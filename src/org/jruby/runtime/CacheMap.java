@@ -75,14 +75,11 @@ public class CacheMap {
     }
     
     /**
-     * Remove all method caches associated with the provided method.  This signature
-     * relies on having the methods valid name passed with it since the caching classes
-     * store the cache by name.
-     *
-     * @param name of the method to remove
+     * Remove all method caches associated with the provided method.
+     * 
      * @param method to remove all caches of
      */
-    public synchronized void remove(String name, DynamicMethod method) {
+    public synchronized void remove(DynamicMethod method) {
         Set<CacheSite> siteList = mappings.remove(method);
         
         // Removed method has never been used so it has not been cached
@@ -101,12 +98,11 @@ public class CacheMap {
      * Remove method caches for all methods in a module 
      */
     public synchronized void moduleIncluded(RubyModule targetModule, RubyModule includedModule) {
-        for (Iterator i = includedModule.getMethods().keySet().iterator(); i.hasNext(); ) {
-            String methodName = (String) i.next();
+        for (String methodName : includedModule.getMethods().keySet()) {
 
             for(RubyModule current = targetModule; current != null; current = current.getSuperClass()) {
                 if (current == includedModule) continue;
-                DynamicMethod method = (DynamicMethod)current.getMethods().get(methodName);
+                DynamicMethod method = current.getMethods().get(methodName);
                 if (method != null) {
                     Set<CacheSite> adapters = mappings.remove(method);
                     if (adapters != null) {

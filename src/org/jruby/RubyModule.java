@@ -63,6 +63,7 @@ import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Dispatcher;
 import org.jruby.runtime.ObjectAllocator;
@@ -669,7 +670,7 @@ public class RubyModule extends RubyObject {
             // cachemap so it stays up to date.
             DynamicMethod existingMethod = getMethods().put(name, method);
             if (existingMethod != null) {
-                getRuntime().getCacheMap().remove(name, existingMethod);
+                getRuntime().getCacheMap().remove(existingMethod);
             }
             // note: duplicating functionality from putMethod, since we
             // remove/put atomically here
@@ -694,7 +695,7 @@ public class RubyModule extends RubyObject {
                 throw getRuntime().newNameError("method '" + name + "' not defined in " + getName(), name);
             }
             
-            getRuntime().getCacheMap().remove(name, method);
+            getRuntime().getCacheMap().remove(method);
         }
         
         if(isSingleton()){
@@ -795,26 +796,59 @@ public class RubyModule extends RubyObject {
         if (oldName.equals(name)) {
             return;
         }
-        if (this == getRuntime().getObject()) {
-            getRuntime().secure(4);
+        Ruby runtime = getRuntime();
+        if (this == runtime.getObject()) {
+            runtime.secure(4);
         }
         DynamicMethod method = searchMethod(oldName);
         DynamicMethod oldMethod = searchMethod(name);
         if (method.isUndefined()) {
             if (isModule()) {
-                method = getRuntime().getObject().searchMethod(oldName);
+                method = runtime.getObject().searchMethod(oldName);
             }
 
             if (method.isUndefined()) {
-                throw getRuntime().newNameError("undefined method `" + oldName + "' for " +
+                throw runtime.newNameError("undefined method `" + oldName + "' for " +
                         (isModule() ? "module" : "class") + " `" + getName() + "'", oldName);
             }
         }
-        getRuntime().getCacheMap().remove(name, method);
-        getRuntime().getCacheMap().remove(name, oldMethod);
-        getRuntime().getCacheMap().remove(name, oldMethod.getRealMethod());
-        
+        CacheMap cacheMap = runtime.getCacheMap();
+        cacheMap.remove(method);
+        cacheMap.remove(oldMethod);
+        if (oldMethod != oldMethod.getRealMethod()) {
+            cacheMap.remove(oldMethod.getRealMethod());
+        }
         putMethod(name, new AliasMethod(this, method, oldName));
+    }
+
+    public synchronized void defineAliases(List<String> aliases, String oldName) {
+        testFrozen("module");
+        Ruby runtime = getRuntime();
+        if (this == runtime.getObject()) {
+            runtime.secure(4);
+        }
+        DynamicMethod method = searchMethod(oldName);
+        if (method.isUndefined()) {
+            if (isModule()) {
+                method = runtime.getObject().searchMethod(oldName);
+            }
+
+            if (method.isUndefined()) {
+                throw runtime.newNameError("undefined method `" + oldName + "' for " +
+                        (isModule() ? "module" : "class") + " `" + getName() + "'", oldName);
+            }
+        }
+        CacheMap cacheMap = runtime.getCacheMap();
+        cacheMap.remove(method);
+        for (String name: aliases) {
+            if (oldName.equals(name)) continue;
+            DynamicMethod oldMethod = searchMethod(name);
+            cacheMap.remove(oldMethod);
+            if (oldMethod != oldMethod.getRealMethod()) {
+                cacheMap.remove(oldMethod.getRealMethod());
+            }
+            putMethod(name, new AliasMethod(this, method, oldName));
+        }
     }
 
     /** this method should be used only by interpreter or compiler 

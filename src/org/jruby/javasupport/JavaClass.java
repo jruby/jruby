@@ -325,9 +325,7 @@ public class JavaClass extends JavaObject {
                 RubyClass singleton = proxy.getSingletonClass();
                 singleton.defineFastMethod(this.name,this,this.visibility);
                 if (aliases != null && isPublic() ) {
-                    for (String alias : aliases) {
-                        singleton.defineAlias(alias, this.name);
-                    }
+                    singleton.defineAliases(aliases, this.name);
                     aliases = null;
                 }
             }
@@ -375,9 +373,7 @@ public class JavaClass extends JavaObject {
             if (hasLocalMethod()) {
                 proxy.defineFastMethod(this.name,this,this.visibility);
                 if (aliases != null && isPublic()) {
-                    for (String alias: aliases) {
-                        proxy.defineAlias(alias, this.name);
-                    }
+                    proxy.defineAliases(aliases, this.name);
                     aliases = null;
                 }
             }
