@@ -1,0 +1,3 @@
+fails(JRUBY-2204):Syslog::open should return Syslog
+fails(JRUBY-2204):Syslog::open should be able to take a block
+fails(JRUBY-2204):Syslog::open should raise an error if the log is opened
