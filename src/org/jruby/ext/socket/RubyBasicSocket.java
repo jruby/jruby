@@ -115,7 +115,7 @@ public class RubyBasicSocket extends RubyIO {
     }
     
     public IRubyObject recv(IRubyObject[] args) {
-        openFile.checkClosed(getRuntime());
+        OpenFile openFile = getOpenFileChecked();
         try {
             return RubyString.newString(getRuntime(), openFile.getMainStream().read(RubyNumeric.fix2int(args[0])));
         } catch (BadDescriptorException e) {
