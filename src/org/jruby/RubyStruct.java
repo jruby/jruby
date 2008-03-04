@@ -49,6 +49,7 @@ import org.jruby.util.IdUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.callback.Callback;
 
 /**
  * @author  jpetersen
@@ -240,9 +241,29 @@ public class RubyStruct extends RubyObject {
 
         // define access methods.
         for (int i = (name == null && !nilName) ? 0 : 1; i < args.length; i++) {
-            String memberName = args[i].asJavaString();
-            newStruct.defineMethod(memberName, callbackFactory.getMethod("get"));
-            newStruct.defineMethod(memberName + "=", callbackFactory.getMethod("set", RubyKernel.IRUBY_OBJECT));
+            final String memberName = args[i].asJavaString();
+            // if we are storing a name as well, index is one too high for values
+            final int index = (name == null && !nilName) ? i : i - 1;
+            newStruct.defineFastMethod(memberName, new Callback() {
+                public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
+                    Arity.checkArgumentCount(recv.getRuntime(), args, 0, 0);
+                    return ((RubyStruct)recv).get(index);
+                }
+
+                public Arity getArity() {
+                    return Arity.NO_ARGUMENTS;
+                }
+            });
+            newStruct.defineFastMethod(memberName + "=", new Callback() {
+                public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
+                    Arity.checkArgumentCount(recv.getRuntime(), args, 1, 1);
+                    return ((RubyStruct)recv).set(args[0], index);
+                }
+
+                public Arity getArity() {
+                    return Arity.ONE_ARGUMENT;
+                }
+            });
         }
         
         if (block.isGiven()) {
@@ -321,45 +342,26 @@ public class RubyStruct extends RubyObject {
         return array;
     }
 
-    public IRubyObject set(IRubyObject value, Block block) {
-        String name = getRuntime().getCurrentContext().getFrameName();
-        if (name.endsWith("=")) {
-            name = name.substring(0, name.length() - 1);
-        }
-
+    public IRubyObject set(IRubyObject value, int index) {
         RubyArray member = (RubyArray) getInternalVariable(classOf(), "__member__");
 
         assert !member.isNil() : "uninitialized struct";
 
         modify();
 
-        for (int i = 0,k=member.getLength(); i < k; i++) {
-            if (member.eltInternal(i).asJavaString().equals(name)) {
-                return values[i] = value;
-            }
-        }
-
-        throw notStructMemberError(name);
+        return values[index] = value;
     }
 
     private RaiseException notStructMemberError(String name) {
         return getRuntime().newNameError(name + " is not struct member", name);
     }
 
-    public IRubyObject get(Block block) {
-        String name = getRuntime().getCurrentContext().getFrameName();
-
+    public IRubyObject get(int index) {
         RubyArray member = (RubyArray) getInternalVariable(classOf(), "__member__");
 
         assert !member.isNil() : "uninitialized struct";
 
-        for (int i = 0,k=member.getLength(); i < k; i++) {
-            if (member.eltInternal(i).asJavaString().equals(name)) {
-                return values[i];
-            }
-        }
-
-        throw notStructMemberError(name);
+        return values[index];
     }
 
     
