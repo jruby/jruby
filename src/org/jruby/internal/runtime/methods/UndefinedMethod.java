@@ -70,4 +70,19 @@ public class UndefinedMethod extends DynamicMethod {
     public static UndefinedMethod getInstance() {
         return instance;
     }
+
+    @Override
+    public void setImplementationClass(RubyModule implClass) {
+        // UndefinedMethod should be immutable
+    }
+
+    @Override
+    public void setVisibility(Visibility visibility) {
+        // UndefinedMethod should be immutable
+    }
+
+    @Override
+    public void setCallConfig(CallConfiguration callConfig) {
+        // UndefinedMethod should be immutable
+    }
 }
