@@ -1180,7 +1180,7 @@ public class ASTInterpreter {
                         context.setLine(savedLine);
                     }
    
-                    return ForNode.callAdapter.call(context, recv, block);
+                    return iVisited.callAdapter.call(context, recv, block);
                 } catch (JumpException.RetryJump rj) {
                     // do nothing, allow loop to retry
                 }
@@ -1286,7 +1286,7 @@ public class ASTInterpreter {
         if (value instanceof RubyString) {
             return ((RubyRegexp) recv).op_match(value);
         } else {
-            return Match3Node.callAdapter.call(context, value, recv);
+            return iVisited.callAdapter.call(context, value, recv);
         }
     }
 
