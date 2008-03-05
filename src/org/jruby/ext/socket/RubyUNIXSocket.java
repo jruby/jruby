@@ -480,9 +480,12 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         }
 
         int[] sp = new int[2];
-        int ret = INSTANCE.socketpair(domain, type, protocol, sp);
-        if(ret < 0) {
-            rb_sys_fail(recv.getRuntime(), "socketpair(2");
+        int ret = -1;
+        try {
+            ret = INSTANCE.socketpair(domain, type, protocol, sp);
+        } catch (UnsatisfiedLinkError ule) { }
+        if (ret < 0) {
+            rb_sys_fail(recv.getRuntime(), "socketpair(2)");
         }
 
         RubyUNIXSocket sock = (RubyUNIXSocket)(recv.getRuntime().fastGetClass("UNIXSocket").callMethod(recv.getRuntime().getCurrentContext(), "allocate", new IRubyObject[0]));
