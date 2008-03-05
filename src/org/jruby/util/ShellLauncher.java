@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.compliance
+ * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -63,18 +63,28 @@ public class ShellLauncher {
         private int result;
         private RubyInstanceConfig config;
         private Thread processThread;
-        private PipedInputStream processOutput = new PipedInputStream();
-        private PipedInputStream processError = new PipedInputStream();
-        private PipedOutputStream processInput = new PipedOutputStream();
+        private PipedInputStream processOutput;
+        private PipedInputStream processError;
+        private PipedOutputStream processInput;
         private final String[] env;
         private final File pwd;
+        private final boolean pipedStreams;
 
         public ScriptThreadProcess(final String[] argArray, final String[] env, final File dir) {
+            this(argArray, env, dir, true);
+        }
+
+        public ScriptThreadProcess(final String[] argArray, final String[] env, final File dir, final boolean pipedStreams) {
             this.argArray = argArray;
             this.env = env;
             this.pwd = dir;
+            this.pipedStreams = pipedStreams;
+            if (pipedStreams) {
+                processOutput = new PipedInputStream();
+                processError = new PipedInputStream();
+                processInput = new PipedOutputStream();
+            }
         }
-        
         public void run() {
             try {
                 this.result = new Main(config).run(argArray);
@@ -98,12 +108,14 @@ public class ShellLauncher {
 
         public void start() throws IOException {
             this.config = new RubyInstanceConfig() {{
-                setInput(new PipedInputStream(processInput));
-                setOutput(new PrintStream(new PipedOutputStream(processOutput)));
-                setError(new PrintStream(new PipedOutputStream(processError)));
                 setEnvironment(environmentMap(env));
                 setCurrentDirectory(pwd.toString());
             }};
+            if (pipedStreams) {
+                this.config.setInput(new PipedInputStream(processInput));
+                this.config.setOutput(new PrintStream(new PipedOutputStream(processOutput)));
+                this.config.setError(new PrintStream(new PipedOutputStream(processError)));
+            }
             String procName = "piped";
             if (argArray.length > 0) {
                 procName = argArray[0];
@@ -135,7 +147,9 @@ public class ShellLauncher {
         }
 
         public void destroy() {
-            closeStreams();
+            if (pipedStreams) {
+                closeStreams();
+            }
             processThread.interrupt();
         }
 
@@ -146,80 +160,6 @@ public class ShellLauncher {
         }
     }
     
-    private static class ScriptExecProcess extends Process implements Runnable {
-        private String[] argArray;
-        private int result;
-        private RubyInstanceConfig config;
-        private Thread processThread;
-        private final String[] env;
-        private final File pwd;
-
-        public ScriptExecProcess(final String[] argArray, final String[] env, final File dir) {
-            this.argArray = argArray;
-            this.env = env;
-            this.pwd = dir;
-        }
-        
-        public void run() {
-            try {
-                this.result = new Main(config).run(argArray);
-            } catch (Throwable throwable) {
-                throwable.printStackTrace(this.config.getError());
-                this.result = -1;
-            } finally {
-                this.config.getOutput().close();
-                this.config.getError().close();
-            }
-        }
-
-        private Map<String, String> environmentMap(String[] env) {
-            Map<String, String> m = new HashMap<String, String>();
-            for (int i = 0; i < env.length; i++) {
-                String[] kv = env[i].split("=", 2);
-                m.put(kv[0], kv[1]);
-            }
-            return m;
-        }
-
-        public void start() throws IOException {
-            this.config = new RubyInstanceConfig() {{
-                setEnvironment(environmentMap(env));
-                setCurrentDirectory(pwd.toString());
-            }};
-            String procName = "piped";
-            if (argArray.length > 0) {
-                procName = argArray[0];
-            }
-            processThread = new Thread(this, "ScriptExecProcess: " + procName);
-            processThread.setDaemon(true);
-            processThread.start();
-        }
-
-        public OutputStream getOutputStream() {
-            return null;
-        }
-
-        public InputStream getInputStream() {
-            return null;
-        }
-
-        public InputStream getErrorStream() {
-            return null;
-        }
-
-        public int waitFor() throws InterruptedException {
-            processThread.join();
-            return result;
-        }
-
-        public int exitValue() {
-            return result;
-        }
-
-        public void destroy() {
-            processThread.interrupt();
-        }
-    }
 
     private String[] getCurrentEnv() {
         RubyHash hash = (RubyHash)runtime.getObject().fastGetConstant("ENV");
@@ -241,7 +181,7 @@ public class ShellLauncher {
     public int execAndWait(IRubyObject[] rawArgs) {
         String[] args = parseCommandLine(runtime, rawArgs);
         if (shouldRunInProcess(runtime, args[0])) {
-            // exec needs to behave differencely in-process, because it's technically
+            // exec needs to behave differently in-process, because it's technically
             // supposed to replace the calling process. So if we're supposed to run
             // in-process, we allow it to use the default streams and not use
             // pumpers at all. See JRUBY-2156 and JRUBY-2154.
@@ -257,7 +197,7 @@ public class ShellLauncher {
                 }
                 String[] newargs = new String[args.length - startIndex];
                 System.arraycopy(args, startIndex, newargs, 0, newargs.length);
-                ScriptExecProcess ipScript = new ScriptExecProcess(newargs, getCurrentEnv(), pwd);
+                ScriptThreadProcess ipScript = new ScriptThreadProcess(newargs, getCurrentEnv(), pwd, false);
                 ipScript.start();
                 
                 return ipScript.waitFor();
