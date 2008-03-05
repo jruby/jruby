@@ -68,7 +68,14 @@ public class IOInputStream extends InputStream {
         }
         this.numOne = RubyFixnum.one(this.io.getRuntime());
     }
-    
+
+    @Override
+    public void close() throws IOException {
+        if (in != null) {
+            in.close();
+        }
+    }
+
     // Note: this method produces meaningful results
     // only for RubyIO objects. For everything else returns 0.
     @Override

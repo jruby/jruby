@@ -84,5 +84,19 @@ class TestZlib < Test::Unit::TestCase
      res = d.finish
      assert_equal("\313H\315\311\311\a\000", res)
   end
-  
+
+  # JRUBY-2228
+  def test_gzipreader_descriptor_leak
+    @filename = "____temp_zlib_file";
+    Zlib::GzipWriter.open(@filename) { |z| z.puts 'HEH' }
+
+    ios = [] # to prevent opened files GC'ed
+    assert_nothing_raised() {
+      2048.times {
+        z = Zlib::GzipReader.open(@filename)
+        z.close
+        ios << z
+      }
+    }
+  end
 end
