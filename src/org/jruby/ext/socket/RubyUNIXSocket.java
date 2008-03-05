@@ -37,6 +37,7 @@ import java.nio.channels.WritableByteChannel;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Structure;
+import com.sun.jna.Union;
 import com.sun.jna.ptr.IntByReference;
 
 import org.jruby.Ruby;
@@ -46,6 +47,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -149,11 +151,42 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
         void perror(String arg);
 
+        // Sockaddr_un has different structure on different platforms.
+        // See JRUBY-2213 for more details.
         public static class sockaddr_un extends Structure {
             public final static int LENGTH = 106;
-            public byte sun_len;
-            public byte sun_family;
-            public byte[] sun_path = new byte[104];
+            public final static boolean hasLen = Platform.IS_BSD;
+
+            public header sun_header;
+            public byte[] sun_path = new byte[LENGTH - 2];
+
+            public static final class header extends Union {
+                public static final class famlen extends Structure {
+                    public byte sun_len;
+                    public byte sun_family;
+                }
+                public famlen famlen;
+                public short sun_family;
+                public header() {
+                    setType(hasLen ? famlen.class : short.class);
+                }
+            }
+
+            public void setFamily(int family) {
+                if(hasLen) {
+                    sun_header.famlen.sun_family = (byte) family;
+                } else {
+                    sun_header.sun_family = (short) family;
+                }
+            }
+
+            public int getFamily() {
+                if(hasLen) {
+                    return sun_header.famlen.sun_family;
+                } else {
+                    return sun_header.sun_family;
+                }
+            }
         }
     }
 
@@ -220,7 +253,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         }
 
         LibCSocket.sockaddr_un sockaddr = new LibCSocket.sockaddr_un();
-        sockaddr.sun_family = RubySocket.AF_UNIX;
+        sockaddr.setFamily(RubySocket.AF_UNIX);
 
         ByteList path = _path.convertToString().getByteList();
         fpath = path.toString();
