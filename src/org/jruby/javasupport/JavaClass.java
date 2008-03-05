@@ -61,6 +61,7 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -881,6 +882,7 @@ public class JavaClass extends JavaObject {
         extender.callMethod(getRuntime().getCurrentContext(), "extend_proxy", proxyModule);
     }
     
+    @JRubyMethod(required = 1)
     public IRubyObject extend_proxy(IRubyObject extender) {
         addProxyExtender(extender);
         return getRuntime().getNil();
@@ -919,143 +921,10 @@ public class JavaClass extends JavaObject {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here, since we don't intend for people to monkey with
         // this type and it can't be marshalled. Confirm. JRUBY-415
         RubyClass result = javaModule.defineClassUnder("JavaClass", javaModule.fastGetClass("JavaObject"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR); 
-
-    	CallbackFactory callbackFactory = runtime.callbackFactory(JavaClass.class);
         
         result.includeModule(runtime.fastGetModule("Comparable"));
         
-        JavaObject.registerRubyMethods(runtime, result);
-
-        result.getMetaClass().defineFastMethod("for_name", 
-                callbackFactory.getFastSingletonMethod("for_name", IRubyObject.class));
-        result.defineFastMethod("public?", 
-                callbackFactory.getFastMethod("public_p"));
-        result.defineFastMethod("protected?", 
-                callbackFactory.getFastMethod("protected_p"));
-        result.defineFastMethod("private?", 
-                callbackFactory.getFastMethod("private_p"));
-        result.defineFastMethod("final?", 
-                callbackFactory.getFastMethod("final_p"));
-        result.defineFastMethod("interface?", 
-                callbackFactory.getFastMethod("interface_p"));
-        result.defineFastMethod("array?", 
-                callbackFactory.getFastMethod("array_p"));
-        result.defineFastMethod("primitive?", 
-                callbackFactory.getFastMethod("primitive_p"));
-        result.defineFastMethod("enum?", 
-                callbackFactory.getFastMethod("enum_p"));
-        result.defineFastMethod("annotation?", 
-                callbackFactory.getFastMethod("annotation_p"));
-        result.defineFastMethod("anonymous_class?", 
-                callbackFactory.getFastMethod("anonymous_class_p"));
-        result.defineFastMethod("local_class?", 
-                callbackFactory.getFastMethod("local_class_p"));
-        result.defineFastMethod("member_class?", 
-                callbackFactory.getFastMethod("member_class_p"));
-        result.defineFastMethod("synthetic?", 
-                callbackFactory.getFastMethod("synthetic_p"));
-        result.defineFastMethod("package", 
-                callbackFactory.getFastMethod("get_package"));
-        result.defineFastMethod("name", 
-                callbackFactory.getFastMethod("name"));
-        result.defineFastMethod("canonical_name", 
-                callbackFactory.getFastMethod("canonical_name"));
-        result.defineFastMethod("class_loader", 
-                callbackFactory.getFastMethod("class_loader"));
-        result.defineFastMethod("protection_domain", 
-                callbackFactory.getFastMethod("protection_domain"));
-        result.defineFastMethod("simple_name",
-                callbackFactory.getFastMethod("simple_name"));
-        result.defineFastMethod("to_s", 
-                callbackFactory.getFastMethod("name"));
-        result.defineFastMethod("superclass", 
-                callbackFactory.getFastMethod("superclass"));
-        result.defineFastMethod("<=>", 
-                callbackFactory.getFastMethod("op_cmp", IRubyObject.class));
-        result.defineFastMethod("java_instance_methods", 
-                callbackFactory.getFastMethod("java_instance_methods"));
-        result.defineFastMethod("java_class_methods", 
-                callbackFactory.getFastMethod("java_class_methods"));
-        result.defineFastMethod("java_method", 
-                callbackFactory.getFastOptMethod("java_method"));
-        result.defineFastMethod("constructors", 
-                callbackFactory.getFastMethod("constructors"));
-        result.defineFastMethod("constructor", 
-                callbackFactory.getFastOptMethod("constructor"));
-        result.defineFastMethod("array_class", 
-                callbackFactory.getFastMethod("array_class"));
-        result.defineFastMethod("new_array", 
-                callbackFactory.getFastMethod("new_array", IRubyObject.class));
-        result.defineFastMethod("fields", 
-                callbackFactory.getFastMethod("fields"));
-        result.defineFastMethod("field", 
-                callbackFactory.getFastMethod("field", IRubyObject.class));
-        result.defineFastMethod("interfaces", 
-                callbackFactory.getFastMethod("interfaces"));
-        result.defineFastMethod("assignable_from?", 
-                callbackFactory.getFastMethod("assignable_from_p", IRubyObject.class));
-        result.defineFastMethod("component_type", 
-                callbackFactory.getFastMethod("component_type"));
-        result.defineFastMethod("declared_instance_methods", 
-                callbackFactory.getFastMethod("declared_instance_methods"));
-        result.defineFastMethod("declared_class_methods", 
-                callbackFactory.getFastMethod("declared_class_methods"));
-        result.defineFastMethod("declared_fields", 
-                callbackFactory.getFastMethod("declared_fields"));
-        result.defineFastMethod("declared_field", 
-                callbackFactory.getFastMethod("declared_field", IRubyObject.class));
-        result.defineFastMethod("declared_constructors", 
-                callbackFactory.getFastMethod("declared_constructors"));
-        result.defineFastMethod("declared_constructor", 
-                callbackFactory.getFastOptMethod("declared_constructor"));
-        result.defineFastMethod("classes", 
-                callbackFactory.getFastMethod("classes"));
-        result.defineFastMethod("declared_classes", 
-                callbackFactory.getFastMethod("declared_classes"));
-        result.defineFastMethod("declared_method", 
-                callbackFactory.getFastOptMethod("declared_method"));
-        result.defineFastMethod("resource", 
-                callbackFactory.getFastMethod("resource", IRubyObject.class));
-        result.defineFastMethod("resource_as_stream", 
-                callbackFactory.getFastMethod("resource_as_stream", IRubyObject.class));
-        result.defineFastMethod("resource_as_string", 
-                callbackFactory.getFastMethod("resource_as_string", IRubyObject.class));
-        result.defineFastMethod("declaring_class", 
-                callbackFactory.getFastMethod("declaring_class"));
-        result.defineFastMethod("enclosing_class", 
-                callbackFactory.getFastMethod("enclosing_class"));
-        result.defineFastMethod("enclosing_constructor", 
-                callbackFactory.getFastMethod("enclosing_constructor"));
-        result.defineFastMethod("enclosing_method", 
-                callbackFactory.getFastMethod("enclosing_method"));
-        result.defineFastMethod("enum_constants", 
-                callbackFactory.getFastMethod("enum_constants"));
-        result.defineFastMethod("generic_interfaces", 
-                callbackFactory.getFastMethod("generic_interfaces"));
-        result.defineFastMethod("generic_superclass", 
-                callbackFactory.getFastMethod("generic_superclass"));
-        result.defineFastMethod("type_parameters", 
-                callbackFactory.getFastMethod("type_parameters"));
-        result.defineFastMethod("signers", 
-                callbackFactory.getFastMethod("signers"));
-        result.defineFastMethod("annotations", 
-                callbackFactory.getFastMethod("annotations"));
-        result.defineFastMethod("annotations?", 
-                callbackFactory.getFastMethod("annotations_p"));
-        result.defineFastMethod("declared_annotations", 
-                callbackFactory.getFastMethod("declared_annotations"));
-        result.defineFastMethod("declared_annotations?", 
-                callbackFactory.getFastMethod("declared_annotations_p"));
-        result.defineFastMethod("annotation", 
-                callbackFactory.getFastMethod("annotation", IRubyObject.class));
-        result.defineFastMethod("extend_proxy", 
-                callbackFactory.getFastMethod("extend_proxy", IRubyObject.class));
-        result.defineFastMethod("annotation_present?", 
-                callbackFactory.getFastMethod("annotation_present_p", IRubyObject.class));
-        result.defineFastMethod("modifiers", 
-                callbackFactory.getFastMethod("modifiers"));
-        result.defineFastMethod("ruby_class", 
-                callbackFactory.getFastMethod("ruby_class"));
+        result.defineAnnotatedMethods(JavaClass.class);
 
         result.getMetaClass().undefineMethod("new");
         result.getMetaClass().undefineMethod("allocate");
@@ -1073,6 +942,7 @@ public class JavaClass extends JavaObject {
         return JavaClass.get(runtime, klass);
     }
 
+    @JRubyMethod(name = "for_name", required = 1, meta = true)
     public static JavaClass for_name(IRubyObject recv, IRubyObject name) {
         return forNameVerbose(recv.getRuntime(), name.asJavaString());
     }
@@ -1100,67 +970,82 @@ public class JavaClass extends JavaObject {
             }
         };
 
+    @JRubyMethod
     public RubyModule ruby_class() {
         // Java.getProxyClass deals with sync issues, so we won't duplicate the logic here
         return Java.getProxyClass(getRuntime(), this);
     }
 
+    @JRubyMethod(name = "public?")
     public RubyBoolean public_p() {
         return getRuntime().newBoolean(Modifier.isPublic(javaClass().getModifiers()));
     }
 
+    @JRubyMethod(name = "protected?")
     public RubyBoolean protected_p() {
         return getRuntime().newBoolean(Modifier.isProtected(javaClass().getModifiers()));
     }
 
+    @JRubyMethod(name = "protected?")
     public RubyBoolean private_p() {
         return getRuntime().newBoolean(Modifier.isPrivate(javaClass().getModifiers()));
     }
 
-	public Class javaClass() {
-		return (Class) getValue();
-	}
+    public Class javaClass() {
+        return (Class) getValue();
+    }
 
+    @JRubyMethod(name = "final?")
     public RubyBoolean final_p() {
         return getRuntime().newBoolean(Modifier.isFinal(javaClass().getModifiers()));
     }
 
+    @JRubyMethod(name = "interface?")
     public RubyBoolean interface_p() {
         return getRuntime().newBoolean(javaClass().isInterface());
     }
 
+    @JRubyMethod(name = "array?")
     public RubyBoolean array_p() {
         return getRuntime().newBoolean(javaClass().isArray());
     }
     
+    @JRubyMethod(name = "enum?")
     public RubyBoolean enum_p() {
         return getRuntime().newBoolean(javaClass().isEnum());
     }
     
+    @JRubyMethod(name = "annotation?")
     public RubyBoolean annotation_p() {
         return getRuntime().newBoolean(javaClass().isAnnotation());
     }
     
+    @JRubyMethod(name = "anonymous_class?")
     public RubyBoolean anonymous_class_p() {
         return getRuntime().newBoolean(javaClass().isAnonymousClass());
     }
     
+    @JRubyMethod(name = "local_class?")
     public RubyBoolean local_class_p() {
         return getRuntime().newBoolean(javaClass().isLocalClass());
     }
     
+    @JRubyMethod(name = "member_class?")
     public RubyBoolean member_class_p() {
         return getRuntime().newBoolean(javaClass().isMemberClass());
     }
     
+    @JRubyMethod(name = "synthetic?")
     public IRubyObject synthetic_p() {
         return getRuntime().newBoolean(javaClass().isSynthetic());
     }
 
+    @JRubyMethod(name = {"name", "to_s"})
     public RubyString name() {
         return getRuntime().newString(javaClass().getName());
     }
 
+    @JRubyMethod
     public IRubyObject canonical_name() {
         String canonicalName = javaClass().getCanonicalName();
         if (canonicalName != null) {
@@ -1169,26 +1054,32 @@ public class JavaClass extends JavaObject {
         return getRuntime().getNil();
     }
     
+    @JRubyMethod(name = "package")
     public IRubyObject get_package() {
         return Java.getInstance(getRuntime(), javaClass().getPackage());
     }
 
+    @JRubyMethod
     public IRubyObject class_loader() {
         return Java.getInstance(getRuntime(), javaClass().getClassLoader());
     }
 
+    @JRubyMethod
     public IRubyObject protection_domain() {
         return Java.getInstance(getRuntime(), javaClass().getProtectionDomain());
     }
     
+    @JRubyMethod(required = 1)
     public IRubyObject resource(IRubyObject name) {
         return Java.getInstance(getRuntime(), javaClass().getResource(name.asJavaString()));
     }
 
+    @JRubyMethod(required = 1)
     public IRubyObject resource_as_stream(IRubyObject name) {
         return Java.getInstance(getRuntime(), javaClass().getResourceAsStream(name.asJavaString()));
     }
     
+    @JRubyMethod(required = 1)
     public IRubyObject resource_as_string(IRubyObject name) {
         InputStream in = javaClass().getResourceAsStream(name.asJavaString());
         if (in == null) return getRuntime().getNil();
@@ -1206,6 +1097,7 @@ public class JavaClass extends JavaObject {
     }
     
     @SuppressWarnings("unchecked")
+    @JRubyMethod(required = 1)
     public IRubyObject annotation(IRubyObject annoClass) {
         if (!(annoClass instanceof JavaClass)) {
             throw getRuntime().newTypeError(annoClass, getRuntime().getJavaSupport().getJavaClassClass());
@@ -1213,6 +1105,7 @@ public class JavaClass extends JavaObject {
         return Java.getInstance(getRuntime(), javaClass().getAnnotation(((JavaClass)annoClass).javaClass()));
     }
     
+    @JRubyMethod
     public IRubyObject annotations() {
         // note: intentionally returning the actual array returned from Java, rather
         // than wrapping it in a RubyArray. wave of the future, when java_class will
@@ -1220,20 +1113,24 @@ public class JavaClass extends JavaObject {
         return Java.getInstance(getRuntime(), javaClass().getAnnotations());
     }
     
+    @JRubyMethod(name = "annotations?")
     public RubyBoolean annotations_p() {
         return getRuntime().newBoolean(javaClass().getAnnotations().length > 0);
     }
     
+    @JRubyMethod
     public IRubyObject declared_annotations() {
         // see note above re: return type
         return Java.getInstance(getRuntime(), javaClass().getDeclaredAnnotations());
     }
     
+    @JRubyMethod(name = "declared_annotations?")
     public RubyBoolean declared_annotations_p() {
         return getRuntime().newBoolean(javaClass().getDeclaredAnnotations().length > 0);
     }
     
     @SuppressWarnings("unchecked")
+    @JRubyMethod(name = "annotation_present?", required = 1)
     public IRubyObject annotation_present_p(IRubyObject annoClass) {
         if (!(annoClass instanceof JavaClass)) {
             throw getRuntime().newTypeError(annoClass, getRuntime().getJavaSupport().getJavaClassClass());
@@ -1241,10 +1138,12 @@ public class JavaClass extends JavaObject {
         return getRuntime().newBoolean(javaClass().isAnnotationPresent(((JavaClass)annoClass).javaClass()));
     }
     
+    @JRubyMethod
     public IRubyObject modifiers() {
         return getRuntime().newFixnum(javaClass().getModifiers());
     }
 
+    @JRubyMethod
     public IRubyObject declaring_class() {
         Class<?> clazz = javaClass().getDeclaringClass();
         if (clazz != null) {
@@ -1253,10 +1152,12 @@ public class JavaClass extends JavaObject {
         return getRuntime().getNil();
     }
 
+    @JRubyMethod
     public IRubyObject enclosing_class() {
         return Java.getInstance(getRuntime(), javaClass().getEnclosingClass());
     }
     
+    @JRubyMethod
     public IRubyObject enclosing_constructor() {
         Constructor<?> ctor = javaClass().getEnclosingConstructor();
         if (ctor != null) {
@@ -1265,6 +1166,7 @@ public class JavaClass extends JavaObject {
         return getRuntime().getNil();
     }
 
+    @JRubyMethod
     public IRubyObject enclosing_method() {
         Method meth = javaClass().getEnclosingMethod();
         if (meth != null) {
@@ -1273,22 +1175,27 @@ public class JavaClass extends JavaObject {
         return getRuntime().getNil();
     }
 
+    @JRubyMethod
     public IRubyObject enum_constants() {
         return Java.getInstance(getRuntime(), javaClass().getEnumConstants());
     }
 
+    @JRubyMethod
     public IRubyObject generic_interfaces() {
         return Java.getInstance(getRuntime(), javaClass().getGenericInterfaces());
     }
     
+    @JRubyMethod
     public IRubyObject generic_superclass() {
         return Java.getInstance(getRuntime(), javaClass().getGenericSuperclass());
     }
     
+    @JRubyMethod
     public IRubyObject type_parameters() {
         return Java.getInstance(getRuntime(), javaClass().getTypeParameters());
     }
     
+    @JRubyMethod
     public IRubyObject signers() {
         return Java.getInstance(getRuntime(), javaClass().getSigners());
     }
@@ -1311,10 +1218,12 @@ public class JavaClass extends JavaObject {
  		return className.substring(className.lastIndexOf('.') + 1);
  	}
 
+    @JRubyMethod
     public RubyString simple_name() {
         return getRuntime().newString(getSimpleName(javaClass()));
     }
 
+    @JRubyMethod
     public IRubyObject superclass() {
         Class<?> superclass = javaClass().getSuperclass();
         if (superclass == null) {
@@ -1323,6 +1232,7 @@ public class JavaClass extends JavaObject {
         return JavaClass.get(getRuntime(), superclass);
     }
 
+    @JRubyMethod(name = "<=>", required = 1)
     public RubyFixnum op_cmp(IRubyObject other) {
         if (! (other instanceof JavaClass)) {
             throw getRuntime().newTypeError("<=> requires JavaClass (" + other.getType() + " given)");
@@ -1337,15 +1247,17 @@ public class JavaClass extends JavaObject {
         return getRuntime().newFixnum(1);
     }
 
+    @JRubyMethod
     public RubyArray java_instance_methods() {
         return java_methods(javaClass().getMethods(), false);
     }
 
+    @JRubyMethod
     public RubyArray declared_instance_methods() {
         return java_methods(javaClass().getDeclaredMethods(), false);
     }
 
-	private RubyArray java_methods(Method[] methods, boolean isStatic) {
+    private RubyArray java_methods(Method[] methods, boolean isStatic) {
         RubyArray result = getRuntime().newArray(methods.length);
         for (int i = 0; i < methods.length; i++) {
             Method method = methods[i];
@@ -1354,22 +1266,26 @@ public class JavaClass extends JavaObject {
             }
         }
         return result;
-	}
-
-	public RubyArray java_class_methods() {
-	    return java_methods(javaClass().getMethods(), true);
     }
 
-	public RubyArray declared_class_methods() {
-	    return java_methods(javaClass().getDeclaredMethods(), true);
+    @JRubyMethod
+    public RubyArray java_class_methods() {
+        return java_methods(javaClass().getMethods(), true);
     }
 
-	public JavaMethod java_method(IRubyObject[] args) throws ClassNotFoundException {
+    @JRubyMethod
+    public RubyArray declared_class_methods() {
+        return java_methods(javaClass().getDeclaredMethods(), true);
+    }
+
+    @JRubyMethod(required = 1, rest = true)
+    public JavaMethod java_method(IRubyObject[] args) throws ClassNotFoundException {
         String methodName = args[0].asJavaString();
         Class<?>[] argumentTypes = buildArgumentTypes(args);
         return JavaMethod.create(getRuntime(), javaClass(), methodName, argumentTypes);
     }
 
+    @JRubyMethod(required = 1, rest = true)
     public JavaMethod declared_method(IRubyObject[] args) throws ClassNotFoundException {
         String methodName = args[0].asJavaString();
         Class<?>[] argumentTypes = buildArgumentTypes(args);
@@ -1388,16 +1304,19 @@ public class JavaClass extends JavaObject {
         return argumentTypes;
     }
 
+    @JRubyMethod
     public RubyArray constructors() {
         RubyArray ctors;
         if ((ctors = constructors) != null) return ctors;
         return constructors = buildConstructors(javaClass().getConstructors());
     }
     
+    @JRubyMethod
     public RubyArray classes() {
         return JavaClass.getRubyArray(getRuntime(), javaClass().getClasses());
     }
 
+    @JRubyMethod
     public RubyArray declared_classes() {
         Ruby runtime = getRuntime();
         RubyArray result = runtime.newArray();
@@ -1427,6 +1346,7 @@ public class JavaClass extends JavaObject {
         return result;
     }
 
+    @JRubyMethod
     public RubyArray declared_constructors() {
         return buildConstructors(javaClass().getDeclaredConstructors());
     }
@@ -1439,6 +1359,7 @@ public class JavaClass extends JavaObject {
         return result;
     }
 
+    @JRubyMethod(rest = true)
     public JavaConstructor constructor(IRubyObject[] args) {
         try {
             Class<?>[] parameterTypes = buildClassArgs(args);
@@ -1449,6 +1370,7 @@ public class JavaClass extends JavaObject {
         }
     }
 
+    @JRubyMethod(rest = true)
     public JavaConstructor declared_constructor(IRubyObject[] args) {
         try {
             Class<?>[] parameterTypes = buildClassArgs(args);
@@ -1469,10 +1391,12 @@ public class JavaClass extends JavaObject {
         return parameterTypes;
     }
 
+    @JRubyMethod
     public JavaClass array_class() {
         return JavaClass.get(getRuntime(), Array.newInstance(javaClass(), 0).getClass());
     }
    
+    @JRubyMethod(required = 1)
     public JavaObject new_array(IRubyObject lengthArgument) {
         if (lengthArgument instanceof RubyInteger) {
             // one-dimensional array
@@ -1502,37 +1426,41 @@ public class JavaClass extends JavaObject {
         }
     }
 
+    @JRubyMethod
     public RubyArray fields() {
         return buildFieldResults(javaClass().getFields());
     }
 
+    @JRubyMethod
     public RubyArray declared_fields() {
         return buildFieldResults(javaClass().getDeclaredFields());
     }
-    
-	private RubyArray buildFieldResults(Field[] fields) {
+
+    private RubyArray buildFieldResults(Field[] fields) {
         RubyArray result = getRuntime().newArray(fields.length);
         for (int i = 0; i < fields.length; i++) {
             result.append(new JavaField(getRuntime(), fields[i]));
         }
         return result;
-	}
+    }
 
-	public JavaField field(IRubyObject name) {
-		String stringName = name.asJavaString();
+    @JRubyMethod(required = 1)
+    public JavaField field(IRubyObject name) {
+        String stringName = name.asJavaString();
         try {
             Field field = javaClass().getField(stringName);
-			return new JavaField(getRuntime(),field);
+            return new JavaField(getRuntime(), field);
         } catch (NoSuchFieldException nsfe) {
             throw undefinedFieldError(stringName);
         }
     }
 
-	public JavaField declared_field(IRubyObject name) {
-		String stringName = name.asJavaString();
+    @JRubyMethod(required = 1)
+    public JavaField declared_field(IRubyObject name) {
+        String stringName = name.asJavaString();
         try {
             Field field = javaClass().getDeclaredField(stringName);
-			return new JavaField(getRuntime(),field);
+            return new JavaField(getRuntime(), field);
         } catch (NoSuchFieldException nsfe) {
             throw undefinedFieldError(stringName);
         }
@@ -1542,14 +1470,17 @@ public class JavaClass extends JavaObject {
         return getRuntime().newNameError("undefined field '" + name + "' for class '" + javaClass().getName() + "'", name);
     }
 
+    @JRubyMethod
     public RubyArray interfaces() {
         return JavaClass.getRubyArray(getRuntime(), javaClass().getInterfaces());
     }
 
+    @JRubyMethod(name = "primitive?")
     public RubyBoolean primitive_p() {
         return getRuntime().newBoolean(isPrimitive());
     }
 
+    @JRubyMethod(name = "assignable_from?", required = 1)
     public RubyBoolean assignable_from_p(IRubyObject other) {
         if (! (other instanceof JavaClass)) {
             throw getRuntime().newTypeError("assignable_from requires JavaClass (" + other.getType() + " given)");
@@ -1591,6 +1522,7 @@ public class JavaClass extends JavaObject {
         return javaClass().isPrimitive();
     }
 
+    @JRubyMethod
     public JavaClass component_type() {
         if (! javaClass().isArray()) {
             throw getRuntime().newTypeError("not a java array-class");
