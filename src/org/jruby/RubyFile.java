@@ -1566,8 +1566,10 @@ public class RubyFile extends RubyIO {
             if (!lToDelete.exists() && !isSymlink) {
                 throw runtime.newErrnoENOENTError(" No such file or directory - \"" + filename + "\"");
             }
-            
-            if (!lToDelete.delete()) return runtime.getFalse();
+
+            if (!lToDelete.delete()) {
+                throw runtime.newErrnoEACCESError("Permission denied - \"" + filename + "\"");
+            }
         }
         
         return runtime.newFixnum(args.length);

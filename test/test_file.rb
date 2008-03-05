@@ -535,21 +535,37 @@ class TestFile < Test::Unit::TestCase
     # JRUBY-1025: negative int passed to truncate should raise EINVAL
     filename = "__truncate_test_file"
     assert_raises(Errno::EINVAL) {
-      File.open(filename, 'w').truncate(-1)
+      begin
+        f = File.open(filename, 'w')
+        f.truncate(-1)
+      ensure
+        f.close
+      end
     }
     assert_raises(Errno::EINVAL) {
       File.truncate(filename, -1)
     }
+  ensure
     File.delete(filename)
   end
 
   def test_file_create
     filename = '2nnever'
-    assert_equal(nil, File.new(filename, File::CREAT).read(1))
-    File.delete(filename)
+    f = File.new(filename, File::CREAT)
+    begin
+      assert_equal(nil, f.read(1))
+    ensure
+      f.close
+      File.delete(filename)
+    end
 
-    assert_raises(IOError) { File.new(filename, File::CREAT) << 'b' }
-    File.delete(filename)
+    f = File.new(filename, File::CREAT)
+    begin
+      assert_raises(IOError) { f << 'b' }
+    ensure
+      f.close
+      File.delete(filename)
+    end
   end
 
   # http://jira.codehaus.org/browse/JRUBY-1023
