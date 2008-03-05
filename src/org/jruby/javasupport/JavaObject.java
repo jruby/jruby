@@ -50,6 +50,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author  jpetersen
  */
 public class JavaObject extends RubyObject {
+
     private static Object NULL_LOCK = new Object();
     private final Object value;
 
@@ -65,7 +66,7 @@ public class JavaObject extends RubyObject {
     public static JavaObject wrap(Ruby runtime, Object value) {
         if (value != null) {
             if (value instanceof Class) {
-                return JavaClass.get(runtime, (Class<?>)value);
+                return JavaClass.get(runtime, (Class<?>) value);
             } else if (value.getClass().isArray()) {
                 return new JavaArray(runtime, value);
             }
@@ -84,20 +85,20 @@ public class JavaObject extends RubyObject {
     public static RubyClass createJavaObjectClass(Ruby runtime, RubyModule javaModule) {
         // FIXME: Ideally JavaObject instances should be marshallable, which means that
         // the JavaObject metaclass should have an appropriate allocator. JRUBY-414
-    	RubyClass result = javaModule.defineClassUnder("JavaObject", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        RubyClass result = javaModule.defineClassUnder("JavaObject", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
-    	registerRubyMethods(runtime, result);
+        registerRubyMethods(runtime, result);
 
         result.getMetaClass().undefineMethod("new");
         result.getMetaClass().undefineMethod("allocate");
-        
+
         result.setMarshal(ObjectMarshal.NOT_MARSHALABLE_MARSHAL);
 
         return result;
     }
 
-	protected static void registerRubyMethods(Ruby runtime, RubyClass result) {
-		CallbackFactory callbackFactory = runtime.callbackFactory(JavaObject.class);
+    protected static void registerRubyMethods(Ruby runtime, RubyClass result) {
+        CallbackFactory callbackFactory = runtime.callbackFactory(JavaObject.class);
 
         result.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
         result.defineFastMethod("==", callbackFactory.getFastMethod("op_equal", IRubyObject.class));
@@ -112,19 +113,21 @@ public class JavaObject extends RubyObject {
         result.defineFastMethod("[]", callbackFactory.getFastMethod("aref", IRubyObject.class));
         result.defineFastMethod("[]=", callbackFactory.getFastMethod("aset", IRubyObject.class, IRubyObject.class));
         result.defineFastMethod("fill", callbackFactory.getFastMethod("afill", IRubyObject.class, IRubyObject.class, IRubyObject.class));
-	}
+    }
 
     public boolean equals(Object other) {
         return other instanceof JavaObject &&
-            this.value == ((JavaObject)other).value;
+                this.value == ((JavaObject) other).value;
     }
-    
+
     public int hashCode() {
-        if (value != null) return value.hashCode();
+        if (value != null) {
+            return value.hashCode();
+        }
         return 0;
     }
 
-	public RubyFixnum hash() {
+    public RubyFixnum hash() {
         return getRuntime().newFixnum(hashCode());
     }
 
@@ -133,8 +136,8 @@ public class JavaObject extends RubyObject {
             String stringValue = value.toString();
             if (stringValue != null) {
                 return RubyString.newUnicodeString(getRuntime(), value.toString());
-            } 
-              
+            }
+
             return getRuntime().getNil();
         }
         return getRuntime().newString("");
@@ -147,27 +150,27 @@ public class JavaObject extends RubyObject {
                 return getRuntime().getFalse();
             }
         }
-    	
+
         if (getValue() == null && ((JavaObject) other).getValue() == null) {
             return getRuntime().getTrue();
         }
-    	
+
         boolean isEqual = getValue().equals(((JavaObject) other).getValue());
         return isEqual ? getRuntime().getTrue() : getRuntime().getFalse();
     }
-    
+
     public IRubyObject same(IRubyObject other) {
         if (!(other instanceof JavaObject)) {
             other = other.getInstanceVariables().fastGetInstanceVariable("@java_object");
             if (!(other instanceof JavaObject)) {
-              return getRuntime().getFalse();
+                return getRuntime().getFalse();
             }
         }
-      
+
         if (getValue() == null && ((JavaObject) other).getValue() == null) {
             return getRuntime().getTrue();
         }
-      
+
         boolean isSame = getValue() == ((JavaObject) other).getValue();
         return isSame ? getRuntime().getTrue() : getRuntime().getFalse();
     }
@@ -191,11 +194,11 @@ public class JavaObject extends RubyObject {
     public IRubyObject aset(IRubyObject index, IRubyObject someValue) {
         throw getRuntime().newTypeError("not a java array");
     }
-    
-    public IRubyObject afill (IRubyObject beginIndex, IRubyObject endIndex, IRubyObject someValue) {
+
+    public IRubyObject afill(IRubyObject beginIndex, IRubyObject endIndex, IRubyObject someValue) {
         throw getRuntime().newTypeError("not a java array");
     }
-    
+
     public IRubyObject is_java_proxy() {
         return getRuntime().getTrue();
     }
