@@ -185,4 +185,15 @@ class TestThread < Test::Unit::TestCase
     }
     threads.each { |t| t.join }
   end
+
+  def test_socket_accept_can_be_interrupted
+    require 'socket'
+    t = Thread.new {
+      TCPServer.new(nil, 10000).accept
+    }
+    Thread.pass until t.status == "sleep"
+    ex = Exception.new
+    t.raise ex
+    assert_raises(Exception) { t.join }
+  end
 end

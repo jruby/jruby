@@ -32,9 +32,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.IOException;
+import java.nio.channels.Channel;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 import java.util.HashMap;
 import java.util.Map;
 
+import java.util.Set;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
@@ -569,6 +575,9 @@ public class RubyThread extends RubyObject {
             // on IO, or we need to accept that we can't wake such threads and must wait
             // for them to complete their operation.
             //threadImpl.interrupt();
+            
+            // new interrupt, to hopefully wake it out of any blocking IO
+            this.interrupt();
         } finally {
             if (currentThread.lock.isHeldByCurrentThread()) currentThread.lock.unlock();
             if (this.lock.isHeldByCurrentThread()) this.lock.unlock();
@@ -647,7 +656,7 @@ public class RubyThread extends RubyObject {
     @JRubyMethod(name = "status")
     public IRubyObject status() {
         if (threadImpl.isAlive()) {
-            if (isStopped) {
+            if (isStopped || currentSelector != null && currentSelector.isOpen()) {
             	return getRuntime().newString("sleep");
             } else if (killed) {
                 return getRuntime().newString("aborting");
@@ -689,6 +698,9 @@ public class RubyThread extends RubyObject {
             // on IO, or we need to accept that we can't wake such threads and must wait
             // for them to complete their operation.
             //threadImpl.interrupt();
+            
+            // new interrupt, to hopefully wake it out of any blocking IO
+            this.interrupt();
         } finally {
             if (currentThread.lock.isHeldByCurrentThread()) currentThread.lock.unlock();
             if (this.lock.isHeldByCurrentThread()) this.lock.unlock();
@@ -747,6 +759,54 @@ public class RubyThread extends RubyObject {
 
     public static RubyThread mainThread(IRubyObject receiver) {
         return receiver.getRuntime().getThreadService().getMainThread();
+    }
+    
+    private Selector currentSelector;
+    
+    public boolean selectForAccept(RubyIO io) {
+        Channel channel = io.getChannel();
+        
+        if (channel instanceof SelectableChannel) {
+            SelectableChannel selectable = (SelectableChannel)channel;
+            
+            try {
+                currentSelector = selectable.provider().openSelector();
+            
+                SelectionKey key = selectable.register(currentSelector, SelectionKey.OP_ACCEPT);
+
+                int result = currentSelector.select();
+
+                if (result == 1) {
+                    Set<SelectionKey> keySet = currentSelector.selectedKeys();
+
+                    if (keySet.iterator().next() == key) {
+                        return true;
+                    }
+                }
+
+                return false;
+            } catch (IOException ioe) {
+                throw io.getRuntime().newRuntimeError("Error with selector: " + ioe);
+            } finally {
+                if (currentSelector != null) {
+                    try {
+                        currentSelector.close();
+                    } catch (IOException ioe) {
+                        throw io.getRuntime().newRuntimeError("Could not close selector");
+                    }
+                }
+                currentSelector = null;
+            }
+        } else {
+            // can't select, just have to do a blocking call
+            return true;
+        }
+    }
+    
+    public void interrupt() {
+        if (currentSelector != null) {
+            currentSelector.wakeup();
+        }
     }
     
     public void beforeBlockingCall() {

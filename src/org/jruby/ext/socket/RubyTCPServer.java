@@ -117,16 +117,13 @@ public class RubyTCPServer extends RubyTCPSocket {
     public IRubyObject accept() {
         RubyTCPSocket socket = new RubyTCPSocket(getRuntime(),getRuntime().fastGetClass("TCPSocket"));
         ThreadContext context = getRuntime().getCurrentContext();
-        Selector selector = null;
+        
         try {
             ssc.configureBlocking(false);
-            selector = Selector.open();
-            SelectionKey key = ssc.register(selector, SelectionKey.OP_ACCEPT);
             
-            context.getThread().beforeBlockingCall();
             while (true) {
-                int selected = selector.select();
-                if (selected == 0) {
+                boolean ready = context.getThread().selectForAccept(this);
+                if (!ready) {
                     // we were woken up without being selected...poll for thread events and go back to sleep
                     getRuntime().getCurrentContext().pollThreadEvents();
                 } else {
@@ -141,12 +138,6 @@ public class RubyTCPServer extends RubyTCPSocket {
             }
         } catch(IOException e) {
             throw sockerr(this, "problem when accepting");
-        } finally {
-            try {
-                if (selector != null) selector.close();
-            } catch (IOException ioe) {
-            }
-            context.getThread().afterBlockingCall();
         }
     }
 
