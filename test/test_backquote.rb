@@ -1,4 +1,5 @@
 require 'test/unit'
+require 'rbconfig'
 
 class TestBackquote < Test::Unit::TestCase
   def test_backquote_special_commands
@@ -22,5 +23,24 @@ class TestBackquote < Test::Unit::TestCase
 
   def test_backquote_ruby
     assert_equal "true\n", `ruby -e "puts true"`
+  end
+
+
+  # http://jira.codehaus.org/browse/JRUBY-1557
+  def test_backquotes_with_redirects_pass_through_shell
+    if File.exists?("/dev/null")
+      File.open("arguments", "w") do |f|
+        f << %q{#!/bin/sh} << "\n"
+        f << %q{echo "arguments: $@"}
+      end
+      File.chmod 0755, "arguments"
+
+      assert_equal "arguments: one two\n", `./arguments one two 2> /dev/null`
+      assert_equal "", `./arguments three four > /dev/null`
+      ruby = File.join(Config::CONFIG['bindir'], Config::CONFIG['ruby_install_name'])
+      assert_equal "arguments: five six\n", `#{ruby} -e 'puts "arguments: five six"' 2> /dev/null`
+    end
+  ensure
+    File.delete("arguments") rescue nil
   end
 end

@@ -44,10 +44,12 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- *
+ * This mess of a class is what happens when all Java gives you is
+ * Runtime.getRuntime().exec(). Thanks dude, that really helped.
  * @author nicksieger
  */
 public class ShellLauncher {
@@ -180,7 +182,7 @@ public class ShellLauncher {
 
     public int execAndWait(IRubyObject[] rawArgs) {
         String[] args = parseCommandLine(runtime, rawArgs);
-        if (shouldRunInProcess(runtime, args[0])) {
+        if (shouldRunInProcess(runtime, args)) {
             // exec needs to behave differently in-process, because it's technically
             // supposed to replace the calling process. So if we're supposed to run
             // in-process, we allow it to use the default streams and not use
@@ -235,7 +237,7 @@ public class ShellLauncher {
         File pwd = new File(runtime.getCurrentDirectory());
         String[] args = parseCommandLine(runtime, rawArgs);
 
-        if (shouldRunInProcess(runtime, args[0])) {
+        if (shouldRunInProcess(runtime, args)) {
             String command = args[0];
             // snip off ruby or jruby command from list of arguments
             // leave alone if the command is the name of a script
@@ -275,6 +277,7 @@ public class ShellLauncher {
             this.out = out;
             this.onlyIfAvailable = avail;
         }
+        @Override
         public void run() {
             byte[] buf = new byte[1024];
             int numRead;
@@ -383,10 +386,25 @@ public class ShellLauncher {
     /**
      * Only run an in-process script if the script name has "ruby", ".rb", or "irb" in the name
      */
-    private boolean shouldRunInProcess(Ruby runtime, String command) {
+    private boolean shouldRunInProcess(Ruby runtime, String[] commands) {
         if (!runtime.getInstanceConfig().isRunRubyInProcess()) {
             return false;
         }
+
+        // Check for special shell characters [<>|] at the beginning
+        // and end of each command word and don't run in process if we find them.
+        for (int i = 0; i < commands.length; i++) {
+            String c = commands[i];
+            char[] firstLast = new char[] {c.charAt(0), c.charAt(c.length()-1)};
+            for (int j = 0; j < firstLast.length; j++) {
+                switch (firstLast[j]) {
+                case '<': case '>': case '|':
+                    return false;
+                }
+            }
+        }
+
+        String command = commands[0];
         String[] slashDelimitedTokens = command.split("/");
         String finalToken = slashDelimitedTokens[slashDelimitedTokens.length - 1];
         int indexOfRuby = finalToken.indexOf("ruby");
@@ -395,8 +413,15 @@ public class ShellLauncher {
                 || finalToken.endsWith("irb"));
     }
 
+    /**
+     * This hack is to work around a problem with cmd.exe on windows where it can't
+     * interpret a filename with spaces in the first argument position as a command.
+     * In that case it's better to try passing the bare arguments to runtime.exec.
+     * On all other platforms we'll always run the command in the shell.
+     */
     private boolean shouldRunInShell(String shell, String[] args) {
-        return shell != null && args.length > 1 && !new File(args[0]).exists();
+        return !Platform.IS_WINDOWS ||
+                (shell != null && args.length > 1 && !new File(args[0]).exists());
     }
 
     private String getShell(Ruby runtime) {

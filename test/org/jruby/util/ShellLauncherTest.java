@@ -9,6 +9,7 @@ import junit.framework.TestCase;
 import org.jruby.Ruby;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.RubyString;
+import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ShellLauncherTest extends TestCase {
@@ -60,14 +61,15 @@ public class ShellLauncherTest extends TestCase {
         assertEquals("hello\ndone\n", msg);
     }
 
-    public void testSingleArgumentIsOnlyRunByShellIfCommandContainsSpaces() {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        RubyString cmd = RubyString.newString(runtime, "nonexistentcmd");
-        try {
-            launcher.runAndWait(new IRubyObject[]{cmd}, baos);
-            fail("should have raised an exception");
-        } catch (RaiseException re) {
-
+    public void testSingleArgumentCommandOnWindowsIsOnlyRunByShellIfCommandContainsSpaces() {
+        if (Platform.IS_WINDOWS) {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            RubyString cmd = RubyString.newString(runtime, "nonexistentcmd");
+            try {
+                launcher.runAndWait(new IRubyObject[]{cmd}, baos);
+                fail("should have raised an exception");
+            } catch (RaiseException re) {
+            }
         }
     }
 
