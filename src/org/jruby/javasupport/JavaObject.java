@@ -39,6 +39,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
@@ -98,21 +99,7 @@ public class JavaObject extends RubyObject {
     }
 
     protected static void registerRubyMethods(Ruby runtime, RubyClass result) {
-        CallbackFactory callbackFactory = runtime.callbackFactory(JavaObject.class);
-
-        result.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
-        result.defineFastMethod("==", callbackFactory.getFastMethod("op_equal", IRubyObject.class));
-        result.defineFastMethod("eql?", callbackFactory.getFastMethod("op_equal", IRubyObject.class));
-        result.defineFastMethod("equal?", callbackFactory.getFastMethod("same", IRubyObject.class));
-        result.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
-        result.defineFastMethod("java_type", callbackFactory.getFastMethod("java_type"));
-        result.defineFastMethod("java_class", callbackFactory.getFastMethod("java_class"));
-        result.defineFastMethod("java_proxy?", callbackFactory.getFastMethod("is_java_proxy"));
-        result.defineMethod("synchronized", callbackFactory.getMethod("ruby_synchronized"));
-        result.defineFastMethod("length", callbackFactory.getFastMethod("length"));
-        result.defineFastMethod("[]", callbackFactory.getFastMethod("aref", IRubyObject.class));
-        result.defineFastMethod("[]=", callbackFactory.getFastMethod("aset", IRubyObject.class, IRubyObject.class));
-        result.defineFastMethod("fill", callbackFactory.getFastMethod("afill", IRubyObject.class, IRubyObject.class, IRubyObject.class));
+        result.defineAnnotatedMethods(JavaObject.class);
     }
 
     public boolean equals(Object other) {
@@ -127,10 +114,12 @@ public class JavaObject extends RubyObject {
         return 0;
     }
 
+    @JRubyMethod
     public RubyFixnum hash() {
         return getRuntime().newFixnum(hashCode());
     }
 
+    @JRubyMethod
     public IRubyObject to_s() {
         if (value != null) {
             String stringValue = value.toString();
@@ -143,6 +132,7 @@ public class JavaObject extends RubyObject {
         return getRuntime().newString("");
     }
 
+    @JRubyMethod(name = {"==", "eql?"}, required = 1)
     public IRubyObject op_equal(IRubyObject other) {
         if (!(other instanceof JavaObject)) {
             other = other.getInstanceVariables().fastGetInstanceVariable("@java_object");
@@ -159,6 +149,7 @@ public class JavaObject extends RubyObject {
         return isEqual ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
+    @JRubyMethod(name = "equal?", required = 1)
     public IRubyObject same(IRubyObject other) {
         if (!(other instanceof JavaObject)) {
             other = other.getInstanceVariables().fastGetInstanceVariable("@java_object");
@@ -175,34 +166,42 @@ public class JavaObject extends RubyObject {
         return isSame ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
+    @JRubyMethod
     public RubyString java_type() {
         return getRuntime().newString(getJavaClass().getName());
     }
 
+    @JRubyMethod
     public IRubyObject java_class() {
         return JavaClass.get(getRuntime(), getJavaClass());
     }
 
+    @JRubyMethod
     public RubyFixnum length() {
         throw getRuntime().newTypeError("not a java array");
     }
 
+    @JRubyMethod(name = "[]", required = 1)
     public IRubyObject aref(IRubyObject index) {
         throw getRuntime().newTypeError("not a java array");
     }
 
+    @JRubyMethod(name = "[]=", required = 2)
     public IRubyObject aset(IRubyObject index, IRubyObject someValue) {
         throw getRuntime().newTypeError("not a java array");
     }
 
+    @JRubyMethod(name = "fill", required = 3)
     public IRubyObject afill(IRubyObject beginIndex, IRubyObject endIndex, IRubyObject someValue) {
         throw getRuntime().newTypeError("not a java array");
     }
 
+    @JRubyMethod(name = "java_proxy?")
     public IRubyObject is_java_proxy() {
         return getRuntime().getTrue();
     }
 
+    @JRubyMethod(name = "synchronized")
     public IRubyObject ruby_synchronized(Block block) {
         Object lock = getValue();
         synchronized (lock != null ? lock : NULL_LOCK) {
