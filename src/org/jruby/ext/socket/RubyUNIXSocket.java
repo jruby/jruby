@@ -247,8 +247,11 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     protected void init_unixsock(IRubyObject _path, boolean server) throws Exception {
         int status;
-        fd = INSTANCE.socket(RubySocket.AF_UNIX, RubySocket.SOCK_STREAM, 0);
-        if(fd < 0) {
+        fd = -1;
+        try {
+            fd = INSTANCE.socket(RubySocket.AF_UNIX, RubySocket.SOCK_STREAM, 0);
+        } catch (UnsatisfiedLinkError ule) { }
+        if (fd < 0) {
             rb_sys_fail("socket(2)");
         }
 
