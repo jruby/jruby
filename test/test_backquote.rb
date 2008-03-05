@@ -19,4 +19,8 @@ class TestBackquote < Test::Unit::TestCase
       assert($?.exitstatus > 0)
     end
   end
+
+  def test_backquote_ruby
+    assert_equal "true\n", `ruby -e "puts true"`
+  end
 end
