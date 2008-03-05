@@ -66,14 +66,20 @@ public class SyntaxException extends RuntimeException {
 	private static final long serialVersionUID = -2130930815167932274L;
 	
     private ISourcePosition position;
+    private PID pid;
 
-    public SyntaxException(PID id, ISourcePosition position, String message, Object... data) {
+    public SyntaxException(PID pid, ISourcePosition position, String message, Object... data) {
         super(message);
 
+        this.pid = pid;
         this.position = position;
     }
 
     public ISourcePosition getPosition() {
         return position;
+    }
+    
+    public PID getPid() {
+        return pid;
     }
 }
