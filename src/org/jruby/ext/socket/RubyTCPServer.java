@@ -43,9 +43,11 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
+import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -96,7 +98,21 @@ public class RubyTCPServer extends RubyTCPSocket {
         try {
             InetAddress addr = InetAddress.getByName(shost);
             ssc = ServerSocketChannel.open();
-            socket_address = new InetSocketAddress(addr, RubyNumeric.fix2int(port));
+            
+            int portInt;
+            if (port instanceof RubyInteger) {
+                portInt = RubyNumeric.fix2int(port);
+            } else {
+                IRubyObject portString = port.convertToString();
+                IRubyObject portInteger = portString.convertToInteger(MethodIndex.TO_I, "to_i");
+                portInt = RubyNumeric.fix2int(portInteger);
+
+                if (portInt <= 0) {
+                    portInt = RubyNumeric.fix2int(RubySocket.getservbyname(getRuntime().getObject(), new IRubyObject[] {portString}));
+                }
+            }
+            
+            socket_address = new InetSocketAddress(addr, portInt);
             ssc.socket().bind(socket_address);
             initSocket(new ChannelDescriptor(ssc, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
         } catch (InvalidValueException ex) {
