@@ -1125,7 +1125,7 @@ public class RubyKernel {
         try {
             // TODO: exec should replace the current process.
             // This could be possible with JNA. 
-            resultCode = new ShellLauncher(runtime).runAndWait(args);
+            resultCode = new ShellLauncher(runtime).execAndWait(args);
         } catch (Exception e) {
             throw runtime.newErrnoENOENTError("cannot execute");
         }

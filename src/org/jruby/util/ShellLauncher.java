@@ -151,9 +151,6 @@ public class ShellLauncher {
         private int result;
         private RubyInstanceConfig config;
         private Thread processThread;
-        private PipedInputStream processOutput = new PipedInputStream();
-        private PipedInputStream processError = new PipedInputStream();
-        private PipedOutputStream processInput = new PipedOutputStream();
         private final String[] env;
         private final File pwd;
 
@@ -186,9 +183,6 @@ public class ShellLauncher {
 
         public void start() throws IOException {
             this.config = new RubyInstanceConfig() {{
-                setInput(new PipedInputStream(processInput));
-                setOutput(new PrintStream(new PipedOutputStream(processOutput)));
-                setError(new PrintStream(new PipedOutputStream(processError)));
                 setEnvironment(environmentMap(env));
                 setCurrentDirectory(pwd.toString());
             }};
@@ -196,21 +190,21 @@ public class ShellLauncher {
             if (argArray.length > 0) {
                 procName = argArray[0];
             }
-            processThread = new Thread(this, "ScriptThreadProcess: " + procName);
+            processThread = new Thread(this, "ScriptExecProcess: " + procName);
             processThread.setDaemon(true);
             processThread.start();
         }
 
         public OutputStream getOutputStream() {
-            return processInput;
+            return null;
         }
 
         public InputStream getInputStream() {
-            return processOutput;
+            return null;
         }
 
         public InputStream getErrorStream() {
-            return processError;
+            return null;
         }
 
         public int waitFor() throws InterruptedException {
@@ -223,14 +217,7 @@ public class ShellLauncher {
         }
 
         public void destroy() {
-            closeStreams();
             processThread.interrupt();
-        }
-
-        private void closeStreams() {
-            try { processInput.close(); } catch (IOException io) {}
-            try { processOutput.close(); } catch (IOException io) {}
-            try { processError.close(); } catch (IOException io) {}
         }
     }
 
@@ -249,6 +236,39 @@ public class ShellLauncher {
 
     public int runAndWait(IRubyObject[] rawArgs) {
         return runAndWait(rawArgs, runtime.getOutputStream());
+    }
+
+    public int execAndWait(IRubyObject[] rawArgs) {
+        String[] args = parseCommandLine(runtime, rawArgs);
+        if (shouldRunInProcess(runtime, args[0])) {
+            // exec needs to behave differencely in-process, because it's technically
+            // supposed to replace the calling process. So if we're supposed to run
+            // in-process, we allow it to use the default streams and not use
+            // pumpers at all. See JRUBY-2156 and JRUBY-2154.
+            try {
+                File pwd = new File(runtime.getCurrentDirectory());
+                String command = args[0];
+                // snip off ruby or jruby command from list of arguments
+                // leave alone if the command is the name of a script
+                int startIndex = command.endsWith(".rb") ? 0 : 1;
+                if (command.trim().endsWith("irb")) {
+                    startIndex = 0;
+                    args[0] = runtime.getJRubyHome() + File.separator + "bin" + File.separator + "jirb";
+                }
+                String[] newargs = new String[args.length - startIndex];
+                System.arraycopy(args, startIndex, newargs, 0, newargs.length);
+                ScriptExecProcess ipScript = new ScriptExecProcess(newargs, getCurrentEnv(), pwd);
+                ipScript.start();
+                
+                return ipScript.waitFor();
+            } catch (IOException e) {
+                throw runtime.newIOErrorFromException(e);
+            } catch (InterruptedException e) {
+                throw runtime.newThreadError("unexpected interrupt");
+            }
+        } else {
+            return runAndWait(rawArgs);
+        }
     }
 
     public int runAndWait(IRubyObject[] rawArgs, OutputStream output) {
