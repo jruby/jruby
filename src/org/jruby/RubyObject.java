@@ -967,7 +967,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         // TODO: Generalize this type-checking code into IRubyObject helper.
         if (!(type instanceof RubyModule)) {
             // TODO: newTypeError does not offer enough for ruby error string...
-            throw getRuntime().newTypeError(type, getRuntime().getModule());
+            throw getRuntime().newTypeError("class or module required");
         }
 
         return getRuntime().newBoolean(((RubyModule)type).isInstance(this));

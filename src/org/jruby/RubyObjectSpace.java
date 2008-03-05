@@ -113,6 +113,7 @@ public class RubyObjectSpace {
         if (args.length == 0) {
             rubyClass = recv.getRuntime().getObject();
         } else {
+            if (!(args[0] instanceof RubyModule)) throw recv.getRuntime().newTypeError("class or module required");
             rubyClass = (RubyModule) args[0];
         }
         Ruby runtime = recv.getRuntime();
