@@ -16,8 +16,11 @@ class SocketTest < Test::Unit::TestCase
   end
 end
 
-if defined?(UNIXSocket)
-  class UNIXSocketTests < Test::Unit::TestCase 
+class UNIXSocketTests < Test::Unit::TestCase
+  # this is intentional, otherwise test run fails on windows
+  def test_dummy; end
+
+  if defined?(UNIXSocket)
     def test_unix_socket_path
       path = "/tmp/sample"
 
