@@ -98,8 +98,8 @@ public class JITCompiler {
                 method.setJITCompiledScript(jitCompiledScript);
                 method.setCallCount(-1);
             }
-        } catch (Exception e) {
-            if (instanceConfig.isJitLoggingVerbose()) log(method, name, "could not compile", e.getMessage());
+        } catch (Throwable t) {
+            if (instanceConfig.isJitLoggingVerbose()) log(method, name, "could not compile", t.getMessage());
 
             method.setCallCount(-1);
         }
