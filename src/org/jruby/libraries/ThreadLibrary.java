@@ -39,6 +39,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyThread;
 import org.jruby.RubyInteger;
+import org.jruby.RubyFloat;
 import org.jruby.RubyNumeric;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
@@ -57,6 +58,35 @@ public class ThreadLibrary implements Library {
         ConditionVariable.setup(runtime);
         Queue.setup(runtime);
         SizedQueue.setup(runtime);
+    }
+
+    static void wait_timeout(IRubyObject o, Double timeout) throws InterruptedException {
+        boolean success = false;
+        try {
+            if ( timeout != null ) {
+                long delay_ns = (long)(timeout * 1000000000.0);
+                if (delay_ns > 0) {
+                    long delay_ms = delay_ns / 1000000;
+                    int delay_ns_remainder = (int)( delay_ns % 1000000 );
+                    long start_ns = System.nanoTime();
+                    o.wait(delay_ms, delay_ns_remainder);
+                    long end_ns = System.nanoTime();
+                    if ( ( end_ns - start_ns ) > delay_ns ) {
+                        throw new RaiseException(o.getRuntime(), o.getRuntime().fastGetClass("TimeoutError"), "wait timed out", false);
+                    }
+                }
+            } else {
+                o.wait();
+            }
+            success = true;
+        } finally {
+            // An exception may have caused us to miss a notify that we
+            // consumed, so do another notify in case someone else would
+            // have been ready to pick it up instead
+            if (!success) {
+                o.notify();
+            }
+        }
     }
 
     public static class Mutex extends RubyObject {
@@ -163,24 +193,36 @@ public class ThreadLibrary implements Library {
             });
             CallbackFactory cb = runtime.callbackFactory(ConditionVariable.class);
             cConditionVariable.getMetaClass().defineMethod("new", cb.getOptSingletonMethod("newInstance"));
-            cConditionVariable.defineFastMethod("wait", cb.getFastMethod("wait_ruby", Mutex.class));
+            cConditionVariable.defineFastMethod("wait", cb.getFastOptMethod("wait_ruby"));
             cConditionVariable.defineFastMethod("broadcast", cb.getFastMethod("broadcast"));
             cConditionVariable.defineFastMethod("signal", cb.getFastMethod("signal"));
         }
 
-        public IRubyObject wait_ruby(Mutex mutex) throws InterruptedException {
+        public IRubyObject wait_ruby(IRubyObject args[]) throws InterruptedException {
+            if ( args.length < 1 ) {
+                throw getRuntime().newArgumentError(args.length, 1);
+            }
+            if ( args.length > 2 ) {
+                throw getRuntime().newArgumentError(args.length, 2);
+            }
+
+            if (!( args[0] instanceof Mutex )) {
+                throw getRuntime().newTypeError(args[0], getRuntime().fastGetClass("Mutex"));
+            }
+            Mutex mutex = (Mutex)args[0];
+
+            Double timeout = null;
+            if ( args.length > 1 && !args[1].isNil() ) {
+                timeout = args[1].convertToFloat().getDoubleValue();
+            }
+
             if (Thread.interrupted()) {
                 throw new InterruptedException();
             }
             try {
                 synchronized (this) {
                     mutex.unlock();
-                    try {
-                        wait();
-                    } catch (InterruptedException e) {
-                        notify();
-                        throw e;
-                    }
+                    ThreadLibrary.wait_timeout(this, timeout);
                 }
             } finally {
                 mutex.lock();
