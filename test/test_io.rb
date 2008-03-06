@@ -4,6 +4,7 @@ require 'rbconfig'
 class TestIO < Test::Unit::TestCase
   WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
   def setup
+    @to_close = []
     @file = "TestIO_tmp"
     @file2 = "Test2IO_tmp"
     @file3 = "Test3IO_tmp"
@@ -15,6 +16,7 @@ class TestIO < Test::Unit::TestCase
   end
 
   def teardown
+    @to_close.each {|io| io.close rescue nil }
     File.unlink @file rescue nil
     File.unlink @file2 rescue nil
     File.unlink @file3 rescue nil
@@ -43,6 +45,7 @@ class TestIO < Test::Unit::TestCase
   def test_two_ios_with_same_filenos
     # Two ios with same fileno, but different objects.
     f = File.new(@file, "w")
+    @to_close << f
     f.puts("heh")
     g = IO.new(f.fileno)
     assert_equal(f.fileno, g.fileno)
@@ -51,6 +54,7 @@ class TestIO < Test::Unit::TestCase
     assert_raises(IOError) { g.puts }
 
     f = File.new(@file, "r")
+    @to_close << f
     g = IO.new(f.fileno)
     assert_equal(f.fileno, g.fileno)
     assert_raises(IOError) { g.puts }
@@ -65,12 +69,16 @@ class TestIO < Test::Unit::TestCase
     x = []
     x << 2 << x
     f = File.new(@file, "w")
+    @to_close << f
     g = IO.new(f.fileno)
+    @to_close << g
     g.puts x
     g.close
 
     f = File.new(@file, "r")
+    @to_close << f
     g = IO.new(f.fileno)
+    @to_close << g
     a = f.gets
     b = f.gets
     assert_equal("2\n", a)
@@ -83,6 +91,7 @@ class TestIO < Test::Unit::TestCase
     # out from under g) and thus make g try the ops and fail
     f = File.open(@file)
     g = IO.new(f.fileno)
+    @to_close << g
     f.close
     assert_raises(Errno::EBADF) { g.readchar }
     assert_raises(Errno::EBADF) { g.readline }
@@ -95,6 +104,7 @@ class TestIO < Test::Unit::TestCase
 
     f = File.open(@file, "w")
     g = IO.new(f.fileno)
+    @to_close << g
     f.close
     assert_nothing_raised { g.print "" }
     assert_nothing_raised { g.write "" }
@@ -108,10 +118,12 @@ class TestIO < Test::Unit::TestCase
     # Cannot open an IO which does not have compatible permission with
     # original IO
     f = File.new(@file2, "w")
+    @to_close << f
     assert_raises(Errno::EINVAL) { g = IO.new(f.fileno, "r") }
     f.close
 
     f = File.new(@file, "r")
+    @to_close << f
     assert_raises(Errno::EINVAL) { g = IO.new(f.fileno, "w") }
     f.close
   end
@@ -120,7 +132,9 @@ class TestIO < Test::Unit::TestCase
     ensure_files @file
     # However, you can open a second with less permissions
     f = File.new(@file, "r+")
+    @to_close << f
     g = IO.new(f.fileno, "r")
+    @to_close << g
     g.gets
     f.puts "HEH"
     assert_raises(IOError) { g.write "HOH" }
@@ -131,6 +145,7 @@ class TestIO < Test::Unit::TestCase
   def test_seek
     ensure_files @file
     f = File.new(@file)
+    @to_close << f
     assert_raises(Errno::EINVAL) { f.seek(-1) }
     # Advance one + single arg seek
     f.seek(1)
@@ -141,6 +156,7 @@ class TestIO < Test::Unit::TestCase
   def test_empty_write_does_not_complain
     # empty write...writes nothing and does not complain
     f = File.new(@file, "w")
+    @to_close << f
     i = f.syswrite("")
     assert_equal(i, 0)
     i = f.syswrite("heh")
@@ -155,8 +171,10 @@ class TestIO < Test::Unit::TestCase
   def test_reopen
     ensure_files @file, @file2    
     file = File.open(@file)
+    @to_close << file
     file.gets
     file2 = File.open(@file2)
+    @to_close << file2
     file2_fileno = file2.fileno;
     file2 = file2.reopen(file)
     assert_equal(file.pos, file2.pos)
@@ -171,6 +189,7 @@ class TestIO < Test::Unit::TestCase
 
   def test_file_puts_gets_readline
     f = File.open(@file, "w")
+    @to_close << f
     f.puts("line1");
     f.puts("line2");
     f.puts("line3");
@@ -186,6 +205,7 @@ class TestIO < Test::Unit::TestCase
     ensure_files @file
     # test that read returns correct values
     f = File.open(@file)
+    @to_close << f
     f.read # read all
     assert_equal("", f.read)
     assert_equal(nil, f.read(1))
@@ -197,6 +217,7 @@ class TestIO < Test::Unit::TestCase
      ensure_files @file
      
      f = File.open(@file)
+     @to_close << f
      assert_equal " ", f.read(1, nil) 
   end
     
@@ -206,8 +227,10 @@ class TestIO < Test::Unit::TestCase
     assert_raises(ArgumentError) { io = IO.open }
 
     f = File.open(@file)
+    @to_close << f
     assert_raises(ArgumentError) { io = IO.open(f.fileno, "r", :gratuitous) }
     io = IO.open(f.fileno, "r")
+    @to_close << io
     assert_equal(f.fileno, io.fileno)
     assert(!io.closed?)
     io.close
@@ -221,6 +244,7 @@ class TestIO < Test::Unit::TestCase
     ensure_files @file
 
     f = File.open(@file)
+    @to_close << f
     IO.open(f.fileno, "r") do |io|
       assert_equal(f.fileno, io.fileno)
       assert(!io.closed?)
@@ -358,17 +382,18 @@ class TestIO < Test::Unit::TestCase
 
   # JRUBY-1987
   def test_reopen_doesnt_close_same_handler
-    f = File.open("__temp1", "w")
+    f = File.open(@file, "w")
+    @to_close << f
     x = IO.new(f.fileno)
+    @to_close << x
     f.print "."
     y = x.dup
+    @to_close << y
     x.reopen(y)
     f.print "."
     f.close
-    out = File.read("__temp1")
+    out = File.read(@file)
     assert_equal "..", out
-  ensure
-    File.unlink("__temp1") rescue nil
   end
   
   # JRUBY-1698
@@ -376,12 +401,14 @@ class TestIO < Test::Unit::TestCase
     # See JRUBY-1686: this caused OOM
     ensure_files @file
     f = File.open(@file)
+    @to_close << f
     assert_nothing_raised { f.read(1000000000) }
   end
   
   # JRUBY-2023, multithreaded writes
   def test_multithreaded_writes
     f = File.open("__temp1", "w")
+    @to_close << f
     threads = []
     100.times {
       threads << Thread.new { 100.times { f.print('.') } }

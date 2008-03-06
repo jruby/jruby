@@ -3,6 +3,7 @@ require 'rbconfig'
 require 'fileutils'
 
 class TestFile < Test::Unit::TestCase
+  WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
   def jruby_specific_test
     flunk("JRuby specific test") unless defined?(JRUBY_VERSION)
   end
@@ -482,15 +483,17 @@ class TestFile < Test::Unit::TestCase
     assert(stat2.readable?)
   end
 
-  def test_file_symlink
-    # Test File.symlink? if possible
-    system("ln -s build.xml build.xml.link")
-    if File.exist? "build.xml.link"
-      assert(File.symlink?("build.xml.link"))
-      # JRUBY-683 -  Test that symlinks don't effect Dir and File.expand_path
-      assert_equal(['build.xml.link'], Dir['build.xml.link'])
-      assert_equal(File.expand_path('.') + '/build.xml.link', File.expand_path('build.xml.link'))
-      File.delete("build.xml.link")
+  unless(WINDOWS) # no symlinks on Windows
+    def test_file_symlink
+      # Test File.symlink? if possible
+      system("ln -s build.xml build.xml.link")
+      if File.exist? "build.xml.link"
+        assert(File.symlink?("build.xml.link"))
+        # JRUBY-683 -  Test that symlinks don't effect Dir and File.expand_path
+        assert_equal(['build.xml.link'], Dir['build.xml.link'])
+        assert_equal(File.expand_path('.') + '/build.xml.link', File.expand_path('build.xml.link'))
+        File.delete("build.xml.link")
+      end
     end
   end
 

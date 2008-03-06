@@ -43,7 +43,6 @@ import org.jruby.ast.LocalVarNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.PostExeNode;
 import org.jruby.ast.RegexpNode;
-import org.jruby.ast.visitor.rewriter.ReWriteVisitor;
 import org.jruby.lexer.yacc.IDESourcePosition;
 import org.jruby.util.ByteList;
 
@@ -115,11 +114,10 @@ public class TestReWriteVisitor extends TestCase {
             stream.close();
             BufferedReader reader = new BufferedReader(new FileReader(fileName));
             assertEquals(reader.readLine(), testString);
+            reader.close();
         } finally {
             new java.io.File(fileName).delete();
         }
     }
 }
-
-
 
