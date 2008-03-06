@@ -818,34 +818,39 @@ public class ChannelStream implements Stream, Finalizable {
         }
 
         this.modes = modes;
-        String cwd = getRuntime().getCurrentDirectory();
-        JRubyFile theFile = JRubyFile.create(cwd,path);
 
-        if (theFile.isDirectory() && modes.isWritable()) throw new DirectoryAsFileException();
-        
-        if (modes.isCreate()) {
-            if (theFile.exists() && modes.isExclusive()) {
-                throw getRuntime().newErrnoEEXISTError("File exists - " + path);
-            }
-            theFile.createNewFile();
-        } else {
-            if (!theFile.exists()) {
-                throw getRuntime().newErrnoENOENTError("file not found - " + path);
-            }
-        }
-        
         if (descriptor.isOpen()) {
             descriptor.close();
         }
-
-        // We always open this rw since we can only open it r or rw.
-        RandomAccessFile file = new RandomAccessFile(theFile, modes.toJavaModeString());
-
-        if (modes.isTruncate()) file.setLength(0L);
-
-        descriptor = new ChannelDescriptor(file.getChannel(), descriptor.getFileno(), modes, file.getFD());
         
-        if (modes.isAppendable()) fseek(0, SEEK_END);
+        if (path.equals("/dev/null") || path.equalsIgnoreCase("nul:") || path.equalsIgnoreCase("nul")) {
+            descriptor = new ChannelDescriptor(new NullChannel(), descriptor.getFileno(), modes, new FileDescriptor());
+        } else {
+            String cwd = getRuntime().getCurrentDirectory();
+            JRubyFile theFile = JRubyFile.create(cwd,path);
+
+            if (theFile.isDirectory() && modes.isWritable()) throw new DirectoryAsFileException();
+
+            if (modes.isCreate()) {
+                if (theFile.exists() && modes.isExclusive()) {
+                    throw getRuntime().newErrnoEEXISTError("File exists - " + path);
+                }
+                theFile.createNewFile();
+            } else {
+                if (!theFile.exists()) {
+                    throw getRuntime().newErrnoENOENTError("file not found - " + path);
+                }
+            }
+
+            // We always open this rw since we can only open it r or rw.
+            RandomAccessFile file = new RandomAccessFile(theFile, modes.toJavaModeString());
+
+            if (modes.isTruncate()) file.setLength(0L);
+            
+            descriptor = new ChannelDescriptor(file.getChannel(), descriptor.getFileno(), modes, file.getFD());
+        
+            if (modes.isAppendable()) fseek(0, SEEK_END);
+        }
     }
     
     public static Stream fopen(Ruby runtime, String path, ModeFlags modes) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException, InvalidValueException, PipeException, BadDescriptorException {
