@@ -1045,7 +1045,9 @@ public final class Ruby {
     }
     
     private RubyClass defineClassIfAllowed(String name, RubyClass superClass) {
-        if (profile.allowClass(name)) {
+	// TODO: should probably apply the null object pattern for a
+	// non-allowed class, rather than null
+        if (superClass != null && profile.allowClass(name)) {
             return defineClass(name, superClass, superClass.getAllocator());
         }
         return null;
