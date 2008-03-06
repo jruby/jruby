@@ -61,7 +61,14 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.Vector;
 import java.util.WeakHashMap;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jruby.ast.Node;
@@ -762,6 +769,19 @@ public final class Ruby {
     public boolean isClassDefined(String name) {
         return getModule(name) != null;
     }
+    
+    /**
+     * A ThreadFactory for when we're using pooled threads; we want to create
+     * the threads with daemon = true so they don't keep us from shutting down.
+     */
+    public static class DaemonThreadFactory implements ThreadFactory {
+        public Thread newThread(Runnable runnable) {
+            Thread thread = new Thread(runnable);
+            thread.setDaemon(true);
+            
+            return thread;
+        }
+    }
 
     /** 
      * This method is called immediately after constructing the Ruby instance.
@@ -779,6 +799,17 @@ public final class Ruby {
         loadService = config.createLoadService(this);
         posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this), RubyInstanceConfig.nativeEnabled);
         javaSupport = new JavaSupport(this);
+        
+        if (config.POOLING_ENABLED) {
+            Executors.newCachedThreadPool();
+            executor = new ThreadPoolExecutor(
+                    RubyInstanceConfig.POOL_MIN,
+                    RubyInstanceConfig.POOL_MAX,
+                    RubyInstanceConfig.POOL_TTL,
+                    TimeUnit.SECONDS,
+                    new SynchronousQueue<Runnable>(),
+                    new DaemonThreadFactory());
+        }
 
         // Initialize all the core classes
         bootstrap();
@@ -2511,6 +2542,10 @@ public final class Ruby {
     public Set<Script> getJittedMethods() {
         return jittedMethods;
     }
+    
+    public ExecutorService getExecutor() {
+        return executor;
+    }
 
     private CacheMap cacheMap = new CacheMap();
     private ThreadService threadService;
@@ -2660,4 +2695,7 @@ public final class Ruby {
 
     // mutex that controls modifications of internal finalizers
     private final Object internalFinalizersMutex = new Object();
+    
+    // A thread pool to use for executing this runtime's Ruby threads
+    private ExecutorService executor;
 }

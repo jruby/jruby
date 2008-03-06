@@ -93,14 +93,7 @@ public class RubyThread extends RubyObject {
     
     public final ReentrantLock lock = new ReentrantLock();
     
-    private static boolean USE_POOLING;
-    
     private static final boolean DEBUG = false;
-    
-   static {
-       if (Ruby.isSecurityRestricted()) USE_POOLING = false;
-       else USE_POOLING = SafePropertyAccessor.getBoolean("jruby.thread.pooling");
-   }
    
     public static RubyClass createThreadClass(Ruby runtime) {
         // FIXME: In order for Thread to play well with the standard 'new' behavior,
@@ -172,7 +165,7 @@ public class RubyThread extends RubyObject {
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         if (!block.isGiven()) throw getRuntime().newThreadError("must be called with a block");
 
-        if (USE_POOLING) {
+        if (RubyInstanceConfig.POOLING_ENABLED) {
             threadImpl = new FutureThread(this, new RubyRunnable(this, args, block));
         } else {
             threadImpl = new NativeThread(this, new RubyNativeThread(this, args, block));

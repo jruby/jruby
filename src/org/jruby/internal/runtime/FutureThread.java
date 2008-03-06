@@ -46,17 +46,6 @@ public class FutureThread implements ThreadLike {
     private RubyRunnable runnable;
     public RubyThread rubyThread;
     
-    private static class DaemonThreadFactory implements ThreadFactory {
-        public Thread newThread(Runnable runnable) {
-            Thread thread = new Thread(runnable);
-            thread.setDaemon(true);
-            
-            return thread;
-        }
-    }
-    
-    private static ExecutorService executor = Executors.newCachedThreadPool(new DaemonThreadFactory());
-    
     public FutureThread(RubyThread rubyThread, RubyRunnable runnable) {
         this.rubyThread = rubyThread;
         this.runnable = runnable;
@@ -67,7 +56,7 @@ public class FutureThread implements ThreadLike {
      * a job to the pool.
      */
     public void start() {
-        future = executor.submit(runnable);
+        future = rubyThread.getRuntime().getExecutor().submit(runnable);
     }
     
     /**

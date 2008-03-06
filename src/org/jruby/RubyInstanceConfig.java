@@ -150,6 +150,15 @@ public class RubyInstanceConfig {
             = SafePropertyAccessor.getBoolean("jruby.indexed.methods");
     public static final boolean FORK_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.fork.enabled");
+    public static final boolean POOLING_ENABLED
+            = SafePropertyAccessor.getBoolean("jruby.thread.pool.enabled");
+    public static final int POOL_MAX
+            = SafePropertyAccessor.getInt("jruby.thread.pool.max", Integer.MAX_VALUE);
+    public static final int POOL_MIN
+            = SafePropertyAccessor.getInt("jruby.thread.pool.min", 0);
+    public static final int POOL_TTL
+            = SafePropertyAccessor.getInt("jruby.thread.pool.ttl", 60);
+    
     public static boolean nativeEnabled = true;
 
     public static interface LoadServiceCreator {
@@ -345,6 +354,15 @@ public class RubyInstanceConfig {
                 .append("       Enable verbose logging of native extension loading. Default is false.\n")
                 .append("    jruby.fork.enabled=true|false\n")
                 .append("       (EXPERIMENTAL, maybe dangerous) Enable fork(2) on platforms that support it.\n")
+                .append("\nTHREAD POOLING:\n")
+                .append("    jruby.thread.pool.enabled=true|false\n")
+                .append("       Enable reuse of native backing threads via a thread pool. Default is false.\n")
+                .append("    jruby.thread.pool.min=<min thread count>\n")
+                .append("       The minimum number of threads to keep alive in the pool. Default is 0.\n")
+                .append("    jruby.thread.pool.max=<max thread count>\n")
+                .append("       The maximum number of threads to allow in the pool. Default is unlimited.\n")
+                .append("    jruby.thread.pool.ttl=<time to live, in seconds>\n")
+                .append("       The maximum number of seconds to keep alive an idle thread. Default is 60.\n")
                 .append("\nMISCELLANY:\n")
                 .append("    jruby.compat.version=RUBY1_8|RUBY1_9\n")
                 .append("       Specify the major Ruby version to be compatible with; Default is RUBY1_8\n")

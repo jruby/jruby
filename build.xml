@@ -444,7 +444,7 @@
 	<sysproperty key="jruby.compat.version" value="@{jruby.version}"/>
 	<sysproperty key="jruby.objectspace.enabled" value="@{objectspace.enabled}"/>
 	<sysproperty key="jruby.runtime.threadlocal" value="@{threadlocal}"/>
-	<sysproperty key="jruby.thread.pooling" value="@{thread.pooling}"/>
+	<sysproperty key="jruby.thread.pool.enabled" value="@{thread.pooling}"/>
 	<sysproperty key="jruby.reflection" value="@{reflection}"/>
 	<sysproperty key="jruby.jit.logging.verbose" value="true"/>
 	<sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
@@ -676,7 +676,7 @@
 	<sysproperty key="jruby.jit.threshold" value="@{jit.threshold}"/>
 	<sysproperty key="jruby.jit.max" value="@{jit.max}"/>
 	<sysproperty key="jruby.objectspace.enabled" value="@{objectspace.enabled}"/>
-	<sysproperty key="jruby.thread.pooling" value="@{thread.pooling}"/>
+	<sysproperty key="jruby.thread.pool.enabled" value="@{thread.pooling}"/>
 	<sysproperty key="jruby.reflection" value="@{reflection}"/>
       
 	<arg line="bin/mspec ci"/>

@@ -104,6 +104,37 @@ public class SafePropertyAccessor {
     }
 
     /**
+     * An extension over <code>System.getProperty</code> method
+     * that additionally produces an int value.
+     * Handles security restrictions, and returns <code>0</code>
+     * if the access to the property is restricted.
+     * @param property The system property name.
+     * @return The value of the system property,
+     *         or the default value.
+     */
+    public static int getInt(String property) {
+        return getInt(property, 0);
+    }
+
+    /**
+     * An extension over <code>System.getProperty</code> method
+     * that additionally produces an int value.
+     * Handles security restrictions, and returns the default
+     * value if the access to the property is restricted.
+     * @param property The system property name.
+     * @param defValue The default value.
+     * @return The value of the system property,
+     *         or the default value.
+     */
+    public static int getInt(String property, int defValue) {
+        try {
+            return Integer.parseInt(System.getProperty(property, String.valueOf(defValue)));
+        } catch (SecurityException se) {
+            return defValue;
+        }
+    }
+
+    /**
      * Returns <code>true</code> if the access to the system property
      * is restricted (i.e., when System.getProperty()
      * throws SecurityException).
