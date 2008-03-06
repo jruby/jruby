@@ -4,7 +4,7 @@ require 'rbconfig'
 class TestProcess < Test::Unit::TestCase
   def setup
     @shell = Config::CONFIG['SHELL']
-    @shellcmd = "#@shell " + (Config::CONFIG['host_os'] =~ /Windows/ ? "/c" : "-c")
+    @shellcmd = "#@shell " + (Config::CONFIG['host_os'] =~ /Windows|mswin/ ? "/c" : "-c")
     system(%{#@shellcmd "exit 1"})
     @first_status = $?
     system(%{#@shellcmd "exit 2"})
