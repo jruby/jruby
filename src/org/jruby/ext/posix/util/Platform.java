@@ -51,7 +51,14 @@ public class Platform {
     private static final String DARWIN = "darwin";
     private static final String FREEBSD = "freebsd";
     private static final String LINUX = "linux";
-    private static final String SOLARIS= "sunos";
+    private static final String SOLARIS = "sunos";
+    // Ruby's designation for some platforms, minus version numbers in some cases
+    private static final String RUBY_DARWIN = "darwin";
+    private static final String RUBY_LINUX = "linux";
+    private static final String RUBY_WIN32 = "mswin32";
+    private static final String RUBY_SOLARIS = "solaris";
+    private static final String RUBY_FREEBSD = "freebsd";
+    private static final String RUBY_AIX = "aix";
     // TODO: investigate supported platforms for OpenJDK7?
 
     public static final boolean IS_WINDOWS = OS_NAME_LC.indexOf(WINDOWS) != -1;
@@ -83,15 +90,25 @@ public class Platform {
     public static final String ARCH = System.getProperty("os.arch");
     
     /** This is a map from Java's "friendly" OS names to those used by Ruby */
-    public static final Map<String, String> OS_NAMES = new HashMap<String, String>();
+    public static final Map<String, String> RUBY_OS_NAMES = new HashMap<String, String>();
     static {
-        OS_NAMES.put("Mac OS X", DARWIN);
-        OS_NAMES.put("Darwin", DARWIN);
-        OS_NAMES.put("Linux", LINUX);
+        RUBY_OS_NAMES.put("Mac OS X", RUBY_DARWIN);
+        RUBY_OS_NAMES.put("Darwin", RUBY_DARWIN);
+        RUBY_OS_NAMES.put("Linux", RUBY_LINUX);
+        RUBY_OS_NAMES.put("Windows 95", RUBY_WIN32);
+        RUBY_OS_NAMES.put("Windows 98", RUBY_WIN32);
+        RUBY_OS_NAMES.put("Windows Me", RUBY_WIN32);
+        RUBY_OS_NAMES.put("Windows NT", RUBY_WIN32);
+        RUBY_OS_NAMES.put("Windows XP", RUBY_WIN32);
+        RUBY_OS_NAMES.put("Windows 2003", RUBY_WIN32);
+        RUBY_OS_NAMES.put("Windows Vista", RUBY_WIN32);
+        RUBY_OS_NAMES.put("Solaris", RUBY_SOLARIS);
+        RUBY_OS_NAMES.put("FreeBSD", RUBY_FREEBSD);
+        RUBY_OS_NAMES.put("AIX", RUBY_AIX);
     }
     
     public static String getOSName()  {
-        String theOSName = OS_NAMES.get(OS_NAME);
+        String theOSName = RUBY_OS_NAMES.get(OS_NAME);
         
         return theOSName == null ? OS_NAME : theOSName;
     }
