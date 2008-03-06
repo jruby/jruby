@@ -32,8 +32,7 @@ module Timeout
   ##
   # Raised by Timeout#timeout when the block times out.
 
-  class Error<Interrupt
-  end
+  Error = ::TimeoutError # TimeoutError is now part of core
 
   ##
   # Executes the method's block. If the block execution terminates before +sec+
@@ -75,12 +74,6 @@ end
 def timeout(n, e=Timeout::Error, &block) # :nodoc:
   Timeout::timeout(n, e, &block)
 end
-
-##
-# Another name for Timeout::Error, defined for backwards compatibility with
-# earlier versions of timeout.rb.
-
-TimeoutError = Timeout::Error # :nodoc:
 
 if __FILE__ == $0
   p timeout(5) {
