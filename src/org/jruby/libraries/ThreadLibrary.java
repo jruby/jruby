@@ -65,15 +65,15 @@ public class ThreadLibrary implements Library {
         try {
             if ( timeout != null ) {
                 long delay_ns = (long)(timeout * 1000000000.0);
+                long start_ns = System.nanoTime();
                 if (delay_ns > 0) {
                     long delay_ms = delay_ns / 1000000;
                     int delay_ns_remainder = (int)( delay_ns % 1000000 );
-                    long start_ns = System.nanoTime();
                     o.wait(delay_ms, delay_ns_remainder);
-                    long end_ns = System.nanoTime();
-                    if ( ( end_ns - start_ns ) > delay_ns ) {
-                        throw new RaiseException(o.getRuntime(), o.getRuntime().fastGetClass("TimeoutError"), "wait timed out", false);
-                    }
+                }
+                long end_ns = System.nanoTime();
+                if ( ( end_ns - start_ns ) > delay_ns ) {
+                    throw new RaiseException(o.getRuntime(), o.getRuntime().fastGetClass("TimeoutError"), "wait timed out", false);
                 }
             } else {
                 o.wait();
