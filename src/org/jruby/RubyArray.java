@@ -1177,7 +1177,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_each
      *
      */
-    @JRubyMethod(name = "each", backtrace = true)
+    @JRubyMethod(name = "each", frame = true)
     public IRubyObject each(Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
         for (int i = 0; i < realLength; i++) {
@@ -1189,7 +1189,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_each_index
      *
      */
-    @JRubyMethod(name = "each_index", backtrace = true)
+    @JRubyMethod(name = "each_index", frame = true)
     public IRubyObject each_index(Block block) {
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
@@ -1202,7 +1202,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_reverse_each
      *
      */
-    @JRubyMethod(name = "reverse_each", backtrace = true)
+    @JRubyMethod(name = "reverse_each", frame = true)
     public IRubyObject reverse_each(Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
         
