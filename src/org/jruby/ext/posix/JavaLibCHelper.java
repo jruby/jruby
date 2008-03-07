@@ -39,6 +39,7 @@ import java.nio.ByteBuffer;
 import org.jruby.ext.posix.POSIX.ERRORS;
 import org.jruby.ext.posix.util.Chmod;
 import org.jruby.ext.posix.util.ExecIt;
+import org.jruby.ext.posix.util.FieldAccess;
 
 /**
  * This libc implementation is created one per runtime instance versus the others which
@@ -56,15 +57,7 @@ public class JavaLibCHelper {
 
     public JavaLibCHelper(POSIXHandler handler) {
         this.handler = handler;
-        
-        try {
-            field = FileDescriptor.class.getDeclaredField("fd");
-            field.setAccessible(true);
-        } catch (SecurityException e) {
-            // ignore
-        } catch (NoSuchFieldException e) {
-            field = null;
-        }
+        this.field = FieldAccess.getProtectedField(FileDescriptor.class, "fd");
     }
     
     public int chmod(String filename, int mode) {

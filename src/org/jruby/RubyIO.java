@@ -35,6 +35,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.BufferedInputStream;
 import static java.lang.System.out;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -44,6 +45,8 @@ import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.ChannelDescriptor;
 import java.io.EOFException;
 import java.io.FileDescriptor;
+import java.io.FilterInputStream;
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -64,6 +67,7 @@ import org.jruby.anno.JRubyMethod;
 
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.posix.util.FieldAccess;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
@@ -194,12 +198,28 @@ public class RubyIO extends RubyObject {
 
         try {
             InputStream pipeIn = process.getInputStream();
+            if (pipeIn instanceof FilterInputStream) {
+                try {
+                    pipeIn = (InputStream)
+                        FieldAccess.getProtectedFieldValue(FilterInputStream.class,
+                            "in", pipeIn);
+                } catch (Exception e) {
+                }
+            }
             ChannelDescriptor main = new ChannelDescriptor(
                     Channels.newChannel(pipeIn),
                     getNewFileno(),
                     new FileDescriptor());
             
             OutputStream pipeOut = process.getOutputStream();
+            if (pipeOut instanceof FilterOutputStream) {
+                try {
+                    pipeOut = (OutputStream)
+                        FieldAccess.getProtectedFieldValue(FilterOutputStream.class,
+                            "out", pipeOut);
+                } catch (Exception e) {
+                }
+            }
             ChannelDescriptor pipe = new ChannelDescriptor(
                     Channels.newChannel(pipeOut),
                     getNewFileno(),
