@@ -485,6 +485,23 @@ public class ChannelDescriptor {
         
         return internalWrite(ByteBuffer.wrap(buf.unsafeBytes(), buf.begin(), buf.length()));
     }
+
+    /**
+     * Write the bytes in the specified byte list to the associated channel.
+     * 
+     * @param buf the byte list containing the bytes to be written
+     * @param offset the offset to start at. this is relative to the begin variable in the but
+     * @param len the amount of bytes to write. this should not be longer than the buffer
+     * @return the number of bytes actually written
+     * @throws java.io.IOException if there is an exception during IO
+     * @throws org.jruby.util.io.BadDescriptorException if the associated
+     * channel is already closed
+     */
+    public int write(ByteList buf, int offset, int len) throws IOException, BadDescriptorException {
+        checkOpen();
+        
+        return internalWrite(ByteBuffer.wrap(buf.unsafeBytes(), buf.begin()+offset, len));
+    }
     
     /**
      * Write the byte represented by the specified int to the associated channel.

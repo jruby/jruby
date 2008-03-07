@@ -344,8 +344,14 @@ public class ChannelStream implements Stream, Finalizable {
     private void flushWrite() throws IOException, BadDescriptorException {
         if (reading || !modes.isWritable() || buffer.position() == 0) return; // Don't bother
             
+        int len = buffer.position();
         buffer.flip();
-        descriptor.write(buffer);
+        int n = descriptor.write(buffer);
+
+        if(n != len) {
+            // TODO: check the return value here
+        }
+
         buffer.clear();
     }
 
@@ -609,7 +615,11 @@ public class ChannelStream implements Stream, Finalizable {
         if (buf.length() > buffer.capacity()) { // Doesn't fit in buffer. Write immediately.
             flushWrite(); // ensure nothing left to write
             
-            descriptor.write(ByteBuffer.wrap(buf.unsafeBytes(), buf.begin(), buf.length()));
+
+            int n = descriptor.write(ByteBuffer.wrap(buf.unsafeBytes(), buf.begin(), buf.length()));
+            if(n != buf.length()) {
+                // TODO: check the return value here
+            }
         } else {
             if (buf.length() > buffer.remaining()) flushWrite();
             

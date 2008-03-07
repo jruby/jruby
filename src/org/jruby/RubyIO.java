@@ -634,9 +634,16 @@ public class RubyIO extends RubyObject {
                             c = -1;
                         }
 
-                        if (c == -1) {
-                            // TODO: clear error, wait for it to become readable
-                            break;
+                        if(c == -1) {
+                            if (!readStream.isBlocking() && (readStream instanceof ChannelStream)) {
+                                if(!(waitReadable(((ChannelStream)readStream).getDescriptor()))) {
+                                    throw getRuntime().newIOError("bad file descriptor: " + openFile.getPath());
+                                }
+
+                                continue;
+                            } else {
+                                break;
+                            }
                         }
                         
                         buf.append(c);
@@ -734,9 +741,15 @@ public class RubyIO extends RubyObject {
                 c = -1;
             }
 
-            if (c == -1) {
-                // TODO: clear error, wait for it to become readable
-                break;
+            if(c == -1) {
+                if (!readStream.isBlocking() && (readStream instanceof ChannelStream)) {
+                    if(!(waitReadable(((ChannelStream)readStream).getDescriptor()))) {
+                        throw getRuntime().newIOError("bad file descriptor: " + openFile.getPath());
+                    }
+                    continue;
+                } else {
+                    break;
+                }
             }
             
             buf.append(c);
@@ -750,7 +763,6 @@ public class RubyIO extends RubyObject {
             incrementLineno(openFile);
             RubyString str = RubyString.newString(getRuntime(), buf);
             str.setTaint(true);
-
             return str;
         }
     }
@@ -979,16 +991,78 @@ public class RubyIO extends RubyObject {
             throw getRuntime().newErrnoEPIPEError();
         }
     }
+
+    protected boolean waitWritable(ChannelDescriptor descriptor) throws IOException {
+        Channel channel = descriptor.getChannel();
+        if (channel == null || !(channel instanceof SelectableChannel)) {
+            return false;
+        }
+       
+        Selector selector = Selector.open();
+
+        ((SelectableChannel) channel).configureBlocking(false);
+        int real_ops = ((SelectableChannel) channel).validOps() & SelectionKey.OP_WRITE;
+        SelectionKey key = ((SelectableChannel) channel).keyFor(selector);
+       
+        if (key == null) {
+            ((SelectableChannel) channel).register(selector, real_ops, descriptor);
+        } else {
+            key.interestOps(key.interestOps()|real_ops);
+        }
+
+        while(selector.select() == 0);
+
+        for (Iterator i = selector.selectedKeys().iterator(); i.hasNext(); ) {
+            SelectionKey skey = (SelectionKey) i.next();
+            if ((skey.interestOps() & skey.readyOps() & (SelectionKey.OP_WRITE)) != 0) {
+                if(skey.attachment() == descriptor) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    protected boolean waitReadable(ChannelDescriptor descriptor) throws IOException {
+        Channel channel = descriptor.getChannel();
+        if (channel == null || !(channel instanceof SelectableChannel)) {
+            return false;
+        }
+       
+        Selector selector = Selector.open();
+
+        ((SelectableChannel) channel).configureBlocking(false);
+        int real_ops = ((SelectableChannel) channel).validOps() & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT);
+        SelectionKey key = ((SelectableChannel) channel).keyFor(selector);
+       
+        if (key == null) {
+            ((SelectableChannel) channel).register(selector, real_ops, descriptor);
+        } else {
+            key.interestOps(key.interestOps()|real_ops);
+        }
+
+        while(selector.select() == 0);
+
+        for (Iterator i = selector.selectedKeys().iterator(); i.hasNext(); ) {
+            SelectionKey skey = (SelectionKey) i.next();
+            if ((skey.interestOps() & skey.readyOps() & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != 0) {
+                if(skey.attachment() == descriptor) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
     
     protected int fwrite(ByteList buffer) {
         int n, r, l, offset = 0;
+        boolean eagain = false;
         Stream writeStream = openFile.getWriteStream();
 
         int len = buffer.length();
         
-//        if ((n = len) <= 0) return n;
-        if (len == 0) return 0;
-        
+        if ((n = len) <= 0) return n;
+
         try {
             if (openFile.isSync()) {
                 openFile.fflush(writeStream);
@@ -997,11 +1071,34 @@ public class RubyIO extends RubyObject {
     //            if (!rb_thread_fd_writable(fileno(f))) {
     //                rb_io_check_closed(fptr);
     //            }
-                // TODO: loop until it's all written
-                //while (offset < len) {
-                    writeStream.getDescriptor().write(buffer);
-                //}
-                return len;
+               
+                while(offset<len) {
+                    l = n;
+
+                    // TODO: Something about pipe buffer length here
+
+                    r = writeStream.getDescriptor().write(buffer,offset,l);
+
+                    if(r == len) {
+                        return len; //Everything written
+                    }
+
+                    if (0 <= r) {
+                        offset += r;
+                        n -= r;
+                        eagain = true;
+                    }
+
+                    if(eagain && waitWritable(writeStream.getDescriptor())) {
+                        openFile.checkClosed(getRuntime());
+                        if(offset >= buffer.length()) {
+                            return -1;
+                        }
+                    } else {
+                        return -1;
+                    }
+                }
+
 
                 // TODO: all this stuff...some pipe logic, some async thread stuff
     //          retry:
