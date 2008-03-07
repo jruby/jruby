@@ -44,12 +44,6 @@
 #
 # *  Klass._load(str)  -  calling Klass.instance()
 #
-# *  Klass._instantiate?()  -  returning ``the instance'' or
-#    nil. This hook method puts a second (or nth) thread calling
-#    Klass.instance() on a waiting loop. The return value
-#    signifies the successful completion or premature termination
-#    of the first, or more generally, current "instantiation thread".
-#
 #
 # The instance method of Singleton are
 # * clone and dup - raising TypeErrors to prevent cloning or duping
@@ -60,7 +54,7 @@
 #    and _dump(depth) hooks allows the (partially) resurrections of
 #    a previous state of ``the instance''.
 
-
+require 'thread'
 
 module Singleton
   #  disable build-in copying methods
@@ -80,50 +74,6 @@ end
 
 
 class << Singleton
-  #  Method body of first instance call.
-  FirstInstanceCall = proc do
-    #  @__instance__ takes on one of the following values
-    #  * nil     -  before and after a failed creation
-    #  * false  -  during creation
-    #  * sub_class instance  -  after a successful creation
-    #  the form makes up for the lack of returns in progs
-    Thread.critical = true
-    if  @__instance__.nil?
-      @__instance__  = false
-      Thread.critical = false
-      begin
-        @__instance__ = new
-      ensure
-        if @__instance__
-          class <<self
-            remove_method :instance
-            def instance; @__instance__ end
-          end
-        else
-          @__instance__ = nil #  failed instance creation
-        end
-      end
-    elsif  _instantiate?()
-      Thread.critical = false    
-    else
-      @__instance__  = false
-      Thread.critical = false
-      begin
-        @__instance__ = new
-      ensure
-        if @__instance__
-          class <<self
-            remove_method :instance
-            def instance; @__instance__ end
-          end
-        else
-          @__instance__ = nil
-        end
-      end
-    end
-    @__instance__
-  end
-  
   module SingletonClassMethods  
     # properly clone the Singleton pattern - did you know
     # that duping doesn't copy class methods?  
@@ -142,22 +92,37 @@ class << Singleton
     def _load(str) 
       instance 
     end
-    
-    # waiting-loop hook
-    def _instantiate?()
-      while false.equal?(@__instance__)
-        Thread.critical = false
-        sleep(0.08)   # timeout
-        Thread.critical = true
-      end
-      @__instance__
-    end
   end
   
   def __init__(klass)
     klass.instance_eval { @__instance__ = nil }
-    class << klass
-      define_method(:instance,FirstInstanceCall)
+
+    # the mutex can get GCed once "instance" is redefined
+    mutex = Mutex.new
+
+    (class << klass ; self ; end).instance_eval do
+      define_method(:instance) do ||
+
+        # note that there is no good way to support the _instantiate? hook
+        # in a backwards-compatible way without forcing the use of
+        # Thread.critical, which is the very thing we are trying to avoid
+        # with this rewrite
+
+        mutex.synchronize do
+          unless @__instance__
+            @__instance__ = new
+
+            # redefining the method establishes a happens-before edge to
+            # callers of the redefined method, so that they will see a
+            # properly initialized @__instance__ without needing to
+            # synchronize on the mutex
+            class << self
+              def instance ; @__instance__ ; end
+            end
+          end
+          @__instance__
+        end
+      end
     end
     klass
   end
@@ -209,7 +174,7 @@ end
 
 
 
-puts "\nThreaded example with exception and customized #_instantiate?() hook"; p
+puts "\nThreaded example with exception"; p
 Thread.abort_on_exception = false
 
 class Ups < SomeSingletonClass
@@ -220,17 +185,6 @@ class Ups < SomeSingletonClass
 end
   
 class << Ups
-  def _instantiate?
-    @enter.push Thread.current[:i]
-    while false.equal?(@__instance__)
-      Thread.critical = false
-      sleep 0.08 
-      Thread.critical = true
-    end
-    @leave.push Thread.current[:i]
-    @__instance__
-  end
-  
   def __sleep
     sleep(rand(0.08))
   end
@@ -248,8 +202,6 @@ class << Ups
   end
   
   def instantiate_all
-    @enter = []
-    @leave = []
     1.upto(9) {|i|  
       Thread.new { 
         begin
@@ -264,8 +216,6 @@ class << Ups
     puts "Before there were #{num_of_instances(self)}"
     sleep 3
     puts "Now there is #{num_of_instances(self)}"
-    puts "#{@enter.join '; '} was the order of threads entering the waiting loop"
-    puts "#{@leave.join '; '} was the order of threads leaving the waiting loop"
   end
 end
 
