@@ -3,6 +3,7 @@
 = monitor.rb
 
 Copyright (C) 2001  Shugo Maeda <shugo@ruby-lang.org>
+Copyright (C) 2008  MenTaLguY <mental@rydia.net>
 
 This library is distributed under the terms of the Ruby license.
 You can freely distribute/modify this library.
@@ -42,6 +43,7 @@ empty_cond.signal.
 
 =end
   
+require 'thread'
 
 #
 # Adds monitor functionality to an arbitrary object by mixing the module with
@@ -84,41 +86,14 @@ module MonitorMixin
   # above calls while_wait and signal, this class should be documented.
   #
   class ConditionVariable
-    class Timeout < Exception; end
-    
     # Create a new timer with the argument timeout, and add the
     # current thread to the list of waiters.  Then the thread is
     # stopped.  It will be resumed when a corresponding #signal 
     # occurs.
     def wait(timeout = nil)
-      @monitor.instance_eval {mon_check_owner()}
-      timer = create_timer(timeout)
-      
-      Thread.critical = true
-      count = @monitor.instance_eval {mon_exit_for_cond()}
-      @waiters.push(Thread.current)
-
-      begin
-	Thread.stop
-        return true
-      rescue Timeout
-        return false
-      ensure
-	Thread.critical = true
-	begin
-	  if timer && timer.alive?
-	    Thread.kill(timer)
-	  end
-	  if @waiters.include?(Thread.current)  # interrupted?
-	    @waiters.delete(Thread.current)
-	  end
-	  @monitor.instance_eval {mon_enter_for_cond(count)}
-	ensure
-	  Thread.critical = false
-	end
-      end
+      condition = @condition
+      @monitor.instance_eval { mon_wait_for_cond(condition, timeout) }
     end
-    
 
     # call #wait while the supplied block returns +true+.
     def wait_while
@@ -136,49 +111,28 @@ module MonitorMixin
     
     # Wake up and run the next waiter
     def signal
-      @monitor.instance_eval {mon_check_owner()}
-      Thread.critical = true
-      t = @waiters.shift
-      t.wakeup if t
-      Thread.critical = false
-      Thread.pass
+      condition = @condition
+      @monitor.instance_eval { mon_signal_cond(condition) }
+      nil
     end
     
     # Wake up all the waiters.
     def broadcast
-      @monitor.instance_eval {mon_check_owner()}
-      Thread.critical = true
-      for t in @waiters
-	t.wakeup
-      end
-      @waiters.clear
-      Thread.critical = false
-      Thread.pass
+      condition = @condition
+      @monitor.instance_eval { mon_broadcast_cond(condition) }
+      nil
     end
     
     def count_waiters
-      return @waiters.length
+      condition = @condition
+      @monitor.instance_eval { mon_count_cond_waiters(condition) }
     end
     
     private
 
-    def initialize(monitor)
+    def initialize(monitor, condition)
       @monitor = monitor
-      @waiters = []
-    end
-
-    def create_timer(timeout)
-      if timeout
-	waiter = Thread.current
-	return Thread.start {
-	  Thread.pass
-	  sleep(timeout)
-	  Thread.critical = true
-	  waiter.raise(Timeout.new)
-	}
-      else
-        return nil
-      end
+      @condition = condition
     end
   end
   
@@ -191,17 +145,15 @@ module MonitorMixin
   # Attempts to enter exclusive section.  Returns +false+ if lock fails.
   #
   def mon_try_enter
-    result = false
-    Thread.critical = true
-    if @mon_owner.nil?
-      @mon_owner = Thread.current
+    @mon_mutex.synchronize do
+      @mon_owner = Thread.current unless @mon_owner
+      if @mon_owner == Thread.current
+        @mon_count += 1
+        true
+      else
+        false
+      end
     end
-    if @mon_owner == Thread.current
-      @mon_count += 1
-      result = true
-    end
-    Thread.critical = false
-    return result
   end
   # For backward compatibility
   alias try_mon_enter mon_try_enter
@@ -210,25 +162,22 @@ module MonitorMixin
   # Enters exclusive section.
   #
   def mon_enter
-    Thread.critical = true
-    mon_acquire(@mon_entering_queue)
-    @mon_count += 1
-  ensure
-    Thread.critical = false
+    @mon_mutex.synchronize do
+      mon_acquire(@mon_entering_cond)
+      @mon_count += 1
+    end
   end
   
   #
   # Leaves exclusive section.
   #
   def mon_exit
-    mon_check_owner
-    Thread.critical = true
-    @mon_count -= 1
-    if @mon_count == 0
-      mon_release
+    @mon_mutex.synchronize do
+      mon_check_owner
+      @mon_count -= 1
+      mon_release if @mon_count.zero?
+      nil
     end
-    Thread.critical = false
-    Thread.pass
   end
 
   #
@@ -253,7 +202,9 @@ module MonitorMixin
   # This facilitates control of the monitor with #signal and #wait.
   #
   def new_cond
-    return ConditionVariable.new(self)
+    condition = ::ConditionVariable.new
+    condition.instance_eval { @mon_n_waiters = 0 }
+    return ConditionVariable.new(self, condition)
   end
 
   private
@@ -265,47 +216,85 @@ module MonitorMixin
 
   # called by initialize method to set defaults for instance variables.
   def mon_initialize
+    @mon_mutex = Mutex.new
     @mon_owner = nil
     @mon_count = 0
-    @mon_entering_queue = []
-    @mon_waiting_queue = []
+    @mon_total_waiting = 0
+    @mon_entering_cond = ::ConditionVariable.new
+    @mon_waiting_cond = ::ConditionVariable.new
+    self
   end
 
   # Throw a ThreadError exception if the current thread
   # does't own the monitor
   def mon_check_owner
+    # called with @mon_mutex held
     if @mon_owner != Thread.current
       raise ThreadError, "current thread not owner"
     end
   end
 
-  def mon_acquire(queue)
+  def mon_acquire(condition)
+    # called with @mon_mutex held
     while @mon_owner && @mon_owner != Thread.current
-      queue.push(Thread.current)
-      Thread.stop
-      Thread.critical = true
+      condition.wait @mon_mutex
     end
     @mon_owner = Thread.current
   end
 
   def mon_release
+    # called with @mon_mutex held
     @mon_owner = nil
-    t = @mon_waiting_queue.shift
-    t = @mon_entering_queue.shift unless t
-    t.wakeup if t
+    if @mon_total_waiting.nonzero?
+      @mon_waiting_cond.signal
+    else
+      @mon_entering_cond.signal
+    end
   end
 
-  def mon_enter_for_cond(count)
-    mon_acquire(@mon_waiting_queue)
-    @mon_count = count
+  def mon_wait_for_cond(condition, timeout)
+    @mon_mutex.synchronize do
+      mon_check_owner
+      count = @mon_count
+      @mon_count = 0
+      condition.instance_eval { @mon_n_waiters += 1 }
+      begin
+        mon_release
+        begin
+          condition.wait(@mon_mutex, timeout)
+          true
+        rescue TimeoutError
+          false
+        end
+      ensure
+        @mon_total_waiting += 1
+        # TODO: not interrupt-safe
+        mon_acquire(@mon_waiting_cond)
+        @mon_total_waiting -= 1
+        @mon_count = count
+        condition.instance_eval { @mon_n_waiters -= 1 }
+      end
+    end
   end
 
-  def mon_exit_for_cond
-    count = @mon_count
-    @mon_count = 0
-    return count
-  ensure
-    mon_release
+  def mon_signal_cond(condition)
+    @mon_mutex.synchronize do
+      mon_check_owner
+      condition.signal
+    end
+  end
+
+  def mon_broadcast_cond(condition)
+    @mon_mutex.synchronize do
+      mon_check_owner
+      condition.broadcast
+    end
+  end
+
+  def mon_count_cond_waiters(condition)
+    @mon_mutex.synchronize do
+      condition.instance_eval { @mon_n_waiters }
+    end
   end
 end
 
