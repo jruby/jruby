@@ -2488,6 +2488,12 @@ public final class Ruby {
         return objectSpaceEnabled;
     }
 
+    // The method is intentionally not public, since it typically should
+    // not be used outside of the core.
+    /* package-private */ void setObjectSpaceEnabled(boolean objectSpaceEnabled) {
+        this.objectSpaceEnabled = objectSpaceEnabled;
+    }
+
     public long getStartTime() {
         return startTime;
     }
@@ -2570,7 +2576,7 @@ public final class Ruby {
     private boolean hasEventHooks;  
     private boolean globalAbortOnExceptionEnabled = false;
     private boolean doNotReverseLookupEnabled = false;
-    private final boolean objectSpaceEnabled;
+    private volatile boolean objectSpaceEnabled;
     
     private final Set<Script> jittedMethods = Collections.synchronizedSet(new WeakHashSet<Script>());
     

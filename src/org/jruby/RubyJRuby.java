@@ -88,7 +88,22 @@ public class RubyJRuby {
     public static IRubyObject runtime(IRubyObject recv, Block unusedBlock) {
         return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), recv.getRuntime()), Block.NULL_BLOCK);
     }
-    
+
+    @JRubyMethod(name = "objectspace", frame = true, module = true)
+    public static IRubyObject getObjectSpaceEnabled(IRubyObject recv, Block b) {
+        Ruby runtime = recv.getRuntime();
+        return RubyBoolean.newBoolean(
+                runtime, runtime.isObjectSpaceEnabled());
+    }
+
+    @JRubyMethod(name = "objectspace=", required = 1, frame = true, module = true)
+    public static IRubyObject setObjectSpaceEnabled(
+            IRubyObject recv, IRubyObject arg, Block b) {
+        Ruby runtime = recv.getRuntime();
+        runtime.setObjectSpaceEnabled(arg.isTrue());
+        return runtime.getNil();
+    }
+
     @JRubyMethod(name = {"parse", "ast_for"}, optional = 3, frame = true, module = true)
     public static IRubyObject parse(IRubyObject recv, IRubyObject[] args, Block block) {
         if(block.isGiven()) {

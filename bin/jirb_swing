@@ -33,6 +33,7 @@ frame.default_close_operation = JFrame::EXIT_ON_CLOSE
 frame.set_size(700, 600)
 frame.content_pane.add(pane)
 tar = org.jruby.demo.TextAreaReadline.new(text, " Welcome to the JRuby IRB Console [#{JRUBY_VERSION}] \n\n")
+JRuby.objectspace = true # useful for code completion
 tar.hook_into_runtime( JRuby.runtime )
 frame.visible = true
 

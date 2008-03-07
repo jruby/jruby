@@ -153,7 +153,6 @@ module IRB
 	else
 	  # func1.func2
 	  candidates = []
-	  begin
 	  ObjectSpace.each_object(Module){|m|
             # JRuby specific (JRUBY-2186)
             next unless m.respond_to?(:instance_methods)
@@ -167,9 +166,6 @@ module IRB
 	      /^(IRB|SLex|RubyLex|RubyToken)/ =~ name
 	    candidates.concat m.instance_methods(false)
 	  }
-	  rescue RuntimeError
-	    ## JRuby specific (JRUBY-2186)
-	  end
 	  candidates.sort!
 	  candidates.uniq!
 	end

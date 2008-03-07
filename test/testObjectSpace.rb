@@ -29,3 +29,16 @@ test_equal(4, nil.object_id)
 test_equal(false, ObjectSpace._id2ref(0))
 test_equal(true, ObjectSpace._id2ref(2))
 test_equal(nil, ObjectSpace._id2ref(4))
+
+if (defined?(JRUBY_VERSION))
+  begin
+    require 'jruby'
+    orig_obj_space = JRuby.objectspace
+    JRuby.objectspace = false
+    test_equal(false, JRuby.objectspace)
+    JRuby.objectspace = true
+    test_equal(true, JRuby.objectspace)
+  ensure
+    JRuby.objectspace = orig_obj_space
+  end
+end

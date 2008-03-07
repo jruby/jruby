@@ -7,6 +7,12 @@
 #   	by Keiju ISHITSUKA(keiju@ishitsuka.com)
 #
 
+if defined?(JRUBY_VERSION)
+  require 'jruby'
+  # useful for code completion
+  JRuby.objectspace = true
+end
+
 require "irb"
 
 if __FILE__ == $0
