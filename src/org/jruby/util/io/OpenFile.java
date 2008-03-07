@@ -168,6 +168,14 @@ public class OpenFile {
         mode |= WBUF;
     }
 
+    public void setSync(boolean sync) {
+        if(sync) {
+            mode = mode | SYNC;
+        } else {
+            mode = mode & ~SYNC;
+        }
+    }
+
     public boolean isSync() {
         return (mode & SYNC) != 0;
     }
