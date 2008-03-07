@@ -91,7 +91,7 @@ public final class TopSelfFactory {
              * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
              */
             public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-                return runtime.getObject().rbPublic(args);
+                return runtime.getObject().rbPublic(recv.getRuntime().getCurrentContext(), args);
             }
 
             /**
@@ -107,7 +107,7 @@ public final class TopSelfFactory {
              * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
              */
             public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-                return runtime.getObject().rbPrivate(args);
+                return runtime.getObject().rbPrivate(recv.getRuntime().getCurrentContext(), args);
             }
 
             /**

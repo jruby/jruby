@@ -250,7 +250,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
                     rubyArgs[i + 2] = JavaUtil.convertJavaToRuby(getRuntime(),
                             nargs[i]);
                 }
-                IRubyObject call_result = proc.call(rubyArgs);
+                IRubyObject call_result = proc.call(getRuntime().getCurrentContext(), rubyArgs);
                 Object converted_result = JavaUtil.convertRubyToJava(
                         call_result, method.getReturnType());
                 return converted_result;

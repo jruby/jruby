@@ -597,7 +597,7 @@ public class RubyModule extends RubyObject {
     /** rb_undef
      *
      */
-    public void undef(String name) {
+    public void undef(ThreadContext context, String name) {
         Ruby runtime = getRuntime();
         if (this == runtime.getObject()) {
             runtime.secure(4);
@@ -631,9 +631,9 @@ public class RubyModule extends RubyObject {
         
         if (isSingleton()) {
             IRubyObject singleton = ((MetaClass)this).getAttached(); 
-            singleton.callMethod(runtime.getCurrentContext(), "singleton_method_undefined", getRuntime().newSymbol(name));
+            singleton.callMethod(context, "singleton_method_undefined", getRuntime().newSymbol(name));
         } else {
-            callMethod(runtime.getCurrentContext(), "method_undefined", getRuntime().newSymbol(name));
+            callMethod(context, "method_undefined", getRuntime().newSymbol(name));
         }
     }
     
@@ -678,7 +678,7 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    public void removeMethod(String name) {
+    public void removeMethod(ThreadContext context, String name) {
         if (this == getRuntime().getObject()) {
             getRuntime().secure(4);
         }
@@ -700,9 +700,9 @@ public class RubyModule extends RubyObject {
         
         if(isSingleton()){
             IRubyObject singleton = ((MetaClass)this).getAttached(); 
-            singleton.callMethod(getRuntime().getCurrentContext(), "singleton_method_removed", getRuntime().newSymbol(name));
-        }else{
-            callMethod(getRuntime().getCurrentContext(), "method_removed", getRuntime().newSymbol(name));
+            singleton.callMethod(context, "singleton_method_removed", getRuntime().newSymbol(name));
+        } else {
+            callMethod(context, "method_removed", getRuntime().newSymbol(name));
     }
     }
 
@@ -921,11 +921,10 @@ public class RubyModule extends RubyObject {
     }
 
     // FIXME: create AttrReaderMethod, AttrWriterMethod, for faster attr access
-    private void addAccessor(String internedName, boolean readable, boolean writeable) {
+    private void addAccessor(ThreadContext context, String internedName, boolean readable, boolean writeable) {
         assert internedName == internedName.intern() : internedName + " is not interned";
 
         final Ruby runtime = getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
 
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
         Visibility attributeScope = context.getCurrentVisibility();
@@ -1048,7 +1047,7 @@ public class RubyModule extends RubyObject {
 
     // What is argument 1 for in this method? A Method or Proc object /OB
     @JRubyMethod(name = "define_method", required = 1, optional = 1, frame = true, visibility = Visibility.PRIVATE)
-    public IRubyObject define_method(IRubyObject[] args, Block block) {
+    public IRubyObject define_method(ThreadContext context, IRubyObject[] args, Block block) {
         if (args.length < 1 || args.length > 2) {
             throw getRuntime().newArgumentError("wrong # of arguments(" + args.length + " for 1)");
         }
@@ -1056,8 +1055,7 @@ public class RubyModule extends RubyObject {
         IRubyObject body;
         String name = args[0].asJavaString().intern();
         DynamicMethod newMethod = null;
-        ThreadContext tc = getRuntime().getCurrentContext();
-        Visibility visibility = tc.getCurrentVisibility();
+        Visibility visibility = context.getCurrentVisibility();
 
         if (visibility == Visibility.MODULE_FUNCTION) visibility = Visibility.PRIVATE;
         if (args.length == 1) {
@@ -1091,9 +1089,8 @@ public class RubyModule extends RubyObject {
         addMethod(name, newMethod);
 
         RubySymbol symbol = getRuntime().fastNewSymbol(name);
-        ThreadContext context = getRuntime().getCurrentContext();
 
-        if (tc.getPreviousVisibility() == Visibility.MODULE_FUNCTION) {
+        if (context.getPreviousVisibility() == Visibility.MODULE_FUNCTION) {
             getSingletonClass().addMethod(name, new WrapperMethod(getSingletonClass(), newMethod, Visibility.PUBLIC));
         }
 
@@ -1119,11 +1116,8 @@ public class RubyModule extends RubyObject {
         return new ProcMethod(this, proc, visibility);
     }
 
-    public IRubyObject executeUnder(Callback method, IRubyObject[] args, Block block) {
-        ThreadContext context = getRuntime().getCurrentContext();
-
+    public IRubyObject executeUnder(ThreadContext context, Callback method, IRubyObject[] args, Block block) {
         context.preExecuteUnder(this, block);
-
         try {
             return method.execute(this, args, block);
         } finally {
@@ -1263,8 +1257,8 @@ public class RubyModule extends RubyObject {
     }
 
     @JRubyMethod(name = "==", required = 1)
-    public IRubyObject op_equal(IRubyObject other) {
-        return super.op_equal(other);
+    public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
+        return super.op_equal(context, other);
     }
 
     /** rb_mod_freeze
@@ -1373,21 +1367,28 @@ public class RubyModule extends RubyObject {
      *
      */
     @JRubyMethod(name = "attr", required = 1, optional = 1, visibility = Visibility.PRIVATE)
-    public IRubyObject attr(IRubyObject[] args) {
+    public IRubyObject attr(ThreadContext context, IRubyObject[] args) {
         boolean writeable = args.length > 1 ? args[1].isTrue() : false;
 
-        addAccessor(args[0].asJavaString().intern(), true, writeable);
+        addAccessor(context, args[0].asJavaString().intern(), true, writeable);
 
         return getRuntime().getNil();
     }
 
+    /**
+     * @deprecated
+     */
+    public IRubyObject attr_reader(IRubyObject[] args) {
+        return attr_reader(getRuntime().getCurrentContext(), args);
+    }
+    
     /** rb_mod_attr_reader
      *
      */
     @JRubyMethod(name = "attr_reader", rest = true, visibility = Visibility.PRIVATE)
-    public IRubyObject attr_reader(IRubyObject[] args) {
+    public IRubyObject attr_reader(ThreadContext context, IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
-            addAccessor(args[i].asJavaString().intern(), true, false);
+            addAccessor(context, args[i].asJavaString().intern(), true, false);
         }
 
         return getRuntime().getNil();
@@ -1397,24 +1398,31 @@ public class RubyModule extends RubyObject {
      *
      */
     @JRubyMethod(name = "attr_writer", rest = true, visibility = Visibility.PRIVATE)
-    public IRubyObject attr_writer(IRubyObject[] args) {
+    public IRubyObject attr_writer(ThreadContext context, IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
-            addAccessor(args[i].asJavaString().intern(), false, true);
+            addAccessor(context, args[i].asJavaString().intern(), false, true);
         }
 
         return getRuntime().getNil();
+    }
+
+    /**
+     * @deprecated
+     */
+    public IRubyObject attr_accessor(IRubyObject[] args) {
+        return attr_accessor(getRuntime().getCurrentContext(), args);
     }
 
     /** rb_mod_attr_accessor
      *
      */
     @JRubyMethod(name = "attr_accessor", rest = true, visibility = Visibility.PRIVATE)
-    public IRubyObject attr_accessor(IRubyObject[] args) {
+    public IRubyObject attr_accessor(ThreadContext context, IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
             // This is almost always already interned, since it will be called with a symbol in most cases
             // but when created from Java code, we might get an argument that needs to be interned.
             // addAccessor has as a precondition that the string MUST be interned
-            addAccessor(args[i].asJavaString().intern(), true, true);
+            addAccessor(context, args[i].asJavaString().intern(), true, true);
         }
 
         return getRuntime().getNil();
@@ -1543,7 +1551,7 @@ public class RubyModule extends RubyObject {
         return getRuntime().getNil();
     }
 
-    private void setVisibility(IRubyObject[] args, Visibility visibility) {
+    private void setVisibility(ThreadContext context, IRubyObject[] args, Visibility visibility) {
         if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
             throw getRuntime().newSecurityError("Insecure: can't change method visibility");
         }
@@ -1551,7 +1559,7 @@ public class RubyModule extends RubyObject {
         if (args.length == 0) {
             // Note: we change current frames visibility here because the methods which call
             // this method are all "fast" (e.g. they do not created their own frame).
-            getRuntime().getCurrentContext().setCurrentVisibility(visibility);
+            context.setCurrentVisibility(visibility);
         } else {
             setMethodVisibility(args, visibility);
         }
@@ -1561,8 +1569,8 @@ public class RubyModule extends RubyObject {
      *
      */
     @JRubyMethod(name = "public", rest = true, visibility = Visibility.PRIVATE)
-    public RubyModule rbPublic(IRubyObject[] args) {
-        setVisibility(args, Visibility.PUBLIC);
+    public RubyModule rbPublic(ThreadContext context, IRubyObject[] args) {
+        setVisibility(context, args, Visibility.PUBLIC);
         return this;
     }
 
@@ -1570,8 +1578,8 @@ public class RubyModule extends RubyObject {
      *
      */
     @JRubyMethod(name = "protected", rest = true, visibility = Visibility.PRIVATE)
-    public RubyModule rbProtected(IRubyObject[] args) {
-        setVisibility(args, Visibility.PROTECTED);
+    public RubyModule rbProtected(ThreadContext context, IRubyObject[] args) {
+        setVisibility(context, args, Visibility.PROTECTED);
         return this;
     }
 
@@ -1579,8 +1587,8 @@ public class RubyModule extends RubyObject {
      *
      */
     @JRubyMethod(name = "private", rest = true, visibility = Visibility.PRIVATE)
-    public RubyModule rbPrivate(IRubyObject[] args) {
-        setVisibility(args, Visibility.PRIVATE);
+    public RubyModule rbPrivate(ThreadContext context, IRubyObject[] args) {
+        setVisibility(context, args, Visibility.PRIVATE);
         return this;
     }
 
@@ -1665,29 +1673,29 @@ public class RubyModule extends RubyObject {
     }
 
     @JRubyMethod(name = "alias_method", required = 2, visibility = Visibility.PRIVATE)
-    public RubyModule alias_method(IRubyObject newId, IRubyObject oldId) {
+    public RubyModule alias_method(ThreadContext context, IRubyObject newId, IRubyObject oldId) {
         defineAlias(newId.asJavaString(), oldId.asJavaString());
-        callMethod(getRuntime().getCurrentContext(), "method_added", newId);
+        callMethod(context, "method_added", newId);
         return this;
     }
 
     @JRubyMethod(name = "undef_method", required = 1, rest = true, visibility = Visibility.PRIVATE)
-    public RubyModule undef_method(IRubyObject[] args) {
+    public RubyModule undef_method(ThreadContext context, IRubyObject[] args) {
         for (int i=0; i<args.length; i++) {
-            undef(args[i].asJavaString());
+            undef(context, args[i].asJavaString());
         }
         return this;
     }
 
     @JRubyMethod(name = {"module_eval", "class_eval"}, optional = 3, frame = true)
-    public IRubyObject module_eval(IRubyObject[] args, Block block) {
-        return specificEval(this, args, block);
+    public IRubyObject module_eval(ThreadContext context, IRubyObject[] args, Block block) {
+        return specificEval(context, this, args, block);
     }
 
     @JRubyMethod(name = "remove_method", required = 1, rest = true, visibility = Visibility.PRIVATE)
-    public RubyModule remove_method(IRubyObject[] args) {
+    public RubyModule remove_method(ThreadContext context, IRubyObject[] args) {
         for(int i=0;i<args.length;i++) {
-            removeMethod(args[i].asJavaString());
+            removeMethod(context, args[i].asJavaString());
         }
         return this;
     }
@@ -1710,10 +1718,10 @@ public class RubyModule extends RubyObject {
      * Return an array of nested modules or classes.
      */
     @JRubyMethod(name = "nesting", frame = true, meta = true)
-    public static RubyArray nesting(IRubyObject recv, Block block) {
+    public static RubyArray nesting(ThreadContext context, IRubyObject recv, Block block) {
         Ruby runtime = recv.getRuntime();
         RubyModule object = runtime.getObject();
-        StaticScope scope = runtime.getCurrentContext().getCurrentScope().getStaticScope();
+        StaticScope scope = context.getCurrentScope().getStaticScope();
         RubyArray result = runtime.newArray();
         
         for (StaticScope current = scope; current.getModule() != object; current = current.getPreviousCRefScope()) {

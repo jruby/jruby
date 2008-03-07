@@ -1028,14 +1028,15 @@ public class Java implements Library {
                 } else if (methodName.equals("equals") && methodArgsLength == 1 && parameterTypes[0].equals(Object.class)) {
                     return Boolean.valueOf(proxy == nargs[0]);
                 }
+                Ruby runtime = recv.getRuntime();
                 int length = nargs == null ? 0 : nargs.length;
                 IRubyObject[] rubyArgs = new IRubyObject[length + 2];
-                rubyArgs[0] = JavaObject.wrap(recv.getRuntime(), proxy);
-                rubyArgs[1] = new JavaMethod(recv.getRuntime(), method);
+                rubyArgs[0] = JavaObject.wrap(runtime, proxy);
+                rubyArgs[1] = new JavaMethod(runtime, method);
                 for (int i = 0; i < length; i++) {
-                    rubyArgs[i + 2] = JavaObject.wrap(recv.getRuntime(), nargs[i]);
+                    rubyArgs[i + 2] = JavaObject.wrap(runtime, nargs[i]);
                 }
-                return JavaUtil.convertArgument(proc.call(rubyArgs), method.getReturnType());
+                return JavaUtil.convertArgument(proc.call(runtime.getCurrentContext(), rubyArgs), method.getReturnType());
             }
         }));
     }

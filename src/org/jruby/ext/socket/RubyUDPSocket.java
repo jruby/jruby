@@ -85,7 +85,6 @@ public class RubyUDPSocket extends RubyIPSocket {
         super(runtime, type);
     }
 
-    @Override
     public IRubyObject initialize() {
         try {
             DatagramChannel channel = DatagramChannel.open();

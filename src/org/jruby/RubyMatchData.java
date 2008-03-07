@@ -41,6 +41,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
@@ -139,8 +140,8 @@ public class RubyMatchData extends RubyObject {
     }
 
     @JRubyMethod(name = "select", frame = true)
-    public IRubyObject select(Block block) {
-        return block.yield(getRuntime().getCurrentContext(), to_a());
+    public IRubyObject select(ThreadContext context, Block block) {
+        return block.yield(context, to_a());
     }
 
     /** match_captures

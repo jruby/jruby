@@ -39,7 +39,6 @@ import org.jruby.anno.JRubyMethod;
 
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
@@ -267,9 +266,9 @@ public class RubyClass extends RubyModule {
     *
     */
     @JRubyMethod(name = "new", rest = true, frame = true)
-    public IRubyObject newInstance(IRubyObject[] args, Block block) {
+    public IRubyObject newInstance(ThreadContext context, IRubyObject[] args, Block block) {
         IRubyObject obj = allocate();
-        obj.callMethod(getRuntime().getCurrentContext(), "initialize", args, block);
+        obj.callMethod(context, "initialize", args, block);
         return obj;
     }
 

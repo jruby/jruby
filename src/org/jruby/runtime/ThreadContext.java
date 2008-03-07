@@ -44,7 +44,6 @@ import org.jruby.RubyKernel.CatchTarget;
 import org.jruby.RubyModule;
 import org.jruby.RubyThread;
 import org.jruby.internal.runtime.JumpTarget;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.libraries.FiberLibrary.Fiber;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.LocalStaticScope;
@@ -413,7 +412,7 @@ public final class ThreadContext {
     }
     
     public void pollThreadEvents() {
-        getThread().pollThreadEvents();
+        getThread().pollThreadEvents(this);
     }
     
     public void pushRubyClass(RubyModule currentModule) {

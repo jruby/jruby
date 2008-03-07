@@ -267,8 +267,8 @@ public interface IRubyObject {
     IRubyObject id();
     
     
-    public IRubyObject op_equal(IRubyObject other);
-    public IRubyObject op_eqq(IRubyObject other);
+    public IRubyObject op_equal(ThreadContext context, IRubyObject other);
+    public IRubyObject op_eqq(ThreadContext context, IRubyObject other);
     public boolean eql(IRubyObject other);
 
     public void addFinalizer(IRubyObject finalizer);

@@ -412,7 +412,7 @@ public abstract class CallSite {
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg) {
             if (self instanceof RubyFixnum) {
-                return ((RubyFixnum)self).op_plus(arg);
+                return ((RubyFixnum)self).op_plus(context, arg);
             }
             
             return super.call(context, self, arg);
@@ -426,7 +426,7 @@ public abstract class CallSite {
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg) {
             if (self instanceof RubyFixnum) {
-                return ((RubyFixnum)self).op_minus(arg);
+                return ((RubyFixnum)self).op_minus(context, arg);
             }
             
             return super.call(context, self, arg);
@@ -440,7 +440,7 @@ public abstract class CallSite {
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg) {
             if (self instanceof RubyFixnum) {
-                return ((RubyFixnum)self).op_mul(arg);
+                return ((RubyFixnum)self).op_mul(context, arg);
             }
             
             return super.call(context, self, arg);
@@ -454,7 +454,7 @@ public abstract class CallSite {
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg) {
             if (self instanceof RubyFixnum) {
-                return ((RubyFixnum)self).op_div(arg);
+                return ((RubyFixnum)self).op_div(context, arg);
             }
             
             return super.call(context, self, arg);
@@ -468,7 +468,7 @@ public abstract class CallSite {
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg) {
             if (self instanceof RubyFixnum) {
-                return ((RubyFixnum)self).op_lt(arg);
+                return ((RubyFixnum)self).op_lt(context, arg);
             }
             
             return super.call(context, self, arg);
@@ -482,7 +482,7 @@ public abstract class CallSite {
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg) {
             if (self instanceof RubyFixnum) {
-                return ((RubyFixnum)self).op_le(arg);
+                return ((RubyFixnum)self).op_le(context, arg);
             }
             
             return super.call(context, self, arg);
@@ -496,7 +496,7 @@ public abstract class CallSite {
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg) {
             if (self instanceof RubyFixnum) {
-                return ((RubyFixnum)self).op_gt(arg);
+                return ((RubyFixnum)self).op_gt(context, arg);
             }
             
             return super.call(context, self, arg);
@@ -510,7 +510,7 @@ public abstract class CallSite {
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg) {
             if (self instanceof RubyFixnum) {
-                return ((RubyFixnum)self).op_ge(arg);
+                return ((RubyFixnum)self).op_ge(context, arg);
             }
             
             return super.call(context, self, arg);

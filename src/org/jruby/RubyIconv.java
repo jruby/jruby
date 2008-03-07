@@ -44,6 +44,7 @@ import org.jruby.runtime.Arity;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.util.ByteList;
@@ -151,16 +152,16 @@ public class RubyIconv extends RubyObject {
     }
 
     @JRubyMethod(name = "open", required = 2, frame = true, meta = true)
-    public static IRubyObject open(IRubyObject recv, IRubyObject to, IRubyObject from, Block block) {
+    public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject to, IRubyObject from, Block block) {
         Ruby runtime = recv.getRuntime();
         RubyIconv iconv =
-            (RubyIconv) runtime.fastGetClass("Iconv").newInstance(
+            (RubyIconv) runtime.fastGetClass("Iconv").newInstance(context,
                     new IRubyObject[] { to, from }, Block.NULL_BLOCK);
         if (!block.isGiven()) return iconv;
 
         IRubyObject result = runtime.getNil();
         try {
-            result = block.yield(recv.getRuntime().getCurrentContext(), iconv);
+            result = block.yield(context, iconv);
         } finally {
             iconv.close();
         }
@@ -270,8 +271,8 @@ public class RubyIconv extends RubyObject {
     }
     
     @JRubyMethod(name = "conv", required = 3, rest = true, meta = true)
-    public static IRubyObject conv(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        return convertWithArgs(recv, args, "conv").join(recv.getRuntime().newString(""));
+    public static IRubyObject conv(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+        return convertWithArgs(recv, args, "conv").join(context, recv.getRuntime().newString(""));
     }
     
     public static RubyArray convertWithArgs(IRubyObject recv, IRubyObject[] args, String function) {

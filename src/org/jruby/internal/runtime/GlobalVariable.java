@@ -101,7 +101,7 @@ public final class GlobalVariable {
             context.setWithinTrace(true);
 
             for (int i = 0; i < traces.size(); i++) {
-                ((RubyProc)traces.get(i)).call(new IRubyObject[] {value});
+                ((RubyProc)traces.get(i)).call(context, new IRubyObject[] {value});
             }
         } finally {
             context.setWithinTrace(false);

@@ -555,11 +555,11 @@ public class RubyZlib {
 
     public static class RubyGzipFile extends RubyObject {
         @JRubyMethod(name = "wrap", required = 2, frame = true, meta = true)
-        public static IRubyObject wrap(IRubyObject recv, IRubyObject io, IRubyObject proc, Block unusedBlock) throws IOException {
+        public static IRubyObject wrap(ThreadContext context, IRubyObject recv, IRubyObject io, IRubyObject proc, Block unusedBlock) throws IOException {
             if (!(io instanceof RubyGzipFile)) throw recv.getRuntime().newTypeError(io, (RubyClass)recv);
             if (!proc.isNil()) {
                 try {
-                    ((RubyProc)proc).call(new IRubyObject[]{io});
+                    ((RubyProc)proc).call(context, new IRubyObject[]{io});
                 } finally {
                     RubyGzipFile zipIO = (RubyGzipFile)io;
                     if (!zipIO.isClosed()) {
@@ -688,18 +688,14 @@ public class RubyZlib {
         }
 
         @JRubyMethod(name = "open", required = 1, frame = true, meta = true)
-        public static IRubyObject open(IRubyObject recv, IRubyObject filename, Block block) throws IOException {
+        public static IRubyObject open(final ThreadContext context, IRubyObject recv, IRubyObject filename, Block block) throws IOException {
             Ruby runtime = recv.getRuntime();
             IRubyObject proc = block.isGiven() ? runtime.newProc(Block.Type.PROC, block) : runtime.getNil();
-            RubyGzipReader io = newInstance(
-                    recv,
-                    new IRubyObject[]{ runtime.getFile().callMethod(
-                            runtime.getCurrentContext(),
-                            "open",
-                            new IRubyObject[]{filename, runtime.newString("rb")})},
-                            block);
+            RubyGzipReader io = newInstance(recv,
+                    new IRubyObject[]{ runtime.getFile().callMethod(context, "open",
+                            new IRubyObject[]{filename, runtime.newString("rb")})}, block);
             
-            return RubyGzipFile.wrap(recv, io, proc, null);
+            return RubyGzipFile.wrap(context, recv, io, proc, null);
         }
 
         public RubyGzipReader(Ruby runtime, RubyClass type) {
@@ -736,8 +732,8 @@ public class RubyZlib {
         }
 
         @JRubyMethod(name = "readline")
-        public IRubyObject readline() throws IOException {
-            IRubyObject dst = gets(new IRubyObject[0]);
+        public IRubyObject readline(ThreadContext context) throws IOException {
+            IRubyObject dst = gets(context, new IRubyObject[0]);
             if (dst.isNil()) {
                 throw getRuntime().newEOFError();
             }
@@ -765,10 +761,10 @@ public class RubyZlib {
         }
 
         @JRubyMethod(name = "gets", optional = 1)
-        public IRubyObject gets(IRubyObject[] args) throws IOException {
+        public IRubyObject gets(ThreadContext context, IRubyObject[] args) throws IOException {
             IRubyObject result = internalGets(args);
             if (!result.isNil()) {
-                getRuntime().getCurrentContext().getCurrentFrame().setLastLine(result);
+                context.getCurrentFrame().setLastLine(result);
             }
             return result;
         }
@@ -870,14 +866,13 @@ public class RubyZlib {
         }
 
         @JRubyMethod(name = "each", optional = 1, frame = true)
-        public IRubyObject each(IRubyObject[] args, Block block) throws IOException {
+        public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) throws IOException {
             ByteList sep = ((RubyString)getRuntime().getGlobalVariables().get("$/")).getByteList();
             
             if (args.length > 0 && !args[0].isNil()) {
                 sep = args[0].convertToString().getByteList();
             }
 
-            ThreadContext context = getRuntime().getCurrentContext();
             while (!isEof()) {
                 block.yield(context, internalSepGets(sep));
             }
@@ -909,10 +904,9 @@ public class RubyZlib {
         }
 
         @JRubyMethod(name = "each_byte", frame = true)
-        public IRubyObject each_byte(Block block) throws IOException {
+        public IRubyObject each_byte(ThreadContext context, Block block) throws IOException {
             int value = io.read();
 
-            ThreadContext context = getRuntime().getCurrentContext();
             while (value != -1) {
                 block.yield(context, getRuntime().newFixnum(value));
                 value = io.read();
@@ -939,7 +933,7 @@ public class RubyZlib {
         }
 
         @JRubyMethod(name = "open", required = 1, optional = 2, frame = true, meta = true)
-        public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) throws IOException {
+        public static IRubyObject open(final ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) throws IOException {
             Ruby runtime = recv.getRuntime();
             IRubyObject level = runtime.getNil();
             IRubyObject strategy = runtime.getNil();
@@ -953,11 +947,11 @@ public class RubyZlib {
             RubyGzipWriter io = newGzipWriter(
                     recv,
                     new IRubyObject[]{ runtime.getFile().callMethod(
-                            runtime.getCurrentContext(),
+                            context,
                             "open",
                             new IRubyObject[]{args[0],runtime.newString("wb")}),level,strategy},block);
             
-            return RubyGzipFile.wrap(recv, io, proc, null);
+            return RubyGzipFile.wrap(context, recv, io, proc, null);
         }
 
         public RubyGzipWriter(Ruby runtime, RubyClass type) {
@@ -1034,9 +1028,9 @@ public class RubyZlib {
         }
         
         @JRubyMethod(name = "puts", rest = true)
-        public IRubyObject puts(IRubyObject[] args) throws IOException {
-            RubyStringIO sio = (RubyStringIO)getRuntime().fastGetClass("StringIO").newInstance(new IRubyObject[0], Block.NULL_BLOCK);
-            sio.puts(args);
+        public IRubyObject puts(ThreadContext context, IRubyObject[] args) throws IOException {
+            RubyStringIO sio = (RubyStringIO)getRuntime().fastGetClass("StringIO").newInstance(context, new IRubyObject[0], Block.NULL_BLOCK);
+            sio.puts(context, args);
             write(sio.string());
             
             return getRuntime().getNil();

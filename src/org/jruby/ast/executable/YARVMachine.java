@@ -372,7 +372,7 @@ public class YARVMachine {
                 for(int i = hsize; i>0; i -= 2) {
                     v = pop();
                     k = pop();
-                    h.op_aset(k,v);
+                    h.op_aset(context, k, v);
                 }
                 push(h);
                 break;
@@ -620,7 +620,7 @@ public class YARVMachine {
             long otherValue = ((RubyFixnum) other).getLongValue();
             long result = receiverValue + otherValue;
             if ((~(receiverValue ^ otherValue) & (receiverValue ^ result) & RubyFixnum.SIGN_BIT) != 0) {
-                push(RubyBignum.newBignum(runtime, receiverValue).op_plus(other));
+                push(RubyBignum.newBignum(runtime, receiverValue).op_plus(context, other));
             }
 
             push(runtime.newFixnum(result));
@@ -635,7 +635,7 @@ public class YARVMachine {
             long otherValue = ((RubyFixnum) other).getLongValue();
             long result = receiverValue - otherValue;
             if ((~(receiverValue ^ otherValue) & (receiverValue ^ result) & RubyFixnum.SIGN_BIT) != 0) {
-                push(RubyBignum.newBignum(runtime, receiverValue).op_minus(other));
+                push(RubyBignum.newBignum(runtime, receiverValue).op_minus(context, other));
             }
 
             push(runtime.newFixnum(result));

@@ -148,11 +148,11 @@ public class RubyUndef implements IRubyObject {
         return false;
     }
 
-    public IRubyObject op_equal(IRubyObject other) {
+    public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         return null;
     }
 
-    public IRubyObject op_eqq(IRubyObject other) {
+    public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
         return null;
     }
 

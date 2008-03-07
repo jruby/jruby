@@ -59,14 +59,13 @@ public class RubyStringIO extends RubyObject {
     }
 
     @JRubyMethod(name = "open", optional = 2, frame = true, meta = true)
-    public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
-        RubyStringIO strio = (RubyStringIO)((RubyClass)recv).newInstance(args, Block.NULL_BLOCK);
+    public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        RubyStringIO strio = (RubyStringIO)((RubyClass)recv).newInstance(context, args, Block.NULL_BLOCK);
         IRubyObject val = strio;
-        ThreadContext tc = recv.getRuntime().getCurrentContext();
         
         if (block.isGiven()) {
             try {
-                val = block.yield(tc, strio);
+                val = block.yield(context, strio);
             } finally {
                 strio.close();
             }
@@ -110,11 +109,11 @@ public class RubyStringIO extends RubyObject {
     }
 
     @JRubyMethod(name = "<<", required = 1)
-    public IRubyObject append(IRubyObject obj) {
+    public IRubyObject append(ThreadContext context, IRubyObject obj) {
         checkWritable();
         checkFrozen();
 
-        RubyString val = ((RubyString)obj.callMethod(obj.getRuntime().getCurrentContext(),MethodIndex.TO_S, "to_s"));
+        RubyString val = ((RubyString)obj.callMethod(context, MethodIndex.TO_S, "to_s"));
         internal.modify();
         if (append) {
             internal.getByteList().append(val.getByteList());
@@ -170,30 +169,29 @@ public class RubyStringIO extends RubyObject {
     }
 
     @JRubyMethod(name = "each", optional = 1, frame = true)
-    public IRubyObject each(IRubyObject[] args, Block block) {
-        IRubyObject line = gets(args);
-        ThreadContext context = getRuntime().getCurrentContext();
+    public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
+        IRubyObject line = gets(context, args);
        
         while (!line.isNil()) {
             block.yield(context, line);
-            line = gets(args);
+            line = gets(context, args);
         }
        
         return this;
     }
 
     @JRubyMethod(name = "each_byte", frame = true)
-    public IRubyObject each_byte(Block block) {
+    public IRubyObject each_byte(ThreadContext context, Block block) {
         checkReadable();
         
-        RubyString.newString(getRuntime(),new ByteList(internal.getByteList(), (int)pos, internal.getByteList().length())).each_byte(block);
+        RubyString.newString(getRuntime(),new ByteList(internal.getByteList(), (int)pos, internal.getByteList().length())).each_byte(context, block);
         
         return getRuntime().getNil();
     }
 
     @JRubyMethod(name = "each_line", optional = 1, frame = true)
-    public IRubyObject each_line(IRubyObject[] args, Block block) {
-        return each(args, block);
+    public IRubyObject each_line(ThreadContext context, IRubyObject[] args, Block block) {
+        return each(context, args, block);
     }
 
     @JRubyMethod(name = "eof")
@@ -264,12 +262,12 @@ public class RubyStringIO extends RubyObject {
     }
 
     @JRubyMethod(name = "gets", optional = 1)
-    public IRubyObject gets(IRubyObject[] args) {
+    public IRubyObject gets(ThreadContext context, IRubyObject[] args) {
         checkReadable();
 
         IRubyObject result = internalGets(args);
         if (!result.isNil()) {
-            getRuntime().getCurrentContext().getCurrentFrame().setLastLine(result);
+            context.getCurrentFrame().setLastLine(result);
         }
         
         return result;
@@ -333,22 +331,22 @@ public class RubyStringIO extends RubyObject {
     }
 
     @JRubyMethod(name = "print", rest = true)
-    public IRubyObject print(IRubyObject[] args) {
+    public IRubyObject print(ThreadContext context, IRubyObject[] args) {
         if (args.length != 0) {
             for (int i=0,j=args.length;i<j;i++) {
-                append(args[i]);
+                append(context, args[i]);
             }
         }
         IRubyObject sep = getRuntime().getGlobalVariables().get("$\\");
         if (!sep.isNil()) {
-            append(sep);
+            append(context, sep);
         }
         return getRuntime().getNil();
     }
     
     @JRubyMethod(name = "printf", required = 1, rest = true)
-    public IRubyObject printf(IRubyObject[] args) {
-        append(RubyKernel.sprintf(this,args));
+    public IRubyObject printf(ThreadContext context, IRubyObject[] args) {
+        append(context, RubyKernel.sprintf(this,args));
         return getRuntime().getNil();
     }
 
@@ -377,12 +375,11 @@ public class RubyStringIO extends RubyObject {
     public static final ByteList NEWLINE = ByteList.create("\n");
 
     @JRubyMethod(name = "puts", rest = true)
-    public IRubyObject puts(IRubyObject[] args) {
+    public IRubyObject puts(ThreadContext context, IRubyObject[] args) {
         checkWritable();
         
         // FIXME: the code below is a copy of RubyIO.puts,
         // and we should avoid copy-paste.
-        ThreadContext context = getRuntime().getCurrentContext();
         
         if (args.length == 0) {
             callMethod(context, "write", getRuntime().newStringShared(NEWLINE));
@@ -397,7 +394,7 @@ public class RubyStringIO extends RubyObject {
             } else if (getRuntime().isInspecting(args[i])) {
                 line = "[...]";
             } else if (args[i] instanceof RubyArray) {
-                inspectPuts((RubyArray) args[i]);
+                inspectPuts(context, (RubyArray) args[i]);
                 continue;
             } else {
                 line = args[i].toString();
@@ -412,10 +409,10 @@ public class RubyStringIO extends RubyObject {
         return getRuntime().getNil();
     }
 
-    private IRubyObject inspectPuts(RubyArray array) {
+    private IRubyObject inspectPuts(ThreadContext context, RubyArray array) {
         try {
             getRuntime().registerInspecting(array);
-            return puts(array.toJavaArray());
+            return puts(context, array.toJavaArray());
         } finally {
             getRuntime().unregisterInspecting(array);
         }
@@ -522,8 +519,8 @@ public class RubyStringIO extends RubyObject {
     }
 
     @JRubyMethod(name = "readline", optional = 1)
-    public IRubyObject readline(IRubyObject[] args) {
-        IRubyObject line = gets(args);
+    public IRubyObject readline(ThreadContext context, IRubyObject[] args) {
+        IRubyObject line = gets(context, args);
         
         if (line.isNil()) throw getRuntime().newEOFError();
         
@@ -531,12 +528,12 @@ public class RubyStringIO extends RubyObject {
     }
     
     @JRubyMethod(name = "readlines", optional = 1)
-    public IRubyObject readlines(IRubyObject[] arg) {
+    public IRubyObject readlines(ThreadContext context, IRubyObject[] arg) {
         checkReadable();
         
         List<IRubyObject> lns = new ArrayList<IRubyObject>();
         while (!(pos >= internal.getByteList().length() || eof)) {
-            lns.add(gets(arg));
+            lns.add(gets(context, arg));
         }
         return getRuntime().newArray(lns);
     }
@@ -646,8 +643,8 @@ public class RubyStringIO extends RubyObject {
     }
 
     @JRubyMethod(name = "syswrite", required = 1)
-    public IRubyObject syswrite(IRubyObject args) {
-        return write(args);
+    public IRubyObject syswrite(ThreadContext context, IRubyObject args) {
+        return write(context, args);
     }
 
     @JRubyMethod(name = "truncate", required = 1)
@@ -674,10 +671,10 @@ public class RubyStringIO extends RubyObject {
     }
 
     @JRubyMethod(name = "write", required = 1)
-    public IRubyObject write(IRubyObject arg) {
+    public IRubyObject write(ThreadContext context, IRubyObject arg) {
         checkWritable();
         String obj = arg.toString();
-        append(arg);
+        append(context, arg);
         return getRuntime().newFixnum(obj.length());
     }
 

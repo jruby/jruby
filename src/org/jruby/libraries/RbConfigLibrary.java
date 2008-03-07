@@ -138,7 +138,7 @@ public class RbConfigLibrary implements Library {
 
     private static void setConfig(RubyHash configHash, String key, String value) {
         Ruby runtime = configHash.getRuntime();
-        configHash.op_aset(runtime.newString(key), runtime.newString(value));
+        configHash.op_aset(runtime.getCurrentContext(), runtime.newString(key), runtime.newString(value));
     }
 
     public static String jrubyScript() {

@@ -129,8 +129,8 @@ public class RubyProcess {
         }
         
         @JRubyMethod(name = "==", required = 1)
-        public IRubyObject op_equal(IRubyObject other) {
-            return other.callMethod(getRuntime().getCurrentContext(), MethodIndex.EQUALEQUAL, "==", this.to_i());
+        public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
+            return other.callMethod(context, MethodIndex.EQUALEQUAL, "==", this.to_i());
         }
 
         @JRubyMethod(name = "to_i")
@@ -180,8 +180,8 @@ public class RubyProcess {
         }
         
         @JRubyMethod(name = "re_exchange", module = true)
-        public static IRubyObject re_exchange(IRubyObject self) {
-            return switch_rb(self, Block.NULL_BLOCK);
+        public static IRubyObject re_exchange(ThreadContext context, IRubyObject self) {
+            return switch_rb(context, self, Block.NULL_BLOCK);
         }
         
         @JRubyMethod(name = "re_exchangeable?", module = true)
@@ -200,7 +200,7 @@ public class RubyProcess {
         }
         
         @JRubyMethod(name = "switch", module = true, visibility = Visibility.PRIVATE)
-        public static IRubyObject switch_rb(IRubyObject self, Block block) {
+        public static IRubyObject switch_rb(ThreadContext context, IRubyObject self, Block block) {
             Ruby runtime = self.getRuntime();
             int uid = runtime.getPosix().getuid();
             int euid = runtime.getPosix().geteuid();
@@ -210,7 +210,7 @@ public class RubyProcess {
                     runtime.getPosix().seteuid(uid);
                     runtime.getPosix().setuid(euid);
                     
-                    return block.yield(runtime.getCurrentContext(), runtime.getNil());
+                    return block.yield(context, runtime.getNil());
                 } finally {
                     runtime.getPosix().seteuid(euid);
                     runtime.getPosix().setuid(uid);
@@ -246,8 +246,8 @@ public class RubyProcess {
         }
         
         @JRubyMethod(name = "re_exchange", module = true)
-        public static IRubyObject re_exchange(IRubyObject self) {
-            return switch_rb(self, Block.NULL_BLOCK);
+        public static IRubyObject re_exchange(ThreadContext context, IRubyObject self) {
+            return switch_rb(context, self, Block.NULL_BLOCK);
         }
         
         @JRubyMethod(name = "re_exchangeable?", module = true)
@@ -266,7 +266,7 @@ public class RubyProcess {
         }
         
         @JRubyMethod(name = "switch", module = true, visibility = Visibility.PRIVATE)
-        public static IRubyObject switch_rb(IRubyObject self, Block block) {
+        public static IRubyObject switch_rb(ThreadContext context, IRubyObject self, Block block) {
             Ruby runtime = self.getRuntime();
             int gid = runtime.getPosix().getgid();
             int egid = runtime.getPosix().getegid();
@@ -276,7 +276,7 @@ public class RubyProcess {
                     runtime.getPosix().setegid(gid);
                     runtime.getPosix().setgid(egid);
                     
-                    return block.yield(runtime.getCurrentContext(), runtime.getNil());
+                    return block.yield(context, runtime.getNil());
                 } finally {
                     runtime.getPosix().setegid(egid);
                     runtime.getPosix().setgid(gid);
@@ -333,8 +333,8 @@ public class RubyProcess {
     }
 
     @JRubyMethod(name = "abort", optional = 1, module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject abort(IRubyObject recv, IRubyObject[] args) {
-        return RubyKernel.abort(recv, args);
+    public static IRubyObject abort(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return RubyKernel.abort(context, recv, args);
     }
 
     @JRubyMethod(name = "exit!", optional = 1, module = true, visibility = Visibility.PRIVATE)
@@ -622,7 +622,7 @@ public class RubyProcess {
     }
 
     @JRubyMethod(name = "detach", required = 1, module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject detach(IRubyObject recv, IRubyObject arg) {
+    public static IRubyObject detach(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         final int pid = (int)arg.convertToInteger().getLongValue();
         Ruby runtime = recv.getRuntime();
         
@@ -638,7 +638,7 @@ public class RubyProcess {
         return RubyThread.newInstance(
                 runtime.getThread(),
                 IRubyObject.NULL_ARRAY,
-                CallBlock.newCallClosure(recv, (RubyModule)recv, Arity.NO_ARGUMENTS, callback, runtime.getCurrentContext()));
+                CallBlock.newCallClosure(recv, (RubyModule)recv, Arity.NO_ARGUMENTS, callback, context));
     }
     
     @JRubyMethod(name = "times", frame = true, module = true, visibility = Visibility.PRIVATE)
@@ -658,8 +658,8 @@ public class RubyProcess {
     }
     
     @JRubyMethod(name = "fork", module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject fork(IRubyObject recv, Block block) {
-        return RubyKernel.fork(recv, block);
+    public static IRubyObject fork(ThreadContext context, IRubyObject recv, Block block) {
+        return RubyKernel.fork(context, recv, block);
     }
     
     @JRubyMethod(name = "exit", optional = 1, module = true, visibility = Visibility.PRIVATE)

@@ -555,18 +555,17 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     /** specific_eval
      *
      */
-    public IRubyObject specificEval(RubyModule mod, IRubyObject[] args, Block block) {
+    public IRubyObject specificEval(ThreadContext context, RubyModule mod, IRubyObject[] args, Block block) {
         if (block.isGiven()) {
             if (args.length > 0) throw getRuntime().newArgumentError(args.length, 0);
 
-            return yieldUnder(mod, new IRubyObject[] { this }, block);
+            return yieldUnder(context, mod, new IRubyObject[] { this }, block);
         }
-        ThreadContext tc = getRuntime().getCurrentContext();
 
         if (args.length == 0) {
             throw getRuntime().newArgumentError("block not supplied");
         } else if (args.length > 3) {
-            String lastFuncName = tc.getFrameName();
+            String lastFuncName = context.getFrameName();
             throw getRuntime().newArgumentError(
                 "wrong # of arguments: " + lastFuncName + "(src) or " + lastFuncName + "{..}");
         }
@@ -584,25 +583,25 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         IRubyObject file = args.length > 1 ? args[1] : getRuntime().newString("(eval)");
         IRubyObject line = args.length > 2 ? args[2] : RubyFixnum.one(getRuntime());
 
-        Visibility savedVisibility = tc.getCurrentVisibility();
-        tc.setCurrentVisibility(Visibility.PUBLIC);
+        Visibility savedVisibility = context.getCurrentVisibility();
+        context.setCurrentVisibility(Visibility.PUBLIC);
         try {
-            return evalUnder(mod, args[0], file, line);
+            return evalUnder(context, mod, args[0], file, line);
         } finally {
-            tc.setCurrentVisibility(savedVisibility);
+            context.setCurrentVisibility(savedVisibility);
         }
     }
 
-    public IRubyObject evalUnder(RubyModule under, IRubyObject src, IRubyObject file, IRubyObject line) {
-        return under.executeUnder(new Callback() {
+    public IRubyObject evalUnder(final ThreadContext context, RubyModule under, IRubyObject src, IRubyObject file, IRubyObject line) {
+        return under.executeUnder(context, new Callback() {
             public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
                 IRubyObject source = args[1];
                 IRubyObject filename = args[2];
                 // Line numbers are zero-based so we subtract one
                 int lineNumber = (int) (args[3].convertToInteger().getLongValue() - 1);
 
-                return ASTInterpreter.evalSimple(source.getRuntime().getCurrentContext(),
-                                  args[0], source, filename.convertToString().toString(), lineNumber);
+                return ASTInterpreter.evalSimple(context, args[0], source, 
+                        filename.convertToString().toString(), lineNumber);
             }
 
             public Arity getArity() {
@@ -611,11 +610,9 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         }, new IRubyObject[] { this, src, file, line }, Block.NULL_BLOCK);
     }
 
-    private IRubyObject yieldUnder(RubyModule under, IRubyObject[] args, Block block) {
-        return under.executeUnder(new Callback() {
+    private IRubyObject yieldUnder(final ThreadContext context, RubyModule under, IRubyObject[] args, Block block) {
+        return under.executeUnder(context, new Callback() {
             public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-                ThreadContext context = getRuntime().getCurrentContext();
-
                 Visibility savedVisibility = block.getBinding().getVisibility();
 
                 block.getBinding().setVisibility(Visibility.PUBLIC);
@@ -657,7 +654,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *
      */
     @JRubyMethod(name = "==", required = 1)
-    public IRubyObject op_equal(IRubyObject obj) {
+    public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
         return this == obj ? getRuntime().getTrue() : getRuntime().getFalse();
     }
     
@@ -682,12 +679,8 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * 
      */
     @JRubyMethod(name = "===", required = 1)
-    public IRubyObject op_eqq(IRubyObject other) {
-        if(this == other || callMethod(getRuntime().getCurrentContext(), MethodIndex.EQUALEQUAL, "==",other).isTrue()){
-            return getRuntime().getTrue();
-        }
- 
-        return getRuntime().getFalse();
+    public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
+        return getRuntime().newBoolean(this == other || callMethod(context, MethodIndex.EQUALEQUAL, "==",other).isTrue());
     }
     
     protected static IRubyObject equalInternal(final ThreadContext context, final IRubyObject that, final IRubyObject other){
@@ -820,11 +813,11 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     }    
 
     @JRubyMethod(name = "display", optional = 1)
-    public IRubyObject display(IRubyObject[] args) {
+    public IRubyObject display(ThreadContext context, IRubyObject[] args) {
         IRubyObject port = args.length == 0
             ? getRuntime().getGlobalVariables().get("$>") : args[0];
 
-        port.callMethod(getRuntime().getCurrentContext(), "write", this);
+        port.callMethod(context, "write", this);
 
         return getRuntime().getNil();
     }
@@ -1088,32 +1081,32 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     }
 
     @JRubyMethod(name = "instance_eval", optional = 3, frame = true)
-    public IRubyObject instance_eval(IRubyObject[] args, Block block) {
+    public IRubyObject instance_eval(ThreadContext context, IRubyObject[] args, Block block) {
         RubyModule klazz;
         if (isImmediate()) {
-            klazz = getRuntime().getCurrentContext().getPreviousFrame().getKlazz();
+            klazz = context.getPreviousFrame().getKlazz();
             if (klazz == null) klazz = getRuntime().getObject();
         } else {
             klazz = getSingletonClass();
         }
-        return specificEval(klazz, args, block);
+        return specificEval(context, klazz, args, block);
     }
 
     @JRubyMethod(name = "instance_exec", optional = 3, frame = true)
-    public IRubyObject instance_exec(IRubyObject[] args, Block block) {
+    public IRubyObject instance_exec(ThreadContext context, IRubyObject[] args, Block block) {
         if (!block.isGiven()) {
             throw getRuntime().newArgumentError("block not supplied");
         }
 
         RubyModule klazz;
         if (isImmediate()) {
-            klazz = getRuntime().getCurrentContext().getPreviousFrame().getKlazz();
+            klazz = context.getPreviousFrame().getKlazz();
             if (klazz == null) klazz = getRuntime().getObject();            
         } else {
             klazz = getSingletonClass();
         }
 
-        return yieldUnder(klazz, args, block);
+        return yieldUnder(context, klazz, args, block);
     }
 
     @JRubyMethod(name = "extend", required = 1, rest = true)
@@ -1157,7 +1150,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * @return the result of invoking the method identified by aSymbol.
      */
     @JRubyMethod(name = {"send", "__send__"}, required = 1, rest = true)
-    public IRubyObject send(IRubyObject[] args, Block block) {
+    public IRubyObject send(ThreadContext context, IRubyObject[] args, Block block) {
         String name = args[0].asJavaString();
         int newArgsLength = args.length - 1;
 
@@ -1171,7 +1164,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
 
         RubyModule rubyClass = getMetaClass();
         DynamicMethod method = rubyClass.searchMethod(name);
-        ThreadContext context = getRuntime().getCurrentContext();
 
         // send doesn't check visibility
         if (method.isUndefined()) {
@@ -1187,7 +1179,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     }
     
     @JRubyMethod(name = "=~", required = 1)
-    public IRubyObject op_match(IRubyObject arg) {
+    public IRubyObject op_match(ThreadContext context, IRubyObject arg) {
     	return getRuntime().getFalse();
     }
     

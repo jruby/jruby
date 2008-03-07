@@ -125,10 +125,7 @@ public class RubyBinding extends RubyObject {
     }
     
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
-    @Override
-    public IRubyObject initialize() {
-        ThreadContext context = getRuntime().getCurrentContext();
-
+    public IRubyObject initialize(ThreadContext context) {
         // FIXME: We should be cloning, not reusing: frame, scope, dynvars, and potentially iter/block info
         Frame frame = context.getCurrentFrame();
         binding = new Binding(frame, context.getBindingRubyClass(), context.getCurrentScope());

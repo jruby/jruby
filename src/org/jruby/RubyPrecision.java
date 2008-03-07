@@ -33,6 +33,7 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -66,17 +67,17 @@ public class RubyPrecision {
     
     
     @JRubyMethod(name = "prec", required = 1, frame = true)
-    public static IRubyObject prec(IRubyObject receiver, IRubyObject type, Block block) {
-        return type.callMethod(receiver.getRuntime().getCurrentContext(), "induced_from", receiver);
+    public static IRubyObject prec(ThreadContext context, IRubyObject receiver, IRubyObject type, Block block) {
+        return type.callMethod(context, "induced_from", receiver);
     }
 
     @JRubyMethod(name = "prec_i", frame = true)
-    public static IRubyObject prec_i(IRubyObject receiver, Block block) {
-        return receiver.getRuntime().getInteger().callMethod(receiver.getRuntime().getCurrentContext(), "induced_from", receiver);
+    public static IRubyObject prec_i(ThreadContext context, IRubyObject receiver, Block block) {
+        return receiver.getRuntime().getInteger().callMethod(context, "induced_from", receiver);
     }
 
     @JRubyMethod(name = "prec_f", frame = true)
-    public static IRubyObject prec_f(IRubyObject receiver, Block block) {
-        return receiver.getRuntime().getFloat().callMethod(receiver.getRuntime().getCurrentContext(), "induced_from", receiver);
+    public static IRubyObject prec_f(ThreadContext context, IRubyObject receiver, Block block) {
+        return receiver.getRuntime().getFloat().callMethod(context, "induced_from", receiver);
     }
 }

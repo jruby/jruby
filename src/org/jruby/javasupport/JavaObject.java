@@ -44,6 +44,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -202,10 +203,10 @@ public class JavaObject extends RubyObject {
     }
 
     @JRubyMethod(name = "synchronized")
-    public IRubyObject ruby_synchronized(Block block) {
+    public IRubyObject ruby_synchronized(ThreadContext context, Block block) {
         Object lock = getValue();
         synchronized (lock != null ? lock : NULL_LOCK) {
-            return block.yield(getRuntime().getCurrentContext(), null);
+            return block.yield(context, null);
         }
     }
 }

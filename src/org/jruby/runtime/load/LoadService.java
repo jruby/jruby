@@ -152,7 +152,7 @@ public class LoadService {
        RubyHash env = (RubyHash) runtime.getObject().fastGetConstant("ENV");
        RubyString env_rubylib = runtime.newString("RUBYLIB");
        if (env.has_key_p(env_rubylib).isTrue()) {
-           String rubylib = env.op_aref(env_rubylib).toString();
+           String rubylib = env.op_aref(runtime.getCurrentContext(), env_rubylib).toString();
            String[] paths = rubylib.split(File.pathSeparator);
            for (int i = 0; i < paths.length; i++) {
                addPath(paths[i]);

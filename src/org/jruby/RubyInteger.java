@@ -103,9 +103,8 @@ public abstract class RubyInteger extends RubyNumeric {
      * 
      */
     @JRubyMethod(name = "upto", required = 1, frame = true)
-    public IRubyObject upto(IRubyObject to, Block block) {
+    public IRubyObject upto(ThreadContext context, IRubyObject to, Block block) {
         Ruby runtime = getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
 
         if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
 
@@ -134,9 +133,7 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     // TODO: Make callCoerced work in block context...then fix downto, step, and upto.
     @JRubyMethod(name = "downto", required = 1, frame = true)
-    public IRubyObject downto(IRubyObject to, Block block) {
-        ThreadContext context = getRuntime().getCurrentContext();
-
+    public IRubyObject downto(ThreadContext context, IRubyObject to, Block block) {
         if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
             RubyFixnum toFixnum = (RubyFixnum) to;
             long toValue = toFixnum.getLongValue();
@@ -158,9 +155,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     @JRubyMethod(name = "times", frame = true)
-    public IRubyObject times(Block block) {
-        ThreadContext context = getRuntime().getCurrentContext();
-
+    public IRubyObject times(ThreadContext context, Block block) {
         if (this instanceof RubyFixnum) {
 
             long value = getLongValue();
@@ -185,11 +180,11 @@ public abstract class RubyInteger extends RubyNumeric {
      * 
      */
     @JRubyMethod(name = {"succ", "next"})
-    public IRubyObject succ() {
+    public IRubyObject succ(ThreadContext context) {
         if (this instanceof RubyFixnum) {
             return RubyFixnum.newFixnum(getRuntime(), getLongValue() + 1L);
         } else {
-            return callMethod(getRuntime().getCurrentContext(), MethodIndex.OP_PLUS, "+", RubyFixnum.one(getRuntime()));
+            return callMethod(context, MethodIndex.OP_PLUS, "+", RubyFixnum.one(getRuntime()));
         }
     }
 
@@ -221,11 +216,11 @@ public abstract class RubyInteger extends RubyNumeric {
      * 
      */
     @JRubyMethod(name = "induced_from", meta = true, required = 1)
-    public static IRubyObject induced_from(IRubyObject recv, IRubyObject other) {
+    public static IRubyObject induced_from(ThreadContext context, IRubyObject recv, IRubyObject other) {
         if (other instanceof RubyFixnum || other instanceof RubyBignum) {
             return other;
         } else if (other instanceof RubyFloat) {
-            return other.callMethod(recv.getRuntime().getCurrentContext(), MethodIndex.TO_I, "to_i");
+            return other.callMethod(context, MethodIndex.TO_I, "to_i");
         } else {
             throw recv.getRuntime().newTypeError(
                     "failed to convert " + other.getMetaClass().getName() + " into Integer");

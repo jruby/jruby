@@ -961,7 +961,7 @@ public class ASTInterpreter {
 
     private static IRubyObject dotNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         DotNode iVisited = (DotNode) node;
-        return RubyRange.newRange(runtime, 
+        return RubyRange.newRange(runtime, context,
                 evalInternal(runtime,context, iVisited.getBeginNode(), self, aBlock), 
                 evalInternal(runtime,context, iVisited.getEndNode(), self, aBlock), 
                 iVisited.isExclusive());
@@ -1275,7 +1275,7 @@ public class ASTInterpreter {
         IRubyObject recv = evalInternal(runtime,context, iVisited.getReceiverNode(), self, aBlock);
         IRubyObject value = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
    
-        return ((RubyRegexp) recv).op_match(value);
+        return ((RubyRegexp) recv).op_match(context, value);
     }
     
     private static IRubyObject match3Node(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -1284,14 +1284,14 @@ public class ASTInterpreter {
         IRubyObject value = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
    
         if (value instanceof RubyString) {
-            return ((RubyRegexp) recv).op_match(value);
+            return ((RubyRegexp) recv).op_match(context, value);
         } else {
             return iVisited.callAdapter.call(context, value, recv);
         }
     }
 
     private static IRubyObject matchNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
-        return ((RubyRegexp) evalInternal(runtime,context, ((MatchNode)node).getRegexpNode(), self, aBlock)).op_match2();
+        return ((RubyRegexp) evalInternal(runtime,context, ((MatchNode)node).getRegexpNode(), self, aBlock)).op_match2(context);
     }
 
     private static IRubyObject moduleNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -1641,7 +1641,7 @@ public class ASTInterpreter {
     }
 
     private static IRubyObject splatNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
-        return splatValue(runtime, evalInternal(runtime,context, ((SplatNode) node).getValue(), self, aBlock));
+        return splatValue(runtime, evalInternal(runtime, context, ((SplatNode) node).getValue(), self, aBlock));
     }
 
     private static IRubyObject strNode(Ruby runtime, Node node) {
@@ -1693,7 +1693,7 @@ public class ASTInterpreter {
             throw runtime.newTypeError("No class to undef method '" + iVisited.getName() + "'.");
         }
         
-        module.undef(iVisited.getName());
+        module.undef(context, iVisited.getName());
    
         return runtime.getNil();
     }

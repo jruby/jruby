@@ -112,7 +112,7 @@ public class TestRuby extends TestRubyBase {
             setInput(System.in); setOutput(System.out); setError(new PrintStream(err)); setObjectSpaceEnabled(false);
         }};
         Ruby ruby = Ruby.newInstance(config);
-        RubyException exception = (RubyException)runtime.getClass("NameError").newInstance(new IRubyObject[]{ruby.newString("A message")},  Block.NULL_BLOCK);
+        RubyException exception = (RubyException)runtime.getClass("NameError").newInstance(ruby.getCurrentContext(), new IRubyObject[]{ruby.newString("A message")},  Block.NULL_BLOCK);
         RubyString[] lines = new RubyString[]{
             RubyString.newString(ruby, "Line 1"),
             RubyString.newString(ruby, "Line 2"),
@@ -129,7 +129,7 @@ public class TestRuby extends TestRubyBase {
             setInput(System.in); setOutput(System.out); setError(new PrintStream(err)); setObjectSpaceEnabled(false);
         }};
         Ruby ruby = Ruby.newInstance(config);
-        RubyException exception = (RubyException)runtime.getClass("NameError").newInstance(new IRubyObject[]{ruby.newString("A message")},  Block.NULL_BLOCK);
+        RubyException exception = (RubyException)runtime.getClass("NameError").newInstance(ruby.getCurrentContext(), new IRubyObject[]{ruby.newString("A message")},  Block.NULL_BLOCK);
         ruby.printError(exception);
         //        assertEquals(":[0,0]:[0,7]: A message (NameError)\n", err.toString());
     }

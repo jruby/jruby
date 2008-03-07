@@ -88,7 +88,7 @@ public class RubyTime extends RubyObject {
     public static DateTimeZone getLocalTimeZone(Ruby runtime) {
         RubyString tzVar = runtime.newString(TZ_STRING);
         RubyHash h = ((RubyHash)runtime.getObject().fastGetConstant("ENV"));
-        IRubyObject tz = h.op_aref(tzVar);
+        IRubyObject tz = h.op_aref(runtime.getCurrentContext(), tzVar);
         if (tz == null || ! (tz instanceof RubyString)) {
             return DateTimeZone.getDefault();
         } else {
@@ -277,39 +277,39 @@ public class RubyTime extends RubyObject {
     }
     
     @JRubyMethod(name = ">=", required = 1)
-    public IRubyObject op_ge(IRubyObject other) {
+    public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
             return getRuntime().newBoolean(cmp((RubyTime) other) >= 0);
         }
         
-        return RubyComparable.op_ge(this, other);
+        return RubyComparable.op_ge(context, this, other);
     }
     
     @JRubyMethod(name = ">", required = 1)
-    public IRubyObject op_gt(IRubyObject other) {
+    public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
             return getRuntime().newBoolean(cmp((RubyTime) other) > 0);
         }
         
-        return RubyComparable.op_gt(this, other);
+        return RubyComparable.op_gt(context, this, other);
     }
     
     @JRubyMethod(name = "<=", required = 1)
-    public IRubyObject op_le(IRubyObject other) {
+    public IRubyObject op_le(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
             return getRuntime().newBoolean(cmp((RubyTime) other) <= 0);
         }
         
-        return RubyComparable.op_le(this, other);
+        return RubyComparable.op_le(context, this, other);
     }
     
     @JRubyMethod(name = "<", required = 1)
-    public IRubyObject op_lt(IRubyObject other) {
+    public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
             return getRuntime().newBoolean(cmp((RubyTime) other) < 0);
         }
         
-        return RubyComparable.op_lt(this, other);
+        return RubyComparable.op_lt(context, this, other);
     }
     
     private int cmp(RubyTime other) {
@@ -369,8 +369,8 @@ public class RubyTime extends RubyObject {
     }
 
     @JRubyMethod(name = "===", required = 1)
-    public IRubyObject op_eqq(IRubyObject other) {
-        return (RubyNumeric.fix2int(callMethod(getRuntime().getCurrentContext(), MethodIndex.OP_SPACESHIP, "<=>", other)) == 0) ? getRuntime().getTrue() : getRuntime().getFalse();
+    public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
+        return (RubyNumeric.fix2int(callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", other)) == 0) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
     @JRubyMethod(name = "<=>", required = 1)
@@ -584,14 +584,14 @@ public class RubyTime extends RubyObject {
     }
 
     @JRubyMethod(name = {"new", "now"}, rest = true, frame = true, meta = true)
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         IRubyObject obj = ((RubyClass)recv).allocate();
-        obj.callMethod(recv.getRuntime().getCurrentContext(), "initialize", args, block);
+        obj.callMethod(context, "initialize", args, block);
         return obj;
     }
     
     @JRubyMethod(name = "at", required = 1, optional = 1, meta = true)
-    public static IRubyObject at(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
 
         RubyTime time = new RubyTime(runtime, (RubyClass) recv, new DateTime(getLocalTimeZone(runtime)));
@@ -707,7 +707,7 @@ public class RubyTime extends RubyObject {
                 len = ARG_SIZE;
             }
         }
-        ThreadContext tc = runtime.getCurrentContext();
+        ThreadContext context = runtime.getCurrentContext();
         
         if(args[0] instanceof RubyString) {
             args[0] = RubyNumeric.str2inum(runtime, (RubyString) args[0], 10, false);
@@ -748,7 +748,7 @@ public class RubyTime extends RubyObject {
         for (int i = 0; int_args.length >= i + 2; i++) {
             if (!args[i + 2].isNil()) {
                 if(!(args[i+2] instanceof RubyNumeric)) {
-                    args[i+2] = args[i+2].callMethod(tc,"to_i");
+                    args[i+2] = args[i+2].callMethod(context,"to_i");
                 }
                 long value = RubyNumeric.num2long(args[i + 2]);
                 if (time_min[i] > value || value > time_max[i]) {

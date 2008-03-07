@@ -108,7 +108,7 @@ public class RubyObjectSpace {
     }
     
     @JRubyMethod(name = "each_object", optional = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject each_object(IRubyObject recv, IRubyObject[] args, Block block) {
+    public static IRubyObject each_object(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         RubyModule rubyClass;
         if (args.length == 0) {
             rubyClass = recv.getRuntime().getObject();
@@ -117,7 +117,6 @@ public class RubyObjectSpace {
             rubyClass = (RubyModule) args[0];
         }
         Ruby runtime = recv.getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
         int count = 0;
         if (rubyClass != runtime.getClassClass()) {
             if (!runtime.isObjectSpaceEnabled()) {

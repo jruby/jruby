@@ -34,6 +34,7 @@ package org.jruby;
 
 import java.util.List;
 
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -72,39 +73,13 @@ public class RubyStruct extends RubyObject {
         RubyClass structClass = runtime.defineClass("Struct", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setStructClass(structClass);
         structClass.index = ClassIndex.STRUCT;
-        
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyStruct.class);
         structClass.includeModule(runtime.getEnumerable());
-
-        structClass.getMetaClass().defineMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
-
-        structClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
-        structClass.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("initialize_copy", RubyKernel.IRUBY_OBJECT));
-        structClass.defineMethod("clone", callbackFactory.getFastMethod("rbClone"));
-
-        structClass.defineFastMethod("==", callbackFactory.getFastMethod("op_equal", RubyKernel.IRUBY_OBJECT));
-        structClass.defineFastMethod("eql?", callbackFactory.getFastMethod("eql_p", RubyKernel.IRUBY_OBJECT));
-
-        structClass.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
-        structClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
-        structClass.defineFastMethod("to_a", callbackFactory.getFastMethod("to_a"));
-        structClass.defineFastMethod("values", callbackFactory.getFastMethod("to_a"));
-        structClass.defineFastMethod("size", callbackFactory.getFastMethod("size"));
-        structClass.defineFastMethod("length", callbackFactory.getFastMethod("size"));
-        structClass.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
-
-        structClass.defineMethod("each", callbackFactory.getMethod("each"));
-        structClass.defineMethod("each_pair", callbackFactory.getMethod("each_pair"));
-        structClass.defineFastMethod("[]", callbackFactory.getFastMethod("aref", RubyKernel.IRUBY_OBJECT));
-        structClass.defineFastMethod("[]=", callbackFactory.getFastMethod("aset", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
-        structClass.defineFastMethod("values_at", callbackFactory.getFastOptMethod("values_at"));
-
-        structClass.defineFastMethod("members", callbackFactory.getFastMethod("members"));
-        structClass.defineMethod("select", callbackFactory.getMethod("select"));
+        structClass.defineAnnotatedMethods(RubyStruct.class);
 
         return structClass;
     }
     
+    @Override
     public int getNativeTypeIndex() {
         return ClassIndex.STRUCT;
     }
@@ -136,9 +111,9 @@ public class RubyStruct extends RubyObject {
         }
     }
     
-    public RubyFixnum hash() {
+    @JRubyMethod
+    public RubyFixnum hash(ThreadContext context) {
         Ruby runtime = getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
         int h = getMetaClass().getRealClass().hashCode();
 
         for (int i = 0; i < values.length; i++) {
@@ -186,11 +161,11 @@ public class RubyStruct extends RubyObject {
      * MRI: rb_struct_s_def / make_struct
      *
      */
+    @JRubyMethod(name = "new", required = 1, rest = true, frame = true, meta = true)
     public static RubyClass newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
         String name = null;
         boolean nilName = false;
         Ruby runtime = recv.getRuntime();
-        Arity.checkArgumentCount(runtime, args, 1, -1);
 
         if (args.length > 0) {
             IRubyObject firstArgAsString = args[0].checkStringType();
@@ -296,6 +271,7 @@ public class RubyStruct extends RubyObject {
         return struct;
     }
 
+    @JRubyMethod(rest = true, frame = true )
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         modify();
 
@@ -325,12 +301,13 @@ public class RubyStruct extends RubyObject {
         return result;
     }
 
+    @JRubyMethod
     public RubyArray members() {
         return members(classOf(), Block.NULL_BLOCK);
     }
     
-    public RubyArray select(Block block) {
-        ThreadContext context = getRuntime().getCurrentContext();
+    @JRubyMethod
+    public RubyArray select(ThreadContext context, Block block) {
         RubyArray array = RubyArray.newArray(context.getRuntime());
         
         for (int i = 0; i < values.length; i++) {
@@ -364,20 +341,20 @@ public class RubyStruct extends RubyObject {
         return values[index];
     }
 
-    
+    @Override
     public void copySpecialInstanceVariables(IRubyObject clone) {
         RubyStruct struct = (RubyStruct)clone;
         struct.values = new IRubyObject[values.length];
         System.arraycopy(values, 0, struct.values, 0, values.length);
     }
 
-    public IRubyObject op_equal(IRubyObject other) {
+    @JRubyMethod(name = "==", required = 1)
+    public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (this == other) return getRuntime().getTrue();
         if (!(other instanceof RubyStruct)) return getRuntime().getFalse();
         if (getMetaClass().getRealClass() != other.getMetaClass().getRealClass()) return getRuntime().getFalse();
         
         Ruby runtime = getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
         RubyStruct otherStruct = (RubyStruct)other;
         for (int i = 0; i < values.length; i++) {
             if (!equalInternal(context, values[i], otherStruct.values[i]).isTrue()) return runtime.getFalse();
@@ -385,13 +362,13 @@ public class RubyStruct extends RubyObject {
         return runtime.getTrue();
     }
     
-    public IRubyObject eql_p(IRubyObject other) {
+    @JRubyMethod(name = "eql?", required = 1)
+    public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
         if (this == other) return getRuntime().getTrue();
         if (!(other instanceof RubyStruct)) return getRuntime().getFalse();
         if (getMetaClass() != other.getMetaClass()) return getRuntime().getFalse();
         
         Ruby runtime = getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
         RubyStruct otherStruct = (RubyStruct)other;
         for (int i = 0; i < values.length; i++) {
             if (!eqlInternal(context, values[i], otherStruct.values[i])) return runtime.getFalse();
@@ -399,10 +376,12 @@ public class RubyStruct extends RubyObject {
         return runtime.getTrue();        
     }
 
+    @JRubyMethod(name = "to_s")
     public IRubyObject to_s() {
         return inspect();
     }
 
+    @JRubyMethod(name = "inspect")
     public IRubyObject inspect() {
         RubyArray member = (RubyArray) getInternalVariable(classOf(), "__member__");
 
@@ -426,16 +405,18 @@ public class RubyStruct extends RubyObject {
         return getRuntime().newString(sb.toString()); // OBJ_INFECT
     }
 
+    @JRubyMethod(name = {"to_a", "values"})
     public RubyArray to_a() {
         return getRuntime().newArray(values);
     }
 
+    @JRubyMethod(name = {"size", "length"} )
     public RubyFixnum size() {
         return getRuntime().newFixnum(values.length);
     }
 
-    public IRubyObject each(Block block) {
-        ThreadContext context = getRuntime().getCurrentContext();
+    @JRubyMethod(name = "each", backtrace = true)
+    public IRubyObject each(ThreadContext context, Block block) {
         for (int i = 0; i < values.length; i++) {
             block.yield(context, values[i]);
         }
@@ -443,12 +424,12 @@ public class RubyStruct extends RubyObject {
         return this;
     }
 
-    public IRubyObject each_pair(Block block) {
+    @JRubyMethod(frame = true)
+    public IRubyObject each_pair(ThreadContext context, Block block) {
         RubyArray member = (RubyArray) getInternalVariable(classOf(), "__member__");
 
         assert !member.isNil() : "uninitialized struct";
 
-        ThreadContext context = getRuntime().getCurrentContext();
         for (int i = 0; i < values.length; i++) {
             block.yield(context, getRuntime().newArrayNoCopy(new IRubyObject[]{member.eltInternal(i), values[i]}));
         }
@@ -456,6 +437,7 @@ public class RubyStruct extends RubyObject {
         return this;
     }
 
+    @JRubyMethod(name = "[]", required = 1)
     public IRubyObject aref(IRubyObject key) {
         if (key instanceof RubyString || key instanceof RubySymbol) {
             return getByName(key.asJavaString());
@@ -474,6 +456,7 @@ public class RubyStruct extends RubyObject {
         return values[idx];
     }
 
+    @JRubyMethod(name = "[]=", required = 2)
     public IRubyObject aset(IRubyObject key, IRubyObject value) {
         if (key instanceof RubyString || key instanceof RubySymbol) {
             return setByName(key.asJavaString(), value);
@@ -496,6 +479,7 @@ public class RubyStruct extends RubyObject {
     // FIXME: This is copied code from RubyArray.  Both RE, Struct, and Array should share one impl
     // This is also hacky since I construct ruby objects to access ruby arrays through aref instead
     // of something lower.
+    @JRubyMethod(rest = true)
     public IRubyObject values_at(IRubyObject[] args) {
         long olen = values.length;
         RubyArray result = getRuntime().newArray(args.length);
@@ -583,6 +567,8 @@ public class RubyStruct extends RubyObject {
         }
     };
     
+    @Override
+    @JRubyMethod(required = 1)
     public IRubyObject initialize_copy(IRubyObject arg) {
         if (this == arg) return this;
         RubyStruct original = (RubyStruct) arg;

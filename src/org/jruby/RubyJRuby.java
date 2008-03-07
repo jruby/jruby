@@ -46,6 +46,7 @@ import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.ASTCompiler;
 import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.runtime.InterpretedBlock;
+import org.jruby.runtime.ThreadContext;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.util.TraceClassVisitor;
 
@@ -54,14 +55,15 @@ import org.objectweb.asm.util.TraceClassVisitor;
  */
 public class RubyJRuby {
     public static RubyModule createJRuby(Ruby runtime) {
-        runtime.getKernel().callMethod(runtime.getCurrentContext(),"require", runtime.newString("java"));
+        ThreadContext context = runtime.getCurrentContext();
+        runtime.getKernel().callMethod(context, "require", runtime.newString("java"));
         RubyModule jrubyModule = runtime.defineModule("JRuby");
         
         jrubyModule.defineAnnotatedMethods(RubyJRuby.class);
 
         RubyClass compiledScriptClass = jrubyModule.defineClassUnder("CompiledScript",runtime.getObject(), runtime.getObject().getAllocator());
 
-        compiledScriptClass.attr_accessor(new IRubyObject[]{runtime.newSymbol("name"), runtime.newSymbol("class_name"), runtime.newSymbol("original_script"), runtime.newSymbol("code")});
+        compiledScriptClass.attr_accessor(context, new IRubyObject[]{runtime.newSymbol("name"), runtime.newSymbol("class_name"), runtime.newSymbol("original_script"), runtime.newSymbol("code")});
         compiledScriptClass.defineAnnotatedMethods(JRubyCompiledScript.class);
 
         return jrubyModule;

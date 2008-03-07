@@ -35,6 +35,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.util.TypeConverter;
 
 /**

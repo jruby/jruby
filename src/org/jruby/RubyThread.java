@@ -61,7 +61,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.Visibility;
-import org.jruby.util.SafePropertyAccessor;
 
 /**
  * Implementation of Ruby's <code>Thread</code> class.  Each Ruby thread is
@@ -188,8 +187,8 @@ public class RubyThread extends RubyObject {
         return rubyThread;
     }
     
-    private void ensureCurrent() {
-        if (this != getRuntime().getCurrentContext().getThread()) {
+    private void ensureCurrent(ThreadContext context) {
+        if (this != context.getThread()) {
             throw new RuntimeException("internal thread method called from another thread");
         }
     }
@@ -206,10 +205,14 @@ public class RubyThread extends RubyObject {
     }
 
     public void pollThreadEvents() {
+        pollThreadEvents(getRuntime().getCurrentContext());
+    }
+    
+    public void pollThreadEvents(ThreadContext context) {
         // check for criticalization *before* locking ourselves
         threadService.waitForCritical();
 
-        ensureCurrent();
+        ensureCurrent(context);
 
         if (DEBUG) System.out.println("thread " + Thread.currentThread() + " before");
         if (killed) throw new ThreadKill();
@@ -221,7 +224,7 @@ public class RubyThread extends RubyObject {
             receivedException = null;
             RubyModule kernelModule = getRuntime().getKernel();
             if (DEBUG) System.out.println("thread " + Thread.currentThread() + " before propagating exception: " + killed);
-            kernelModule.callMethod(getRuntime().getCurrentContext(), "raise", raiseException);
+            kernelModule.callMethod(context, "raise", raiseException);
         }
     }
 
@@ -593,7 +596,7 @@ public class RubyThread extends RubyObject {
         
         if(args.length == 1) {
             if(args[0] instanceof RubyString) {
-                return runtime.fastGetClass("RuntimeError").newInstance(args, block);
+                return runtime.fastGetClass("RuntimeError").newInstance(context, args, block);
             }
             
             if(!args[0].respondsTo("exception")) {
@@ -633,7 +636,7 @@ public class RubyThread extends RubyObject {
     }
     
     public void sleep(long millis) throws InterruptedException {
-        ensureCurrent();
+        ensureCurrent(getRuntime().getCurrentContext());
         synchronized (stopLock) {
             pollThreadEvents();
             try {

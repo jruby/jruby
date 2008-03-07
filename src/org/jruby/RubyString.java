@@ -341,18 +341,17 @@ public class RubyString extends RubyObject {
 
     /* rb_str_cmp_m */
     @JRubyMethod(name = "<=>", required = 1)
-    public IRubyObject op_cmp(IRubyObject other) {
+    public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyString) {
             return getRuntime().newFixnum(op_cmp((RubyString)other));
         }
 
         // deal with case when "other" is not a string
         if (other.respondsTo("to_str") && other.respondsTo("<=>")) {
-            IRubyObject result = other.callMethod(getRuntime().getCurrentContext(),
-                    MethodIndex.OP_SPACESHIP, "<=>", this);
+            IRubyObject result = other.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", this);
 
             if (result instanceof RubyNumeric) {
-                return ((RubyNumeric) result).op_uminus();
+                return ((RubyNumeric) result).op_uminus(context);
             }
         }
 
@@ -363,12 +362,12 @@ public class RubyString extends RubyObject {
      * 
      */
     @JRubyMethod(name = "==", required = 1)
-    public IRubyObject op_equal(IRubyObject other) {
+    public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (this == other) return getRuntime().getTrue();
         if (!(other instanceof RubyString)) {
             if (!other.respondsTo("to_str")) return getRuntime().getFalse();
             Ruby runtime = getRuntime();
-            return other.callMethod(runtime.getCurrentContext(), MethodIndex.EQUALEQUAL, "==", this).isTrue() ? runtime.getTrue() : runtime.getFalse();
+            return other.callMethod(context, MethodIndex.EQUALEQUAL, "==", this).isTrue() ? runtime.getTrue() : runtime.getFalse();
         }
         return value.equal(((RubyString)other).value) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
@@ -441,10 +440,10 @@ public class RubyString extends RubyObject {
     /** rb_obj_as_string
      *
      */
-    public static RubyString objAsString(IRubyObject obj) {
+    public static RubyString objAsString(ThreadContext context, IRubyObject obj) {
         if (obj instanceof RubyString) return (RubyString) obj;
 
-        IRubyObject str = obj.callMethod(obj.getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s");
+        IRubyObject str = obj.callMethod(context, MethodIndex.TO_S, "to_s");
 
         if (!(str instanceof RubyString)) return (RubyString) obj.anyToString();
 
@@ -665,20 +664,20 @@ public class RubyString extends RubyObject {
      *
      */
     @JRubyMethod(name = "=~", required = 1)
-    public IRubyObject op_match(IRubyObject other) {
-        if (other instanceof RubyRegexp) return ((RubyRegexp) other).op_match(this);
+    public IRubyObject op_match(ThreadContext context, IRubyObject other) {
+        if (other instanceof RubyRegexp) return ((RubyRegexp) other).op_match(context, this);
         if (other instanceof RubyString) {
             throw getRuntime().newTypeError("type mismatch: String given");
         }
-        return other.callMethod(getRuntime().getCurrentContext(), "=~", this);
+        return other.callMethod(context, "=~", this);
     }
 
     /** rb_str_match2
      *
      */
     @JRubyMethod(name = "~")
-    public IRubyObject op_match2() {
-        return RubyRegexp.newRegexp(getRuntime(), value, 0, false).op_match2();
+    public IRubyObject op_match2(ThreadContext context) {
+        return RubyRegexp.newRegexp(getRuntime(), value, 0, false).op_match2(context);
     }
 
     /**
@@ -689,8 +688,8 @@ public class RubyString extends RubyObject {
      * @param pattern Regexp or String
      */
     @JRubyMethod(name = "match", required = 1)
-    public IRubyObject match(IRubyObject pattern) {
-        return getPattern(pattern, false).callMethod(getRuntime().getCurrentContext(), "match", this);
+    public IRubyObject match(ThreadContext context, IRubyObject pattern) {
+        return getPattern(pattern, false).callMethod(context, "match", this);
     }
 
     /** rb_str_capitalize
@@ -742,39 +741,39 @@ public class RubyString extends RubyObject {
     }
 
     @JRubyMethod(name = ">=", required = 1)
-    public IRubyObject op_ge(IRubyObject other) {
+    public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyString) {
             return getRuntime().newBoolean(op_cmp((RubyString) other) >= 0);
         }
 
-        return RubyComparable.op_ge(this, other);
+        return RubyComparable.op_ge(context, this, other);
     }
 
     @JRubyMethod(name = ">", required = 1)
-    public IRubyObject op_gt(IRubyObject other) {
+    public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyString) {
             return getRuntime().newBoolean(op_cmp((RubyString) other) > 0);
         }
 
-        return RubyComparable.op_gt(this, other);
+        return RubyComparable.op_gt(context, this, other);
     }
 
     @JRubyMethod(name = "<=", required = 1)
-    public IRubyObject op_le(IRubyObject other) {
+    public IRubyObject op_le(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyString) {
             return getRuntime().newBoolean(op_cmp((RubyString) other) <= 0);
         }
 
-        return RubyComparable.op_le(this, other);
+        return RubyComparable.op_le(context, this, other);
     }
 
     @JRubyMethod(name = "<", required = 1)
-    public IRubyObject op_lt(IRubyObject other) {
+    public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyString) {
             return getRuntime().newBoolean(op_cmp((RubyString) other) < 0);
         }
 
-        return RubyComparable.op_lt(this, other);
+        return RubyComparable.op_lt(context, this, other);
     }
 
     @JRubyMethod(name = "eql?", required = 1)
@@ -1634,9 +1633,9 @@ public class RubyString extends RubyObject {
      *
      */
     @JRubyMethod(name = "sub", required = 1, optional = 1, frame = true)
-    public IRubyObject sub(IRubyObject[] args, Block block) {
+    public IRubyObject sub(ThreadContext context, IRubyObject[] args, Block block) {
         RubyString str = strDup();
-        str.sub_bang(args, block);
+        str.sub_bang(context, args, block);
         return str;
     }
 
@@ -1644,7 +1643,7 @@ public class RubyString extends RubyObject {
      *
      */
     @JRubyMethod(name = "sub!", required = 1, optional = 1, frame = true)
-    public IRubyObject sub_bang(IRubyObject[] args, Block block) {
+    public IRubyObject sub_bang(ThreadContext context, IRubyObject[] args, Block block) {
         
         RubyString repl = null;
         final boolean iter;
@@ -1667,7 +1666,6 @@ public class RubyString extends RubyObject {
         int range = value.begin + value.realSize;
         Matcher matcher = regex.matcher(value.bytes, value.begin, range);
         
-        ThreadContext context = getRuntime().getCurrentContext();
         Frame frame = context.getPreviousFrame();
         if (matcher.search(value.begin, range, Option.NONE) >= 0) {
             if (iter) {                
@@ -1676,10 +1674,10 @@ public class RubyString extends RubyObject {
                 RubyMatchData match = rubyRegex.updateBackRef(this, frame, matcher);
                 match.use();
                 if (regex.numberOfCaptures() == 0) {
-                    repl = objAsString(block.yield(context, substr(matcher.getBegin(), matcher.getEnd() - matcher.getBegin())));
+                    repl = objAsString(context, block.yield(context, substr(matcher.getBegin(), matcher.getEnd() - matcher.getBegin())));
                 } else {
                     Region region = matcher.getRegion();
-                    repl = objAsString(block.yield(context, substr(region.beg[0], region.end[0] - region.beg[0])));
+                    repl = objAsString(context, block.yield(context, substr(region.beg[0], region.end[0] - region.beg[0])));
                 }
                 modifyCheck(bytes, size);
                 frozenCheck();
@@ -1727,19 +1725,19 @@ public class RubyString extends RubyObject {
      *
      */
     @JRubyMethod(name = "gsub", required = 1, optional = 1, frame = true)
-    public IRubyObject gsub(IRubyObject[] args, Block block) {
-        return gsub(args, block, false);
+    public IRubyObject gsub(ThreadContext context, IRubyObject[] args, Block block) {
+        return gsub(context, args, block, false);
     }
 
     /** rb_str_gsub_bang
      *
      */
     @JRubyMethod(name = "gsub!", required = 1, optional = 1, frame = true)
-    public IRubyObject gsub_bang(IRubyObject[] args, Block block) {
-        return gsub(args, block, true);
+    public IRubyObject gsub_bang(ThreadContext context, IRubyObject[] args, Block block) {
+        return gsub(context, args, block, true);
     }
 
-    private final IRubyObject gsub(IRubyObject[] args, Block block, final boolean bang) {
+    private final IRubyObject gsub(ThreadContext context, IRubyObject[] args, Block block, final boolean bang) {
         IRubyObject repl;
         final boolean iter;
         boolean tainted = false;
@@ -1764,7 +1762,6 @@ public class RubyString extends RubyObject {
         
         int beg = matcher.search(begin, range, Option.NONE);
 
-        ThreadContext context = getRuntime().getCurrentContext();
         Frame frame = context.getPreviousFrame();
         
         if (beg < 0) {
@@ -1792,12 +1789,12 @@ public class RubyString extends RubyObject {
                 if (regex.numberOfCaptures() == 0) {
                     begz = matcher.getBegin();
                     endz = matcher.getEnd();
-                    val = objAsString(block.yield(context, substr(begz, endz - begz)));
+                    val = objAsString(context, block.yield(context, substr(begz, endz - begz)));
                 } else {
                     Region region = matcher.getRegion();
                     begz = region.beg[0];
                     endz = region.end[0];
-                    val = objAsString(block.yield(context, substr(begz, endz - begz)));
+                    val = objAsString(context, block.yield(context, substr(begz, endz - begz)));
  
                 }
                 modifyCheck(bytes, size);
@@ -1877,7 +1874,7 @@ public class RubyString extends RubyObject {
      *
      */
     @JRubyMethod(name = "index", required = 1, optional = 1)
-    public IRubyObject index(IRubyObject[] args) {
+    public IRubyObject index(ThreadContext context, IRubyObject[] args) {
         int pos = args.length == 2 ? RubyNumeric.num2int(args[1]) : 0;  
         IRubyObject sub = args[0];
         
@@ -1885,7 +1882,7 @@ public class RubyString extends RubyObject {
             pos += value.realSize;
             if (pos < 0) {
                 if (sub instanceof RubyRegexp) { 
-                    getRuntime().getCurrentContext().getPreviousFrame().setBackRef(getRuntime().getNil());
+                    context.getPreviousFrame().setBackRef(getRuntime().getNil());
                 }
                 return getRuntime().getNil();
             }
@@ -1895,7 +1892,7 @@ public class RubyString extends RubyObject {
             RubyRegexp regSub = (RubyRegexp)sub;
             
             pos = regSub.adjustStartPos(this, pos, false);
-            pos = regSub.search(this, pos, false);
+            pos = regSub.search(context, this, pos, false);
         } else if (sub instanceof RubyFixnum) {
             int c_int = RubyNumeric.fix2int(sub);
             if (c_int < 0x00 || c_int > 0xFF) {
@@ -1939,7 +1936,7 @@ public class RubyString extends RubyObject {
      *
      */
     @JRubyMethod(name = "rindex", required = 1, optional = 1)
-    public IRubyObject rindex(IRubyObject[] args) {
+    public IRubyObject rindex(ThreadContext context, IRubyObject[] args) {
         int pos;
         final IRubyObject sub;
         
@@ -1951,7 +1948,7 @@ public class RubyString extends RubyObject {
                 pos += value.realSize;
                 if (pos < 0) {
                     if (sub instanceof RubyRegexp) { 
-                        getRuntime().getCurrentContext().getPreviousFrame().setBackRef(getRuntime().getNil());
+                        context.getPreviousFrame().setBackRef(getRuntime().getNil());
                     }
                     return getRuntime().getNil();
                 }
@@ -1966,7 +1963,7 @@ public class RubyString extends RubyObject {
             RubyRegexp regSub = (RubyRegexp)sub;
             if(regSub.length() > 0) {
                 pos = regSub.adjustStartPos(this, pos, true);
-                pos = regSub.search(this, pos, true);
+                pos = regSub.search(context, this, pos, true);
             }
             if (pos >= 0) return RubyFixnum.newFixnum(getRuntime(), pos);
         } else if (sub instanceof RubyString) {
@@ -2039,11 +2036,11 @@ public class RubyString extends RubyObject {
      *
      */
     @JRubyMethod(name = {"[]", "slice"}, required = 1, optional = 1)
-    public IRubyObject op_aref(IRubyObject[] args) {
+    public IRubyObject op_aref(ThreadContext context, IRubyObject[] args) {
         if (args.length == 2) {
             if (args[0] instanceof RubyRegexp) {
-                if(((RubyRegexp)args[0]).search(this,0,false) >= 0) {
-                    return RubyRegexp.nth_match(RubyNumeric.fix2int(args[1]), getRuntime().getCurrentContext().getCurrentFrame().getBackRef());
+                if(((RubyRegexp)args[0]).search(context, this,0,false) >= 0) {
+                    return RubyRegexp.nth_match(RubyNumeric.fix2int(args[1]), context.getCurrentFrame().getBackRef());
                 }
                 return getRuntime().getNil();
             }
@@ -2051,8 +2048,8 @@ public class RubyString extends RubyObject {
         }
 
         if (args[0] instanceof RubyRegexp) {
-            if(((RubyRegexp)args[0]).search(this,0,false) >= 0) {
-                return RubyRegexp.nth_match(0, getRuntime().getCurrentContext().getCurrentFrame().getBackRef());
+            if(((RubyRegexp)args[0]).search(context, this,0,false) >= 0) {
+                return RubyRegexp.nth_match(0, context.getCurrentFrame().getBackRef());
             }
             return getRuntime().getNil();
         } else if (args[0] instanceof RubyString) {
@@ -2075,12 +2072,12 @@ public class RubyString extends RubyObject {
      * rb_str_subpat_set
      *
      */
-    private void subpatSet(RubyRegexp regexp, int nth, IRubyObject repl) {
+    private void subpatSet(ThreadContext context, RubyRegexp regexp, int nth, IRubyObject repl) {
         RubyMatchData match;
         int start, end, len;        
-        if (regexp.search(this, 0, false) < 0) throw getRuntime().newIndexError("regexp not matched");
+        if (regexp.search(context, this, 0, false) < 0) throw getRuntime().newIndexError("regexp not matched");
 
-        match = (RubyMatchData)getRuntime().getCurrentContext().getCurrentFrame().getBackRef();
+        match = (RubyMatchData)context.getCurrentFrame().getBackRef();
 
         if (match.regs == null) {
             if (nth >= 1) throw getRuntime().newIndexError("index " + nth + " out of regexp");
@@ -2110,13 +2107,13 @@ public class RubyString extends RubyObject {
      *
      */
     @JRubyMethod(name = "[]=", required = 2, optional = 1)
-    public IRubyObject op_aset(IRubyObject[] args) {
+    public IRubyObject op_aset(ThreadContext context, IRubyObject[] args) {
         int strLen = value.length();
         if (args.length == 3) {
             if (args[0] instanceof RubyRegexp) {
                 RubyString repl = stringValue(args[2]);
                 int nth = RubyNumeric.fix2int(args[1]);
-                subpatSet((RubyRegexp) args[0], nth, repl);
+                subpatSet(context, (RubyRegexp) args[0], nth, repl);
                 return repl;
             }
             RubyString repl = stringValue(args[2]);
@@ -2151,7 +2148,7 @@ public class RubyString extends RubyObject {
         }
         if (args[0] instanceof RubyRegexp) {
             RubyString repl = stringValue(args[1]);
-            subpatSet((RubyRegexp) args[0], 0, repl);
+            subpatSet(context, (RubyRegexp) args[0], 0, repl);
             return repl;
         }
         if (args[0] instanceof RubyString) {
@@ -2174,17 +2171,17 @@ public class RubyString extends RubyObject {
      *
      */
     @JRubyMethod(name = "slice!", required = 1, optional = 1)
-    public IRubyObject slice_bang(IRubyObject[] args) {
+    public IRubyObject slice_bang(ThreadContext context, IRubyObject[] args) {
         int argc = args.length;
         IRubyObject[] newArgs = new IRubyObject[argc + 1];
         newArgs[0] = args[0];
         if (argc > 1) newArgs[1] = args[1];
 
         newArgs[argc] = newString("");
-        IRubyObject result = op_aref(args);
+        IRubyObject result = op_aref(context, args);
         if (result.isNil()) return result;
 
-        op_aset(newArgs);
+        op_aset(context, newArgs);
         return result;
     }
 
@@ -2247,12 +2244,12 @@ public class RubyString extends RubyObject {
      *
      */
     @JRubyMethod(name = "upto", required = 1, frame = true)
-    public IRubyObject upto(IRubyObject str, Block block) {
-        return upto(str, false, block);
+    public IRubyObject upto(ThreadContext context, IRubyObject str, Block block) {
+        return upto(context, str, false, block);
     }
 
     /* rb_str_upto */
-    public IRubyObject upto(IRubyObject str, boolean excl, Block block) {
+    public IRubyObject upto(ThreadContext context, IRubyObject str, boolean excl, Block block) {
         // alias 'this' to 'beg' for ease of comparison with MRI
         RubyString beg = this;
         RubyString end = stringValue(str);
@@ -2263,7 +2260,6 @@ public class RubyString extends RubyObject {
         RubyString afterEnd = stringValue(end.succ());
         RubyString current = beg;
 
-        ThreadContext context = getRuntime().getCurrentContext();
         while (!current.equals(afterEnd)) {
             block.yield(context, current);
             if (!excl && current.equals(end)) break;
@@ -2356,7 +2352,7 @@ public class RubyString extends RubyObject {
      *
      */
     @JRubyMethod(name = "split", optional = 2)
-    public RubyArray split(IRubyObject[] args) {
+    public RubyArray split(ThreadContext context, IRubyObject[] args) {
         final int i, lim;
         final boolean limit;
 
@@ -2386,10 +2382,10 @@ public class RubyString extends RubyObject {
                 if (strSpat.value.bytes[strSpat.value.begin] == (byte)' ') {
                     result = awkSplit(limit, lim, i);
                 } else {
-                    result = split(spat, limit, lim, i);
+                    result = split(context, spat, limit, lim, i);
                 }
             } else {
-                result = split(spat, limit, lim, i);
+                result = split(context, spat, limit, lim, i);
             }
         }
 
@@ -2401,7 +2397,7 @@ public class RubyString extends RubyObject {
         return result;
     }
     
-    private RubyArray split(IRubyObject pat, boolean limit, int lim, int i) {
+    private RubyArray split(ThreadContext context, IRubyObject pat, boolean limit, int lim, int i) {
         Ruby runtime = getRuntime();
         
         final Regex regex = getPattern(pat, true).getPattern();
@@ -2481,7 +2477,7 @@ public class RubyString extends RubyObject {
         }
         
         // only this case affects backrefs 
-        runtime.getCurrentContext().getCurrentFrame().setBackRef(runtime.getNil());
+        context.getCurrentFrame().setBackRef(runtime.getNil());
         
         if (value.realSize > 0 && (limit || value.realSize > beg || lim < 0)) {
             if (value.realSize == beg) {
@@ -2554,9 +2550,8 @@ public class RubyString extends RubyObject {
      *
      */
     @JRubyMethod(name = "scan", required = 1, frame = true)
-    public IRubyObject scan(IRubyObject arg, Block block) {
+    public IRubyObject scan(ThreadContext context, IRubyObject arg, Block block) {
         Ruby runtime = getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
         Frame frame = context.getPreviousFrame();
         
         final RubyRegexp rubyRegex = getPattern(arg, true);
@@ -3290,7 +3285,7 @@ public class RubyString extends RubyObject {
      *
      */
     @JRubyMethod(name = {"each_line", "each"}, required = 0, optional = 1, frame = true)
-    public IRubyObject each_line(IRubyObject[] args, Block block) {
+    public IRubyObject each_line(ThreadContext context, IRubyObject[] args, Block block) {
         byte newline;
         int p = value.begin;
         int pend = p + value.realSize;
@@ -3308,10 +3303,8 @@ public class RubyString extends RubyObject {
             _rsep = args[0];
         }
 
-        ThreadContext tc = getRuntime().getCurrentContext();
-
         if(_rsep.isNil()) {
-            block.yield(tc, this);
+            block.yield(context, this);
             return this;
         }
         
@@ -3344,7 +3337,7 @@ public class RubyString extends RubyObject {
                 ByteList.memcmp(rsepValue.bytes, rsepValue.begin, rslen, strBytes, p-rslen, rslen) == 0)) {
                 line = RubyString.newStringShared(getRuntime(), getMetaClass(), this.value.makeShared(s-ptr, p-s));
                 line.infectBy(this);
-                block.yield(tc, line);
+                block.yield(context, line);
                 modifyCheck(strBytes,len);
                 s = p;
             }
@@ -3356,7 +3349,7 @@ public class RubyString extends RubyObject {
             }
             line = RubyString.newStringShared(getRuntime(), getMetaClass(), this.value.makeShared(s-ptr, p-s));
             line.infectBy(this);
-            block.yield(tc, line);
+            block.yield(context, line);
         }
 
         return this;
@@ -3366,9 +3359,8 @@ public class RubyString extends RubyObject {
      * rb_str_each_byte
      */
     @JRubyMethod(name = "each_byte", frame = true)
-    public RubyString each_byte(Block block) {
+    public RubyString each_byte(ThreadContext context, Block block) {
         Ruby runtime = getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
         // Check the length every iteration, since
         // the block can modify this string.
         for (int i = 0; i < value.length(); i++) {

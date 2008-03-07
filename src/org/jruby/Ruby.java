@@ -117,7 +117,6 @@ import org.jruby.util.IOOutputStream;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.KCode;
-import org.jruby.util.NormalizedFile;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.io.ChannelDescriptor;
@@ -215,11 +214,11 @@ public final class Ruby {
      * @returns The result of the eval
      */
     public IRubyObject evalScriptlet(String script) {
-        Node node = parseEval(script, "<script>", getCurrentContext().getCurrentScope(), 0);
+        ThreadContext context = getCurrentContext();
+        Node node = parseEval(script, "<script>", context.getCurrentScope(), 0);
         
         try {
-            ThreadContext tc = getCurrentContext();
-            return ASTInterpreter.eval(this, tc, node, tc.getFrameSelf(), Block.NULL_BLOCK);
+            return ASTInterpreter.eval(this, context, node, context.getFrameSelf(), Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
             throw newLocalJumpError("return", (IRubyObject)rj.getValue(), "unexpected return");
         } catch (JumpException.BreakJump bj) {
@@ -354,7 +353,7 @@ public final class Ruby {
             getGlobalVariables().set("$\\", getGlobalVariables().get("$/"));
         }
         
-        while (RubyKernel.gets(getTopSelf(), IRubyObject.NULL_ARRAY).isTrue()) {
+        while (RubyKernel.gets(context, getTopSelf(), IRubyObject.NULL_ARRAY).isTrue()) {
             loop: while (true) { // Used for the 'redo' command
                 try {
                     if (processLineEnds) {
@@ -373,7 +372,7 @@ public final class Ruby {
                         runInterpreter(scriptNode);
                     }
                     
-                    if (printing) RubyKernel.print(getKernel(), new IRubyObject[] {getGlobalVariables().get("$_")});
+                    if (printing) RubyKernel.print(context, getKernel(), new IRubyObject[] {getGlobalVariables().get("$_")});
                     break loop;
                 } catch (JumpException.RedoJump rj) {
                     // do nothing, this iteration restarts
@@ -495,7 +494,7 @@ public final class Ruby {
         ThreadContext context = getCurrentContext();
         
         try {
-            return script.load(getCurrentContext(), context.getFrameSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+            return script.load(context, context.getFrameSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
             return (IRubyObject) rj.getValue();
         }
@@ -1747,23 +1746,23 @@ public final class Ruby {
             return;
         }
 
-        ThreadContext tc = getCurrentContext();
-        IRubyObject backtrace = excp.callMethod(tc, "backtrace");
+        ThreadContext context = getCurrentContext();
+        IRubyObject backtrace = excp.callMethod(context, "backtrace");
 
         PrintStream errorStream = getErrorStream();
         if (backtrace.isNil() || !(backtrace instanceof RubyArray)) {
-            if (tc.getFile() != null) {
-                errorStream.print(tc.getFile() + ":" + tc.getLine());
+            if (context.getFile() != null) {
+                errorStream.print(context.getFile() + ":" + context.getLine());
             } else {
-                errorStream.print(tc.getLine());
+                errorStream.print(context.getLine());
             }
         } else if (((RubyArray) backtrace).getLength() == 0) {
-            printErrorPos(errorStream);
+            printErrorPos(context, errorStream);
         } else {
             IRubyObject mesg = ((RubyArray) backtrace).first(IRubyObject.NULL_ARRAY);
 
             if (mesg.isNil()) {
-                printErrorPos(errorStream);
+                printErrorPos(context, errorStream);
             } else {
                 errorStream.print(mesg);
             }
@@ -1805,16 +1804,15 @@ public final class Ruby {
         excp.printBacktrace(errorStream);
     }
 
-    private void printErrorPos(PrintStream errorStream) {
-        ThreadContext tc = getCurrentContext();
-        if (tc.getFile() != null) {
-            if (tc.getFrameName() != null) {
-                errorStream.print(tc.getFile() + ":" + tc.getLine());
-                errorStream.print(":in '" + tc.getFrameName() + '\'');
-            } else if (tc.getLine() != 0) {
-                errorStream.print(tc.getFile() + ":" + tc.getLine());
+    private void printErrorPos(ThreadContext context, PrintStream errorStream) {
+        if (context.getFile() != null) {
+            if (context.getFrameName() != null) {
+                errorStream.print(context.getFile() + ":" + context.getLine());
+                errorStream.print(":in '" + context.getFrameName() + '\'');
+            } else if (context.getLine() != 0) {
+                errorStream.print(context.getFile() + ":" + context.getLine());
             } else {
-                errorStream.print(tc.getFile());
+                errorStream.print(context.getFile());
             }
         }
     }
@@ -1911,7 +1909,7 @@ public final class Ruby {
 
                 context.preTrace();
                 try {
-                    traceFunc.call(new IRubyObject[] {
+                    traceFunc.call(context, new IRubyObject[] {
                         newString(EVENT_NAMES[event]), // event name
                         newString(file), // filename
                         newFixnum(line + 1), // line numbers should be 1-based
@@ -2037,7 +2035,7 @@ public final class Ruby {
         while (!atExitBlocks.empty()) {
             RubyProc proc = atExitBlocks.pop();
 
-            proc.call(IRubyObject.NULL_ARRAY);
+            proc.call(proc.getRuntime().getCurrentContext(), IRubyObject.NULL_ARRAY);
         }
         if (finalizers != null) {
             synchronized (finalizers) {

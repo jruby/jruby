@@ -65,17 +65,17 @@ public class JRubyEngine extends BSFEngineImpl {
     private Ruby runtime;
 
     public Object apply(String file, int line, int col, Object funcBody, Vector paramNames, Vector args) {
-        ThreadContext threadContext = runtime.getCurrentContext();
+        ThreadContext context = runtime.getCurrentContext();
         try {
             // add a new method conext
             String[] names = new String[paramNames.size()];
             paramNames.toArray(names);
 
-            threadContext.preBsfApply(names);
+            context.preBsfApply(names);
             
             // FIXME: This is broken.  We are assigning BSF globals as local vars in the top-level
             // scope.  This may be ok, but we are overwriting $~ and $_.  Leaving for now.
-            DynamicScope scope = threadContext.getCurrentScope();
+            DynamicScope scope = context.getCurrentScope();
 
             // set global variables
             for (int i = 0, size = args.size(); i < size; i++) {
@@ -86,10 +86,10 @@ public class JRubyEngine extends BSFEngineImpl {
             //runtime.setPosition(file, line);
 
             Node node = runtime.parseEval(file, funcBody.toString(), null, 0);
-            IRubyObject result = ASTInterpreter.eval(runtime, runtime.getCurrentContext(), node, runtime.getTopSelf(), Block.NULL_BLOCK);
+            IRubyObject result = ASTInterpreter.eval(runtime, context, node, runtime.getTopSelf(), Block.NULL_BLOCK);
             return JavaEmbedUtils.rubyToJava(runtime, result, Object.class);
         } finally {
-            threadContext.postBsfApply();
+            context.postBsfApply();
         }
     }
 

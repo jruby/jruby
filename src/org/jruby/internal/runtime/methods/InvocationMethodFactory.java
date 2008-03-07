@@ -764,15 +764,23 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    private void loadReceiver(String typePath, Method method, SkinnyMethodAdapter mv) {
+    private void loadReceiver(String typePath, Class[] signature, Method method, SkinnyMethodAdapter mv) {
         // load target for invocations
         if (Modifier.isStatic(method.getModifiers())) {
+            if (signature.length > 1 && signature[0] == ThreadContext.class) {
+                mv.aload(THREADCONTEXT_INDEX);
+            }
+            
             // load self object as IRubyObject, for recv param
             mv.aload(RECEIVER_INDEX);
         } else {
             // load receiver as original type for virtual invocation
             mv.aload(RECEIVER_INDEX);
             mv.checkcast(typePath);
+            
+            if (signature.length > 0 && signature[0] == ThreadContext.class) {
+                mv.aload(THREADCONTEXT_INDEX);
+            }
         }
     }
 
@@ -934,7 +942,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         
         method.label(tryBegin);
         {
-            loadReceiver(typePath, javaMethod, method);
+            loadReceiver(typePath, signature, javaMethod, method);
             
             loadArguments(method, jrubyMethod, specificArity);
             

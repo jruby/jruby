@@ -38,6 +38,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -158,7 +159,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     @JRubyMethod(name = "mode", required = 1, optional = 1, meta = true)
-    public static IRubyObject mode(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject mode(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         // FIXME: I doubt any of the constants referenced in this method
         // are ever redefined -- should compare to the known values, rather
         // than do an expensive constant lookup.
@@ -190,14 +191,14 @@ public class RubyBigDecimal extends RubyNumeric {
             
             RubyFixnum EXCEPTION_INFINITY = (RubyFixnum)clazz.fastGetConstant("EXCEPTION_INFINITY");
             if ((longMode & EXCEPTION_INFINITY.getLongValue()) != 0) {
-                newExceptionMode = (value.isTrue()) ? (RubyFixnum)currentExceptionMode.callCoerced("|", EXCEPTION_INFINITY)
-                        : (RubyFixnum)currentExceptionMode.callCoerced("&", new RubyFixnum(runtime, ~(EXCEPTION_INFINITY).getLongValue()));
+                newExceptionMode = (value.isTrue()) ? (RubyFixnum)currentExceptionMode.callCoerced(context, "|", EXCEPTION_INFINITY)
+                        : (RubyFixnum)currentExceptionMode.callCoerced(context, "&", new RubyFixnum(runtime, ~(EXCEPTION_INFINITY).getLongValue()));
             }
             
             RubyFixnum EXCEPTION_NaN = (RubyFixnum)clazz.fastGetConstant("EXCEPTION_NaN");
             if ((longMode & EXCEPTION_NaN.getLongValue()) != 0) {
-                newExceptionMode = (value.isTrue()) ? (RubyFixnum)currentExceptionMode.callCoerced("|", EXCEPTION_NaN)
-                        : (RubyFixnum)currentExceptionMode.callCoerced("&", new RubyFixnum(runtime, ~(EXCEPTION_NaN).getLongValue()));
+                newExceptionMode = (value.isTrue()) ? (RubyFixnum)currentExceptionMode.callCoerced(context, "|", EXCEPTION_NaN)
+                        : (RubyFixnum)currentExceptionMode.callCoerced(context, "&", new RubyFixnum(runtime, ~(EXCEPTION_NaN).getLongValue()));
             }
             c.setInternalModuleVariable("vpExceptionMode", newExceptionMode);
             return newExceptionMode;
@@ -239,7 +240,8 @@ public class RubyBigDecimal extends RubyNumeric {
         if(must) {
             String err;
             if (isImmediate()) {
-                err = RubyString.objAsString(callMethod(getRuntime().getCurrentContext(), "inspect")).toString();
+                ThreadContext context = getRuntime().getCurrentContext();
+                err = RubyString.objAsString(context, callMethod(context, "inspect")).toString();
             } else {
                 err = getMetaClass().getBaseName();
             }
@@ -288,20 +290,20 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     @JRubyMethod(name = "*", required = 1)
-    public IRubyObject op_mul(IRubyObject arg) {
+    public IRubyObject op_mul(ThreadContext context, IRubyObject arg) {
         RubyBigDecimal val = getVpValue(arg, false);
         if(val == null) {
-            return callCoerced("*", arg);
+            return callCoerced(context, "*", arg);
         }
 
         return new RubyBigDecimal(getRuntime(),value.multiply(val.value)).setResult();
     }
 
     @JRubyMethod(name = "mult", required = 2)
-    public IRubyObject mult2(IRubyObject b, IRubyObject n) {
+    public IRubyObject mult2(ThreadContext context, IRubyObject b, IRubyObject n) {
         RubyBigDecimal val = getVpValue(b,false);
         if(val == null) {
-            return callCoerced("*",b);
+            return callCoerced(context, "*",b);
         }
 
         return new RubyBigDecimal(getRuntime(),value.multiply(val.value)).setResult();
@@ -340,19 +342,19 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     @JRubyMethod(name = "+", required = 1)
-    public IRubyObject op_plus(IRubyObject arg) {
+    public IRubyObject op_plus(ThreadContext context, IRubyObject arg) {
         RubyBigDecimal val = getVpValue(arg, false);
         if(val == null) {
-            return callCoerced("+", arg);
+            return callCoerced(context, "+", arg);
         }
         return new RubyBigDecimal(getRuntime(),value.add(val.value)).setResult();
     }
 
     @JRubyMethod(name = "add", required = 2)
-    public IRubyObject add2(IRubyObject b, IRubyObject n) {
+    public IRubyObject add2(ThreadContext context, IRubyObject b, IRubyObject n) {
         RubyBigDecimal val = getVpValue(b, false);
         if(val == null) {
-            return callCoerced("+", b);
+            return callCoerced(context, "+", b);
         }
         return new RubyBigDecimal(getRuntime(),value.add(val.value)).setResult();
     }
@@ -363,19 +365,19 @@ public class RubyBigDecimal extends RubyNumeric {
     }
     
     @JRubyMethod(name = "-", required = 1)
-    public IRubyObject op_minus(IRubyObject arg) {
+    public IRubyObject op_minus(ThreadContext context, IRubyObject arg) {
         RubyBigDecimal val = getVpValue(arg, false);
         if(val == null) {
-            return callCoerced("-", arg);
+            return callCoerced(context, "-", arg);
         }
         return new RubyBigDecimal(getRuntime(),value.subtract(val.value)).setResult();
     }
 
     @JRubyMethod(name = "sub", required = 2)
-    public IRubyObject sub2(IRubyObject b, IRubyObject n) {
+    public IRubyObject sub2(ThreadContext context, IRubyObject b, IRubyObject n) {
         RubyBigDecimal val = getVpValue(b, false);
         if(val == null) {
-            return callCoerced("-", b);
+            return callCoerced(context, "-", b);
         }
         return new RubyBigDecimal(getRuntime(),value.subtract(val.value)).setResult();
     }
@@ -386,7 +388,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
     
     @JRubyMethod(name = {"/", "div", "quo"}, required = 1, optional = 1)
-    public IRubyObject op_div(IRubyObject[] args) {
+    public IRubyObject op_div(ThreadContext context, IRubyObject[] args) {
         int scale = 0;
         if(args.length == 2) {
             scale = RubyNumeric.fix2int(args[1]);
@@ -394,7 +396,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
         RubyBigDecimal val = getVpValue(args[0],false);
         if(val == null) {
-            return callCoerced("/",args[0]);
+            return callCoerced(context, "/",args[0]);
         }
 
         if(scale == 0) {
@@ -404,11 +406,11 @@ public class RubyBigDecimal extends RubyNumeric {
         }
     }
     
-    private IRubyObject cmp(IRubyObject r, char op) {
+    private IRubyObject cmp(ThreadContext context, IRubyObject r, char op) {
         int e = 0;
         RubyBigDecimal rb = getVpValue(r,false);
         if(rb == null) {
-            IRubyObject ee = callCoerced("<=>",r);
+            IRubyObject ee = callCoerced(context, "<=>",r);
             if(ee.isNil()) {
                 return getRuntime().getNil();
             }
@@ -429,33 +431,33 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     @JRubyMethod(name = "<=>", required = 1)
-    public IRubyObject op_cmp(IRubyObject arg) {
-        return cmp(arg,'*');
+    public IRubyObject op_cmp(ThreadContext context, IRubyObject arg) {
+        return cmp(context, arg,'*');
     }
 
     @JRubyMethod(name = "eql?", required = 1)
-    public IRubyObject eql_p(IRubyObject arg) {
-        return cmp(arg,'=');
+    public IRubyObject eql_p(ThreadContext context, IRubyObject arg) {
+        return cmp(context, arg,'=');
     }
 
     @JRubyMethod(name = "<", required = 1)
-    public IRubyObject op_lt(IRubyObject arg) {
-        return cmp(arg,'<');
+    public IRubyObject op_lt(ThreadContext context, IRubyObject arg) {
+        return cmp(context, arg,'<');
     }
 
     @JRubyMethod(name = "<=", required = 1)
-    public IRubyObject op_le(IRubyObject arg) {
-        return cmp(arg,'L');
+    public IRubyObject op_le(ThreadContext context, IRubyObject arg) {
+        return cmp(context, arg,'L');
     }
 
     @JRubyMethod(name = ">", required = 1)
-    public IRubyObject op_gt(IRubyObject arg) {
-        return cmp(arg,'>');
+    public IRubyObject op_gt(ThreadContext context, IRubyObject arg) {
+        return cmp(context, arg,'>');
     }
 
     @JRubyMethod(name = ">=", required = 1)
-    public IRubyObject op_ge(IRubyObject arg) {
-        return cmp(arg,'G');
+    public IRubyObject op_ge(ThreadContext context, IRubyObject arg) {
+        return cmp(context, arg,'G');
     }
 
     @JRubyMethod(name = "abs")
@@ -482,16 +484,16 @@ public class RubyBigDecimal extends RubyNumeric {
     public double getDoubleValue() { return value.doubleValue(); }
     public long getLongValue() { return value.longValue(); }
 
-    public RubyNumeric multiplyWith(RubyInteger value) { 
-        return (RubyNumeric)op_mul(value);
+    public RubyNumeric multiplyWith(ThreadContext context, RubyInteger value) { 
+        return (RubyNumeric)op_mul(context, value);
     }
 
-    public RubyNumeric multiplyWith(RubyFloat value) { 
-        return (RubyNumeric)op_mul(value);
+    public RubyNumeric multiplyWith(ThreadContext context, RubyFloat value) { 
+        return (RubyNumeric)op_mul(context, value);
     }
 
-    public RubyNumeric multiplyWith(RubyBignum value) { 
-        return (RubyNumeric)op_mul(value);
+    public RubyNumeric multiplyWith(ThreadContext context, RubyBignum value) { 
+        return (RubyNumeric)op_mul(context, value);
     }
 
     @JRubyMethod(name = "divmod", required = 1)
@@ -544,9 +546,9 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     @JRubyMethod(name = "inspect")
-    public IRubyObject inspect() {
+    public IRubyObject inspect(ThreadContext context) {
         StringBuffer val = new StringBuffer("#<BigDecimal:").append(Integer.toHexString(System.identityHashCode(this))).append(",");
-        val.append("'").append(this.callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s")).append("'").append(",");
+        val.append("'").append(this.callMethod(context, MethodIndex.TO_S, "to_s")).append("'").append(",");
         int len = value.abs().unscaledValue().toString().length();
         int pow = len/4;
         val.append(len).append("(").append((pow+1)*4).append(")").append(">");

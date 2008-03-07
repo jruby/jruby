@@ -1124,15 +1124,16 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                                 mv.aload(DISPATCHER_SELF_INDEX);
                             }
                             
-                            switch (arity.getValue()) {
-                            case 3:
-                                loadArguments(mv, DISPATCHER_ARGS_INDEX, 3, descriptor);
-                                break;
-                            case 2:
-                                loadArguments(mv, DISPATCHER_ARGS_INDEX, 2, descriptor);
-                                break;
-                            case 1:
-                                loadArguments(mv, DISPATCHER_ARGS_INDEX, 1, descriptor);
+                            boolean contextProvided = descriptor.length > 0 && descriptor[0] == ThreadContext.class;
+
+                            if (contextProvided) {
+                                mv.aload(DISPATCHER_THREADCONTEXT_INDEX);
+                            }
+
+                            int argCount = arity.getValue();
+                            switch (argCount) {
+                            case 3: case 2: case 1:
+                                loadArguments(mv, DISPATCHER_ARGS_INDEX, argCount, descriptor, contextProvided);
                                 break;
                             case 0:
                                 break;
@@ -1144,7 +1145,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                             
                             Class ret = getReturnClass(method, descriptor);
                             String callSig = sig(ret, descriptor);
-
+//                            if (method.equals("op_equal")) System.out.println("NAME: " + type.getName() + "METHOD: " + sig(ret,descriptor) + ", ARITY: " + arity.getValue());
                             // if block, pass it
                             if (descriptor.length > 0 && descriptor[descriptor.length - 1] == Block.class) {
                                 mv.aload(DISPATCHER_BLOCK_INDEX);
@@ -1262,8 +1263,12 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
     
     private void loadArguments(MethodVisitor mv, int argsIndex, int count, Class[] types) {
+        loadArguments(mv, argsIndex, count, types, false);
+    }
+    
+    private void loadArguments(MethodVisitor mv, int argsIndex, int count, Class[] types, boolean contextProvided) {
         for (int i = 0; i < count; i++) {
-            loadArgument(mv, argsIndex, i, types[i]);
+            loadArgument(mv, argsIndex, i, types[i + (contextProvided ? 1 : 0)]);
         }
     }
     

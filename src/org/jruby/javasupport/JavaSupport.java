@@ -189,7 +189,7 @@ public class JavaSupport {
             excptnClass = excptnClass.getSuperclass();
         }
         if (handler != null) {
-            handler.call(new IRubyObject[]{JavaUtil.convertJavaToRuby(runtime, exception)});
+            handler.call(runtime.getCurrentContext(), new IRubyObject[]{JavaUtil.convertJavaToRuby(runtime, exception)});
         } else {
             throw createRaiseException(exception);
         }

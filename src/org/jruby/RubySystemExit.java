@@ -54,7 +54,7 @@ public class RubySystemExit extends RubyException {
         IRubyObject[] exArgs = new IRubyObject[] {
                 runtime.newFixnum(status),
                 runtime.newString("exit") };
-        return (RubySystemExit) exc.newInstance(exArgs, Block.NULL_BLOCK);
+        return (RubySystemExit) exc.newInstance(runtime.getCurrentContext(), exArgs, Block.NULL_BLOCK);
     }
 
     protected RubySystemExit(Ruby runtime, RubyClass exceptionClass) {

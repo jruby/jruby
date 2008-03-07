@@ -37,9 +37,7 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.JumpTarget;
-import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Frame;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -101,12 +99,12 @@ public class RubyProc extends RubyObject implements JumpTarget {
      * this case, we need to check previous frame for a block to consume.
      */
     @JRubyMethod(name = "new", rest = true, frame = true, meta = true)
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
         
         // No passed in block, lets check next outer frame for one ('Proc.new')
         if (!block.isGiven()) {
-            block = runtime.getCurrentContext().getPreviousFrame().getBlock();
+            block = context.getPreviousFrame().getBlock();
         }
         
         if (block.isGiven() && block.getProcObject() != null) {
@@ -115,12 +113,12 @@ public class RubyProc extends RubyObject implements JumpTarget {
         
         IRubyObject obj = ((RubyClass) recv).allocate();
         
-        obj.callMethod(runtime.getCurrentContext(), "initialize", args, block);
+        obj.callMethod(context, "initialize", args, block);
         return obj;
     }
     
     @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(Block procBlock) {
+    public IRubyObject initialize(ThreadContext context, Block procBlock) {
         if (!procBlock.isGiven()) {
             throw getRuntime().newArgumentError("tried to create Proc object without a block");
         }
@@ -133,7 +131,6 @@ public class RubyProc extends RubyObject implements JumpTarget {
         block.type = type;
         block.setProcObject(this);
 
-        ThreadContext context = getRuntime().getCurrentContext();
         file = context.getFile();
         line = context.getLine();
         return this;
@@ -181,21 +178,20 @@ public class RubyProc extends RubyObject implements JumpTarget {
         return getRuntime().newBinding(block.getBinding());
     }
 
-    public IRubyObject call(IRubyObject[] args) {
-        return call(args, null, Block.NULL_BLOCK);
+    public IRubyObject call(ThreadContext context, IRubyObject[] args) {
+        return call(context, args, null, Block.NULL_BLOCK);
     }
 
     // ENEBO: For method def others are Java to java versions
     @JRubyMethod(name = {"call", "[]"}, rest = true, frame = true)
-    public IRubyObject call(IRubyObject[] args, Block unusedBlock) {
-        return call(args, null, Block.NULL_BLOCK);
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block unusedBlock) {
+        return call(context, args, null, Block.NULL_BLOCK);
     }
     
-    public IRubyObject call(IRubyObject[] args, IRubyObject self, Block unusedBlock) {
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, Block unusedBlock) {
         assert args != null;
         
         Ruby runtime = getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
         
         try {
             Block newBlock = block.cloneBlock();

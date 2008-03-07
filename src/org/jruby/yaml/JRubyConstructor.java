@@ -61,6 +61,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
 import org.joda.time.DateTime;
+import org.jruby.runtime.ThreadContext;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -350,7 +351,8 @@ public class JRubyConstructor extends ConstructorImpl {
 
     public static Object constructRubyRange(final Constructor ctor, final Node node) {
         final Ruby runtime = ((JRubyConstructor)ctor).runtime;
-        if(node instanceof org.jvyamlb.nodes.ScalarNode) {
+        ThreadContext context = runtime.getCurrentContext();
+        if (node instanceof org.jvyamlb.nodes.ScalarNode) {
             String s1 = ctor.constructScalar(node).toString();
             String first;
             String second;
@@ -365,15 +367,15 @@ public class JRubyConstructor extends ConstructorImpl {
                 first = s1.substring(0,ix);
                 second = s1.substring(ix+2);
             }
-            IRubyObject fist = runtime.fastGetModule("YAML").callMethod(runtime.getCurrentContext(),"load",runtime.newString(first));
-            IRubyObject sic = runtime.fastGetModule("YAML").callMethod(runtime.getCurrentContext(),"load",runtime.newString(second));
-            return RubyRange.newRange(runtime, fist, sic, exc);
+            IRubyObject fist = runtime.fastGetModule("YAML").callMethod(context,"load",runtime.newString(first));
+            IRubyObject sic = runtime.fastGetModule("YAML").callMethod(context,"load",runtime.newString(second));
+            return RubyRange.newRange(runtime, context, fist, sic, exc);
         } else {
             final Map vars = (Map)(ctor.constructMapping(node));
             IRubyObject beg = (IRubyObject)vars.get(runtime.newString("begin"));
             IRubyObject end = (IRubyObject)vars.get(runtime.newString("end"));
             boolean excl = ((IRubyObject)vars.get(runtime.newString("excl"))).isTrue();
-            return RubyRange.newRange(runtime, beg, end, excl);
+            return RubyRange.newRange(runtime, context, beg, end, excl);
         }
     }
 

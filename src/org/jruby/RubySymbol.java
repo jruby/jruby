@@ -43,6 +43,7 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
@@ -159,8 +160,8 @@ public class RubySymbol extends RubyObject {
     }
 
     @JRubyMethod(name = "===", required = 1)
-    public IRubyObject op_eqq(IRubyObject other) {
-        return super.op_equal(other);
+    public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
+        return super.op_equal(context, other);
     }
 
     public RubyFixnum hash() {

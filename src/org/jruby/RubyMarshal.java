@@ -44,6 +44,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -124,7 +125,7 @@ public class RubyMarshal {
     }
 
     @JRubyMethod(name = {"load", "restore"}, required = 1, optional = 1, frame = true, module = true)
-    public static IRubyObject load(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+    public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         try {
             if (args.length < 1) {
                 throw recv.getRuntime().newArgumentError("wrong number of arguments (0 for 1)");
@@ -148,7 +149,7 @@ public class RubyMarshal {
             if (in != null && in.respondsTo("read")) {
                 rawInput = inputStream(in);
             } else if (in != null && in.respondsTo("to_str")) {
-                RubyString inString = (RubyString) RuntimeHelpers.invoke(recv.getRuntime().getCurrentContext(), in, MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY);
+                RubyString inString = (RubyString) RuntimeHelpers.invoke(context, in, MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY);
                 ByteList bytes = inString.getByteList();
                 rawInput = new ByteArrayInputStream(bytes.unsafeBytes(), bytes.begin(), bytes.length());
             } else {

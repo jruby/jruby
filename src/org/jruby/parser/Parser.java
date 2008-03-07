@@ -45,6 +45,7 @@ import org.jruby.common.NullWarnings;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
@@ -147,11 +148,12 @@ public class Parser {
         if (!configuration.isEvalParse() && scriptLines != null) {
             if (scriptLines instanceof RubyHash) {
                 RubyString filename = runtime.newString(file);
-                IRubyObject object = ((RubyHash) scriptLines).op_aref(filename);
+                ThreadContext context = runtime.getCurrentContext();
+                IRubyObject object = ((RubyHash) scriptLines).op_aref(context, filename);
                 
                 list = (RubyArray) (object instanceof RubyArray ? object : runtime.newArray()); 
                 
-                ((RubyHash) scriptLines).op_aset(filename, list);
+                ((RubyHash) scriptLines).op_aset(context, filename, list);
             }
         }
 

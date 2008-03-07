@@ -31,6 +31,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.util.SignalFacade;
@@ -62,23 +63,23 @@ public class RubySignal {
     }
 
     @JRubyMethod(name = "trap", required = 1, optional = 1, frame = true, meta = true)
-    public static IRubyObject trap(IRubyObject recv, IRubyObject[] args, Block block) {
+    public static IRubyObject trap(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
         runtime.getLoadService().require("jsignal");
-        return RuntimeHelpers.invoke(runtime.getCurrentContext(), runtime.getKernel(), "__jtrap", args, CallType.FUNCTIONAL, block);
+        return RuntimeHelpers.invoke(context, runtime.getKernel(), "__jtrap", args, CallType.FUNCTIONAL, block);
     }
     
     @JRubyMethod(name = "list", meta = true)
-    public static IRubyObject list(IRubyObject recv) {
+    public static IRubyObject list(ThreadContext context, IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         RubyHash names = RubyHash.newHash(runtime);
         for (int i = 0; i < NAMES.length; i++) {
-            names.op_aset(runtime.newString(NAMES[i]), runtime.newFixnum(i));
+            names.op_aset(context, runtime.newString(NAMES[i]), runtime.newFixnum(i));
         }
         // IOT is also 6
-        names.op_aset(runtime.newString("IOT"), runtime.newFixnum(6));
+        names.op_aset(context, runtime.newString("IOT"), runtime.newFixnum(6));
         // CLD is also 20
-        names.op_aset(runtime.newString("CLD"), runtime.newFixnum(20));
+        names.op_aset(context, runtime.newString("CLD"), runtime.newFixnum(20));
         return names;
     }
 

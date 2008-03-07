@@ -67,75 +67,70 @@ public class JavaUtil {
     }
     
     public interface RubyConverter {
-        public Object convert(IRubyObject rubyObject);
+        public Object convert(ThreadContext context, IRubyObject rubyObject);
     }
     
     public static final RubyConverter RUBY_BOOLEAN_CONVERTER = new RubyConverter() {
-        public Object convert(IRubyObject rubyObject) {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
             return Boolean.valueOf(rubyObject.isTrue());
         }
     };
     
     public static final RubyConverter RUBY_BYTE_CONVERTER = new RubyConverter() {
-        public Object convert(IRubyObject rubyObject) {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
             if (rubyObject.respondsTo("to_i")) {
                 return new Byte((byte) ((RubyNumeric) rubyObject.callMethod(
-                        rubyObject.getRuntime().getCurrentContext(), MethodIndex.TO_I, "to_i")).getLongValue());
+                        context, MethodIndex.TO_I, "to_i")).getLongValue());
             }
             return new Byte((byte) 0);
         }
     };
     
     public static final RubyConverter RUBY_SHORT_CONVERTER = new RubyConverter() {
-        public Object convert(IRubyObject rubyObject) {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
             if (rubyObject.respondsTo("to_i")) {
                 return new Short((short) ((RubyNumeric) rubyObject.callMethod(
-                        rubyObject.getRuntime().getCurrentContext(),
-                        MethodIndex.TO_I, "to_i")).getLongValue());
+                        context, MethodIndex.TO_I, "to_i")).getLongValue());
             }
             return new Short((short) 0);
         }
     };
     
     public static final RubyConverter RUBY_INTEGER_CONVERTER = new RubyConverter() {
-        public Object convert(IRubyObject rubyObject) {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
             if (rubyObject.respondsTo("to_i")) {
                 return new Integer((int) ((RubyNumeric) rubyObject.callMethod(
-                        rubyObject.getRuntime().getCurrentContext(),
-                        MethodIndex.TO_I, "to_i")).getLongValue());
+                        context, MethodIndex.TO_I, "to_i")).getLongValue());
             }
             return new Integer(0);
         }
     };
     
     public static final RubyConverter RUBY_LONG_CONVERTER = new RubyConverter() {
-        public Object convert(IRubyObject rubyObject) {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
             if (rubyObject.respondsTo("to_i")) {
                 return new Long(((RubyNumeric) rubyObject.callMethod(
-                        rubyObject.getRuntime().getCurrentContext(),
-                        MethodIndex.TO_I, "to_i")).getLongValue());
+                        context, MethodIndex.TO_I, "to_i")).getLongValue());
             }
             return new Long(0);
         }
     };
     
     public static final RubyConverter RUBY_FLOAT_CONVERTER = new RubyConverter() {
-        public Object convert(IRubyObject rubyObject) {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
             if (rubyObject.respondsTo("to_f")) {
                 return new Float((float) ((RubyNumeric) rubyObject.callMethod(
-                        rubyObject.getRuntime().getCurrentContext(),
-                        MethodIndex.TO_F, "to_f")).getDoubleValue());
+                        context, MethodIndex.TO_F, "to_f")).getDoubleValue());
             }
             return new Float(0.0);
         }
     };
     
     public static final RubyConverter RUBY_DOUBLE_CONVERTER = new RubyConverter() {
-        public Object convert(IRubyObject rubyObject) {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
             if (rubyObject.respondsTo("to_f")) {
                 return new Double(((RubyNumeric) rubyObject.callMethod(
-                        rubyObject.getRuntime().getCurrentContext(),
-                        MethodIndex.TO_F, "to_f")).getDoubleValue());
+                        context, MethodIndex.TO_F, "to_f")).getDoubleValue());
             }
             return new Double(0.0);
         }
@@ -196,7 +191,7 @@ public class JavaUtil {
         if (javaClass.isPrimitive()) {
             RubyConverter converter = RUBY_CONVERTERS.get(javaClass);
             if (converter != null) {
-                return converter.convert(rubyObject);
+                return converter.convert(context, rubyObject);
             }
 
             // XXX this probably isn't good enough -AM
@@ -483,13 +478,14 @@ public class JavaUtil {
                 if (!((RubyModule)javaInterfaceModule).isInstance(rubyObject)) {
                     rubyObject.extend(new IRubyObject[] {javaInterfaceModule});
                 }
+                ThreadContext context = runtime.getCurrentContext();
                 if (rubyObject instanceof RubyProc) {
                     // Proc implementing an interface, pull in the catch-all code that lets the proc get invoked
                     // no matter what method is called on the interface
-                    rubyObject.instance_eval(new IRubyObject[] {
+                    rubyObject.instance_eval(context, new IRubyObject[] {
                         runtime.newString("extend Proc::CatchAll")}, Block.NULL_BLOCK);
                 }
-                JavaObject jo = (JavaObject) rubyObject.instance_eval(new IRubyObject[] {
+                JavaObject jo = (JavaObject) rubyObject.instance_eval(context, new IRubyObject[] {
                     runtime.newString("send :__jcreate_meta!")}, Block.NULL_BLOCK);
                 return jo.getValue();
             }

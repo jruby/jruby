@@ -735,14 +735,15 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void createNewRange(boolean isExclusive) {
             loadRuntime();
+            loadThreadContext();
 
             // could be more efficient with a callback
-            method.dup_x2();
-            method.pop();
+            method.dup2_x2();
+            method.pop2();
 
             method.ldc(new Boolean(isExclusive));
 
-            method.invokestatic(p(RubyRange.class), "newRange", sig(RubyRange.class, params(Ruby.class, IRubyObject.class, IRubyObject.class, Boolean.TYPE)));
+            method.invokestatic(p(RubyRange.class), "newRange", sig(RubyRange.class, params(Ruby.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, Boolean.TYPE)));
         }
 
         /**
@@ -1332,11 +1333,14 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void match() {
-            method.invokevirtual(p(RubyRegexp.class), "op_match2", sig(IRubyObject.class, params()));
+            loadThreadContext();
+            method.invokevirtual(p(RubyRegexp.class), "op_match2", sig(IRubyObject.class, params(ThreadContext.class)));
         }
 
         public void match2() {
-            method.invokevirtual(p(RubyRegexp.class), "op_match", sig(IRubyObject.class, params(IRubyObject.class)));
+            loadThreadContext();
+            method.swap();
+            method.invokevirtual(p(RubyRegexp.class), "op_match", sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class)));
         }
 
         public void match3() {
@@ -2043,8 +2047,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.athrow();
             
             method.label(notNull);
+            loadThreadContext();
             method.ldc(name);
-            method.invokevirtual(p(RubyModule.class), "undef", sig(Void.TYPE, params(String.class)));
+            method.invokevirtual(p(RubyModule.class), "undef", sig(Void.TYPE, params(ThreadContext.class, String.class)));
             
             loadNil();
         }

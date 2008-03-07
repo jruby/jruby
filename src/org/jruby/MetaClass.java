@@ -68,10 +68,6 @@ public final class MetaClass extends RubyClass {
         throw getRuntime().newTypeError("can't create instance of virtual class");
     }
 
-    public void methodAdded(RubySymbol symbol) {
-        attached.get().callMethod(getRuntime().getCurrentContext(), "singleton_method_added", symbol);
-    }
-
     public IRubyObject getAttached() {
         return attached.get();
     }

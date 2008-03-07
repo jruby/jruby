@@ -37,8 +37,6 @@ package org.jruby;
 
 import java.io.BufferedInputStream;
 import static java.lang.System.out;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.jruby.util.io.FileExistsException;
 import org.jruby.util.io.STDIO;
 import org.jruby.util.io.OpenFile;
@@ -789,7 +787,7 @@ public class RubyIO extends RubyObject {
     // IO class methods.
 
     @JRubyMethod(name = {"new", "for_fd"}, rest = true, frame = true, meta = true)
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         RubyClass klass = (RubyClass)recv;
         
         if (block.isGiven()) {
@@ -800,7 +798,7 @@ public class RubyIO extends RubyObject {
                     className + "::open()");
         }
         
-        return klass.newInstance(args, block);
+        return klass.newInstance(context, args, block);
     }
 
     @JRubyMethod(name = "initialize", required = 1, optional = 1, frame = true, visibility = Visibility.PRIVATE)
@@ -878,18 +876,18 @@ public class RubyIO extends RubyObject {
     }
 
     @JRubyMethod(name = "open", required = 1, optional = 2, frame = true, meta = true)
-    public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
+    public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
         RubyClass klass = (RubyClass)recv;
         
-        RubyIO io = (RubyIO)klass.newInstance(args, block);
+        RubyIO io = (RubyIO)klass.newInstance(context, args, block);
 
         if (block.isGiven()) {
             try {
-                return block.yield(runtime.getCurrentContext(), io);
+                return block.yield(context, io);
             } finally {
                 try {
-                    io.getMetaClass().invoke(runtime.getCurrentContext(), io, "close", IRubyObject.NULL_ARRAY, CallType.FUNCTIONAL, Block.NULL_BLOCK);
+                    io.getMetaClass().invoke(context, io, "close", IRubyObject.NULL_ARRAY, CallType.FUNCTIONAL, Block.NULL_BLOCK);
                 } catch (RaiseException re) {
                     RubyException rubyEx = re.getException();
                     if (rubyEx.kind_of_p(runtime.getStandardError()).isTrue()) {
@@ -1174,9 +1172,9 @@ public class RubyIO extends RubyObject {
      * 
      */
     @JRubyMethod(name = "<<", required = 1)
-    public IRubyObject op_append(IRubyObject anObject) {
+    public IRubyObject op_append(ThreadContext context, IRubyObject anObject) {
         // Claims conversion is done via 'to_s' in docs.
-        callMethod(getRuntime().getCurrentContext(), "write", anObject);
+        callMethod(context, "write", anObject);
         
         return this; 
     }
@@ -1291,14 +1289,13 @@ public class RubyIO extends RubyObject {
      * 
      */
     @JRubyMethod(name = "print", rest = true)
-    public IRubyObject print(IRubyObject[] args) {
+    public IRubyObject print(ThreadContext context, IRubyObject[] args) {
         if (args.length == 0) {
-            args = new IRubyObject[] { getRuntime().getCurrentContext().getCurrentFrame().getLastLine() };
+            args = new IRubyObject[] { context.getCurrentFrame().getLastLine() };
         }
 
         IRubyObject fs = getRuntime().getGlobalVariables().get("$,");
         IRubyObject rs = getRuntime().getGlobalVariables().get("$\\");
-        ThreadContext context = getRuntime().getCurrentContext();
         
         for (int i = 0; i < args.length; i++) {
             if (i > 0 && !fs.isNil()) {
@@ -1318,13 +1315,13 @@ public class RubyIO extends RubyObject {
     }
 
     @JRubyMethod(name = "printf", required = 1, rest = true)
-    public IRubyObject printf(IRubyObject[] args) {
-        callMethod(getRuntime().getCurrentContext(), "write", RubyKernel.sprintf(this, args));
+    public IRubyObject printf(ThreadContext context, IRubyObject[] args) {
+        callMethod(context, "write", RubyKernel.sprintf(this, args));
         return getRuntime().getNil();
     }
     
     @JRubyMethod(name = "putc", required = 1)
-    public IRubyObject putc(IRubyObject object) {
+    public IRubyObject putc(ThreadContext context, IRubyObject object) {
         int c;
         
         if (getRuntime().getString().isInstance(object)) {
@@ -1338,7 +1335,7 @@ public class RubyIO extends RubyObject {
         } else if (getRuntime().getFixnum().isInstance(object)){
             c = RubyNumeric.fix2int(object);
         } else { // What case will this work for?
-            c = RubyNumeric.fix2int(object.callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_I, "to_i"));
+            c = RubyNumeric.fix2int(object.callMethod(context, MethodIndex.TO_I, "to_i"));
         }
 
         try {
@@ -1758,12 +1755,12 @@ public class RubyIO extends RubyObject {
      * 
      */
     @JRubyMethod(name = "gets", optional = 1)
-    public IRubyObject gets(IRubyObject[] args) {
+    public IRubyObject gets(ThreadContext context, IRubyObject[] args) {
         ByteList separator = getSeparatorForGets(args);
         
         IRubyObject result = getline(separator);
 
-        if (!result.isNil()) getRuntime().getCurrentContext().getCurrentFrame().setLastLine(result);
+        if (!result.isNil()) context.getCurrentFrame().setLastLine(result);
 
         return result;
     }
@@ -1835,9 +1832,7 @@ public class RubyIO extends RubyObject {
     private static final ByteList RECURSIVE_BYTELIST = ByteList.create("[...]");
 
     @JRubyMethod(name = "puts", rest = true)
-    public IRubyObject puts(IRubyObject[] args) {
-    	ThreadContext context = getRuntime().getCurrentContext();
-        
+    public IRubyObject puts(ThreadContext context, IRubyObject[] args) {
         assert getRuntime().getGlobalVariables().getDefaultSeparator() instanceof RubyString;
         RubyString separator = (RubyString)getRuntime().getGlobalVariables().getDefaultSeparator();
         
@@ -1854,7 +1849,7 @@ public class RubyIO extends RubyObject {
             } else if (getRuntime().isInspecting(args[i])) {
                 line = RECURSIVE_BYTELIST;
             } else if (args[i] instanceof RubyArray) {
-                inspectPuts((RubyArray) args[i]);
+                inspectPuts(context, (RubyArray) args[i]);
                 continue;
             } else {
                 line = args[i].asString().getByteList();
@@ -1873,10 +1868,10 @@ public class RubyIO extends RubyObject {
         callMethod(context, "write", getRuntime().newStringShared(byteList));
     }
     
-    private IRubyObject inspectPuts(RubyArray array) {
+    private IRubyObject inspectPuts(ThreadContext context, RubyArray array) {
         try {
             getRuntime().registerInspecting(array);
-            return puts(array.toJavaArray());
+            return puts(context, array.toJavaArray());
         } finally {
             getRuntime().unregisterInspecting(array);
         }
@@ -1886,8 +1881,8 @@ public class RubyIO extends RubyObject {
      * 
      */
     @JRubyMethod(name = "readline", optional = 1)
-    public IRubyObject readline(IRubyObject[] args) {
-        IRubyObject line = gets(args);
+    public IRubyObject readline(ThreadContext context, IRubyObject[] args) {
+        IRubyObject line = gets(context, args);
 
         if (line.isNil()) {
             throw getRuntime().newEOFError();
@@ -1981,7 +1976,7 @@ public class RubyIO extends RubyObject {
     }
     
     @JRubyMethod(name = "readpartial", required = 1, optional = 1)
-    public IRubyObject readpartial(IRubyObject[] args) {
+    public IRubyObject readpartial(ThreadContext context, IRubyObject[] args) {
         if(!(openFile.getMainStream() instanceof ChannelStream)) {
             // cryptic for the uninitiated...
             throw getRuntime().newNotImplementedError("readpartial only works with Nio based handlers");
@@ -1990,7 +1985,7 @@ public class RubyIO extends RubyObject {
             ByteList buf = ((ChannelStream)openFile.getMainStream()).readpartial(RubyNumeric.fix2int(args[0]));
             IRubyObject strbuf = RubyString.newString(getRuntime(), buf == null ? new ByteList(ByteList.NULL_ARRAY) : buf);
             if(args.length > 1) {
-                args[1].callMethod(getRuntime().getCurrentContext(),MethodIndex.OP_LSHIFT, "<<", strbuf);
+                args[1].callMethod(context, MethodIndex.OP_LSHIFT, "<<", strbuf);
                 return args[1];
             } 
 
@@ -2005,7 +2000,7 @@ public class RubyIO extends RubyObject {
     }
 
     @JRubyMethod(name = "sysread", required = 1, optional = 1)
-    public IRubyObject sysread(IRubyObject[] args) {
+    public IRubyObject sysread(ThreadContext context, IRubyObject[] args) {
         int len = (int)RubyNumeric.num2long(args[0]);
         if (len < 0) throw getRuntime().newArgumentError("Negative size");
 
@@ -2040,7 +2035,7 @@ public class RubyIO extends RubyObject {
             
             // TODO: Ruby locks the string here
             
-            getRuntime().getCurrentContext().getThread().beforeBlockingCall();
+            context.getThread().beforeBlockingCall();
             myOpenFile.checkClosed(getRuntime());
             
             // TODO: Ruby re-checks that the buffer string hasn't been modified
@@ -2075,7 +2070,7 @@ public class RubyIO extends RubyObject {
             }
     	    throw getRuntime().newSystemCallError(e.getMessage());
     	} finally {
-            getRuntime().getCurrentContext().getThread().afterBlockingCall();
+            context.getThread().afterBlockingCall();
         }
     }
     
@@ -2357,10 +2352,9 @@ public class RubyIO extends RubyObject {
      * <p>Invoke a block for each byte.</p>
      */
     @JRubyMethod(name = "each_byte", frame = true)
-    public IRubyObject each_byte(Block block) {
+    public IRubyObject each_byte(ThreadContext context, Block block) {
     	try {
             Ruby runtime = getRuntime();
-            ThreadContext context = runtime.getCurrentContext();
             OpenFile myOpenFile = getOpenFileChecked();
             
             while (true) {
@@ -2405,8 +2399,7 @@ public class RubyIO extends RubyObject {
      * <p>Invoke a block for each line.</p>
      */
     @JRubyMethod(name = {"each_line", "each"}, optional = 1, frame = true)
-    public RubyIO each_line(IRubyObject[] args, Block block) {
-        ThreadContext context = getRuntime().getCurrentContext(); 
+    public RubyIO each_line(ThreadContext context, IRubyObject[] args, Block block) {
         ByteList separator = getSeparatorForGets(args);
         
         for (IRubyObject line = getline(separator); !line.isNil(); 
@@ -2456,7 +2449,7 @@ public class RubyIO extends RubyObject {
     *
     */
     @JRubyMethod(name = "foreach", required = 1, optional = 1, frame = true, meta = true)
-    public static IRubyObject foreach(IRubyObject recv, IRubyObject[] args, Block block) {
+    public static IRubyObject foreach(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
         int count = args.length;
         IRubyObject filename = args[0].convertToString();
@@ -2464,12 +2457,11 @@ public class RubyIO extends RubyObject {
        
         ByteList separator = getSeparatorFromArgs(runtime, args, 1);
 
-        RubyIO io = (RubyIO)RubyFile.open(runtime.getFile(), new IRubyObject[] { filename }, Block.NULL_BLOCK);
+        RubyIO io = (RubyIO)RubyFile.open(context, runtime.getFile(), new IRubyObject[] { filename }, Block.NULL_BLOCK);
         
         if (!io.isNil()) {
             try {
                 IRubyObject str = io.getline(separator);
-                ThreadContext context = runtime.getCurrentContext();
                 while (!str.isNil()) {
                     block.yield(context, str);
                     str = io.getline(separator);
@@ -2482,14 +2474,14 @@ public class RubyIO extends RubyObject {
         return runtime.getNil();
     }
    
-    private static RubyIO registerSelect(Selector selector, IRubyObject obj, int ops) throws IOException {
+    private static RubyIO registerSelect(ThreadContext context, Selector selector, IRubyObject obj, int ops) throws IOException {
        RubyIO ioObj;
        
        if (!(obj instanceof RubyIO)) {
            // invoke to_io
            if (!obj.respondsTo("to_io")) return null;
 
-           ioObj = (RubyIO) obj.callMethod(obj.getRuntime().getCurrentContext(), "to_io");
+           ioObj = (RubyIO) obj.callMethod(context, "to_io");
        } else {
            ioObj = (RubyIO) obj;
        }
@@ -2513,11 +2505,11 @@ public class RubyIO extends RubyObject {
    }
    
     @JRubyMethod(name = "select", required = 1, optional = 3, meta = true)
-    public static IRubyObject select(IRubyObject recv, IRubyObject[] args) {
-        return select_static(recv.getRuntime(), args);
+    public static IRubyObject select(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return select_static(context, recv.getRuntime(), args);
     }
    
-    public static IRubyObject select_static(Ruby runtime, IRubyObject[] args) {
+    public static IRubyObject select_static(ThreadContext context, Ruby runtime, IRubyObject[] args) {
        try {
            // FIXME: This needs to be ported
            boolean atLeastOneDescriptor = false;
@@ -2530,7 +2522,7 @@ public class RubyIO extends RubyObject {
                // read
                for (Iterator i = ((RubyArray) args[0]).getList().iterator(); i.hasNext(); ) {
                    IRubyObject obj = (IRubyObject) i.next();
-                   RubyIO ioObj = registerSelect(selector, obj, 
+                   RubyIO ioObj = registerSelect(context, selector, obj, 
                            SelectionKey.OP_READ | SelectionKey.OP_ACCEPT);
                    
                    if (ioObj!=null && ioObj.writeDataBuffered()) pending.add(obj);
@@ -2541,7 +2533,7 @@ public class RubyIO extends RubyObject {
                // write
                for (Iterator i = ((RubyArray) args[1]).getList().iterator(); i.hasNext(); ) {
                    IRubyObject obj = (IRubyObject) i.next();
-                   registerSelect(selector, obj, SelectionKey.OP_WRITE);
+                   registerSelect(context, selector, obj, SelectionKey.OP_WRITE);
                }
            }
            if (args.length > 2 && !args[2].isNil()) {
@@ -2625,9 +2617,9 @@ public class RubyIO extends RubyObject {
    }
    
     @JRubyMethod(name = "read", required = 1, optional = 2, meta = true)
-    public static IRubyObject read(IRubyObject recv, IRubyObject[] args, Block block) {
+    public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
        IRubyObject[] fileArguments = new IRubyObject[] {args[0]};
-       RubyIO file = (RubyIO) RubyKernel.open(recv, fileArguments, block);
+       RubyIO file = (RubyIO) RubyKernel.open(context, recv, fileArguments, block);
        IRubyObject[] readArguments;
        
        if (args.length >= 2 && !args[1].isNil()) {
@@ -2649,12 +2641,12 @@ public class RubyIO extends RubyObject {
    }
    
     @JRubyMethod(name = "readlines", required = 1, optional = 1, meta = true)
-    public static RubyArray readlines(IRubyObject recv, IRubyObject[] args, Block block) {
+    public static RubyArray readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         int count = args.length;
 
         IRubyObject[] fileArguments = new IRubyObject[]{args[0]};
         IRubyObject[] separatorArguments = count >= 2 ? new IRubyObject[]{args[1]} : IRubyObject.NULL_ARRAY;
-        RubyIO file = (RubyIO) RubyKernel.open(recv, fileArguments, block);
+        RubyIO file = (RubyIO) RubyKernel.open(context, recv, fileArguments, block);
         try {
             return file.readlines(separatorArguments);
         } finally {
@@ -2663,7 +2655,7 @@ public class RubyIO extends RubyObject {
     }
    
     @JRubyMethod(name = "popen", required = 1, optional = 1, meta = true)
-    public static IRubyObject popen(IRubyObject recv, IRubyObject[] args, Block block) {
+    public static IRubyObject popen(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
         int mode;
 
@@ -2691,7 +2683,7 @@ public class RubyIO extends RubyObject {
 
             if (block.isGiven()) {
                 try {
-                    return block.yield(runtime.getCurrentContext(), io);
+                    return block.yield(context, io);
                 } finally {
                     if (io.openFile.isOpen()) {
                         io.close();

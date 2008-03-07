@@ -270,7 +270,7 @@ public class RuntimeHelpers {
         context.setLastVisibility(method.getVisibility());
 
         if (methodIndex == MethodIndex.METHOD_MISSING) {
-            return RubyKernel.method_missing(self, args, block);
+            return RubyKernel.method_missing(context, self, args, block);
         }
 
         IRubyObject[] newArgs = new IRubyObject[args.length + 1];
@@ -287,7 +287,7 @@ public class RuntimeHelpers {
         context.setLastVisibility(method.getVisibility());
 
         if (name.equals("method_missing")) {
-            return RubyKernel.method_missing(self, args, block);
+            return RubyKernel.method_missing(context, self, args, block);
         }
 
         IRubyObject[] newArgs = new IRubyObject[args.length + 1];
@@ -791,7 +791,7 @@ public class RuntimeHelpers {
     
     public static IRubyObject match3(RubyRegexp regexp, IRubyObject value, ThreadContext context) {
         if (value instanceof RubyString) {
-            return regexp.op_match(value);
+            return regexp.op_match(context, value);
         } else {
             return value.callMethod(context, "=~", regexp);
         }

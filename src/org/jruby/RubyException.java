@@ -121,11 +121,6 @@ public class RubyException extends RubyObject {
         runtime.setException(exceptionClass);
 
         exceptionClass.setMarshal(EXCEPTION_MARSHAL);
-        
-        CallbackFactory classCB = runtime.callbackFactory(RubyClass.class);
-        // TODO: could this just  be an alias for new?
-        // FIXME: not sure how to bind this right...
-        exceptionClass.getMetaClass().defineMethod("exception", classCB.getOptMethod("newInstance"));
         exceptionClass.defineAnnotatedMethods(RubyException.class);
 
         return exceptionClass;
@@ -169,6 +164,11 @@ public class RubyException extends RubyObject {
         return backtrace();
     }
     
+    @JRubyMethod(name = "exception", optional = 1, rest = true, meta = true)
+    public static IRubyObject exception_meta(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        return ((RubyClass) recv).newInstance(context, args, block);
+    }
+
     @JRubyMethod(optional = 1)
     public RubyException exception(IRubyObject[] args) {
         switch (args.length) {
@@ -194,8 +194,8 @@ public class RubyException extends RubyObject {
     }
 
     @JRubyMethod(name = {"to_str", "message"})
-    public IRubyObject to_str() {
-        return callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s");
+    public IRubyObject to_str(ThreadContext context) {
+        return callMethod(context, MethodIndex.TO_S, "to_s");
     }
 
     /** inspects an object and return a kind of debug information
@@ -203,9 +203,9 @@ public class RubyException extends RubyObject {
      *@return A RubyString containing the debug information.
      */
     @JRubyMethod
-    public IRubyObject inspect() {
+    public IRubyObject inspect(ThreadContext context) {
         RubyModule rubyClass = getMetaClass();
-        RubyString exception = RubyString.objAsString(this);
+        RubyString exception = RubyString.objAsString(context, this);
 
         if (exception.getByteList().realSize == 0) return getRuntime().newString(rubyClass.getName());
         StringBuffer sb = new StringBuffer("#<");

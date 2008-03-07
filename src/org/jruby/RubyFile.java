@@ -911,7 +911,7 @@ public class RubyFile extends RubyIO {
      * @return Resulting absolute path as a String
      */
     @JRubyMethod(required = 1, optional = 1, meta = true)
-    public static IRubyObject expand_path(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject expand_path(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         
         String relativePath = RubyString.stringValue(args[0]).toString();
@@ -921,7 +921,7 @@ public class RubyFile extends RubyIO {
         String cwd = null;
         
         // Handle ~user paths 
-        relativePath = expandUserPath(recv, relativePath);
+        relativePath = expandUserPath(context, recv, relativePath);
         
         // If there's a second argument, it's the path to which the first 
         // argument is relative.
@@ -930,7 +930,7 @@ public class RubyFile extends RubyIO {
             String cwdArg = RubyString.stringValue(args[1]).toString();
             
             // Handle ~user paths.
-            cwd = expandUserPath(recv, cwdArg);
+            cwd = expandUserPath(context, recv, cwdArg);
 
             cwd = adjustRootPathOnWindows(runtime, cwd, null);
 
@@ -1017,7 +1017,7 @@ public class RubyFile extends RubyIO {
      * @param path Path to check
      * @return Expanded path
      */
-    private static String expandUserPath( IRubyObject recv, String path ) {
+    private static String expandUserPath(ThreadContext context, IRubyObject recv, String path ) {
         
         int pathLength = path.length();
 
@@ -1028,7 +1028,7 @@ public class RubyFile extends RubyIO {
             if (userEnd == -1) {
                 if (pathLength == 1) {
                     // Single '~' as whole path to expand
-                    path = RubyDir.getHomeDirectoryPath(recv).toString();
+                    path = RubyDir.getHomeDirectoryPath(context, recv).toString();
                 } else {
                     // No directory delimeter.  Rest of string is username
                     userEnd = pathLength;
@@ -1037,7 +1037,7 @@ public class RubyFile extends RubyIO {
             
             if (userEnd == 1) {
                 // '~/...' as path to expand
-                path = RubyDir.getHomeDirectoryPath(recv).toString() +
+                path = RubyDir.getHomeDirectoryPath(context, recv).toString() +
                         path.substring(1);
             } else if (userEnd > 1){
                 // '~user/...' as path to expand
@@ -1350,10 +1350,8 @@ public class RubyFile extends RubyIO {
         return getLastModified(recv.getRuntime(), filename.convertToString().toString());
     }
     
-    public static IRubyObject open(IRubyObject recv, IRubyObject[] args, boolean tryToYield, Block block) {
+    public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, boolean tryToYield, Block block) {
         Ruby runtime = recv.getRuntime();
-        ThreadContext tc = runtime.getCurrentContext();
-        
         RubyFile file;
 
         if (args[0] instanceof RubyInteger) { // open with file descriptor
@@ -1381,7 +1379,7 @@ public class RubyFile extends RubyIO {
         
         if (tryToYield && block.isGiven()) {
             try {
-                return block.yield(tc, file);
+                return block.yield(context, file);
             } finally {
                 if (file.openFile.isOpen()) {
                     file.close();
@@ -1480,7 +1478,7 @@ public class RubyFile extends RubyIO {
 
     // Can we produce IOError which bypasses a close?
     @JRubyMethod(required = 2, meta = true)
-    public static IRubyObject truncate(IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
+    public static IRubyObject truncate(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
         Ruby runtime = recv.getRuntime();
         RubyString filename = arg1.convertToString(); // TODO: SafeStringValue here
         RubyInteger newLength = arg2.convertToInteger(); 
@@ -1494,7 +1492,7 @@ public class RubyFile extends RubyIO {
         }
         
         IRubyObject[] args = new IRubyObject[] { filename, runtime.newString("r+") };
-        RubyFile file = (RubyFile) open(recv, args, false, null);
+        RubyFile file = (RubyFile) open(context, recv, args, false, null);
         file.truncate(newLength);
         file.close();
         

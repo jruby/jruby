@@ -53,6 +53,7 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -231,13 +232,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     }
 
     @JRubyMethod(name = "~")
-    public IRubyObject op_match2() {
-        IRubyObject line = getRuntime().getCurrentContext().getCurrentFrame().getLastLine();
+    public IRubyObject op_match2(ThreadContext context) {
+        IRubyObject line = context.getCurrentFrame().getLastLine();
         if(!(line instanceof RubyString)) {
-            getRuntime().getCurrentContext().getCurrentFrame().setBackRef(getRuntime().getNil());
+            context.getCurrentFrame().setBackRef(getRuntime().getNil());
             return getRuntime().getNil();
         }
-        int start = search((RubyString)line, 0, false);
+        int start = search(context, (RubyString)line, 0, false);
         if(start < 0) {
             return getRuntime().getNil();
         } else {
@@ -249,14 +250,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
      * 
      */
     @JRubyMethod(name = "===", required = 1)
-    public IRubyObject eqq(IRubyObject str) {
+    public IRubyObject eqq(ThreadContext context, IRubyObject str) {
         if(!(str instanceof RubyString)) str = str.checkStringType();
 
         if (str.isNil()) {
-            getRuntime().getCurrentContext().getCurrentFrame().setBackRef(getRuntime().getNil());
+            context.getCurrentFrame().setBackRef(getRuntime().getNil());
             return getRuntime().getFalse();
         }
-        int start = search((RubyString)str, 0, false);
+        int start = search(context, (RubyString)str, 0, false);
         return (start < 0) ? getRuntime().getFalse() : getRuntime().getTrue();
     }
 
@@ -508,9 +509,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     
     /** rb_reg_search
      */
-    public int search(RubyString str, int pos, boolean reverse) {
+    public int search(ThreadContext context, RubyString str, int pos, boolean reverse) {
         Ruby runtime = getRuntime();
-        Frame frame = runtime.getCurrentContext().getCurrentFrame();
+        Frame frame = context.getCurrentFrame();
 
         ByteList value = str.getByteList();
         if (pos > value.realSize || pos < 0) {
@@ -570,14 +571,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
      * 
      */
     @JRubyMethod(name = "=~", required = 1)
-    public IRubyObject op_match(IRubyObject str) {
+    public IRubyObject op_match(ThreadContext context, IRubyObject str) {
         int start;
         if(str.isNil()) {
-            getRuntime().getCurrentContext().getCurrentFrame().setBackRef(getRuntime().getNil());
+            context.getCurrentFrame().setBackRef(getRuntime().getNil());
             return str;
         }
         
-        start = search(str.convertToString(), 0, false);
+        start = search(context, str.convertToString(), 0, false);
 
         if(start < 0) return getRuntime().getNil();
 
@@ -588,11 +589,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
      * 
      */
     @JRubyMethod(name = "match", required = 1)
-    public IRubyObject match_m(IRubyObject str) {
-        if(op_match(str).isNil()) {
+    public IRubyObject match_m(ThreadContext context, IRubyObject str) {
+        if(op_match(context, str).isNil()) {
             return getRuntime().getNil();
         }
-        IRubyObject result =  getRuntime().getCurrentContext().getCurrentFrame().getBackRef();
+        IRubyObject result =  context.getCurrentFrame().getBackRef();
         if(result instanceof RubyMatchData) {
             ((RubyMatchData)result).use();
         }
@@ -1006,12 +1007,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
      *
      */
     @JRubyMethod(name = "last_match", optional = 1, meta = true)
-    public static IRubyObject last_match_s(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject last_match_s(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         if (args.length == 1) {
-            return nth_match(RubyNumeric.fix2int(args[0]), recv.getRuntime().getCurrentContext().getCurrentFrame().getBackRef());
+            return nth_match(RubyNumeric.fix2int(args[0]), context.getCurrentFrame().getBackRef());
         }
 
-        IRubyObject result = recv.getRuntime().getCurrentContext().getCurrentFrame().getBackRef();
+        IRubyObject result = context.getCurrentFrame().getBackRef();
 
         if (result instanceof RubyMatchData) ((RubyMatchData)result).use();
         return result;
@@ -1074,7 +1075,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
      *
      */
     @JRubyMethod(name = "union", rest = true, meta = true)
-    public static IRubyObject union(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject union(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0) {
             return newRegexp(recv.getRuntime(), ByteList.create("(?!)"), 0, false);
         } else if (args.length == 1) {
@@ -1127,7 +1128,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
             } else if (kcode == KCode.UTF8) {
                 _args[2] = recv.getRuntime().newString("u");
             }
-            return recv.callMethod(recv.getRuntime().getCurrentContext(),"new",_args);
+            return recv.callMethod(context, "new", _args);
         }
     }
 
