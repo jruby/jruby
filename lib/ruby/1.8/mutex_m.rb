@@ -7,6 +7,7 @@
 #   	by Keiju ISHITSUKA(keiju@ishitsuka.com)
 #       modified by matz
 #       patched by akira yamada
+#       gutted by MenTaLguY
 #++
 #
 # == Usage
@@ -27,6 +28,8 @@
 #   end
 #   
 #   obj = Foo.new
+
+require 'thread'
 
 module Mutex_m
   def Mutex_m.define_aliases(cl)
@@ -62,57 +65,31 @@ module Mutex_m
   
   # locking 
   def mu_synchronize
-    begin
-      mu_lock
-      yield
-    ensure
-      mu_unlock
-    end
+    @mu_mutex.synchronize { yield }
   end
   
   def mu_locked?
-    @mu_locked
+    @mu_mutex.locked?
   end
   
   def mu_try_lock
-    result = false
-    Thread.critical = true
-    unless @mu_locked
-      @mu_locked = true
-      result = true
-    end
-    Thread.critical = false
-    result
+    @mu_mutex.try_lock
   end
   
   def mu_lock
-    while (Thread.critical = true; @mu_locked)
-      @mu_waiting.push Thread.current
-      Thread.stop
-    end
-    @mu_locked = true
-    Thread.critical = false
+    @mu_mutex.lock
     self
   end
   
   def mu_unlock
-    return unless @mu_locked
-    Thread.critical = true
-    wait = @mu_waiting
-    @mu_waiting = []
-    @mu_locked = false
-    Thread.critical = false
-    for w in wait
-      w.run
-    end
+    @mu_mutex.unlock
     self
   end
   
   private
   
   def mu_initialize
-    @mu_waiting = []
-    @mu_locked = false;
+    @mu_mutex = ::Mutex.new
   end
 
   def initialize(*args)
