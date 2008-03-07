@@ -1094,6 +1094,7 @@ public class RubyIO extends RubyObject {
                         if(offset >= buffer.length()) {
                             return -1;
                         }
+                        eagain = false;
                     } else {
                         return -1;
                     }
