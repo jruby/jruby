@@ -80,7 +80,7 @@ if $cygwin; then
 	CP=`cygpath -p -w "$CP"`
 fi
 
-exec "$JAVA_CMD" -Xmx712m -Xss1024k -Xverify:none -da -classpath "$CP"	\
+exec "$JAVA_CMD" -Xmx712m -Xss1024k -da -classpath "$CP"	\
   "-Djruby.base=$JRUBY_BASE" "-Djruby.home=$JRUBY_HOME"				\
   "-Djruby.lib=$JRUBY_BASE/lib" -Djruby.script=jruby				\
   "-Djruby.shell=$JRUBY_SHELL" 						\
