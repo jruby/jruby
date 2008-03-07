@@ -572,6 +572,7 @@ class Resolv
           @sock = UDPSocket.new
           @sock.fcntl(Fcntl::F_SETFD, 1) if defined? Fcntl::F_SETFD
           @id = {}
+          @id_lock = Mutex.new
           @id.default = -1
           @thread = Thread.new {
             DNSThreadGroup.add Thread.current
@@ -594,7 +595,7 @@ class Resolv
 
         def sender(msg, data, queue, host, port=Port)
           service = [host, port]
-          id = Thread.exclusive {
+          id = @id_lock.synchronize {
             @id[service] = (@id[service] + 1) & 0xffff
           }
           request = msg.encode
@@ -625,6 +626,7 @@ class Resolv
           @sock.connect(host, port)
           @sock.fcntl(Fcntl::F_SETFD, 1) if defined? Fcntl::F_SETFD
           @id = -1
+          @id_lock = Mutex.new
           @thread = Thread.new {
             DNSThreadGroup.add Thread.current
             loop {
@@ -648,7 +650,7 @@ class Resolv
           unless host == @host && port == @port
             raise RequestError.new("host/port don't match: #{host}:#{port}")
           end
-          id = Thread.exclusive { @id = (@id + 1) & 0xffff }
+          id = @id_lock.synchronize { @id = (@id + 1) & 0xffff }
           request = msg.encode
           request[0,2] = [id].pack('n')
           return @senders[id] = Sender.new(request, data, @sock, queue)
@@ -670,6 +672,7 @@ class Resolv
           @sock.connect(host, port)
           @sock.fcntl(Fcntl::F_SETFD, 1) if defined? Fcntl::F_SETFD
           @id = -1
+          @id_lock = Mutex.new
           @senders = {}
           @thread = Thread.new {
             DNSThreadGroup.add Thread.current
@@ -695,7 +698,7 @@ class Resolv
           unless host == @host && port == @port
             raise RequestError.new("host/port don't match: #{host}:#{port}")
           end
-          id = Thread.exclusive { @id = (@id + 1) & 0xffff }
+          id = @id_lock.synchronize { @id = (@id + 1) & 0xffff }
           request = msg.encode
           request[0,2] = [request.length, id].pack('nn')
           return @senders[id] = Sender.new(request, data, @sock, queue)
