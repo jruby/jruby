@@ -49,6 +49,8 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.IdUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.methods.CallConfiguration;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.callback.Callback;
 
@@ -219,24 +221,38 @@ public class RubyStruct extends RubyObject {
             final String memberName = args[i].asJavaString();
             // if we are storing a name as well, index is one too high for values
             final int index = (name == null && !nilName) ? i : i - 1;
-            newStruct.defineFastMethod(memberName, new Callback() {
-                public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-                    Arity.checkArgumentCount(recv.getRuntime(), args, 0, 0);
-                    return ((RubyStruct)recv).get(index);
+            newStruct.addMethod(memberName, new DynamicMethod(newStruct, Visibility.PUBLIC, CallConfiguration.NO_FRAME_NO_SCOPE) {
+                @Override
+                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                    Arity.checkArgumentCount(self.getRuntime(), args, 0, 0);
+                    return ((RubyStruct)self).get(index);
                 }
 
-                public Arity getArity() {
-                    return Arity.NO_ARGUMENTS;
+                @Override
+                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+                    return ((RubyStruct)self).get(index);
+                }
+
+                @Override
+                public DynamicMethod dup() {
+                    return this;
                 }
             });
-            newStruct.defineFastMethod(memberName + "=", new Callback() {
-                public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-                    Arity.checkArgumentCount(recv.getRuntime(), args, 1, 1);
-                    return ((RubyStruct)recv).set(args[0], index);
+            newStruct.addMethod(memberName + "=", new DynamicMethod(newStruct, Visibility.PUBLIC, CallConfiguration.NO_FRAME_NO_SCOPE) {
+                @Override
+                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                    Arity.checkArgumentCount(self.getRuntime(), args, 1, 1);
+                    return ((RubyStruct)self).set(args[0], index);
                 }
 
-                public Arity getArity() {
-                    return Arity.ONE_ARGUMENT;
+                @Override
+                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
+                    return ((RubyStruct)self).set(arg, index);
+                }
+
+                @Override
+                public DynamicMethod dup() {
+                    return this;
                 }
             });
         }
