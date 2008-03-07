@@ -18,7 +18,6 @@ import javax.swing.JTextPane;
 
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.runtime.builtin.IRubyObject;
 
 public class IRBApplet extends Applet {
 
@@ -51,7 +50,7 @@ public class IRBApplet extends Applet {
             setInput(pipeIn);
             setOutput(new PrintStream(tar));
             setError(new PrintStream(tar));
-            setObjectSpaceEnabled(false);
+            setObjectSpaceEnabled(true); // useful for code completion inside the IRB
             setArgv(new String[] {"-f"});
         }};
         

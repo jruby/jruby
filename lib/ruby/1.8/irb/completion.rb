@@ -139,17 +139,25 @@ module IRB
 	if (gv | lv | cv).include?(receiver)
 	  # foo.func and foo is local var.
 	  candidates = eval("#{receiver}.methods", bind)
+          # JRuby specific (JRUBY-2186)
+          candidates = [] unless candidates.is_a?(Array)
 	elsif /^[A-Z]/ =~ receiver and /\./ !~ receiver
 	  # Foo::Bar.func
 	  begin
 	    candidates = eval("#{receiver}.methods", bind)
+            # JRuby specific (JRUBY-2186)
+            candidates = [] unless candidates.is_a?(Array)
 	  rescue Exception
 	    candidates = []
 	  end
 	else
 	  # func1.func2
 	  candidates = []
+	  begin
 	  ObjectSpace.each_object(Module){|m|
+            # JRuby specific (JRUBY-2186)
+            next unless m.respond_to?(:instance_methods)
+
 	    begin
 	      name = m.name
 	    rescue Exception
@@ -159,6 +167,9 @@ module IRB
 	      /^(IRB|SLex|RubyLex|RubyToken)/ =~ name
 	    candidates.concat m.instance_methods(false)
 	  }
+	  rescue RuntimeError
+	    ## JRuby specific (JRUBY-2186)
+	  end
 	  candidates.sort!
 	  candidates.uniq!
 	end
