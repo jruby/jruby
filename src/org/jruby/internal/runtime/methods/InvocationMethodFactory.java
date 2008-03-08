@@ -42,6 +42,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.JumpException;
@@ -274,47 +275,37 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      * @see org.jruby.internal.runtime.methods.MethodFactory#getAnnotatedMethod
      */
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, Method method) {
+        JavaMethodDescriptor desc = new JavaMethodDescriptor(method);
         Class type = method.getDeclaringClass();
-        JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
         String typePath = p(type);
         String javaMethodName = method.getName();
         
-        String generatedClassName = type.getName() + "Invoker$" + javaMethodName + "_method_" + jrubyMethod.required() + "_" + jrubyMethod.optional();
-        String generatedClassPath = typePath + "Invoker$" + javaMethodName + "_method_" + jrubyMethod.required() + "_" + jrubyMethod.optional();
+        String generatedClassName = type.getName() + "Invoker$" + javaMethodName + "_method_" + desc.required + "_" + desc.optional;
+        String generatedClassPath = typePath + "Invoker$" + javaMethodName + "_method_" + desc.required + "_" + desc.optional;
         
         synchronized (classLoader) {
             Class c = tryClass(implementationClass.getRuntime(), generatedClassName);
 
             try {
-                Class[] parameterTypes = method.getParameterTypes();
-                boolean isStatic = Modifier.isStatic(method.getModifiers());
                 if (c == null) {
                     int specificArity = -1;
-                    if (jrubyMethod.optional() == 0 && jrubyMethod.rest() == false) {
-                        if (jrubyMethod.required() == 0) {
-                            // try to count specific args to determine required
-                            int i = parameterTypes.length;
-                            if (isStatic) i--;
-                            if (parameterTypes.length > 0) {
-                                if (parameterTypes[0] == ThreadContext.class) i--;
-                                if (parameterTypes[parameterTypes.length - 1] == Block.class) i--;
-                            }
-                            
-                            if (i <= 3) {
-                                specificArity = i;
+                    if (desc.optional == 0 && !desc.rest) {
+                        if (desc.required == 0) {
+                            if (desc.actualRequired <= 3) {
+                                specificArity = desc.actualRequired;
                             } else {
                                 specificArity = -1;
                             }
-                        } else if (jrubyMethod.required() >= 0 && jrubyMethod.required() <= 3) {
-                            specificArity = jrubyMethod.required();
+                        } else if (desc.required >= 0 && desc.required <= 3) {
+                            specificArity = desc.required;
                         }
                     }
 
                     boolean block;
-                    if (parameterTypes.length == 0) {
+                    if (desc.parameters.length == 0) {
                         block = false;
                     } else {
-                        if (parameterTypes[parameterTypes.length - 1] == Block.class) {
+                        if (desc.parameters[desc.parameters.length - 1] == Block.class) {
                             block = true;
                         } else {
                             block = false;
@@ -331,20 +322,20 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     Label line = new Label();
                     mv.visitLineNumber(0, line);
 
-                    createAnnotatedMethodInvocation(method, mv, superClass, specificArity, block);
+                    createAnnotatedMethodInvocation(desc, mv, superClass, specificArity, block);
 
                     endMethod(mv);
 
                     c = endClass(implementationClass.getRuntime(), cw, generatedClassName);
                 }
 
-                JavaMethod ic = (JavaMethod)c.getConstructor(new Class[]{RubyModule.class, Visibility.class}).newInstance(new Object[]{implementationClass, jrubyMethod.visibility()});
+                JavaMethod ic = (JavaMethod)c.getConstructor(new Class[]{RubyModule.class, Visibility.class}).newInstance(new Object[]{implementationClass, desc.anno.visibility()});
 
-                ic.setArity(Arity.fromAnnotation(jrubyMethod, parameterTypes, isStatic));
+                ic.setArity(Arity.fromAnnotation(desc.anno, desc.parameters, desc.isStatic));
                 ic.setJavaName(javaMethodName);
-                ic.setArgumentTypes(method.getParameterTypes());
-                ic.setSingleton(Modifier.isStatic(method.getModifiers()));
-                ic.setCallConfig(CallConfiguration.getCallConfigByAnno(jrubyMethod));
+                ic.setArgumentTypes(desc.parameters);
+                ic.setSingleton(desc.isStatic);
+                ic.setCallConfig(CallConfiguration.getCallConfigByAnno(desc.anno));
                 return ic;
             } catch(Exception e) {
                 e.printStackTrace();
@@ -921,22 +912,20 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         Label line = new Label();
         mv.visitLineNumber(0, line);
         // TODO: indexed methods do not use specific arity yet
-        createAnnotatedMethodInvocation(method, mv, superClass, -1, true);
+        createAnnotatedMethodInvocation(new JavaMethodDescriptor(method), mv, superClass, -1, true);
         endMethod(mv);
         
         return methodName;
     }
 
-    private void createAnnotatedMethodInvocation(Method javaMethod, SkinnyMethodAdapter method, String superClass, int specificArity, boolean block) {
-        JRubyMethod jrubyMethod = javaMethod.getAnnotation(JRubyMethod.class);
-        String typePath = p(javaMethod.getDeclaringClass());
-        String javaMethodName = javaMethod.getName();
-        Class[] signature = javaMethod.getParameterTypes();
-        Class ret = javaMethod.getReturnType();
+    private void createAnnotatedMethodInvocation(JavaMethodDescriptor desc, SkinnyMethodAdapter method, String superClass, int specificArity, boolean block) {
+        String typePath = p(desc.method.getDeclaringClass());
+        String javaMethodName = desc.method.getName();
+        Class ret = desc.method.getReturnType();
 
-        checkArity(jrubyMethod, method, specificArity);
+        checkArity(desc.anno, method, specificArity);
         
-        CallConfiguration callConfig = CallConfiguration.getCallConfigByAnno(jrubyMethod);
+        CallConfiguration callConfig = CallConfiguration.getCallConfigByAnno(desc.anno);
         if (!callConfig.isNoop()) {
             invokeCallConfigPre(method, superClass, specificArity, block);
         }
@@ -957,18 +946,18 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         
         method.label(tryBegin);
         {
-            loadReceiver(typePath, signature, javaMethod, method);
+            loadReceiver(typePath, desc.parameters, desc.method, method);
             
-            loadArguments(method, jrubyMethod, specificArity);
+            loadArguments(method, desc.anno, specificArity);
             
             loadBlock(method, specificArity, block);
 
-            if (Modifier.isStatic(javaMethod.getModifiers())) {
+            if (Modifier.isStatic(desc.method.getModifiers())) {
                 // static invocation
-                method.invokestatic(typePath, javaMethodName, sig(ret, signature));
+                method.invokestatic(typePath, javaMethodName, sig(ret, desc.parameters));
             } else {
                 // virtual invocation
-                method.invokevirtual(typePath, javaMethodName, sig(ret, signature));
+                method.invokevirtual(typePath, javaMethodName, sig(ret, desc.parameters));
             }
         }
                 
