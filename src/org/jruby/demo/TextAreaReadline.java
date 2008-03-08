@@ -6,6 +6,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -25,10 +26,10 @@ import javax.swing.text.StyleConstants;
 import org.jruby.Ruby;
 import org.jruby.RubyIO;
 import org.jruby.RubyModule;
+import org.jruby.RubyString;
 import org.jruby.ext.Readline;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 
@@ -117,7 +118,7 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
 
         readlineM.defineModuleFunction("readline", new Callback() {
             public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-                return runtime.newString(readLine(args[0].toString()));
+                return RubyString.newUnicodeString(runtime, readLine(args[0].toString()));
             }
             public Arity getArity() { return Arity.twoArguments(); }
         });
@@ -326,10 +327,10 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
     }
     
     public void write(byte[] b, int off, int len) {
-        writeLine(new String(b, off, len));
+        writeLine(new String(b, off, len, Charset.forName("UTF-8")));
     }
     
     public void write(byte[] b) {
-        writeLine(new String(b));
+        writeLine(new String(b, Charset.forName("UTF-8")));
     }
 }

@@ -47,6 +47,7 @@ import jline.Completor;
 import jline.FileNameCompletor;
 import jline.CandidateListCompletionHandler;
 import jline.History;
+import org.jruby.RubyString;
 import org.jruby.runtime.MethodIndex;
 
 /**
@@ -149,7 +150,7 @@ public class Readline {
     public static IRubyObject s_push(IRubyObject recv, IRubyObject[] lines) throws Exception {
         ConsoleHolder holder = getHolder(recv.getRuntime());
         for (int i = 0; i < lines.length; i++) {
-            holder.history.addToHistory(lines[i].toString());
+            holder.history.addToHistory(((RubyString)lines[i]).getUnicodeValue());
         }
         return recv.getRuntime().getNil();
     }
