@@ -287,7 +287,7 @@ public class RubyStruct extends RubyObject {
         return struct;
     }
 
-    @JRubyMethod(rest = true, frame = true )
+    @JRubyMethod(rest = true, frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         modify();
 
