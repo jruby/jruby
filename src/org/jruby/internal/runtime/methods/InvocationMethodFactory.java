@@ -286,15 +286,30 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             Class c = tryClass(implementationClass.getRuntime(), generatedClassName);
 
             try {
+                Class[] parameterTypes = method.getParameterTypes();
+                boolean isStatic = Modifier.isStatic(method.getModifiers());
                 if (c == null) {
                     int specificArity = -1;
                     if (jrubyMethod.optional() == 0 && jrubyMethod.rest() == false) {
-                        if (jrubyMethod.required() >= 0 && jrubyMethod.required() <= 3) {
+                        if (jrubyMethod.required() == 0) {
+                            // try to count specific args to determine required
+                            int i = parameterTypes.length;
+                            if (isStatic) i--;
+                            if (parameterTypes.length > 0) {
+                                if (parameterTypes[0] == ThreadContext.class) i--;
+                                if (parameterTypes[parameterTypes.length - 1] == Block.class) i--;
+                            }
+                            
+                            if (i <= 3) {
+                                specificArity = i;
+                            } else {
+                                specificArity = -1;
+                            }
+                        } else if (jrubyMethod.required() >= 0 && jrubyMethod.required() <= 3) {
                             specificArity = jrubyMethod.required();
                         }
                     }
 
-                    Class[] parameterTypes = method.getParameterTypes();
                     boolean block;
                     if (parameterTypes.length == 0) {
                         block = false;
@@ -325,7 +340,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                 JavaMethod ic = (JavaMethod)c.getConstructor(new Class[]{RubyModule.class, Visibility.class}).newInstance(new Object[]{implementationClass, jrubyMethod.visibility()});
 
-                ic.setArity(Arity.fromAnnotation(jrubyMethod));
+                ic.setArity(Arity.fromAnnotation(jrubyMethod, parameterTypes, isStatic));
                 ic.setJavaName(javaMethodName);
                 ic.setArgumentTypes(method.getParameterTypes());
                 ic.setSingleton(Modifier.isStatic(method.getModifiers()));

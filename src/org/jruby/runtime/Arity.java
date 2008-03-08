@@ -31,6 +31,8 @@
 package org.jruby.runtime;
 
 import java.io.Serializable;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.Ruby;
@@ -90,6 +92,27 @@ public final class Arity implements Serializable {
             return createArity(-(anno.required() + 1));
         }
         return createArity(anno.required());
+    }
+    
+    public static Arity fromAnnotation(JRubyMethod anno, Class[] parameterTypes, boolean isStatic) {
+        int required = 0;
+        if (anno.optional() == 0 && !anno.rest() && anno.required() == 0) {
+            // try count specific args to determine required
+            int i = parameterTypes.length;
+            if (isStatic) i--;
+            if (parameterTypes.length > 0) {
+                if (parameterTypes[0] == ThreadContext.class) i--;
+                if (parameterTypes[parameterTypes.length - 1] == Block.class) i--;
+            }
+
+            required = i;
+        } else {
+            required = anno.required();
+        }
+        if (anno.optional() > 0 || anno.rest()) {
+            return createArity(-(required + 1));
+        }
+        return createArity(required);
     }
     
     private static Arity newArity(int value) {
