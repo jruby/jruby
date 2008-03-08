@@ -35,12 +35,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.io.BufferedInputStream;
-import static java.lang.System.out;
-import org.jruby.util.io.FileExistsException;
-import org.jruby.util.io.STDIO;
-import org.jruby.util.io.OpenFile;
-import org.jruby.util.io.ChannelDescriptor;
 import java.io.EOFException;
 import java.io.FileDescriptor;
 import java.io.FilterInputStream;
@@ -61,8 +55,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import org.jruby.anno.JRubyMethod;
 
+import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.posix.util.FieldAccess;
@@ -83,6 +77,10 @@ import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.PipeException;
+import org.jruby.util.io.FileExistsException;
+import org.jruby.util.io.STDIO;
+import org.jruby.util.io.OpenFile;
+import org.jruby.util.io.ChannelDescriptor;
 
 /**
  * 
