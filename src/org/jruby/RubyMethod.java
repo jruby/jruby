@@ -142,7 +142,7 @@ public class RubyMethod extends RubyObject {
         CallbackFactory f = getRuntime().callbackFactory(RubyMethod.class);
         Ruby r = getRuntime();
         ThreadContext tc = r.getCurrentContext();
-        Block block = MethodBlock.createMethodBlock(tc, tc.getCurrentScope().cloneScope(), f.getBlockMethod("bmcall"), this, r.getTopSelf());
+        Block block = MethodBlock.createMethodBlock(tc, tc.getCurrentScope(), f.getBlockMethod("bmcall"), this, r.getTopSelf());
         
         while (true) {
             try {

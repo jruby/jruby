@@ -47,6 +47,9 @@ public class MethodBlock extends BlockBody {
     private final Callback callback;
     
     private final Arity arity;
+     
+    // This is a dummy scope; we should find a way to make that more explicit
+    private final StaticScope staticScope;
 
     public static Block createMethodBlock(ThreadContext context, DynamicScope dynamicScope, Callback callback, RubyMethod method, IRubyObject self) {
         Binding binding = new Binding(self,
@@ -54,16 +57,17 @@ public class MethodBlock extends BlockBody {
                          context.getCurrentFrame().getVisibility(),
                          context.getRubyClass(),
                          dynamicScope);
-        BlockBody body = new MethodBlock(callback, method);
+        BlockBody body = new MethodBlock(callback, method, dynamicScope.getStaticScope());
         
         return new Block(body, binding);
     }
 
-    public MethodBlock(Callback callback, RubyMethod method) {
+    public MethodBlock(Callback callback, RubyMethod method, StaticScope staticScope) {
         super(BlockBody.SINGLE_RESTARG);
         this.callback = callback;
         this.method = method;
         this.arity = Arity.createArity((int) method.arity().getLongValue());
+        this.staticScope = staticScope;
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
@@ -125,7 +129,10 @@ public class MethodBlock extends BlockBody {
     }
     
     public StaticScope getStaticScope() {
-        throw new RuntimeException("MethodBlock does not have a static scope; this should not be called");
+        // TODO: This is actually now returning the scope of whoever called Method#to_proc
+        // which is obviously wrong; but there's no scope to provide for many methods.
+        // It fixes JRUBY-2237, but needs a better solution.
+        return staticScope;
     }
 
     public Block cloneBlock(Binding binding) {
