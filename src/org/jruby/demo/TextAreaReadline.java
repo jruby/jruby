@@ -6,7 +6,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
+import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -327,10 +327,18 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
     }
     
     public void write(byte[] b, int off, int len) {
-        writeLine(new String(b, off, len, Charset.forName("UTF-8")));
+        try {
+            writeLine(new String(b, off, len, "UTF-8"));
+        } catch (UnsupportedEncodingException ex) {
+            writeLine(new String(b, off, len));
+        }
     }
     
     public void write(byte[] b) {
-        writeLine(new String(b, Charset.forName("UTF-8")));
+        try {
+            writeLine(new String(b, "UTF-8"));
+        } catch (UnsupportedEncodingException ex) {
+            writeLine(new String(b));
+        }
     }
 }
