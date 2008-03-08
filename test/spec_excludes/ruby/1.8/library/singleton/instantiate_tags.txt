@@ -1,1 +1,1 @@
-fails(JRUBY-2239):Singleton._instantiate? returns nil until it is instantiated
+fails(JRUBY-2239):Singleton._instantiate? is private
