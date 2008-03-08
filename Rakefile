@@ -26,15 +26,33 @@ task :build do
   ant "jar"
 end
 
-desc "Run the basic set of tests"
-task :test do
-  ant "test"
-end
+desc "Alias for test:short"
+task :test => "test:short"
+
+desc "Alias for spec:ci"
+task :spec => "spec:ci"
 
 namespace :test do
+  desc "Run the basic set of tests"
+  task :short do
+    ant "test"
+  end
+  
   desc "Run the complete set of tests (will take a while)"
   task :all do
     ant "test-all"
+  end
+end
+
+namespace :spec do
+  desc "Run the rubyspecs expected to pass (version-frozen)"
+  task :ci do
+    ant "spec"
+  end
+  
+  desc "Run all the specs including failures (version-frozen)"
+  task :all do
+    ant "spec-all"
   end
 end
 
