@@ -40,6 +40,7 @@ import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.BeginNode;
 import org.jruby.ast.BinaryOperatorNode;
 import org.jruby.ast.BlockAcceptingNode;
+import org.jruby.ast.BlockNode;
 import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.BreakNode;
 import org.jruby.ast.CallNode;
@@ -408,6 +409,14 @@ public class ASTInspector {
             break;
         case ROOTNODE:
             inspect(((RootNode)node).getBodyNode());
+            if (((RootNode)node).getBodyNode() instanceof BlockNode) {
+                BlockNode blockNode = (BlockNode)((RootNode)node).getBodyNode();
+                if (blockNode.size() > 500) {
+                    // method has more than 500 lines; we'll need to split it
+                    // and therefore need to use a heap-based scope
+                    hasScopeAwareMethods = true;
+                }
+            }
             break;
         case RESCUEBODYNODE:
             disable();

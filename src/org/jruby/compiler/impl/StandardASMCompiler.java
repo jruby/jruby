@@ -2578,6 +2578,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
         
         public void beginChainedMethod() {
+            method.start();
+            
             method.aload(THREADCONTEXT_INDEX);
             method.dup();
             method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));

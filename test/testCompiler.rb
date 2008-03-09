@@ -471,3 +471,8 @@ test_no_exception {
 # JRUBY-2043
 test_equal(5, compile_and_run("def foo; 1.times { a, b = [], 5; a[1] = []; return b; }; end; foo"))
 test_equal({"1" => 2}, compile_and_run("def foo; x = {1 => 2}; x.inject({}) do |hash, (key, value)|; hash[key.to_s] = value; hash; end; end; foo"))
+
+# JRUBY-2246
+long_src = "a = 1\n"
+5000.times { long_src << "a += 1\n" }
+test_equal(5001, compile_and_run(long_src))
