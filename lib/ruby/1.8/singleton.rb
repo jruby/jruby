@@ -44,11 +44,6 @@
 #
 # *  Klass._load(str)  -  calling Klass.instance()
 #
-# *  Klass._instantiate?()  -  returns the ``the instance''
-#    if the class has been instantiated, otherwise nil.
-#    No longer a hook method; overriding it will have no effect
-#    on the instantiation process.
-#
 #
 # The instance method of Singleton are
 # * clone and dup - raising TypeErrors to prevent cloning or duping
@@ -106,10 +101,13 @@ class << Singleton
     mutex = Mutex.new
 
     (class << klass ; self ; end).instance_eval do
-      define_method(:_instantiate?) do ||
-        
-      end
       define_method(:instance) do ||
+
+        # note that there is no good way to support the _instantiate? hook
+        # in a backwards-compatible way without forcing the use of
+        # Thread.critical, which is the very thing we are trying to avoid
+        # with this rewrite
+
         mutex.synchronize do
           unless @__instance__
             @__instance__ = new
@@ -120,7 +118,6 @@ class << Singleton
             # synchronize on the mutex
             class << self
               def instance ; @__instance__ ; end
-              alias _instantiate? instance
             end
           end
           @__instance__
@@ -129,12 +126,7 @@ class << Singleton
     end
     klass
   end
-
-  # Note that there is no good way to support _instantiate? as an
-  # overridable hook and remain backwards-compatible; _instantiate? is
-  # preserved merely for the sake of direct callers
-  def _instantiate? ; nil ; end
-
+  
   private
   #  extending an object with Singleton is a bad idea
   undef_method :extend_object
