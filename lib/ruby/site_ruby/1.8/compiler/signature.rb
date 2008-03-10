@@ -1,6 +1,4 @@
 module Compiler
-  include Java
-
   module JavaTypes
     import java.lang.Object
     import java.lang.Byte
@@ -20,7 +18,7 @@ module Compiler
     module_function :classname
     
     def path(cls)
-      return cls if String === cls
+      return cls if Symbol === cls
       cls = cls.java_class if Class === cls
       cls.name.gsub('.', '/')
     end
