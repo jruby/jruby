@@ -395,6 +395,9 @@ public class ShellLauncher {
         // and end of each command word and don't run in process if we find them.
         for (int i = 0; i < commands.length; i++) {
             String c = commands[i];
+            if (c.trim().length() == 0) {
+                continue;
+            }
             char[] firstLast = new char[] {c.charAt(0), c.charAt(c.length()-1)};
             for (int j = 0; j < firstLast.length; j++) {
                 switch (firstLast[j]) {
