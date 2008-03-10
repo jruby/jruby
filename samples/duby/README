@@ -1,0 +1,16 @@
+Duby: A Type-Inferred Ruby-Like JVM Language
+
+Duby is an experimental project to create a JVM bytecode compiler for a 
+Ruby-like language that infers static types from argument declarations 
+and called methods. It is currently under development, but may eventually
+be used to implement portions of JRuby, since Duby combines the terse,
+neat syntax of Ruby with the performance of statically-typed Java 
+bytecode. 
+
+To compile the samples, run the following lines:
+
+jruby lib/ruby/site_ruby/1.8/compiler/duby/compiler.rb <filename>
+
+And to load and call them, use JRuby's Java integration:
+
+CLASSPATH=. jruby -rjava -e "p Java::Foo.new.fib(35)"
