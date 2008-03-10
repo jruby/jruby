@@ -1,1 +1,2 @@
 fails:Fixnum#>> does not raise RangeError when the given argument is out of range of Integer
+fails(JRUBY-2250):Fixnum#>> does not raise RangeError when the given argument is out of range of Integer

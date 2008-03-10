@@ -1,0 +1,1 @@
+fails(JRUBY-2250):Bignum#>> does not raise RangeError when the given argument is out of range of Integer
