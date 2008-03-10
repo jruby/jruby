@@ -1,6 +1,6 @@
 require 'test/unit'
 require 'jruby'
-require 'compiler/pruby'
+require 'compiler/duby'
 
 class TestCallNode < Test::Unit::TestCase
   def test_declared_type
