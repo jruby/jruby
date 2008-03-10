@@ -44,6 +44,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -77,6 +78,7 @@ public class JavaMethod extends JavaCallable {
         result.defineFastMethod("invoke", callbackFactory.getFastOptMethod("invoke"));
         result.defineFastMethod("invoke_static", callbackFactory.getFastOptMethod("invoke_static"));
         result.defineFastMethod("return_type", callbackFactory.getFastMethod("return_type"));
+        result.defineFastMethod("parameter_types", callbackFactory.getFastMethod("parameter_types"));
         result.defineFastMethod("type_parameters", callbackFactory.getFastMethod("type_parameters"));
 
         return result;
@@ -118,6 +120,33 @@ public class JavaMethod extends JavaCallable {
             Method method = javaClass.getDeclaredMethod(methodName, argumentTypes);
             return create(runtime, method);
         } catch (NoSuchMethodException e) {
+            throw runtime.newNameError("undefined method '" + methodName + "' for class '" + javaClass.getName() + "'",
+                    methodName);
+        }
+    }
+
+    public static JavaMethod createDeclaredSmart(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
+        try {
+            Method method = javaClass.getDeclaredMethod(methodName, argumentTypes);
+            return create(runtime, method);
+        } catch (NoSuchMethodException e) {
+            // search through all declared methods to find a closest match
+            MethodSearch: for (Method method : javaClass.getDeclaredMethods()) {
+                if (method.getName().equals(methodName)) {
+                    Class<?>[] targetTypes = method.getParameterTypes();
+                    TypeScan: for (int i = 0; i < argumentTypes.length; i++) {
+                        if (i >= targetTypes.length) continue MethodSearch;
+                        
+                        if (targetTypes[i].isAssignableFrom(argumentTypes[i])) {
+                            continue TypeScan;
+                        }
+                    }
+                    
+                    // if we get here, we found a matching method, use it
+                    // TODO: choose narrowest method by continuing to search
+                    return create(runtime, method);
+                }
+            }
             throw runtime.newNameError("undefined method '" + methodName + "' for class '" + javaClass.getName() + "'",
                     methodName);
         }
@@ -202,6 +231,17 @@ public class JavaMethod extends JavaCallable {
             return getRuntime().getNil();
         }
         return JavaClass.get(getRuntime(), klass);
+    }
+
+    public IRubyObject parameter_types() {
+        Class<?>[] klasses = method.getParameterTypes();
+        RubyArray array = RubyArray.newArray(getRuntime());
+        
+        for (Class<?> cls : klasses) {
+            array.append(JavaClass.get(getRuntime(), cls));
+        }
+
+        return array;
     }
     
     public IRubyObject type_parameters() {

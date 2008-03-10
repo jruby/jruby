@@ -19,7 +19,7 @@ module Compiler
       const_down = const_name.downcase
       
       case const_name
-      when "ALOAD", "ILOAD", "ASTORE"
+      when "ALOAD", "ILOAD", "ASTORE", "ISTORE"
         # variable instructions
         eval "
             def #{const_down}(var)
@@ -51,10 +51,10 @@ module Compiler
           method_visitor.visit_insn(Opcodes::RETURN)
         end
         
-      when "ARETURN", "DUP", "SWAP", "POP", "POP2", "ICONST_0", "ICONST_1", "ICONST_2",
+      when "ARETURN", "IRETURN", "DUP", "SWAP", "POP", "POP2", "ICONST_0", "ICONST_1", "ICONST_2",
           "ICONST_3", "LCONST_0", "ISUB", "ACONST_NULL", "NOP", "AALOAD", "IALOAD",
           "BALOAD", "BASTORE", "DUP_X1", "DUP_X2", "DUP2", "DUP2_X1", "DUP2_X2",
-          "ATHROW", "ARRAYLENGTH", "IADD", "IINC"
+          "ATHROW", "ARRAYLENGTH", "IADD", "IINC", "ISUB"
         # bare instructions
         eval "
             def #{const_down}
@@ -83,7 +83,7 @@ module Compiler
         # jump instructions
         eval "
             def #{const_down}(target)
-              method_visitor.visit_jump_insn(Opcodes::#{const_name}, target)
+              method_visitor.visit_jump_insn(Opcodes::#{const_name}, target.label)
             end
           ", b, __FILE__, __LINE__
           
@@ -114,13 +114,15 @@ module Compiler
     end
     
     class SmartLabel
+      attr_reader :label
+      
       def initialize(method_visitor)
         @method_visitor = method_visitor
         @label = Label.new
       end
       
       def set!
-        method_visitor.visit_label(@label)
+        @method_visitor.visit_label(@label)
       end
     end
     
@@ -130,14 +132,14 @@ module Compiler
     
     def aprintln
       dup
-      getstatic path(System), "out", PrintStream
+      getstatic System, "out", PrintStream
       swap
-      invokevirtual path(PrintStream), "println", [Void::TYPE, Object]
+      invokevirtual PrintStream, "println", [Void::TYPE, Object]
     end
     
     def swap2
       dup2_x2
-      pop
+      pop2
     end
     
     def line(num)

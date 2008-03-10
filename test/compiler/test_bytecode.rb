@@ -10,19 +10,33 @@ class TestBytecode < Test::Unit::TestCase
   import java.lang.Void
   
   class DummyMethod
+    def initialize
+      @all = []
+    end
     def method_missing(sym, *args)
-      [sym, *args]
+      current = [sym, *args]
+      @all << current
+      current
+    end
+    
+    def all
+      @all
     end
   end
   
+  def setup
+    @dummy = DummyMethod.new
+  end
+  
   def method_visitor
-    DummyMethod.new
+    @dummy
   end
   
   def test_var_insns
     assert_equal([:visit_var_insn, Opcodes::ALOAD, :a], (aload :a))
     assert_equal([:visit_var_insn, Opcodes::ILOAD, :a], (iload :a))
     assert_equal([:visit_var_insn, Opcodes::ASTORE, :a], (astore :a))
+    assert_equal([:visit_var_insn, Opcodes::ISTORE, :a], (istore :a))
   end
   
   def test_ldc
@@ -54,6 +68,7 @@ class TestBytecode < Test::Unit::TestCase
   end
   
   def test_bare_insns
+    assert_equal([:visit_insn, Opcodes::IRETURN], (ireturn))
     assert_equal([:visit_insn, Opcodes::ARETURN], (areturn))
     assert_equal([:visit_insn, Opcodes::DUP], (dup))
     assert_equal([:visit_insn, Opcodes::SWAP], (swap))
@@ -79,6 +94,7 @@ class TestBytecode < Test::Unit::TestCase
     assert_equal([:visit_insn, Opcodes::ATHROW], (athrow))
     assert_equal([:visit_insn, Opcodes::ARRAYLENGTH], (arraylength))
     assert_equal([:visit_insn, Opcodes::IADD], (iadd))
+    assert_equal([:visit_insn, Opcodes::ISUB], (isub))
     assert_equal([:visit_insn, Opcodes::IINC], (iinc))
   end
   
@@ -102,19 +118,20 @@ class TestBytecode < Test::Unit::TestCase
   end
   
   def test_jump_insns
-    assert_equal([:visit_jump_insn, Opcodes::GOTO, :a], (goto :a))
-    assert_equal([:visit_jump_insn, Opcodes::IFEQ, :a], (ifeq :a))
-    assert_equal([:visit_jump_insn, Opcodes::IFNE, :a], (ifne :a))
-    assert_equal([:visit_jump_insn, Opcodes::IF_ACMPEQ, :a], (if_acmpeq :a))
-    assert_equal([:visit_jump_insn, Opcodes::IF_ACMPNE, :a], (if_acmpne :a))
-    assert_equal([:visit_jump_insn, Opcodes::IF_ICMPEQ, :a], (if_icmpeq :a))
-    assert_equal([:visit_jump_insn, Opcodes::IF_ICMPNE, :a], (if_icmpne :a))
-    assert_equal([:visit_jump_insn, Opcodes::IF_ICMPLT, :a], (if_icmplt :a))
-    assert_equal([:visit_jump_insn, Opcodes::IF_ICMPGT, :a], (if_icmpgt :a))
-    assert_equal([:visit_jump_insn, Opcodes::IF_ICMPLE, :a], (if_icmple :a))
-    assert_equal([:visit_jump_insn, Opcodes::IF_ICMPGE, :a], (if_icmpge :a))
-    assert_equal([:visit_jump_insn, Opcodes::IFNULL, :a], (ifnull :a))
-    assert_equal([:visit_jump_insn, Opcodes::IFNONNULL, :a], (ifnonnull :a))
+    lbl = label
+    assert_equal([:visit_jump_insn, Opcodes::GOTO, lbl.label], (goto lbl))
+    assert_equal([:visit_jump_insn, Opcodes::IFEQ, lbl.label], (ifeq lbl))
+    assert_equal([:visit_jump_insn, Opcodes::IFNE, lbl.label], (ifne lbl))
+    assert_equal([:visit_jump_insn, Opcodes::IF_ACMPEQ, lbl.label], (if_acmpeq lbl))
+    assert_equal([:visit_jump_insn, Opcodes::IF_ACMPNE, lbl.label], (if_acmpne lbl))
+    assert_equal([:visit_jump_insn, Opcodes::IF_ICMPEQ, lbl.label], (if_icmpeq lbl))
+    assert_equal([:visit_jump_insn, Opcodes::IF_ICMPNE, lbl.label], (if_icmpne lbl))
+    assert_equal([:visit_jump_insn, Opcodes::IF_ICMPLT, lbl.label], (if_icmplt lbl))
+    assert_equal([:visit_jump_insn, Opcodes::IF_ICMPGT, lbl.label], (if_icmpgt lbl))
+    assert_equal([:visit_jump_insn, Opcodes::IF_ICMPLE, lbl.label], (if_icmple lbl))
+    assert_equal([:visit_jump_insn, Opcodes::IF_ICMPGE, lbl.label], (if_icmpge lbl))
+    assert_equal([:visit_jump_insn, Opcodes::IFNULL, lbl.label], (ifnull lbl))
+    assert_equal([:visit_jump_insn, Opcodes::IFNONNULL, lbl.label], (ifnonnull lbl))
   end
   
   def test_lookup_switch
@@ -128,5 +145,23 @@ class TestBytecode < Test::Unit::TestCase
   def test_label
     l1 = label
     assert_equal([:visit_label, l1.label], l1.set!)
+  end
+  
+  def test_aprintln
+    aprintln
+    assert_equal(
+      [ [:visit_insn, Opcodes::DUP],
+        [:visit_field_insn, Opcodes::GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;"],
+        [:visit_insn, Opcodes::SWAP],
+        [ :visit_method_insn,
+          Opcodes::INVOKEVIRTUAL,
+          "java/io/PrintStream",
+          "println",
+          "(Ljava/lang/Object;)V"]], @dummy.all)
+  end
+  
+  def test_swap2
+    swap2
+    assert_equal([[:visit_insn, Opcodes::DUP2_X2], [:visit_insn, Opcodes::POP2]], @dummy.all)
   end
 end

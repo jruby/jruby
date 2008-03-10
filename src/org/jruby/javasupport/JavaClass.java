@@ -1291,13 +1291,27 @@ public class JavaClass extends JavaObject {
         return JavaMethod.createDeclared(getRuntime(), javaClass(), methodName, argumentTypes);
     }
 
+    @JRubyMethod(required = 1, rest = true)
+    public JavaMethod declared_method_smart(IRubyObject[] args) throws ClassNotFoundException {
+        String methodName = args[0].asJavaString();
+        Class<?>[] argumentTypes = buildArgumentTypes(args);
+        return JavaMethod.createDeclaredSmart(getRuntime(), javaClass(), methodName, argumentTypes);
+    }
+
     private Class<?>[] buildArgumentTypes(IRubyObject[] args) throws ClassNotFoundException {
         if (args.length < 1) {
             throw getRuntime().newArgumentError(args.length, 1);
         }
         Class<?>[] argumentTypes = new Class[args.length - 1];
         for (int i = 1; i < args.length; i++) {
-            JavaClass type = for_name(this, args[i]);
+            JavaClass type;
+            if (args[i] instanceof JavaClass) {
+                type = (JavaClass)args[i];
+            } else if (args[i].respondsTo("java_class")) {
+                type = (JavaClass)args[i].callMethod(getRuntime().getCurrentContext(), "java_class");
+            } else {
+                type = for_name(this, args[i]);
+            }
             argumentTypes[i - 1] = type.javaClass();
         }
         return argumentTypes;
