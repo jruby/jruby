@@ -7,6 +7,7 @@ module Compiler
     include Signature
     
     import "jruby.objectweb.asm.Opcodes"
+    import "jruby.objectweb.asm.Label"
   
     import java.lang.Object
     import java.lang.System
@@ -31,6 +32,7 @@ module Compiler
         def ldc_int(value); method_visitor.visit_ldc_insn(java.lang.Integer.new(value)); end
         eval "
             def #{const_down}(value)
+              value = value.to_s if Symbol === value
               method_visitor.visit_ldc_insn(value)
             end
           ", b, __FILE__, __LINE__
@@ -111,8 +113,19 @@ module Compiler
       method_visitor.visit_try_catch_block(from, to, target, type) 
     end
     
-    def label(lbl)
-      method_visitor.visit_label(lbl)
+    class SmartLabel
+      def initialize(method_visitor)
+        @method_visitor = method_visitor
+        @label = Label.new
+      end
+      
+      def set!
+        method_visitor.visit_label(@label)
+      end
+    end
+    
+    def label
+      return SmartLabel.new(method_visitor)
     end
     
     def aprintln
@@ -125,6 +138,10 @@ module Compiler
     def swap2
       dup2_x2
       pop
+    end
+    
+    def line(num)
+      method_visitor.visit_line_number num, Label.new
     end
   end
 end

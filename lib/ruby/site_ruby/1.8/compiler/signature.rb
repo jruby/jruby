@@ -1,3 +1,5 @@
+require 'java'
+
 module Compiler
   module JavaTypes
     import java.lang.Object
@@ -85,6 +87,10 @@ module Compiler
     module_function :class_id, :ci
     
     def signature(*sig_classes)
+      if sig_classes.size == 0
+        return "()V"
+      end
+      
       return_class = sig_classes.shift
       sig_string = "("
       sig_classes.each {|arg_class| sig_string << class_id(arg_class)}

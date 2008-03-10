@@ -10,7 +10,7 @@ module Compiler
     import java.lang.Void
     include Signature
 
-    def initialize(class_name, file_name, superclass, *interfaces)
+    def initialize(class_name, file_name, superclass = Object, *interfaces)
       @class_name = class_name
       @superclass = superclass
       
@@ -46,8 +46,18 @@ module Compiler
       MethodBuilder.build(self, ACC_PUBLIC, name.to_s, signature, &block)
     end
     
+    # New version does not instance_eval, to allow for easier embedding
+    def method2(name, *signature, &block)
+      MethodBuilder.build2(self, ACC_PUBLIC, name.to_s, signature, &block)
+    end
+    
     def static_method(name, *signature, &block)
       MethodBuilder.build(self, ACC_PUBLIC | ACC_STATIC, name.to_s, signature, &block)
+    end
+    
+    # New version does not instance_eval, to allow for easier embedding
+    def static_method2(name, *signature, &block)
+      MethodBuilder.build2(self, ACC_PUBLIC | ACC_STATIC, name.to_s, signature, &block)
     end
     
     # name for signature generation using the class being generated
@@ -72,6 +82,10 @@ module Compiler
     def new_method(modifiers, name, signature)
       @class_writer.visit_method(modifiers, name, sig(*signature), nil, nil)
     end
+    
+    def line(num)
+      # class bodies don't track line numbers in Java, so we ignore
+    end
   end
   
   class MethodBuilder
@@ -92,6 +106,13 @@ module Compiler
       mb = MethodBuilder.new(class_builder, modifiers, name, signature)
       mb.start
       mb.instance_eval &block
+      mb.stop
+    end
+    
+    def self.build2(class_builder, modifiers, name, signature, &block)
+      mb = MethodBuilder.new(class_builder, modifiers, name, signature)
+      mb.start
+      block.call(mb)
       mb.stop
     end
     

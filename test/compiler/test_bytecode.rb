@@ -26,7 +26,9 @@ class TestBytecode < Test::Unit::TestCase
   end
   
   def test_ldc
-    assert_equal([:visit_ldc_insn, :a], (ldc :a))
+    assert_equal([:visit_ldc_insn, "a"], (ldc :a))
+    assert_equal([:visit_ldc_insn, "a"], (ldc "a"))
+    assert_equal([:visit_ldc_insn, java.lang.Integer.new(1)], (ldc_int 1))
   end
   
   def test_method_insns
@@ -124,6 +126,7 @@ class TestBytecode < Test::Unit::TestCase
   end
   
   def test_label
-    assert_equal([:visit_label, :a], (label :a))
+    l1 = label
+    assert_equal([:visit_label, l1.label], l1.set!)
   end
 end
