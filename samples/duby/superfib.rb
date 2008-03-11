@@ -1,6 +1,6 @@
 class Foo
   def fib(n)
-    {n => java.lang.Integer::TYPE, :return => java.lang.Integer::TYPE}
+    {n => :int, :return => :int}
     if (n < 2)
       n
     else

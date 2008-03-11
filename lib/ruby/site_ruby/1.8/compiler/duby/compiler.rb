@@ -3,13 +3,15 @@ require 'jruby'
 
 module Compiler
   module PrimitiveRuby
-    JObject = java.lang.Object
-    JClass = java.lang.Class
-    JString = java.lang.String
+    JObject = java.lang.Object.java_class
+    JClass = java.lang.Class.java_class
+    JString = java.lang.String.java_class
     Void = java.lang.Void::TYPE
-    System = java.lang.System
-    PrintStream = java.io.PrintStream
-    JInteger = java.lang.Integer
+    System = java.lang.System.java_class
+    PrintStream = java.io.PrintStream.java_class
+    JInteger = java.lang.Integer.java_class
+    Jint = Java::int.java_class
+    JavaClass = Java::JavaClass
     
     class CompileError < Exception
       def initialize(position, message)
@@ -70,22 +72,40 @@ module Compiler
         def compile(builder)
           receiver_type = receiver_node.type(builder)
           
-          if Java::JavaClass === receiver_type && receiver_type.primitive?
+          if receiver_type.primitive?
             # we're performing an operation against a primitive, map it accordingly
             compile_primitive(receiver_type, builder)
           else
-            receiver_node.compile(builder)
-
-            # inefficient to cast every time; better inference will help
-            builder.checkcast(receiver_type)
-
-            args_list = args_node.child_nodes.to_a
-            args_list.each_index do |idx|
-              node = args_list[idx]
-              node.compile(builder)
+            case name
+            when "new"
+              compile_new(receiver_type, builder)
+            else
+              compile_call(receiver_type, builder)
             end
+          end
+        end
+        
+        def compile_call(receiver_type, builder)
+          receiver_node.compile(builder)
 
+          # I removed this because inference is working...but will it be needed under some circumstances?
+#          # inefficient to cast every time; better inference will help
+#          builder.checkcast(receiver_type)
+
+          compile_args(builder)
+
+          if (receiver_type.interface?)
+            builder.invokeinterface receiver_type, mapped_name(builder), signature(builder)
+          else
             builder.invokevirtual receiver_type, mapped_name(builder), signature(builder)
+          end
+        end
+        
+        def compile_args(builder)
+          args_list = args_node.child_nodes.to_a
+          args_list.each_index do |idx|
+            node = args_list[idx]
+            node.compile(builder)
           end
         end
         
@@ -101,7 +121,7 @@ module Compiler
           node.compile(builder)
 
           case type
-          when JInteger::TYPE
+          when Jint
             case name
             when "+"
               builder.iadd
@@ -115,11 +135,27 @@ module Compiler
           end
         end
         
+        def compile_new(type, builder)
+          builder.new type
+          builder.dup
+          builder.invokespecial type, mapped_name(builder), signature(builder)
+        end
+        
         def mapped_name(builder)
           # TODO move to a utility somewhere for smart name mappings
+          # TODO or at least make it a table...
           mapped_name = name
-          if (receiver_node.type(builder) == JString && name == "+")
-            mapped_name = "concat"
+          case receiver_node.type(builder)
+          when JString
+            case name
+            when "+"
+              mapped_name = "concat"
+            end
+          else
+            case name
+            when "new"
+              mapped_name = "<init>"
+            end
           end
           
           mapped_name
@@ -129,10 +165,12 @@ module Compiler
           @return_type ||= begin
             recv_type = receiver_node.type(builder)
             
-            if Java::JavaClass === recv_type
+            # if we already have an exact class, use it
+            if JavaClass === recv_type
               recv_type
             else
-              recv_java_class = recv_type.java_class
+              # otherwise, find the target method and get its return type
+              recv_java_class = recv_type
               arg_types = []
               args_node.child_nodes.each do |node|
                 arg_types << node.type(builder)
@@ -140,7 +178,7 @@ module Compiler
               declared_method = recv_java_class.declared_method_smart(mapped_name(builder), *arg_types)
               return_type = declared_method.return_type
 
-              JavaUtilities.get_proxy_class(return_type.to_s)
+              builder.type(return_type.to_s)
             end
           end
         end
@@ -150,18 +188,20 @@ module Compiler
           args_node.child_nodes.each do |node|
             arg_types << node.type(builder)
           end if args_node
-          recv_java_class = receiver_node.type(builder).java_class
+          
+          recv_java_class = receiver_node.type(builder)
           declared_method = recv_java_class.declared_method_smart(mapped_name(builder), *arg_types)
           return_type = declared_method.return_type
+          
           if (return_type)
-            return_class = JavaUtilities.get_proxy_class(return_type.to_s)
+            return_class = builder.type(return_type.to_s)
           else
             return_type = Void
           end
           
           return [
             return_class,
-            *declared_method.parameter_types.map {|type| JavaUtilities.get_proxy_class(type.to_s)}
+            *declared_method.parameter_types.map {|type| builder.type(type.to_s)}
           ]
         end
         
@@ -178,13 +218,19 @@ module Compiler
           
           # join and load
           class_name = elements.join(".")
-          JavaUtilities.get_proxy_class(class_name)
+          builder.type(class_name)
         end
       end
   
       class Colon2Node
         def declared_type(builder)
-          left_node.declared_type(builder).java_class.declared_field(name).static_value
+          left_node.declared_type(builder).declared_field(name).static_value
+        end
+      end
+      
+      class ConstNode
+        def type(builder)
+          builder.type(name.intern)
         end
       end
       
@@ -214,7 +260,7 @@ module Compiler
             case signature[0]
             when Void
               method.returnvoid
-            when JInteger::TYPE
+            when Jint
               method.ireturn
             else
               method.areturn
@@ -225,16 +271,11 @@ module Compiler
   
       class FCallNode
         def compile(builder)
-          if (mapped_name(builder) == "println")
-            builder.getstatic System, "out", [PrintStream]
-            
-            arg_types = []
-            args_node.child_nodes.each do |node|
-              node.compile(builder)
-              arg_types << node.type(builder)
-            end
-            
-            builder.invokevirtual PrintStream, mapped_name(builder), special_signature(PrintStream, builder)
+          case name
+          when "puts"
+            compile_puts(builder)
+          when "import"
+            compile_import(builder)
           else
             builder.aload 0
             arg_types = []
@@ -244,6 +285,29 @@ module Compiler
             end
             
             builder.invokevirtual builder.this, name, builder.method_signature(name, arg_types)
+          end
+        end
+        
+        def compile_puts(builder)
+          builder.getstatic System, "out", [PrintStream]
+
+          arg_types = []
+          args_node.child_nodes.each do |node|
+            node.compile(builder)
+            arg_types << node.type(builder)
+          end
+
+          builder.invokevirtual PrintStream, "println", special_signature(PrintStream, builder)
+        end
+        
+        def compile_import(builder)
+          args_node.child_nodes.each do |node|
+            case node
+            when StrNode
+              builder.import(node.value)
+            else
+              raise CompilerError.new(position, "Imports only allow strings right now")
+            end
           end
         end
         
@@ -258,18 +322,18 @@ module Compiler
           args_node.child_nodes.each do |node|
             arg_types << node.type(builder)
           end if args_node
-          recv_java_class = recv_type.java_class
+          recv_java_class = recv_type
           declared_method = recv_java_class.declared_method_smart(mapped_name(builder), *arg_types)
           return_type = declared_method.return_type
           if (return_type)
-            return_class = JavaUtilities.get_proxy_class(return_type.to_s)
+            return_class = return_type
           else
             return_class = Void
           end
           
           return [
             return_class,
-            *declared_method.parameter_types.map {|type| JavaUtilities.get_proxy_class(type.to_s)}
+            *declared_method.parameter_types
           ]
         end
         
@@ -288,7 +352,7 @@ module Compiler
         end
         
         def type(builder)
-          JInteger::TYPE
+          Jint
         end
       end
       
@@ -337,7 +401,7 @@ module Compiler
           case condition
           when CallNode
             case condition.receiver_node.type(builder)
-            when JInteger::TYPE
+            when Jint
               case condition.name
               when "<"
                 args = condition.args_node
@@ -371,7 +435,7 @@ module Compiler
           local_index = builder.local(name, value_node.type(builder))
           value_node.compile(builder)
           case type(builder)
-          when JInteger::TYPE
+          when Jint
             builder.istore(local_index)
           else
             builder.astore(local_index)
@@ -387,7 +451,7 @@ module Compiler
         def compile(builder)
           local_index = builder.local(name)
           case type(builder)
-          when JInteger::TYPE
+          when Jint
             builder.iload(local_index)
           else
             builder.aload(local_index)
@@ -403,6 +467,10 @@ module Compiler
         def compile(builder)
           builder.line position.start_line
           next_node.compile(builder)
+        end
+        
+        def type(builder)
+          next_node.type(builder)
         end
       end
       
@@ -422,10 +490,6 @@ module Compiler
           end
         end
       end
-      
-      class SymbolNode
-        
-      end
   
       class StrNode
         def compile(builder)
@@ -434,6 +498,12 @@ module Compiler
         
         def type(builder)
           java.lang.String
+        end
+      end
+      
+      class SymbolNode
+        def declared_type(builder)
+          builder.type(name.intern)
         end
       end
   

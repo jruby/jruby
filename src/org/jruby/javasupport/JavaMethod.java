@@ -38,6 +38,7 @@ package org.jruby.javasupport;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -101,6 +102,10 @@ public class JavaMethod extends JavaCallable {
         returnConverter = JavaUtil.getJavaConverter(method.getReturnType());
     }
 
+    public static JavaConstructor create(Ruby runtime, Constructor constructor) {
+        return new JavaConstructor(runtime, constructor);
+    }
+
     public static JavaMethod create(Ruby runtime, Method method) {
         return new JavaMethod(runtime, method);
     }
@@ -125,26 +130,69 @@ public class JavaMethod extends JavaCallable {
         }
     }
 
-    public static JavaMethod createDeclaredSmart(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
+    public static JavaCallable createDeclaredSmart(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
         try {
             Method method = javaClass.getDeclaredMethod(methodName, argumentTypes);
             return create(runtime, method);
         } catch (NoSuchMethodException e) {
-            // search through all declared methods to find a closest match
-            MethodSearch: for (Method method : javaClass.getDeclaredMethods()) {
-                if (method.getName().equals(methodName)) {
+            // FIXME: I should probably have this in JavaConstructor :(
+            if (methodName.equals("<init>")) {
+                // Java reflection does not allow retrieving constructors like methods
+                MethodSearch: for (Constructor method : javaClass.getConstructors()) {
                     Class<?>[] targetTypes = method.getParameterTypes();
-                    TypeScan: for (int i = 0; i < argumentTypes.length; i++) {
-                        if (i >= targetTypes.length) continue MethodSearch;
+                    
+                    // for zero args case we can stop searching
+                    if (targetTypes.length != argumentTypes.length) {
+                        continue MethodSearch;
+                    } else if (targetTypes.length == 0 && argumentTypes.length == 0) {
+                        return create(runtime, method);
+                    } else {
+                        boolean found = true;
                         
-                        if (targetTypes[i].isAssignableFrom(argumentTypes[i])) {
-                            continue TypeScan;
+                        TypeScan: for (int i = 0; i < argumentTypes.length; i++) {
+                            if (i >= targetTypes.length) found = false;
+                            
+                            if (targetTypes[i].isAssignableFrom(argumentTypes[i])) {
+                                found = true;
+                                continue TypeScan;
+                            } else {
+                                found = false;
+                                continue MethodSearch;
+                            }
+                        }
+
+                        // if we get here, we found a matching method, use it
+                        // TODO: choose narrowest method by continuing to search
+                        if (found) {
+                            return create(runtime, method);
                         }
                     }
+                }
+            } else {
+                // search through all declared methods to find a closest match
+                MethodSearch: for (Method method : javaClass.getDeclaredMethods()) {
+                    if (method.getName().equals(methodName)) {
+                        Class<?>[] targetTypes = method.getParameterTypes();
                     
-                    // if we get here, we found a matching method, use it
-                    // TODO: choose narrowest method by continuing to search
-                    return create(runtime, method);
+                        // for zero args case we can stop searching
+                        if (targetTypes.length == 0 && argumentTypes.length == 0) {
+                            return create(runtime, method);
+                        }
+                        
+                        TypeScan: for (int i = 0; i < argumentTypes.length; i++) {
+                            if (i >= targetTypes.length) continue MethodSearch;
+
+                            if (targetTypes[i].isAssignableFrom(argumentTypes[i])) {
+                                continue TypeScan;
+                            } else {
+                                continue MethodSearch;
+                            }
+                        }
+
+                        // if we get here, we found a matching method, use it
+                        // TODO: choose narrowest method by continuing to search
+                        return create(runtime, method);
+                    }
                 }
             }
             throw runtime.newNameError("undefined method '" + methodName + "' for class '" + javaClass.getName() + "'",

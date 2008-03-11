@@ -63,6 +63,7 @@ public class JavaConstructor extends JavaCallable {
 
         result.defineFastMethod("new_instance", callbackFactory.getFastOptMethod("new_instance"));
         result.defineFastMethod("type_parameters", callbackFactory.getFastMethod("type_parameters"));
+        result.defineFastMethod("return_type", callbackFactory.getFastMethod("return_type"));
         
         return result;
     }
@@ -130,6 +131,9 @@ public class JavaConstructor extends JavaCallable {
         return Java.getInstance(getRuntime(), constructor.getTypeParameters());
     }
 
+    public IRubyObject return_type() {
+        return getRuntime().getNil();
+    }
 
     public IRubyObject new_instance(IRubyObject[] args) {
         int length = args.length;

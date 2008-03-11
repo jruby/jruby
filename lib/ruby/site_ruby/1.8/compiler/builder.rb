@@ -2,14 +2,32 @@ require 'compiler/bytecode'
 require 'compiler/signature'
 
 module Compiler
+  module Util
+    def type_from_dotted(dotted_name)
+      JavaUtilities.get_proxy_class(dotted_name).java_class
+    end
+  end
+  
   class FileBuilder
+    include Util
+    
     def initialize(file_name)
       @file_name = file_name
       @class_builders = {}
+      @imports = {}
+      
+      init_imports
+    end
+    
+    def init_imports
+      # set up a few useful imports
+      @imports[:int] = Java::int.java_class
+      @imports[:string] = Java::java.lang.String.java_class
+      @imports[:object] = Java::java.lang.Object.java_class
     end
     
     def public_class(class_name, superclass = java.lang.Object, *interfaces)
-      @class_builders[class_name] ||= ClassBuilder.new(class_name, @file_name, superclass, *interfaces)
+      @class_builders[class_name] ||= ClassBuilder.new(self, class_name, @file_name, superclass, *interfaces)
       
       if block_given?
         yield @class_builders[class_name]
@@ -29,9 +47,21 @@ module Compiler
     def line(line)
       # No tracking of lines at the file level, so we ignore
     end
+    
+    def import(strcls)
+      # TODO: very simple
+      bits = strcls.split(".")
+      @imports[bits[-1].to_sym] = type_from_dotted(strcls)
+    end
+    
+    def type(sym)
+      @imports[sym] || type_from_dotted(sym)
+    end
   end
   
   class ClassBuilder
+    include Util
+    
     import "jruby.objectweb.asm.Opcodes"
     import "jruby.objectweb.asm.ClassWriter"
     include Opcodes
@@ -39,7 +69,8 @@ module Compiler
     import java.lang.Void
     include Signature
 
-    def initialize(class_name, file_name, superclass = Object, *interfaces)
+    def initialize(file_builder, class_name, file_name, superclass = Object, *interfaces)
+      @file_builder = file_builder
       @class_name = class_name
       @superclass = superclass 
       
@@ -54,10 +85,13 @@ module Compiler
       
       @method_builders = {}
       @method_signatures = {}
+      
+      @imports = {}
     end
     
     def self.build(class_name, file_name, superclass = java.lang.Object, *interfaces, &block)
-      cb = ClassBuilder.new(class_name, file_name, superclass, *interfaces)
+      fb = FileBuilder.new(file_name)
+      cb = fb.public_class(class_name, superclass, *interfaces)
       cb.instance_eval &block
       cb.generate
     end
@@ -150,6 +184,15 @@ module Compiler
     def find_super_signature(name, arg_types)
       # TODO: implement by searching parent
     end
+    
+    def import(strcls)
+      bits = strcls.split(".")
+      @imports[bits[-1].intern] = type_from_dotted(strcls)
+    end
+    
+    def type(sym)
+      @imports[sym] || @file_builder.type(sym)
+    end
   end
   
   class MethodBuilder
@@ -218,6 +261,10 @@ module Compiler
     
     def method_signature(name, arg_types)
       @class_builder.signature(name, arg_types)
+    end
+    
+    def type(sym)
+      @class_builder.type(sym)
     end
   end
 end

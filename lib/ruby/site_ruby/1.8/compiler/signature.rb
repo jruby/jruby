@@ -28,31 +28,14 @@ module Compiler
     
     def class_id(cls)
       cls = cls.java_class if Class === cls
-#      
-#      if java.lang.Class === cls
-#        case cls
-#        when JavaTypes::Byte::TYPE
-#          return "B"
-#        when JavaTypes::Boolean::TYPE
-#          return "Z"
-#        when JavaTypes::Short::TYPE
-#          return "S"
-#        when JavaTypes::Character::TYPE
-#          return "C"
-#        when JavaTypes::Integer::TYPE
-#          return "I"
-#        when JavaTypes::Long::TYPE
-#          return "J"
-#        when JavaTypes::Float::TYPE
-#          return "F"
-#        when JavaTypes::Double::TYPE
-#          return "D"
-#        when JavaTypes::Void::TYPE
-#          return "V"
-#        else
-#          return "L#{cls};"
-#        end
-#      end
+      
+      unless cls
+        return "V"
+      end
+      
+      if Module === cls
+        return "L#{cls.java_class};"
+      end
       
       if cls.array?
         cls = cls.component_type
