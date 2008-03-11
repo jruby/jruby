@@ -44,7 +44,7 @@ public class RubySignal {
         try {
             Class realFacadeClass = Class.forName("org.jruby.util.SunSignalFacade");
             return (SignalFacade)realFacadeClass.newInstance();
-        } catch(Exception e) {
+        } catch(Throwable e) {
             return new NoFunctionalitySignalFacade();
         }
     }
