@@ -31,6 +31,7 @@
     <exclude unless="bsf.present" name="org/jruby/javasupport/bsf/**/*.java"/>
     <exclude unless="jdk1.4+" name="**/XmlAstMarshal.java"/>
     <exclude unless="jdk1.4+" name="**/AstPersistenceDelegates.java"/>
+    <exclude unless="sun-misc-signal" name="**/SunSignalFacade.java"/>
   </patternset>
 
   <patternset id="ruby.src.pattern">
@@ -97,6 +98,8 @@
   <!-- Checks if specific libs and versions are avaiable -->
   <target name="check-for-optional-packages" if="jdk1.5+"
           depends="check-for-optional-java4-packages">
+    <available property="sun-misc-signal"
+               classname="sun.misc.Signal"/>
   </target>
 
   <!-- Builds the Ant tasks that we need later on in the build -->
