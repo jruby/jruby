@@ -23,6 +23,10 @@ module Compiler
     PrintStream = java.io.PrintStream.java_class
     JInteger = java.lang.Integer.java_class
     Jint = Java::int.java_class
+    Jlong = Java::long.java_class
+    Jfloat = Java::float.java_class
+    Jdouble = Java::double.java_class
+    Jboolean = Java::boolean.java_class
     JavaClass = Java::JavaClass
     
     # reload 
@@ -143,8 +147,59 @@ module Compiler
               builder.iadd
             when "-"
               builder.isub
+            when "/"
+              builder.idiv
+            when "*"
+              builder.imul
+            when "&"
+              builder.iand
+            when "|"
+              builder.ior
             else
               raise CompileError.new(position, "Primitive int operation #{name} not supported")
+            end
+          when Jlong
+            case name
+            when "+"
+              builder.ladd
+            when "-"
+              builder.lsub
+            when "/"
+              builder.ldiv
+            when "*"
+              builder.lmul
+            when "&"
+              builder.land
+            when "|"
+              builder.lor
+            else
+              raise CompileError.new(position, "Primitive long operation #{name} not supported")
+            end
+          when Jfloat
+            case name
+            when "+"
+              builder.fadd
+            when "-"
+              builder.fsub
+            when "/"
+              builder.fdiv
+            when "*"
+              builder.fmul
+            else
+              raise CompileError.new(position, "Primitive float operation #{name} not supported")
+            end
+          when Jdouble
+            case name
+            when "+"
+              builder.dadd
+            when "-"
+              builder.dsub
+            when "/"
+              builder.ddiv
+            when "*"
+              builder.dmul
+            else
+              raise CompileError.new(position, "Primitive double operation #{name} not supported")
             end
           else
             raise CompileError.new(position, "Primitive #{type} operations not supported")
@@ -315,6 +370,12 @@ module Compiler
       class FixnumNode
         def compile(builder)
           builder.ldc_int(value)
+        end
+      end
+      
+      class FloatNode
+        def compile(builder)
+          builder.ldc_float(value)
         end
       end
       

@@ -30,6 +30,9 @@ module Compiler
       when "LDC"
         # constant loading is tricky because overloaded invocation is pretty bad in JRuby
         def ldc_int(value); method_visitor.visit_ldc_insn(java.lang.Integer.new(value)); end
+        def ldc_long(value); method_visitor.visit_ldc_insn(java.lang.Long.new(value)); end
+        def ldc_float(value); method_visitor.visit_ldc_insn(java.lang.Float.new(value)); end
+        def ldc_double(value); method_visitor.visit_ldc_insn(java.lang.Double.new(value)); end
         eval "
             def #{const_down}(value)
               value = value.to_s if Symbol === value
@@ -51,10 +54,19 @@ module Compiler
           method_visitor.visit_insn(Opcodes::RETURN)
         end
         
-      when "ARETURN", "IRETURN", "DUP", "SWAP", "POP", "POP2", "ICONST_0", "ICONST_1", "ICONST_2",
-          "ICONST_3", "LCONST_0", "ISUB", "ACONST_NULL", "NOP", "AALOAD", "IALOAD",
-          "BALOAD", "BASTORE", "DUP_X1", "DUP_X2", "DUP2", "DUP2_X1", "DUP2_X2",
-          "ATHROW", "ARRAYLENGTH", "IADD", "IINC", "ISUB"
+      when "DUP", "SWAP", "POP", "POP2", "DUP_X1", "DUP_X2", "DUP2", "DUP2_X1", "DUP2_X2",
+          "NOP",
+          "ARRAYLENGTH",
+          "ARETURN", "ATHROW", "ACONST_NULL", "AALOAD",
+          "BALOAD", "BASTORE",
+          "ICONST_0", "ICONST_1", "ICONST_2", "ICONST_3", "IRETURN", "IALOAD",
+          "IADD", "IINC", "ISUB", "IDIV", "IMUL", "INEG", "IAND", "IOR", "IXOR",
+          "LCONST_0", "LCONST_1", "LRETURN", "LALOAD",
+          "LADD", "LINC", "LSUB", "LDIV", "LMUL", "LNEG", "LAND", "LOR", "LXOR",
+          "FCONST_0", "FCONST_1", "FCONST_2", "FRETURN", "FALOAD",
+          "FADD", "FINC", "FSUB", "FDIV", "FMUL", "FNEG",
+          "DCONST_0", "DCONST_1", "DRETURN", "DALOAD",
+          "DADD", "DINC", "DSUB", "DDIV", "DMUL", "DNEG"
         # bare instructions
         eval "
             def #{const_down}

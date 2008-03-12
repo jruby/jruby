@@ -1,7 +1,21 @@
 class StupidInt
-  def +(a)
-    {a => :int}
+  def main(args)
+    {args => :string[]}
     
-    puts(5 + a)
+    int = 1
+    
+    int + 1
+    int - 1
+    int / 1
+    int * 1
+    int & 1
+    int | 1
+    
+    float = 1.0
+    
+    float + 1.0
+    float - 1.0
+    float / 1.0
+    float * 1.0
   end
 end

@@ -113,6 +113,9 @@ module Compiler
             when CallNode
               elements.unshift(receiver.name)
               receiver = receiver.receiver_node
+            when SymbolNode
+              elements.unshift(receiver.name)
+              break
             when VCallNode
               elements.unshift(receiver.name)
               break
@@ -204,6 +207,12 @@ module Compiler
       class FixnumNode
         def type(builder)
           Jint
+        end
+      end
+      
+      class FloatNode
+        def type(builder)
+          Jfloat
         end
       end
       
