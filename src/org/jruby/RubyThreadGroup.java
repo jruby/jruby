@@ -31,6 +31,7 @@ package org.jruby;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 import org.jruby.anno.JRubyMethod;
 
 import org.jruby.runtime.Block;
@@ -45,7 +46,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author Charles O Nutter (headius@headius.com)
  */
 public class RubyThreadGroup extends RubyObject {
-    private Map<Integer, IRubyObject> rubyThreadList = new HashMap<Integer, IRubyObject>();
+    private Map<Integer, IRubyObject> rubyThreadList = new WeakHashMap<Integer, IRubyObject>();
     private boolean enclosed = false;
 
     // ENEBO: Can these be fast?
