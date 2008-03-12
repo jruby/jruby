@@ -119,6 +119,11 @@ public final class ThreadContext {
             frameStack[i] = new Frame();
         }
     }
+
+    @Override
+    protected void finalize() throws Throwable {
+        thread.dispose();
+    }
     
     CallType lastCallType;
     

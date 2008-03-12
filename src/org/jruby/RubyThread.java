@@ -93,6 +93,22 @@ public class RubyThread extends RubyObject {
     public final ReentrantLock lock = new ReentrantLock();
     
     private static final boolean DEBUG = false;
+
+    protected RubyThread(Ruby runtime, RubyClass type) {
+        super(runtime, type);
+        this.threadService = runtime.getThreadService();
+        // set to default thread group
+        RubyThreadGroup defaultThreadGroup = (RubyThreadGroup)runtime.getThreadGroup().fastGetConstant("Default");
+        defaultThreadGroup.add(this, Block.NULL_BLOCK);
+        finalResult = runtime.getNil();
+    }
+    
+    /**
+     * Dispose of the current thread by removing it from its parent ThreadGroup.
+     */
+    public void dispose() {
+        threadGroup.remove(this);
+    }
    
     public static RubyClass createThreadClass(Ruby runtime) {
         // FIXME: In order for Thread to play well with the standard 'new' behavior,
@@ -226,15 +242,6 @@ public class RubyThread extends RubyObject {
             if (DEBUG) System.out.println("thread " + Thread.currentThread() + " before propagating exception: " + killed);
             kernelModule.callMethod(context, "raise", raiseException);
         }
-    }
-
-    protected RubyThread(Ruby runtime, RubyClass type) {
-        super(runtime, type);
-        this.threadService = runtime.getThreadService();
-        // set to default thread group
-        RubyThreadGroup defaultThreadGroup = (RubyThreadGroup)runtime.getThreadGroup().fastGetConstant("Default");
-        defaultThreadGroup.add(this, Block.NULL_BLOCK);
-        finalResult = runtime.getNil();
     }
 
     /**

@@ -30,8 +30,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime;
 
+import java.lang.ref.SoftReference;
 import java.util.concurrent.locks.ReentrantLock;
-import java.lang.ref.WeakReference;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,7 +47,7 @@ import org.jruby.util.collections.WeakHashSet;
 public class ThreadService {
     private Ruby runtime;
     private ThreadContext mainContext;
-    private ThreadLocal localContext;
+    private ThreadLocal<SoftReference> localContext;
     private ThreadGroup rubyThreadGroup;
     private Set rubyThreadList;
     private Thread mainThread;
@@ -63,7 +63,7 @@ public class ThreadService {
         
         // Must be called from main thread (it is currently, but this bothers me)
         mainThread = Thread.currentThread();
-        localContext.set(new WeakReference(mainContext));
+        localContext.set(new SoftReference(mainContext));
         rubyThreadList.add(mainThread);
     }
 
@@ -71,18 +71,43 @@ public class ThreadService {
         localContext.set(null);
     }
 
+    /**
+     * In order to provide an appropriate execution context for a given thread,
+     * we store ThreadContext instances in a threadlocal. This method is a utility
+     * to get at that threadlocal context from anywhere in the program it may
+     * not be immediately available. This method should be used sparingly, and
+     * if it is possible to pass ThreadContext on the argument list, it is
+     * preferable.
+     * 
+     * <b>Description of behavior</b>
+     * 
+     * The threadlocal does not actually contain the ThreadContext directly;
+     * instead, it contains a SoftReference that holds the ThreadContext. This
+     * is to allow new threads to enter the system and execute Ruby code with
+     * a valid context, but still allow that context to garbage collect if the
+     * thread stays alive much longer. We use SoftReference here because
+     * WeakReference is collected too quickly, resulting in very expensive
+     * ThreadContext churn (and this originally lead to JRUBY-2261's leak of
+     * adopted RubyThread instances).
+     * 
+     * @return The ThreadContext instance for the current thread, or a new one
+     * if none has previously been created or the old ThreadContext has been
+     * collected.
+     */
     public ThreadContext getCurrentContext() {
-        WeakReference wr = null;
+        SoftReference sr = null;
         ThreadContext context = null;
         
         while (context == null) {
-            // loop until a context is available, to clean up weakrefs that might get collected
-            if ((wr = (WeakReference)localContext.get()) == null) {
-                wr = adoptCurrentThread();
-                context = (ThreadContext)wr.get();
+            // loop until a context is available, to clean up softrefs that might have been collected
+            if ((sr = (SoftReference)localContext.get()) == null) {
+                sr = adoptCurrentThread();
+                context = (ThreadContext)sr.get();
             } else {
-                context = (ThreadContext)wr.get();
+                context = (ThreadContext)sr.get();
             }
+            
+            // context is null, wipe out the SoftReference (this could be done with a reference queue)
             if (context == null) {
                 localContext.set(null);
             }
@@ -91,12 +116,12 @@ public class ThreadService {
         return context;
     }
     
-    private WeakReference adoptCurrentThread() {
+    private SoftReference adoptCurrentThread() {
         Thread current = Thread.currentThread();
         
         RubyThread.adopt(runtime.getThread(), current);
         
-        return (WeakReference) localContext.get();
+        return (SoftReference) localContext.get();
     }
 
     public RubyThread getMainThread() {
@@ -135,7 +160,7 @@ public class ThreadService {
 
     public synchronized ThreadContext registerNewThread(RubyThread thread) {
         ThreadContext context = ThreadContext.newContext(runtime);
-        localContext.set(new WeakReference(context));
+        localContext.set(new SoftReference(context));
         getCurrentContext().setThread(thread);
         // This requires register to be called from within the registree thread
         rubyThreadList.add(Thread.currentThread());

@@ -33,6 +33,10 @@ import org.apache.bsf.BSFManager;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.apache.bsf.BSFException;
+import org.jruby.RubyArray;
+import org.jruby.RubyThreadGroup;
+import org.jruby.runtime.Block;
 
 /**
  * A simple "adopted thread" concurrency test case.
@@ -111,6 +115,76 @@ public class TestAdoptedThreading extends TestCase {
                 }
             }
         }
+    }
+    
+    public void testThreadsStayAdopted() throws Exception {
+        final Object start = new Object();
+        final Exception[] fail = {null};
+        
+        RubyThreadGroup rtg = (RubyThreadGroup)manager_.eval("ruby", "(java)", 1, 1, "ThreadGroup::Default");
+        
+        int initialCount = ((RubyArray)rtg.list(Block.NULL_BLOCK)).getLength();
+        
+        synchronized (start) {
+            Thread pausyThread = new Thread() {
+                public void run() {
+                    synchronized (this) {
+                        // Notify the calling thread that we're about to go to sleep the first time
+                        synchronized(start) {
+                            start.notify();
+                        }
+                
+                        // wait for the go signal
+                        try {
+                            this.wait();
+                        } catch (InterruptedException ie) {
+                            fail[0] = ie;
+                            return;
+                        }
+                    }
+                    
+                    // run ten separate calls into Ruby, with delay and explicit GC
+                    for (int i = 0; i < 10; i++) {
+                        try {
+                            manager_.exec("ruby", "(java)", 1, 1, "a = 0; while a < 1000; a += 1; end");
+                        } catch (BSFException bsfe) {
+                            fail[0] = bsfe;
+                        }
+                        System.gc();
+
+                        try {
+                            sleep(1000);
+                        } catch (InterruptedException ie) {
+                            fail[0] = ie;
+                            break;
+                        }
+                    }
+                    
+                    synchronized (start) {
+                        start.notify();
+                    }
+                }
+            };
+            
+            pausyThread.start();
+            
+            // wait until thread has initialized
+            start.wait();
+            
+            // notify thread to proceed
+            synchronized(pausyThread) {
+                pausyThread.notify();
+            }
+            
+            // wait until thread has completed
+            start.wait();
+        }
+        
+        // if any exceptions were raised, we fail
+        assertNull(fail[0]);
+        
+        // there should only be one more thread in thread group than before we started
+        assertEquals(initialCount + 1, ((RubyArray)rtg.list(Block.NULL_BLOCK)).getLength());
     }
 
     class Runner extends Thread {
