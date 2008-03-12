@@ -8,6 +8,23 @@ module Compiler
       JavaUtilities.get_proxy_class(dotted_name).java_class
     end
   end
+    
+  class TypedVariable
+    attr_accessor :type
+    attr_accessor :name
+    attr_accessor :index
+
+    def initialize(name, type, index = 0)
+      @name = name
+      @type = type || java.lang.Object
+      @index = index
+    end
+
+    def learn(type)
+      # TODO ensure new type is compatible with previous type or raise
+      @type ||= type || java.lang.Object
+    end
+  end
   
   class FileBuilder
     include Util
@@ -99,10 +116,11 @@ module Compiler
       
       @constructor = false
       
-      @method_builders = {}
-      @method_signatures = {}
+      @methods = {}
       
       @imports = {}
+      
+      @fields = {}
     end
     
     def self.build(class_name, file_name, superclass = java.lang.Object, *interfaces, &block)
@@ -113,7 +131,9 @@ module Compiler
     end
     
     def generate
-      unless @constructor
+      if @constructor
+        @constructor.generate_constructor(@superclass)
+      else
         method2("<init>") do |method|
           method.aload 0
           method.invokespecial @superclass, "<init>", Void::TYPE
@@ -122,18 +142,21 @@ module Compiler
       end
       
       # lazily generate the actual methods
-      @method_builders.each do |builder, block|
-        builder.start
-        block.call(builder)
-        builder.stop
+      @methods.each do |name, deferred_method_builder|
+        deferred_method_builder.generate
+      end
+      
+      # generate fields
+      @fields.each do |name, field|
+        @class_writer.visit_field(ACC_PROTECTED, field.name, class_id(field.type), nil, nil)
       end
       
       String.from_java_bytes(@class_writer.to_byte_array)
     end
     
-    def field(name, type)
-      @class_writer.visitField(ACC_PUBLIC, name.to_s, ci(type), nil, nil)
-    end
+#    def field(name, type)
+#      @class_writer.visitField(ACC_PUBLIC, name.to_s, ci(type), nil, nil)
+#    end
     
     def constructor(*signature, &block)
       signature.unshift Void::TYPE
@@ -146,11 +169,46 @@ module Compiler
       MethodBuilder.build(self, ACC_PUBLIC, name.to_s, signature, &block)
     end
     
+    class DeferredMethodBuilder
+      attr_accessor :signature
+      
+      def initialize(name, method_builder, signature, block)
+        @name = name
+        @method_builder = method_builder
+        @signature = signature
+        @block = block
+      end
+      
+      def generate
+        @method_builder.start
+        @block.call(@method_builder)
+        @method_builder.stop
+      end
+      
+      def generate_constructor(superclass)
+        # FIXME: this could be a lot nicer
+        if (@name == "<init>")
+          @method_builder.aload(0)
+          @method_builder.invokespecial superclass, "<init>", Void::TYPE
+        end
+        
+        generate
+      end
+    end
+    
     # New version does not instance_eval, to allow for easier embedding
     def method2(name, *signature, &block)
-      @method_signatures[name] = signature
+      if @constructor && name == "<init>"
+        raise "Overloading not yet supported"
+      end
+
       mb = MethodBuilder.new(self, ACC_PUBLIC, name, signature)
-      @method_builders[mb] = block
+      deferred_builder = DeferredMethodBuilder.new(name, mb, signature, block)
+      if name == "<init>"
+        @constructor = deferred_builder
+      else
+        @methods[name] = deferred_builder
+      end
     end
     
     def static_method(name, *signature, &block)
@@ -160,9 +218,9 @@ module Compiler
     
     # New version does not instance_eval, to allow for easier embedding
     def static_method2(name, *signature, &block)
-      @method_signatures[name] = signature
       mb = MethodBuilder.new(self, ACC_PUBLIC | ACC_STATIC, name, signature)
-      @method_builders[mb] = block
+      deferred_builder = DeferredMethodBuilder.new(name, mb, signature, block)
+      @methods[name] = deferred_builder
     end
     
     # name for signature generation using the class being generated
@@ -194,7 +252,11 @@ module Compiler
     
     def signature(name, arg_types)
       # TODO: allow overloading?
-      @method_signatures[name] || find_super_signature(name, arg_types)
+      if @methods[name]
+        @method[name].signature
+      else
+        find_super_signature(name, arg_types)
+      end
     end
     
     def find_super_signature(name, arg_types)
@@ -209,27 +271,36 @@ module Compiler
     def type(sym)
       @imports[sym] || @file_builder.type(sym)
     end
+    
+    def field(name, type = nil)
+      if type
+        # declaring
+        if @fields[name]
+          # TODO ensure new type fits existing inferred type
+          field = @fields[name]
+          field.learn(type) if type
+        else
+          field = TypedVariable.new(name, type)
+          @fields[name] = field
+        end
+      else
+        field = @fields[name]
+        
+        raise "Field accessed before initialized" unless field
+      end
+      
+      field
+    end
+    
+    def field_type(name)
+      @fields[name].type
+    end
   end
   
   class MethodBuilder
     import "jruby.objectweb.asm.Opcodes"
     include Opcodes
     include Compiler::Bytecode
-    
-    
-    # placeholder for now
-    class InferredType
-      attr_accessor :type
-      
-      def initialize(type)
-       @type = type || java.lang.Object
-      end
-      
-      def learn(type)
-        # TODO ensure new type is compatible with previous type or raise
-        @type ||= type || java.lang.Object
-      end
-    end
     
     attr_reader :method_visitor
     
@@ -241,13 +312,11 @@ module Compiler
       
       @method_visitor = class_builder.new_method(modifiers, name, signature)
       
-      @locals = []
-      @local_types = []
+      @locals = {}
       
       @static = (modifiers & ACC_STATIC) != 0
       
-      @locals << "this" unless @static
-      @local_types << @class_builder unless @static
+      @locals['this'] = TypedVariable.new("this", @class_builder, 0) unless @static
     end
     
     def self.build(class_builder, modifiers, name, signature, &block)
@@ -264,6 +333,12 @@ module Compiler
       mb.stop
     end
     
+    def generate(&block)
+      start
+      block.call(self)
+      stop
+    end
+    
     def this
       @class_builder
     end
@@ -273,18 +348,40 @@ module Compiler
         raise "'this' attempted to load from static method"
       end
       
-      if @locals.index(name)
+      if @locals[name]
         # TODO ensure new type fits existing inferred type
-        @local_types[@locals.index(name)].learn(type) if type
+        local = @locals[name]
+        local.learn(type) if type
       else
-        @locals << name
-        @local_types << InferredType.new(type)
+        local = TypedVariable.new(name, type, @locals.size)
+        @locals[name] = local
       end
-      @locals.index(name)
+      local.index
     end
     
     def local_type(name)
-      @local_types[@locals.index(name)].type
+      @locals[name].type
+    end
+    
+    def field(*args)
+      @class_builder.field(*args)
+    end
+    
+    def field_type(name)
+      @class_builder.field(name).type
+    end
+    
+    def getfield(name)
+      field = @class_builder.field(name)
+      aload(0)
+      super(@class_builder, field.name, [field.type])
+    end
+    
+    def putfield(name)
+      field = @class_builder.field(name)
+      aload(0)
+      swap
+      super(@class_builder, field.name, [field.type])
     end
     
     def method_signature(name, arg_types)
