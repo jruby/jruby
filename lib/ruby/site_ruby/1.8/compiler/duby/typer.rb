@@ -20,7 +20,7 @@ module Compiler
       class BlockNode
         # Type of a block is the type of its final element
         def type(builder)
-          child_nodes.get(child_nodes.size - 1).type
+          @type ||= child_nodes.get(child_nodes.size - 1).type
         end
       end
       
@@ -142,7 +142,7 @@ module Compiler
       
       class ConstNode
         def type(builder)
-          builder.type(name)
+          @type ||= builder.type(name)
         end
       end
       
@@ -189,18 +189,20 @@ module Compiler
         end
         
         def type(builder)
-          arg_types = []
-          args_node.child_nodes.each do |node|
-            arg_types << node.type(builder)
-          end if args_node
-          if builder.static
-            signature = builder.static_signature(name, arg_types)
-          else
-            signature = builder.instance_signature(name, arg_types)
+          @type ||= begin
+            arg_types = []
+            args_node.child_nodes.each do |node|
+              arg_types << node.type(builder)
+            end if args_node
+            if builder.static
+              signature = builder.static_signature(name, arg_types)
+            else
+              signature = builder.instance_signature(name, arg_types)
+            end
+            raise CompileError.new(position, "Signature not found for call #{name}") unless signature
+
+            signature[0]
           end
-          raise CompileError.new(position, "Signature not found for call #{name}") unless signature
-          
-          signature[0]
         end
       end
       
@@ -248,7 +250,7 @@ module Compiler
       
       class InstVarNode
         def type(builder)
-          builder.field_type(mapped_name(builder))
+          @type ||= builder.field_type(mapped_name(builder))
         end
         
         def mapped_name(builder)
@@ -259,7 +261,7 @@ module Compiler
       class InstAsgnNode
         def type(builder)
           builder.field(mapped_name(builder), value_node.type(builder))
-          builder.field_type(mapped_name(builder))
+          @type ||= builder.field_type(mapped_name(builder))
         end
         
         def mapped_name(builder)
@@ -269,13 +271,13 @@ module Compiler
       
       class LocalAsgnNode
         def type(builder)
-          builder.local_type(name)
+          @type ||= builder.local_type(name)
         end
       end
       
       class LocalVarNode
         def type(builder)
-          builder.local_type(name)
+          @type ||= builder.local_type(name)
         end
       end
       
@@ -284,7 +286,7 @@ module Compiler
   
       class NewlineNode
         def type(builder)
-          next_node.type(builder)
+          @type ||= next_node.type(builder)
         end
       end
       
@@ -299,13 +301,13 @@ module Compiler
   
       class StrNode
         def type(builder)
-          java.lang.String
+          JString
         end
       end
       
       class SymbolNode
         def declared_type(builder)
-          builder.type(name.intern)
+          @type ||= builder.type(name.intern)
         end
       end
   
@@ -316,7 +318,7 @@ module Compiler
         end
         
         def type(builder)
-          if builder.static
+          @type ||= if builder.static
             builder.static_signature(name, [])[0]
           else
             builder.instance_signature(name, [])[0]

@@ -49,6 +49,11 @@ module Compiler
     include Util
     include TypeNamespace
     
+    attr_accessor :file_name
+    attr_accessor :class_builders
+    attr_accessor :imports
+    attr_accessor :package
+    
     def initialize(file_name)
       @file_name = file_name
       @class_builders = {}
@@ -116,6 +121,14 @@ module Compiler
     import java.lang.Object
     import java.lang.Void
     include Signature
+    
+    attr_accessor :class_name
+    attr_accessor :superclass
+    attr_accessor :constructor
+    attr_accessor :instance_methods
+    attr_accessor :static_methods
+    attr_accessor :imports
+    attr_accessor :fields
 
     def initialize(file_builder, class_name, file_name, superclass = Object, *interfaces)
       @parent = file_builder
@@ -173,21 +186,6 @@ module Compiler
       String.from_java_bytes(@class_writer.to_byte_array)
     end
     
-#    def field(name, type)
-#      @class_writer.visitField(ACC_PUBLIC, name.to_s, ci(type), nil, nil)
-#    end
-    
-    def constructor(*signature, &block)
-      signature.unshift Void::TYPE
-      
-      MethodBuilder.build(self, ACC_PUBLIC, "<init>", signature, &block)
-    end
-    
-    def method(name, *signature, &block)
-      @instance_signatures[name] = signature
-      MethodBuilder.build(self, ACC_PUBLIC, name.to_s, signature, &block)
-    end
-    
     class DeferredMethodBuilder
       attr_accessor :signature
       
@@ -219,7 +217,7 @@ module Compiler
     end
     
     # New version does not instance_eval, to allow for easier embedding
-    def method2(name, *signature, &block)
+    def method(name, *signature, &block)
       if @constructor && name == "<init>"
         raise "Overloading not yet supported"
       end
@@ -233,13 +231,8 @@ module Compiler
       end
     end
     
-    def static_method(name, *signature, &block)
-      @static_signatures[name] = signature
-      MethodBuilder.build(self, ACC_PUBLIC | ACC_STATIC, name.to_s, signature, &block)
-    end
-    
     # New version does not instance_eval, to allow for easier embedding
-    def static_method2(name, *signature, &block)
+    def static_method(name, *signature, &block)
       mb = MethodBuilder.new(self, ACC_PUBLIC | ACC_STATIC, name, signature)
       deferred_builder = DeferredMethodBuilder.new(name, mb, signature, block)
       @static_methods[name] = deferred_builder

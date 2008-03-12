@@ -264,7 +264,7 @@ module Compiler
           signature ||= [Void]
           
           log "Compiling instance method for #{name} as #{signature.join(',')}"
-          builder.method2(mapped_name(builder), *signature) do |method|
+          builder.method(mapped_name(builder), *signature) do |method|
             # Run through any type declarations first
             first_real_node.declare_types(method) if HashNode === first_real_node
 
@@ -300,7 +300,7 @@ module Compiler
           signature ||= [Void]
           
           log "Compiling static method for #{name} as #{signature.join(',')}"
-          builder.static_method2(name, *signature) do |method|
+          builder.static_method(name, *signature) do |method|
             # Run through any type declarations first
             first_real_node.declare_types(method) if HashNode === first_real_node
 
