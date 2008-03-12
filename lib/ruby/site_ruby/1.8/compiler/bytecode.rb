@@ -19,7 +19,12 @@ module Compiler
       const_down = const_name.downcase
       
       case const_name
-      when "ALOAD", "ILOAD", "ASTORE", "ISTORE"
+      when "ALOAD", "ASTORE",
+          "BISTORE", "BILOAD",
+          "ISTORE", "ILOAD",
+          "LSTORE", "LLOAD",
+          "FSTORE", "FLOAD",
+          "DSTORE", "DLOAD"
         # variable instructions
         eval "
             def #{const_down}(var)

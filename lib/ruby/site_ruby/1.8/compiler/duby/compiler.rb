@@ -64,9 +64,14 @@ module Compiler
   
       class BlockNode
         def compile(builder)
+          builder.aconst_null
           child_nodes.each do |node|
+            node = node.next_node while NewlineNode === node
+            next unless node
+            
             builder.line node.position.start_line
             
+            builder.pop
             node.compile(builder)
           end
         end
@@ -130,11 +135,16 @@ module Compiler
         end
         
         def compile_primitive(type, builder)
-          receiver_node.compile(builder)
-
-          if !args_node || args_node.size != 1
-            raise CompileError.new(position, "Primitive operations must have exactly one argument")
+          if !args_node
+            raise CompileError.new(position, "Unary primitive operations are not yet supported")
           end
+          
+          if args_node.size != 1
+            raise CompileError.new(position, "Binary primitive operations require exactly one argument")
+          end
+          
+          # binary operations consume receiver and arg and leave result, so no dup necessary
+          receiver_node.compile(builder)
           
           node = args_node.get(0)
           # TODO: check or cast types according to receiver's type
@@ -382,9 +392,13 @@ module Compiler
       class HashNode
         def compile(builder)
           @declared ||= false
-          unless @declared
-            # TODO: compile
-            super
+          
+          if @declared
+            # hash was used for type declaration, so we just push a null to skip it
+            # TODO: it would be nice if we could just skip the null too, but BlockNode wants to pop it
+            builder.aconst_null
+          else
+            raise CompileError.new(position, "Literal hash syntax not yet supported")
           end
         end
       end
@@ -437,7 +451,12 @@ module Compiler
       class InstAsgnNode
         def compile(builder)
           builder.field(mapped_name(builder), value_node.type(builder))
+          
+          # assignment consumes the value, so we dup it
+          # TODO inefficient if we don't need the result
           value_node.compile(builder)
+          builder.dup
+          
           builder.putfield(mapped_name(builder))
         end
       end
@@ -445,10 +464,23 @@ module Compiler
       class LocalAsgnNode
         def compile(builder)
           local_index = builder.local(name, value_node.type(builder))
+          
+          # assignment consumes a value, so we dup it
+          # TODO: inefficient if we don't actually need the result
           value_node.compile(builder)
+          builder.dup
+          
           case type(builder)
+          when Jboolean
+            builder.bistore(local_index)
           when Jint
             builder.istore(local_index)
+          when Jlong
+            builder.lstore(local_index)
+          when Jfloat
+            builder.fstore(local_index)
+          when Jdouble
+            builder.dstore(local_index)
           else
             builder.astore(local_index)
           end
@@ -459,8 +491,16 @@ module Compiler
         def compile(builder)
           local_index = builder.local(name)
           case type(builder)
+          when Jboolean
+            builder.biload(local_index)
           when Jint
             builder.iload(local_index)
+          when Jlong
+            builder.lload(local_index)
+          when Jfloat
+            builder.fload(local_index)
+          when Jdouble
+            builder.dload(local_index)
           else
             builder.aload(local_index)
           end

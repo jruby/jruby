@@ -1,5 +1,5 @@
 class StupidInt
-  def main(args)
+  def self.main(args)
     {args => :string[]}
     
     int = 1
