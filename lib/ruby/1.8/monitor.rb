@@ -260,11 +260,11 @@ module MonitorMixin
       condition.instance_eval { @mon_n_waiters += 1 }
       begin
         mon_release
-        begin
+        if timeout
           condition.wait(@mon_mutex, timeout)
+        else
+          condition.wait(@mon_mutex)
           true
-        rescue TimeoutError
-          false
         end
       ensure
         @mon_total_waiting += 1

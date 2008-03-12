@@ -1003,7 +1003,6 @@ public final class Ruby {
         scriptError = defineClassIfAllowed("ScriptError", exceptionClass);
         rangeError = defineClassIfAllowed("RangeError", standardError);
         signalException = defineClassIfAllowed("SignalException", exceptionClass);
-        interruptError = defineClassIfAllowed("Interrupt", signalException);
         
         if (profile.allowClass("NameError")) {
             nameError = RubyNameError.createNameErrorClass(this, standardError);
@@ -1025,7 +1024,7 @@ public final class Ruby {
         }
         
         defineClassIfAllowed("Fatal", exceptionClass);
-	defineClassIfAllowed("TimeoutError", interruptError);
+        defineClassIfAllowed("Interrupt", signalException);
         defineClassIfAllowed("TypeError", standardError);
         defineClassIfAllowed("ArgumentError", standardError);
         defineClassIfAllowed("IndexError", standardError);
@@ -2614,7 +2613,7 @@ public final class Ruby {
         groupStruct, 
             procStatusClass, exceptionClass, runtimeError, ioError,
             scriptError, nameError, signalException, standardError,
-            interruptError, systemCallError, rangeError;
+            systemCallError, rangeError;
     
     /**
      * All the core modules we keep direct references to, for quick access and

@@ -60,32 +60,20 @@ public class ThreadLibrary implements Library {
         SizedQueue.setup(runtime);
     }
 
-    static void wait_timeout(IRubyObject o, Double timeout) throws InterruptedException {
-        boolean success = false;
-        try {
-            if ( timeout != null ) {
-                long delay_ns = (long)(timeout * 1000000000.0);
-                long start_ns = System.nanoTime();
-                if (delay_ns > 0) {
-                    long delay_ms = delay_ns / 1000000;
-                    int delay_ns_remainder = (int)( delay_ns % 1000000 );
-                    o.wait(delay_ms, delay_ns_remainder);
-                }
-                long end_ns = System.nanoTime();
-                if ( ( end_ns - start_ns ) > delay_ns ) {
-                    throw new RaiseException(o.getRuntime(), o.getRuntime().fastGetClass("TimeoutError"), "wait timed out", false);
-                }
-            } else {
-                o.wait();
+    static boolean wait_timeout(IRubyObject o, Double timeout) throws InterruptedException {
+        if ( timeout != null ) {
+            long delay_ns = (long)(timeout * 1000000000.0);
+            long start_ns = System.nanoTime();
+            if (delay_ns > 0) {
+                long delay_ms = delay_ns / 1000000;
+                int delay_ns_remainder = (int)( delay_ns % 1000000 );
+                o.wait(delay_ms, delay_ns_remainder);
             }
-            success = true;
-        } finally {
-            // An exception may have caused us to miss a notify that we
-            // consumed, so do another notify in case someone else would
-            // have been ready to pick it up instead
-            if (!success) {
-                o.notify();
-            }
+            long end_ns = System.nanoTime();
+            return ( end_ns - start_ns ) <= delay_ns;
+        } else {
+            o.wait();
+            return true;
         }
     }
 
@@ -219,15 +207,30 @@ public class ThreadLibrary implements Library {
             if (Thread.interrupted()) {
                 throw new InterruptedException();
             }
+            boolean success = false;
             try {
                 synchronized (this) {
                     mutex.unlock();
-                    ThreadLibrary.wait_timeout(this, timeout);
+                    try {
+                        success = ThreadLibrary.wait_timeout(this, timeout);
+                    } finally {
+                        // An interrupt or timeout may have caused us to miss
+                        // a notify that we consumed, so do another notify in
+                        // case someone else is available to pick it up.
+                        if (!success) {
+                            this.notify();
+                        }
+                    }
                 }
             } finally {
                 mutex.lock();
             }
-            return getRuntime().getNil();
+            if (timeout != null) {
+                return getRuntime().newBoolean(success);
+            } else {
+                // backwards-compatibility
+                return getRuntime().getNil();
+            }
         }
 
         public synchronized IRubyObject broadcast() {
