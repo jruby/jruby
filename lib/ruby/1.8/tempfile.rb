@@ -31,7 +31,7 @@ class Tempfile < DelegateClass(File)
 
     failure = 0
     begin
-      @tmpname = File.join(tmpdir, make_tmpname(basename))
+      @tmpname = File.join(tmpdir, make_tmpname_secure(basename))
       @tmpfile = File.open(@tmpname, File::RDWR|File::CREAT|File::EXCL, 0600)
     rescue Exception => e
       failure += 1
@@ -53,16 +53,20 @@ class Tempfile < DelegateClass(File)
 
   @@sequence_number = 0
   @@sequence_mutex = Mutex.new
-  def make_tmpname(basename)
+  def make_tmpname_secure(basename) #:nodoc:
     begin
       File.open("/dev/urandom", "rb") do |random|
-        "#{basename}.#{random.read(16).unpack('H*')}"
+        basename = "#{random.read(16).unpack('H*')}_#{basename}"
       end
     rescue
-      # insecure fallback
-      sequence_number = @@sequence_mutex.synchronize { @@sequence_number += 1 }
-      "#{basename}.#{$$}.#{sequence_number}"
     end
+    sequence_number = @@sequence_mutex.synchronize { @@sequence_number += 1 }
+    make_tmpname(basename, sequence_number)
+  end
+  private :make_tmpname_secure
+
+  def make_tmpname(basename, n)
+    "#{basename}.#{$$}.#{n}"
   end
   private :make_tmpname
 
