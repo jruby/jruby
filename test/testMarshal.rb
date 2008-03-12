@@ -337,6 +337,18 @@ test_equal("a message", e3.message)
 test_equal(e1.backtrace, e3.backtrace)
 test_equal(42, e3.ivar)
 
+# Check that numbers of all sizes don't make link indexes break
+fixnum = 12345
+mri_bignum = 1234567890
+jruby_bignum = 12345678901234567890
+s = "should be cached"
+a = [fixnum,mri_bignum,jruby_bignum,s]
+a = a + a
+dumped_by_mri = "\004\b[\ri\00290l+\a\322\002\226Il+\t\322\n\037\353\214\251T\253\"\025should be cachedi\00290l+\a\322\002\226I@\a@\b"
+test_no_exception { test_equal(a, Marshal.load(Marshal.dump(a))) }
+test_no_exception { test_equal(a, Marshal.load(dumped_by_mri)) }
+test_no_exception { test_equal(dumped_by_mri, Marshal.dump(a)) }
+
 require 'stringio'
 class MTStream < StringIO
   attr :binmode_called

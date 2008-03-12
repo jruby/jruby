@@ -116,9 +116,13 @@ public class MarshalStream extends FilterOutputStream {
         } else if (value instanceof RubyBoolean) {
             return false;
         } else if (value instanceof RubyFixnum) {
-            return false;
+            return ! isMarshalFixnum((RubyFixnum)value);
         }
         return true;
+    }
+
+    private static boolean isMarshalFixnum(RubyFixnum fixnum) {
+        return fixnum.getLongValue() <= RubyFixnum.MAX_MARSHAL_FIXNUM && fixnum.getLongValue() >= RubyFixnum.MIN_MARSHAL_FIXNUM;
     }
 
     private void writeAndRegister(IRubyObject value) throws IOException {
@@ -211,7 +215,7 @@ public class MarshalStream extends FilterOutputStream {
             case ClassIndex.FIXNUM: {
                 RubyFixnum fixnum = (RubyFixnum)value;
 
-                if (fixnum.getLongValue() <= RubyFixnum.MAX_MARSHAL_FIXNUM && fixnum.getLongValue() >= RubyFixnum.MIN_MARSHAL_FIXNUM) {
+                if (isMarshalFixnum(fixnum)) {
                     write('i');
                     writeInt((int) fixnum.getLongValue());
                     return;
