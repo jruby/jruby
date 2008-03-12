@@ -243,8 +243,7 @@ module Compiler
         end
         
         def mapped_name(builder)
-          # TODO: strip off the @ sigil?
-          name
+          name[1..-1]
         end
       end
       
@@ -255,8 +254,7 @@ module Compiler
         end
         
         def mapped_name(builder)
-          # TODO: strip off the @ sigil?
-          name
+          name[1..-1]
         end
       end
       
