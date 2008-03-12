@@ -135,84 +135,124 @@ module Compiler
         end
         
         def compile_primitive(type, builder)
-          if !args_node
-            raise CompileError.new(position, "Unary primitive operations are not yet supported")
-          end
-          
-          if args_node.size != 1
-            raise CompileError.new(position, "Binary primitive operations require exactly one argument")
-          end
-          
-          # binary operations consume receiver and arg and leave result, so no dup necessary
           receiver_node.compile(builder)
-          
-          node = args_node.get(0)
-          # TODO: check or cast types according to receiver's type
-          node.compile(builder)
 
-          case type
-          when Jint
-            case name
-            when "+"
-              builder.iadd
-            when "-"
-              builder.isub
-            when "/"
-              builder.idiv
-            when "*"
-              builder.imul
-            when "&"
-              builder.iand
-            when "|"
-              builder.ior
+          if !args_node
+            case type
+            when Jint
+              case name
+              when "-@"
+                builder.ineg
+              when "+@"
+                # do nothing
+              else
+                raise CompileError.new(position, "Primitive int operation #{name} not supported")
+              end
+            when Jlong
+              case name
+              when "-@"
+                builder.lneg
+              when "+@"
+                # do nothing
+              else
+                raise CompileError.new(position, "Primitive long operation #{name} not supported")
+              end
+            when Jfloat
+              case name
+              when "-@"
+                builder.fneg
+              when "+@"
+                # do nothing
+              else
+                raise CompileError.new(position, "Primitive float operation #{name} not supported")
+              end
+            when Jdouble
+              case name
+              when "-@"
+                builder.dneg
+              when "+@"
+                # do nothing
+              else
+                raise CompileError.new(position, "Primitive double operation #{name} not supported")
+              end
             else
-              raise CompileError.new(position, "Primitive int operation #{name} not supported")
+              raise CompileError.new(position, "Unary primitive operations on #{type} not supported")
             end
-          when Jlong
-            case name
-            when "+"
-              builder.ladd
-            when "-"
-              builder.lsub
-            when "/"
-              builder.ldiv
-            when "*"
-              builder.lmul
-            when "&"
-              builder.land
-            when "|"
-              builder.lor
-            else
-              raise CompileError.new(position, "Primitive long operation #{name} not supported")
-            end
-          when Jfloat
-            case name
-            when "+"
-              builder.fadd
-            when "-"
-              builder.fsub
-            when "/"
-              builder.fdiv
-            when "*"
-              builder.fmul
-            else
-              raise CompileError.new(position, "Primitive float operation #{name} not supported")
-            end
-          when Jdouble
-            case name
-            when "+"
-              builder.dadd
-            when "-"
-              builder.dsub
-            when "/"
-              builder.ddiv
-            when "*"
-              builder.dmul
-            else
-              raise CompileError.new(position, "Primitive double operation #{name} not supported")
-            end
+          elsif args_node.size != 1
+            raise CompileError.new(position, "Binary primitive operations require exactly one argument")
           else
-            raise CompileError.new(position, "Primitive #{type} operations not supported")
+            node = args_node.get(0)
+            # TODO: check or cast types according to receiver's type
+            node.compile(builder)
+
+            case type
+            when Jint
+              case name
+              when "+"
+                builder.iadd
+              when "-"
+                builder.isub
+              when "/"
+                builder.idiv
+              when "*"
+                builder.imul
+              when "&"
+                builder.iand
+              when "|"
+                builder.ior
+              when "^"
+                builder.ixor
+              else
+                raise CompileError.new(position, "Primitive int operation #{name} not supported")
+              end
+            when Jlong
+              case name
+              when "+"
+                builder.ladd
+              when "-"
+                builder.lsub
+              when "/"
+                builder.ldiv
+              when "*"
+                builder.lmul
+              when "&"
+                builder.land
+              when "|"
+                builder.lor
+              when "^"
+                builder.lxor
+              else
+                raise CompileError.new(position, "Primitive long operation #{name} not supported")
+              end
+            when Jfloat
+              case name
+              when "+"
+                builder.fadd
+              when "-"
+                builder.fsub
+              when "/"
+                builder.fdiv
+              when "*"
+                builder.fmul
+              else
+                raise CompileError.new(position, "Primitive float operation #{name} not supported")
+              end
+            when Jdouble
+              case name
+              when "+"
+                builder.dadd
+              when "-"
+                builder.dsub
+              when "/"
+                builder.ddiv
+              when "*"
+                builder.dmul
+              else
+                raise CompileError.new(position, "Primitive double operation #{name} not supported")
+              end
+            else
+              raise CompileError.new(position, "Primitive #{type} operations not supported")
+            end
           end
         end
         
