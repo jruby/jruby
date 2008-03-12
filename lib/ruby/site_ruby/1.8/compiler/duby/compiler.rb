@@ -64,14 +64,14 @@ module Compiler
   
       class BlockNode
         def compile(builder)
-          builder.aconst_null
+          builder.aconst_null if builder.method?
           child_nodes.each do |node|
             node = node.next_node while NewlineNode === node
             next unless node
             
-            builder.line node.position.start_line
+            builder.line node.position.start_line + 1
             
-            builder.pop
+            builder.pop if builder.method?
             node.compile(builder)
           end
         end

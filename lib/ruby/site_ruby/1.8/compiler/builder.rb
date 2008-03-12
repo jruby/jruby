@@ -100,6 +100,10 @@ module Compiler
       yield
       @package.pop
     end
+    
+    def method?
+      false
+    end
   end
   
   class ClassBuilder
@@ -318,6 +322,10 @@ module Compiler
     def field_type(name)
       @fields[name].type
     end
+    
+    def method?
+      false
+    end
   end
   
   class MethodBuilder
@@ -418,6 +426,10 @@ module Compiler
     
     def type(sym)
       @class_builder.type(sym)
+    end
+    
+    def method?
+      true
     end
   end
 end
