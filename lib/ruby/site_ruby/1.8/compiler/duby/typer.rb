@@ -53,7 +53,9 @@ module Compiler
             recv_type = receiver_node.type(builder)
             
             # if we already have an exact class, use it
-            if JavaClass === recv_type
+            if recv_type.array?
+              recv_type = recv_type.component_type
+            elsif JavaClass === recv_type
               recv_type
             else
               # otherwise, find the target method and get its return type
@@ -93,19 +95,39 @@ module Compiler
         end
         
         def declared_type(builder)
-          elements = [name]
-          receiver = receiver_node
-          # walk receivers until we get to a vcall, the top of the declaration
-          until VCallNode === receiver
-            elements.unshift(receiver.name)
-            receiver = receiver.receiver_node
+          if name == "[]"
+            # array type, top should be a constant; find the rest
+            array = true
+            elements = []
+          else
+            elements = [name]
           end
-          # push VCall's name as first element
-          elements.unshift(receiver.name)
+          
+          receiver = receiver_node
+          
+          loop do
+            case receiver
+            when ConstNode
+              elements << receiver_node.name
+              break
+            when CallNode
+              elements.unshift(receiver.name)
+              receiver = receiver.receiver_node
+            when VCallNode
+              elements.unshift(receiver.name)
+              break
+            end
+          end
           
           # join and load
           class_name = elements.join(".")
-          builder.type(class_name)
+          type = builder.type(class_name)
+          
+          if array
+            type.array_class
+          else
+            type
+          end
         end
       end
   
@@ -117,7 +139,7 @@ module Compiler
       
       class ConstNode
         def type(builder)
-          builder.type(name.intern)
+          builder.type(name)
         end
       end
       
@@ -168,7 +190,14 @@ module Compiler
           args_node.child_nodes.each do |node|
             arg_types << node.type(builder)
           end if args_node
-          builder.method_signature(name, arg_types)[0]
+          if builder.static
+            signature = builder.static_signature(name, arg_types)
+          else
+            signature = builder.instance_signature(name, arg_types)
+          end
+          raise CompileError.new(position, "Signature not found for call #{name}") unless signature
+          
+          signature[0]
         end
       end
       
@@ -280,7 +309,11 @@ module Compiler
         end
         
         def type(builder)
-          builder.method_signature(name, [])[0]
+          if builder.static
+            builder.static_signature(name, [])[0]
+          else
+            builder.instance_signature(name, [])[0]
+          end
         end
       end
     end

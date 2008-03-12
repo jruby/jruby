@@ -2,6 +2,17 @@ require 'compiler/builder'
 require 'compiler/duby/typer'
 require 'jruby'
 
+def log(str)
+  puts str if $VERBOSE
+end
+    
+class CompileError < Exception
+  def initialize(position, message)
+    full_message = "Compile error at #{position.file}:#{position.start_line}: #{message}"
+    super(full_message)
+  end
+end
+
 module Compiler
   module PrimitiveRuby
     JObject = java.lang.Object.java_class
@@ -13,13 +24,6 @@ module Compiler
     JInteger = java.lang.Integer.java_class
     Jint = Java::int.java_class
     JavaClass = Java::JavaClass
-    
-    class CompileError < Exception
-      def initialize(position, message)
-        full_message = "Compile error at #{position.file}:#{position.start_line}: #{message}"
-        super(full_message)
-      end
-    end
     
     # reload 
     module Java::OrgJrubyAst
@@ -70,19 +74,31 @@ module Compiler
           
           if receiver_type.primitive?
             # we're performing an operation against a primitive, map it accordingly
+            log "Compiling #{name} at #{position.start_line} as primitive op"
             compile_primitive(receiver_type, builder)
+          elsif receiver_type.array?
+            log "Compiling #{name} at #{position.start_line} as array op"
+            compile_array(receiver_type, builder)
           else
             case name
             when "new"
+              log "Compiling #{name} at #{position.start_line} as object instantiation"
               compile_new(receiver_type, builder)
             else
+              log "Compiling #{name} at #{position.start_line} as call"
               compile_call(receiver_type, builder)
             end
           end
         end
         
         def compile_call(receiver_type, builder)
-          receiver_node.compile(builder)
+          case receiver_node
+          when ConstNode
+            # static call
+            static = true
+          else
+            receiver_node.compile(builder)
+          end
 
           # I removed this because inference is working...but will it be needed under some circumstances?
 #          # inefficient to cast every time; better inference will help
@@ -90,10 +106,14 @@ module Compiler
 
           compile_args(builder)
 
-          if (receiver_type.interface?)
-            builder.invokeinterface receiver_type, mapped_name(builder), signature(builder)
+          if static
+            builder.invokestatic receiver_type, mapped_name(builder), signature(builder)
           else
-            builder.invokevirtual receiver_type, mapped_name(builder), signature(builder)
+            if (receiver_type.interface?)
+              builder.invokeinterface receiver_type, mapped_name(builder), signature(builder)
+            else
+              builder.invokevirtual receiver_type, mapped_name(builder), signature(builder)
+            end
           end
         end
         
@@ -131,6 +151,24 @@ module Compiler
           end
         end
         
+        def compile_array(type, builder)
+          receiver_node.compile(builder)
+
+          case name
+          when "[]"
+            if !args_node || args_node.size != 1
+              raise CompileError.new(position, "Primitive operations must have exactly one argument")
+            end
+
+            node = args_node.get(0)
+            # TODO: check or cast to int for indexing
+            node.compile(builder)
+            
+            # TODO: do we need to check for a primitive array here?
+            builder.aaload
+          end
+        end
+        
         def compile_new(type, builder)
           builder.new type
           builder.dup
@@ -160,6 +198,7 @@ module Compiler
           
           signature ||= [Void]
           
+          log "Compiling instance method for #{name} as #{signature.join(',')}"
           builder.method2(mapped_name(builder), *signature) do |method|
             # Run through any type declarations first
             first_real_node.declare_types(method) if HashNode === first_real_node
@@ -195,6 +234,7 @@ module Compiler
           
           signature ||= [Void]
           
+          log "Compiling static method for #{name} as #{signature.join(',')}"
           builder.static_method2(name, *signature) do |method|
             # Run through any type declarations first
             first_real_node.declare_types(method) if HashNode === first_real_node
@@ -225,18 +265,29 @@ module Compiler
           when "import"
             compile_import(builder)
           else
-            builder.aload 0
-            arg_types = []
-            args_node.child_nodes.each do |node|
-              node.compile(builder)
-              arg_types << node.type(builder)
+            if (builder.static)
+              arg_types = []
+              args_node.child_nodes.each do |node|
+                node.compile(builder)
+                arg_types << node.type(builder)
+              end
+
+              builder.invokestatic builder.this, name, builder.static_signature(name, arg_types)
+            else
+              builder.aload 0
+              arg_types = []
+              args_node.child_nodes.each do |node|
+                node.compile(builder)
+                arg_types << node.type(builder)
+              end
+
+              builder.invokevirtual builder.this, name, builder.instance_signature(name, arg_types)
             end
-            
-            builder.invokevirtual builder.this, name, builder.method_signature(name, arg_types)
           end
         end
         
         def compile_puts(builder)
+          log "Compiling special #{name} at #{position.start_line}"
           builder.getstatic System, "out", [PrintStream]
 
           arg_types = []
@@ -249,12 +300,13 @@ module Compiler
         end
         
         def compile_import(builder)
+          log "Compiling import at #{position.start_line}"
           args_node.child_nodes.each do |node|
             case node
             when StrNode
               builder.import(node.value)
             else
-              raise CompilerError.new(position, "Imports only allow strings right now")
+              raise CompileError.new(position, "Imports only allow strings right now")
             end
           end
         end
@@ -403,9 +455,13 @@ module Compiler
   
       class VCallNode
         def compile(builder)
-          builder.aload 0
+          if builder.static
+            builder.invokestatic builder.this, name, builder.static_signature(name, [])
+          else
+            builder.aload 0
 
-          builder.invokevirtual builder.this, name, builder.method_signature(name, [])
+            builder.invokevirtual builder.this, name, builder.instance_signature(name, [])
+          end
         end
       end
     end
@@ -415,7 +471,12 @@ end
 if $0 == __FILE__
   n = JRuby.parse(File.read(ARGV[0]), ARGV[0])
   compiler = Compiler::FileBuilder.new(ARGV[0])
-  n.compile(compiler)
-  
-  compiler.generate
+  begin
+    n.compile(compiler)
+
+    compiler.generate
+  rescue CompileError => e
+    puts e
+    puts e.backtrace
+  end
 end

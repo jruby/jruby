@@ -8,6 +8,25 @@ module Compiler
       JavaUtilities.get_proxy_class(dotted_name).java_class
     end
   end
+  
+  module TypeNamespace
+    include Util
+    
+    def import(strcls)
+      bits = strcls.split(".")
+      log "Importing #{type_from_dotted(strcls)} as #{bits[-1]}" 
+      @imports[bits[-1]] = type_from_dotted(strcls)
+    end
+
+    def type(sym)
+      sym = sym.to_s
+      type = @imports[sym]
+      
+      return type if type
+      return @parent.type(sym) if @parent
+      return type_from_dotted(sym)
+    end
+  end
     
   class TypedVariable
     attr_accessor :type
@@ -28,6 +47,7 @@ module Compiler
   
   class FileBuilder
     include Util
+    include TypeNamespace
     
     def initialize(file_name)
       @file_name = file_name
@@ -40,9 +60,9 @@ module Compiler
     
     def init_imports
       # set up a few useful imports
-      @imports[:int] = Java::int.java_class
-      @imports[:string] = Java::java.lang.String.java_class
-      @imports[:object] = Java::java.lang.Object.java_class
+      @imports[:int.to_s] = Java::int.java_class
+      @imports[:string.to_s] = Java::java.lang.String.java_class
+      @imports[:object.to_s] = Java::java.lang.Object.java_class
     end
     
     def public_class(class_name, superclass = java.lang.Object, *interfaces)
@@ -72,16 +92,6 @@ module Compiler
       # No tracking of lines at the file level, so we ignore
     end
     
-    def import(strcls)
-      # TODO: very simple
-      bits = strcls.split(".")
-      @imports[bits[-1].to_sym] = type_from_dotted(strcls)
-    end
-    
-    def type(sym)
-      @imports[sym] || type_from_dotted(sym)
-    end
-    
     def package(name)
       name = name.dup
       # flip case of first char (obviously not unicode aware...)
@@ -94,6 +104,7 @@ module Compiler
   
   class ClassBuilder
     include Util
+    include TypeNamespace
     
     import "jruby.objectweb.asm.Opcodes"
     import "jruby.objectweb.asm.ClassWriter"
@@ -103,7 +114,7 @@ module Compiler
     include Signature
 
     def initialize(file_builder, class_name, file_name, superclass = Object, *interfaces)
-      @file_builder = file_builder
+      @parent = file_builder
       @class_name = class_name
       @superclass = superclass 
       
@@ -114,9 +125,9 @@ module Compiler
       @class_writer.visit(V1_4, ACC_PUBLIC | ACC_SUPER, class_name, nil, path(superclass), interface_paths.to_java(:string))
       @class_writer.visit_source(file_name, nil)
       
-      @constructor = false
-      
-      @methods = {}
+      @constructor = nil
+      @instance_methods = {}
+      @static_methods = {}
       
       @imports = {}
       
@@ -134,15 +145,19 @@ module Compiler
       if @constructor
         @constructor.generate_constructor(@superclass)
       else
-        method2("<init>") do |method|
-          method.aload 0
-          method.invokespecial @superclass, "<init>", Void::TYPE
-          method.returnvoid
-        end
+        method = MethodBuilder.new(self, ACC_PUBLIC, "<init>", [])
+        method.start
+        method.aload 0
+        method.invokespecial @superclass, "<init>", Void::TYPE
+        method.returnvoid
+        method.stop
       end
       
       # lazily generate the actual methods
-      @methods.each do |name, deferred_method_builder|
+      @instance_methods.each do |name, deferred_method_builder|
+        deferred_method_builder.generate
+      end
+      @static_methods.each do |name, deferred_method_builder|
         deferred_method_builder.generate
       end
       
@@ -165,7 +180,7 @@ module Compiler
     end
     
     def method(name, *signature, &block)
-      @method_signatures[name] = signature
+      @instance_signatures[name] = signature
       MethodBuilder.build(self, ACC_PUBLIC, name.to_s, signature, &block)
     end
     
@@ -186,13 +201,16 @@ module Compiler
       end
       
       def generate_constructor(superclass)
+        @method_builder.start
+        
         # FIXME: this could be a lot nicer
         if (@name == "<init>")
           @method_builder.aload(0)
           @method_builder.invokespecial superclass, "<init>", Void::TYPE
         end
         
-        generate
+        @block.call(@method_builder)
+        @method_builder.stop
       end
     end
     
@@ -207,12 +225,12 @@ module Compiler
       if name == "<init>"
         @constructor = deferred_builder
       else
-        @methods[name] = deferred_builder
+        @instance_methods[name] = deferred_builder
       end
     end
     
     def static_method(name, *signature, &block)
-      @method_signatures[name] = signature
+      @static_signatures[name] = signature
       MethodBuilder.build(self, ACC_PUBLIC | ACC_STATIC, name.to_s, signature, &block)
     end
     
@@ -220,7 +238,7 @@ module Compiler
     def static_method2(name, *signature, &block)
       mb = MethodBuilder.new(self, ACC_PUBLIC | ACC_STATIC, name, signature)
       deferred_builder = DeferredMethodBuilder.new(name, mb, signature, block)
-      @methods[name] = deferred_builder
+      @static_methods[name] = deferred_builder
     end
     
     # name for signature generation using the class being generated
@@ -250,26 +268,31 @@ module Compiler
       # class bodies don't track line numbers in Java, so we ignore
     end
     
-    def signature(name, arg_types)
-      # TODO: allow overloading?
-      if @methods[name]
-        @method[name].signature
+    def static_signature(name, arg_types)
+      if @static_methods[name]
+        @static_methods[name].signature
       else
-        find_super_signature(name, arg_types)
+        find_super_static_signature(name, arg_types)
       end
     end
     
-    def find_super_signature(name, arg_types)
+    def instance_signature(name, arg_types)
+      # TODO: allow overloading?
+      if @instance_methods[name]
+        @instance_methods[name].signature
+      else
+        find_super_instance_signature(name, arg_types)
+      end
+    end
+    
+    def find_super_instance_signature(name, arg_types)
       # TODO: implement by searching parent
+      nil
     end
     
-    def import(strcls)
-      bits = strcls.split(".")
-      @imports[bits[-1].intern] = type_from_dotted(strcls)
-    end
-    
-    def type(sym)
-      @imports[sym] || @file_builder.type(sym)
+    def find_super_static_signature(name, arg_types)
+      # TODO: implement by searching parent
+      nil
     end
     
     def field(name, type = nil)
@@ -303,6 +326,7 @@ module Compiler
     include Compiler::Bytecode
     
     attr_reader :method_visitor
+    attr_reader :static
     
     def initialize(class_builder, modifiers, name, signature)
       @class_builder = class_builder
@@ -384,8 +408,12 @@ module Compiler
       super(@class_builder, field.name, [field.type])
     end
     
-    def method_signature(name, arg_types)
-      @class_builder.signature(name, arg_types)
+    def instance_signature(name, arg_types)
+      @class_builder.instance_signature(name, arg_types) || @class_builder.static_signature(name)
+    end
+    
+    def static_signature(name, arg_types)
+      @class_builder.static_signature(name, arg_types)
     end
     
     def type(sym)
