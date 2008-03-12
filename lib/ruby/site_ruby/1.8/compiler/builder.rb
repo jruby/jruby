@@ -1,5 +1,6 @@
 require 'compiler/bytecode'
 require 'compiler/signature'
+require 'fileutils'
 
 module Compiler
   module Util
@@ -15,6 +16,7 @@ module Compiler
       @file_name = file_name
       @class_builders = {}
       @imports = {}
+      @package = []
       
       init_imports
     end
@@ -27,6 +29,7 @@ module Compiler
     end
     
     def public_class(class_name, superclass = java.lang.Object, *interfaces)
+      class_name = @package.empty? ? class_name : "#{@package.join('/')}/#{class_name}"
       @class_builders[class_name] ||= ClassBuilder.new(self, class_name, @file_name, superclass, *interfaces)
       
       if block_given?
@@ -38,8 +41,12 @@ module Compiler
     
     def generate
       @class_builders.each do |class_name, class_builder|
+        if class_name.rindex('/')
+          dir = class_name[0..class_name.rindex('/')]
+          FileUtils.mkdir_p(dir)
+        end
         class_file = "#{class_name}.class"
-        puts "Writing #{class_file}"
+        puts "Writing class #{class_name.gsub('/', '.')}"
         File.open(class_file, 'w') {|file| file.write(class_builder.generate)}
       end
     end
@@ -56,6 +63,15 @@ module Compiler
     
     def type(sym)
       @imports[sym] || type_from_dotted(sym)
+    end
+    
+    def package(name)
+      name = name.dup
+      # flip case of first char (obviously not unicode aware...)
+      name[0] += 32
+      @package.push(name)
+      yield
+      @package.pop
     end
   end
   
@@ -196,7 +212,10 @@ module Compiler
   end
   
   class MethodBuilder
+    import "jruby.objectweb.asm.Opcodes"
+    include Opcodes
     include Compiler::Bytecode
+    
     
     # placeholder for now
     class InferredType
@@ -222,8 +241,13 @@ module Compiler
       
       @method_visitor = class_builder.new_method(modifiers, name, signature)
       
-      @locals = ["this"]
-      @local_types = [@class_builder]
+      @locals = []
+      @local_types = []
+      
+      @static = (modifiers & ACC_STATIC) != 0
+      
+      @locals << "this" unless @static
+      @local_types << @class_builder unless @static
     end
     
     def self.build(class_builder, modifiers, name, signature, &block)
@@ -245,6 +269,10 @@ module Compiler
     end
     
     def local(name, type = nil)
+      if name == "this" && @static
+        raise "'this' attempted to load from static method"
+      end
+      
       if @locals.index(name)
         # TODO ensure new type fits existing inferred type
         @local_types[@locals.index(name)].learn(type) if type

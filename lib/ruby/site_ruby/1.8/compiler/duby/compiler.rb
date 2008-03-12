@@ -138,6 +138,9 @@ module Compiler
         def compile_new(type, builder)
           builder.new type
           builder.dup
+          
+          compile_args(builder)
+          
           builder.invokespecial type, mapped_name(builder), signature(builder)
         end
         
@@ -234,6 +237,7 @@ module Compiler
         end
       end
       
+      
       class DefnNode
         def compile(builder)
           first_real_node = body_node
@@ -248,6 +252,41 @@ module Compiler
           signature ||= [Void]
           
           builder.method2(name, *signature) do |method|
+            # Run through any type declarations first
+            first_real_node.declare_types(method) if HashNode === first_real_node
+
+            # declare args that may not have been declared already
+            args_node.compile(method)
+            
+            body_node.compile(method)
+            
+            # Expectation is that last element leaves the right type on stack
+            case signature[0]
+            when Void
+              method.returnvoid
+            when Jint
+              method.ireturn
+            else
+              method.areturn
+            end
+          end
+        end
+      end
+      
+      class DefsNode
+        def compile(builder)
+          first_real_node = body_node
+          first_real_node = body_node.child_nodes[0] if BlockNode === body_node
+          while NewlineNode === first_real_node
+            first_real_node = first_real_node.next_node
+          end
+          
+          # determine signature from declaration line
+          signature = first_real_node.signature(builder) if HashNode === first_real_node
+          
+          signature ||= [Void]
+          
+          builder.static_method2(name, *signature) do |method|
             # Run through any type declarations first
             first_real_node.declare_types(method) if HashNode === first_real_node
 
@@ -462,6 +501,14 @@ module Compiler
           builder.local_type(name)
         end
       end
+      
+      class ModuleNode
+        def compile(builder)
+          builder.package(cpath.name) {
+            body_node.compile(builder)
+          }
+        end
+      end
   
       class NewlineNode
         def compile(builder)
@@ -488,6 +535,12 @@ module Compiler
           if body_node
             body_node.compile(builder)
           end
+        end
+      end
+      
+      class SelfNode
+        def compile(builder)
+          builder.local("this")
         end
       end
   
