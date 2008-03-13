@@ -54,7 +54,11 @@ module Compiler
             
             # if we already have an exact class, use it
             if recv_type.array?
-              recv_type = recv_type.component_type
+              if name == "length"
+                Jint
+              else
+                recv_type = recv_type.component_type
+              end
             elsif JavaClass === recv_type
               recv_type
             else

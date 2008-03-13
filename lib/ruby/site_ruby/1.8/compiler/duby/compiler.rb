@@ -22,6 +22,9 @@ module Compiler
     System = java.lang.System.java_class
     PrintStream = java.io.PrintStream.java_class
     JInteger = java.lang.Integer.java_class
+    Jbyte = Java::byte.java_class
+    Jchar = Java::char.java_class
+    Jshort = Java::short.java_class
     Jint = Java::int.java_class
     Jlong = Java::long.java_class
     Jfloat = Java::float.java_class
@@ -139,6 +142,9 @@ module Compiler
 
           if !args_node
             case type
+            when Jboolean, Jbyte, Jshort, Jchar
+              # TODO: cast and do the same as int
+              raise CompileError.new(position, "Unary primitive operations on #{type} not supported")
             when Jint
               case name
               when "-@"
@@ -186,6 +192,9 @@ module Compiler
             node.compile(builder)
 
             case type
+            when Jboolean, Jbyte, Jshort, Jchar
+              # TODO: cast and do the same as int
+              raise CompileError.new(position, "Binary primitive operations on #{type} not supported")
             when Jint
               case name
               when "+"
@@ -260,17 +269,54 @@ module Compiler
           receiver_node.compile(builder)
 
           case name
+          when "length"
+            if args_node
+              raise CompileError.new(position, "Array length does not take an argument")
+            end
+            
+            builder.arraylength
           when "[]"
             if !args_node || args_node.size != 1
-              raise CompileError.new(position, "Primitive operations must have exactly one argument")
+              raise CompileError.new(position, "Array accessignment must have exactly one argument")
             end
 
             node = args_node.get(0)
             # TODO: check or cast to int for indexing
             node.compile(builder)
             
-            # TODO: do we need to check for a primitive array here?
-            builder.aaload
+            if type.component_type.primitive?
+              case type.component_type
+              when Jboolean, Jbyte
+                builder.baload
+              when Jchar
+                builder.caload
+              when Jshort
+                builder.saload
+              when Jint
+                builder.iaload
+              when Jlong
+                builder.laload
+              when Jfloat
+                builder.faload
+              when Jdouble
+                builder.daload
+              end
+            else
+              builder.aaload
+            end
+          when "[]="
+            if !args_node || args_node.size != 2
+              raise CompileError.new(position, "Array assignment must have exactly two arguments")
+            end
+
+            # TODO: check or cast to int for indexing
+            args_node.get(0).compile(builder)
+            # TODO: check type matches?
+            args_node.get(1).compile(builder)
+            
+            builder.aastore
+          else
+            raise CompileError.new(position, "Array operation #{name} not supported")
           end
         end
         
@@ -314,11 +360,27 @@ module Compiler
             body_node.compile(method)
             
             # Expectation is that last element leaves the right type on stack
-            case signature[0]
-            when Void
-              method.returnvoid
-            when Jint
-              method.ireturn
+            if signature[0].primitive?
+              case signature[0]
+              when Void
+                method.returnvoid
+              when Jboolean, Jbyte
+                method.breturn
+              when Jchar
+                method.creturn
+              when Jshort
+                method.sreturn
+              when Jint
+                method.ireturn
+              when Jlong
+                method.lreturn
+              when Jfloat
+                method.freturn
+              when Jdouble
+                method.dreturn
+              else
+                raise CompileError.new(position, "Unknown return type: #{signature[0]}")
+              end
             else
               method.areturn
             end
@@ -350,11 +412,27 @@ module Compiler
             body_node.compile(method)
             
             # Expectation is that last element leaves the right type on stack
-            case signature[0]
-            when Void
-              method.returnvoid
-            when Jint
-              method.ireturn
+            if signature[0].primitive?
+              case signature[0]
+              when Void
+                method.returnvoid
+              when Jboolean, Jbyte
+                method.breturn
+              when Jchar
+                method.creturn
+              when Jshort
+                method.sreturn
+              when Jint
+                method.ireturn
+              when Jlong
+                method.lreturn
+              when Jfloat
+                method.freturn
+              when Jdouble
+                method.dreturn
+              else
+                raise CompileError.new(position, "Unknown return type: #{signature[0]}")
+              end
             else
               method.areturn
             end
@@ -445,39 +523,47 @@ module Compiler
       
       class IfNode
         def compile(builder)
-          f = builder.label
+          else_lbl = builder.label
           done = builder.label
           condition = self.condition
           condition = condition.next_node while NewlineNode === condition
           
           case condition
           when CallNode
-            case condition.receiver_node.type(builder)
-            when Jint
+            args = condition.args_node
+            receiver_type = condition.receiver_node.type(builder)
+            
+            if receiver_type.primitive?
               case condition.name
               when "<"
-                args = condition.args_node
-                raise CompileError.new(position, "int < must have exactly one argument") if !args || args.size != 1
-                
+                raise CompileError.new(position, "Primitive < must have exactly one argument") if !args || args.size != 1
+
                 condition.receiver_node.compile(builder)
                 args.get(0).compile(builder)
-                
-                # test >= for jump
-                builder.if_icmpge(f)
-                
+
+                # >= is else for <
+                case receiver_type
+                when Jint
+                  builder.if_icmpge(else_lbl)
+                else
+                  raise CompileError.new(position, "Primitive < is only supported for int")
+                end
+
                 then_body.compile(builder)
                 builder.goto(done)
-                
-                f.set!
+
+                else_lbl.set!
                 else_body.compile(builder)
-                
+
                 done.set!
+              else
+                raise CompileError.new(position, "Conditional not supported: #{condition.inspect}")
               end
             else
-              raise CompileError.new(position, "Conditionals on non-primitives not supported: #{condition.inspect}")
+              raise CompileError.new(position, "Conditional on non-primitives not supported: #{condition.inspect}")
             end
           else
-            raise CompileError.new(position, "Non-call conditionals not supported: #{condition.inspect}")
+            raise CompileError.new(position, "Non-call conditional not supported: #{condition.inspect}")
           end
         end
       end
