@@ -201,3 +201,4 @@ test_ok Regexp.new("foo").send(:initialize, "bar")
 test_ok Regexp.new("foo").send(:initialize_copy, Regexp.new("bar"))
 test_exception(SecurityError){/foo/.send(:initialize, "bar")}
 test_exception(SecurityError){/foo/.send(:initialize_copy, Regexp.new("bar"))}
+test_no_exception{Regexp.new("a", 0, "")}

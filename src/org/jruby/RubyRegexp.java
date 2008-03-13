@@ -466,9 +466,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
                 }
             }
             if (args.length == 3 && !args[2].isNil()) {
-                char first = args[2].convertToString().getByteList().charAt(0);
+                ByteList kcodeBytes = args[2].convertToString().getByteList();
+                char first = kcodeBytes.length() > 0 ? kcodeBytes.charAt(0) : 0;
                 regexFlags &= ~0x70;
-                switch(first) {
+                switch (first) {
                 case 'n': case 'N':
                     regexFlags |= 16;
                     break;
