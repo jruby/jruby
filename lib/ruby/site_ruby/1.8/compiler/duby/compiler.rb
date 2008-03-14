@@ -1,5 +1,6 @@
 require 'compiler/builder'
 require 'compiler/duby/typer'
+require 'compiler/duby/signature'
 require 'jruby'
 
 # I don't like these at top-level, but reopened Java classes have trouble with const lookup

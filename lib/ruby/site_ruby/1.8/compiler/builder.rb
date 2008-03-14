@@ -406,7 +406,7 @@ module Compiler
     end
     
     def instance_signature(name, arg_types)
-      @class_builder.instance_signature(name, arg_types) || @class_builder.static_signature(name)
+      @class_builder.instance_signature(name, arg_types) || @class_builder.static_signature(name, arg_types)
     end
     
     def static_signature(name, arg_types)
