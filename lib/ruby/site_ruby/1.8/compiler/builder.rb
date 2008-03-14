@@ -83,13 +83,9 @@ module Compiler
     
     def generate
       @class_builders.each do |class_name, class_builder|
-        if class_name.rindex('/')
-          dir = class_name[0..class_name.rindex('/')]
-          FileUtils.mkdir_p(dir)
-        end
         class_file = "#{class_name}.class"
-        puts "Writing class #{class_name.gsub('/', '.')}"
-        File.open(class_file, 'w') {|file| file.write(class_builder.generate)}
+        
+        yield class_file, class_builder
       end
     end
     
