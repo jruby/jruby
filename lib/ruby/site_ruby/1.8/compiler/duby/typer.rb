@@ -5,18 +5,6 @@ module Compiler
   module PrimitiveRuby
     # reload 
     module Java::OrgJrubyAst
-      class Node
-      end
-  
-      class ArgsNode
-      end
-  
-      class ArrayNode
-      end
-      
-      class ClassNode
-      end
-      
       class BeginNode
         def type(builder)
           body_node.type(builder)
@@ -35,29 +23,6 @@ module Compiler
       end
       
       class CallNode
-        def mapped_name(builder)
-          # TODO move to a utility somewhere for smart name mappings
-          # TODO or at least make it a table...
-          mapped_name = name
-          case receiver_node.type(builder)
-          when JString
-            case name
-            when "+"
-              mapped_name = "concat"
-            # This doesn't work yet, because format is a static method on String
-#            when "%"
-#              mapped_name = "format"
-            end
-          else
-            case name
-            when "new"
-              mapped_name = "<init>"
-            end
-          end
-          
-          mapped_name
-        end
-        
         def type(builder)
           @return_type ||= begin
             recv_type = receiver_node.type(builder)
@@ -85,51 +50,6 @@ module Compiler
             end
           end
         end
-        
-        def declared_type(builder)
-          if name == "[]"
-            # array type, top should be a constant; find the rest
-            array = true
-            elements = []
-          else
-            elements = [name]
-          end
-          
-          receiver = receiver_node
-          
-          loop do
-            case receiver
-            when ConstNode
-              elements << receiver_node.name
-              break
-            when CallNode
-              elements.unshift(receiver.name)
-              receiver = receiver.receiver_node
-            when SymbolNode
-              elements.unshift(receiver.name)
-              break
-            when VCallNode
-              elements.unshift(receiver.name)
-              break
-            end
-          end
-          
-          # join and load
-          class_name = elements.join(".")
-          type = builder.type(class_name)
-          
-          if array
-            type.array_class
-          else
-            type
-          end
-        end
-      end
-  
-      class Colon2Node
-        def declared_type(builder)
-          left_node.declared_type(builder).declared_field(name).static_value
-        end
       end
       
       class ConstNode
@@ -137,29 +57,8 @@ module Compiler
           @type ||= builder.type(name)
         end
       end
-      
-      
-      class DefnNode
-        def mapped_name(builder)
-          case name
-          when "initialize"
-            "<init>"
-          else
-            name
-          end
-        end
-      end
-      
-      class DefsNode
-      end
   
       class FCallNode
-        def mapped_name(builder)
-          if name == "puts"
-            "println"
-          end
-        end
-        
         def special_signature(recv_type, builder)
           arg_types = []
           args_node.child_nodes.each do |node|
@@ -210,26 +109,9 @@ module Compiler
         end
       end
       
-      class HashNode
-        def declare_types(builder)
-          @declared = true
-          list = list_node.child_nodes.to_a
-          list.each_index do |index|
-            builder.local(list[index].name, list[index + 1].declared_type(builder)) if index % 2 == 0
-          end
-        end
-      end
-      
-      class IfNode
-      end
-      
       class InstVarNode
         def type(builder)
           @type ||= builder.field_type(mapped_name(builder))
-        end
-        
-        def mapped_name(builder)
-          name[1..-1]
         end
       end
       
@@ -237,10 +119,6 @@ module Compiler
         def type(builder)
           builder.field(mapped_name(builder), value_node.type(builder))
           @type ||= builder.field_type(mapped_name(builder))
-        end
-        
-        def mapped_name(builder)
-          name[1..-1]
         end
       end
       
@@ -264,34 +142,14 @@ module Compiler
           @type ||= next_node.type(builder)
         end
       end
-      
-      class ReturnNode
-      end
-  
-      class RootNode
-      end
-      
-      class SelfNode
-      end
   
       class StrNode
         def type(builder)
           JString
         end
       end
-      
-      class SymbolNode
-        def declared_type(builder)
-          @type ||= builder.type(name.intern)
-        end
-      end
   
       class VCallNode
-        def mapped_name(builder)
-          # TODO map names for the local type?
-          name
-        end
-        
         def type(builder)
           @type ||= if builder.static
             builder.static_signature(name, [])[0]
