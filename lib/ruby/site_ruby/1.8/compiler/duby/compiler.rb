@@ -503,6 +503,7 @@ module Compiler
           end
 
           builder.invokevirtual PrintStream, "println", special_signature(PrintStream, builder)
+          builder.aconst_null
         end
         
         def compile_import(builder)
@@ -571,17 +572,43 @@ module Compiler
                 else
                   raise CompileError.new(position, "Primitive < is only supported for int")
                 end
+              when ">"
+                raise CompileError.new(position, "Primitive > must have exactly one argument") if !args || args.size != 1
 
-                then_body.compile(builder)
-                builder.goto(done)
+                condition.receiver_node.compile(builder)
+                args.get(0).compile(builder)
 
-                else_lbl.set!
-                else_body.compile(builder)
+                # <= is else for >
+                case receiver_type
+                when Jint
+                  builder.if_icmple(else_lbl)
+                else
+                  raise CompileError.new(position, "Primitive > is only supported for int")
+                end
+              when "=="
+                raise CompileError.new(position, "Primitive == must have exactly one argument") if !args || args.size != 1
 
-                done.set!
+                condition.receiver_node.compile(builder)
+                args.get(0).compile(builder)
+
+                # ne is else for ==
+                case receiver_type
+                when Jint
+                  builder.if_icmpne(else_lbl)
+                else
+                  raise CompileError.new(position, "Primitive == is only supported for int")
+                end
               else
                 raise CompileError.new(position, "Conditional not supported: #{condition.inspect}")
               end
+              
+              then_body.compile(builder)
+              builder.goto(done)
+
+              else_lbl.set!
+              else_body.compile(builder)
+
+              done.set!
             else
               raise CompileError.new(position, "Conditional on non-primitives not supported: #{condition.inspect}")
             end
