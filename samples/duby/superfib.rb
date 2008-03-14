@@ -15,4 +15,18 @@ class Foo
       fib(n - 2) + fib(n - 1)
     end
   end
+
+  def self.fib_iter(n)
+    {n => :int, :return => :int}
+    a = 0
+    b = 1
+    i = n
+    while i > 0
+      c = b
+      b = b + a
+      a = c
+      i = i - 1
+    end
+    a
+  end
 end

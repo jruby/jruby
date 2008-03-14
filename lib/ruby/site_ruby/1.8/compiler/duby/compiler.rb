@@ -2,6 +2,7 @@ require 'compiler/builder'
 require 'compiler/duby/typer'
 require 'jruby'
 
+# I don't like these at top-level, but reopened Java classes have trouble with const lookup
 def log(str)
   puts str if $VERBOSE
 end
@@ -58,25 +59,47 @@ module Compiler
         end
       end
       
-      class ClassNode
+      class BeginNode
         def compile(builder)
-          cb = builder.public_class(cpath.name)
-          body_node.compile(cb)
+          body_node.compile(builder)
         end
       end
   
       class BlockNode
         def compile(builder)
-          builder.aconst_null if builder.method?
-          child_nodes.each do |node|
-            node = node.next_node while NewlineNode === node
-            next unless node
-            
-            builder.line node.position.start_line + 1
-            
-            builder.pop if builder.method?
-            node.compile(builder)
+          size = child_nodes.size
+          if size == 0
+            case type
+            when Jint
+              builder.iconst_0
+            else
+              builder.aconst_null
+            end
+          else
+            i = 0
+            while i < size
+              node = child_nodes.get(i)
+              node = node.next_node while NewlineNode === node
+              next unless node
+
+              builder.line node.position.start_line + 1
+
+              node.compile(builder)
+              
+              if i + 1 < size
+                builder.pop if builder.method?
+              end
+              
+              i += 1
+            end
           end
+        end
+      end
+      
+      class ClassNode
+        def compile(builder)
+          cb = builder.public_class(cpath.name)
+          body_node.compile(cb)
         end
       end
       
@@ -357,7 +380,7 @@ module Compiler
             # declare args that may not have been declared already
             args_node.compile(method)
             
-            body_node.compile(method)
+            body_node.compile(method) if body_node
             
             # Expectation is that last element leaves the right type on stack
             if signature[0].primitive?
@@ -409,7 +432,7 @@ module Compiler
             # declare args that may not have been declared already
             args_node.compile(method)
             
-            body_node.compile(method)
+            body_node.compile(method) if body_node
             
             # Expectation is that last element leaves the right type on stack
             if signature[0].primitive?
@@ -568,12 +591,6 @@ module Compiler
         end
       end
       
-      class InstVarNode
-        def compile(builder)
-          builder.getfield(mapped_name(builder))
-        end
-      end
-      
       class InstAsgnNode
         def compile(builder)
           builder.field(mapped_name(builder), value_node.type(builder))
@@ -584,6 +601,12 @@ module Compiler
           builder.dup
           
           builder.putfield(mapped_name(builder))
+        end
+      end
+      
+      class InstVarNode
+        def compile(builder)
+          builder.getfield(mapped_name(builder))
         end
       end
       
@@ -691,6 +714,79 @@ module Compiler
           end
         end
       end
+      
+      class WhileNode
+        def compile(builder)
+          begin_lbl = builder.label
+          end_lbl = builder.label
+          cond_lbl = builder.label
+          
+          case body_node.type(builder)
+          when Jint
+            builder.iconst_0
+          else
+            builder.aconst_null
+          end
+          
+          if evaluate_at_start
+            builder.goto cond_lbl
+          end
+          
+          begin_lbl.set!
+          builder.pop
+          body_node.compile(builder)
+          
+          cond_lbl.set!
+          compile_condition(builder, begin_lbl)
+          end_lbl.set!
+        end
+        
+        def compile_condition(builder, begin_lbl)
+          condition = condition_node
+          condition = condition.next_node while NewlineNode === condition
+          
+          case condition
+          when CallNode
+            args = condition.args_node
+            receiver_type = condition.receiver_node.type(builder)
+            
+            if receiver_type.primitive?
+              case condition.name
+              when "<"
+                raise CompileError.new(position, "Primitive < must have exactly one argument") if !args || args.size != 1
+
+                condition.receiver_node.compile(builder)
+                args.get(0).compile(builder)
+
+                case receiver_type
+                when Jint
+                  builder.if_icmplt(begin_lbl)
+                else
+                  raise CompileError.new(position, "Primitive < is only supported for int")
+                end
+              when ">"
+                raise CompileError.new(position, "Primitive > must have exactly one argument") if !args || args.size != 1
+
+                condition.receiver_node.compile(builder)
+                args.get(0).compile(builder)
+
+                case receiver_type
+                when Jint
+                  builder.if_icmpgt(begin_lbl)
+                else
+                  raise CompileError.new(position, "Primitive < is only supported for int")
+                end
+              else
+                raise CompileError.new(position, "Conditional not supported: #{condition.inspect}")
+              end
+            else
+              raise CompileError.new(position, "Conditional on non-primitives not supported: #{condition.inspect}")
+            end
+          else
+            raise CompileError.new(position, "Non-call conditional not supported: #{condition.inspect}")
+          end
+        end
+      end
     end
   end
 end
@@ -701,7 +797,17 @@ if $0 == __FILE__
   begin
     n.compile(compiler)
 
-    compiler.generate
+    compiler.generate do |filename, builder|
+      puts "Compiling #{builder.class_name.gsub('/', '.')}.class"
+      
+      class_name = builder.class_name
+      if class_name.rindex('/')
+        dir = class_name[0..class_name.rindex('/')]
+        FileUtils.mkdir_p(dir)
+      end
+      
+      File.open(filename, 'w') {|file| file.write(builder.generate)}
+    end
   rescue CompileError => e
     puts e
     puts e.backtrace

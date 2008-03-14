@@ -16,11 +16,21 @@ module Compiler
       
       class ClassNode
       end
+      
+      class BeginNode
+        def type(builder)
+          body_node.type(builder)
+        end
+      end
   
       class BlockNode
         # Type of a block is the type of its final element
         def type(builder)
-          @type ||= child_nodes.get(child_nodes.size - 1).type
+          if child_nodes.size == 0
+            JObject
+          else
+            @type ||= child_nodes.get(child_nodes.size - 1).type(builder)
+          end
         end
       end
       
