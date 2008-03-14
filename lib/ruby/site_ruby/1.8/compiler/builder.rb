@@ -35,13 +35,13 @@ module Compiler
 
     def initialize(name, type, index = 0)
       @name = name
-      @type = type || java.lang.Object
+      @type = type || java.lang.Object.java_class
       @index = index
     end
 
     def learn(type)
       # TODO ensure new type is compatible with previous type or raise
-      @type ||= type || java.lang.Object
+      @type ||= type || java.lang.Object.java_class
     end
   end
   
