@@ -197,9 +197,16 @@ public class RubyFileTest {
     public static IRubyObject size_p(IRubyObject recv, IRubyObject filename) {
         JRubyFile file = file(filename);
 
-        if (!file.exists()) return recv.getRuntime().getNil();
-        
-        return recv.getRuntime().newFixnum(file.length());
+        if (!file.exists()) {
+            return recv.getRuntime().getNil();
+        }
+
+        long length =  file.length();
+        if (length > 0) {
+            return recv.getRuntime().newFixnum(length);
+        } else {
+            return recv.getRuntime().getNil();
+        }
     }
     
     @JRubyMethod(name = "socket?", required = 1, module = true)

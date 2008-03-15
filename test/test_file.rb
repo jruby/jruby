@@ -430,6 +430,18 @@ class TestFile < Test::Unit::TestCase
     assert(File.size?('build.xml'))
   end
 
+  # JRUBY-2275
+  def test_file_size_empty_file
+    filename = "__empty_test__file"
+    File.open(filename, "w+") { }
+    assert_equal(nil, File.size?(filename))
+    assert_equal(nil, FileTest.size?(filename))
+    assert_equal(0, File.size(filename))
+    assert_equal(0, FileTest.size(filename))
+  ensure
+    File.delete(filename)
+  end
+
   def test_file_open_utime
     filename = "__test__file"
     File.open(filename, "w") {|f| }
