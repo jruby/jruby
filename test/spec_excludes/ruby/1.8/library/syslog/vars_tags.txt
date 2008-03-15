@@ -1,3 +1,6 @@
 fails(JRUBY-2204):Syslog::ident should return the value of the last ident passed to open
 fails(JRUBY-2204):Syslog::options should return the value of the last "option" passed to open
 fails(JRUBY-2204):Syslog::facility should return the value of the last "facility" passed to open
+fails(JRUBY-2204):Syslog::options should default to (LOG_PID | LOG_CONS)
+fails(JRUBY-2204):Syslog::facility should default to LOG_USER
+fails(JRUBY-2204):Syslog::mask should default to 255

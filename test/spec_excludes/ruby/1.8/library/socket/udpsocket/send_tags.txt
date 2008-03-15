@@ -1,0 +1,2 @@
+fails(RBX-421):UDPSocket.send sends data in ad hoc mode
+fails(RBX-421):UDPSocket.send sends data in connection mode

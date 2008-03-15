@@ -1,0 +1,1 @@
+fails(JRUBY-2277):Module#alias_method converts a non string/symbol/fixnum name to string using to_str
