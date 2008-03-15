@@ -73,7 +73,6 @@ public class ReflectionMethodFactory extends MethodFactory {
         JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
         JavaMethod ic = new ReflectedJavaMethod(implementationClass, method, jrubyMethod);
 
-        ic.setArity(Arity.fromAnnotation(jrubyMethod));
         ic.setJavaName(method.getName());
         ic.setArgumentTypes(method.getParameterTypes());
         ic.setSingleton(Modifier.isStatic(method.getModifiers()));

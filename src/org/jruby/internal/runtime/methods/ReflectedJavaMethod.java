@@ -44,7 +44,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class ReflectedJavaMethod extends JavaMethod {
     private final Method method;
-    private final JRubyMethod annotation;
     
     private final boolean needsBlock;
     private final boolean isStatic;
@@ -55,22 +54,27 @@ public class ReflectedJavaMethod extends JavaMethod {
     
     private final boolean argsAsIs;
 
+    private final boolean needsThreadContext;
+
     public ReflectedJavaMethod(
             RubyModule implementationClass, Method method, JRubyMethod annotation) {
         super(implementationClass, annotation.visibility());
         
         this.method = method;
-        this.annotation = annotation;
         
         Class<?>[] params = method.getParameterTypes();
         this.needsBlock = params.length > 0 && params[params.length - 1] == Block.class;
         this.isStatic = Modifier.isStatic(method.getModifiers());
         
-        this.required = annotation.required();
+        Arity arity = Arity.fromAnnotation(annotation, params, this.isStatic);
+        setArity(arity);
+
+        this.required = arity.getValue() >= 0 ? arity.getValue() : Math.abs(arity.getValue())-1;
         this.optional = annotation.optional();
         this.rest = annotation.rest();
         
-        this.argsAsIs = ! isStatic && optional == 0 && !rest && ! needsBlock;
+        this.needsThreadContext = params.length > 0 && params[0] == ThreadContext.class;
+        this.argsAsIs = ! isStatic && optional == 0 && !rest && !needsBlock && !needsThreadContext;
         
         if (rest) {
             max = -1;
@@ -111,6 +115,9 @@ public class ReflectedJavaMethod extends JavaMethod {
                 
                 Object[] params = new Object[argsLength];
                 int offset = 0;
+                if (needsThreadContext) {
+                    params[offset++] = context;
+                }
                 if (isStatic) {
                     params[offset++] = self;
                 }
@@ -171,6 +178,10 @@ public class ReflectedJavaMethod extends JavaMethod {
     private int calcArgsLength() {
         int argsLength = 0;
         
+        if (needsThreadContext) {
+            argsLength++;
+        }
+
         if (isStatic) {
             argsLength++;
         }
