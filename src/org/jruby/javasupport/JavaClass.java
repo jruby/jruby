@@ -985,7 +985,7 @@ public class JavaClass extends JavaObject {
         return getRuntime().newBoolean(Modifier.isProtected(javaClass().getModifiers()));
     }
 
-    @JRubyMethod(name = "protected?")
+    @JRubyMethod(name = "private?")
     public RubyBoolean private_p() {
         return getRuntime().newBoolean(Modifier.isPrivate(javaClass().getModifiers()));
     }
