@@ -961,6 +961,21 @@ public class RubyIO extends RubyObject {
     
     @JRubyMethod(name = "write_nonblock", required = 1)
     public IRubyObject write_nonblock(IRubyObject obj) {
+        // MRI behavior: always check whether the file is writable
+        // or not, even if we are to write 0 bytes.
+        OpenFile myOpenFile = getOpenFileChecked();
+        try {
+            myOpenFile.checkWritable(getRuntime());
+        } catch (IOException ex) {
+            throw getRuntime().newIOErrorFromException(ex);
+        } catch (BadDescriptorException ex) {
+            throw getRuntime().newErrnoEBADFError();
+        } catch (InvalidValueException ex) {
+            throw getRuntime().newErrnoEINVALError();
+        }  catch (PipeException ex) {
+            throw getRuntime().newErrnoEPIPEError();
+        }
+
         // TODO: Obviously, we're not doing a non-blocking write here
         return write(obj);
     }
