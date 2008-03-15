@@ -49,7 +49,7 @@ test_equal(nil, t == nil)
 
 # Time.utc can accept float values (by turning them into ints)
 test_no_exception { Time::utc(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0) }
-test_exception(ArgumentError) { Time::local(1111, 11, 11, 11, 11, 11, 0) }
+test_exception(ArgumentError) { Time::local(2**30, 11, 11, 11, 11, 11, 0) }
 
 # Test getgm/local/utc methods
 local = Time.now
@@ -119,13 +119,8 @@ test_no_exception {Time.utc(2007, 10, 10, 11, 55, 23, "-0200", 3)}
 test_equal 999999,  Time.utc(2007, 10, 10, 11, 55, 23, -1).usec
 
 # Follow MRI year conversion logic
-test_exception {Time.utc(-1)}
 test_equal 2000, Time.utc(0).year
-test_exception {Time.utc(39)}
-test_exception {Time.utc(68)}
 test_equal 1969, Time.utc(69).year
 test_equal 2038, Time.utc(38).year
 test_equal 2038, Time.utc(138).year
-test_exception {Time.utc(39)}
-test_exception {Time.utc(1901)}
 test_equal 1902, Time.utc(1902).year

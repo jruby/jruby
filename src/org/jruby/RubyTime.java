@@ -772,16 +772,20 @@ public class RubyTime extends RubyObject {
         }
 
         // set up with min values and then add to allow rolling over
-        dt = dt.withDate(year, 1, 1)
-                .withHourOfDay(0)
-                .withMinuteOfHour(0)
-                .withSecondOfMinute(0)
-                .withMillisOfSecond(0);
-        dt = dt.plusMonths(month - 1)
-                .plusDays(int_args[0] - 1)
-                .plusHours(int_args[1])
-                .plusMinutes(int_args[2])
-                .plusSeconds(int_args[3]);
+        try {
+            dt = dt.withDate(year, 1, 1)
+                    .withHourOfDay(0)
+                    .withMinuteOfHour(0)
+                    .withSecondOfMinute(0)
+                    .withMillisOfSecond(0);
+            dt = dt.plusMonths(month - 1)
+                    .plusDays(int_args[0] - 1)
+                    .plusHours(int_args[1])
+                    .plusMinutes(int_args[2])
+                    .plusSeconds(int_args[3]);
+        } catch (org.joda.time.IllegalFieldValueException e) {
+            throw runtime.newArgumentError("time out of range");
+        }
 
         RubyTime time = new RubyTime(runtime, (RubyClass) recv, dt);
         // Ignores usec if 8 args (for compatibility with parsedate) or if not supplied.
@@ -797,11 +801,6 @@ public class RubyTime extends RubyObject {
             time.setUSec(usec);
         }
 
-        // Restrict to time_t for compatibility
-        long seconds = dt.getMillis() / 1000;
-        if (seconds > Integer.MAX_VALUE || seconds < Integer.MIN_VALUE) {
-            throw runtime.newArgumentError("time out of range");
-        }
         time.callInit(IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
         return time;
     }
