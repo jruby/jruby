@@ -48,6 +48,8 @@
 #   safe{..}
 #
 
+require 'monitor'
+
 module Finalizer
   RCS_ID='-$Id$-'
 
@@ -164,14 +166,14 @@ module Finalizer
 
     # method to call finalize_* safely.
     def safe
-      old_status = Thread.critical
-      Thread.critical = true
-      ObjectSpace.remove_finalizer(@proc)
-      begin
-	yield
-      ensure
-	ObjectSpace.add_finalizer(@proc)
-	Thread.critical = old_status
+      # Monitor, since this may need to be reentrant
+      @monitor.synchronize do
+        ObjectSpace.remove_finalizer(@proc)
+        begin
+	  yield
+        ensure
+	  ObjectSpace.add_finalizer(@proc)
+        end
       end
     end
 
@@ -187,6 +189,7 @@ module Finalizer
     end
 
   end
+  @monitor = Monitor.new
   @dependency = Hash.new
   @proc = proc{|id| final_of(id)}
   ObjectSpace.add_finalizer(@proc)
