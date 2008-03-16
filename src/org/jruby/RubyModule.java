@@ -1676,7 +1676,8 @@ public class RubyModule extends RubyObject {
     public RubyModule alias_method(ThreadContext context, IRubyObject newId, IRubyObject oldId) {
         String newName = newId.asJavaString();
         defineAlias(newName, oldId.asJavaString());
-        RubySymbol newSym = context.getRuntime().newSymbol(newName);
+        RubySymbol newSym = newId instanceof RubySymbol ? (RubySymbol)newId :
+            context.getRuntime().newSymbol(newName);
         if (isSingleton()) {
             ((MetaClass)this).getAttached().callMethod(context, "singleton_method_added", newSym);
         } else {
