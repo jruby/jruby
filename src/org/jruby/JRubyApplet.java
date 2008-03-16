@@ -11,6 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
+ * Copyright (C) 2007 Charles Nutter <charles.o.nutter@sun.com>
  * Copyright (C) 2008 MenTaLguY <mental@rydia.net>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -28,13 +29,19 @@
 package org.jruby;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Insets;
 import java.awt.Graphics;
+import java.awt.GraphicsEnvironment;
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.PipedInputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
+import java.util.Arrays;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -42,6 +49,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
+import org.jruby.demo.TextAreaReadline;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -53,6 +61,7 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
 
 /**
@@ -176,7 +185,11 @@ public class JRubyApplet extends JApplet {
         super.init();
         final JRubyApplet applet = this;
 
-        console = new TrivialConsole();
+        if (getBooleanParameter("console", false)) {
+            console = new TextConsole();
+        } else {
+            console = new TrivialConsole();
+        }
 
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
@@ -253,6 +266,7 @@ public class JRubyApplet extends JApplet {
 
     private void showAppletError(final String message) {
         final JRubyApplet applet = this;
+        System.err.println(message);
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
@@ -369,6 +383,54 @@ public class JRubyApplet extends JApplet {
         public JComponent getComponent() { return panel; }
         public void setPaintCallback(PaintCallback callback) {
             panel.setPaintCallback(callback);
+        }
+    }
+
+    public static class TextConsole implements Console {
+        private JTextPane textPane;
+        private JScrollPane scrollPane;
+        private TextAreaReadline adaptor;
+        private InputStream inputStream;
+        private PrintStream outputStream;
+        private PrintStream errorStream;
+        
+        public TextConsole() {
+            textPane = new JTextPane();
+	    textPane.setMargin(new Insets(4, 4, 4, 4));
+            textPane.setCaretColor(new Color(0xa4, 0x00, 0x00));
+            textPane.setBackground(new Color(0xf2, 0xf2, 0xf2));
+            textPane.setForeground(new Color(0xa4, 0x00, 0x00));
+
+            Font font = findFont("Monospaced", Font.PLAIN, 14,
+                                 new String[] {"Monaco", "Andale Mono"});
+
+            textPane.setFont(font);
+
+            scrollPane = new JScrollPane(textPane);
+            adaptor = new TextAreaReadline(textPane, "  JRuby applet console  \n\n");
+            inputStream = new PipedInputStream();
+            outputStream = new PrintStream(adaptor);
+            errorStream = new PrintStream(adaptor);
+        }
+        public JComponent getComponent() { return scrollPane; }
+        public InputStream getInputStream() { return inputStream; }
+        public PrintStream getOutputStream() { return outputStream; }
+        public PrintStream getErrorStream() { return errorStream; }
+        public void attachRuntime(Ruby runtime) {
+            adaptor.hookIntoRuntime(runtime);
+        }
+        public void setPaintCallback(PaintCallback callback) {
+        }
+
+        private Font findFont(String otherwise, int style, int size, String[] families) {
+            String[] fonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+            Arrays.sort(fonts);
+            for (int i = 0; i < families.length; i++) {
+                if (Arrays.binarySearch(fonts, families[i]) >= 0) {
+                    return new Font(families[i], style, size);
+                }
+            }
+            return new Font(otherwise, style, size);
         }
     }
 }
