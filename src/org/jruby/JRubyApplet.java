@@ -53,7 +53,7 @@ import javax.swing.SwingUtilities;
  * The JRubyApplet class provides a simple way to write Java applets using
  * JRuby without needing to create a custom Java applet class.  At applet
  * initialization time, JRubyApplet starts up a JRuby runtime, then evaluates
- * the scriptlet given as the "script" applet parameter.
+ * the scriptlet given as the "eval" applet parameter.
  *
  * The Java applet instance is available to the Ruby script as
  * JRubyApplet.applet; the script can also define callbacks for applet
@@ -141,7 +141,7 @@ public class JRubyApplet extends JApplet {
         runtime.setSecurityRestricted(true);
         rubyObject = JavaObject.wrap(runtime, this);
         AppletModule.setup(runtime, rubyObject);
-        final String script = getParameter("script");
+        final String script = getParameter("eval");
         if (script != null) {
             try {
                 SwingUtilities.invokeAndWait(new Runnable() {
