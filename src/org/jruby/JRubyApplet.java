@@ -31,6 +31,7 @@ import java.awt.BorderLayout;
 import java.awt.Graphics;
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
@@ -48,6 +49,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import javax.swing.JApplet;
+import javax.swing.JComponent;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
@@ -72,9 +75,24 @@ public class JRubyApplet extends JApplet {
     private RubyProc startProc;
     private RubyProc stopProc;
     private RubyProc destroyProc;
-    private RubyProc paintProc;
     private Graphics priorGraphics;
     private IRubyObject wrappedGraphics;
+    private JTextArea errorText;
+    private JComponent errorComponent;
+    private Console console;
+
+    public interface PaintCallback {
+        public void paint(Graphics g);
+    }
+
+    public interface Console {
+        public InputStream getInputStream();
+        public PrintStream getOutputStream();
+        public PrintStream getErrorStream();
+        public void attachRuntime(Ruby runtime);
+        public JComponent getComponent();
+        public void setPaintCallback(PaintCallback callback);
+    }
 
     public static class AppletModule {
         public static void setup(Ruby runtime, IRubyObject applet) {
@@ -143,6 +161,9 @@ public class JRubyApplet extends JApplet {
     }
 
     private InputStream getCodeResourceAsStream(String name) {
+        if (name == null) {
+            return null;
+        }
         try {
             final URL directURL = new URL(getCodeBase(), name);
             return directURL.openStream();
@@ -153,6 +174,27 @@ public class JRubyApplet extends JApplet {
 
     public void init() {
         super.init();
+        final JRubyApplet applet = this;
+
+        console = new TrivialConsole();
+
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    final JTextArea textArea = new JTextArea("Errors:\n\n");
+                    textArea.setEditable(false);
+                    final JScrollPane pane = new JScrollPane(textArea);
+                    pane.setOpaque(true);
+                    pane.setVisible(false);
+                    applet.errorText = textArea;
+                    applet.errorComponent = pane;
+                    applet.getLayeredPane().add(pane, new Integer(300));
+                }
+            });
+        } catch (InterruptedException e) { 
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException("Error setting up error panel", e.getCause());
+        }
 
         synchronized (this) {
             if (runtime != null) {
@@ -160,12 +202,16 @@ public class JRubyApplet extends JApplet {
             }
 
             final RubyInstanceConfig config = new RubyInstanceConfig() {{
+                setInput(console.getInputStream());
+                setOutput(console.getOutputStream());
+                setError(console.getErrorStream());
                 setObjectSpaceEnabled(getBooleanParameter("ObjectSpace", false));
             }};
             runtime = Ruby.newInstance(config);
             runtime.setSecurityRestricted(true);
             rubyObject = JavaObject.wrap(runtime, this);
             AppletModule.setup(runtime, rubyObject);
+            console.attachRuntime(runtime);
         }
 
         final String scriptName = getParameter("script");
@@ -173,23 +219,23 @@ public class JRubyApplet extends JApplet {
         final String evalString = getParameter("eval");
 
         if ( scriptName == null && evalString == null ) {
-            showError("No Ruby script specified.");
+            showAppletError("No Ruby script specified.");
             return;
         }
         if ( scriptName != null && scriptStream == null ) {
-            showError("Script " + scriptName + " not found.");
+            showAppletError("Script " + scriptName + " not found.");
             return;
         }
 
         try {
-            final Ruby runtime = this.runtime;
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
+                    applet.setContentPane(applet.console.getComponent());
                     if (scriptStream != null) {
-                        runtime.runFromMain(scriptStream, scriptName);
+                        applet.runtime.runFromMain(scriptStream, scriptName);
                     }
                     if (evalString != null) {
-                        runtime.evalScriptlet(evalString);
+                        applet.runtime.evalScriptlet(evalString);
                     }
                 }
             });
@@ -202,24 +248,21 @@ public class JRubyApplet extends JApplet {
     private void showException(Throwable t) {
         StringWriter writer = new StringWriter();
         t.printStackTrace(new PrintWriter(writer, true));
-        showError(writer.toString());
+        showAppletError(writer.toString());
     }
 
-    private synchronized void showError(final String message) {
+    private void showAppletError(final String message) {
+        final JRubyApplet applet = this;
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
-                    final JTextArea textArea = new JTextArea(message);
-                    textArea.setEditable(false);
-                    final JScrollPane pane = new JScrollPane(textArea);
-                    getContentPane().removeAll();
-                    getContentPane().setLayout(new BorderLayout());
-                    getContentPane().add(pane);
+                    applet.errorComponent.setVisible(true);
+                    applet.errorText.append(message + "\n");
                 }
             });
         } catch (InterruptedException e) { 
         } catch (InvocationTargetException e) {
-            throw new RuntimeException("Error displaying error", e.getCause());
+            throw new RuntimeException("Error displaying applet error", e.getCause());
         }
     }
 
@@ -270,7 +313,6 @@ public class JRubyApplet extends JApplet {
             startProc = null;
             stopProc = null;
             destroyProc = null;
-            paintProc = null;
             priorGraphics = null;
             wrappedGraphics = null;
             runtime.tearDown();
@@ -278,20 +320,55 @@ public class JRubyApplet extends JApplet {
         }
     }
 
-    private synchronized void setPaintProc(RubyProc proc) {
-        paintProc = proc;
-    }
-    public void paint(Graphics g) {
-        super.paint(g); 
-        synchronized (this) {
-            if (paintProc != null) {
-                if (priorGraphics != g) {
-                    wrappedGraphics = JavaObject.wrap(runtime, g);
-                    priorGraphics = g;
+    private synchronized void setPaintProc(final RubyProc proc) {
+        if (proc != null) {
+            final JRubyApplet applet = this;
+            console.setPaintCallback(new PaintCallback() {
+                public void paint(Graphics g) {
+                    if (applet.priorGraphics != g) {
+                        applet.wrappedGraphics = JavaObject.wrap(applet.runtime, g);
+                        applet.priorGraphics = g;
+                    }
+                    ThreadContext context = applet.runtime.getCurrentContext();
+                    proc.call(context, new IRubyObject[] {wrappedGraphics}, Block.NULL_BLOCK);
                 }
-                ThreadContext context = runtime.getCurrentContext();
-                paintProc.call(context, new IRubyObject[] {wrappedGraphics}, Block.NULL_BLOCK);
+            });
+        } else {
+            console.setPaintCallback(null);
+        }
+    }
+
+    public static class TrivialConsole implements Console {
+        private PainterPanel panel;
+
+        public static class PainterPanel extends JPanel {
+            private PaintCallback paintCallback;
+
+            public synchronized void setPaintCallback(PaintCallback callback) {
+                paintCallback = callback;
+                repaint(getVisibleRect());
             }
+
+            public void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                synchronized (this) {
+                    if (paintCallback != null) {
+                        paintCallback.paint(g);
+                    }
+                }
+            }
+        }
+
+        public TrivialConsole() {
+            panel = new PainterPanel();
+        }
+        public InputStream getInputStream() { return System.in; }
+        public PrintStream getOutputStream() { return System.out; }
+        public PrintStream getErrorStream() { return System.err; }
+        public void attachRuntime(Ruby runtime) {}
+        public JComponent getComponent() { return panel; }
+        public void setPaintCallback(PaintCallback callback) {
+            panel.setPaintCallback(callback);
         }
     }
 }
