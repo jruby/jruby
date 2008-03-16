@@ -46,6 +46,7 @@ import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.io.ModeFlags;
 
 /**
  * This mess of a class is what happens when all Java gives you is
@@ -222,6 +223,122 @@ public class ShellLauncher {
 
     public static Process run(Ruby runtime, IRubyObject string) throws IOException {
         return run(runtime, new IRubyObject[] {string});
+    }
+
+    public static Process popen(Ruby runtime, IRubyObject string, ModeFlags modes) throws IOException {
+        String shell = getShell(runtime);
+        Process aProcess = null;
+        File pwd = new File(runtime.getCurrentDirectory());
+        String[] args = parseCommandLine(runtime, new IRubyObject[] {string});
+
+        // CON: popen is a case where I think we should just always shell out.
+        if (shouldRunInShell(shell, args)) {
+            // execute command with sh -c
+            // this does shell expansion of wildcards
+            String[] argArray = new String[3];
+            String cmdline = string.toString();
+            argArray[0] = shell;
+            argArray[1] = shell.endsWith("sh") ? "-c" : "/c";
+            argArray[2] = cmdline;
+            aProcess = Runtime.getRuntime().exec(argArray, getCurrentEnv(runtime), pwd);
+        } else {
+            aProcess = Runtime.getRuntime().exec(args, getCurrentEnv(runtime), pwd);        
+        }
+            
+        aProcess = new POpenProcess(aProcess, runtime, modes);
+        
+        return aProcess;
+    }
+    
+    public static class POpenProcess extends Process {
+        private Process child;
+        private Ruby runtime;
+        private ModeFlags modes;
+        
+        private InputStream in;
+        private OutputStream out;
+        private StreamPumper pumper;
+        
+        public POpenProcess(Process child, Ruby runtime, ModeFlags modes) {
+            this.child = child;
+            this.runtime = runtime;
+            this.modes = modes;
+            
+            if (modes.isWritable()) {
+                // popen caller wants to be able to write, provide subprocess out directly
+                out = child.getOutputStream();
+            } else {
+                // popen caller will not be writing, provide a bogus stream
+                try {
+                    child.getOutputStream().close();
+                } catch (IOException ioe) {
+                    throw runtime.newIOErrorFromException(ioe);
+                }
+                
+                out = new OutputStream() {
+                    @Override
+                    public void write(int b) throws IOException {
+                    }
+                };
+            }
+            
+            if (modes.isReadable()) {
+                in = child.getInputStream();
+            } else {
+                // TODO: Should this call runtime.getOutputStream() instead?
+                pumper = new StreamPumper(child.getInputStream(), runtime.getOut(), false);
+                pumper.setDaemon(true);
+                pumper.start();
+                
+                in = new InputStream() {
+                    @Override
+                    public int read() throws IOException {
+                        return -1;
+                    }
+                };
+            }
+        }
+
+        @Override
+        public OutputStream getOutputStream() {
+            return out;
+        }
+
+        @Override
+        public InputStream getInputStream() {
+            return in;
+        }
+
+        @Override
+        public InputStream getErrorStream() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public int waitFor() throws InterruptedException {
+            int result = child.waitFor();
+            if (pumper != null) pumper.quit();
+            return result;
+        }
+
+        @Override
+        public int exitValue() {
+            int result = child.exitValue();
+            if (pumper != null) pumper.quit();
+            return result;
+        }
+
+        @Override
+        public void destroy() {
+            if (pumper != null) pumper.quit();
+            try {
+                in.close();
+                out.close();
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
+            child.destroy();
+        }
     }
     
     public static Process run(Ruby runtime, IRubyObject[] rawArgs) throws IOException {

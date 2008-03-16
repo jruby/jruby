@@ -277,7 +277,7 @@ public class RubyIO extends RubyObject {
                 openFile.setMainStream(
                         new ChannelStream(
                             runtime, 
-                            new ChannelDescriptor(Channels.newChannel(runtime.getErr()), 2, new ModeFlags(ModeFlags.WRONLY | ModeFlags.APPEND), FileDescriptor.out), 
+                            new ChannelDescriptor(Channels.newChannel(runtime.getErr()), 2, new ModeFlags(ModeFlags.WRONLY | ModeFlags.APPEND), FileDescriptor.err), 
                             FileDescriptor.err));
                 openFile.getMainStream().setSync(true);
                 break;
@@ -2691,7 +2691,7 @@ public class RubyIO extends RubyObject {
 
             ModeFlags modes = new ModeFlags(mode);
         
-            Process process = ShellLauncher.run(runtime, cmdObj);
+            Process process = ShellLauncher.popen(runtime, cmdObj, modes);
             RubyIO io = new RubyIO(runtime, process, modes);
 
             if (block.isGiven()) {

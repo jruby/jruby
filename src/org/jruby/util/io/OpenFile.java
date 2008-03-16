@@ -271,6 +271,8 @@ public class OpenFile {
             if (raise) {
                 throw runtime.newErrnoEBADFError();
             }
+        } catch (Throwable t) {
+            t.printStackTrace();
         }
     }
 }
