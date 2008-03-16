@@ -281,15 +281,17 @@ public class JRubyApplet extends JApplet {
     private synchronized void setPaintProc(RubyProc proc) {
         paintProc = proc;
     }
-    public synchronized void paint(Graphics g) {
+    public void paint(Graphics g) {
         super.paint(g); 
-        if (paintProc != null) {
-            if (priorGraphics != g) {
-                wrappedGraphics = JavaObject.wrap(runtime, g);
-                priorGraphics = g;
+        synchronized (this) {
+            if (paintProc != null) {
+                if (priorGraphics != g) {
+                    wrappedGraphics = JavaObject.wrap(runtime, g);
+                    priorGraphics = g;
+                }
+                ThreadContext context = runtime.getCurrentContext();
+                paintProc.call(context, new IRubyObject[] {wrappedGraphics}, Block.NULL_BLOCK);
             }
-            ThreadContext context = runtime.getCurrentContext();
-            paintProc.call(context, new IRubyObject[] {wrappedGraphics}, Block.NULL_BLOCK);
         }
     }
 }
