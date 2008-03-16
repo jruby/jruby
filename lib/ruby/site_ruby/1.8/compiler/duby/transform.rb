@@ -40,7 +40,7 @@ module Compiler::Duby
 
     class BeginNode
       def transform(parent)
-        body_node.compile(builder)
+        body_node.transform(parent)
       end
     end
 
@@ -53,10 +53,6 @@ module Compiler::Duby
     end
 
     class ClassNode
-      def transform(parent)
-        cb = builder.public_class(cpath.name)
-        body_node.compile(cb)
-      end
     end
 
     class CallNode
@@ -78,107 +74,9 @@ module Compiler::Duby
     end
 
     class DefnNode
-      def transform(parent)
-        first_real_node = body_node
-        first_real_node = body_node.child_nodes[0] if BlockNode === body_node
-        while NewlineNode === first_real_node
-          first_real_node = first_real_node.next_node
-        end
-
-        # determine signature from declaration line
-        signature = first_real_node.signature(builder) if HashNode === first_real_node
-
-        signature ||= [Void]
-
-        log "Compiling instance method for #{name} as #{signature.join(',')}"
-        builder.method(mapped_name(builder), *signature) do |method|
-          # Run through any type declarations first
-          first_real_node.declare_types(method) if HashNode === first_real_node
-
-          # declare args that may not have been declared already
-          args_node.compile(method)
-
-          body_node.compile(method) if body_node
-
-          # Expectation is that last element leaves the right type on stack
-          if signature[0].primitive?
-            case signature[0]
-            when Void
-              method.returnvoid
-            when Jboolean, Jbyte
-              method.breturn
-            when Jchar
-              method.creturn
-            when Jshort
-              method.sreturn
-            when Jint
-              method.ireturn
-            when Jlong
-              method.lreturn
-            when Jfloat
-              method.freturn
-            when Jdouble
-              method.dreturn
-            else
-              raise CompileError.new(position, "Unknown return type: #{signature[0]}")
-            end
-          else
-            method.areturn
-          end
-        end
-      end
     end
 
     class DefsNode
-      def transform(parent)
-        first_real_node = body_node
-        first_real_node = body_node.child_nodes[0] if BlockNode === body_node
-        while NewlineNode === first_real_node
-          first_real_node = first_real_node.next_node
-        end
-
-        # determine signature from declaration line
-        signature = first_real_node.signature(builder) if HashNode === first_real_node
-
-        signature ||= [Void]
-
-        log "Compiling static method for #{name} as #{signature.join(',')}"
-        builder.static_method(name, *signature) do |method|
-          # Run through any type declarations first
-          first_real_node.declare_types(method) if HashNode === first_real_node
-
-          # declare args that may not have been declared already
-          args_node.compile(method)
-
-          body_node.compile(method) if body_node
-
-          # Expectation is that last element leaves the right type on stack
-          if signature[0].primitive?
-            case signature[0]
-            when Void
-              method.returnvoid
-            when Jboolean, Jbyte
-              method.breturn
-            when Jchar
-              method.creturn
-            when Jshort
-              method.sreturn
-            when Jint
-              method.ireturn
-            when Jlong
-              method.lreturn
-            when Jfloat
-              method.freturn
-            when Jdouble
-              method.dreturn
-            else
-              raise CompileError.new(position, "Unknown return type: #{signature[0]}")
-            end
-          else
-            method.areturn
-          end
-        end
-      end
     end
 
     class FCallNode
@@ -200,22 +98,11 @@ module Compiler::Duby
 
     class FloatNode
       def transform(parent)
-        builder.ldc_float(value)
+        Float.new(parent, value)
       end
     end
 
     class HashNode
-      def transform(parent)
-        @declared ||= false
-
-        if @declared
-          # hash was used for type declaration, so we just push a null to skip it
-          # TODO: it would be nice if we could just skip the null too, but BlockNode wants to pop it
-          builder.aconst_null
-        else
-          raise CompileError.new(position, "Literal hash syntax not yet supported")
-        end
-      end
     end
 
     class IfNode
@@ -232,13 +119,14 @@ module Compiler::Duby
 
     class InstAsgnNode
       def transform(parent)
-        FieldAssignment.new(parent, name) {|local| [value_node.transform(local)]}
+        # TODO: first encounter or explicit decl should be a FieldDeclaration
+        FieldAssignment.new(parent, name) {|field| [value_node.transform(field)]}
       end
     end
 
     class InstVarNode
       def transform(parent)
-        builder.getfield(mapped_name(builder))
+        Field.new(parent, name)
       end
     end
 

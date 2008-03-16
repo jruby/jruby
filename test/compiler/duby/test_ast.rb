@@ -43,7 +43,7 @@ class TestAst < Test::Unit::TestCase
     
     assert_not_nil(new_ast)
     assert(Compiler::Duby::Body === new_ast)
-    inspected = "Body\n LocalAssignment(a)\n  Fixnum(1)\n Local"
+    inspected = "Body\n LocalAssignment(a)\n  Fixnum(1)\n Local(a)"
     assert_equal(inspected, new_ast.inspect)
     assert(!new_ast.newline)
     
@@ -58,6 +58,29 @@ class TestAst < Test::Unit::TestCase
     assert(Compiler::Duby::Local === var)
     assert(var.newline)
     assert_equal("a", var.name)
+  end
+  
+  def test_fields
+    node = JRuby.parse("@a = 1; @a")
+    new_ast = node.child_nodes[0].transform(nil)
+    
+    assert_not_nil(new_ast)
+    assert(Compiler::Duby::Body === new_ast)
+    inspected = "Body\n FieldAssignment(@a)\n  Fixnum(1)\n Field(@a)"
+    assert_equal(inspected, new_ast.inspect)
+    assert(!new_ast.newline)
+    
+    asgn = new_ast[0]
+    var = new_ast[1]
+    
+    assert(Compiler::Duby::FieldAssignment === asgn)
+    assert(asgn.newline)
+    assert_equal("@a", asgn.name)
+    assert(Compiler::Duby::Fixnum === asgn.value)
+    assert(!asgn.value.newline)
+    assert(Compiler::Duby::Field === var)
+    assert(var.newline)
+    assert_equal("@a", var.name)
   end
   
   def test_array
@@ -115,5 +138,47 @@ class TestAst < Test::Unit::TestCase
     assert(Compiler::Duby::Not === new_ast.else.condition)
     assert(Compiler::Duby::Fixnum === new_ast.else.body)
     assert(Compiler::Duby::Fixnum === new_ast.else.else)
+  end
+  
+  def test_begin
+    node = JRuby.parse("begin; 1; 2; end")
+    new_ast = node.child_nodes[0].transform(nil)
+    
+    assert_not_nil(new_ast)
+    assert(Compiler::Duby::Body === new_ast)
+    assert(Compiler::Duby::Fixnum === new_ast[0])
+    
+    node = JRuby.parse("begin; 1; end")
+    new_ast = node.child_nodes[0].transform(nil)
+    assert(Compiler::Duby::Fixnum === new_ast)
+  end
+  
+  def test_block
+    node = JRuby.parse("1; 2")
+    new_ast = node.child_nodes[0].transform(nil)
+    
+    assert_not_nil(new_ast)
+    assert(Compiler::Duby::Body === new_ast)
+    assert(Compiler::Duby::Fixnum === new_ast[0])
+    
+    node = JRuby.parse("1")
+    new_ast = node.child_nodes[0].transform(nil)
+    assert(Compiler::Duby::Fixnum === new_ast)
+  end
+  
+  def test_fixnum
+    node = JRuby.parse("1")
+    
+    new_ast = node.child_nodes[0].transform(nil)
+    assert(Compiler::Duby::Fixnum === new_ast)
+    assert_equal(1, new_ast.literal)
+  end
+  
+  def test_float
+    node = JRuby.parse("1.0")
+    
+    new_ast = node.child_nodes[0].transform(nil)
+    assert(Compiler::Duby::Float === new_ast)
+    assert_equal(1.0, new_ast.literal)
   end
 end

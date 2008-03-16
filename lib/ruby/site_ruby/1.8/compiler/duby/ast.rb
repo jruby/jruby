@@ -170,6 +170,17 @@ module Compiler::Duby
       "Fixnum(#{literal})"
     end
   end
+  class Float < Node
+    include Literal
+    def initialize(parent, literal)
+      super(parent)
+      @literal = literal
+    end
+    
+    def to_s
+      "Float(#{literal})"
+    end
+  end
   class Hash < Node; end
   class If < Node
     attr_accessor :condition, :body, :else
@@ -178,8 +189,43 @@ module Compiler::Duby
       super(parent, children)
     end
   end
-  class InstAsgn < Node; end
-  class InstVar < Node; end
+  class FieldDeclaration < Node
+    include Named
+    include Valued
+    def initialize(parent, name)
+      @type, @value = children = yield(self)
+      @name = name
+      super(parent, children)
+    end
+    
+    def to_s
+      "FieldDeclaration(type = #{type}, name = #{name})"
+    end
+  end
+  class FieldAssignment < Node
+    include Named
+    include Valued
+    def initialize(parent, name)
+      @value = (children = yield(self))[0]
+      @name = name
+      super(parent, children)
+    end
+    
+    def to_s
+      "FieldAssignment(#{name})"
+    end
+  end
+  class Field < Node
+    include Named
+    def initialize(parent, name)
+      super(parent, [])
+      @name = name
+    end
+    
+    def to_s
+      "Field(#{name})"
+    end
+  end
   class LocalDeclaration < Node
     include Named
     include Valued
@@ -211,6 +257,10 @@ module Compiler::Duby
     def initialize(parent, name)
       super(parent, [])
       @name = name
+    end
+    
+    def to_s
+      "Local(#{name})"
     end
   end
   class Module < Node; end

@@ -1,1 +1,2 @@
 compiler/duby/test_compiler
+compiler/duby/test_ast
