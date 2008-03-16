@@ -285,7 +285,7 @@ public class JavaClass extends JavaObject {
         synchronized void createJavaMethods(Ruby runtime) {
             if (methods != null) {
                 if (methods.size() == 1) {
-                    javaMethod = JavaMethod.create(runtime,(Method)methods.get(0));
+                    javaMethod = JavaMethod.create(runtime, methods.get(0));
                 } else {
                     javaMethods = new IntHashMap();
                     matchingMethods = new IntHashMap();
@@ -1295,7 +1295,23 @@ public class JavaClass extends JavaObject {
     public JavaCallable declared_method_smart(IRubyObject[] args) throws ClassNotFoundException {
         String methodName = args[0].asJavaString();
         Class<?>[] argumentTypes = buildArgumentTypes(args);
-        return JavaMethod.createDeclaredSmart(getRuntime(), javaClass(), methodName, argumentTypes);
+ 
+        JavaCallable callable = getMatchingCallable(getRuntime(), javaClass(), methodName, argumentTypes);
+
+        if (callable != null) return callable;
+
+        throw getRuntime().newNameError("undefined method '" + methodName + "' for class '" + javaClass().getName() + "'",
+                methodName);
+    }
+    
+    public static JavaCallable getMatchingCallable(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
+        if ("<init>".equals(methodName)) {
+            return JavaConstructor.getMatchingConstructor(runtime, javaClass, argumentTypes);
+        } else {
+            // FIXME: do we really want 'declared' methods?  includes private/protected, and does _not_
+            // include superclass methods
+            return JavaMethod.getMatchingDeclaredMethod(runtime, javaClass, methodName, argumentTypes);
+        }
     }
 
     private Class<?>[] buildArgumentTypes(IRubyObject[] args) throws ClassNotFoundException {

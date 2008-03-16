@@ -558,7 +558,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
         JavaClass javaClass = null;
         Set<String> names = new HashSet<String>(); // need names ordered for key generation later
-        List<Class> interfaceList = new ArrayList<Class>();
+        List<Class<?>> interfaceList = new ArrayList<Class<?>>();
 
         List<IRubyObject> ancestors = clazz.getAncestorList();
         boolean skipRemainingClasses = false;
@@ -677,9 +677,9 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         }
         
         int interfaceCount = interfaceList.size();
-        Class[] interfaces = new Class[interfaceCount];
+        Class<?>[] interfaces = new Class<?>[interfaceCount];
         for (int i = interfaceCount; --i >= 0; ) {
-            interfaces[i] = (Class)interfaceList.get(i);
+            interfaces[i] = interfaceList.get(i);
         }
        
         try {

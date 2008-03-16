@@ -79,7 +79,6 @@ public class JavaMethod extends JavaCallable {
         result.defineFastMethod("invoke", callbackFactory.getFastOptMethod("invoke"));
         result.defineFastMethod("invoke_static", callbackFactory.getFastOptMethod("invoke_static"));
         result.defineFastMethod("return_type", callbackFactory.getFastMethod("return_type"));
-        result.defineFastMethod("parameter_types", callbackFactory.getFastMethod("parameter_types"));
         result.defineFastMethod("type_parameters", callbackFactory.getFastMethod("type_parameters"));
 
         return result;
@@ -102,10 +101,6 @@ public class JavaMethod extends JavaCallable {
         returnConverter = JavaUtil.getJavaConverter(method.getReturnType());
     }
 
-    public static JavaConstructor create(Ruby runtime, Constructor constructor) {
-        return new JavaConstructor(runtime, constructor);
-    }
-
     public static JavaMethod create(Ruby runtime, Method method) {
         return new JavaMethod(runtime, method);
     }
@@ -122,84 +117,50 @@ public class JavaMethod extends JavaCallable {
 
     public static JavaMethod createDeclared(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
         try {
-            Method method = javaClass.getDeclaredMethod(methodName, argumentTypes);
-            return create(runtime, method);
+            return create(runtime, javaClass.getDeclaredMethod(methodName, argumentTypes));
         } catch (NoSuchMethodException e) {
             throw runtime.newNameError("undefined method '" + methodName + "' for class '" + javaClass.getName() + "'",
                     methodName);
         }
     }
 
-    public static JavaCallable createDeclaredSmart(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
+    public static JavaMethod getMatchingDeclaredMethod(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
+        // FIXME: do we really want 'declared' methods?  includes private/protected, and does _not_
+        // include superclass methods.  also, the getDeclared calls may throw SecurityException if
+        // we're running under a restrictive security policy.
         try {
-            Method method = javaClass.getDeclaredMethod(methodName, argumentTypes);
-            return create(runtime, method);
+            return create(runtime, javaClass.getDeclaredMethod(methodName, argumentTypes));
         } catch (NoSuchMethodException e) {
-            // FIXME: I should probably have this in JavaConstructor :(
-            if (methodName.equals("<init>")) {
-                // Java reflection does not allow retrieving constructors like methods
-                MethodSearch: for (Constructor method : javaClass.getConstructors()) {
+            // search through all declared methods to find a closest match
+            MethodSearch: for (Method method : javaClass.getDeclaredMethods()) {
+                if (method.getName().equals(methodName)) {
                     Class<?>[] targetTypes = method.getParameterTypes();
-                    
+                
                     // for zero args case we can stop searching
-                    if (targetTypes.length != argumentTypes.length) {
-                        continue MethodSearch;
-                    } else if (targetTypes.length == 0 && argumentTypes.length == 0) {
+                    if (targetTypes.length == 0 && argumentTypes.length == 0) {
                         return create(runtime, method);
-                    } else {
-                        boolean found = true;
-                        
-                        TypeScan: for (int i = 0; i < argumentTypes.length; i++) {
-                            if (i >= targetTypes.length) found = false;
-                            
-                            if (targetTypes[i].isAssignableFrom(argumentTypes[i])) {
-                                found = true;
-                                continue TypeScan;
-                            } else {
-                                found = false;
-                                continue MethodSearch;
-                            }
-                        }
-
-                        // if we get here, we found a matching method, use it
-                        // TODO: choose narrowest method by continuing to search
-                        if (found) {
-                            return create(runtime, method);
-                        }
                     }
-                }
-            } else {
-                // search through all declared methods to find a closest match
-                MethodSearch: for (Method method : javaClass.getDeclaredMethods()) {
-                    if (method.getName().equals(methodName)) {
-                        Class<?>[] targetTypes = method.getParameterTypes();
                     
-                        // for zero args case we can stop searching
-                        if (targetTypes.length == 0 && argumentTypes.length == 0) {
-                            return create(runtime, method);
-                        }
-                        
-                        TypeScan: for (int i = 0; i < argumentTypes.length; i++) {
-                            if (i >= targetTypes.length) continue MethodSearch;
+                    TypeScan: for (int i = 0; i < argumentTypes.length; i++) {
+                        if (i >= targetTypes.length) continue MethodSearch;
 
-                            if (targetTypes[i].isAssignableFrom(argumentTypes[i])) {
-                                continue TypeScan;
-                            } else {
-                                continue MethodSearch;
-                            }
+                        if (targetTypes[i].isAssignableFrom(argumentTypes[i])) {
+                            continue TypeScan;
+                        } else {
+                            continue MethodSearch;
                         }
-
-                        // if we get here, we found a matching method, use it
-                        // TODO: choose narrowest method by continuing to search
-                        return create(runtime, method);
                     }
+
+                    // if we get here, we found a matching method, use it
+                    // TODO: choose narrowest method by continuing to search
+                    return create(runtime, method);
                 }
             }
-            throw runtime.newNameError("undefined method '" + methodName + "' for class '" + javaClass.getName() + "'",
-                    methodName);
         }
+        // no matching method found
+        return null;
     }
-
+    
     public boolean equals(Object other) {
         return other instanceof JavaMethod &&
             this.method == ((JavaMethod)other).method;
@@ -281,17 +242,6 @@ public class JavaMethod extends JavaCallable {
         return JavaClass.get(getRuntime(), klass);
     }
 
-    public IRubyObject parameter_types() {
-        Class<?>[] klasses = method.getParameterTypes();
-        RubyArray array = RubyArray.newArray(getRuntime());
-        
-        for (Class<?> cls : klasses) {
-            array.append(JavaClass.get(getRuntime(), cls));
-        }
-
-        return array;
-    }
-    
     public IRubyObject type_parameters() {
         return Java.getInstance(getRuntime(), method.getTypeParameters());
     }

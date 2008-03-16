@@ -74,6 +74,50 @@ public class JavaConstructor extends JavaCallable {
         this.parameterTypes = constructor.getParameterTypes();
     }
 
+    public static JavaConstructor create(Ruby runtime, Constructor<?> constructor) {
+        return new JavaConstructor(runtime, constructor);
+    }
+    
+    public static JavaConstructor getMatchingConstructor(Ruby runtime, Class<?> javaClass, Class<?>[] argumentTypes) {
+        try {
+            return create(runtime, javaClass.getConstructor(argumentTypes));
+        } catch (NoSuchMethodException e) {
+            // Java reflection does not allow retrieving constructors like methods
+            CtorSearch: for (Constructor<?> ctor : javaClass.getConstructors()) {
+                Class<?>[] targetTypes = ctor.getParameterTypes();
+                
+                // for zero args case we can stop searching
+                if (targetTypes.length != argumentTypes.length) {
+                    continue CtorSearch;
+                } else if (targetTypes.length == 0 && argumentTypes.length == 0) {
+                    return create(runtime, ctor);
+                } else {
+                    boolean found = true;
+                    
+                    TypeScan: for (int i = 0; i < argumentTypes.length; i++) {
+                        if (i >= targetTypes.length) found = false;
+                        
+                        if (targetTypes[i].isAssignableFrom(argumentTypes[i])) {
+                            found = true;
+                            continue TypeScan;
+                        } else {
+                            found = false;
+                            continue CtorSearch;
+                        }
+                    }
+
+                    // if we get here, we found a matching method, use it
+                    // TODO: choose narrowest method by continuing to search
+                    if (found) {
+                        return create(runtime, ctor);
+                    }
+                }
+            }
+        }
+        // no matching ctor found
+        return null;
+    }
+
     public boolean equals(Object other) {
         return other instanceof JavaConstructor &&
             this.constructor == ((JavaConstructor)other).constructor;
