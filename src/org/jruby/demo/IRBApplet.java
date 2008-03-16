@@ -39,6 +39,7 @@ public class IRBApplet extends Applet {
         
         text.setFont(font);
         JScrollPane pane = new JScrollPane();
+        pane.setDoubleBuffered(true);
         pane.setViewportView(text);
         pane.setBorder(BorderFactory.createLineBorder(Color.darkGray));
         add(pane);
