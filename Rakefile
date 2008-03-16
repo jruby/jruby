@@ -25,6 +25,7 @@ desc "Build JRuby"
 task :build do
   ant "jar"
 end
+task :jar => :build
 
 desc "Alias for test:short"
 task :test => "test:short"
