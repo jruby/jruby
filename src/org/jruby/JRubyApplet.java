@@ -205,7 +205,7 @@ public class JRubyApplet extends JApplet {
                 setInput(console.getInputStream());
                 setOutput(console.getOutputStream());
                 setError(console.getErrorStream());
-                setObjectSpaceEnabled(getBooleanParameter("ObjectSpace", false));
+                setObjectSpaceEnabled(getBooleanParameter("objectspace", false));
             }};
             runtime = Ruby.newInstance(config);
             runtime.setSecurityRestricted(true);
