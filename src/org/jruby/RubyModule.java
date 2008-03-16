@@ -1674,8 +1674,14 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "alias_method", required = 2, visibility = Visibility.PRIVATE)
     public RubyModule alias_method(ThreadContext context, IRubyObject newId, IRubyObject oldId) {
-        defineAlias(newId.asJavaString(), oldId.asJavaString());
-        callMethod(context, "method_added", newId);
+        String newName = newId.asJavaString();
+        defineAlias(newName, oldId.asJavaString());
+        RubySymbol newSym = context.getRuntime().newSymbol(newName);
+        if (isSingleton()) {
+            ((MetaClass)this).getAttached().callMethod(context, "singleton_method_added", newSym);
+        } else {
+            callMethod(context, "method_added", newSym);
+        }
         return this;
     }
 

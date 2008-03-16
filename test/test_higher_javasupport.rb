@@ -750,4 +750,16 @@ CLASSDEF
   def test_null_toString
     assert nil == org.jruby.javasupport.test.NullToString.new.to_s
   end
+  
+  # JRUBY-2277
+  # kind of a strange place for this test, but the error manifested
+  # when JI was enabled.  the actual bug was a problem in alias_method,
+  # and not related to JI; see related test in test_methods.rb 
+  def test_alias_method_with_JI_enabled_does_not_raise
+    name = Object.new
+    def name.to_str
+      "new_name"
+    end
+    assert_nothing_raised { String.send("alias_method", name, "to_str") }
+  end
 end

@@ -27,6 +27,46 @@ class TestMethods < Test::Unit::TestCase
       $!.to_s =~ /private/
     end
   end
+
+  # JRUBY-2277
+  def test_alias_method_calls_correct_method_added_with_sym
+    $methods_added = []
+    $singleton_methods_added = []
+
+    c  = Class.new do
+      class << self
+        def singleton_method_added(x) # will also add its own def!
+          $singleton_methods_added << x
+        end
+        def method_added(x)
+          $methods_added << x
+        end
+        def another_singleton
+        end
+        alias_method :yet_another_singleton, :another_singleton
+      end
+      def foo
+      end
+      def bar
+      end
+      alias_method :baz, :bar  
+    end
+
+    expected_methods = [:foo, :bar, :baz]
+    expected_singletons = [:singleton_method_added, :method_added, :another_singleton, :yet_another_singleton]
+
+    assert_equal(expected_methods, $methods_added)
+    assert_equal(expected_singletons, $singleton_methods_added)
+
+    # test coercion of alias names to symbols
+    name = Object.new
+    def name.to_str
+      "boo"
+    end
+    assert_nothing_raised { c.send("alias_method", name, "foo") }
+    assert_equal(:boo, $methods_added.last)
+
+  end
 end
 
 class TestMethodObjects < Test::Unit::TestCase
