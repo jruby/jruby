@@ -5,8 +5,8 @@ import java.io.FileDescriptor;
 public class LinuxPOSIX extends BaseNativePOSIX {
     private static int STAT_VERSION = 3;
     
-    public LinuxPOSIX(LibC libc, POSIXHandler handler) {
-        super(libc, handler);
+    public LinuxPOSIX(String libraryName, LibC libc, POSIXHandler handler) {
+        super(libraryName, libc, handler);
     }
 
     @Override

@@ -32,6 +32,8 @@ package org.jruby.libraries;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,7 +46,38 @@ import org.jruby.runtime.load.Library;
 import org.jruby.util.NormalizedFile;
 
 public class RbConfigLibrary implements Library {
-
+    // Ruby's designation for some platforms, minus version numbers in some cases
+    private static final String RUBY_DARWIN = "darwin";
+    private static final String RUBY_LINUX = "linux";
+    private static final String RUBY_WIN32 = "mswin32";
+    private static final String RUBY_SOLARIS = "solaris";
+    private static final String RUBY_FREEBSD = "freebsd";
+    private static final String RUBY_AIX = "aix";
+    
+    /** This is a map from Java's "friendly" OS names to those used by Ruby */
+    public static final Map<String, String> RUBY_OS_NAMES = new HashMap<String, String>();
+    static {
+        RUBY_OS_NAMES.put("Mac OS X", RUBY_DARWIN);
+        RUBY_OS_NAMES.put("Darwin", RUBY_DARWIN);
+        RUBY_OS_NAMES.put("Linux", RUBY_LINUX);
+        RUBY_OS_NAMES.put("Windows 95", RUBY_WIN32);
+        RUBY_OS_NAMES.put("Windows 98", RUBY_WIN32);
+        RUBY_OS_NAMES.put("Windows Me", RUBY_WIN32);
+        RUBY_OS_NAMES.put("Windows NT", RUBY_WIN32);
+        RUBY_OS_NAMES.put("Windows XP", RUBY_WIN32);
+        RUBY_OS_NAMES.put("Windows 2003", RUBY_WIN32);
+        RUBY_OS_NAMES.put("Windows Vista", RUBY_WIN32);
+        RUBY_OS_NAMES.put("Solaris", RUBY_SOLARIS);
+        RUBY_OS_NAMES.put("FreeBSD", RUBY_FREEBSD);
+        RUBY_OS_NAMES.put("AIX", RUBY_AIX);
+    }
+    
+    public static String getOSName() {
+        String OSName = Platform.getOSName();
+        String theOSName = RUBY_OS_NAMES.get(OSName);
+        
+        return theOSName == null ? OSName : theOSName;
+    }
     /**
      * Just enough configuration settings (most don't make sense in Java) to run the rubytests
      * unit tests. The tests use <code>bindir</code>, <code>RUBY_INSTALL_NAME</code> and

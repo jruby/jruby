@@ -1,18 +1,21 @@
 package org.jruby.ext.posix;
 
+import com.sun.jna.NativeLibrary;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 public abstract class BaseNativePOSIX implements POSIX {
+    protected String libraryName;
     protected LibC libc;
     protected POSIXHandler handler;
     protected JavaLibCHelper helper;
     
-    public BaseNativePOSIX(LibC libc, POSIXHandler handler) {
+    public BaseNativePOSIX(String libraryName, LibC libc, POSIXHandler handler) {
         this.libc = libc;
         this.handler = handler;
+        this.libraryName = libraryName;
         helper = new JavaLibCHelper(handler);
     }
 
@@ -224,4 +227,19 @@ public abstract class BaseNativePOSIX implements POSIX {
     }
     
     public abstract FileStat allocateStat();
+
+    /**
+     * Does the loaded library have the method specified
+     * @param name of method to look for
+     * @return true if found.  false otherwise
+     */
+    protected boolean hasMethod(String name) {
+        try {
+            NativeLibrary.getInstance(libraryName).getFunction(name);
+        } catch (UnsatisfiedLinkError e) {
+            return false;
+        }
+        
+        return true;
+    }
 }

@@ -8,22 +8,23 @@ import org.jruby.util.SafePropertyAccessor;
 import com.sun.jna.Native;
 
 public class POSIXFactory {
+    static final String LIBC = "c";
     static LibC libc = null;
     
-    public static POSIX getPOSIX(POSIXHandler handler, boolean useNativePOSIX) {        
+    public static POSIX getPOSIX(POSIXHandler handler, boolean useNativePOSIX) {
         POSIX posix = null;
         
         // No 64 bit structures defined yet.
         if (useNativePOSIX && Platform.IS_32_BIT) {
             try {
                 if (Platform.IS_MAC) {
-                    posix = new MacOSPOSIX(loadMacOSLibC(), handler);
+                    posix = loadMacOSPOSIX(handler);
                 } else if (Platform.IS_LINUX) {
-                    posix = new LinuxPOSIX(loadLinuxLibC(), handler);
+                    posix = loadLinuxPOSIX(handler);
                 } else if (Platform.IS_WINDOWS) {
-                    posix = new WindowsPOSIX(loadWindowsLibC(), handler);
+                    posix = loadWindowsPOSIX(handler);
                 } else if (Platform.IS_SOLARIS) {
-                    posix = new SolarisPOSIX(loadSolarisLibC(), handler);
+                    posix = loadSolarisPOSIX(handler);
                 }
                 
                 if (SafePropertyAccessor.getBoolean("jruby.native.verbose")) {
@@ -52,38 +53,32 @@ public class POSIXFactory {
         return new JavaPOSIX(handler);
     }
     
-    public static LibC loadLinuxLibC() {
-        if (libc != null) return libc;
-        
-        libc = (LibC) Native.loadLibrary("c", LinuxLibC.class, new HashMap<Object, Object>());
-        
-        return libc;
+    public static POSIX loadLinuxPOSIX(POSIXHandler handler) {
+        return new LinuxPOSIX(LIBC, loadLibC(LIBC, LinuxLibC.class, new HashMap<Object, Object>()), handler);        
     }
     
-    public static LibC loadMacOSLibC() {
-        if (libc != null) return libc;
-        
-        libc = (LibC) Native.loadLibrary("c", LibC.class, new HashMap<Object, Object>());
-        
-        return libc;
+    public static POSIX loadMacOSPOSIX(POSIXHandler handler) {
+        return new MacOSPOSIX(LIBC, loadLibC(LIBC, LibC.class, new HashMap<Object, Object>()), handler);        
     }
     
-    public static LibC loadSolarisLibC() {
-        if (libc != null) return libc;
-
-        libc = (LibC) Native.loadLibrary("c", LibC.class, new HashMap<Object, Object>());
-        
-        return libc;
+    public static POSIX loadSolarisPOSIX(POSIXHandler handler) {
+        return new SolarisPOSIX(LIBC, loadLibC(LIBC, LibC.class, new HashMap<Object, Object>()), handler);        
     }
+    
+    public static POSIX loadWindowsPOSIX(POSIXHandler handler) {
+        String name = "msvcrt";
 
-    public static LibC loadWindowsLibC() {
-        if (libc != null) return libc;
-        
         HashMap<Object, Object> options = new HashMap<Object, Object>();
         options.put(com.sun.jna.Library.OPTION_FUNCTION_MAPPER, new WindowsLibCFunctionMapper());
-
-        libc = (LibC) Native.loadLibrary("msvcrt", LibC.class, options);
-
+        
+        return new WindowsPOSIX(name, loadLibC(name, LibC.class, options), handler);        
+    }
+    
+    public static LibC loadLibC(String libraryName, Class<?> libCClass, HashMap<Object, Object> options) {
+        if (libc != null) return libc;
+        
+        libc = (LibC) Native.loadLibrary(libraryName, libCClass, options);
+        
         return libc;
     }
 }
