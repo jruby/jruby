@@ -1,3 +1,2 @@
 fails:Kernel#load does not expand/resolve qualified files against $LOAD_PATH
 fails:Kernel#load produces __FILE__ as the given filename and __LINE__ as the source line number
-fails:Kernel#load allows wrapping the code in the file in an anonymous module

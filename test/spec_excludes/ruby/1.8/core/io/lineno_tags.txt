@@ -1,1 +1,0 @@
-fails:IO#lineno= does not change $. until next read

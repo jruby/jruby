@@ -1,2 +1,0 @@
-fails:IO#ungetc affects EOF state
-fails:IO#ungetc raises IOError when invoked on stream that was not yet read
