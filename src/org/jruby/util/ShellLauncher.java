@@ -53,13 +53,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author nicksieger
  */
 public class ShellLauncher {
-    private Ruby runtime;
-
-    /** Creates a new instance of ShellLauncher */
-    public ShellLauncher(Ruby runtime) {
-        this.runtime = runtime;
-    }
-    
     private static class ScriptThreadProcess extends Process implements Runnable {
         private String[] argArray;
         private int result;
@@ -163,7 +156,7 @@ public class ShellLauncher {
     }
     
 
-    private String[] getCurrentEnv() {
+    private static String[] getCurrentEnv(Ruby runtime) {
         RubyHash hash = (RubyHash)runtime.getObject().fastGetConstant("ENV");
         String[] ret = new String[hash.size()];
         int i=0;
@@ -176,11 +169,11 @@ public class ShellLauncher {
         return ret;
     }
 
-    public int runAndWait(IRubyObject[] rawArgs) {
-        return runAndWait(rawArgs, runtime.getOutputStream());
+    public static int runAndWait(Ruby runtime, IRubyObject[] rawArgs) {
+        return runAndWait(runtime, rawArgs, runtime.getOutputStream());
     }
 
-    public int execAndWait(IRubyObject[] rawArgs) {
+    public static int execAndWait(Ruby runtime, IRubyObject[] rawArgs) {
         String[] args = parseCommandLine(runtime, rawArgs);
         if (shouldRunInProcess(runtime, args)) {
             // exec needs to behave differently in-process, because it's technically
@@ -199,7 +192,7 @@ public class ShellLauncher {
                 }
                 String[] newargs = new String[args.length - startIndex];
                 System.arraycopy(args, startIndex, newargs, 0, newargs.length);
-                ScriptThreadProcess ipScript = new ScriptThreadProcess(newargs, getCurrentEnv(), pwd, false);
+                ScriptThreadProcess ipScript = new ScriptThreadProcess(newargs, getCurrentEnv(runtime), pwd, false);
                 ipScript.start();
                 
                 return ipScript.waitFor();
@@ -209,15 +202,15 @@ public class ShellLauncher {
                 throw runtime.newThreadError("unexpected interrupt");
             }
         } else {
-            return runAndWait(rawArgs);
+            return runAndWait(runtime, rawArgs);
         }
     }
 
-    public int runAndWait(IRubyObject[] rawArgs, OutputStream output) {
+    public static int runAndWait(Ruby runtime, IRubyObject[] rawArgs, OutputStream output) {
         OutputStream error = runtime.getErrorStream();
         InputStream input = runtime.getInputStream();
         try {
-            Process aProcess = run(rawArgs);
+            Process aProcess = run(runtime, rawArgs);
             handleStreams(aProcess,input,output,error);
             return aProcess.waitFor();
         } catch (IOException e) {
@@ -227,11 +220,11 @@ public class ShellLauncher {
         }
     }
 
-    public Process run(IRubyObject string) throws IOException {
-        return run(new IRubyObject[] {string});
+    public static Process run(Ruby runtime, IRubyObject string) throws IOException {
+        return run(runtime, new IRubyObject[] {string});
     }
     
-    public Process run(IRubyObject[] rawArgs) throws IOException {
+    public static Process run(Ruby runtime, IRubyObject[] rawArgs) throws IOException {
         String shell = getShell(runtime);
         Process aProcess = null;
         File pwd = new File(runtime.getCurrentDirectory());
@@ -248,7 +241,7 @@ public class ShellLauncher {
             }
             String[] newargs = new String[args.length - startIndex];
             System.arraycopy(args, startIndex, newargs, 0, newargs.length);
-            ScriptThreadProcess ipScript = new ScriptThreadProcess(newargs, getCurrentEnv(), pwd);
+            ScriptThreadProcess ipScript = new ScriptThreadProcess(newargs, getCurrentEnv(runtime), pwd);
             ipScript.start();
             aProcess = ipScript;
         } else if (rawArgs.length == 1 && shouldRunInShell(shell, args)) {
@@ -259,9 +252,9 @@ public class ShellLauncher {
             argArray[0] = shell;
             argArray[1] = shell.endsWith("sh") ? "-c" : "/c";
             argArray[2] = cmdline;
-            aProcess = Runtime.getRuntime().exec(argArray, getCurrentEnv(), pwd);
+            aProcess = Runtime.getRuntime().exec(argArray, getCurrentEnv(runtime), pwd);
         } else {
-            aProcess = Runtime.getRuntime().exec(args, getCurrentEnv(), pwd);        
+            aProcess = Runtime.getRuntime().exec(args, getCurrentEnv(runtime), pwd);        
         }
         return aProcess;
     }
@@ -329,7 +322,7 @@ public class ShellLauncher {
         }
     }
 
-    private void handleStreams(Process p, InputStream in, OutputStream out, OutputStream err) throws IOException {
+    private static void handleStreams(Process p, InputStream in, OutputStream out, OutputStream err) throws IOException {
         InputStream pOut = p.getInputStream();
         InputStream pErr = p.getErrorStream();
         OutputStream pIn = p.getOutputStream();
@@ -363,7 +356,7 @@ public class ShellLauncher {
         try { t3.interrupt(); } catch (SecurityException se) {}
     }
 
-    private String[] parseCommandLine(Ruby runtime, IRubyObject[] rawArgs) {
+    private static String[] parseCommandLine(Ruby runtime, IRubyObject[] rawArgs) {
         String[] args;
         if (rawArgs.length == 1) {
             RubyArray parts = (RubyArray) runtime.evalScriptlet(
@@ -386,7 +379,7 @@ public class ShellLauncher {
     /**
      * Only run an in-process script if the script name has "ruby", ".rb", or "irb" in the name
      */
-    private boolean shouldRunInProcess(Ruby runtime, String[] commands) {
+    private static boolean shouldRunInProcess(Ruby runtime, String[] commands) {
         if (!runtime.getInstanceConfig().isRunRubyInProcess()) {
             return false;
         }
@@ -422,12 +415,12 @@ public class ShellLauncher {
      * In that case it's better to try passing the bare arguments to runtime.exec.
      * On all other platforms we'll always run the command in the shell.
      */
-    private boolean shouldRunInShell(String shell, String[] args) {
+    private static boolean shouldRunInShell(String shell, String[] args) {
         return !Platform.IS_WINDOWS ||
                 (shell != null && args.length > 1 && !new File(args[0]).exists());
     }
 
-    private String getShell(Ruby runtime) {
+    private static String getShell(Ruby runtime) {
         return runtime.evalScriptlet("require 'rbconfig'; Config::CONFIG['SHELL']").toString();
     }
 }

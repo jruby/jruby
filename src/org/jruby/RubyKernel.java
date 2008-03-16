@@ -1029,7 +1029,7 @@ public class RubyKernel {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         
         RubyString string = aString.convertToString();
-        int resultCode = new ShellLauncher(runtime).runAndWait(new IRubyObject[] {string}, output);
+        int resultCode = ShellLauncher.runAndWait(runtime, new IRubyObject[] {string}, output);
         
         recv.getRuntime().getGlobalVariables().set("$?", RubyProcess.RubyStatus.newProcessStatus(runtime, resultCode));
         
@@ -1100,7 +1100,7 @@ public class RubyKernel {
         Ruby runtime = recv.getRuntime();
         int resultCode;
         try {
-            resultCode = new ShellLauncher(runtime).runAndWait(args);
+            resultCode = ShellLauncher.runAndWait(runtime, args);
         } catch (Exception e) {
             resultCode = 127;
         }
@@ -1115,7 +1115,7 @@ public class RubyKernel {
         try {
             // TODO: exec should replace the current process.
             // This could be possible with JNA. 
-            resultCode = new ShellLauncher(runtime).execAndWait(args);
+            resultCode = ShellLauncher.execAndWait(runtime, args);
         } catch (Exception e) {
             throw runtime.newErrnoENOENTError("cannot execute");
         }

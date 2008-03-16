@@ -23,7 +23,6 @@ public class ShellLauncherTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         runtime = Ruby.newInstance();
-        launcher = new ShellLauncher(runtime);
     }
 
     @Override
@@ -37,7 +36,7 @@ public class ShellLauncherTest extends TestCase {
     public void testScriptThreadProcessPuts() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         RubyString cmd = RubyString.newString(runtime, "jruby -e \"puts %{hi}\"");
-        int result = launcher.runAndWait(new IRubyObject[]{cmd}, baos);
+        int result = ShellLauncher.runAndWait(runtime, new IRubyObject[]{cmd}, baos);
         assertEquals(0, result);
         assertEquals("hi\n", baos.toString());
     }
@@ -45,7 +44,7 @@ public class ShellLauncherTest extends TestCase {
     public void testScriptVerboseOutput() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         RubyString cmd = RubyString.newString(runtime, "jruby -e \"1.upto(1000) { puts %{hi} }\"");
-        int result = launcher.runAndWait(new IRubyObject[]{cmd}, baos);
+        int result = ShellLauncher.runAndWait(runtime, new IRubyObject[]{cmd}, baos);
         assertEquals(0, result);
         assertEquals(3000, baos.size());
     }
@@ -54,7 +53,7 @@ public class ShellLauncherTest extends TestCase {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         RubyString cmd = RubyString.newString(runtime,
                 "jruby -e \"system(%Q[ruby -e 'system %q(echo hello) ; puts %q(done)'])\"");
-        int result = launcher.runAndWait(new IRubyObject[]{cmd}, baos);
+        int result = ShellLauncher.runAndWait(runtime, new IRubyObject[]{cmd}, baos);
         assertEquals(0, result);
         String msg = baos.toString();
         msg = msg.replaceAll("\r", "");
@@ -66,7 +65,7 @@ public class ShellLauncherTest extends TestCase {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             RubyString cmd = RubyString.newString(runtime, "nonexistentcmd");
             try {
-                launcher.runAndWait(new IRubyObject[]{cmd}, baos);
+                ShellLauncher.runAndWait(runtime, new IRubyObject[]{cmd}, baos);
                 fail("should have raised an exception");
             } catch (RaiseException re) {
             }
@@ -87,7 +86,7 @@ public class ShellLauncherTest extends TestCase {
 
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            int result = launcher.runAndWait(new IRubyObject[] {
+            int result = ShellLauncher.runAndWait(runtime, new IRubyObject[] {
                 RubyString.newString(runtime, "ls"),
                 RubyString.newString(runtime, "-1"),
                 RubyString.newString(runtime, testDir.getName()),

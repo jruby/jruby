@@ -2691,7 +2691,7 @@ public class RubyIO extends RubyObject {
 
             ModeFlags modes = new ModeFlags(mode);
         
-            Process process = new ShellLauncher(runtime).run(cmdObj);
+            Process process = ShellLauncher.run(runtime, cmdObj);
             RubyIO io = new RubyIO(runtime, process, modes);
 
             if (block.isGiven()) {
