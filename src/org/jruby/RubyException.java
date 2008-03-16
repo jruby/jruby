@@ -165,7 +165,7 @@ public class RubyException extends RubyObject {
     }
     
     @JRubyMethod(name = "exception", optional = 1, rest = true, meta = true)
-    public static IRubyObject exception_meta(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+    public static IRubyObject exception(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         return ((RubyClass) recv).newInstance(context, args, block);
     }
 

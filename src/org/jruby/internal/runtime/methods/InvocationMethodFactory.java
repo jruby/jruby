@@ -280,8 +280,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         String typePath = p(type);
         String javaMethodName = method.getName();
         
-        String generatedClassName = type.getName() + "Invoker$" + javaMethodName + "_method_" + desc.required + "_" + desc.optional;
-        String generatedClassPath = typePath + "Invoker$" + javaMethodName + "_method_" + desc.required + "_" + desc.optional;
+        String commonClassSuffix = "Invoker$" + javaMethodName + (desc.isStatic ? "_s" : "" )  + "_method_" + desc.required + "_" + desc.optional;
+        String generatedClassName = type.getName() + commonClassSuffix;
+        String generatedClassPath = typePath + commonClassSuffix;
         
         synchronized (classLoader) {
             Class c = tryClass(implementationClass.getRuntime(), generatedClassName);
