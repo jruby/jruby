@@ -118,13 +118,23 @@ public class JRubyApplet extends JApplet {
         }
     }
 
+    private boolean getBooleanParameter(String name, boolean default_value) {
+        String value = getParameter(name);
+        if ( value != null ) {
+            return value == "true";
+        } else {
+            return default_value;
+        }
+    }
+
     public synchronized void init() {
         super.init();
         if (runtime != null) {
             return;
         }
+        
         final RubyInstanceConfig config = new RubyInstanceConfig() {{
-            setObjectSpaceEnabled(false);
+            setObjectSpaceEnabled(getBooleanParameter("ObjectSpace", false));
         }};
         this.runtime = Ruby.newInstance(config);
         final Ruby runtime = this.runtime;
