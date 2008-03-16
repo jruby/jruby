@@ -27,8 +27,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.io.StringWriter;
+import java.awt.BorderLayout;
+import java.awt.Graphics;
+import java.io.InputStream;
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.net.URL;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -67,6 +72,9 @@ public class JRubyApplet extends JApplet {
     private RubyProc startProc;
     private RubyProc stopProc;
     private RubyProc destroyProc;
+    private RubyProc paintProc;
+    private Graphics priorGraphics;
+    private IRubyObject wrappedGraphics;
 
     public static class AppletModule {
         public static void setup(Ruby runtime, IRubyObject applet) {
@@ -77,6 +85,7 @@ public class JRubyApplet extends JApplet {
             module.getMetaClass().defineMethod("on_start", cb.getSingletonMethod("on_start"));
             module.getMetaClass().defineMethod("on_stop", cb.getSingletonMethod("on_stop"));
             module.getMetaClass().defineMethod("on_destroy", cb.getSingletonMethod("on_destroy"));
+            module.getMetaClass().defineMethod("on_paint", cb.getSingletonMethod("on_paint"));
         }
 
         private static RubyProc blockToProc(Ruby runtime, Block block) {
@@ -116,45 +125,77 @@ public class JRubyApplet extends JApplet {
             applet.setDestroyProc(blockToProc(recv.getRuntime(), block));
             return recv;
         }
+
+        public static IRubyObject on_paint(IRubyObject recv, Block block) {
+            JRubyApplet applet = appletUnwrapped(recv);
+            applet.setPaintProc(blockToProc(recv.getRuntime(), block));
+            return recv;
+        }
     }
 
     private boolean getBooleanParameter(String name, boolean default_value) {
         String value = getParameter(name);
         if ( value != null ) {
-            return value == "true";
+            return value.equals("true");
         } else {
             return default_value;
         }
     }
 
-    public synchronized void init() {
+    private InputStream getCodeResourceAsStream(String name) {
+        try {
+            final URL directURL = new URL(getCodeBase(), name);
+            return directURL.openStream();
+        } catch (IOException e) {
+        }
+        return JRubyApplet.class.getClassLoader().getResourceAsStream(name);
+    }
+
+    public void init() {
         super.init();
-        if (runtime != null) {
+
+        synchronized (this) {
+            if (runtime != null) {
+                return;
+            }
+
+            final RubyInstanceConfig config = new RubyInstanceConfig() {{
+                setObjectSpaceEnabled(getBooleanParameter("ObjectSpace", false));
+            }};
+            runtime = Ruby.newInstance(config);
+            runtime.setSecurityRestricted(true);
+            rubyObject = JavaObject.wrap(runtime, this);
+            AppletModule.setup(runtime, rubyObject);
+        }
+
+        final String scriptName = getParameter("script");
+        final InputStream scriptStream = getCodeResourceAsStream(scriptName);
+        final String evalString = getParameter("eval");
+
+        if ( scriptName == null && evalString == null ) {
+            showError("No Ruby script specified.");
             return;
         }
-        
-        final RubyInstanceConfig config = new RubyInstanceConfig() {{
-            setObjectSpaceEnabled(getBooleanParameter("ObjectSpace", false));
-        }};
-        this.runtime = Ruby.newInstance(config);
-        final Ruby runtime = this.runtime;
-        runtime.setSecurityRestricted(true);
-        rubyObject = JavaObject.wrap(runtime, this);
-        AppletModule.setup(runtime, rubyObject);
-        final String script = getParameter("eval");
-        if (script != null) {
-            try {
-                SwingUtilities.invokeAndWait(new Runnable() {
-                    public void run() {
-                        runtime.evalScriptlet(script);
+        if ( scriptName != null && scriptStream == null ) {
+            showError("Script " + scriptName + " not found.");
+            return;
+        }
+
+        try {
+            final Ruby runtime = this.runtime;
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    if (scriptStream != null) {
+                        runtime.runFromMain(scriptStream, scriptName);
                     }
-                });
-            } catch (InterruptedException e) {
-            } catch (InvocationTargetException e) {
-                showException(e.getCause());
-            }
-        } else {
-            showError("(No Ruby script given.)");
+                    if (evalString != null) {
+                        runtime.evalScriptlet(evalString);
+                    }
+                }
+            });
+        } catch (InterruptedException e) {
+        } catch (InvocationTargetException e) {
+            showException(e.getCause());
         }
     }
 
@@ -164,14 +205,16 @@ public class JRubyApplet extends JApplet {
         showError(writer.toString());
     }
 
-    private void showError(final String message) {
+    private synchronized void showError(final String message) {
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
                     final JTextArea textArea = new JTextArea(message);
                     textArea.setEditable(false);
                     final JScrollPane pane = new JScrollPane(textArea);
-                    add(pane);
+                    getContentPane().removeAll();
+                    getContentPane().setLayout(new BorderLayout());
+                    getContentPane().add(pane);
                 }
             });
         } catch (InterruptedException e) { 
@@ -180,18 +223,16 @@ public class JRubyApplet extends JApplet {
         }
     }
 
-    private void callProcWithAppletInstance(final RubyProc proc) {
+    private void invokeCallback(final RubyProc proc, final IRubyObject[] args) {
         if (proc == null) {
             return;
         }
         final Ruby runtime = this.runtime;
-        final IRubyObject rubyObject = this.rubyObject;
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
                     ThreadContext context = runtime.getCurrentContext();
-                    proc.call(context, new IRubyObject[] {rubyObject},
-                              Block.NULL_BLOCK);
+                    proc.call(context, args, Block.NULL_BLOCK);
                 }
             });
         } catch (InterruptedException e) {
@@ -205,14 +246,14 @@ public class JRubyApplet extends JApplet {
     }
     public synchronized void start() {
         super.start();
-        callProcWithAppletInstance(startProc);
+        invokeCallback(startProc, new IRubyObject[] {});
     }
 
     private synchronized void setStopProc(RubyProc proc) {
         stopProc = proc;
     }
     public synchronized void stop() {
-        callProcWithAppletInstance(stopProc);
+        invokeCallback(stopProc, new IRubyObject[] {});
         super.stop();
     }
 
@@ -221,7 +262,7 @@ public class JRubyApplet extends JApplet {
     }
     public synchronized void destroy() {
         try {
-            callProcWithAppletInstance(destroyProc);
+            invokeCallback(destroyProc, new IRubyObject[] {});
         } finally {
             final Ruby runtime = this.runtime;
             this.runtime = null;
@@ -229,8 +270,26 @@ public class JRubyApplet extends JApplet {
             startProc = null;
             stopProc = null;
             destroyProc = null;
+            paintProc = null;
+            priorGraphics = null;
+            wrappedGraphics = null;
             runtime.tearDown();
             super.destroy();
+        }
+    }
+
+    private synchronized void setPaintProc(RubyProc proc) {
+        paintProc = proc;
+    }
+    public synchronized void paint(Graphics g) {
+        super.paint(g); 
+        if (paintProc != null) {
+            if (priorGraphics != g) {
+                wrappedGraphics = JavaObject.wrap(runtime, g);
+                priorGraphics = g;
+            }
+            ThreadContext context = runtime.getCurrentContext();
+            paintProc.call(context, new IRubyObject[] {wrappedGraphics}, Block.NULL_BLOCK);
         }
     }
 }
