@@ -1,4 +1,4 @@
-#!/usr/bin/env jruby
+#!/usr/bin/env /Users/enebo/workspace/jruby_trunk/bin/jruby -v
 #
 #   irb.rb - intaractive ruby
 #   	$Release Version: 0.7.3 $
