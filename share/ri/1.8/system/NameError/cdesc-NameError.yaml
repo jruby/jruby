@@ -1,0 +1,21 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Descendents of class <tt>Exception</tt> are used to communicate between <tt>raise</tt> methods and <tt>rescue</tt> statements in <tt>begin/end</tt> blocks. <tt>Exception</tt> objects carry information about the exception---its type (the exception's class name), an optional descriptive string, and optional traceback information. Programs may subclass <tt>Exception</tt> to add additional information.
+constants: []
+
+full_name: NameError
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: name
+- !ruby/object:RI::MethodSummary 
+  name: to_s
+name: NameError
+superclass: StandardError

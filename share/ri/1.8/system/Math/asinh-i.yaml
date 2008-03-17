@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Math#asinh
+is_singleton: false
+name: asinh
+params: (z)
+visibility: public

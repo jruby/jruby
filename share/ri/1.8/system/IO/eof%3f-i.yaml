@@ -1,0 +1,23 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns true if <em>ios</em> is at end of file that means there are no more data to read. The stream must be opened for reading or an <tt>IOError</tt> will be raised.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   f = File.new(&quot;testfile&quot;)\n   dummy = f.readlines\n   f.eof   #=&gt; true\n"
+- !ruby/struct:SM::Flow::P 
+  body: If <em>ios</em> is a stream such as pipe or socket, <tt>IO#eof?</tt> blocks until the other end sends some data or closes it.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   r, w = IO.pipe\n   Thread.new { sleep 1; w.close }\n   r.eof?  #=&gt; true after 1 second blocking\n\n   r, w = IO.pipe\n   Thread.new { sleep 1; w.puts &quot;a&quot; }\n   r.eof?  #=&gt; false after 1 second blocking\n\n   r, w = IO.pipe\n   r.eof?  # blocks forever\n"
+- !ruby/struct:SM::Flow::P 
+  body: Note that <tt>IO#eof?</tt> reads data to a input buffer. So <tt>IO#sysread</tt> doesn't work with <tt>IO#eof?</tt>.
+full_name: IO#eof?
+is_singleton: false
+name: eof?
+params: |
+  ios.eof     => true or false
+  ios.eof?    => true or false
+
+visibility: public

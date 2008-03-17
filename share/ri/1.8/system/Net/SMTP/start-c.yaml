@@ -1,0 +1,66 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: smtp
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Creates a new Net::SMTP object and connects to the server.
+- !ruby/struct:SM::Flow::P 
+  body: "This method is equivalent to:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  Net::SMTP.new(address, port).start(helo_domain, account, password, authtype)\n"
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Example
+- !ruby/struct:SM::Flow::VERB 
+  body: "    Net::SMTP.start('your.smtp.server') do |smtp|\n      smtp.send_message msgstr, 'from@example.com', ['dest@example.com']\n    end\n"
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Block Usage
+- !ruby/struct:SM::Flow::P 
+  body: If called with a block, the newly-opened Net::SMTP object is yielded to the block, and automatically closed when the block finishes. If called without a block, the newly-opened Net::SMTP object is returned to the caller, and it is the caller's responsibility to close it when finished.
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Parameters
+- !ruby/struct:SM::Flow::P 
+  body: <tt>address</tt> is the hostname or ip address of your smtp server.
+- !ruby/struct:SM::Flow::P 
+  body: <tt>port</tt> is the port to connect to; it defaults to port 25.
+- !ruby/struct:SM::Flow::P 
+  body: <tt>helo</tt> is the <em>HELO</em> <em>domain</em> provided by the client to the server (see overview comments); it defaults to 'localhost.localdomain'.
+- !ruby/struct:SM::Flow::P 
+  body: The remaining arguments are used for SMTP authentication, if required or desired. <tt>user</tt> is the account name; <tt>secret</tt> is your password or other authentication token; and <tt>authtype</tt> is the authentication type, one of :plain, :login, or :cram_md5. See the discussion of SMTP Authentication in the overview notes.
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Errors
+- !ruby/struct:SM::Flow::P 
+  body: "This method may raise:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: Net::SMTPAuthenticationError
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: Net::SMTPServerBusy
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: Net::SMTPSyntaxError
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: Net::SMTPFatalError
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: Net::SMTPUnknownError
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: IOError
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: TimeoutError
+  type: :BULLET
+full_name: Net::SMTP::start
+is_singleton: true
+name: start
+params: ( address, port = nil, helo = 'localhost.localdomain', user = nil, secret = nil, authtype = nil) {|smtp| ...}
+visibility: public

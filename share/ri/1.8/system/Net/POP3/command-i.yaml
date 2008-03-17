@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Net::POP3#command
+is_singleton: false
+name: command
+params: ()
+visibility: private

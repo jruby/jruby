@@ -1,0 +1,39 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: DEPRECATED
+- !ruby/struct:SM::Flow::P 
+  body: See REXML::Formatters
+- !ruby/struct:SM::Flow::P 
+  body: Writes out this element, and recursively, all children.
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "output:"
+    body: output an object which supports '&lt;&lt; string'; this is where the
+  type: :NOTE
+- !ruby/struct:SM::Flow::VERB 
+  body: "  document will be written.\n"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "indent:"
+    body: An integer. If -1, no indenting will be used; otherwise, the indentation will be this number of spaces, and children will be indented an additional amount. Defaults to -1
+  - !ruby/struct:SM::Flow::LI 
+    label: "transitive:"
+    body: If transitive is true and indent is &gt;= 0, then the output will be pretty-printed in such a way that the added whitespace does not affect the parse tree of the document
+  - !ruby/struct:SM::Flow::LI 
+    label: "ie_hack:"
+    body: Internet Explorer is the worst piece of crap to have ever been written, with the possible exception of Windows itself. Since IE is unable to parse proper XML, we have to provide a hack to generate XML that IE's limited abilities can handle. This hack inserts a space before the /&gt; on empty tags. Defaults to false
+  type: :NOTE
+- !ruby/struct:SM::Flow::VERB 
+  body: " out = ''\n doc.write( out )     #-&gt; doc is written to the string 'out'\n doc.write( $stdout ) #-&gt; doc written to the console\n"
+full_name: REXML::Element#write
+is_singleton: false
+name: write
+params: (writer=$stdout, indent=-1, transitive=false, ie_hack=false)
+visibility: public

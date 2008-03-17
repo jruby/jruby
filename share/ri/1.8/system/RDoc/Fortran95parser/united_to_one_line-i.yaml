@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Continuous lines are united.
+- !ruby/struct:SM::Flow::P 
+  body: Comments in continuous lines are removed.
+full_name: RDoc::Fortran95parser#united_to_one_line
+is_singleton: false
+name: united_to_one_line
+params: (f90src)
+visibility: private

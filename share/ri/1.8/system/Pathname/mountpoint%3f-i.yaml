@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "#mountpoint? returns <tt>true</tt> if <tt>self</tt> points to a mountpoint."
+full_name: Pathname#mountpoint?
+is_singleton: false
+name: mountpoint?
+params: ()
+visibility: public

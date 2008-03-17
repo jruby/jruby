@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: DRb::DRbServer#kill_sub_thread
+is_singleton: false
+name: kill_sub_thread
+params: ()
+visibility: private

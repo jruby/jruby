@@ -1,0 +1,15 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: With no associated block, <tt>open</tt> is a synonym for <tt>IO::new</tt>. If the optional code block is given, it will be passed <em>io</em> as an argument, and the IO object will automatically be closed when the block terminates. In this instance, <tt>IO::open</tt> returns the value of the block.
+full_name: IO::open
+is_singleton: true
+name: open
+params: |
+  IO.open(fd, mode_string="r" )               => io
+  IO.open(fd, mode_string="r" ) {|io| block } => obj
+
+visibility: public

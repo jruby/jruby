@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns sqrt(x**2 + y**2), the hypotenuse of a right-angled triangle with sides <em>x</em> and <em>y</em>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   Math.hypot(3, 4)   #=&gt; 5.0\n"
+full_name: Math::hypot
+is_singleton: true
+name: hypot
+params: |
+  Math.hypot(x, y)    => float
+
+visibility: public

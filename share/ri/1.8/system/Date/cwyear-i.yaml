@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Get the commercial year of this date. See <b>Commercial</b> <b>Date</b> in the introduction for how this differs from the normal year.
+full_name: Date#cwyear
+is_singleton: false
+name: cwyear
+params: ()
+visibility: public

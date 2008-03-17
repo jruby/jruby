@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: while, until, and for have an optional
+full_name: RDoc::RubyParser#skip_optional_do_after_expression
+is_singleton: false
+name: skip_optional_do_after_expression
+params: ()
+visibility: private

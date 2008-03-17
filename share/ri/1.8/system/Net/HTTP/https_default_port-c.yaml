@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: The default port to use for HTTPS requests; defaults to 443.
+full_name: Net::HTTP::https_default_port
+is_singleton: true
+name: https_default_port
+params: ()
+visibility: public

@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::VERB 
+  body: "    Constructor.  CData is data between &lt;![CDATA[ ... ]]&gt;\n"
+- !ruby/struct:SM::Flow::P 
+  body: <em>Examples</em>
+- !ruby/struct:SM::Flow::VERB 
+  body: " CData.new( source )\n CData.new( &quot;Here is some CDATA&quot; )\n CData.new( &quot;Some unprocessed data&quot;, respect_whitespace_TF, parent_element )\n"
+full_name: REXML::CData::new
+is_singleton: true
+name: new
+params: ( first, whitespace=true, parent=nil )
+visibility: public

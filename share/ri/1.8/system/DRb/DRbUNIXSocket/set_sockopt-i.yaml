@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: DRb::DRbUNIXSocket#set_sockopt
+is_singleton: false
+name: set_sockopt
+params: (soc)
+visibility: public

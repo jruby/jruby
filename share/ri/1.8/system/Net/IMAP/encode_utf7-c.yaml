@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Encode a string from UTF-8 format to modified UTF-7.
+full_name: Net::IMAP::encode_utf7
+is_singleton: true
+name: encode_utf7
+params: (s)
+visibility: public

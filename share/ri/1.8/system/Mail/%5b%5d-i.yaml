@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Return the header corresponding to <tt>field</tt>.
+- !ruby/struct:SM::Flow::P 
+  body: Matching is case-insensitive.
+full_name: Mail#[]
+is_singleton: false
+name: "[]"
+params: (field)
+visibility: public

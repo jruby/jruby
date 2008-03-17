@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Disables garbage collection, returning <tt>true</tt> if garbage collection was already disabled.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   GC.disable   #=&gt; false\n   GC.disable   #=&gt; true\n"
+full_name: GC::disable
+is_singleton: true
+name: disable
+params: |
+  GC.disable    => true or false
+
+visibility: public

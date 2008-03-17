@@ -1,0 +1,54 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Get the URI that we are connected to.
+  name: uri
+  rw: R
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: getservername
+- !ruby/object:RI::MethodSummary 
+  name: new
+- !ruby/object:RI::MethodSummary 
+  name: open
+- !ruby/object:RI::MethodSummary 
+  name: open_server
+- !ruby/object:RI::MethodSummary 
+  name: open_server_inaddr_any
+- !ruby/object:RI::MethodSummary 
+  name: parse_uri
+- !ruby/object:RI::MethodSummary 
+  name: uri_option
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: The default drb protocol.
+- !ruby/struct:SM::Flow::P 
+  body: Communicates over a TCP socket.
+constants: []
+
+full_name: DRb::DRbTCPSocket
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: accept
+- !ruby/object:RI::MethodSummary 
+  name: alive?
+- !ruby/object:RI::MethodSummary 
+  name: close
+- !ruby/object:RI::MethodSummary 
+  name: peeraddr
+- !ruby/object:RI::MethodSummary 
+  name: recv_reply
+- !ruby/object:RI::MethodSummary 
+  name: recv_request
+- !ruby/object:RI::MethodSummary 
+  name: send_reply
+- !ruby/object:RI::MethodSummary 
+  name: send_request
+- !ruby/object:RI::MethodSummary 
+  name: stream
+name: DRbTCPSocket
+superclass: Object

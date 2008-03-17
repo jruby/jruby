@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: CSV::generate
+is_singleton: true
+name: generate
+params: (path, fs = nil, rs = nil, &block)
+visibility: public

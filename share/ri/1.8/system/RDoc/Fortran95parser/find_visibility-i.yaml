@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Find visibility
+full_name: RDoc::Fortran95parser#find_visibility
+is_singleton: false
+name: find_visibility
+params: (container, subname, visibility_info)
+visibility: private

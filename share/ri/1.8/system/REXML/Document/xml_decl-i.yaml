@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "@return the XMLDecl of this document; if no XMLDecl has been set, the default declaration is returned."
+full_name: REXML::Document#xml_decl
+is_singleton: false
+name: xml_decl
+params: ()
+visibility: public

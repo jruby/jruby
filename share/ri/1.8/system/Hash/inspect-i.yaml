@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Return the contents of this hash as a string.
+full_name: Hash#inspect
+is_singleton: false
+name: inspect
+params: |
+  hsh.inspect  => string
+
+visibility: public

@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns true if the generator has reached the end.
+full_name: Generator#end?
+is_singleton: false
+name: end?
+params: ()
+visibility: public

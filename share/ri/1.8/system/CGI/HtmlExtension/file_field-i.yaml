@@ -1,0 +1,20 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Generate an File Upload Input element as a string.
+- !ruby/struct:SM::Flow::P 
+  body: The attributes of the element can be specified as three arguments, <tt>name</tt>, <tt>size</tt>, and <tt>maxlength</tt>. <tt>maxlength</tt> is the maximum length of the file's <em>name</em>, not of the file's <em>contents</em>.
+- !ruby/struct:SM::Flow::P 
+  body: Alternatively, the attributes can be specified as a hash.
+- !ruby/struct:SM::Flow::P 
+  body: "See #multipart_form() for forms that include file uploads."
+- !ruby/struct:SM::Flow::VERB 
+  body: "  file_field(&quot;name&quot;)\n    # &lt;INPUT TYPE=&quot;file&quot; NAME=&quot;name&quot; SIZE=&quot;20&quot;&gt;\n\n  file_field(&quot;name&quot;, 40)\n    # &lt;INPUT TYPE=&quot;file&quot; NAME=&quot;name&quot; SIZE=&quot;40&quot;&gt;\n\n  file_field(&quot;name&quot;, 40, 100)\n    # &lt;INPUT TYPE=&quot;file&quot; NAME=&quot;name&quot; SIZE=&quot;40&quot; MAXLENGTH=&quot;100&quot;&gt;\n\n  file_field(&quot;NAME&quot; =&gt; &quot;name&quot;, &quot;SIZE&quot; =&gt; 40)\n    # &lt;INPUT TYPE=&quot;file&quot; NAME=&quot;name&quot; SIZE=&quot;40&quot;&gt;\n"
+full_name: CGI::HtmlExtension#file_field
+is_singleton: false
+name: file_field
+params: (name = "", size = 20, maxlength = nil)
+visibility: public

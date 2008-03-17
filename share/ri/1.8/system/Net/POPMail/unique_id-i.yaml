@@ -1,0 +1,15 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: uidl
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the unique-id of the message. Normally the unique-id is a hash string of the message.
+- !ruby/struct:SM::Flow::P 
+  body: This method raises a POPError if an error occurs.
+full_name: Net::POPMail#unique_id
+is_singleton: false
+name: unique_id
+params: ()
+visibility: public

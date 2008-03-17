@@ -1,0 +1,18 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: pstore
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Opens a new transaction for the data store. Code executed inside a block passed to this method may read and write data to and from the data store file.
+- !ruby/struct:SM::Flow::P 
+  body: At the end of the block, changes are committed to the data store automatically. You may exit the transaction early with a call to either PStore#commit or PStore#abort. See those methods for details about how changes are handled. Raising an uncaught Exception in the block is equivalent to calling PStore#abort.
+- !ruby/struct:SM::Flow::P 
+  body: If <em>read_only</em> is set to <tt>true</tt>, you will only be allowed to read from the data store during the transaction and any attempts to change the data will raise a PStore::Error.
+- !ruby/struct:SM::Flow::P 
+  body: Note that PStore does not support nested transactions.
+full_name: PStore#transaction
+is_singleton: false
+name: transaction
+params: (read_only=false) {|pstore| ...}
+visibility: public

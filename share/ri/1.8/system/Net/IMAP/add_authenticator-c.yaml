@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Adds an authenticator for Net::IMAP#authenticate. <tt>auth_type</tt> is the type of authentication this authenticator supports (for instance, &quot;LOGIN&quot;). The <tt>authenticator</tt> is an object which defines a process() method to handle authentication with the server. See Net::IMAP::LoginAuthenticator and Net::IMAP::CramMD5Authenticator for examples.
+- !ruby/struct:SM::Flow::P 
+  body: If <tt>auth_type</tt> refers to an existing authenticator, it will be replaced by the new one.
+full_name: Net::IMAP::add_authenticator
+is_singleton: true
+name: add_authenticator
+params: (auth_type, authenticator)
+visibility: public

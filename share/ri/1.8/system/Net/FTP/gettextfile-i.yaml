@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: line
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Retrieves <tt>remotefile</tt> in ASCII (text) mode, storing the result in <tt>localfile</tt>. If a block is supplied, it is passed the retrieved data one line at a time.
+full_name: Net::FTP#gettextfile
+is_singleton: false
+name: gettextfile
+params: (remotefile, localfile = File.basename(remotefile)) {|line| ...}
+visibility: public

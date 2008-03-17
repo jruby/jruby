@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Format up one or more files according to the given arguments. For simplicity, <em>argv</em> is an array of strings, equivalent to the strings that would be passed on the command line. (This isn't a coincidence, as we <em>do</em> pass in ARGV when running interactively). For a list of options, see rdoc/rdoc.rb. By default, output will be stored in a directory called <tt>doc</tt> below the current directory, so make sure you're somewhere writable before invoking.
+- !ruby/struct:SM::Flow::P 
+  body: "Throws: RDocError on error"
+full_name: RDoc::RDoc#document
+is_singleton: false
+name: document
+params: (argv)
+visibility: public

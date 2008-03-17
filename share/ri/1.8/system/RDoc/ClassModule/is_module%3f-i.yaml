@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Return <tt>true</tt> if this object represents a module
+full_name: RDoc::ClassModule#is_module?
+is_singleton: false
+name: is_module?
+params: ()
+visibility: public

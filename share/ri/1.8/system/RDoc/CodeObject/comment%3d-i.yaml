@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Update the comment, but don't overwrite a real comment with an empty one
+full_name: RDoc::CodeObject#comment=
+is_singleton: false
+name: comment=
+params: (comment)
+visibility: public

@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: p
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Iterates over the entries (files and subdirectories) in the directory. It yields a Pathname object for each entry.
+- !ruby/struct:SM::Flow::P 
+  body: This method has existed since 1.8.1.
+full_name: Pathname#each_entry
+is_singleton: false
+name: each_entry
+params: () {|p| ...}
+visibility: public

@@ -1,0 +1,17 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: entity
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the entity body.
+- !ruby/struct:SM::Flow::P 
+  body: Calling this method a second or subsequent time will return the already read string.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  http.request_get('/index.html') {|res|\n    puts res.body\n  }\n\n  http.request_get('/index.html') {|res|\n    p res.body.object_id   # 538149362\n    p res.body.object_id   # 538149362\n  }\n"
+full_name: Net::HTTPResponse#body
+is_singleton: false
+name: body
+params: ()
+visibility: public

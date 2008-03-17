@@ -1,0 +1,55 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: context
+  rw: R
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "A Context is built by the parser to represent a container: contexts hold classes, modules, methods, require lists and include lists. ClassModule and TopLevel are the context objects we process here"
+constants: []
+
+full_name: Generators::ContextUser
+includes: 
+- !ruby/object:RI::IncludedModule 
+  name: MarkUp
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: add_table_of_sections
+- !ruby/object:RI::MethodSummary 
+  name: aref_to
+- !ruby/object:RI::MethodSummary 
+  name: as_href
+- !ruby/object:RI::MethodSummary 
+  name: build_alias_summary_list
+- !ruby/object:RI::MethodSummary 
+  name: build_class_list
+- !ruby/object:RI::MethodSummary 
+  name: build_constants_summary_list
+- !ruby/object:RI::MethodSummary 
+  name: build_include_list
+- !ruby/object:RI::MethodSummary 
+  name: build_method_detail_list
+- !ruby/object:RI::MethodSummary 
+  name: build_method_summary_list
+- !ruby/object:RI::MethodSummary 
+  name: build_requires_list
+- !ruby/object:RI::MethodSummary 
+  name: collect_methods
+- !ruby/object:RI::MethodSummary 
+  name: diagram_reference
+- !ruby/object:RI::MethodSummary 
+  name: document_self
+- !ruby/object:RI::MethodSummary 
+  name: find_symbol
+- !ruby/object:RI::MethodSummary 
+  name: href
+- !ruby/object:RI::MethodSummary 
+  name: potentially_referenced_list
+- !ruby/object:RI::MethodSummary 
+  name: url
+name: ContextUser
+superclass: Object

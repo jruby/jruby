@@ -1,0 +1,17 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Set the effective group ID, and if possible, the saved group ID of the process to the given <em>integer</em>. Returns the new effective group ID. Not available on all platforms.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   [Process.gid, Process.egid]          #=&gt; [0, 0]\n   Process::GID.grant_privilege(31)     #=&gt; 33\n   [Process.gid, Process.egid]          #=&gt; [0, 33]\n"
+full_name: Process::GID::grant_privilege
+is_singleton: true
+name: grant_privilege
+params: |
+  Process::GID.grant_privilege(integer)    => fixnum
+  Process::GID.eid = integer               => fixnum
+
+visibility: public

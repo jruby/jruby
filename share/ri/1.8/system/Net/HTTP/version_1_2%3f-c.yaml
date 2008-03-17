@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: true if net/http is in version 1.2 mode. Defaults to true.
+full_name: Net::HTTP::version_1_2?
+is_singleton: true
+name: version_1_2?
+params: ()
+visibility: public

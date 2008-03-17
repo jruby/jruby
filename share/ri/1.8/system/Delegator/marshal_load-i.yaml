@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Reinitializes delegation from a serialized object.
+full_name: Delegator#marshal_load
+is_singleton: false
+name: marshal_load
+params: (obj)
+visibility: public

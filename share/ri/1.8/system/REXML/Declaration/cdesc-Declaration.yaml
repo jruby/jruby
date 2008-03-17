@@ -1,0 +1,21 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: This is an abstract class. You never use this directly; it serves as a parent class for the specific declarations.
+constants: []
+
+full_name: REXML::Declaration
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: to_s
+- !ruby/object:RI::MethodSummary 
+  name: write
+name: Declaration
+superclass: Child

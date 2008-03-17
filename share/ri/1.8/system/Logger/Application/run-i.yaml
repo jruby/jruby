@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Logger::Application#run
+is_singleton: false
+name: run
+params: ()
+visibility: private

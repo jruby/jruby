@@ -1,0 +1,20 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the process ID of a child process associated with <em>ios</em>. This will be set by <tt>IO::popen</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   pipe = IO.popen(&quot;-&quot;)\n   if pipe\n     $stderr.puts &quot;In parent, child pid is #{pipe.pid}&quot;\n   else\n     $stderr.puts &quot;In child, pid is #{$$}&quot;\n   end\n"
+- !ruby/struct:SM::Flow::P 
+  body: <em>produces:</em>
+- !ruby/struct:SM::Flow::VERB 
+  body: "   In child, pid is 26209\n   In parent, child pid is 26209\n"
+full_name: IO#pid
+is_singleton: false
+name: pid
+params: |
+  ios.pid    => fixnum
+
+visibility: public

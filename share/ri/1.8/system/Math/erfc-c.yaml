@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Calculates the complementary error function of x.
+full_name: Math::erfc
+is_singleton: true
+name: erfc
+params: |
+  Math.erfc(x)  => float
+
+visibility: public

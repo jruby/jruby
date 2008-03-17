@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Return the full class name (with '::' between the components) or &quot;&quot; if there's no class name
+full_name: NameDescriptor#full_class_name
+is_singleton: false
+name: full_class_name
+params: ()
+visibility: public

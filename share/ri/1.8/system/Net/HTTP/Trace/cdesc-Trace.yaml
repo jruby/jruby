@@ -1,0 +1,26 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: METHOD
+  value: "'TRACE'"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: REQUEST_HAS_BODY
+  value: "false"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: RESPONSE_HAS_BODY
+  value: "true"
+full_name: Net::HTTP::Trace
+includes: []
+
+instance_methods: []
+
+name: Trace
+superclass: HTTPRequest

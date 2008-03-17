@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: DRb#regist_server
+is_singleton: false
+name: regist_server
+params: (server)
+visibility: public

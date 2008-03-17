@@ -1,0 +1,46 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: foreach
+- !ruby/object:RI::MethodSummary 
+  name: generate
+- !ruby/object:RI::MethodSummary 
+  name: generate_body
+- !ruby/object:RI::MethodSummary 
+  name: generate_line
+- !ruby/object:RI::MethodSummary 
+  name: generate_row
+- !ruby/object:RI::MethodSummary 
+  name: generate_separator
+- !ruby/object:RI::MethodSummary 
+  name: open
+- !ruby/object:RI::MethodSummary 
+  name: open_reader
+- !ruby/object:RI::MethodSummary 
+  name: open_writer
+- !ruby/object:RI::MethodSummary 
+  name: parse
+- !ruby/object:RI::MethodSummary 
+  name: parse_body
+- !ruby/object:RI::MethodSummary 
+  name: parse_line
+- !ruby/object:RI::MethodSummary 
+  name: parse_row
+- !ruby/object:RI::MethodSummary 
+  name: read
+- !ruby/object:RI::MethodSummary 
+  name: readlines
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: This program is copyrighted free software by NAKAMURA, Hiroshi. You can redistribute it and/or modify it under the same terms of Ruby's license; either the dual license version in 2003, or any later version.
+constants: []
+
+full_name: CSV
+includes: []
+
+instance_methods: []
+
+name: CSV
+superclass: Object

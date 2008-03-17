@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IRB::Context#prompting?
+is_singleton: false
+name: prompting?
+params: ()
+visibility: public

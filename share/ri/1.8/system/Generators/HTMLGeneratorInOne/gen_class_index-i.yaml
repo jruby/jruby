@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Generators::HTMLGeneratorInOne#gen_class_index
+is_singleton: false
+name: gen_class_index
+params: ()
+visibility: public

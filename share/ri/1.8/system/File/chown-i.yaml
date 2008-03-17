@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Changes the owner and group of <em>file</em> to the given numeric owner and group id's. Only a process with superuser privileges may change the owner of a file. The current owner of a file may change the file's group to any group to which the owner belongs. A <tt>nil</tt> or -1 owner or group id is ignored. Follows symbolic links. See also <tt>File#lchown</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   File.new(&quot;testfile&quot;).chown(502, 1000)\n"
+full_name: File#chown
+is_singleton: false
+name: chown
+params: |
+  file.chown(owner_int, group_int )   => 0
+
+visibility: public

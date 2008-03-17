@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Set the title, but only if not already set. This means that a title set from the command line trumps one set in a source file
+full_name: Options#title=
+is_singleton: false
+name: title=
+params: (string)
+visibility: public

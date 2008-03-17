@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: DEBUGGER__::Context#display_frames
+is_singleton: false
+name: display_frames
+params: (pos)
+visibility: public

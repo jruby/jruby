@@ -1,0 +1,19 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+constants: []
+
+full_name: CSV::BasicWriter
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: close_on_terminate
+- !ruby/object:RI::MethodSummary 
+  name: terminate
+name: BasicWriter
+superclass: Writer

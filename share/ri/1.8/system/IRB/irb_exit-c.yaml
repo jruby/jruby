@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IRB::irb_exit
+is_singleton: true
+name: irb_exit
+params: (irb, ret)
+visibility: public

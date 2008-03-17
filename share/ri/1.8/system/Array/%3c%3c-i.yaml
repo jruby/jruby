@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Append---Pushes the given object on to the end of this array. This expression returns the array itself, so several appends may be chained together.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   [ 1, 2 ] &lt;&lt; &quot;c&quot; &lt;&lt; &quot;d&quot; &lt;&lt; [ 3, 4 ]\n           #=&gt;  [ 1, 2, &quot;c&quot;, &quot;d&quot;, [ 3, 4 ] ]\n"
+full_name: Array#<<
+is_singleton: false
+name: "<<"
+params: |
+  array << obj            -> array
+
+visibility: public

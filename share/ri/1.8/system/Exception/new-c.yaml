@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Construct a new Exception object, optionally passing in a message.
+full_name: Exception::new
+is_singleton: true
+name: new
+params: |
+  Exception.new(msg = nil)   =>  exception
+
+visibility: public

@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: true if <tt>key</tt> header exists.
+full_name: Net::HTTPHeader#key?
+is_singleton: false
+name: key?
+params: (key)
+visibility: public

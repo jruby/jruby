@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Evaluates to <tt>true</tt> if this element has at least one Text child
+full_name: REXML::Element#has_text?
+is_singleton: false
+name: has_text?
+params: ()
+visibility: public

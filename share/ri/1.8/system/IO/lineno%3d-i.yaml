@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Manually sets the current line number to the given value. <tt>$.</tt> is updated only on the next read.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   f = File.new(&quot;testfile&quot;)\n   f.gets                     #=&gt; &quot;This is line one\\n&quot;\n   $.                         #=&gt; 1\n   f.lineno = 1000\n   f.lineno                   #=&gt; 1000\n   $. # lineno of last read   #=&gt; 1\n   f.gets                     #=&gt; &quot;This is line two\\n&quot;\n   $. # lineno of last read   #=&gt; 1001\n"
+full_name: IO#lineno=
+is_singleton: false
+name: lineno=
+params: |
+  ios.lineno = integer    => integer
+
+visibility: public

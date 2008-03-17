@@ -1,0 +1,26 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Fetches a child element. Filters only Element children, regardless of the XPath match.
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "index:"
+    body: the search parameter. This is either an Integer, which will be used to find the index'th child Element, or an XPath, which will be used to search for the Element. <em>Because of the nature of XPath searches, any element in the connected XML document can be fetched through any other element.</em> <b>The Integer index is 1-based, not 0-based.</b> This means that the first child element is at index 1, not 0, and the +n+th element is at index <tt>n</tt>, not <tt>n-1</tt>. This is because XPath indexes element children starting from 1, not 0, and the indexes should be the same.
+  - !ruby/struct:SM::Flow::LI 
+    label: "name:"
+    body: optional, and only used in the first argument is an Integer. In that case, the index'th child Element that has the supplied name will be returned. Note again that the indexes start at 1.
+  - !ruby/struct:SM::Flow::LI 
+    label: "Returns:"
+    body: the first matching Element, or nil if no child matched
+  type: :NOTE
+- !ruby/struct:SM::Flow::VERB 
+  body: " doc = Document.new '&lt;a&gt;&lt;b/&gt;&lt;c id=&quot;1&quot;/&gt;&lt;c id=&quot;2&quot;/&gt;&lt;d/&gt;&lt;/a&gt;'\n doc.root.elements[1]       #-&gt; &lt;b/&gt;\n doc.root.elements['c']     #-&gt; &lt;c id=&quot;1&quot;/&gt;\n doc.root.elements[2,'c']   #-&gt; &lt;c id=&quot;2&quot;/&gt;\n"
+full_name: REXML::Elements#[]
+is_singleton: false
+name: "[]"
+params: ( index, name=nil)
+visibility: public

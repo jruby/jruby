@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Prettify (indent) an HTML string.
+- !ruby/struct:SM::Flow::P 
+  body: <tt>string</tt> is the HTML string to indent. <tt>shift</tt> is the indentation unit to use; it defaults to two spaces.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  print CGI::pretty(&quot;&lt;HTML&gt;&lt;BODY&gt;&lt;/BODY&gt;&lt;/HTML&gt;&quot;)\n    # &lt;HTML&gt;\n    #   &lt;BODY&gt;\n    #   &lt;/BODY&gt;\n    # &lt;/HTML&gt;\n\n  print CGI::pretty(&quot;&lt;HTML&gt;&lt;BODY&gt;&lt;/BODY&gt;&lt;/HTML&gt;&quot;, &quot;\\t&quot;)\n    # &lt;HTML&gt;\n    #         &lt;BODY&gt;\n    #         &lt;/BODY&gt;\n    # &lt;/HTML&gt;\n"
+full_name: CGI::pretty
+is_singleton: true
+name: pretty
+params: (string, shift = " ")
+visibility: public

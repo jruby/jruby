@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Unescape a string that has been HTML-escaped
+- !ruby/struct:SM::Flow::VERB 
+  body: "  CGI::unescapeHTML(&quot;Usage: foo &amp;quot;bar&amp;quot; &amp;lt;baz&amp;gt;&quot;)\n     # =&gt; &quot;Usage: foo \\&quot;bar\\&quot; &lt;baz&gt;&quot;\n"
+full_name: CGI::unescapeHTML
+is_singleton: true
+name: unescapeHTML
+params: (string)
+visibility: public

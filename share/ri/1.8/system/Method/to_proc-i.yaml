@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns a <tt>Proc</tt> object corresponding to this method.
+full_name: Method#to_proc
+is_singleton: false
+name: to_proc
+params: |
+  meth.to_proc    => prc
+
+visibility: public

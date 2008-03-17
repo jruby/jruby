@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: RDoc::Fortran95parser#parse_program_or_module
+is_singleton: false
+name: parse_program_or_module
+params: (container, code, visibility=:public, external=nil)
+visibility: private

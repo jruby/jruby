@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IRB::Irb#output_value
+is_singleton: false
+name: output_value
+params: ()
+visibility: public

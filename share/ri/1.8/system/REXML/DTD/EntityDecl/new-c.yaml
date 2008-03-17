@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "&lt;!ENTITY name SYSTEM &quot;...&quot;&gt; &lt;!ENTITY name &quot;...&quot;&gt;"
+full_name: REXML::DTD::EntityDecl::new
+is_singleton: true
+name: new
+params: (src)
+visibility: public

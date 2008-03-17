@@ -1,0 +1,30 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Initiates the termination of the Ruby script by raising the <tt>SystemExit</tt> exception. This exception may be caught. The optional parameter is used to return a status code to the invoking environment.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   begin\n     exit\n     puts &quot;never get here&quot;\n   rescue SystemExit\n     puts &quot;rescued a SystemExit exception&quot;\n   end\n   puts &quot;after begin block&quot;\n"
+- !ruby/struct:SM::Flow::P 
+  body: <em>produces:</em>
+- !ruby/struct:SM::Flow::VERB 
+  body: "   rescued a SystemExit exception\n   after begin block\n"
+- !ruby/struct:SM::Flow::P 
+  body: Just prior to termination, Ruby executes any <tt>at_exit</tt> functions (see Kernel::at_exit) and runs any object finalizers (see ObjectSpace::define_finalizer).
+- !ruby/struct:SM::Flow::VERB 
+  body: "   at_exit { puts &quot;at_exit function&quot; }\n   ObjectSpace.define_finalizer(&quot;string&quot;,  proc { puts &quot;in finalizer&quot; })\n   exit\n"
+- !ruby/struct:SM::Flow::P 
+  body: <em>produces:</em>
+- !ruby/struct:SM::Flow::VERB 
+  body: "   at_exit function\n   in finalizer\n"
+full_name: Kernel#exit
+is_singleton: false
+name: exit
+params: |
+  exit(integer=0)
+  Kernel::exit(integer=0)
+  Process::exit(integer=0)
+
+visibility: public

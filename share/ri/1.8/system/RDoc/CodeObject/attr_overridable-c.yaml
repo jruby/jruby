@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: There's a wee trick we pull. Comment blocks can have directives that override the stuff we extract during the parse. So, we have a special class method, attr_overridable, that lets code objects list those directives. Wehn a comment is assigned, we then extract out any matching directives and update our object
+full_name: RDoc::CodeObject::attr_overridable
+is_singleton: true
+name: attr_overridable
+params: (name, *aliases)
+visibility: public

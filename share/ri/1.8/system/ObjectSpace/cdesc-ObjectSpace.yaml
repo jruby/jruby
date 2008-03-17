@@ -1,0 +1,42 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: _id2ref
+- !ruby/object:RI::MethodSummary 
+  name: add_finalizer
+- !ruby/object:RI::MethodSummary 
+  name: call_finalizer
+- !ruby/object:RI::MethodSummary 
+  name: define_finalizer
+- !ruby/object:RI::MethodSummary 
+  name: each_object
+- !ruby/object:RI::MethodSummary 
+  name: finalizers
+- !ruby/object:RI::MethodSummary 
+  name: garbage_collect
+- !ruby/object:RI::MethodSummary 
+  name: remove_finalizer
+- !ruby/object:RI::MethodSummary 
+  name: undefine_finalizer
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: The <tt>ObjectSpace</tt> module contains a number of routines that interact with the garbage collection facility and allow you to traverse all living objects with an iterator.
+- !ruby/struct:SM::Flow::P 
+  body: <tt>ObjectSpace</tt> also provides support for object finalizers, procs that will be called when a specific object is about to be destroyed by garbage collection.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   include ObjectSpace\n\n   a = &quot;A&quot;\n   b = &quot;B&quot;\n   c = &quot;C&quot;\n\n   define_finalizer(a, proc {|id| puts &quot;Finalizer one on #{id}&quot; })\n   define_finalizer(a, proc {|id| puts &quot;Finalizer two on #{id}&quot; })\n   define_finalizer(b, proc {|id| puts &quot;Finalizer three on #{id}&quot; })\n"
+- !ruby/struct:SM::Flow::P 
+  body: <em>produces:</em>
+- !ruby/struct:SM::Flow::VERB 
+  body: "   Finalizer three on 537763470\n   Finalizer one on 537763480\n   Finalizer two on 537763480\n"
+constants: []
+
+full_name: ObjectSpace
+includes: []
+
+instance_methods: []
+
+name: ObjectSpace
+superclass: 

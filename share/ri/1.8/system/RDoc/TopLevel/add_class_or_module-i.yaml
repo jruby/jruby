@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Adding a class or module to a TopLevel is special, as we only want one copy of a particular top-level class. For example, if both file A and file B implement class C, we only want one ClassModule object for C. This code arranges to share classes and modules between files.
+full_name: RDoc::TopLevel#add_class_or_module
+is_singleton: false
+name: add_class_or_module
+params: (collection, class_type, name, superclass)
+visibility: public

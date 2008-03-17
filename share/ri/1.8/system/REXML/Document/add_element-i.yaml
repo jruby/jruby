@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: REXML::Document#add_element
+is_singleton: false
+name: add_element
+params: (arg=nil, arg2=nil)
+visibility: public

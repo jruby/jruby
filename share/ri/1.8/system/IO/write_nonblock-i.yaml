@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Writes the given string to <em>ios</em> using write(2) system call after O_NONBLOCK is set for the underlying file descriptor.
+- !ruby/struct:SM::Flow::P 
+  body: "write_nonblock just calls write(2). It causes all errors write(2) causes: EAGAIN, EINTR, etc. The result may also be smaller than string.length (partial write). The caller should care such errors and partial write."
+full_name: IO#write_nonblock
+is_singleton: false
+name: write_nonblock
+params: |
+  ios.write_nonblock(string)   => integer
+
+visibility: public

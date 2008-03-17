@@ -1,0 +1,18 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Generate a submit button Input element, as a String.
+- !ruby/struct:SM::Flow::P 
+  body: <tt>value</tt> is the text to display on the button. <tt>name</tt> is the name of the input.
+- !ruby/struct:SM::Flow::P 
+  body: Alternatively, the attributes can be specified as a hash.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  submit\n    # &lt;INPUT TYPE=&quot;submit&quot;&gt;\n\n  submit(&quot;ok&quot;)\n    # &lt;INPUT TYPE=&quot;submit&quot; VALUE=&quot;ok&quot;&gt;\n\n  submit(&quot;ok&quot;, &quot;button1&quot;)\n    # &lt;INPUT TYPE=&quot;submit&quot; VALUE=&quot;ok&quot; NAME=&quot;button1&quot;&gt;\n\n  submit(&quot;VALUE&quot; =&gt; &quot;ok&quot;, &quot;NAME&quot; =&gt; &quot;button1&quot;, &quot;ID&quot; =&gt; &quot;foo&quot;)\n    # &lt;INPUT TYPE=&quot;submit&quot; VALUE=&quot;ok&quot; NAME=&quot;button1&quot; ID=&quot;foo&quot;&gt;\n"
+full_name: CGI::HtmlExtension#submit
+is_singleton: false
+name: submit
+params: (value = nil, name = nil)
+visibility: public

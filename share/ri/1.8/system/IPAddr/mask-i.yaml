@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns a new ipaddr built by masking IP address with the given prefixlen/netmask. (e.g. 8, 64, &quot;255.255.255.0&quot;, etc.)
+full_name: IPAddr#mask
+is_singleton: false
+name: mask
+params: (prefixlen)
+visibility: public

@@ -1,0 +1,11 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: eql?
+block_params: 
+comment: 
+full_name: DRb::DRbObject#==
+is_singleton: false
+name: ==
+params: (other)
+visibility: public

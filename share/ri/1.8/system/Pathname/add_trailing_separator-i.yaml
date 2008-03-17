@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: add_trailing_separator(path) -&gt; path
+full_name: Pathname#add_trailing_separator
+is_singleton: false
+name: add_trailing_separator
+params: (path)
+visibility: private

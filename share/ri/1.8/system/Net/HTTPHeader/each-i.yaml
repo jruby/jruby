@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Alias for #each_header"
+full_name: Net::HTTPHeader#each
+is_singleton: false
+name: each
+params: (
+visibility: public

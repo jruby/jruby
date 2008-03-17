@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Build a summary list of all the methods in this context
+full_name: Generators::ContextUser#build_method_summary_list
+is_singleton: false
+name: build_method_summary_list
+params: (path_prefix="")
+visibility: public

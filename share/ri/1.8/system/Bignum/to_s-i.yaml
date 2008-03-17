@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns a string containing the representation of <em>big</em> radix <em>base</em> (2 through 36).
+- !ruby/struct:SM::Flow::VERB 
+  body: "   12345654321.to_s         #=&gt; &quot;12345654321&quot;\n   12345654321.to_s(2)      #=&gt; &quot;1011011111110110111011110000110001&quot;\n   12345654321.to_s(8)      #=&gt; &quot;133766736061&quot;\n   12345654321.to_s(16)     #=&gt; &quot;2dfdbbc31&quot;\n   78546939656932.to_s(36)  #=&gt; &quot;rubyrules&quot;\n"
+full_name: Bignum#to_s
+is_singleton: false
+name: to_s
+params: |
+  big.to_s(base=10)   =>  string
+
+visibility: public

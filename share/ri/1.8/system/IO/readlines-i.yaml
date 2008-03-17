@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Reads all of the lines in <em>ios</em>, and returns them in <em>anArray</em>. Lines are separated by the optional <em>sep_string</em>. If <em>sep_string</em> is <tt>nil</tt>, the rest of the stream is returned as a single record. The stream must be opened for reading or an <tt>IOError</tt> will be raised.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   f = File.new(&quot;testfile&quot;)\n   f.readlines[0]   #=&gt; &quot;This is line one\\n&quot;\n"
+full_name: IO#readlines
+is_singleton: false
+name: readlines
+params: |
+  ios.readlines(sep_string=$/)  =>   array
+
+visibility: public

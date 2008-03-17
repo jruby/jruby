@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Creates and returns a new <tt>FTP</tt> object. If a <tt>host</tt> is given, a connection is made. Additionally, if the <tt>user</tt> is given, the given user name, password, and (optionally) account are used to log in. See #login."
+full_name: Net::FTP::new
+is_singleton: true
+name: new
+params: (host = nil, user = nil, passwd = nil, acct = nil)
+visibility: public

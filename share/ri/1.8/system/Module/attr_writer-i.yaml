@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Creates an accessor method to allow assignment to the attribute <em>aSymbol</em><tt>.id2name</tt>.
+full_name: Module#attr_writer
+is_singleton: false
+name: attr_writer
+params: |
+  attr_writer(symbol, ...)    => nil
+
+visibility: public

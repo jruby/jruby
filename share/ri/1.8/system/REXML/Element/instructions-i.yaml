@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Get an array of all Instruction children. IMMUTABLE
+full_name: REXML::Element#instructions
+is_singleton: false
+name: instructions
+params: ()
+visibility: public

@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Options::OptionList::strip_output
+is_singleton: true
+name: strip_output
+params: (text)
+visibility: public

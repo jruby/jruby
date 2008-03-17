@@ -1,0 +1,44 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+- !ruby/object:RI::MethodSummary 
+  name: parse_source
+comment: 
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: START
+  value: "\"<!ENTITY\""
+- !ruby/object:RI::Constant 
+  comment: 
+  name: START_RE
+  value: /^\s*#{START}/um
+- !ruby/object:RI::Constant 
+  comment: 
+  name: PUBLIC
+  value: /^\s*#{START}\s+(?:%\s+)?(\w+)\s+PUBLIC\s+((["']).*?\3)\s+((["']).*?\5)\s*>/um
+- !ruby/object:RI::Constant 
+  comment: 
+  name: SYSTEM
+  value: /^\s*#{START}\s+(?:%\s+)?(\w+)\s+SYSTEM\s+((["']).*?\3)(?:\s+NDATA\s+\w+)?\s*>/um
+- !ruby/object:RI::Constant 
+  comment: 
+  name: PLAIN
+  value: /^\s*#{START}\s+(\w+)\s+((["']).*?\3)\s*>/um
+- !ruby/object:RI::Constant 
+  comment: 
+  name: PERCENT
+  value: /^\s*#{START}\s+%\s+(\w+)\s+((["']).*?\3)\s*>/um
+full_name: REXML::DTD::EntityDecl
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: to_s
+- !ruby/object:RI::MethodSummary 
+  name: write
+name: EntityDecl
+superclass: Child

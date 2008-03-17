@@ -1,0 +1,49 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: _load
+- !ruby/object:RI::MethodSummary 
+  name: _load
+- !ruby/object:RI::MethodSummary 
+  name: new
+- !ruby/object:RI::MethodSummary 
+  name: new_with
+- !ruby/object:RI::MethodSummary 
+  name: new_with_uri
+- !ruby/object:RI::MethodSummary 
+  name: prepare_backtrace
+- !ruby/object:RI::MethodSummary 
+  name: with_friend
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Object wrapping a reference to a remote drb object.
+- !ruby/struct:SM::Flow::P 
+  body: Method calls on this object are relayed to the remote object that this object is a stub for.
+constants: []
+
+full_name: DRb::DRbObject
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: ==
+- !ruby/object:RI::MethodSummary 
+  name: __drbref
+- !ruby/object:RI::MethodSummary 
+  name: __drburi
+- !ruby/object:RI::MethodSummary 
+  name: _dump
+- !ruby/object:RI::MethodSummary 
+  name: _dump
+- !ruby/object:RI::MethodSummary 
+  name: eql?
+- !ruby/object:RI::MethodSummary 
+  name: hash
+- !ruby/object:RI::MethodSummary 
+  name: method_missing
+- !ruby/object:RI::MethodSummary 
+  name: respond_to?
+name: DRbObject
+superclass: Object

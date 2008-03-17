@@ -1,0 +1,20 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Sends a STATUS command, and returns the status of the indicated <tt>mailbox</tt>. <tt>attr</tt> is a list of one or more attributes that we are request the status of. Supported attributes include:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  MESSAGES:: the number of messages in the mailbox.\n  RECENT:: the number of recent messages in the mailbox.\n  UNSEEN:: the number of unseen messages in the mailbox.\n"
+- !ruby/struct:SM::Flow::P 
+  body: "The return value is a hash of attributes. For example:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  p imap.status(&quot;inbox&quot;, [&quot;MESSAGES&quot;, &quot;RECENT&quot;])\n  #=&gt; {&quot;RECENT&quot;=&gt;0, &quot;MESSAGES&quot;=&gt;44}\n"
+- !ruby/struct:SM::Flow::P 
+  body: A Net::IMAP::NoResponseError is raised if status values for <tt>mailbox</tt> cannot be returned, for instance because it does not exist.
+full_name: Net::IMAP#status
+is_singleton: false
+name: status
+params: (mailbox, attr)
+visibility: public

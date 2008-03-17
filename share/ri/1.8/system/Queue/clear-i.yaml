@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Removes all objects from the queue.
+full_name: Queue#clear
+is_singleton: false
+name: clear
+params: ()
+visibility: public

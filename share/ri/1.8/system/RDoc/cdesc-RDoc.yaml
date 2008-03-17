@@ -1,0 +1,432 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: extract_sections
+- !ruby/object:RI::MethodSummary 
+  name: find_comment
+- !ruby/object:RI::MethodSummary 
+  name: gets
+- !ruby/object:RI::MethodSummary 
+  name: no_comment
+- !ruby/object:RI::MethodSummary 
+  name: usage
+- !ruby/object:RI::MethodSummary 
+  name: usage_no_exit
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: We put rdoc stuff in the RDoc module to avoid namespace clutter.
+- !ruby/struct:SM::Flow::P 
+  body: "ToDo: This isn't universally true."
+- !ruby/struct:SM::Flow::H 
+  level: 1
+  text: RDOC - Ruby Documentation System
+- !ruby/struct:SM::Flow::P 
+  body: This package contains Rdoc and SimpleMarkup. Rdoc is an application that produces documentation for one or more Ruby source files. We work similarly to JavaDoc, parsing the source, and extracting the definition for classes, modules, and methods (along with includes and requires). We associate with these optional documentation contained in the immediately preceding comment block, and then render the result using a pluggable output formatter. (Currently, HTML is the only supported format. Markup is a library that converts plain text into various output formats. The Markup library is used to interpret the comment blocks that Rdoc uses to document methods, classes, and so on.
+- !ruby/struct:SM::Flow::P 
+  body: This library contains two packages, rdoc itself and a text markup library, 'markup'.
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: Roadmap
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: If you want to use Rdoc to create documentation for your Ruby source files, read on.
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: If you want to include extensions written in C, see rdoc/parsers/parse_c.rb.
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: For information on the various markups available in comment blocks, see markup/simple_markup.rb.
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: If you want to drive Rdoc programatically, see RDoc::RDoc.
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: If you want to use the library to format text blocks into HTML, have a look at SM::SimpleMarkup.
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: If you want to try writing your own HTML output template, see RDoc::Page.
+  type: :BULLET
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: Summary
+- !ruby/struct:SM::Flow::P 
+  body: Once installed, you can create documentation using the 'rdoc' command (the command is 'rdoc.bat' under Windows)
+- !ruby/struct:SM::Flow::VERB 
+  body: "  % rdoc [options]  [names...]\n"
+- !ruby/struct:SM::Flow::P 
+  body: Type &quot;rdoc --help&quot; for an up-to-date option summary.
+- !ruby/struct:SM::Flow::P 
+  body: A typical use might be to generate documentation for a package of Ruby source (such as rdoc itself).
+- !ruby/struct:SM::Flow::VERB 
+  body: "  % rdoc\n"
+- !ruby/struct:SM::Flow::P 
+  body: This command generates documentation for all the Ruby and C source files in and below the current directory. These will be stored in a documentation tree starting in the subdirectory 'doc'.
+- !ruby/struct:SM::Flow::P 
+  body: You can make this slightly more useful for your readers by having the index page contain the documentation for the primary file. In our case, we could type
+- !ruby/struct:SM::Flow::VERB 
+  body: "  % rdoc --main rdoc/rdoc.rb\n"
+- !ruby/struct:SM::Flow::P 
+  body: You'll find information on the various formatting tricks you can use in comment blocks in the documentation this generates.
+- !ruby/struct:SM::Flow::P 
+  body: RDoc uses file extensions to determine how to process each file. File names ending <tt>.rb</tt> and <tt>.rbw</tt> are assumed to be Ruby source. Files ending <tt>.c</tt> are parsed as C files. All other files are assumed to contain just SimpleMarkup-style markup (with or without leading '#' comment markers). If directory names are passed to RDoc, they are scanned recursively for C and Ruby source files only.
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: Credits
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: The Ruby parser in rdoc/parse.rb is based heavily on the outstanding work of Keiju ISHITSUKA of Nippon Rational Inc, who produced the Ruby parser for irb and the rtags package.
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: Code to diagram classes and modules was written by Sergey A Yanovitsky (Jah) of Enticla.
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: Charset patch from MoonWolf.
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: Rich Kilmer wrote the kilmer.rb output template.
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: Dan Brickley led the design of the RDF format.
+  type: :BULLET
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: License
+- !ruby/struct:SM::Flow::P 
+  body: RDoc is Copyright (c) 2001-2003 Dave Thomas, The Pragmatic Programmers. It is free software, and may be redistributed under the terms specified in the README file of the Ruby distribution.
+- !ruby/struct:SM::Flow::H 
+  level: 1
+  text: Usage
+- !ruby/struct:SM::Flow::P 
+  body: "RDoc is invoked from the command line using:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "   % rdoc &lt;options&gt; [name...]\n"
+- !ruby/struct:SM::Flow::P 
+  body: Files are parsed, and the information they contain collected, before any output is produced. This allows cross references between all files to be resolved. If a name is a directory, it is traversed. If no names are specified, all Ruby files in the current directory (and subdirectories) are processed.
+- !ruby/struct:SM::Flow::P 
+  body: "Options are:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--accessor</tt> <i>name[,name...]</i>
+    body: specifies the name(s) of additional methods that should be treated as if they were <tt>attr_</tt><em>xxx</em> methods. Specifying &quot;--accessor db_opt&quot; means lines such as
+  - !ruby/struct:SM::Flow::VERB 
+    body: "     db_opt :name, :age\n"
+  - !ruby/struct:SM::Flow::P 
+    body: will get parsed and displayed in the documentation. Each name may have an optional &quot;=flagtext&quot; appended, in which case the given flagtext will appear where (for example) the 'rw' appears for attr_accessor.
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--all</tt>
+    body: include protected and private methods in the output (by default only public methods are included)
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--charset</tt> _charset_
+    body: Set the character set for the generated HTML.
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--diagram</tt>
+    body: include diagrams showing modules and classes. This is currently an experimental feature, and may not be supported by all output templates. You need dot V1.8.6 or later to use the --diagram option correctly (http://www.research.att.com/sw/tools/graphviz/).
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--exclude</tt> <i>pattern</i>
+    body: exclude files and directories matching this pattern from processing
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--extension</tt> <i>new=old</i>
+    body: treat files ending <em>.new</em> as if they ended <em>.old</em>. Saying '--extension cgi=rb' causes RDoc to treat .cgi files as Ruby source.
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>fileboxes</tt>
+    body: Classes are put in boxes which represents files, where these classes reside. Classes shared between more than one file are shown with list of files that sharing them. Silently discarded if --diagram is not given Experimental.
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--fmt</tt> _fmt_
+    body: generate output in a particular format.
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--help</tt>
+    body: generate a usage summary.
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--help-output</tt>
+    body: explain the various output options.
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--image-format</tt> <i>gif/png/jpg/jpeg</i>
+    body: sets output image format for diagrams. Can be png, gif, jpeg, jpg. If this option is omitted, png is used. Requires --diagram.
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--include</tt> <i>dir,...</i>
+    body: "specify one or more directories to be searched when satisfying :<tt>include</tt>: directives. Multiple <tt>--include</tt> options may be given. The directory containing the file currently being processed is always searched."
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--inline-source</tt>
+    body: By default, the source code of methods is shown in a popup. With this option, it's displayed inline.
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>line-numbers</tt>
+    body: include line numbers in the source code
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--main</tt> _name_
+    body: the class of module <em>name</em> will appear on the index page. If you want to set a particular file as a main page (a README, for example) simply specifiy its name as the first on the command line.
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--merge</tt>
+    body: when generating <em>ri</em> output, if classes being processed already exist in the destination directory, merge in the current details rather than overwrite them.
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--one-file</tt>
+    body: place all the output into a single file
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--op</tt> _dir_
+    body: set the output directory to <em>dir</em> (the default is the directory &quot;doc&quot;)
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--op-name</tt> _name_
+    body: set the name of the output. Has no effect for HTML. &quot;doc&quot;)
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--opname</tt> _name_
+    body: set the output name (has no effect for HTML).
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--promiscuous</tt>
+    body: If a module or class is defined in more than one source file, and you click on a particular file's name in the top navigation pane, RDoc will normally only show you the inner classes and modules of that class that are defined in the particular file. Using this option makes it show all classes and modules defined in the class, regardless of the file they were defined in.
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--quiet</tt>
+    body: do not display progress messages
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--ri</tt>, <tt>--ri-site</tt>, _and_ <tt>--ri-system</tt>
+    body: generate output than can be read by the <em>ri</em> command-line tool. By default --ri places its output in ~/.rdoc, --ri-site in $datadir/ri/&lt;ver&gt;/site, and --ri-system in $datadir/ri/&lt;ver&gt;/system. All can be overridden with a subsequent --op option. All default directories are in ri's default search path.
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--show-hash</tt>
+    body: "A name of the form #name in a comment is a possible hyperlink to an instance method name. When displayed, the '#' is removed unless this option is specified"
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--style</tt> <i>stylesheet url</i>
+    body: specifies the URL of an external stylesheet to use (rather than generating one of our own)
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>tab-width</tt> _n_
+    body: set the width of tab characters (default 8)
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--template</tt> <i>name</i>
+    body: "specify an alternate template to use when generating output (the default is 'standard'). This template should be in a directory accessible via $: as rdoc/generators/xxxx_template, where 'xxxx' depends on the output formatter."
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--version</tt>
+    body: display RDoc's version
+  - !ruby/struct:SM::Flow::LI 
+    label: <tt>--webcvs</tt> _url_
+    body: Specify a URL for linking to a web frontend to CVS. If the URL contains a '\%s', the name of the current file will be substituted; if the URL doesn't contain a '\%s', the filename will be appended to it.
+  type: :LABELED
+- !ruby/struct:SM::Flow::H 
+  level: 1
+  text: Example
+- !ruby/struct:SM::Flow::P 
+  body: A typical small Ruby program commented using RDoc might be as follows. You can see the formatted result in EXAMPLE.rb and Anagram.
+- !ruby/struct:SM::Flow::VERB 
+  body: "      :include: EXAMPLE.rb\n"
+- !ruby/struct:SM::Flow::H 
+  level: 1
+  text: Markup
+- !ruby/struct:SM::Flow::P 
+  body: "Comment blocks can be written fairly naturally, either using '#' on successive lines of the comment, or by including the comment in an =begin/=end block. If you use the latter form, the =begin line must be flagged with an RDoc tag:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  =begin rdoc\n  Documentation to\n  be processed by RDoc.\n  =end\n"
+- !ruby/struct:SM::Flow::P 
+  body: Paragraphs are lines that share the left margin. Text indented past this margin are formatted verbatim.
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "1."
+    body: "Lists are typed as indented paragraphs with:"
+  - !ruby/object:SM::Flow::LIST 
+    contents: 
+    - !ruby/struct:SM::Flow::LI 
+      label: "*"
+      body: a '*' or '-' (for bullet lists)
+    - !ruby/struct:SM::Flow::LI 
+      label: "*"
+      body: a digit followed by a period for numbered lists
+    - !ruby/struct:SM::Flow::LI 
+      label: "*"
+      body: an upper or lower case letter followed by a period for alpha lists.
+    type: :BULLET
+  - !ruby/struct:SM::Flow::P 
+    body: For example, the input that produced the above paragraph looked like
+  - !ruby/struct:SM::Flow::VERB 
+    body: "    1. Lists are typed as indented\n       paragraphs with:\n       * a '*' or '-' (for bullet lists)\n       * a digit followed by a period for\n         numbered lists\n       * an upper or lower case letter followed\n         by a period for alpha lists.\n"
+  - !ruby/struct:SM::Flow::LI 
+    label: "2."
+    body: Labeled lists (sometimes called description lists) are typed using square brackets for the label.
+  - !ruby/struct:SM::Flow::VERB 
+    body: "   [cat]   small domestic animal\n   [<tt>cat</tt>] command to copy standard input\n"
+  - !ruby/struct:SM::Flow::LI 
+    label: "3."
+    body: Labeled lists may also be produced by putting a double colon after the label. This sets the result in tabular form, so the descriptions all line up. This was used to create the 'author' block at the bottom of this description.
+  - !ruby/struct:SM::Flow::VERB 
+    body: "   cat::   small domestic animal\n   <tt>cat</tt>:: command to copy standard input\n"
+  - !ruby/struct:SM::Flow::P 
+    body: "For both kinds of labeled lists, if the body text starts on the same line as the label, then the start of that text determines the block indent for the rest of the body. The text may also start on the line following the label, indented from the start of the label. This is often preferable if the label is long. Both the following are valid labeled list entries:"
+  - !ruby/struct:SM::Flow::VERB 
+    body: "   <tt>--output</tt> <em>name [, name]</em>::\n       specify the name of one or more output files. If multiple\n       files are present, the first is used as the index.\n\n   <tt>--quiet:</tt>:: do not output the names, sizes, byte counts,\n                       index areas, or bit ratios of units as\n                       they are processed.\n"
+  - !ruby/struct:SM::Flow::LI 
+    label: "4."
+    body: Headings are entered using equals signs
+  - !ruby/struct:SM::Flow::VERB 
+    body: "   = Level One Heading\n   == Level Two Heading\n"
+  - !ruby/struct:SM::Flow::P 
+    body: and so on
+  - !ruby/struct:SM::Flow::LI 
+    label: "5."
+    body: Rules (horizontal lines) are entered using three or more hyphens.
+  - !ruby/struct:SM::Flow::LI 
+    label: "6."
+    body: "Non-verbatim text can be marked up:"
+  - !ruby/object:SM::Flow::LIST 
+    contents: 
+    - !ruby/struct:SM::Flow::LI 
+      label: "_italic_:"
+      body: _word_ or &lt;em&gt;text&lt;/em&gt;
+    - !ruby/struct:SM::Flow::LI 
+      label: "*bold*:"
+      body: "*word* or &lt;b&gt;text&lt;/b&gt;"
+    - !ruby/struct:SM::Flow::LI 
+      label: "+typewriter+:"
+      body: +word+ or &lt;tt&gt;text&lt;/tt&gt;
+    type: :NOTE
+  - !ruby/struct:SM::Flow::P 
+    body: "The first form only works around 'words', where a word is a sequence of upper and lower case letters and underscores. Putting a backslash before inline markup stops it being interpreted, which is how I created the table above:"
+  - !ruby/struct:SM::Flow::VERB 
+    body: "  <em>italic</em>::     _word_ or &lt;em&gt;text&lt;/em&gt;\n  <b>bold</b>::       *word* or &lt;b&gt;text&lt;/b&gt;\n  <tt>typewriter</tt>:: +word+ or &lt;tt&gt;text&lt;/tt&gt;\n"
+  - !ruby/struct:SM::Flow::LI 
+    label: "7."
+    body: Names of classes, source files, and any method names containing an underscore or preceded by a hash character are automatically hyperlinked from comment text to their description.
+  - !ruby/struct:SM::Flow::LI 
+    label: "8."
+    body: Hyperlinks to the web starting http:, mailto:, ftp:, or www. are recognized. An HTTP url that references an external image file is converted into an inline &lt;IMG..&gt;. Hyperlinks starting 'link:' are assumed to refer to local files whose path is relative to the --op directory.
+  - !ruby/struct:SM::Flow::P 
+    body: "Hyperlinks can also be of the form <tt>label</tt>[url], in which case the label is used in the displayed text, and <tt>url</tt> is used as the target. If <tt>label</tt> contains multiple words, put it in braces: <em>{multi word label}[</em>url<em>]</em>."
+  - !ruby/struct:SM::Flow::LI 
+    label: "9."
+    body: "Method parameter lists are extracted and displayed with the method description. If a method calls <tt>yield</tt>, then the parameters passed to yield will also be displayed:"
+  - !ruby/struct:SM::Flow::VERB 
+    body: "   def fred\n     ...\n     yield line, address\n"
+  - !ruby/struct:SM::Flow::P 
+    body: This will get documented as
+  - !ruby/struct:SM::Flow::VERB 
+    body: "   fred() { |line, address| ... }\n"
+  - !ruby/struct:SM::Flow::P 
+    body: "You can override this using a comment containing ':yields: ...' immediately after the method definition"
+  - !ruby/struct:SM::Flow::VERB 
+    body: "   def fred      # :yields: index, position\n     ...\n     yield line, address\n"
+  - !ruby/struct:SM::Flow::P 
+    body: which will get documented as
+  - !ruby/struct:SM::Flow::VERB 
+    body: "    fred() { |index, position| ... }\n"
+  - !ruby/struct:SM::Flow::LI 
+    label: "10."
+    body: "':yields:' is an example of a documentation modifier. These appear immediately after the start of the document element they are modifying. Other modifiers include"
+  - !ruby/object:SM::Flow::LIST 
+    contents: 
+    - !ruby/struct:SM::Flow::LI 
+      label: <tt>:nodoc:</tt><i>[all]</i>
+      body: don't include this element in the documentation. For classes and modules, the methods, aliases, constants, and attributes directly within the affected class or module will also be omitted. By default, though, modules and classes within that class of module <em>will</em> be documented. This is turned off by adding the <tt>all</tt> modifier.
+    - !ruby/struct:SM::Flow::VERB 
+      body: "     module SM  #:nodoc:\n       class Input\n       end\n     end\n     module Markup #:nodoc: all\n       class Output\n       end\n     end\n"
+    - !ruby/struct:SM::Flow::P 
+      body: In the above code, only class <tt>SM::Input</tt> will be documented.
+    - !ruby/struct:SM::Flow::LI 
+      label: <tt>:doc:</tt>
+      body: force a method or attribute to be documented even if it wouldn't otherwise be. Useful if, for example, you want to include documentation of a particular private method.
+    - !ruby/struct:SM::Flow::LI 
+      label: <tt>:notnew:</tt>
+      body: "only applicable to the <tt>initialize</tt> instance method. Normally RDoc assumes that the documentation and parameters for #initialize are actually for the ::new method, and so fakes out a ::new for the class. THe :notnew: modifier stops this. Remember that #initialize is protected, so you won't see the documentation unless you use the -a command line option."
+    type: :LABELED
+  - !ruby/struct:SM::Flow::LI 
+    label: "11."
+    body: RDoc stops processing comments if it finds a comment line containing '<tt>#--</tt>'. This can be used to separate external from internal comments, or to stop a comment being associated with a method, class, or module. Commenting can be turned back on with a line that starts '<tt>#++</tt>'.
+  - !ruby/struct:SM::Flow::VERB 
+    body: "    # Extract the age and calculate the\n    # date-of-birth.\n    #--\n    # FIXME: fails if the birthday falls on\n    # February 29th\n    #++\n    # The DOB is returned as a Time object.\n\n    def get_dob(person)\n       ...\n"
+  - !ruby/struct:SM::Flow::LI 
+    label: "12."
+    body: "Comment blocks can contain other directives:"
+  - !ruby/object:SM::Flow::LIST 
+    contents: 
+    - !ruby/struct:SM::Flow::LI 
+      label: "<tt>:section: title</tt>"
+      body: Starts a new section in the output. The title following
+    type: :LABELED
+  - !ruby/struct:SM::Flow::VERB 
+    body: "  <tt>:section:</tt> is used as the section heading, and the\n  remainder of the comment containing the section is used as\n  introductory text. Subsequent methods, aliases, attributes,\n  and classes will be documented in this section. A :section:\n  comment block may have one or more lines before the :section:\n  directive. These will be removed, and any identical lines at\n  the end of the block are also removed. This allows you to add\n  visual cues such as\n\n       # ----------------------------------------\n     # :section: My Section\n     # This is the section that I wrote.\n     # See it glisten in the noon-day sun.\n       # ----------------------------------------\n"
+  - !ruby/object:SM::Flow::LIST 
+    contents: 
+    - !ruby/struct:SM::Flow::LI 
+      label: <tt>call-seq:</tt>
+      body: lines up to the next blank line in the comment are treated as the method's calling sequence, overriding the default parsing of method parameters and yield arguments.
+    - !ruby/struct:SM::Flow::LI 
+      label: <tt>:include:</tt><i>filename</i>
+      body: "include the contents of the named file at this point. The file will be searched for in the directories listed by the <tt>--include</tt> option, or in the current directory by default. The contents of the file will be shifted to have the same indentation as the ':' at the start of the :include: directive."
+    - !ruby/struct:SM::Flow::LI 
+      label: <tt>:title:</tt><i>text</i>
+      body: "Sets the title for the document. Equivalent to the --title command line parameter. (The command line parameter overrides any :title: directive in the source)."
+    - !ruby/struct:SM::Flow::LI 
+      label: <tt>:enddoc:</tt>
+      body: Document nothing further at the current level.
+    - !ruby/struct:SM::Flow::LI 
+      label: <tt>:main:</tt><i>name</i>
+      body: Equivalent to the --main command line parameter.
+    - !ruby/struct:SM::Flow::LI 
+      label: "<tt>:stopdoc: / :startdoc:</tt>"
+      body: Stop and start adding new documentation elements to the current container. For example, if a class has a number of constants that you don't want to document, put a <tt>:stopdoc:</tt> before the first, and a <tt>:startdoc:</tt> after the last. If you don't specifiy a <tt>:startdoc:</tt> by the end of the container, disables documentation for the entire class or module.
+    type: :LABELED
+  type: :NUMBER
+- !ruby/struct:SM::Flow::RULE 
+  width: 1
+- !ruby/struct:SM::Flow::P 
+  body: See also markup/simple_markup.rb.
+- !ruby/struct:SM::Flow::H 
+  level: 1
+  text: Other stuff
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "Author:"
+    body: Dave Thomas &lt;dave@pragmaticprogrammer.com&gt;
+  - !ruby/struct:SM::Flow::LI 
+    label: "Requires:"
+    body: Ruby 1.8.1 or later
+  - !ruby/struct:SM::Flow::LI 
+    label: "License:"
+    body: Copyright (c) 2001-2003 Dave Thomas. Released under the same license as Ruby.
+  type: :NOTE
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: Warranty
+- !ruby/struct:SM::Flow::P 
+  body: This software is provided &quot;as is&quot; and without any express or implied warranties, including, without limitation, the implied warranties of merchantibility and fitness for a particular purpose.
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Ruby's built-in classes.
+  name: KNOWN_CLASSES
+  value: "{     \"rb_cObject\"           => \"Object\",     \"rb_cArray\"            => \"Array\",     \"rb_cBignum\"           => \"Bignum\",     \"rb_cClass\"            => \"Class\",     \"rb_cDir\"              => \"Dir\",     \"rb_cData\"             => \"Data\",     \"rb_cFalseClass\"       => \"FalseClass\",     \"rb_cFile\"             => \"File\",     \"rb_cFixnum\"           => \"Fixnum\",     \"rb_cFloat\"            => \"Float\",     \"rb_cHash\"             => \"Hash\",     \"rb_cInteger\"          => \"Integer\",     \"rb_cIO\"               => \"IO\",     \"rb_cModule\"           => \"Module\",     \"rb_cNilClass\"         => \"NilClass\",     \"rb_cNumeric\"          => \"Numeric\",     \"rb_cProc\"             => \"Proc\",     \"rb_cRange\"            => \"Range\",     \"rb_cRegexp\"           => \"Regexp\",     \"rb_cString\"           => \"String\",     \"rb_cSymbol\"           => \"Symbol\",     \"rb_cThread\"           => \"Thread\",     \"rb_cTime\"             => \"Time\",     \"rb_cTrueClass\"        => \"TrueClass\",     \"rb_cStruct\"           => \"Struct\",     \"rb_eException\"        => \"Exception\",     \"rb_eStandardError\"    => \"StandardError\",     \"rb_eSystemExit\"       => \"SystemExit\",     \"rb_eInterrupt\"        => \"Interrupt\",     \"rb_eSignal\"           => \"Signal\",     \"rb_eFatal\"            => \"Fatal\",     \"rb_eArgError\"         => \"ArgError\",     \"rb_eEOFError\"         => \"EOFError\",     \"rb_eIndexError\"       => \"IndexError\",     \"rb_eRangeError\"       => \"RangeError\",     \"rb_eIOError\"          => \"IOError\",     \"rb_eRuntimeError\"     => \"RuntimeError\",     \"rb_eSecurityError\"    => \"SecurityError\",     \"rb_eSystemCallError\"  => \"SystemCallError\",     \"rb_eTypeError\"        => \"TypeError\",     \"rb_eZeroDivError\"     => \"ZeroDivError\",     \"rb_eNotImpError\"      => \"NotImpError\",     \"rb_eNoMemError\"       => \"NoMemError\",     \"rb_eFloatDomainError\" => \"FloatDomainError\",     \"rb_eScriptError\"      => \"ScriptError\",     \"rb_eNameError\"        => \"NameError\",     \"rb_eSyntaxError\"      => \"SyntaxError\",     \"rb_eLoadError\"        => \"LoadError\",      \"rb_mKernel\"           => \"Kernel\",     \"rb_mComparable\"       => \"Comparable\",     \"rb_mEnumerable\"       => \"Enumerable\",     \"rb_mPrecision\"        => \"Precision\",     \"rb_mErrno\"            => \"Errno\",     \"rb_mFileTest\"         => \"FileTest\",     \"rb_mGC\"               => \"GC\",     \"rb_mMath\"             => \"Math\",     \"rb_mProcess\"          => \"Process\""
+- !ruby/object:RI::Constant 
+  comment: 
+  name: GENERAL_MODIFIERS
+  value: "[ 'nodoc' ].freeze"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: CLASS_MODIFIERS
+  value: GENERAL_MODIFIERS
+- !ruby/object:RI::Constant 
+  comment: 
+  name: ATTR_MODIFIERS
+  value: GENERAL_MODIFIERS
+- !ruby/object:RI::Constant 
+  comment: 
+  name: CONSTANT_MODIFIERS
+  value: GENERAL_MODIFIERS
+- !ruby/object:RI::Constant 
+  comment: 
+  name: METHOD_MODIFIERS
+  value: GENERAL_MODIFIERS +      [ 'arg', 'args', 'yield', 'yields', 'notnew', 'not-new', 'not_new', 'doc' ]
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Name of the dotfile that contains the description of files to be processed in the current directory
+  name: DOT_DOC_FILENAME
+  value: "\".document\""
+full_name: RDoc
+includes: []
+
+instance_methods: []
+
+name: RDoc
+superclass: 

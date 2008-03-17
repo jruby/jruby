@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: This method retrieves the public identifier identifying the document's DTD.
+- !ruby/struct:SM::Flow::P 
+  body: Method contributed by Henrik Martensson
+full_name: REXML::DocType#public
+is_singleton: false
+name: public
+params: ()
+visibility: public

@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Sends a CAPABILITY command, and returns an array of capabilities that the server supports. Each capability is a string. See [IMAP] for a list of possible capabilities.
+- !ruby/struct:SM::Flow::P 
+  body: Note that the Net::IMAP class does not modify its behaviour according to the capabilities of the server; it is up to the user of the class to ensure that a certain capability is supported by a server before using it.
+full_name: Net::IMAP#capability
+is_singleton: false
+name: capability
+params: ()
+visibility: public

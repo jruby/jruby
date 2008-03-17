@@ -1,0 +1,95 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: audit
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: debug
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: host
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: maxConnections
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: port
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: stdlog
+  rw: RW
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: in_service?
+- !ruby/object:RI::MethodSummary 
+  name: new
+- !ruby/object:RI::MethodSummary 
+  name: stop
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: GServer implements a generic server, featuring thread pool management, simple logging, and multi-server management. See HttpServer in <tt>xmlrpc/httpserver.rb</tt> in the Ruby standard library for an example of GServer in action.
+- !ruby/struct:SM::Flow::P 
+  body: Any kind of application-level server can be implemented using this class. It accepts multiple simultaneous connections from clients, up to an optional maximum number. Several <em>services</em> (i.e. one service per TCP port) can be run simultaneously, and stopped at any time through the class method <tt>GServer.stop(port)</tt>. All the threading issues are handled, saving you the effort. All events are optionally logged, but you can provide your own event handlers if you wish.
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Example
+- !ruby/struct:SM::Flow::P 
+  body: "Using GServer is simple. Below we implement a simple time server, run it, query it, and shut it down. Try this code in <tt>irb</tt>:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  require 'gserver'\n\n  #\n  # A server that returns the time in seconds since 1970.\n  #\n  class TimeServer &lt; GServer\n    def initialize(port=10001, *args)\n      super(port, *args)\n    end\n    def serve(io)\n      io.puts(Time.now.to_i)\n    end\n  end\n\n  # Run the server with logging enabled (it's a separate thread).\n  server = TimeServer.new\n  server.audit = true                  # Turn logging on.\n  server.start\n\n  # *** Now point your browser to http://localhost:10001 to see it working ***\n\n  # See if it's still running.\n  GServer.in_service?(10001)           # -&gt; true\n  server.stopped?                      # -&gt; false\n\n  # Shut the server down gracefully.\n  server.shutdown\n\n  # Alternatively, stop it immediately.\n  GServer.stop(10001)\n  # or, of course, &quot;server.stop&quot;.\n"
+- !ruby/struct:SM::Flow::P 
+  body: All the business of accepting connections and exception handling is taken care of. All we have to do is implement the method that actually serves the client.
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Advanced
+- !ruby/struct:SM::Flow::P 
+  body: As the example above shows, the way to use GServer is to subclass it to create a specific server, overriding the <tt>serve</tt> method. You can override other methods as well if you wish, perhaps to collect statistics, or emit more detailed logging.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  connecting\n  disconnecting\n  starting\n  stopping\n"
+- !ruby/struct:SM::Flow::P 
+  body: The above methods are only called if auditing is enabled.
+- !ruby/struct:SM::Flow::P 
+  body: You can also override <tt>log</tt> and <tt>error</tt> if, for example, you wish to use a more sophisticated logging system.
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: DEFAULT_HOST
+  value: "\"127.0.0.1\""
+full_name: GServer
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: connecting
+- !ruby/object:RI::MethodSummary 
+  name: connections
+- !ruby/object:RI::MethodSummary 
+  name: disconnecting
+- !ruby/object:RI::MethodSummary 
+  name: error
+- !ruby/object:RI::MethodSummary 
+  name: join
+- !ruby/object:RI::MethodSummary 
+  name: log
+- !ruby/object:RI::MethodSummary 
+  name: serve
+- !ruby/object:RI::MethodSummary 
+  name: shutdown
+- !ruby/object:RI::MethodSummary 
+  name: start
+- !ruby/object:RI::MethodSummary 
+  name: starting
+- !ruby/object:RI::MethodSummary 
+  name: stop
+- !ruby/object:RI::MethodSummary 
+  name: stopped?
+- !ruby/object:RI::MethodSummary 
+  name: stopping
+name: GServer
+superclass: Object

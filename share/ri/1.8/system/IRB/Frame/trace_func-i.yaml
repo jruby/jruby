@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IRB::Frame#trace_func
+is_singleton: false
+name: trace_func
+params: (event, file, line, id, binding)
+visibility: public

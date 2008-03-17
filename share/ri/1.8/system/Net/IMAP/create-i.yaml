@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Sends a CREATE command to create a new <tt>mailbox</tt>.
+- !ruby/struct:SM::Flow::P 
+  body: A Net::IMAP::NoResponseError is raised if a mailbox with that name cannot be created.
+full_name: Net::IMAP#create
+is_singleton: false
+name: create
+params: (mailbox)
+visibility: public

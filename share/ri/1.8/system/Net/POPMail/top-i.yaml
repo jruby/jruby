@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Fetches the message header and <tt>lines</tt> lines of body.
+- !ruby/struct:SM::Flow::P 
+  body: The optional <tt>dest</tt> argument is obsolete.
+- !ruby/struct:SM::Flow::P 
+  body: This method raises a POPError if an error occurs.
+full_name: Net::POPMail#top
+is_singleton: false
+name: top
+params: ( lines, dest = '' )
+visibility: public

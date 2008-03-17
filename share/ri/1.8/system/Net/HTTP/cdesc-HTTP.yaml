@@ -1,0 +1,292 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: The host name to connect to.
+  name: address
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: close_on_empty_response
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: specify enabling SSL server certificate and hostname checking.
+  name: enable_post_connection_check
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Seconds to wait until connection is opened. If the HTTP object cannot open a connection in this many seconds, it raises a TimeoutError exception.
+  name: open_timeout
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: The port number to connect to.
+  name: port
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: proxy_address
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: proxy_pass
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: proxy_port
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: proxy_user
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Seconds to wait until reading one block (by one read(2) call). If the HTTP object cannot open a connection in this many seconds, it raises a TimeoutError exception.
+  name: read_timeout
+  rw: R
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: Proxy
+- !ruby/object:RI::MethodSummary 
+  name: default_port
+- !ruby/object:RI::MethodSummary 
+  name: get
+- !ruby/object:RI::MethodSummary 
+  name: get_print
+- !ruby/object:RI::MethodSummary 
+  name: get_response
+- !ruby/object:RI::MethodSummary 
+  name: http_default_port
+- !ruby/object:RI::MethodSummary 
+  name: https_default_port
+- !ruby/object:RI::MethodSummary 
+  name: new
+- !ruby/object:RI::MethodSummary 
+  name: new
+- !ruby/object:RI::MethodSummary 
+  name: post_form
+- !ruby/object:RI::MethodSummary 
+  name: proxy_class?
+- !ruby/object:RI::MethodSummary 
+  name: ssl_context_accessor
+- !ruby/object:RI::MethodSummary 
+  name: start
+- !ruby/object:RI::MethodSummary 
+  name: version_1_1
+- !ruby/object:RI::MethodSummary 
+  name: version_1_1?
+- !ruby/object:RI::MethodSummary 
+  name: version_1_2
+- !ruby/object:RI::MethodSummary 
+  name: version_1_2?
+comment: 
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: What Is This Library?
+- !ruby/struct:SM::Flow::P 
+  body: This library provides your program functions to access WWW documents via HTTP, Hyper Text Transfer Protocol version 1.1. For details of HTTP, refer [RFC2616] (http://www.ietf.org/rfc/rfc2616.txt).
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: Examples
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Getting Document From WWW Server
+- !ruby/struct:SM::Flow::P 
+  body: "Example #1: Simple GET+print"
+- !ruby/struct:SM::Flow::VERB 
+  body: "    require 'net/http'\n    Net::HTTP.get_print 'www.example.com', '/index.html'\n"
+- !ruby/struct:SM::Flow::P 
+  body: "Example #2: Simple GET+print by URL"
+- !ruby/struct:SM::Flow::VERB 
+  body: "    require 'net/http'\n    require 'uri'\n    Net::HTTP.get_print URI.parse('http://www.example.com/index.html')\n"
+- !ruby/struct:SM::Flow::P 
+  body: "Example #3: More generic GET+print"
+- !ruby/struct:SM::Flow::VERB 
+  body: "    require 'net/http'\n    require 'uri'\n\n    url = URI.parse('http://www.example.com/index.html')\n    res = Net::HTTP.start(url.host, url.port) {|http|\n      http.get('/index.html')\n    }\n    puts res.body\n"
+- !ruby/struct:SM::Flow::P 
+  body: "Example #4: More generic GET+print"
+- !ruby/struct:SM::Flow::VERB 
+  body: "    require 'net/http'\n\n    url = URI.parse('http://www.example.com/index.html')\n    req = Net::HTTP::Get.new(url.path)\n    res = Net::HTTP.start(url.host, url.port) {|http|\n      http.request(req)\n    }\n    puts res.body\n"
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Posting Form Data
+- !ruby/struct:SM::Flow::VERB 
+  body: "    require 'net/http'\n    require 'uri'\n\n    #1: Simple POST\n    res = Net::HTTP.post_form(URI.parse('http://www.example.com/search.cgi'),\n                              {'q'=&gt;'ruby', 'max'=&gt;'50'})\n    puts res.body\n\n    #2: POST with basic authentication\n    res = Net::HTTP.post_form(URI.parse('http://jack:pass@www.example.com/todo.cgi'),\n                                        {'from'=&gt;'2005-01-01', 'to'=&gt;'2005-03-31'})\n    puts res.body\n\n    #3: Detailed control\n    url = URI.parse('http://www.example.com/todo.cgi')\n    req = Net::HTTP::Post.new(url.path)\n    req.basic_auth 'jack', 'pass'\n    req.set_form_data({'from'=&gt;'2005-01-01', 'to'=&gt;'2005-03-31'}, ';')\n    res = Net::HTTP.new(url.host, url.port).start {|http| http.request(req) }\n    case res\n    when Net::HTTPSuccess, Net::HTTPRedirection\n      # OK\n    else\n      res.error!\n    end\n"
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Accessing via Proxy
+- !ruby/struct:SM::Flow::P 
+  body: Net::HTTP.Proxy creates http proxy class. It has same methods of Net::HTTP but its instances always connect to proxy, instead of given host.
+- !ruby/struct:SM::Flow::VERB 
+  body: "    require 'net/http'\n\n    proxy_addr = 'your.proxy.host'\n    proxy_port = 8080\n            :\n    Net::HTTP::Proxy(proxy_addr, proxy_port).start('www.example.com') {|http|\n      # always connect to your.proxy.addr:8080\n            :\n    }\n"
+- !ruby/struct:SM::Flow::P 
+  body: Since Net::HTTP.Proxy returns Net::HTTP itself when proxy_addr is nil, there's no need to change code if there's proxy or not.
+- !ruby/struct:SM::Flow::P 
+  body: "There are two additional parameters in Net::HTTP.Proxy which allow to specify proxy user name and password:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "    Net::HTTP::Proxy(proxy_addr, proxy_port, proxy_user = nil, proxy_pass = nil)\n"
+- !ruby/struct:SM::Flow::P 
+  body: "You may use them to work with authorization-enabled proxies:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "    require 'net/http'\n    require 'uri'\n\n    proxy_host = 'your.proxy.host'\n    proxy_port = 8080\n    uri = URI.parse(ENV['http_proxy'])\n    proxy_user, proxy_pass = uri.userinfo.split(/:/) if uri.userinfo\n    Net::HTTP::Proxy(proxy_host, proxy_port,\n                     proxy_user, proxy_pass).start('www.example.com') {|http|\n      # always connect to your.proxy.addr:8080 using specified username and password\n            :\n    }\n"
+- !ruby/struct:SM::Flow::P 
+  body: Note that net/http never rely on HTTP_PROXY environment variable. If you want to use proxy, set it explicitly.
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Following Redirection
+- !ruby/struct:SM::Flow::VERB 
+  body: "    require 'net/http'\n    require 'uri'\n\n    def fetch(uri_str, limit = 10)\n      # You should choose better exception.\n      raise ArgumentError, 'HTTP redirect too deep' if limit == 0\n\n      response = Net::HTTP.get_response(URI.parse(uri_str))\n      case response\n      when Net::HTTPSuccess     then response\n      when Net::HTTPRedirection then fetch(response['location'], limit - 1)\n      else\n        response.error!\n      end\n    end\n\n    print fetch('http://www.ruby-lang.org')\n"
+- !ruby/struct:SM::Flow::P 
+  body: Net::HTTPSuccess and Net::HTTPRedirection is a HTTPResponse class. All HTTPResponse objects belong to its own response class which indicate HTTP result status. For details of response classes, see section &quot;HTTP Response Classes&quot;.
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Basic Authentication
+- !ruby/struct:SM::Flow::VERB 
+  body: "    require 'net/http'\n\n    Net::HTTP.start('www.example.com') {|http|\n      req = Net::HTTP::Get.new('/secret-page.html')\n      req.basic_auth 'account', 'password'\n      response = http.request(req)\n      print response.body\n    }\n"
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: HTTP Request Classes
+- !ruby/struct:SM::Flow::P 
+  body: Here is HTTP request class hierarchy.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  Net::HTTPRequest\n      Net::HTTP::Get\n      Net::HTTP::Head\n      Net::HTTP::Post\n      Net::HTTP::Put\n      Net::HTTP::Proppatch\n      Net::HTTP::Lock\n      Net::HTTP::Unlock\n      Net::HTTP::Options\n      Net::HTTP::Propfind\n      Net::HTTP::Delete\n      Net::HTTP::Move\n      Net::HTTP::Copy\n      Net::HTTP::Mkcol\n      Net::HTTP::Trace\n"
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: HTTP Response Classes
+- !ruby/struct:SM::Flow::P 
+  body: Here is HTTP response class hierarchy. All classes are defined in Net module.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  HTTPResponse\n      HTTPUnknownResponse\n      HTTPInformation                    # 1xx\n          HTTPContinue                       # 100\n          HTTPSwitchProtocl                  # 101\n      HTTPSuccess                        # 2xx\n          HTTPOK                             # 200\n          HTTPCreated                        # 201\n          HTTPAccepted                       # 202\n          HTTPNonAuthoritativeInformation    # 203\n          HTTPNoContent                      # 204\n          HTTPResetContent                   # 205\n          HTTPPartialContent                 # 206\n      HTTPRedirection                    # 3xx\n          HTTPMultipleChoice                 # 300\n          HTTPMovedPermanently               # 301\n          HTTPFound                          # 302\n          HTTPSeeOther                       # 303\n          HTTPNotModified                    # 304\n          HTTPUseProxy                       # 305\n          HTTPTemporaryRedirect              # 307\n      HTTPClientError                    # 4xx\n          HTTPBadRequest                     # 400\n          HTTPUnauthorized                   # 401\n          HTTPPaymentRequired                # 402\n          HTTPForbidden                      # 403\n          HTTPNotFound                       # 404\n          HTTPMethodNotAllowed               # 405\n          HTTPNotAcceptable                  # 406\n          HTTPProxyAuthenticationRequired    # 407\n          HTTPRequestTimeOut                 # 408\n          HTTPConflict                       # 409\n          HTTPGone                           # 410\n          HTTPLengthRequired                 # 411\n          HTTPPreconditionFailed             # 412\n          HTTPRequestEntityTooLarge          # 413\n          HTTPRequestURITooLong              # 414\n          HTTPUnsupportedMediaType           # 415\n          HTTPRequestedRangeNotSatisfiable   # 416\n          HTTPExpectationFailed              # 417\n      HTTPServerError                    # 5xx\n          HTTPInternalServerError            # 500\n          HTTPNotImplemented                 # 501\n          HTTPBadGateway                     # 502\n          HTTPServiceUnavailable             # 503\n          HTTPGatewayTimeOut                 # 504\n          HTTPVersionNotSupported            # 505\n"
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: Switching Net::HTTP versions
+- !ruby/struct:SM::Flow::P 
+  body: You can use net/http.rb 1.1 features (bundled with Ruby 1.6) by calling HTTP.version_1_1. Calling Net::HTTP.version_1_2 allows you to use 1.2 features again.
+- !ruby/struct:SM::Flow::VERB 
+  body: "    # example\n    Net::HTTP.start {|http1| ...(http1 has 1.2 features)... }\n\n    Net::HTTP.version_1_1\n    Net::HTTP.start {|http2| ...(http2 has 1.1 features)... }\n\n    Net::HTTP.version_1_2\n    Net::HTTP.start {|http3| ...(http3 has 1.2 features)... }\n"
+- !ruby/struct:SM::Flow::P 
+  body: This function is NOT thread-safe.
+constants: []
+
+full_name: Net::HTTP
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: D
+- !ruby/object:RI::MethodSummary 
+  name: active?
+- !ruby/object:RI::MethodSummary 
+  name: addr_port
+- !ruby/object:RI::MethodSummary 
+  name: begin_transport
+- !ruby/object:RI::MethodSummary 
+  name: conn_address
+- !ruby/object:RI::MethodSummary 
+  name: conn_port
+- !ruby/object:RI::MethodSummary 
+  name: connect
+- !ruby/object:RI::MethodSummary 
+  name: copy
+- !ruby/object:RI::MethodSummary 
+  name: delete
+- !ruby/object:RI::MethodSummary 
+  name: do_finish
+- !ruby/object:RI::MethodSummary 
+  name: do_start
+- !ruby/object:RI::MethodSummary 
+  name: edit_path
+- !ruby/object:RI::MethodSummary 
+  name: end_transport
+- !ruby/object:RI::MethodSummary 
+  name: finish
+- !ruby/object:RI::MethodSummary 
+  name: get
+- !ruby/object:RI::MethodSummary 
+  name: get2
+- !ruby/object:RI::MethodSummary 
+  name: head
+- !ruby/object:RI::MethodSummary 
+  name: head2
+- !ruby/object:RI::MethodSummary 
+  name: inspect
+- !ruby/object:RI::MethodSummary 
+  name: keep_alive?
+- !ruby/object:RI::MethodSummary 
+  name: lock
+- !ruby/object:RI::MethodSummary 
+  name: mkcol
+- !ruby/object:RI::MethodSummary 
+  name: move
+- !ruby/object:RI::MethodSummary 
+  name: on_connect
+- !ruby/object:RI::MethodSummary 
+  name: options
+- !ruby/object:RI::MethodSummary 
+  name: peer_cert
+- !ruby/object:RI::MethodSummary 
+  name: post
+- !ruby/object:RI::MethodSummary 
+  name: post2
+- !ruby/object:RI::MethodSummary 
+  name: propfind
+- !ruby/object:RI::MethodSummary 
+  name: proppatch
+- !ruby/object:RI::MethodSummary 
+  name: proxy?
+- !ruby/object:RI::MethodSummary 
+  name: proxy_address
+- !ruby/object:RI::MethodSummary 
+  name: proxy_pass
+- !ruby/object:RI::MethodSummary 
+  name: proxy_port
+- !ruby/object:RI::MethodSummary 
+  name: proxy_user
+- !ruby/object:RI::MethodSummary 
+  name: proxyaddr
+- !ruby/object:RI::MethodSummary 
+  name: proxyport
+- !ruby/object:RI::MethodSummary 
+  name: read_timeout=
+- !ruby/object:RI::MethodSummary 
+  name: request
+- !ruby/object:RI::MethodSummary 
+  name: request_get
+- !ruby/object:RI::MethodSummary 
+  name: request_head
+- !ruby/object:RI::MethodSummary 
+  name: request_post
+- !ruby/object:RI::MethodSummary 
+  name: send_request
+- !ruby/object:RI::MethodSummary 
+  name: set_debug_output
+- !ruby/object:RI::MethodSummary 
+  name: ssl_timeout
+- !ruby/object:RI::MethodSummary 
+  name: ssl_timeout=
+- !ruby/object:RI::MethodSummary 
+  name: start
+- !ruby/object:RI::MethodSummary 
+  name: started?
+- !ruby/object:RI::MethodSummary 
+  name: timeout=
+- !ruby/object:RI::MethodSummary 
+  name: trace
+- !ruby/object:RI::MethodSummary 
+  name: unlock
+- !ruby/object:RI::MethodSummary 
+  name: use_ssl
+- !ruby/object:RI::MethodSummary 
+  name: use_ssl=
+- !ruby/object:RI::MethodSummary 
+  name: use_ssl?
+- !ruby/object:RI::MethodSummary 
+  name: use_ssl?
+name: HTTP
+superclass: Protocol

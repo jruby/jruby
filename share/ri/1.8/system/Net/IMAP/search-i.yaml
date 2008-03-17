@@ -1,0 +1,55 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Sends a SEARCH command to search the mailbox for messages that match the given searching criteria, and returns message sequence numbers. <tt>keys</tt> can either be a string holding the entire search string, or a single-dimension array of search keywords and arguments. The following are some common search criteria; see [IMAP] section 6.4.4 for a full list.
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "<message set>:"
+    body: a set of message sequence numbers. ',' indicates an interval, ':' indicates a range. For instance, '2,10:12,15' means &quot;2,10,11,12,15&quot;.
+  - !ruby/struct:SM::Flow::LI 
+    label: "BEFORE <date>:"
+    body: messages with an internal date strictly before &lt;date&gt;. The date argument has a format similar to 8-Aug-2002.
+  - !ruby/struct:SM::Flow::LI 
+    label: "BODY <string>:"
+    body: messages that contain &lt;string&gt; within their body.
+  - !ruby/struct:SM::Flow::LI 
+    label: "CC <string>:"
+    body: messages containing &lt;string&gt; in their CC field.
+  - !ruby/struct:SM::Flow::LI 
+    label: "FROM <string>:"
+    body: messages that contain &lt;string&gt; in their FROM field.
+  - !ruby/struct:SM::Flow::LI 
+    label: "NEW:"
+    body: messages with the \Recent, but not the \Seen, flag set.
+  - !ruby/struct:SM::Flow::LI 
+    label: "NOT <search-key>:"
+    body: negate the following search key.
+  - !ruby/struct:SM::Flow::LI 
+    label: "OR <search-key> <search-key>:"
+    body: "&quot;or&quot; two search keys together."
+  - !ruby/struct:SM::Flow::LI 
+    label: "ON <date>:"
+    body: messages with an internal date exactly equal to &lt;date&gt;, which has a format similar to 8-Aug-2002.
+  - !ruby/struct:SM::Flow::LI 
+    label: "SINCE <date>:"
+    body: messages with an internal date on or after &lt;date&gt;.
+  - !ruby/struct:SM::Flow::LI 
+    label: "SUBJECT <string>:"
+    body: messages with &lt;string&gt; in their subject.
+  - !ruby/struct:SM::Flow::LI 
+    label: "TO <string>:"
+    body: messages with &lt;string&gt; in their TO field.
+  type: :NOTE
+- !ruby/struct:SM::Flow::P 
+  body: "For example:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  p imap.search([&quot;SUBJECT&quot;, &quot;hello&quot;, &quot;NOT&quot;, &quot;NEW&quot;])\n  #=&gt; [1, 6, 7, 8]\n"
+full_name: Net::IMAP#search
+is_singleton: false
+name: search
+params: (keys, charset = nil)
+visibility: public

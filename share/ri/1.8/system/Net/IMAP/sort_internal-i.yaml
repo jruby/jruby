@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Net::IMAP#sort_internal
+is_singleton: false
+name: sort_internal
+params: (cmd, sort_keys, search_keys, charset)
+visibility: private

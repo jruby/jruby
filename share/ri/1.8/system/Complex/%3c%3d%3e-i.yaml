@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Compares the absolute values of the two numbers.
+full_name: Complex#<=>
+is_singleton: false
+name: <=>
+params: (other)
+visibility: public

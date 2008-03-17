@@ -1,0 +1,20 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: create_finalizer
+- !ruby/object:RI::MethodSummary 
+  name: extended
+comment: 
+constants: []
+
+full_name: IRB::HistorySavingAbility
+includes: 
+- !ruby/object:RI::IncludedModule 
+  name: Readline
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: load_history
+name: HistorySavingAbility
+superclass: 

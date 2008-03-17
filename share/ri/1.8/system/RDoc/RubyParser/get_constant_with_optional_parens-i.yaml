@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Get a constant that may be surrounded by parens
+full_name: RDoc::RubyParser#get_constant_with_optional_parens
+is_singleton: false
+name: get_constant_with_optional_parens
+params: ()
+visibility: private

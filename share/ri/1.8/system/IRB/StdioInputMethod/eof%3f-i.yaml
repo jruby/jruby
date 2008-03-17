@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IRB::StdioInputMethod#eof?
+is_singleton: false
+name: eof?
+params: ()
+visibility: public

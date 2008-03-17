@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: RDoc::C_Parser#remove_private_comments
+is_singleton: false
+name: remove_private_comments
+params: (comment)
+visibility: private

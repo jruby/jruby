@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Alias for #compare_file"
+full_name: FileUtils#cmp
+is_singleton: false
+name: cmp
+params: (a, b)
+visibility: public

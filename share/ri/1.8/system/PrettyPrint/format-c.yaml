@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: q
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "This is a convenience method which is same as follows:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  begin\n    q = PrettyPrint.new(output, maxwidth, newline, &amp;genspace)\n    ...\n    q.flush\n    output\n  end\n"
+full_name: PrettyPrint::format
+is_singleton: true
+name: format
+params: (output='', maxwidth=79, newline="\n", genspace=lambda {|n| ' ' * n} {|q| ...}
+visibility: public

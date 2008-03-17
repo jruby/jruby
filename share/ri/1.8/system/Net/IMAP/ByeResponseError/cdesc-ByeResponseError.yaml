@@ -1,0 +1,17 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Error raised upon a &quot;BYE&quot; response from the server, indicating that the client is not being allowed to login, or has been timed out due to inactivity.
+constants: []
+
+full_name: Net::IMAP::ByeResponseError
+includes: []
+
+instance_methods: []
+
+name: ByeResponseError
+superclass: ResponseError

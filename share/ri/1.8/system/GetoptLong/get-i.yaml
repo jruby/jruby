@@ -1,0 +1,19 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: get_option
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Get next option name and its argument, as an Array of two elements.
+- !ruby/struct:SM::Flow::P 
+  body: The option name is always converted to the first (preferred) name given in the original options to GetoptLong.new.
+- !ruby/struct:SM::Flow::P 
+  body: "Example: ['--option', 'value']"
+- !ruby/struct:SM::Flow::P 
+  body: Returns nil if the processing is complete (as determined by STATUS_TERMINATED).
+full_name: GetoptLong#get
+is_singleton: false
+name: get
+params: ()
+visibility: public

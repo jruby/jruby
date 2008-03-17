@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Creates an <tt>n</tt> by <tt>n</tt> zero matrix.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  Matrix.zero(2)\n    =&gt; 0 0\n       0 0\n"
+full_name: Matrix::zero
+is_singleton: true
+name: zero
+params: (n)
+visibility: public

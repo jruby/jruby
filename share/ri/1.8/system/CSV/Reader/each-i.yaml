@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: (row)
+comment: 
+full_name: CSV::Reader#each
+is_singleton: false
+name: each
+params: () {|row| ...}
+visibility: public

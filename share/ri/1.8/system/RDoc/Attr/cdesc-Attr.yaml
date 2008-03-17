@@ -1,0 +1,36 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: name
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: rw
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: text
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: visibility
+  rw: RW
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Represent attributes
+constants: []
+
+full_name: RDoc::Attr
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: <=>
+- !ruby/object:RI::MethodSummary 
+  name: to_s
+name: Attr
+superclass: CodeObject

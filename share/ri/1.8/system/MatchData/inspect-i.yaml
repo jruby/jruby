@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns a string representing <em>obj</em>. The default <tt>to_s</tt> prints the object's class and an encoding of the object id. As a special case, the top-level object that is the initial execution context of Ruby programs returns ``main.''
+full_name: MatchData#inspect
+is_singleton: false
+name: inspect
+params: |
+  obj.to_s    => string
+
+visibility: public

@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IPAddr#_to_string
+is_singleton: false
+name: _to_string
+params: (addr)
+visibility: private

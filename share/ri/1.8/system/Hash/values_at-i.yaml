@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Return an array containing the values associated with the given keys. Also see <tt>Hash.select</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  h = { &quot;cat&quot; =&gt; &quot;feline&quot;, &quot;dog&quot; =&gt; &quot;canine&quot;, &quot;cow&quot; =&gt; &quot;bovine&quot; }\n  h.values_at(&quot;cow&quot;, &quot;cat&quot;)  #=&gt; [&quot;bovine&quot;, &quot;feline&quot;]\n"
+full_name: Hash#values_at
+is_singleton: false
+name: values_at
+params: |
+  hsh.values_at(key, ...)   => array
+
+visibility: public

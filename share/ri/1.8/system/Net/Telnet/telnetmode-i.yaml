@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Set telnet command interpretation on (<tt>mode</tt> == true) or off (<tt>mode</tt> == false), or return the current value (<tt>mode</tt> not provided). It should be on for true telnet sessions, off if using Net::Telnet to connect to a non-telnet service such as SMTP.
+full_name: Net::Telnet#telnetmode
+is_singleton: false
+name: telnetmode
+params: (mode = nil)
+visibility: public

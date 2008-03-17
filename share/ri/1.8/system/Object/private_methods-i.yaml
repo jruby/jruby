@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the list of private methods accessible to <em>obj</em>. If the <em>all</em> parameter is set to <tt>false</tt>, only those methods in the receiver will be listed.
+full_name: Object#private_methods
+is_singleton: false
+name: private_methods
+params: |
+  obj.private_methods(all=true)   => array
+
+visibility: public

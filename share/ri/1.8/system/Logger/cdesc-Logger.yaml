@@ -1,0 +1,248 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Logging formatter. formatter#call is invoked with 4 arguments; severity, time, progname and msg for each log. Bear in mind that time is a Time and msg is an Object that user passed and it could not be a String. It is expected to return a logdev#write-able Object. Default formatter is used when no formatter is set.
+  name: formatter
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Logging severity threshold (e.g. <tt>Logger::INFO</tt>).
+  name: level
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Logging program name.
+  name: progname
+  rw: RW
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Simple logging utility.
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "Author:"
+    body: NAKAMURA, Hiroshi &lt;nakahiro@sarion.co.jp&gt;
+  - !ruby/struct:SM::Flow::LI 
+    label: "Documentation:"
+    body: NAKAMURA, Hiroshi and Gavin Sinclair
+  - !ruby/struct:SM::Flow::LI 
+    label: "License:"
+    body: You can redistribute it and/or modify it under the same terms of Ruby's license; either the dual license version in 2003, or any later version.
+  - !ruby/struct:SM::Flow::LI 
+    label: "Revision:"
+    body: "$Id: logger.rb 11708 2007-02-12 23:01:19Z shyouhei $"
+  type: :NOTE
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: Description
+- !ruby/struct:SM::Flow::P 
+  body: The Logger class provides a simple but sophisticated logging utility that anyone can use because it's included in the Ruby 1.8.x standard library.
+- !ruby/struct:SM::Flow::P 
+  body: "The HOWTOs below give a code-based overview of Logger's usage, but the basic concept is as follows. You create a Logger object (output to a file or elsewhere), and use it to log messages. The messages will have varying levels (<tt>info</tt>, <tt>error</tt>, etc), reflecting their varying importance. The levels, and their meanings, are:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "+FATAL+:"
+    body: an unhandleable error that results in a program crash
+  - !ruby/struct:SM::Flow::LI 
+    label: "+ERROR+:"
+    body: a handleable error condition
+  - !ruby/struct:SM::Flow::LI 
+    label: "+WARN+:"
+    body: a warning
+  - !ruby/struct:SM::Flow::LI 
+    label: "+INFO+:"
+    body: generic (useful) information about system operation
+  - !ruby/struct:SM::Flow::LI 
+    label: "+DEBUG+:"
+    body: low-level information for developers
+  type: :NOTE
+- !ruby/struct:SM::Flow::P 
+  body: So each message has a level, and the Logger itself has a level, which acts as a filter, so you can control the amount of information emitted from the logger without having to remove actual messages.
+- !ruby/struct:SM::Flow::P 
+  body: For instance, in a production system, you may have your logger(s) set to <tt>INFO</tt> (or <tt>WARN</tt> if you don't want the log files growing large with repetitive information). When you are developing it, though, you probably want to know about the program's internal state, and would set them to <tt>DEBUG</tt>.
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Example
+- !ruby/struct:SM::Flow::P 
+  body: "A simple example demonstrates the above explanation:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  log = Logger.new(STDOUT)\n  log.level = Logger::WARN\n\n  log.debug(&quot;Created logger&quot;)\n  log.info(&quot;Program started&quot;)\n  log.warn(&quot;Nothing to do!&quot;)\n\n  begin\n    File.each_line(path) do |line|\n      unless line =~ /^(\\w+) = (.*)$/\n        log.error(&quot;Line in wrong format: #{line}&quot;)\n      end\n    end\n  rescue =&gt; err\n    log.fatal(&quot;Caught exception; exiting&quot;)\n    log.fatal(err)\n  end\n"
+- !ruby/struct:SM::Flow::P 
+  body: Because the Logger's level is set to <tt>WARN</tt>, only the warning, error, and fatal messages are recorded. The debug and info messages are silently discarded.
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Features
+- !ruby/struct:SM::Flow::P 
+  body: There are several interesting features that Logger provides, like auto-rolling of log files, setting the format of log messages, and specifying a program name in conjunction with the message. The next section shows you how to achieve these things.
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: HOWTOs
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: How to create a logger
+- !ruby/struct:SM::Flow::P 
+  body: The options below give you various choices, in more or less increasing complexity.
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "1."
+    body: Create a logger which logs messages to STDERR/STDOUT.
+  - !ruby/struct:SM::Flow::VERB 
+    body: "  logger = Logger.new(STDERR)\n  logger = Logger.new(STDOUT)\n"
+  - !ruby/struct:SM::Flow::LI 
+    label: "2."
+    body: Create a logger for the file which has the specified name.
+  - !ruby/struct:SM::Flow::VERB 
+    body: "  logger = Logger.new('logfile.log')\n"
+  - !ruby/struct:SM::Flow::LI 
+    label: "3."
+    body: Create a logger for the specified file.
+  - !ruby/struct:SM::Flow::VERB 
+    body: "  file = File.open('foo.log', File::WRONLY | File::APPEND)\n  # To create new (and to remove old) logfile, add File::CREAT like;\n  #   file = open('foo.log', File::WRONLY | File::APPEND | File::CREAT)\n  logger = Logger.new(file)\n"
+  - !ruby/struct:SM::Flow::LI 
+    label: "4."
+    body: Create a logger which ages logfile once it reaches a certain size. Leave 10 &quot;old log files&quot; and each file is about 1,024,000 bytes.
+  - !ruby/struct:SM::Flow::VERB 
+    body: "  logger = Logger.new('foo.log', 10, 1024000)\n"
+  - !ruby/struct:SM::Flow::LI 
+    label: "5."
+    body: Create a logger which ages logfile daily/weekly/monthly.
+  - !ruby/struct:SM::Flow::VERB 
+    body: "  logger = Logger.new('foo.log', 'daily')\n  logger = Logger.new('foo.log', 'weekly')\n  logger = Logger.new('foo.log', 'monthly')\n"
+  type: :NUMBER
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: How to log a message
+- !ruby/struct:SM::Flow::P 
+  body: Notice the different methods (<tt>fatal</tt>, <tt>error</tt>, <tt>info</tt>) being used to log messages of various levels. Other methods in this family are <tt>warn</tt> and <tt>debug</tt>. <tt>add</tt> is used below to log a message of an arbitrary (perhaps dynamic) level.
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "1."
+    body: Message in block.
+  - !ruby/struct:SM::Flow::VERB 
+    body: "  logger.fatal { &quot;Argument 'foo' not given.&quot; }\n"
+  - !ruby/struct:SM::Flow::LI 
+    label: "2."
+    body: Message as a string.
+  - !ruby/struct:SM::Flow::VERB 
+    body: "  logger.error &quot;Argument #{ @foo } mismatch.&quot;\n"
+  - !ruby/struct:SM::Flow::LI 
+    label: "3."
+    body: With progname.
+  - !ruby/struct:SM::Flow::VERB 
+    body: "  logger.info('initialize') { &quot;Initializing...&quot; }\n"
+  - !ruby/struct:SM::Flow::LI 
+    label: "4."
+    body: With severity.
+  - !ruby/struct:SM::Flow::VERB 
+    body: "  logger.add(Logger::FATAL) { 'Fatal error!' }\n"
+  type: :NUMBER
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: How to close a logger
+- !ruby/struct:SM::Flow::VERB 
+  body: "     logger.close\n"
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Setting severity threshold
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "1."
+    body: Original interface.
+  - !ruby/struct:SM::Flow::VERB 
+    body: "  logger.sev_threshold = Logger::WARN\n"
+  - !ruby/struct:SM::Flow::LI 
+    label: "2."
+    body: Log4r (somewhat) compatible interface.
+  - !ruby/struct:SM::Flow::VERB 
+    body: "  logger.level = Logger::INFO\n\n  DEBUG &lt; INFO &lt; WARN &lt; ERROR &lt; FATAL &lt; UNKNOWN\n"
+  type: :NUMBER
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: Format
+- !ruby/struct:SM::Flow::P 
+  body: "Log messages are rendered in the output stream in a certain format. The default format and a sample are shown below:"
+- !ruby/struct:SM::Flow::P 
+  body: "Log format:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  SeverityID, [Date Time mSec #pid] SeverityLabel -- ProgName: message\n"
+- !ruby/struct:SM::Flow::P 
+  body: "Log sample:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  I, [Wed Mar 03 02:34:24 JST 1999 895701 #19074]  INFO -- Main: info.\n"
+- !ruby/struct:SM::Flow::P 
+  body: "You may change the date and time format in this manner:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  logger.datetime_format = &quot;%Y-%m-%d %H:%M:%S&quot;\n        # e.g. &quot;2004-01-03 00:54:26&quot;\n"
+- !ruby/struct:SM::Flow::P 
+  body: There is currently no supported way to change the overall format, but you may have some luck hacking the Format constant.
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: VERSION
+  value: "\"1.2.6\""
+- !ruby/object:RI::Constant 
+  comment: 
+  name: ProgName
+  value: "\"#{$1}/#{$2}\""
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Severity label for logging. (max 5 char)
+  name: SEV_LABEL
+  value: "%w(DEBUG INFO WARN ERROR FATAL ANY)"
+full_name: Logger
+includes: 
+- !ruby/object:RI::IncludedModule 
+  name: Severity
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: "<<"
+- !ruby/object:RI::MethodSummary 
+  name: add
+- !ruby/object:RI::MethodSummary 
+  name: close
+- !ruby/object:RI::MethodSummary 
+  name: datetime_format
+- !ruby/object:RI::MethodSummary 
+  name: datetime_format=
+- !ruby/object:RI::MethodSummary 
+  name: debug
+- !ruby/object:RI::MethodSummary 
+  name: debug?
+- !ruby/object:RI::MethodSummary 
+  name: error
+- !ruby/object:RI::MethodSummary 
+  name: error?
+- !ruby/object:RI::MethodSummary 
+  name: fatal
+- !ruby/object:RI::MethodSummary 
+  name: fatal?
+- !ruby/object:RI::MethodSummary 
+  name: format_message
+- !ruby/object:RI::MethodSummary 
+  name: format_severity
+- !ruby/object:RI::MethodSummary 
+  name: info
+- !ruby/object:RI::MethodSummary 
+  name: info?
+- !ruby/object:RI::MethodSummary 
+  name: log
+- !ruby/object:RI::MethodSummary 
+  name: unknown
+- !ruby/object:RI::MethodSummary 
+  name: warn
+- !ruby/object:RI::MethodSummary 
+  name: warn?
+name: Logger
+superclass: Object

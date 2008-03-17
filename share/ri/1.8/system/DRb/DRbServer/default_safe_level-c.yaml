@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: DRb::DRbServer::default_safe_level
+is_singleton: true
+name: default_safe_level
+params: (level)
+visibility: public

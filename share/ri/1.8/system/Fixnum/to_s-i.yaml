@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns a string containing the representation of <em>fix</em> radix <em>base</em> (between 2 and 36).
+- !ruby/struct:SM::Flow::VERB 
+  body: "   12345.to_s       #=&gt; &quot;12345&quot;\n   12345.to_s(2)    #=&gt; &quot;11000000111001&quot;\n   12345.to_s(8)    #=&gt; &quot;30071&quot;\n   12345.to_s(10)   #=&gt; &quot;12345&quot;\n   12345.to_s(16)   #=&gt; &quot;3039&quot;\n   12345.to_s(36)   #=&gt; &quot;9ix&quot;\n"
+full_name: Fixnum#to_s
+is_singleton: false
+name: to_s
+params: |
+  fix.to_s( base=10 ) -> aString
+
+visibility: public

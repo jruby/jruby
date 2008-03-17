@@ -1,0 +1,17 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: each_option
+block_params: option_name, option_argument
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Iterator version of `get'.
+- !ruby/struct:SM::Flow::P 
+  body: "The block is called repeatedly with two arguments: The first is the option name. The second is the argument which followed it (if any). Example: ('--opt', 'value')"
+- !ruby/struct:SM::Flow::P 
+  body: The option name is always converted to the first (preferred) name given in the original options to GetoptLong.new.
+full_name: GetoptLong#each
+is_singleton: false
+name: each
+params: () {|option_name, option_argument| ...}
+visibility: public

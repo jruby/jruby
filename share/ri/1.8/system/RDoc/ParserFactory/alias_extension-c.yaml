@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Alias an extension to another extension. After this call, files ending &quot;new_ext&quot; will be parsed using the same parser as &quot;old_ext&quot;
+full_name: RDoc::ParserFactory::alias_extension
+is_singleton: true
+name: alias_extension
+params: (old_ext, new_ext)
+visibility: public

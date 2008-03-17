@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the absolute value <em>and</em> the argument.
+full_name: Complex#polar
+is_singleton: false
+name: polar
+params: ()
+visibility: public

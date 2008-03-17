@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Returns a content type string such as &quot;html&quot;. This method returns nil if Content-Type: header field does not exist or sub-type is not given (e.g. &quot;Content-Type: text&quot;)."
+full_name: Net::HTTPHeader#sub_type
+is_singleton: false
+name: sub_type
+params: ()
+visibility: public

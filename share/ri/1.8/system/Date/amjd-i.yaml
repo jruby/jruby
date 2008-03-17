@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Get the date as an Astronomical Modified Julian Day Number.
+full_name: Date#amjd
+is_singleton: false
+name: amjd
+params: ()
+visibility: public

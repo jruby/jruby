@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Positions <em>ios</em> to the beginning of input, resetting <tt>lineno</tt> to zero.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   f = File.new(&quot;testfile&quot;)\n   f.readline   #=&gt; &quot;This is line one\\n&quot;\n   f.rewind     #=&gt; 0\n   f.lineno     #=&gt; 0\n   f.readline   #=&gt; &quot;This is line one\\n&quot;\n"
+full_name: IO#rewind
+is_singleton: false
+name: rewind
+params: |
+  ios.rewind    => 0
+
+visibility: public

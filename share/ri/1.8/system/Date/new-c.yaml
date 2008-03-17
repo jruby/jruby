@@ -1,0 +1,20 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "<b>NOTE</b> this is the documentation for the method new!(). If you are reading this as the documentation for new(), that is because rdoc doesn't fully support the aliasing of the initialize() method. new() is in fact an alias for #civil(): read the documentation for that method instead."
+- !ruby/struct:SM::Flow::P 
+  body: Create a new Date object.
+- !ruby/struct:SM::Flow::P 
+  body: <tt>ajd</tt> is the Astronomical Julian Day Number. <tt>of</tt> is the offset from UTC as a fraction of a day. Both default to 0.
+- !ruby/struct:SM::Flow::P 
+  body: <tt>sg</tt> specifies the Day of Calendar Reform to use for this Date object.
+- !ruby/struct:SM::Flow::P 
+  body: Using one of the factory methods such as Date::civil is generally easier and safer.
+full_name: Date::new
+is_singleton: true
+name: new
+params: (ajd=0, of=0, sg=ITALY)
+visibility: public

@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Always returns zero.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   nil.to_f   #=&gt; 0.0\n"
+full_name: NilClass#to_f
+is_singleton: false
+name: to_f
+params: |
+  nil.to_f    => 0.0
+
+visibility: public

@@ -1,0 +1,58 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: arg
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: block
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: conv
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: desc
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: long
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: pattern
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: short
+  rw: R
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: guess
+- !ruby/object:RI::MethodSummary 
+  name: incompatible_argument_styles
+- !ruby/object:RI::MethodSummary 
+  name: new
+- !ruby/object:RI::MethodSummary 
+  name: pattern
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Individual switch class. Not important to the user.
+- !ruby/struct:SM::Flow::P 
+  body: "Defined within Switch are several Switch-derived classes: NoArgument, RequiredArgument, etc."
+constants: []
+
+full_name: OptionParser::Switch
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: conv_arg
+- !ruby/object:RI::MethodSummary 
+  name: parse_arg
+- !ruby/object:RI::MethodSummary 
+  name: summarize
+name: Switch
+superclass: Object

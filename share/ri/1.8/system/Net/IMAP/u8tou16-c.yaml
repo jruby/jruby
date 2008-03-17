@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Net::IMAP::u8tou16
+is_singleton: true
+name: u8tou16
+params: (s)
+visibility: private

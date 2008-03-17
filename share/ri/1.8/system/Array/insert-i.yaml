@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Inserts the given values before the element with the given index (which may be negative).
+- !ruby/struct:SM::Flow::VERB 
+  body: "   a = %w{ a b c d }\n   a.insert(2, 99)         #=&gt; [&quot;a&quot;, &quot;b&quot;, 99, &quot;c&quot;, &quot;d&quot;]\n   a.insert(-2, 1, 2, 3)   #=&gt; [&quot;a&quot;, &quot;b&quot;, 99, &quot;c&quot;, 1, 2, 3, &quot;d&quot;]\n"
+full_name: Array#insert
+is_singleton: false
+name: insert
+params: |
+  array.insert(index, obj...)  -> array
+
+visibility: public

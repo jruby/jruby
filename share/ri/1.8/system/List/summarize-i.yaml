@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: ("")
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Creates the summary table, passing each line to the <tt>block</tt> (without newline). The arguments <tt>args</tt> are passed along to the summarize method which is called on every option.
+full_name: List#summarize
+is_singleton: false
+name: summarize
+params: (*args, &block) {|""| ...}
+visibility: public

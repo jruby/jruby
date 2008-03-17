@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Creates instance variables and corresponding methods that return the value of each instance variable. Equivalent to calling ``<tt>attr</tt><em>:name</em>'' on each name in turn.
+full_name: Module#attr_reader
+is_singleton: false
+name: attr_reader
+params: |
+  attr_reader(symbol, ...)    => nil
+
+visibility: public

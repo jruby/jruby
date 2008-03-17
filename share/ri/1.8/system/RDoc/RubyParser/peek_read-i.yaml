@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: RDoc::RubyParser#peek_read
+is_singleton: false
+name: peek_read
+params: ()
+visibility: private

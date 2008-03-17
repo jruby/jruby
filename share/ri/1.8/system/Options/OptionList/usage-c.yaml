@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Show usage and exit
+full_name: Options::OptionList::usage
+is_singleton: true
+name: usage
+params: (generator_names)
+visibility: public

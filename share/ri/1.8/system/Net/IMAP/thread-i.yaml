@@ -1,0 +1,25 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "As for #search(), but returns message sequence numbers in threaded format, as a Net::IMAP::ThreadMember tree. The supported algorithms are:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "ORDEREDSUBJECT:"
+    body: split into single-level threads according to subject, ordered by date.
+  - !ruby/struct:SM::Flow::LI 
+    label: "REFERENCES:"
+    body: split into threads by parent/child relationships determined by which message is a reply to which.
+  type: :NOTE
+- !ruby/struct:SM::Flow::P 
+  body: "Unlike #search(), <tt>charset</tt> is a required argument. US-ASCII and UTF-8 are sample values."
+- !ruby/struct:SM::Flow::P 
+  body: See [SORT-THREAD-EXT] for more details.
+full_name: Net::IMAP#thread
+is_singleton: false
+name: thread
+params: (algorithm, search_keys, charset)
+visibility: public

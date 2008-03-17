@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Set an error (protected).
+full_name: GetoptLong#set_error
+is_singleton: false
+name: set_error
+params: (type, message)
+visibility: protected

@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Benchmark::Tms#memberwise
+is_singleton: false
+name: memberwise
+params: (op, x)
+visibility: protected

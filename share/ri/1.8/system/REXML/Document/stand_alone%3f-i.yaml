@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "@return the XMLDecl standalone value of this document as a String. If no XMLDecl has been set, returns the default setting."
+full_name: REXML::Document#stand_alone?
+is_singleton: false
+name: stand_alone?
+params: ()
+visibility: public

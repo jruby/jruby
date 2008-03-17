@@ -1,0 +1,22 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Locks or unlocks a file according to <em>locking_constant</em> (a logical <em>or</em> of the values in the table below). Returns <tt>false</tt> if <tt>File::LOCK_NB</tt> is specified and the operation would otherwise have blocked. Not available on all platforms.
+- !ruby/struct:SM::Flow::P 
+  body: "Locking constants (in class File):"
+- !ruby/struct:SM::Flow::VERB 
+  body: "   LOCK_EX   | Exclusive lock. Only one process may hold an\n             | exclusive lock for a given file at a time.\n   ----------+------------------------------------------------\n   LOCK_NB   | Don't block when locking. May be combined\n             | with other lock options using logical or.\n   ----------+------------------------------------------------\n   LOCK_SH   | Shared lock. Multiple processes may each hold a\n             | shared lock for a given file at the same time.\n   ----------+------------------------------------------------\n   LOCK_UN   | Unlock.\n"
+- !ruby/struct:SM::Flow::P 
+  body: "Example:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "   File.new(&quot;testfile&quot;).flock(File::LOCK_UN)   #=&gt; 0\n"
+full_name: File#flock
+is_singleton: false
+name: flock
+params: |
+  file.flock (locking_constant ) =>  0 or false
+
+visibility: public

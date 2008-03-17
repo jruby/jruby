@@ -1,0 +1,18 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::VERB 
+  body: " Uses the integer <em>aCmd</em> to perform various tests on\n <em>file1</em> (first table below) or on <em>file1</em> and\n <em>file2</em> (second table).\n\n File tests on a single file:\n\n   Test   Returns   Meaning\n    ?A  | Time    | Last access time for file1\n    ?b  | boolean | True if file1 is a block device\n    ?c  | boolean | True if file1 is a character device\n    ?C  | Time    | Last change time for file1\n    ?d  | boolean | True if file1 exists and is a directory\n    ?e  | boolean | True if file1 exists\n    ?f  | boolean | True if file1 exists and is a regular file\n    ?g  | boolean | True if file1 has the \\CF{setgid} bit\n        |         | set (false under NT)\n    ?G  | boolean | True if file1 exists and has a group\n        |         | ownership equal to the caller's group\n    ?k  | boolean | True if file1 exists and has the sticky bit set\n    ?l  | boolean | True if file1 exists and is a symbolic link\n    ?M  | Time    | Last modification time for file1\n    ?o  | boolean | True if file1 exists and is owned by\n        |         | the caller's effective uid\n    ?O  | boolean | True if file1 exists and is owned by\n        |         | the caller's real uid\n    ?p  | boolean | True if file1 exists and is a fifo\n    ?r  | boolean | True if file1 is readable by the effective\n        |         | uid/gid of the caller\n    ?R  | boolean | True if file is readable by the real\n        |         | uid/gid of the caller\n    ?s  | int/nil | If file1 has nonzero size, return the size,\n        |         | otherwise return nil\n    ?S  | boolean | True if file1 exists and is a socket\n    ?u  | boolean | True if file1 has the setuid bit set\n    ?w  | boolean | True if file1 exists and is writable by\n        |         | the effective uid/gid\n    ?W  | boolean | True if file1 exists and is writable by\n        |         | the real uid/gid\n    ?x  | boolean | True if file1 exists and is executable by\n        |         | the effective uid/gid\n    ?X  | boolean | True if file1 exists and is executable by\n        |         | the real uid/gid\n    ?z  | boolean | True if file1 exists and has a zero length\n"
+- !ruby/struct:SM::Flow::P 
+  body: "Tests that take two files:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "    ?-  | boolean | True if file1 and file2 are identical\n    ?=  | boolean | True if the modification times of file1\n        |         | and file2 are equal\n    ?&lt;  | boolean | True if the modification time of file1\n        |         | is prior to that of file2\n    ?&gt;  | boolean | True if the modification time of file1\n        |         | is after that of file2\n"
+full_name: Kernel#test
+is_singleton: false
+name: test
+params: |
+  test(int_cmd, file1 [, file2] ) => obj
+
+visibility: public

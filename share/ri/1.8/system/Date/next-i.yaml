@@ -1,0 +1,13 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: succ
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Return a new Date one day after this one.
+full_name: Date#next
+is_singleton: false
+name: next
+params: ()
+visibility: public

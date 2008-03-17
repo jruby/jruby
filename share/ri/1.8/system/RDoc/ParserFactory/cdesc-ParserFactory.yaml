@@ -1,0 +1,40 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: alias_extension
+- !ruby/object:RI::MethodSummary 
+  name: can_parse
+- !ruby/object:RI::MethodSummary 
+  name: parser_for
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: A parser is simple a class that implements
+- !ruby/struct:SM::Flow::VERB 
+  body: "  #initialize(file_name, body, options)\n"
+- !ruby/struct:SM::Flow::P 
+  body: and
+- !ruby/struct:SM::Flow::VERB 
+  body: "  #scan\n"
+- !ruby/struct:SM::Flow::P 
+  body: The initialize method takes a file name to be used, the body of the file, and an RDoc::Options object. The scan method is then called to return an appropriately parsed TopLevel code object.
+- !ruby/struct:SM::Flow::P 
+  body: The ParseFactory is used to redirect to the correct parser given a filename extension. This magic works because individual parsers have to register themselves with us as they are loaded in. The do this using the following incantation
+- !ruby/struct:SM::Flow::VERB 
+  body: "   require &quot;rdoc/parsers/parsefactory&quot;\n\n   module RDoc\n\n     class XyzParser\n       extend ParseFactory                  &lt;&lt;&lt;&lt;\n       parse_files_matching /\\.xyz$/        &lt;&lt;&lt;&lt;\n\n       def initialize(file_name, body, options)\n         ...\n       end\n\n       def scan\n         ...\n       end\n     end\n   end\n"
+- !ruby/struct:SM::Flow::P 
+  body: Just to make life interesting, if we suspect a plain text file, we also look for a shebang line just in case it's a potential shell script
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: Parsers
+  value: Struct.new(:regexp, :parser)
+full_name: RDoc::ParserFactory
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: parse_files_matching
+name: ParserFactory
+superclass: 

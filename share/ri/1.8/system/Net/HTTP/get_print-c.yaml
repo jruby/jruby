@@ -1,0 +1,18 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Get body from target and output it to +$stdout+. The target can either be specified as (<tt>uri</tt>), or as (<tt>host</tt>, <tt>path</tt>, <tt>port</tt> = 80); so:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "   Net::HTTP.get_print URI.parse('http://www.example.com/index.html')\n"
+- !ruby/struct:SM::Flow::P 
+  body: "or:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "   Net::HTTP.get_print 'www.example.com', '/index.html'\n"
+full_name: Net::HTTP::get_print
+is_singleton: true
+name: get_print
+params: (uri_or_host, path = nil, port = nil)
+visibility: public

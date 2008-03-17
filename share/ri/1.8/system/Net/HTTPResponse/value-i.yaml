@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Raises HTTP error if the response is not 2xx.
+full_name: Net::HTTPResponse#value
+is_singleton: false
+name: value
+params: ()
+visibility: public

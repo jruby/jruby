@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: ftp
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: A synonym for <tt>FTP.new</tt>, but with a mandatory host parameter.
+- !ruby/struct:SM::Flow::P 
+  body: If a block is given, it is passed the <tt>FTP</tt> object, which will be closed when the block finishes, or when an exception is raised.
+full_name: Net::FTP::open
+is_singleton: true
+name: open
+params: (host, user = nil, passwd = nil, acct = nil) {|ftp| ...}
+visibility: public

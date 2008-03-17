@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Undo escaping such as that done by CGI::escapeElement()
+- !ruby/struct:SM::Flow::VERB 
+  body: "  print CGI::unescapeElement(\n          CGI::escapeHTML('&lt;BR&gt;&lt;A HREF=&quot;url&quot;&gt;&lt;/A&gt;'), &quot;A&quot;, &quot;IMG&quot;)\n    # &quot;&amp;lt;BR&amp;gt;&lt;A HREF=&quot;url&quot;&gt;&lt;/A&gt;&quot;\n\n  print CGI::unescapeElement(\n          CGI::escapeHTML('&lt;BR&gt;&lt;A HREF=&quot;url&quot;&gt;&lt;/A&gt;'), [&quot;A&quot;, &quot;IMG&quot;])\n    # &quot;&amp;lt;BR&amp;gt;&lt;A HREF=&quot;url&quot;&gt;&lt;/A&gt;&quot;\n"
+full_name: CGI::unescapeElement
+is_singleton: true
+name: unescapeElement
+params: (string, *elements)
+visibility: public

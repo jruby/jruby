@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Shifts big right <em>numeric</em> positions (left if <em>numeric</em> is negative).
+full_name: Bignum#>>
+is_singleton: false
+name: ">>"
+params: |
+  big >> numeric   =>  integer
+
+visibility: public

@@ -1,0 +1,17 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Converts any arguments to arrays, then merges elements of <em>self</em> with corresponding elements from each argument. This generates a sequence of <tt>self.size</tt> <em>n</em>-element arrays, where <em>n</em> is one more that the count of arguments. If the size of any argument is less than <tt>enumObj.size</tt>, <tt>nil</tt> values are supplied. If a block given, it is invoked for each output array, otherwise an array of arrays is returned.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   a = [ 4, 5, 6 ]\n   b = [ 7, 8, 9 ]\n\n   [1,2,3].zip(a, b)      #=&gt; [[1, 4, 7], [2, 5, 8], [3, 6, 9]]\n   [1,2].zip(a,b)         #=&gt; [[1, 4, 7], [2, 5, 8]]\n   a.zip([1,2],[8])       #=&gt; [[4,1,8], [5,2,nil], [6,nil,nil]]\n"
+full_name: Array#zip
+is_singleton: false
+name: zip
+params: |
+  array.zip(arg, ...)                   -> an_array
+  array.zip(arg, ...) {| arr | block }  -> nil
+
+visibility: public

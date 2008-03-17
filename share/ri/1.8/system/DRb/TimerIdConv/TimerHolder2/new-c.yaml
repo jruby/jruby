@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: DRb::TimerIdConv::TimerHolder2::new
+is_singleton: true
+name: new
+params: (timeout=600)
+visibility: public

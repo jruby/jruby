@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Record the file that we happen to find it in
+full_name: RDoc::Context#record_location
+is_singleton: false
+name: record_location
+params: (toplevel)
+visibility: public

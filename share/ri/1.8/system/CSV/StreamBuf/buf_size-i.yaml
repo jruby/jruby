@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: CSV::StreamBuf#buf_size
+is_singleton: false
+name: buf_size
+params: (idx)
+visibility: private

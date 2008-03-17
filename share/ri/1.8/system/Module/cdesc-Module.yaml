@@ -1,0 +1,143 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: constants
+- !ruby/object:RI::MethodSummary 
+  name: nesting
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: A <tt>Module</tt> is a collection of methods and constants. The methods in a module may be instance methods or module methods. Instance methods appear as methods in a class when the module is included, module methods do not. Conversely, module methods may be called without creating an encapsulating object, while instance methods may not. (See <tt>Module#module_function</tt>)
+- !ruby/struct:SM::Flow::P 
+  body: In the descriptions that follow, the parameter <em>syml</em> refers to a symbol, which is either a quoted string or a <tt>Symbol</tt> (such as <tt>:name</tt>).
+- !ruby/struct:SM::Flow::VERB 
+  body: "   module Mod\n     include Math\n     CONST = 1\n     def meth\n       #  ...\n     end\n   end\n   Mod.class              #=&gt; Module\n   Mod.constants          #=&gt; [&quot;E&quot;, &quot;PI&quot;, &quot;CONST&quot;]\n   Mod.instance_methods   #=&gt; [&quot;meth&quot;]\n"
+constants: []
+
+full_name: Module
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: <
+- !ruby/object:RI::MethodSummary 
+  name: <=
+- !ruby/object:RI::MethodSummary 
+  name: <=>
+- !ruby/object:RI::MethodSummary 
+  name: ==
+- !ruby/object:RI::MethodSummary 
+  name: ===
+- !ruby/object:RI::MethodSummary 
+  name: ">"
+- !ruby/object:RI::MethodSummary 
+  name: ">="
+- !ruby/object:RI::MethodSummary 
+  name: alias_method
+- !ruby/object:RI::MethodSummary 
+  name: ancestors
+- !ruby/object:RI::MethodSummary 
+  name: append_features
+- !ruby/object:RI::MethodSummary 
+  name: attr
+- !ruby/object:RI::MethodSummary 
+  name: attr_accessor
+- !ruby/object:RI::MethodSummary 
+  name: attr_reader
+- !ruby/object:RI::MethodSummary 
+  name: attr_writer
+- !ruby/object:RI::MethodSummary 
+  name: autoload
+- !ruby/object:RI::MethodSummary 
+  name: autoload?
+- !ruby/object:RI::MethodSummary 
+  name: class_eval
+- !ruby/object:RI::MethodSummary 
+  name: class_variable_defined?
+- !ruby/object:RI::MethodSummary 
+  name: class_variable_get
+- !ruby/object:RI::MethodSummary 
+  name: class_variable_set
+- !ruby/object:RI::MethodSummary 
+  name: class_variables
+- !ruby/object:RI::MethodSummary 
+  name: const_defined?
+- !ruby/object:RI::MethodSummary 
+  name: const_get
+- !ruby/object:RI::MethodSummary 
+  name: const_missing
+- !ruby/object:RI::MethodSummary 
+  name: const_set
+- !ruby/object:RI::MethodSummary 
+  name: constants
+- !ruby/object:RI::MethodSummary 
+  name: define_method
+- !ruby/object:RI::MethodSummary 
+  name: extend_object
+- !ruby/object:RI::MethodSummary 
+  name: extended
+- !ruby/object:RI::MethodSummary 
+  name: freeze
+- !ruby/object:RI::MethodSummary 
+  name: include
+- !ruby/object:RI::MethodSummary 
+  name: include?
+- !ruby/object:RI::MethodSummary 
+  name: included
+- !ruby/object:RI::MethodSummary 
+  name: included_modules
+- !ruby/object:RI::MethodSummary 
+  name: instance_method
+- !ruby/object:RI::MethodSummary 
+  name: instance_methods
+- !ruby/object:RI::MethodSummary 
+  name: method_added
+- !ruby/object:RI::MethodSummary 
+  name: method_defined?
+- !ruby/object:RI::MethodSummary 
+  name: method_removed
+- !ruby/object:RI::MethodSummary 
+  name: method_undefined
+- !ruby/object:RI::MethodSummary 
+  name: module_eval
+- !ruby/object:RI::MethodSummary 
+  name: module_function
+- !ruby/object:RI::MethodSummary 
+  name: name
+- !ruby/object:RI::MethodSummary 
+  name: private
+- !ruby/object:RI::MethodSummary 
+  name: private_class_method
+- !ruby/object:RI::MethodSummary 
+  name: private_instance_methods
+- !ruby/object:RI::MethodSummary 
+  name: private_method_defined?
+- !ruby/object:RI::MethodSummary 
+  name: protected
+- !ruby/object:RI::MethodSummary 
+  name: protected_instance_methods
+- !ruby/object:RI::MethodSummary 
+  name: protected_method_defined?
+- !ruby/object:RI::MethodSummary 
+  name: public
+- !ruby/object:RI::MethodSummary 
+  name: public_class_method
+- !ruby/object:RI::MethodSummary 
+  name: public_instance_methods
+- !ruby/object:RI::MethodSummary 
+  name: public_method_defined?
+- !ruby/object:RI::MethodSummary 
+  name: remove_class_variable
+- !ruby/object:RI::MethodSummary 
+  name: remove_const
+- !ruby/object:RI::MethodSummary 
+  name: remove_method
+- !ruby/object:RI::MethodSummary 
+  name: to_s
+- !ruby/object:RI::MethodSummary 
+  name: undef_method
+name: Module
+superclass: 

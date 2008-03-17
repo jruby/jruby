@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: returns a pretty printed object as a string.
+full_name: Kernel#pretty_inspect
+is_singleton: false
+name: pretty_inspect
+params: ()
+visibility: public

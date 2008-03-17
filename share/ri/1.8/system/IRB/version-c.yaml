@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: IRB version method
+full_name: IRB::version
+is_singleton: true
+name: version
+params: ()
+visibility: public

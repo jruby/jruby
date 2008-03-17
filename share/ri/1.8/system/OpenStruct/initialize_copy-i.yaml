@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Duplicate an OpenStruct object members.
+full_name: OpenStruct#initialize_copy
+is_singleton: false
+name: initialize_copy
+params: (orig)
+visibility: public

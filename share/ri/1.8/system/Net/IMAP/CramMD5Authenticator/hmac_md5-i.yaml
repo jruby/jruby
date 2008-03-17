@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Net::IMAP::CramMD5Authenticator#hmac_md5
+is_singleton: false
+name: hmac_md5
+params: (text, key)
+visibility: private

@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: REXML::Element#__to_xpath_helper
+is_singleton: false
+name: __to_xpath_helper
+params: (node)
+visibility: private

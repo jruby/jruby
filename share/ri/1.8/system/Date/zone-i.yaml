@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Date#zone
+is_singleton: false
+name: zone
+params: ()
+visibility: private

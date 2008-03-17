@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::VERB 
+  body: " flt ** other   =&gt; float\n"
+- !ruby/struct:SM::Flow::P 
+  body: Raises <tt>float</tt> the <tt>other</tt> power.
+full_name: Float#**
+is_singleton: false
+name: "**"
+params: |
+  
+
+visibility: public

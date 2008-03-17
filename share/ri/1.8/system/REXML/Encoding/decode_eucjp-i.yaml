@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: REXML::Encoding#decode_eucjp
+is_singleton: false
+name: decode_eucjp
+params: (str)
+visibility: public

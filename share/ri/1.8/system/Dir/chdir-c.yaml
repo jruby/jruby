@@ -1,0 +1,23 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Changes the current working directory of the process to the given string. When called without an argument, changes the directory to the value of the environment variable <tt>HOME</tt>, or <tt>LOGDIR</tt>. <tt>SystemCallError</tt> (probably <tt>Errno::ENOENT</tt>) if the target directory does not exist.
+- !ruby/struct:SM::Flow::P 
+  body: If a block is given, it is passed the name of the new current directory, and the block is executed with that as the current directory. The original working directory is restored when the block exits. The return value of <tt>chdir</tt> is the value of the block. <tt>chdir</tt> blocks can be nested, but in a multi-threaded program an error will be raised if a thread attempts to open a <tt>chdir</tt> block while another thread has one open.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   Dir.chdir(&quot;/var/spool/mail&quot;)\n   puts Dir.pwd\n   Dir.chdir(&quot;/tmp&quot;) do\n     puts Dir.pwd\n     Dir.chdir(&quot;/usr&quot;) do\n       puts Dir.pwd\n     end\n     puts Dir.pwd\n   end\n   puts Dir.pwd\n"
+- !ruby/struct:SM::Flow::P 
+  body: <em>produces:</em>
+- !ruby/struct:SM::Flow::VERB 
+  body: "   /var/spool/mail\n   /tmp\n   /usr\n   /tmp\n   /var/spool/mail\n"
+full_name: Dir::chdir
+is_singleton: true
+name: chdir
+params: |
+  Dir.chdir( [ string] ) => 0
+  Dir.chdir( [ string] ) {| path | block }  => anObject
+
+visibility: public

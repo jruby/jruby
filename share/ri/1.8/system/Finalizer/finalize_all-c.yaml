@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: finalize all dependants registered to the Finalizer.
+full_name: Finalizer::finalize_all
+is_singleton: true
+name: finalize_all
+params: ()
+visibility: public

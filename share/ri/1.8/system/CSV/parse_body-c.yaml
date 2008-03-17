@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: CSV::parse_body
+is_singleton: true
+name: parse_body
+params: (src, idx, fs, rs)
+visibility: private

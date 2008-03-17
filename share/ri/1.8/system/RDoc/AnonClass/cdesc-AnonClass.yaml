@@ -1,0 +1,17 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Anonymous classes
+constants: []
+
+full_name: RDoc::AnonClass
+includes: []
+
+instance_methods: []
+
+name: AnonClass
+superclass: ClassModule

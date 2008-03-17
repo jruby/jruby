@@ -1,0 +1,13 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: each_key
+block_params: +key+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Iterates for each header names.
+full_name: Net::HTTPHeader#each_name
+is_singleton: false
+name: each_name
+params: () {|+key+| ...}
+visibility: public

@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns <tt>true</tt> if the value of <tt>fix</tt> is greater than that of <tt>other</tt>.
+full_name: Fixnum#>
+is_singleton: false
+name: ">"
+params: |
+  fix > other     => true or false
+
+visibility: public

@@ -1,0 +1,22 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Creates a pair of pipe endpoints (connected to each other) and returns them as a two-element array of <tt>IO</tt> objects: <tt>[</tt> <em>read_file</em>, <em>write_file</em> <tt>]</tt>. Not available on all platforms."
+- !ruby/struct:SM::Flow::P 
+  body: In the example below, the two processes close the ends of the pipe that they are not using. This is not just a cosmetic nicety. The read end of a pipe will not generate an end of file condition if there are any writers with the pipe still open. In the case of the parent process, the <tt>rd.read</tt> will never return if it does not first issue a <tt>wr.close</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   rd, wr = IO.pipe\n\n   if fork\n     wr.close\n     puts &quot;Parent got: &lt;#{rd.read}&gt;&quot;\n     rd.close\n     Process.wait\n   else\n     rd.close\n     puts &quot;Sending message to parent&quot;\n     wr.write &quot;Hi Dad&quot;\n     wr.close\n   end\n"
+- !ruby/struct:SM::Flow::P 
+  body: <em>produces:</em>
+- !ruby/struct:SM::Flow::VERB 
+  body: "   Sending message to parent\n   Parent got: &lt;Hi Dad&gt;\n"
+full_name: IO::pipe
+is_singleton: true
+name: pipe
+params: |
+  IO.pipe -> array
+
+visibility: public

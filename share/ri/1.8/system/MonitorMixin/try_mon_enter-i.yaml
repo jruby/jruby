@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Alias for #mon_try_enter"
+full_name: MonitorMixin#try_mon_enter
+is_singleton: false
+name: try_mon_enter
+params: ()
+visibility: public

@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: attribute
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Itterates over the attributes of an Element. Yields actual Attribute nodes, not String values.
+- !ruby/struct:SM::Flow::VERB 
+  body: " doc = Document.new '&lt;a x=&quot;1&quot; y=&quot;2&quot;/&gt;'\n doc.root.attributes.each_attribute {|attr|\n   p attr.expanded_name+&quot; =&gt; &quot;+attr.value\n }\n"
+full_name: REXML::Attributes#each_attribute
+is_singleton: false
+name: each_attribute
+params: ( {|attribute| ...}
+visibility: public

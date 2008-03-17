@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: m
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Iterate over all the classes and modules in this object
+full_name: RDoc::Context#each_classmodule
+is_singleton: false
+name: each_classmodule
+params: () {|m| ...}
+visibility: public

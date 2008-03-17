@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IRB::InputMethod::new
+is_singleton: true
+name: new
+params: (file = STDIN_FILE_NAME)
+visibility: public

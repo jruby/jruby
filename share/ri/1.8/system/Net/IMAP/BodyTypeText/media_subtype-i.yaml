@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Obsolete: use <tt>subtype</tt> instead. Calling this will generate a warning message to <tt>stderr</tt>, then return the value of <tt>subtype</tt>."
+full_name: Net::IMAP::BodyTypeText#media_subtype
+is_singleton: false
+name: media_subtype
+params: ()
+visibility: public

@@ -1,0 +1,29 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: Element
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Iterates through the child elements, yielding for each Element that has a particular attribute set.
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "key:"
+    body: the name of the attribute to search for
+  - !ruby/struct:SM::Flow::LI 
+    label: "value:"
+    body: the value of the attribute
+  - !ruby/struct:SM::Flow::LI 
+    label: "max:"
+    body: (optional) causes this method to return after yielding for this number of matching children
+  - !ruby/struct:SM::Flow::LI 
+    label: "name:"
+    body: (optional) if supplied, this is an XPath that filters the children to check.
+  type: :NOTE
+- !ruby/struct:SM::Flow::VERB 
+  body: " doc = Document.new &quot;&lt;a&gt;&lt;b @id='1'/&gt;&lt;c @id='2'/&gt;&lt;d @id='1'/&gt;&lt;e/&gt;&lt;/a&gt;&quot;\n # Yields b, c, d\n doc.root.each_element_with_attribute( 'id' ) {|e| p e}\n # Yields b, d\n doc.root.each_element_with_attribute( 'id', '1' ) {|e| p e}\n # Yields b\n doc.root.each_element_with_attribute( 'id', '1', 1 ) {|e| p e}\n # Yields d\n doc.root.each_element_with_attribute( 'id', '1', 0, 'd' ) {|e| p e}\n"
+full_name: REXML::Element#each_element_with_attribute
+is_singleton: false
+name: each_element_with_attribute
+params: ( key, value=nil, max=0, name=nil ) {|Element| ...}
+visibility: public

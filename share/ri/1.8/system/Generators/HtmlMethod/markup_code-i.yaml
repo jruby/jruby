@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Given a sequence of source tokens, mark up the source code to make it look purty.
+full_name: Generators::HtmlMethod#markup_code
+is_singleton: false
+name: markup_code
+params: (tokens)
+visibility: public

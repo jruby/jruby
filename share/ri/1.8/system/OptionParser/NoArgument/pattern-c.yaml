@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: OptionParser::NoArgument::pattern
+is_singleton: true
+name: pattern
+params: ()
+visibility: public

@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: DEBUGGER__::resume
+is_singleton: true
+name: resume
+params: ()
+visibility: public

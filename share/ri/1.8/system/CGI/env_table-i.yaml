@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: CGI#env_table
+is_singleton: false
+name: env_table
+params: ()
+visibility: private

@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Logger::LogDevice#shift_log_age
+is_singleton: false
+name: shift_log_age
+params: ()
+visibility: private

@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Puts <em>ios</em> into binary mode. This is useful only in MS-DOS/Windows environments. Once a stream is in binary mode, it cannot be reset to nonbinary mode.
+full_name: IO#binmode
+is_singleton: false
+name: binmode
+params: |
+  ios.binmode    => ios
+
+visibility: public

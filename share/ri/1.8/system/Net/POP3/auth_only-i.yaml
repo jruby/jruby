@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Starts a pop3 session, attempts authentication, and quits. This method must not be called while POP3 session is opened. This method raises POPAuthenticationError if authentication fails.
+full_name: Net::POP3#auth_only
+is_singleton: false
+name: auth_only
+params: ( account, password )
+visibility: public

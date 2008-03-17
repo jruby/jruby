@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: RDoc::RubyParser#parse_alias
+is_singleton: false
+name: parse_alias
+params: (context, single, tk, comment)
+visibility: private

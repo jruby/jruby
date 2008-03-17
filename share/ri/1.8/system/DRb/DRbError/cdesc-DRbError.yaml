@@ -1,0 +1,17 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Superclass of all errors raised in the DRb module.
+constants: []
+
+full_name: DRb::DRbError
+includes: []
+
+instance_methods: []
+
+name: DRbError
+superclass: RuntimeError

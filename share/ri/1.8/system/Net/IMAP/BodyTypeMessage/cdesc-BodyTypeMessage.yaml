@@ -1,0 +1,34 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Net::IMAP::BodyTypeMessage represents MESSAGE/RFC822 body structures of messages.
+- !ruby/struct:SM::Flow::H 
+  level: 4
+  text: "Fields:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "envelope:"
+    body: Returns a Net::IMAP::Envelope giving the envelope structure.
+  - !ruby/struct:SM::Flow::LI 
+    label: "body:"
+    body: Returns an object giving the body structure.
+  type: :NOTE
+- !ruby/struct:SM::Flow::P 
+  body: And Net::IMAP::BodyTypeMessage has all methods of Net::IMAP::BodyTypeText.
+constants: []
+
+full_name: Net::IMAP::BodyTypeMessage
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: media_subtype
+- !ruby/object:RI::MethodSummary 
+  name: multipart?
+name: BodyTypeMessage
+superclass: Struct.new(:media_type, :subtype,                                        :param, :content_id,                                        :description, :encoding, :size,                                        :envelope, :body, :lines,                                        :md5, :disposition, :language,                                        :extension)

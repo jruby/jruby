@@ -1,0 +1,104 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Returns the address family of this IP address.
+  name: family
+  rw: R
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+- !ruby/object:RI::MethodSummary 
+  name: new_ntoh
+- !ruby/object:RI::MethodSummary 
+  name: ntop
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: IPAddr provides a set of methods to manipulate an IP address. Both IPv4 and IPv6 are supported.
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: Example
+- !ruby/struct:SM::Flow::VERB 
+  body: "  require 'ipaddr'\n\n  ipaddr1 = IPAddr.new &quot;3ffe:505:2::1&quot;\n\n  p ipaddr1                   #=&gt; #&lt;IPAddr: IPv6:3ffe:0505:0002:0000:0000:0000:0000:0001/ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff&gt;\n\n  p ipaddr1.to_s              #=&gt; &quot;3ffe:505:2::1&quot;\n\n  ipaddr2 = ipaddr1.mask(48)  #=&gt; #&lt;IPAddr: IPv6:3ffe:0505:0002:0000:0000:0000:0000:0000/ffff:ffff:ffff:0000:0000:0000:0000:0000&gt;\n\n  p ipaddr2.to_s              #=&gt; &quot;3ffe:505:2::&quot;\n\n  ipaddr3 = IPAddr.new &quot;192.168.2.0/24&quot;\n\n  p ipaddr3                   #=&gt; #&lt;IPAddr: IPv4:192.168.2.0/255.255.255.0&gt;\n"
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: IN4MASK
+  value: "0xffffffff"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: IN6MASK
+  value: "0xffffffffffffffffffffffffffffffff"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: IN6FORMAT
+  value: (["%.4x"] * 8).join(':')
+full_name: IPAddr
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: "&"
+- !ruby/object:RI::MethodSummary 
+  name: "<<"
+- !ruby/object:RI::MethodSummary 
+  name: ==
+- !ruby/object:RI::MethodSummary 
+  name: ===
+- !ruby/object:RI::MethodSummary 
+  name: ">>"
+- !ruby/object:RI::MethodSummary 
+  name: _reverse
+- !ruby/object:RI::MethodSummary 
+  name: _to_string
+- !ruby/object:RI::MethodSummary 
+  name: addr_mask
+- !ruby/object:RI::MethodSummary 
+  name: hton
+- !ruby/object:RI::MethodSummary 
+  name: in6_addr
+- !ruby/object:RI::MethodSummary 
+  name: in_addr
+- !ruby/object:RI::MethodSummary 
+  name: include?
+- !ruby/object:RI::MethodSummary 
+  name: inspect
+- !ruby/object:RI::MethodSummary 
+  name: ip6_arpa
+- !ruby/object:RI::MethodSummary 
+  name: ip6_int
+- !ruby/object:RI::MethodSummary 
+  name: ipv4?
+- !ruby/object:RI::MethodSummary 
+  name: ipv4_compat
+- !ruby/object:RI::MethodSummary 
+  name: ipv4_compat?
+- !ruby/object:RI::MethodSummary 
+  name: ipv4_mapped
+- !ruby/object:RI::MethodSummary 
+  name: ipv4_mapped?
+- !ruby/object:RI::MethodSummary 
+  name: ipv6?
+- !ruby/object:RI::MethodSummary 
+  name: mask
+- !ruby/object:RI::MethodSummary 
+  name: mask!
+- !ruby/object:RI::MethodSummary 
+  name: native
+- !ruby/object:RI::MethodSummary 
+  name: reverse
+- !ruby/object:RI::MethodSummary 
+  name: set
+- !ruby/object:RI::MethodSummary 
+  name: to_i
+- !ruby/object:RI::MethodSummary 
+  name: to_s
+- !ruby/object:RI::MethodSummary 
+  name: to_string
+- !ruby/object:RI::MethodSummary 
+  name: "|"
+- !ruby/object:RI::MethodSummary 
+  name: "~"
+name: IPAddr
+superclass: Object

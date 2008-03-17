@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: ".to_s + \"</\" + escapeHTML(element) + \">\" : \"\")"
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: make HTML tag string
+full_name: CGI::tag
+is_singleton: true
+name: tag
+params: "(element, attributes = {}) {|.to_s + \"</\" + escapeHTML(element) + \">\" : \"\")| ...}"
+visibility: public

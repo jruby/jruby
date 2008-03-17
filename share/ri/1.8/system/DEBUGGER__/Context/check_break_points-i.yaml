@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: DEBUGGER__::Context#check_break_points
+is_singleton: false
+name: check_break_points
+params: (file, klass, pos, binding, id)
+visibility: public

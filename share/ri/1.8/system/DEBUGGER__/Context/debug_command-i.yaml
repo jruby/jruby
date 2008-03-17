@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: DEBUGGER__::Context#debug_command
+is_singleton: false
+name: debug_command
+params: (file, line, id, binding)
+visibility: public

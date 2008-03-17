@@ -1,0 +1,169 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: abort
+- !ruby/object:RI::MethodSummary 
+  name: detach
+- !ruby/object:RI::MethodSummary 
+  name: egid
+- !ruby/object:RI::MethodSummary 
+  name: egid=
+- !ruby/object:RI::MethodSummary 
+  name: euid
+- !ruby/object:RI::MethodSummary 
+  name: euid=
+- !ruby/object:RI::MethodSummary 
+  name: exit
+- !ruby/object:RI::MethodSummary 
+  name: exit!
+- !ruby/object:RI::MethodSummary 
+  name: fork
+- !ruby/object:RI::MethodSummary 
+  name: getpgid
+- !ruby/object:RI::MethodSummary 
+  name: getpriority
+- !ruby/object:RI::MethodSummary 
+  name: getrlimit
+- !ruby/object:RI::MethodSummary 
+  name: gid
+- !ruby/object:RI::MethodSummary 
+  name: gid=
+- !ruby/object:RI::MethodSummary 
+  name: groups
+- !ruby/object:RI::MethodSummary 
+  name: groups=
+- !ruby/object:RI::MethodSummary 
+  name: initgroups
+- !ruby/object:RI::MethodSummary 
+  name: kill
+- !ruby/object:RI::MethodSummary 
+  name: maxgroups
+- !ruby/object:RI::MethodSummary 
+  name: maxgroups=
+- !ruby/object:RI::MethodSummary 
+  name: pid
+- !ruby/object:RI::MethodSummary 
+  name: ppid
+- !ruby/object:RI::MethodSummary 
+  name: setpgid
+- !ruby/object:RI::MethodSummary 
+  name: setpgrp
+- !ruby/object:RI::MethodSummary 
+  name: setpriority
+- !ruby/object:RI::MethodSummary 
+  name: setrlimit
+- !ruby/object:RI::MethodSummary 
+  name: setsid
+- !ruby/object:RI::MethodSummary 
+  name: times
+- !ruby/object:RI::MethodSummary 
+  name: uid
+- !ruby/object:RI::MethodSummary 
+  name: uid=
+- !ruby/object:RI::MethodSummary 
+  name: wait
+- !ruby/object:RI::MethodSummary 
+  name: wait2
+- !ruby/object:RI::MethodSummary 
+  name: waitall
+- !ruby/object:RI::MethodSummary 
+  name: waitpid
+- !ruby/object:RI::MethodSummary 
+  name: waitpid2
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: The <tt>Process</tt> module is a collection of methods used to manipulate processes.
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: WNOHANG
+  value: INT2FIX(WNOHANG)
+- !ruby/object:RI::Constant 
+  comment: 
+  name: WNOHANG
+  value: INT2FIX(0)
+- !ruby/object:RI::Constant 
+  comment: 
+  name: WUNTRACED
+  value: INT2FIX(WUNTRACED)
+- !ruby/object:RI::Constant 
+  comment: 
+  name: WUNTRACED
+  value: INT2FIX(0)
+- !ruby/object:RI::Constant 
+  comment: 
+  name: PRIO_PROCESS
+  value: INT2FIX(PRIO_PROCESS)
+- !ruby/object:RI::Constant 
+  comment: 
+  name: PRIO_PGRP
+  value: INT2FIX(PRIO_PGRP)
+- !ruby/object:RI::Constant 
+  comment: 
+  name: PRIO_USER
+  value: INT2FIX(PRIO_USER)
+- !ruby/object:RI::Constant 
+  comment: 
+  name: RLIM_INFINITY
+  value: RLIM2NUM(RLIM_INFINITY)
+- !ruby/object:RI::Constant 
+  comment: 
+  name: RLIM_SAVED_MAX
+  value: RLIM2NUM(RLIM_SAVED_MAX)
+- !ruby/object:RI::Constant 
+  comment: 
+  name: RLIM_SAVED_CUR
+  value: RLIM2NUM(RLIM_SAVED_CUR)
+- !ruby/object:RI::Constant 
+  comment: 
+  name: RLIMIT_CORE
+  value: INT2FIX(RLIMIT_CORE)
+- !ruby/object:RI::Constant 
+  comment: 
+  name: RLIMIT_CPU
+  value: INT2FIX(RLIMIT_CPU)
+- !ruby/object:RI::Constant 
+  comment: 
+  name: RLIMIT_DATA
+  value: INT2FIX(RLIMIT_DATA)
+- !ruby/object:RI::Constant 
+  comment: 
+  name: RLIMIT_FSIZE
+  value: INT2FIX(RLIMIT_FSIZE)
+- !ruby/object:RI::Constant 
+  comment: 
+  name: RLIMIT_NOFILE
+  value: INT2FIX(RLIMIT_NOFILE)
+- !ruby/object:RI::Constant 
+  comment: 
+  name: RLIMIT_STACK
+  value: INT2FIX(RLIMIT_STACK)
+- !ruby/object:RI::Constant 
+  comment: 
+  name: RLIMIT_AS
+  value: INT2FIX(RLIMIT_AS)
+- !ruby/object:RI::Constant 
+  comment: 
+  name: RLIMIT_MEMLOCK
+  value: INT2FIX(RLIMIT_MEMLOCK)
+- !ruby/object:RI::Constant 
+  comment: 
+  name: RLIMIT_NPROC
+  value: INT2FIX(RLIMIT_NPROC)
+- !ruby/object:RI::Constant 
+  comment: 
+  name: RLIMIT_RSS
+  value: INT2FIX(RLIMIT_RSS)
+- !ruby/object:RI::Constant 
+  comment: 
+  name: RLIMIT_SBSIZE
+  value: INT2FIX(RLIMIT_SBSIZE)
+full_name: Process
+includes: []
+
+instance_methods: []
+
+name: Process
+superclass: 

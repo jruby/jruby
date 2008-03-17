@@ -1,0 +1,33 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Mutex implements a simple semaphore that can be used to coordinate access to shared data from multiple concurrent threads.
+- !ruby/struct:SM::Flow::P 
+  body: "Example:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  require 'thread'\n  semaphore = Mutex.new\n\n  a = Thread.new {\n    semaphore.synchronize {\n      # access shared resource\n    }\n  }\n\n  b = Thread.new {\n    semaphore.synchronize {\n      # access shared resource\n    }\n  }\n"
+constants: []
+
+full_name: Mutex
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: exclusive_unlock
+- !ruby/object:RI::MethodSummary 
+  name: lock
+- !ruby/object:RI::MethodSummary 
+  name: locked?
+- !ruby/object:RI::MethodSummary 
+  name: synchronize
+- !ruby/object:RI::MethodSummary 
+  name: try_lock
+- !ruby/object:RI::MethodSummary 
+  name: unlock
+name: Mutex
+superclass: Object

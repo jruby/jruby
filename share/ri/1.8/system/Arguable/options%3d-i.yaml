@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Sets OptionParser object, when <tt>opt</tt> is <tt>false</tt> or <tt>nil</tt>, methods OptionParser::Arguable#options and OptionParser::Arguable#options= are undefined. Thus, there is no ways to access the OptionParser object via the receiver object.
+full_name: Arguable#options=
+is_singleton: false
+name: options=
+params: (opt)
+visibility: public

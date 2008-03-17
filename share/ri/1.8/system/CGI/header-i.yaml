@@ -1,0 +1,59 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Create an HTTP header block as a string.
+- !ruby/struct:SM::Flow::P 
+  body: Includes the empty line that ends the header block.
+- !ruby/struct:SM::Flow::P 
+  body: "<tt>options</tt> can be a string specifying the Content-Type (defaults to text/html), or a hash of header key/value pairs. The following header keys are recognized:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "type:"
+    body: the Content-Type header. Defaults to &quot;text/html&quot;
+  - !ruby/struct:SM::Flow::LI 
+    label: "charset:"
+    body: the charset of the body, appended to the Content-Type header.
+  - !ruby/struct:SM::Flow::LI 
+    label: "nph:"
+    body: a boolean value. If true, prepend protocol string and status code, and date; and sets default values for &quot;server&quot; and &quot;connection&quot; if not explicitly set.
+  - !ruby/struct:SM::Flow::LI 
+    label: "status:"
+    body: the HTTP status code, returned as the Status header. See the list of available status codes below.
+  - !ruby/struct:SM::Flow::LI 
+    label: "server:"
+    body: the server software, returned as the Server header.
+  - !ruby/struct:SM::Flow::LI 
+    label: "connection:"
+    body: the connection type, returned as the Connection header (for instance, &quot;close&quot;.
+  - !ruby/struct:SM::Flow::LI 
+    label: "length:"
+    body: the length of the content that will be sent, returned as the Content-Length header.
+  - !ruby/struct:SM::Flow::LI 
+    label: "language:"
+    body: the language of the content, returned as the Content-Language header.
+  - !ruby/struct:SM::Flow::LI 
+    label: "expires:"
+    body: the time on which the current content expires, as a <tt>Time</tt> object, returned as the Expires header.
+  - !ruby/struct:SM::Flow::LI 
+    label: "cookie:"
+    body: a cookie or cookies, returned as one or more Set-Cookie headers. The value can be the literal string of the cookie; a CGI::Cookie object; an Array of literal cookie strings or Cookie objects; or a hash all of whose values are literal cookie strings or Cookie objects. These cookies are in addition to the cookies held in the @output_cookies field.
+  type: :NOTE
+- !ruby/struct:SM::Flow::P 
+  body: "Other header lines can also be set; they are appended as key: value."
+- !ruby/struct:SM::Flow::VERB 
+  body: "  header\n    # Content-Type: text/html\n\n  header(&quot;text/plain&quot;)\n    # Content-Type: text/plain\n\n  header(&quot;nph&quot;        =&gt; true,\n         &quot;status&quot;     =&gt; &quot;OK&quot;,  # == &quot;200 OK&quot;\n           # &quot;status&quot;     =&gt; &quot;200 GOOD&quot;,\n         &quot;server&quot;     =&gt; ENV['SERVER_SOFTWARE'],\n         &quot;connection&quot; =&gt; &quot;close&quot;,\n         &quot;type&quot;       =&gt; &quot;text/html&quot;,\n         &quot;charset&quot;    =&gt; &quot;iso-2022-jp&quot;,\n           # Content-Type: text/html; charset=iso-2022-jp\n         &quot;length&quot;     =&gt; 103,\n         &quot;language&quot;   =&gt; &quot;ja&quot;,\n         &quot;expires&quot;    =&gt; Time.now + 30,\n         &quot;cookie&quot;     =&gt; [cookie1, cookie2],\n         &quot;my_header1&quot; =&gt; &quot;my_value&quot;\n         &quot;my_header2&quot; =&gt; &quot;my_value&quot;)\n"
+- !ruby/struct:SM::Flow::P 
+  body: "The status codes are:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  &quot;OK&quot;                  --&gt; &quot;200 OK&quot;\n  &quot;PARTIAL_CONTENT&quot;     --&gt; &quot;206 Partial Content&quot;\n  &quot;MULTIPLE_CHOICES&quot;    --&gt; &quot;300 Multiple Choices&quot;\n  &quot;MOVED&quot;               --&gt; &quot;301 Moved Permanently&quot;\n  &quot;REDIRECT&quot;            --&gt; &quot;302 Found&quot;\n  &quot;NOT_MODIFIED&quot;        --&gt; &quot;304 Not Modified&quot;\n  &quot;BAD_REQUEST&quot;         --&gt; &quot;400 Bad Request&quot;\n  &quot;AUTH_REQUIRED&quot;       --&gt; &quot;401 Authorization Required&quot;\n  &quot;FORBIDDEN&quot;           --&gt; &quot;403 Forbidden&quot;\n  &quot;NOT_FOUND&quot;           --&gt; &quot;404 Not Found&quot;\n  &quot;METHOD_NOT_ALLOWED&quot;  --&gt; &quot;405 Method Not Allowed&quot;\n  &quot;NOT_ACCEPTABLE&quot;      --&gt; &quot;406 Not Acceptable&quot;\n  &quot;LENGTH_REQUIRED&quot;     --&gt; &quot;411 Length Required&quot;\n  &quot;PRECONDITION_FAILED&quot; --&gt; &quot;412 Precondition Failed&quot;\n  &quot;SERVER_ERROR&quot;        --&gt; &quot;500 Internal Server Error&quot;\n  &quot;NOT_IMPLEMENTED&quot;     --&gt; &quot;501 Method Not Implemented&quot;\n  &quot;BAD_GATEWAY&quot;         --&gt; &quot;502 Bad Gateway&quot;\n  &quot;VARIANT_ALSO_VARIES&quot; --&gt; &quot;506 Variant Also Negotiates&quot;\n"
+- !ruby/struct:SM::Flow::P 
+  body: This method does not perform charset conversion.
+full_name: CGI#header
+is_singleton: false
+name: header
+params: (options = "text/html")
+visibility: public

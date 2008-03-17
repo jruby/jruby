@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "As for #sort(), but returns an array of unique identifiers."
+full_name: Net::IMAP#uid_sort
+is_singleton: false
+name: uid_sort
+params: (sort_keys, search_keys, charset)
+visibility: public

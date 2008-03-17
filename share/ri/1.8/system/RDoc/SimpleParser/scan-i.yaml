@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Extract the file contents and attach them to the toplevel as a comment
+full_name: RDoc::SimpleParser#scan
+is_singleton: false
+name: scan
+params: ()
+visibility: public

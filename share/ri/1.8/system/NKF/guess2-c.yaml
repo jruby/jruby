@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns guessed encoding of <em>str</em> as integer by nkf routine.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   case NKF.guess(input)\n   when NKF::ASCII\n     &quot;ASCII&quot;\n   when NKF::JIS\n     &quot;ISO-2022-JP&quot;\n   when NKF::SJIS\n     &quot;Shift_JIS&quot;\n   when NKF::EUC\n     &quot;EUC-JP&quot;\n   when NKF::UTF8\n     &quot;UTF-8&quot;\n   when NKF::UTF16\n     &quot;UTF-16&quot;\n   when NKF::UNKNOWN\n     &quot;UNKNOWN&quot;\n   when NKF::BINARY\n     &quot;BINARY&quot;\n   end\n"
+full_name: NKF::guess2
+is_singleton: true
+name: guess2
+params: |
+  NKF.guess2(str)  -> integer
+
+visibility: public

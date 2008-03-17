@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Return the appropriate error message in POSIX-defined format. If no error has occurred, returns nil.
+full_name: GetoptLong#error_message
+is_singleton: false
+name: error_message
+params: ()
+visibility: public

@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Logger::LogDevice#previous_period_end
+is_singleton: false
+name: previous_period_end
+params: (now)
+visibility: private

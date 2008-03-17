@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Has a method been included in the list of insecure methods?
+full_name: DRb::DRbServer#insecure_method?
+is_singleton: false
+name: insecure_method?
+params: (msg_id)
+visibility: private

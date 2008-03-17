@@ -1,0 +1,23 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Get the wrapped DRb::DRbUnknown object.
+  name: unknown
+  rw: R
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: An exception wrapping a DRb::DRbUnknown object
+constants: []
+
+full_name: DRb::DRbUnknownError
+includes: []
+
+instance_methods: []
+
+name: DRbUnknownError
+superclass: DRbError

@@ -1,0 +1,17 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Error raised upon a &quot;BAD&quot; response from the server, indicating that the client command violated the IMAP protocol, or an internal server failure has occurred.
+constants: []
+
+full_name: Net::IMAP::BadResponseError
+includes: []
+
+instance_methods: []
+
+name: BadResponseError
+superclass: ResponseError

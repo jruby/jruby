@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Sets the element of which this object is an attribute. Normally, this is not directly called.
+- !ruby/struct:SM::Flow::P 
+  body: Returns this attribute
+full_name: REXML::Attribute#element=
+is_singleton: false
+name: element=
+params: ( element )
+visibility: public

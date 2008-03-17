@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Alias for #to_s"
+full_name: Pathname#TO_PATH
+is_singleton: false
+name: TO_PATH
+params: ()
+visibility: public

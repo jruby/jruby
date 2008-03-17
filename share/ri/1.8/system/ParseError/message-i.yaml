@@ -1,0 +1,13 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: to_s
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Default stringizing method to emit standard error message.
+full_name: ParseError#message
+is_singleton: false
+name: message
+params: ()
+visibility: public

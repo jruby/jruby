@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Generators::HtmlMethod#parent_name
+is_singleton: false
+name: parent_name
+params: ()
+visibility: public

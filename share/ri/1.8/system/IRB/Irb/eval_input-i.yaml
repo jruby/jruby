@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IRB::Irb#eval_input
+is_singleton: false
+name: eval_input
+params: ()
+visibility: public

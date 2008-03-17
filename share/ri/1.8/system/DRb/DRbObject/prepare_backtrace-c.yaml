@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: DRb::DRbObject::prepare_backtrace
+is_singleton: true
+name: prepare_backtrace
+params: (uri, result)
+visibility: public

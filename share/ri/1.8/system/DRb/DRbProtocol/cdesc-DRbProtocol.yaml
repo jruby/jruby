@@ -1,0 +1,79 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Module managing the underlying network protocol(s) used by drb.
+- !ruby/struct:SM::Flow::P 
+  body: "By default, drb uses the DRbTCPSocket protocol. Other protocols can be defined. A protocol must define the following class methods:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  [open(uri, config)] Open a client connection to the server at <tt>uri</tt>,\n                      using configuration <tt>config</tt>.  Return a protocol\n                      instance for this connection.\n  [open_server(uri, config)] Open a server listening at <tt>uri</tt>,\n                             using configuration <tt>config</tt>.  Return a\n                             protocol instance for this listener.\n  [uri_option(uri, config)] Take a URI, possibly containing an option\n                            component (e.g. a trailing '?param=val'),\n                            and return a [uri, option] tuple.\n"
+- !ruby/struct:SM::Flow::P 
+  body: All of these methods should raise a DRbBadScheme error if the URI does not identify the protocol they support (e.g. &quot;druby:&quot; for the standard Ruby protocol). This is how the DRbProtocol module, given a URI, determines which protocol implementation serves that protocol.
+- !ruby/struct:SM::Flow::P 
+  body: "The protocol instance returned by #open_server must have the following methods:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: accept
+    body: Accept a new connection to the server. Returns a protocol instance capable of communicating with the client.
+  - !ruby/struct:SM::Flow::LI 
+    label: close
+    body: Close the server connection.
+  - !ruby/struct:SM::Flow::LI 
+    label: uri
+    body: Get the URI for this server.
+  type: :LABELED
+- !ruby/struct:SM::Flow::P 
+  body: "The protocol instance returned by #open must have the following methods:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: send_request (ref, msg_id, arg, b)
+    body: Send a request to <tt>ref</tt> with the given message id and arguments. This is most easily implemented by calling DRbMessage.send_request, providing a stream that sits on top of the current protocol.
+  - !ruby/struct:SM::Flow::LI 
+    label: recv_reply
+    body: Receive a reply from the server and return it as a [success-boolean, reply-value] pair. This is most easily implemented by calling DRb.recv_reply, providing a stream that sits on top of the current protocol.
+  - !ruby/struct:SM::Flow::LI 
+    label: alive?
+    body: Is this connection still alive?
+  - !ruby/struct:SM::Flow::LI 
+    label: close
+    body: Close this connection.
+  type: :LABELED
+- !ruby/struct:SM::Flow::P 
+  body: "The protocol instance returned by #open_server().accept() must have the following methods:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: recv_request
+    body: Receive a request from the client and return a [object, message, args, block] tuple. This is most easily implemented by calling DRbMessage.recv_request, providing a stream that sits on top of the current protocol.
+  - !ruby/struct:SM::Flow::LI 
+    label: send_reply(succ, result)
+    body: Send a reply to the client. This is most easily implemented by calling DRbMessage.send_reply, providing a stream that sits on top of the current protocol.
+  - !ruby/struct:SM::Flow::LI 
+    label: close
+    body: Close this connection.
+  type: :LABELED
+- !ruby/struct:SM::Flow::P 
+  body: A new protocol is registered with the DRbProtocol module using the add_protocol method.
+- !ruby/struct:SM::Flow::P 
+  body: For examples of other protocols, see DRbUNIXSocket in drb/unix.rb, and HTTP0 in sample/http0.rb and sample/http0serv.rb in the full drb distribution.
+constants: []
+
+full_name: DRb::DRbProtocol
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: add_protocol
+- !ruby/object:RI::MethodSummary 
+  name: open
+- !ruby/object:RI::MethodSummary 
+  name: open_server
+- !ruby/object:RI::MethodSummary 
+  name: uri_option
+name: DRbProtocol
+superclass: 

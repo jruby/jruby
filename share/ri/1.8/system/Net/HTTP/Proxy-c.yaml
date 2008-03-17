@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Creates an HTTP proxy class. Arguments are address/port of proxy host and username/password if authorization on proxy server is required. You can replace the HTTP class with created proxy class.
+- !ruby/struct:SM::Flow::P 
+  body: If ADDRESS is nil, this method returns self (Net::HTTP).
+- !ruby/struct:SM::Flow::VERB 
+  body: "    # Example\n    proxy_class = Net::HTTP::Proxy('proxy.example.com', 8080)\n                    :\n    proxy_class.start('www.ruby-lang.org') {|http|\n      # connecting proxy.foo.org:8080\n                    :\n    }\n"
+full_name: Net::HTTP::Proxy
+is_singleton: true
+name: Proxy
+params: (p_addr, p_port = nil, p_user = nil, p_pass = nil)
+visibility: public

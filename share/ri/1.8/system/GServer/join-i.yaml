@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: GServer#join
+is_singleton: false
+name: join
+params: ()
+visibility: public

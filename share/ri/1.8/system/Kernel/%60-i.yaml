@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the standard output of running <em>cmd</em> in a subshell. The built-in syntax <tt>%x{...}</tt> uses this method. Sets <tt>$?</tt> to the process status.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   `date`                   #=&gt; &quot;Wed Apr  9 08:56:30 CDT 2003\\n&quot;\n   `ls testdir`.split[1]    #=&gt; &quot;main.rb&quot;\n   `echo oops &amp;&amp; exit 99`   #=&gt; &quot;oops\\n&quot;\n   $?.exitstatus            #=&gt; 99\n"
+full_name: Kernel#`
+is_singleton: false
+name: `
+params: |
+  `cmd`    => string
+
+visibility: public

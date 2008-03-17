@@ -1,0 +1,48 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: diagram
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: file_absolute_name
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: file_relative_name
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: file_stat
+  rw: RW
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: all_classes_and_modules
+- !ruby/object:RI::MethodSummary 
+  name: find_class_named
+- !ruby/object:RI::MethodSummary 
+  name: new
+- !ruby/object:RI::MethodSummary 
+  name: reset
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: A TopLevel context is a source file
+constants: []
+
+full_name: RDoc::TopLevel
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: add_class_or_module
+- !ruby/object:RI::MethodSummary 
+  name: find_class_or_module_named
+- !ruby/object:RI::MethodSummary 
+  name: find_local_symbol
+- !ruby/object:RI::MethodSummary 
+  name: find_module_named
+- !ruby/object:RI::MethodSummary 
+  name: full_name
+name: TopLevel
+superclass: Context

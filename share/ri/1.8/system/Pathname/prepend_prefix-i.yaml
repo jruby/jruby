@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Pathname#prepend_prefix
+is_singleton: false
+name: prepend_prefix
+params: (prefix, relpath)
+visibility: private

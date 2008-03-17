@@ -1,0 +1,114 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: Developer Documentation (not for RDoc output)
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Class tree
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "-"
+    body: "OptionParser:: front end"
+  - !ruby/struct:SM::Flow::LI 
+    label: "-"
+    body: "OptionParser::Switch:: each switches"
+  - !ruby/struct:SM::Flow::LI 
+    label: "-"
+    body: "OptionParser::List:: options list"
+  - !ruby/struct:SM::Flow::LI 
+    label: "-"
+    body: "OptionParser::ParseError:: errors on parsing"
+  - !ruby/object:SM::Flow::LIST 
+    contents: 
+    - !ruby/struct:SM::Flow::LI 
+      label: "-"
+      body: OptionParser::AmbiguousOption
+    - !ruby/struct:SM::Flow::LI 
+      label: "-"
+      body: OptionParser::NeedlessArgument
+    - !ruby/struct:SM::Flow::LI 
+      label: "-"
+      body: OptionParser::MissingArgument
+    - !ruby/struct:SM::Flow::LI 
+      label: "-"
+      body: OptionParser::InvalidOption
+    - !ruby/struct:SM::Flow::LI 
+      label: "-"
+      body: OptionParser::InvalidArgument
+    - !ruby/object:SM::Flow::LIST 
+      contents: 
+      - !ruby/struct:SM::Flow::LI 
+        label: "-"
+        body: OptionParser::AmbiguousArgument
+      type: :BULLET
+    type: :BULLET
+  type: :BULLET
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Object relationship diagram
+- !ruby/struct:SM::Flow::VERB 
+  body: "  +--------------+\n  | OptionParser |&lt;&gt;-----+\n  +--------------+       |                      +--------+\n                         |                    ,-| Switch |\n       on_head --------&gt;+---------------+    /  +--------+\n       accept/reject --&gt;| List          |&lt;|&gt;-\n                        |               |&lt;|&gt;-  +----------+\n       on -------------&gt;+---------------+    `-| argument |\n                          :           :        |  class   |\n                        +---------------+      |==========|\n       on_tail --------&gt;|               |      |pattern   |\n                        +---------------+      |----------|\n  OptionParser.accept -&gt;| DefaultList   |      |converter |\n               reject   |(shared between|      +----------+\n                        | all instances)|\n                        +---------------+\n"
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: OptionParser
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Introduction
+- !ruby/struct:SM::Flow::P 
+  body: OptionParser is a class for command-line option analysis. It is much more advanced, yet also easier to use, than GetoptLong, and is a more Ruby-oriented solution.
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Features
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "1."
+    body: The argument specification and the code to handle it are written in the same place.
+  - !ruby/struct:SM::Flow::LI 
+    label: "2."
+    body: It can output an option summary; you don't need to maintain this string separately.
+  - !ruby/struct:SM::Flow::LI 
+    label: "3."
+    body: Optional and mandatory arguments are specified very gracefully.
+  - !ruby/struct:SM::Flow::LI 
+    label: "4."
+    body: Arguments can be automatically converted to a specified class.
+  - !ruby/struct:SM::Flow::LI 
+    label: "5."
+    body: Arguments can be restricted to a certain set.
+  type: :NUMBER
+- !ruby/struct:SM::Flow::P 
+  body: All of these features are demonstrated in the examples below.
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Minimal example
+- !ruby/struct:SM::Flow::VERB 
+  body: "  require 'optparse'\n\n  options = {}\n  OptionParser.new do |opts|\n    opts.banner = &quot;Usage: example.rb [options]&quot;\n\n    opts.on(&quot;-v&quot;, &quot;--[no-]verbose&quot;, &quot;Run verbosely&quot;) do |v|\n      options[:verbose] = v\n    end\n  end.parse!\n\n  p options\n  p ARGV\n"
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Complete example
+- !ruby/struct:SM::Flow::P 
+  body: The following example is a complete Ruby program. You can run it and see the effect of specifying various options. This is probably the best way to learn the features of <tt>optparse</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  require 'optparse'\n  require 'optparse/time'\n  require 'ostruct'\n  require 'pp'\n\n  class OptparseExample\n\n    CODES = %w[iso-2022-jp shift_jis euc-jp utf8 binary]\n    CODE_ALIASES = { &quot;jis&quot; =&gt; &quot;iso-2022-jp&quot;, &quot;sjis&quot; =&gt; &quot;shift_jis&quot; }\n\n    #\n    # Return a structure describing the options.\n    #\n    def self.parse(args)\n      # The options specified on the command line will be collected in <b>options</b>.\n      # We set default values here.\n      options = OpenStruct.new\n      options.library = []\n      options.inplace = false\n      options.encoding = &quot;utf8&quot;\n      options.transfer_type = :auto\n      options.verbose = false\n\n      opts = OptionParser.new do |opts|\n        opts.banner = &quot;Usage: example.rb [options]&quot;\n\n        opts.separator &quot;&quot;\n        opts.separator &quot;Specific options:&quot;\n\n        # Mandatory argument.\n        opts.on(&quot;-r&quot;, &quot;--require LIBRARY&quot;,\n                &quot;Require the LIBRARY before executing your script&quot;) do |lib|\n          options.library &lt;&lt; lib\n        end\n\n        # Optional argument; multi-line description.\n        opts.on(&quot;-i&quot;, &quot;--inplace [EXTENSION]&quot;,\n                &quot;Edit ARGV files in place&quot;,\n                &quot;  (make backup if EXTENSION supplied)&quot;) do |ext|\n          options.inplace = true\n          options.extension = ext || ''\n          options.extension.sub!(/\\A\\.?(?=.)/, &quot;.&quot;)  # Ensure extension begins with dot.\n        end\n\n        # Cast 'delay' argument to a Float.\n        opts.on(&quot;--delay N&quot;, Float, &quot;Delay N seconds before executing&quot;) do |n|\n          options.delay = n\n        end\n\n        # Cast 'time' argument to a Time object.\n        opts.on(&quot;-t&quot;, &quot;--time [TIME]&quot;, Time, &quot;Begin execution at given time&quot;) do |time|\n          options.time = time\n        end\n\n        # Cast to octal integer.\n        opts.on(&quot;-F&quot;, &quot;--irs [OCTAL]&quot;, OptionParser::OctalInteger,\n                &quot;Specify record separator (default \\0)&quot;) do |rs|\n          options.record_separator = rs\n        end\n\n        # List of arguments.\n        opts.on(&quot;--list x,y,z&quot;, Array, &quot;Example 'list' of arguments&quot;) do |list|\n          options.list = list\n        end\n\n        # Keyword completion.  We are specifying a specific set of arguments (CODES\n        # and CODE_ALIASES - notice the latter is a Hash), and the user may provide\n        # the shortest unambiguous text.\n        code_list = (CODE_ALIASES.keys + CODES).join(',')\n        opts.on(&quot;--code CODE&quot;, CODES, CODE_ALIASES, &quot;Select encoding&quot;,\n                &quot;  (#{code_list})&quot;) do |encoding|\n          options.encoding = encoding\n        end\n\n        # Optional argument with keyword completion.\n        opts.on(&quot;--type [TYPE]&quot;, [:text, :binary, :auto],\n                &quot;Select transfer type (text, binary, auto)&quot;) do |t|\n          options.transfer_type = t\n        end\n\n        # Boolean switch.\n        opts.on(&quot;-v&quot;, &quot;--[no-]verbose&quot;, &quot;Run verbosely&quot;) do |v|\n          options.verbose = v\n        end\n\n        opts.separator &quot;&quot;\n        opts.separator &quot;Common options:&quot;\n\n        # No argument, shows at tail.  This will print an options summary.\n        # Try it and see!\n        opts.on_tail(&quot;-h&quot;, &quot;--help&quot;, &quot;Show this message&quot;) do\n          puts opts\n          exit\n        end\n\n        # Another typical switch to print the version.\n        opts.on_tail(&quot;--version&quot;, &quot;Show version&quot;) do\n          puts OptionParser::Version.join('.')\n          exit\n        end\n      end\n\n      opts.parse!(args)\n      options\n    end  # parse()\n\n  end  # class OptparseExample\n\n  options = OptparseExample.parse(ARGV)\n  pp options\n"
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Further documentation
+- !ruby/struct:SM::Flow::P 
+  body: The above examples should be enough to learn how to use this class. If you have any questions, email me (gsinclair@soyabean.com.au) and I will update this document.
+constants: []
+
+full_name: OptionParser
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: switch_name
+name: OptionParser
+superclass: Object

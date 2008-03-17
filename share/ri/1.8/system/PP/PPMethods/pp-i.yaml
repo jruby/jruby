@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Adds <tt>obj</tt> to the pretty printing buffer using Object#pretty_print or Object#pretty_print_cycle.
+- !ruby/struct:SM::Flow::P 
+  body: Object#pretty_print_cycle is used when <tt>obj</tt> is already printed, a.k.a the object reference chain has a cycle.
+full_name: PP::PPMethods#pp
+is_singleton: false
+name: pp
+params: (obj)
+visibility: public

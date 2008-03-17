@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Continuous line checker
+full_name: RDoc::Fortran95parser#continuous_line?
+is_singleton: false
+name: continuous_line?
+params: (line)
+visibility: private

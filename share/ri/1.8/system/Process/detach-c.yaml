@@ -1,0 +1,28 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Some operating systems retain the status of terminated child processes until the parent collects that status (normally using some variant of <tt>wait()</tt>. If the parent never collects this status, the child stays around as a <em>zombie</em> process. <tt>Process::detach</tt> prevents this by setting up a separate Ruby thread whose sole job is to reap the status of the process <em>pid</em> when it terminates. Use <tt>detach</tt> only when you do not intent to explicitly wait for the child to terminate. <tt>detach</tt> only checks the status periodically (currently once each second).
+- !ruby/struct:SM::Flow::P 
+  body: In this first example, we don't reap the first child process, so it appears as a zombie in the process status display.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   p1 = fork { sleep 0.1 }\n   p2 = fork { sleep 0.2 }\n   Process.waitpid(p2)\n   sleep 2\n   system(&quot;ps -ho pid,state -p #{p1}&quot;)\n"
+- !ruby/struct:SM::Flow::P 
+  body: <em>produces:</em>
+- !ruby/struct:SM::Flow::VERB 
+  body: "   27389 Z\n"
+- !ruby/struct:SM::Flow::P 
+  body: In the next example, <tt>Process::detach</tt> is used to reap the child automatically.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   p1 = fork { sleep 0.1 }\n   p2 = fork { sleep 0.2 }\n   Process.detach(p1)\n   Process.waitpid(p2)\n   sleep 2\n   system(&quot;ps -ho pid,state -p #{p1}&quot;)\n"
+- !ruby/struct:SM::Flow::P 
+  body: <em>(produces no output)</em>
+full_name: Process::detach
+is_singleton: true
+name: detach
+params: |
+  Process.detach(pid)   => thread
+
+visibility: public

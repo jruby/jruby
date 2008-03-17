@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: RDoc::Diagram#find_full_name
+is_singleton: false
+name: find_full_name
+params: (name, mod)
+visibility: private

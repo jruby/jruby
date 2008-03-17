@@ -1,0 +1,15 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns big modulo other. See Numeric.divmod for more information.
+full_name: Bignum#modulo
+is_singleton: false
+name: modulo
+params: |
+  big % other         => Numeric
+  big.modulo(other)   => Numeric
+
+visibility: public

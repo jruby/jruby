@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Creates a matrix where the diagonal elements are composed of <tt>values</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  Matrix.diagonal(9, 5, -3)\n    =&gt;  9  0  0\n        0  5  0\n        0  0 -3\n"
+full_name: Matrix::diagonal
+is_singleton: true
+name: diagonal
+params: (*values)
+visibility: public

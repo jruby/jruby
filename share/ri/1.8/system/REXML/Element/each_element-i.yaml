@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: Element
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Synonym for Element.elements.each
+full_name: REXML::Element#each_element
+is_singleton: false
+name: each_element
+params: ( xpath=nil ) {|Element| ...}
+visibility: public

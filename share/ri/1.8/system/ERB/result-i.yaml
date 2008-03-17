@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Executes the generated ERB code to produce a completed template, returning the results of that code. (See ERB#new for details on how this process can be affected by <em>safe_level</em>.)
+- !ruby/struct:SM::Flow::P 
+  body: <em>b</em> accepts a Binding or Proc object which is used to set the context of code evaluation.
+full_name: ERB#result
+is_singleton: false
+name: result
+params: (b=TOPLEVEL_BINDING)
+visibility: public

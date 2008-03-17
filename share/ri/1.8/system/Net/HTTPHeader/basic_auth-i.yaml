@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Set the Authorization: header for &quot;Basic&quot; authorization."
+full_name: Net::HTTPHeader#basic_auth
+is_singleton: false
+name: basic_auth
+params: (account, password)
+visibility: public

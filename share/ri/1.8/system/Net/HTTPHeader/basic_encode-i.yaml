@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Net::HTTPHeader#basic_encode
+is_singleton: false
+name: basic_encode
+params: (account, password)
+visibility: private

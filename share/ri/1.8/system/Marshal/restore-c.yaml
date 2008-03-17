@@ -1,0 +1,15 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the result of converting the serialized data in source into a Ruby object (possibly with associated subordinate objects). source may be either an instance of IO or an object that responds to to_str. If proc is specified, it will be passed each object as it is deserialized.
+full_name: Marshal::restore
+is_singleton: true
+name: restore
+params: |
+  load( source [, proc] ) => obj
+  restore( source [, proc] ) => obj
+
+visibility: public

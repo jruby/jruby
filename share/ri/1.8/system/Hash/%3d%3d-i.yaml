@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Equality---Two hashes are equal if they each contain the same number of keys and if each key-value pair is equal to (according to <tt>Object#==</tt>) the corresponding elements in the other hash.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   h1 = { &quot;a&quot; =&gt; 1, &quot;c&quot; =&gt; 2 }\n   h2 = { 7 =&gt; 35, &quot;c&quot; =&gt; 2, &quot;a&quot; =&gt; 1 }\n   h3 = { &quot;a&quot; =&gt; 1, &quot;c&quot; =&gt; 2, 7 =&gt; 35 }\n   h4 = { &quot;a&quot; =&gt; 1, &quot;d&quot; =&gt; 2, &quot;f&quot; =&gt; 35 }\n   h1 == h2   #=&gt; false\n   h2 == h3   #=&gt; true\n   h3 == h4   #=&gt; false\n"
+full_name: Hash#==
+is_singleton: false
+name: ==
+params: |
+  hsh == other_hash    => true or false
+
+visibility: public

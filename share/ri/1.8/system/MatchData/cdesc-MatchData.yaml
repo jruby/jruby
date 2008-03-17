@@ -1,0 +1,48 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: <tt>MatchData</tt> is the type of the special variable <tt>$~</tt>, and is the type of the object returned by <tt>Regexp#match</tt> and <tt>Regexp#last_match</tt>. It encapsulates all the results of a pattern match, results normally accessed through the special variables <tt>$&amp;</tt>, <tt>$'</tt>, <tt>$`</tt>, <tt>$1</tt>, <tt>$2</tt>, and so on. <tt>Matchdata</tt> is also known as <tt>MatchingData</tt>.
+constants: []
+
+full_name: MatchData
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: "[]"
+- !ruby/object:RI::MethodSummary 
+  name: begin
+- !ruby/object:RI::MethodSummary 
+  name: captures
+- !ruby/object:RI::MethodSummary 
+  name: end
+- !ruby/object:RI::MethodSummary 
+  name: inspect
+- !ruby/object:RI::MethodSummary 
+  name: length
+- !ruby/object:RI::MethodSummary 
+  name: offset
+- !ruby/object:RI::MethodSummary 
+  name: post_match
+- !ruby/object:RI::MethodSummary 
+  name: pre_match
+- !ruby/object:RI::MethodSummary 
+  name: pretty_print
+- !ruby/object:RI::MethodSummary 
+  name: select
+- !ruby/object:RI::MethodSummary 
+  name: size
+- !ruby/object:RI::MethodSummary 
+  name: string
+- !ruby/object:RI::MethodSummary 
+  name: to_a
+- !ruby/object:RI::MethodSummary 
+  name: to_s
+- !ruby/object:RI::MethodSummary 
+  name: values_at
+name: MatchData
+superclass: Object

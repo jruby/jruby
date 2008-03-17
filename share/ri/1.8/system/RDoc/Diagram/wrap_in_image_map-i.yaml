@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Extract the client-side image map from dot, and use it to generate the imagemap proper. Return the whole &lt;map&gt;..&lt;img&gt; combination, suitable for inclusion on the page
+full_name: RDoc::Diagram#wrap_in_image_map
+is_singleton: false
+name: wrap_in_image_map
+params: (src, dot)
+visibility: private

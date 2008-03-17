@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Pass in the set of top level objects. The method also creates the subdirectory to hold the images
+full_name: RDoc::Diagram::new
+is_singleton: true
+name: new
+params: (info, options)
+visibility: public

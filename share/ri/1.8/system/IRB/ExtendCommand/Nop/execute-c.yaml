@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IRB::ExtendCommand::Nop::execute
+is_singleton: true
+name: execute
+params: (conf, *opts)
+visibility: public

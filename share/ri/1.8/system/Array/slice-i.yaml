@@ -1,0 +1,21 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Element Reference---Returns the element at <em>index</em>, or returns a subarray starting at <em>start</em> and continuing for <em>length</em> elements, or returns a subarray specified by <em>range</em>. Negative indices count backward from the end of the array (-1 is the last element). Returns nil if the index (or starting index) are out of range.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   a = [ &quot;a&quot;, &quot;b&quot;, &quot;c&quot;, &quot;d&quot;, &quot;e&quot; ]\n   a[2] +  a[0] + a[1]    #=&gt; &quot;cab&quot;\n   a[6]                   #=&gt; nil\n   a[1, 2]                #=&gt; [ &quot;b&quot;, &quot;c&quot; ]\n   a[1..3]                #=&gt; [ &quot;b&quot;, &quot;c&quot;, &quot;d&quot; ]\n   a[4..7]                #=&gt; [ &quot;e&quot; ]\n   a[6..10]               #=&gt; nil\n   a[-3, 3]               #=&gt; [ &quot;c&quot;, &quot;d&quot;, &quot;e&quot; ]\n   # special cases\n   a[5]                   #=&gt; nil\n   a[5, 1]                #=&gt; []\n   a[5..10]               #=&gt; []\n"
+full_name: Array#slice
+is_singleton: false
+name: slice
+params: |
+  array[index]                -> obj      or nil
+  array[start, length]        -> an_array or nil
+  array[range]                -> an_array or nil
+  array.slice(index)          -> obj      or nil
+  array.slice(start, length)  -> an_array or nil
+  array.slice(range)          -> an_array or nil
+
+visibility: public

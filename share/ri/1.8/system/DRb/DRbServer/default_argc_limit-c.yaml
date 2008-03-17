@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Set the default value for the :argc_limit option.
+- !ruby/struct:SM::Flow::P 
+  body: "See #new(). The initial default value is 256."
+full_name: DRb::DRbServer::default_argc_limit
+is_singleton: true
+name: default_argc_limit
+params: (argc)
+visibility: public

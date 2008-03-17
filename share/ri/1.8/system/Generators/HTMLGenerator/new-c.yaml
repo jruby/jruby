@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Set up a new HTML generator. Basically all we do here is load up the correct output temlate
+full_name: Generators::HTMLGenerator::new
+is_singleton: true
+name: new
+params: (options)
+visibility: public

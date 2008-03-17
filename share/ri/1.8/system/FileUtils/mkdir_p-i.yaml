@@ -1,0 +1,25 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: mkpath
+- !ruby/object:RI::AliasName 
+  name: makedirs
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Options: mode noop verbose"
+- !ruby/struct:SM::Flow::P 
+  body: Creates a directory and all its parent directories. For example,
+- !ruby/struct:SM::Flow::VERB 
+  body: "  FileUtils.mkdir_p '/usr/local/lib/ruby'\n"
+- !ruby/struct:SM::Flow::P 
+  body: causes to make following directories, if it does not exist.
+- !ruby/struct:SM::Flow::VERB 
+  body: "    * /usr\n    * /usr/local\n    * /usr/local/lib\n    * /usr/local/lib/ruby\n"
+- !ruby/struct:SM::Flow::P 
+  body: You can pass several directories at a time in a list.
+full_name: FileUtils#mkdir_p
+is_singleton: false
+name: mkdir_p
+params: (list, options = {})
+visibility: public

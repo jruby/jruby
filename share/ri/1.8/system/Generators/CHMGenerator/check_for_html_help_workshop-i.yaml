@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Generators::CHMGenerator#check_for_html_help_workshop
+is_singleton: false
+name: check_for_html_help_workshop
+params: ()
+visibility: public

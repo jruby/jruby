@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Set the changed state of this object. Notifications will be sent only if the changed <tt>state</tt> is <tt>true</tt>.
+full_name: Observable#changed
+is_singleton: false
+name: changed
+params: (state=true)
+visibility: public

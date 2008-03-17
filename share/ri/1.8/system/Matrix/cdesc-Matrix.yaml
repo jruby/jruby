@@ -1,0 +1,286 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: "[]"
+- !ruby/object:RI::MethodSummary 
+  name: column_vector
+- !ruby/object:RI::MethodSummary 
+  name: columns
+- !ruby/object:RI::MethodSummary 
+  name: diagonal
+- !ruby/object:RI::MethodSummary 
+  name: identity
+- !ruby/object:RI::MethodSummary 
+  name: new
+- !ruby/object:RI::MethodSummary 
+  name: row_vector
+- !ruby/object:RI::MethodSummary 
+  name: rows
+- !ruby/object:RI::MethodSummary 
+  name: scalar
+- !ruby/object:RI::MethodSummary 
+  name: zero
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: The <tt>Matrix</tt> class represents a mathematical matrix, and provides methods for creating special-case matrices (zero, identity, diagonal, singular, vector), operating on them arithmetically and algebraically, and determining their mathematical properties (trace, rank, inverse, determinant).
+- !ruby/struct:SM::Flow::P 
+  body: Note that although matrices should theoretically be rectangular, this is not enforced by the class.
+- !ruby/struct:SM::Flow::P 
+  body: Also note that the determinant of integer matrices may be incorrectly calculated unless you also <tt>require 'mathn'</tt>. This may be fixed in the future.
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: Method Catalogue
+- !ruby/struct:SM::Flow::P 
+  body: "To create a matrix:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: <tt> Matrix[*rows] </tt>
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: <tt> Matrix.[](*rows) </tt>
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: <tt> Matrix.rows(rows, copy = true) </tt>
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: <tt> Matrix.columns(columns) </tt>
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: <tt> Matrix.diagonal(*values) </tt>
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: <tt> Matrix.scalar(n, value) </tt>
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: <tt> Matrix.scalar(n, value) </tt>
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: <tt> Matrix.identity(n) </tt>
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: <tt> Matrix.unit(n) </tt>
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: <tt> Matrix.I(n) </tt>
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: <tt> Matrix.zero(n) </tt>
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: <tt> Matrix.row_vector(row) </tt>
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: <tt> Matrix.column_vector(column) </tt>
+  type: :BULLET
+- !ruby/struct:SM::Flow::P 
+  body: "To access Matrix elements/columns/rows/submatrices/properties:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: <tt> [](i, j) </tt>
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #row_size </tt>"
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #column_size </tt>"
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #row(i) </tt>"
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #column(j) </tt>"
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #collect </tt>"
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #map </tt>"
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #minor(*param) </tt>"
+  type: :BULLET
+- !ruby/struct:SM::Flow::P 
+  body: "Properties of a matrix:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #regular? </tt>"
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #singular? </tt>"
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #square? </tt>"
+  type: :BULLET
+- !ruby/struct:SM::Flow::P 
+  body: "Matrix arithmetic:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: <tt> *(m) </tt>
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: <tt> +(m) </tt>
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: <tt> -(m) </tt>
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #/(m) </tt>"
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #inverse </tt>"
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #inv </tt>"
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: <tt> ** </tt>
+  type: :BULLET
+- !ruby/struct:SM::Flow::P 
+  body: "Matrix functions:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #determinant </tt>"
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #det </tt>"
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #rank </tt>"
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #trace </tt>"
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #tr </tt>"
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #transpose </tt>"
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #t </tt>"
+  type: :BULLET
+- !ruby/struct:SM::Flow::P 
+  body: "Conversion to other data types:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #coerce(other) </tt>"
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #row_vectors </tt>"
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #column_vectors </tt>"
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #to_a </tt>"
+  type: :BULLET
+- !ruby/struct:SM::Flow::P 
+  body: "String representations:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #to_s </tt>"
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "<tt> #inspect </tt>"
+  type: :BULLET
+constants: []
+
+full_name: Matrix
+includes: 
+- !ruby/object:RI::IncludedModule 
+  name: ExceptionForMatrix
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: "*"
+- !ruby/object:RI::MethodSummary 
+  name: "**"
+- !ruby/object:RI::MethodSummary 
+  name: +
+- !ruby/object:RI::MethodSummary 
+  name: "-"
+- !ruby/object:RI::MethodSummary 
+  name: /
+- !ruby/object:RI::MethodSummary 
+  name: ==
+- !ruby/object:RI::MethodSummary 
+  name: "[]"
+- !ruby/object:RI::MethodSummary 
+  name: clone
+- !ruby/object:RI::MethodSummary 
+  name: coerce
+- !ruby/object:RI::MethodSummary 
+  name: collect
+- !ruby/object:RI::MethodSummary 
+  name: column
+- !ruby/object:RI::MethodSummary 
+  name: column_size
+- !ruby/object:RI::MethodSummary 
+  name: column_vectors
+- !ruby/object:RI::MethodSummary 
+  name: compare_by_row_vectors
+- !ruby/object:RI::MethodSummary 
+  name: det
+- !ruby/object:RI::MethodSummary 
+  name: determinant
+- !ruby/object:RI::MethodSummary 
+  name: eql?
+- !ruby/object:RI::MethodSummary 
+  name: hash
+- !ruby/object:RI::MethodSummary 
+  name: init_rows
+- !ruby/object:RI::MethodSummary 
+  name: inspect
+- !ruby/object:RI::MethodSummary 
+  name: inv
+- !ruby/object:RI::MethodSummary 
+  name: inverse
+- !ruby/object:RI::MethodSummary 
+  name: inverse_from
+- !ruby/object:RI::MethodSummary 
+  name: map
+- !ruby/object:RI::MethodSummary 
+  name: minor
+- !ruby/object:RI::MethodSummary 
+  name: rank
+- !ruby/object:RI::MethodSummary 
+  name: regular?
+- !ruby/object:RI::MethodSummary 
+  name: row
+- !ruby/object:RI::MethodSummary 
+  name: row_size
+- !ruby/object:RI::MethodSummary 
+  name: row_vectors
+- !ruby/object:RI::MethodSummary 
+  name: singular?
+- !ruby/object:RI::MethodSummary 
+  name: square?
+- !ruby/object:RI::MethodSummary 
+  name: t
+- !ruby/object:RI::MethodSummary 
+  name: to_a
+- !ruby/object:RI::MethodSummary 
+  name: to_s
+- !ruby/object:RI::MethodSummary 
+  name: tr
+- !ruby/object:RI::MethodSummary 
+  name: trace
+- !ruby/object:RI::MethodSummary 
+  name: transpose
+name: Matrix
+superclass: Object

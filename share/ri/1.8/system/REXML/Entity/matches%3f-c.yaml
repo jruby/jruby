@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Evaluates whether the given string matchs an entity definition, returning true if so, and false otherwise.
+full_name: REXML::Entity::matches?
+is_singleton: true
+name: matches?
+params: (string)
+visibility: public

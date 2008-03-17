@@ -1,0 +1,53 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: The primary local dRuby server.
+  - !ruby/struct:SM::Flow::P 
+    body: "This is the server created by the #start_service call."
+  name: primary_server
+  rw: RW
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: for ruby-1.8.0
+constants: []
+
+full_name: DRb
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: config
+- !ruby/object:RI::MethodSummary 
+  name: current_server
+- !ruby/object:RI::MethodSummary 
+  name: fetch_server
+- !ruby/object:RI::MethodSummary 
+  name: front
+- !ruby/object:RI::MethodSummary 
+  name: here?
+- !ruby/object:RI::MethodSummary 
+  name: install_acl
+- !ruby/object:RI::MethodSummary 
+  name: install_id_conv
+- !ruby/object:RI::MethodSummary 
+  name: regist_server
+- !ruby/object:RI::MethodSummary 
+  name: remove_server
+- !ruby/object:RI::MethodSummary 
+  name: start_service
+- !ruby/object:RI::MethodSummary 
+  name: stop_service
+- !ruby/object:RI::MethodSummary 
+  name: thread
+- !ruby/object:RI::MethodSummary 
+  name: to_id
+- !ruby/object:RI::MethodSummary 
+  name: to_obj
+- !ruby/object:RI::MethodSummary 
+  name: uri
+name: DRb
+superclass: 

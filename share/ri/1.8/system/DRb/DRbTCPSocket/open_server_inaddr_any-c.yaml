@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: DRb::DRbTCPSocket::open_server_inaddr_any
+is_singleton: true
+name: open_server_inaddr_any
+params: (host, port)
+visibility: public

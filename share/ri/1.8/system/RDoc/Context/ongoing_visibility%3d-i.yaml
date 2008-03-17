@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Change the default visibility for new methods
+full_name: RDoc::Context#ongoing_visibility=
+is_singleton: false
+name: ongoing_visibility=
+params: (vis)
+visibility: public

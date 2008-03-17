@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "A convenience method which is same as follows:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  text ','\n  breakable\n"
+full_name: PP::PPMethods#comma_breakable
+is_singleton: false
+name: comma_breakable
+params: ()
+visibility: public

@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "call_seq:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  local_jump_error.exit_value  =&gt; obj\n"
+- !ruby/struct:SM::Flow::P 
+  body: Returns the exit value associated with this <tt>LocalJumpError</tt>.
+full_name: LocalJumpError#exit_value
+is_singleton: false
+name: exit_value
+params: ()
+visibility: public

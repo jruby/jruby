@@ -1,0 +1,20 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Iterates <em>block</em>, passing decreasing values from <em>int</em> down to and including <em>limit</em>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   5.downto(1) { |n| print n, &quot;.. &quot; }\n   print &quot;  Liftoff!\\n&quot;\n"
+- !ruby/struct:SM::Flow::P 
+  body: <em>produces:</em>
+- !ruby/struct:SM::Flow::VERB 
+  body: "   5.. 4.. 3.. 2.. 1..   Liftoff!\n"
+full_name: Integer#downto
+is_singleton: false
+name: downto
+params: |
+  int.downto(limit) {|i| block }     => int
+
+visibility: public

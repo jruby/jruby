@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Return a new Date object that is <tt>n</tt> days later than the current one.
+- !ruby/struct:SM::Flow::P 
+  body: "<tt>n</tt> may be a negative value, in which case the new Date is earlier than the current one; however, #-() might be more intuitive."
+- !ruby/struct:SM::Flow::P 
+  body: If <tt>n</tt> is not a Numeric, a TypeError will be thrown. In particular, two Dates cannot be added to each other.
+full_name: Date#+
+is_singleton: false
+name: +
+params: (n)
+visibility: public

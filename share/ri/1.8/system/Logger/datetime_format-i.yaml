@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Logger#datetime_format
+is_singleton: false
+name: datetime_format
+params: ()
+visibility: public

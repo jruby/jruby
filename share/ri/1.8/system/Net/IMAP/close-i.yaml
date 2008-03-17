@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Sends a CLOSE command to close the currently selected mailbox. The CLOSE command permanently removes from the mailbox all messages that have the \Deleted flag set.
+full_name: Net::IMAP#close
+is_singleton: false
+name: close
+params: ()
+visibility: public

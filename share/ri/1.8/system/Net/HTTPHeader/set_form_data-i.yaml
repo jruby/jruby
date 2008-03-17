@@ -1,0 +1,15 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: form_data=
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Set header fields and a body from HTML form data. <tt>params</tt> should be a Hash containing HTML form data. Optional argument <tt>sep</tt> means data record separator.
+- !ruby/struct:SM::Flow::P 
+  body: "This method also set Content-Type: header field to application/x-www-form-urlencoded."
+full_name: Net::HTTPHeader#set_form_data
+is_singleton: false
+name: set_form_data
+params: (params, sep = '&')
+visibility: public

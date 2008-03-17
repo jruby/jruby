@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the native file system's block size. Will return <tt>nil</tt> on platforms that don't support this information.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   File.stat(&quot;testfile&quot;).blksize   #=&gt; 4096\n"
+full_name: File::Stat#blksize
+is_singleton: false
+name: blksize
+params: |
+  stat.blksize   => integer or nil
+
+visibility: public

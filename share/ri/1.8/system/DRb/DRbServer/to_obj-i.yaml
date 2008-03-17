@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Convert a dRuby reference to the local object it refers to.
+full_name: DRb::DRbServer#to_obj
+is_singleton: false
+name: to_obj
+params: (ref)
+visibility: public

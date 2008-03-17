@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IRB::IrbLoader#irb_load
+is_singleton: false
+name: irb_load
+params: (fn, priv = nil)
+visibility: public

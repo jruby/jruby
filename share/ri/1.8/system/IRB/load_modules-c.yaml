@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: loading modules
+full_name: IRB::load_modules
+is_singleton: true
+name: load_modules
+params: ()
+visibility: public

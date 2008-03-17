@@ -1,0 +1,17 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Passes each entry in <em>enum</em> to <em>block</em>. Returns the first for which <em>block</em> is not <tt>false</tt>. If no object matches, calls <em>ifnone</em> and returns its result when it is specified, or returns <tt>nil</tt>
+- !ruby/struct:SM::Flow::VERB 
+  body: "   (1..10).detect  {|i| i % 5 == 0 and i % 7 == 0 }   #=&gt; nil\n   (1..100).detect {|i| i % 5 == 0 and i % 7 == 0 }   #=&gt; 35\n"
+full_name: Enumerable#detect
+is_singleton: false
+name: detect
+params: |
+  enum.detect(ifnone = nil) {| obj | block }  => obj or nil
+  enum.find(ifnone = nil)   {| obj | block }  => obj or nil
+
+visibility: public

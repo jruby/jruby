@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns true if the ipaddr is an IPv6 address.
+full_name: IPAddr#ipv6?
+is_singleton: false
+name: ipv6?
+params: ()
+visibility: public

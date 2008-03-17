@@ -1,0 +1,48 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Buffered stream.
+- !ruby/struct:SM::Flow::P 
+  body: EXAMPLE 1 -- an IO.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  class MyBuf &lt; StreamBuf\n    # Do initialize myself before a super class.  Super class might call my\n    # method 'read'. (Could be awful for C++ user. :-)\n    def initialize(s)\n      @s = s\n      super()\n    end\n\n    # define my own 'read' method.\n    # CAUTION: Returning nil means EnfOfStream.\n    def read(size)\n      @s.read(size)\n    end\n\n    # release buffers. in Ruby which has GC, you do not have to call this...\n    def terminate\n      @s = nil\n      super()\n    end\n  end\n\n  buf = MyBuf.new(STDIN)\n  my_str = ''\n  p buf[0, 0]               # =&gt; '' (null string)\n  p buf[0]                  # =&gt; 97 (char code of 'a')\n  p buf[0, 1]               # =&gt; 'a'\n  my_str = buf[0, 5]\n  p my_str                  # =&gt; 'abcde' (5 chars)\n  p buf[0, 6]               # =&gt; &quot;abcde\\n&quot; (6 chars)\n  p buf[0, 7]               # =&gt; &quot;abcde\\n&quot; (6 chars)\n  p buf.drop(3)             # =&gt; 3 (dropped chars)\n  p buf.get(0, 2)           # =&gt; 'de' (2 chars)\n  p buf.is_eos?             # =&gt; false (is not EOS here)\n  p buf.drop(5)             # =&gt; 3 (dropped chars)\n  p buf.is_eos?             # =&gt; true (is EOS here)\n  p buf[0]                  # =&gt; nil (is EOS here)\n"
+- !ruby/struct:SM::Flow::P 
+  body: EXAMPLE 2 -- String.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  This is a conceptual example.  No pros with this.\n\n  class StrBuf &lt; StreamBuf\n    def initialize(s)\n      @str = s\n      @idx = 0\n      super()\n    end\n\n    def read(size)\n      str = @str[@idx, size]\n      @idx += str.size\n      str\n    end\n  end\n"
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: BufSize
+  value: 1024 * 8
+full_name: CSV::StreamBuf
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: "[]"
+- !ruby/object:RI::MethodSummary 
+  name: add_buf
+- !ruby/object:RI::MethodSummary 
+  name: buf_size
+- !ruby/object:RI::MethodSummary 
+  name: drop
+- !ruby/object:RI::MethodSummary 
+  name: get
+- !ruby/object:RI::MethodSummary 
+  name: idx_is_eos?
+- !ruby/object:RI::MethodSummary 
+  name: is_eos?
+- !ruby/object:RI::MethodSummary 
+  name: read
+- !ruby/object:RI::MethodSummary 
+  name: rel_buf
+- !ruby/object:RI::MethodSummary 
+  name: terminate
+name: StreamBuf
+superclass: Object

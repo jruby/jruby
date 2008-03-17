@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: DRb::ExtServ#front
+is_singleton: false
+name: front
+params: ()
+visibility: public

@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Set the session date for key <tt>key</tt>.
+full_name: CGI::Session#[]=
+is_singleton: false
+name: "[]="
+params: (key, val)
+visibility: public

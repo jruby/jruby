@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "set and cleared by :startdoc: and :enddoc:, this is used to toggle the capturing of documentation"
+full_name: RDoc::CodeObject#start_doc
+is_singleton: false
+name: start_doc
+params: ()
+visibility: public

@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns <tt>true</tt> if <em>num</em> has a zero value.
+full_name: Numeric#zero?
+is_singleton: false
+name: zero?
+params: |
+  num.zero?    => true or false
+
+visibility: public

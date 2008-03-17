@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IRB::HistorySavingAbility::extended
+is_singleton: true
+name: extended
+params: (obj)
+visibility: public

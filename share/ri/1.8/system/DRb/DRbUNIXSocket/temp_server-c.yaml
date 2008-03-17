@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: DRb::DRbUNIXSocket::temp_server
+is_singleton: true
+name: temp_server
+params: ()
+visibility: private

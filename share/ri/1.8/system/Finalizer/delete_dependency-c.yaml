@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: delete dependency R_method(obj, dependant)
+full_name: Finalizer::delete_dependency
+is_singleton: true
+name: delete_dependency
+params: (id, dependant, method = :finalize)
+visibility: public

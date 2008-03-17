@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Writes the given string to <em>ios</em> using a low-level write. Returns the number of bytes written. Do not mix with other methods that write to <em>ios</em> or you may get unpredictable results. Raises <tt>SystemCallError</tt> on error.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   f = File.new(&quot;out&quot;, &quot;w&quot;)\n   f.syswrite(&quot;ABCDEF&quot;)   #=&gt; 6\n"
+full_name: IO#syswrite
+is_singleton: false
+name: syswrite
+params: |
+  ios.syswrite(string)   => integer
+
+visibility: public

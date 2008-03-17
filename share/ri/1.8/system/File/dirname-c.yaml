@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns all components of the filename given in <em>file_name</em> except the last one. The filename must be formed using forward slashes (``<tt>/</tt>'') regardless of the separator used on the local file system.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   File.dirname(&quot;/home/gumby/work/ruby.rb&quot;)   #=&gt; &quot;/home/gumby/work&quot;\n"
+full_name: File::dirname
+is_singleton: true
+name: dirname
+params: |
+  File.dirname(file_name ) -> dir_name
+
+visibility: public

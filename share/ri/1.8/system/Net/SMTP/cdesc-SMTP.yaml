@@ -1,0 +1,169 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: The address of the SMTP server to connect to.
+  name: address
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Seconds to wait while attempting to open a connection. If the connection cannot be opened within this time, a TimeoutError is raised.
+  name: open_timeout
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: The port number of the SMTP server to connect to.
+  name: port
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Seconds to wait while reading one block (by one read(2) call). If the read(2) call does not complete within this time, a TimeoutError is raised.
+  name: read_timeout
+  rw: R
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: default_port
+- !ruby/object:RI::MethodSummary 
+  name: new
+- !ruby/object:RI::MethodSummary 
+  name: start
+comment: 
+- !ruby/struct:SM::Flow::H 
+  level: 1
+  text: Net::SMTP
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: What is This Library?
+- !ruby/struct:SM::Flow::P 
+  body: This library provides functionality to send internet mail via SMTP, the Simple Mail Transfer Protocol. For details of SMTP itself, see [RFC2821] (http://www.ietf.org/rfc/rfc2821.txt).
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: What is This Library NOT?
+- !ruby/struct:SM::Flow::P 
+  body: This library does NOT provide functions to compose internet mails. You must create them by yourself. If you want better mail support, try RubyMail or TMail. You can get both libraries from RAA. (http://www.ruby-lang.org/en/raa.html)
+- !ruby/struct:SM::Flow::P 
+  body: "FYI: the official documentation on internet mail is: [RFC2822] (http://www.ietf.org/rfc/rfc2822.txt)."
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: Examples
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Sending Messages
+- !ruby/struct:SM::Flow::P 
+  body: You must open a connection to an SMTP server before sending messages. The first argument is the address of your SMTP server, and the second argument is the port number. Using SMTP.start with a block is the simplest way to do this. This way, the SMTP connection is closed automatically after the block is executed.
+- !ruby/struct:SM::Flow::VERB 
+  body: "    require 'net/smtp'\n    Net::SMTP.start('your.smtp.server', 25) do |smtp|\n      # Use the SMTP object smtp only in this block.\n    end\n"
+- !ruby/struct:SM::Flow::P 
+  body: Replace 'your.smtp.server' with your SMTP server. Normally your system manager or internet provider supplies a server for you.
+- !ruby/struct:SM::Flow::P 
+  body: Then you can send messages.
+- !ruby/struct:SM::Flow::VERB 
+  body: "    msgstr = &lt;&lt;END_OF_MESSAGE\n    From: Your Name &lt;your@mail.address&gt;\n    To: Destination Address &lt;someone@example.com&gt;\n    Subject: test message\n    Date: Sat, 23 Jun 2001 16:26:43 +0900\n    Message-Id: &lt;unique.message.id.string@example.com&gt;\n\n    This is a test message.\n    END_OF_MESSAGE\n\n    require 'net/smtp'\n    Net::SMTP.start('your.smtp.server', 25) do |smtp|\n      smtp.send_message msgstr,\n                        'your@mail.address',\n                        'his_addess@example.com'\n    end\n"
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Closing the Session
+- !ruby/struct:SM::Flow::P 
+  body: "You MUST close the SMTP session after sending messages, by calling the #finish method:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "    # using SMTP#finish\n    smtp = Net::SMTP.start('your.smtp.server', 25)\n    smtp.send_message msgstr, 'from@address', 'to@address'\n    smtp.finish\n"
+- !ruby/struct:SM::Flow::P 
+  body: "You can also use the block form of SMTP.start/SMTP#start. This closes the SMTP session automatically:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "    # using block form of SMTP.start\n    Net::SMTP.start('your.smtp.server', 25) do |smtp|\n      smtp.send_message msgstr, 'from@address', 'to@address'\n    end\n"
+- !ruby/struct:SM::Flow::P 
+  body: I strongly recommend this scheme. This form is simpler and more robust.
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: HELO domain
+- !ruby/struct:SM::Flow::P 
+  body: In almost all situations, you must provide a third argument to SMTP.start/SMTP#start. This is the domain name which you are on (the host to send mail from). It is called the &quot;HELO domain&quot;. The SMTP server will judge whether it should send or reject the SMTP session by inspecting the HELO domain.
+- !ruby/struct:SM::Flow::VERB 
+  body: "    Net::SMTP.start('your.smtp.server', 25,\n                    'mail.from.domain') { |smtp| ... }\n"
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: SMTP Authentication
+- !ruby/struct:SM::Flow::P 
+  body: "The Net::SMTP class supports three authentication schemes; PLAIN, LOGIN and CRAM MD5. (SMTP Authentication: [RFC2554]) To use SMTP authentication, pass extra arguments to SMTP.start/SMTP#start."
+- !ruby/struct:SM::Flow::VERB 
+  body: "    # PLAIN\n    Net::SMTP.start('your.smtp.server', 25, 'mail.from.domain',\n                    'Your Account', 'Your Password', :plain)\n    # LOGIN\n    Net::SMTP.start('your.smtp.server', 25, 'mail.from.domain',\n                    'Your Account', 'Your Password', :login)\n\n    # CRAM MD5\n    Net::SMTP.start('your.smtp.server', 25, 'mail.from.domain',\n                    'Your Account', 'Your Password', :cram_md5)\n"
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: Revision
+  value: "%q$Revision: 11708 $.split[1]"
+full_name: Net::SMTP
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: auth_cram_md5
+- !ruby/object:RI::MethodSummary 
+  name: auth_login
+- !ruby/object:RI::MethodSummary 
+  name: auth_plain
+- !ruby/object:RI::MethodSummary 
+  name: authenticate
+- !ruby/object:RI::MethodSummary 
+  name: base64_encode
+- !ruby/object:RI::MethodSummary 
+  name: check_auth_args
+- !ruby/object:RI::MethodSummary 
+  name: check_response
+- !ruby/object:RI::MethodSummary 
+  name: critical
+- !ruby/object:RI::MethodSummary 
+  name: do_finish
+- !ruby/object:RI::MethodSummary 
+  name: do_start
+- !ruby/object:RI::MethodSummary 
+  name: ehlo
+- !ruby/object:RI::MethodSummary 
+  name: esmtp
+- !ruby/object:RI::MethodSummary 
+  name: esmtp=
+- !ruby/object:RI::MethodSummary 
+  name: esmtp?
+- !ruby/object:RI::MethodSummary 
+  name: finish
+- !ruby/object:RI::MethodSummary 
+  name: get_response
+- !ruby/object:RI::MethodSummary 
+  name: getok
+- !ruby/object:RI::MethodSummary 
+  name: helo
+- !ruby/object:RI::MethodSummary 
+  name: inspect
+- !ruby/object:RI::MethodSummary 
+  name: mailfrom
+- !ruby/object:RI::MethodSummary 
+  name: open_message_stream
+- !ruby/object:RI::MethodSummary 
+  name: quit
+- !ruby/object:RI::MethodSummary 
+  name: rcptto
+- !ruby/object:RI::MethodSummary 
+  name: read_timeout=
+- !ruby/object:RI::MethodSummary 
+  name: ready
+- !ruby/object:RI::MethodSummary 
+  name: recv_response
+- !ruby/object:RI::MethodSummary 
+  name: send0
+- !ruby/object:RI::MethodSummary 
+  name: send_mail
+- !ruby/object:RI::MethodSummary 
+  name: send_message
+- !ruby/object:RI::MethodSummary 
+  name: sendmail
+- !ruby/object:RI::MethodSummary 
+  name: set_debug_output
+- !ruby/object:RI::MethodSummary 
+  name: start
+- !ruby/object:RI::MethodSummary 
+  name: started?
+name: SMTP
+superclass: Object

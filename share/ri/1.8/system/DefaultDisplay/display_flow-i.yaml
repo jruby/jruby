@@ -1,0 +1,11 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: []
+
+full_name: DefaultDisplay#display_flow
+is_singleton: false
+name: display_flow
+params: (flow)
+visibility: private

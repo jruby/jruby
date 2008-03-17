@@ -1,0 +1,17 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Document-method: object_id"
+- !ruby/struct:SM::Flow::P 
+  body: Returns an integer identifier for <em>obj</em>. The same number will be returned on all calls to <tt>id</tt> for a given object, and no two active objects will share an id. <tt>Object#object_id</tt> is a different concept from the <tt>:name</tt> notation, which returns the symbol id of <tt>name</tt>. Replaces the deprecated <tt>Object#id</tt>.
+full_name: Object#__id__
+is_singleton: false
+name: __id__
+params: |
+  obj.__id__       => fixnum
+  obj.object_id    => fixnum
+
+visibility: public

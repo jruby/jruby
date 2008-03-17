@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: returns a list of encodings in Content-Encoding field as an Array of String. The encodings are downcased for canonicalization.
+full_name: OpenURI::Meta#content_encoding
+is_singleton: false
+name: content_encoding
+params: ()
+visibility: public

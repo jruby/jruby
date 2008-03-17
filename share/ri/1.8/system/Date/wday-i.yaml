@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Get the week day of this date. Sunday is day-of-week 0; Saturday is day-of-week 6.
+full_name: Date#wday
+is_singleton: false
+name: wday
+params: ()
+visibility: public

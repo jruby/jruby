@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: DRb::DRbServer::InvokeMethod18Mixin#perform_with_block
+is_singleton: false
+name: perform_with_block
+params: ()
+visibility: public

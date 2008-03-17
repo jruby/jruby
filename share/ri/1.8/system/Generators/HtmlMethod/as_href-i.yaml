@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: return a reference to outselves to be used as an href= the form depends on whether we're all in one file or in multiple files
+full_name: Generators::HtmlMethod#as_href
+is_singleton: false
+name: as_href
+params: (from_path)
+visibility: public

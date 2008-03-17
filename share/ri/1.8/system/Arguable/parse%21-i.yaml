@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Parses <tt>self</tt> destructively and returns <tt>self</tt> containing the rest arguments left unparsed.
+full_name: Arguable#parse!
+is_singleton: false
+name: parse!
+params: ()
+visibility: public

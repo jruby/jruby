@@ -1,0 +1,20 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Flushes any buffered data within <em>ios</em> to the underlying operating system (note that this is Ruby internal buffering only; the OS may buffer the data as well).
+- !ruby/struct:SM::Flow::VERB 
+  body: "   $stdout.print &quot;no newline&quot;\n   $stdout.flush\n"
+- !ruby/struct:SM::Flow::P 
+  body: <em>produces:</em>
+- !ruby/struct:SM::Flow::VERB 
+  body: "   no newline\n"
+full_name: IO#flush
+is_singleton: false
+name: flush
+params: |
+  ios.flush    => ios
+
+visibility: public

@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Options: noop verbose"
+- !ruby/struct:SM::Flow::P 
+  body: Changes permission bits on the named files (in <tt>list</tt>) to the bit pattern represented by <tt>mode</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  FileUtils.chmod 0755, 'somecommand'\n  FileUtils.chmod 0644, %w(my.rb your.rb his.rb her.rb)\n  FileUtils.chmod 0755, '/usr/bin/ruby', :verbose =&gt; true\n"
+full_name: FileUtils#chmod
+is_singleton: false
+name: chmod
+params: (mode, list, options = {})
+visibility: public

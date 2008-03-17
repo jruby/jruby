@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Decodes text formatted using a subset of RFC2047 (the one used for mime-encoding mail headers).
+- !ruby/struct:SM::Flow::P 
+  body: Only supports an encoding type of 'b' (base 64), and only supports the character sets ISO-2022-JP and SHIFT_JIS (so the only two encoded word sequences recognized are <tt>=?ISO-2022-JP?B?...=</tt> and <tt>=?SHIFT_JIS?B?...=</tt>). Recognition of these sequences is case insensitive.
+full_name: Base64#decode_b
+is_singleton: false
+name: decode_b
+params: (str)
+visibility: public

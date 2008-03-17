@@ -1,0 +1,15 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: shift
+- !ruby/object:RI::AliasName 
+  name: deq
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Retrieves data from the queue. If the queue is empty, the calling thread is suspended until data is pushed onto the queue. If <tt>non_block</tt> is true, the thread isn't suspended, and an exception is raised.
+full_name: Queue#pop
+is_singleton: false
+name: pop
+params: (non_block=false)
+visibility: public

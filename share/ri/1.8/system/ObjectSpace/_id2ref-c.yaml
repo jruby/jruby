@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Converts an object id to a reference to the object. May not be called on an object id passed as a parameter to a finalizer.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   s = &quot;I am a string&quot;                    #=&gt; &quot;I am a string&quot;\n   r = ObjectSpace._id2ref(s.object_id)   #=&gt; &quot;I am a string&quot;\n   r == s                                 #=&gt; true\n"
+full_name: ObjectSpace::_id2ref
+is_singleton: true
+name: _id2ref
+params: |
+  ObjectSpace._id2ref(object_id) -> an_object
+
+visibility: public

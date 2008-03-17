@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Evaluates to the root node of the document that this element belongs to. If this element doesn't belong to a document, but does belong to another Element, the parent's root will be returned, until the earliest ancestor is found.
+- !ruby/struct:SM::Flow::P 
+  body: "Note that this is not the same as the document element. In the following example, &lt;a&gt; is the document element, and the root node is the parent node of the document element. You may ask yourself why the root node is useful: consider the doctype and XML declaration, and any processing instructions before the document element... they are children of the root node, or siblings of the document element. The only time this isn't true is when an Element is created that is not part of any Document. In this case, the ancestor that has no parent acts as the root node."
+- !ruby/struct:SM::Flow::VERB 
+  body: " d = Document.new '&lt;a&gt;<b>&lt;c/&gt;</b>&lt;/a&gt;'\n a = d[1] ; c = a[1][1]\n d.root_node == d   # TRUE\n a.root_node        # namely, d\n c.root_node        # again, d\n"
+full_name: REXML::Element#root_node
+is_singleton: false
+name: root_node
+params: ()
+visibility: public

@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: "@optparse"
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Actual OptionParser object, automatically created if nonexistent.
+- !ruby/struct:SM::Flow::P 
+  body: If called with a block, yields the OptionParser object and returns the result of the block. If an OptionParser::ParseError exception occurs in the block, it is rescued, a error message printed to STDERR and <tt>nil</tt> returned.
+full_name: Arguable#options
+is_singleton: false
+name: options
+params: () {|@optparse| ...}
+visibility: public

@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Open a client connection to <tt>uri</tt> using configuration <tt>config</tt>.
+full_name: DRb::DRbTCPSocket::open
+is_singleton: true
+name: open
+params: (uri, config)
+visibility: public

@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Check external aliases
+full_name: RDoc::Fortran95parser#check_external_aliases
+is_singleton: false
+name: check_external_aliases
+params: (subname, params, comment, test=nil)
+visibility: private

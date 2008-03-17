@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IRB::Irb#prompt
+is_singleton: false
+name: prompt
+params: (prompt, ltype, indent, line_no)
+visibility: public

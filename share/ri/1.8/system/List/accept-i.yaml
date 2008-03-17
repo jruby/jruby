@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: See OptionParser.accept.
+full_name: List#accept
+is_singleton: false
+name: accept
+params: (t, pat = /.*/nm, &block)
+visibility: public

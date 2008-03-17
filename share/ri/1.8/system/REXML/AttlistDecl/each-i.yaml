@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Itterate over the key/value pairs:"
+- !ruby/struct:SM::Flow::VERB 
+  body: " attlist_decl.each { |attribute_name, attribute_value| ... }\n"
+full_name: REXML::AttlistDecl#each
+is_singleton: false
+name: each
+params: (&block)
+visibility: public

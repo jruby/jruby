@@ -1,0 +1,20 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: ""
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Generate a Form element with multipart encoding as a String.
+- !ruby/struct:SM::Flow::P 
+  body: Multipart encoding is used for forms that include file uploads.
+- !ruby/struct:SM::Flow::P 
+  body: <tt>action</tt> is the action to perform. <tt>enctype</tt> is the encoding type, which defaults to &quot;multipart/form-data&quot;.
+- !ruby/struct:SM::Flow::P 
+  body: Alternatively, the attributes can be specified as a hash.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  multipart_form{ &quot;string&quot; }\n    # &lt;FORM METHOD=&quot;post&quot; ENCTYPE=&quot;multipart/form-data&quot;&gt;string&lt;/FORM&gt;\n\n  multipart_form(&quot;url&quot;) { &quot;string&quot; }\n    # &lt;FORM METHOD=&quot;post&quot; ACTION=&quot;url&quot; ENCTYPE=&quot;multipart/form-data&quot;&gt;string&lt;/FORM&gt;\n"
+full_name: CGI::HtmlExtension#multipart_form
+is_singleton: false
+name: multipart_form
+params: (action = nil, enctype = "multipart/form-data") {|| ...}
+visibility: public

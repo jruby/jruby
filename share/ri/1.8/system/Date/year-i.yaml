@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Get the year of this date.
+full_name: Date#year
+is_singleton: false
+name: year
+params: ()
+visibility: public

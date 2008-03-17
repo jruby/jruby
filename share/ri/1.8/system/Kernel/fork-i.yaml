@@ -1,0 +1,17 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Creates a subprocess. If a block is specified, that block is run in the subprocess, and the subprocess terminates with a status of zero. Otherwise, the <tt>fork</tt> call returns twice, once in the parent, returning the process ID of the child, and once in the child, returning <em>nil</em>. The child process can exit using <tt>Kernel.exit!</tt> to avoid running any <tt>at_exit</tt> functions. The parent process should use <tt>Process.wait</tt> to collect the termination statuses of its children or use <tt>Process.detach</tt> to register disinterest in their status; otherwise, the operating system may accumulate zombie processes.
+- !ruby/struct:SM::Flow::P 
+  body: The thread calling fork is the only thread in the created child process. fork doesn't copy other threads.
+full_name: Kernel#fork
+is_singleton: false
+name: fork
+params: |
+  Kernel.fork  [{ block }]   => fixnum or nil
+  Process.fork [{ block }]   => fixnum or nil
+
+visibility: public

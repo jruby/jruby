@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Main name of the switch.
+full_name: OptionParser#switch_name
+is_singleton: false
+name: switch_name
+params: ()
+visibility: public

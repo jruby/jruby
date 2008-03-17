@@ -1,0 +1,26 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Log an <tt>INFO</tt> message.
+- !ruby/struct:SM::Flow::P 
+  body: The message can come either from the <tt>progname</tt> argument or the <tt>block</tt>. If both are provided, then the <tt>block</tt> is used as the message, and <tt>progname</tt> is used as the program name.
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Examples
+- !ruby/struct:SM::Flow::VERB 
+  body: "  logger.info(&quot;MainApp&quot;) { &quot;Received connection from #{ip}&quot; }\n  # ...\n  logger.info &quot;Waiting for input from user&quot;\n  # ...\n  logger.info { &quot;User typed #{input}&quot; }\n"
+- !ruby/struct:SM::Flow::P 
+  body: You'll probably stick to the second form above, unless you want to provide a program name (which you can do with <tt>Logger#progname=</tt> as well).
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Return
+- !ruby/struct:SM::Flow::P 
+  body: "See #add."
+full_name: Logger#info
+is_singleton: false
+name: info
+params: (progname = nil, &block)
+visibility: public

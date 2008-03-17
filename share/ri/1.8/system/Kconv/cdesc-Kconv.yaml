@@ -1,0 +1,127 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Kanji Converter for Ruby.
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Auto-Detect
+  name: AUTO
+  value: NKF::AUTO
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: ISO-2022-JP
+  name: JIS
+  value: NKF::JIS
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: EUC-JP
+  name: EUC
+  value: NKF::EUC
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Shift_JIS
+  name: SJIS
+  value: NKF::SJIS
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: BINARY
+  name: BINARY
+  value: NKF::BINARY
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: NOCONV
+  name: NOCONV
+  value: NKF::NOCONV
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: ASCII
+  name: ASCII
+  value: NKF::ASCII
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: UTF-8
+  name: UTF8
+  value: NKF::UTF8
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: UTF-16
+  name: UTF16
+  value: NKF::UTF16
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: UTF-32
+  name: UTF32
+  value: NKF::UTF32
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: UNKNOWN
+  name: UNKNOWN
+  value: NKF::UNKNOWN
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Revision of kconv.rb
+  name: REVISION
+  value: "%q$Revision: 11708 $"
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Regexp of Shift_JIS string (private constant)
+  name: RegexpShiftjis
+  value: "/\\A(?:                        [\\x00-\\x7f\\xa1-\\xdf] |                        [\\x81-\\x9f\\xe0-\\xfc][\\x40-\\x7e\\x80-\\xfc]                        )*\\z/nx"
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Regexp of EUC-JP string (private constant)
+  name: RegexpEucjp
+  value: "/\\A(?:                     [\\x00-\\x7f]                         |                     \\x8e        [\\xa1-\\xdf]             |                     \\x8f        [\\xa1-\\xfe] [\\xa1-\\xfe] |                     [\\xa1-\\xfe] [\\xa1-\\xfe]                    )*\\z/nx"
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Regexp of UTF-8 string (private constant)
+  name: RegexpUtf8
+  value: "/\\A(?:                     [\\x00-\\x7f]                                     |                     [\\xc2-\\xdf] [\\x80-\\xbf]                         |                     \\xe0        [\\xa0-\\xbf] [\\x80-\\xbf]             |                     [\\xe1-\\xef] [\\x80-\\xbf] [\\x80-\\xbf]             |                     \\xf0        [\\x90-\\xbf] [\\x80-\\xbf] [\\x80-\\xbf] |                     [\\xf1-\\xf3] [\\x80-\\xbf] [\\x80-\\xbf] [\\x80-\\xbf] |                     \\xf4        [\\x80-\\x8f] [\\x80-\\xbf] [\\x80-\\xbf]                    )*\\z/nx"
+full_name: Kconv
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: guess
+- !ruby/object:RI::MethodSummary 
+  name: guess_old
+- !ruby/object:RI::MethodSummary 
+  name: iseuc
+- !ruby/object:RI::MethodSummary 
+  name: issjis
+- !ruby/object:RI::MethodSummary 
+  name: isutf8
+- !ruby/object:RI::MethodSummary 
+  name: kconv
+- !ruby/object:RI::MethodSummary 
+  name: toeuc
+- !ruby/object:RI::MethodSummary 
+  name: tojis
+- !ruby/object:RI::MethodSummary 
+  name: tosjis
+- !ruby/object:RI::MethodSummary 
+  name: toutf16
+- !ruby/object:RI::MethodSummary 
+  name: toutf8
+name: Kconv
+superclass: 

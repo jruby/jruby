@@ -1,0 +1,25 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Runs the specified command string as a subprocess; the subprocess's standard input and output will be connected to the returned <tt>IO</tt> object. If <em>cmd_string</em> starts with a ``<tt>-</tt>'', then a new instance of Ruby is started as the subprocess. The default mode for the new file object is ``r'', but <em>mode</em> may be set to any of the modes listed in the description for class IO.
+- !ruby/struct:SM::Flow::P 
+  body: If a block is given, Ruby will run the command as a child connected to Ruby with a pipe. Ruby's end of the pipe will be passed as a parameter to the block. At the end of block, Ruby close the pipe and sets <tt>$?</tt>. In this case <tt>IO::popen</tt> returns the value of the block.
+- !ruby/struct:SM::Flow::P 
+  body: "If a block is given with a <em>cmd_string</em> of ``<tt>-</tt>'', the block will be run in two separate processes: once in the parent, and once in a child. The parent process will be passed the pipe object as a parameter to the block, the child version of the block will be passed <tt>nil</tt>, and the child's standard in and standard out will be connected to the parent through the pipe. Not available on all platforms."
+- !ruby/struct:SM::Flow::VERB 
+  body: "   f = IO.popen(&quot;uname&quot;)\n   p f.readlines\n   puts &quot;Parent is #{Process.pid}&quot;\n   IO.popen (&quot;date&quot;) { |f| puts f.gets }\n   IO.popen(&quot;-&quot;) {|f| $stderr.puts &quot;#{Process.pid} is here, f is #{f}&quot;}\n   p $?\n"
+- !ruby/struct:SM::Flow::P 
+  body: <em>produces:</em>
+- !ruby/struct:SM::Flow::VERB 
+  body: "   [&quot;Linux\\n&quot;]\n   Parent is 26166\n   Wed Apr  9 08:53:52 CDT 2003\n   26169 is here, f is\n   26166 is here, f is #&lt;IO:0x401b3d44&gt;\n   #&lt;Process::Status: pid=26166,exited(0)&gt;\n"
+full_name: IO::popen
+is_singleton: true
+name: popen
+params: |
+  IO.popen(cmd_string, mode="r" )               => io
+  IO.popen(cmd_string, mode="r" ) {|io| block } => obj
+
+visibility: public

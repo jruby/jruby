@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Check public_methods
+full_name: RDoc::Fortran95parser#check_public_methods
+is_singleton: false
+name: check_public_methods
+params: (method, parent)
+visibility: private

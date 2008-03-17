@@ -1,0 +1,27 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Delegator is an abstract class used to build delegator pattern objects from subclasses. Subclasses should redefine __getobj__. For a concrete implementation, see SimpleDelegator.
+constants: []
+
+full_name: Delegator
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: __getobj__
+- !ruby/object:RI::MethodSummary 
+  name: marshal_dump
+- !ruby/object:RI::MethodSummary 
+  name: marshal_load
+- !ruby/object:RI::MethodSummary 
+  name: method_missing
+- !ruby/object:RI::MethodSummary 
+  name: respond_to?
+name: Delegator
+superclass: Object

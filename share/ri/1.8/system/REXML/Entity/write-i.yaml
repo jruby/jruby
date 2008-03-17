@@ -1,0 +1,21 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Write out a fully formed, correct entity definition (assuming the Entity object itself is valid.)
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "out:"
+    body: An object implementing &lt;TT&gt;&amp;lt;&amp;lt;&lt;TT&gt; to which the entity will be output
+  - !ruby/struct:SM::Flow::LI 
+    label: "indent:"
+    body: <b>DEPRECATED</b> and ignored
+  type: :NOTE
+full_name: REXML::Entity#write
+is_singleton: false
+name: write
+params: (out, indent=-1)
+visibility: public

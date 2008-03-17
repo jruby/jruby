@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Removes a namespace from this node. This only works if the namespace is actually declared in this node. If no argument is passed, deletes the default namespace.
+- !ruby/struct:SM::Flow::P 
+  body: "Evaluates to: this element"
+- !ruby/struct:SM::Flow::VERB 
+  body: " doc = Document.new &quot;&lt;a xmlns:foo='bar' xmlns='twiddle'/&gt;&quot;\n doc.root.delete_namespace\n puts doc     # -&gt; &lt;a xmlns:foo='bar'/&gt;\n doc.root.delete_namespace 'foo'\n puts doc     # -&gt; &lt;a/&gt;\n"
+full_name: REXML::Element#delete_namespace
+is_singleton: false
+name: delete_namespace
+params: (namespace="xmlns")
+visibility: public

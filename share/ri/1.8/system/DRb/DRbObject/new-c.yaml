@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Create a new remote object stub.
+- !ruby/struct:SM::Flow::P 
+  body: <tt>obj</tt> is the (local) object we want to create a stub for. Normally this is <tt>nil</tt>. <tt>uri</tt> is the URI of the remote object that this will be a stub for.
+full_name: DRb::DRbObject::new
+is_singleton: true
+name: new
+params: (obj, uri=nil)
+visibility: public

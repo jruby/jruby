@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Dump given message to the log device without any formatting. If no log device exists, return <tt>nil</tt>.
+full_name: Logger#<<
+is_singleton: false
+name: "<<"
+params: (msg)
+visibility: public

@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: if postproc is nil, this node is an abstract node. if postproc is non-nil, this node is a real node.
+full_name: IRB::SLex::Node::new
+is_singleton: true
+name: new
+params: (preproc = nil, postproc = nil)
+visibility: public

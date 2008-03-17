@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Generators::ContextUser#aref_to
+is_singleton: false
+name: aref_to
+params: (target)
+visibility: public

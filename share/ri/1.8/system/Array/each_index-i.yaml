@@ -1,0 +1,20 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Same as <tt>Array#each</tt>, but passes the index of the element instead of the element itself.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   a = [ &quot;a&quot;, &quot;b&quot;, &quot;c&quot; ]\n   a.each_index {|x| print x, &quot; -- &quot; }\n"
+- !ruby/struct:SM::Flow::P 
+  body: "produces:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "   0 -- 1 -- 2 --\n"
+full_name: Array#each_index
+is_singleton: false
+name: each_index
+params: |
+  array.each_index {|index| block }  ->  array
+
+visibility: public

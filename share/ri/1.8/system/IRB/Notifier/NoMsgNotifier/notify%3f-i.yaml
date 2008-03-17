@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IRB::Notifier::NoMsgNotifier#notify?
+is_singleton: false
+name: notify?
+params: ()
+visibility: public

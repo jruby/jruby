@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IRB::delete_caller
+is_singleton: true
+name: delete_caller
+params: ()
+visibility: public

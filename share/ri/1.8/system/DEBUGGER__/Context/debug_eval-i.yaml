@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: DEBUGGER__::Context#debug_eval
+is_singleton: false
+name: debug_eval
+params: (str, binding)
+visibility: public

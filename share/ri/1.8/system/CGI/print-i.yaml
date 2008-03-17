@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Print an argument or list of arguments to the default output stream
+- !ruby/struct:SM::Flow::VERB 
+  body: "  cgi = CGI.new\n  cgi.print    # default:  cgi.print == $DEFAULT_OUTPUT.print\n"
+full_name: CGI#print
+is_singleton: false
+name: print
+params: (*options)
+visibility: public

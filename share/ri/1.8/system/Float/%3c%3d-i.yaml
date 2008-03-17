@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: <tt>true</tt> if <tt>flt</tt> is less than or equal to <tt>other</tt>.
+full_name: Float#<=
+is_singleton: false
+name: <=
+params: |
+  flt <= other    =>  true or false
+
+visibility: public

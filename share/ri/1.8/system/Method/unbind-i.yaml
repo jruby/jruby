@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Dissociates <em>meth</em> from it's current receiver. The resulting <tt>UnboundMethod</tt> can subsequently be bound to a new object of the same class (see <tt>UnboundMethod</tt>).
+full_name: Method#unbind
+is_singleton: false
+name: unbind
+params: |
+  meth.unbind    => unbound_method
+
+visibility: public

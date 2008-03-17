@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: DRb::DRbSSLSocket::uri_option
+is_singleton: true
+name: uri_option
+params: (uri, config)
+visibility: public

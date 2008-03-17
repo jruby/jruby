@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the rank of the matrix. Beware that using Float values, with their usual lack of precision, can affect the value returned by this method. Use Rational values instead if this is important to you.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  Matrix[[7,6], [3,9]].rank\n    =&gt; 2\n"
+full_name: Matrix#rank
+is_singleton: false
+name: rank
+params: ()
+visibility: public

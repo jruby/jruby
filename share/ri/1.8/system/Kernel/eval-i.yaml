@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Evaluates the Ruby expression(s) in <em>string</em>. If <em>binding</em> is given, the evaluation is performed in its context. The binding may be a <tt>Binding</tt> object or a <tt>Proc</tt> object. If the optional <em>filename</em> and <em>lineno</em> parameters are present, they will be used when reporting syntax errors.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   def getBinding(str)\n     return binding\n   end\n   str = &quot;hello&quot;\n   eval &quot;str + ' Fred'&quot;                      #=&gt; &quot;hello Fred&quot;\n   eval &quot;str + ' Fred'&quot;, getBinding(&quot;bye&quot;)   #=&gt; &quot;bye Fred&quot;\n"
+full_name: Kernel#eval
+is_singleton: false
+name: eval
+params: |
+  eval(string [, binding [, filename [,lineno]]])  => obj
+
+visibility: public

@@ -1,0 +1,17 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Equivalent to <tt>$_.chomp!(<em>string</em>)</tt>. See <tt>String#chomp!</tt>
+- !ruby/struct:SM::Flow::VERB 
+  body: "   $_ = &quot;now\\n&quot;\n   chomp!       #=&gt; &quot;now&quot;\n   $_           #=&gt; &quot;now&quot;\n   chomp! &quot;x&quot;   #=&gt; nil\n   $_           #=&gt; &quot;now&quot;\n"
+full_name: Kernel#chomp!
+is_singleton: false
+name: chomp!
+params: |
+  chomp!             => $_ or nil
+  chomp!(string)     => $_ or nil
+
+visibility: public

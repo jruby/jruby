@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Alias for #rm_f"
+full_name: FileUtils#safe_unlink
+is_singleton: false
+name: safe_unlink
+params: (list, options = {})
+visibility: public

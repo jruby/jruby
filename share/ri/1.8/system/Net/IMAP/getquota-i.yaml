@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Sends the GETQUOTA command along with specified <tt>mailbox</tt>. If this mailbox exists, then an array containing a Net::IMAP::MailboxQuota object is returned. This command generally is only available to server admin.
+full_name: Net::IMAP#getquota
+is_singleton: false
+name: getquota
+params: (mailbox)
+visibility: public

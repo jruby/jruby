@@ -1,0 +1,17 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Show the name of the underlying method.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  &quot;cat&quot;.method(:count).inspect   #=&gt; &quot;#&lt;Method: String#count&gt;&quot;\n"
+full_name: Method#inspect
+is_singleton: false
+name: inspect
+params: |
+  meth.to_s      =>  string
+  meth.inspect   =>  string
+
+visibility: public

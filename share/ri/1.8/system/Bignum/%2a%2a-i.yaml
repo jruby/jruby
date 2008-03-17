@@ -1,0 +1,17 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: power!
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Raises <em>big</em> to the <em>exponent</em> power (which may be an integer, float, or anything that will coerce to a number). The result may be a Fixnum, Bignum, or Float
+- !ruby/struct:SM::Flow::VERB 
+  body: "  123456789 ** 2      #=&gt; 15241578750190521\n  123456789 ** 1.2    #=&gt; 5126464716.09932\n  123456789 ** -2     #=&gt; 6.5610001194102e-17\n"
+full_name: Bignum#**
+is_singleton: false
+name: "**"
+params: |
+  big ** exponent   #=> numeric
+
+visibility: public

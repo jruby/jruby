@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Equivalent to <tt>File::chmod</tt>, but does not follow symbolic links (so it will change the permissions associated with the link, not the file referenced by the link). Often not available.
+full_name: File::lchmod
+is_singleton: true
+name: lchmod
+params: |
+  File.lchmod(mode_int, file_name, ...)  => integer
+
+visibility: public

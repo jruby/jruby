@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns <tt>true</tt> if the process was created as a result of an execve(2) system call which had either of the setuid or setgid bits set (and extra privileges were given as a result) or if it has changed any of its real, effective or saved user or group IDs since it began execution.
+full_name: Process::Sys::issetugid
+is_singleton: true
+name: issetugid
+params: |
+  Process::Sys.issetugid   => true or false
+
+visibility: public

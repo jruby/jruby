@@ -1,0 +1,32 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: recvdata
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Send a command to the host.
+- !ruby/struct:SM::Flow::P 
+  body: More exactly, sends a string to the host, and reads in all received data until is sees the prompt or other matched sequence.
+- !ruby/struct:SM::Flow::P 
+  body: If a block is given, the received data will be yielded to it as it is read in. Whether a block is given or not, the received data will be return as a string. Note that the received data includes the prompt and in most cases the host's echo of our command.
+- !ruby/struct:SM::Flow::P 
+  body: "<tt>options</tt> is either a String, specified the string or command to send to the host; or it is a hash of options. If a hash, the following options can be specified:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "String:"
+    body: the command or other string to send to the host.
+  - !ruby/struct:SM::Flow::LI 
+    label: "Match:"
+    body: a regular expression, the sequence to look for in the received data before returning. If not specified, the Prompt option value specified when this instance was created will be used, or, failing that, the default prompt of /[$%#&gt;] \z/n.
+  - !ruby/struct:SM::Flow::LI 
+    label: "Timeout:"
+    body: the seconds to wait for data from the host before raising a Timeout error. If not specified, the Timeout option value specified when this instance was created will be used, or, failing that, the default value of 10 seconds.
+  type: :NOTE
+- !ruby/struct:SM::Flow::P 
+  body: The command or other string will have the newline sequence appended to it.
+full_name: Net::Telnet#cmd
+is_singleton: false
+name: cmd
+params: (options) {|recvdata| ...}
+visibility: public

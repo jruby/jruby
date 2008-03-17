@@ -1,0 +1,17 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: def_delegators
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Shortcut for defining multiple delegator methods, but with no provision for using a different name. The following two code samples have the same effect:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  def_delegators :@records, :size, :&lt;&lt;, :map\n\n  def_delegator :@records, :size\n  def_delegator :@records, :&lt;&lt;\n  def_delegator :@records, :map\n"
+- !ruby/struct:SM::Flow::P 
+  body: See the examples at Forwardable and forwardable.rb.
+full_name: Forwardable#def_instance_delegators
+is_singleton: false
+name: def_instance_delegators
+params: (accessor, *methods)
+visibility: public

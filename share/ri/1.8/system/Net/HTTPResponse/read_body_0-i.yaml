@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Net::HTTPResponse#read_body_0
+is_singleton: false
+name: read_body_0
+params: (dest)
+visibility: private

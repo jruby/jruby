@@ -1,0 +1,41 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: args
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: reason
+  rw: W
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Base class of exceptions from OptionParser.
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Reason which caused the error.
+  name: Reason
+  value: "'parse error'.freeze"
+full_name: ParseError
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: inspect
+- !ruby/object:RI::MethodSummary 
+  name: message
+- !ruby/object:RI::MethodSummary 
+  name: reason
+- !ruby/object:RI::MethodSummary 
+  name: recover
+- !ruby/object:RI::MethodSummary 
+  name: set_option
+- !ruby/object:RI::MethodSummary 
+  name: to_s
+name: ParseError
+superclass: RuntimeError

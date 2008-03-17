@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "On the server side, for an instance returned by #open_server, accept a client connection and return a new instance to handle the server's side of this client-server session."
+full_name: DRb::DRbTCPSocket#accept
+is_singleton: false
+name: accept
+params: ()
+visibility: public

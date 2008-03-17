@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Evaluates to an <tt>Array</tt> containing the prefixes (names) of all defined namespaces at this context node.
+- !ruby/struct:SM::Flow::VERB 
+  body: " doc = Document.new(&quot;&lt;a xmlns:x='1' xmlns:y='2'&gt;&lt;b/&gt;&lt;c xmlns:z='3'/&gt;&lt;/a&gt;&quot;)\n doc.elements['//b'].prefixes # -&gt; ['x', 'y']\n"
+full_name: REXML::Element#prefixes
+is_singleton: false
+name: prefixes
+params: ()
+visibility: public

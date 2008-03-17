@@ -1,0 +1,182 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: should the output be placed into a single file
+  name: all_one_file
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: character-set
+  name: charset
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: URL of stylesheet
+  name: css
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: should diagrams be drawn
+  name: diagram
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: files matching this pattern will be excluded
+  name: exclude
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: extra_accessor_flags
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: pattern for additional attr_... style methods
+  name: extra_accessors
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: should we draw fileboxes in diagrams
+  name: fileboxes
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: and the list of files to be processed
+  name: files
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: scan newer sources than the flag file if true.
+  name: force_update
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: description of the output generator (set with the <tt>-fmt</tt> option
+  name: generator
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: image format for diagrams
+  name: image_format
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: include line numbers in the source listings
+  name: include_line_numbers
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: should source code be included inline, or displayed in a popup
+  name: inline_source
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: name of the file, class or module to display in the initial index page (if not specified the first file we encounter is used)
+  name: main_page
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: merge into classes of the name name when generating ri
+  name: merge
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: the name of the output directory
+  name: op_dir
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: the name to use for the output
+  name: op_name
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Are we promiscuous about showing module contents across multiple files
+  name: promiscuous
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Don't display progress as we process the files
+  name: quiet
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: "array of directories to search for files to satisfy an :include:"
+  name: rdoc_include
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: include private and protected methods in the output
+  name: show_all
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: include the '#' at the front of hyperlinked instance method names
+  name: show_hash
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: the number of columns in a tab
+  name: tab_width
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: template to be used when generating output
+  name: template
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: URL of web cvs frontend
+  name: webcvs
+  rw: R
+class_methods: []
+
+comment: 
+constants: []
+
+full_name: Options
+includes: 
+- !ruby/object:RI::IncludedModule 
+  name: Singleton
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: check_diagram
+- !ruby/object:RI::MethodSummary 
+  name: check_files
+- !ruby/object:RI::MethodSummary 
+  name: error
+- !ruby/object:RI::MethodSummary 
+  name: parse
+- !ruby/object:RI::MethodSummary 
+  name: setup_generator
+- !ruby/object:RI::MethodSummary 
+  name: title
+- !ruby/object:RI::MethodSummary 
+  name: title=
+name: Options
+superclass: Object

@@ -1,0 +1,11 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: print
+block_params: 
+comment: 
+full_name: Net::WriteAdapter#write
+is_singleton: false
+name: write
+params: (str)
+visibility: public

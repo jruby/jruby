@@ -1,0 +1,178 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: "[]"
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Arrays are ordered, integer-indexed collections of any object. Array indexing starts at 0, as in C or Java. A negative index is assumed to be relative to the end of the array---that is, an index of -1 indicates the last element of the array, -2 is the next to last element in the array, and so on.
+constants: []
+
+full_name: Array
+includes: 
+- !ruby/object:RI::IncludedModule 
+  name: Enumerable
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: "&"
+- !ruby/object:RI::MethodSummary 
+  name: "*"
+- !ruby/object:RI::MethodSummary 
+  name: +
+- !ruby/object:RI::MethodSummary 
+  name: "-"
+- !ruby/object:RI::MethodSummary 
+  name: "<<"
+- !ruby/object:RI::MethodSummary 
+  name: <=>
+- !ruby/object:RI::MethodSummary 
+  name: ==
+- !ruby/object:RI::MethodSummary 
+  name: "[]"
+- !ruby/object:RI::MethodSummary 
+  name: "[]="
+- !ruby/object:RI::MethodSummary 
+  name: abbrev
+- !ruby/object:RI::MethodSummary 
+  name: assoc
+- !ruby/object:RI::MethodSummary 
+  name: at
+- !ruby/object:RI::MethodSummary 
+  name: clear
+- !ruby/object:RI::MethodSummary 
+  name: collect
+- !ruby/object:RI::MethodSummary 
+  name: collect!
+- !ruby/object:RI::MethodSummary 
+  name: compact
+- !ruby/object:RI::MethodSummary 
+  name: compact!
+- !ruby/object:RI::MethodSummary 
+  name: concat
+- !ruby/object:RI::MethodSummary 
+  name: dclone
+- !ruby/object:RI::MethodSummary 
+  name: delete
+- !ruby/object:RI::MethodSummary 
+  name: delete_at
+- !ruby/object:RI::MethodSummary 
+  name: delete_if
+- !ruby/object:RI::MethodSummary 
+  name: each
+- !ruby/object:RI::MethodSummary 
+  name: each_index
+- !ruby/object:RI::MethodSummary 
+  name: empty?
+- !ruby/object:RI::MethodSummary 
+  name: eql?
+- !ruby/object:RI::MethodSummary 
+  name: fetch
+- !ruby/object:RI::MethodSummary 
+  name: fill
+- !ruby/object:RI::MethodSummary 
+  name: first
+- !ruby/object:RI::MethodSummary 
+  name: flatten
+- !ruby/object:RI::MethodSummary 
+  name: flatten!
+- !ruby/object:RI::MethodSummary 
+  name: frozen?
+- !ruby/object:RI::MethodSummary 
+  name: hash
+- !ruby/object:RI::MethodSummary 
+  name: include?
+- !ruby/object:RI::MethodSummary 
+  name: index
+- !ruby/object:RI::MethodSummary 
+  name: indexes
+- !ruby/object:RI::MethodSummary 
+  name: indices
+- !ruby/object:RI::MethodSummary 
+  name: initialize_copy
+- !ruby/object:RI::MethodSummary 
+  name: insert
+- !ruby/object:RI::MethodSummary 
+  name: inspect
+- !ruby/object:RI::MethodSummary 
+  name: join
+- !ruby/object:RI::MethodSummary 
+  name: last
+- !ruby/object:RI::MethodSummary 
+  name: length
+- !ruby/object:RI::MethodSummary 
+  name: map
+- !ruby/object:RI::MethodSummary 
+  name: map!
+- !ruby/object:RI::MethodSummary 
+  name: nitems
+- !ruby/object:RI::MethodSummary 
+  name: pack
+- !ruby/object:RI::MethodSummary 
+  name: pop
+- !ruby/object:RI::MethodSummary 
+  name: pretty_print
+- !ruby/object:RI::MethodSummary 
+  name: pretty_print_cycle
+- !ruby/object:RI::MethodSummary 
+  name: push
+- !ruby/object:RI::MethodSummary 
+  name: quote
+- !ruby/object:RI::MethodSummary 
+  name: rassoc
+- !ruby/object:RI::MethodSummary 
+  name: reject
+- !ruby/object:RI::MethodSummary 
+  name: reject!
+- !ruby/object:RI::MethodSummary 
+  name: replace
+- !ruby/object:RI::MethodSummary 
+  name: reverse
+- !ruby/object:RI::MethodSummary 
+  name: reverse!
+- !ruby/object:RI::MethodSummary 
+  name: reverse_each
+- !ruby/object:RI::MethodSummary 
+  name: rindex
+- !ruby/object:RI::MethodSummary 
+  name: select
+- !ruby/object:RI::MethodSummary 
+  name: shift
+- !ruby/object:RI::MethodSummary 
+  name: size
+- !ruby/object:RI::MethodSummary 
+  name: slice
+- !ruby/object:RI::MethodSummary 
+  name: slice!
+- !ruby/object:RI::MethodSummary 
+  name: sort
+- !ruby/object:RI::MethodSummary 
+  name: sort!
+- !ruby/object:RI::MethodSummary 
+  name: to_a
+- !ruby/object:RI::MethodSummary 
+  name: to_ary
+- !ruby/object:RI::MethodSummary 
+  name: to_s
+- !ruby/object:RI::MethodSummary 
+  name: to_yaml
+- !ruby/object:RI::MethodSummary 
+  name: transpose
+- !ruby/object:RI::MethodSummary 
+  name: uniq
+- !ruby/object:RI::MethodSummary 
+  name: uniq!
+- !ruby/object:RI::MethodSummary 
+  name: unshift
+- !ruby/object:RI::MethodSummary 
+  name: values_at
+- !ruby/object:RI::MethodSummary 
+  name: yaml_initialize
+- !ruby/object:RI::MethodSummary 
+  name: zip
+- !ruby/object:RI::MethodSummary 
+  name: "|"
+name: Array
+superclass: Object

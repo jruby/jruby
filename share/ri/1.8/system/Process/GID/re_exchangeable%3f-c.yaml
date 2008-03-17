@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns <tt>true</tt> if the real and effective group IDs of a process may be exchanged on the current platform.
+full_name: Process::GID::re_exchangeable?
+is_singleton: true
+name: re_exchangeable?
+params: |
+  Process::GID.re_exchangeable?   => true or false
+
+visibility: public

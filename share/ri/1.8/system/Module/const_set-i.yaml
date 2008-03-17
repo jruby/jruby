@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Sets the named constant to the given object, returning that object. Creates a new constant if no constant with the given name previously existed.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   Math.const_set(&quot;HIGH_SCHOOL_PI&quot;, 22.0/7.0)   #=&gt; 3.14285714285714\n   Math::HIGH_SCHOOL_PI - Math::PI              #=&gt; 0.00126448926734968\n"
+full_name: Module#const_set
+is_singleton: false
+name: const_set
+params: |
+  mod.const_set(sym, obj)    => obj
+
+visibility: public

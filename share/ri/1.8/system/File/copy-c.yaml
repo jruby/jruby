@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Copies a file <tt>from</tt> to <tt>to</tt> using #syscopy. If <tt>to</tt> is a directory, copies <tt>from</tt> to <tt>to/from</tt>. If <tt>verbose</tt> is true, <tt>from -&gt; to</tt> is printed."
+full_name: File::copy
+is_singleton: true
+name: copy
+params: (from, to, verbose = false)
+visibility: public

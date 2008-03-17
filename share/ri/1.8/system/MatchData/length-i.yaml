@@ -1,0 +1,17 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the number of elements in the match array.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   m = /(.)(.)(\\d+)(\\d)/.match(&quot;THX1138.&quot;)\n   m.length   #=&gt; 5\n   m.size     #=&gt; 5\n"
+full_name: MatchData#length
+is_singleton: false
+name: length
+params: |
+  mtch.length   => integer
+  mtch.size     => integer
+
+visibility: public

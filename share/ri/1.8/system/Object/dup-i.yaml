@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Produces a shallow copy of <em>obj</em>---the instance variables of <em>obj</em> are copied, but not the objects they reference. <tt>dup</tt> copies the tainted state of <em>obj</em>. See also the discussion under <tt>Object#clone</tt>. In general, <tt>clone</tt> and <tt>dup</tt> may have different semantics in descendent classes. While <tt>clone</tt> is used to duplicate an object, including its internal state, <tt>dup</tt> typically uses the class of the descendent object to create the new instance.
+- !ruby/struct:SM::Flow::P 
+  body: "This method may have class-specific behavior. If so, that behavior will be documented under the #<tt>initialize_copy</tt> method of the class."
+full_name: Object#dup
+is_singleton: false
+name: dup
+params: |
+  obj.dup -> an_object
+
+visibility: public

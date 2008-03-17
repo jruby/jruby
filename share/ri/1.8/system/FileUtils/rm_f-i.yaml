@@ -1,0 +1,17 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: safe_unlink
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Options: noop verbose"
+- !ruby/struct:SM::Flow::P 
+  body: Equivalent to
+- !ruby/struct:SM::Flow::VERB 
+  body: "  #rm(list, :force =&gt; true)\n"
+full_name: FileUtils#rm_f
+is_singleton: false
+name: rm_f
+params: (list, options = {})
+visibility: public

@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Finishes conversion.
+- !ruby/struct:SM::Flow::P 
+  body: "After calling this, calling Iconv#iconv will cause an exception, but multiple calls of #close are guaranteed to end successfully."
+- !ruby/struct:SM::Flow::P 
+  body: Returns a string containing the byte sequence to change the output buffer to its initial shift state.
+full_name: Iconv#close
+is_singleton: false
+name: close
+params: ()
+visibility: public

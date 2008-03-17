@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: See <tt>FileTest.executable_real?</tt>.
+full_name: Pathname#executable_real?
+is_singleton: false
+name: executable_real?
+params: ()
+visibility: public

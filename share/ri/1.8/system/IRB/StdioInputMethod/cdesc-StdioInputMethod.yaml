@@ -1,0 +1,23 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+constants: []
+
+full_name: IRB::StdioInputMethod
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: eof?
+- !ruby/object:RI::MethodSummary 
+  name: gets
+- !ruby/object:RI::MethodSummary 
+  name: line
+- !ruby/object:RI::MethodSummary 
+  name: readable_atfer_eof?
+name: StdioInputMethod
+superclass: InputMethod

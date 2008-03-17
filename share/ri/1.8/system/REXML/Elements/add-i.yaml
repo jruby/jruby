@@ -1,0 +1,24 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: "<<"
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Adds an element
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "element:"
+    body: if supplied, is either an Element, String, or Source (see Element.initialize). If not supplied or nil, a new, default Element will be constructed
+  - !ruby/struct:SM::Flow::LI 
+    label: "Returns:"
+    body: the added Element
+  type: :NOTE
+- !ruby/struct:SM::Flow::VERB 
+  body: " a = Element.new 'a'\n a.elements.add Element.new 'b'  #-&gt; &lt;a&gt;&lt;b/&gt;&lt;/a&gt;\n a.elements.add 'c'              #-&gt; &lt;a&gt;&lt;b/&gt;&lt;c/&gt;&lt;/a&gt;\n"
+full_name: REXML::Elements#add
+is_singleton: false
+name: add
+params: (element=nil)
+visibility: public

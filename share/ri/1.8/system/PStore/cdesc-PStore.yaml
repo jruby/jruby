@@ -1,0 +1,63 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: PStore implements a file based persistance mechanism based on a Hash. User code can store hierarchies of Ruby objects (values) into the data store file by name (keys). An object hierarchy may be just a single object. User code may later read values back from the data store or even update data, as needed.
+- !ruby/struct:SM::Flow::P 
+  body: The transactional behavior ensures that any changes succeed or fail together. This can be used to ensure that the data store is not left in a transitory state, where some values were upated but others were not.
+- !ruby/struct:SM::Flow::P 
+  body: Behind the scenes, Ruby objects are stored to the data store file with Marshal. That carries the usual limitations. Proc objects cannot be marshalled, for example.
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: "Usage example:"
+- !ruby/struct:SM::Flow::VERB 
+  body: " require &quot;pstore&quot;\n\n # a mock wiki object...\n class WikiPage\n   def initialize( page_name, author, contents )\n     @page_name = page_name\n     @revisions = Array.new\n\n     add_revision(author, contents)\n   end\n\n   attr_reader :page_name\n\n   def add_revision( author, contents )\n     @revisions &lt;&lt; { :created  =&gt; Time.now,\n                     :author   =&gt; author,\n                     :contents =&gt; contents }\n   end\n\n   def wiki_page_references\n     [@page_name] + @revisions.last[:contents].scan(/\\b(?:[A-Z]+[a-z]+){2,}/)\n   end\n\n   # ...\n end\n\n # create a new page...\n home_page = WikiPage.new( &quot;HomePage&quot;, &quot;James Edward Gray II&quot;,\n                           &quot;A page about the JoysOfDocumentation...&quot; )\n\n # then we want to update page data and the index together, or not at all...\n wiki = PStore.new(&quot;wiki_pages.pstore&quot;)\n wiki.transaction do  # begin transaction; do all of this or none of it\n   # store page...\n   wiki[home_page.page_name] = home_page\n   # ensure that an index has been created...\n   wiki[:wiki_index] ||= Array.new\n   # update wiki index...\n   wiki[:wiki_index].push(*home_page.wiki_page_references)\n end                   # commit changes to wiki data store file\n\n ### Some time later... ###\n\n # read wiki data...\n wiki.transaction(true) do  # begin read-only transaction, no changes allowed\n   wiki.roots.each do |data_root_name|\n     p data_root_name\n     p wiki[data_root_name]\n   end\n end\n"
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: RDWR_ACCESS
+  value: File::RDWR | File::CREAT | binmode
+- !ruby/object:RI::Constant 
+  comment: 
+  name: RD_ACCESS
+  value: File::RDONLY | binmode
+- !ruby/object:RI::Constant 
+  comment: 
+  name: WR_ACCESS
+  value: File::WRONLY | File::CREAT | File::TRUNC | binmode
+full_name: PStore
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: "[]"
+- !ruby/object:RI::MethodSummary 
+  name: "[]="
+- !ruby/object:RI::MethodSummary 
+  name: abort
+- !ruby/object:RI::MethodSummary 
+  name: commit
+- !ruby/object:RI::MethodSummary 
+  name: commit_new
+- !ruby/object:RI::MethodSummary 
+  name: delete
+- !ruby/object:RI::MethodSummary 
+  name: fetch
+- !ruby/object:RI::MethodSummary 
+  name: in_transaction
+- !ruby/object:RI::MethodSummary 
+  name: in_transaction_wr
+- !ruby/object:RI::MethodSummary 
+  name: path
+- !ruby/object:RI::MethodSummary 
+  name: root?
+- !ruby/object:RI::MethodSummary 
+  name: roots
+- !ruby/object:RI::MethodSummary 
+  name: transaction
+name: PStore
+superclass: Object

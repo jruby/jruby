@@ -1,0 +1,21 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: name
+  rw: RW
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: an included module
+constants: []
+
+full_name: RDoc::Include
+includes: []
+
+instance_methods: []
+
+name: Include
+superclass: CodeObject

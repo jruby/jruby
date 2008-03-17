@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: When this module is included in another, Ruby calls <tt>append_features</tt> in this module, passing it the receiving module in <em>mod</em>. Ruby's default implementation is to add the constants, methods, and module variables of this module to <em>mod</em> if this module has not already been added to <em>mod</em> or one of its ancestors. See also <tt>Module#include</tt>.
+full_name: Module#append_features
+is_singleton: false
+name: append_features
+params: |
+  append_features(mod)   => mod
+
+visibility: public

@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Converts <em>arg</em> to a <tt>String</tt> by calling its <tt>to_s</tt> method.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   String(self)        #=&gt; &quot;main&quot;\n   String(self.class   #=&gt; &quot;Object&quot;\n   String(123456)      #=&gt; &quot;123456&quot;\n"
+full_name: Kernel#String
+is_singleton: false
+name: String
+params: |
+  String(arg)   => string
+
+visibility: public

@@ -1,0 +1,17 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Evaluates a string containing Ruby source code, or the given block, within the context of the receiver (<em>obj</em>). In order to set the context, the variable <tt>self</tt> is set to <em>obj</em> while the code is executing, giving the code access to <em>obj</em>'s instance variables. In the version of <tt>instance_eval</tt> that takes a <tt>String</tt>, the optional second and third parameters supply a filename and starting line number that are used when reporting compilation errors.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   class Klass\n     def initialize\n       @secret = 99\n     end\n   end\n   k = Klass.new\n   k.instance_eval { @secret }   #=&gt; 99\n"
+full_name: Object#instance_eval
+is_singleton: false
+name: instance_eval
+params: |
+  obj.instance_eval(string [, filename [, lineno]] )   => obj
+  obj.instance_eval {| | block }                       => obj
+
+visibility: public

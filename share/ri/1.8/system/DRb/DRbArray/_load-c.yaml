@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: DRb::DRbArray::_load
+is_singleton: true
+name: _load
+params: (s)
+visibility: public

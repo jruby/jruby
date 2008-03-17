@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Makes a list of existing class methods public.
+full_name: Module#public_class_method
+is_singleton: false
+name: public_class_method
+params: |
+  mod.public_class_method(symbol, ...)    => mod
+
+visibility: public

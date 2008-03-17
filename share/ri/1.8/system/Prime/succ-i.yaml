@@ -1,0 +1,11 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: next
+block_params: 
+comment: 
+full_name: Prime#succ
+is_singleton: false
+name: succ
+params: ()
+visibility: public

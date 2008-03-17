@@ -1,0 +1,26 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Adds an attribute to this element, overwriting any existing attribute by the same name.
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "key:"
+    body: can be either an Attribute or a String. If an Attribute, the attribute is added to the list of Element attributes. If String, the argument is used as the name of the new attribute, and the value parameter must be supplied.
+  - !ruby/struct:SM::Flow::LI 
+    label: "value:"
+    body: Required if <tt>key</tt> is a String, and ignored if the first argument is an Attribute. This is a String, and is used as the value of the new Attribute. This should be the unnormalized value of the attribute (without entities).
+  - !ruby/struct:SM::Flow::LI 
+    label: "Returns:"
+    body: the Attribute added
+  type: :NOTE
+- !ruby/struct:SM::Flow::VERB 
+  body: " e = Element.new 'e'\n e.add_attribute( 'a', 'b' )               #-&gt; &lt;e a='b'/&gt;\n e.add_attribute( 'x:a', 'c' )             #-&gt; &lt;e a='b' x:a='c'/&gt;\n e.add_attribute Attribute.new('b', 'd')   #-&gt; &lt;e a='b' x:a='c' b='d'/&gt;\n"
+full_name: REXML::Element#add_attribute
+is_singleton: false
+name: add_attribute
+params: ( key, value=nil )
+visibility: public

@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: If <em>num</em> and <em>numeric</em> have different signs, returns <em>mod</em>-<em>numeric</em>; otherwise, returns <em>mod</em>. In both cases <em>mod</em> is the value <em>num</em>.<tt>modulo(</tt><em>numeric</em><tt>)</tt>. The differences between <tt>remainder</tt> and modulo (<tt>%</tt>) are shown in the table under <tt>Numeric#divmod</tt>.
+full_name: Numeric#remainder
+is_singleton: false
+name: remainder
+params: |
+  num.remainder(numeric)    => result
+
+visibility: public

@@ -1,0 +1,34 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: START
+  value: "'<![CDATA['"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: STOP
+  value: "']]>'"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: ILLEGAL
+  value: /(\]\]>)/
+full_name: REXML::CData
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: clone
+- !ruby/object:RI::MethodSummary 
+  name: to_s
+- !ruby/object:RI::MethodSummary 
+  name: value
+- !ruby/object:RI::MethodSummary 
+  name: write
+name: CData
+superclass: Text

@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the last component of the filename given in <em>file_name</em>, which must be formed using forward slashes (``<tt>/</tt>'') regardless of the separator used on the local file system. If <em>suffix</em> is given and present at the end of <em>file_name</em>, it is removed.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   File.basename(&quot;/home/gumby/work/ruby.rb&quot;)          #=&gt; &quot;ruby.rb&quot;\n   File.basename(&quot;/home/gumby/work/ruby.rb&quot;, &quot;.rb&quot;)   #=&gt; &quot;ruby&quot;\n"
+full_name: File::basename
+is_singleton: true
+name: basename
+params: |
+  File.basename(file_name [, suffix] ) -> base_name
+
+visibility: public

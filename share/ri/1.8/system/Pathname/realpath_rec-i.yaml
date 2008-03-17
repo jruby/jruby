@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Pathname#realpath_rec
+is_singleton: false
+name: realpath_rec
+params: (prefix, unresolved, h)
+visibility: private

@@ -1,0 +1,34 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: bottom
+- !ruby/object:RI::MethodSummary 
+  name: new
+- !ruby/object:RI::MethodSummary 
+  name: sender
+- !ruby/object:RI::MethodSummary 
+  name: top
+comment: 
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: INIT_STACK_TIMES
+  value: "3"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: CALL_STACK_OFFSET
+  value: "3"
+full_name: IRB::Frame
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: bottom
+- !ruby/object:RI::MethodSummary 
+  name: top
+- !ruby/object:RI::MethodSummary 
+  name: trace_func
+name: Frame
+superclass: Object

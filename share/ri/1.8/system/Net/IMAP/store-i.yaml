@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Sends a STORE command to alter data associated with messages in the mailbox, in particular their flags. The <tt>set</tt> parameter is a number or an array of numbers or a Range object. Each number is a message sequence number. <tt>attr</tt> is the name of a data item to store: 'FLAGS' means to replace the message's flag list with the provided one; '+FLAGS' means to add the provided flags; and '-FLAGS' means to remove them. <tt>flags</tt> is a list of flags."
+- !ruby/struct:SM::Flow::P 
+  body: "The return value is an array of Net::IMAP::FetchData. For example:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  p imap.store(6..8, &quot;+FLAGS&quot;, [:Deleted])\n  #=&gt; [#&lt;Net::IMAP::FetchData seqno=6, attr={&quot;FLAGS&quot;=&gt;[:Seen, :Deleted]}&gt;, \\\n       #&lt;Net::IMAP::FetchData seqno=7, attr={&quot;FLAGS&quot;=&gt;[:Seen, :Deleted]}&gt;, \\\n       #&lt;Net::IMAP::FetchData seqno=8, attr={&quot;FLAGS&quot;=&gt;[:Seen, :Deleted]}&gt;]\n"
+full_name: Net::IMAP#store
+is_singleton: false
+name: store
+params: (set, attr, flags)
+visibility: public

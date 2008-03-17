@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Equality---Two arrays are equal if they contain the same number of elements and if each element is equal to (according to Object.==) the corresponding element in the other array.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   [ &quot;a&quot;, &quot;c&quot; ]    == [ &quot;a&quot;, &quot;c&quot;, 7 ]     #=&gt; false\n   [ &quot;a&quot;, &quot;c&quot;, 7 ] == [ &quot;a&quot;, &quot;c&quot;, 7 ]     #=&gt; true\n   [ &quot;a&quot;, &quot;c&quot;, 7 ] == [ &quot;a&quot;, &quot;d&quot;, &quot;f&quot; ]   #=&gt; false\n"
+full_name: Array#==
+is_singleton: false
+name: ==
+params: |
+  array == other_array   ->   bool
+
+visibility: public

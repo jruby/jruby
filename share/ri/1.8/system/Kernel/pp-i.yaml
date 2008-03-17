@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: prints arguments in pretty form.
+- !ruby/struct:SM::Flow::P 
+  body: pp returns nil.
+full_name: Kernel#pp
+is_singleton: false
+name: pp
+params: (*objs)
+visibility: private

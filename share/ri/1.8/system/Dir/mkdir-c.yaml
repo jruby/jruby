@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Makes a new directory named by <em>string</em>, with permissions specified by the optional parameter <em>anInteger</em>. The permissions may be modified by the value of <tt>File::umask</tt>, and are ignored on NT. Raises a <tt>SystemCallError</tt> if the directory cannot be created. See also the discussion of permissions in the class documentation for <tt>File</tt>.
+full_name: Dir::mkdir
+is_singleton: true
+name: mkdir
+params: |
+  Dir.mkdir( string [, integer] ) => 0
+
+visibility: public

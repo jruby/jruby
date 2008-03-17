@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the least significant eight bits of the return code of <em>stat</em>. Only available if <tt>exited?</tt> is <tt>true</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   fork { }           #=&gt; 26572\n   Process.wait       #=&gt; 26572\n   $?.exited?         #=&gt; true\n   $?.exitstatus      #=&gt; 0\n\n   fork { exit 99 }   #=&gt; 26573\n   Process.wait       #=&gt; 26573\n   $?.exited?         #=&gt; true\n   $?.exitstatus      #=&gt; 99\n"
+full_name: Process::Status#exitstatus
+is_singleton: false
+name: exitstatus
+params: |
+  stat.exitstatus   => fixnum or nil
+
+visibility: public

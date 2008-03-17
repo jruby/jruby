@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Element Reference---Retrieves the <em>value</em> object corresponding to the <em>key</em> object. If not found, returns the a default value (see <tt>Hash::new</tt> for details).
+- !ruby/struct:SM::Flow::VERB 
+  body: "   h = { &quot;a&quot; =&gt; 100, &quot;b&quot; =&gt; 200 }\n   h[&quot;a&quot;]   #=&gt; 100\n   h[&quot;c&quot;]   #=&gt; nil\n"
+full_name: Hash#[]
+is_singleton: false
+name: "[]"
+params: |
+  hsh[key]    =>  value
+
+visibility: public

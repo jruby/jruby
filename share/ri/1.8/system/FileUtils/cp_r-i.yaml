@@ -1,0 +1,18 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Options: preserve noop verbose dereference_root remove_destination"
+- !ruby/struct:SM::Flow::P 
+  body: Copies <tt>src</tt> to <tt>dest</tt>. If <tt>src</tt> is a directory, this method copies all its contents recursively. If <tt>dest</tt> is a directory, copies <tt>src</tt> to +dest/src+.
+- !ruby/struct:SM::Flow::P 
+  body: <tt>src</tt> can be a list of files.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  # Installing ruby library &quot;mylib&quot; under the site_ruby\n  FileUtils.rm_r site_ruby + '/mylib', :force\n  FileUtils.cp_r 'lib/', site_ruby + '/mylib'\n\n  # Examples of copying several files to target directory.\n  FileUtils.cp_r %w(mail.rb field.rb debug/), site_ruby + '/tmail'\n  FileUtils.cp_r Dir.glob('*.rb'), '/home/aamine/lib/ruby', :noop =&gt; true, :verbose =&gt; true\n\n  # If you want to copy all contents of a directory instead of the\n  # directory itself, c.f. src/x -&gt; dest/x, src/y -&gt; dest/y,\n  # use following code.\n  FileUtils.cp_r 'src/.', 'dest'     # cp_r('src', 'dest') makes src/dest,\n                                     # but this doesn't.\n"
+full_name: FileUtils#cp_r
+is_singleton: false
+name: cp_r
+params: (src, dest, options = {})
+visibility: public

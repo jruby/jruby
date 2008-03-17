@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Net::SMTP#do_start
+is_singleton: false
+name: do_start
+params: ( helodomain, user, secret, authtype )
+visibility: private

@@ -1,0 +1,11 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: level=
+block_params: 
+comment: 
+full_name: IRB::Notifier::CompositeNotifier#level_notifier=
+is_singleton: false
+name: level_notifier=
+params: (value)
+visibility: public

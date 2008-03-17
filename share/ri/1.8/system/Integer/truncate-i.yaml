@@ -1,0 +1,19 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: As <em>int</em> is already an <tt>Integer</tt>, all these methods simply return the receiver.
+full_name: Integer#truncate
+is_singleton: false
+name: truncate
+params: |
+  int.to_i      => int
+  int.to_int    => int
+  int.floor     => int
+  int.ceil      => int
+  int.round     => int
+  int.truncate  => int
+
+visibility: public

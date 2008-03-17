@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the element at the current position.
+full_name: Generator#current
+is_singleton: false
+name: current
+params: ()
+visibility: public

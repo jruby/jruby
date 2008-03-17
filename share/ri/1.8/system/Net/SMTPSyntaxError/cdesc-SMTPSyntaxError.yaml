@@ -1,0 +1,18 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Represents an SMTP command syntax error (error code 500)
+constants: []
+
+full_name: Net::SMTPSyntaxError
+includes: 
+- !ruby/object:RI::IncludedModule 
+  name: SMTPError
+instance_methods: []
+
+name: SMTPSyntaxError
+superclass: ProtoSyntaxError

@@ -1,0 +1,19 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: chdir
+block_params: dir
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Options: verbose"
+- !ruby/struct:SM::Flow::P 
+  body: Changes the current directory to the directory <tt>dir</tt>.
+- !ruby/struct:SM::Flow::P 
+  body: If this method is called with block, resumes to the old working directory after the block execution finished.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  FileUtils.cd('/', :verbose =&gt; true)   # chdir and report it\n"
+full_name: FileUtils#cd
+is_singleton: false
+name: cd
+params: (dir, options = {}) {|dir| ...}
+visibility: public

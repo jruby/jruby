@@ -1,0 +1,19 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Stores an individual Ruby object or a hierarchy of Ruby objects in the data store file under the root <em>name</em>. Assigning to a <em>name</em> already in the data store clobbers the old data.
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: "Example:"
+- !ruby/struct:SM::Flow::VERB 
+  body: " require &quot;pstore&quot;\n\n store = PStore.new(&quot;data_file.pstore&quot;)\n store.transaction do  # begin transaction\n   # load some data into the store...\n   store[:single_object] = &quot;My data...&quot;\n   store[:obj_heirarchy] = { &quot;Kev Jackson&quot; =&gt; [&quot;rational.rb&quot;, &quot;pstore.rb&quot;],\n                             &quot;James Gray&quot;  =&gt; [&quot;erb.rb&quot;, &quot;pstore.rb&quot;] }\n end                   # commit changes to data store file\n"
+- !ruby/struct:SM::Flow::P 
+  body: "<b>WARNING</b>: This method is only valid in a PStore#transaction and it cannot be read-only. It will raise PStore::Error if called at any other time."
+full_name: PStore#[]=
+is_singleton: false
+name: "[]="
+params: (name, value)
+visibility: public

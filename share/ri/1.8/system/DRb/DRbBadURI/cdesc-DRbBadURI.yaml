@@ -1,0 +1,17 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Error raised by the DRbProtocol module when it cannot find any protocol implementation support the scheme specified in a URI.
+constants: []
+
+full_name: DRb::DRbBadURI
+includes: []
+
+instance_methods: []
+
+name: DRbBadURI
+superclass: DRbError

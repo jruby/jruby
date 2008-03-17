@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: By default we replace existing classes with the same name. If the --merge option was given, we instead merge this definition into an existing class. We add our methods, aliases, etc to that class, but do not change the class's description.
+full_name: Generators::RIGenerator#update_or_replace
+is_singleton: false
+name: update_or_replace
+params: (cls_desc)
+visibility: private

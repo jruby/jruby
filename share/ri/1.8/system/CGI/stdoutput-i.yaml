@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: CGI#stdoutput
+is_singleton: false
+name: stdoutput
+params: ()
+visibility: private

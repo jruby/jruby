@@ -1,0 +1,20 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Closes the read end of a duplex I/O stream (i.e., one that contains both a read and a write stream, such as a pipe). Will raise an <tt>IOError</tt> if the stream is not duplexed.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   f = IO.popen(&quot;/bin/sh&quot;,&quot;r+&quot;)\n   f.close_read\n   f.readlines\n"
+- !ruby/struct:SM::Flow::P 
+  body: <em>produces:</em>
+- !ruby/struct:SM::Flow::VERB 
+  body: "   prog.rb:3:in `readlines': not opened for reading (IOError)\n    from prog.rb:3\n"
+full_name: IO#close_read
+is_singleton: false
+name: close_read
+params: |
+  ios.close_read    => nil
+
+visibility: public

@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Alias for #url_encode"
+full_name: ERB::Util#u
+is_singleton: false
+name: u
+params: (s)
+visibility: public

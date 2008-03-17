@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: DRb::DRbMessage#make_proxy
+is_singleton: false
+name: make_proxy
+params: (obj, error=false)
+visibility: private

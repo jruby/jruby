@@ -1,0 +1,60 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: appname
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: logdev
+  rw: R
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: Description
+- !ruby/struct:SM::Flow::P 
+  body: Application -- Add logging support to your application.
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: Usage
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "1."
+    body: Define your application class as a sub-class of this class.
+  - !ruby/struct:SM::Flow::LI 
+    label: "2."
+    body: Override 'run' method in your class to do many things.
+  - !ruby/struct:SM::Flow::LI 
+    label: "3."
+    body: Instantiate it and invoke 'start'.
+  type: :NUMBER
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: Example
+- !ruby/struct:SM::Flow::VERB 
+  body: "  class FooApp &lt; Application\n    def initialize(foo_app, application_specific, arguments)\n      super('FooApp') # Name of the application.\n    end\n\n    def run\n      ...\n      log(WARN, 'warning', 'my_method1')\n      ...\n      @log.error('my_method2') { 'Error!' }\n      ...\n    end\n  end\n\n  status = FooApp.new(....).start\n"
+constants: []
+
+full_name: Logger::Application
+includes: 
+- !ruby/object:RI::IncludedModule 
+  name: Logger::Severity
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: level=
+- !ruby/object:RI::MethodSummary 
+  name: log
+- !ruby/object:RI::MethodSummary 
+  name: log=
+- !ruby/object:RI::MethodSummary 
+  name: run
+- !ruby/object:RI::MethodSummary 
+  name: set_log
+- !ruby/object:RI::MethodSummary 
+  name: start
+name: Application
+superclass: Object

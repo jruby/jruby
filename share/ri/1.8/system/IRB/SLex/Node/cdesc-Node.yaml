@@ -1,0 +1,30 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: postproc
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: preproc
+  rw: RW
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+constants: []
+
+full_name: IRB::SLex::Node
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: create_subnode
+- !ruby/object:RI::MethodSummary 
+  name: match
+- !ruby/object:RI::MethodSummary 
+  name: match_io
+- !ruby/object:RI::MethodSummary 
+  name: search
+name: Node
+superclass: Object

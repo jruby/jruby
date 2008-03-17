@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Equivalent to <em>stat</em><tt>.to_i.to_s</tt>.
+full_name: Process::Status#to_s
+is_singleton: false
+name: to_s
+params: |
+  stat.to_s   => string
+
+visibility: public

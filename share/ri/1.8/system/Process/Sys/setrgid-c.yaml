@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Set the real group ID of the calling process to <em>integer</em>. Not available on all platforms.
+full_name: Process::Sys::setrgid
+is_singleton: true
+name: setrgid
+params: |
+  Process::Sys.setrgid(integer)   => nil
+
+visibility: public

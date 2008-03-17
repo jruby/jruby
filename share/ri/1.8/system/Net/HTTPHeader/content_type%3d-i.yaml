@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Alias for #set_content_type"
+full_name: Net::HTTPHeader#content_type=
+is_singleton: false
+name: content_type=
+params: (type, params = {})
+visibility: public

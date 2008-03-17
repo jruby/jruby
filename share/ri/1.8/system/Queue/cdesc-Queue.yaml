@@ -1,0 +1,43 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: This class provides a way to synchronize communication between threads.
+- !ruby/struct:SM::Flow::P 
+  body: "Example:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  require 'thread'\n\n  queue = Queue.new\n\n  producer = Thread.new do\n    5.times do |i|\n      sleep rand(i) # simulate expense\n      queue &lt;&lt; i\n      puts &quot;#{i} produced&quot;\n    end\n  end\n\n  consumer = Thread.new do\n    5.times do |i|\n      value = queue.pop\n      sleep rand(i/2) # simulate expense\n      puts &quot;consumed #{value}&quot;\n    end\n  end\n\n  consumer.join\n"
+constants: []
+
+full_name: Queue
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: "<<"
+- !ruby/object:RI::MethodSummary 
+  name: clear
+- !ruby/object:RI::MethodSummary 
+  name: deq
+- !ruby/object:RI::MethodSummary 
+  name: empty?
+- !ruby/object:RI::MethodSummary 
+  name: enq
+- !ruby/object:RI::MethodSummary 
+  name: length
+- !ruby/object:RI::MethodSummary 
+  name: num_waiting
+- !ruby/object:RI::MethodSummary 
+  name: pop
+- !ruby/object:RI::MethodSummary 
+  name: push
+- !ruby/object:RI::MethodSummary 
+  name: shift
+- !ruby/object:RI::MethodSummary 
+  name: size
+name: Queue
+superclass: Object

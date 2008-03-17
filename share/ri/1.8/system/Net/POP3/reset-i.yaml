@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Resets the session. This clears all &quot;deleted&quot; marks from messages.
+- !ruby/struct:SM::Flow::P 
+  body: This method raises a POPError if an error occurs.
+full_name: Net::POP3#reset
+is_singleton: false
+name: reset
+params: ()
+visibility: public

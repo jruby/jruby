@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Open a server listening for connections at <tt>uri</tt> with configuration <tt>config</tt>.
+- !ruby/struct:SM::Flow::P 
+  body: The DRbProtocol module asks each registered protocol in turn to try to open a server at the URI. Each protocol signals that it does not handle that URI by raising a DRbBadScheme error. If no protocol recognises the URI, then a DRbBadURI error is raised. If a protocol accepts the URI, but an error occurs in opening it, the underlying error is passed on to the caller.
+full_name: DRb::DRbProtocol#open_server
+is_singleton: false
+name: open_server
+params: (uri, config, first=true)
+visibility: public

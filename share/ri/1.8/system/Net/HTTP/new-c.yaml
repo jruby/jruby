@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Creates a new Net::HTTP object for the specified <tt>address</tt>. This method does not open the TCP connection.
+full_name: Net::HTTP::new
+is_singleton: true
+name: new
+params: (address, port = nil)
+visibility: public

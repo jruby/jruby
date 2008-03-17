@@ -1,0 +1,18 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns guessed encoding of <em>str</em> as integer.
+- !ruby/struct:SM::Flow::P 
+  body: "Algorithm described in: Ken Lunde. `Understanding Japanese Information Processing' Sebastopol, CA: O'Reilly &amp; Associates."
+- !ruby/struct:SM::Flow::VERB 
+  body: "    case NKF.guess1(input)\n    when NKF::JIS\n      &quot;ISO-2022-JP&quot;\n    when NKF::SJIS\n      &quot;Shift_JIS&quot;\n    when NKF::EUC\n      &quot;EUC-JP&quot;\n    when NKF::UNKNOWN\n      &quot;UNKNOWN(ASCII)&quot;\n    when NKF::BINARY\n      &quot;BINARY&quot;\n    end\n"
+full_name: NKF::guess1
+is_singleton: true
+name: guess1
+params: |
+  NKF.guess1(str)  -> integer
+
+visibility: public

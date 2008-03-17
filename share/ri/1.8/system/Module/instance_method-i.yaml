@@ -1,0 +1,20 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns an <tt>UnboundMethod</tt> representing the given instance method in <em>mod</em>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   class Interpreter\n     def do_a() print &quot;there, &quot;; end\n     def do_d() print &quot;Hello &quot;;  end\n     def do_e() print &quot;!\\n&quot;;     end\n     def do_v() print &quot;Dave&quot;;    end\n     Dispatcher = {\n      ?a =&gt; instance_method(:do_a),\n      ?d =&gt; instance_method(:do_d),\n      ?e =&gt; instance_method(:do_e),\n      ?v =&gt; instance_method(:do_v)\n     }\n     def interpret(string)\n       string.each_byte {|b| Dispatcher[b].bind(self).call }\n     end\n   end\n\n   interpreter = Interpreter.new\n   interpreter.interpret('dave')\n"
+- !ruby/struct:SM::Flow::P 
+  body: <em>produces:</em>
+- !ruby/struct:SM::Flow::VERB 
+  body: "   Hello there, Dave!\n"
+full_name: Module#instance_method
+is_singleton: false
+name: instance_method
+params: |
+  mod.instance_method(symbol)   => unbound_method
+
+visibility: public

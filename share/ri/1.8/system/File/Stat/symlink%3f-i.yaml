@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns <tt>true</tt> if <em>stat</em> is a symbolic link, <tt>false</tt> if it isn't or if the operating system doesn't support this feature. As <tt>File::stat</tt> automatically follows symbolic links, <tt>symlink?</tt> will always be <tt>false</tt> for an object returned by <tt>File::stat</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   File.symlink(&quot;testfile&quot;, &quot;alink&quot;)   #=&gt; 0\n   File.stat(&quot;alink&quot;).symlink?         #=&gt; false\n   File.lstat(&quot;alink&quot;).symlink?        #=&gt; true\n"
+full_name: File::Stat#symlink?
+is_singleton: false
+name: symlink?
+params: |
+  stat.symlink?    => true or false
+
+visibility: public

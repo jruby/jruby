@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: returns a Time which represents Last-Modified field.
+full_name: OpenURI::Meta#last_modified
+is_singleton: false
+name: last_modified
+params: ()
+visibility: public

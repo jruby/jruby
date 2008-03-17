@@ -1,0 +1,25 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: A helper method to add a Text child. Actual Text instances can be added with regular Parent methods, such as add() and &lt;&lt;()
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "text:"
+    body: if a String, a new Text instance is created and added to the parent. If Text, the object is added directly.
+  - !ruby/struct:SM::Flow::LI 
+    label: "Returns:"
+    body: this Element
+  type: :NOTE
+- !ruby/struct:SM::Flow::VERB 
+  body: " e = Element.new('a')          #-&gt; &lt;e/&gt;\n e.add_text 'foo'              #-&gt; &lt;e&gt;foo&lt;/e&gt;\n e.add_text Text.new(' bar')    #-&gt; &lt;e&gt;foo bar&lt;/e&gt;\n"
+- !ruby/struct:SM::Flow::P 
+  body: Note that at the end of this example, the branch has <b>3</b> nodes; the 'e' element and <b>2</b> Text node children.
+full_name: REXML::Element#add_text
+is_singleton: false
+name: add_text
+params: ( text )
+visibility: public

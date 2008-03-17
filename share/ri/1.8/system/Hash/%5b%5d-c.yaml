@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Creates a new hash populated with the given objects. Equivalent to the literal <tt>{ <em>key</em>, <em>value</em>, ... }</tt>. Keys and values occur in pairs, so there must be an even number of arguments.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   Hash[&quot;a&quot;, 100, &quot;b&quot;, 200]       #=&gt; {&quot;a&quot;=&gt;100, &quot;b&quot;=&gt;200}\n   Hash[&quot;a&quot; =&gt; 100, &quot;b&quot; =&gt; 200]   #=&gt; {&quot;a&quot;=&gt;100, &quot;b&quot;=&gt;200}\n   { &quot;a&quot; =&gt; 100, &quot;b&quot; =&gt; 200 }     #=&gt; {&quot;a&quot;=&gt;100, &quot;b&quot;=&gt;200}\n"
+full_name: Hash::[]
+is_singleton: true
+name: "[]"
+params: |
+  Hash[ [key =>|, value]* ]   => hash
+
+visibility: public

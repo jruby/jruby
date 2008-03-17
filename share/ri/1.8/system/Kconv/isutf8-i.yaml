@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns whether input encoding is UTF-8 or not.
+- !ruby/struct:SM::Flow::P 
+  body: <b>Note</b> don't expect this return value is MatchData.
+full_name: Kconv#isutf8
+is_singleton: false
+name: isutf8
+params: |
+  Kconv.isutf8(str)   -> obj or nil
+
+visibility: public

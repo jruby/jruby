@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Net::IMAP::CramMD5Authenticator::new
+is_singleton: true
+name: new
+params: (user, password)
+visibility: public

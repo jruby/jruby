@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns an array containing the lines returned by calling <tt>Kernel.gets(<em>separator</em>)</tt> until the end of file.
+full_name: Kernel#readlines
+is_singleton: false
+name: readlines
+params: |
+  readlines(separator=$/)    => array
+
+visibility: public

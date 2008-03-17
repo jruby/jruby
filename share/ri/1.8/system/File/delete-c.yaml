@@ -1,0 +1,15 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Deletes the named files, returning the number of names passed as arguments. Raises an exception on any error. See also <tt>Dir::rmdir</tt>.
+full_name: File::delete
+is_singleton: true
+name: delete
+params: |
+  File.delete(file_name, ...)  => integer
+  File.unlink(file_name, ...)  => integer
+
+visibility: public

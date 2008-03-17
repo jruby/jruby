@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: FileUtils#fu_world_writable?
+is_singleton: false
+name: fu_world_writable?
+params: (st)
+visibility: public

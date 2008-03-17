@@ -1,0 +1,71 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: ready
+block_params: stream
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Opens a message writer stream and gives it to the block. The stream is valid only in the block, and has these methods:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "puts(str = ''):"
+    body: outputs STR and CR LF.
+  - !ruby/struct:SM::Flow::LI 
+    label: "print(str):"
+    body: outputs STR.
+  - !ruby/struct:SM::Flow::LI 
+    label: "printf(fmt, *args):"
+    body: outputs sprintf(fmt,*args).
+  - !ruby/struct:SM::Flow::LI 
+    label: "write(str):"
+    body: outputs STR and returns the length of written bytes.
+  - !ruby/struct:SM::Flow::LI 
+    label: "<<(str):"
+    body: outputs STR and returns self.
+  type: :NOTE
+- !ruby/struct:SM::Flow::P 
+  body: If a single CR (&quot;\r&quot;) or LF (&quot;\n&quot;) is found in the message, it is converted to the CR LF pair. You cannot send a binary message with this method.
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Parameters
+- !ruby/struct:SM::Flow::P 
+  body: <tt>from_addr</tt> is a String representing the source mail address.
+- !ruby/struct:SM::Flow::P 
+  body: <tt>to_addr</tt> is a String or Strings or Array of Strings, representing the destination mail address or addresses.
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Example
+- !ruby/struct:SM::Flow::VERB 
+  body: "    Net::SMTP.start('smtp.example.com', 25) do |smtp|\n      smtp.open_message_stream('from@example.com', ['dest@example.com']) do |f|\n        f.puts 'From: from@example.com'\n        f.puts 'To: dest@example.com'\n        f.puts 'Subject: test message'\n        f.puts\n        f.puts 'This is a test message.'\n      end\n    end\n"
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Errors
+- !ruby/struct:SM::Flow::P 
+  body: "This method may raise:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: Net::SMTPServerBusy
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: Net::SMTPSyntaxError
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: Net::SMTPFatalError
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: Net::SMTPUnknownError
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: IOError
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: TimeoutError
+  type: :BULLET
+full_name: Net::SMTP#open_message_stream
+is_singleton: false
+name: open_message_stream
+params: ( from_addr, *to_addrs ) {|stream| ...}
+visibility: public

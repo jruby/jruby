@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Do year <tt>y</tt>, month <tt>m</tt>, and day-of-month <tt>d</tt> make a valid Civil Date? Returns the corresponding Julian Day Number if they do, nil if they don't.
+- !ruby/struct:SM::Flow::P 
+  body: <tt>m</tt> and <tt>d</tt> can be negative, in which case they count backwards from the end of the year and the end of the month respectively. No wraparound is performed, however, and invalid values cause an ArgumentError to be raised. A date falling in the period skipped in the Day of Calendar Reform adjustment is not valid.
+- !ruby/struct:SM::Flow::P 
+  body: <tt>sg</tt> specifies the Day of Calendar Reform.
+full_name: Date::valid_civil?
+is_singleton: true
+name: valid_civil?
+params: (y, m, d, sg=ITALY)
+visibility: public

@@ -1,0 +1,55 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: "mesg "
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Creates a new Net::Telnet object.
+- !ruby/struct:SM::Flow::P 
+  body: "Attempts to connect to the host (unless the Proxy option is provided: see below). If a block is provided, it is yielded status messages on the attempt to connect to the server, of the form:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  Trying localhost...\n  Connected to localhost.\n"
+- !ruby/struct:SM::Flow::P 
+  body: <tt>options</tt> is a hash of options. The following example lists all options and their default values.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  host = Net::Telnet::new(\n           &quot;Host&quot;       =&gt; &quot;localhost&quot;,  # default: &quot;localhost&quot;\n           &quot;Port&quot;       =&gt; 23,           # default: 23\n           &quot;Binmode&quot;    =&gt; false,        # default: false\n           &quot;Output_log&quot; =&gt; &quot;output_log&quot;, # default: nil (no output)\n           &quot;Dump_log&quot;   =&gt; &quot;dump_log&quot;,   # default: nil (no output)\n           &quot;Prompt&quot;     =&gt; /[$%#&gt;] \\z/n, # default: /[$%#&gt;] \\z/n\n           &quot;Telnetmode&quot; =&gt; true,         # default: true\n           &quot;Timeout&quot;    =&gt; 10,           # default: 10\n             # if ignore timeout then set &quot;Timeout&quot; to false.\n           &quot;Waittime&quot;   =&gt; 0,            # default: 0\n           &quot;Proxy&quot;      =&gt; proxy         # default: nil\n                           # proxy is Net::Telnet or IO object\n         )\n"
+- !ruby/struct:SM::Flow::P 
+  body: "The options have the following meanings:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "Host:"
+    body: the hostname or IP address of the host to connect to, as a String. Defaults to &quot;localhost&quot;.
+  - !ruby/struct:SM::Flow::LI 
+    label: "Port:"
+    body: the port to connect to. Defaults to 23.
+  - !ruby/struct:SM::Flow::LI 
+    label: "Binmode:"
+    body: "if false (the default), newline substitution is performed. Outgoing LF is converted to CRLF, and incoming CRLF is converted to LF. If true, this substitution is not performed. This value can also be set with the #binmode() method. The outgoing conversion only applies to the #puts() and #print() methods, not the #write() method. The precise nature of the newline conversion is also affected by the telnet options SGA and BIN."
+  - !ruby/struct:SM::Flow::LI 
+    label: "Output_log:"
+    body: the name of the file to write connection status messages and all received traffic to. In the case of a proper Telnet session, this will include the client input as echoed by the host; otherwise, it only includes server responses. Output is appended verbatim to this file. By default, no output log is kept.
+  - !ruby/struct:SM::Flow::LI 
+    label: "Dump_log:"
+    body: as for Output_log, except that output is written in hexdump format (16 bytes per line as hex pairs, followed by their printable equivalent), with connection status messages preceded by '#', sent traffic preceded by '&gt;', and received traffic preceded by '&lt;'. By default, not dump log is kept.
+  - !ruby/struct:SM::Flow::LI 
+    label: "Prompt:"
+    body: a regular expression matching the host's command-line prompt sequence. This is needed by the Telnet class to determine when the output from a command has finished and the host is ready to receive a new command. By default, this regular expression is /[$%#&gt;] \z/n.
+  - !ruby/struct:SM::Flow::LI 
+    label: "Telnetmode:"
+    body: "a boolean value, true by default. In telnet mode, traffic received from the host is parsed for special command sequences, and these sequences are escaped in outgoing traffic sent using #puts() or #print() (but not #write()). If you are using the Net::Telnet object to connect to a non-telnet service (such as SMTP or POP), this should be set to &quot;false&quot; to prevent undesired data corruption. This value can also be set by the #telnetmode() method."
+  - !ruby/struct:SM::Flow::LI 
+    label: "Timeout:"
+    body: "the number of seconds to wait before timing out both the initial attempt to connect to host (in this constructor), and all attempts to read data from the host (in #waitfor(), #cmd(), and #login()). Exceeding this timeout causes a TimeoutError to be raised. The default value is 10 seconds. You can disable the timeout by setting this value to false. In this case, the connect attempt will eventually timeout on the underlying connect(2) socket call with an Errno::ETIMEDOUT error (but generally only after a few minutes), but other attempts to read data from the host will hand indefinitely if no data is forthcoming."
+  - !ruby/struct:SM::Flow::LI 
+    label: "Waittime:"
+    body: the amount of time to wait after seeing what looks like a prompt (that is, received data that matches the Prompt option regular expression) to see if more data arrives. If more data does arrive in this time, Net::Telnet assumes that what it saw was not really a prompt. This is to try to avoid false matches, but it can also lead to missing real prompts (if, for instance, a background process writes to the terminal soon after the prompt is displayed). By default, set to 0, meaning not to wait for more data.
+  - !ruby/struct:SM::Flow::LI 
+    label: "Proxy:"
+    body: a proxy object to used instead of opening a direct connection to the host. Must be either another Net::Telnet object or an IO object. If it is another Net::Telnet object, this instance will use that one's socket for communication. If an IO object, it is used directly for communication. Any other kind of object will cause an error to be raised.
+  type: :NOTE
+full_name: Net::Telnet::new
+is_singleton: true
+name: new
+params: (options) {|mesg| ...}
+visibility: public

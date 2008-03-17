@@ -1,0 +1,17 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Opens the file named by <em>filename</em> according to <em>mode</em> (default is ``r'') and returns a new <tt>File</tt> object. See the description of class <tt>IO</tt> for a description of <em>mode</em>. The file mode may optionally be specified as a <tt>Fixnum</tt> by <em>or</em>-ing together the flags (O_RDONLY etc, again described under <tt>IO</tt>). Optional permission bits may be given in <em>perm</em>. These mode and permission bits are platform dependent; on Unix systems, see <tt>open(2)</tt> for details.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   f = File.new(&quot;testfile&quot;, &quot;r&quot;)\n   f = File.new(&quot;newfile&quot;,  &quot;w+&quot;)\n   f = File.new(&quot;newfile&quot;, File::CREAT|File::TRUNC|File::RDWR, 0644)\n"
+full_name: File::new
+is_singleton: true
+name: new
+params: |
+  File.new(filename, mode="r")            => file
+  File.new(filename [, mode [, perm]])    => file
+
+visibility: public

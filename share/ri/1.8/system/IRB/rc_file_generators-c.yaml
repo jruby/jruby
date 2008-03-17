@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: "proc{|rc|  rc == \"rc\" ? irbrc : irbrc+rc"
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: enumerate possible rc-file base name generators
+full_name: IRB::rc_file_generators
+is_singleton: true
+name: rc_file_generators
+params: "() {|proc{|rc| rc == \"rc\" ? irbrc : irbrc+rc| ...}"
+visibility: public

@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "call #wait until the supplied block returns <tt>true</tt>."
+full_name: MonitorMixin::ConditionVariable#wait_until
+is_singleton: false
+name: wait_until
+params: ()
+visibility: public

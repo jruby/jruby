@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Return the fully qualified name of this class or module
+full_name: RDoc::ClassModule#full_name
+is_singleton: false
+name: full_name
+params: ()
+visibility: public

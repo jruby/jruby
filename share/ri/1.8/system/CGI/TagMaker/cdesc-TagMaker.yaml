@@ -1,0 +1,19 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Base module for HTML-generation mixins.
+- !ruby/struct:SM::Flow::P 
+  body: Provides methods for code generation for tags following the various DTD element types.
+constants: []
+
+full_name: CGI::TagMaker
+includes: []
+
+instance_methods: []
+
+name: TagMaker
+superclass: 

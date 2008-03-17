@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Sets the (integer) real and/or effective group IDs of the current process to <em>rid</em> and <em>eid</em>, respectively. A value of <tt>-1</tt> for either means to leave that ID unchanged. Not available on all platforms.
+full_name: Process::Sys::setregid
+is_singleton: true
+name: setregid
+params: |
+  Process::Sys.setregid(rid, eid)   => nil
+
+visibility: public

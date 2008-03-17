@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Pathname#join joins pathnames.
+- !ruby/struct:SM::Flow::P 
+  body: <tt>path0.join(path1, ..., pathN)</tt> is the same as <tt>path0 + path1 + ... + pathN</tt>.
+full_name: Pathname#join
+is_singleton: false
+name: join
+params: (*args)
+visibility: public

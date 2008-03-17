@@ -1,0 +1,17 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns a new array with the results of running <em>block</em> once for every element in <em>enum</em>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   (1..4).collect {|i| i*i }   #=&gt; [1, 4, 9, 16]\n   (1..4).collect { &quot;cat&quot;  }   #=&gt; [&quot;cat&quot;, &quot;cat&quot;, &quot;cat&quot;, &quot;cat&quot;]\n"
+full_name: Enumerable#collect
+is_singleton: false
+name: collect
+params: |
+  enum.collect {| obj | block }  => array
+  enum.map     {| obj | block }  => array
+
+visibility: public

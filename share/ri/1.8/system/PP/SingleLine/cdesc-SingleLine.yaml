@@ -1,0 +1,16 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+constants: []
+
+full_name: PP::SingleLine
+includes: 
+- !ruby/object:RI::IncludedModule 
+  name: PPMethods
+instance_methods: []
+
+name: SingleLine
+superclass: PrettyPrint::SingleLine

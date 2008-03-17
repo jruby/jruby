@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: RDoc::TopLevel#find_class_or_module_named
+is_singleton: false
+name: find_class_or_module_named
+params: (symbol)
+visibility: public

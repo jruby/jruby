@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns <tt>true</tt> is the queue is empty.
+full_name: Queue#empty?
+is_singleton: false
+name: empty?
+params: ()
+visibility: public

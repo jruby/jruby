@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: m[1], m.post_match
+comment: 
+full_name: Net::HTTPResponse::each_response_header
+is_singleton: true
+name: each_response_header
+params: (sock) {|m[1], m.post_match| ...}
+visibility: private

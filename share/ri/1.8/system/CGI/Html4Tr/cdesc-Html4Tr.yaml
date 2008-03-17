@@ -1,0 +1,17 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Mixin module for HTML version 4 transitional generation methods.
+constants: []
+
+full_name: CGI::Html4Tr
+includes: []
+
+instance_methods: []
+
+name: Html4Tr
+superclass: 

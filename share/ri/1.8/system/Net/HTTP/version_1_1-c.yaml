@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Turns on net/http 1.1 (ruby 1.6) features. Defaults to OFF in ruby 1.8.
+full_name: Net::HTTP::version_1_1
+is_singleton: true
+name: version_1_1
+params: ()
+visibility: public

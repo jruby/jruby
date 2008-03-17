@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Preprocess received data from the host.
+- !ruby/struct:SM::Flow::P 
+  body: "Performs newline conversion and detects telnet command sequences. Called automatically by #waitfor(). You should only use this method yourself if you have read input directly using sysread() or similar, and even then only if in telnet mode."
+full_name: Net::Telnet#preprocess
+is_singleton: false
+name: preprocess
+params: (string)
+visibility: public

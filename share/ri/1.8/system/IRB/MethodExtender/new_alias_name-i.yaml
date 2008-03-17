@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "return #{prefix}#{name}#{postfix}&lt;num&gt;"
+full_name: IRB::MethodExtender#new_alias_name
+is_singleton: false
+name: new_alias_name
+params: (name, prefix = "__alias_of__", postfix = "__")
+visibility: public

@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Evaluates to <tt>true</tt> if this element has at least one child Element
+- !ruby/struct:SM::Flow::VERB 
+  body: " doc = Document.new &quot;&lt;a&gt;&lt;b/&gt;&lt;c&gt;Text&lt;/c&gt;&lt;/a&gt;&quot;\n doc.root.has_elements               # -&gt; true\n doc.elements[&quot;/a/b&quot;].has_elements   # -&gt; false\n doc.elements[&quot;/a/c&quot;].has_elements   # -&gt; false\n"
+full_name: REXML::Element#has_elements?
+is_singleton: false
+name: has_elements?
+params: ()
+visibility: public

@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns <tt>true</tt> if the named file is executable by the effective user id of this process.
+full_name: FileTest#executable?
+is_singleton: false
+name: executable?
+params: |
+  File.executable?(file_name)   => true or false
+
+visibility: public

@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Deletes a file on the server.
+full_name: Net::FTP#delete
+is_singleton: false
+name: delete
+params: (filename)
+visibility: public

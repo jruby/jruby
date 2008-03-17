@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Finds a comment matching <tt>type</tt> and <tt>const_name</tt> either above the comment or in the matching Document- section.
+full_name: RDoc::C_Parser#find_const_comment
+is_singleton: false
+name: find_const_comment
+params: (type, const_name)
+visibility: private

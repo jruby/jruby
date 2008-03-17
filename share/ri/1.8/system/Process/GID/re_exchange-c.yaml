@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Exchange real and effective group IDs and return the new effective group ID. Not available on all platforms.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   [Process.gid, Process.egid]   #=&gt; [0, 33]\n   Process::GID.re_exchange      #=&gt; 0\n   [Process.gid, Process.egid]   #=&gt; [33, 0]\n"
+full_name: Process::GID::re_exchange
+is_singleton: true
+name: re_exchange
+params: |
+  Process::GID.re_exchange   => fixnum
+
+visibility: public

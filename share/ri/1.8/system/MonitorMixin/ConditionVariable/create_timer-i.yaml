@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: MonitorMixin::ConditionVariable#create_timer
+is_singleton: false
+name: create_timer
+params: (timeout)
+visibility: private

@@ -1,0 +1,20 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Calls the block once for each living, nonimmediate object in this Ruby process. If <em>module</em> is specified, calls the block for only those classes or modules that match (or are a subclass of) <em>module</em>. Returns the number of objects found. Immediate objects (<tt>Fixnum</tt>s, <tt>Symbol</tt>s <tt>true</tt>, <tt>false</tt>, and <tt>nil</tt>) are never returned. In the example below, <tt>each_object</tt> returns both the numbers we defined and several constants defined in the <tt>Math</tt> module.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   a = 102.7\n   b = 95       # Won't be returned\n   c = 12345678987654321\n   count = ObjectSpace.each_object(Numeric) {|x| p x }\n   puts &quot;Total count: #{count}&quot;\n"
+- !ruby/struct:SM::Flow::P 
+  body: <em>produces:</em>
+- !ruby/struct:SM::Flow::VERB 
+  body: "   12345678987654321\n   102.7\n   2.71828182845905\n   3.14159265358979\n   2.22044604925031e-16\n   1.7976931348623157e+308\n   2.2250738585072e-308\n   Total count: 7\n"
+full_name: ObjectSpace::each_object
+is_singleton: true
+name: each_object
+params: |
+  ObjectSpace.each_object([module]) {|obj| ... } => fixnum
+
+visibility: public

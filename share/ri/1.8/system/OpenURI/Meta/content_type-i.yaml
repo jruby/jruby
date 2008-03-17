@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: returns &quot;type/subtype&quot; which is MIME Content-Type. It is downcased for canonicalization. Content-Type parameters are stripped.
+full_name: OpenURI::Meta#content_type
+is_singleton: false
+name: content_type
+params: ()
+visibility: public

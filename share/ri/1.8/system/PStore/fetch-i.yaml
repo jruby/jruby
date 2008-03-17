@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: This method is just like PStore#[], save that you may also provide a <em>default</em> value for the object. In the event the specified <em>name</em> is not found in the data store, your <em>default</em> will be returned instead. If you do not specify a default, PStore::Error will be raised if the object is not found.
+- !ruby/struct:SM::Flow::P 
+  body: "<b>WARNING</b>: This method is only valid in a PStore#transaction. It will raise PStore::Error if called at any other time."
+full_name: PStore#fetch
+is_singleton: false
+name: fetch
+params: (name, default=PStore::Error)
+visibility: public

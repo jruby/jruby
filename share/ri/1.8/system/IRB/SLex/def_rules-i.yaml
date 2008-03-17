@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IRB::SLex#def_rules
+is_singleton: false
+name: def_rules
+params: (*tokens, &block)
+visibility: public

@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Remove the named field from the object.
+full_name: OpenStruct#delete_field
+is_singleton: false
+name: delete_field
+params: (name)
+visibility: public

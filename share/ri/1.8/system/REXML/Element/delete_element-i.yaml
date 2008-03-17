@@ -1,0 +1,23 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Deletes a child element.
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "element:"
+    body: Must be an <tt>Element</tt>, <tt>String</tt>, or <tt>Integer</tt>. If Element, the element is removed. If String, the element is found (via XPath) and removed. &lt;em&gt;This means that any parent can remove any descendant.&lt;em&gt; If Integer, the Element indexed by that number will be removed.
+  - !ruby/struct:SM::Flow::LI 
+    label: "Returns:"
+    body: the element that was removed.
+  type: :NOTE
+- !ruby/struct:SM::Flow::VERB 
+  body: " doc.delete_element &quot;/a/b/c[@id='4']&quot;\n doc.delete_element doc.elements[&quot;//k&quot;]\n doc.delete_element 1\n"
+full_name: REXML::Element#delete_element
+is_singleton: false
+name: delete_element
+params: (element)
+visibility: public

@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: (i.name)
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Build a list from an array of <em>Htmlxxx</em> items. Look up each in the AllReferences hash: if we find a corresponding entry, we generate a hyperlink to it, otherwise just output the name. However, some names potentially need massaging. For example, you may require a Ruby file without the .rb extension, but the file names we know about may have it. To deal with this, we pass in a block which performs the massaging, returning an array of alternative names to match"
+full_name: Generators::ContextUser#potentially_referenced_list
+is_singleton: false
+name: potentially_referenced_list
+params: (array) {|i.name| ...}
+visibility: public

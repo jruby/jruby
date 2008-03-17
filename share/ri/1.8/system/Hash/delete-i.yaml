@@ -1,0 +1,17 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Deletes and returns a key-value pair from <em>hsh</em> whose key is equal to <em>key</em>. If the key is not found, returns the <em>default value</em>. If the optional code block is given and the key is not found, pass in the key and return the result of <em>block</em>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   h = { &quot;a&quot; =&gt; 100, &quot;b&quot; =&gt; 200 }\n   h.delete(&quot;a&quot;)                              #=&gt; 100\n   h.delete(&quot;z&quot;)                              #=&gt; nil\n   h.delete(&quot;z&quot;) { |el| &quot;#{el} not found&quot; }   #=&gt; &quot;z not found&quot;\n"
+full_name: Hash#delete
+is_singleton: false
+name: delete
+params: |
+  hsh.delete(key)                   => value
+  hsh.delete(key) {| key | block }  => value
+
+visibility: public

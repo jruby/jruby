@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns an Array of option names of the method <tt>mid</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  p FileUtils.options(:rm)  #=&gt; [&quot;noop&quot;, &quot;verbose&quot;, &quot;force&quot;]\n"
+full_name: FileUtils::options_of
+is_singleton: true
+name: options_of
+params: (mid)
+visibility: private

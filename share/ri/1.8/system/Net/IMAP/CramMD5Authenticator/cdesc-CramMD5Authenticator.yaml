@@ -1,0 +1,21 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Authenticator for the &quot;CRAM-MD5&quot; authentication type. See #authenticate()."
+constants: []
+
+full_name: Net::IMAP::CramMD5Authenticator
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: hmac_md5
+- !ruby/object:RI::MethodSummary 
+  name: process
+name: CramMD5Authenticator
+superclass: Object

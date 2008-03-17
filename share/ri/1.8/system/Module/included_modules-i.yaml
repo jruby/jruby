@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the list of modules included in <em>mod</em>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   module Mixin\n   end\n\n   module Outer\n     include Mixin\n   end\n\n   Mixin.included_modules   #=&gt; []\n   Outer.included_modules   #=&gt; [Mixin]\n"
+full_name: Module#included_modules
+is_singleton: false
+name: included_modules
+params: |
+  mod.included_modules -> array
+
+visibility: public

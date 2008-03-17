@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: i
+comment: 
+full_name: DOT::DOTNode#each_port
+is_singleton: false
+name: each_port
+params: () {|i| ...}
+visibility: public

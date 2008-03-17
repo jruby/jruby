@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Compute a hash based on the value of <em>big</em>.
+full_name: Bignum#hash
+is_singleton: false
+name: hash
+params: |
+  big.hash   => fixnum
+
+visibility: public

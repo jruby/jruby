@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: The relationship operator for Date.
+- !ruby/struct:SM::Flow::P 
+  body: Compares dates by Julian Day Number. When comparing two DateTime instances, or a DateTime with a Date, the instances will be regarded as equivalent if they fall on the same date in local time.
+full_name: Date#===
+is_singleton: false
+name: ===
+params: (other)
+visibility: public

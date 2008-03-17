@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: PrettyPrint::SingleLine#first?
+is_singleton: false
+name: first?
+params: ()
+visibility: public

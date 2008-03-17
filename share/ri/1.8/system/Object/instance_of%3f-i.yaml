@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns <tt>true</tt> if <em>obj</em> is an instance of the given class. See also <tt>Object#kind_of?</tt>.
+full_name: Object#instance_of?
+is_singleton: false
+name: instance_of?
+params: |
+  obj.instance_of?(class)    => true or false
+
+visibility: public

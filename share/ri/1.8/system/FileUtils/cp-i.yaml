@@ -1,0 +1,19 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: copy
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Options: preserve noop verbose"
+- !ruby/struct:SM::Flow::P 
+  body: Copies a file content <tt>src</tt> to <tt>dest</tt>. If <tt>dest</tt> is a directory, copies <tt>src</tt> to +dest/src+.
+- !ruby/struct:SM::Flow::P 
+  body: If <tt>src</tt> is a list of files, then <tt>dest</tt> must be a directory.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  FileUtils.cp 'eval.c', 'eval.c.org'\n  FileUtils.cp %w(cgi.rb complex.rb date.rb), '/usr/lib/ruby/1.6'\n  FileUtils.cp %w(cgi.rb complex.rb date.rb), '/usr/lib/ruby/1.6', :verbose =&gt; true\n  FileUtils.cp 'symlink', 'dest'   # copy content, &quot;dest&quot; is not a symlink\n"
+full_name: FileUtils#cp
+is_singleton: false
+name: cp
+params: (src, dest, options = {})
+visibility: public

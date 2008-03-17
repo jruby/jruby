@@ -1,0 +1,21 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: message
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Deletes all messages on the server.
+- !ruby/struct:SM::Flow::P 
+  body: If called with a block, yields each message in turn before deleting it.
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Example
+- !ruby/struct:SM::Flow::VERB 
+  body: "    n = 1\n    pop.delete_all do |m|\n      File.open(&quot;inbox/#{n}&quot;) do |f|\n        f.write m.pop\n      end\n      n += 1\n    end\n"
+- !ruby/struct:SM::Flow::P 
+  body: This method raises a POPError if an error occurs.
+full_name: Net::POP3#delete_all
+is_singleton: false
+name: delete_all
+params: ( {|message| ...}
+visibility: public

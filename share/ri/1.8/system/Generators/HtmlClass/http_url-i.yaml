@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: return the relative file name to store this class in, which is also its url
+full_name: Generators::HtmlClass#http_url
+is_singleton: false
+name: http_url
+params: (full_name, prefix)
+visibility: public

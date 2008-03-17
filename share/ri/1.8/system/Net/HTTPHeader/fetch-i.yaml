@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: +key+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the header field corresponding to the case-insensitive key. Returns the default value <tt>args</tt>, or the result of the block, or nil, if there's no header field named key. See Hash#fetch
+full_name: Net::HTTPHeader#fetch
+is_singleton: false
+name: fetch
+params: (key, *args) {|+key+| ...}
+visibility: public

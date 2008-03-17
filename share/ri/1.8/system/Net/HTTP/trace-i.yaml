@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Sends a TRACE request to the <tt>path</tt> and gets a response, as an HTTPResponse object.
+full_name: Net::HTTP#trace
+is_singleton: false
+name: trace
+params: (path, initheader = nil)
+visibility: public

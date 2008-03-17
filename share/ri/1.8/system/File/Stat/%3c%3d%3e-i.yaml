@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Compares <tt>File::Stat</tt> objects by comparing their respective modification times.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   f1 = File.new(&quot;f1&quot;, &quot;w&quot;)\n   sleep 1\n   f2 = File.new(&quot;f2&quot;, &quot;w&quot;)\n   f1.stat &lt;=&gt; f2.stat   #=&gt; -1\n"
+full_name: File::Stat#<=>
+is_singleton: false
+name: <=>
+params: |
+  stat <=> other_stat    => -1, 0, 1
+
+visibility: public

@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: CSV::foreach
+is_singleton: true
+name: foreach
+params: (path, rs = nil, &block)
+visibility: public

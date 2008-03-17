@@ -1,0 +1,15 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Equivalent to calling <tt>$_.scan</tt>. See <tt>String#scan</tt>.
+full_name: Kernel#scan
+is_singleton: false
+name: scan
+params: |
+  scan(pattern)                   => array
+  scan(pattern) {|///| block }    => $_
+
+visibility: public

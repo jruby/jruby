@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: DEBUGGER__::suspend
+is_singleton: true
+name: suspend
+params: ()
+visibility: public

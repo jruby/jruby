@@ -1,0 +1,27 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: File-based session storage class.
+- !ruby/struct:SM::Flow::P 
+  body: Implements session storage as a flat file of 'key=value' values. This storage type only works directly with String values; the user is responsible for converting other types to Strings when storing and from Strings when retrieving.
+constants: []
+
+full_name: CGI::Session::FileStore
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: close
+- !ruby/object:RI::MethodSummary 
+  name: delete
+- !ruby/object:RI::MethodSummary 
+  name: restore
+- !ruby/object:RI::MethodSummary 
+  name: update
+name: FileStore
+superclass: Object

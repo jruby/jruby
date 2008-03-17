@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Sends a string to the host.
+- !ruby/struct:SM::Flow::P 
+  body: "Same as #print(), but appends a newline to the string."
+full_name: Net::Telnet#puts
+is_singleton: false
+name: puts
+params: (string)
+visibility: public

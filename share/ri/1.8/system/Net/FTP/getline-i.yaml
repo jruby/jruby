@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Net::FTP#getline
+is_singleton: false
+name: getline
+params: ()
+visibility: private

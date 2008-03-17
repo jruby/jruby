@@ -1,0 +1,24 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Monitors provide means of mutual exclusion for Thread programming. A critical region is created by means of the synchronize method, which takes a block. The condition variables (created with #new_cond) may be used to control the execution of a monitor with #signal and #wait."
+- !ruby/struct:SM::Flow::P 
+  body: the Monitor class wraps MonitorMixin, and provides aliases
+- !ruby/struct:SM::Flow::VERB 
+  body: " alias try_enter try_mon_enter\n alias enter mon_enter\n alias exit mon_exit\n"
+- !ruby/struct:SM::Flow::P 
+  body: to access its methods more concisely.
+constants: []
+
+full_name: Monitor
+includes: 
+- !ruby/object:RI::IncludedModule 
+  name: MonitorMixin
+instance_methods: []
+
+name: Monitor
+superclass: Object

@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: ACL#allow_addr?
+is_singleton: false
+name: allow_addr?
+params: (addr)
+visibility: public

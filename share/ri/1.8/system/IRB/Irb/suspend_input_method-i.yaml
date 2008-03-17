@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: back_io
+comment: 
+full_name: IRB::Irb#suspend_input_method
+is_singleton: false
+name: suspend_input_method
+params: (input_method) {|back_io| ...}
+visibility: public

@@ -1,0 +1,21 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Synonym for Element.to_a This is a little slower than calling elements.each directly.
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "xpath:"
+    body: any XPath by which to search for elements in the tree
+  - !ruby/struct:SM::Flow::LI 
+    label: "Returns:"
+    body: an array of Elements that match the supplied path
+  type: :NOTE
+full_name: REXML::Element#get_elements
+is_singleton: false
+name: get_elements
+params: ( xpath )
+visibility: public

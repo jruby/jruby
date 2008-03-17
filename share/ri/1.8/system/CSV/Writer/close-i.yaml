@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: CSV::Writer#close
+is_singleton: false
+name: close
+params: ()
+visibility: public

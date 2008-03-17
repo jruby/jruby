@@ -1,0 +1,62 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Net::IMAP::BodyTypeBasic represents basic body structures of messages.
+- !ruby/struct:SM::Flow::H 
+  level: 4
+  text: "Fields:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "media_type:"
+    body: Returns the content media type name as defined in [MIME-IMB].
+  - !ruby/struct:SM::Flow::LI 
+    label: "subtype:"
+    body: Returns the content subtype name as defined in [MIME-IMB].
+  - !ruby/struct:SM::Flow::LI 
+    label: "param:"
+    body: Returns a hash that represents parameters as defined in [MIME-IMB].
+  - !ruby/struct:SM::Flow::LI 
+    label: "content_id:"
+    body: Returns a string giving the content id as defined in [MIME-IMB].
+  - !ruby/struct:SM::Flow::LI 
+    label: "description:"
+    body: Returns a string giving the content description as defined in [MIME-IMB].
+  - !ruby/struct:SM::Flow::LI 
+    label: "encoding:"
+    body: Returns a string giving the content transfer encoding as defined in [MIME-IMB].
+  - !ruby/struct:SM::Flow::LI 
+    label: "size:"
+    body: Returns a number giving the size of the body in octets.
+  - !ruby/struct:SM::Flow::LI 
+    label: "md5:"
+    body: Returns a string giving the body MD5 value as defined in [MD5].
+  - !ruby/struct:SM::Flow::LI 
+    label: "disposition:"
+    body: Returns a Net::IMAP::ContentDisposition object giving the content disposition.
+  - !ruby/struct:SM::Flow::LI 
+    label: "language:"
+    body: Returns a string or an array of strings giving the body language value as defined in [LANGUAGE-TAGS].
+  - !ruby/struct:SM::Flow::LI 
+    label: "extension:"
+    body: Returns extension data.
+  - !ruby/struct:SM::Flow::LI 
+    label: "multipart?:"
+    body: Returns false.
+  type: :NOTE
+constants: []
+
+full_name: Net::IMAP::BodyTypeBasic
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: media_subtype
+- !ruby/object:RI::MethodSummary 
+  name: multipart?
+name: BodyTypeBasic
+superclass: Struct.new(:media_type, :subtype,                                      :param, :content_id,                                      :description, :encoding, :size,                                      :md5, :disposition, :language,                                      :extension)

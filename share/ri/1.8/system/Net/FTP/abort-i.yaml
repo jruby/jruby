@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Aborts the previous command (ABOR command).
+full_name: Net::FTP#abort
+is_singleton: false
+name: abort
+params: ()
+visibility: public

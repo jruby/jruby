@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: REXML::Document#node_type
+is_singleton: false
+name: node_type
+params: ()
+visibility: public

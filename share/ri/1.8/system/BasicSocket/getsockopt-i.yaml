@@ -1,0 +1,43 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Gets a socket option. These are protocol and system specific, see your local sytem documentation for details. The option is returned as a String with the data being the binary value of the socket option.
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Parameters
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: <tt>level</tt> is an integer, usually one of the SOL_ constants such as Socket::SOL_SOCKET, or a protocol level.
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: <tt>optname</tt> is an integer, usually one of the SO_ constants, such as Socket::SO_REUSEADDR.
+  type: :BULLET
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Examples
+- !ruby/struct:SM::Flow::P 
+  body: "Some socket options are integers with boolean values, in this case #getsockopt could be called like this:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  optval = sock.getsockopt(Socket::SOL_SOCKET,Socket::SO_REUSEADDR)\n  optval = optval.unpack &quot;i&quot;\n  reuseaddr = optval[0] == 0 ? false : true\n"
+- !ruby/struct:SM::Flow::P 
+  body: "Some socket options are integers with numeric values, in this case #getsockopt could be called like this:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  optval = sock.getsockopt(Socket::IPPROTO_IP, Socket::IP_TTL)\n  ipttl = optval.unpack(&quot;i&quot;)[0]\n"
+- !ruby/struct:SM::Flow::P 
+  body: "Option values may be structs. Decoding them can be complex as it involves examining your system headers to determine the correct definition. An example is a +struct linger+, which may be defined in your system headers as:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  struct linger {\n    int l_onoff;\n    int l_linger;\n  };\n"
+- !ruby/struct:SM::Flow::P 
+  body: "In this case #getsockopt could be called like this:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  optval =  sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_LINGER)\n  onoff, linger = optval.unpack &quot;ii&quot;\n"
+full_name: BasicSocket#getsockopt
+is_singleton: false
+name: getsockopt
+params: " getsockopt(level, optname)\n"
+visibility: public

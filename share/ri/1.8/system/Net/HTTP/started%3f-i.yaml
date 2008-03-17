@@ -1,0 +1,13 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: active?
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: returns true if the HTTP session is started.
+full_name: Net::HTTP#started?
+is_singleton: false
+name: started?
+params: ()
+visibility: public

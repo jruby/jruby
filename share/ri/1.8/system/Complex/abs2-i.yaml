@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Square of the absolute value.
+full_name: Complex#abs2
+is_singleton: false
+name: abs2
+params: ()
+visibility: public

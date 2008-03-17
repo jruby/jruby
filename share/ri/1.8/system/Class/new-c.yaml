@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Creates a new anonymous (unnamed) class with the given superclass (or <tt>Object</tt> if no parameter is given). You can give a class a name by assigning the class object to a constant.
+full_name: Class::new
+is_singleton: true
+name: new
+params: |
+  Class.new(super_class=Object)   =>    a_class
+
+visibility: public

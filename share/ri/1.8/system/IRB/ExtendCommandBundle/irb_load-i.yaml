@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IRB::ExtendCommandBundle#irb_load
+is_singleton: false
+name: irb_load
+params: (*opts, &b)
+visibility: public

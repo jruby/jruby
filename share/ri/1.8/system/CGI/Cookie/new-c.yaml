@@ -1,0 +1,37 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Create a new CGI::Cookie object.
+- !ruby/struct:SM::Flow::P 
+  body: "The contents of the cookie can be specified as a <tt>name</tt> and one or more <tt>value</tt> arguments. Alternatively, the contents can be specified as a single hash argument. The possible keywords of this hash are as follows:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "name:"
+    body: the name of the cookie. Required.
+  - !ruby/struct:SM::Flow::LI 
+    label: "value:"
+    body: the cookie's value or list of values.
+  - !ruby/struct:SM::Flow::LI 
+    label: "path:"
+    body: the path for which this cookie applies. Defaults to the base directory of the CGI script.
+  - !ruby/struct:SM::Flow::LI 
+    label: "domain:"
+    body: the domain for which this cookie applies.
+  - !ruby/struct:SM::Flow::LI 
+    label: "expires:"
+    body: the time at which this cookie expires, as a <tt>Time</tt> object.
+  - !ruby/struct:SM::Flow::LI 
+    label: "secure:"
+    body: whether this cookie is a secure cookie or not (default to false). Secure cookies are only transmitted to HTTPS servers.
+  type: :NOTE
+- !ruby/struct:SM::Flow::P 
+  body: These keywords correspond to attributes of the cookie object.
+full_name: CGI::Cookie::new
+is_singleton: true
+name: new
+params: (name = "", *value)
+visibility: public

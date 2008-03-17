@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: CSV::read
+is_singleton: true
+name: read
+params: (path, length = nil, offset = nil)
+visibility: public

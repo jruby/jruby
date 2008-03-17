@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Generators::RIGenerator#generate_method_info
+is_singleton: false
+name: generate_method_info
+params: (cls_desc, method)
+visibility: public

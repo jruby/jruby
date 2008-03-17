@@ -1,0 +1,21 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Defines an instance method in the receiver. The <em>method</em> parameter can be a <tt>Proc</tt> or <tt>Method</tt> object. If a block is specified, it is used as the method body. This block is evaluated using <tt>instance_eval</tt>, a point that is tricky to demonstrate because <tt>define_method</tt> is private. (This is why we resort to the <tt>send</tt> hack in this example.)
+- !ruby/struct:SM::Flow::VERB 
+  body: "   class A\n     def fred\n       puts &quot;In Fred&quot;\n     end\n     def create_method(name, &amp;block)\n       self.class.send(:define_method, name, &amp;block)\n     end\n     define_method(:wilma) { puts &quot;Charge it!&quot; }\n   end\n   class B &lt; A\n     define_method(:barney, instance_method(:fred))\n   end\n   a = B.new\n   a.barney\n   a.wilma\n   a.create_method(:betty) { p self }\n   a.betty\n"
+- !ruby/struct:SM::Flow::P 
+  body: <em>produces:</em>
+- !ruby/struct:SM::Flow::VERB 
+  body: "   In Fred\n   Charge it!\n   #&lt;B:0x401b39e8&gt;\n"
+full_name: Module#define_method
+is_singleton: false
+name: define_method
+params: |
+  define_method(symbol, method)     => new_method
+  define_method(symbol) { block }   => proc
+
+visibility: public

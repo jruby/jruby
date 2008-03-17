@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: See <tt>Process#getpriority</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   Process.setpriority(Process::PRIO_USER, 0, 19)      #=&gt; 0\n   Process.setpriority(Process::PRIO_PROCESS, 0, 19)   #=&gt; 0\n   Process.getpriority(Process::PRIO_USER, 0)          #=&gt; 19\n   Process.getpriority(Process::PRIO_PROCESS, 0)       #=&gt; 19\n"
+full_name: Process::setpriority
+is_singleton: true
+name: setpriority
+params: |
+  Process.setpriority(kind, integer, priority)   => 0
+
+visibility: public

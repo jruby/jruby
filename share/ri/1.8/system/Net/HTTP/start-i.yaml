@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: http
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Opens TCP connection and HTTP session.
+- !ruby/struct:SM::Flow::P 
+  body: When this method is called with block, gives a HTTP object to the block and closes the TCP connection / HTTP session after the block executed.
+- !ruby/struct:SM::Flow::P 
+  body: When called with a block, returns the return value of the block; otherwise, returns self.
+full_name: Net::HTTP#start
+is_singleton: false
+name: start
+params: ( {|http| ...}
+visibility: public

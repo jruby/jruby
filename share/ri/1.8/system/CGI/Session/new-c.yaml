@@ -1,0 +1,54 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Create a new CGI::Session object for <tt>request</tt>.
+- !ruby/struct:SM::Flow::P 
+  body: "<tt>request</tt> is an instance of the <tt>CGI</tt> class (see cgi.rb). <tt>option</tt> is a hash of options for initialising this CGI::Session instance. The following options are recognised:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "session_key:"
+    body: the parameter name used for the session id. Defaults to '_session_id'.
+  - !ruby/struct:SM::Flow::LI 
+    label: "session_id:"
+    body: the session id to use. If not provided, then it is retrieved from the <tt>session_key</tt> parameter of the request, or automatically generated for a new session.
+  - !ruby/struct:SM::Flow::LI 
+    label: "new_session:"
+    body: if true, force creation of a new session. If not set, a new session is only created if none currently exists. If false, a new session is never created, and if none currently exists and the <tt>session_id</tt> option is not set, an ArgumentError is raised.
+  - !ruby/struct:SM::Flow::LI 
+    label: "database_manager:"
+    body: the name of the class providing storage facilities for session state persistence. Built-in support is provided for <tt>FileStore</tt> (the default), <tt>MemoryStore</tt>, and <tt>PStore</tt> (from cgi/session/pstore.rb). See the documentation for these classes for more details.
+  type: :NOTE
+- !ruby/struct:SM::Flow::P 
+  body: The following options are also recognised, but only apply if the session id is stored in a cookie.
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "session_expires:"
+    body: the time the current session expires, as a <tt>Time</tt> object. If not set, the session will terminate when the user's browser is closed.
+  - !ruby/struct:SM::Flow::LI 
+    label: "session_domain:"
+    body: the hostname domain for which this session is valid. If not set, defaults to the hostname of the server.
+  - !ruby/struct:SM::Flow::LI 
+    label: "session_secure:"
+    body: if <tt>true</tt>, this session will only work over HTTPS.
+  - !ruby/struct:SM::Flow::LI 
+    label: "session_path:"
+    body: the path for which this session applies. Defaults to the directory of the CGI script.
+  type: :NOTE
+- !ruby/struct:SM::Flow::P 
+  body: <tt>option</tt> is also passed on to the session storage class initialiser; see the documentation for each session storage class for the options they support.
+- !ruby/struct:SM::Flow::P 
+  body: The retrieved or created session is automatically added to <tt>request</tt> as a cookie, and also to its <tt>output_hidden</tt> table, which is used to add hidden input elements to forms.
+- !ruby/struct:SM::Flow::P 
+  body: <b>WARNING</b> the <tt>output_hidden</tt> fields are surrounded by a &lt;fieldset&gt; tag in HTML 4 generation, which is <em>not</em> invisible on many browsers; you may wish to disable the use of fieldsets with code similar to the following (see http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-list/37805)
+- !ruby/struct:SM::Flow::VERB 
+  body: "  cgi = CGI.new(&quot;html4&quot;)\n  class &lt;&lt; cgi\n      undef_method :fieldset\n  end\n"
+full_name: CGI::Session::new
+is_singleton: true
+name: new
+params: (request, option={})
+visibility: public

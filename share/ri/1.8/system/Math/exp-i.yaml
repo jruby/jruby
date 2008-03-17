@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Redefined to handle a Complex argument.
+full_name: Math#exp
+is_singleton: false
+name: exp
+params: (z)
+visibility: public

@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: REXML::DTD::NotationDecl::parse_source
+is_singleton: true
+name: parse_source
+params: (source, listener)
+visibility: public

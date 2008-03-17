@@ -1,0 +1,20 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Constructor
+- !ruby/struct:SM::Flow::VERB 
+  body: "  dt = DocType.new( 'foo', '-//I/Hate/External/IDs' )\n  # &lt;!DOCTYPE foo '-//I/Hate/External/IDs'&gt;\n  dt = DocType.new( doctype_to_clone )\n  # Incomplete.  Shallow clone of doctype\n"
+- !ruby/struct:SM::Flow::P 
+  body: "<tt>Note</tt> that the constructor:"
+- !ruby/struct:SM::Flow::VERB 
+  body: " Doctype.new( Source.new( &quot;&lt;!DOCTYPE foo 'bar'&gt;&quot; ) )\n"
+- !ruby/struct:SM::Flow::P 
+  body: is <em>deprecated</em>. Do not use it. It will probably disappear.
+full_name: REXML::DocType::new
+is_singleton: true
+name: new
+params: ( first, parent=nil )
+visibility: public

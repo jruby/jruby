@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns <tt>nil</tt>, -1, or +1 depending on whether <em>flt</em> is finite, -infinity, or +infinity.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   (0.0).infinite?        #=&gt; nil\n   (-1.0/0.0).infinite?   #=&gt; -1\n   (+1.0/0.0).infinite?   #=&gt; 1\n"
+full_name: Float#infinite?
+is_singleton: false
+name: infinite?
+params: |
+  flt.infinite? -> nil, -1, +1
+
+visibility: public

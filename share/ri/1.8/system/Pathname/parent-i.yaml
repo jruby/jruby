@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "#parent returns the parent directory."
+- !ruby/struct:SM::Flow::P 
+  body: This is same as <tt>self + '..'</tt>.
+full_name: Pathname#parent
+is_singleton: false
+name: parent
+params: ()
+visibility: public

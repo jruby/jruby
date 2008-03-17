@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: CGI::QueryExtension#read_multipart
+is_singleton: false
+name: read_multipart
+params: (boundary, content_length)
+visibility: private

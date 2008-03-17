@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Mutex_m#mu_try_lock
+is_singleton: false
+name: mu_try_lock
+params: ()
+visibility: public

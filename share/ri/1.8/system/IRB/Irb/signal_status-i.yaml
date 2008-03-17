@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: if @signal_status == :IN_LOAD
+comment: 
+full_name: IRB::Irb#signal_status
+is_singleton: false
+name: signal_status
+params: (status) {|if @signal_status == :IN_LOAD| ...}
+visibility: public

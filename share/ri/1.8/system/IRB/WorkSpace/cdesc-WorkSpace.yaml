@@ -1,0 +1,28 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: binding
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: main
+  rw: R
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+constants: []
+
+full_name: IRB::WorkSpace
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: evaluate
+- !ruby/object:RI::MethodSummary 
+  name: evaluate
+- !ruby/object:RI::MethodSummary 
+  name: filter_backtrace
+name: WorkSpace
+superclass: Object

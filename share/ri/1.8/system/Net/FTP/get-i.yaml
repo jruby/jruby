@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: data
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Retrieves <tt>remotefile</tt> in whatever mode the session is set (text or binary). See #gettextfile and #getbinaryfile."
+full_name: Net::FTP#get
+is_singleton: false
+name: get
+params: (remotefile, localfile = File.basename(remotefile), blocksize = DEFAULT_BLOCKSIZE) {|data| ...}
+visibility: public

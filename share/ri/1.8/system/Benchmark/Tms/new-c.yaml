@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns an initialized Tms object which has <em>u</em> as the user CPU time, <em>s</em> as the system CPU time, <em>cu</em> as the children's user CPU time, <em>cs</em> as the children's system CPU time, <em>real</em> as the elapsed real time and <em>l</em> as the label.
+full_name: Benchmark::Tms::new
+is_singleton: true
+name: new
+params: (u = 0.0, s = 0.0, cu = 0.0, cs = 0.0, real = 0.0, l = nil)
+visibility: public

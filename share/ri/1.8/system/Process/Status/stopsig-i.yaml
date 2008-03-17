@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the number of the signal that caused <em>stat</em> to stop (or <tt>nil</tt> if self is not stopped).
+full_name: Process::Status#stopsig
+is_singleton: false
+name: stopsig
+params: |
+  stat.stopsig   => fixnum or nil
+
+visibility: public

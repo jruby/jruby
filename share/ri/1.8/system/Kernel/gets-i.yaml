@@ -1,0 +1,22 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns (and assigns to <tt>$_</tt>) the next line from the list of files in <tt>ARGV</tt> (or <tt>$*</tt>), or from standard input if no files are present on the command line. Returns <tt>nil</tt> at end of file. The optional argument specifies the record separator. The separator is included with the contents of each record. A separator of <tt>nil</tt> reads the entire contents, and a zero-length separator reads the input one paragraph at a time, where paragraphs are divided by two consecutive newlines. If multiple filenames are present in <tt>ARGV</tt>, +gets(nil)+ will read the contents one file at a time.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   ARGV &lt;&lt; &quot;testfile&quot;\n   print while gets\n"
+- !ruby/struct:SM::Flow::P 
+  body: <em>produces:</em>
+- !ruby/struct:SM::Flow::VERB 
+  body: "   This is line one\n   This is line two\n   This is line three\n   And so on...\n"
+- !ruby/struct:SM::Flow::P 
+  body: The style of programming using <tt>$_</tt> as an implicit parameter is gradually losing favor in the Ruby community.
+full_name: Kernel#gets
+is_singleton: false
+name: gets
+params: |
+  gets(separator=$/)    => string or nil
+
+visibility: public

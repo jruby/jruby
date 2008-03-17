@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: If <tt>src</tt> is not the same as <tt>dest</tt>, copies it and changes the permission mode to <tt>mode</tt>. If <tt>dest</tt> is a directory, destination is <tt>dest/src</tt>. If <tt>mode</tt> is not set, default is used. If <tt>verbose</tt> is set to true, the name of each file copied will be printed.
+full_name: File::install
+is_singleton: true
+name: install
+params: (from, to, mode = nil, verbose = false)
+visibility: public

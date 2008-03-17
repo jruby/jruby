@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Logger::Formatter#call
+is_singleton: false
+name: call
+params: (severity, time, progname, msg)
+visibility: public

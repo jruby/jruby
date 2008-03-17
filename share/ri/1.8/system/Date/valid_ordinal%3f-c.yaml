@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Do the year <tt>y</tt> and day-of-year <tt>d</tt> make a valid Ordinal Date? Returns the corresponding Julian Day Number if they do, or nil if they don't.
+- !ruby/struct:SM::Flow::P 
+  body: <tt>d</tt> can be a negative number, in which case it counts backwards from the end of the year (-1 being the last day of the year). No year wraparound is performed, however, so valid values of <tt>d</tt> are -365 .. -1, 1 .. 365 on a non-leap-year, -366 .. -1, 1 .. 366 on a leap year. A date falling in the period skipped in the Day of Calendar Reform adjustment is not valid.
+- !ruby/struct:SM::Flow::P 
+  body: <tt>sg</tt> specifies the Day of Calendar Reform.
+full_name: Date::valid_ordinal?
+is_singleton: true
+name: valid_ordinal?
+params: (y, d, sg=ITALY)
+visibility: public

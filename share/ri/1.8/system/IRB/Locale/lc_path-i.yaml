@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IRB::Locale#lc_path
+is_singleton: false
+name: lc_path
+params: (file = "", lc = @lang)
+visibility: private

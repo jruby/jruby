@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: (row)
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Parse lines from given string or stream. Return rows as an Array of Arrays.
+full_name: CSV::parse
+is_singleton: true
+name: parse
+params: (str_or_readable, fs = nil, rs = nil, &block) {|row| ...}
+visibility: public

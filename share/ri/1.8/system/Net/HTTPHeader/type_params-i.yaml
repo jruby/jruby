@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns content type parameters as a Hash as like {&quot;charset&quot; =&gt; &quot;iso-2022-jp&quot;}.
+full_name: Net::HTTPHeader#type_params
+is_singleton: false
+name: type_params
+params: ()
+visibility: public

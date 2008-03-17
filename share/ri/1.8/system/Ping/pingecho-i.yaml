@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Return true if we can open a connection to the hostname or IP address <tt>host</tt> on port <tt>service</tt> (which defaults to the &quot;echo&quot; port) waiting up to <tt>timeout</tt> seconds.
+- !ruby/struct:SM::Flow::P 
+  body: "Example:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  require 'ping'\n\n  Ping.pingecho &quot;google.com&quot;, 10, 80\n"
+full_name: Ping#pingecho
+is_singleton: false
+name: pingecho
+params: (host, timeout=5, service="echo")
+visibility: public

@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Invoked when a reference is made to an undefined constant in <em>mod</em>. It is passed a symbol for the undefined constant, and returns a value to be used for that constant. The following code is a (very bad) example: if reference is made to an undefined constant, it attempts to load a file whose name is the lowercase version of the constant (thus class <tt>Fred</tt> is assumed to be in file <tt>fred.rb</tt>). If found, it returns the value of the loaded class. It therefore implements a perverse kind of autoload facility."
+- !ruby/struct:SM::Flow::VERB 
+  body: "  def Object.const_missing(name)\n    @looked_for ||= {}\n    str_name = name.to_s\n    raise &quot;Class not found: #{name}&quot; if @looked_for[str_name]\n    @looked_for[str_name] = 1\n    file = str_name.downcase\n    require file\n    klass = const_get(name)\n    return klass if klass\n    raise &quot;Class not found: #{name}&quot;\n  end\n"
+full_name: Module#const_missing
+is_singleton: false
+name: const_missing
+params: |
+  mod.const_missing(sym)    => obj
+
+visibility: public

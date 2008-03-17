@@ -1,0 +1,13 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: ctime
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: alias_method :format, :strftime
+full_name: Date#asctime
+is_singleton: false
+name: asctime
+params: ()
+visibility: public

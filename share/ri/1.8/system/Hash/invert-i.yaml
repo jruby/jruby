@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns a new hash created by using <em>hsh</em>'s values as keys, and the keys as values.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   h = { &quot;n&quot; =&gt; 100, &quot;m&quot; =&gt; 100, &quot;y&quot; =&gt; 300, &quot;d&quot; =&gt; 200, &quot;a&quot; =&gt; 0 }\n   h.invert   #=&gt; {0=&gt;&quot;a&quot;, 100=&gt;&quot;n&quot;, 200=&gt;&quot;d&quot;, 300=&gt;&quot;y&quot;}\n"
+full_name: Hash#invert
+is_singleton: false
+name: invert
+params: |
+  hsh.invert -> aHash
+
+visibility: public

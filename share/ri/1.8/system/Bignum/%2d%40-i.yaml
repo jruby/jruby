@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Unary minus (returns a new Bignum whose value is 0-big)
+full_name: Bignum#-@
+is_singleton: false
+name: -@
+params: |
+  -big   =>  other_big
+
+visibility: public

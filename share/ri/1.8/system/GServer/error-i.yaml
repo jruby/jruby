@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: GServer#error
+is_singleton: false
+name: error
+params: (detail)
+visibility: protected

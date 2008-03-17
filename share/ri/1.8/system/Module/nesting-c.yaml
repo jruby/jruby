@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the list of <tt>Modules</tt> nested at the point of call.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   module M1\n     module M2\n       $a = Module.nesting\n     end\n   end\n   $a           #=&gt; [M1::M2, M1]\n   $a[0].name   #=&gt; &quot;M1::M2&quot;\n"
+full_name: Module::nesting
+is_singleton: true
+name: nesting
+params: |
+  Module.nesting    => array
+
+visibility: public

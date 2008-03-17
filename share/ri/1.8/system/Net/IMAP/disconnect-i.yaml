@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Disconnects from the server.
+full_name: Net::IMAP#disconnect
+is_singleton: false
+name: disconnect
+params: ()
+visibility: public

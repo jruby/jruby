@@ -1,0 +1,49 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "#include &quot;ruby.h&quot;"
+- !ruby/struct:SM::Flow::P 
+  body: "#ifdef ENABLE_DTRACE #include &quot;dtrace.h&quot; #endif"
+- !ruby/struct:SM::Flow::P 
+  body: VALUE rb_mDtrace;
+- !ruby/struct:SM::Flow::P 
+  body: "static VALUE ruby_dtrace_probe(int argc, VALUE *argv, unsigned check_only) { #ifdef ENABLE_DTRACE"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  if (check_only) {\n    return RUBY_RUBY_PROBE_ENABLED() ? Qtrue : Qfalse;\n  }\n  else {\n    VALUE name, data;\n    char *probe_data;\n\n    rb_scan_args(argc, argv, &quot;11&quot;, &amp;name, &amp;data);\n    probe_data = NIL_P(data) ? &quot;&quot; : StringValuePtr(data);\n\n    RUBY_RUBY_PROBE(StringValuePtr(name), probe_data);\n  }\n"
+- !ruby/struct:SM::Flow::P 
+  body: "#endif"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  return Qnil;\n"
+- !ruby/struct:SM::Flow::P 
+  body: "}"
+- !ruby/struct:SM::Flow::P 
+  body: static VALUE ruby_dtrace_fire(int argc, VALUE *argv, VALUE klass) {
+- !ruby/struct:SM::Flow::VERB 
+  body: "  return ruby_dtrace_probe(argc, argv, 0);\n"
+- !ruby/struct:SM::Flow::P 
+  body: "}"
+- !ruby/struct:SM::Flow::P 
+  body: static VALUE ruby_dtrace_enabled(VALUE klass) {
+- !ruby/struct:SM::Flow::VERB 
+  body: "  return ruby_dtrace_probe(0, NULL, 1);\n"
+- !ruby/struct:SM::Flow::P 
+  body: "}"
+- !ruby/struct:SM::Flow::P 
+  body: void Init_DTracer() {
+- !ruby/struct:SM::Flow::VERB 
+  body: "  rb_mDtrace = rb_define_module(&quot;DTracer&quot;);\n  rb_define_module_function(rb_mDtrace, &quot;fire&quot;, ruby_dtrace_fire, -1);\n  rb_define_module_function(rb_mDtrace, &quot;enabled?&quot;, ruby_dtrace_enabled, 0);\n"
+- !ruby/struct:SM::Flow::P 
+  body: "}"
+constants: []
+
+full_name: DTracer
+includes: []
+
+instance_methods: []
+
+name: DTracer
+superclass: 

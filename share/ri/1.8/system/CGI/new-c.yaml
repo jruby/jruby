@@ -1,0 +1,33 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Creates a new CGI instance.
+- !ruby/struct:SM::Flow::P 
+  body: "<tt>type</tt> specifies which version of HTML to load the HTML generation methods for. The following versions of HTML are supported:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "html3:"
+    body: HTML 3.x
+  - !ruby/struct:SM::Flow::LI 
+    label: "html4:"
+    body: HTML 4.0
+  - !ruby/struct:SM::Flow::LI 
+    label: "html4Tr:"
+    body: HTML 4.0 Transitional
+  - !ruby/struct:SM::Flow::LI 
+    label: "html4Fr:"
+    body: HTML 4.0 with Framesets
+  type: :NOTE
+- !ruby/struct:SM::Flow::P 
+  body: If not specified, no HTML generation methods will be loaded.
+- !ruby/struct:SM::Flow::P 
+  body: If the CGI object is not created in a standard CGI call environment (that is, it can't locate REQUEST_METHOD in its environment), then it will run in &quot;offline&quot; mode. In this mode, it reads its parameters from the command line or (failing that) from standard input. Otherwise, cookies and other parameters are parsed automatically from the standard CGI locations, which varies according to the REQUEST_METHOD.
+full_name: CGI::new
+is_singleton: true
+name: new
+params: (type = "query")
+visibility: public

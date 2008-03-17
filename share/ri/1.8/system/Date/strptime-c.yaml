@@ -1,0 +1,20 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Create a new Date object by parsing from a String according to a specified format.
+- !ruby/struct:SM::Flow::P 
+  body: <tt>str</tt> is a String holding a date representation. <tt>fmt</tt> is the format that the date is in. See date/format.rb for details on supported formats.
+- !ruby/struct:SM::Flow::P 
+  body: The default <tt>str</tt> is '-4712-01-01', and the default <tt>fmt</tt> is '%F', which means Year-Month-Day_of_Month. This gives Julian Day Number day 0.
+- !ruby/struct:SM::Flow::P 
+  body: <tt>sg</tt> specifies the Day of Calendar Reform.
+- !ruby/struct:SM::Flow::P 
+  body: An ArgumentError will be raised if <tt>str</tt> cannot be parsed.
+full_name: Date::strptime
+is_singleton: true
+name: strptime
+params: (str='-4712-01-01', fmt='%F', sg=ITALY)
+visibility: public

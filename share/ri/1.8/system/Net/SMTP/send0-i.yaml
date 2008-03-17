@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: ""
+comment: 
+full_name: Net::SMTP#send0
+is_singleton: false
+name: send0
+params: ( from_addr, to_addrs ) {|| ...}
+visibility: private

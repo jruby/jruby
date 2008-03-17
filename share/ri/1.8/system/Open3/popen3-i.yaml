@@ -1,0 +1,20 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: ""
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Open stdin, stdout, and stderr streams and start external executable. Non-block form:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  require 'open3'\n\n  [stdin, stdout, stderr] = Open3.popen3(cmd)\n"
+- !ruby/struct:SM::Flow::P 
+  body: "Block form:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  require 'open3'\n\n  Open3.popen3(cmd) { |stdin, stdout, stderr| ... }\n"
+- !ruby/struct:SM::Flow::P 
+  body: The parameter <tt>cmd</tt> is passed directly to Kernel#exec.
+full_name: Open3#popen3
+is_singleton: false
+name: popen3
+params: (*cmd) {|| ...}
+visibility: public

@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: DRb::ExtServManager::command=
+is_singleton: true
+name: command=
+params: (cmd)
+visibility: public

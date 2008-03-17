@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Equivalent to <tt>File::chown</tt>, but does not follow symbolic links (so it will change the owner associated with the link, not the file referenced by the link). Often not available. Returns number of files in the argument list.
+full_name: File::lchown
+is_singleton: true
+name: lchown
+params: |
+  file.lchown(owner_int, group_int, file_name,..) => integer
+
+visibility: public

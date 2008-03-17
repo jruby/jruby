@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: DRb::TimerIdConv::TimerHolder2#fetch
+is_singleton: false
+name: fetch
+params: (key, dv=@sentinel)
+visibility: public

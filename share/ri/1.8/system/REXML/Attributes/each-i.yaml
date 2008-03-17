@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: attr.expanded_name, attr.value
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Itterates over each attribute of an Element, yielding the expanded name and value as a pair of Strings.
+- !ruby/struct:SM::Flow::VERB 
+  body: " doc = Document.new '&lt;a x=&quot;1&quot; y=&quot;2&quot;/&gt;'\n doc.root.attributes.each {|name, value| p name+&quot; =&gt; &quot;+value }\n"
+full_name: REXML::Attributes#each
+is_singleton: false
+name: each
+params: () {|attr.expanded_name, attr.value| ...}
+visibility: public

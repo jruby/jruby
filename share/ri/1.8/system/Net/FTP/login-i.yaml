@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Logs in to the remote host. The session must have been previously connected. If <tt>user</tt> is the string &quot;anonymous&quot; and the <tt>password</tt> is <tt>nil</tt>, a password of <tt>user@host</tt> is synthesized. If the <tt>acct</tt> parameter is not <tt>nil</tt>, an FTP ACCT command is sent following the successful login. Raises an exception on error (typically <tt>Net::FTPPermError</tt>).
+full_name: Net::FTP#login
+is_singleton: false
+name: login
+params: (user = "anonymous", passwd = nil, acct = nil)
+visibility: public

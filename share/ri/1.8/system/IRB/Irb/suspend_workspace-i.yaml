@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: back_workspace
+comment: 
+full_name: IRB::Irb#suspend_workspace
+is_singleton: false
+name: suspend_workspace
+params: (workspace) {|back_workspace| ...}
+visibility: public

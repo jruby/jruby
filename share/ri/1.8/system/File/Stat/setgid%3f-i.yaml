@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns <tt>true</tt> if <em>stat</em> has the set-group-id permission bit set, <tt>false</tt> if it doesn't or if the operating system doesn't support this feature.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   File.stat(&quot;/usr/sbin/lpc&quot;).setgid?   #=&gt; true\n"
+full_name: File::Stat#setgid?
+is_singleton: false
+name: setgid?
+params: |
+  stat.setgid?   => true or false
+
+visibility: public

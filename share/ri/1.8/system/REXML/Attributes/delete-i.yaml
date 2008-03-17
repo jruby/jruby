@@ -1,0 +1,23 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Removes an attribute
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "attribute:"
+    body: either a String, which is the name of the attribute to remove -- namespaces are significant here -- or the attribute to remove.
+  - !ruby/struct:SM::Flow::LI 
+    label: "Returns:"
+    body: the owning element
+  type: :NOTE
+- !ruby/struct:SM::Flow::VERB 
+  body: " doc = Document.new &quot;&lt;a y:foo='0' x:foo='1' foo='3' z:foo='4'/&gt;&quot;\n doc.root.attributes.delete 'foo'   #-&gt; &lt;a y:foo='0' x:foo='1' z:foo='4'/&gt;&quot;\n doc.root.attributes.delete 'x:foo' #-&gt; &lt;a y:foo='0' z:foo='4'/&gt;&quot;\n attr = doc.root.attributes.get_attribute('y:foo')\n doc.root.attributes.delete attr    #-&gt; &lt;a z:foo='4'/&gt;&quot;\n"
+full_name: REXML::Attributes#delete
+is_singleton: false
+name: delete
+params: ( attribute )
+visibility: public

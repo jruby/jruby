@@ -1,0 +1,21 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+constants: []
+
+full_name: DEBUGGER__::Mutex
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: lock
+- !ruby/object:RI::MethodSummary 
+  name: locked?
+- !ruby/object:RI::MethodSummary 
+  name: unlock
+name: Mutex
+superclass: Object

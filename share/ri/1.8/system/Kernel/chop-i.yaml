@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Equivalent to <tt>($_.dup).chop!</tt>, except <tt>nil</tt> is never returned. See <tt>String#chop!</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   a  =  &quot;now\\r\\n&quot;\n   $_ = a\n   chop   #=&gt; &quot;now&quot;\n   $_     #=&gt; &quot;now&quot;\n   chop   #=&gt; &quot;no&quot;\n   chop   #=&gt; &quot;n&quot;\n   chop   #=&gt; &quot;&quot;\n   chop   #=&gt; &quot;&quot;\n   a      #=&gt; &quot;now\\r\\n&quot;\n"
+full_name: Kernel#chop
+is_singleton: false
+name: chop
+params: |
+  chop   => string
+
+visibility: public

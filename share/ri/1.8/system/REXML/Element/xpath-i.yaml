@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: REXML::Element#xpath
+is_singleton: false
+name: xpath
+params: ()
+visibility: public

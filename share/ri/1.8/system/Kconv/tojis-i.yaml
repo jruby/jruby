@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Convert <tt>str</tt> to ISO-2022-JP
+- !ruby/struct:SM::Flow::P 
+  body: <b>Note</b> This method decode MIME encoded string and convert halfwidth katakana to fullwidth katakana. If you don't want it, use NKF.nkf('-jxm0', str).
+full_name: Kconv#tojis
+is_singleton: false
+name: tojis
+params: |
+  Kconv.tojis(str)   -> string
+
+visibility: public

@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Escape special characters in HTML, namely &amp;\&quot;&lt;&gt;
+- !ruby/struct:SM::Flow::VERB 
+  body: "  CGI::escapeHTML('Usage: foo &quot;bar&quot; &lt;baz&gt;')\n     # =&gt; &quot;Usage: foo &amp;quot;bar&amp;quot; &amp;lt;baz&amp;gt;&quot;\n"
+full_name: CGI::escapeHTML
+is_singleton: true
+name: escapeHTML
+params: (string)
+visibility: public

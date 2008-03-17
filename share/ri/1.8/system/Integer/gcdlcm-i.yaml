@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Returns the GCD <em>and</em> the LCM (see #gcd and #lcm) of the two arguments (<tt>self</tt> and <tt>other</tt>). This is more efficient than calculating them separately."
+- !ruby/struct:SM::Flow::P 
+  body: "Example:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  6.gcdlcm 9     # -&gt; [3, 18]\n"
+full_name: Integer#gcdlcm
+is_singleton: false
+name: gcdlcm
+params: (other)
+visibility: public

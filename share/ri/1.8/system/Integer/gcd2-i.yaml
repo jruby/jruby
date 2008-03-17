@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Integer#gcd2
+is_singleton: false
+name: gcd2
+params: (int)
+visibility: public

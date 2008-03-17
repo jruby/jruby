@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Retrieves a value from the PStore file data, by <em>name</em>. The hierarchy of Ruby objects stored under that root <em>name</em> will be returned.
+- !ruby/struct:SM::Flow::P 
+  body: "<b>WARNING</b>: This method is only valid in a PStore#transaction. It will raise PStore::Error if called at any other time."
+full_name: PStore#[]
+is_singleton: false
+name: "[]"
+params: (name)
+visibility: public

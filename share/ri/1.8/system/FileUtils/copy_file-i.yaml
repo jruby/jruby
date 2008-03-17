@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Copies file contents of <tt>src</tt> to <tt>dest</tt>. Both of <tt>src</tt> and <tt>dest</tt> must be a path name.
+full_name: FileUtils#copy_file
+is_singleton: false
+name: copy_file
+params: (src, dest, preserve = false, dereference = true)
+visibility: public

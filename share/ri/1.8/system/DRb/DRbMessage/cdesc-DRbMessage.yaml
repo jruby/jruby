@@ -1,0 +1,22 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Handler for sending and receiving drb messages.
+- !ruby/struct:SM::Flow::P 
+  body: This takes care of the low-level marshalling and unmarshalling of drb requests and responses sent over the wire between server and client. This relieves the implementor of a new drb protocol layer with having to deal with these details.
+- !ruby/struct:SM::Flow::P 
+  body: The user does not have to directly deal with this object in normal use.
+constants: []
+
+full_name: DRb::DRbMessage
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: make_proxy
+name: DRbMessage
+superclass: Object

@@ -1,0 +1,17 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the first element, or the first <tt>n</tt> elements, of the array. If the array is empty, the first form returns <tt>nil</tt>, and the second form returns an empty array.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   a = [ &quot;q&quot;, &quot;r&quot;, &quot;s&quot;, &quot;t&quot; ]\n   a.first    #=&gt; &quot;q&quot;\n   a.first(1) #=&gt; [&quot;q&quot;]\n   a.first(3) #=&gt; [&quot;q&quot;, &quot;r&quot;, &quot;s&quot;]\n"
+full_name: Array#first
+is_singleton: false
+name: first
+params: |
+  array.first   ->   obj or nil
+  array.first(n) -> an_array
+
+visibility: public

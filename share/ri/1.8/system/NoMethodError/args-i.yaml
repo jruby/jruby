@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Return the arguments passed in as the third parameter to the constructor.
+full_name: NoMethodError#args
+is_singleton: false
+name: args
+params: |
+  no_method_error.args  => obj
+
+visibility: public

@@ -1,0 +1,17 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns <tt>true</tt> if any member of <em>enum</em> equals <em>obj</em>. Equality is tested using <tt>==</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   IO.constants.include? &quot;SEEK_SET&quot;          #=&gt; true\n   IO.constants.include? &quot;SEEK_NO_FURTHER&quot;   #=&gt; false\n"
+full_name: Enumerable#include?
+is_singleton: false
+name: include?
+params: |
+  enum.include?(obj)     => true or false
+  enum.member?(obj)      => true or false
+
+visibility: public

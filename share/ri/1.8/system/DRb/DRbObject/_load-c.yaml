@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Unmarshall a marshalled DRbObject.
+- !ruby/struct:SM::Flow::P 
+  body: If the referenced object is located within the local server, then the object itself is returned. Otherwise, a new DRbObject is created to act as a stub for the remote referenced object.
+full_name: DRb::DRbObject::_load
+is_singleton: true
+name: _load
+params: (s)
+visibility: public

@@ -1,0 +1,55 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: body
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: body_stream
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: method
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: path
+  rw: R
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Parent of HTTPRequest class. Do not use this directly; use a subclass of HTTPRequest.
+- !ruby/struct:SM::Flow::P 
+  body: Mixes in the HTTPHeader module.
+constants: []
+
+full_name: Net::HTTPGenericRequest
+includes: 
+- !ruby/object:RI::IncludedModule 
+  name: HTTPHeader
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: body=
+- !ruby/object:RI::MethodSummary 
+  name: body_exist?
+- !ruby/object:RI::MethodSummary 
+  name: body_stream=
+- !ruby/object:RI::MethodSummary 
+  name: inspect
+- !ruby/object:RI::MethodSummary 
+  name: request_body_permitted?
+- !ruby/object:RI::MethodSummary 
+  name: response_body_permitted?
+- !ruby/object:RI::MethodSummary 
+  name: send_request_with_body
+- !ruby/object:RI::MethodSummary 
+  name: send_request_with_body_stream
+- !ruby/object:RI::MethodSummary 
+  name: supply_default_content_type
+- !ruby/object:RI::MethodSummary 
+  name: write_header
+name: HTTPGenericRequest
+superclass: Object

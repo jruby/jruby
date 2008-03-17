@@ -1,0 +1,11 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: []
+
+full_name: RDoc::C_Parser#handle_method
+is_singleton: false
+name: handle_method
+params: (type, var_name, meth_name, meth_body, param_count, source_file = nil)
+visibility: private

@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: DRb::ExtServ#stop_service
+is_singleton: false
+name: stop_service
+params: ()
+visibility: public

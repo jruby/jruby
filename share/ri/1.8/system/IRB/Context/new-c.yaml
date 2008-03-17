@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Arguments:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  input_method: nil -- stdin or readline\n                String -- File\n                other -- using this as InputMethod\n"
+full_name: IRB::Context::new
+is_singleton: true
+name: new
+params: (irb, workspace = nil, input_method = nil, output_method = nil)
+visibility: public

@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Computes the arc tangent of <em>x</em>. Returns -{PI/2} .. {PI/2}.
+full_name: Math::atan
+is_singleton: true
+name: atan
+params: |
+  Math.atan(x)    => float
+
+visibility: public

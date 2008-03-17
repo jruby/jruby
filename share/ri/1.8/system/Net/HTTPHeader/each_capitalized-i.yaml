@@ -1,0 +1,13 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: canonical_each
+block_params: capitalize(k), v.join(', ')
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "As for #each_header, except the keys are provided in capitalized form."
+full_name: Net::HTTPHeader#each_capitalized
+is_singleton: false
+name: each_capitalized
+params: () {|capitalize(k), v.join(', ')| ...}
+visibility: public

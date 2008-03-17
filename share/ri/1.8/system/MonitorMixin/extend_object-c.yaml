@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: MonitorMixin::extend_object
+is_singleton: true
+name: extend_object
+params: (obj)
+visibility: public

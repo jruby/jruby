@@ -1,0 +1,13 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: angle
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: See Complex#arg.
+full_name: Numeric#arg
+is_singleton: false
+name: arg
+params: ()
+visibility: public

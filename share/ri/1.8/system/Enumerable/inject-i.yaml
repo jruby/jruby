@@ -1,0 +1,17 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Combines the elements of <em>enum</em> by applying the block to an accumulator value (<em>memo</em>) and each element in turn. At each step, <em>memo</em> is set to the value returned by the block. The first form lets you supply an initial value for <em>memo</em>. The second form uses the first element of the collection as a the initial value (and skips that element while iterating).
+- !ruby/struct:SM::Flow::VERB 
+  body: "   # Sum some numbers\n   (5..10).inject {|sum, n| sum + n }              #=&gt; 45\n   # Multiply some numbers\n   (5..10).inject(1) {|product, n| product * n }   #=&gt; 151200\n\n   # find the longest word\n   longest = %w{ cat sheep bear }.inject do |memo,word|\n      memo.length &gt; word.length ? memo : word\n   end\n   longest                                         #=&gt; &quot;sheep&quot;\n\n   # find the length of the longest word\n   longest = %w{ cat sheep bear }.inject(0) do |memo,word|\n      memo &gt;= word.length ? memo : word.length\n   end\n   longest                                         #=&gt; 5\n"
+full_name: Enumerable#inject
+is_singleton: false
+name: inject
+params: |
+  enum.inject(initial) {| memo, obj | block }  => obj
+  enum.inject          {| memo, obj | block }  => obj
+
+visibility: public

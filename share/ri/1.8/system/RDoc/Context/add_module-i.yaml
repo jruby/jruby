@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: RDoc::Context#add_module
+is_singleton: false
+name: add_module
+params: (class_type, name)
+visibility: public

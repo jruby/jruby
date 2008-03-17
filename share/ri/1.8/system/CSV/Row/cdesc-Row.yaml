@@ -1,0 +1,17 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: deprecated
+constants: []
+
+full_name: CSV::Row
+includes: []
+
+instance_methods: []
+
+name: Row
+superclass: Array

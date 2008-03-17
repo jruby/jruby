@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Close the connection.
+- !ruby/struct:SM::Flow::P 
+  body: "If this is an instance returned by #open_server, then this stops listening for new connections altogether. If this is an instance returned by #open or by #accept, then it closes this particular client-server session."
+full_name: DRb::DRbTCPSocket#close
+is_singleton: false
+name: close
+params: ()
+visibility: public

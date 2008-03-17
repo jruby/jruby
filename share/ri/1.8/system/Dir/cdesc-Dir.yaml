@@ -1,0 +1,66 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: "[]"
+- !ruby/object:RI::MethodSummary 
+  name: chdir
+- !ruby/object:RI::MethodSummary 
+  name: chroot
+- !ruby/object:RI::MethodSummary 
+  name: delete
+- !ruby/object:RI::MethodSummary 
+  name: entries
+- !ruby/object:RI::MethodSummary 
+  name: foreach
+- !ruby/object:RI::MethodSummary 
+  name: getwd
+- !ruby/object:RI::MethodSummary 
+  name: glob
+- !ruby/object:RI::MethodSummary 
+  name: mkdir
+- !ruby/object:RI::MethodSummary 
+  name: new
+- !ruby/object:RI::MethodSummary 
+  name: open
+- !ruby/object:RI::MethodSummary 
+  name: pwd
+- !ruby/object:RI::MethodSummary 
+  name: rmdir
+- !ruby/object:RI::MethodSummary 
+  name: tmpdir
+- !ruby/object:RI::MethodSummary 
+  name: unlink
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: tmpdir - retrieve temporary directory path
+- !ruby/struct:SM::Flow::P 
+  body: "$Id: tmpdir.rb 11708 2007-02-12 23:01:19Z shyouhei $"
+constants: []
+
+full_name: Dir
+includes: 
+- !ruby/object:RI::IncludedModule 
+  name: Enumerable
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: close
+- !ruby/object:RI::MethodSummary 
+  name: each
+- !ruby/object:RI::MethodSummary 
+  name: path
+- !ruby/object:RI::MethodSummary 
+  name: pos
+- !ruby/object:RI::MethodSummary 
+  name: pos=
+- !ruby/object:RI::MethodSummary 
+  name: read
+- !ruby/object:RI::MethodSummary 
+  name: rewind
+- !ruby/object:RI::MethodSummary 
+  name: seek
+- !ruby/object:RI::MethodSummary 
+  name: tell
+name: Dir
+superclass: Object

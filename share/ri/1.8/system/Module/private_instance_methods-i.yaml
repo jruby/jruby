@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns a list of the private instance methods defined in <em>mod</em>. If the optional parameter is not <tt>false</tt>, the methods of any ancestors are included.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   module Mod\n     def method1()  end\n     private :method1\n     def method2()  end\n   end\n   Mod.instance_methods           #=&gt; [&quot;method2&quot;]\n   Mod.private_instance_methods   #=&gt; [&quot;method1&quot;]\n"
+full_name: Module#private_instance_methods
+is_singleton: false
+name: private_instance_methods
+params: |
+  mod.private_instance_methods(include_super=true)    => array
+
+visibility: public

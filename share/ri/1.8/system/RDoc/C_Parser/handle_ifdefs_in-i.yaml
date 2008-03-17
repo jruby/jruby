@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Removes #ifdefs that would otherwise confuse us"
+full_name: RDoc::C_Parser#handle_ifdefs_in
+is_singleton: false
+name: handle_ifdefs_in
+params: (body)
+visibility: private

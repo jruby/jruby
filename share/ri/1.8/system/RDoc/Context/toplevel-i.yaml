@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Return the toplevel that owns us
+full_name: RDoc::Context#toplevel
+is_singleton: false
+name: toplevel
+params: ()
+visibility: public

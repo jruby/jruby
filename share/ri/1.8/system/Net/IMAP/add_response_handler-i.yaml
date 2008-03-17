@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Adds a response handler. For example, to detect when the server sends us a new EXISTS response (which normally indicates new messages being added to the mail box), you could add the following handler after selecting the mailbox.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  imap.add_response_handler { |resp|\n    if resp.kind_of?(Net::IMAP::UntaggedResponse) and resp.name == &quot;EXISTS&quot;\n      puts &quot;Mailbox now has #{resp.data} messages&quot;\n    end\n  }\n"
+full_name: Net::IMAP#add_response_handler
+is_singleton: false
+name: add_response_handler
+params: (handler = Proc.new)
+visibility: public

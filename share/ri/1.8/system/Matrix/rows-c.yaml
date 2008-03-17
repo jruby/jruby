@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Creates a matrix where <tt>rows</tt> is an array of arrays, each of which is a row to the matrix. If the optional argument <tt>copy</tt> is false, use the given arrays as the internal structure of the matrix without copying.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  Matrix.rows([[25, 93], [-1, 66]])\n     =&gt;  25 93\n         -1 66\n"
+full_name: Matrix::rows
+is_singleton: true
+name: rows
+params: (rows, copy = true)
+visibility: public

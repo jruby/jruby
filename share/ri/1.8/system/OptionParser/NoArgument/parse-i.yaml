@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: (NeedlessArgument, arg)
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Raises an exception if any arguments given.
+full_name: OptionParser::NoArgument#parse
+is_singleton: false
+name: parse
+params: (arg, argv) {|NeedlessArgument, arg| ...}
+visibility: public

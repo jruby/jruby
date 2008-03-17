@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: date
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Step backward one day at a time until we reach <tt>min</tt> (inclusive), yielding each date as we go.
+full_name: Date#downto
+is_singleton: false
+name: downto
+params: (min) {|date| ...}
+visibility: public

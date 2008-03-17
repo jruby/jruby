@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: DRb::DRbUNIXSocket::new
+is_singleton: true
+name: new
+params: (uri, soc, config={}, server_mode = false)
+visibility: public

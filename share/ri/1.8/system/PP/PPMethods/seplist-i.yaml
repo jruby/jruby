@@ -1,0 +1,22 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: element
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Adds a separated list. The list is separated by comma with breakable space, by default.
+- !ruby/struct:SM::Flow::P 
+  body: "#seplist iterates the <tt>list</tt> using <tt>iter_method</tt>. It yields each object to the block given for #seplist. The procedure <tt>separator_proc</tt> is called between each yields."
+- !ruby/struct:SM::Flow::P 
+  body: If the iteration is zero times, <tt>separator_proc</tt> is not called at all.
+- !ruby/struct:SM::Flow::P 
+  body: If <tt>separator_proc</tt> is nil or not given, +lambda { comma_breakable }+ is used. If <tt>iter_method</tt> is not given, :each is used.
+- !ruby/struct:SM::Flow::P 
+  body: For example, following 3 code fragments has similar effect.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  q.seplist([1,2,3]) {|v| xxx v }\n\n  q.seplist([1,2,3], lambda { comma_breakable }, :each) {|v| xxx v }\n\n  xxx 1\n  q.comma_breakable\n  xxx 2\n  q.comma_breakable\n  xxx 3\n"
+full_name: PP::PPMethods#seplist
+is_singleton: false
+name: seplist
+params: (list, sep=nil, iter_method=:each) {|element| ...}
+visibility: public

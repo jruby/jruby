@@ -1,0 +1,85 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: System CPU time of children
+  name: cstime
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: User CPU time of children
+  name: cutime
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Label
+  name: label
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Elapsed real time
+  name: real
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: System CPU time
+  name: stime
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Total time, that is <em>utime</em> + <em>stime</em> + <em>cutime</em> + <em>cstime</em>
+  name: total
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: User CPU time
+  name: utime
+  rw: R
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: A data object, representing the times associated with a benchmark measurement.
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: CAPTION
+  value: "\"      user     system      total        real\\n\""
+- !ruby/object:RI::Constant 
+  comment: 
+  name: FMTSTR
+  value: "\"%10.6u %10.6y %10.6t %10.6r\\n\""
+full_name: Benchmark::Tms
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: "*"
+- !ruby/object:RI::MethodSummary 
+  name: +
+- !ruby/object:RI::MethodSummary 
+  name: "-"
+- !ruby/object:RI::MethodSummary 
+  name: /
+- !ruby/object:RI::MethodSummary 
+  name: add
+- !ruby/object:RI::MethodSummary 
+  name: add!
+- !ruby/object:RI::MethodSummary 
+  name: format
+- !ruby/object:RI::MethodSummary 
+  name: memberwise
+- !ruby/object:RI::MethodSummary 
+  name: to_a
+- !ruby/object:RI::MethodSummary 
+  name: to_s
+name: Tms
+superclass: Object

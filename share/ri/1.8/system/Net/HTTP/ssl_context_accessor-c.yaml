@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Net::HTTP::ssl_context_accessor
+is_singleton: true
+name: ssl_context_accessor
+params: (name)
+visibility: public

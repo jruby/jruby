@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Net::HTTP#do_finish
+is_singleton: false
+name: do_finish
+params: ()
+visibility: private

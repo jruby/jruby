@@ -1,0 +1,22 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Equality---At the <tt>Object</tt> level, <tt>==</tt> returns <tt>true</tt> only if <em>obj</em> and <em>other</em> are the same object. Typically, this method is overridden in descendent classes to provide class-specific meaning.
+- !ruby/struct:SM::Flow::P 
+  body: "Unlike <tt>==</tt>, the <tt>equal?</tt> method should never be overridden by subclasses: it is used to determine object identity (that is, <tt>a.equal?(b)</tt> iff <tt>a</tt> is the same object as <tt>b</tt>)."
+- !ruby/struct:SM::Flow::P 
+  body: "The <tt>eql?</tt> method returns <tt>true</tt> if <em>obj</em> and <em>anObject</em> have the same value. Used by <tt>Hash</tt> to test members for equality. For objects of class <tt>Object</tt>, <tt>eql?</tt> is synonymous with <tt>==</tt>. Subclasses normally continue this tradition, but there are exceptions. <tt>Numeric</tt> types, for example, perform type conversion across <tt>==</tt>, but not across <tt>eql?</tt>, so:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "   1 == 1.0     #=&gt; true\n   1.eql? 1.0   #=&gt; false\n"
+full_name: Object#==
+is_singleton: false
+name: ==
+params: |
+  obj == other        => true or false
+  obj.equal?(other)   => true or false
+  obj.eql?(other)     => true or false
+
+visibility: public

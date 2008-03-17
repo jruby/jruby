@@ -1,0 +1,15 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: map
+block_params: e
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns a matrix that is the result of iteration of the given block over all elements of the matrix.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  Matrix[ [1,2], [3,4] ].collect { |i| i**2 }\n    =&gt; 1  4\n       9 16\n"
+full_name: Matrix#collect
+is_singleton: false
+name: collect
+params: ( {|e| ...}
+visibility: public

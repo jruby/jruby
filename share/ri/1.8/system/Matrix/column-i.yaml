@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: e
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns column vector number <tt>j</tt> of the matrix as a Vector (starting at 0 like an array). When a block is given, the elements of that vector are iterated.
+full_name: Matrix#column
+is_singleton: false
+name: column
+params: (j) {|e| ...}
+visibility: public

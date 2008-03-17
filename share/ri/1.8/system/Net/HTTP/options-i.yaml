@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Sends a OPTIONS request to the <tt>path</tt> and gets a response, as an HTTPResponse object.
+full_name: Net::HTTP#options
+is_singleton: false
+name: options
+params: (path, initheader = nil)
+visibility: public

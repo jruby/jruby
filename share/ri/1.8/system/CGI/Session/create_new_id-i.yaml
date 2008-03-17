@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Create a new session id.
+- !ruby/struct:SM::Flow::P 
+  body: The session id is an MD5 hash based upon the time, a random number, and a constant string. This routine is used internally for automatically generated session ids.
+full_name: CGI::Session#create_new_id
+is_singleton: false
+name: create_new_id
+params: ()
+visibility: private

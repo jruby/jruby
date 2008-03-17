@@ -1,0 +1,15 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+constants: []
+
+full_name: MonitorMixin::ConditionVariable::Timeout
+includes: []
+
+instance_methods: []
+
+name: Timeout
+superclass: Exception

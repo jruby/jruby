@@ -1,0 +1,77 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Numeric is a built-in class on which Fixnum, Bignum, etc., are based. Here some methods are added so that all number types can be treated to some extent as Complex numbers.
+constants: []
+
+full_name: Numeric
+includes: 
+- !ruby/object:RI::IncludedModule 
+  name: Comparable
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: +@
+- !ruby/object:RI::MethodSummary 
+  name: -@
+- !ruby/object:RI::MethodSummary 
+  name: <=>
+- !ruby/object:RI::MethodSummary 
+  name: abs
+- !ruby/object:RI::MethodSummary 
+  name: angle
+- !ruby/object:RI::MethodSummary 
+  name: arg
+- !ruby/object:RI::MethodSummary 
+  name: ceil
+- !ruby/object:RI::MethodSummary 
+  name: coerce
+- !ruby/object:RI::MethodSummary 
+  name: conj
+- !ruby/object:RI::MethodSummary 
+  name: conjugate
+- !ruby/object:RI::MethodSummary 
+  name: div
+- !ruby/object:RI::MethodSummary 
+  name: divmod
+- !ruby/object:RI::MethodSummary 
+  name: eql?
+- !ruby/object:RI::MethodSummary 
+  name: floor
+- !ruby/object:RI::MethodSummary 
+  name: im
+- !ruby/object:RI::MethodSummary 
+  name: imag
+- !ruby/object:RI::MethodSummary 
+  name: image
+- !ruby/object:RI::MethodSummary 
+  name: integer?
+- !ruby/object:RI::MethodSummary 
+  name: modulo
+- !ruby/object:RI::MethodSummary 
+  name: nonzero?
+- !ruby/object:RI::MethodSummary 
+  name: polar
+- !ruby/object:RI::MethodSummary 
+  name: quo
+- !ruby/object:RI::MethodSummary 
+  name: real
+- !ruby/object:RI::MethodSummary 
+  name: remainder
+- !ruby/object:RI::MethodSummary 
+  name: round
+- !ruby/object:RI::MethodSummary 
+  name: singleton_method_added
+- !ruby/object:RI::MethodSummary 
+  name: step
+- !ruby/object:RI::MethodSummary 
+  name: to_int
+- !ruby/object:RI::MethodSummary 
+  name: truncate
+- !ruby/object:RI::MethodSummary 
+  name: zero?
+name: Numeric
+superclass: Object

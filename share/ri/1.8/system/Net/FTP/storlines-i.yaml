@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: line
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Puts the connection into ASCII (text) mode, issues the given server-side command (such as &quot;STOR myfile&quot;), and sends the contents of the file named <tt>file</tt> to the server, one line at a time. If the optional block is given, it also passes it the lines.
+full_name: Net::FTP#storlines
+is_singleton: false
+name: storlines
+params: (cmd, file) {|line| ...}
+visibility: public

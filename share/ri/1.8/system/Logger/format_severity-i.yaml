@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Logger#format_severity
+is_singleton: false
+name: format_severity
+params: (severity)
+visibility: private

@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Clean the path simply by resolving and removing excess &quot;.&quot; and &quot;..&quot; entries. Nothing more, nothing less.
+full_name: Pathname#cleanpath_aggressive
+is_singleton: false
+name: cleanpath_aggressive
+params: ()
+visibility: private

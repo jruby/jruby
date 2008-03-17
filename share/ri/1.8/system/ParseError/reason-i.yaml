@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns error reason. Override this for I18N.
+full_name: ParseError#reason
+is_singleton: false
+name: reason
+params: ()
+visibility: public

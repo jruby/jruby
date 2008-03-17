@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns <tt>nil</tt> if <tt>file_name</tt> doesn't exist or has zero size, the size of the file otherwise.
+full_name: FileTest#size?
+is_singleton: false
+name: size?
+params: |
+  File.size?(file_name)   => Integer or nil
+
+visibility: public

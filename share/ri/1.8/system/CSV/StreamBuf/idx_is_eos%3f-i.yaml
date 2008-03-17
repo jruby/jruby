@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: CSV::StreamBuf#idx_is_eos?
+is_singleton: false
+name: idx_is_eos?
+params: (idx)
+visibility: private

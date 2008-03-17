@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Do hour <tt>h</tt>, minute <tt>min</tt>, and second <tt>s</tt> constitute a valid time?
+- !ruby/struct:SM::Flow::P 
+  body: If they do, returns their value as a fraction of a day. If not, returns nil.
+- !ruby/struct:SM::Flow::P 
+  body: The 24-hour clock is used. Negative values of <tt>h</tt>, <tt>min</tt>, and <tt>sec</tt> are treating as counting backwards from the end of the next larger unit (e.g. a <tt>min</tt> of -2 is treated as 58). No wraparound is performed.
+full_name: Date::valid_time?
+is_singleton: true
+name: valid_time?
+params: (h, min, s)
+visibility: public

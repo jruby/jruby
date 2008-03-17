@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: auth
+full_name: Net::SMTP#check_auth_args
+is_singleton: false
+name: check_auth_args
+params: ( user, secret, authtype )
+visibility: private

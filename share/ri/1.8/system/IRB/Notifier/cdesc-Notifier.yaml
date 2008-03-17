@@ -1,0 +1,19 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: D_NOMSG
+  value: NoMsgNotifier.new
+full_name: IRB::Notifier
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: def_notifier
+name: Notifier
+superclass: 

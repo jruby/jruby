@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: If Rational is defined, returns a Rational number instead of a Fixnum.
+full_name: Fixnum#quo
+is_singleton: false
+name: quo
+params: (other)
+visibility: public

@@ -1,0 +1,11 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: unless pager = setup_pager
+comment: []
+
+full_name: DefaultDisplay#page
+is_singleton: false
+name: page
+params: () {|unless pager = setup_pager| ...}
+visibility: private

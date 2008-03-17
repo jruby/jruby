@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Set the default id conv object.
+- !ruby/struct:SM::Flow::P 
+  body: See DRbServer#default_id_conv.
+full_name: DRb#install_id_conv
+is_singleton: false
+name: install_id_conv
+params: (idconv)
+visibility: public

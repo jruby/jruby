@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: (row)
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Parse CSV data and get lines. Given block is called for each parsed row. Block value is always nil. Rows are not cached for performance reason.
+full_name: CSV::Reader::parse
+is_singleton: true
+name: parse
+params: (str_or_readable, fs = ',', rs = nil, &block) {|row| ...}
+visibility: public

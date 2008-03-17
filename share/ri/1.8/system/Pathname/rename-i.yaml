@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: See <tt>File.rename</tt>. Rename the file.
+full_name: Pathname#rename
+is_singleton: false
+name: rename
+params: (to)
+visibility: public

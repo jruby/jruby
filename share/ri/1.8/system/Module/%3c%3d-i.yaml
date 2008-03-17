@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Returns true if <em>mod</em> is a subclass of <em>other</em> or is the same as <em>other</em>. Returns <tt>nil</tt> if there's no relationship between the two. (Think of the relationship in terms of the class definition: &quot;class A&lt;B&quot; implies &quot;A&lt;B&quot;)."
+full_name: Module#<=
+is_singleton: false
+name: <=
+params: |
+  mod <= other   =>  true, false, or nil
+
+visibility: public

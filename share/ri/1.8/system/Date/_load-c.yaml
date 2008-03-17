@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Load from Marshall format.
+full_name: Date::_load
+is_singleton: true
+name: _load
+params: (str)
+visibility: public

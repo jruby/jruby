@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Write <tt>string</tt> to the host.
+- !ruby/struct:SM::Flow::P 
+  body: Does not perform any conversions on <tt>string</tt>. Will log <tt>string</tt> to the dumplog, if the Dump_log option is set.
+full_name: Net::Telnet#write
+is_singleton: false
+name: write
+params: (string)
+visibility: public

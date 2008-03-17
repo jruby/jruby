@@ -1,0 +1,15 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Deprecated; use <tt>Array#values_at</tt>.
+full_name: Array#indexes
+is_singleton: false
+name: indexes
+params: |
+  array.indexes( i1, i2, ... iN )   -> an_array
+  array.indices( i1, i2, ... iN )   -> an_array
+
+visibility: public

@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Generators::AllReferences::reset
+is_singleton: true
+name: reset
+params: ()
+visibility: public

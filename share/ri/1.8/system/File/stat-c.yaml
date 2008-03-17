@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns a <tt>File::Stat</tt> object for the named file (see <tt>File::Stat</tt>).
+- !ruby/struct:SM::Flow::VERB 
+  body: "   File.stat(&quot;testfile&quot;).mtime   #=&gt; Tue Apr 08 12:58:04 CDT 2003\n"
+full_name: File::stat
+is_singleton: true
+name: stat
+params: |
+  File.stat(file_name)   =>  stat
+
+visibility: public

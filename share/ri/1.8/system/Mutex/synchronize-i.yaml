@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: ""
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Obtains a lock, runs the block, and releases the lock when the block completes. See the example under Mutex.
+full_name: Mutex#synchronize
+is_singleton: false
+name: synchronize
+params: () {|| ...}
+visibility: public

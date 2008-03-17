@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Sends a SUBSCRIBE command to add the specified <tt>mailbox</tt> name to the server's set of &quot;active&quot; or &quot;subscribed&quot; mailboxes as returned by #lsub()."
+- !ruby/struct:SM::Flow::P 
+  body: A Net::IMAP::NoResponseError is raised if <tt>mailbox</tt> cannot be subscribed to, for instance because it does not exist.
+full_name: Net::IMAP#subscribe
+is_singleton: false
+name: subscribe
+params: (mailbox)
+visibility: public

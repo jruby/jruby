@@ -1,0 +1,223 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: cookie
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: inputs
+  rw: R
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: cookie
+- !ruby/object:RI::MethodSummary 
+  name: error
+- !ruby/object:RI::MethodSummary 
+  name: escape
+- !ruby/object:RI::MethodSummary 
+  name: escape
+- !ruby/object:RI::MethodSummary 
+  name: escapeElement
+- !ruby/object:RI::MethodSummary 
+  name: escapeHTML
+- !ruby/object:RI::MethodSummary 
+  name: escapeHTML
+- !ruby/object:RI::MethodSummary 
+  name: header
+- !ruby/object:RI::MethodSummary 
+  name: message
+- !ruby/object:RI::MethodSummary 
+  name: new
+- !ruby/object:RI::MethodSummary 
+  name: new
+- !ruby/object:RI::MethodSummary 
+  name: parse
+- !ruby/object:RI::MethodSummary 
+  name: pretty
+- !ruby/object:RI::MethodSummary 
+  name: print
+- !ruby/object:RI::MethodSummary 
+  name: rfc1123_date
+- !ruby/object:RI::MethodSummary 
+  name: rfc1123_date
+- !ruby/object:RI::MethodSummary 
+  name: tag
+- !ruby/object:RI::MethodSummary 
+  name: unescape
+- !ruby/object:RI::MethodSummary 
+  name: unescape
+- !ruby/object:RI::MethodSummary 
+  name: unescapeElement
+- !ruby/object:RI::MethodSummary 
+  name: unescapeHTML
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: CGI class. See documentation for the file cgi.rb for an overview of the CGI protocol.
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: Introduction
+- !ruby/struct:SM::Flow::P 
+  body: CGI is a large class, providing several categories of methods, many of which are mixed in from other modules. Some of the documentation is in this class, some in the modules CGI::QueryExtension and CGI::HtmlExtension. See CGI::Cookie for specific information on handling cookies, and cgi/session.rb (CGI::Session) for information on sessions.
+- !ruby/struct:SM::Flow::P 
+  body: For queries, CGI provides methods to get at environmental variables, parameters, cookies, and multipart request data. For responses, CGI provides methods for writing output and generating HTML.
+- !ruby/struct:SM::Flow::P 
+  body: Read on for more details. Examples are provided at the bottom.
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: Queries
+- !ruby/struct:SM::Flow::P 
+  body: The CGI class dynamically mixes in parameter and cookie-parsing functionality, environmental variable access, and support for parsing multipart requests (including uploaded files) from the CGI::QueryExtension module.
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Environmental Variables
+- !ruby/struct:SM::Flow::P 
+  body: "The standard CGI environmental variables are available as read-only attributes of a CGI object. The following is a list of these variables:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  AUTH_TYPE               HTTP_HOST          REMOTE_IDENT\n  CONTENT_LENGTH          HTTP_NEGOTIATE     REMOTE_USER\n  CONTENT_TYPE            HTTP_PRAGMA        REQUEST_METHOD\n  GATEWAY_INTERFACE       HTTP_REFERER       SCRIPT_NAME\n  HTTP_ACCEPT             HTTP_USER_AGENT    SERVER_NAME\n  HTTP_ACCEPT_CHARSET     PATH_INFO          SERVER_PORT\n  HTTP_ACCEPT_ENCODING    PATH_TRANSLATED    SERVER_PROTOCOL\n  HTTP_ACCEPT_LANGUAGE    QUERY_STRING       SERVER_SOFTWARE\n  HTTP_CACHE_CONTROL      REMOTE_ADDR\n  HTTP_FROM               REMOTE_HOST\n"
+- !ruby/struct:SM::Flow::P 
+  body: For each of these variables, there is a corresponding attribute with the same name, except all lower case and without a preceding HTTP_. <tt>content_length</tt> and <tt>server_port</tt> are integers; the rest are strings.
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Parameters
+- !ruby/struct:SM::Flow::P 
+  body: "The method #params() returns a hash of all parameters in the request as name/value-list pairs, where the value-list is an Array of one or more values. The CGI object itself also behaves as a hash of parameter names to values, but only returns a single value (as a String) for each parameter name."
+- !ruby/struct:SM::Flow::P 
+  body: "For instance, suppose the request contains the parameter &quot;favourite_colours&quot; with the multiple values &quot;blue&quot; and &quot;green&quot;. The following behaviour would occur:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  cgi.params[&quot;favourite_colours&quot;]  # =&gt; [&quot;blue&quot;, &quot;green&quot;]\n  cgi[&quot;favourite_colours&quot;]         # =&gt; &quot;blue&quot;\n"
+- !ruby/struct:SM::Flow::P 
+  body: "If a parameter does not exist, the former method will return an empty array, the latter an empty string. The simplest way to test for existence of a parameter is by the #has_key? method."
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Cookies
+- !ruby/struct:SM::Flow::P 
+  body: "HTTP Cookies are automatically parsed from the request. They are available from the #cookies() accessor, which returns a hash from cookie name to CGI::Cookie object."
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Multipart requests
+- !ruby/struct:SM::Flow::P 
+  body: "If a request's method is POST and its content type is multipart/form-data, then it may contain uploaded files. These are stored by the QueryExtension module in the parameters of the request. The parameter name is the name attribute of the file input field, as usual. However, the value is not a string, but an IO object, either an IOString for small files, or a Tempfile for larger ones. This object also has the additional singleton methods:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "#local_path():"
+    body: the path of the uploaded file on the local filesystem
+  - !ruby/struct:SM::Flow::LI 
+    label: "#original_filename():"
+    body: the name of the file on the client computer
+  - !ruby/struct:SM::Flow::LI 
+    label: "#content_type():"
+    body: the content type of the file
+  type: :NOTE
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: Responses
+- !ruby/struct:SM::Flow::P 
+  body: The CGI class provides methods for sending header and content output to the HTTP client, and mixes in methods for programmatic HTML generation from CGI::HtmlExtension and CGI::TagMaker modules. The precise version of HTML to use for HTML generation is specified at object creation time.
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Writing output
+- !ruby/struct:SM::Flow::P 
+  body: "The simplest way to send output to the HTTP client is using the #out() method. This takes the HTTP headers as a hash parameter, and the body content via a block. The headers can be generated as a string using the #header() method. The output stream can be written directly to using the #print() method."
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Generating HTML
+- !ruby/struct:SM::Flow::P 
+  body: Each HTML element has a corresponding method for generating that element as a String. The name of this method is the same as that of the element, all lowercase. The attributes of the element are passed in as a hash, and the body as a no-argument block that evaluates to a String. The HTML generation module knows which elements are always empty, and silently drops any passed-in body. It also knows which elements require matching closing tags and which don't. However, it does not know what attributes are legal for which elements.
+- !ruby/struct:SM::Flow::P 
+  body: There are also some additional HTML generation methods mixed in from the CGI::HtmlExtension module. These include individual methods for the different types of form inputs, and methods for elements that commonly take particular attributes where the attributes can be directly specified as arguments, rather than via a hash.
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: Examples of use
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Get form values
+- !ruby/struct:SM::Flow::VERB 
+  body: "  require &quot;cgi&quot;\n  cgi = CGI.new\n  value = cgi['field_name']   # &lt;== value string for 'field_name'\n    # if not 'field_name' included, then return &quot;&quot;.\n  fields = cgi.keys            # &lt;== array of field names\n\n  # returns true if form has 'field_name'\n  cgi.has_key?('field_name')\n  cgi.has_key?('field_name')\n  cgi.include?('field_name')\n"
+- !ruby/struct:SM::Flow::P 
+  body: CAUTION! cgi['field_name'] returned an Array with the old cgi.rb(included in ruby 1.6)
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Get form values as hash
+- !ruby/struct:SM::Flow::VERB 
+  body: "  require &quot;cgi&quot;\n  cgi = CGI.new\n  params = cgi.params\n"
+- !ruby/struct:SM::Flow::P 
+  body: cgi.params is a hash.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  cgi.params['new_field_name'] = [&quot;value&quot;]  # add new param\n  cgi.params['field_name'] = [&quot;new_value&quot;]  # change value\n  cgi.params.delete('field_name')           # delete param\n  cgi.params.clear                          # delete all params\n"
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Save form values to file
+- !ruby/struct:SM::Flow::VERB 
+  body: "  require &quot;pstore&quot;\n  db = PStore.new(&quot;query.db&quot;)\n  db.transaction do\n    db[&quot;params&quot;] = cgi.params\n  end\n"
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Restore form values from file
+- !ruby/struct:SM::Flow::VERB 
+  body: "  require &quot;pstore&quot;\n  db = PStore.new(&quot;query.db&quot;)\n  db.transaction do\n    cgi.params = db[&quot;params&quot;]\n  end\n"
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Get multipart form values
+- !ruby/struct:SM::Flow::VERB 
+  body: "  require &quot;cgi&quot;\n  cgi = CGI.new\n  value = cgi['field_name']   # &lt;== value string for 'field_name'\n  value.read                  # &lt;== body of value\n  value.local_path            # &lt;== path to local file of value\n  value.original_filename     # &lt;== original filename of value\n  value.content_type          # &lt;== content_type of value\n"
+- !ruby/struct:SM::Flow::P 
+  body: and value has StringIO or Tempfile class methods.
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Get cookie values
+- !ruby/struct:SM::Flow::VERB 
+  body: "  require &quot;cgi&quot;\n  cgi = CGI.new\n  values = cgi.cookies['name']  # &lt;== array of 'name'\n    # if not 'name' included, then return [].\n  names = cgi.cookies.keys      # &lt;== array of cookie names\n"
+- !ruby/struct:SM::Flow::P 
+  body: and cgi.cookies is a hash.
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Get cookie objects
+- !ruby/struct:SM::Flow::VERB 
+  body: "  require &quot;cgi&quot;\n  cgi = CGI.new\n  for name, cookie in cgi.cookies\n    cookie.expires = Time.now + 30\n  end\n  cgi.out(&quot;cookie&quot; =&gt; cgi.cookies) {&quot;string&quot;}\n\n  cgi.cookies # { &quot;name1&quot; =&gt; cookie1, &quot;name2&quot; =&gt; cookie2, ... }\n\n  require &quot;cgi&quot;\n  cgi = CGI.new\n  cgi.cookies['name'].expires = Time.now + 30\n  cgi.out(&quot;cookie&quot; =&gt; cgi.cookies['name']) {&quot;string&quot;}\n"
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Print http header and html string to $DEFAULT_OUTPUT ($&gt;)
+- !ruby/struct:SM::Flow::VERB 
+  body: "  require &quot;cgi&quot;\n  cgi = CGI.new(&quot;html3&quot;)  # add HTML generation methods\n  cgi.out() do\n    cgi.html() do\n      cgi.head{ cgi.title{&quot;TITLE&quot;} } +\n      cgi.body() do\n        cgi.form() do\n          cgi.textarea(&quot;get_text&quot;) +\n          cgi.br +\n          cgi.submit\n        end +\n        cgi.pre() do\n          CGI::escapeHTML(\n            &quot;params: &quot; + cgi.params.inspect + &quot;\\n&quot; +\n            &quot;cookies: &quot; + cgi.cookies.inspect + &quot;\\n&quot; +\n            ENV.collect() do |key, value|\n              key + &quot; --&gt; &quot; + value + &quot;\\n&quot;\n            end.join(&quot;&quot;)\n          )\n        end\n      end\n    end\n  end\n\n  # add HTML generation methods\n  CGI.new(&quot;html3&quot;)    # html3.2\n  CGI.new(&quot;html4&quot;)    # html4.01 (Strict)\n  CGI.new(&quot;html4Tr&quot;)  # html4.01 Transitional\n  CGI.new(&quot;html4Fr&quot;)  # html4.01 Frameset\n"
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: CR
+  value: "\"\\015\""
+- !ruby/object:RI::Constant 
+  comment: 
+  name: LF
+  value: "\"\\012\""
+- !ruby/object:RI::Constant 
+  comment: 
+  name: EOL
+  value: CR + LF
+- !ruby/object:RI::Constant 
+  comment: 
+  name: RFC822_DAYS
+  value: "%w[ Sun Mon Tue Wed Thu Fri Sat ]"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: RFC822_MONTHS
+  value: "%w[ Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec ]"
+full_name: CGI
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: env_table
+- !ruby/object:RI::MethodSummary 
+  name: header
+- !ruby/object:RI::MethodSummary 
+  name: out
+- !ruby/object:RI::MethodSummary 
+  name: print
+- !ruby/object:RI::MethodSummary 
+  name: read_from_cmdline
+- !ruby/object:RI::MethodSummary 
+  name: stdinput
+- !ruby/object:RI::MethodSummary 
+  name: stdoutput
+name: CGI
+superclass: Object

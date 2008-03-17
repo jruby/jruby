@@ -1,0 +1,20 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Packs the contents of <em>arr</em> into a binary sequence according to the directives in <em>aTemplateString</em> (see the table below) Directives ``A,'' ``a,'' and ``Z'' may be followed by a count, which gives the width of the resulting field. The remaining directives also may take a count, indicating the number of array elements to convert. If the count is an asterisk (``<tt>*</tt>''), all remaining array elements will be converted. Any of the directives ``<tt>sSiIlL</tt>'' may be followed by an underscore (``<tt>_</tt>'') to use the underlying platform's native size for the specified type; otherwise, they use a platform-independent size. Spaces are ignored in the template string. See also <tt>String#unpack</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   a = [ &quot;a&quot;, &quot;b&quot;, &quot;c&quot; ]\n   n = [ 65, 66, 67 ]\n   a.pack(&quot;A3A3A3&quot;)   #=&gt; &quot;a  b  c  &quot;\n   a.pack(&quot;a3a3a3&quot;)   #=&gt; &quot;a\\000\\000b\\000\\000c\\000\\000&quot;\n   n.pack(&quot;ccc&quot;)      #=&gt; &quot;ABC&quot;\n"
+- !ruby/struct:SM::Flow::P 
+  body: Directives for <tt>pack</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: " Directive    Meaning\n ---------------------------------------------------------------\n     @     |  Moves to absolute position\n     A     |  ASCII string (space padded, count is width)\n     a     |  ASCII string (null padded, count is width)\n     B     |  Bit string (descending bit order)\n     b     |  Bit string (ascending bit order)\n     C     |  Unsigned char\n     c     |  Char\n     D, d  |  Double-precision float, native format\n     E     |  Double-precision float, little-endian byte order\n     e     |  Single-precision float, little-endian byte order\n     F, f  |  Single-precision float, native format\n     G     |  Double-precision float, network (big-endian) byte order\n     g     |  Single-precision float, network (big-endian) byte order\n     H     |  Hex string (high nibble first)\n     h     |  Hex string (low nibble first)\n     I     |  Unsigned integer\n     i     |  Integer\n     L     |  Unsigned long\n     l     |  Long\n     M     |  Quoted printable, MIME encoding (see RFC2045)\n     m     |  Base64 encoded string\n     N     |  Long, network (big-endian) byte order\n     n     |  Short, network (big-endian) byte-order\n     P     |  Pointer to a structure (fixed-length string)\n     p     |  Pointer to a null-terminated string\n     Q, q  |  64-bit number\n     S     |  Unsigned short\n     s     |  Short\n     U     |  UTF-8\n     u     |  UU-encoded string\n     V     |  Long, little-endian byte order\n     v     |  Short, little-endian byte order\n     w     |  BER-compressed integer\\fnm\n     X     |  Back up a byte\n     x     |  Null byte\n     Z     |  Same as ``a'', except that null is added with *\n"
+full_name: Array#pack
+is_singleton: false
+name: pack
+params: |
+  arr.pack ( aTemplateString ) -> aBinaryString
+
+visibility: public

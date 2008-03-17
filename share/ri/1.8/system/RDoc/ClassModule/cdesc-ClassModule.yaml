@@ -1,0 +1,34 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: diagram
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: superclass
+  rw: R
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: ClassModule is the base class for objects representing either a class or a module.
+constants: []
+
+full_name: RDoc::ClassModule
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: find_class_named
+- !ruby/object:RI::MethodSummary 
+  name: full_name
+- !ruby/object:RI::MethodSummary 
+  name: http_url
+- !ruby/object:RI::MethodSummary 
+  name: is_module?
+- !ruby/object:RI::MethodSummary 
+  name: to_s
+name: ClassModule
+superclass: Context

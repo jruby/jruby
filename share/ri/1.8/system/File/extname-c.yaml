@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the extension (the portion of file name in <em>path</em> after the period).
+- !ruby/struct:SM::Flow::VERB 
+  body: "   File.extname(&quot;test.rb&quot;)         #=&gt; &quot;.rb&quot;\n   File.extname(&quot;a/b/d/test.rb&quot;)   #=&gt; &quot;.rb&quot;\n   File.extname(&quot;test&quot;)            #=&gt; &quot;&quot;\n   File.extname(&quot;.profile&quot;)        #=&gt; &quot;&quot;\n"
+full_name: File::extname
+is_singleton: true
+name: extname
+params: |
+  File.extname(path) -> string
+
+visibility: public

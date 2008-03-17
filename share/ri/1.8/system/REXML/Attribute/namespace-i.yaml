@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the namespace URL, if defined, or nil otherwise
+- !ruby/struct:SM::Flow::VERB 
+  body: " e = Element.new(&quot;el&quot;)\n e.add_attributes({&quot;xmlns:ns&quot;, &quot;http://url&quot;})\n e.namespace( &quot;ns&quot; )              # -&gt; &quot;http://url&quot;\n"
+full_name: REXML::Attribute#namespace
+is_singleton: false
+name: namespace
+params: (arg=nil)
+visibility: public

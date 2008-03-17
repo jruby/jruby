@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the number of columns. Note that it is possible to construct a matrix with uneven columns (e.g. Matrix[ [1,2,3], [4,5] ]), but this is mathematically unsound. This method uses the first row to determine the result.
+full_name: Matrix#column_size
+is_singleton: false
+name: column_size
+params: ()
+visibility: public

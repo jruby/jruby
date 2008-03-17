@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns exception's message (or the name of the exception if no message is set).
+full_name: Exception#to_s
+is_singleton: false
+name: to_s
+params: |
+  exception.to_s   =>  string
+
+visibility: public

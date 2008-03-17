@@ -1,0 +1,21 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+constants: []
+
+full_name: PrettyPrint::GroupQueue
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: delete
+- !ruby/object:RI::MethodSummary 
+  name: deq
+- !ruby/object:RI::MethodSummary 
+  name: enq
+name: GroupQueue
+superclass: Object

@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: (key, *sw)
+comment: 
+full_name: OptionParser::Completion#complete
+is_singleton: false
+name: complete
+params: (key, icase = false, pat = nil) {|key, *sw| ...}
+visibility: public

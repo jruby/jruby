@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: def_exception(n, m, s)
+- !ruby/struct:SM::Flow::VERB 
+  body: "        n:  exception_name\n        m:  message_form\n        s:      superclass(default: StandardError)\n    define exception named ``c'' with message m.\n"
+full_name: Exception2MessageMapper#def_exception
+is_singleton: false
+name: def_exception
+params: (n, m, s = StandardError)
+visibility: public

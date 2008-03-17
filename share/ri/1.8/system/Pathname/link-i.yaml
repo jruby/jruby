@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Pathname#link is confusing and <b>obsoleted</b> because the receiver/argument order is inverted to corresponding system call.
+full_name: Pathname#link
+is_singleton: false
+name: link
+params: (old)
+visibility: public

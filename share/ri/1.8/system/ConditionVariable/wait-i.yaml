@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Releases the lock held in <tt>mutex</tt> and waits; reacquires the lock on wakeup.
+full_name: ConditionVariable#wait
+is_singleton: false
+name: wait
+params: (mutex)
+visibility: public

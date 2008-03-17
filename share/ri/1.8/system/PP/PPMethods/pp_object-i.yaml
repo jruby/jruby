@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: PP::PPMethods#pp_object
+is_singleton: false
+name: pp_object
+params: (obj)
+visibility: public

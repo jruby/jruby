@@ -1,0 +1,67 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: OpenURI::OpenRead#open provides `open' for URI::HTTP and URI::FTP.
+- !ruby/struct:SM::Flow::P 
+  body: "OpenURI::OpenRead#open takes optional 3 arguments as: OpenURI::OpenRead#open([mode [, perm]] [, options]) [{|io| ... }]"
+- !ruby/struct:SM::Flow::P 
+  body: `mode', `perm' is same as Kernel#open.
+- !ruby/struct:SM::Flow::P 
+  body: However, `mode' must be read mode because OpenURI::OpenRead#open doesn't support write mode (yet). Also `perm' is just ignored because it is meaningful only for file creation.
+- !ruby/struct:SM::Flow::P 
+  body: `options' must be a hash.
+- !ruby/struct:SM::Flow::P 
+  body: Each pairs which key is a string in the hash specify a extra header field for HTTP. I.e. it is ignored for FTP without HTTP proxy.
+- !ruby/struct:SM::Flow::P 
+  body: "The hash may include other options which key is a symbol:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: ":proxy"
+    body: "Synopsis:"
+  - !ruby/struct:SM::Flow::VERB 
+    body: "  :proxy =&gt; &quot;http://proxy.foo.com:8000/&quot;\n  :proxy =&gt; URI.parse(&quot;http://proxy.foo.com:8000/&quot;)\n  :proxy =&gt; true\n  :proxy =&gt; false\n  :proxy =&gt; nil\n"
+  - !ruby/struct:SM::Flow::P 
+    body: If :proxy option is specified, the value should be String, URI, boolean or nil. When String or URI is given, it is treated as proxy URI. When true is given or the option itself is not specified, environment variable `scheme_proxy' is examined. `scheme' is replaced by `http', `https' or `ftp'. When false or nil is given, the environment variables are ignored and connection will be made to a server directly.
+  - !ruby/struct:SM::Flow::LI 
+    label: ":http_basic_authentication"
+    body: "Synopsis:"
+  - !ruby/struct:SM::Flow::VERB 
+    body: "  :http_basic_authentication=&gt;[user, password]\n"
+  - !ruby/struct:SM::Flow::P 
+    body: "If :http_basic_authentication is specified, the value should be an array which contains 2 strings: username and password. It is used for HTTP Basic authentication defined by RFC 2617."
+  - !ruby/struct:SM::Flow::LI 
+    label: ":content_length_proc"
+    body: "Synopsis:"
+  - !ruby/struct:SM::Flow::VERB 
+    body: "  :content_length_proc =&gt; lambda {|content_length| ... }\n"
+  - !ruby/struct:SM::Flow::P 
+    body: If :content_length_proc option is specified, the option value procedure is called before actual transfer is started. It takes one argument which is expected content length in bytes.
+  - !ruby/struct:SM::Flow::P 
+    body: If two or more transfer is done by HTTP redirection, the procedure is called only one for a last transfer.
+  - !ruby/struct:SM::Flow::P 
+    body: When expected content length is unknown, the procedure is called with nil. It is happen when HTTP response has no Content-Length header.
+  - !ruby/struct:SM::Flow::LI 
+    label: ":progress_proc"
+    body: "Synopsis:"
+  - !ruby/struct:SM::Flow::VERB 
+    body: "  :progress_proc =&gt; lambda {|size| ...}\n"
+  - !ruby/struct:SM::Flow::P 
+    body: If :progress_proc option is specified, the proc is called with one argument each time when `open' gets content fragment from network. The argument `size' `size' is a accumulated transfered size in bytes.
+  - !ruby/struct:SM::Flow::P 
+    body: If two or more transfer is done by HTTP redirection, the procedure is called only one for a last transfer.
+  - !ruby/struct:SM::Flow::P 
+    body: ":progress_proc and :content_length_proc are intended to be used for progress bar. For example, it can be implemented as follows using Ruby/ProgressBar."
+  - !ruby/struct:SM::Flow::VERB 
+    body: "  pbar = nil\n  open(&quot;http://...&quot;,\n    :content_length_proc =&gt; lambda {|t|\n      if t &amp;&amp; 0 &lt; t\n        pbar = ProgressBar.new(&quot;...&quot;, t)\n        pbar.file_transfer_mode\n      end\n    },\n    :progress_proc =&gt; lambda {|s|\n      pbar.set s if pbar\n    }) {|f| ... }\n"
+  type: :LABELED
+- !ruby/struct:SM::Flow::P 
+  body: OpenURI::OpenRead#open returns an IO like object if block is not given. Otherwise it yields the IO object and return the value of the block. The IO object is extended with OpenURI::Meta.
+full_name: OpenURI::OpenRead#open
+is_singleton: false
+name: open
+params: (*rest, &block)
+visibility: public

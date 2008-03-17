@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the last access time for this file as an object of class <tt>Time</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   File.stat(&quot;testfile&quot;).atime   #=&gt; Wed Dec 31 18:00:00 CST 1969\n"
+full_name: File::Stat#atime
+is_singleton: false
+name: atime
+params: |
+  stat.atime   => time
+
+visibility: public

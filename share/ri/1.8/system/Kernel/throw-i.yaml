@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Transfers control to the end of the active <tt>catch</tt> block waiting for <em>symbol</em>. Raises <tt>NameError</tt> if there is no <tt>catch</tt> block for the symbol. The optional second parameter supplies a return value for the <tt>catch</tt> block, which otherwise defaults to <tt>nil</tt>. For examples, see <tt>Kernel::catch</tt>.
+full_name: Kernel#throw
+is_singleton: false
+name: throw
+params: |
+  throw(symbol [, obj])
+
+visibility: public

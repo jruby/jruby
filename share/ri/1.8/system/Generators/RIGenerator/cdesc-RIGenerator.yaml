@@ -1,0 +1,33 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: for
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+constants: []
+
+full_name: Generators::RIGenerator
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: generate
+- !ruby/object:RI::MethodSummary 
+  name: generate_class_info
+- !ruby/object:RI::MethodSummary 
+  name: generate_method_info
+- !ruby/object:RI::MethodSummary 
+  name: markup
+- !ruby/object:RI::MethodSummary 
+  name: method_list
+- !ruby/object:RI::MethodSummary 
+  name: params_of
+- !ruby/object:RI::MethodSummary 
+  name: process_class
+- !ruby/object:RI::MethodSummary 
+  name: update_or_replace
+name: RIGenerator
+superclass: Object

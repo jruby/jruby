@@ -1,0 +1,56 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: returns a URI which is base of relative URIs in the data. It may differ from the URI supplied by a user because redirection.
+  name: base_uri
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: returns a Hash which represents header fields. The Hash keys are downcased for canonicalization.
+  name: meta
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: returns an Array which consists status code and message.
+  name: status
+  rw: RW
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Mixin for holding meta-information.
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: RE_LWS
+  value: /[\r\n\t ]+/n
+- !ruby/object:RI::Constant 
+  comment: 
+  name: RE_TOKEN
+  value: "%r{[^\\x00- ()<>@,;:\\\\\"/\\[\\]?={}\\x7f]+}n"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: RE_QUOTED_STRING
+  value: "%r{\"(?:[\\r\\n\\t !#-\\[\\]-~\\x80-\\xff]|\\\\[\\x00-\\x7f])*\"}n"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: RE_PARAMETERS
+  value: "%r{(?:;#{RE_LWS}?#{RE_TOKEN}#{RE_LWS}?=#{RE_LWS}?(?:#{RE_TOKEN}|#{RE_QUOTED_STRING})#{RE_LWS}?)*}n"
+full_name: OpenURI::Meta
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: charset
+- !ruby/object:RI::MethodSummary 
+  name: content_encoding
+- !ruby/object:RI::MethodSummary 
+  name: content_type
+- !ruby/object:RI::MethodSummary 
+  name: last_modified
+name: Meta
+superclass: 

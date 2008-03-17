@@ -1,0 +1,25 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::VERB 
+  body: " OpenURI is an easy-to-use wrapper for net/http, net/https and net/ftp.\n"
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: Example
+- !ruby/struct:SM::Flow::VERB 
+  body: " It is possible to open http/https/ftp URL as usual like opening a file:\n\n   open(&quot;http://www.ruby-lang.org/&quot;) {|f|\n     f.each_line {|line| p line}\n   }\n\n The opened file has several methods for meta information as follows since\n it is extended by OpenURI::Meta.\n\n   open(&quot;http://www.ruby-lang.org/en&quot;) {|f|\n     f.each_line {|line| p line}\n     p f.base_uri         # &lt;URI::HTTP:0x40e6ef2 URL:http://www.ruby-lang.org/en/&gt;\n     p f.content_type     # &quot;text/html&quot;\n     p f.charset          # &quot;iso-8859-1&quot;\n     p f.content_encoding # []\n     p f.last_modified    # Thu Dec 05 02:45:02 UTC 2002\n   }\n\n Additional header fields can be specified by an optional hash argument.\n\n   open(&quot;http://www.ruby-lang.org/en/&quot;,\n     &quot;User-Agent&quot; =&gt; &quot;Ruby/#{RUBY_VERSION}&quot;,\n     &quot;From&quot; =&gt; &quot;foo@bar.invalid&quot;,\n     &quot;Referer&quot; =&gt; &quot;http://www.ruby-lang.org/&quot;) {|f|\n     # ...\n   }\n\n The environment variables such as http_proxy, https_proxy and ftp_proxy\n are in effect by default.  :proxy =&gt; nil disables proxy.\n\n   open(&quot;http://www.ruby-lang.org/en/raa.html&quot;, :proxy =&gt; nil) {|f|\n     # ...\n   }\n\n URI objects can be opened in a similar way.\n\n   uri = URI.parse(&quot;http://www.ruby-lang.org/en/&quot;)\n   uri.open {|f|\n     # ...\n   }\n\n URI objects can be read directly. The returned string is also extended by\n OpenURI::Meta.\n\n   str = uri.read\n   p str.base_uri\n\n Author:: Tanaka Akira &lt;akr@m17n.org&gt;\n"
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: Options
+  value: "{     :proxy => true,     :progress_proc => true,     :content_length_proc => true,     :http_basic_authentication => true,   }"
+full_name: OpenURI
+includes: []
+
+instance_methods: []
+
+name: OpenURI
+superclass: 

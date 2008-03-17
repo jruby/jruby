@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Generate all the HTML. For the one-file case, we generate all the information in to one big hash
+full_name: Generators::HTMLGeneratorInOne#generate_xml
+is_singleton: false
+name: generate_xml
+params: ()
+visibility: public

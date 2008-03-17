@@ -1,0 +1,18 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Sends a LIST command, and returns a subset of names from the complete set of all names available to the client. <tt>refname</tt> provides a context (for instance, a base directory in a directory-based mailbox hierarchy). <tt>mailbox</tt> specifies a mailbox or (via wildcards) mailboxes under that context. Two wildcards may be used in <tt>mailbox</tt>: '*', which matches all characters <b>including</b> the hierarchy delimiter (for instance, '/' on a UNIX-hosted directory-based mailbox hierarchy); and '%', which matches all characters <b>except</b> the hierarchy delimiter."
+- !ruby/struct:SM::Flow::P 
+  body: If <tt>refname</tt> is empty, <tt>mailbox</tt> is used directly to determine which mailboxes to match. If <tt>mailbox</tt> is empty, the root name of <tt>refname</tt> and the hierarchy delimiter are returned.
+- !ruby/struct:SM::Flow::P 
+  body: "The return value is an array of +Net::IMAP::MailboxList+. For example:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  imap.create(&quot;foo/bar&quot;)\n  imap.create(&quot;foo/baz&quot;)\n  p imap.list(&quot;&quot;, &quot;foo/%&quot;)\n  #=&gt; [#&lt;Net::IMAP::MailboxList attr=[:Noselect], delim=&quot;/&quot;, name=&quot;foo/&quot;&gt;, \\\n       #&lt;Net::IMAP::MailboxList attr=[:Noinferiors, :Marked], delim=&quot;/&quot;, name=&quot;foo/bar&quot;&gt;, \\\n       #&lt;Net::IMAP::MailboxList attr=[:Noinferiors], delim=&quot;/&quot;, name=&quot;foo/baz&quot;&gt;]\n"
+full_name: Net::IMAP#list
+is_singleton: false
+name: list
+params: (refname, mailbox)
+visibility: public

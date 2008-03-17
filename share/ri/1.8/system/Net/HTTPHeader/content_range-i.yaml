@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Returns a Range object which represents Content-Range: header field. This indicates, for a partial entity body, where this fragment fits inside the full entity body, as range of byte offsets."
+full_name: Net::HTTPHeader#content_range
+is_singleton: false
+name: content_range
+params: ()
+visibility: public

@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Test for numerical equality (<tt>a == a + 0<em>i</em></tt>).
+full_name: Complex#==
+is_singleton: false
+name: ==
+params: (other)
+visibility: public

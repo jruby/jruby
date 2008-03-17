@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Options: noop verbose force"
+- !ruby/struct:SM::Flow::P 
+  body: Changes owner and group on the named files (in <tt>list</tt>) to the user <tt>user</tt> and the group <tt>group</tt> recursively. <tt>user</tt> and <tt>group</tt> may be an ID (Integer/String) or a name (String). If <tt>user</tt> or <tt>group</tt> is nil, this method does not change the attribute.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  FileUtils.chown_R 'www', 'www', '/var/www/htdocs'\n  FileUtils.chown_R 'cvs', 'cvs', '/var/cvs', :verbose =&gt; true\n"
+full_name: FileUtils#chown_R
+is_singleton: false
+name: chown_R
+params: (user, group, list, options = {})
+visibility: public

@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Alias for #cp"
+full_name: FileUtils#copy
+is_singleton: false
+name: copy
+params: (src, dest, options = {})
+visibility: public

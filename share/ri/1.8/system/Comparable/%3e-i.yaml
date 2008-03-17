@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Compares two objects based on the receiver's <tt>&lt;=&gt;</tt> method, returning true if it returns 1.
+full_name: Comparable#>
+is_singleton: false
+name: ">"
+params: |
+  obj > other    => true or false
+
+visibility: public

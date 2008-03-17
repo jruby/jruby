@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Alias for #set_range"
+full_name: Net::HTTPHeader#range=
+is_singleton: false
+name: range=
+params: (r, e = nil)
+visibility: public

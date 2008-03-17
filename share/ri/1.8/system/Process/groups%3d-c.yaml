@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Set the supplemental group access list to the given <tt>Array</tt> of group IDs.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   Process.groups   #=&gt; [0, 1, 2, 3, 4, 6, 10, 11, 20, 26, 27]\n   Process.groups = [27, 6, 10, 11]   #=&gt; [27, 6, 10, 11]\n   Process.groups   #=&gt; [27, 6, 10, 11]\n"
+full_name: Process::groups=
+is_singleton: true
+name: groups=
+params: |
+  Process.groups= array   => array
+
+visibility: public

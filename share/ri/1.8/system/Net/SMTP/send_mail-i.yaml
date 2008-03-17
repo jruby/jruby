@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Alias for #send_message"
+full_name: Net::SMTP#send_mail
+is_singleton: false
+name: send_mail
+params: ( msgstr, from_addr, *to_addrs )
+visibility: public

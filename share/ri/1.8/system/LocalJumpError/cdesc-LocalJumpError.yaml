@@ -1,0 +1,22 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: <tt>Proc</tt> objects are blocks of code that have been bound to a set of local variables. Once bound, the code may be called in different contexts and still access those variables.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   def gen_times(factor)\n     return Proc.new {|n| n*factor }\n   end\n\n   times3 = gen_times(3)\n   times5 = gen_times(5)\n\n   times3.call(12)               #=&gt; 36\n   times5.call(5)                #=&gt; 25\n   times3.call(times5.call(4))   #=&gt; 60\n"
+constants: []
+
+full_name: LocalJumpError
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: exit_value
+- !ruby/object:RI::MethodSummary 
+  name: reason
+name: LocalJumpError
+superclass: StandardError

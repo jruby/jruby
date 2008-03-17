@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Returns the APOP class if <tt>isapop</tt> is true; otherwise, returns the POP class. For example:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "    # Example 1\n    pop = Net::POP3::APOP($is_apop).new(addr, port)\n\n    # Example 2\n    Net::POP3::APOP($is_apop).start(addr, port) do |pop|\n      ....\n    end\n"
+full_name: Net::POP3::APOP
+is_singleton: true
+name: APOP
+params: ( isapop )
+visibility: public

@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Calculates the error function of x.
+full_name: Math::erf
+is_singleton: true
+name: erf
+params: |
+  Math.erf(x)  => float
+
+visibility: public

@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns a list of the protected instance methods defined in <em>mod</em>. If the optional parameter is not <tt>false</tt>, the methods of any ancestors are included.
+full_name: Module#protected_instance_methods
+is_singleton: false
+name: protected_instance_methods
+params: |
+  mod.protected_instance_methods(include_super=true)   => array
+
+visibility: public

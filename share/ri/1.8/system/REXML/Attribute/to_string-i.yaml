@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns this attribute out as XML source, expanding the name
+- !ruby/struct:SM::Flow::VERB 
+  body: " a = Attribute.new( &quot;x&quot;, &quot;y&quot; )\n a.to_string     # -&gt; &quot;x='y'&quot;\n b = Attribute.new( &quot;ns:x&quot;, &quot;y&quot; )\n b.to_string     # -&gt; &quot;ns:x='y'&quot;\n"
+full_name: REXML::Attribute#to_string
+is_singleton: false
+name: to_string
+params: ()
+visibility: public

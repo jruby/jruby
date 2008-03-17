@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Removes tracing for the specified command on the given global variable and returns <tt>nil</tt>. If no command is specified, removes all tracing for that variable and returns an array containing the commands actually removed.
+full_name: Kernel#untrace_var
+is_singleton: false
+name: untrace_var
+params: |
+  untrace_var(symbol [, cmd] )   => array or nil
+
+visibility: public

@@ -1,0 +1,13 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: conj
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "See Complex#conjugate (short answer: returns <em>self</em>)."
+full_name: Numeric#conjugate
+is_singleton: false
+name: conjugate
+params: ()
+visibility: public

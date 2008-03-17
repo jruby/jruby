@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the symbol whose integer value is <em>fix</em>. See also <tt>Fixnum#id2name</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   fred = :fred.to_i\n   fred.id2name   #=&gt; &quot;fred&quot;\n   fred.to_sym    #=&gt; :fred\n"
+full_name: Fixnum#to_sym
+is_singleton: false
+name: to_sym
+params: |
+  fix.to_sym -> aSymbol
+
+visibility: public

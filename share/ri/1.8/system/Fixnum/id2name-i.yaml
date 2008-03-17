@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the name of the object whose symbol id is <em>fix</em>. If there is no symbol in the symbol table with this value, returns <tt>nil</tt>. <tt>id2name</tt> has nothing to do with the <tt>Object.id</tt> method. See also <tt>Fixnum#to_sym</tt>, <tt>String#intern</tt>, and class <tt>Symbol</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   symbol = :@inst_var    #=&gt; :@inst_var\n   id     = symbol.to_i   #=&gt; 9818\n   id.id2name             #=&gt; &quot;@inst_var&quot;\n"
+full_name: Fixnum#id2name
+is_singleton: false
+name: id2name
+params: |
+  fix.id2name -> string or nil
+
+visibility: public

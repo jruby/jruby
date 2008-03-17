@@ -1,0 +1,20 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Creates a buffer for pretty printing.
+- !ruby/struct:SM::Flow::P 
+  body: <tt>output</tt> is an output target. If it is not specified, '' is assumed. It should have a &lt;&lt; method which accepts the first argument <tt>obj</tt> of PrettyPrint#text, the first argument <tt>sep</tt> of PrettyPrint#breakable, the first argument <tt>newline</tt> of PrettyPrint.new, and the result of a given block for PrettyPrint.new.
+- !ruby/struct:SM::Flow::P 
+  body: <tt>maxwidth</tt> specifies maximum line length. If it is not specified, 79 is assumed. However actual outputs may overflow <tt>maxwidth</tt> if long non-breakable texts are provided.
+- !ruby/struct:SM::Flow::P 
+  body: <tt>newline</tt> is used for line breaks. &quot;\n&quot; is used if it is not specified.
+- !ruby/struct:SM::Flow::P 
+  body: The block is used to generate spaces. {|width| ' ' * width} is used if it is not given.
+full_name: PrettyPrint::new
+is_singleton: true
+name: new
+params: (output='', maxwidth=79, newline="\n", &genspace)
+visibility: public

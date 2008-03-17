@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Net::WriteAdapter#printf
+is_singleton: false
+name: printf
+params: (*args)
+visibility: public

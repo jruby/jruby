@@ -1,0 +1,20 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Options: force noop verbose secure"
+- !ruby/struct:SM::Flow::P 
+  body: remove files <tt>list</tt>[0] <tt>list</tt>[1]... If <tt>list</tt>[n] is a directory, removes its all contents recursively. This method ignores StandardError when :force option is set.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  FileUtils.rm_r Dir.glob('/tmp/*')\n  FileUtils.rm_r '/', :force =&gt; true          #  :-)\n"
+- !ruby/struct:SM::Flow::P 
+  body: "WARNING: This method causes local vulnerability if one of parent directories or removing directory tree are world writable (including /tmp, whose permission is 1777), and the current process has strong privilege such as Unix super user (root), and the system has symbolic link. For secure removing, read the documentation of #remove_entry_secure carefully, and set :secure option to true. Default is :secure=&gt;false."
+- !ruby/struct:SM::Flow::P 
+  body: "NOTE: This method calls #remove_entry_secure if :secure option is set. See also #remove_entry_secure."
+full_name: FileUtils#rm_r
+is_singleton: false
+name: rm_r
+params: (list, options = {})
+visibility: public

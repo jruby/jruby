@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Whether an attlist declaration includes the given attribute definition
+- !ruby/struct:SM::Flow::VERB 
+  body: " if attlist_decl.include? &quot;xmlns:foobar&quot;\n"
+full_name: REXML::AttlistDecl#include?
+is_singleton: false
+name: include?
+params: (key)
+visibility: public

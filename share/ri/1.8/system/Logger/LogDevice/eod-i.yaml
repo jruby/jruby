@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Logger::LogDevice#eod
+is_singleton: false
+name: eod
+params: (t)
+visibility: private

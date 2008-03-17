@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Return a pathname which is substituted by String#sub.
+full_name: Pathname#sub
+is_singleton: false
+name: sub
+params: (pattern, *rest, &block)
+visibility: public

@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Sets the instance variable names by <em>symbol</em> to <em>object</em>, thereby frustrating the efforts of the class's author to attempt to provide proper encapsulation. The variable did not have to exist prior to this call.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   class Fred\n     def initialize(p1, p2)\n       @a, @b = p1, p2\n     end\n   end\n   fred = Fred.new('cat', 99)\n   fred.instance_variable_set(:@a, 'dog')   #=&gt; &quot;dog&quot;\n   fred.instance_variable_set(:@c, 'cat')   #=&gt; &quot;cat&quot;\n   fred.inspect                             #=&gt; &quot;#&lt;Fred:0x401b3da8 @a=\\&quot;dog\\&quot;, @b=99, @c=\\&quot;cat\\&quot;&gt;&quot;\n"
+full_name: Object#instance_variable_set
+is_singleton: false
+name: instance_variable_set
+params: |
+  obj.instance_variable_set(symbol, obj)    => obj
+
+visibility: public

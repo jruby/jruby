@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the map from canonical name to system dependent name.
+full_name: Iconv::charset_map
+is_singleton: true
+name: charset_map
+params: " Iconv.charset_map\n"
+visibility: public

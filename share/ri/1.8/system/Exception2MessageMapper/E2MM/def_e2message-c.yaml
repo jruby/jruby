@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: E2MM.def_exception(k, e, m)
+- !ruby/struct:SM::Flow::VERB 
+  body: "        k:  class to define exception under.\n        e:  exception\n        m:  message_form\n    define exception c with message m.\n"
+full_name: Exception2MessageMapper::E2MM::def_e2message
+is_singleton: true
+name: def_e2message
+params: (k, c, m)
+visibility: public

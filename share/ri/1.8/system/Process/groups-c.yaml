@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Get an <tt>Array</tt> of the gids of groups in the supplemental group access list for this process.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   Process.groups   #=&gt; [27, 6, 10, 11]\n"
+full_name: Process::groups
+is_singleton: true
+name: groups
+params: |
+  Process.groups   => array
+
+visibility: public

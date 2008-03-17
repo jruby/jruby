@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IRB::Notifier::CompositeNotifier::new
+is_singleton: true
+name: new
+params: (prefix, base_notifier)
+visibility: public

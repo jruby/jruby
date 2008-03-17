@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IO#soak_up_spaces
+is_singleton: false
+name: soak_up_spaces
+params: ()
+visibility: private

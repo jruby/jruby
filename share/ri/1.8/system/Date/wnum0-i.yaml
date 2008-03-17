@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Date#wnum0
+is_singleton: false
+name: wnum0
+params: ()
+visibility: private

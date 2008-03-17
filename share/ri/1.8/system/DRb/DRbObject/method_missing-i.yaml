@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Routes method calls to the referenced object.
+full_name: DRb::DRbObject#method_missing
+is_singleton: false
+name: method_missing
+params: (msg_id, *a, &b)
+visibility: public

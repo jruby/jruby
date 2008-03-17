@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Net::HTTPGenericRequest#send_request_with_body
+is_singleton: false
+name: send_request_with_body
+params: (sock, ver, path, body)
+visibility: private

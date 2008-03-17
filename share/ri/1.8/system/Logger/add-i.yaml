@@ -1,0 +1,63 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: log
+block_params: ""
+comment: 
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Synopsis
+- !ruby/struct:SM::Flow::VERB 
+  body: "  Logger#add(severity, message = nil, progname = nil) { ... }\n"
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Args
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "+severity+:"
+    body: "Severity. Constants are defined in Logger namespace: <tt>DEBUG</tt>, <tt>INFO</tt>, <tt>WARN</tt>, <tt>ERROR</tt>, <tt>FATAL</tt>, or <tt>UNKNOWN</tt>."
+  - !ruby/struct:SM::Flow::LI 
+    label: "+message+:"
+    body: The log message. A String or Exception.
+  - !ruby/struct:SM::Flow::LI 
+    label: "+progname+:"
+    body: Program name string. Can be omitted. Treated as a message if no <tt>message</tt> and <tt>block</tt> are given.
+  - !ruby/struct:SM::Flow::LI 
+    label: "+block+:"
+    body: Can be omitted. Called to get a message string if <tt>message</tt> is nil.
+  type: :NOTE
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Return
+- !ruby/struct:SM::Flow::P 
+  body: <tt>true</tt> if successful, <tt>false</tt> otherwise.
+- !ruby/struct:SM::Flow::P 
+  body: When the given severity is not high enough (for this particular logger), log no message, and return <tt>true</tt>.
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Description
+- !ruby/struct:SM::Flow::P 
+  body: "Log a message if the given severity is high enough. This is the generic logging method. Users will be more inclined to use #debug, #info, #warn, #error, and #fatal."
+- !ruby/struct:SM::Flow::P 
+  body: "<b>Message format</b>: <tt>message</tt> can be any object, but it has to be converted to a String in order to log it. Generally, <tt>inspect</tt> is used if the given object is not a String. A special case is an <tt>Exception</tt> object, which will be printed in detail, including message, class, and backtrace. See #msg2str for the implementation if required."
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Bugs
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: Logfile is not locked.
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: Append open does not need to lock file.
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: But on the OS which supports multi I/O, records possibly be mixed.
+  type: :BULLET
+full_name: Logger#add
+is_singleton: false
+name: add
+params: (severity, message = nil, progname = nil, &block) {|| ...}
+visibility: public

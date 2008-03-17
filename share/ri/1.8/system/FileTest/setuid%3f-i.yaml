@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns <tt>true</tt> if the named file has the setuid bit set.
+full_name: FileTest#setuid?
+is_singleton: false
+name: setuid?
+params: |
+  File.setuid?(file_name)   =>  true or false
+
+visibility: public

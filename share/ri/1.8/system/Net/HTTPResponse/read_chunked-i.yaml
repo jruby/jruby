@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Net::HTTPResponse#read_chunked
+is_singleton: false
+name: read_chunked
+params: (dest)
+visibility: private

@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: print error message to $&gt; and exit
+full_name: CGI::error
+is_singleton: true
+name: error
+params: ()
+visibility: public

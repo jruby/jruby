@@ -1,0 +1,24 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Detected a bug of underlying iconv(3) libray.
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: returns an error without setting errno properly
+  type: :BULLET
+constants: []
+
+full_name: Iconv::BrokenLibrary
+includes: 
+- !ruby/object:RI::IncludedModule 
+  name: Iconv::Failure
+instance_methods: []
+
+name: BrokenLibrary
+superclass: RuntimeError

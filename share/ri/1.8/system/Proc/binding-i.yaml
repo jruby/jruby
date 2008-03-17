@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the binding associated with <em>prc</em>. Note that <tt>Kernel#eval</tt> accepts either a <tt>Proc</tt> or a <tt>Binding</tt> object as its second parameter.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   def fred(param)\n     proc {}\n   end\n\n   b = fred(99)\n   eval(&quot;param&quot;, b.binding)   #=&gt; 99\n   eval(&quot;param&quot;, b)           #=&gt; 99\n"
+full_name: Proc#binding
+is_singleton: false
+name: binding
+params: |
+  prc.binding    => binding
+
+visibility: public

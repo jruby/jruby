@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: ACL#install_list
+is_singleton: false
+name: install_list
+params: (list)
+visibility: public

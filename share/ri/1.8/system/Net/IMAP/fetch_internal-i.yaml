@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Net::IMAP#fetch_internal
+is_singleton: false
+name: fetch_internal
+params: (cmd, set, attr)
+visibility: private

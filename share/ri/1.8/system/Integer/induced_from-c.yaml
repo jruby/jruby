@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Convert <tt>obj</tt> to an Integer.
+full_name: Integer::induced_from
+is_singleton: true
+name: induced_from
+params: |
+  Integer.induced_from(obj)    =>  fixnum, bignum
+
+visibility: public

@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns &quot;true&quot; if the &quot;transfer-encoding&quot; header is present and set to &quot;chunked&quot;. This is an HTTP/1.1 feature, allowing the the content to be sent in &quot;chunks&quot; without at the outset stating the entire content length.
+full_name: Net::HTTPHeader#chunked?
+is_singleton: false
+name: chunked?
+params: ()
+visibility: public

@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: GServer#stopped?
+is_singleton: false
+name: stopped?
+params: ()
+visibility: public

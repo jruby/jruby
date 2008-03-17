@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Get the day-of-the-year of this date.
+- !ruby/struct:SM::Flow::P 
+  body: January 1 is day-of-the-year 1
+full_name: Date#yday
+is_singleton: false
+name: yday
+params: ()
+visibility: public

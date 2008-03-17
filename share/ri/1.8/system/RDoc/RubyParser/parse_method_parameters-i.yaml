@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Capture the method's parameters. Along the way, look for a comment containing
+- !ruby/struct:SM::Flow::VERB 
+  body: "   # yields: ....\n"
+- !ruby/struct:SM::Flow::P 
+  body: and add this as the block_params for the method
+full_name: RDoc::RubyParser#parse_method_parameters
+is_singleton: false
+name: parse_method_parameters
+params: (method)
+visibility: private

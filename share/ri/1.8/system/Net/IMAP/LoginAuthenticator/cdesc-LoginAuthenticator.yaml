@@ -1,0 +1,26 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Authenticator for the &quot;LOGIN&quot; authentication type. See #authenticate()."
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: STATE_USER
+  value: ":USER"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: STATE_PASSWORD
+  value: ":PASSWORD"
+full_name: Net::IMAP::LoginAuthenticator
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: process
+name: LoginAuthenticator
+superclass: Object

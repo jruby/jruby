@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Creates a single-column matrix where the values of that column are as given in <tt>column</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  Matrix.column_vector([4,5,6])\n    =&gt; 4\n       5\n       6\n"
+full_name: Matrix::column_vector
+is_singleton: true
+name: column_vector
+params: (column)
+visibility: public

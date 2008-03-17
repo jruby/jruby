@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Searches through the array whose elements are also arrays. Compares <em>key</em> with the second element of each contained array using <tt>==</tt>. Returns the first contained array that matches. See also <tt>Array#assoc</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   a = [ [ 1, &quot;one&quot;], [2, &quot;two&quot;], [3, &quot;three&quot;], [&quot;ii&quot;, &quot;two&quot;] ]\n   a.rassoc(&quot;two&quot;)    #=&gt; [2, &quot;two&quot;]\n   a.rassoc(&quot;four&quot;)   #=&gt; nil\n"
+full_name: Array#rassoc
+is_singleton: false
+name: rassoc
+params: |
+  array.rassoc(key) -> an_array or nil
+
+visibility: public

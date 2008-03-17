@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Sends a SETQUOTA command along with the specified <tt>mailbox</tt> and <tt>quota</tt>. If <tt>quota</tt> is nil, then quota will be unset for that mailbox. Typically one needs to be logged in as server admin for this to work. The IMAP quota commands are described in [RFC-2087].
+full_name: Net::IMAP#setquota
+is_singleton: false
+name: setquota
+params: (mailbox, quota)
+visibility: public

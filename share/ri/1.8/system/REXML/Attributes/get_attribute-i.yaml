@@ -1,0 +1,25 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Fetches an attribute
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "name:"
+    body: the name by which to search for the attribute. Can be a <tt>prefix:name</tt> namespace name.
+  - !ruby/struct:SM::Flow::LI 
+    label: "Returns:"
+    body: The first matching attribute, or nil if there was none. This
+  type: :NOTE
+- !ruby/struct:SM::Flow::P 
+  body: value is an Attribute node, not the String value of the attribute.
+- !ruby/struct:SM::Flow::VERB 
+  body: " doc = Document.new '&lt;a x:foo=&quot;1&quot; foo=&quot;2&quot; bar=&quot;3&quot;/&gt;'\n doc.root.attributes.get_attribute(&quot;foo&quot;).value    #-&gt; &quot;2&quot;\n doc.root.attributes.get_attribute(&quot;x:foo&quot;).value  #-&gt; &quot;1&quot;\n"
+full_name: REXML::Attributes#get_attribute
+is_singleton: false
+name: get_attribute
+params: ( name )
+visibility: public

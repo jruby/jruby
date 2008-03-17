@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Net::HTTPHeader#capitalize
+is_singleton: false
+name: capitalize
+params: (name)
+visibility: private

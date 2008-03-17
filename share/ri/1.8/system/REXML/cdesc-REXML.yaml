@@ -1,0 +1,61 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: REXML is an XML toolkit for Ruby[http://www.ruby-lang.org], in Ruby.
+- !ruby/struct:SM::Flow::P 
+  body: REXML is a <em>pure</em> Ruby, XML 1.0 conforming, non-validating[http://www.w3.org/TR/2004/REC-xml-20040204/#sec-conformance] toolkit with an intuitive API. REXML passes 100% of the non-validating Oasis tests[http://www.oasis-open.org/committees/xml-conformance/xml-test-suite.shtml], and provides tree, stream, SAX2, pull, and lightweight APIs. REXML also includes a full XPath[http://www.w3c.org/tr/xpath] 1.0 implementation. Since Ruby 1.8, REXML is included in the standard Ruby distribution.
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "Main page:"
+    body: http://www.germane-software.com/software/rexml
+  - !ruby/struct:SM::Flow::LI 
+    label: "Author:"
+    body: Sean Russell &lt;serATgermaneHYPHENsoftwareDOTcom&gt;
+  - !ruby/struct:SM::Flow::LI 
+    label: "Version:"
+    body: 3.1.7.1
+  - !ruby/struct:SM::Flow::LI 
+    label: "Date:"
+    body: 2007/209
+  type: :NOTE
+- !ruby/struct:SM::Flow::P 
+  body: This API documentation can be downloaded from the REXML home page, or can be accessed online[http://www.germane-software.com/software/rexml_doc]
+- !ruby/struct:SM::Flow::P 
+  body: A tutorial is available in the REXML distribution in docs/tutorial.html, or can be accessed online[http://www.germane-software.com/software/rexml/docs/tutorial.html]
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: COPYRIGHT
+  value: "\"Copyright \xC2\xA9 2001-2007 Sean Russell <ser@germane-software.com>\""
+- !ruby/object:RI::Constant 
+  comment: 
+  name: DATE
+  value: "\"2007/209\""
+- !ruby/object:RI::Constant 
+  comment: 
+  name: VERSION
+  value: "\"3.1.7.1\""
+- !ruby/object:RI::Constant 
+  comment: 
+  name: REVISION
+  value: "\"$Revision: 1270$\".gsub(/\\$Revision:|\\$/,'').strip"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: Copyright
+  value: COPYRIGHT
+- !ruby/object:RI::Constant 
+  comment: 
+  name: Version
+  value: VERSION
+full_name: REXML
+includes: []
+
+instance_methods: []
+
+name: REXML
+superclass: 

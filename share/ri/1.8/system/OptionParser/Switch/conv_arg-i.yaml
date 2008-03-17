@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Parses argument, converts and returns <tt>arg</tt>, <tt>block</tt> and result of conversion. Yields at semi-error condition instead of raising an exception.
+full_name: OptionParser::Switch#conv_arg
+is_singleton: false
+name: conv_arg
+params: (arg, val = nil)
+visibility: private

@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: True if self is a HTTP proxy class.
+full_name: Net::HTTP#proxy?
+is_singleton: false
+name: proxy?
+params: ()
+visibility: public

@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Send the GETACL command along with specified <tt>mailbox</tt>. If this mailbox exists, an array containing objects of Net::IMAP::MailboxACLItem will be returned.
+full_name: Net::IMAP#getacl
+is_singleton: false
+name: getacl
+params: (mailbox)
+visibility: public

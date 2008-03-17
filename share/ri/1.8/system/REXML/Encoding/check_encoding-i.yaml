@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: REXML::Encoding#check_encoding
+is_singleton: false
+name: check_encoding
+params: (str)
+visibility: public

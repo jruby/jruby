@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Evaluates to the document to which this element belongs, or nil if this element doesn't belong to a document.
+full_name: REXML::Element#document
+is_singleton: false
+name: document
+params: ()
+visibility: public

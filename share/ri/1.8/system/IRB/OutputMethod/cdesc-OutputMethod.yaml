@@ -1,0 +1,34 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: OutputMethod
+- !ruby/struct:SM::Flow::VERB 
+  body: "  StdioOutputMethod\n"
+constants: []
+
+full_name: IRB::OutputMethod
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: foo
+- !ruby/object:RI::MethodSummary 
+  name: parse_printf_format
+- !ruby/object:RI::MethodSummary 
+  name: pp
+- !ruby/object:RI::MethodSummary 
+  name: ppx
+- !ruby/object:RI::MethodSummary 
+  name: print
+- !ruby/object:RI::MethodSummary 
+  name: printf
+- !ruby/object:RI::MethodSummary 
+  name: printn
+- !ruby/object:RI::MethodSummary 
+  name: puts
+name: OutputMethod
+superclass: Object

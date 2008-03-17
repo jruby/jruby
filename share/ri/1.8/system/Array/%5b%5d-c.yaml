@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns a new array populated with the given objects.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  Array.[]( 1, 'a', /^A/ )\n  Array[ 1, 'a', /^A/ ]\n  [ 1, 'a', /^A/ ]\n"
+full_name: Array::[]
+is_singleton: true
+name: "[]"
+params: (...)
+visibility: public

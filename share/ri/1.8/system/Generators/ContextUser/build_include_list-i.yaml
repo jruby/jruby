@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Generators::ContextUser#build_include_list
+is_singleton: false
+name: build_include_list
+params: (context)
+visibility: public

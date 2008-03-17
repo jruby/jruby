@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Alias for #use_ssl?"
+full_name: Net::HTTP#use_ssl
+is_singleton: false
+name: use_ssl
+params: ()
+visibility: public

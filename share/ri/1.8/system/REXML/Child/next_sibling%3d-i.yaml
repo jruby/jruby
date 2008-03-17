@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Sets the next sibling of this child. This can be used to insert a child after some other child.
+- !ruby/struct:SM::Flow::VERB 
+  body: " a = Element.new(&quot;a&quot;)\n b = a.add_element(&quot;b&quot;)\n c = Element.new(&quot;c&quot;)\n b.next_sibling = c\n # =&gt; &lt;a&gt;&lt;b/&gt;&lt;c/&gt;&lt;/a&gt;\n"
+full_name: REXML::Child#next_sibling=
+is_singleton: false
+name: next_sibling=
+params: ( other )
+visibility: public

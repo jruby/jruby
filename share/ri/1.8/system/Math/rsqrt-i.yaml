@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Math#rsqrt
+is_singleton: false
+name: rsqrt
+params: (a)
+visibility: public

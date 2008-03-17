@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: RDoc::RubyParser#add_token_listener
+is_singleton: false
+name: add_token_listener
+params: (obj)
+visibility: private

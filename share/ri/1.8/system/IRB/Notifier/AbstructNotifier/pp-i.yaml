@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IRB::Notifier::AbstructNotifier#pp
+is_singleton: false
+name: pp
+params: (*objs)
+visibility: public

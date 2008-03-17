@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Return comments of definitions of arguments
+- !ruby/struct:SM::Flow::P 
+  body: If &quot;all&quot; argument is true, information of all arguments are returned. If &quot;modified_params&quot; is true, list of arguments are decorated, for exameple, optional arguments are parenthetic as &quot;[arg]&quot;.
+full_name: RDoc::Fortran95parser#find_arguments
+is_singleton: false
+name: find_arguments
+params: (args, text, all=nil, indent=nil, modified_params=nil)
+visibility: private

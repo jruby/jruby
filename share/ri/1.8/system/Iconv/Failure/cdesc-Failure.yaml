@@ -1,0 +1,23 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Base attributes for Iconv exceptions.
+constants: []
+
+full_name: Iconv::Failure
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: failed
+- !ruby/object:RI::MethodSummary 
+  name: inspect
+- !ruby/object:RI::MethodSummary 
+  name: success
+name: Failure
+superclass: 

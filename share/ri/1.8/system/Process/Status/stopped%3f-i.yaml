@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns <tt>true</tt> if this process is stopped. This is only returned if the corresponding <tt>wait</tt> call had the <tt>WUNTRACED</tt> flag set.
+full_name: Process::Status#stopped?
+is_singleton: false
+name: stopped?
+params: |
+  stat.stopped?   => true or false
+
+visibility: public

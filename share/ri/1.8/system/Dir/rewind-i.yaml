@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Repositions <em>dir</em> to the first entry.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   d = Dir.new(&quot;testdir&quot;)\n   d.read     #=&gt; &quot;.&quot;\n   d.rewind   #=&gt; #&lt;Dir:0x401b3fb0&gt;\n   d.read     #=&gt; &quot;.&quot;\n"
+full_name: Dir#rewind
+is_singleton: false
+name: rewind
+params: |
+  dir.rewind => dir
+
+visibility: public

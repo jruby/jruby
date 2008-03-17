@@ -1,0 +1,209 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: atime
+- !ruby/object:RI::MethodSummary 
+  name: basename
+- !ruby/object:RI::MethodSummary 
+  name: blockdev?
+- !ruby/object:RI::MethodSummary 
+  name: catname
+- !ruby/object:RI::MethodSummary 
+  name: chardev?
+- !ruby/object:RI::MethodSummary 
+  name: chmod
+- !ruby/object:RI::MethodSummary 
+  name: chmod
+- !ruby/object:RI::MethodSummary 
+  name: chown
+- !ruby/object:RI::MethodSummary 
+  name: compare
+- !ruby/object:RI::MethodSummary 
+  name: copy
+- !ruby/object:RI::MethodSummary 
+  name: ctime
+- !ruby/object:RI::MethodSummary 
+  name: delete
+- !ruby/object:RI::MethodSummary 
+  name: directory?
+- !ruby/object:RI::MethodSummary 
+  name: dirname
+- !ruby/object:RI::MethodSummary 
+  name: executable?
+- !ruby/object:RI::MethodSummary 
+  name: executable_real?
+- !ruby/object:RI::MethodSummary 
+  name: exist?
+- !ruby/object:RI::MethodSummary 
+  name: exists?
+- !ruby/object:RI::MethodSummary 
+  name: expand_path
+- !ruby/object:RI::MethodSummary 
+  name: extname
+- !ruby/object:RI::MethodSummary 
+  name: file?
+- !ruby/object:RI::MethodSummary 
+  name: fnmatch
+- !ruby/object:RI::MethodSummary 
+  name: fnmatch?
+- !ruby/object:RI::MethodSummary 
+  name: ftype
+- !ruby/object:RI::MethodSummary 
+  name: grpowned?
+- !ruby/object:RI::MethodSummary 
+  name: identical?
+- !ruby/object:RI::MethodSummary 
+  name: install
+- !ruby/object:RI::MethodSummary 
+  name: join
+- !ruby/object:RI::MethodSummary 
+  name: lchmod
+- !ruby/object:RI::MethodSummary 
+  name: lchown
+- !ruby/object:RI::MethodSummary 
+  name: link
+- !ruby/object:RI::MethodSummary 
+  name: lstat
+- !ruby/object:RI::MethodSummary 
+  name: makedirs
+- !ruby/object:RI::MethodSummary 
+  name: move
+- !ruby/object:RI::MethodSummary 
+  name: mtime
+- !ruby/object:RI::MethodSummary 
+  name: new
+- !ruby/object:RI::MethodSummary 
+  name: owned?
+- !ruby/object:RI::MethodSummary 
+  name: pipe?
+- !ruby/object:RI::MethodSummary 
+  name: readable?
+- !ruby/object:RI::MethodSummary 
+  name: readable_real?
+- !ruby/object:RI::MethodSummary 
+  name: readlink
+- !ruby/object:RI::MethodSummary 
+  name: rename
+- !ruby/object:RI::MethodSummary 
+  name: safe_unlink
+- !ruby/object:RI::MethodSummary 
+  name: setgid?
+- !ruby/object:RI::MethodSummary 
+  name: setuid?
+- !ruby/object:RI::MethodSummary 
+  name: size
+- !ruby/object:RI::MethodSummary 
+  name: size?
+- !ruby/object:RI::MethodSummary 
+  name: socket?
+- !ruby/object:RI::MethodSummary 
+  name: split
+- !ruby/object:RI::MethodSummary 
+  name: stat
+- !ruby/object:RI::MethodSummary 
+  name: sticky?
+- !ruby/object:RI::MethodSummary 
+  name: symlink
+- !ruby/object:RI::MethodSummary 
+  name: symlink?
+- !ruby/object:RI::MethodSummary 
+  name: syscopy
+- !ruby/object:RI::MethodSummary 
+  name: truncate
+- !ruby/object:RI::MethodSummary 
+  name: umask
+- !ruby/object:RI::MethodSummary 
+  name: unlink
+- !ruby/object:RI::MethodSummary 
+  name: utime
+- !ruby/object:RI::MethodSummary 
+  name: writable?
+- !ruby/object:RI::MethodSummary 
+  name: writable_real?
+- !ruby/object:RI::MethodSummary 
+  name: zero?
+comment: 
+- !ruby/struct:SM::Flow::H 
+  level: 1
+  text: "ftools.rb: Extra tools for the File class"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "Author:"
+    body: WATANABE, Hirofumi
+  - !ruby/struct:SM::Flow::LI 
+    label: "Documentation:"
+    body: Zachary Landau
+  type: :NOTE
+- !ruby/struct:SM::Flow::P 
+  body: This library can be distributed under the terms of the Ruby license. You can freely distribute/modify this library.
+- !ruby/struct:SM::Flow::P 
+  body: It is included in the Ruby standard library.
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: Description
+- !ruby/struct:SM::Flow::P 
+  body: ftools adds several (class, not instance) methods to the File class, for copying, moving, deleting, installing, and comparing files, as well as creating a directory path. See the File class for details.
+- !ruby/struct:SM::Flow::P 
+  body: FileUtils contains all or nearly all the same functionality and more, and is a recommended option over ftools
+- !ruby/struct:SM::Flow::P 
+  body: When you
+- !ruby/struct:SM::Flow::VERB 
+  body: "  require 'ftools'\n"
+- !ruby/struct:SM::Flow::P 
+  body: then the File class aquires some utility methods for copying, moving, and deleting files, and more.
+- !ruby/struct:SM::Flow::P 
+  body: See the method descriptions below, and consider using FileUtils as it is more comprehensive.
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: Separator
+  value: separator
+- !ruby/object:RI::Constant 
+  comment: 
+  name: SEPARATOR
+  value: separator
+- !ruby/object:RI::Constant 
+  comment: 
+  name: ALT_SEPARATOR
+  value: rb_obj_freeze(rb_str_new2("\\"))
+- !ruby/object:RI::Constant 
+  comment: 
+  name: ALT_SEPARATOR
+  value: Qnil
+- !ruby/object:RI::Constant 
+  comment: 
+  name: PATH_SEPARATOR
+  value: rb_obj_freeze(rb_str_new2(PATH_SEP))
+- !ruby/object:RI::Constant 
+  comment: 
+  name: BUFSIZE
+  value: 8 * 1024
+full_name: File
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: atime
+- !ruby/object:RI::MethodSummary 
+  name: chmod
+- !ruby/object:RI::MethodSummary 
+  name: chown
+- !ruby/object:RI::MethodSummary 
+  name: ctime
+- !ruby/object:RI::MethodSummary 
+  name: flock
+- !ruby/object:RI::MethodSummary 
+  name: lstat
+- !ruby/object:RI::MethodSummary 
+  name: mtime
+- !ruby/object:RI::MethodSummary 
+  name: o_chmod
+- !ruby/object:RI::MethodSummary 
+  name: path
+- !ruby/object:RI::MethodSummary 
+  name: truncate
+name: File
+superclass: 

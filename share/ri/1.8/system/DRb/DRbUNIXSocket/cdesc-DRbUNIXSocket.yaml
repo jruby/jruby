@@ -1,0 +1,36 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+- !ruby/object:RI::MethodSummary 
+  name: open
+- !ruby/object:RI::MethodSummary 
+  name: open_server
+- !ruby/object:RI::MethodSummary 
+  name: parse_uri
+- !ruby/object:RI::MethodSummary 
+  name: temp_server
+- !ruby/object:RI::MethodSummary 
+  name: uri_option
+comment: 
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: import from tempfile.rb
+  name: Max_try
+  value: "10"
+full_name: DRb::DRbUNIXSocket
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: accept
+- !ruby/object:RI::MethodSummary 
+  name: close
+- !ruby/object:RI::MethodSummary 
+  name: set_sockopt
+name: DRbUNIXSocket
+superclass: DRbTCPSocket

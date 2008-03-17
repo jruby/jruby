@@ -1,0 +1,19 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "<b>WARNING</b>: This method causes a serious security hole. Use this method only for debugging."
+- !ruby/struct:SM::Flow::P 
+  body: Set an output stream for debugging.
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Example
+- !ruby/struct:SM::Flow::VERB 
+  body: "  pop = Net::POP.new(addr, port)\n  pop.set_debug_output $stderr\n  pop.start(account, passwd) do |pop|\n    ....\n  end\n"
+full_name: Net::POP3#set_debug_output
+is_singleton: false
+name: set_debug_output
+params: ( arg )
+visibility: public

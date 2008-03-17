@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Convert <tt>str</tt> to UTF-16
+- !ruby/struct:SM::Flow::P 
+  body: <b>Note</b> This method decode MIME encoded string and convert halfwidth katakana to fullwidth katakana. If you don't want it, use NKF.nkf('-w16xm0', str).
+full_name: Kconv#toutf16
+is_singleton: false
+name: toutf16
+params: |
+  Kconv.toutf16(str)   -> string
+
+visibility: public

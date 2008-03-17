@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns a list of the names of methods publicly accessible in <em>obj</em>. This will include all the methods accessible in <em>obj</em>'s ancestors.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   class Klass\n     def kMethod()\n     end\n   end\n   k = Klass.new\n   k.methods[0..9]    #=&gt; [&quot;kMethod&quot;, &quot;freeze&quot;, &quot;nil?&quot;, &quot;is_a?&quot;,\n                           &quot;class&quot;, &quot;instance_variable_set&quot;,\n                            &quot;methods&quot;, &quot;extend&quot;, &quot;<em>send</em>&quot;, &quot;instance_eval&quot;]\n   k.methods.length   #=&gt; 42\n"
+full_name: Object#methods
+is_singleton: false
+name: methods
+params: |
+  obj.methods    => array
+
+visibility: public

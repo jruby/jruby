@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Math#atan2
+is_singleton: false
+name: atan2
+params: (y,x)
+visibility: public

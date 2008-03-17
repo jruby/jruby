@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Given a list of files and directories, create a list of all the Ruby files they contain.
+- !ruby/struct:SM::Flow::P 
+  body: If <tt>force_doc</tt> is true, we always add the given files. If false, only add files that we guarantee we can parse It is true when looking at files given on the command line, false when recursing through subdirectories.
+- !ruby/struct:SM::Flow::P 
+  body: The effect of this is that if you want a file with a non- standard extension parsed, you must name it explicity.
+full_name: RDoc::RDoc#normalized_file_list
+is_singleton: false
+name: normalized_file_list
+params: (options, relative_files, force_doc = false, exclude_pattern=nil)
+visibility: private

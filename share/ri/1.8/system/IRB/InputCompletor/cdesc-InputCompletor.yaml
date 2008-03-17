@@ -1,0 +1,27 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: select_message
+comment: 
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: ReservedWords
+  value: "[       \"BEGIN\", \"END\",       \"alias\", \"and\",        \"begin\", \"break\",        \"case\", \"class\",       \"def\", \"defined\", \"do\",       \"else\", \"elsif\", \"end\", \"ensure\",       \"false\", \"for\",        \"if\", \"in\",        \"module\",        \"next\", \"nil\", \"not\",       \"or\",        \"redo\", \"rescue\", \"retry\", \"return\",       \"self\", \"super\",       \"then\", \"true\",       \"undef\", \"unless\", \"until\",       \"when\", \"while\",       \"yield\",     ]"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: CompletionProc
+  value: proc { |input|       bind = IRB.conf[:MAIN_CONTEXT].workspace.binding
+- !ruby/object:RI::Constant 
+  comment: 
+  name: Operators
+  value: "[\"%\", \"&\", \"*\", \"**\", \"+\",  \"-\",  \"/\",       \"<\", \"<<\", \"<=\", \"<=>\", \"==\", \"===\", \"=~\", \">\", \">=\", \">>\",       \"[]\", \"[]=\", \"^\",]"
+full_name: IRB::InputCompletor
+includes: []
+
+instance_methods: []
+
+name: InputCompletor
+superclass: 

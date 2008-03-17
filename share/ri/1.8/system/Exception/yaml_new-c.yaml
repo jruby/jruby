@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Exception::yaml_new
+is_singleton: true
+name: yaml_new
+params: ( klass, tag, val )
+visibility: public

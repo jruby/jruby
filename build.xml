@@ -817,6 +817,7 @@
     <include name="docs/**"/>
     <include name="COPYING*"/>
     <include name="README"/>
+    <include name="share/**"/>
     <exclude name="lib/ruby/**"/>
   </patternset>
 

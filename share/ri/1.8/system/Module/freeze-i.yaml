@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Prevents further modifications to <em>mod</em>.
+full_name: Module#freeze
+is_singleton: false
+name: freeze
+params: |
+  mod.freeze
+
+visibility: public

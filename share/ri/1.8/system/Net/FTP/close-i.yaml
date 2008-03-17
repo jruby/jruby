@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Closes the connection. Further operations are impossible until you open a new connection with #connect."
+full_name: Net::FTP#close
+is_singleton: false
+name: close
+params: ()
+visibility: public

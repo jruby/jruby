@@ -1,0 +1,20 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Prevents further modifications to <em>obj</em>. A <tt>TypeError</tt> will be raised if modification is attempted. There is no way to unfreeze a frozen object. See also <tt>Object#frozen?</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   a = [ &quot;a&quot;, &quot;b&quot;, &quot;c&quot; ]\n   a.freeze\n   a &lt;&lt; &quot;z&quot;\n"
+- !ruby/struct:SM::Flow::P 
+  body: <em>produces:</em>
+- !ruby/struct:SM::Flow::VERB 
+  body: "   prog.rb:3:in `&lt;&lt;': can't modify frozen array (TypeError)\n    from prog.rb:3\n"
+full_name: Object#freeze
+is_singleton: false
+name: freeze
+params: |
+  obj.freeze    => obj
+
+visibility: public

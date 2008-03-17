@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Alias for #each_capitalized"
+full_name: Net::HTTPHeader#canonical_each
+is_singleton: false
+name: canonical_each
+params: ()
+visibility: public

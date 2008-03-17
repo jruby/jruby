@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Net::IMAP#record_response
+is_singleton: false
+name: record_response
+params: (name, data)
+visibility: private

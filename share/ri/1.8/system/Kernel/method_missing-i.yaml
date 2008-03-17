@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Invoked by Ruby when <em>obj</em> is sent a message it cannot handle. <em>symbol</em> is the symbol for the method called, and <em>args</em> are any arguments that were passed to it. By default, the interpreter raises an error when this method is called. However, it is possible to override the method to provide more dynamic behavior. The example below creates a class <tt>Roman</tt>, which responds to methods with names consisting of roman numerals, returning the corresponding integer values.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   class Roman\n     def romanToInt(str)\n       # ...\n     end\n     def method_missing(methId)\n       str = methId.id2name\n       romanToInt(str)\n     end\n   end\n\n   r = Roman.new\n   r.iv      #=&gt; 4\n   r.xxiii   #=&gt; 23\n   r.mm      #=&gt; 2000\n"
+full_name: Kernel#method_missing
+is_singleton: false
+name: method_missing
+params: |
+  obj.method_missing(symbol [, *args] )   => result
+
+visibility: public

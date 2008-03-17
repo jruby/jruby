@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns two arrays, the first containing the elements of <em>enum</em> for which the block evaluates to true, the second containing the rest.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   (1..6).partition {|i| (i&amp;1).zero?}   #=&gt; [[2, 4, 6], [1, 3, 5]]\n"
+full_name: Enumerable#partition
+is_singleton: false
+name: partition
+params: |
+  enum.partition {| obj | block }  => [ true_array, false_array ]
+
+visibility: public

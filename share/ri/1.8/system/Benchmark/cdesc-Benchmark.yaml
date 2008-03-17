@@ -1,0 +1,94 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: The Benchmark module provides methods to measure and report the time used to execute Ruby code.
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "Measure the time to construct the string given by the expression <tt>&quot;a&quot;*1_000_000</tt>:"
+  - !ruby/struct:SM::Flow::VERB 
+    body: "    require 'benchmark'\n\n    puts Benchmark.measure { &quot;a&quot;*1_000_000 }\n"
+  - !ruby/struct:SM::Flow::P 
+    body: "On my machine (FreeBSD 3.2 on P5, 100MHz) this generates:"
+  - !ruby/struct:SM::Flow::VERB 
+    body: "    1.166667   0.050000   1.216667 (  0.571355)\n"
+  - !ruby/struct:SM::Flow::P 
+    body: This report shows the user CPU time, system CPU time, the sum of the user and system CPU times, and the elapsed real time. The unit of time is seconds.
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "Do some experiments sequentially using the #bm method:"
+  - !ruby/struct:SM::Flow::VERB 
+    body: "    require 'benchmark'\n\n    n = 50000\n    Benchmark.bm do |x|\n      x.report { for i in 1..n; a = &quot;1&quot;; end }\n      x.report { n.times do   ; a = &quot;1&quot;; end }\n      x.report { 1.upto(n) do ; a = &quot;1&quot;; end }\n    end\n"
+  - !ruby/struct:SM::Flow::P 
+    body: "The result:"
+  - !ruby/struct:SM::Flow::VERB 
+    body: "           user     system      total        real\n       1.033333   0.016667   1.016667 (  0.492106)\n       1.483333   0.000000   1.483333 (  0.694605)\n       1.516667   0.000000   1.516667 (  0.711077)\n"
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "Continuing the previous example, put a label in each report:"
+  - !ruby/struct:SM::Flow::VERB 
+    body: "    require 'benchmark'\n\n    n = 50000\n    Benchmark.bm(7) do |x|\n      x.report(&quot;for:&quot;)   { for i in 1..n; a = &quot;1&quot;; end }\n      x.report(&quot;times:&quot;) { n.times do   ; a = &quot;1&quot;; end }\n      x.report(&quot;upto:&quot;)  { 1.upto(n) do ; a = &quot;1&quot;; end }\n    end\n"
+  type: :BULLET
+- !ruby/struct:SM::Flow::P 
+  body: "The result:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "                    user     system      total        real\n       for:     1.050000   0.000000   1.050000 (  0.503462)\n       times:   1.533333   0.016667   1.550000 (  0.735473)\n       upto:    1.500000   0.016667   1.516667 (  0.711239)\n"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "The times for some benchmarks depend on the order in which items are run. These differences are due to the cost of memory allocation and garbage collection. To avoid these discrepancies, the #bmbm method is provided. For example, to compare ways to sort an array of floats:"
+  - !ruby/struct:SM::Flow::VERB 
+    body: "    require 'benchmark'\n\n    array = (1..1000000).map { rand }\n\n    Benchmark.bmbm do |x|\n      x.report(&quot;sort!&quot;) { array.dup.sort! }\n      x.report(&quot;sort&quot;)  { array.dup.sort  }\n    end\n"
+  - !ruby/struct:SM::Flow::P 
+    body: "The result:"
+  - !ruby/struct:SM::Flow::VERB 
+    body: "     Rehearsal -----------------------------------------\n     sort!  11.928000   0.010000  11.938000 ( 12.756000)\n     sort   13.048000   0.020000  13.068000 ( 13.857000)\n     ------------------------------- total: 25.006000sec\n\n                 user     system      total        real\n     sort!  12.959000   0.010000  12.969000 ( 13.793000)\n     sort   12.007000   0.000000  12.007000 ( 12.791000)\n"
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: "Report statistics of sequential experiments with unique labels, using the #benchmark method:"
+  - !ruby/struct:SM::Flow::VERB 
+    body: "    require 'benchmark'\n\n    n = 50000\n    Benchmark.benchmark(&quot; &quot;*7 + CAPTION, 7, FMTSTR, &quot;&gt;total:&quot;, &quot;&gt;avg:&quot;) do |x|\n      tf = x.report(&quot;for:&quot;)   { for i in 1..n; a = &quot;1&quot;; end }\n      tt = x.report(&quot;times:&quot;) { n.times do   ; a = &quot;1&quot;; end }\n      tu = x.report(&quot;upto:&quot;)  { 1.upto(n) do ; a = &quot;1&quot;; end }\n      [tf+tt+tu, (tf+tt+tu)/3]\n    end\n"
+  - !ruby/struct:SM::Flow::P 
+    body: "The result:"
+  - !ruby/struct:SM::Flow::VERB 
+    body: "                  user     system      total        real\n     for:     1.016667   0.016667   1.033333 (  0.485749)\n     times:   1.450000   0.016667   1.466667 (  0.681367)\n     upto:    1.533333   0.000000   1.533333 (  0.722166)\n     &gt;total:  4.000000   0.033333   4.033333 (  1.889282)\n     &gt;avg:    1.333333   0.011111   1.344444 (  0.629761)\n"
+  type: :BULLET
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: BENCHMARK_VERSION
+  value: "\"2002-04-25\""
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: The default caption string (heading above the output times).
+  name: CAPTION
+  value: Benchmark::Tms::CAPTION
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: The default format string used to display times. See also Benchmark::Tms#format.
+  name: FMTSTR
+  value: Benchmark::Tms::FMTSTR
+full_name: Benchmark
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: benchmark
+- !ruby/object:RI::MethodSummary 
+  name: bm
+- !ruby/object:RI::MethodSummary 
+  name: bmbm
+- !ruby/object:RI::MethodSummary 
+  name: measure
+- !ruby/object:RI::MethodSummary 
+  name: realtime
+name: Benchmark
+superclass: 

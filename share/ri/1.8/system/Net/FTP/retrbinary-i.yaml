@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: data
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Puts the connection into binary (image) mode, issues the given command, and fetches the data returned, passing it to the associated block in chunks of <tt>blocksize</tt> characters. Note that <tt>cmd</tt> is a server command (such as &quot;RETR myfile&quot;).
+full_name: Net::FTP#retrbinary
+is_singleton: false
+name: retrbinary
+params: (cmd, blocksize, rest_offset = nil) {|data| ...}
+visibility: public

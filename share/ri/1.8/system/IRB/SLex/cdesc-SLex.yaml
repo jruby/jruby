@@ -1,0 +1,46 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: DOUT
+  value: Notifier::def_notifier("SLex::")
+- !ruby/object:RI::Constant 
+  comment: 
+  name: D_WARN
+  value: "DOUT::def_notifier(1, \"Warn: \")"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: D_DEBUG
+  value: "DOUT::def_notifier(2, \"Debug: \")"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: D_DETAIL
+  value: "DOUT::def_notifier(4, \"Detail: \")"
+full_name: IRB::SLex
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: create
+- !ruby/object:RI::MethodSummary 
+  name: def_rule
+- !ruby/object:RI::MethodSummary 
+  name: def_rules
+- !ruby/object:RI::MethodSummary 
+  name: inspect
+- !ruby/object:RI::MethodSummary 
+  name: match
+- !ruby/object:RI::MethodSummary 
+  name: postproc
+- !ruby/object:RI::MethodSummary 
+  name: preproc
+- !ruby/object:RI::MethodSummary 
+  name: search
+name: SLex
+superclass: Object

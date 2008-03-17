@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Set Intersection---Returns a new array containing elements common to the two arrays, with no duplicates.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   [ 1, 1, 3, 5 ] &amp; [ 1, 2, 3 ]   #=&gt; [ 1, 3 ]\n"
+full_name: Array#&
+is_singleton: false
+name: "&"
+params: |
+  array & other_array
+
+visibility: public

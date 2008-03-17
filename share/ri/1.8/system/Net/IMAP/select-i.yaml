@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Sends a SELECT command to select a <tt>mailbox</tt> so that messages in the <tt>mailbox</tt> can be accessed.
+- !ruby/struct:SM::Flow::P 
+  body: "After you have selected a mailbox, you may retrieve the number of items in that mailbox from @responses[&quot;EXISTS&quot;][-1], and the number of recent messages from @responses[&quot;RECENT&quot;][-1]. Note that these values can change if new messages arrive during a session; see #add_response_handler() for a way of detecting this event."
+- !ruby/struct:SM::Flow::P 
+  body: A Net::IMAP::NoResponseError is raised if the mailbox does not exist or is for some reason non-selectable.
+full_name: Net::IMAP#select
+is_singleton: false
+name: select
+params: (mailbox)
+visibility: public

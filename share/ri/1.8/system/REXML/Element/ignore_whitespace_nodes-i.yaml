@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: REXML::Element#ignore_whitespace_nodes
+is_singleton: false
+name: ignore_whitespace_nodes
+params: ()
+visibility: public

@@ -1,0 +1,32 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: class_names
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: true and false have the obvious meaning. nil means we don't care
+  name: is_class_method
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: method_name
+  rw: R
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Break argument into its constituent class or module names, an optional method type, and a method name
+constants: []
+
+full_name: NameDescriptor
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: full_class_name
+name: NameDescriptor
+superclass: Object

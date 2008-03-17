@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Integer#prime_division
+is_singleton: false
+name: prime_division
+params: ()
+visibility: public

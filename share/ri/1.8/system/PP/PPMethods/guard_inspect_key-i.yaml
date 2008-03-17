@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: ""
+comment: 
+full_name: PP::PPMethods#guard_inspect_key
+is_singleton: false
+name: guard_inspect_key
+params: () {|| ...}
+visibility: public

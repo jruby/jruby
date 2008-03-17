@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: DOT::DOTEdge::new
+is_singleton: true
+name: new
+params: ( params = {}, option_list = EDGE_OPTS )
+visibility: public

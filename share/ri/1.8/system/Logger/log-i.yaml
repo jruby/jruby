@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Alias for #add"
+full_name: Logger#log
+is_singleton: false
+name: log
+params: (severity, message = nil, progname = nil, &block)
+visibility: public

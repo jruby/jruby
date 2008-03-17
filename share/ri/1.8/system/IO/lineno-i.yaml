@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the current line number in <em>ios</em>. The stream must be opened for reading. <tt>lineno</tt> counts the number of times <tt>gets</tt> is called, rather than the number of newlines encountered. The two values will differ if <tt>gets</tt> is called with a separator other than newline. See also the <tt>$.</tt> variable.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   f = File.new(&quot;testfile&quot;)\n   f.lineno   #=&gt; 0\n   f.gets     #=&gt; &quot;This is line one\\n&quot;\n   f.lineno   #=&gt; 1\n   f.gets     #=&gt; &quot;This is line two\\n&quot;\n   f.lineno   #=&gt; 2\n"
+full_name: IO#lineno
+is_singleton: false
+name: lineno
+params: |
+  ios.lineno    => integer
+
+visibility: public

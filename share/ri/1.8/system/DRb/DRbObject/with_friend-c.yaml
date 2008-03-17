@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: ()
+comment: 
+full_name: DRb::DRbObject::with_friend
+is_singleton: true
+name: with_friend
+params: (uri) {|| ...}
+visibility: public

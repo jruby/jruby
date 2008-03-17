@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Create a copy of this Date object using a new Day of Calendar Reform.
+full_name: Date#new_start
+is_singleton: false
+name: new_start
+params: (sg=self.class::ITALY)
+visibility: public

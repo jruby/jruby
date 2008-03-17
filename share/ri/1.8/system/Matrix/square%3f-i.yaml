@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns <tt>true</tt> is this is a square matrix. See note in column_size about this being unreliable, though.
+full_name: Matrix#square?
+is_singleton: false
+name: square?
+params: ()
+visibility: public

@@ -1,0 +1,11 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: []
+
+full_name: DefaultDisplay#display_method_info
+is_singleton: false
+name: display_method_info
+params: (method)
+visibility: public

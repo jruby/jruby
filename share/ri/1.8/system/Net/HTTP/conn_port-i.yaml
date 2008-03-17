@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Net::HTTP#conn_port
+is_singleton: false
+name: conn_port
+params: ()
+visibility: private

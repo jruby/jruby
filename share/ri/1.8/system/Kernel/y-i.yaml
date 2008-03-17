@@ -1,0 +1,18 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Prints any supplied <em>objects</em> out in YAML. Intended as a variation on +Kernel::p+.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  S = Struct.new(:name, :state)\n  s = S['dave', 'TX']\n  y s\n"
+- !ruby/struct:SM::Flow::P 
+  body: _produces:_
+- !ruby/struct:SM::Flow::VERB 
+  body: "  --- !ruby/struct:S\n  name: dave\n  state: TX\n"
+full_name: Kernel#y
+is_singleton: false
+name: y
+params: ( object, *objects )
+visibility: private

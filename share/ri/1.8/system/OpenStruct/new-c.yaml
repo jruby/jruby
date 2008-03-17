@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Create a new OpenStruct object. The optional <tt>hash</tt>, if given, will generate attributes and values. For example.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  require 'ostruct'\n  hash = { &quot;country&quot; =&gt; &quot;Australia&quot;, :population =&gt; 20_000_000 }\n  data = OpenStruct.new(hash)\n\n  p data        # -&gt; &lt;OpenStruct country=&quot;Australia&quot; population=20000000&gt;\n"
+- !ruby/struct:SM::Flow::P 
+  body: By default, the resulting OpenStruct object will have no attributes.
+full_name: OpenStruct::new
+is_singleton: true
+name: new
+params: (hash=nil)
+visibility: public

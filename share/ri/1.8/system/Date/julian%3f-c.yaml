@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Does a given Julian Day Number fall inside the old-style (Julian) calendar?
+- !ruby/struct:SM::Flow::P 
+  body: <tt>jd</tt> is the Julian Day Number in question. <tt>sg</tt> may be Date::GREGORIAN, in which case the answer is false; it may be Date::JULIAN, in which case the answer is true; or it may a number representing the Day of Calendar Reform. Date::ENGLAND and Date::ITALY are two possible such days.
+full_name: Date::julian?
+is_singleton: true
+name: julian?
+params: (jd, sg)
+visibility: public

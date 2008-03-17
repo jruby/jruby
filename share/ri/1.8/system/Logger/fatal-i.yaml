@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Log a <tt>FATAL</tt> message.
+- !ruby/struct:SM::Flow::P 
+  body: "See #info for more information."
+full_name: Logger#fatal
+is_singleton: false
+name: fatal
+params: (progname = nil, &block)
+visibility: public

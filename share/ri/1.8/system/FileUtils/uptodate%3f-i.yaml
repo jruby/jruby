@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Options: (none)"
+- !ruby/struct:SM::Flow::P 
+  body: Returns true if <tt>newer</tt> is newer than all <tt>old_list</tt>. Non-existent files are older than any file.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  FileUtils.uptodate?('hello.o', %w(hello.c hello.h)) or    #       system 'make hello.o'\n"
+full_name: FileUtils#uptodate?
+is_singleton: false
+name: uptodate?
+params: (new, old_list, options = nil)
+visibility: public

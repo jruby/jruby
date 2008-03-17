@@ -1,0 +1,22 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Handle common markup tasks for the various Html classes
+constants: []
+
+full_name: Generators::MarkUp
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: cvs_url
+- !ruby/object:RI::MethodSummary 
+  name: markup
+- !ruby/object:RI::MethodSummary 
+  name: style_url
+name: MarkUp
+superclass: 

@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: (InvalidArgument, arg)
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Parses <tt>arg</tt> and returns rest of <tt>arg</tt> and matched portion to the argument pattern. Yields when the pattern doesn't match substring.
+full_name: OptionParser::Switch#parse_arg
+is_singleton: false
+name: parse_arg
+params: (arg) {|InvalidArgument, arg| ...}
+visibility: private

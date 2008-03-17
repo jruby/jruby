@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Gets the scheduling priority for specified process, process group, or user. <em>kind</em> indicates the kind of entity to find: one of <tt>Process::PRIO_PGRP</tt>, <tt>Process::PRIO_USER</tt>, or <tt>Process::PRIO_PROCESS</tt>. <em>integer</em> is an id indicating the particular process, process group, or user (an id of 0 means <em>current</em>). Lower priorities are more favorable for scheduling. Not available on all platforms."
+- !ruby/struct:SM::Flow::VERB 
+  body: "   Process.getpriority(Process::PRIO_USER, 0)      #=&gt; 19\n   Process.getpriority(Process::PRIO_PROCESS, 0)   #=&gt; 19\n"
+full_name: Process::getpriority
+is_singleton: true
+name: getpriority
+params: |
+  Process.getpriority(kind, integer)   => fixnum
+
+visibility: public

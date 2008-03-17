@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns a string containing the ASCII character represented by the receiver's value.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   65.chr    #=&gt; &quot;A&quot;\n   ?a.chr    #=&gt; &quot;a&quot;\n   230.chr   #=&gt; &quot;\\346&quot;\n"
+full_name: Integer#chr
+is_singleton: false
+name: chr
+params: |
+  int.chr    => string
+
+visibility: public

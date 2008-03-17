@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: RDoc::RubyParser::new
+is_singleton: true
+name: new
+params: (top_level, file_name, content, options, stats)
+visibility: public

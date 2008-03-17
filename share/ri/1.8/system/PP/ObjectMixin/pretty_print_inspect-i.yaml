@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Is #inspect implementation using #pretty_print. If you implement #pretty_print, it can be used as follows."
+- !ruby/struct:SM::Flow::VERB 
+  body: "  alias inspect pretty_print_inspect\n"
+- !ruby/struct:SM::Flow::P 
+  body: "However, doing this requires that every class that #inspect is called on implement #pretty_print, or a RuntimeError will be raised."
+full_name: PP::ObjectMixin#pretty_print_inspect
+is_singleton: false
+name: pretty_print_inspect
+params: ()
+visibility: public

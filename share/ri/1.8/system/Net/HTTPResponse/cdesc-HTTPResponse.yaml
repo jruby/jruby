@@ -1,0 +1,70 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: HTTP result code string. For example, '302'. You can also determine the response type by which response subclass the response object is an instance of.
+  name: code
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: The HTTP version supported by the server.
+  name: http_version
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: HTTP result message. For example, 'Not Found'.
+  name: message
+  rw: R
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: body_permitted?
+- !ruby/object:RI::MethodSummary 
+  name: each_response_header
+- !ruby/object:RI::MethodSummary 
+  name: read_status_line
+- !ruby/object:RI::MethodSummary 
+  name: response_class
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: HTTP response class. This class wraps response header and entity. Mixes in the HTTPHeader module, which provides access to response header values both via hash-like methods and individual readers. Note that each possible HTTP response code defines its own HTTPResponse subclass. These are listed below. All classes are defined under the Net module. Indentation indicates inheritance.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  xxx        HTTPResponse\n\n    1xx        HTTPInformation\n      100        HTTPContinue\n      101        HTTPSwitchProtocol\n\n    2xx        HTTPSuccess\n      200        HTTPOK\n      201        HTTPCreated\n      202        HTTPAccepted\n      203        HTTPNonAuthoritativeInformation\n      204        HTTPNoContent\n      205        HTTPResetContent\n      206        HTTPPartialContent\n\n    3xx        HTTPRedirection\n      300        HTTPMultipleChoice\n      301        HTTPMovedPermanently\n      302        HTTPFound\n      303        HTTPSeeOther\n      304        HTTPNotModified\n      305        HTTPUseProxy\n      307        HTTPTemporaryRedirect\n\n    4xx        HTTPClientError\n      400        HTTPBadRequest\n      401        HTTPUnauthorized\n      402        HTTPPaymentRequired\n      403        HTTPForbidden\n      404        HTTPNotFound\n      405        HTTPMethodNotAllowed\n      406        HTTPNotAcceptable\n      407        HTTPProxyAuthenticationRequired\n      408        HTTPRequestTimeOut\n      409        HTTPConflict\n      410        HTTPGone\n      411        HTTPLengthRequired\n      412        HTTPPreconditionFailed\n      413        HTTPRequestEntityTooLarge\n      414        HTTPRequestURITooLong\n      415        HTTPUnsupportedMediaType\n      416        HTTPRequestedRangeNotSatisfiable\n      417        HTTPExpectationFailed\n\n    5xx        HTTPServerError\n      500        HTTPInternalServerError\n      501        HTTPNotImplemented\n      502        HTTPBadGateway\n      503        HTTPServiceUnavailable\n      504        HTTPGatewayTimeOut\n      505        HTTPVersionNotSupported\n\n    xxx        HTTPUnknownResponse\n"
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: CODE_CLASS_TO_OBJ
+  value: "{       '1' => HTTPInformation,       '2' => HTTPSuccess,       '3' => HTTPRedirection,       '4' => HTTPClientError,       '5' => HTTPServerError"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: CODE_TO_OBJ
+  value: "{       '100' => HTTPContinue,       '101' => HTTPSwitchProtocol,        '200' => HTTPOK,       '201' => HTTPCreated,       '202' => HTTPAccepted,       '203' => HTTPNonAuthoritativeInformation,       '204' => HTTPNoContent,       '205' => HTTPResetContent,       '206' => HTTPPartialContent,        '300' => HTTPMultipleChoice,       '301' => HTTPMovedPermanently,       '302' => HTTPFound,       '303' => HTTPSeeOther,       '304' => HTTPNotModified,       '305' => HTTPUseProxy,       '307' => HTTPTemporaryRedirect,        '400' => HTTPBadRequest,       '401' => HTTPUnauthorized,       '402' => HTTPPaymentRequired,       '403' => HTTPForbidden,       '404' => HTTPNotFound,       '405' => HTTPMethodNotAllowed,       '406' => HTTPNotAcceptable,       '407' => HTTPProxyAuthenticationRequired,       '408' => HTTPRequestTimeOut,       '409' => HTTPConflict,       '410' => HTTPGone,       '411' => HTTPLengthRequired,       '412' => HTTPPreconditionFailed,       '413' => HTTPRequestEntityTooLarge,       '414' => HTTPRequestURITooLong,       '415' => HTTPUnsupportedMediaType,       '416' => HTTPRequestedRangeNotSatisfiable,       '417' => HTTPExpectationFailed,        '500' => HTTPInternalServerError,       '501' => HTTPNotImplemented,       '502' => HTTPBadGateway,       '503' => HTTPServiceUnavailable,       '504' => HTTPGatewayTimeOut,       '505' => HTTPVersionNotSupported"
+full_name: Net::HTTPResponse
+includes: 
+- !ruby/object:RI::IncludedModule 
+  name: HTTPHeader
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: body
+- !ruby/object:RI::MethodSummary 
+  name: entity
+- !ruby/object:RI::MethodSummary 
+  name: inspect
+- !ruby/object:RI::MethodSummary 
+  name: procdest
+- !ruby/object:RI::MethodSummary 
+  name: read_body
+- !ruby/object:RI::MethodSummary 
+  name: read_body_0
+- !ruby/object:RI::MethodSummary 
+  name: read_chunked
+- !ruby/object:RI::MethodSummary 
+  name: stream_check
+- !ruby/object:RI::MethodSummary 
+  name: to_ary
+- !ruby/object:RI::MethodSummary 
+  name: value
+name: HTTPResponse
+superclass: Object

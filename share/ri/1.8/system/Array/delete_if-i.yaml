@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Deletes every element of <em>self</em> for which <em>block</em> evaluates to <tt>true</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   a = [ &quot;a&quot;, &quot;b&quot;, &quot;c&quot; ]\n   a.delete_if {|x| x &gt;= &quot;b&quot; }   #=&gt; [&quot;a&quot;]\n"
+full_name: Array#delete_if
+is_singleton: false
+name: delete_if
+params: |
+  array.delete_if {|item| block }  -> array
+
+visibility: public

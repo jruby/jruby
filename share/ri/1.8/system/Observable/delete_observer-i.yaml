@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Delete <tt>observer</tt> as an observer on this object. It will no longer receive notifications.
+full_name: Observable#delete_observer
+is_singleton: false
+name: delete_observer
+params: (observer)
+visibility: public

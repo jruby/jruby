@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: <b>WARNING</b> This method causes serious security hole. Never use this method in production code.
+- !ruby/struct:SM::Flow::P 
+  body: Set an output stream for debugging.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  http = Net::HTTP.new\n  http.set_debug_output $stderr\n  http.start { .... }\n"
+full_name: Net::HTTP#set_debug_output
+is_singleton: false
+name: set_debug_output
+params: (output)
+visibility: public

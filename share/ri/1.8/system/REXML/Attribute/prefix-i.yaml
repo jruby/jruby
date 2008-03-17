@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the namespace of the attribute.
+- !ruby/struct:SM::Flow::VERB 
+  body: " e = Element.new( &quot;elns:myelement&quot; )\n e.add_attribute( &quot;nsa:a&quot;, &quot;aval&quot; )\n e.add_attribute( &quot;b&quot;, &quot;bval&quot; )\n e.attributes.get_attribute( &quot;a&quot; ).prefix   # -&gt; &quot;nsa&quot;\n e.attributes.get_attribute( &quot;b&quot; ).prefix   # -&gt; &quot;elns&quot;\n a = Attribute.new( &quot;x&quot;, &quot;y&quot; )\n a.prefix                                   # -&gt; &quot;&quot;\n"
+full_name: REXML::Attribute#prefix
+is_singleton: false
+name: prefix
+params: ()
+visibility: public

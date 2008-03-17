@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Deprecated synonym for <tt>Object#class</tt>.
+full_name: Object#type
+is_singleton: false
+name: type
+params: |
+  obj.type   => class
+
+visibility: public

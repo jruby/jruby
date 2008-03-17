@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Trap attempts to add methods to <tt>Numeric</tt> objects. Always raises a <tt>TypeError</tt>
+full_name: Numeric#singleton_method_added
+is_singleton: false
+name: singleton_method_added
+params: (p1)
+visibility: public

@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "[Ruby 1.8.3] Returns an array of header field strings corresponding to the case-insensitive <tt>key</tt>. This method allows you to get duplicated header fields without any processing. See also #[]."
+- !ruby/struct:SM::Flow::VERB 
+  body: "  p response.get_fields('Set-Cookie')\n    #=&gt; [&quot;session=al98axx; expires=Fri, 31-Dec-1999 23:58:23&quot;,\n         &quot;query=rubyscript; expires=Fri, 31-Dec-1999 23:58:23&quot;]\n  p response['Set-Cookie']\n    #=&gt; &quot;session=al98axx; expires=Fri, 31-Dec-1999 23:58:23, query=rubyscript; expires=Fri, 31-Dec-1999 23:58:23&quot;\n"
+full_name: Net::HTTPHeader#get_fields
+is_singleton: false
+name: get_fields
+params: (key)
+visibility: public

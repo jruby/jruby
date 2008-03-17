@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: For backward compatibility. To allow Net::HTTP 1.1 style assignment e.g.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   response, body = Net::HTTP.get(....)\n"
+full_name: Net::HTTPResponse#to_ary
+is_singleton: false
+name: to_ary
+params: ()
+visibility: public

@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: +key+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Iterates for each capitalized header names.
+full_name: Net::HTTPHeader#each_capitalized_name
+is_singleton: false
+name: each_capitalized_name
+params: () {|+key+| ...}
+visibility: public

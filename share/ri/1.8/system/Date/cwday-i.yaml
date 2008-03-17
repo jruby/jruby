@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Get the commercial day of the week of this date. Monday is commercial day-of-week 1; Sunday is commercial day-of-week 7.
+full_name: Date#cwday
+is_singleton: false
+name: cwday
+params: ()
+visibility: public

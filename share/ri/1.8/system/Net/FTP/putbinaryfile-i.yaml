@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: data
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Transfers <tt>localfile</tt> to the server in binary mode, storing the result in <tt>remotefile</tt>. If a block is supplied, calls it, passing in the transmitted data in <tt>blocksize</tt> chunks.
+full_name: Net::FTP#putbinaryfile
+is_singleton: false
+name: putbinaryfile
+params: (localfile, remotefile = File.basename(localfile), blocksize = DEFAULT_BLOCKSIZE) {|data| ...}
+visibility: public

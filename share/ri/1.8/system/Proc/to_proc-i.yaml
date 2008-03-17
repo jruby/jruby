@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Part of the protocol for converting objects to <tt>Proc</tt> objects. Instances of class <tt>Proc</tt> simply return themselves.
+full_name: Proc#to_proc
+is_singleton: false
+name: to_proc
+params: |
+  prc.to_proc -> prc
+
+visibility: public

@@ -1,0 +1,19 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: scrolling_list
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Generate a Select element as a string.
+- !ruby/struct:SM::Flow::P 
+  body: <tt>name</tt> is the name of the element. The <tt>values</tt> are the options that can be selected from the Select menu. Each value can be a String or a one, two, or three-element Array. If a String or a one-element Array, this is both the value of that option and the text displayed for it. If a three-element Array, the elements are the option value, displayed text, and a boolean value specifying whether this option starts as selected. The two-element version omits either the option value (defaults to the same as the display text) or the boolean selected specifier (defaults to false).
+- !ruby/struct:SM::Flow::P 
+  body: The attributes and options can also be specified as a hash. In this case, options are specified as an array of values as described above, with the hash key of &quot;VALUES&quot;.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  popup_menu(&quot;name&quot;, &quot;foo&quot;, &quot;bar&quot;, &quot;baz&quot;)\n    # &lt;SELECT NAME=&quot;name&quot;&gt;\n    #   &lt;OPTION VALUE=&quot;foo&quot;&gt;foo&lt;/OPTION&gt;\n    #   &lt;OPTION VALUE=&quot;bar&quot;&gt;bar&lt;/OPTION&gt;\n    #   &lt;OPTION VALUE=&quot;baz&quot;&gt;baz&lt;/OPTION&gt;\n    # &lt;/SELECT&gt;\n\n  popup_menu(&quot;name&quot;, [&quot;foo&quot;], [&quot;bar&quot;, true], &quot;baz&quot;)\n    # &lt;SELECT NAME=&quot;name&quot;&gt;\n    #   &lt;OPTION VALUE=&quot;foo&quot;&gt;foo&lt;/OPTION&gt;\n    #   &lt;OPTION VALUE=&quot;bar&quot; SELECTED&gt;bar&lt;/OPTION&gt;\n    #   &lt;OPTION VALUE=&quot;baz&quot;&gt;baz&lt;/OPTION&gt;\n    # &lt;/SELECT&gt;\n\n  popup_menu(&quot;name&quot;, [&quot;1&quot;, &quot;Foo&quot;], [&quot;2&quot;, &quot;Bar&quot;, true], &quot;Baz&quot;)\n    # &lt;SELECT NAME=&quot;name&quot;&gt;\n    #   &lt;OPTION VALUE=&quot;1&quot;&gt;Foo&lt;/OPTION&gt;\n    #   &lt;OPTION SELECTED VALUE=&quot;2&quot;&gt;Bar&lt;/OPTION&gt;\n    #   &lt;OPTION VALUE=&quot;Baz&quot;&gt;Baz&lt;/OPTION&gt;\n    # &lt;/SELECT&gt;\n\n  popup_menu(&quot;NAME&quot; =&gt; &quot;name&quot;, &quot;SIZE&quot; =&gt; 2, &quot;MULTIPLE&quot; =&gt; true,\n              &quot;VALUES&quot; =&gt; [[&quot;1&quot;, &quot;Foo&quot;], [&quot;2&quot;, &quot;Bar&quot;, true], &quot;Baz&quot;])\n    # &lt;SELECT NAME=&quot;name&quot; MULTIPLE SIZE=&quot;2&quot;&gt;\n    #   &lt;OPTION VALUE=&quot;1&quot;&gt;Foo&lt;/OPTION&gt;\n    #   &lt;OPTION SELECTED VALUE=&quot;2&quot;&gt;Bar&lt;/OPTION&gt;\n    #   &lt;OPTION VALUE=&quot;Baz&quot;&gt;Baz&lt;/OPTION&gt;\n    # &lt;/SELECT&gt;\n"
+full_name: CGI::HtmlExtension#popup_menu
+is_singleton: false
+name: popup_menu
+params: (name = "", *values)
+visibility: public

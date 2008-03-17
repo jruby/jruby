@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: PrettyPrint::SingleLine#breakable
+is_singleton: false
+name: breakable
+params: (sep=' ', width=nil)
+visibility: public

@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: (writer)
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Given block is called with the writer instance. str_or_writable must handle '&lt;&lt;(string)'.
+full_name: CSV::Writer::generate
+is_singleton: true
+name: generate
+params: (str_or_writable, fs = ',', rs = nil, &block) {|writer| ...}
+visibility: public

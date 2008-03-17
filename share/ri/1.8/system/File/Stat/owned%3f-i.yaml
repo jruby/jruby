@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns <tt>true</tt> if the effective user id of the process is the same as the owner of <em>stat</em>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   File.stat(&quot;testfile&quot;).owned?      #=&gt; true\n   File.stat(&quot;/etc/passwd&quot;).owned?   #=&gt; false\n"
+full_name: File::Stat#owned?
+is_singleton: false
+name: owned?
+params: |
+  stat.owned?    => true or false
+
+visibility: public

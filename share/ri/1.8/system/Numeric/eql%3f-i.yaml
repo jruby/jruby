@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns <tt>true</tt> if <em>num</em> and <em>numeric</em> are the same type and have equal values.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   1 == 1.0          #=&gt; true\n   1.eql?(1.0)       #=&gt; false\n   (1.0).eql?(1.0)   #=&gt; true\n"
+full_name: Numeric#eql?
+is_singleton: false
+name: eql?
+params: |
+  num.eql?(numeric)    => true or false
+
+visibility: public

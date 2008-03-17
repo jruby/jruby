@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Sets the group ID for this process.
+full_name: Process::gid=
+is_singleton: true
+name: gid=
+params: |
+  Process.gid= fixnum   => fixnum
+
+visibility: public

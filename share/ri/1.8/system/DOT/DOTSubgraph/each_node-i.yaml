@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: i
+comment: 
+full_name: DOT::DOTSubgraph#each_node
+is_singleton: false
+name: each_node
+params: () {|i| ...}
+visibility: public

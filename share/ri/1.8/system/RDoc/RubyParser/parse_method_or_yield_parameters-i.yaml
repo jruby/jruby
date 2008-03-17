@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: RDoc::RubyParser#parse_method_or_yield_parameters
+is_singleton: false
+name: parse_method_or_yield_parameters
+params: (method=nil, modifiers=METHOD_MODIFIERS)
+visibility: private

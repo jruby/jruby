@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Truncates the file <em>file_name</em> to be at most <em>integer</em> bytes long. Not available on all platforms.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   f = File.new(&quot;out&quot;, &quot;w&quot;)\n   f.write(&quot;1234567890&quot;)     #=&gt; 10\n   f.close                   #=&gt; nil\n   File.truncate(&quot;out&quot;, 5)   #=&gt; 0\n   File.size(&quot;out&quot;)          #=&gt; 5\n"
+full_name: File::truncate
+is_singleton: true
+name: truncate
+params: |
+  File.truncate(file_name, integer)  => 0
+
+visibility: public

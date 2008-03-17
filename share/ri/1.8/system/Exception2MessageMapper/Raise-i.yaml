@@ -1,0 +1,15 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: Fail
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Fail(err, *rest)
+- !ruby/struct:SM::Flow::VERB 
+  body: "    err:        exception\n    rest:       message arguments\n"
+full_name: Exception2MessageMapper#Raise
+is_singleton: false
+name: Raise
+params: (err = nil, *rest)
+visibility: public

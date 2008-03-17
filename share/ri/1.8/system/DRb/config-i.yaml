@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Get the configuration of the current server.
+- !ruby/struct:SM::Flow::P 
+  body: "If there is no current server, this returns the default configuration. See #current_server and DRbServer::make_config."
+full_name: DRb#config
+is_singleton: false
+name: config
+params: ()
+visibility: public

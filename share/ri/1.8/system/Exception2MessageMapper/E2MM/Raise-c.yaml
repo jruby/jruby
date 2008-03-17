@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Fail(klass, err, *rest)
+- !ruby/struct:SM::Flow::VERB 
+  body: "    klass:  class to define exception under.\n    err:        exception\n    rest:       message arguments\n"
+full_name: Exception2MessageMapper::E2MM::Raise
+is_singleton: true
+name: Raise
+params: (klass = E2MM, err = nil, *rest)
+visibility: public

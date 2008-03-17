@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Allocates space for a new object of <em>class</em>'s class. The returned object must be an instance of <em>class</em>.
+full_name: Class#allocate
+is_singleton: false
+name: allocate
+params: |
+  class.allocate()   =>   obj
+
+visibility: public

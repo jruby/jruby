@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Date#strftime
+is_singleton: false
+name: strftime
+params: (fmt='%F')
+visibility: public

@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns <tt>true</tt> if the named file exists and the effective used id of the calling process is the owner of the file.
+full_name: File::owned?
+is_singleton: true
+name: owned?
+params: |
+  File.owned?(file_name)   => true or false
+
+visibility: public

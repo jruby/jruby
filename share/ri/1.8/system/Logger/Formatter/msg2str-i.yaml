@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Logger::Formatter#msg2str
+is_singleton: false
+name: msg2str
+params: (msg)
+visibility: private

@@ -1,0 +1,17 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the bits in <em>stat</em> as a <tt>Fixnum</tt>. Poking around in these bits is platform dependent.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   fork { exit 0xab }         #=&gt; 26566\n   Process.wait               #=&gt; 26566\n   sprintf('%04x', $?.to_i)   #=&gt; &quot;ab00&quot;\n"
+full_name: Process::Status#to_int
+is_singleton: false
+name: to_int
+params: |
+  stat.to_i     => fixnum
+  stat.to_int   => fixnum
+
+visibility: public

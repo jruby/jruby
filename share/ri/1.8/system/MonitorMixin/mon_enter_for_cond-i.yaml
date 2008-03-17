@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: MonitorMixin#mon_enter_for_cond
+is_singleton: false
+name: mon_enter_for_cond
+params: (count)
+visibility: private

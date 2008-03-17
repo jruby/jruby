@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Given an array of flow items and an array of section names, extract those sections from the flow which have headings corresponding to a section name in the list. Return them in the order of names in the <tt>sections</tt> array.
+full_name: RDoc::extract_sections
+is_singleton: true
+name: extract_sections
+params: (flow, sections)
+visibility: private

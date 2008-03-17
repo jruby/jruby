@@ -1,0 +1,26 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: METHOD
+  value: "'PUT'"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: REQUEST_HAS_BODY
+  value: "true"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: RESPONSE_HAS_BODY
+  value: "true"
+full_name: Net::HTTP::Put
+includes: []
+
+instance_methods: []
+
+name: Put
+superclass: HTTPRequest

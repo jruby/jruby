@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Net::HTTP#end_transport
+is_singleton: false
+name: end_transport
+params: (req, res)
+visibility: private

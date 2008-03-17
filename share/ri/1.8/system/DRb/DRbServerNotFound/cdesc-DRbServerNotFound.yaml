@@ -1,0 +1,17 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Error raised by the DRb module when an attempt is made to refer to the context's current drb server but the context does not have one. See #current_server."
+constants: []
+
+full_name: DRb::DRbServerNotFound
+includes: []
+
+instance_methods: []
+
+name: DRbServerNotFound
+superclass: DRbError

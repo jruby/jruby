@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns <tt>true</tt> if the named file is writable by the real user id of this process.
+full_name: FileTest#writable_real?
+is_singleton: false
+name: writable_real?
+params: |
+  File.writable_real?(file_name)   => true or false
+
+visibility: public

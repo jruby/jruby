@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Generators::HtmlMethod#create_source_code_file
+is_singleton: false
+name: create_source_code_file
+params: (code_body)
+visibility: public

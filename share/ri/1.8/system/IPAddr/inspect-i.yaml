@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Returns a string containing a human-readable representation of the ipaddr. (&quot;#&lt;IPAddr: family:address/mask&gt;&quot;)"
+full_name: IPAddr#inspect
+is_singleton: false
+name: inspect
+params: ()
+visibility: public

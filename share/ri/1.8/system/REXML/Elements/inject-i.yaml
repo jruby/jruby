@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: ( initial, e )
+comment: 
+full_name: REXML::Elements#inject
+is_singleton: false
+name: inject
+params: ( xpath=nil, initial=nil, &block ) {|initial, e| ...}
+visibility: public

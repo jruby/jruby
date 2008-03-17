@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: REXML::Encoding#encode_unile
+is_singleton: false
+name: encode_unile
+params: (content)
+visibility: public

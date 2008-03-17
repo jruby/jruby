@@ -1,0 +1,20 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the process id of the parent of this process. Always returns 0 on NT. Not available on all platforms.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   puts &quot;I am #{Process.pid}&quot;\n   Process.fork { puts &quot;Dad is #{Process.ppid}&quot; }\n"
+- !ruby/struct:SM::Flow::P 
+  body: <em>produces:</em>
+- !ruby/struct:SM::Flow::VERB 
+  body: "   I am 27417\n   Dad is 27417\n"
+full_name: Process::ppid
+is_singleton: true
+name: ppid
+params: |
+  Process.ppid   => fixnum
+
+visibility: public

@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Options: noop verbose"
+- !ruby/struct:SM::Flow::P 
+  body: Changes owner and group on the named files (in <tt>list</tt>) to the user <tt>user</tt> and the group <tt>group</tt>. <tt>user</tt> and <tt>group</tt> may be an ID (Integer/String) or a name (String). If <tt>user</tt> or <tt>group</tt> is nil, this method does not change the attribute.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  FileUtils.chown 'root', 'staff', '/usr/local/bin/ruby'\n  FileUtils.chown nil, 'bin', Dir.glob('/usr/bin/*'), :verbose =&gt; true\n"
+full_name: FileUtils#chown
+is_singleton: false
+name: chown
+params: (user, group, list, options = {})
+visibility: public

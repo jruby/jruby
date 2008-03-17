@@ -1,0 +1,34 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: prefix
+  rw: R
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+constants: []
+
+full_name: IRB::Notifier::AbstructNotifier
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: exec_if
+- !ruby/object:RI::MethodSummary 
+  name: notify?
+- !ruby/object:RI::MethodSummary 
+  name: pp
+- !ruby/object:RI::MethodSummary 
+  name: ppx
+- !ruby/object:RI::MethodSummary 
+  name: print
+- !ruby/object:RI::MethodSummary 
+  name: printf
+- !ruby/object:RI::MethodSummary 
+  name: printn
+- !ruby/object:RI::MethodSummary 
+  name: puts
+name: AbstructNotifier
+superclass: Object

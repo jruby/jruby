@@ -1,0 +1,17 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: ===
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns true if the given ipaddr is in the range.
+- !ruby/struct:SM::Flow::P 
+  body: "e.g.:"
+- !ruby/struct:SM::Flow::VERB 
+  body: "  require 'ipaddr'\n  net1 = IPAddr.new(&quot;192.168.2.0/24&quot;)\n  p net1.include?(IPAddr.new(&quot;192.168.2.0&quot;))        #=&gt; true\n  p net1.include?(IPAddr.new(&quot;192.168.2.255&quot;))      #=&gt; true\n  p net1.include?(IPAddr.new(&quot;192.168.3.0&quot;))        #=&gt; false\n"
+full_name: IPAddr#include?
+is_singleton: false
+name: include?
+params: (other)
+visibility: public

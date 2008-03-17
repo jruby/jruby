@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Passes each element of the collection to the given block. The method returns <tt>true</tt> if the block never returns <tt>false</tt> or <tt>nil</tt>. If the block is not given, Ruby adds an implicit block of <tt>{|obj| obj}</tt> (that is <tt>all?</tt> will return <tt>true</tt> only if none of the collection members are <tt>false</tt> or <tt>nil</tt>.)
+- !ruby/struct:SM::Flow::VERB 
+  body: "   %w{ ant bear cat}.all? {|word| word.length &gt;= 3}   #=&gt; true\n   %w{ ant bear cat}.all? {|word| word.length &gt;= 4}   #=&gt; false\n   [ nil, true, 99 ].all?                             #=&gt; false\n"
+full_name: Enumerable#all?
+is_singleton: false
+name: all?
+params: |
+  enum.all? [{|obj| block } ]   => true or false
+
+visibility: public

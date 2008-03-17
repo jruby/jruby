@@ -1,0 +1,26 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: The global value <tt>false</tt> is the only instance of class <tt>FalseClass</tt> and represents a logically false value in boolean expressions. The class provides operators allowing <tt>false</tt> to participate correctly in logical expressions.
+constants: []
+
+full_name: FalseClass
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: "&"
+- !ruby/object:RI::MethodSummary 
+  name: ^
+- !ruby/object:RI::MethodSummary 
+  name: to_s
+- !ruby/object:RI::MethodSummary 
+  name: to_yaml
+- !ruby/object:RI::MethodSummary 
+  name: "|"
+name: FalseClass
+superclass: Object

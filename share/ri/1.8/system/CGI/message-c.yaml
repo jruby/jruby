@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: print message to $&gt;
+full_name: CGI::message
+is_singleton: true
+name: message
+params: "(message, title = \"\", header = [\"Content-Type: text/html\"])"
+visibility: public

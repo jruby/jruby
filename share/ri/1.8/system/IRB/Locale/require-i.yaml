@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IRB::Locale#require
+is_singleton: false
+name: require
+params: (file, priv = nil)
+visibility: public

@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Equivalent to calling ``<tt>attr</tt><em>symbol</em><tt>, true</tt>'' on each <em>symbol</em> in turn.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   module Mod\n     attr_accessor(:one, :two)\n   end\n   Mod.instance_methods.sort   #=&gt; [&quot;one&quot;, &quot;one=&quot;, &quot;two&quot;, &quot;two=&quot;]\n"
+full_name: Module#attr_accessor
+is_singleton: false
+name: attr_accessor
+params: |
+  attr_accessor(symbol, ...)    => nil
+
+visibility: public

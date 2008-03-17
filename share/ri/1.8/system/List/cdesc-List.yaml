@@ -1,0 +1,58 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Map from acceptable argument types to pattern and converter pairs.
+  name: atype
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: List of all switches and summary string.
+  name: list
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Map from long style option switches to actual switch objects.
+  name: long
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Map from short style option switches to actual switch objects.
+  name: short
+  rw: R
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Simple option list providing mapping from short and/or long option string to OptionParser::Switch and mapping from acceptable argument to matching pattern and converter pair. Also provides summary feature.
+constants: []
+
+full_name: List
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: accept
+- !ruby/object:RI::MethodSummary 
+  name: append
+- !ruby/object:RI::MethodSummary 
+  name: complete
+- !ruby/object:RI::MethodSummary 
+  name: each_option
+- !ruby/object:RI::MethodSummary 
+  name: prepend
+- !ruby/object:RI::MethodSummary 
+  name: reject
+- !ruby/object:RI::MethodSummary 
+  name: search
+- !ruby/object:RI::MethodSummary 
+  name: summarize
+- !ruby/object:RI::MethodSummary 
+  name: update
+name: List
+superclass: Object

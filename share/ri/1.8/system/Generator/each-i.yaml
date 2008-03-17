@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: self.next
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Rewinds the generator and enumerates the elements.
+full_name: Generator#each
+is_singleton: false
+name: each
+params: () {|self.next| ...}
+visibility: public

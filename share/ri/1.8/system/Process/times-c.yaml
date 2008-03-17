@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns a <tt>Tms</tt> structure (see <tt>Struct::Tms</tt> on page 388) that contains user and system CPU times for this process.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   t = Process.times\n   [ t.utime, t.stime ]   #=&gt; [0.0, 0.02]\n"
+full_name: Process::times
+is_singleton: true
+name: times
+params: |
+  Process.times   => aStructTms
+
+visibility: public

@@ -1,0 +1,17 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns an array containing the items in <em>enum</em>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   (1..7).to_a                       #=&gt; [1, 2, 3, 4, 5, 6, 7]\n   { 'a'=&gt;1, 'b'=&gt;2, 'c'=&gt;3 }.to_a   #=&gt; [[&quot;a&quot;, 1], [&quot;b&quot;, 2], [&quot;c&quot;, 3]]\n"
+full_name: Enumerable#entries
+is_singleton: false
+name: entries
+params: |
+  enum.to_a      =>    array
+  enum.entries   =>    array
+
+visibility: public

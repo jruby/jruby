@@ -1,0 +1,21 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: compat.rb -- cross platform compatibility
+- !ruby/struct:SM::Flow::P 
+  body: "Author: IPR -- Internet Programming with Ruby -- writers Copyright (c) 2002 GOTOU Yuuzou Copyright (c) 2002 Internet Programming with Ruby writers. All rights reserved."
+- !ruby/struct:SM::Flow::P 
+  body: "$IPR: compat.rb,v 1.6 2002/10/01 17:16:32 gotoyuzo Exp $"
+constants: []
+
+full_name: Errno
+includes: []
+
+instance_methods: []
+
+name: Errno
+superclass: 

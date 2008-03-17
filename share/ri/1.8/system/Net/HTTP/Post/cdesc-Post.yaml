@@ -1,0 +1,26 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: METHOD
+  value: "'POST'"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: REQUEST_HAS_BODY
+  value: "true"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: RESPONSE_HAS_BODY
+  value: "true"
+full_name: Net::HTTP::Post
+includes: []
+
+instance_methods: []
+
+name: Post
+superclass: HTTPRequest

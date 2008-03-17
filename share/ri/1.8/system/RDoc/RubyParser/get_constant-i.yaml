@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Parse a constant, which might be qualified by one or more class or module names
+full_name: RDoc::RubyParser#get_constant
+is_singleton: false
+name: get_constant
+params: ()
+visibility: private

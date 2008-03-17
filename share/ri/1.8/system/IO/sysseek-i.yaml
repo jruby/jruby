@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Seeks to a given <em>offset</em> in the stream according to the value of <em>whence</em> (see <tt>IO#seek</tt> for values of <em>whence</em>). Returns the new offset into the file.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   f = File.new(&quot;testfile&quot;)\n   f.sysseek(-13, IO::SEEK_END)   #=&gt; 53\n   f.sysread(10)                  #=&gt; &quot;And so on.&quot;\n"
+full_name: IO#sysseek
+is_singleton: false
+name: sysseek
+params: |
+  ios.sysseek(offset, whence=SEEK_SET)   => integer
+
+visibility: public

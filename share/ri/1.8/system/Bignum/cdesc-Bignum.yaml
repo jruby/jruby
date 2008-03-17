@@ -1,0 +1,88 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Bignum objects hold integers outside the range of Fixnum. Bignum objects are created automatically when integer calculations would otherwise overflow a Fixnum. When a calculation involving Bignum objects returns a result that will fit in a Fixnum, the result is automatically converted.
+- !ruby/struct:SM::Flow::P 
+  body: For the purposes of the bitwise operations and <tt>[]</tt>, a Bignum is treated as if it were an infinite-length bitstring with 2's complement representation.
+- !ruby/struct:SM::Flow::P 
+  body: While Fixnum values are immediate, Bignum objects are not---assignment and parameter passing work with references to objects, not the objects themselves.
+constants: []
+
+full_name: Bignum
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: "%"
+- !ruby/object:RI::MethodSummary 
+  name: "&"
+- !ruby/object:RI::MethodSummary 
+  name: "*"
+- !ruby/object:RI::MethodSummary 
+  name: "**"
+- !ruby/object:RI::MethodSummary 
+  name: "**"
+- !ruby/object:RI::MethodSummary 
+  name: +
+- !ruby/object:RI::MethodSummary 
+  name: "-"
+- !ruby/object:RI::MethodSummary 
+  name: -@
+- !ruby/object:RI::MethodSummary 
+  name: /
+- !ruby/object:RI::MethodSummary 
+  name: /
+- !ruby/object:RI::MethodSummary 
+  name: "<<"
+- !ruby/object:RI::MethodSummary 
+  name: <=>
+- !ruby/object:RI::MethodSummary 
+  name: ==
+- !ruby/object:RI::MethodSummary 
+  name: ">>"
+- !ruby/object:RI::MethodSummary 
+  name: "[]"
+- !ruby/object:RI::MethodSummary 
+  name: ^
+- !ruby/object:RI::MethodSummary 
+  name: abs
+- !ruby/object:RI::MethodSummary 
+  name: coerce
+- !ruby/object:RI::MethodSummary 
+  name: div
+- !ruby/object:RI::MethodSummary 
+  name: divmod
+- !ruby/object:RI::MethodSummary 
+  name: eql?
+- !ruby/object:RI::MethodSummary 
+  name: hash
+- !ruby/object:RI::MethodSummary 
+  name: modulo
+- !ruby/object:RI::MethodSummary 
+  name: power!
+- !ruby/object:RI::MethodSummary 
+  name: quo
+- !ruby/object:RI::MethodSummary 
+  name: quo
+- !ruby/object:RI::MethodSummary 
+  name: rdiv
+- !ruby/object:RI::MethodSummary 
+  name: remainder
+- !ruby/object:RI::MethodSummary 
+  name: rpower
+- !ruby/object:RI::MethodSummary 
+  name: size
+- !ruby/object:RI::MethodSummary 
+  name: to_f
+- !ruby/object:RI::MethodSummary 
+  name: to_s
+- !ruby/object:RI::MethodSummary 
+  name: "|"
+- !ruby/object:RI::MethodSummary 
+  name: "~"
+name: Bignum
+superclass: Integer

@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Get the 'current' server.
+- !ruby/struct:SM::Flow::P 
+  body: In the context of execution taking place within the main thread of a dRuby server (typically, as a result of a remote call on the server or one of its objects), the current server is that server. Otherwise, the current server is the primary server.
+- !ruby/struct:SM::Flow::P 
+  body: If the above rule fails to find a server, a DRbServerNotFound error is raised.
+full_name: DRb#current_server
+is_singleton: false
+name: current_server
+params: ()
+visibility: public

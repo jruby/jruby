@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Computes the arc cosine of <em>x</em>. Returns 0..PI.
+full_name: Math::acos
+is_singleton: true
+name: acos
+params: |
+  Math.acos(x)    => float
+
+visibility: public

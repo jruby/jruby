@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IRB::ContextExtender::install_extend_commands
+is_singleton: true
+name: install_extend_commands
+params: ()
+visibility: public

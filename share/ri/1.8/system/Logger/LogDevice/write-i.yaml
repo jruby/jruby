@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Logger::LogDevice#write
+is_singleton: false
+name: write
+params: (message)
+visibility: public

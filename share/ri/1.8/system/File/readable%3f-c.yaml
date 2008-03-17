@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns <tt>true</tt> if the named file is readable by the effective user id of this process.
+full_name: File::readable?
+is_singleton: true
+name: readable?
+params: |
+  File.readable?(file_name)   => true or false
+
+visibility: public

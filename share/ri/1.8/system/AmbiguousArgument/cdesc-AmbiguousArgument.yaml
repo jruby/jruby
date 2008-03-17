@@ -1,0 +1,17 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Raises when the given argument word can't be completed uniquely.
+constants: []
+
+full_name: AmbiguousArgument
+includes: []
+
+instance_methods: []
+
+name: AmbiguousArgument
+superclass: InvalidArgument

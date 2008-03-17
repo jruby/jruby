@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns revision information for the erb.rb module.
+full_name: ERB::version
+is_singleton: true
+name: version
+params: ()
+visibility: public

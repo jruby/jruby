@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Finishes the SMTP session and closes TCP connection. Raises IOError if not started.
+full_name: Net::SMTP#finish
+is_singleton: false
+name: finish
+params: ()
+visibility: public

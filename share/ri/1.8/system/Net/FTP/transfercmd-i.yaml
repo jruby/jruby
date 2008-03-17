@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Net::FTP#transfercmd
+is_singleton: false
+name: transfercmd
+params: (cmd, rest_offset = nil)
+visibility: private

@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Sends a LSUB command, and returns a subset of names from the set of names that the user has declared as being &quot;active&quot; or &quot;subscribed&quot;. <tt>refname</tt> and <tt>mailbox</tt> are interpreted as for #list(). The return value is an array of +Net::IMAP::MailboxList+."
+full_name: Net::IMAP#lsub
+is_singleton: false
+name: lsub
+params: (refname, mailbox)
+visibility: public

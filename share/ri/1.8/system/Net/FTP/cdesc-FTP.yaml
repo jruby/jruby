@@ -1,0 +1,228 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: "When <tt>true</tt>, transfers are performed in binary mode. Default: <tt>true</tt>."
+  name: binary
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: "When <tt>true</tt>, all traffic to and from the server is written to +$stdout+. Default: <tt>false</tt>."
+  name: debug_mode
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: The server's last response.
+  name: last_response
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: The server's last response code.
+  name: last_response_code
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: "When <tt>true</tt>, the connection is in passive mode. Default: <tt>false</tt>."
+  name: passive
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: "Sets or retrieves the <tt>resume</tt> status, which decides whether incomplete transfers are resumed or restarted. Default: <tt>false</tt>."
+  name: resume
+  rw: RW
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: The server's welcome message.
+  name: welcome
+  rw: R
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+- !ruby/object:RI::MethodSummary 
+  name: open
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: This class implements the File Transfer Protocol. If you have used a command-line FTP program, and are familiar with the commands, you will be able to use this class easily. Some extra features are included to take advantage of Ruby's style and strengths.
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: Example
+- !ruby/struct:SM::Flow::VERB 
+  body: "  require 'net/ftp'\n"
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Example 1
+- !ruby/struct:SM::Flow::VERB 
+  body: "  ftp = Net::FTP.new('ftp.netlab.co.jp')\n  ftp.login\n  files = ftp.chdir('pub/lang/ruby/contrib')\n  files = ftp.list('n*')\n  ftp.getbinaryfile('nif.rb-0.91.gz', 'nif.gz', 1024)\n  ftp.close\n"
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Example 2
+- !ruby/struct:SM::Flow::VERB 
+  body: "  Net::FTP.open('ftp.netlab.co.jp') do |ftp|\n    ftp.login\n    files = ftp.chdir('pub/lang/ruby/contrib')\n    files = ftp.list('n*')\n    ftp.getbinaryfile('nif.rb-0.91.gz', 'nif.gz', 1024)\n  end\n"
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: Major Methods
+- !ruby/struct:SM::Flow::P 
+  body: "The following are the methods most likely to be useful to users:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "-"
+    body: FTP.open
+  - !ruby/struct:SM::Flow::LI 
+    label: "-"
+    body: "#getbinaryfile"
+  - !ruby/struct:SM::Flow::LI 
+    label: "-"
+    body: "#gettextfile"
+  - !ruby/struct:SM::Flow::LI 
+    label: "-"
+    body: "#putbinaryfile"
+  - !ruby/struct:SM::Flow::LI 
+    label: "-"
+    body: "#puttextfile"
+  - !ruby/struct:SM::Flow::LI 
+    label: "-"
+    body: "#chdir"
+  - !ruby/struct:SM::Flow::LI 
+    label: "-"
+    body: "#nlst"
+  - !ruby/struct:SM::Flow::LI 
+    label: "-"
+    body: "#size"
+  - !ruby/struct:SM::Flow::LI 
+    label: "-"
+    body: "#rename"
+  - !ruby/struct:SM::Flow::LI 
+    label: "-"
+    body: "#delete"
+  type: :BULLET
+constants: []
+
+full_name: Net::FTP
+includes: 
+- !ruby/object:RI::IncludedModule 
+  name: MonitorMixin
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: abort
+- !ruby/object:RI::MethodSummary 
+  name: acct
+- !ruby/object:RI::MethodSummary 
+  name: chdir
+- !ruby/object:RI::MethodSummary 
+  name: close
+- !ruby/object:RI::MethodSummary 
+  name: closed?
+- !ruby/object:RI::MethodSummary 
+  name: connect
+- !ruby/object:RI::MethodSummary 
+  name: delete
+- !ruby/object:RI::MethodSummary 
+  name: dir
+- !ruby/object:RI::MethodSummary 
+  name: get
+- !ruby/object:RI::MethodSummary 
+  name: getaddress
+- !ruby/object:RI::MethodSummary 
+  name: getbinaryfile
+- !ruby/object:RI::MethodSummary 
+  name: getdir
+- !ruby/object:RI::MethodSummary 
+  name: getline
+- !ruby/object:RI::MethodSummary 
+  name: getmultiline
+- !ruby/object:RI::MethodSummary 
+  name: getresp
+- !ruby/object:RI::MethodSummary 
+  name: gettextfile
+- !ruby/object:RI::MethodSummary 
+  name: help
+- !ruby/object:RI::MethodSummary 
+  name: list
+- !ruby/object:RI::MethodSummary 
+  name: login
+- !ruby/object:RI::MethodSummary 
+  name: ls
+- !ruby/object:RI::MethodSummary 
+  name: makepasv
+- !ruby/object:RI::MethodSummary 
+  name: makeport
+- !ruby/object:RI::MethodSummary 
+  name: mdtm
+- !ruby/object:RI::MethodSummary 
+  name: mkdir
+- !ruby/object:RI::MethodSummary 
+  name: mtime
+- !ruby/object:RI::MethodSummary 
+  name: nlst
+- !ruby/object:RI::MethodSummary 
+  name: noop
+- !ruby/object:RI::MethodSummary 
+  name: open_socket
+- !ruby/object:RI::MethodSummary 
+  name: parse227
+- !ruby/object:RI::MethodSummary 
+  name: parse228
+- !ruby/object:RI::MethodSummary 
+  name: parse229
+- !ruby/object:RI::MethodSummary 
+  name: parse257
+- !ruby/object:RI::MethodSummary 
+  name: put
+- !ruby/object:RI::MethodSummary 
+  name: putbinaryfile
+- !ruby/object:RI::MethodSummary 
+  name: putline
+- !ruby/object:RI::MethodSummary 
+  name: puttextfile
+- !ruby/object:RI::MethodSummary 
+  name: pwd
+- !ruby/object:RI::MethodSummary 
+  name: quit
+- !ruby/object:RI::MethodSummary 
+  name: rename
+- !ruby/object:RI::MethodSummary 
+  name: retrbinary
+- !ruby/object:RI::MethodSummary 
+  name: retrlines
+- !ruby/object:RI::MethodSummary 
+  name: return_code
+- !ruby/object:RI::MethodSummary 
+  name: return_code=
+- !ruby/object:RI::MethodSummary 
+  name: rmdir
+- !ruby/object:RI::MethodSummary 
+  name: sanitize
+- !ruby/object:RI::MethodSummary 
+  name: sendcmd
+- !ruby/object:RI::MethodSummary 
+  name: sendport
+- !ruby/object:RI::MethodSummary 
+  name: set_socket
+- !ruby/object:RI::MethodSummary 
+  name: site
+- !ruby/object:RI::MethodSummary 
+  name: size
+- !ruby/object:RI::MethodSummary 
+  name: status
+- !ruby/object:RI::MethodSummary 
+  name: storbinary
+- !ruby/object:RI::MethodSummary 
+  name: storlines
+- !ruby/object:RI::MethodSummary 
+  name: system
+- !ruby/object:RI::MethodSummary 
+  name: transfercmd
+- !ruby/object:RI::MethodSummary 
+  name: voidcmd
+- !ruby/object:RI::MethodSummary 
+  name: voidresp
+name: FTP
+superclass: Object

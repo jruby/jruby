@@ -1,0 +1,92 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: DEBUG_LAST_CMD
+  value: "[]"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: USE_READLINE
+  value: "false"
+full_name: DEBUGGER__::Context
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: break_points
+- !ruby/object:RI::MethodSummary 
+  name: check_break_points
+- !ruby/object:RI::MethodSummary 
+  name: check_suspend
+- !ruby/object:RI::MethodSummary 
+  name: clear_suspend
+- !ruby/object:RI::MethodSummary 
+  name: context
+- !ruby/object:RI::MethodSummary 
+  name: debug_command
+- !ruby/object:RI::MethodSummary 
+  name: debug_eval
+- !ruby/object:RI::MethodSummary 
+  name: debug_funcname
+- !ruby/object:RI::MethodSummary 
+  name: debug_method_info
+- !ruby/object:RI::MethodSummary 
+  name: debug_print_help
+- !ruby/object:RI::MethodSummary 
+  name: debug_silent_eval
+- !ruby/object:RI::MethodSummary 
+  name: debug_variable_info
+- !ruby/object:RI::MethodSummary 
+  name: display
+- !ruby/object:RI::MethodSummary 
+  name: display_expression
+- !ruby/object:RI::MethodSummary 
+  name: display_expressions
+- !ruby/object:RI::MethodSummary 
+  name: display_frames
+- !ruby/object:RI::MethodSummary 
+  name: display_list
+- !ruby/object:RI::MethodSummary 
+  name: excn_handle
+- !ruby/object:RI::MethodSummary 
+  name: format_frame
+- !ruby/object:RI::MethodSummary 
+  name: frame_set_pos
+- !ruby/object:RI::MethodSummary 
+  name: line_at
+- !ruby/object:RI::MethodSummary 
+  name: readline
+- !ruby/object:RI::MethodSummary 
+  name: readline
+- !ruby/object:RI::MethodSummary 
+  name: resume_all
+- !ruby/object:RI::MethodSummary 
+  name: set_last_thread
+- !ruby/object:RI::MethodSummary 
+  name: set_suspend
+- !ruby/object:RI::MethodSummary 
+  name: set_trace
+- !ruby/object:RI::MethodSummary 
+  name: set_trace_all
+- !ruby/object:RI::MethodSummary 
+  name: stdout
+- !ruby/object:RI::MethodSummary 
+  name: stop_next
+- !ruby/object:RI::MethodSummary 
+  name: suspend_all
+- !ruby/object:RI::MethodSummary 
+  name: thnum
+- !ruby/object:RI::MethodSummary 
+  name: trace?
+- !ruby/object:RI::MethodSummary 
+  name: trace_func
+- !ruby/object:RI::MethodSummary 
+  name: var_list
+name: Context
+superclass: Object

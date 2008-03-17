@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Reverses <em>self</em> in place.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   a = [ &quot;a&quot;, &quot;b&quot;, &quot;c&quot; ]\n   a.reverse!       #=&gt; [&quot;c&quot;, &quot;b&quot;, &quot;a&quot;]\n   a                #=&gt; [&quot;c&quot;, &quot;b&quot;, &quot;a&quot;]\n"
+full_name: Array#reverse!
+is_singleton: false
+name: reverse!
+params: |
+  array.reverse!   -> array 
+
+visibility: public

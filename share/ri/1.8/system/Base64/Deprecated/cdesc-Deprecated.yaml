@@ -1,0 +1,15 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+constants: []
+
+full_name: Base64::Deprecated
+includes: []
+
+instance_methods: []
+
+name: Deprecated
+superclass: 

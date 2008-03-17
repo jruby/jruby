@@ -1,0 +1,101 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: ID ---&gt; Encoding name
+  name: encoding
+  rw: R
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: apply
+- !ruby/object:RI::MethodSummary 
+  name: encoding_method
+- !ruby/object:RI::MethodSummary 
+  name: register
+comment: 
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Native, default format is UTF-8, so it is declared here rather than in an encodings/ definition.
+  name: UTF_8
+  value: "'UTF-8'"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: UTF_16
+  value: "'UTF-16'"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: UNILE
+  value: "'UNILE'"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: EUCTOU8
+  value: "'-Ewm0'"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: U8TOEUC
+  value: "'-Wem0'"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: SJISTOU8
+  value: "'-Swm0'"
+- !ruby/object:RI::Constant 
+  comment: 
+  name: U8TOSJIS
+  value: "'-Wsm0'"
+full_name: REXML::Encoding
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: check_encoding
+- !ruby/object:RI::MethodSummary 
+  name: decode_ascii
+- !ruby/object:RI::MethodSummary 
+  name: decode_cp1252
+- !ruby/object:RI::MethodSummary 
+  name: decode_eucjp
+- !ruby/object:RI::MethodSummary 
+  name: decode_eucjp
+- !ruby/object:RI::MethodSummary 
+  name: decode_iconv
+- !ruby/object:RI::MethodSummary 
+  name: decode_sjis
+- !ruby/object:RI::MethodSummary 
+  name: decode_sjis
+- !ruby/object:RI::MethodSummary 
+  name: decode_unile
+- !ruby/object:RI::MethodSummary 
+  name: decode_utf16
+- !ruby/object:RI::MethodSummary 
+  name: decode_utf8
+- !ruby/object:RI::MethodSummary 
+  name: encode_ascii
+- !ruby/object:RI::MethodSummary 
+  name: encode_cp1252
+- !ruby/object:RI::MethodSummary 
+  name: encode_eucjp
+- !ruby/object:RI::MethodSummary 
+  name: encode_eucjp
+- !ruby/object:RI::MethodSummary 
+  name: encode_iconv
+- !ruby/object:RI::MethodSummary 
+  name: encode_sjis
+- !ruby/object:RI::MethodSummary 
+  name: encode_sjis
+- !ruby/object:RI::MethodSummary 
+  name: encode_unile
+- !ruby/object:RI::MethodSummary 
+  name: encode_utf16
+- !ruby/object:RI::MethodSummary 
+  name: encode_utf8
+- !ruby/object:RI::MethodSummary 
+  name: encoding=
+- !ruby/object:RI::MethodSummary 
+  name: from_iso_8859_15
+- !ruby/object:RI::MethodSummary 
+  name: to_iso_8859_15
+name: Encoding
+superclass: 

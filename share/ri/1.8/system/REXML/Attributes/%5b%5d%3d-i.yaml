@@ -1,0 +1,26 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Sets an attribute, overwriting any existing attribute value by the same name. Namespace is significant.
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "name:"
+    body: the name of the attribute
+  - !ruby/struct:SM::Flow::LI 
+    label: "value:"
+    body: (optional) If supplied, the value of the attribute. If nil, any existing matching attribute is deleted.
+  - !ruby/struct:SM::Flow::LI 
+    label: "Returns:"
+    body: Owning element
+  type: :NOTE
+- !ruby/struct:SM::Flow::VERB 
+  body: " doc = Document.new &quot;&lt;a x:foo='1' foo='3'/&gt;&quot;\n doc.root.attributes['y:foo'] = '2'\n doc.root.attributes['foo'] = '4'\n doc.root.attributes['x:foo'] = nil\n"
+full_name: REXML::Attributes#[]=
+is_singleton: false
+name: "[]="
+params: ( name, value )
+visibility: public

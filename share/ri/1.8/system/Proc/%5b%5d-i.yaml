@@ -1,0 +1,25 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Invokes the block, setting the block's parameters to the values in <em>params</em> using something close to method calling semantics. Generates a warning if multiple values are passed to a proc that expects just one (previously this silently converted the parameters to an array).
+- !ruby/struct:SM::Flow::P 
+  body: For procs created using <tt>Kernel.proc</tt>, generates an error if the wrong number of parameters are passed to a proc with multiple parameters. For procs created using <tt>Proc.new</tt>, extra parameters are silently discarded.
+- !ruby/struct:SM::Flow::P 
+  body: Returns the value of the last expression evaluated in the block. See also <tt>Proc#yield</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   a_proc = Proc.new {|a, *b| b.collect {|i| i*a }}\n   a_proc.call(9, 1, 2, 3)   #=&gt; [9, 18, 27]\n   a_proc[9, 1, 2, 3]        #=&gt; [9, 18, 27]\n   a_proc = Proc.new {|a,b| a}\n   a_proc.call(1,2,3)\n"
+- !ruby/struct:SM::Flow::P 
+  body: <em>produces:</em>
+- !ruby/struct:SM::Flow::VERB 
+  body: "   prog.rb:5: wrong number of arguments (3 for 2) (ArgumentError)\n    from prog.rb:4:in `call'\n    from prog.rb:5\n"
+full_name: Proc#[]
+is_singleton: false
+name: "[]"
+params: |
+  prc.call(params,...)   => obj
+  prc[params,...]        => obj
+
+visibility: public

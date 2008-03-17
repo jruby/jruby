@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Changes permission bits on <tt>files</tt> to the bit pattern represented by <tt>mode</tt>. If the last parameter isn't a String, verbose mode will be enabled.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  File.chmod 0755, 'somecommand'\n  File.chmod 0644, 'my.rb', 'your.rb', true\n"
+full_name: File::chmod
+is_singleton: true
+name: chmod
+params: (mode, *files)
+visibility: public

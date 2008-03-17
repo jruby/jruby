@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Issues a SITE command.
+full_name: Net::FTP#site
+is_singleton: false
+name: site
+params: (arg)
+visibility: public

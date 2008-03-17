@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Changes the (remote) directory.
+full_name: Net::FTP#chdir
+is_singleton: false
+name: chdir
+params: (dirname)
+visibility: public

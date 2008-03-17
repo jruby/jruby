@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Convert a Commercial Date to a Julian Day Number.
+- !ruby/struct:SM::Flow::P 
+  body: <tt>y</tt>, <tt>w</tt>, and <tt>d</tt> are the (commercial) year, week of the year, and day of the week of the Commercial Date to convert. <tt>sg</tt> specifies the Day of Calendar Reform.
+full_name: Date::commercial_to_jd
+is_singleton: true
+name: commercial_to_jd
+params: (y, w, d, ns=GREGORIAN)
+visibility: public

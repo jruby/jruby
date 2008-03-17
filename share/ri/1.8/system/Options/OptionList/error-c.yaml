@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Show an error and exit
+full_name: Options::OptionList::error
+is_singleton: true
+name: error
+params: (msg)
+visibility: public

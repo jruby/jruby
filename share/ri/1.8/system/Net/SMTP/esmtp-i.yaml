@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Alias for #esmtp?"
+full_name: Net::SMTP#esmtp
+is_singleton: false
+name: esmtp
+params: ()
+visibility: public

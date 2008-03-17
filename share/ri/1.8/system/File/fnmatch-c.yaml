@@ -1,0 +1,37 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Returns true if <em>path</em> matches against <em>pattern</em> The pattern is not a regular expression; instead it follows rules similar to shell filename globbing. It may contain the following metacharacters:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "<code>*</code>:"
+    body: Matches any file. Can be restricted by other values in the glob. <tt>*</tt> will match all files; <tt>c*</tt> will match all files beginning with <tt>c</tt>; <tt>*c</tt> will match all files ending with <tt>c</tt>; and <b><tt>c</tt></b> will match all files that have <tt>c</tt> in them (including at the beginning or end). Equivalent to <tt>/ .* /x</tt> in regexp.
+  - !ruby/struct:SM::Flow::LI 
+    label: "<code>**</code>:"
+    body: Matches directories recursively or files expansively.
+  - !ruby/struct:SM::Flow::LI 
+    label: "<code>?</code>:"
+    body: Matches any one character. Equivalent to <tt>/.{1}/</tt> in regexp.
+  - !ruby/struct:SM::Flow::LI 
+    label: "<code>[set]</code>:"
+    body: Matches any one character in <tt>set</tt>. Behaves exactly like character sets in Regexp, including set negation (<tt>[^a-z]</tt>).
+  - !ruby/struct:SM::Flow::LI 
+    label: "<code>\\</code>:"
+    body: Escapes the next metacharacter.
+  type: :NOTE
+- !ruby/struct:SM::Flow::P 
+  body: <em>flags</em> is a bitwise OR of the <tt>FNM_xxx</tt> parameters. The same glob pattern and flags are used by <tt>Dir::glob</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   File.fnmatch('cat',       'cat')        #=&gt; true  : match entire string\n   File.fnmatch('cat',       'category')   #=&gt; false : only match partial string\n   File.fnmatch('c{at,ub}s', 'cats')       #=&gt; false : { } isn't supported\n\n   File.fnmatch('c?t',     'cat')          #=&gt; true  : '?' match only 1 character\n   File.fnmatch('c??t',    'cat')          #=&gt; false : ditto\n   File.fnmatch('c*',      'cats')         #=&gt; true  : '*' match 0 or more characters\n   File.fnmatch('c*t',     'c/a/b/t')      #=&gt; true  : ditto\n   File.fnmatch('ca[a-z]', 'cat')          #=&gt; true  : inclusive bracket expression\n   File.fnmatch('ca[^t]',  'cat')          #=&gt; false : exclusive bracket expression ('^' or '!')\n\n   File.fnmatch('cat', 'CAT')                     #=&gt; false : case sensitive\n   File.fnmatch('cat', 'CAT', File::FNM_CASEFOLD) #=&gt; true  : case insensitive\n\n   File.fnmatch('?',   '/', File::FNM_PATHNAME)  #=&gt; false : wildcard doesn't match '/' on FNM_PATHNAME\n   File.fnmatch('*',   '/', File::FNM_PATHNAME)  #=&gt; false : ditto\n   File.fnmatch('[/]', '/', File::FNM_PATHNAME)  #=&gt; false : ditto\n\n   File.fnmatch('\\?',   '?')                       #=&gt; true  : escaped wildcard becomes ordinary\n   File.fnmatch('\\a',   'a')                       #=&gt; true  : escaped ordinary remains ordinary\n   File.fnmatch('\\a',   '\\a', File::FNM_NOESCAPE)  #=&gt; true  : FNM_NOESACPE makes '\\' ordinary\n   File.fnmatch('[\\?]', '?')                       #=&gt; true  : can escape inside bracket expression\n\n   File.fnmatch('*',   '.profile')                      #=&gt; false : wildcard doesn't match leading\n   File.fnmatch('*',   '.profile', File::FNM_DOTMATCH)  #=&gt; true    period by default.\n   File.fnmatch('.*',  '.profile')                      #=&gt; true\n\n   rbfiles = '**' '/' '*.rb' # you don't have to do like this. just write in single string.\n   File.fnmatch(rbfiles, 'main.rb')                    #=&gt; false\n   File.fnmatch(rbfiles, './main.rb')                  #=&gt; false\n   File.fnmatch(rbfiles, 'lib/song.rb')                #=&gt; true\n   File.fnmatch('**.rb', 'main.rb')                    #=&gt; true\n   File.fnmatch('**.rb', './main.rb')                  #=&gt; false\n   File.fnmatch('**.rb', 'lib/song.rb')                #=&gt; true\n   File.fnmatch('*',           'dave/.profile')                      #=&gt; true\n\n   pattern = '*' '/' '*'\n   File.fnmatch(pattern, 'dave/.profile', File::FNM_PATHNAME)  #=&gt; false\n   File.fnmatch(pattern, 'dave/.profile', File::FNM_PATHNAME | File::FNM_DOTMATCH) #=&gt; true\n\n   pattern = '**' '/' 'foo'\n   File.fnmatch(pattern, 'a/b/c/foo', File::FNM_PATHNAME)     #=&gt; true\n   File.fnmatch(pattern, '/a/b/c/foo', File::FNM_PATHNAME)    #=&gt; true\n   File.fnmatch(pattern, 'c:/a/b/c/foo', File::FNM_PATHNAME)  #=&gt; true\n   File.fnmatch(pattern, 'a/.b/c/foo', File::FNM_PATHNAME)    #=&gt; false\n   File.fnmatch(pattern, 'a/.b/c/foo', File::FNM_PATHNAME | File::FNM_DOTMATCH) #=&gt; true\n"
+full_name: File::fnmatch
+is_singleton: true
+name: fnmatch
+params: |
+  File.fnmatch( pattern, path, [flags] ) => (true or false)
+  File.fnmatch?( pattern, path, [flags] ) => (true or false)
+
+visibility: public

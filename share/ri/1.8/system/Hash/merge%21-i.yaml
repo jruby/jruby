@@ -1,0 +1,19 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Adds the contents of <em>other_hash</em> to <em>hsh</em>, overwriting entries with duplicate keys with those from <em>other_hash</em>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   h1 = { &quot;a&quot; =&gt; 100, &quot;b&quot; =&gt; 200 }\n   h2 = { &quot;b&quot; =&gt; 254, &quot;c&quot; =&gt; 300 }\n   h1.merge!(h2)   #=&gt; {&quot;a&quot;=&gt;100, &quot;b&quot;=&gt;254, &quot;c&quot;=&gt;300}\n"
+full_name: Hash#merge!
+is_singleton: false
+name: merge!
+params: |
+  hsh.merge!(other_hash)                                 => hsh
+  hsh.update(other_hash)                                 => hsh
+  hsh.merge!(other_hash){|key, oldval, newval| block}    => hsh
+  hsh.update(other_hash){|key, oldval, newval| block}    => hsh
+
+visibility: public

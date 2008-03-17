@@ -1,0 +1,13 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: day
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Get the day-of-the-month of this date.
+full_name: Date#mday
+is_singleton: false
+name: mday
+params: ()
+visibility: public

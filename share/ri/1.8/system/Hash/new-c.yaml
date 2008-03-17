@@ -1,0 +1,18 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns a new, empty hash. If this hash is subsequently accessed by a key that doesn't correspond to a hash entry, the value returned depends on the style of <tt>new</tt> used to create the hash. In the first form, the access returns <tt>nil</tt>. If <em>obj</em> is specified, this single object will be used for all <em>default values</em>. If a block is specified, it will be called with the hash object and the key, and should return the default value. It is the block's responsibility to store the value in the hash if required.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   h = Hash.new(&quot;Go Fish&quot;)\n   h[&quot;a&quot;] = 100\n   h[&quot;b&quot;] = 200\n   h[&quot;a&quot;]           #=&gt; 100\n   h[&quot;c&quot;]           #=&gt; &quot;Go Fish&quot;\n   # The following alters the single default object\n   h[&quot;c&quot;].upcase!   #=&gt; &quot;GO FISH&quot;\n   h[&quot;d&quot;]           #=&gt; &quot;GO FISH&quot;\n   h.keys           #=&gt; [&quot;a&quot;, &quot;b&quot;]\n\n   # While this creates a new default object each time\n   h = Hash.new { |hash, key| hash[key] = &quot;Go Fish: #{key}&quot; }\n   h[&quot;c&quot;]           #=&gt; &quot;Go Fish: c&quot;\n   h[&quot;c&quot;].upcase!   #=&gt; &quot;GO FISH: C&quot;\n   h[&quot;d&quot;]           #=&gt; &quot;Go Fish: d&quot;\n   h.keys           #=&gt; [&quot;c&quot;, &quot;d&quot;]\n"
+full_name: Hash::new
+is_singleton: true
+name: new
+params: |
+  Hash.new                          => hash
+  Hash.new(obj)                     => aHash
+  Hash.new {|hash, key| block }     => aHash
+
+visibility: public

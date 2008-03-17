@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Is a year a leap year in the Julian calendar?
+- !ruby/struct:SM::Flow::P 
+  body: All years divisible by 4 are leap years in the Julian calendar.
+full_name: Date::julian_leap?
+is_singleton: true
+name: julian_leap?
+params: (y)
+visibility: public

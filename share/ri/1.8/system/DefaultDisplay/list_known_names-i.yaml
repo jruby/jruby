@@ -1,0 +1,11 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: []
+
+full_name: DefaultDisplay#list_known_names
+is_singleton: false
+name: list_known_names
+params: (names)
+visibility: public

@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: row level library
+full_name: Net::SMTP#getok
+is_singleton: false
+name: getok
+params: ( fmt, *args )
+visibility: private

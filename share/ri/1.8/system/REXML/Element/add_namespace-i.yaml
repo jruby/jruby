@@ -1,0 +1,25 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Adds a namespace to this element.
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "prefix:"
+    body: the prefix string, or the namespace URI if <tt>uri</tt> is not supplied
+  - !ruby/struct:SM::Flow::LI 
+    label: "uri:"
+    body: the namespace URI. May be nil, in which <tt>prefix</tt> is used as the URI
+  type: :NOTE
+- !ruby/struct:SM::Flow::P 
+  body: "Evaluates to: this Element"
+- !ruby/struct:SM::Flow::VERB 
+  body: " a = Element.new(&quot;a&quot;)\n a.add_namespace(&quot;xmlns:foo&quot;, &quot;bar&quot; )\n a.add_namespace(&quot;foo&quot;, &quot;bar&quot;)  # shorthand for previous line\n a.add_namespace(&quot;twiddle&quot;)\n puts a   #-&gt; &lt;a xmlns:foo='bar' xmlns='twiddle'/&gt;\n"
+full_name: REXML::Element#add_namespace
+is_singleton: false
+name: add_namespace
+params: ( prefix, uri=nil )
+visibility: public

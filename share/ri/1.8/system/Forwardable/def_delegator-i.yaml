@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Alias for #def_instance_delegator"
+full_name: Forwardable#def_delegator
+is_singleton: false
+name: def_delegator
+params: (accessor, method, ali = method)
+visibility: public

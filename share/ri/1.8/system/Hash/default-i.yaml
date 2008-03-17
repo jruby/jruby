@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns the default value, the value that would be returned by <em>hsh</em>[<em>key</em>] if <em>key</em> did not exist in <em>hsh</em>. See also <tt>Hash::new</tt> and <tt>Hash#default=</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   h = Hash.new                            #=&gt; {}\n   h.default                               #=&gt; nil\n   h.default(2)                            #=&gt; nil\n\n   h = Hash.new(&quot;cat&quot;)                     #=&gt; {}\n   h.default                               #=&gt; &quot;cat&quot;\n   h.default(2)                            #=&gt; &quot;cat&quot;\n\n   h = Hash.new {|h,k| h[k] = k.to_i*10}   #=&gt; {}\n   h.default                               #=&gt; 0\n   h.default(2)                            #=&gt; 20\n"
+full_name: Hash#default
+is_singleton: false
+name: default
+params: |
+  hsh.default(key=nil)   => obj
+
+visibility: public

@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Reads exactly <tt>n</tt> bytes.
+- !ruby/struct:SM::Flow::P 
+  body: If the data read is nil an EOFError is raised.
+- !ruby/struct:SM::Flow::P 
+  body: "If the data read is too short a TruncatedDataError is raised and the read data is obtainable via its #data method."
+full_name: IO#readbytes
+is_singleton: false
+name: readbytes
+params: (n)
+visibility: public

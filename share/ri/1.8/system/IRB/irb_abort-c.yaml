@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IRB::irb_abort
+is_singleton: true
+name: irb_abort
+params: (irb, exception = Abort)
+visibility: public

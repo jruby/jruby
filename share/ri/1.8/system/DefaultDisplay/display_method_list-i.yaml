@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Display a list of method names
+full_name: DefaultDisplay#display_method_list
+is_singleton: false
+name: display_method_list
+params: (methods)
+visibility: public

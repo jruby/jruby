@@ -1,0 +1,31 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: char_no
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: line_no
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: text
+  rw: R
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: NO_TEXT
+  value: "\"??\".freeze"
+full_name: RDoc::Token
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: set_text
+name: Token
+superclass: Object

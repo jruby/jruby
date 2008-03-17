@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Loads and executes the Ruby program in the file <em>filename</em>. If the filename does not resolve to an absolute path, the file is searched for in the library directories listed in <tt>$:</tt>. If the optional <em>wrap</em> parameter is <tt>true</tt>, the loaded script will be executed under an anonymous module, protecting the calling program's global namespace. In no circumstance will any local variables in the loaded file be propagated to the loading environment.
+full_name: Kernel#load
+is_singleton: false
+name: load
+params: |
+  load(filename, wrap=false)   => true
+
+visibility: public

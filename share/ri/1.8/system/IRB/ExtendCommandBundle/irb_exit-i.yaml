@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IRB::ExtendCommandBundle#irb_exit
+is_singleton: false
+name: irb_exit
+params: (ret = 0)
+visibility: public

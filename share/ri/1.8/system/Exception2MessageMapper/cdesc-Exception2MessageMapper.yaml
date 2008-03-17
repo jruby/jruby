@@ -1,0 +1,29 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: []
+
+comment: 
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  name: E2MM
+  value: Exception2MessageMapper
+full_name: Exception2MessageMapper
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: Fail
+- !ruby/object:RI::MethodSummary 
+  name: Raise
+- !ruby/object:RI::MethodSummary 
+  name: bind
+- !ruby/object:RI::MethodSummary 
+  name: def_e2message
+- !ruby/object:RI::MethodSummary 
+  name: def_exception
+- !ruby/object:RI::MethodSummary 
+  name: fail
+name: Exception2MessageMapper
+superclass: 

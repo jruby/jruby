@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IRB::JobManager#irb
+is_singleton: false
+name: irb
+params: (key)
+visibility: public

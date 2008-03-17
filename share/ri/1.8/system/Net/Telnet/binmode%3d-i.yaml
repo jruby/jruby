@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Turn newline conversion on (false) or off (true).
+full_name: Net::Telnet#binmode=
+is_singleton: false
+name: binmode=
+params: (mode)
+visibility: public

@@ -1,0 +1,116 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: 
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: genspace
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: group_queue
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: indent
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: maxwidth
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: newline
+  rw: R
+- !ruby/object:RI::Attribute 
+  comment: 
+  name: output
+  rw: R
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: format
+- !ruby/object:RI::MethodSummary 
+  name: new
+- !ruby/object:RI::MethodSummary 
+  name: singleline_format
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: This class implements a pretty printing algorithm. It finds line breaks and nice indentations for grouped structure.
+- !ruby/struct:SM::Flow::P 
+  body: "By default, the class assumes that primitive elements are strings and each byte in the strings have single column in width. But it can be used for other situations by giving suitable arguments for some methods:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: newline object and space generation block for PrettyPrint.new
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: optional width argument for PrettyPrint#text
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: PrettyPrint#breakable
+  type: :BULLET
+- !ruby/struct:SM::Flow::P 
+  body: "There are several candidate uses:"
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: text formatting using proportional fonts
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: multibyte characters which has columns different to number of bytes
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: non-string formatting
+  type: :BULLET
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: Bugs
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: Box based formatting?
+  - !ruby/struct:SM::Flow::LI 
+    label: "*"
+    body: Other (better) model/algorithm?
+  type: :BULLET
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: References
+- !ruby/struct:SM::Flow::P 
+  body: Christian Lindig, Strictly Pretty, March 2000, http://www.st.cs.uni-sb.de/~lindig/papers/#pretty
+- !ruby/struct:SM::Flow::P 
+  body: Philip Wadler, A prettier printer, March 1998, http://homepages.inf.ed.ac.uk/wadler/topics/language-design.html#prettier
+- !ruby/struct:SM::Flow::H 
+  level: 2
+  text: Author
+- !ruby/struct:SM::Flow::P 
+  body: Tanaka Akira &lt;akr@m17n.org&gt;
+constants: []
+
+full_name: PrettyPrint
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: break_outmost_groups
+- !ruby/object:RI::MethodSummary 
+  name: breakable
+- !ruby/object:RI::MethodSummary 
+  name: current_group
+- !ruby/object:RI::MethodSummary 
+  name: fill_breakable
+- !ruby/object:RI::MethodSummary 
+  name: first?
+- !ruby/object:RI::MethodSummary 
+  name: flush
+- !ruby/object:RI::MethodSummary 
+  name: group
+- !ruby/object:RI::MethodSummary 
+  name: group_sub
+- !ruby/object:RI::MethodSummary 
+  name: nest
+- !ruby/object:RI::MethodSummary 
+  name: text
+name: PrettyPrint
+superclass: Object

@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: CSV::IOBuf#read
+is_singleton: false
+name: read
+params: (size)
+visibility: private

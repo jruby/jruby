@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: q
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: This is similar to PrettyPrint::format but the result has no breaks.
+- !ruby/struct:SM::Flow::P 
+  body: <tt>maxwidth</tt>, <tt>newline</tt> and <tt>genspace</tt> are ignored.
+- !ruby/struct:SM::Flow::P 
+  body: The invocation of <tt>breakable</tt> in the block doesn't break a line and is treated as just an invocation of <tt>text</tt>.
+full_name: PrettyPrint::singleline_format
+is_singleton: true
+name: singleline_format
+params: (output='', maxwidth=nil, newline=nil, genspace=nil) {|q| ...}
+visibility: public

@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: RDoc::Page#write_extra_pages
+is_singleton: false
+name: write_extra_pages
+params: ()
+visibility: public

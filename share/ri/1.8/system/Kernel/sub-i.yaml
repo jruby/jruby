@@ -1,0 +1,15 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Equivalent to <tt>$_.sub(<em>args</em>)</tt>, except that <tt>$_</tt> will be updated if substitution occurs.
+full_name: Kernel#sub
+is_singleton: false
+name: sub
+params: |
+  sub(pattern, replacement)   => $_
+  sub(pattern) { block }      => $_
+
+visibility: public

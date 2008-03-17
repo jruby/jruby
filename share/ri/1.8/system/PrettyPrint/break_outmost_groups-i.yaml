@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: PrettyPrint#break_outmost_groups
+is_singleton: false
+name: break_outmost_groups
+params: ()
+visibility: public

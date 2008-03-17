@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns <tt>true</tt> if <em>stat</em> is a regular file (not a device file, pipe, socket, etc.).
+- !ruby/struct:SM::Flow::VERB 
+  body: "   File.stat(&quot;testfile&quot;).file?   #=&gt; true\n"
+full_name: File::Stat#file?
+is_singleton: false
+name: file?
+params: |
+  stat.file?    => true or false
+
+visibility: public

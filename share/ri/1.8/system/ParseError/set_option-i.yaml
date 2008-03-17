@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: ParseError#set_option
+is_singleton: false
+name: set_option
+params: (opt, eq)
+visibility: public

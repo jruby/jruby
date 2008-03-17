@@ -1,0 +1,17 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns a new array created by sorting <em>self</em>. Comparisons for the sort will be done using the <tt>&lt;=&gt;</tt> operator or using an optional code block. The block implements a comparison between <em>a</em> and <em>b</em>, returning -1, 0, or +1. See also <tt>Enumerable#sort_by</tt>.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   a = [ &quot;d&quot;, &quot;a&quot;, &quot;e&quot;, &quot;c&quot;, &quot;b&quot; ]\n   a.sort                    #=&gt; [&quot;a&quot;, &quot;b&quot;, &quot;c&quot;, &quot;d&quot;, &quot;e&quot;]\n   a.sort {|x,y| y &lt;=&gt; x }   #=&gt; [&quot;e&quot;, &quot;d&quot;, &quot;c&quot;, &quot;b&quot;, &quot;a&quot;]\n"
+full_name: Array#sort
+is_singleton: false
+name: sort
+params: |
+  array.sort                   -> an_array 
+  array.sort {| a,b | block }  -> an_array 
+
+visibility: public

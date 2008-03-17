@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Comparison---Returns -1 if <em>mod</em> includes <em>other_mod</em>, 0 if <em>mod</em> is the same as <em>other_mod</em>, and +1 if <em>mod</em> is included by <em>other_mod</em> or if <em>mod</em> has no relationship with <em>other_mod</em>. Returns <tt>nil</tt> if <em>other_mod</em> is not a module.
+full_name: Module#<=>
+is_singleton: false
+name: <=>
+params: |
+  mod <=> other_mod   => -1, 0, +1, or nil
+
+visibility: public

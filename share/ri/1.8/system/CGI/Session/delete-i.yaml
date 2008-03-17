@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Delete the session from storage. Also closes the storage.
+- !ruby/struct:SM::Flow::P 
+  body: Note that the session's data is <em>not</em> automatically deleted upon the session expiring.
+full_name: CGI::Session#delete
+is_singleton: false
+name: delete
+params: ()
+visibility: public

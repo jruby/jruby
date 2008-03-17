@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: CSV::IOReader::new
+is_singleton: true
+name: new
+params: (io, fs = ',', rs = nil)
+visibility: public

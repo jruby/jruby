@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: OpenStruct#new_ostruct_member
+is_singleton: false
+name: new_ostruct_member
+params: (name)
+visibility: public

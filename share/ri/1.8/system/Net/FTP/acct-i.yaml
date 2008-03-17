@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Sends the ACCT command. TODO: more info."
+full_name: Net::FTP#acct
+is_singleton: false
+name: acct
+params: (account)
+visibility: public

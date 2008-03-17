@@ -1,0 +1,16 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Returns an integer representing the device type on which <em>stat</em> resides. Returns <tt>nil</tt> if the operating system doesn't support this feature.
+- !ruby/struct:SM::Flow::VERB 
+  body: "   File.stat(&quot;/dev/fd1&quot;).rdev   #=&gt; 513\n   File.stat(&quot;/dev/tty&quot;).rdev   #=&gt; 1280\n"
+full_name: File::Stat#rdev
+is_singleton: false
+name: rdev
+params: |
+  stat.rdev   =>  fixnum or nil
+
+visibility: public

@@ -1,0 +1,93 @@
+--- !ruby/object:RI::ClassDescription 
+attributes: []
+
+class_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: new
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: See rdoc/parsers/parse_f95.rb
+constants: 
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/object:SM::Flow::LIST 
+    contents: 
+    - !ruby/struct:SM::Flow::LI 
+      label: "\"false\":"
+      body: Comments are below source code
+    - !ruby/struct:SM::Flow::LI 
+      label: "\"true\" :"
+      body: Comments are upper source code
+    type: :NOTE
+  name: COMMENTS_ARE_UPPER
+  value: "false"
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: Internal alias message
+  name: INTERNAL_ALIAS_MES
+  value: "\"Alias for\""
+- !ruby/object:RI::Constant 
+  comment: 
+  - !ruby/struct:SM::Flow::P 
+    body: External alias message
+  name: EXTERNAL_ALIAS_MES
+  value: "\"The entity is\""
+full_name: RDoc::Fortran95parser
+includes: []
+
+instance_methods: 
+- !ruby/object:RI::MethodSummary 
+  name: block_end?
+- !ruby/object:RI::MethodSummary 
+  name: block_start?
+- !ruby/object:RI::MethodSummary 
+  name: check_external_aliases
+- !ruby/object:RI::MethodSummary 
+  name: check_public_methods
+- !ruby/object:RI::MethodSummary 
+  name: collect_first_comment
+- !ruby/object:RI::MethodSummary 
+  name: comment_out?
+- !ruby/object:RI::MethodSummary 
+  name: continuous_line?
+- !ruby/object:RI::MethodSummary 
+  name: definition_info
+- !ruby/object:RI::MethodSummary 
+  name: find_arguments
+- !ruby/object:RI::MethodSummary 
+  name: find_comments
+- !ruby/object:RI::MethodSummary 
+  name: find_namelists
+- !ruby/object:RI::MethodSummary 
+  name: find_visibility
+- !ruby/object:RI::MethodSummary 
+  name: initialize_external_method
+- !ruby/object:RI::MethodSummary 
+  name: initialize_public_method
+- !ruby/object:RI::MethodSummary 
+  name: parse_program_or_module
+- !ruby/object:RI::MethodSummary 
+  name: parse_subprogram
+- !ruby/object:RI::MethodSummary 
+  name: parse_visibility
+- !ruby/object:RI::MethodSummary 
+  name: progress
+- !ruby/object:RI::MethodSummary 
+  name: remove_empty_head_lines
+- !ruby/object:RI::MethodSummary 
+  name: remove_header_marker
+- !ruby/object:RI::MethodSummary 
+  name: remove_private_comments
+- !ruby/object:RI::MethodSummary 
+  name: remove_trailing_alias
+- !ruby/object:RI::MethodSummary 
+  name: scan
+- !ruby/object:RI::MethodSummary 
+  name: semicolon_to_linefeed
+- !ruby/object:RI::MethodSummary 
+  name: set_visibility
+- !ruby/object:RI::MethodSummary 
+  name: united_to_one_line
+name: Fortran95parser
+superclass: Object

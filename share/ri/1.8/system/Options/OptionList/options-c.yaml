@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: Options::OptionList::options
+is_singleton: true
+name: options
+params: ()
+visibility: public

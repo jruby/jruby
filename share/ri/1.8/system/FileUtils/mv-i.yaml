@@ -1,0 +1,17 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: 
+- !ruby/object:RI::AliasName 
+  name: move
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Options: force noop verbose"
+- !ruby/struct:SM::Flow::P 
+  body: Moves file(s) <tt>src</tt> to <tt>dest</tt>. If <tt>file</tt> and <tt>dest</tt> exist on the different disk partition, the file is copied instead.
+- !ruby/struct:SM::Flow::VERB 
+  body: "  FileUtils.mv 'badname.rb', 'goodname.rb'\n  FileUtils.mv 'stuff.rb', '/notexist/lib/ruby', :force =&gt; true  # no error\n\n  FileUtils.mv %w(junk.txt dust.txt), '/home/aamine/.trash/'\n  FileUtils.mv Dir.glob('test*.rb'), 'test', :noop =&gt; true, :verbose =&gt; true\n"
+full_name: FileUtils#mv
+is_singleton: false
+name: mv
+params: (src, dest, options = {})
+visibility: public

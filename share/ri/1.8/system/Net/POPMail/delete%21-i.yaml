@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Alias for #delete"
+full_name: Net::POPMail#delete!
+is_singleton: false
+name: delete!
+params: ()
+visibility: public

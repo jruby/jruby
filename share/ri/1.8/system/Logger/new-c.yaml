@@ -1,0 +1,35 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Synopsis
+- !ruby/struct:SM::Flow::VERB 
+  body: "  Logger.new(name, shift_age = 7, shift_size = 1048576)\n  Logger.new(name, shift_age = 'weekly')\n"
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Args
+- !ruby/object:SM::Flow::LIST 
+  contents: 
+  - !ruby/struct:SM::Flow::LI 
+    label: "+logdev+:"
+    body: The log device. This is a filename (String) or IO object (typically <tt>STDOUT</tt>, <tt>STDERR</tt>, or an open file).
+  - !ruby/struct:SM::Flow::LI 
+    label: "+shift_age+:"
+    body: Number of old log files to keep, <b>or</b> frequency of rotation (<tt>daily</tt>, <tt>weekly</tt> or <tt>monthly</tt>).
+  - !ruby/struct:SM::Flow::LI 
+    label: "+shift_size+:"
+    body: Maximum logfile size (only applies when <tt>shift_age</tt> is a number).
+  type: :NOTE
+- !ruby/struct:SM::Flow::H 
+  level: 3
+  text: Description
+- !ruby/struct:SM::Flow::P 
+  body: Create an instance.
+full_name: Logger::new
+is_singleton: true
+name: new
+params: (logdev, shift_age = 0, shift_size = 1048576)
+visibility: public

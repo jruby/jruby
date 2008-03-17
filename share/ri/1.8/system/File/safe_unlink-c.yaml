@@ -1,0 +1,12 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: Removes a list of files. Each parameter should be the name of the file to delete. If the last parameter isn't a String, verbose mode will be enabled. Returns the number of files deleted.
+full_name: File::safe_unlink
+is_singleton: true
+name: safe_unlink
+params: (*files)
+visibility: public

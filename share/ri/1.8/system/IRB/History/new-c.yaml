@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IRB::History::new
+is_singleton: true
+name: new
+params: (size = 16)
+visibility: public

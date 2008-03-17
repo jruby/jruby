@@ -1,0 +1,14 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+- !ruby/struct:SM::Flow::P 
+  body: "Performs subtraction: the class of the resulting object depends on the class of <tt>numeric</tt> and on the magnitude of the result."
+full_name: Fixnum#-
+is_singleton: false
+name: "-"
+params: |
+  fix - numeric   =>  numeric_result
+
+visibility: public

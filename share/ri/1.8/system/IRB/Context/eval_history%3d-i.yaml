@@ -1,0 +1,10 @@
+--- !ruby/object:RI::MethodDescription 
+aliases: []
+
+block_params: 
+comment: 
+full_name: IRB::Context#eval_history=
+is_singleton: false
+name: eval_history=
+params: (no)
+visibility: public
