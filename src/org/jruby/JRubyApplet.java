@@ -112,6 +112,7 @@ public class JRubyApplet extends JApplet {
             module.getMetaClass().defineMethod("on_stop", cb.getSingletonMethod("on_stop"));
             module.getMetaClass().defineMethod("on_destroy", cb.getSingletonMethod("on_destroy"));
             module.getMetaClass().defineMethod("on_paint", cb.getSingletonMethod("on_paint"));
+            runtime.evalScriptlet("def JRubyApplet.content_pane ; applet.get_content_pane ; end");
         }
 
         private static RubyProc blockToProc(Ruby runtime, Block block) {
