@@ -15,9 +15,12 @@ import org.jruby.ext.posix.POSIX.ERRORS;
 
 public class JRubyPOSIXHandler implements POSIXHandler {
     Ruby runtime;
+    private boolean isVerbose;
     
     public JRubyPOSIXHandler(Ruby runtime) {
         this.runtime = runtime;
+
+        isVerbose = Boolean.getBoolean("jruby.native.verbose");
     }
 
     public void error(ERRORS error, String extraData) {
@@ -39,6 +42,10 @@ public class JRubyPOSIXHandler implements POSIXHandler {
             ourID = ID.MISCELLANEOUS;
         }
         runtime.getWarnings().warn(ourID, message, data);
+    }
+    
+    public boolean isVerbose() {
+        return isVerbose;
     }
     
     public File getCurrentWorkingDirectory() {

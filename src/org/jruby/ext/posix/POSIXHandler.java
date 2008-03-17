@@ -21,8 +21,19 @@ public interface POSIXHandler {
         }
     }
     public void error(POSIX.ERRORS error, String extraData);
-    public void unimplementedError(String message);
+    
+    /**
+     * Specify that posix method is unimplemented.  In JRuby we generate an
+     * exception with this.
+     */
+    public void unimplementedError(String methodName);
+    
     public void warn(WARNING_ID id, String message, Object... data);
+    
+    /**
+     * Should we provide verbose output about POSIX activities
+     */
+    public boolean isVerbose();
 
     /**
      * Get current working directory of your runtime.

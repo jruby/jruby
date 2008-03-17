@@ -1,10 +1,7 @@
 package org.jruby.ext.posix;
 
 import java.util.HashMap;
-
 import org.jruby.ext.posix.util.Platform;
-import org.jruby.util.SafePropertyAccessor;
-
 import com.sun.jna.Native;
 
 public class POSIXFactory {
@@ -27,7 +24,8 @@ public class POSIXFactory {
                     posix = loadSolarisPOSIX(handler);
                 }
                 
-                if (SafePropertyAccessor.getBoolean("jruby.native.verbose")) {
+                // ENEBO: Should printing be done through a handler+log method?
+                if (handler.isVerbose()) {
                     if (posix != null) {
                         System.err.println("Successfully loaded native POSIX impl.");
                     } else {
@@ -35,7 +33,7 @@ public class POSIXFactory {
                     }
                 }
             } catch (Throwable t) {
-                if (SafePropertyAccessor.getBoolean("jruby.native.verbose")) {
+                if (handler.isVerbose()) {
                     System.err.println("Failed to load native POSIX impl; falling back on Java impl. Stacktrace follows.");
                     t.printStackTrace();
                 }
