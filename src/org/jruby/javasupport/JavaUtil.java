@@ -173,7 +173,7 @@ public class JavaUtil {
         if (rubyObject instanceof JavaObject) {
             Object value =  ((JavaObject) rubyObject).getValue();
             
-            return convertArgument(value, javaClass);
+            return convertArgument(rubyObject.getRuntime(), value, javaClass);
             
         } else if (javaClass == Object.class || javaClass == null) {
             /* The Java method doesn't care what class it is, but we need to
@@ -440,7 +440,11 @@ public class JavaUtil {
         }
     }
 
-    public static Object convertArgument(Object argument, Class parameterType) {
+    public static Object convertArgument(Ruby runtime, Object argument, Class parameterType) {
+        if (argument == null && parameterType.isPrimitive()) {
+            throw runtime.newTypeError("primitives do not accept null");
+        }
+        
         if (argument instanceof JavaObject) {
             argument = ((JavaObject) argument).getValue();
             if (argument == null) {
@@ -472,7 +476,6 @@ public class JavaUtil {
         if (isDuckTypeConvertable(argument.getClass(), parameterType)) {
             RubyObject rubyObject = (RubyObject) argument;
             if (!rubyObject.respondsTo("java_object")) {
-                Ruby runtime = rubyObject.getRuntime();
                 IRubyObject javaUtilities = runtime.getJavaSupport().getJavaUtilitiesModule();
                 IRubyObject javaInterfaceModule = Java.get_interface_module(javaUtilities, JavaClass.get(runtime, parameterType));
                 if (!((RubyModule)javaInterfaceModule).isInstance(rubyObject)) {

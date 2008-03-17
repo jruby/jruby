@@ -202,7 +202,7 @@ public class JavaEmbedUtils {
      * 
      */
     public static Object rubyToJava(Ruby runtime, IRubyObject value, Class type) {
-        return JavaUtil.convertArgument(Java.ruby_to_java(runtime.getObject(), value, Block.NULL_BLOCK), type);
+        return JavaUtil.convertArgument(runtime, Java.ruby_to_java(runtime.getObject(), value, Block.NULL_BLOCK), type);
     }
 
     /**

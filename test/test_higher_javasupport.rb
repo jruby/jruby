@@ -11,6 +11,11 @@ class TestHigherJavasupport < Test::Unit::TestCase
   JArray = ArrayList = java.util.ArrayList
   FinalMethodBaseTest = org.jruby.test.FinalMethodBaseTest
   Annotation = java.lang.annotation.Annotation
+  ClassWithPrimitive = org.jruby.test.ClassWithPrimitive
+  
+  def test_java_int_primitive_assignment
+    assert_raises(TypeError) { ClassWithPrimitive.new.an_int = nil }
+  end
 
   def test_java_passing_class
     assert_equal("java.util.ArrayList", TestHelper.getClassName(ArrayList))

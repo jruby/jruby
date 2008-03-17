@@ -177,7 +177,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         for (int i = 0; i < count; i++) {
             // TODO: call ruby method
             IRubyObject ith = constructor_args.aref(new IRubyObject[] { getRuntime().newFixnum(i) });
-            converted[i] = JavaUtil.convertArgument(Java.ruby_to_java(this, ith, Block.NULL_BLOCK), parameterTypes[i]);
+            converted[i] = JavaUtil.convertArgument(getRuntime(), Java.ruby_to_java(this, ith, Block.NULL_BLOCK), parameterTypes[i]);
         }
 
         JavaProxyInvocationHandler handler = new JavaProxyInvocationHandler() {
@@ -233,7 +233,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         for (int i = 0; i < count; i++) {
             // TODO: call ruby method
             IRubyObject ith = constructor_args.aref(new IRubyObject[] { getRuntime().newFixnum(i) });
-            converted[i] = JavaUtil.convertArgument(Java.ruby_to_java(this, ith, Block.NULL_BLOCK), parameterTypes[i]);
+            converted[i] = JavaUtil.convertArgument(getRuntime(), Java.ruby_to_java(this, ith, Block.NULL_BLOCK), parameterTypes[i]);
         }
 
         final IRubyObject recv = this;

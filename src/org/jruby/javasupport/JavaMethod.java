@@ -197,7 +197,7 @@ public class JavaMethod extends JavaCallable {
         }
         Object javaInvokee = ((JavaObject) invokee).getValue();
         Object[] arguments = new Object[args.length - 1];
-        convertArguments(arguments, args, 1);
+        convertArguments(getRuntime(), arguments, args, 1);
 
         if (! method.getDeclaringClass().isInstance(javaInvokee)) {
             throw getRuntime().newTypeError("invokee not instance of method's class (" +
@@ -229,7 +229,7 @@ public class JavaMethod extends JavaCallable {
         }
         Object[] arguments = new Object[args.length];
         System.arraycopy(args, 0, arguments, 0, arguments.length);
-        convertArguments(arguments, args, 0);
+        convertArguments(getRuntime(), arguments, args, 0);
         return invokeWithExceptionHandling(method, null, arguments);
     }
 
@@ -279,10 +279,10 @@ public class JavaMethod extends JavaCallable {
         return str.toString();
     }
 
-    private void convertArguments(Object[] arguments, Object[] args, int from) {
+    private void convertArguments(Ruby runtime, Object[] arguments, Object[] args, int from) {
         Class<?>[] types = parameterTypes;
         for (int i = arguments.length; --i >= 0; ) {
-            arguments[i] = JavaUtil.convertArgument(args[i+from], types[i]);
+            arguments[i] = JavaUtil.convertArgument(runtime, args[i+from], types[i]);
         }
     }
 
