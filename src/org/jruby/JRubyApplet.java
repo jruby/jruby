@@ -51,6 +51,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.demo.TextAreaReadline;
 import org.jruby.javasupport.JavaObject;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ThreadContext;
@@ -104,7 +105,7 @@ public class JRubyApplet extends JApplet {
     }
 
     public static class AppletModule {
-        public static void setup(Ruby runtime, IRubyObject applet) {
+        public static void setup(Ruby runtime, JRubyApplet applet) {
             RubyModule module = runtime.defineModule("JRubyApplet");
             module.dataWrapStruct(applet);
             CallbackFactory cb = runtime.callbackFactory(AppletModule.class);
@@ -127,37 +128,37 @@ public class JRubyApplet extends JApplet {
             }
         }
 
-        private static JRubyApplet appletUnwrapped(IRubyObject recv) {
-            return (JRubyApplet)((JavaObject)recv.dataGetStruct()).getValue();
-        }
-
         public static IRubyObject applet(IRubyObject recv, Block block) {
-            return (IRubyObject)recv.dataGetStruct();
+            return ((JRubyApplet)recv.dataGetStruct()).getRubyObject();
         }
 
         public static IRubyObject on_start(IRubyObject recv, Block block) {
-            JRubyApplet applet = appletUnwrapped(recv);
+            JRubyApplet applet = (JRubyApplet)recv.dataGetStruct();
             applet.setStartProc(blockToProc(recv.getRuntime(), block));
             return recv;
         }
 
         public static IRubyObject on_stop(IRubyObject recv, Block block) {
-            JRubyApplet applet = appletUnwrapped(recv);
+            JRubyApplet applet = (JRubyApplet)recv.dataGetStruct();
             applet.setStopProc(blockToProc(recv.getRuntime(), block));
             return recv;
         }
 
         public static IRubyObject on_destroy(IRubyObject recv, Block block) {
-            JRubyApplet applet = appletUnwrapped(recv);
+            JRubyApplet applet = (JRubyApplet)recv.dataGetStruct();
             applet.setDestroyProc(blockToProc(recv.getRuntime(), block));
             return recv;
         }
 
         public static IRubyObject on_paint(IRubyObject recv, Block block) {
-            JRubyApplet applet = appletUnwrapped(recv);
+            JRubyApplet applet = (JRubyApplet)recv.dataGetStruct();
             applet.setPaintProc(blockToProc(recv.getRuntime(), block));
             return recv;
         }
+    }
+
+    private synchronized IRubyObject getRubyObject() {
+        return rubyObject;
     }
 
     private boolean getBooleanParameter(String name, boolean default_value) {
@@ -222,8 +223,8 @@ public class JRubyApplet extends JApplet {
             }};
             runtime = Ruby.newInstance(config);
             runtime.setSecurityRestricted(true);
-            rubyObject = JavaObject.wrap(runtime, this);
-            AppletModule.setup(runtime, rubyObject);
+            rubyObject = JavaUtil.convertJavaToUsableRubyObject(runtime, this);
+            AppletModule.setup(runtime, this);
             console.attachRuntime(runtime);
         }
 
@@ -340,7 +341,7 @@ public class JRubyApplet extends JApplet {
             console.setPaintCallback(new PaintCallback() {
                 public void paint(Graphics g) {
                     if (applet.priorGraphics != g) {
-                        applet.wrappedGraphics = JavaObject.wrap(applet.runtime, g);
+                        applet.wrappedGraphics = JavaUtil.convertJavaToUsableRubyObject(applet.runtime, g);
                         applet.priorGraphics = g;
                     }
                     ThreadContext context = applet.runtime.getCurrentContext();
