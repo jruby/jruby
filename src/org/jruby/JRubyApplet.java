@@ -87,8 +87,6 @@ public class JRubyApplet extends JApplet {
     private RubyProc destroyProc;
     private Graphics priorGraphics;
     private IRubyObject wrappedGraphics;
-    private JTextArea errorText;
-    private JComponent errorComponent;
     private Console console;
 
     public interface PaintCallback {
@@ -192,24 +190,6 @@ public class JRubyApplet extends JApplet {
             console = new TrivialConsole();
         }
 
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    final JTextArea textArea = new JTextArea("Errors:\n\n");
-                    textArea.setEditable(false);
-                    final JScrollPane pane = new JScrollPane(textArea);
-                    pane.setOpaque(true);
-                    pane.setVisible(false);
-                    applet.errorText = textArea;
-                    applet.errorComponent = pane;
-                    applet.getLayeredPane().add(pane, new Integer(300));
-                }
-            });
-        } catch (InterruptedException e) { 
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException("Error setting up error panel", e.getCause());
-        }
-
         synchronized (this) {
             if (runtime != null) {
                 return;
@@ -232,15 +212,6 @@ public class JRubyApplet extends JApplet {
         final InputStream scriptStream = getCodeResourceAsStream(scriptName);
         final String evalString = getParameter("eval");
 
-        if ( scriptName == null && evalString == null ) {
-            showAppletError("No Ruby script specified.");
-            return;
-        }
-        if ( scriptName != null && scriptStream == null ) {
-            showAppletError("Script " + scriptName + " not found.");
-            return;
-        }
-
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
@@ -255,29 +226,7 @@ public class JRubyApplet extends JApplet {
             });
         } catch (InterruptedException e) {
         } catch (InvocationTargetException e) {
-            showException(e.getCause());
-        }
-    }
-
-    private void showException(Throwable t) {
-        StringWriter writer = new StringWriter();
-        t.printStackTrace(new PrintWriter(writer, true));
-        showAppletError(writer.toString());
-    }
-
-    private void showAppletError(final String message) {
-        final JRubyApplet applet = this;
-        System.err.println(message);
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    applet.errorComponent.setVisible(true);
-                    applet.errorText.append(message + "\n");
-                }
-            });
-        } catch (InterruptedException e) { 
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException("Error displaying applet error", e.getCause());
+            throw new RuntimeException("Error running script", e.getCause());
         }
     }
 
