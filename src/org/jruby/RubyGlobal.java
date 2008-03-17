@@ -417,14 +417,15 @@ public class RubyGlobal {
         }
 
         public IRubyObject set(IRubyObject value) {
-            int level = RubyNumeric.fix2int(value);
-            if (level < runtime.getSafeLevel()) {
-            	throw runtime.newSecurityError("tried to downgrade safe level from " + 
-            			runtime.getSafeLevel() + " to " + level);
-            }
-            runtime.setSafeLevel(level);
+//            int level = RubyNumeric.fix2int(value);
+//            if (level < runtime.getSafeLevel()) {
+//            	throw runtime.newSecurityError("tried to downgrade safe level from " + 
+//            			runtime.getSafeLevel() + " to " + level);
+//            }
+//            runtime.setSafeLevel(level);
             // thread.setSafeLevel(level);
-            return value;
+            runtime.getWarnings().warn(ID.SAFE_NOT_SUPPORTED, "SAFE levels are not supported in JRuby");
+            return RubyFixnum.newFixnum(runtime, runtime.getSafeLevel());
         }
     }
 
