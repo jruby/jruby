@@ -123,6 +123,10 @@ public class JavaLibCHelper {
     }
     
     public int lstat(String path, FileStat stat) {
+        File file = new File(path);
+
+        if (!file.exists()) handler.error(ERRORS.ENOENT, path);
+        
         // FIXME: Bulletproof this or no?
         JavaFileStat jstat = (JavaFileStat) stat;
         
