@@ -193,58 +193,50 @@ public class RubyIO extends RubyObject {
         openFile.setProcess(process);
 
         try {
-            InputStream pipeIn = process.getInputStream();
-            if (pipeIn instanceof FilterInputStream) {
-                try {
-                    pipeIn = (InputStream)
-                        FieldAccess.getProtectedFieldValue(FilterInputStream.class,
-                            "in", pipeIn);
-                } catch (Exception e) {
+            if (openFile.isReadable()) {
+                InputStream pipeIn = process.getInputStream();
+                if (pipeIn instanceof FilterInputStream) {
+                    try {
+                        pipeIn = (InputStream)
+                            FieldAccess.getProtectedFieldValue(FilterInputStream.class,
+                                "in", pipeIn);
+                    } catch (Exception e) {
+                    }
                 }
-            }
-            ChannelDescriptor main = new ChannelDescriptor(
-                    Channels.newChannel(pipeIn),
-                    getNewFileno(),
-                    new FileDescriptor());
-            
-            OutputStream pipeOut = process.getOutputStream();
-            if (pipeOut instanceof FilterOutputStream) {
-                try {
-                    pipeOut = (OutputStream)
-                        FieldAccess.getProtectedFieldValue(FilterOutputStream.class,
-                            "out", pipeOut);
-                } catch (Exception e) {
-                }
-            }
-            ChannelDescriptor pipe = new ChannelDescriptor(
-                    Channels.newChannel(pipeOut),
-                    getNewFileno(),
-                    new FileDescriptor());
-            
-            if (!openFile.isReadable()) {
-                main.close();
-                pipeIn.close();
-            } else {
+                ChannelDescriptor main = new ChannelDescriptor(
+                        Channels.newChannel(pipeIn),
+                        getNewFileno(),
+                        new FileDescriptor());
+                main.setCanBeSeekable(false);
+                
                 openFile.setMainStream(new ChannelStream(getRuntime(), main));
+                registerDescriptor(main);
             }
             
-            if (!openFile.isWritable()) {
-                pipe.close();
-                pipeOut.close();
-            } else {
+            if (openFile.isWritable()) {
+                OutputStream pipeOut = process.getOutputStream();
+                if (pipeOut instanceof FilterOutputStream) {
+                    try {
+                        pipeOut = (OutputStream)
+                            FieldAccess.getProtectedFieldValue(FilterOutputStream.class,
+                                "out", pipeOut);
+                    } catch (Exception e) {
+                    }
+                }
+                ChannelDescriptor pipe = new ChannelDescriptor(
+                        Channels.newChannel(pipeOut),
+                        getNewFileno(),
+                        new FileDescriptor());
+                pipe.setCanBeSeekable(false);
+                
                 if (openFile.getMainStream() != null) {
                     openFile.setPipeStream(new ChannelStream(getRuntime(), pipe));
                 } else {
                     openFile.setMainStream(new ChannelStream(getRuntime(), pipe));
                 }
+                
+                registerDescriptor(pipe);
             }
-            
-            registerDescriptor(main);
-            registerDescriptor(pipe);
-        } catch (BadDescriptorException ex) {
-            throw getRuntime().newErrnoEBADFError();
-        } catch (IOException ex) {
-            throw getRuntime().newIOErrorFromException(ex);
         } catch (InvalidValueException e) {
             throw getRuntime().newErrnoEINVALError();
         }
@@ -405,10 +397,10 @@ public class RubyIO extends RubyObject {
                         selfFile.getMainStream().clearerr();
                         
                         // dup2 new fd into self to preserve fileno and references to it
-                        originalDescriptor.dup2(selfDescriptor);
+                        originalDescriptor.dup2Into(selfDescriptor);
                         
                         // re-register, since fileno points at something new now
-                        registerDescriptor(selfFile.getMainStream().getDescriptor());
+                        registerDescriptor(selfDescriptor);
                     } else {
                         Stream pipeFile = selfFile.getPipeStream();
                         int mode = selfFile.getMode();
@@ -438,6 +430,7 @@ public class RubyIO extends RubyObject {
                         }
                         selfFile.setMode(mode);
                     }
+                    
                     // TODO: anything threads attached to original fd are notified of the close...
                     // see rb_thread_fd_close
                     
@@ -447,22 +440,21 @@ public class RubyIO extends RubyObject {
                     }
                 }
 
-                // TODO: more pipe logic
-    //            if (fptr->f2 && fd != fileno(fptr->f2)) {
-    //                fd = fileno(fptr->f2);
-    //                if (!orig->f2) {
-    //                    fclose(fptr->f2);
-    //                    rb_thread_fd_close(fd);
-    //                    fptr->f2 = 0;
-    //                }
-    //                else if (fd != (fd2 = fileno(orig->f2))) {
-    //                    fclose(fptr->f2);
-    //                    rb_thread_fd_close(fd);
-    //                    if (dup2(fd2, fd) < 0)
-    //                        rb_sys_fail(orig->path);
-    //                    fptr->f2 = rb_fdopen(fd, "w");
-    //                }
-    //            }
+                if (selfFile.getPipeStream() != null && selfDescriptor.getFileno() != selfFile.getPipeStream().getDescriptor().getFileno()) {
+                    int fd = selfFile.getPipeStream().getDescriptor().getFileno();
+                    
+                    if (originalFile.getPipeStream() == null) {
+                        selfFile.getPipeStream().fclose();
+                        selfFile.setPipeStream(null);
+                    } else if (fd != originalFile.getPipeStream().getDescriptor().getFileno()) {
+                        selfFile.getPipeStream().fclose();
+                        ChannelDescriptor newFD2 = originalFile.getPipeStream().getDescriptor().dup2(fd);
+                        selfFile.setPipeStream(ChannelStream.fdopen(getRuntime(), newFD2, getIOModes(getRuntime(), "w")));
+                        
+                        // re-register, since fileno points at something new now
+                        registerDescriptor(newFD2);
+                    }
+                }
                 
                 // TODO: restore binary mode
     //            if (fptr->mode & FMODE_BINMODE) {
@@ -954,7 +946,6 @@ public class RubyIO extends RubyObject {
         } catch (BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         } catch (IOException e) {
-            e.printStackTrace();
             throw getRuntime().newSystemCallError(e.getMessage());
         }
     }
@@ -1282,7 +1273,7 @@ public class RubyIO extends RubyObject {
         OpenFile myOpenFile = getOpenFileChecked();
         
         try {
-            myOpenFile.getMainStream().fseek(offset, Stream.SEEK_SET);
+            myOpenFile.getMainStream().lseek(offset, Stream.SEEK_SET);
         } catch (BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         } catch (InvalidValueException e) {
@@ -1438,7 +1429,7 @@ public class RubyIO extends RubyObject {
         OpenFile myOpenfile = getOpenFileChecked();
         
         try {
-            myOpenfile.getMainStream().fseek(0L, Stream.SEEK_SET);
+            myOpenfile.getMainStream().lseek(0L, Stream.SEEK_SET);
             myOpenfile.getMainStream().clearerr();
             
             // TODO: This is some goofy global file value from MRI..what to do?
@@ -1557,11 +1548,11 @@ public class RubyIO extends RubyObject {
             
             if (originalFile.getPipeStream() != null) {
                 originalFile.getPipeStream().fflush();
-                originalFile.getMainStream().fseek(0, Stream.SEEK_CUR);
+                originalFile.getMainStream().lseek(0, Stream.SEEK_CUR);
             } else if (originalFile.isWritable()) {
                 originalFile.getMainStream().fflush();
             } else {
-                originalFile.getMainStream().fseek(0, Stream.SEEK_CUR);
+                originalFile.getMainStream().lseek(0, Stream.SEEK_CUR);
             }
 
             newFile.setMode(originalFile.getMode());

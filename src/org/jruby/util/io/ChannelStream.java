@@ -50,6 +50,7 @@ import java.nio.channels.Channel;
 import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectableChannel;
+import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
 import static java.util.logging.Logger.getLogger;
 import org.jruby.Finalizable;
@@ -430,7 +431,7 @@ public class ChannelStream implements Stream, Finalizable {
         // Correct position for read / write buffering (we could invalidate, but expensive)
         if (descriptor.isSeekable()) {
             int ungotcCopy = ungotc;
-            fseek(0, SEEK_CUR);
+            lseek(0, SEEK_CUR);
             ungotc = ungotcCopy;
 
             FileChannel fileChannel = (FileChannel)descriptor.getChannel();
@@ -447,11 +448,15 @@ public class ChannelStream implements Stream, Finalizable {
     }
     
     /**
+     * Implementation of libc "lseek", which seeks on seekable streams, raises
+     * EPIPE if the fd is assocated with a pipe, socket, or FIFO, and doesn't
+     * do anything for other cases (like stdio).
+     * 
      * @throws IOException 
      * @throws InvalidValueException 
      * @see org.jruby.util.IOHandler#seek(long, int)
      */
-    public synchronized void fseek(long offset, int type) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
+    public synchronized void lseek(long offset, int type) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
         if (descriptor.isSeekable()) {
             FileChannel fileChannel = (FileChannel)descriptor.getChannel();
             ungotc = -1;
@@ -478,11 +483,16 @@ public class ChannelStream implements Stream, Finalizable {
                 }
             } catch (IllegalArgumentException e) {
                 throw new InvalidValueException();
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
+                throw ioe;
             }
-        } else if (descriptor.isNull()) {
-            return;
-        } else {
+        } else if (descriptor.getChannel() instanceof SelectableChannel) {
+            // TODO: It's perhaps just a coincidence that all the channels for
+            // which we should raise are instanceof SelectableChannel, since
+            // stdio is not...so this bothers me slightly. -CON
             throw new PipeException();
+        } else {
         }
     }
 
@@ -859,7 +869,7 @@ public class ChannelStream implements Stream, Finalizable {
             
             descriptor = new ChannelDescriptor(file.getChannel(), descriptor.getFileno(), modes, file.getFD());
         
-            if (modes.isAppendable()) fseek(0, SEEK_END);
+            if (modes.isAppendable()) lseek(0, SEEK_END);
         }
     }
     
@@ -870,7 +880,7 @@ public class ChannelStream implements Stream, Finalizable {
         
         Stream stream = fdopen(runtime, descriptor, modes);
         
-        if (modes.isAppendable()) stream.fseek(0, Stream.SEEK_END);
+        if (modes.isAppendable()) stream.lseek(0, Stream.SEEK_END);
         
         return stream;
     }

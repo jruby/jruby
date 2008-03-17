@@ -102,7 +102,7 @@ public class OpenFile {
     public void seek(long offset, int whence) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
         flushBeforeSeek();
 
-        getWriteStream().fseek(offset, whence);
+        getWriteStream().lseek(offset, whence);
     }
 
     private void flushBeforeSeek() throws BadDescriptorException, IOException {

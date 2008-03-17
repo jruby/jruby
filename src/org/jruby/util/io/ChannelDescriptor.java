@@ -78,19 +78,19 @@ public class ChannelDescriptor {
      * The file number (equivalent to the int file descriptor value in POSIX)
      * for this descriptor.
      */
-    private final int fileno;
+    private int fileno;
     /** The java.io.FileDescriptor object for this descriptor. */
-    private final FileDescriptor fileDescriptor;
+    private FileDescriptor fileDescriptor;
     /**
      * The original org.jruby.util.io.ModeFlags with which the specified
      * channel was opened.
      */
-    private final ModeFlags originalModes;
+    private ModeFlags originalModes;
     /** 
      * The reference count for the provided channel.
      * Only counts references through ChannelDescriptor instances.
      */
-    private final AtomicInteger refCounter;
+    private AtomicInteger refCounter;
 
     /**
      * Used to work-around blocking problems with STDIN. In most cases <code>null</code>.
@@ -98,6 +98,17 @@ public class ChannelDescriptor {
      * for more details. You probably should not use it.
      */
     private InputStream baseInputStream;
+    
+    /**
+     * Process streams get Channel.newChannel()ed into FileChannel but are not actually
+     * seekable. So instead of just the isSeekable check doing instanceof FileChannel,
+     * we must also add this boolean to check, which we set to false when it's known
+     * that the incoming channel is from a process.
+     * 
+     * FIXME: This is gross, and it's NIO's fault for not providing a nice way to
+     * tell if a channel is "really" seekable.
+     */
+    private boolean canBeSeekable = true;
     
     /**
      * Construct a new ChannelDescriptor with the specified channel, file number,
@@ -112,12 +123,13 @@ public class ChannelDescriptor {
      * @param fileDescriptor The java.io.FileDescriptor object to associate with this ChannelDescriptor
      * @param refCounter The reference counter from another ChannelDescriptor being duped.
      */
-    private ChannelDescriptor(Channel channel, int fileno, ModeFlags originalModes, FileDescriptor fileDescriptor, AtomicInteger refCounter) {
+    private ChannelDescriptor(Channel channel, int fileno, ModeFlags originalModes, FileDescriptor fileDescriptor, AtomicInteger refCounter, boolean canBeSeekable) {
         this.refCounter = refCounter;
         this.channel = channel;
         this.fileno = fileno;
         this.originalModes = originalModes;
         this.fileDescriptor = fileDescriptor;
+        this.canBeSeekable = canBeSeekable;
     }
 
     /**
@@ -131,7 +143,7 @@ public class ChannelDescriptor {
      * @param fileDescriptor The java.io.FileDescriptor object for the new descriptor
      */
     public ChannelDescriptor(Channel channel, int fileno, ModeFlags originalModes, FileDescriptor fileDescriptor) {
-        this(channel, fileno, originalModes, fileDescriptor, new AtomicInteger(1));
+        this(channel, fileno, originalModes, fileDescriptor, new AtomicInteger(1), true);
     }
 
     /**
@@ -152,7 +164,7 @@ public class ChannelDescriptor {
         // on such stream might lead to thread being blocked without *any* way to unblock it.
         // That's where available() comes it, so at least we could check whether
         // anything is available to be read without blocking.
-        this(Channels.newChannel(baseInputStream), fileno, originalModes, fileDescriptor, new AtomicInteger(1));
+        this(Channels.newChannel(baseInputStream), fileno, originalModes, fileDescriptor, new AtomicInteger(1), true);
         this.baseInputStream = baseInputStream;
     }
 
@@ -220,7 +232,17 @@ public class ChannelDescriptor {
      * @return true if the associated channel is seekable, false otherwise
      */
     public boolean isSeekable() {
-        return channel instanceof FileChannel;
+        return canBeSeekable && channel instanceof FileChannel;
+    }
+    
+    /**
+     * Set the channel to be explicitly seekable or not, for streams that appear
+     * to be seekable with the instanceof FileChannel check.
+     * 
+     * @param seekable Whether the channel is seekable or not.
+     */
+    public void setCanBeSeekable(boolean canBeSeekable) {
+        this.canBeSeekable = canBeSeekable;
     }
     
     /**
@@ -298,18 +320,8 @@ public class ChannelDescriptor {
             
             if (DEBUG) getLogger("ChannelDescriptor").info("Reopen fileno " + newFileno + ", refs now: " + refCounter.get());
 
-            return new ChannelDescriptor(channel, newFileno, originalModes, fileDescriptor, refCounter);
+            return new ChannelDescriptor(channel, newFileno, originalModes, fileDescriptor, refCounter, canBeSeekable);
         }
-    }
-    
-    /**
-     * Mimics the POSIX dup2(2) function for a "file descriptor" that's already
-     * open.
-     * 
-     * @param other The descriptor into which we should dup this one
-     */
-    public void dup2(ChannelDescriptor other) {
-        other.channel = channel;
     }
     
     /**
@@ -325,7 +337,33 @@ public class ChannelDescriptor {
 
             if (DEBUG) getLogger("ChannelDescriptor").info("Reopen fileno " + fileno + ", refs now: " + refCounter.get());
 
-            return new ChannelDescriptor(channel, fileno, originalModes, fileDescriptor, refCounter);
+            return new ChannelDescriptor(channel, fileno, originalModes, fileDescriptor, refCounter, canBeSeekable);
+        }
+    }
+    
+    /**
+     * Mimics the POSIX dup2(2) function, returning a new descriptor that references
+     * the same open channel but with a specified fileno. This differs from the fileno
+     * version by making the target descriptor into a new reference to the current
+     * descriptor's channel, closing it and incrementing reference counts in the process.
+     * 
+     * @param fileno The fileno to use for the new descriptor
+     * @return A duplicate ChannelDescriptor based on this one
+     */
+    public void dup2Into(ChannelDescriptor other) throws BadDescriptorException, IOException {
+        synchronized (refCounter) {
+            refCounter.incrementAndGet();
+
+            if (DEBUG) getLogger("ChannelDescriptor").info("Reopen fileno " + fileno + ", refs now: " + refCounter.get());
+
+            other.close();
+            
+            other.channel = channel;
+            other.fileno = fileno;
+            other.originalModes = originalModes;
+            other.fileDescriptor = fileDescriptor;
+            other.refCounter = refCounter;
+            other.canBeSeekable = canBeSeekable;
         }
     }
     
@@ -672,8 +710,9 @@ public class ChannelDescriptor {
         if (channel instanceof ReadableByteChannel) {
             if (channel instanceof WritableByteChannel) {
                 modes = new ModeFlags(RDWR);
+            } else {
+                modes = new ModeFlags(RDONLY);
             }
-            modes = new ModeFlags(RDONLY);
         } else if (channel instanceof WritableByteChannel) {
             modes = new ModeFlags(WRONLY);
         } else {

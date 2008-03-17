@@ -283,6 +283,7 @@ public class ShellLauncher {
             }
             
             if (modes.isReadable()) {
+                // popen callers wants to be able to read, provide subprocess in directly
                 in = child.getInputStream();
             } else {
                 // TODO: Should this call runtime.getOutputStream() instead?
@@ -316,16 +317,21 @@ public class ShellLauncher {
 
         @Override
         public int waitFor() throws InterruptedException {
+            try {
+                out.close();
+            } catch (IOException ioe) {
+                // ignore, we're on the way out
+            }
+            
             int result = child.waitFor();
             if (pumper != null) pumper.quit();
+            
             return result;
         }
 
         @Override
         public int exitValue() {
-            int result = child.exitValue();
-            if (pumper != null) pumper.quit();
-            return result;
+            return child.exitValue();
         }
 
         @Override
