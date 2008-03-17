@@ -79,6 +79,11 @@ import org.jruby.util.collections.IntHashMap;
 
 public class JavaClass extends JavaObject {
 
+    // some null objects to simplify later code
+    private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[] {};
+    private static final Method[] EMPTY_METHOD_ARRAY = new Method[] {};
+    private static final Field[] EMPTY_FIELD_ARRAY = new Field[] {};
+
     private static class AssignedName {
         // to override an assigned name, the type must be less than
         // or equal to the assigned type. so a field name in a subclass
@@ -461,7 +466,7 @@ public class JavaClass extends JavaObject {
 
     // proxy module for interfaces
     private volatile RubyModule proxyModule;
-    
+
     // proxy class for concrete classes.  also used for
     // "concrete" interfaces, which is why we have two fields
     private volatile RubyClass proxyClass;
@@ -538,11 +543,14 @@ public class JavaClass extends JavaObject {
     private void initializeInterface(Class<?> javaClass) {
         Map<String, AssignedName> staticNames  = new HashMap<String, AssignedName>(STATIC_RESERVED_NAMES);
         List<ConstantField> constantFields = new ArrayList<ConstantField>(); 
-        Field[] fields;
+        Field[] fields = EMPTY_FIELD_ARRAY;
         try {
             fields = javaClass.getDeclaredFields();
         } catch (SecurityException e) {
-            fields = javaClass.getFields();
+            try {
+                fields = javaClass.getFields();
+            } catch (SecurityException e2) {
+            }
         }
         for (int i = fields.length; --i >= 0; ) {
             Field field = fields[i];
@@ -572,7 +580,11 @@ public class JavaClass extends JavaObject {
         Map<String, NamedCallback> staticCallbacks = new HashMap<String, NamedCallback>();
         Map<String, NamedCallback> instanceCallbacks = new HashMap<String, NamedCallback>();
         List<ConstantField> constantFields = new ArrayList<ConstantField>(); 
-        Field[] fields = javaClass.getFields();
+        Field[] fields = EMPTY_FIELD_ARRAY;
+        try {
+            fields = javaClass.getFields();
+        } catch (SecurityException e) {
+        }
         for (int i = fields.length; --i >= 0; ) {
             Field field = fields[i];
             if (javaClass != field.getDeclaringClass()) continue;
@@ -607,7 +619,14 @@ public class JavaClass extends JavaObject {
         }
         // TODO: protected methods.  this is going to require a rework 
         // of some of the mechanism.  
-        Method[] methods = javaClass.getMethods();
+        Method[] methods = EMPTY_METHOD_ARRAY;
+        for (Class c = javaClass; c != null; c = c.getSuperclass()) {
+            try {
+                methods = javaClass.getMethods();
+                break;
+            } catch (SecurityException e) {
+            }
+        }
         for (int i = methods.length; --i >= 0; ) {
             // we need to collect all methods, though we'll only
             // install the ones that are named in this class
@@ -695,7 +714,11 @@ public class JavaClass extends JavaObject {
             callback.install(proxy);
         }
         // setup constants for public inner classes
-        Class<?>[] classes = javaClass.getClasses();
+        Class<?>[] classes = EMPTY_CLASS_ARRAY;
+        try {
+            classes = javaClass.getClasses();
+        } catch (SecurityException e) {
+        }
         for (int i = classes.length; --i >= 0; ) {
             if (javaClass == classes[i].getDeclaringClass()) {
                 Class<?> clazz = classes[i];
@@ -828,7 +851,11 @@ public class JavaClass extends JavaObject {
             field.install(module);
         }
         // setup constants for public inner classes
-        Class<?>[] classes = javaClass.getClasses();
+        Class<?>[] classes = EMPTY_CLASS_ARRAY;
+        try {
+            classes = javaClass.getClasses();
+        } catch (SecurityException e) {
+        }
         for (int i = classes.length; --i >= 0; ) {
             if (javaClass == classes[i].getDeclaringClass()) {
                 Class<?> clazz = classes[i];
