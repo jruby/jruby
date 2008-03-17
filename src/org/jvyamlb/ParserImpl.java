@@ -554,6 +554,7 @@ public class ParserImpl implements Parser {
                         parseStack.push(P_FLOW_MAPPING_INTERNAL_CONTENT);
                     } else {
                         parseStack.push(P_FLOW_MAPPING_ENTRY);
+                        parseStack.push(P_EMPTY_SCALAR);
                         parseStack.push(P_FLOW_NODE);
                         parseStack.push(P_FLOW_ENTRY_MARKER);
                     }

@@ -401,3 +401,6 @@ test_equal({'foobar' => '>= 123'}, YAML.load("foobar: >= 123"))
 
 # JRUBY-2135
 test_equal({'foo' => 'bar'}, YAML.load("---\nfoo: \tbar"))
+
+# JRUBY-1911
+test_equal({'foo' => {'bar' => nil, 'qux' => nil}}, YAML.load("---\nfoo: {bar, qux}"))
