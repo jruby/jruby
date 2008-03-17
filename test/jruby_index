@@ -13,6 +13,7 @@ test_block_arg_processing
 test_cache_map_leak
 test_case
 test_class
+test_command_line_switches
 test_comparable
 test_core_arities
 test_crazy_blocks

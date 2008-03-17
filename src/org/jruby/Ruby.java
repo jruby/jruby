@@ -278,6 +278,19 @@ public final class Ruby {
         IAccessor d = new ValueAccessor(newString(filename));
         getGlobalVariables().define("$PROGRAM_NAME", d);
         getGlobalVariables().define("$0", d);
+
+        for (Iterator i = config.getOptionGlobals().entrySet().iterator(); i.hasNext();) {
+            Map.Entry entry = (Map.Entry) i.next();
+            Object value = entry.getValue();
+            IRubyObject varvalue;
+            if (value != null) {
+                varvalue = newString(value.toString());
+            } else {
+                varvalue = getTrue();
+            }
+            getGlobalVariables().set("$" + entry.getKey().toString(), varvalue);
+        }
+
         
         if(config.isYARVEnabled()) {
             new YARVCompiledRunner(this, inputStream, filename).run();

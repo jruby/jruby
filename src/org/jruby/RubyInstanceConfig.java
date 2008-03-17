@@ -36,6 +36,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jruby.ast.executable.Script;
@@ -105,8 +106,10 @@ public class RubyInstanceConfig {
     private String scriptFileName = null;
     private List<String> requiredLibraries = new ArrayList<String>();
     private boolean benchmarking = false;
+    private boolean argvGlobalsOn = false;
     private boolean assumeLoop = false;
     private boolean assumePrinting = false;
+    private Map optionGlobals = new HashMap();
     private boolean processLineEnds = false;
     private boolean split = false;
     // This property is a Boolean, to allow three values, so it can match MRI's nil, false and true
@@ -284,7 +287,7 @@ public class RubyInstanceConfig {
                 .append("  -n              assume 'while gets(); ... end' loop around your script\n")
                 .append("  -p              assume loop like -n but print line also like sed\n")
                 .append("  -rlibrary       require the library, before executing your script\n")
-                //.append("  -s              enable some switch parsing for switches after script name\n")
+                .append("  -s              enable some switch parsing for switches after script name\n")
                 .append("  -S              look for the script in bin or using PATH environment variable\n")
                 .append("  -T[level]       turn on tainting checks\n")
                 .append("  -v              print version number, then turn on verbose mode\n")
@@ -587,18 +590,33 @@ public class RubyInstanceConfig {
                 }
             }
 
+            processArgv();
+        }
+
+        private void processArgv() {
+            List<String> arglist = new ArrayList<String>();
+            for (; argumentIndex < arguments.length; argumentIndex++) {
+                String arg = arguments[argumentIndex];
+                if (argvGlobalsOn && arg.startsWith("-")) {
+                    arg = arg.substring(1);
+                    if (arg.indexOf('=') > 0) {
+                        String[] keyvalue = arg.split("=", 2);
+                        optionGlobals.put(keyvalue[0], keyvalue[1]);
+                    } else {
+                        optionGlobals.put(arg, null);
+                    }
+                } else {
+                    argvGlobalsOn = false;
+                    arglist.add(arg);
+                }
+            }
 
             // Remaining arguments are for the script itself
-            argv = new String[arguments.length - argumentIndex];
-            System.arraycopy(arguments, argumentIndex, argv, 0, argv.length);
+            argv = arglist.toArray(new String[arglist.size()]);
         }
 
         private boolean isInterpreterArgument(String argument) {
             return (argument.charAt(0) == '-' || argument.charAt(0) == '+') && !endOfArguments;
-        }
-
-        private String getArgumentError(String argument, String additionalError) {
-            return "jruby: invalid argument " + argument + "\n" + additionalError + "\n";
         }
 
         private String getArgumentError(String additionalError) {
@@ -705,9 +723,9 @@ public class RubyInstanceConfig {
                 case 'r':
                     requiredLibraries.add(grabValue(getArgumentError("-r must be followed by a package to require")));
                     break FOR;
-                // FIXME: -s flag not supported
-//                    case 's' :
-//                        break;
+                case 's' :
+                    argvGlobalsOn = true;
+                    break;
                 case 'S':
                     runBinScript();
                     break FOR;
@@ -844,9 +862,6 @@ public class RubyInstanceConfig {
             if (scriptName.equals("irb")) {
                 scriptName = "jirb";
             }
-            inlineScript.append("JRuby::Commands." + scriptName);
-            inlineScript.append("\n");
-            hasInlineScript = true;
             try {
                 String jrubyHome = JRubyFile.create(System.getProperty("user.dir"), JRubyFile.getFileProperty("jruby.home")).getCanonicalPath();
                 scriptFileName = JRubyFile.create(jrubyHome + JRubyFile.separator + "bin", scriptName).getCanonicalPath();
@@ -855,6 +870,9 @@ public class RubyInstanceConfig {
                 mee.setUsageError(true);
                 throw mee;
             }
+            inlineScript.append("JRuby::Commands." + scriptName);
+            inlineScript.append("\n");
+            hasInlineScript = true;
             endOfArguments = true;
         }
 
@@ -1059,5 +1077,9 @@ public class RubyInstanceConfig {
 
     public void setClassCache(ClassCache classCache) {
         this.classCache = classCache;
+    }
+
+    public Map getOptionGlobals() {
+        return optionGlobals;
     }
 }
