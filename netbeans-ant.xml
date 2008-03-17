@@ -16,7 +16,6 @@
         <pathelement path="${test.classes.dir}"/>
         <pathelement path="${test.dir}/requireTest.jar"/>
       </classpath>
-      <jvmarg value="-Djruby.base=${basedir}"/>
       <jvmarg value="-Djruby.home=${basedir}"/>
       <jvmarg value="-Djruby.lib=${lib.dir}"/>
       <jvmarg value="-Djruby.shell=/bin/sh"/>
@@ -43,7 +42,6 @@
         <pathelement path="${test.classes.dir}"/>
         <pathelement path="${test.dir}/requireTest.jar"/>
       </classpath>
-      <jvmarg value="-Djruby.base=${basedir}"/>
       <jvmarg value="-Djruby.home=${basedir}"/>
       <jvmarg value="-Djruby.lib=${lib.dir}"/>
       <jvmarg value="-Djruby.shell=/bin/sh"/>
@@ -72,7 +70,6 @@
       </classpath> 
       <sysproperty key="jruby.home" value="${jruby.home}"/>            
       <jvmarg value="${profiler.info.jvmargs.agent}"/>     
-      <jvmarg value="-Djruby.base=${basedir}"/>
       <jvmarg value="-Djruby.home=${basedir}"/>
       <jvmarg value="-Djruby.lib=${lib.dir}"/>
       <jvmarg value="-Djruby.shell=/bin/sh"/>
@@ -100,7 +97,6 @@
       <jvmarg value="-Xnoagent"/>
       <jvmarg value="-Djava.compiler=none"/>
       <jvmarg value="-Xrunjdwp:transport=dt_socket,address=${jpda.address}"/>
-      <jvmarg value="-Djruby.base=${basedir}"/>
       <jvmarg value="-Djruby.home=${basedir}"/>
       <jvmarg value="-Djruby.lib=${lib.dir}"/>
       <jvmarg value="-Djruby.shell=/bin/sh"/>

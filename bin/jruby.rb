@@ -63,16 +63,8 @@ if java_home.nil?
        "Development Kit installation")
 end
 
-jruby_home = ENV['JRUBY_HOME']
-if jruby_home.nil?
-  bin_dir = File.dirname($0)
-  jruby_home = File.dirname(bin_dir)
-end
-
-jruby_base = ENV['JRUBY_BASE']
-if jruby_base.nil?
-  jruby_base = jruby_home.dup
-end
+bin_dir = File.dirname($0)
+jruby_home = File.dirname(bin_dir)
 
 jruby_opts = ENV['JRUBY_OPTS']
 if jruby_opts.nil?
@@ -97,9 +89,8 @@ end
 
 # FIXME: for cygwin, convert paths
 
-launch['jruby.base'] = jruby_base
 launch['jruby.home'] = jruby_home
-launch['jruby.lib'] = jruby_base + '/lib'
+launch['jruby.lib'] = jruby_home + '/lib'
 launch['jruby.script'] = 'jruby.rb'
 launch['jruby.shell'] = '/bin/sh'
 

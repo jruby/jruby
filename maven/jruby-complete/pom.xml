@@ -269,7 +269,6 @@
                   <sysproperty key="java.awt.headless" value="true"/>
                   <sysproperty key="basedir" value="${basedir}"/>
                   <sysproperty key="jruby.home" value="${basedir}/../.."/>
-                  <sysproperty key="jruby.base" value="${basedir}/../.."/>
                   <sysproperty key="jruby.lib" value="${basedir}/../../lib"/>
                   <sysproperty key="jruby.objectspace.enabled" value="true"/>
                   <env key="CLASSPATH" value="${project.build.outputDirectory}"/>
