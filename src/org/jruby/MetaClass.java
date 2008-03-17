@@ -29,13 +29,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.lang.ref.WeakReference;
+import java.lang.ref.SoftReference;
 
 import org.jruby.runtime.builtin.IRubyObject;
 
 public final class MetaClass extends RubyClass {
     
-    private WeakReference<IRubyObject> attached = new WeakReference<IRubyObject>(null); 
+    private SoftReference<IRubyObject> attached = new SoftReference<IRubyObject>(null); 
 
     /** NEWOBJ (in RubyObject#getSingletonClassClone()) 
      * 
@@ -73,7 +73,7 @@ public final class MetaClass extends RubyClass {
     }
 
     public void setAttached(IRubyObject attached) {
-        this.attached = new WeakReference<IRubyObject>(attached);
+        this.attached = new SoftReference<IRubyObject>(attached);
     }
 
 }
