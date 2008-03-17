@@ -87,13 +87,13 @@ public class JRubyApplet extends JApplet {
     private RubyProc destroyProc;
     private Graphics priorGraphics;
     private IRubyObject wrappedGraphics;
-    private Console console;
+    private Facade console;
 
     public interface PaintCallback {
         public void paint(Graphics g);
     }
 
-    public interface Console {
+    public interface Facade {
         public InputStream getInputStream();
         public PrintStream getOutputStream();
         public PrintStream getErrorStream();
@@ -185,9 +185,9 @@ public class JRubyApplet extends JApplet {
         final JRubyApplet applet = this;
 
         if (getBooleanParameter("console", false)) {
-            console = new TextConsole();
+            console = new ConsoleFacade();
         } else {
-            console = new TrivialConsole();
+            console = new TrivialFacade();
         }
 
         synchronized (this) {
@@ -302,7 +302,7 @@ public class JRubyApplet extends JApplet {
         }
     }
 
-    public static class TrivialConsole implements Console {
+    public static class TrivialFacade implements Facade {
         private PainterPanel panel;
 
         public static class PainterPanel extends JPanel {
@@ -323,7 +323,7 @@ public class JRubyApplet extends JApplet {
             }
         }
 
-        public TrivialConsole() {
+        public TrivialFacade() {
             panel = new PainterPanel();
         }
         public InputStream getInputStream() { return System.in; }
@@ -336,7 +336,7 @@ public class JRubyApplet extends JApplet {
         }
     }
 
-    public static class TextConsole implements Console {
+    public static class ConsoleFacade implements Facade {
         private JTextPane textPane;
         private JScrollPane scrollPane;
         private TextAreaReadline adaptor;
@@ -344,7 +344,7 @@ public class JRubyApplet extends JApplet {
         private PrintStream outputStream;
         private PrintStream errorStream;
         
-        public TextConsole() {
+        public ConsoleFacade() {
             textPane = new JTextPane();
 	    textPane.setMargin(new Insets(4, 4, 4, 4));
             textPane.setCaretColor(new Color(0xa4, 0x00, 0x00));
