@@ -177,7 +177,7 @@
             <configuration>
               <tasks>
                 <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask"
-                  classpath="${project.basedir}/../../build_lib/jarjar-0.7.jar"/>
+                  classpath="${project.basedir}/../../build_lib/jarjar-1.0rc7.jar"/>
                 <delete>
                   <fileset dir="${project.build.directory}"
                     includes="${project.build.finalName}.jar"/>

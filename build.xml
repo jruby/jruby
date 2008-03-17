@@ -170,7 +170,7 @@
 
   <target name="jar-jruby" unless="jar-up-to-date">
       <antcall target="generate-method-classes" inheritall="true"/>
-      <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-0.7.jar"/>
+      <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0rc7.jar"/>
       <jarjar destfile="${lib.dir}/jruby.jar">
         <fileset dir="${jruby.classes.dir}">
           <exclude name="org/jruby/util/ant/**/*.class"/>
@@ -224,7 +224,7 @@
     <target name="jar-complete" depends="generate-method-classes" description="Create the 'complete' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
       <property name="mainclass" value="org.jruby.Main"/>
       <property name="filename" value="jruby-complete.jar"/>
-      <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-0.7.jar"/>
+      <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0rc7.jar"/>
       <jarjar destfile="${lib.dir}/${filename}">
         <fileset dir="${jruby.classes.dir}">
           <exclude name="org/jruby/util/ant/**/*.class"/>
@@ -768,7 +768,7 @@
     <exclude name="lib/emma.jar"/>
     <exclude name="lib/emma_ant.jar"/>
     <exclude name="lib/junit.jar"/>
-    <exclude name="lib/jarjar-0.7.jar"/>
+    <exclude name="lib/jarjar-1.0rc7.jar"/>
   </patternset>
 
   <patternset id="dist.src.files">
@@ -940,7 +940,7 @@
       source="${javac.version}" target="${javac.version}"
       deprecation="true" encoding="UTF-8" />
     <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask"
-      classpath="${build.lib.dir}/jarjar-0.7.jar"/>
+      classpath="${build.lib.dir}/jarjar-1.0rc7.jar"/>
     <jarjar destfile="${nailgun.home}/jruby-nailgun.jar">
       <fileset dir="${jruby.classes.dir}">
         <exclude name="org/jruby/util/ant/**/*.class"/>
