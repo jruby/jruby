@@ -128,7 +128,7 @@ public class RubyDigest {
     }
 
     public static class Base extends RubyObject {
-        protected static ObjectAllocator BASE_ALLOCATOR = new ObjectAllocator() {
+        protected static final ObjectAllocator BASE_ALLOCATOR = new ObjectAllocator() {
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                 return new Base(runtime, klass);
             }

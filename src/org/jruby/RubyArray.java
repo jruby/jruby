@@ -2136,7 +2136,7 @@ public class RubyArray extends RubyObject implements List {
         }
     }
 
-    final class DefaultComparator implements Comparator {
+    static final class DefaultComparator implements Comparator {
         public int compare(Object o1, Object o2) {
             if (o1 instanceof RubyFixnum && o2 instanceof RubyFixnum) {
                 long a = ((RubyFixnum) o1).getLongValue();

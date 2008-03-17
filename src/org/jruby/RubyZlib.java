@@ -349,7 +349,7 @@ public class RubyZlib {
     }
 
     public static class Inflate extends ZStream {
-        protected static ObjectAllocator INFLATE_ALLOCATOR = new ObjectAllocator() {
+        protected static final ObjectAllocator INFLATE_ALLOCATOR = new ObjectAllocator() {
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                 return new Inflate(runtime, klass);
             }
@@ -437,7 +437,7 @@ public class RubyZlib {
     }
 
     public static class Deflate extends ZStream {
-        protected static ObjectAllocator DEFLATE_ALLOCATOR = new ObjectAllocator() {
+        protected static final ObjectAllocator DEFLATE_ALLOCATOR = new ObjectAllocator() {
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                 return new Deflate(runtime, klass);
             }
@@ -572,7 +572,7 @@ public class RubyZlib {
             return io;
         }
         
-        protected static ObjectAllocator GZIPFILE_ALLOCATOR = new ObjectAllocator() {
+        protected static final ObjectAllocator GZIPFILE_ALLOCATOR = new ObjectAllocator() {
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                 return new RubyGzipFile(runtime, klass);
             }
@@ -673,7 +673,7 @@ public class RubyZlib {
     }
 
     public static class RubyGzipReader extends RubyGzipFile {
-        protected static ObjectAllocator GZIPREADER_ALLOCATOR = new ObjectAllocator() {
+        protected static final ObjectAllocator GZIPREADER_ALLOCATOR = new ObjectAllocator() {
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                 return new RubyGzipReader(runtime, klass);
             }
@@ -917,7 +917,7 @@ public class RubyZlib {
     }
 
     public static class RubyGzipWriter extends RubyGzipFile {
-        protected static ObjectAllocator GZIPWRITER_ALLOCATOR = new ObjectAllocator() {
+        protected static final ObjectAllocator GZIPWRITER_ALLOCATOR = new ObjectAllocator() {
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                 return new RubyGzipWriter(runtime, klass);
             }

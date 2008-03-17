@@ -151,7 +151,7 @@ public abstract class MethodFactory {
             }
             if (SafePropertyAccessor.getProperty("jruby.dump_invocations") != null) {
                 dumping = true;
-                dumpingPath = SafePropertyAccessor.getProperty("jruby.dump_invocations").toString();
+                dumpingPath = SafePropertyAccessor.getProperty("jruby.dump_invocations");
             }
         }
     }

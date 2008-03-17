@@ -54,7 +54,7 @@ public class RubyNameError extends RubyException {
     }
 
     protected RubyNameError(Ruby runtime, RubyClass exceptionClass) {
-        this(runtime, exceptionClass, exceptionClass.getName().toString());
+        this(runtime, exceptionClass, exceptionClass.getName());
     }
 
     public RubyNameError(Ruby runtime, RubyClass exceptionClass, String message) {
@@ -78,6 +78,7 @@ public class RubyNameError extends RubyException {
     }
 
     @JRubyMethod(name = "initialize", optional = 2, frame = true)
+    @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         if (args.length > 1) {
             name = args[args.length - 1];
@@ -95,6 +96,7 @@ public class RubyNameError extends RubyException {
     }
 
     @JRubyMethod(name = "to_s")
+    @Override
     public IRubyObject to_s() {
         if (message.isNil()) return getRuntime().newString(message.getMetaClass().getName());
         RubyString str = message.convertToString();

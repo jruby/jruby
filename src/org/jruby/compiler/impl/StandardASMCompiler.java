@@ -182,6 +182,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         FileOutputStream out = new FileOutputStream(new File(pathfile, filename));
 
         out.write(bytecode);
+        out.close();
     }
 
     public String getClassname() {
@@ -741,7 +742,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.dup2_x2();
             method.pop2();
 
-            method.ldc(new Boolean(isExclusive));
+            method.ldc(Boolean.valueOf(isExclusive));
 
             method.invokestatic(p(RubyRange.class), "newRange", sig(RubyRange.class, params(Ruby.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, Boolean.TYPE)));
         }

@@ -111,11 +111,11 @@ public class RuntimeHelpers {
             throw runtime.newTypeError("No class to add method.");
         }
         
-        if (containingClass == runtime.getObject() && name == "initialize") {
+        if (containingClass == runtime.getObject() && name.equals("initialize")) {
             runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining Object#initialize may cause infinite loop", "Object#initialize");
         }
 
-        if (name == "__id__" || name == "__send__") {
+        if (name.equals("__id__") || name.equals("__send__")) {
             runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining `" + name + "' may cause serious problem", name); 
         }
 
@@ -126,7 +126,7 @@ public class RuntimeHelpers {
         MethodFactory factory = MethodFactory.createFactory(compiledClass.getClassLoader());
         DynamicMethod method;
         
-        if (name == "initialize" || visibility == Visibility.MODULE_FUNCTION) {
+        if (name.equals("initialize") || visibility == Visibility.MODULE_FUNCTION) {
             method = factory.getCompiledMethod(containingClass, javaName, 
                     Arity.createArity(arity), Visibility.PRIVATE, scope, scriptObject, callConfig);
         } else {

@@ -47,7 +47,7 @@ public class RubyNil extends RubyObject {
         flags |= NIL_F | FALSE_F;
     }
     
-    public static ObjectAllocator NIL_ALLOCATOR = new ObjectAllocator() {
+    public static final ObjectAllocator NIL_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return runtime.getNil();
         }

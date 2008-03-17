@@ -66,7 +66,7 @@ public class RubyDir extends RubyObject {
         super(runtime, type);
     }
     
-    private static ObjectAllocator DIR_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator DIR_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyDir(runtime, klass);
         }
@@ -536,6 +536,7 @@ public class RubyDir extends RubyObject {
             int totalBytes = stream.available();
             byte[] bytes = new byte[totalBytes];
             stream.read(bytes);
+            stream.close();
             passwd = new String(bytes);
         } catch (IOException e) {
             return recv.getRuntime().getNil();

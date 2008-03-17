@@ -75,7 +75,7 @@ public class RubyNumeric extends RubyObject {
         return numeric;
     }
 
-    protected static ObjectAllocator NUMERIC_ALLOCATOR = new ObjectAllocator() {
+    protected static final ObjectAllocator NUMERIC_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyNumeric(runtime, klass);
         }

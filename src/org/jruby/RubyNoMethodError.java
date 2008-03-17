@@ -34,7 +34,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RubyNoMethodError extends RubyNameError {
     private IRubyObject args;
 
-    private static ObjectAllocator NOMETHODERROR_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator NOMETHODERROR_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyNoMethodError(runtime, klass);
         }
@@ -49,7 +49,7 @@ public class RubyNoMethodError extends RubyNameError {
     }
 
     protected RubyNoMethodError(Ruby runtime, RubyClass exceptionClass) {
-        super(runtime, exceptionClass, exceptionClass.getName().toString());
+        super(runtime, exceptionClass, exceptionClass.getName());
         this.args = runtime.getNil();
     }
     

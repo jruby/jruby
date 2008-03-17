@@ -211,12 +211,12 @@ public class RubyYaccLexer {
     // When the heredoc identifier specifies <<-EOF that indents before ident. are ok (the '-').
     static final int STR_FUNC_INDENT=0x20;
 
-    private final int str_squote = 0;
-    private final int str_dquote = STR_FUNC_EXPAND;
-    private final int str_xquote = STR_FUNC_EXPAND;
-    private final int str_regexp = STR_FUNC_REGEXP | STR_FUNC_ESCAPE | STR_FUNC_EXPAND;
-    private final int str_ssym   = STR_FUNC_SYMBOL;
-    private final int str_dsym   = STR_FUNC_SYMBOL | STR_FUNC_EXPAND;
+    private static final int str_squote = 0;
+    private static final int str_dquote = STR_FUNC_EXPAND;
+    private static final int str_xquote = STR_FUNC_EXPAND;
+    private static final int str_regexp = STR_FUNC_REGEXP | STR_FUNC_ESCAPE | STR_FUNC_EXPAND;
+    private static final int str_ssym   = STR_FUNC_SYMBOL;
+    private static final int str_dsym   = STR_FUNC_SYMBOL | STR_FUNC_EXPAND;
     
     public RubyYaccLexer() {
     	reset();

@@ -60,7 +60,7 @@ public class RubyIconv extends RubyObject {
         super(runtime, type);
     }
     
-    private static ObjectAllocator ICONV_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator ICONV_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyIconv(runtime, klass);
         }
@@ -92,7 +92,7 @@ public class RubyIconv extends RubyObject {
             return new RubyFailure(runtime, excptnClass, msg);
         }
 
-        protected static ObjectAllocator ICONV_FAILURE_ALLOCATOR = new ObjectAllocator() {
+        protected static final ObjectAllocator ICONV_FAILURE_ALLOCATOR = new ObjectAllocator() {
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                 return new RubyFailure(runtime, klass);
             }

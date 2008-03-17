@@ -294,8 +294,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getMethod(String method) {
-        String mname = type.getName() + "Invoker$" + method + "_0";
-        String mnamePath = typePath + "Invoker$" + method + "_0";
+        String mname = type.getName() + "Callback$" + method + "_0";
+        String mnamePath = typePath + "Callback$" + method + "_0";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
@@ -324,8 +324,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getMethod(String method, Class arg1) {
-        String mname = type.getName() + "Invoker$" + method + "_1";
-        String mnamePath = typePath + "Invoker$" + method + "_1";
+        String mname = type.getName() + "Callback$" + method + "_1";
+        String mnamePath = typePath + "Callback$" + method + "_1";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
@@ -358,8 +358,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getMethod(String method, Class arg1, Class arg2) {
-        String mname = type.getName() + "Invoker$" + method + "_2";
-        String mnamePath = typePath + "Invoker$" + method + "_2";
+        String mname = type.getName() + "Callback$" + method + "_2";
+        String mnamePath = typePath + "Callback$" + method + "_2";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
@@ -392,8 +392,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
     
     public Callback getMethod(String method, Class arg1, Class arg2, Class arg3) {
-        String mname = type.getName() + "Invoker$" + method + "_3";
-        String mnamePath = typePath + "Invoker$" + method + "_3";
+        String mname = type.getName() + "Callback$" + method + "_3";
+        String mnamePath = typePath + "Callback$" + method + "_3";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
@@ -427,8 +427,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getSingletonMethod(String method) {
-        String mname = type.getName() + "Invoker$" + method + "S0";
-        String mnamePath = typePath + "Invoker$" + method + "S0";
+        String mname = type.getName() + "Callback$" + method + "S0";
+        String mnamePath = typePath + "Callback$" + method + "S0";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
@@ -457,8 +457,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getSingletonMethod(String method, Class arg1) {
-        String mname = type.getName() + "Invoker$" + method + "_S1";
-        String mnamePath = typePath + "Invoker$" + method + "_S1";
+        String mname = type.getName() + "Callback$" + method + "_S1";
+        String mnamePath = typePath + "Callback$" + method + "_S1";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
@@ -492,8 +492,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getSingletonMethod(String method, Class arg1, Class arg2) {
-        String mname = type.getName() + "Invoker$" + method + "_S2";
-        String mnamePath = typePath + "Invoker$" + method + "_S2";
+        String mname = type.getName() + "Callback$" + method + "_S2";
+        String mnamePath = typePath + "Callback$" + method + "_S2";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
@@ -526,8 +526,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getSingletonMethod(String method, Class arg1, Class arg2, Class arg3) {
-        String mname = type.getName() + "Invoker$" + method + "_S3";
-        String mnamePath = typePath + "Invoker$" + method + "_S3";
+        String mname = type.getName() + "Callback$" + method + "_S3";
+        String mnamePath = typePath + "Callback$" + method + "_S3";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
@@ -568,8 +568,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     public CompiledBlockCallback getBlockCallback(String method, Object scriptObject) {
         Class typeClass = scriptObject.getClass();
         String typePathString = p(typeClass);
-        String mname = typeClass.getName() + "Block" + method + "xx1";
-        String mnamePath = typePathString + "Block" + method + "xx1";
+        String mname = typeClass.getName() + "BlockCallback$" + method + "xx1";
+        String mnamePath = typePathString + "BlockCallback$" + method + "xx1";
         synchronized (classLoader) {
             Class c = tryClass(mname);
             try {
@@ -601,8 +601,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getOptSingletonMethod(String method) {
-        String mname = type.getName() + "Invoker$" + method + "_Sopt";
-        String mnamePath = typePath + "Invoker$" + method + "_Sopt";
+        String mname = type.getName() + "Callback$" + method + "_Sopt";
+        String mnamePath = typePath + "Callback$" + method + "_Sopt";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
@@ -635,8 +635,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getOptMethod(String method) {
-        String mname = type.getName() + "Invoker$" + method + "_opt";
-        String mnamePath = typePath + "Invoker$" + method + "_opt";
+        String mname = type.getName() + "Callback$" + method + "_opt";
+        String mnamePath = typePath + "Callback$" + method + "_opt";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
@@ -668,8 +668,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getFastMethod(String method) {
-        String mname = type.getName() + "Invoker$" + method + "_F0";
-        String mnamePath = typePath + "Invoker$" + method + "_F0";
+        String mname = type.getName() + "Callback$" + method + "_F0";
+        String mnamePath = typePath + "Callback$" + method + "_F0";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
@@ -696,8 +696,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getFastMethod(String method, Class arg1) {
-        String mname = type.getName() + "Invoker$" + method + "_F1";
-        String mnamePath = typePath + "Invoker$" + method + "_F1";
+        String mname = type.getName() + "Callback$" + method + "_F1";
+        String mnamePath = typePath + "Callback$" + method + "_F1";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
@@ -729,8 +729,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getFastMethod(String method, Class arg1, Class arg2) {
-        String mname = type.getName() + "Invoker$" + method + "_F2";
-        String mnamePath = typePath + "Invoker$" + method + "_F2";
+        String mname = type.getName() + "Callback$" + method + "_F2";
+        String mnamePath = typePath + "Callback$" + method + "_F2";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
@@ -762,8 +762,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getFastMethod(String method, Class arg1, Class arg2, Class arg3) {
-        String mname = type.getName() + "Invoker$" + method + "_F3";
-        String mnamePath = typePath + "Invoker$" + method + "_F3";
+        String mname = type.getName() + "Callback$" + method + "_F3";
+        String mnamePath = typePath + "Callback$" + method + "_F3";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
@@ -795,8 +795,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getFastSingletonMethod(String method) {
-        String mname = type.getName() + "Invoker$" + method + "_FS0";
-        String mnamePath = typePath + "Invoker$" + method + "_FS0";
+        String mname = type.getName() + "Callback$" + method + "_FS0";
+        String mnamePath = typePath + "Callback$" + method + "_FS0";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
@@ -825,8 +825,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getFastSingletonMethod(String method, Class arg1) {
-        String mname = type.getName() + "Invoker$" + method + "_FS1";
-        String mnamePath = typePath + "Invoker$" + method + "_FS1";
+        String mname = type.getName() + "Callback$" + method + "_FS1";
+        String mnamePath = typePath + "Callback$" + method + "_FS1";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
@@ -859,8 +859,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getFastSingletonMethod(String method, Class arg1, Class arg2) {
-        String mname = type.getName() + "Invoker$" + method + "_FS2";
-        String mnamePath = typePath + "Invoker$" + method + "_FS2";
+        String mname = type.getName() + "Callback$" + method + "_FS2";
+        String mnamePath = typePath + "Callback$" + method + "_FS2";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
@@ -893,8 +893,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getFastSingletonMethod(String method, Class arg1, Class arg2, Class arg3) {
-        String mname = type.getName() + "Invoker$" + method + "_FS3";
-        String mnamePath = typePath + "Invoker$" + method + "_FS3";
+        String mname = type.getName() + "Callback$" + method + "_FS3";
+        String mnamePath = typePath + "Callback$" + method + "_FS3";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
@@ -927,8 +927,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getFastOptMethod(String method) {
-        String mname = type.getName() + "Invoker$" + method + "_Fopt";
-        String mnamePath = typePath + "Invoker$" + method + "_Fopt";
+        String mname = type.getName() + "Callback$" + method + "_Fopt";
+        String mnamePath = typePath + "Callback$" + method + "_Fopt";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
@@ -959,8 +959,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     public Callback getFastOptSingletonMethod(String method) {
-        String mname = type.getName() + "Invoker$" + method + "_FSopt";
-        String mnamePath = typePath + "Invoker$" + method + "_FSopt";
+        String mname = type.getName() + "Callback$" + method + "_FSopt";
+        String mnamePath = typePath + "Callback$" + method + "_FSopt";
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(mname);
             try {
@@ -992,8 +992,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
     
     public Dispatcher createDispatcher(RubyClass metaClass) {
-        String className = type.getName() + "Dispatcher_for_" + metaClass.getBaseName();
-        String classPath = typePath + "Dispatcher_for_" + metaClass.getBaseName();
+        String className = type.getName() + "Dispatcher$" + metaClass.getBaseName();
+        String classPath = typePath + "Dispatcher$" + metaClass.getBaseName();
         
         synchronized (runtime.getJRubyClassLoader()) {
             Class c = tryClass(className);
