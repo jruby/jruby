@@ -193,7 +193,7 @@
   </target>
 
   <path id="lib.classpath">
-    <pathelement location="${build.lib.dir}/retroweaver-rt-2.0.4.jar"/>
+    <pathelement location="${build.lib.dir}/retroweaver-rt-2.0.5.jar"/>
     <pathelement location="${build.lib.dir}/backport-util-concurrent.jar"/>
     <pathelement location="/usr/java/j2sdk1.4.2_16/jre/lib/rt.jar" />
     <pathelement location="${lib.dir}/bsf.jar" />
@@ -201,12 +201,21 @@
 
   <target name="jar-1.4" depends="jar-jruby">
     <copy file="${lib.dir}/jruby.jar" tofile="${lib.dir}/jruby1.5.jar"/>
-    <retro inputjar="${lib.dir}/jruby1.5.jar" outputjar="${lib.dir}/jruby.jar" target="1.4" failonerror="true" verify="true">
+    <retro inputjar="${lib.dir}/jruby1.5.jar" outputjar="${lib.dir}/jruby-weaved.jar" target="1.4" failonerror="true" verify="true">
       <classpath>
         <path refid="lib.classpath"/>
-        <pathelement location="${lib.dir}/jruby.jar" />
+        <pathelement location="${lib.dir}/jruby-weaved.jar" />
       </classpath>
     </retro>
+      <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0rc7.jar"/>
+      <jarjar destfile="${lib.dir}/jruby.jar">
+        <zipfileset src="${lib.dir}/jruby-weaved.jar"/>
+        <zipfileset src="${build.lib.dir}/retroweaver-rt-2.0.5.jar"/>
+        <zipfileset src="${build.lib.dir}/backport-util-concurrent.jar"/>
+        <rule pattern="edu.emory.mathcs.backport.**" result="jruby.backport.@1"/>
+        <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
+      </jarjar>
+    <delete file="${lib.dir}/jruby-weaved.jar"/>
     <delete file="${lib.dir}/jruby1.5.jar"/>
   </target>
 
@@ -392,6 +401,51 @@
       coverage-report"
 	  description="Runs unit tests in all modes."/>
 
+  <target name="weave-tests" description="weave the test classes">
+    <retro srcdir="${test.classes.dir}" target="1.4" failonerror="true" verify="true">
+      <classpath>
+        <path refid="lib.classpath"/>
+        <pathelement location="${lib.dir}/jruby.jar" />
+        <pathelement location="${build.lib.dir}/junit.jar" />
+        <pathelement location="${build.lib.dir}/asm-3.0.jar" />
+        <pathelement location="${test.classes.dir}" />
+      </classpath>
+    </retro>
+  </target>
+ 
+  <target name="test-1.4" depends="
+    copy-test-files,
+    jar-1.4,
+    weave-tests,
+    instrument,
+    run-junit-compiled,
+    run-junit-compiled-1.9,
+    coverage-report"
+  	description="Runs unit tests with weaved jruby classes.">
+  </target>
+
+  <target name="test-all-1.4" depends="
+      copy-test-files,
+      jar-1.4,
+      weave-tests,
+      instrument,
+      run-junit-interpreted,
+      run-junit-compiled,
+      run-junit-precompiled,
+      run-junit-interpreted-1.9,
+      run-junit-compiled-1.9,
+      run-junit-precompiled-1.9,
+      run-junit-reflected-interpreted,
+      run-junit-reflected-compiled,
+      run-junit-reflected-precompiled,
+      run-junit-compiled-threadpool,
+      run-junit-precompiled-threadpool,
+      run-junit-interpreted-threadpool,
+      run-junit-object-persistence,
+      compile-stdlib,
+      coverage-report"
+	  description="Runs unit tests in all modes with weaved jruby classes."/>
+
   <!-- All junit permutations for 1.8 and 1.9 support -->
   <target name="run-junit-interpreted"><run-junit-1.8/></target>
   <target name="run-junit-interpreted-1.9"><run-junit-1.9/></target>
@@ -412,7 +466,10 @@
   
   <path id="test.class.path">
     <pathelement location="${jruby.instrumented.classes.dir}" />
-    <path refid="build.classpath"/>
+    <fileset dir="${build.lib.dir}" includes="*.jar">
+      <exclude name="joni.jar"/>
+    </fileset>
+    <pathelement path="${lib.dir}/bsf.jar"/>
     <pathelement path="${java.class.path}"/>
     <pathelement path="${lib.dir}/jruby.jar"/>
     <pathelement location="${test.classes.dir}"/>
@@ -434,7 +491,7 @@
       <echo message="compile=@{compile.mode}, jit.threshold=@{jit.threshold}, jit.max=@{jit.max}, objectspace=@{objectspace.enabled} threadpool=@{thread.pooling} reflection=@{reflection} version=@{jruby.version}"/>
       <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
 
-      <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="${jruby.test.memory}" showoutput="true" timeout="1200000">
+      <junit jvm="${jruby.test.jvm}" fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="${jruby.test.memory}" showoutput="true" timeout="1200000">
 	<classpath refid="test.class.path"/>
       
 	<sysproperty key="java.awt.headless" value="true"/>
