@@ -56,10 +56,16 @@
     <condition property="ruby.home" value="${env.RUBY_HOME}">
       <not><isset property="ruby.home"/></not>
     </condition>
+    <property name="rdoc.archive" value="docs/rdocs.tar.gz"/>
+    <uptodate property="docsNotNeeded" srcfile="${rdoc.archive}" targetfile="${basedir}/share/ri"/>
+  </target>
+  
+  <target name="extract-rdocs" depends="init" unless="docsNotNeeded">
+      <untar src="${rdoc.archive}" dest="${basedir}" compression="gzip"/>
   </target>
 
   <!-- Creates the directories needed for building -->
-  <target name="prepare" depends="init">
+  <target name="prepare" depends="extract-rdocs">
     <mkdir dir="${build.dir}"/>
     <mkdir dir="${classes.dir}"/>
     <mkdir dir="${jruby.classes.dir}"/>
