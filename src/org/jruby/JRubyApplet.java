@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.applet.Applet;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
@@ -49,6 +50,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.demo.TextAreaReadline;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
@@ -57,7 +59,6 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import javax.swing.JApplet;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -79,80 +80,33 @@ import javax.swing.SwingUtilities;
  * JRubyApplet.on_stop, and JRubyApplet.on_destroy, respectively.
  *
  */
-public class JRubyApplet extends JApplet {
+public class JRubyApplet extends Applet {
     private Ruby runtime;
     private IRubyObject rubyObject;
     private RubyProc startProc;
     private RubyProc stopProc;
     private RubyProc destroyProc;
+    private RubyProc paintProc;
     private Graphics priorGraphics;
     private IRubyObject wrappedGraphics;
     private Facade console;
-
-    public interface PaintCallback {
-        public void paint(Graphics g);
-    }
 
     public interface Facade {
         public InputStream getInputStream();
         public PrintStream getOutputStream();
         public PrintStream getErrorStream();
-        public void attachRuntime(Ruby runtime);
-        public JComponent getComponent();
-        public void setPaintCallback(PaintCallback callback);
+        public void attach(Ruby runtime, Applet applet);
     }
 
-    public static class AppletModule {
-        public static void setup(Ruby runtime, JRubyApplet applet) {
-            RubyModule module = runtime.defineModule("JRubyApplet");
-            module.dataWrapStruct(applet);
-            CallbackFactory cb = runtime.callbackFactory(AppletModule.class);
-            module.getMetaClass().defineMethod("applet", cb.getSingletonMethod("applet"));
-            module.getMetaClass().defineMethod("on_start", cb.getSingletonMethod("on_start"));
-            module.getMetaClass().defineMethod("on_stop", cb.getSingletonMethod("on_stop"));
-            module.getMetaClass().defineMethod("on_destroy", cb.getSingletonMethod("on_destroy"));
-            module.getMetaClass().defineMethod("on_paint", cb.getSingletonMethod("on_paint"));
-            runtime.evalScriptlet("def JRubyApplet.content_pane ; applet.get_content_pane ; end");
-        }
-
-        private static RubyProc blockToProc(Ruby runtime, Block block) {
-            if (block.isGiven()) {
-                RubyProc proc = block.getProcObject();
-                if (proc == null) {
-                    proc = RubyProc.newProc(runtime, block, block.type);
-                }
-                return proc;
-            } else {
-                return null;
+    private static RubyProc blockToProc(Ruby runtime, Block block) {
+        if (block.isGiven()) {
+            RubyProc proc = block.getProcObject();
+            if (proc == null) {
+                proc = RubyProc.newProc(runtime, block, block.type);
             }
-        }
-
-        public static IRubyObject applet(IRubyObject recv, Block block) {
-            return ((JRubyApplet)recv.dataGetStruct()).getRubyObject();
-        }
-
-        public static IRubyObject on_start(IRubyObject recv, Block block) {
-            JRubyApplet applet = (JRubyApplet)recv.dataGetStruct();
-            applet.setStartProc(blockToProc(recv.getRuntime(), block));
-            return recv;
-        }
-
-        public static IRubyObject on_stop(IRubyObject recv, Block block) {
-            JRubyApplet applet = (JRubyApplet)recv.dataGetStruct();
-            applet.setStopProc(blockToProc(recv.getRuntime(), block));
-            return recv;
-        }
-
-        public static IRubyObject on_destroy(IRubyObject recv, Block block) {
-            JRubyApplet applet = (JRubyApplet)recv.dataGetStruct();
-            applet.setDestroyProc(blockToProc(recv.getRuntime(), block));
-            return recv;
-        }
-
-        public static IRubyObject on_paint(IRubyObject recv, Block block) {
-            JRubyApplet applet = (JRubyApplet)recv.dataGetStruct();
-            applet.setPaintProc(blockToProc(recv.getRuntime(), block));
-            return recv;
+            return proc;
+        } else {
+            return null;
         }
     }
 
@@ -181,6 +135,7 @@ public class JRubyApplet extends JApplet {
         return JRubyApplet.class.getClassLoader().getResourceAsStream(name);
     }
 
+    @Override
     public void init() {
         super.init();
         final JRubyApplet applet = this;
@@ -205,8 +160,10 @@ public class JRubyApplet extends JApplet {
             Ruby.setSecurityRestricted(true);
             runtime = Ruby.newInstance(config);
             rubyObject = JavaUtil.convertJavaToUsableRubyObject(runtime, this);
-            AppletModule.setup(runtime, this);
-            console.attachRuntime(runtime);
+            rubyObject.dataWrapStruct(this);
+            runtime.defineGlobalConstant("JRubyApplet", rubyObject);
+            rubyObject.getMetaClass().defineAnnotatedMethods(JRubyApplet.class);
+            console.attach(runtime, this);
         }
 
         final String scriptName = getParameter("script");
@@ -216,7 +173,6 @@ public class JRubyApplet extends JApplet {
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
-                    applet.setContentPane(applet.console.getComponent());
                     if (scriptStream != null) {
                         applet.runtime.runFromMain(scriptStream, scriptName);
                     }
@@ -249,25 +205,43 @@ public class JRubyApplet extends JApplet {
         }
     }
 
-    private synchronized void setStartProc(RubyProc proc) {
-        startProc = proc;
+    @JRubyMethod
+    public static IRubyObject on_start(IRubyObject recv, Block block) {
+        JRubyApplet applet = (JRubyApplet)recv.dataGetStruct();
+        synchronized (applet) {
+            applet.startProc = blockToProc(applet.runtime, block);
+        }
+        return recv;
     }
+    @Override
     public synchronized void start() {
         super.start();
         invokeCallback(startProc, new IRubyObject[] {});
     }
 
-    private synchronized void setStopProc(RubyProc proc) {
-        stopProc = proc;
+    @JRubyMethod
+    public static IRubyObject on_stop(IRubyObject recv, Block block) {
+        JRubyApplet applet = (JRubyApplet)recv.dataGetStruct();
+        synchronized (applet) {
+            applet.stopProc = blockToProc(applet.runtime, block);
+        }
+        return recv;
     }
+    @Override
     public synchronized void stop() {
         invokeCallback(stopProc, new IRubyObject[] {});
         super.stop();
     }
 
-    private synchronized void setDestroyProc(RubyProc proc) {
-        destroyProc = proc;
+    @JRubyMethod
+    public static IRubyObject on_destroy(IRubyObject recv, Block block) {
+        JRubyApplet applet = (JRubyApplet)recv.dataGetStruct();
+        synchronized (applet) {
+            applet.destroyProc = blockToProc(applet.runtime, block);
+        }
+        return recv;
     }
+    @Override
     public synchronized void destroy() {
         try {
             invokeCallback(destroyProc, new IRubyObject[] {});
@@ -278,6 +252,7 @@ public class JRubyApplet extends JApplet {
             startProc = null;
             stopProc = null;
             destroyProc = null;
+            paintProc = null;
             priorGraphics = null;
             wrappedGraphics = null;
             runtime.tearDown();
@@ -285,56 +260,32 @@ public class JRubyApplet extends JApplet {
         }
     }
 
-    private synchronized void setPaintProc(final RubyProc proc) {
-        if (proc != null) {
-            final JRubyApplet applet = this;
-            console.setPaintCallback(new PaintCallback() {
-                public void paint(Graphics g) {
-                    if (applet.priorGraphics != g) {
-                        applet.wrappedGraphics = JavaUtil.convertJavaToUsableRubyObject(applet.runtime, g);
-                        applet.priorGraphics = g;
-                    }
-                    ThreadContext context = applet.runtime.getCurrentContext();
-                    proc.call(context, new IRubyObject[] {wrappedGraphics}, Block.NULL_BLOCK);
-                }
-            });
-        } else {
-            console.setPaintCallback(null);
+    @JRubyMethod
+    public static IRubyObject on_paint(IRubyObject recv, Block block) {
+        JRubyApplet applet = (JRubyApplet)recv.dataGetStruct();
+        synchronized (applet) {
+            applet.paintProc = blockToProc(applet.runtime, block);
+        }
+        return recv;
+    }
+    @Override
+    public synchronized void paint(Graphics g) {
+        if (paintProc != null) {
+            if (priorGraphics != g) {
+                wrappedGraphics = JavaUtil.convertJavaToUsableRubyObject(runtime, g);
+                priorGraphics = g;
+            }
+            ThreadContext context = runtime.getCurrentContext();
+            paintProc.call(context, new IRubyObject[] {wrappedGraphics}, Block.NULL_BLOCK);
         }
     }
 
     public static class TrivialFacade implements Facade {
-        private PainterPanel panel;
-
-        public static class PainterPanel extends JPanel {
-            private PaintCallback paintCallback;
-
-            public synchronized void setPaintCallback(PaintCallback callback) {
-                paintCallback = callback;
-                repaint(getVisibleRect());
-            }
-
-            public void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                synchronized (this) {
-                    if (paintCallback != null) {
-                        paintCallback.paint(g);
-                    }
-                }
-            }
-        }
-
-        public TrivialFacade() {
-            panel = new PainterPanel();
-        }
+        public TrivialFacade() {}
         public InputStream getInputStream() { return System.in; }
         public PrintStream getOutputStream() { return System.out; }
         public PrintStream getErrorStream() { return System.err; }
-        public void attachRuntime(Ruby runtime) {}
-        public JComponent getComponent() { return panel; }
-        public void setPaintCallback(PaintCallback callback) {
-            panel.setPaintCallback(callback);
-        }
+        public void attach(Ruby runtime, Applet applet) {}
     }
 
     public static class ConsoleFacade implements Facade {
@@ -358,19 +309,18 @@ public class JRubyApplet extends JApplet {
             textPane.setFont(font);
 
             scrollPane = new JScrollPane(textPane);
+            scrollPane.setDoubleBuffered(true);
             adaptor = new TextAreaReadline(textPane, "  JRuby applet console  \n\n");
             inputStream = new PipedInputStream();
             outputStream = new PrintStream(adaptor);
             errorStream = new PrintStream(adaptor);
         }
-        public JComponent getComponent() { return scrollPane; }
         public InputStream getInputStream() { return inputStream; }
         public PrintStream getOutputStream() { return outputStream; }
         public PrintStream getErrorStream() { return errorStream; }
-        public void attachRuntime(Ruby runtime) {
+        public void attach(Ruby runtime, Applet applet) {
             adaptor.hookIntoRuntime(runtime);
-        }
-        public void setPaintCallback(PaintCallback callback) {
+            applet.add(scrollPane);
         }
 
         private Font findFont(String otherwise, int style, int size, String[] families) {
