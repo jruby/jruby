@@ -34,7 +34,9 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Insets;
 import java.awt.Graphics;
+import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
+import java.awt.image.VolatileImage;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.PipedInputStream;
@@ -82,6 +84,8 @@ import javax.swing.SwingUtilities;
  */
 public class JRubyApplet extends Applet {
     private Ruby runtime;
+    private boolean doubleBuffered = true;
+    private Color backgroundColor = Color.WHITE;
     private IRubyObject rubyObject;
     private RubyProc startProc;
     private RubyProc stopProc;
@@ -89,7 +93,9 @@ public class JRubyApplet extends Applet {
     private RubyProc paintProc;
     private Graphics priorGraphics;
     private IRubyObject wrappedGraphics;
-    private Facade console;
+    private VolatileImage backBuffer;
+    private Graphics backBufferGraphics;
+    private Facade facade;
 
     private interface Facade {
         public InputStream getInputStream();
@@ -164,6 +170,7 @@ public class JRubyApplet extends Applet {
             JRubyApplet applet = (JRubyApplet)recv.dataGetStruct();
             synchronized (applet) {
                 applet.paintProc = blockToProc(applet.runtime, block);
+                applet.repaint();
             }
             return recv;
         }
@@ -175,9 +182,9 @@ public class JRubyApplet extends Applet {
         final JRubyApplet applet = this;
 
         if (getBooleanParameter("console", false)) {
-            console = new ConsoleFacade();
+            facade = new ConsoleFacade();
         } else {
-            console = new TrivialFacade();
+            facade = new TrivialFacade();
         }
 
         synchronized (this) {
@@ -186,18 +193,18 @@ public class JRubyApplet extends Applet {
             }
 
             final RubyInstanceConfig config = new RubyInstanceConfig() {{
-                setInput(console.getInputStream());
-                setOutput(console.getOutputStream());
-                setError(console.getErrorStream());
+                setInput(facade.getInputStream());
+                setOutput(facade.getOutputStream());
+                setError(facade.getErrorStream());
                 setObjectSpaceEnabled(getBooleanParameter("objectspace", false));
             }};
             Ruby.setSecurityRestricted(true);
             runtime = Ruby.newInstance(config);
             rubyObject = JavaUtil.convertJavaToUsableRubyObject(runtime, this);
             rubyObject.dataWrapStruct(this);
-            runtime.defineGlobalConstant("JRubyApplet", rubyObject);
+            runtime.defineGlobalConstant("JRUBY_APPLET", rubyObject);
             rubyObject.getMetaClass().defineAnnotatedMethods(RubyMethods.class);
-            console.attach(runtime, this);
+            facade.attach(runtime, this);
         }
 
         final String scriptName = getParameter("script");
@@ -239,6 +246,24 @@ public class JRubyApplet extends Applet {
         }
     }
 
+    public synchronized void setBackgroundColor(Color color) {
+        backgroundColor = color;
+        repaint();
+    }
+
+    public synchronized Color getBackgroundColor() {
+        return backgroundColor;
+    }
+
+    public synchronized boolean isDoubleBuffered() {
+        return doubleBuffered;
+    }
+
+    public synchronized void setDoubleBuffered(boolean shouldBuffer) {
+        doubleBuffered = shouldBuffer;
+        repaint();
+    }
+
     @Override
     public synchronized void start() {
         super.start();
@@ -271,7 +296,43 @@ public class JRubyApplet extends Applet {
     }
 
     @Override
+    public void update(Graphics g) {
+        paint(g);
+    }
+
+    @Override
     public synchronized void paint(Graphics g) {
+        if (doubleBuffered) {
+            paintBuffered(g);
+        } else {
+            paintUnbuffered(g);
+        }
+    }
+
+    private synchronized void paintBuffered(Graphics g) {
+        do {
+            GraphicsConfiguration config = getGraphicsConfiguration();
+            int width = getWidth();
+            int height = getHeight();
+            if (backBuffer == null || width != backBuffer.getWidth() || height != backBuffer.getHeight() || backBuffer.validate(config) == VolatileImage.IMAGE_INCOMPATIBLE) {
+                if (backBuffer != null) {
+                    backBufferGraphics.dispose();
+                    backBuffer.flush();
+                }
+                backBuffer = config.createCompatibleVolatileImage(width, height);
+                backBufferGraphics = backBuffer.createGraphics();
+            }
+            backBufferGraphics.setClip(g.getClip());
+            paintUnbuffered(backBufferGraphics);
+        } while (backBuffer.contentsLost());
+        g.drawImage(backBuffer, 0, 0, this);
+    }
+
+    private synchronized void paintUnbuffered(Graphics g) {
+        if (backgroundColor != null) {
+            g.setColor(backgroundColor);
+            g.fillRect(0, 0, getWidth(), getHeight());
+        }
         if (paintProc != null) {
             if (priorGraphics != g) {
                 wrappedGraphics = JavaUtil.convertJavaToUsableRubyObject(runtime, g);
@@ -280,6 +341,7 @@ public class JRubyApplet extends Applet {
             ThreadContext context = runtime.getCurrentContext();
             paintProc.call(context, new IRubyObject[] {wrappedGraphics}, Block.NULL_BLOCK);
         }
+        super.paint(g);
     }
 
     private static class TrivialFacade implements Facade {
