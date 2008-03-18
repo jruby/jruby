@@ -376,7 +376,7 @@ public class JRubyApplet extends Applet {
         
         public ConsoleFacade() {
             textPane = new JTextPane();
-	    textPane.setMargin(new Insets(4, 4, 4, 4));
+	    textPane.setMargin(new Insets(4, 4, 0, 4));
             textPane.setCaretColor(new Color(0xa4, 0x00, 0x00));
             textPane.setBackground(new Color(0xf2, 0xf2, 0xf2));
             textPane.setForeground(new Color(0xa4, 0x00, 0x00));
