@@ -20,7 +20,11 @@ public class JRubyPOSIXHandler implements POSIXHandler {
     public JRubyPOSIXHandler(Ruby runtime) {
         this.runtime = runtime;
 
-        isVerbose = Boolean.getBoolean("jruby.native.verbose");
+        isVerbose = false;
+        try {
+            isVerbose = Boolean.getBoolean("jruby.native.verbose");
+        } catch (SecurityException e) {
+        }
     }
 
     public void error(ERRORS error, String extraData) {

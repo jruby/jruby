@@ -1,0 +1,6 @@
+// @(#)javaws.policy	1.7 00/09/18
+// intentionally light policy, to mirror javaws and applet security
+
+grant {
+  permission java.lang.RuntimePermission "accessDeclaredMembers";
+};
