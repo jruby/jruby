@@ -398,6 +398,7 @@ public class JRubyApplet extends Applet {
         public void attach(Ruby runtime, Applet applet) {
             adaptor.hookIntoRuntime(runtime);
             applet.add(scrollPane);
+            applet.validate();
         }
 
         private Font findFont(String otherwise, int style, int size, String[] families) {
