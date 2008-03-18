@@ -192,7 +192,6 @@ public class JRubyApplet extends Applet {
     @Override
     public void init() {
         super.init();
-        final JRubyApplet applet = this;
 
         if (getBooleanParameter("console", false)) {
             facade = new ConsoleFacade();
@@ -217,7 +216,6 @@ public class JRubyApplet extends Applet {
             rubyObject.dataWrapStruct(this);
             runtime.defineGlobalConstant("JRUBY_APPLET", rubyObject);
             rubyObject.getMetaClass().defineAnnotatedMethods(RubyMethods.class);
-            facade.attach(runtime, this);
         }
 
         final String scriptName = getParameter("script");
@@ -225,8 +223,11 @@ public class JRubyApplet extends Applet {
         final String evalString = getParameter("eval");
 
         try {
+            final JRubyApplet applet = this;
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
+                    applet.setLayout(new BorderLayout());
+                    applet.facade.attach(applet.runtime, applet);
                     if (scriptStream != null) {
                         applet.runtime.runFromMain(scriptStream, scriptName);
                     }
