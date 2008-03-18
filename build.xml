@@ -376,8 +376,9 @@
     instrument,
     run-junit-compiled,
     run-junit-compiled-1.9,
+    test-security-manager,
     coverage-report"
-  	description="Runs unit tests.">
+    description="Runs unit tests.">
   </target>
 
   <target name="test-compiled" depends="copy-test-files,run-junit-compiled,run-junit-precompiled"/>
@@ -580,6 +581,17 @@
 	<test name="org.jruby.test.ObjectPersistenceTestSuite" todir="${test.results.dir}" unless="test"/>
       </junit-tests>
     </run-junit>
+  </target>
+
+  <target name="test-security-manager">
+    <java classname="org.jruby.Main" fork="true" failonerror="true">
+      <classpath refid="build.classpath"/>
+      <classpath path="${jruby.classes.dir}"/>
+      <sysproperty key="java.security.manager" value=""/>
+      <sysproperty key="java.security.policy" value="file:test/restricted.policy"/>
+      <arg value="-e"/>
+      <arg value="puts 'Restricted policy looks ok'"/>
+    </java>
   </target>
 
   <target name="detect-stable-specs-need-update">
