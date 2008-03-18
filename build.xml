@@ -803,6 +803,8 @@
   <patternset id="dist.bindir.files">
     <include name="bin/*jruby*"/>
     <include name="bin/*gem*"/>
+    <include name="bin/*ri*"/>
+    <include name="bin/*rdoc*"/>
     <include name="bin/*jirb*"/>
     <include name="bin/generate_yaml_index.rb"/>
     <include name="bin/testrb"/>
