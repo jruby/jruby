@@ -583,7 +583,7 @@ public class RubyInstanceConfig {
                 argumentIndex++;
             }
 
-            if (!hasInlineScript) {
+            if (!hasInlineScript && scriptFileName == null) {
                 if (argumentIndex < arguments.length) {
                     setScriptFileName(arguments[argumentIndex]); //consume the file name
                     argumentIndex++;
@@ -857,7 +857,6 @@ public class RubyInstanceConfig {
         }
 
         private void runBinScript() {
-            requiredLibraries.add("jruby/commands");
             String scriptName = grabValue("jruby: provide a bin script to execute");
             if (scriptName.equals("irb")) {
                 scriptName = "jirb";
@@ -870,9 +869,14 @@ public class RubyInstanceConfig {
                 mee.setUsageError(true);
                 throw mee;
             }
-            inlineScript.append("JRuby::Commands." + scriptName);
-            inlineScript.append("\n");
-            hasInlineScript = true;
+
+            // route 'gem' through ruby code in case we're running out of the complete jar
+            if (scriptName.equals("gem") || !new File(scriptFileName).exists()) {
+                requiredLibraries.add("jruby/commands");
+                inlineScript.append("JRuby::Commands." + scriptName);
+                inlineScript.append("\n");
+                hasInlineScript = true;
+            }
             endOfArguments = true;
         }
 
