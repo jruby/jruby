@@ -391,6 +391,7 @@
   <target name="test-all" depends="
       copy-test-files,
       instrument,
+      test-security-manager,
       run-junit-interpreted,
       run-junit-compiled,
       run-junit-precompiled,
