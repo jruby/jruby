@@ -77,9 +77,22 @@ import javax.swing.SwingUtilities;
  * the scriptlet given as the "eval" applet parameter.
  *
  * The Java applet instance is available to the Ruby script as
- * JRubyApplet.applet; the script can also define callbacks for applet
- * start, stop, and destroy by passing blocks to JRubyApplet.on_start,
- * JRubyApplet.on_stop, and JRubyApplet.on_destroy, respectively.
+ * JRUBY_APPLET; the script can define callbacks for applet start, stop,
+ * and destroy by passing blocks to JRUBY_APPLET.on_start,
+ * JRUBY_APPLET.on_stop, and JRUBY_APPLET.on_destroy, respectively.
+ *
+ * Ruby code can install a custom paint callback using JRUBY_APPLET.on_paint
+ * (the Graphics2D object is passed as an argument to the callback).  By
+ * default, JRubyApplet painting is double-buffered, but you can select
+ * single-buffered painting via JRUBY_APPLET.double_buffered = false.
+ *
+ * The applet's background color can be set via JRUBY_APPLET.background_color=.
+ * You may want to set it to nil if you're not using double-buffering, so that
+ * no background color will be drawn (your own paint code is then responsible
+ * for filling the area).
+ *
+ * Beyond these things, you should be able to use JRuby's Java integration
+ * to do whatever you would do in Java with the applet instance.
  *
  */
 public class JRubyApplet extends Applet {
