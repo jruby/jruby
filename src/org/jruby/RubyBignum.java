@@ -144,13 +144,30 @@ public class RubyBignum extends RubyInteger {
      */
     public static double big2dbl(RubyBignum value) {
         BigInteger big = value.getValue();
-        double dbl = big.doubleValue();
+        double dbl = convertToDouble(big);
         if (dbl == Double.NEGATIVE_INFINITY || dbl == Double.POSITIVE_INFINITY) {
             value.getRuntime().getWarnings().warn(ID.BIGNUM_FROM_FLOAT_RANGE, "Bignum out of Float range");
     }
         return dbl;
     }
-
+    
+    /**
+     * BigInteger#doubleValue is _really_ slow currently.
+     * This is faster, and mostly correct (?)
+     */
+    static double convertToDouble(BigInteger bigint) {
+        byte[] arr = bigint.toByteArray();
+        double res = 0;
+        double acc = 1;
+        for (int i = arr.length - 1; i > 0 ; i--)
+        {
+            res += (double) (arr[i] & 0xff) * acc;
+            acc *= 256;
+        }
+        res += (double) arr[0] * acc; // final byte sign is significant
+        return res;
+    }
+    
     /** rb_int2big
      * 
      */
