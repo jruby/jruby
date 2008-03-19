@@ -24,7 +24,7 @@
     <dependency>
       <groupId>org.jruby.joni</groupId>
       <artifactId>joni</artifactId>
-      <version>1.0.1</version>
+      <version>1.0.2</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -118,7 +118,7 @@
                 <artifactItem>
                   <groupId>org.jruby.joni</groupId>
                   <artifactId>joni</artifactId>
-                  <version>1.0.1</version>
+                  <version>1.0.2</version>
                 </artifactItem>
                 <artifactItem>
                   <groupId>joda-time</groupId>
