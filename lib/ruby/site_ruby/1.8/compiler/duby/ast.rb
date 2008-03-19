@@ -263,7 +263,13 @@ module Compiler::Duby
       super(parent, yield(self))
     end
   end
-  class Return < Node; end
+  class Return < Node
+    include Valued
+    def initialize(parent)
+      @value = (children = yield(self))[0]
+      super(parent, children)
+    end
+  end
   class Root < Node; end
   class Self < Node; end
   class Str < Node; end
@@ -283,7 +289,6 @@ module Compiler::Duby
       "TypeReference(#{name}, array = #{array})"
     end
   end
-  class VCall < Node; end
   class VoidType < Node; end
   class While < Node; end
 end

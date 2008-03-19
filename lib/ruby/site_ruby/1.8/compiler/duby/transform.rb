@@ -297,8 +297,9 @@ module Compiler::Duby
 
     class ReturnNode
       def transform(parent)
-        value_node.compile(builder)
-        builder.areturn
+        Return.new(parent) do |ret|
+          [value_node.transform(ret)]
+        end
       end
     end
 
@@ -332,12 +333,11 @@ module Compiler::Duby
 
     class VCallNode
       def transform(parent)
-        if builder.static
-          builder.invokestatic builder.this, name, builder.static_signature(name, [])
-        else
-          builder.aload 0
-
-          builder.invokevirtual builder.this, name, builder.instance_signature(name, [])
+        FunctionalCall.new(parent, name) do |call|
+          [
+            [],
+            nil
+          ]
         end
       end
     end

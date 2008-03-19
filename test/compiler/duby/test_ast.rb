@@ -263,4 +263,28 @@ class TestAst < Test::Unit::TestCase
     assert(Compiler::Duby::TypeReference === signature[2])
     assert_equal("java.lang.Object", signature[2].name)
   end
+  
+  def test_return
+    node = JRuby.parse("return 1")
+    new_ast = node.child_nodes[0].transform(nil)
+    
+    assert_not_nil(new_ast)
+    inspected = "Return\n Fixnum(1)"
+    assert_equal(inspected, new_ast.inspect)
+    assert(Compiler::Duby::Return === new_ast)
+    assert(Compiler::Duby::Fixnum === new_ast.value)
+  end
+  
+  def test_vcall
+    node = JRuby.parse("foo")
+    new_ast = node.child_nodes[0].transform(nil)
+    
+    assert_not_nil(new_ast)
+    assert(Compiler::Duby::FunctionalCall === new_ast)
+    assert_equal("FunctionalCall(foo)", new_ast.inspect)
+    
+    assert_equal("foo", new_ast.name)
+    assert_not_nil(new_ast.parameters)
+    assert_equal(0, new_ast.parameters.size)
+  end
 end
