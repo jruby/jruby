@@ -73,6 +73,39 @@ module Compiler::Duby
           ]
         end
       end
+      
+      def type_reference(parent)
+        if name == "[]"
+          # array type, top should be a constant; find the rest
+          array = true
+          elements = []
+        else
+          elements = [name]
+        end
+
+        receiver = receiver_node
+
+        loop do
+          case receiver
+          when ConstNode
+            elements << receiver_node.name
+            break
+          when CallNode
+            elements.unshift(receiver.name)
+            receiver = receiver.receiver_node
+          when SymbolNode
+            elements.unshift(receiver.name)
+            break
+          when VCallNode
+            elements.unshift(receiver.name)
+            break
+          end
+        end
+
+        # join and load
+        class_name = elements.join(".")
+        TypeReference.new(parent, class_name, array)
+      end
     end
 
     class Colon2Node
@@ -82,12 +115,62 @@ module Compiler::Duby
       def transform(parent)
         Constant.new(parent, name)
       end
+      
+      def type_reference(parent)
+        TypeReference.new(parent, name)
+      end
     end
 
     class DefnNode
+      def transform(parent)
+        MethodDefinition.new(parent, name) do |defn|
+          signature = [VoidType.new(parent)]
+          
+          # TODO: Disabled until parser supports it
+          if false && args_node
+            if args_node.arguments && TypedLocalAsgn === args_node.arguments[0]
+              # do signature creation from args
+            end
+          elsif body_node
+            first_node = body_node[0]
+            first_node = first_node.next_node while NewlineNode === first_node
+            if HashNode === first_node
+              signature = first_node.signature(defn)
+            end
+          end
+          [
+            signature,
+            args_node.transform(defn),
+            body_node.transform(defn)
+          ]
+        end
+      end
     end
 
     class DefsNode
+      def transform(parent)
+        StaticMethodDefinition.new(parent, name) do |defn|
+          signature = [VoidType.new(parent)]
+          
+          # TODO: Disabled until parser supports it
+          if false && args_node
+            if args_node.arguments && TypedLocalAsgn === args_node.arguments[0]
+              # do signature creation from args
+            end
+          elsif body_node
+            first_node = body_node[0]
+            first_node = first_node.next_node while NewlineNode === first_node
+            if HashNode === first_node
+              signature = first_node.signature(defn)
+            end
+          end
+          [
+            signature,
+            args_node.transform(defn),
+            body_node.transform(defn)
+          ]
+        end
+      end
     end
 
     class FCallNode
@@ -114,6 +197,36 @@ module Compiler::Duby
     end
 
     class HashNode
+      def transform(parent)
+        @declaration ||= false
+        
+        if @declaration
+          Noop.new(parent)
+        else
+          super
+        end
+      end
+      
+      # Create a signature definition using a literal hash syntax
+      def signature(parent)
+        # flag this as a declaration, so it transforms to a noop
+        @declaration = true
+        
+        arg_types = []
+        return_type = VoidType.new(parent)
+        
+        list = list_node.child_nodes.to_a
+        list.each_index do |index|
+          if index % 2 == 0
+            if SymbolNode === list[index] && list[index].name == 'return'
+              return_type = list[index + 1].type_reference(parent)
+            else
+              arg_types << list[index + 1].type_reference(parent)
+            end
+          end
+        end
+        return [return_type, arg_types]
+      end
     end
 
     class IfNode
@@ -168,6 +281,11 @@ module Compiler::Duby
         actual.newline = true
         actual
       end
+      
+      # newlines are bypassed during signature transformation
+      def signature(parent)
+        next_node.signature(parent)
+      end
     end
     
     class NotNode
@@ -206,6 +324,9 @@ module Compiler::Duby
     end
 
     class SymbolNode
+      def type_reference(parent)
+        TypeReference.new(parent, name)
+      end
     end
 
     class VCallNode

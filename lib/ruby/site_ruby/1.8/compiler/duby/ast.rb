@@ -157,8 +157,6 @@ module Compiler::Duby
       super(parent, [])
     end
   end
-  class Defn < Node; end
-  class Defs < Node; end
   class FunctionalCall < Node
     include Named
     attr_accessor :parameters, :block
@@ -170,36 +168,6 @@ module Compiler::Duby
     
     def to_s
       "FunctionalCall(#{name})"
-    end
-  end
-  class Fixnum < Node
-    include Literal
-    def initialize(parent, literal)
-      super(parent)
-      @literal = literal
-    end
-    
-    def to_s
-      "Fixnum(#{literal})"
-    end
-  end
-  class Float < Node
-    include Literal
-    def initialize(parent, literal)
-      super(parent)
-      @literal = literal
-    end
-    
-    def to_s
-      "Float(#{literal})"
-    end
-  end
-  class Hash < Node; end
-  class If < Node
-    attr_accessor :condition, :body, :else
-    def initialize(parent)
-      @condition, @body, @else = children = yield(self)
-      super(parent, children)
     end
   end
   class FieldDeclaration < Node
@@ -239,6 +207,36 @@ module Compiler::Duby
       "Field(#{name})"
     end
   end
+  class Fixnum < Node
+    include Literal
+    def initialize(parent, literal)
+      super(parent)
+      @literal = literal
+    end
+    
+    def to_s
+      "Fixnum(#{literal})"
+    end
+  end
+  class Float < Node
+    include Literal
+    def initialize(parent, literal)
+      super(parent)
+      @literal = literal
+    end
+    
+    def to_s
+      "Float(#{literal})"
+    end
+  end
+  class Hash < Node; end
+  class If < Node
+    attr_accessor :condition, :body, :else
+    def initialize(parent)
+      @condition, @body, @else = children = yield(self)
+      super(parent, children)
+    end
+  end
   class LocalDeclaration < Node
     include Named
     include Valued
@@ -276,7 +274,28 @@ module Compiler::Duby
       "Local(#{name})"
     end
   end
+  
+  class MethodDefinition < Node
+    include Named
+    attr_accessor :signature, :arguments, :body
+    def initialize(parent, name)
+      @signature, @arguments, @body = children = yield(self)
+      @name = name
+      super(parent, children)
+    end
+  end
+  class StaticMethodDefinition < Node
+    include Named
+    attr_accessor :signature, :arguments, :body
+    def initialize(parent, name)
+      @signature, @arguments, @body = children = yield(self)
+      @name = name
+      super(parent, children)
+    end
+  end
+  
   class Module < Node; end
+  class Noop < Node; end
   class Not < Node
     def initialize(parent)
       super(parent, yield(self))
@@ -287,6 +306,18 @@ module Compiler::Duby
   class Self < Node; end
   class Str < Node; end
   class Symbol < Node; end
+  class TypeReference < Node
+    include Named
+    attr_accessor :array
+    def initialize(parent, name, array = false)
+      @name = name
+      @array = array
+      super(parent, [])
+    end
+    
+    def array?; @array; end
+  end
   class VCall < Node; end
+  class VoidType < Node; end
   class While < Node; end
 end
