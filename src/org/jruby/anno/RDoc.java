@@ -13,7 +13,10 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.TYPE})
 public @interface RDoc {
-    String callSeq() default "";
+    String[] callSeq() default "";
     String doc() default "";
-    String name() default "";
+    String[] name() default "";
+    //This parameter should only be used to point out if something is a Module instead of a Class
+    String type() default "Class";
+    String parent() default "Object";
 }
