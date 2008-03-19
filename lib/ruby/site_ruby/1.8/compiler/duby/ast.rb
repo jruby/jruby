@@ -42,6 +42,10 @@ module Compiler::Duby
   
   module Named
     attr_accessor :name
+    
+    def to_s
+      "#{super}(#{name})"
+    end
   end
   
   module Typed
@@ -56,6 +60,10 @@ module Compiler::Duby
   module Literal
     include Typed
     attr_accessor :literal
+    
+    def to_s
+      "#{super}(#{literal})"
+    end
   end
 
   class Arguments < Node
@@ -75,10 +83,6 @@ module Compiler::Duby
       
       @name = name
     end
-    
-    def to_s
-      "RequiredArgument(#{name})"
-    end
   end
   class OptionalArgument < Argument
     include Named
@@ -88,10 +92,6 @@ module Compiler::Duby
       @name = @child.name
       super(parent, children)
     end
-    
-    def to_s
-      "OptionalArgument(#{name})"
-    end
   end
   class RestArgument < Argument
     include Named
@@ -100,10 +100,6 @@ module Compiler::Duby
       
       @name = name
     end
-    
-    def to_s
-      "RestArgument(#{name})"
-    end
   end
   class BlockArgument < Argument
     include Named
@@ -111,10 +107,6 @@ module Compiler::Duby
       super(parent)
       
       @name = name
-    end
-    
-    def to_s
-      "BlockArgument(#{name})"
     end
   end
   class Array < Node
@@ -134,10 +126,6 @@ module Compiler::Duby
       @target, @parameters, @block = children = yield(self)
       @name = name
       super(parent, children)
-    end
-    
-    def to_s
-      "Call(#{name})"
     end
   end
   class ClassDefinition < Node
@@ -165,10 +153,6 @@ module Compiler::Duby
       @name = name
       super(parent, children)
     end
-    
-    def to_s
-      "FunctionalCall(#{name})"
-    end
   end
   class FieldDeclaration < Node
     include Named
@@ -191,20 +175,12 @@ module Compiler::Duby
       @name = name
       super(parent, children)
     end
-    
-    def to_s
-      "FieldAssignment(#{name})"
-    end
   end
   class Field < Node
     include Named
     def initialize(parent, name)
       super(parent, [])
       @name = name
-    end
-    
-    def to_s
-      "Field(#{name})"
     end
   end
   class Fixnum < Node
@@ -213,20 +189,12 @@ module Compiler::Duby
       super(parent)
       @literal = literal
     end
-    
-    def to_s
-      "Fixnum(#{literal})"
-    end
   end
   class Float < Node
     include Literal
     def initialize(parent, literal)
       super(parent)
       @literal = literal
-    end
-    
-    def to_s
-      "Float(#{literal})"
     end
   end
   class Hash < Node; end
@@ -258,10 +226,6 @@ module Compiler::Duby
       @name = name
       super(parent, children)
     end
-    
-    def to_s
-      "LocalAssignment(#{name})"
-    end
   end
   class Local < Node
     include Named
@@ -269,12 +233,7 @@ module Compiler::Duby
       super(parent, [])
       @name = name
     end
-    
-    def to_s
-      "Local(#{name})"
-    end
   end
-  
   class MethodDefinition < Node
     include Named
     attr_accessor :signature, :arguments, :body
@@ -293,7 +252,6 @@ module Compiler::Duby
       super(parent, children)
     end
   end
-  
   class Module < Node; end
   class Noop < Node; end
   class Not < Node
@@ -312,10 +270,14 @@ module Compiler::Duby
     def initialize(parent, name, array = false)
       @name = name
       @array = array
-      super(parent, [])
+      super(parent)
     end
     
     def array?; @array; end
+    
+    def to_s
+      "TypeReference(#{name}, array = #{array})"
+    end
   end
   class VCall < Node; end
   class VoidType < Node; end

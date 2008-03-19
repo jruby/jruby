@@ -80,6 +80,7 @@ module Compiler::Duby
           array = true
           elements = []
         else
+          array = false
           elements = [name]
         end
 
@@ -225,7 +226,7 @@ module Compiler::Duby
             end
           end
         end
-        return [return_type, arg_types]
+        return [return_type, *arg_types]
       end
     end
 

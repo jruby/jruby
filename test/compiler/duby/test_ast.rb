@@ -145,6 +145,7 @@ class TestAst < Test::Unit::TestCase
     new_ast = node.child_nodes[0].transform(nil)
     
     assert_not_nil(new_ast)
+    assert_equal("Body\n Fixnum(1)\n Fixnum(2)", new_ast.inspect)
     assert(Compiler::Duby::Body === new_ast)
     assert(Compiler::Duby::Fixnum === new_ast[0])
     
@@ -158,6 +159,7 @@ class TestAst < Test::Unit::TestCase
     new_ast = node.child_nodes[0].transform(nil)
     
     assert_not_nil(new_ast)
+    assert_equal("Body\n Fixnum(1)\n Fixnum(2)", new_ast.inspect)
     assert(Compiler::Duby::Body === new_ast)
     assert(Compiler::Duby::Fixnum === new_ast[0])
     
@@ -170,6 +172,8 @@ class TestAst < Test::Unit::TestCase
     node = JRuby.parse("1")
     
     new_ast = node.child_nodes[0].transform(nil)
+    assert_not_nil(new_ast)
+    assert_equal("Fixnum(1)", new_ast.inspect)
     assert(Compiler::Duby::Fixnum === new_ast)
     assert_equal(1, new_ast.literal)
   end
@@ -178,6 +182,8 @@ class TestAst < Test::Unit::TestCase
     node = JRuby.parse("1.0")
     
     new_ast = node.child_nodes[0].transform(nil)
+    assert_not_nil(new_ast)
+    assert_equal("Float(1.0)", new_ast.inspect)
     assert(Compiler::Duby::Float === new_ast)
     assert_equal(1.0, new_ast.literal)
   end
@@ -186,6 +192,8 @@ class TestAst < Test::Unit::TestCase
     node = JRuby.parse("class Foo < Bar; 1; 2; end")
     new_ast = node.child_nodes[0].transform(nil)
     
+    assert_not_nil(new_ast)
+    assert_equal("ClassDefinition(Foo)\n Constant(Bar)\n Body\n  Fixnum(1)\n  Fixnum(2)", new_ast.inspect)
     assert(Compiler::Duby::ClassDefinition === new_ast)
     assert_equal("Foo", new_ast.name)
     
@@ -198,6 +206,8 @@ class TestAst < Test::Unit::TestCase
     node = JRuby.parse("def foo(a, b); 1; end")
     new_ast = node.child_nodes[0].transform(nil)
     
+    assert_not_nil(new_ast)
+    assert_equal("MethodDefinition(foo)\n VoidType\n Arguments\n  RequiredArgument(a)\n  RequiredArgument(b)\n Fixnum(1)", new_ast.inspect)
     assert(Compiler::Duby::MethodDefinition === new_ast)
     assert_equal("foo", new_ast.name)
     assert_not_nil(new_ast.signature)
@@ -211,6 +221,8 @@ class TestAst < Test::Unit::TestCase
     node = JRuby.parse("def self.foo(a, b); 1; end")
     new_ast = node.child_nodes[0].transform(nil)
     
+    assert_not_nil(new_ast)
+    assert_equal("StaticMethodDefinition(foo)\n VoidType\n Arguments\n  RequiredArgument(a)\n  RequiredArgument(b)\n Fixnum(1)", new_ast.inspect)
     assert(Compiler::Duby::StaticMethodDefinition === new_ast)
     assert_equal("foo", new_ast.name)
     assert_not_nil(new_ast.signature)
@@ -225,26 +237,30 @@ class TestAst < Test::Unit::TestCase
     new_ast = node.child_nodes[0].transform(nil)
     
     assert_not_nil(new_ast.signature)
+    inspected = "StaticMethodDefinition(foo)\n TypeReference(baz, array = false)\n TypeReference(foo, array = false)\n TypeReference(bar, array = false)\n Arguments\n  RequiredArgument(a)\n  RequiredArgument(b)\n Body\n  Noop\n  Fixnum(1)"
+    assert_equal(inspected, new_ast.inspect)
     signature = new_ast.signature
-    assert_equal(2, signature.size)
+    assert_equal(3, signature.size)
     assert(Compiler::Duby::TypeReference === signature[0])
     assert_equal("baz", signature[0].name)
-    assert(Compiler::Duby::TypeReference === signature[1][0])
-    assert_equal("foo", signature[1][0].name)
-    assert(Compiler::Duby::TypeReference === signature[1][1])
-    assert_equal("bar", signature[1][1].name)
+    assert(Compiler::Duby::TypeReference === signature[1])
+    assert_equal("foo", signature[1].name)
+    assert(Compiler::Duby::TypeReference === signature[2])
+    assert_equal("bar", signature[2].name)
   end
   
   def test_type_reference
     node = JRuby.parse("{a => :foo, b => java.lang.Object, :return => ArrayList}")
     signature = node.child_nodes[0].signature(nil)
     
-    assert_equal(2, signature.size)
+    inspected = "[TypeReference(ArrayList, array = false), TypeReference(foo, array = false), TypeReference(java.lang.Object, array = false)]"
+    assert_equal(inspected, signature.inspect)
+    assert_equal(3, signature.size)
     assert(Compiler::Duby::TypeReference === signature[0])
     assert_equal("ArrayList", signature[0].name)
-    assert(Compiler::Duby::TypeReference === signature[1][0])
-    assert_equal("foo", signature[1][0].name)
-    assert(Compiler::Duby::TypeReference === signature[1][1])
-    assert_equal("java.lang.Object", signature[1][1].name)
+    assert(Compiler::Duby::TypeReference === signature[1])
+    assert_equal("foo", signature[1].name)
+    assert(Compiler::Duby::TypeReference === signature[2])
+    assert_equal("java.lang.Object", signature[2].name)
   end
 end
