@@ -53,6 +53,14 @@ module Compiler::Duby
     end
 
     class ClassNode
+      def transform(parent)
+        ClassDefinition.new(parent, cpath.name) do |class_def|
+          [
+            super_node ? super_node.transform(class_def) : nil,
+            body_node ? body_node.transform(class_def) : nil
+          ]
+        end
+      end
     end
 
     class CallNode
@@ -71,6 +79,9 @@ module Compiler::Duby
     end
 
     class ConstNode
+      def transform(parent)
+        Constant.new(parent, name)
+      end
     end
 
     class DefnNode

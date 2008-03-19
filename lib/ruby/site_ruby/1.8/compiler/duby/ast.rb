@@ -122,7 +122,6 @@ module Compiler::Duby
       super(parent, yield(self))
     end
   end
-  class Begin < Node; end
   class Body < Node
     def initialize(parent)
       super(parent, yield(self))
@@ -141,9 +140,23 @@ module Compiler::Duby
       "Call(#{name})"
     end
   end
-  class Class < Node; end
+  class ClassDefinition < Node
+    include Named
+    attr_accessor :superclass, :body
+    def initialize(parent, name)
+      @superclass, @body = children = yield(self)
+      @name = name
+      super(parent, children)
+    end
+  end
   class Colon2 < Node; end
-  class Const < Node; end
+  class Constant < Node
+    include Named
+    def initialize(parent, name)
+      @name = name
+      super(parent, [])
+    end
+  end
   class Defn < Node; end
   class Defs < Node; end
   class FunctionalCall < Node

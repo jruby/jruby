@@ -181,4 +181,16 @@ class TestAst < Test::Unit::TestCase
     assert(Compiler::Duby::Float === new_ast)
     assert_equal(1.0, new_ast.literal)
   end
+  
+  def test_class
+    node = JRuby.parse("class Foo < Bar; 1; 2; end")
+    new_ast = node.child_nodes[0].transform(nil)
+    
+    assert(Compiler::Duby::ClassDefinition === new_ast)
+    assert_equal("Foo", new_ast.name)
+    
+    assert(Compiler::Duby::Constant === new_ast.superclass)
+    assert(Compiler::Duby::Body === new_ast.body)
+    assert(Compiler::Duby::Fixnum === new_ast.body[0])
+  end
 end
