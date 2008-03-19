@@ -49,6 +49,7 @@ public class IOOutputStream extends OutputStream {
     private IRubyObject io;
     private CallSite writeAdapter;
     private CallSite closeAdapter = new CallSite.InlineCachingCallSite("close", CallType.FUNCTIONAL);
+    private CallSite flushAdapter = new CallSite.InlineCachingCallSite("flush", CallType.FUNCTIONAL);
 
     /**
      * Creates a new OutputStream with the object provided.
@@ -80,5 +81,9 @@ public class IOOutputStream extends OutputStream {
     
     public void close() throws IOException {
         closeAdapter.call(io.getRuntime().getCurrentContext(), io);
+    }
+
+    public void flush() throws IOException {
+        flushAdapter.call(io.getRuntime().getCurrentContext(), io);
     }
 }

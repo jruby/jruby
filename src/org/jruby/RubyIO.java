@@ -133,7 +133,7 @@ public class RubyIO extends RubyObject {
         openFile = new OpenFile();
         
         try {
-            openFile.setMainStream(new ChannelStream(runtime, new ChannelDescriptor(Channels.newChannel(outputStream), getNewFileno(), new FileDescriptor())));
+            openFile.setMainStream(new ChannelStream(runtime, new ChannelDescriptor(outputStream, getNewFileno(), new ModeFlags(ModeFlags.WRONLY | ModeFlags.APPEND), new FileDescriptor())));
         } catch (InvalidValueException e) {
             throw getRuntime().newErrnoEINVALError();
         }
@@ -145,7 +145,7 @@ public class RubyIO extends RubyObject {
     
     public RubyIO(Ruby runtime, InputStream inputStream) {
         super(runtime, runtime.getIO());
-        
+
         if (inputStream == null) {
             throw runtime.newIOError("Opening invalid stream");
         }
@@ -153,7 +153,7 @@ public class RubyIO extends RubyObject {
         openFile = new OpenFile();
         
         try {
-            openFile.setMainStream(new ChannelStream(runtime, new ChannelDescriptor(Channels.newChannel(inputStream), getNewFileno(), new FileDescriptor())));
+            openFile.setMainStream(new ChannelStream(runtime, new ChannelDescriptor(inputStream, getNewFileno(), new ModeFlags(ModeFlags.RDONLY), new FileDescriptor())));
         } catch (InvalidValueException e) {
             throw getRuntime().newErrnoEINVALError();
         }
@@ -186,7 +186,6 @@ public class RubyIO extends RubyObject {
 
     public RubyIO(Ruby runtime, Process process, ModeFlags modes) {
     	super(runtime, runtime.getIO());
-        
         openFile = new OpenFile();
         
         openFile.setMode(modes.getOpenFileFlags() | OpenFile.SYNC);
@@ -261,7 +260,7 @@ public class RubyIO extends RubyObject {
                 openFile.setMainStream(
                         new ChannelStream(
                             runtime, 
-                            new ChannelDescriptor(Channels.newChannel(runtime.getOut()), 1, new ModeFlags(ModeFlags.WRONLY | ModeFlags.APPEND), FileDescriptor.out),
+                            new ChannelDescriptor(runtime.getOut(), 1, new ModeFlags(ModeFlags.WRONLY | ModeFlags.APPEND), FileDescriptor.out),
                             FileDescriptor.out));
                 openFile.getMainStream().setSync(true);
                 break;
