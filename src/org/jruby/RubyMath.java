@@ -32,9 +32,11 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyModule;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+@JRubyModule(name="Math")
 public class RubyMath {
     /** Create the Math module and add it to the Ruby runtime.
      * 

@@ -50,6 +50,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.internal.runtime.methods.AliasMethod;
@@ -87,6 +88,7 @@ import org.jruby.runtime.MethodIndex;
  *
  * @author  jpetersen
  */
+@JRubyClass(name="Module")
 public class RubyModule extends RubyObject {
     
     public static RubyClass createModuleClass(Ruby runtime, RubyClass moduleClass) {

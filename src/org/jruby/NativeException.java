@@ -29,6 +29,8 @@ package org.jruby;
 
 import java.io.PrintStream;
 
+import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.Block;
@@ -37,6 +39,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 
+@JRubyClass(name = "NativeException", parent="RuntimeError")
 public class NativeException extends RubyException {
 
     private final Throwable cause;
@@ -60,7 +63,8 @@ public class NativeException extends RubyException {
 
 		return exceptionClass;
     }
-    
+
+    @JRubyMethod
     public IRubyObject cause(Block unusedBlock) {
         return Java.wrap(getRuntime(), JavaObject.wrap(getRuntime(), cause));
     }

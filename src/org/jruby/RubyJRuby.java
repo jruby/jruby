@@ -32,6 +32,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyModule;
+import org.jruby.anno.JRubyClass;
 
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
@@ -53,6 +55,7 @@ import org.objectweb.asm.util.TraceClassVisitor;
 /**
  * Module which defines JRuby-specific methods for use. 
  */
+@JRubyModule(name="JRuby")
 public class RubyJRuby {
     public static RubyModule createJRuby(Ruby runtime) {
         ThreadContext context = runtime.getCurrentContext();
@@ -188,6 +191,7 @@ public class RubyJRuby {
                 JavaObject.wrap(recv.getRuntime(), obj));
     }
 
+    @JRubyClass(name="JRuby::CompiledScript")
     public static class JRubyCompiledScript {
         @JRubyMethod(name = "to_s")
         public static IRubyObject compiled_script_to_s(IRubyObject recv) {
@@ -209,6 +213,7 @@ public class RubyJRuby {
         }
     }
 
+    @JRubyModule(name="JRubyExtensions")
     public static class JRubyExtensions {
         @JRubyMethod(name = "steal_method", required = 2, module = true)
         public static IRubyObject steal_method(IRubyObject recv, IRubyObject type, IRubyObject methodName) {

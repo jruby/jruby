@@ -31,6 +31,7 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyModule;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -42,6 +43,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author Anders
  */
+@JRubyModule(name="GC")
 public class RubyGC {
     public static RubyModule createGCModule(Ruby runtime) {
         RubyModule result = runtime.defineModule("GC");

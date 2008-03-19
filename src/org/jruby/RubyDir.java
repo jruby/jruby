@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.ext.posix.util.Platform;
 
 import org.jruby.javasupport.JavaUtil;
@@ -54,6 +55,7 @@ import org.jruby.util.ByteList;
  *
  * @author  jvoegele
  */
+@JRubyClass(name="Dir", include="Enumerable")
 public class RubyDir extends RubyObject {
 	// What we passed to the constructor for method 'path'
     private RubyString    path;

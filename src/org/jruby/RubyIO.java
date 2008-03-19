@@ -57,6 +57,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.posix.util.FieldAccess;
@@ -86,6 +87,7 @@ import org.jruby.util.io.ChannelDescriptor;
  * 
  * @author jpetersen
  */
+@JRubyClass(name="IO", include="Enumerable")
 public class RubyIO extends RubyObject {
     protected OpenFile openFile;
     

@@ -29,9 +29,11 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
+@JRubyClass(name="LocalJumpError",parent="StandardError")
 public class RubyLocalJumpError extends RubyException {
     private static ObjectAllocator LOCALJUMPERROR_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {

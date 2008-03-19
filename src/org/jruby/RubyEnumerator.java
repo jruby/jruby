@@ -28,6 +28,7 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
@@ -40,6 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * Implementation of Ruby's Enumerator module.
  */
+@JRubyModule(name="Enumerable::Enumerator", include="Enumerable")
 public class RubyEnumerator extends RubyObject {
     /** target for each operation */
     private IRubyObject object;

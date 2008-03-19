@@ -39,6 +39,7 @@ package org.jruby;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.List;
+import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 
 import org.jruby.runtime.Block;
@@ -59,6 +60,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
  *
  * @author  jpetersen
  */
+@JRubyClass(name="Exception")
 public class RubyException extends RubyObject {
 
     private Frame[] backtraceFrames;

@@ -34,6 +34,8 @@ import java.security.Provider;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyModule;
+import org.jruby.anno.JRubyClass;
 
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -45,6 +47,7 @@ import org.jruby.util.ByteList;
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
+@JRubyModule(name="Digest")
 public class RubyDigest {
     private static Provider provider = null;
 
@@ -72,6 +75,19 @@ public class RubyDigest {
         // fall back to system JCA providers
         return MessageDigest.getInstance(providerName);
     }
+
+    @JRubyClass(name="Digest::MD5", parent="Digest::Base")
+    public static class MD5 {}
+    @JRubyClass(name="Digest::RMD160", parent="Digest::Base")
+    public static class RMD160 {}
+    @JRubyClass(name="Digest::SHA1", parent="Digest::Base")
+    public static class SHA1 {}
+    @JRubyClass(name="Digest::SHA256", parent="Digest::Base")
+    public static class SHA256 {}
+    @JRubyClass(name="Digest::SHA384", parent="Digest::Base")
+    public static class SHA384 {}
+    @JRubyClass(name="Digest::SHA512", parent="Digest::Base")
+    public static class SHA512 {}
 
     public static void createDigestMD5(Ruby runtime) {
         runtime.getLoadService().require("digest.so");
@@ -127,6 +143,7 @@ public class RubyDigest {
         cDigest_SHA2_512.setInternalModuleVariable("metadata",runtime.newString("SHA-512"));
     }
 
+    @JRubyClass(name="Digest::Base")
     public static class Base extends RubyObject {
         protected static final ObjectAllocator BASE_ALLOCATOR = new ObjectAllocator() {
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {

@@ -37,6 +37,7 @@ import org.joni.Regex;
 import org.joni.Region;
 import org.joni.exception.JOniException;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -48,6 +49,7 @@ import org.jruby.util.ByteList;
 /**
  * @author olabini
  */
+@JRubyClass(name="MatchData")
 public class RubyMatchData extends RubyObject {
     Region regs;        // captures
     int begin;          // begin and end are used when not groups defined

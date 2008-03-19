@@ -46,6 +46,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
@@ -69,6 +70,7 @@ import org.jruby.util.Pack;
  * all users must synchronize externally with writers.
  *
  */
+@JRubyClass(name="Array")
 public class RubyArray extends RubyObject implements List {
 
     public static RubyClass createArrayClass(Ruby runtime) {

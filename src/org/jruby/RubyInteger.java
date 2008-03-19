@@ -35,6 +35,7 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.MethodIndex;
@@ -46,6 +47,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author  jpetersen
  */
+@JRubyClass(name="Integer", parent="Numeric", include="Precision")
 public abstract class RubyInteger extends RubyNumeric { 
 
     public static RubyClass createIntegerClass(Ruby runtime) {

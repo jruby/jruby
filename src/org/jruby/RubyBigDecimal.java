@@ -31,6 +31,7 @@ import java.math.BigDecimal;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 
 import org.jruby.runtime.Arity;
 
@@ -44,6 +45,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
+@JRubyClass(name="BigDecimal", parent="Numeric")
 public class RubyBigDecimal extends RubyNumeric {
     private static final ObjectAllocator BIGDECIMAL_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {

@@ -36,6 +36,7 @@ package org.jruby;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.CallbackFactory;
@@ -50,6 +51,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
  *
  * @author  jpetersen
  */
+@JRubyClass(name="Bignum", parent="Integer")
 public class RubyBignum extends RubyInteger {
     public static RubyClass createBignumClass(Ruby runtime) {
         RubyClass bignum = runtime.defineClass("Bignum", runtime.getInteger(),

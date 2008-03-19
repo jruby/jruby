@@ -65,6 +65,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ClassIndex;
@@ -78,6 +79,7 @@ import org.jruby.util.TypeConverter;
  *
  * @author  jpetersen
  */
+@JRubyClass(name="Object", include="Kernel")
 public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObjectType, InstanceVariables, InternalVariables {
     
     private RubyObject(){};

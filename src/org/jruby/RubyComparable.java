@@ -34,6 +34,7 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
@@ -42,6 +43,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /** Implementation of the Comparable module.
  *
  */
+@JRubyModule(name="Comparable")
 public class RubyComparable {
     public static RubyModule createComparable(Ruby runtime) {
         RubyModule comparableModule = runtime.defineModule("Comparable");

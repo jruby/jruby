@@ -1,6 +1,7 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyModule;
 import org.jruby.ext.posix.Passwd;
 import org.jruby.ext.posix.Group;
 import org.jruby.ext.posix.POSIX;
@@ -8,6 +9,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+@JRubyModule(name="Etc")
 public class RubyEtc {
     public static RubyModule createEtcModule(Ruby runtime) {
         RubyModule etcModule = runtime.defineModule("Etc");

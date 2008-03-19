@@ -45,6 +45,7 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyModule;
 
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
@@ -71,6 +72,7 @@ import org.jruby.util.TypeConverter;
 /**
  * Note: For CVS history, see KernelModule.java.
  */
+@JRubyModule(name="Kernel")
 public class RubyKernel {
     public final static Class<?> IRUBY_OBJECT = IRubyObject.class;
 

@@ -33,6 +33,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Frame;
@@ -44,6 +45,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * @author  jpetersen
  */
+@JRubyClass(name="Binding")
 public class RubyBinding extends RubyObject {
     private Binding binding;
 

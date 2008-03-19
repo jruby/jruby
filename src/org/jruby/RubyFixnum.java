@@ -37,6 +37,7 @@
 package org.jruby;
 
 import java.math.BigInteger;
+import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.CallbackFactory;
@@ -50,6 +51,7 @@ import org.jruby.util.Convert;
 /** 
  * Implementation of the Fixnum class.
  */
+@JRubyClass(name="Fixnum", parent="Integer", include="Precision")
 public class RubyFixnum extends RubyInteger {
     
     public static RubyClass createFixnumClass(Ruby runtime) {

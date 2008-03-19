@@ -36,6 +36,7 @@ package org.jruby;
 import java.io.FileDescriptor;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.ext.posix.FileStat;
 import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Block;
@@ -47,6 +48,7 @@ import org.jruby.util.JRubyFile;
 /**
  * Implements File::Stat
  */
+@JRubyClass(name="File::Stat", include="Comparable")
 public class RubyFileStat extends RubyObject {
     private static final long serialVersionUID = 1L;
     

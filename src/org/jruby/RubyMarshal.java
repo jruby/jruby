@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyModule;
 
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
@@ -58,6 +59,7 @@ import org.jruby.util.IOOutputStream;
  *
  * @author Anders
  */
+@JRubyModule(name="Marshal")
 public class RubyMarshal {
 
     public static RubyModule createMarshalModule(Ruby runtime) {

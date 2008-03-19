@@ -28,6 +28,7 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -36,6 +37,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
+@JRubyClass(name="Continuation")
 public class RubyContinuation {
     public static void createContinuation(Ruby runtime) {
         RubyClass cContinuation = runtime.defineClass("Continuation",runtime.getObject(),runtime.getObject().getAllocator());

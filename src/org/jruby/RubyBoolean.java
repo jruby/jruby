@@ -32,6 +32,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -42,6 +43,7 @@ import org.jruby.runtime.marshal.MarshalStream;
  *
  * @author  jpetersen
  */
+@JRubyClass(name={"TrueClass", "FalseClass"})
 public class RubyBoolean extends RubyObject {
     
     public RubyBoolean(Ruby runtime, boolean value) {

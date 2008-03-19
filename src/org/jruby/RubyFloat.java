@@ -40,6 +40,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
@@ -53,6 +54,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 /**
   * A representation of a float object
  */
+@JRubyClass(name="Float", parent="Numeric", include="Precision")
 public class RubyFloat extends RubyNumeric {
 
     public static RubyClass createFloatClass(Ruby runtime) {

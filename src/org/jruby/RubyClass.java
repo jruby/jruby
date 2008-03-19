@@ -36,6 +36,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -55,6 +56,7 @@ import org.jruby.util.collections.WeakHashSet;
  *
  * @author  jpetersen
  */
+@JRubyClass(name="Class", parent="Module")
 public class RubyClass extends RubyModule {
 	
     public static void createClassClass(Ruby runtime, RubyClass classClass) {

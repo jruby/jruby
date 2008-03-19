@@ -47,7 +47,9 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 
+import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyModule;
 import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -71,6 +73,7 @@ import org.jruby.util.io.PipeException;
 /**
  * Ruby File class equivalent in java.
  **/
+@JRubyClass(name="File", parent="IO", include="FileTest")
 public class RubyFile extends RubyIO {
     private static final long serialVersionUID = 1L;
     
@@ -161,6 +164,9 @@ public class RubyFile extends RubyIO {
             return instance;
         }
     };
+
+    @JRubyModule(name="File::Constants")
+    public static class Constants {}
     
     public static RubyClass createFileClass(Ruby runtime) {
         RubyClass fileClass = runtime.defineClass("File", runtime.getIO(), FILE_ALLOCATOR);

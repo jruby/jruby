@@ -40,6 +40,8 @@ import java.nio.charset.MalformedInputException;
 import java.nio.charset.UnmappableCharacterException;
 import java.nio.charset.UnsupportedCharsetException;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyModule;
+import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Arity;
 
 import org.jruby.runtime.Block;
@@ -49,6 +51,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.util.ByteList;
 
+@JRubyClass(name="Iconv")
 public class RubyIconv extends RubyObject {
     //static private final String TRANSLIT = "//translit";
     static private final String IGNORE = "//ignore";
@@ -65,6 +68,19 @@ public class RubyIconv extends RubyObject {
             return new RubyIconv(runtime, klass);
         }
     };
+
+    @JRubyModule(name="Iconv::Failure")
+    public static class Failure {}
+    @JRubyClass(name="Iconv::IllegalSequence", parent="ArgumentError", include="Iconv::Failure")
+    public static class IllegalSequence {}
+    @JRubyClass(name="Iconv::InvalidCharacter", parent="ArgumentError", include="Iconv::Failure")
+    public static class InvalidCharacter {}
+    @JRubyClass(name="Iconv::InvalidEncoding", parent="ArgumentError", include="Iconv::Failure")
+    public static class InvalidEncoding {}
+    @JRubyClass(name="Iconv::OutOfRange", parent="ArgumentError", include="Iconv::Failure")
+    public static class OutOfRange {}
+    @JRubyClass(name="Iconv::BrokenLibrary", parent="ArgumentError", include="Iconv::Failure")
+    public static class BrokenLibrary {}
 
     public static void createIconv(Ruby runtime) {
         RubyClass iconvClass = runtime.defineClass("Iconv", runtime.getObject(), ICONV_ALLOCATOR);

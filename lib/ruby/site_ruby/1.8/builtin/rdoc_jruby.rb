@@ -44,38 +44,39 @@ module JRuby
       JRubyModuleAnnotation = org.jruby.anno.JRubyModule.java_class
       
       def handle_class_module(clazz, class_mod, annotation, type_annotation, enclosure)
-        progress(class_mod[0, 1])
+        type_annotation.name.to_a.each do |name|
+          progress(class_mod[0, 1])
 
-        name = type_annotation.name.to_a.first
-        parent = class_mod == 'class' ? type_annotation.parent : nil
-        
+          parent = class_mod == 'class' ? type_annotation.parent : nil
+          
 
-        if class_mod == "class" 
-          cm = enclosure.add_class(::RDoc::NormalClass, name, parent)
-          @stats.num_classes += 1
-        else
-          cm = enclosure.add_module(::RDoc::NormalModule, name)
-          @stats.num_modules += 1
+          if class_mod == "class" 
+            cm = enclosure.add_class(::RDoc::NormalClass, name, parent)
+            @stats.num_classes += 1
+          else
+            cm = enclosure.add_module(::RDoc::NormalModule, name)
+            @stats.num_modules += 1
+          end
+
+          cm.record_location(enclosure.toplevel)
+          type_annotation.include.to_a.each do |inc|
+            cm.add_include(::RDoc::Include.new(inc, ""))
+          end
+          
+          find_class_comment(clazz, annotation, cm)
+          
+          handle_methods(clazz, cm)
         end
-
-        cm.record_location(enclosure.toplevel)
-        type_annotation.include.to_a.each do |inc|
-          cm.add_include(::RDoc::Include.new(inc, ""))
-        end
-        
-        find_class_comment(clazz, annotation, cm)
-        
-        handle_methods(clazz, cm)
       end
       
       def handle_methods(clazz, enclosure)
-        clazz.java_class.java_class_methods.each do |method|
+        clazz.java_class.declared_class_methods.each do |method|
           if method.annotation_present?(JRubyMethodAnnotation)
             handle_method(clazz, method, enclosure)
           end
         end
         
-        clazz.java_class.java_instance_methods.each do |method|
+        clazz.java_class.declared_instance_methods.each do |method|
           if method.annotation_present?(JRubyMethodAnnotation)
             handle_method(clazz, method, enclosure)
           end
@@ -89,7 +90,7 @@ module JRuby
 
         anno = method.annotation(JRubyMethodAnnotation)
         
-        meth_name = anno.name.to_a.first
+        meth_name = anno.name.to_a.first || method.name
         type = anno.meta ? "singleton_method" : "instance_method"
 
         if meth_name == "initialize"
@@ -99,6 +100,7 @@ module JRuby
 
         meth_obj = ::RDoc::AnyMethod.new("", meth_name)
         meth_obj.singleton = type == "singleton_method"
+
         
         p_count = (anno.optional == 0 && !anno.rest) ? anno.required : -1
         
@@ -115,10 +117,32 @@ module JRuby
         find_method_comment(method.annotation(RDocAnnotation), meth_obj)
 
         enclosure.add_method(meth_obj)
+
+        meth_obj.visibility = case anno.visibility
+                                when org.jruby.runtime.Visibility::PUBLIC: :public
+                                when org.jruby.runtime.Visibility::PROTECTED: :protected
+                                when org.jruby.runtime.Visibility::PRIVATE: :private
+                                when org.jruby.runtime.Visibility::MODULE_FUNCTION: :public
+                              end
+        
+        if anno.name.to_a.length > 1
+          anno.name.to_a[1..-1].each do |al|
+            new_meth = ::RDoc::AnyMethod.new("", al)
+            new_meth.is_alias_for = meth_obj
+            new_meth.singleton    = meth_obj.singleton
+            new_meth.params       = meth_obj.params
+            new_meth.comment = "Alias for \##{meth_obj.name}"
+            meth_obj.add_alias(new_meth)
+            enclosure.add_method(new_meth)
+            new_meth.visibility = meth_obj.visibility
+          end
+        end
       end
 
       def find_class_comment(clazz, doc_annotation, class_meth)
-        class_meth.comment = doc_annotation.doc
+        if doc_annotation
+          class_meth.comment = doc_annotation.doc
+        end
       end
 
       def find_method_comment(doc_annotation, meth)
@@ -134,22 +158,29 @@ module JRuby
       end
       
       def extract_class_information(clazz)
-        a = clazz.java_class.annotation(RDocAnnotation)
-        if a
+        class_anno = clazz.java_class.annotation(JRubyClassAnnotation)
+        module_anno = clazz.java_class.annotation(JRubyModuleAnnotation)
+        doc_anno = clazz.java_class.annotation(RDocAnnotation)
+        if (class_anno || module_anno)
           $stderr.printf("%70s: ", clazz.java_class.to_s) unless @options.quiet
-          class_mod = if clazz.java_class.annotation_present?(JRubyClassAnnotation)
+          class_mod = if class_anno
                         "class"
                       else
                         "module"
                       end
           
-          handle_class_module(clazz, class_mod, a, clazz.java_class.annotation((class_mod == "class" ? JRubyClassAnnotation : JRubyModuleAnnotation)), @top_level)
+          handle_class_module(clazz, class_mod, doc_anno, class_anno || module_anno, @top_level)
+
+          if class_anno && module_anno
+            handle_class_module(clazz, "module", doc_anno, module_anno, @top_level)
+          end
+          
           $stderr.puts unless @options.quiet
         end
       end
     end
     
-    INTERNAL_PACKAGES = %w(org.jruby.yaml org.jruby.util org.jruby.runtime org.jruby.ast org.jruby.internal org.jruby.lexer org.jruby.evaluator org.jruby.compiler org.jruby.parser org.jruby.exceptions org.jruby.demo org.jruby.environment)
+    INTERNAL_PACKAGES = %w(org.jruby.yaml org.jruby.util org.jruby.runtime org.jruby.ast org.jruby.internal org.jruby.lexer org.jruby.evaluator org.jruby.compiler org.jruby.parser org.jruby.exceptions org.jruby.demo org.jruby.environment org.jruby.JRubyApplet)
     INTERNAL_PACKAGES_RE = INTERNAL_PACKAGES.map{ |ip| /^#{ip}/ }
     INTERNAL_PACKAGE_RE = Regexp::union(*INTERNAL_PACKAGES_RE)
     
@@ -226,7 +257,7 @@ module JRuby
           JRuby::RDoc::extract_rdoc_information_from_classes(classes, options, @stats)
         end
         
-        r.document(%w(--all --ri))
+        r.document(%w(--all --ri-system))
       end
     end
   end
