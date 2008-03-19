@@ -69,21 +69,74 @@ module JRuby
       end
       
       def handle_methods(clazz, enclosure)
-
+        clazz.java_class.java_class_methods.each do |method|
+          if method.annotation_present?(JRubyMethodAnnotation)
+            handle_method(clazz, method, enclosure)
+          end
+        end
         
-        $stderr.puts "looking through all the methods..."
-
+        clazz.java_class.java_instance_methods.each do |method|
+          if method.annotation_present?(JRubyMethodAnnotation)
+            handle_method(clazz, method, enclosure)
+          end
+        end
+      end
       
+      def handle_method(clazz, method, enclosure)
+        progress(".")
+
+        @stats.num_methods += 1
+
+        anno = method.annotation(JRubyMethodAnnotation)
+        
+        meth_name = anno.name.to_a.first
+        type = anno.meta ? "singleton_method" : "instance_method"
+
+        if meth_name == "initialize"
+          meth_name = "new"
+          type = "singleton_method"
+        end
+
+        meth_obj = ::RDoc::AnyMethod.new("", meth_name)
+        meth_obj.singleton = type == "singleton_method"
+        
+        p_count = (anno.optional == 0 && !anno.rest) ? anno.required : -1
+        
+        if p_count < 0
+          meth_obj.params = "(...)"
+        elsif p_count == 0
+          meth_obj.params = "()"
+        else
+          meth_obj.params = "(" +
+                            (1..p_count).map{|i| "p#{i}"}.join(", ") + 
+                                                ")"
+        end
+
+        find_method_comment(method.annotation(RDocAnnotation), meth_obj)
+
+        enclosure.add_method(meth_obj)
       end
 
       def find_class_comment(clazz, doc_annotation, class_meth)
         class_meth.comment = doc_annotation.doc
       end
+
+      def find_method_comment(doc_annotation, meth)
+        if doc_annotation
+          call_seq = (doc_annotation.call_seq || []).to_a.join("\n")
+
+          if call_seq != ""
+            call_seq << "\n\n"
+          end
+
+          meth.comment = call_seq + doc_annotation.doc
+        end
+      end
       
       def extract_class_information(clazz)
         a = clazz.java_class.annotation(RDocAnnotation)
         if a
-          $stderr.printf("\n%70s: ", clazz.java_class.to_s) unless @options.quiet
+          $stderr.printf("%70s: ", clazz.java_class.to_s) unless @options.quiet
           class_mod = if clazz.java_class.annotation_present?(JRubyClassAnnotation)
                         "class"
                       else
