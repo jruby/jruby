@@ -33,7 +33,6 @@ import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
@@ -99,7 +98,6 @@ public class ChannelDescriptor {
      * for more details. You probably should not use it.
      */
     private InputStream baseInputStream;
-    private OutputStream baseOutputStream;
     
     /**
      * Process streams get Channel.newChannel()ed into FileChannel but are not actually
@@ -168,11 +166,6 @@ public class ChannelDescriptor {
         // anything is available to be read without blocking.
         this(Channels.newChannel(baseInputStream), fileno, originalModes, fileDescriptor, new AtomicInteger(1), true);
         this.baseInputStream = baseInputStream;
-    }
-
-    public ChannelDescriptor(OutputStream baseOutputStream, int fileno, ModeFlags originalModes, FileDescriptor fileDescriptor) {
-        this(Channels.newChannel(baseOutputStream), fileno, originalModes, fileDescriptor, new AtomicInteger(1));
-        this.baseOutputStream = baseOutputStream;
     }
 
     /**
@@ -490,7 +483,7 @@ public class ChannelDescriptor {
      */
     public int internalWrite(ByteBuffer buffer) throws IOException, BadDescriptorException {
         checkOpen();
-
+        
         WritableByteChannel writeChannel = (WritableByteChannel)channel;
         
         if (isSeekable() && originalModes.isAppendable()) {
@@ -498,13 +491,7 @@ public class ChannelDescriptor {
             fileChannel.position(fileChannel.size());
         }
         
-        int ret = writeChannel.write(buffer);
-
-        if(null != baseOutputStream) {
-            baseOutputStream.flush();
-        }
-
-        return ret;
+        return writeChannel.write(buffer);
     }
     
     /**

@@ -413,7 +413,7 @@ public class ShellLauncher {
                     if (onlyIfAvailable && !hasReadSomething) {
                         if (in.available() == 0) {
                             synchronized (waitLock) {
-                                waitLock.wait(10);
+                                waitLock.wait(10);                                
                             }
                             continue;
                         } else {
@@ -425,7 +425,6 @@ public class ShellLauncher {
                         break;
                     }
                     out.write(buf, 0, numRead);
-                    out.flush();
                 }
             } catch (Exception e) {
             } finally {
