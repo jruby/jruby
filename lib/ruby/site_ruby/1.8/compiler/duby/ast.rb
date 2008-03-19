@@ -1,4 +1,8 @@
 module Compiler::Duby
+  # The top of the AST class hierarchy, this represents an abstract AST node.
+  # It provides accessors for _children_, an array of all child nodes,
+  # _parent_, a reference to this node's parent (nil if none), and _newline_,
+  # whether this node represents a new line.
   class Node
     attr_accessor :children
     attr_accessor :parent
