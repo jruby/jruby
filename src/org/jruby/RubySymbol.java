@@ -39,6 +39,7 @@ package org.jruby;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
@@ -50,6 +51,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 /**
  * Represents a Ruby symbol (e.g. :bar)
  */
+@JRubyClass(name="Symbol")
 public class RubySymbol extends RubyObject {
     private final String symbol;
     private final int id;

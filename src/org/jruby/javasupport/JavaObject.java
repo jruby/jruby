@@ -40,6 +40,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
@@ -51,6 +52,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author  jpetersen
  */
+@JRubyClass(name="Java::JavaObject")
 public class JavaObject extends RubyObject {
 
     private static Object NULL_LOCK = new Object();

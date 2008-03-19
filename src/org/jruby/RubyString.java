@@ -48,6 +48,7 @@ import org.joni.Region;
 import org.joni.encoding.Encoding;
 import org.joni.encoding.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
@@ -69,6 +70,7 @@ import org.jruby.util.Sprintf;
  * all users must synchronize externally with writers.
  *
  */
+@JRubyClass(name="String", include={"Enumerable", "Comparable"})
 public class RubyString extends RubyObject {
     private static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
 

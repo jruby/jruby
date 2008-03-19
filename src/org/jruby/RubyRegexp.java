@@ -46,6 +46,7 @@ import org.joni.Syntax;
 import org.joni.WarnCallback;
 import org.joni.encoding.Encoding;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.parser.ReOptions;
 import org.jruby.runtime.Block;
@@ -65,6 +66,7 @@ import org.jruby.util.TypeConverter;
 /**
  *
  */
+@JRubyClass(name="Regexp")
 public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     private KCode kcode;
     private Regex pattern;

@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.HashMap;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -17,6 +18,7 @@ import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
+@JRubyClass(name="SystemCallError", parent="StandardError")
 public class RubySystemCallError extends RubyException {
     private IRubyObject errno = getRuntime().getNil();
 

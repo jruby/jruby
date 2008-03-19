@@ -34,6 +34,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 
+import org.jruby.anno.JRubyClass;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -49,6 +50,7 @@ import org.jruby.runtime.MethodIndex;
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
+@JRubyClass(name="Generator", include="Enumerable")
 public class Generator {
     public static class Service implements Library {
         public void load(final Ruby runtime, boolean wrap) throws IOException {

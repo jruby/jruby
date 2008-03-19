@@ -46,6 +46,7 @@ import org.jruby.RubyException;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
+import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Arity;
@@ -61,6 +62,7 @@ import org.jruby.util.ByteList;
 /**
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
  */
+@JRubyClass(name="UNIXSocket", parent="BasicSocket")
 public class RubyUNIXSocket extends RubyBasicSocket {
     protected static LibCSocket INSTANCE = null;
 

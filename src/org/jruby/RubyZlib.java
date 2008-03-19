@@ -36,6 +36,8 @@ import java.util.ArrayList;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyModule;
 
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
@@ -55,6 +57,7 @@ import org.jruby.util.ZlibDeflate;
 
 import org.jruby.util.ByteList;
 
+@JRubyModule(name="Zlib")
 public class RubyZlib {
     /** Create the Zlib module and add it to the Ruby runtime.
      * 
@@ -150,6 +153,23 @@ public class RubyZlib {
         return result;
     }
 
+    @JRubyClass(name="Zlib::Error", parent="StandardError")
+    public static class Error {}
+    @JRubyClass(name="Zlib::StreamEnd", parent="Zlib::Error")
+    public static class StreamEnd extends Error {}
+    @JRubyClass(name="Zlib::StreamError", parent="Zlib::Error")
+    public static class StreamError extends Error {}
+    @JRubyClass(name="Zlib::BufError", parent="Zlib::Error")
+    public static class BufError extends Error {}
+    @JRubyClass(name="Zlib::NeedDict", parent="Zlib::Error")
+    public static class NeedDict extends Error {}
+    @JRubyClass(name="Zlib::MemError", parent="Zlib::Error")
+    public static class MemError extends Error {}
+    @JRubyClass(name="Zlib::VersionError", parent="Zlib::Error")
+    public static class VersionError extends Error {}
+    @JRubyClass(name="Zlib::DataError", parent="Zlib::Error")
+    public static class DataError extends Error {}
+
     @JRubyMethod(name = "zlib_version", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject zlib_version(IRubyObject recv) {
         return ((RubyModule)recv).fastGetConstant("ZLIB_VERSION");
@@ -226,6 +246,7 @@ public class RubyZlib {
     }
 
 
+    @JRubyClass(name="Zlib::ZStream")
     public static abstract class ZStream extends RubyObject {
         protected boolean closed = false;
         protected boolean ended = false;
@@ -348,6 +369,7 @@ public class RubyZlib {
         }
     }
 
+    @JRubyClass(name="Zlib::Inflate", parent="Zlib::ZStream")
     public static class Inflate extends ZStream {
         protected static final ObjectAllocator INFLATE_ALLOCATOR = new ObjectAllocator() {
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {
@@ -436,6 +458,7 @@ public class RubyZlib {
         }
     }
 
+    @JRubyClass(name="Zlib::Deflate", parent="Zlib::ZStream")
     public static class Deflate extends ZStream {
         protected static final ObjectAllocator DEFLATE_ALLOCATOR = new ObjectAllocator() {
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {
@@ -553,7 +576,17 @@ public class RubyZlib {
         }
     }
 
+    @JRubyClass(name="Zlib::GzipFile")
     public static class RubyGzipFile extends RubyObject {
+        @JRubyClass(name="Zlib::GzipFile::Error", parent="Zlib::Error")
+        public static class Error {}
+        @JRubyClass(name="Zlib::GzipFile::CRCError", parent="Zlib::GzipFile::Error")
+        public static class CRCError extends Error {}
+        @JRubyClass(name="Zlib::GzipFile::NoFooter", parent="Zlib::GzipFile::Error")
+        public static class NoFooter extends Error {}
+        @JRubyClass(name="Zlib::GzipFile::LengthError", parent="Zlib::GzipFile::Error")
+        public static class LengthError extends Error {}
+
         @JRubyMethod(name = "wrap", required = 2, frame = true, meta = true)
         public static IRubyObject wrap(ThreadContext context, IRubyObject recv, IRubyObject io, IRubyObject proc, Block unusedBlock) throws IOException {
             if (!(io instanceof RubyGzipFile)) throw recv.getRuntime().newTypeError(io, (RubyClass)recv);
@@ -672,7 +705,10 @@ public class RubyZlib {
         }
     }
 
+    @JRubyClass(name="Zlib::GzipReader", parent="Zlib::GzipFile", include="Enumerable")
     public static class RubyGzipReader extends RubyGzipFile {
+        @JRubyClass(name="Zlib::GzipReader::Error", parent="Zlib::GzipReader")
+        public static class Error {}
         protected static final ObjectAllocator GZIPREADER_ALLOCATOR = new ObjectAllocator() {
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                 return new RubyGzipReader(runtime, klass);
@@ -916,6 +952,7 @@ public class RubyZlib {
         }
     }
 
+    @JRubyClass(name="Zlib::GzipWriter", parent="Zlib::GzipFile")
     public static class RubyGzipWriter extends RubyGzipFile {
         protected static final ObjectAllocator GZIPWRITER_ALLOCATOR = new ObjectAllocator() {
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {

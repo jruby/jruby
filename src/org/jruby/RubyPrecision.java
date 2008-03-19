@@ -31,6 +31,7 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyModule;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ThreadContext;
@@ -40,6 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author  jpetersen
  */
+@JRubyModule(name="Precision")
 public class RubyPrecision {
     
     public static RubyModule createPrecisionModule(Ruby runtime) {

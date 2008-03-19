@@ -35,6 +35,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyModule;
 import org.jruby.runtime.Arity;
 
 import org.jruby.runtime.Block;
@@ -43,6 +44,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
+@JRubyModule(name="ObjectSpace")
 public class RubyObjectSpace {
 
     /** Create the ObjectSpace module and add it to the Ruby runtime.

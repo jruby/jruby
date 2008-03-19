@@ -13,6 +13,7 @@ import org.jruby.RubyException;
 import org.jruby.RubyKernel;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -24,6 +25,7 @@ import org.jruby.runtime.load.Library;
  *
  * @author headius
  */
+@JRubyClass(name="WeakRef", parent="Delegator")
 public class WeakRef extends RubyObject {
     private WeakReference<IRubyObject> ref;
     
@@ -46,6 +48,9 @@ public class WeakRef extends RubyObject {
         }
     }
     
+    @JRubyClass(name="RefError", parent="StandardError")
+    public static class RefError {}
+
     public WeakRef(Ruby runtime, RubyClass klazz) {
         super(runtime, klazz);
     }

@@ -27,10 +27,12 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
+@JRubyClass(name="NoMethodError", parent="NameError")
 public class RubyNoMethodError extends RubyNameError {
     private IRubyObject args;
 

@@ -76,7 +76,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.ByteList;
 import org.jruby.util.ClassProvider;
+import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyModule;
 
+@JRubyModule(name="Java")
 public class Java implements Library {
     public void load(Ruby runtime, boolean wrap) throws IOException {
         createJavaModule(runtime);
@@ -136,6 +139,11 @@ public class Java implements Library {
         return javaModule;
     }
     
+    @JRubyModule(name="JavaUtilities")
+    public static class JavaUtilities {}
+    @JRubyClass(name="JavaProxy")
+    public static class JavaProxy {}
+
     private static final ClassProvider JAVA_PACKAGE_CLASS_PROVIDER = new ClassProvider() {
         public RubyClass defineClassUnder(RubyModule pkg, String name, RubyClass superClazz) {
             // shouldn't happen, but if a superclass is specified, it's not ours

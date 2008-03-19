@@ -32,6 +32,7 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
@@ -51,6 +52,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author  jpetersen
  * @since 0.2.3
  */
+@JRubyClass(name="Method")
 public class RubyMethod extends RubyObject {
     protected RubyModule implementationModule;
     protected String methodName;

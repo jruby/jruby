@@ -41,6 +41,7 @@ import org.jruby.RubyThread;
 import org.jruby.RubyInteger;
 import org.jruby.RubyFloat;
 import org.jruby.RubyNumeric;
+import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -77,6 +78,7 @@ public class ThreadLibrary implements Library {
         }
     }
 
+    @JRubyClass(name="Mutex")
     public static class Mutex extends RubyObject {
         private RubyThread owner = null;
 
@@ -162,6 +164,7 @@ public class ThreadLibrary implements Library {
         }
     }
 
+    @JRubyClass(name="ConditionVariable")
     public static class ConditionVariable extends RubyObject {
         public static ConditionVariable newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
             ConditionVariable result = new ConditionVariable(recv.getRuntime(), (RubyClass)recv);
@@ -244,6 +247,7 @@ public class ThreadLibrary implements Library {
         }
     }
 
+    @JRubyClass(name="Queue")
     public static class Queue extends RubyObject {
         private LinkedList entries;
 
@@ -321,6 +325,7 @@ public class ThreadLibrary implements Library {
     }
 
 
+    @JRubyClass(name="SizedQueue", parent="Queue")
     public static class SizedQueue extends Queue {
         private int capacity;
 

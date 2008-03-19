@@ -28,6 +28,7 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyModule;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -37,6 +38,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.SignalFacade;
 import org.jruby.util.NoFunctionalitySignalFacade;
 
+@JRubyModule(name="Signal")
 public class RubySignal {
     private final static SignalFacade SIGNALS = getSignalFacade();
 

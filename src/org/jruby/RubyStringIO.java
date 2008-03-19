@@ -32,6 +32,7 @@ package org.jruby;
 import java.util.ArrayList;
 import java.util.List;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.MethodIndex;
@@ -43,6 +44,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.Stream;
 import org.jruby.util.ByteList;
 
+@JRubyClass(name="StringIO")
 public class RubyStringIO extends RubyObject {
     private static ObjectAllocator STRINGIO_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {

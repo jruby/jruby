@@ -45,6 +45,8 @@ import org.jruby.RubyIO;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
+import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
@@ -59,7 +61,10 @@ import org.jruby.util.io.InvalidValueException;
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
+@JRubyClass(name="Socket", parent="BasicSocket", include="Socket::Constants")
 public class RubySocket extends RubyBasicSocket {
+    @JRubyClass(name="SocketError", parent="StandardError")
+    public static class SocketError {}
 
     public static class Service implements Library {
         public void load(final Ruby runtime, boolean wrap) throws IOException {
@@ -130,6 +135,9 @@ public class RubySocket extends RubyBasicSocket {
     public static final int IPPROTO_ICMP = 1;
     public static final int IPPROTO_TCP = 6;
     public static final int IPPROTO_UDP = 17;
+
+    @JRubyModule(name="Socket::Constants")
+    public static class Constants {}
 
     static void createSocket(Ruby runtime) {
         RubyClass rb_cSocket = runtime.defineClass("Socket", runtime.fastGetClass("BasicSocket"), SOCKET_ALLOCATOR);

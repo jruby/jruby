@@ -62,6 +62,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -77,6 +78,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 import org.jruby.util.collections.IntHashMap;
 
+@JRubyClass(name="Java::JavaClass", parent="Java::JavaObject")
 public class JavaClass extends JavaObject {
 
     // some null objects to simplify later code

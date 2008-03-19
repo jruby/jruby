@@ -29,6 +29,7 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -40,6 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * 
  * @author jpetersen
  */
+@JRubyClass(name="UnboundMethod", parent="Method")
 public class RubyUnboundMethod extends RubyMethod {
     protected RubyUnboundMethod(Ruby runtime) {
         super(runtime, runtime.getUnboundMethod());

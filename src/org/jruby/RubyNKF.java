@@ -37,11 +37,13 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyModule;
 
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 
+@JRubyModule(name="NKF")
 public class RubyNKF {
     public static final NKFCharset AUTO = new NKFCharset(0, "x-JISAutoDetect");
     public static final NKFCharset JIS = new NKFCharset(1, "iso-2022-jp");

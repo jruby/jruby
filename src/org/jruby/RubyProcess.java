@@ -29,7 +29,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyModule;
 import org.jruby.ext.posix.POSIX;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -46,6 +48,8 @@ import org.jruby.runtime.callback.Callback;
 
 /**
  */
+
+@JRubyModule(name="Process")
 public class RubyProcess {
 
     public static RubyModule createProcessModule(Ruby runtime) {
@@ -93,7 +97,8 @@ public class RubyProcess {
         
         return process;
     }
-    
+
+    @JRubyClass(name="Process::Status")
     public static class RubyStatus extends RubyObject {
         private long status = 0L;
         
@@ -157,7 +162,8 @@ public class RubyProcess {
             return status << 8;
         }
     }
-    
+
+    @JRubyModule(name="Process::UID")
     public static class UserID {
         @JRubyMethod(name = "change_privilege", required = 1, module = true)
         public static IRubyObject change_privilege(IRubyObject self, IRubyObject arg) {
@@ -224,6 +230,7 @@ public class RubyProcess {
         }
     }
     
+    @JRubyModule(name="Process::GID")
     public static class GroupID {
         @JRubyMethod(name = "change_privilege", required = 1, module = true)
         public static IRubyObject change_privilege(IRubyObject self, IRubyObject arg) {
@@ -290,6 +297,7 @@ public class RubyProcess {
         }
     }
     
+    @JRubyModule(name="Process::Sys")
     public static class Sys {
         @JRubyMethod(name = "getegid", module = true, visibility = Visibility.PRIVATE)
         public static IRubyObject getegid(IRubyObject self) {

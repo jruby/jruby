@@ -32,6 +32,7 @@ package org.jruby;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -44,6 +45,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author Charles O Nutter (headius@headius.com)
  */
+@JRubyClass(name="ThreadGroup")
 public class RubyThreadGroup extends RubyObject {
     private Map<Integer, IRubyObject> rubyThreadList = new HashMap<Integer, IRubyObject>();
     private boolean enclosed = false;

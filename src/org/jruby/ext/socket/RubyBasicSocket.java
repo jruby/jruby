@@ -45,6 +45,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyIO;
 import org.jruby.RubyString;
+import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -56,6 +57,7 @@ import org.jruby.util.io.ChannelDescriptor;
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
+@JRubyClass(name="BasicSocket", parent="IO")
 public class RubyBasicSocket extends RubyIO {
     private static ObjectAllocator BASICSOCKET_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {

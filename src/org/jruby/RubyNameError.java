@@ -29,6 +29,7 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -36,6 +37,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * @author Anders Bengtsson
  */
+@JRubyClass(name="NameError", parent="StandardError")
 public class RubyNameError extends RubyException {
     private IRubyObject name;
     

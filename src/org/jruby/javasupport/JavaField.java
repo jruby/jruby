@@ -42,10 +42,12 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
+@JRubyClass(name="Java::JavaField")
 public class JavaField extends JavaAccessibleObject {
     private Field field;
 

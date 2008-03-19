@@ -35,6 +35,8 @@ import java.util.Map;
 
 import java.util.regex.Pattern;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyModule;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -67,6 +69,7 @@ import org.jvyamlb.YAML;
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
+@JRubyModule(name="YAML")
 public class RubyYAML {
     public static RubyModule createYAMLModule(Ruby runtime) {
         RubyModule result = runtime.defineModule("YAML");
@@ -323,6 +326,7 @@ public class RubyYAML {
         return port;
     }
 
+    @JRubyClass(name="Hash")
     public static class YAMLHashMethods {
         @JRubyMethod(name = "to_yaml_node", required = 1)
         public static IRubyObject hash_to_yaml_node(IRubyObject self, IRubyObject arg) {
@@ -331,6 +335,7 @@ public class RubyYAML {
         }
     }   
 
+    @JRubyClass(name="Object")
     public static class YAMLObjectMethods {
         @JRubyMethod(name = "to_yaml_properties")
         public static IRubyObject obj_to_yaml_properties(IRubyObject self) {
@@ -363,6 +368,7 @@ public class RubyYAML {
         }
     }
     
+    @JRubyClass(name="Class")
     public static class YAMLClassMethods {
         @JRubyMethod(name = "to_yaml", rest = true)
         public static IRubyObject class_to_yaml(IRubyObject self, IRubyObject[] args) {
@@ -370,6 +376,7 @@ public class RubyYAML {
         }
     }
     
+    @JRubyClass(name="Array")
     public static class YAMLArrayMethods {
         @JRubyMethod(name = "to_yaml_node", required = 1)
         public static IRubyObject array_to_yaml_node(IRubyObject self, IRubyObject arg) {
@@ -378,6 +385,7 @@ public class RubyYAML {
         }
     }
 
+    @JRubyClass(name="Struct")
     public static class YAMLStructMethods {
         @JRubyMethod(name = "to_yaml_node", required = 1)
         public static IRubyObject struct_to_yaml_node(IRubyObject self, IRubyObject arg) {
@@ -399,6 +407,7 @@ public class RubyYAML {
         }
     }
     
+    @JRubyClass(name="Exception")
     public static class YAMLExceptionMethods {
         @JRubyMethod(name = "to_yaml_node", required = 1)
         public static IRubyObject exception_to_yaml_node(IRubyObject self, IRubyObject arg) {
@@ -418,6 +427,7 @@ public class RubyYAML {
     }
     
     private static final Pattern AFTER_NEWLINE = Pattern.compile("\n.+", Pattern.DOTALL);
+    @JRubyClass(name="String")
     public static class YAMLStringMethods {
         @JRubyMethod(name = "is_complex_yaml?")
         public static IRubyObject string_is_complex(IRubyObject self) {
@@ -471,6 +481,7 @@ public class RubyYAML {
         }
     }
     
+    @JRubyClass(name="Symbol")
     public static class YAMLSymbolMethods {
         @JRubyMethod(name = "to_yaml_node", required = 1)
         public static IRubyObject symbol_to_yaml_node(IRubyObject self, IRubyObject arg) {
@@ -483,6 +494,7 @@ public class RubyYAML {
         }
     }
     
+    @JRubyClass(name="Numeric")
     public static class YAMLNumericMethods {
         @JRubyMethod(name = "to_yaml_node", required = 1)
         public static IRubyObject numeric_to_yaml_node(IRubyObject self, IRubyObject arg) {
@@ -499,6 +511,7 @@ public class RubyYAML {
         }
     }
 
+    @JRubyClass(name="Range")
     public static class YAMLRangeMethods {
         @JRubyMethod(name = "to_yaml_node", required = 1)
         public static IRubyObject range_to_yaml_node(IRubyObject self, IRubyObject arg) {
@@ -515,6 +528,7 @@ public class RubyYAML {
         }
     }
     
+    @JRubyClass(name="Regexp")
     public static class YAMLRegexpMethods {
         @JRubyMethod(name = "to_yaml_node", required = 1)
         public static IRubyObject regexp_to_yaml_node(IRubyObject self, IRubyObject arg) {
@@ -523,6 +537,7 @@ public class RubyYAML {
         }
     }
     
+    @JRubyClass(name="Time")
     public static class YAMLTimeMethods {
         @JRubyMethod(name = "to_yaml_node", required = 1)
         public static IRubyObject time_to_yaml_node(IRubyObject self, IRubyObject arg) {
@@ -556,6 +571,7 @@ public class RubyYAML {
         }
     }
     
+    @JRubyClass(name="Date")
     public static class YAMLDateMethods {
         @JRubyMethod(name = "to_yaml_node", required = 1)
         public static IRubyObject date_to_yaml_node(IRubyObject self, IRubyObject arg) {
@@ -564,6 +580,7 @@ public class RubyYAML {
         }
     }
     
+    @JRubyClass(name="TrueClass")
     public static class YAMLTrueMethods {
         @JRubyMethod(name = "to_yaml_node", required = 1)
         public static IRubyObject true_to_yaml_node(IRubyObject self, IRubyObject arg) {
@@ -576,6 +593,7 @@ public class RubyYAML {
         }
     }
     
+    @JRubyClass(name="FalseClass")
     public static class YAMLFalseMethods {
         @JRubyMethod(name = "to_yaml_node", required = 1)
         public static IRubyObject false_to_yaml_node(IRubyObject self, IRubyObject arg) {
@@ -588,6 +606,7 @@ public class RubyYAML {
         }
     }
     
+    @JRubyClass(name="NilClass")
     public static class YAMLNilMethods {
         @JRubyMethod(name = "to_yaml_node", required = 1)
         public static IRubyObject nil_to_yaml_node(IRubyObject self, IRubyObject arg) {

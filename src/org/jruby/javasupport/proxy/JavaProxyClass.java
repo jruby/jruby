@@ -54,6 +54,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyNil;
 import org.jruby.RubyString;
+import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.JavaClass;
@@ -199,6 +200,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         return proxyClass;
     }
 
+    @JRubyClass(name="JavaProxy::JavaProxyMethod")
     public static class ProxyMethodImpl extends JavaProxyReflectionObject
             implements JavaProxyMethod {
         private final Method m;

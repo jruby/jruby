@@ -6,6 +6,7 @@ import org.joni.Regex;
 import org.joni.Region;
 import org.joni.encoding.Encoding;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -17,6 +18,7 @@ import org.jruby.util.ByteList;
  * @author kscott
  *
  */
+@JRubyClass(name="StringScanner")
 public class RubyStringScanner extends RubyObject {
 
     private RubyString str;

@@ -34,11 +34,13 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.anno.JRubyModule;
 
 /**
  * @author Bill Dortch
  *
  */
+@JRubyModule(name="JavaArrayUtilities")
 public class JavaArrayUtilities {
 
     public static RubyModule createJavaArrayUtilitiesModule(Ruby runtime) {

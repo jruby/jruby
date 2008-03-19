@@ -33,6 +33,7 @@ import java.io.IOException;
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.RubyClass;
+import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
@@ -48,6 +49,7 @@ public class FiberLibrary implements Library {
         Fiber.setup(runtime);
     }
 
+    @JRubyClass(name="Fiber")
     public static class Fiber extends RubyObject {
         private Block block;
         private Object yieldLock = new Object();

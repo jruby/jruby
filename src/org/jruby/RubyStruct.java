@@ -35,6 +35,7 @@ package org.jruby;
 import java.util.List;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -57,6 +58,7 @@ import org.jruby.runtime.callback.Callback;
 /**
  * @author  jpetersen
  */
+@JRubyClass(name="Struct")
 public class RubyStruct extends RubyObject {
     private IRubyObject[] values;
 

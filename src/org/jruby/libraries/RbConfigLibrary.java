@@ -44,7 +44,9 @@ import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.NormalizedFile;
+import org.jruby.anno.JRubyModule;
 
+@JRubyModule(name="Config")
 public class RbConfigLibrary implements Library {
     // Ruby's designation for some platforms, minus version numbers in some cases
     private static final String RUBY_DARWIN = "darwin";

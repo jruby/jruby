@@ -59,6 +59,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.ReentrantLock;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.Visibility;
 
@@ -73,6 +74,7 @@ import org.jruby.runtime.Visibility;
  * 
  * Note: For CVS history, see ThreadClass.java.
  */
+@JRubyClass(name="Thread")
 public class RubyThread extends RubyObject {
     private ThreadLike threadImpl;
     private RubyFixnum priority;

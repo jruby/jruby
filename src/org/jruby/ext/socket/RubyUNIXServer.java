@@ -35,6 +35,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
+import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -43,6 +44,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
  */
+@JRubyClass(name="UNIXServer", parent="UNIXSocket")
 public class RubyUNIXServer extends RubyUNIXSocket {
     private static ObjectAllocator UNIXSERVER_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {

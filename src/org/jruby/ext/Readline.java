@@ -41,6 +41,7 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.load.Library;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.anno.JRubyModule;
 
 import jline.ConsoleReader;
 import jline.Completor;
@@ -54,6 +55,7 @@ import org.jruby.runtime.MethodIndex;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  * @author <a href="mailto:pldms@mac.com">Damian Steer</a>
  */
+@JRubyModule(name="Readline", include="Enumerable")
 public class Readline {
     public static class Service implements Library {
         public void load(final Ruby runtime, boolean wrap) throws IOException {

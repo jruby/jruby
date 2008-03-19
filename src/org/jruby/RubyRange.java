@@ -39,6 +39,7 @@ package org.jruby;
 import java.io.IOException;
 import java.util.List;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -55,6 +56,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 /**
  * @author jpetersen
  */
+@JRubyClass(name="Range", include="Enumerable")
 public class RubyRange extends RubyObject {
 
     private IRubyObject begin;

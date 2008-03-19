@@ -35,6 +35,7 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.runtime.Block;
@@ -46,6 +47,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * @author  jpetersen
  */
+@JRubyClass(name="Proc")
 public class RubyProc extends RubyObject implements JumpTarget {
     private Block block = Block.NULL_BLOCK;
     private Block.Type type;

@@ -36,6 +36,7 @@ package org.jruby;
 
 import java.math.BigInteger;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
@@ -54,6 +55,7 @@ import org.jruby.util.Convert;
 // TODO: Numeric.new works in Ruby and it does here too.  However trying to use
 //   that instance in a numeric operation should generate an ArgumentError. Doing
 //   this seems so pathological I do not see the need to fix this now.
+@JRubyClass(name="Numeric", include="Comparable")
 public class RubyNumeric extends RubyObject {
     
     public static RubyClass createNumericClass(Ruby runtime) {
