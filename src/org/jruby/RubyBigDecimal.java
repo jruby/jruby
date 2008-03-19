@@ -32,6 +32,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyConstant;
 
 import org.jruby.runtime.Arity;
 
@@ -52,32 +53,55 @@ public class RubyBigDecimal extends RubyNumeric {
             return new RubyBigDecimal(runtime, klass);
         }
     };
+
+    @JRubyConstant
+    public final static int ROUND_DOWN = BigDecimal.ROUND_DOWN;
+    @JRubyConstant
+    public final static int ROUND_CEILING = BigDecimal.ROUND_CEILING;
+    @JRubyConstant
+    public final static int ROUND_UP = BigDecimal.ROUND_UP;
+    @JRubyConstant
+    public final static int ROUND_HALF_DOWN = BigDecimal.ROUND_HALF_DOWN;
+    @JRubyConstant
+    public final static int ROUND_HALF_EVEN = BigDecimal.ROUND_HALF_EVEN;
+    @JRubyConstant
+    public final static int ROUND_HALF_UP = BigDecimal.ROUND_HALF_UP;
+    @JRubyConstant
+    public final static int ROUND_FLOOR = BigDecimal.ROUND_FLOOR;
+
+    @JRubyConstant
+    public final static int SIGN_POSITIVE_INFINITE=3;
+    @JRubyConstant
+    public final static int EXCEPTION_OVERFLOW=1;
+    @JRubyConstant
+    public final static int SIGN_POSITIVE_ZERO=1;
+    @JRubyConstant
+    public final static int EXCEPTION_ALL=255;
+    @JRubyConstant
+    public final static int SIGN_NEGATIVE_FINITE=-2;
+    @JRubyConstant
+    public final static int EXCEPTION_UNDERFLOW=4;
+    @JRubyConstant
+    public final static int SIGN_NaN=0;
+    @JRubyConstant
+    public final static int BASE=10000;
+    @JRubyConstant
+    public final static int ROUND_MODE=256;
+    @JRubyConstant
+    public final static int SIGN_POSITIVE_FINITE=2;
+    @JRubyConstant
+    public final static int EXCEPTION_INFINITY=1;
+    @JRubyConstant
+    public final static int SIGN_NEGATIVE_INFINITE=-3;
+    @JRubyConstant
+    public final static int EXCEPTION_ZERODIVIDE=1;
+    @JRubyConstant
+    public final static int SIGN_NEGATIVE_ZERO=-1;
+    @JRubyConstant
+    public final static int EXCEPTION_NaN=2;
     
     public static RubyClass createBigDecimal(Ruby runtime) {
         RubyClass result = runtime.defineClass("BigDecimal",runtime.getNumeric(), BIGDECIMAL_ALLOCATOR);
-
-        result.fastSetConstant("ROUND_DOWN",RubyNumeric.int2fix(runtime,BigDecimal.ROUND_DOWN));
-        result.fastSetConstant("SIGN_POSITIVE_INFINITE",RubyNumeric.int2fix(runtime,3));
-        result.fastSetConstant("EXCEPTION_OVERFLOW",RubyNumeric.int2fix(runtime,1));
-        result.fastSetConstant("SIGN_POSITIVE_ZERO",RubyNumeric.int2fix(runtime,1));
-        result.fastSetConstant("EXCEPTION_ALL",RubyNumeric.int2fix(runtime,255));
-        result.fastSetConstant("ROUND_CEILING",RubyNumeric.int2fix(runtime,BigDecimal.ROUND_CEILING));
-        result.fastSetConstant("ROUND_UP",RubyNumeric.int2fix(runtime,BigDecimal.ROUND_UP));
-        result.fastSetConstant("SIGN_NEGATIVE_FINITE",RubyNumeric.int2fix(runtime,-2));
-        result.fastSetConstant("EXCEPTION_UNDERFLOW",RubyNumeric.int2fix(runtime, 4));
-        result.fastSetConstant("SIGN_NaN",RubyNumeric.int2fix(runtime, 0));
-        result.fastSetConstant("BASE",RubyNumeric.int2fix(runtime,10000));
-        result.fastSetConstant("ROUND_HALF_DOWN",RubyNumeric.int2fix(runtime,BigDecimal.ROUND_HALF_DOWN));
-        result.fastSetConstant("ROUND_MODE",RubyNumeric.int2fix(runtime,256));
-        result.fastSetConstant("SIGN_POSITIVE_FINITE",RubyNumeric.int2fix(runtime,2));
-        result.fastSetConstant("EXCEPTION_INFINITY",RubyNumeric.int2fix(runtime,1));
-        result.fastSetConstant("ROUND_HALF_EVEN",RubyNumeric.int2fix(runtime,BigDecimal.ROUND_HALF_EVEN));
-        result.fastSetConstant("ROUND_HALF_UP",RubyNumeric.int2fix(runtime,BigDecimal.ROUND_HALF_UP));
-        result.fastSetConstant("SIGN_NEGATIVE_INFINITE",RubyNumeric.int2fix(runtime,-3));
-        result.fastSetConstant("EXCEPTION_ZERODIVIDE",RubyNumeric.int2fix(runtime,1));
-        result.fastSetConstant("SIGN_NEGATIVE_ZERO",RubyNumeric.int2fix(runtime,-1));
-        result.fastSetConstant("EXCEPTION_NaN",RubyNumeric.int2fix(runtime,2));
-        result.fastSetConstant("ROUND_FLOOR",RubyNumeric.int2fix(runtime,BigDecimal.ROUND_FLOOR));
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyBigDecimal.class);
 
@@ -88,6 +112,7 @@ public class RubyBigDecimal extends RubyNumeric {
         result.setInternalModuleVariable("vpRoundingMode", RubyFixnum.zero(runtime));
         
         result.defineAnnotatedMethods(RubyBigDecimal.class);
+        result.defineAnnotatedConstants(RubyBigDecimal.class);
         result.dispatcher = callbackFactory.createDispatcher(result);
 
         return result;

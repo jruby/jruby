@@ -37,7 +37,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -51,6 +53,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyConstant;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.internal.runtime.methods.AliasMethod;
@@ -459,6 +462,44 @@ public class RubyModule extends RubyObject {
         }
     }
     
+    public void defineAnnotatedConstants(Class clazz) {
+        Field[] declaredFields = clazz.getDeclaredFields();
+        for (Field field : declaredFields) {
+            if(Modifier.isStatic(field.getModifiers())) {
+                defineAnnotatedConstant(field);
+            }
+        }
+    }
+
+    public boolean defineAnnotatedConstant(Field field) {
+        JRubyConstant jrubyConstant = field.getAnnotation(JRubyConstant.class);
+
+        if (jrubyConstant == null) return false;
+
+        String[] names = jrubyConstant.value();
+        if(names.length == 0) {
+            names = new String[]{field.getName()};
+        }
+
+        Class tp = field.getType();
+        IRubyObject realVal = getRuntime().getNil();
+
+        try {
+            if(tp == Integer.class || tp == Integer.TYPE || tp == Short.class || tp == Short.TYPE || tp == Byte.class || tp == Byte.TYPE) {
+                realVal = RubyNumeric.int2fix(getRuntime(), field.getInt(null));
+            } else if(tp == Boolean.class || tp == Boolean.TYPE) {
+                realVal = field.getBoolean(null) ? getRuntime().getTrue() : getRuntime().getFalse();
+            }
+        } catch(Exception e) {}
+
+        
+        for(String name : names) {
+            this.fastSetConstant(name, realVal);
+        }
+
+        return true;
+    }
+
     public void defineAnnotatedMethods(Class clazz) {
         if (RubyInstanceConfig.INDEXED_METHODS) {
             defineAnnotatedMethodsIndexed(clazz);
