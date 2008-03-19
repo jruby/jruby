@@ -48,7 +48,6 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.anno.RDoc;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
@@ -99,50 +98,6 @@ import org.jruby.runtime.marshal.UnmarshalStream;
  *  all users must synchronize externally with writers.
  *
  */
-@RDoc(doc=
-      "A <code>Hash</code> is a collection of key-value pairs. It is\n"+
-      "similar to an <code>Array</code>, except that indexing is done via\n"+
-      "arbitrary keys of any object type, not an integer index. The order\n"+
-      "in which you traverse a hash by either key or value may seem\n"+
-      "arbitrary, and will generally not be in the insertion order.\n"+
-      "   \n"+
-      "Hashes have a <em>default value</em> that is returned when accessing\n"+
-      "keys that do not exist in the hash. By default, that value is\n"+
-      "<code>nil</code>.\n"+
-      "\n"+
-      "<code>Hash</code> uses <code>key.eql?</code> to test keys for equality.\n"+
-      "If you need to use instances of your own classes as keys in a <code>Hash</code>,\n"+
-      "it is recommended that you define both the <code>eql?</code> and <code>hash</code>\n"+
-      "methods. The <code>hash</code> method must have the property that \n"+
-      "<code>a.eql?(b)</code> implies <code>a.hash == b.hash</code>.\n"+
-      "\n"+
-      "  class MyClass\n"+
-      "    attr_reader :str\n"+
-      "    def initialize(str)\n"+
-      "      @str = str\n"+
-      "    end\n"+
-      "    def eql?(o)\n"+
-      "      o.is_a?(MyClass) && str == o.str\n"+
-      "    end\n"+
-      "    def hash\n"+
-      "      @str.hash\n"+
-      "    end\n"+
-      "  end\n"+
-      "  \n"+
-      "  a = MyClass.new(\"some string\")\n"+
-      "  b = MyClass.new(\"some string\")\n"+
-      "  a.eql? b  #=> true\n"+
-      "  \n"+
-      "  h = {}\n"+
-      "  \n"+
-      "  h[a] = 1\n"+
-      "  h[a]      #=> 1\n"+
-      "  h[b]      #=> 1\n"+
-      "  \n"+
-      "  h[b] = 2\n"+
-      "  h[a]      #=> 2\n"+
-      "  h[b]      #=> \n2"
-)
 @JRubyClass(name = "Hash", include="Enumerable")
 public class RubyHash extends RubyObject implements Map {
 
@@ -1009,14 +964,6 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
     @JRubyMethod(name = "values")
-    @RDoc(callSeq="hsh.values    => array",
-          doc=
-          "Returns a new array populated with the values from <i>hsh</i>. See\n"+
-          "also <code>Hash#keys</code>.\n"+
-          "   \n"+
-          "   h = { \"a\" => 100, \"b\" => 200, \"c\" => 300 }\n"+
-          "   h.values   #=> [100, 200, 300]\n"
-    )
     public RubyArray rb_values() {
         final RubyArray values = RubyArray.newArray(getRuntime(), size);
 

@@ -31,7 +31,6 @@ import java.util.Comparator;
 import java.util.Arrays;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.anno.RDoc;
 
 import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.Arity;
@@ -47,16 +46,6 @@ import org.jruby.util.TypeConverter;
  * The implementation of Ruby's Enumerable module.
  */
 
-@RDoc(doc=
-      "The <code>Enumerable</code> mixin provides collection classes with\n"+
-      "several traversal and searching methods, and with the ability to\n"+
-      "sort. The class must provide a method <code>each</code>, which\n"+
-      "yields successive members of the collection. If\n"+
-      "<code>Enumerable#max</code>, <code>#min</code>, or\n"+
-      "<code>#sort</code> is used, the objects in the collection must also\n"+
-      "implement a meaningful <code><=></code> operator, as these methods\n"+
-      "rely on an ordering between members of the collection.\n"
-)
 @JRubyModule(name="Enumerable")
 public class RubyEnumerable {
 

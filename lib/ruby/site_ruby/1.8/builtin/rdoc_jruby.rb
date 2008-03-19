@@ -38,7 +38,6 @@ module JRuby
         $stderr.flush
       end      
 
-      RDocAnnotation = org.jruby.anno.RDoc.java_class
       JRubyMethodAnnotation = org.jruby.anno.JRubyMethod.java_class
       JRubyClassAnnotation = org.jruby.anno.JRubyClass.java_class
       JRubyModuleAnnotation = org.jruby.anno.JRubyModule.java_class
@@ -114,7 +113,9 @@ module JRuby
                                                 ")"
         end
 
-        find_method_comment(method.annotation(RDocAnnotation), meth_obj)
+        find_method_comment(nil,
+                            #method.annotation(RDocAnnotation),
+                            meth_obj)
 
         enclosure.add_method(meth_obj)
 
@@ -160,7 +161,8 @@ module JRuby
       def extract_class_information(clazz)
         class_anno = clazz.java_class.annotation(JRubyClassAnnotation)
         module_anno = clazz.java_class.annotation(JRubyModuleAnnotation)
-        doc_anno = clazz.java_class.annotation(RDocAnnotation)
+#        doc_anno = clazz.java_class.annotation(RDocAnnotation)
+        doc_anno = nil
         if (class_anno || module_anno)
           $stderr.printf("%70s: ", clazz.java_class.to_s) unless @options.quiet
           class_mod = if class_anno
