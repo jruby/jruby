@@ -238,6 +238,22 @@ module Compiler::Duby
       @name = name
     end
   end
+  class Loop < Node
+    attr_accessor :condition, :body, :check_first, :negative
+    def initialize(parent, check_first, negative)
+      @condition, @body = children = yield(self)
+      @check_first = check_first
+      @negative = negative
+      super(parent, children)
+    end
+    
+    def check_first?; @check_first; end
+    def negative?; @negative; end
+    
+    def to_s
+      "Loop(check_first = #{check_first?}, negative = #{negative?})"
+    end
+  end
   class MethodDefinition < Node
     include Named
     attr_accessor :signature, :arguments, :body

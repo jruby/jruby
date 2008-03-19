@@ -343,6 +343,25 @@ module Compiler::Duby
     end
 
     class WhileNode
+      def transform(parent)
+        Loop.new(parent, evaluate_at_start, false) do |loop|
+          [
+            condition_node.transform(loop),
+            body_node.transform(loop)
+          ]
+        end
+      end
+    end
+
+    class UntilNode
+      def transform(parent)
+        Loop.new(parent, evaluate_at_start, true) do |loop|
+          [
+            condition_node.transform(loop),
+            body_node.transform(loop)
+          ]
+        end
+      end
     end
   end
 end

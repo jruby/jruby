@@ -287,4 +287,52 @@ class TestAst < Test::Unit::TestCase
     assert_not_nil(new_ast.parameters)
     assert_equal(0, new_ast.parameters.size)
   end
+  
+  def test_while
+    node = JRuby.parse("while 1; 2; end")
+    new_ast = node.child_nodes[0].transform(nil)
+    
+    assert_not_nil(new_ast)
+    assert(Compiler::Duby::Loop === new_ast)
+    assert_equal("Loop(check_first = true, negative = false)\n Fixnum(1)\n Fixnum(2)", new_ast.inspect)
+    assert(new_ast.check_first?)
+    assert(!new_ast.negative?)
+    assert(Compiler::Duby::Fixnum === new_ast.condition)
+    assert(Compiler::Duby::Fixnum === new_ast.body)
+    
+    node = JRuby.parse("begin; 2; end while 1")
+    new_ast = node.child_nodes[0].transform(nil)
+    
+    assert_not_nil(new_ast)
+    assert(Compiler::Duby::Loop === new_ast)
+    assert_equal("Loop(check_first = false, negative = false)\n Fixnum(1)\n Fixnum(2)", new_ast.inspect)
+    assert(!new_ast.check_first?)
+    assert(!new_ast.negative?)
+    assert(Compiler::Duby::Fixnum === new_ast.condition)
+    assert(Compiler::Duby::Fixnum === new_ast.body)
+  end
+  
+  def test_until
+    node = JRuby.parse("until 1; 2; end")
+    new_ast = node.child_nodes[0].transform(nil)
+    
+    assert_not_nil(new_ast)
+    assert(Compiler::Duby::Loop === new_ast)
+    assert_equal("Loop(check_first = true, negative = true)\n Fixnum(1)\n Fixnum(2)", new_ast.inspect)
+    assert(new_ast.check_first?)
+    assert(new_ast.negative?)
+    assert(Compiler::Duby::Fixnum === new_ast.condition)
+    assert(Compiler::Duby::Fixnum === new_ast.body)
+    
+    node = JRuby.parse("begin; 2; end until 1")
+    new_ast = node.child_nodes[0].transform(nil)
+    
+    assert_not_nil(new_ast)
+    assert(Compiler::Duby::Loop === new_ast)
+    assert_equal("Loop(check_first = false, negative = true)\n Fixnum(1)\n Fixnum(2)", new_ast.inspect)
+    assert(!new_ast.check_first?)
+    assert(new_ast.negative?)
+    assert(Compiler::Duby::Fixnum === new_ast.condition)
+    assert(Compiler::Duby::Fixnum === new_ast.body)
+  end
 end
