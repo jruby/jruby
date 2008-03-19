@@ -46,6 +46,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.RDoc;
 import org.jruby.common.IRubyWarnings.ID;
@@ -140,9 +141,9 @@ import org.jruby.runtime.marshal.UnmarshalStream;
       "  \n"+
       "  h[b] = 2\n"+
       "  h[a]      #=> 2\n"+
-      "  h[b]      #=> \n2",
-      name = "Hash"
+      "  h[b]      #=> \n2"
 )
+@JRubyClass(name = "Hash", include="Enumerable")
 public class RubyHash extends RubyObject implements Map {
 
     public static RubyClass createHashClass(Ruby runtime) {

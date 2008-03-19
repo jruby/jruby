@@ -11,8 +11,8 @@ import java.lang.annotation.Target;
  */
 /* Seems runtime retention is necessary, since APT can't extract annotation information from class files */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD, ElementType.TYPE})
-public @interface RDoc {
-    String[] callSeq() default "";
-    String doc() default "";
+@Target(ElementType.TYPE)
+public @interface JRubyModule {
+    String[] name();
+    String[] include() default {};
 }
