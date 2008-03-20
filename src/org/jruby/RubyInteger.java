@@ -37,7 +37,6 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -60,13 +59,11 @@ public abstract class RubyInteger extends RubyNumeric {
                 }
             };
 
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyInteger.class);
         integer.getSingletonClass().undefineMethod("new");
 
         integer.includeModule(runtime.getPrecision());
         
         integer.defineAnnotatedMethods(RubyInteger.class);
-        integer.dispatcher = callbackFactory.createDispatcher(integer);
         
         return integer;
     }

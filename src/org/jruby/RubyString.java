@@ -49,6 +49,7 @@ import org.joni.encoding.Encoding;
 import org.joni.encoding.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.TypePopulator;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
@@ -104,13 +105,10 @@ public class RubyString extends RubyObject {
                     return obj instanceof RubyString;
                 }
             };
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyString.class);
-        
+            
         stringClass.includeModule(runtime.getComparable());
         stringClass.includeModule(runtime.getEnumerable());
-        
         stringClass.defineAnnotatedMethods(RubyString.class);
-        stringClass.dispatcher = callbackFactory.createDispatcher(stringClass);
         
         return stringClass;
     }

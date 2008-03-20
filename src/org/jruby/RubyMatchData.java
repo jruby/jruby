@@ -38,9 +38,7 @@ import org.joni.Region;
 import org.joni.exception.JOniException;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -68,12 +66,9 @@ public class RubyMatchData extends RubyObject {
             }
         };
 
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyMatchData.class);
-
         matchDataClass.getMetaClass().undefineMethod("new");
         
         matchDataClass.defineAnnotatedMethods(RubyMatchData.class);
-        matchDataClass.dispatcher = callbackFactory.createDispatcher(matchDataClass);
 
         return matchDataClass;
     }

@@ -57,14 +57,13 @@ public class NativeException extends RubyException {
         // a real allocator to be used. Otherwise Class.new will fail, as will marshalling. JRUBY-415
     	RubyClass exceptionClass = runtime.defineClass(CLASS_NAME, baseClass, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
     	
-		CallbackFactory callbackFactory = runtime.callbackFactory(NativeException.class);
-		exceptionClass.defineMethod("cause", 
-				callbackFactory.getMethod("cause"));		
+        CallbackFactory callbackFactory = runtime.callbackFactory(NativeException.class);
+        exceptionClass.defineAnnotatedMethods(NativeException.class);
 
-		return exceptionClass;
+        return exceptionClass;
     }
 
-    @JRubyMethod
+    @JRubyMethod(frame = true)
     public IRubyObject cause(Block unusedBlock) {
         return Java.wrap(getRuntime(), JavaObject.wrap(getRuntime(), cause));
     }

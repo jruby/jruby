@@ -51,7 +51,6 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -82,11 +81,9 @@ public class RubyArray extends RubyObject implements List {
                 return obj instanceof RubyArray;
             }
         };
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyArray.class);
 
         arrayc.includeModule(runtime.getEnumerable());
         arrayc.defineAnnotatedMethods(RubyArray.class);
-        arrayc.dispatcher = callbackFactory.createDispatcher(arrayc);
 
         return arrayc;
     }

@@ -113,7 +113,6 @@ public class RubyBigDecimal extends RubyNumeric {
         
         result.defineAnnotatedMethods(RubyBigDecimal.class);
         result.defineAnnotatedConstants(RubyBigDecimal.class);
-        result.dispatcher = callbackFactory.createDispatcher(result);
 
         return result;
     }

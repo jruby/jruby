@@ -50,7 +50,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.parser.ReOptions;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ObjectAllocator;
@@ -132,14 +131,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
                 }
             };
         
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyRegexp.class);
-        
         regexpClass.defineConstant("IGNORECASE", runtime.newFixnum(RE_OPTION_IGNORECASE));
         regexpClass.defineConstant("EXTENDED", runtime.newFixnum(RE_OPTION_EXTENDED));
         regexpClass.defineConstant("MULTILINE", runtime.newFixnum(RE_OPTION_MULTILINE));
         
         regexpClass.defineAnnotatedMethods(RubyRegexp.class);
-        regexpClass.dispatcher = callbackFactory.createDispatcher(regexpClass);
 
         return regexpClass;
     }

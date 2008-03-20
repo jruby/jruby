@@ -40,7 +40,6 @@ import java.math.BigInteger;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -64,13 +63,10 @@ public class RubyFixnum extends RubyInteger {
                     return obj instanceof RubyFixnum;
                 }
             };
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyFixnum.class);
 
         fixnum.includeModule(runtime.getPrecision());
         
         fixnum.defineAnnotatedMethods(RubyFixnum.class);
-        
-        fixnum.dispatcher = callbackFactory.createDispatcher(fixnum);
         
         for (int i = 0; i < runtime.fixnumCache.length; i++) {
             runtime.fixnumCache[i] = new RubyFixnum(runtime, fixnum, i - 128);

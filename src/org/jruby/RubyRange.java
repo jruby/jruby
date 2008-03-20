@@ -42,7 +42,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
@@ -139,8 +138,6 @@ public class RubyRange extends RubyObject {
         
         result.setMarshal(RANGE_MARSHAL);
         
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyRange.class);
-        
         result.includeModule(runtime.getEnumerable());
 
         // We override Enumerable#member? since ranges in 1.8.1 are continuous.
@@ -151,8 +148,6 @@ public class RubyRange extends RubyObject {
         
 //        CallbackFactory classCB = runtime.callbackFactory(RubyClass.class);
 //        result.getMetaClass().defineMethod("new", classCB.getOptMethod("newInstance"));
-        
-        result.dispatcher = callbackFactory.createDispatcher(result);
         
         return result;
     }

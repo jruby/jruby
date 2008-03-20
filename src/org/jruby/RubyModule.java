@@ -55,6 +55,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JavaMethodDescriptor;
+import org.jruby.anno.TypePopulator;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.internal.runtime.methods.AliasMethod;
@@ -106,7 +107,6 @@ public class RubyModule extends RubyObject {
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyModule.class);
         
         moduleClass.defineAnnotatedMethods(RubyModule.class);
-        moduleClass.dispatcher = callbackFactory.createDispatcher(moduleClass);
 
         callbackFactory = runtime.callbackFactory(RubyKernel.class);
         moduleClass.defineFastMethod("autoload", callbackFactory.getFastSingletonMethod("autoload", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
@@ -510,11 +510,25 @@ public class RubyModule extends RubyObject {
     }
     
     public void defineAnnotatedMethodsIndividually(Class clazz) {
-        Method[] declaredMethods = clazz.getDeclaredMethods();
-        MethodFactory methodFactory = MethodFactory.createFactory(getRuntime().getJRubyClassLoader());
-        for (Method method: declaredMethods) {
-            defineAnnotatedMethod(method, methodFactory);
+        try {
+            Class populatorClass = Class.forName(clazz.getSimpleName() + "Populator");
+            TypePopulator populator = (TypePopulator)populatorClass.newInstance();
+            populator.populate(this);
+        } catch (Throwable t) {
+            // fallback on non-pregenerated logic
+            Method[] declaredMethods = clazz.getDeclaredMethods();
+            MethodFactory methodFactory = MethodFactory.createFactory(getRuntime().getJRubyClassLoader());
+            for (Method method: declaredMethods) {
+                defineAnnotatedMethod(method, methodFactory);
+            }
+            
+            // FIXME: dispatcher is only supported for non-pregenerated binding logic
+            CallbackFactory callbackFactory = getRuntime().callbackFactory(RubyString.class);
+//            if (this instanceof RubyClass) {
+//                dispatcher = callbackFactory.createDispatcher((RubyClass)this);
+//            }
         }
+        
     }
     
     private void defineAnnotatedMethodsIndexed(Class clazz) {

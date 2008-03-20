@@ -158,7 +158,14 @@
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.dump_invocations" value="${jruby.classes.dir}"/>
       <arg value="-rjava"/>
-      <arg value="${build.dir}/__empty.rb"/>
+      <arg value="-rjruby"/>
+      <arg value="-rbigdecimal"/>
+      <arg value="-rdigest"/>
+      <arg value="-rzlib"/>
+      <arg value="-ryaml"/>
+      <arg value="-rstrscan"/>
+      <arg value="-riconv"/>
+      <arg value="-e '1'"/>
     </java>
     <!-- indexed invokers -->
     <!--

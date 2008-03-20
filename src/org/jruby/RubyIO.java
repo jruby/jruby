@@ -63,7 +63,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.posix.util.FieldAccess;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -302,7 +301,6 @@ public class RubyIO extends RubyObject {
 
     public static RubyClass createIOClass(Ruby runtime) {
         RubyClass ioClass = runtime.defineClass("IO", runtime.getObject(), IO_ALLOCATOR);
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyIO.class);   
         ioClass.kindOf = new RubyModule.KindOf() {
             @Override
             public boolean isKindOf(IRubyObject obj, RubyModule type) {
@@ -323,8 +321,6 @@ public class RubyIO extends RubyObject {
         ioClass.fastSetConstant("SEEK_SET", runtime.newFixnum(Stream.SEEK_SET));
         ioClass.fastSetConstant("SEEK_CUR", runtime.newFixnum(Stream.SEEK_CUR));
         ioClass.fastSetConstant("SEEK_END", runtime.newFixnum(Stream.SEEK_END));
-        
-        ioClass.dispatcher = callbackFactory.createDispatcher(ioClass);
 
         return ioClass;
     }

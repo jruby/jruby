@@ -69,3 +69,10 @@ task :clean do
   
   delete_files.each {|files| rm_rf files, :verbose => true}
 end
+
+desc "Generate sources, compile and add to jar file"
+task :gen do
+  system 'apt -nocompile -cp lib/jruby.jar:build_lib/asm-3.0.jar:build_lib/asm-util-3.0.jar -factory org.jruby.anno.AnnotationBinder src/org/jruby/*.java'
+  system 'javac -cp lib/jruby.jar src_gen/*.java'
+  system 'jar -uf lib/jruby.jar -C src_gen .'
+end

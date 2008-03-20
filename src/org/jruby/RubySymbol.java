@@ -41,7 +41,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -76,7 +75,6 @@ public class RubySymbol extends RubyObject {
     public static RubyClass createSymbolClass(Ruby runtime) {
         RubyClass symbolClass = runtime.defineClass("Symbol", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setSymbol(symbolClass);
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubySymbol.class);   
         RubyClass symbolMetaClass = symbolClass.getMetaClass();
         symbolClass.index = ClassIndex.SYMBOL;
         symbolClass.kindOf = new RubyModule.KindOf() {
@@ -87,8 +85,6 @@ public class RubySymbol extends RubyObject {
 
         symbolClass.defineAnnotatedMethods(RubySymbol.class);
         symbolMetaClass.undefineMethod("new");
-        
-        symbolClass.dispatcher = callbackFactory.createDispatcher(symbolClass);
         
         return symbolClass;
     }

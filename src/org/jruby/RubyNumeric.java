@@ -40,7 +40,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -61,7 +60,6 @@ public class RubyNumeric extends RubyObject {
     public static RubyClass createNumericClass(Ruby runtime) {
         RubyClass numeric = runtime.defineClass("Numeric", runtime.getObject(), NUMERIC_ALLOCATOR);
         runtime.setNumeric(numeric);
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyNumeric.class);
 
         numeric.kindOf = new RubyModule.KindOf() {
             @Override
@@ -72,7 +70,6 @@ public class RubyNumeric extends RubyObject {
 
         numeric.includeModule(runtime.getComparable());
         numeric.defineAnnotatedMethods(RubyNumeric.class);
-        numeric.dispatcher = callbackFactory.createDispatcher(numeric);
 
         return numeric;
     }

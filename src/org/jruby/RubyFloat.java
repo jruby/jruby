@@ -42,7 +42,6 @@ import java.util.Locale;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -67,7 +66,6 @@ public class RubyFloat extends RubyNumeric {
             }
         };        
         
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyFloat.class);
         floatc.getSingletonClass().undefineMethod("new");
         floatc.includeModule(runtime.getPrecision());
 
@@ -87,7 +85,6 @@ public class RubyFloat extends RubyNumeric {
         floatc.defineConstant("EPSILON", RubyFloat.newFloat(runtime, 2.2204460492503131e-16));
         
         floatc.defineAnnotatedMethods(RubyFloat.class);
-        floatc.dispatcher = callbackFactory.createDispatcher(floatc);
 
         return floatc;
     }

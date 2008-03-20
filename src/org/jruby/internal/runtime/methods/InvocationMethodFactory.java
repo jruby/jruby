@@ -267,6 +267,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             }
         }
     }
+    
+    public static String getAnnotatedBindingClassName(String javaMethodName, String typeName, boolean isStatic, int required, int optional) {
+        String commonClassSuffix = "Invoker$" + javaMethodName + (isStatic ? "_s" : "" )  + "_method_" + required + "_" + optional;
+        return typeName + commonClassSuffix;
+    }
 
     /**
      * Use code generation to provide a method handle based on an annotated Java
@@ -276,12 +281,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      */
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc) {
         Class type = desc.declaringClass;
-        String typePath = p(type);
         String javaMethodName = desc.name;
         
-        String commonClassSuffix = "Invoker$" + javaMethodName + (desc.isStatic ? "_s" : "" )  + "_method_" + desc.required + "_" + desc.optional;
-        String generatedClassName = type.getName() + commonClassSuffix;
-        String generatedClassPath = typePath + commonClassSuffix;
+        String generatedClassName = getAnnotatedBindingClassName(javaMethodName, type.getName(), desc.isStatic, desc.required, desc.optional);
+        String generatedClassPath = generatedClassName.replace('.', '/');
         
         synchronized (classLoader) {
             Class c = tryClass(implementationClass.getRuntime(), generatedClassName);
@@ -342,6 +345,22 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 throw implementationClass.getRuntime().newLoadError(e.getMessage());
             }
         }
+    }
+
+    /**
+     * Use code generation to provide a method handle based on an annotated Java
+     * method.
+     * 
+     * @see org.jruby.internal.runtime.methods.MethodFactory#getAnnotatedMethod
+     */
+    public void prepareAnnotatedMethod(RubyModule implementationClass, JavaMethod javaMethod, JavaMethodDescriptor desc) {
+        String javaMethodName = desc.name;
+        
+        javaMethod.setArity(Arity.fromAnnotation(desc.anno, desc.parameters, desc.isStatic));
+        javaMethod.setJavaName(javaMethodName);
+        javaMethod.setArgumentTypes(desc.parameters);
+        javaMethod.setSingleton(desc.isStatic);
+        javaMethod.setCallConfig(CallConfiguration.getCallConfigByAnno(desc.anno));
     }
 
     /**

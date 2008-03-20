@@ -52,7 +52,6 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -110,12 +109,10 @@ public class RubyHash extends RubyObject implements Map {
                 return obj instanceof RubyHash;
             }
         };
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyHash.class);
 
         hashc.includeModule(runtime.getEnumerable());
 
         hashc.defineAnnotatedMethods(RubyHash.class);
-        hashc.dispatcher = callbackFactory.createDispatcher(hashc);
 
         return hashc;
     }

@@ -71,6 +71,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jruby.anno.TypePopulator;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.RubiniusRunner;
 import org.jruby.ast.executable.Script;
