@@ -34,6 +34,7 @@ import java.lang.reflect.Modifier;
 
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.MethodFactory;
@@ -69,15 +70,19 @@ public class ReflectionMethodFactory extends MethodFactory {
      * 
      * @see org.jruby.internal.runtime.methods.MethodFactory#getAnnotatedMethod
      */
-    public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, Method method) {
-        JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
-        JavaMethod ic = new ReflectedJavaMethod(implementationClass, method, jrubyMethod);
+    public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc) {
+        try {
+            Method method = desc.declaringClass.getDeclaredMethod(desc.name, desc.parameters);
+            JavaMethod ic = new ReflectedJavaMethod(implementationClass, method, desc.anno);
 
-        ic.setJavaName(method.getName());
-        ic.setArgumentTypes(method.getParameterTypes());
-        ic.setSingleton(Modifier.isStatic(method.getModifiers()));
-        ic.setCallConfig(CallConfiguration.getCallConfigByAnno(jrubyMethod));
-        return ic;
+            ic.setJavaName(method.getName());
+            ic.setArgumentTypes(method.getParameterTypes());
+            ic.setSingleton(Modifier.isStatic(method.getModifiers()));
+            ic.setCallConfig(CallConfiguration.getCallConfigByAnno(desc.anno));
+            return ic;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -94,7 +99,7 @@ public class ReflectionMethodFactory extends MethodFactory {
 
             if (jrubyMethod == null) continue;
             
-            callback.define(implementationClass, method, getAnnotatedMethod(implementationClass, method));
+            callback.define(implementationClass, method, getAnnotatedMethod(implementationClass, new JavaMethodDescriptor(method)));
         }
     }
 

@@ -274,11 +274,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      * 
      * @see org.jruby.internal.runtime.methods.MethodFactory#getAnnotatedMethod
      */
-    public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, Method method) {
-        JavaMethodDescriptor desc = new JavaMethodDescriptor(method);
-        Class type = method.getDeclaringClass();
+    public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc) {
+        Class type = desc.declaringClass;
         String typePath = p(type);
-        String javaMethodName = method.getName();
+        String javaMethodName = desc.name;
         
         String commonClassSuffix = "Invoker$" + javaMethodName + (desc.isStatic ? "_s" : "" )  + "_method_" + desc.required + "_" + desc.optional;
         String generatedClassName = type.getName() + commonClassSuffix;
@@ -771,10 +770,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    private void loadReceiver(String typePath, Class[] signature, Method method, SkinnyMethodAdapter mv) {
+    private void loadReceiver(String typePath, JavaMethodDescriptor desc, SkinnyMethodAdapter mv) {
         // load target for invocations
-        if (Modifier.isStatic(method.getModifiers())) {
-            if (signature.length > 1 && signature[0] == ThreadContext.class) {
+        if (Modifier.isStatic(desc.modifiers)) {
+            if (desc.parameters.length > 1 && desc.parameters[0] == ThreadContext.class) {
                 mv.aload(THREADCONTEXT_INDEX);
             }
             
@@ -785,7 +784,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             mv.aload(RECEIVER_INDEX);
             mv.checkcast(typePath);
             
-            if (signature.length > 0 && signature[0] == ThreadContext.class) {
+            if (desc.parameters.length > 0 && desc.parameters[0] == ThreadContext.class) {
                 mv.aload(THREADCONTEXT_INDEX);
             }
         }
@@ -920,9 +919,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     }
 
     private void createAnnotatedMethodInvocation(JavaMethodDescriptor desc, SkinnyMethodAdapter method, String superClass, int specificArity, boolean block) {
-        String typePath = p(desc.method.getDeclaringClass());
-        String javaMethodName = desc.method.getName();
-        Class ret = desc.method.getReturnType();
+        String typePath = p(desc.declaringClass);
+        String javaMethodName = desc.name;
+        Class ret = desc.returnType;
 
         checkArity(desc.anno, method, specificArity);
         
@@ -947,13 +946,13 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         
         method.label(tryBegin);
         {
-            loadReceiver(typePath, desc.parameters, desc.method, method);
+            loadReceiver(typePath, desc, method);
             
             loadArguments(method, desc.anno, specificArity);
             
             loadBlock(method, specificArity, block);
 
-            if (Modifier.isStatic(desc.method.getModifiers())) {
+            if (Modifier.isStatic(desc.modifiers)) {
                 // static invocation
                 method.invokestatic(typePath, javaMethodName, sig(ret, desc.parameters));
             } else {

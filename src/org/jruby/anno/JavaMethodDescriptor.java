@@ -25,13 +25,19 @@ public class JavaMethodDescriptor {
     public final boolean rest;
     public final Class[] parameters;
     public final JRubyMethod anno;
-    public final Method method;
+    public final int modifiers;
+    public final Class declaringClass;
+    public final String name;
+    public final Class returnType;
     
     public JavaMethodDescriptor(Method method) {
-        this.method = method;
         anno = method.getAnnotation(JRubyMethod.class);
         
-        isStatic = Modifier.isStatic(method.getModifiers());
+        modifiers = method.getModifiers();
+        declaringClass = method.getDeclaringClass();
+        name = method.getName();
+        returnType = method.getReturnType();
+        isStatic = Modifier.isStatic(modifiers);
         parameters = method.getParameterTypes();
         if (parameters.length > 0) {
             hasContext = parameters[0] == ThreadContext.class;

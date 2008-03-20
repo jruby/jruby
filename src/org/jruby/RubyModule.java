@@ -54,6 +54,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
+import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.internal.runtime.methods.AliasMethod;
@@ -603,7 +604,7 @@ public class RubyModule extends RubyObject {
 
             if(jrubyMethod.compat() == CompatVersion.BOTH ||
                     getRuntime().getInstanceConfig().getCompatVersion() == jrubyMethod.compat()) {
-            DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, method);
+            DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, new JavaMethodDescriptor(method));
             methodDefiningCallback.define(this, method, dynamicMethod);
             
             return true;

@@ -31,6 +31,7 @@ package org.jruby.runtime;
 import java.lang.reflect.Method;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.ReflectionMethodFactory;
@@ -108,10 +109,10 @@ public abstract class MethodFactory {
      * 
      * @param implementationClass The target class or module on which the method
      * will be bound.
-     * @param method The java.lang.Method object for the target method.
+     * @param desc A JavaMethodDescriptor describing the target method
      * @return A method handle for the target object.
      */
-    public abstract DynamicMethod getAnnotatedMethod(RubyModule implementationClass, Method method);
+    public abstract DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc);
     
     /**
      * Add all annotated methods on the target Java class to the specified
