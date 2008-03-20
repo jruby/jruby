@@ -142,6 +142,13 @@ module Compiler::Duby
     end
   end
   class Colon2 < Node; end
+  class Condition < Node
+    attr_accessor :predicate
+    def initialize(parent)
+      @predicate = (children = yield(self))[0]
+      super(parent, children)
+    end
+  end
   class Constant < Node
     include Named
     def initialize(parent, name)

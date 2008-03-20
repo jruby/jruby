@@ -234,7 +234,7 @@ module Compiler::Duby
       def transform(parent)
         If.new(parent) do |iff|
           [
-            condition.transform(iff),
+            Condition.new(iff) {|cond| [condition.transform(cond)]},
             then_body.transform(iff),
             else_body ? else_body.transform(iff) : nil
           ]
@@ -269,11 +269,6 @@ module Compiler::Duby
     end
 
     class ModuleNode
-      def transform(parent)
-        builder.package(cpath.name) {
-          body_node.compile(builder)
-        }
-      end
     end
 
     class NewlineNode
@@ -304,25 +299,12 @@ module Compiler::Duby
     end
 
     class RootNode
-      def transform(parent)
-        # builder is class builder
-
-        if body_node
-          body_node.compile(builder)
-        end
-      end
     end
 
     class SelfNode
-      def transform(parent)
-        builder.local("this")
-      end
     end
 
     class StrNode
-      def transform(parent)
-        builder.ldc value
-      end
     end
 
     class SymbolNode
@@ -346,7 +328,7 @@ module Compiler::Duby
       def transform(parent)
         Loop.new(parent, evaluate_at_start, false) do |loop|
           [
-            condition_node.transform(loop),
+            Condition.new(loop) {|cond| [condition_node.transform(cond)]},
             body_node.transform(loop)
           ]
         end
@@ -357,7 +339,7 @@ module Compiler::Duby
       def transform(parent)
         Loop.new(parent, evaluate_at_start, true) do |loop|
           [
-            condition_node.transform(loop),
+            Condition.new(loop) {|cond| [condition_node.transform(cond)]},
             body_node.transform(loop)
           ]
         end

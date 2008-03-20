@@ -130,12 +130,14 @@ class TestAst < Test::Unit::TestCase
     
     assert_not_nil(new_ast)
     assert(Compiler::Duby::If === new_ast)
-    assert_equal("If\n Fixnum(1)\n Fixnum(2)\n If\n  Not\n   Fixnum(3)\n  Fixnum(4)\n  Fixnum(5)", new_ast.inspect)
+    assert_equal("If\n Condition\n  Fixnum(1)\n Fixnum(2)\n If\n  Condition\n   Not\n    Fixnum(3)\n  Fixnum(4)\n  Fixnum(5)", new_ast.inspect)
     
-    assert(Compiler::Duby::Fixnum === new_ast.condition)
+    assert(Compiler::Duby::Condition === new_ast.condition)
+    assert(Compiler::Duby::Fixnum === new_ast.condition.predicate)
     assert(Compiler::Duby::Fixnum === new_ast.body)
     assert(Compiler::Duby::If === new_ast.else)
-    assert(Compiler::Duby::Not === new_ast.else.condition)
+    assert(Compiler::Duby::Condition === new_ast.else.condition)
+    assert(Compiler::Duby::Not === new_ast.else.condition.predicate)
     assert(Compiler::Duby::Fixnum === new_ast.else.body)
     assert(Compiler::Duby::Fixnum === new_ast.else.else)
   end
@@ -294,10 +296,11 @@ class TestAst < Test::Unit::TestCase
     
     assert_not_nil(new_ast)
     assert(Compiler::Duby::Loop === new_ast)
-    assert_equal("Loop(check_first = true, negative = false)\n Fixnum(1)\n Fixnum(2)", new_ast.inspect)
+    assert_equal("Loop(check_first = true, negative = false)\n Condition\n  Fixnum(1)\n Fixnum(2)", new_ast.inspect)
     assert(new_ast.check_first?)
     assert(!new_ast.negative?)
-    assert(Compiler::Duby::Fixnum === new_ast.condition)
+    assert(Compiler::Duby::Condition === new_ast.condition)
+    assert(Compiler::Duby::Fixnum === new_ast.condition.predicate)
     assert(Compiler::Duby::Fixnum === new_ast.body)
     
     node = JRuby.parse("begin; 2; end while 1")
@@ -305,10 +308,11 @@ class TestAst < Test::Unit::TestCase
     
     assert_not_nil(new_ast)
     assert(Compiler::Duby::Loop === new_ast)
-    assert_equal("Loop(check_first = false, negative = false)\n Fixnum(1)\n Fixnum(2)", new_ast.inspect)
+    assert_equal("Loop(check_first = false, negative = false)\n Condition\n  Fixnum(1)\n Fixnum(2)", new_ast.inspect)
     assert(!new_ast.check_first?)
     assert(!new_ast.negative?)
-    assert(Compiler::Duby::Fixnum === new_ast.condition)
+    assert(Compiler::Duby::Condition === new_ast.condition)
+    assert(Compiler::Duby::Fixnum === new_ast.condition.predicate)
     assert(Compiler::Duby::Fixnum === new_ast.body)
   end
   
@@ -318,10 +322,11 @@ class TestAst < Test::Unit::TestCase
     
     assert_not_nil(new_ast)
     assert(Compiler::Duby::Loop === new_ast)
-    assert_equal("Loop(check_first = true, negative = true)\n Fixnum(1)\n Fixnum(2)", new_ast.inspect)
+    assert_equal("Loop(check_first = true, negative = true)\n Condition\n  Fixnum(1)\n Fixnum(2)", new_ast.inspect)
     assert(new_ast.check_first?)
     assert(new_ast.negative?)
-    assert(Compiler::Duby::Fixnum === new_ast.condition)
+    assert(Compiler::Duby::Condition === new_ast.condition)
+    assert(Compiler::Duby::Fixnum === new_ast.condition.predicate)
     assert(Compiler::Duby::Fixnum === new_ast.body)
     
     node = JRuby.parse("begin; 2; end until 1")
@@ -329,10 +334,11 @@ class TestAst < Test::Unit::TestCase
     
     assert_not_nil(new_ast)
     assert(Compiler::Duby::Loop === new_ast)
-    assert_equal("Loop(check_first = false, negative = true)\n Fixnum(1)\n Fixnum(2)", new_ast.inspect)
+    assert_equal("Loop(check_first = false, negative = true)\n Condition\n  Fixnum(1)\n Fixnum(2)", new_ast.inspect)
     assert(!new_ast.check_first?)
     assert(new_ast.negative?)
-    assert(Compiler::Duby::Fixnum === new_ast.condition)
+    assert(Compiler::Duby::Condition === new_ast.condition)
+    assert(Compiler::Duby::Fixnum === new_ast.condition.predicate)
     assert(Compiler::Duby::Fixnum === new_ast.body)
   end
 end
