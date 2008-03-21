@@ -1,4 +1,4 @@
-module Compiler::Duby
+module Compiler::Duby::AST
   # The top of the AST class hierarchy, this represents an abstract AST node.
   # It provides accessors for _children_, an array of all child nodes,
   # _parent_, a reference to this node's parent (nil if none), and _newline_,
