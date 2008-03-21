@@ -66,7 +66,7 @@ module Compiler::Duby
     attr_accessor :literal
     
     def to_s
-      "#{super}(#{literal})"
+      "#{super}(#{literal.inspect})"
     end
   end
 
@@ -295,7 +295,13 @@ module Compiler::Duby
   end
   class Root < Node; end
   class Self < Node; end
-  class Str < Node; end
+  class String < Node
+    include Literal
+    def initialize(parent, literal)
+      super(parent)
+      @literal = literal
+    end
+  end
   class Symbol < Node; end
   class TypeReference < Node
     include Named

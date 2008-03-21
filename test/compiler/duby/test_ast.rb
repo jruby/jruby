@@ -341,4 +341,22 @@ class TestAst < Test::Unit::TestCase
     assert(Compiler::Duby::Fixnum === new_ast.condition.predicate)
     assert(Compiler::Duby::Fixnum === new_ast.body)
   end
+  
+  def test_string
+    node = JRuby.parse("'foo'")
+    new_ast = node.child_nodes[0].transform(nil)
+    
+    assert_not_nil(new_ast)
+    assert(Compiler::Duby::String === new_ast)
+    assert_equal("String(\"foo\")", new_ast.inspect)
+    assert_equal("foo", new_ast.literal)
+  end
+  
+  def test_root
+    node = JRuby.parse("1")
+    new_ast = node.transform(nil)
+    
+    assert_not_nil(new_ast)
+    assert(Compiler::Duby::Fixnum === new_ast)
+  end
 end

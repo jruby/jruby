@@ -299,12 +299,18 @@ module Compiler::Duby
     end
 
     class RootNode
+      def transform(parent)
+        child_nodes[0].transform(parent)
+      end
     end
 
     class SelfNode
     end
 
     class StrNode
+      def transform(parent)
+        String.new(parent, value)
+      end
     end
 
     class SymbolNode
