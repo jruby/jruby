@@ -13,6 +13,7 @@ module Compiler::Duby::AST
       @parent = parent
       @children = children
       @newline = false
+      @inferred_type = nil
     end
     
     def inspect(indent = 0)
@@ -73,6 +74,18 @@ module Compiler::Duby::AST
     end
   end
   
+  module Scoped
+    def scope
+      @scope ||= begin
+        scope = parent
+        scope = scope.parent until scope.class.include? Scope
+        scope
+      end
+    end
+  end
+  
+  module Scope; end
+  
   class TypeReference < Node
     include Named
     attr_accessor :array
@@ -92,6 +105,14 @@ module Compiler::Duby::AST
       to_s == other.to_s
     end
     
+    def eql?(other)
+      self == other
+    end
+    
+    def hash
+      to_s.hash
+    end
+    
     def is_parent(other)
       # default behavior now is to disallow any polymorphic types
       self == other
@@ -99,7 +120,7 @@ module Compiler::Duby::AST
     
     NoType = TypeReference.new(:notype)
   end
-
+  
   class Arguments < Node
     attr_accessor :args, :opt_args, :rest_arg, :block_arg
     def initialize(parent)
@@ -112,6 +133,7 @@ module Compiler::Duby::AST
   end
   class RequiredArgument < Argument
     include Named
+    include Scoped
     def initialize(parent, name)
       super(parent)
       
@@ -120,6 +142,7 @@ module Compiler::Duby::AST
   end
   class OptionalArgument < Argument
     include Named
+    include Scoped
     attr_accessor :child
     def initialize(parent)
       @child = (children = yield(self))[0]
@@ -129,6 +152,7 @@ module Compiler::Duby::AST
   end
   class RestArgument < Argument
     include Named
+    include Scoped
     def initialize(parent, name)
       super(parent)
       
@@ -249,6 +273,7 @@ module Compiler::Duby::AST
   class LocalDeclaration < Node
     include Named
     include Valued
+    include Scoped
     def initialize(parent, name)
       @type, @value = children = yield(self)
       @name = name
@@ -256,23 +281,33 @@ module Compiler::Duby::AST
     end
     
     def to_s
-      "LocalDeclaration(type = #{type}, name = #{name})"
+      "LocalDeclaration(type = #{type}, name = #{name}, scope = #{scope})"
     end
   end
   class LocalAssignment < Node
     include Named
     include Valued
+    include Scoped
     def initialize(parent, name)
       @value = (children = yield(self))[0]
       @name = name
       super(parent, children)
     end
+    
+    def to_s
+      "LocalAssignment(name = #{name}, scope = #{scope})"
+    end
   end
   class Local < Node
     include Named
+    include Scoped
     def initialize(parent, name)
       super(parent, [])
       @name = name
+    end
+    
+    def to_s
+      "Local(name = #{name}, scope = #{scope})"
     end
   end
   class Loop < Node
@@ -293,6 +328,7 @@ module Compiler::Duby::AST
   end
   class MethodDefinition < Node
     include Named
+    include Scope
     attr_accessor :signature, :arguments, :body
     def initialize(parent, name)
       @signature, @arguments, @body = children = yield(self)
@@ -302,6 +338,7 @@ module Compiler::Duby::AST
   end
   class StaticMethodDefinition < Node
     include Named
+    include Scope
     attr_accessor :signature, :arguments, :body
     def initialize(parent, name)
       @signature, @arguments, @body = children = yield(self)
@@ -323,7 +360,14 @@ module Compiler::Duby::AST
       super(parent, children)
     end
   end
-  class Root < Node; end
+  class Script < Node
+    include Scope
+    attr_accessor :body
+    def initialize(parent)
+      @body = (children = yield(self))[0]
+      super(parent, children)
+    end
+  end
   class Self < Node; end
   class String < Node
     include Literal

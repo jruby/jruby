@@ -6,11 +6,11 @@ class TestAst < Test::Unit::TestCase
   include Compiler::Duby
   
   def test_args
-    new_ast = AST.parse("def foo(a, b = 1, *c, &d); end")
+    new_ast = AST.parse("def foo(a, b = 1, *c, &d); end").body
     arguments = new_ast.arguments
     
     assert_not_nil(arguments)
-    inspected = "Arguments\n RequiredArgument(a)\n OptionalArgument(b)\n  LocalAssignment(b)\n   Fixnum(1)\n RestArgument(c)\n BlockArgument(d)"
+    inspected = "Arguments\n RequiredArgument(a)\n OptionalArgument(b)\n  LocalAssignment(name = b, scope = MethodDefinition(foo))\n   Fixnum(1)\n RestArgument(c)\n BlockArgument(d)"
     assert_equal(inspected, arguments.inspect)
     
     assert(AST::Arguments === arguments)
@@ -39,11 +39,11 @@ class TestAst < Test::Unit::TestCase
   end
   
   def test_locals
-    new_ast = AST.parse("a = 1; a")
+    new_ast = AST.parse("a = 1; a").body
     
     assert_not_nil(new_ast)
     assert(AST::Body === new_ast)
-    inspected = "Body\n LocalAssignment(a)\n  Fixnum(1)\n Local(a)"
+    inspected = "Body\n LocalAssignment(name = a, scope = Script)\n  Fixnum(1)\n Local(name = a, scope = Script)"
     assert_equal(inspected, new_ast.inspect)
     assert(!new_ast.newline)
     
@@ -61,7 +61,7 @@ class TestAst < Test::Unit::TestCase
   end
   
   def test_fields
-    new_ast = AST.parse("@a = 1; @a")
+    new_ast = AST.parse("@a = 1; @a").body
     
     assert_not_nil(new_ast)
     assert(AST::Body === new_ast)
@@ -83,18 +83,18 @@ class TestAst < Test::Unit::TestCase
   end
   
   def test_array
-    new_ast = AST.parse("[a = 1, 1]")
+    new_ast = AST.parse("[a = 1, 1]").body
     
     assert_not_nil(new_ast)
     assert(AST::Array === new_ast)
-    assert_equal("Array\n LocalAssignment(a)\n  Fixnum(1)\n Fixnum(1)", new_ast.inspect)
+    assert_equal("Array\n LocalAssignment(name = a, scope = Script)\n  Fixnum(1)\n Fixnum(1)", new_ast.inspect)
     
     assert(AST::LocalAssignment === new_ast[0])
     assert(AST::Fixnum === new_ast[1])
   end
   
   def test_call
-    new_ast = AST.parse("1.foo(1)")
+    new_ast = AST.parse("1.foo(1)").body
     
     assert_not_nil(new_ast)
     assert(AST::Call === new_ast)
@@ -108,7 +108,7 @@ class TestAst < Test::Unit::TestCase
   end
   
   def test_fcall
-    new_ast = AST.parse("foo(1)")
+    new_ast = AST.parse("foo(1)").body
     
     assert_not_nil(new_ast)
     assert(AST::FunctionalCall === new_ast)
@@ -121,7 +121,7 @@ class TestAst < Test::Unit::TestCase
   end
   
   def test_if
-    new_ast = AST.parse("if 1; 2; elsif !3; 4; else; 5; end")
+    new_ast = AST.parse("if 1; 2; elsif !3; 4; else; 5; end").body
     
     assert_not_nil(new_ast)
     assert(AST::If === new_ast)
@@ -138,34 +138,34 @@ class TestAst < Test::Unit::TestCase
   end
   
   def test_begin
-    new_ast = AST.parse("begin; 1; 2; end")
+    new_ast = AST.parse("begin; 1; 2; end").body
     
     assert_not_nil(new_ast)
     assert_equal("Body\n Fixnum(1)\n Fixnum(2)", new_ast.inspect)
     assert(AST::Body === new_ast)
     assert(AST::Fixnum === new_ast[0])
     
-    new_ast = AST.parse("begin; 1; end")
+    new_ast = AST.parse("begin; 1; end").body
     assert(AST::Fixnum === new_ast)
     
-    new_ast = AST.parse("begin; end")
+    new_ast = AST.parse("begin; end").body
     assert(AST::Noop === new_ast)
   end
   
   def test_block
-    new_ast = AST.parse("1; 2")
+    new_ast = AST.parse("1; 2").body
     
     assert_not_nil(new_ast)
     assert_equal("Body\n Fixnum(1)\n Fixnum(2)", new_ast.inspect)
     assert(AST::Body === new_ast)
     assert(AST::Fixnum === new_ast[0])
     
-    new_ast = AST.parse("1")
+    new_ast = AST.parse("1").body
     assert(AST::Fixnum === new_ast)
   end
   
   def test_fixnum
-    new_ast = AST.parse("1")
+    new_ast = AST.parse("1").body
     
     assert_not_nil(new_ast)
     assert_equal("Fixnum(1)", new_ast.inspect)
@@ -174,7 +174,7 @@ class TestAst < Test::Unit::TestCase
   end
   
   def test_float
-    new_ast = AST.parse("1.0")
+    new_ast = AST.parse("1.0").body
     
     assert_not_nil(new_ast)
     assert_equal("Float(1.0)", new_ast.inspect)
@@ -183,7 +183,7 @@ class TestAst < Test::Unit::TestCase
   end
   
   def test_class
-    new_ast = AST.parse("class Foo < Bar; 1; 2; end")
+    new_ast = AST.parse("class Foo < Bar; 1; 2; end").body
     
     assert_not_nil(new_ast)
     assert_equal("ClassDefinition(Foo)\n Constant(Bar)\n Body\n  Fixnum(1)\n  Fixnum(2)", new_ast.inspect)
@@ -196,7 +196,7 @@ class TestAst < Test::Unit::TestCase
   end
   
   def test_defn
-    new_ast = AST.parse("def foo(a, b); 1; end")
+    new_ast = AST.parse("def foo(a, b); 1; end").body
     
     assert_not_nil(new_ast)
     assert_equal("MethodDefinition(foo)\n {:return=>TypeReference(notype, array = false)}\n Arguments\n  RequiredArgument(a)\n  RequiredArgument(b)\n Fixnum(1)", new_ast.inspect)
@@ -208,7 +208,7 @@ class TestAst < Test::Unit::TestCase
     assert(AST::Arguments === new_ast.arguments)
     assert(AST::Fixnum === new_ast.body)
     
-    new_ast = AST.parse("def foo; end")
+    new_ast = AST.parse("def foo; end").body
     
     assert_not_nil(new_ast)
     assert_equal("MethodDefinition(foo)\n {:return=>TypeReference(notype, array = false)}\n Arguments", new_ast.inspect)
@@ -221,10 +221,11 @@ class TestAst < Test::Unit::TestCase
   end
   
   def test_defs
-    new_ast = AST.parse("def self.foo(a, b); 1; end")
+    new_ast = AST.parse("def self.foo(a, b); 1; end").body
     
     assert_not_nil(new_ast)
-    assert_equal("StaticMethodDefinition(foo)\n {:return=>TypeReference(notype, array = false)}\n Arguments\n  RequiredArgument(a)\n  RequiredArgument(b)\n Fixnum(1)", new_ast.inspect)
+    inspected = "StaticMethodDefinition(foo)\n {:return=>TypeReference(notype, array = false)}\n Arguments\n  RequiredArgument(a)\n  RequiredArgument(b)\n Fixnum(1)"
+    assert_equal(inspected, new_ast.inspect)
     assert(AST::StaticMethodDefinition === new_ast)
     assert_equal("foo", new_ast.name)
     assert_not_nil(new_ast.signature)
@@ -233,7 +234,7 @@ class TestAst < Test::Unit::TestCase
     assert(AST::Arguments === new_ast.arguments)
     assert(AST::Fixnum === new_ast.body)
     
-    new_ast = AST.parse("def self.foo; end")
+    new_ast = AST.parse("def self.foo; end").body
     
     assert_not_nil(new_ast)
     assert_equal("StaticMethodDefinition(foo)\n {:return=>TypeReference(notype, array = false)}\n Arguments", new_ast.inspect)
@@ -246,7 +247,7 @@ class TestAst < Test::Unit::TestCase
   end
   
   def test_signature
-    new_ast = AST.parse("def self.foo(a, b); {a => :foo, b => :bar, :return => :baz}; 1; end")
+    new_ast = AST.parse("def self.foo(a, b); {a => :foo, b => :bar, :return => :baz}; 1; end").body
     
     assert_not_nil(new_ast.signature)
     inspected = "StaticMethodDefinition(foo)\n {:return=>TypeReference(baz, array = false), :a=>TypeReference(foo, array = false), :b=>TypeReference(bar, array = false)}\n Arguments\n  RequiredArgument(a)\n  RequiredArgument(b)\n Body\n  Noop\n  Fixnum(1)"
@@ -276,7 +277,7 @@ class TestAst < Test::Unit::TestCase
   end
   
   def test_return
-    new_ast = AST.parse("return 1")
+    new_ast = AST.parse("return 1").body
     
     assert_not_nil(new_ast)
     inspected = "Return\n Fixnum(1)"
@@ -286,7 +287,7 @@ class TestAst < Test::Unit::TestCase
   end
   
   def test_vcall
-    new_ast = AST.parse("foo")
+    new_ast = AST.parse("foo").body
     
     assert_not_nil(new_ast)
     assert(AST::FunctionalCall === new_ast)
@@ -298,7 +299,7 @@ class TestAst < Test::Unit::TestCase
   end
   
   def test_while
-    new_ast = AST.parse("while 1; 2; end")
+    new_ast = AST.parse("while 1; 2; end").body
     
     assert_not_nil(new_ast)
     assert(AST::Loop === new_ast)
@@ -309,7 +310,7 @@ class TestAst < Test::Unit::TestCase
     assert(AST::Fixnum === new_ast.condition.predicate)
     assert(AST::Fixnum === new_ast.body)
     
-    new_ast = AST.parse("begin; 2; end while 1")
+    new_ast = AST.parse("begin; 2; end while 1").body
     
     assert_not_nil(new_ast)
     assert(AST::Loop === new_ast)
@@ -322,7 +323,7 @@ class TestAst < Test::Unit::TestCase
   end
   
   def test_until
-    new_ast = AST.parse("until 1; 2; end")
+    new_ast = AST.parse("until 1; 2; end").body
     
     assert_not_nil(new_ast)
     assert(AST::Loop === new_ast)
@@ -333,7 +334,7 @@ class TestAst < Test::Unit::TestCase
     assert(AST::Fixnum === new_ast.condition.predicate)
     assert(AST::Fixnum === new_ast.body)
     
-    new_ast = AST.parse("begin; 2; end until 1")
+    new_ast = AST.parse("begin; 2; end until 1").body
     
     assert_not_nil(new_ast)
     assert(AST::Loop === new_ast)
@@ -346,7 +347,7 @@ class TestAst < Test::Unit::TestCase
   end
   
   def test_string
-    new_ast = AST.parse("'foo'")
+    new_ast = AST.parse("'foo'").body
     
     assert_not_nil(new_ast)
     assert(AST::String === new_ast)
@@ -355,7 +356,7 @@ class TestAst < Test::Unit::TestCase
   end
   
   def test_root
-    new_ast = AST.parse("1")
+    new_ast = AST.parse("1").body
     
     assert_not_nil(new_ast)
     assert(AST::Fixnum === new_ast)

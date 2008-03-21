@@ -307,7 +307,7 @@ module Compiler::Duby
 
       class RootNode
         def transform(parent)
-          child_nodes[0].transform(parent)
+          Script.new(parent) {|script| [child_nodes[0].transform(script)]}
         end
       end
 
