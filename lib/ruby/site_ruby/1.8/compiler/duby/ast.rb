@@ -7,6 +7,7 @@ module Compiler::Duby::AST
     attr_accessor :children
     attr_accessor :parent
     attr_accessor :newline
+    attr_accessor :inferred_type
 
     def initialize(parent, children = [])
       @parent = parent
@@ -23,6 +24,8 @@ module Compiler::Duby::AST
             child.each {|ary_child|
               str << "\n#{ary_child.inspect(indent + 1)}"
             }
+          elsif ::Hash === child
+            str << "\n#{indent_str} #{child.inspect}"
           else
             str << "\n#{child.inspect(indent + 1)}"
           end
@@ -68,6 +71,33 @@ module Compiler::Duby::AST
     def to_s
       "#{super}(#{literal.inspect})"
     end
+  end
+  
+  class TypeReference < Node
+    include Named
+    attr_accessor :array
+    def initialize(name, array = false)
+      @name = name
+      @array = array
+      super(nil)
+    end
+    
+    def array?; @array; end
+    
+    def to_s
+      "TypeReference(#{name}, array = #{array})"
+    end
+    
+    def ==(other)
+      to_s == other.to_s
+    end
+    
+    def is_parent(other)
+      # default behavior now is to disallow any polymorphic types
+      self == other
+    end
+    
+    NoType = TypeReference.new(:notype)
   end
 
   class Arguments < Node
@@ -303,21 +333,6 @@ module Compiler::Duby::AST
     end
   end
   class Symbol < Node; end
-  class TypeReference < Node
-    include Named
-    attr_accessor :array
-    def initialize(parent, name, array = false)
-      @name = name
-      @array = array
-      super(parent)
-    end
-    
-    def array?; @array; end
-    
-    def to_s
-      "TypeReference(#{name}, array = #{array})"
-    end
-  end
   class VoidType < Node; end
   class While < Node; end
 end

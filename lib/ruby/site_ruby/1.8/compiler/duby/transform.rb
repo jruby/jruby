@@ -48,7 +48,7 @@ module Compiler::Duby
 
       class BeginNode
         def transform(parent)
-          body_node.transform(parent)
+          body_node ? body_node.transform(parent) : Noop.new(parent)
         end
       end
 
@@ -113,7 +113,7 @@ module Compiler::Duby
 
           # join and load
           class_name = elements.join(".")
-          TypeReference.new(parent, class_name, array)
+          TypeReference.new(class_name, array)
         end
       end
 
@@ -126,14 +126,14 @@ module Compiler::Duby
         end
 
         def type_reference(parent)
-          TypeReference.new(parent, name)
+          TypeReference.new(name)
         end
       end
 
       class DefnNode
         def transform(parent)
           MethodDefinition.new(parent, name) do |defn|
-            signature = [VoidType.new(parent)]
+            signature = {:return => TypeReference::NoType}
 
             # TODO: Disabled until parser supports it
             if false && args_node
@@ -159,7 +159,7 @@ module Compiler::Duby
       class DefsNode
         def transform(parent)
           StaticMethodDefinition.new(parent, name) do |defn|
-            signature = [VoidType.new(parent)]
+            signature = {:return => TypeReference::NoType}
 
             # TODO: Disabled until parser supports it
             if false && args_node
@@ -221,20 +221,19 @@ module Compiler::Duby
           # flag this as a declaration, so it transforms to a noop
           @declaration = true
 
-          arg_types = []
-          return_type = VoidType.new(parent)
+          arg_types = {:return => TypeReference::NoType}
 
           list = list_node.child_nodes.to_a
           list.each_index do |index|
             if index % 2 == 0
               if SymbolNode === list[index] && list[index].name == 'return'
-                return_type = list[index + 1].type_reference(parent)
+                arg_types[:return] = list[index + 1].type_reference(parent)
               else
-                arg_types << list[index + 1].type_reference(parent)
+                arg_types[list[index].name.intern] = list[index + 1].type_reference(parent)
               end
             end
           end
-          return [return_type, *arg_types]
+          return arg_types
         end
       end
 
@@ -323,7 +322,7 @@ module Compiler::Duby
 
       class SymbolNode
         def type_reference(parent)
-          TypeReference.new(parent, name)
+          TypeReference.new(name)
         end
       end
 
