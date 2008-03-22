@@ -51,6 +51,10 @@ def bench_method_dispatch(bm)
     self
   end
 
+  def quux(&block)
+    self
+  end
+
   $bm.report "ruby method: 100k x100 self.foo" do
     a = []; 
     i = 0;
@@ -68,7 +72,7 @@ def bench_method_dispatch(bm)
       i += 1;
     end
   end
-
+  
   $bm.report "ruby method(opt): 100k x100 self.baz" do
     a = []; 
     i = 0;
@@ -105,6 +109,42 @@ def bench_method_dispatch(bm)
     end
   end
 
+  $bm.report "ruby method(block): 100k x100 self.quux" do
+    a = []; 
+    i = 0;
+    while i < 100000
+      quux; quux; quux; quux; quux; quux; quux; quux; quux; quux;
+      quux; quux; quux; quux; quux; quux; quux; quux; quux; quux;
+      quux; quux; quux; quux; quux; quux; quux; quux; quux; quux;
+      quux; quux; quux; quux; quux; quux; quux; quux; quux; quux;
+      quux; quux; quux; quux; quux; quux; quux; quux; quux; quux;
+      quux; quux; quux; quux; quux; quux; quux; quux; quux; quux;
+      quux; quux; quux; quux; quux; quux; quux; quux; quux; quux;
+      quux; quux; quux; quux; quux; quux; quux; quux; quux; quux;
+      quux; quux; quux; quux; quux; quux; quux; quux; quux; quux;
+      quux; quux; quux; quux; quux; quux; quux; quux; quux; quux;
+      i += 1;
+    end
+  end
+
+  $bm.report "ruby method(block{}): 10k x100 self.quux" do
+    a = []; 
+    i = 0;
+    while i < 10_000
+      quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; 
+      quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; 
+      quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; 
+      quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; 
+      quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; 
+      quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; 
+      quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; 
+      quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; 
+      quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; 
+      quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; quux{}; 
+      i += 1;
+    end
+  end
+  
   $bm.report "define_method method: 100k x100 calls" do
     a = 0
     while a < 100000
