@@ -199,7 +199,7 @@ class TestAst < Test::Unit::TestCase
     new_ast = AST.parse("def foo(a, b); 1; end").body
     
     assert_not_nil(new_ast)
-    assert_equal("MethodDefinition(foo)\n {:return=>TypeReference(notype, array = false)}\n Arguments\n  RequiredArgument(a)\n  RequiredArgument(b)\n Fixnum(1)", new_ast.inspect)
+    assert_equal("MethodDefinition(foo)\n {:return=>Type(notype)}\n Arguments\n  RequiredArgument(a)\n  RequiredArgument(b)\n Fixnum(1)", new_ast.inspect)
     assert(AST::MethodDefinition === new_ast)
     assert_equal("foo", new_ast.name)
     assert_not_nil(new_ast.signature)
@@ -211,7 +211,7 @@ class TestAst < Test::Unit::TestCase
     new_ast = AST.parse("def foo; end").body
     
     assert_not_nil(new_ast)
-    assert_equal("MethodDefinition(foo)\n {:return=>TypeReference(notype, array = false)}\n Arguments", new_ast.inspect)
+    assert_equal("MethodDefinition(foo)\n {:return=>Type(notype)}\n Arguments", new_ast.inspect)
     assert_not_nil(new_ast.arguments)
     assert_equal(nil, new_ast.arguments.args)
     assert_equal(nil, new_ast.arguments.opt_args)
@@ -224,7 +224,7 @@ class TestAst < Test::Unit::TestCase
     new_ast = AST.parse("def self.foo(a, b); 1; end").body
     
     assert_not_nil(new_ast)
-    inspected = "StaticMethodDefinition(foo)\n {:return=>TypeReference(notype, array = false)}\n Arguments\n  RequiredArgument(a)\n  RequiredArgument(b)\n Fixnum(1)"
+    inspected = "StaticMethodDefinition(foo)\n {:return=>Type(notype)}\n Arguments\n  RequiredArgument(a)\n  RequiredArgument(b)\n Fixnum(1)"
     assert_equal(inspected, new_ast.inspect)
     assert(AST::StaticMethodDefinition === new_ast)
     assert_equal("foo", new_ast.name)
@@ -237,7 +237,7 @@ class TestAst < Test::Unit::TestCase
     new_ast = AST.parse("def self.foo; end").body
     
     assert_not_nil(new_ast)
-    assert_equal("StaticMethodDefinition(foo)\n {:return=>TypeReference(notype, array = false)}\n Arguments", new_ast.inspect)
+    assert_equal("StaticMethodDefinition(foo)\n {:return=>Type(notype)}\n Arguments", new_ast.inspect)
     assert_not_nil(new_ast.arguments)
     assert_equal(nil, new_ast.arguments.args)
     assert_equal(nil, new_ast.arguments.opt_args)
@@ -250,7 +250,7 @@ class TestAst < Test::Unit::TestCase
     new_ast = AST.parse("def self.foo(a, b); {a => :foo, b => :bar, :return => :baz}; 1; end").body
     
     assert_not_nil(new_ast.signature)
-    inspected = "StaticMethodDefinition(foo)\n {:return=>TypeReference(baz, array = false), :a=>TypeReference(foo, array = false), :b=>TypeReference(bar, array = false)}\n Arguments\n  RequiredArgument(a)\n  RequiredArgument(b)\n Body\n  Noop\n  Fixnum(1)"
+    inspected = "StaticMethodDefinition(foo)\n {:return=>Type(baz), :a=>Type(foo), :b=>Type(bar)}\n Arguments\n  RequiredArgument(a)\n  RequiredArgument(b)\n Body\n  Noop\n  Fixnum(1)"
     assert_equal(inspected, new_ast.inspect)
     signature = new_ast.signature
     assert_equal(3, signature.size)
@@ -265,7 +265,7 @@ class TestAst < Test::Unit::TestCase
   def test_type_reference
     signature = JRuby.parse("{a => :foo, b => java.lang.Object, :return => ArrayList}").child_nodes[0].signature(nil)
     
-    inspected = "{:return=>TypeReference(ArrayList, array = false), :a=>TypeReference(foo, array = false), :b=>TypeReference(java.lang.Object, array = false)}"
+    inspected = "{:return=>Type(ArrayList), :a=>Type(foo), :b=>Type(java.lang.Object)}"
     assert_equal(inspected, signature.inspect)
     assert_equal(3, signature.size)
     assert(AST::TypeReference === signature[:return])

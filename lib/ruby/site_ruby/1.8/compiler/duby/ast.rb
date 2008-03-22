@@ -18,6 +18,11 @@ module Compiler
           @children = children
           @newline = false
           @inferred_type = nil
+          @resolved = false
+        end
+        
+        def log(message)
+          puts "* [AST] [#{simple_name}] " + message if $DEBUG
         end
 
         def inspect(indent = 0)
@@ -39,8 +44,12 @@ module Compiler
           str
         end
 
-        def to_s
+        def simple_name
           self.class.name.split("::")[-1]
+        end
+        
+        def to_s
+          simple_name
         end
 
         def [](index)
@@ -49,6 +58,15 @@ module Compiler
 
         def each(&b)
           children.each(&b)
+        end
+        
+        def resolved!
+          log "resolved!"
+          @resolved = true
+        end
+        
+        def resolved?
+          @resolved
         end
       end
 
@@ -102,7 +120,7 @@ module Compiler
         def array?; @array; end
 
         def to_s
-          "TypeReference(#{name}, array = #{array})"
+          "Type(#{name}#{array? ? ' array' : ''})"
         end
 
         def ==(other)
@@ -121,11 +139,22 @@ module Compiler
           # default behavior now is to disallow any polymorphic types
           self == other
         end
+        
+        def compatible?(other)
+          # default behavior is only exact match right now
+          self == other
+        end
+        
+        def narrow(other)
+          # only exact match allowed for now, so narrowing is a noop
+          self
+        end
 
         NoType = TypeReference.new(:notype)
       end
 
       class Colon2 < Node; end
+      
       class Constant < Node
         include Named
         def initialize(parent, name)
@@ -133,7 +162,9 @@ module Compiler
           super(parent, [])
         end
       end
+      
       class Self < Node; end
+      
       class VoidType < Node; end
     end
   end

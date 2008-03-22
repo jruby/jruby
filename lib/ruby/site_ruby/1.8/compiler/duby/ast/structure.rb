@@ -5,16 +5,16 @@ module Compiler::Duby::AST
     end
         
     # Type of a block is the type of its final element
-    def infer_type(typer)
+    def infer(typer)
       unless @inferred_type
         if children.size == 0
           @inferred_type = typer.default_type
         else
-          children.each {|child| @inferred_type = child.infer_type(typer)}
+          children.each {|child| @inferred_type = child.infer(typer)}
         end
           
         unless @inferred_type
-          typer.defer_inference(self)
+          typer.defer(self)
         end
       end
 
@@ -23,7 +23,7 @@ module Compiler::Duby::AST
   end
   
   class Noop < Node
-    def infer_type(typer)
+    def infer(typer)
       @inferred_type ||= typer.default_type
     end
   end
@@ -37,8 +37,8 @@ module Compiler::Duby::AST
       super(parent, children)
     end
     
-    def infer_type(typer)
-      @inferred_type ||= body.infer_type(typer) || (typer.defer_inference(self); nil)
+    def infer(typer)
+      @inferred_type ||= body.infer(typer) || (typer.defer(self); nil)
     end
   end
 end

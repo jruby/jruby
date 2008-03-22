@@ -14,12 +14,12 @@ module Compiler::Duby::AST
       "LocalAssignment(name = #{name}, scope = #{scope})"
     end
     
-    def infer_type(typer)
+    def infer(typer)
       unless @inferred_type
-        @inferred_type = typer.learn_local_type(scope, name, value.infer_type(typer))
+        @inferred_type = typer.learn_local_type(scope, name, value.infer(typer))
 
         unless @inferred_type
-          typer.defer_inference(self)
+          typer.defer(self)
         end
       end
 
@@ -40,12 +40,12 @@ module Compiler::Duby::AST
       "Local(name = #{name}, scope = #{scope})"
     end
     
-    def infer_type(typer)
+    def infer(typer)
       unless @inferred_type
         @inferred_type = typer.local_type(scope, name)
 
         unless @inferred_type
-          typer.defer_inference(self)
+          typer.defer(self)
         end
       end
 

@@ -7,9 +7,9 @@ module Compiler::Duby::AST
       super(parent, children)
     end
     
-    def infer_type(typer)
+    def infer(typer)
       unless @inferred_type
-        @inferred_type = args ? args.map {|arg| arg.infer_type(typer)} : []
+        @inferred_type = args ? args.map {|arg| arg.infer(typer)} : []
       end
     end
   end
@@ -28,7 +28,7 @@ module Compiler::Duby::AST
       @name = name
     end
     
-    def infer_type(typer)
+    def infer(typer)
       unless @inferred_type
         # if not already typed, check parent of parent (MethodDefinition) for signature info
         method_def = parent.parent
@@ -42,7 +42,7 @@ module Compiler::Duby::AST
         end
           
         unless @inferred_type
-          typer.defer_inference(self)
+          typer.defer(self)
         end
       end
         
@@ -94,13 +94,13 @@ module Compiler::Duby::AST
       super(parent, children)
     end
         
-    def infer_type(typer)
-      arguments.infer_type(typer)
+    def infer(typer)
+      arguments.infer(typer)
       forced_type = signature[:return]
-      inferred_type = body.infer_type(typer)
+      inferred_type = body.infer(typer)
         
       if !inferred_type
-        typer.defer_inference(self)
+        typer.defer(self)
       else
         if forced_type != TypeReference::NoType && !forced_type.is_parent(inferred_type)
           raise InferenceError.new("Inferred return type is incompatible with declared", self)
@@ -125,13 +125,13 @@ module Compiler::Duby::AST
       super(parent, children)
     end
         
-    def infer_type(typer)
-      arguments.infer_type(typer)
+    def infer(typer)
+      arguments.infer(typer)
       forced_type = signature[:return]
-      inferred_type = body.infer_type(typer)
+      inferred_type = body.infer(typer)
         
       if !inferred_type
-        typer.defer_inference(self)
+        typer.defer(self)
       else
         if forced_type != TypeReference::NoType && !forced_type.is_parent(inferred_type)
           raise InferenceError.new("Inferred return type is incompatible with declared", self)

@@ -13,7 +13,7 @@ module Compiler::Duby::AST
       @literal = literal
     end
     
-    def infer_type(typer)
+    def infer(typer)
       typer.fixnum_type
     end
   end
@@ -26,7 +26,7 @@ module Compiler::Duby::AST
       @literal = literal
     end
     
-    def infer_type(typer)
+    def infer(typer)
       typer.float_type
     end
   end
@@ -41,7 +41,7 @@ module Compiler::Duby::AST
       @literal = literal
     end
     
-    def infer_type(typer)
+    def infer(typer)
       @inferred_type ||= typer.string_type
     end
   end

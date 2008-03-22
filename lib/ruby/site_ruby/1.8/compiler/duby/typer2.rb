@@ -11,61 +11,103 @@ module Compiler::Duby
       end
     end
     
-    class Simple
+    class BaseTyper
       include Compiler::Duby
+      
+      def log(message)
+        puts "* [#{name}] #{message}" if $DEBUG
+      end
+    end
+    
+    class Simple < BaseTyper
       attr_accessor :self_type
 
       def initialize(self_type)
         @self_type = type_reference(self_type)
       end
+      
+      def name
+        "Simple"
+      end
 
       def default_type
         nil
       end
+      
       def fixnum_type
         AST::TypeReference.new :fixnum
       end
+      
       def float_type
         AST::TypeReference.new :float
       end
+      
       def string_type
         AST::TypeReference.new :string
       end
+      
+      def boolean_type
+        AST::TypeReference.new :boolean
+      end
+      
       def learn_local_type(scope, name, type)
         name = name.intern unless Symbol === name
 
-        puts "* Learned local type in #{scope} : #{name} = #{type}" if $DEBUG
+        log "Learned local type under #{scope} : #{name} = #{type}"
 
         get_local_type_hash(scope)[name] = type
       end
+      
       def local_type(scope, name)
         name = name.intern unless Symbol === name
 
-        puts "* Retrieved local type in #{scope} : #{name} = #{get_local_type_hash(scope)[name]}" if $DEBUG
+        log "Retrieved local type in #{scope} : #{name} = #{get_local_type_hash(scope)[name]}"
 
         get_local_type_hash(scope)[name]
       end
+      
       def local_types
         @local_types ||= {}
       end
+      
       def get_local_type_hash(scope)
         local_types[scope] ||= {}
       end
+      
       def learn_method_type(target_type, name, parameter_types, type)
         name = name.intern unless Symbol === name
 
-        puts "* Learned method: #{target_type} : #{name} : (#{parameter_types.join(',')}) = #{type}" if $DEBUG
+        log "Learned method #{name} (#{parameter_types}) on #{target_type} = #{type}"
 
         get_method_type_hash(target_type, name, parameter_types)[:type] = type
       end
+      
       def method_type(target_type, name, parameter_types)
         name = name.intern unless Symbol === name
 
-        get_method_type_hash(target_type, name, parameter_types)[:type]
+        simple_type = get_method_type_hash(target_type, name, parameter_types)[:type]
+        
+        if !simple_type
+          log "Method type for \"#{name}\" #{parameter_types} on #{target_type} not found."
+          
+          # allow plugins a go
+          Compiler::Duby.typer_plugins.each do |plugin|
+            log "Invoking plugin: #{plugin}"
+            
+            break if simple_type = plugin.method_type(self, target_type, name, parameter_types)
+          end
+          
+        else
+          log "Method type for \"#{name}\" #{parameter_types} on #{target_type} = #{simple_type}"
+        end
+        
+        simple_type
       end
+      
       def method_types
         @method_types ||= {}
       end
+      
       def get_method_type_hash(target_type, name, parameter_types)
         method_types[target_type] ||= {}
         method_types[target_type][name] ||= {}
@@ -77,6 +119,7 @@ module Compiler::Duby
 
         current
       end
+      
       def type_reference(name)
         AST::TypeReference.new(name)
       end
@@ -85,29 +128,30 @@ module Compiler::Duby
         @deferred_nodes ||= []
       end
 
-      def defer_inference(node)
+      def defer(node)
         return if deferred_nodes.include? node
-        puts "* Deferring inference for #{node}" if $DEBUG
+        log "Deferring inference for #{node}"
+        
         deferred_nodes << node
       end
 
-      def resolve_deferred(raise = false)
+      def resolve(raise = false)
         count = deferred_nodes.size + 1
         count.times do |i|
           old_deferred = @deferred_nodes
           @deferred_nodes = deferred_nodes.select do |node|
-            type = node.infer_type(self)
+            type = node.infer(self)
 
-            puts "* [Cycle #{i}]: Inferred type for #{node}: #{type || 'FAILED'}" if $DEBUG
+            log "[Cycle #{i}]: Inferred type for #{node}: #{type || 'FAILED'}"
 
             type == default_type
           end
           
           if @deferred_nodes.size == 0
-            puts "* Inference cycle #{i} resolved all types, exiting" if $DEBUG
+            log "Inference cycle #{i} resolved all types, exiting"
             break
           elsif old_deferred == @deferred_nodes
-            puts "* Inference cycle #{i} made no progress, bailing out" if $DEBUG
+            log "Inference cycle #{i} made no progress, bailing out"
             break
           end
         end
@@ -121,13 +165,22 @@ module Compiler::Duby
   end
   InferenceError = Typer::InferenceError
   SimpleTyper = Typer::Simple
+  
+  def self.typer_plugins
+    @typer_plugins ||= []
+  end
 end
 
 if __FILE__ == $0
   ast = Compiler::Duby::AST.parse(File.read(ARGV[0]))
   typer = Compiler::Duby::SimpleTyper.new(:script)
   ast.infer(typer)
-  typer.resolve_deferred(true)
+  begin
+    typer.resolve(true)
+  rescue Compiler::Duby::InferenceError => e
+    puts e.message
+  end
   
+  puts "\nAST:"
   p ast
 end

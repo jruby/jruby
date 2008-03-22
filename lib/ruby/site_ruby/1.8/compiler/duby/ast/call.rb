@@ -9,14 +9,16 @@ module Compiler::Duby::AST
       super(parent, children)
     end
         
-    def infer_type(typer)
+    def infer(typer)
       unless @inferred_type
         receiver_type = typer.self_type
-        parameter_types = parameters.map {|param| param.infer_type(typer)}
+        parameter_types = parameters.map {|param| param.infer(typer)}
         @inferred_type = typer.method_type(receiver_type, name, parameter_types)
           
-        unless @inferred_type
-          typer.defer_inference(self)
+        if @inferred_type
+          resolved!
+        else
+          typer.defer(self)
         end
       end
         
@@ -34,14 +36,16 @@ module Compiler::Duby::AST
       super(parent, children)
     end
         
-    def infer_type(typer)
+    def infer(typer)
       unless @inferred_type
-        receiver_type = target.infer_type(typer)
-        parameter_types = parameters.map {|param| param.infer_type(typer)}
+        receiver_type = target.infer(typer)
+        parameter_types = parameters.map {|param| param.infer(typer)}
         @inferred_type = typer.method_type(receiver_type, name, parameter_types)
           
-        unless @inferred_type
-          typer.defer_inference(self)
+        if @inferred_type
+          resolved!
+        else
+          typer.defer(self)
         end
       end
         
