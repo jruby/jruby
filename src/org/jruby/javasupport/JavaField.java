@@ -78,7 +78,7 @@ public class JavaField extends JavaAccessibleObject {
     }
 
     public JavaField(Ruby runtime, Field field) {
-        super(runtime, (RubyClass) runtime.getJavaSupport().getJavaModule().fastGetClass("JavaField"));
+        super(runtime, runtime.getJavaSupport().getJavaFieldClass());
         this.field = field;
     }
 

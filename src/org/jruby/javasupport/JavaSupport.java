@@ -103,6 +103,9 @@ public class JavaSupport {
     private RubyClass javaClassClass;
     private RubyClass javaArrayClass;
     private RubyClass javaProxyClass;
+    private RubyClass javaFieldClass;
+    private RubyClass javaMethodClass;
+    private RubyClass javaConstructorClass;
     private RubyModule javaInterfaceTemplate;
     private RubyModule packageModuleTemplate;
     private RubyClass arrayProxyClass;
@@ -205,76 +208,88 @@ public class JavaSupport {
         return objectProxyCache;
     }
 
-    // not synchronizing these methods, no harm if these values get set twice...
+    // not synchronizing these methods, no harm if these values get set more
+    // than once.
+    // (also note that there's no chance of getting a partially initialized
+    // class/module, as happens-before is guaranteed by volatile write/read
+    // of constants table.)
     
     public RubyModule getJavaModule() {
-        if (javaModule == null) {
-            javaModule = runtime.fastGetModule("Java");
-        }
-        return javaModule;
+        RubyModule module;
+        if ((module = javaModule) != null) return module;
+        return javaModule = runtime.fastGetModule("Java");
     }
     
     public RubyModule getJavaUtilitiesModule() {
-        if (javaUtilitiesModule == null) {
-            javaUtilitiesModule = runtime.fastGetModule("JavaUtilities");
-        }
-        return javaUtilitiesModule;
+        RubyModule module;
+        if ((module = javaUtilitiesModule) != null) return module;
+        return javaUtilitiesModule = runtime.fastGetModule("JavaUtilities");
     }
     
     public RubyClass getJavaObjectClass() {
-        if (javaObjectClass == null) {
-            javaObjectClass = getJavaModule().fastGetClass("JavaObject");
-        }
-        return javaObjectClass;
+        RubyClass clazz;
+        if ((clazz = javaObjectClass) != null) return clazz;
+        return javaObjectClass = getJavaModule().fastGetClass("JavaObject");
     }
 
     public RubyClass getJavaArrayClass() {
-        if (javaArrayClass == null) {
-            javaArrayClass = getJavaModule().fastGetClass("JavaArray");
-        }
-        return javaArrayClass;
+        RubyClass clazz;
+        if ((clazz = javaArrayClass) != null) return clazz;
+        return javaArrayClass = getJavaModule().fastGetClass("JavaArray");
     }
     
     public RubyClass getJavaClassClass() {
-        if(javaClassClass == null) {
-            javaClassClass = getJavaModule().fastGetClass("JavaClass");
-        }
-        return javaClassClass;
+        RubyClass clazz;
+        if ((clazz = javaClassClass) != null) return clazz;
+        return javaClassClass = getJavaModule().fastGetClass("JavaClass");
     }
     
     public RubyModule getJavaInterfaceTemplate() {
-        if (javaInterfaceTemplate == null) {
-            javaInterfaceTemplate = runtime.fastGetModule("JavaInterfaceTemplate");
-        }
-        return javaInterfaceTemplate;
+        RubyModule module;
+        if ((module = javaInterfaceTemplate) != null) return module;
+        return javaInterfaceTemplate = runtime.fastGetModule("JavaInterfaceTemplate");
     }
     
     public RubyModule getPackageModuleTemplate() {
-        if (packageModuleTemplate == null) {
-            packageModuleTemplate = runtime.fastGetModule("JavaPackageModuleTemplate");
-        }
-        return packageModuleTemplate;
+        RubyModule module;
+        if ((module = packageModuleTemplate) != null) return module;
+        return packageModuleTemplate = runtime.fastGetModule("JavaPackageModuleTemplate");
     }
     
     public RubyClass getJavaProxyClass() {
-        if (javaProxyClass == null) {
-            javaProxyClass = runtime.fastGetClass("JavaProxy");
-        }
-        return javaProxyClass;
+        RubyClass clazz;
+        if ((clazz = javaProxyClass) != null) return clazz;
+        return javaProxyClass = runtime.fastGetClass("JavaProxy");
     }
     
     public RubyClass getConcreteProxyClass() {
-        if (concreteProxyClass == null) {
-            concreteProxyClass = runtime.fastGetClass("ConcreteJavaProxy");
-        }
-        return concreteProxyClass;
+        RubyClass clazz;
+        if ((clazz = concreteProxyClass) != null) return clazz;
+        return concreteProxyClass = runtime.fastGetClass("ConcreteJavaProxy");
     }
     
     public RubyClass getArrayProxyClass() {
-        if (arrayProxyClass == null) {
-            arrayProxyClass = runtime.fastGetClass("ArrayJavaProxy");
-        }
-        return arrayProxyClass;
+        RubyClass clazz;
+        if ((clazz = arrayProxyClass) != null) return clazz;
+        return arrayProxyClass = runtime.fastGetClass("ArrayJavaProxy");
+    }
+    
+    public RubyClass getJavaFieldClass() {
+        RubyClass clazz;
+        if ((clazz = javaFieldClass) != null) return clazz;
+        return javaFieldClass = getJavaModule().fastGetClass("JavaField");
+    }
+
+    public RubyClass getJavaMethodClass() {
+        RubyClass clazz;
+        if ((clazz = javaMethodClass) != null) return clazz;
+        return javaMethodClass = getJavaModule().fastGetClass("JavaMethod");
+    }
+
+    public RubyClass getJavaConstructorClass() {
+        RubyClass clazz;
+        if ((clazz = javaConstructorClass) != null) return clazz;
+        return javaConstructorClass = getJavaModule().fastGetClass("JavaConstructor");
     }
 
 }

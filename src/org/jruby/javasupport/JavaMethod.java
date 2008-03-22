@@ -87,7 +87,7 @@ public class JavaMethod extends JavaCallable {
     }
 
     public JavaMethod(Ruby runtime, Method method) {
-        super(runtime, (RubyClass) runtime.getJavaSupport().getJavaModule().fastGetClass("JavaMethod"));
+        super(runtime, runtime.getJavaSupport().getJavaMethodClass());
         this.method = method;
         this.parameterTypes = method.getParameterTypes();
 

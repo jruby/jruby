@@ -291,7 +291,7 @@ public class Java implements Library {
                 addToJavaPackageModule(interfaceModule,javaClass);
                 javaClass.setupInterfaceModule(interfaceModule);
                 // include any interfaces we extend
-                Class[] extended = javaClass.javaClass().getInterfaces();
+                Class<?>[] extended = javaClass.javaClass().getInterfaces();
                 for (int i = extended.length; --i >= 0; ) {
                     JavaClass extendedClass = JavaClass.get(runtime, extended[i]);
                     RubyModule extModule = getInterfaceModule(runtime, extendedClass);
@@ -366,7 +366,7 @@ public class Java implements Library {
     
     public static RubyModule getProxyClass(Ruby runtime, JavaClass javaClass) {
         RubyClass proxyClass;
-        Class c;
+        Class<?> c;
         if ((c = javaClass.javaClass()).isInterface()) {
             return getInterfaceModule(runtime, javaClass);
         }
@@ -403,7 +403,7 @@ public class Java implements Library {
                             javaClass, false);
 
                     // include interface modules into the proxy class
-                    Class[] interfaces = c.getInterfaces();
+                    Class<?>[] interfaces = c.getInterfaces();
                     for (int i = interfaces.length; --i >= 0; ) {
                         JavaClass ifc = JavaClass.get(runtime, interfaces[i]);
                         proxyClass.includeModule(getInterfaceModule(runtime, ifc));
@@ -462,7 +462,7 @@ public class Java implements Library {
     // package scheme 2: separate module for each full package name, constructed 
     // from the camel-cased package segments: Java::JavaLang::Object, 
     private static void addToJavaPackageModule(RubyModule proxyClass, JavaClass javaClass) {
-        Class clazz = javaClass.javaClass();
+        Class<?> clazz = javaClass.javaClass();
         String fullName;
         if ((fullName = clazz.getName()) == null) return;
         int endPackage = fullName.lastIndexOf('.');

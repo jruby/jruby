@@ -71,7 +71,7 @@ public class JavaConstructor extends JavaCallable {
     }
 
     public JavaConstructor(Ruby runtime, Constructor<?> constructor) {
-        super(runtime, runtime.getJavaSupport().getJavaModule().fastGetClass("JavaConstructor"));
+        super(runtime, runtime.getJavaSupport().getJavaConstructorClass());
         this.constructor = constructor;
         this.parameterTypes = constructor.getParameterTypes();
     }
