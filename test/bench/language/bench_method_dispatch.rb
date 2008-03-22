@@ -47,6 +47,10 @@ def bench_method_dispatch(bm)
     define_method(:bar) { }
   end
   
+  def baz(opts = { })
+    self
+  end
+
   $bm.report "ruby method: 100k x100 self.foo" do
     a = []; 
     i = 0;
@@ -61,6 +65,42 @@ def bench_method_dispatch(bm)
       foo; foo; foo; foo; foo; foo; foo; foo; foo; foo;
       foo; foo; foo; foo; foo; foo; foo; foo; foo; foo;
       foo; foo; foo; foo; foo; foo; foo; foo; foo; foo;
+      i += 1;
+    end
+  end
+
+  $bm.report "ruby method(opt): 100k x100 self.baz" do
+    a = []; 
+    i = 0;
+    while i < 100000
+      baz; baz; baz; baz; baz; baz; baz; baz; baz; baz; 
+      baz; baz; baz; baz; baz; baz; baz; baz; baz; baz; 
+      baz; baz; baz; baz; baz; baz; baz; baz; baz; baz; 
+      baz; baz; baz; baz; baz; baz; baz; baz; baz; baz; 
+      baz; baz; baz; baz; baz; baz; baz; baz; baz; baz; 
+      baz; baz; baz; baz; baz; baz; baz; baz; baz; baz; 
+      baz; baz; baz; baz; baz; baz; baz; baz; baz; baz; 
+      baz; baz; baz; baz; baz; baz; baz; baz; baz; baz; 
+      baz; baz; baz; baz; baz; baz; baz; baz; baz; baz; 
+      baz; baz; baz; baz; baz; baz; baz; baz; baz; baz; 
+      i += 1;
+    end
+  end
+
+  $bm.report "ruby method(no opt): 100k x100 self.baz" do
+    a = []; 
+    i = 0;
+    while i < 100000
+      baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); 
+      baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); 
+      baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); 
+      baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); 
+      baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); 
+      baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); 
+      baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); 
+      baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); 
+      baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); 
+      baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); 
       i += 1;
     end
   end
