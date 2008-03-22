@@ -416,31 +416,32 @@ public class JavaUtil {
         return converter.convert(runtime, object);
     }
 
-    public static Class primitiveToWrapper(Class type) {
-        if (type == Double.TYPE) {
-            return Double.class;
-        } else if (type == Float.TYPE) {
-            return Float.class;
-        } else if (type == Integer.TYPE) {
-            return Integer.class;
-        } else if (type == Long.TYPE) {
-            return Long.class;
-        } else if (type == Short.TYPE) {
-            return Short.class;
-        } else if (type == Byte.TYPE) {
-            return Byte.class;
-        } else if (type == Character.TYPE) {
-            return Character.class;
-        } else if (type == Void.TYPE) {
-            return Void.class;
-        } else if (type == Boolean.TYPE) {
-            return Boolean.class;
-        } else {
-            return type;
+    public static Class<?> primitiveToWrapper(Class<?> type) {
+        if (type.isPrimitive()) {
+            if (type == Integer.TYPE) {
+                return Integer.class;
+            } else if (type == Double.TYPE) {
+                return Double.class;
+            } else if (type == Boolean.TYPE) {
+                return Boolean.class;
+            } else if (type == Byte.TYPE) {
+                return Byte.class;
+            } else if (type == Character.TYPE) {
+                return Character.class;
+            } else if (type == Float.TYPE) {
+                return Float.class;
+            } else if (type == Long.TYPE) {
+                return Long.class;
+            } else if (type == Void.TYPE) {
+                return Void.class;
+            } else if (type == Short.TYPE) {
+                return Short.class;
+            }
         }
+        return type;
     }
 
-    public static Object convertArgument(Ruby runtime, Object argument, Class parameterType) {
+    public static Object convertArgument(Ruby runtime, Object argument, Class<?> parameterType) {
         if (argument == null && parameterType.isPrimitive()) {
             throw runtime.newTypeError("primitives do not accept null");
         }
@@ -451,7 +452,7 @@ public class JavaUtil {
                 return null;
             }
         }
-        Class type = primitiveToWrapper(parameterType);
+        Class<?> type = primitiveToWrapper(parameterType);
         if (type == Void.class) {
             return null;
         }
@@ -461,8 +462,6 @@ public class JavaUtil {
                 return new Long(number.longValue());
             } else if (type == Integer.class) {
                 return new Integer(number.intValue());
-            } else if (type == Short.class) {
-                return new Short(number.shortValue());
             } else if (type == Byte.class) {
                 return new Byte(number.byteValue());
             } else if (type == Character.class) {
@@ -471,6 +470,8 @@ public class JavaUtil {
                 return new Double(number.doubleValue());
             } else if (type == Float.class) {
                 return new Float(number.floatValue());
+            } else if (type == Short.class) {
+                return new Short(number.shortValue());
             }
         }
         if (isDuckTypeConvertable(argument.getClass(), parameterType)) {

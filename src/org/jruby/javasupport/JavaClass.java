@@ -256,7 +256,7 @@ public class JavaClass extends JavaObject {
         protected List<String> aliases;
         protected JavaMethod javaMethod;
         protected IntHashMap javaMethods;
-        protected IntHashMap matchingMethods;
+        protected volatile boolean initialized;
         MethodCallback(){}
         MethodCallback(String name, int type) {
             super(name,type);
@@ -290,24 +290,26 @@ public class JavaClass extends JavaObject {
         // ProxyData.method_cache, since we really don't need to be passing
         // around RubyArray objects anymore.
         synchronized void createJavaMethods(Ruby runtime) {
-            if (methods != null) {
-                if (methods.size() == 1) {
-                    javaMethod = JavaMethod.create(runtime, methods.get(0));
-                } else {
-                    javaMethods = new IntHashMap();
-                    matchingMethods = new IntHashMap();
-                    for (Method method: methods) {
-                        // TODO: deal with varargs
-                        int arity = method.getParameterTypes().length;
-                        RubyArray methodsForArity = (RubyArray)javaMethods.get(arity);
-                        if (methodsForArity == null) {
-                            methodsForArity = RubyArray.newArrayLight(runtime);
-                            javaMethods.put(arity,methodsForArity);
+            if (!initialized) { // read-volatile
+                if (methods != null) {
+                    if (methods.size() == 1) {
+                        javaMethod = JavaMethod.create(runtime, methods.get(0));
+                    } else {
+                        javaMethods = new IntHashMap();
+                        for (Method method: methods) {
+                            // TODO: deal with varargs
+                            int arity = method.getParameterTypes().length;
+                            RubyArray methodsForArity = (RubyArray)javaMethods.get(arity);
+                            if (methodsForArity == null) {
+                                methodsForArity = RubyArray.newArrayLight(runtime);
+                                javaMethods.put(arity,methodsForArity);
+                            }
+                            methodsForArity.append(JavaMethod.create(runtime,method));
                         }
-                        methodsForArity.append(JavaMethod.create(runtime,method));
                     }
+                    methods = null;
                 }
-                methods = null;
+                initialized = true; // write-volatile
             }
         }
 
@@ -338,34 +340,28 @@ public class JavaClass extends JavaObject {
             }
         }
 
-        // synchronized due to modification of matchingMethods
-        synchronized public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-            createJavaMethods(self.getRuntime());
+        public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
+            if (!initialized) { // read-volatile
+                createJavaMethods(self.getRuntime());
+            }
             // TODO: ok to convert args in place, rather than new array?
             int len = args.length;
             IRubyObject[] convertedArgs = new IRubyObject[len];
             for (int i = len; --i >= 0; ) {
                 convertedArgs[i] = Java.ruby_to_java(self,args[i],Block.NULL_BLOCK);
             }
-            if (javaMethods == null) {
-                return Java.java_to_ruby(self,javaMethod.invoke_static(convertedArgs),Block.NULL_BLOCK); 
-            } else {
-                int argsTypeHash = 0;
-                for (int i = len; --i >= 0; ) {
-                    argsTypeHash += 3*args[i].getMetaClass().id;
+            JavaMethod method;
+            if ((method = javaMethod) == null) {
+                // TODO: varargs?
+                RubyArray methods = (RubyArray)javaMethods.get(len);
+                if (methods == null) {
+                    raiseNoMatchingMethodError(self,convertedArgs,0);
                 }
-                IRubyObject match = (IRubyObject)matchingMethods.get(argsTypeHash);
-                if (match == null) {
-                    // TODO: varargs?
-                    RubyArray methods = (RubyArray)javaMethods.get(len);
-                    if (methods == null) {
-                        raiseNoMatchingMethodError(self,convertedArgs,0);
-                    }
-                    match = Java.matching_method_internal(JAVA_UTILITIES, methods, convertedArgs, 0, len);
-                }
-                return Java.java_to_ruby(self, ((JavaMethod)match).invoke_static(convertedArgs), Block.NULL_BLOCK);
+                method = (JavaMethod)Java.matching_method_internal(JAVA_UTILITIES, methods, convertedArgs, 0, len);
             }
+            return Java.java_to_ruby(self, method.invoke_static(convertedArgs), Block.NULL_BLOCK);
         }
+
         public Arity getArity() {
             return Arity.OPTIONAL;
         }
@@ -386,9 +382,10 @@ public class JavaClass extends JavaObject {
             }
         }
 
-        // synchronized due to modification of matchingMethods
-        synchronized public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-            createJavaMethods(self.getRuntime());
+        public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
+            if (!initialized) { // read-volatile
+                createJavaMethods(self.getRuntime());
+            }
             // TODO: ok to convert args in place, rather than new array?
             int len = args.length;
             if (block.isGiven()) { // convert block to argument
@@ -408,27 +405,18 @@ public class JavaClass extends JavaObject {
             for (; --i >= 0; ) {
                 convertedArgs[i+1] = Java.ruby_to_java(self,args[i],Block.NULL_BLOCK);
             }
-
-            if (javaMethods == null) {
-                return Java.java_to_ruby(self,javaMethod.invoke(convertedArgs),Block.NULL_BLOCK);
-            } else {
-                int argsTypeHash = 0;
-                for (i = len; --i >= 0; ) {
-                    argsTypeHash += 3*args[i].getMetaClass().id;
+            JavaMethod method;
+            if ((method = javaMethod) == null) {
+                // TODO: varargs?
+                RubyArray methods = (RubyArray)javaMethods.get(len);
+                if (methods == null) {
+                    raiseNoMatchingMethodError(self,convertedArgs,1);
                 }
-                IRubyObject match = (IRubyObject)matchingMethods.get(argsTypeHash);
-                if (match == null) {
-                    // TODO: varargs?
-                    RubyArray methods = (RubyArray)javaMethods.get(len);
-                    if (methods == null) {
-                        raiseNoMatchingMethodError(self,convertedArgs,1);
-                    }
-                    match = Java.matching_method_internal(JAVA_UTILITIES, methods, convertedArgs, 1, len);
-                    matchingMethods.put(argsTypeHash, match);
-                }
-                return Java.java_to_ruby(self,((JavaMethod)match).invoke(convertedArgs),Block.NULL_BLOCK);
+                method = (JavaMethod)Java.matching_method_internal(JAVA_UTILITIES, methods, convertedArgs, 1, len);
             }
+            return Java.java_to_ruby(self, method.invoke(convertedArgs), Block.NULL_BLOCK);
         }
+
         public Arity getArity() {
             return Arity.OPTIONAL;
         }
