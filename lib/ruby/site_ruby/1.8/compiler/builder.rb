@@ -150,7 +150,7 @@ module Compiler
     def self.build(class_name, file_name, superclass = java.lang.Object, *interfaces, &block)
       fb = FileBuilder.new(file_name)
       cb = fb.public_class(class_name, superclass, *interfaces)
-      cb.instance_eval &block
+      cb.instance_eval(&block)
       cb.generate
     end
     
@@ -343,7 +343,7 @@ module Compiler
     def self.build(class_builder, modifiers, name, signature, &block)
       mb = MethodBuilder.new(class_builder, modifiers, name, signature)
       mb.start
-      mb.instance_eval &block
+      mb.instance_eval(&block)
       mb.stop
     end
     

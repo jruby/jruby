@@ -117,8 +117,15 @@ public
 
   def append_features(clazz)
     if clazz.instance_of?(Class)
+      # initialize if it hasn't be
+      @java_class ||= nil
+      
       java_class = @java_class
       clazz.module_eval do
+        # initialize thses if they haven't been
+        @java_class ||= nil
+        @java_proxy_class ||= nil
+        
         # not allowed for original (non-generated) Java classes
         # note: not allowing for any previously created class right now;
         # this restriction might be loosened later (post-1.0.0) for generated classes
@@ -126,6 +133,7 @@ public
           raise ArgumentError.new("can't add Java interface to existing Java class!")
         end
 
+        @java_interfaces ||= nil
         unless @java_interfaces
           @java_interfaces = [java_class]
 
