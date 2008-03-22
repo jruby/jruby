@@ -1,9 +1,17 @@
-require 'compiler/builder'
-require 'jruby'
+require 'compiler/duby/ast'
+require 'compiler/duby/transform'
 
 module Compiler::Duby
   module Typer
-    class SimpleTyper
+    class InferenceError < Exception
+      attr_accessor :node
+      def initialize(msg, node = nil)
+        super(msg)
+        @node = node
+      end
+    end
+    
+    class Simple
       include Compiler::Duby
       attr_accessor :self_type
 
@@ -85,37 +93,36 @@ module Compiler::Duby
 
       def resolve_deferred(raise = false)
         count = deferred_nodes.size + 1
-        count.times do
+        count.times do |i|
           old_deferred = @deferred_nodes
           @deferred_nodes = deferred_nodes.select do |node|
             type = node.infer_type(self)
 
-            puts "* Inferred type for #{node}: #{type || 'FAILED'}" if $DEBUG
+            puts "* [Cycle #{i}]: Inferred type for #{node}: #{type || 'FAILED'}" if $DEBUG
 
             type == default_type
           end
           
-          if old_deferred == @deferred_nodes
-            puts "* Inference cycle made no progress, bailing out" if $DEBUG
+          if @deferred_nodes.size == 0
+            puts "* Inference cycle #{i} resolved all types, exiting" if $DEBUG
+            break
+          elsif old_deferred == @deferred_nodes
+            puts "* Inference cycle #{i} made no progress, bailing out" if $DEBUG
             break
           end
         end
 
         # done with n sweeps, if any remain raise errors
         if raise && !deferred_nodes.empty?
-          raise AST::InferenceError.new("Could not infer typing for the following nodes:\n  " + deferred_nodes.map {|e| "#{e} (child of #{e.parent})"}.join("\n  "))
+          raise InferenceError.new("Could not infer typing for the following nodes:\n  " + deferred_nodes.map {|e| "#{e} (child of #{e.parent})"}.join("\n  "))
         end
       end
     end
   end
+  InferenceError = Typer::InferenceError
+  SimpleTyper = Typer::Simple
+  
   module AST
-    class InferenceError < Exception
-      attr_accessor :node
-      def initialize(msg, node = nil)
-        super(msg)
-        @node = node
-      end
-    end
     class Arguments
       def infer_type(typer)
         unless @inferred_type
@@ -317,4 +324,13 @@ module Compiler::Duby
       end
     end
   end
+end
+
+if __FILE__ == $0
+  ast = Compiler::Duby::AST.parse(File.read(ARGV[0]))
+  typer = Compiler::Duby::SimpleTyper.new(:script)
+  ast.infer(typer)
+  typer.resolve_deferred(true)
+  
+  p ast
 end
