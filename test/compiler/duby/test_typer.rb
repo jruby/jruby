@@ -161,4 +161,54 @@ class TestTyper < Test::Unit::TestCase
     inspected = "[FunctionalCall(bar)\n Fixnum(1)\n Fixnum(1), MethodDefinition(baz)\n {:return=>Type(notype)}\n Arguments\n FunctionalCall(bar)\n  Fixnum(1)\n  Fixnum(1)]"
     assert_equal(inspected, typer.deferred_nodes.inspect)
   end
+  
+  def test_if
+    ast = AST.parse("if 1; 1.0; else; ''; end").body
+    typer = SimpleTyper.new(:bar)
+    
+    # incompatible body types
+    assert_raise(InferenceError) {ast.infer(typer)}
+    
+    ast = AST.parse("if 1; 1.0; else; 2.0; end").body
+    
+    assert_nothing_raised {ast.infer(typer)}
+    
+    assert_equal(typer.fixnum_type, ast.condition.inferred_type)
+    assert_equal(typer.float_type, ast.body.inferred_type)
+    assert_equal(typer.float_type, ast.else.inferred_type)
+    
+    ast = AST.parse("if foo; bar; else; baz; end").body
+    
+    assert_nothing_raised {ast.infer(typer)}
+    
+    assert_equal(typer.default_type, ast.condition.inferred_type)
+    assert_equal(typer.default_type, ast.body.inferred_type)
+    assert_equal(typer.default_type, ast.else.inferred_type)
+    
+    # unresolved types for the foo, bar, and baz calls
+    assert_raise(InferenceError) {typer.resolve(true)}
+    
+    ast2 = AST.parse("def foo; 1; end; def bar; 1.0; end")
+    
+    ast2.infer(typer)
+    ast.infer(typer)
+    
+    # unresolved types for the baz call
+    assert_raise(InferenceError) {typer.resolve(true)}
+    
+    assert_equal(typer.fixnum_type, ast.condition.inferred_type)
+    assert_equal(typer.float_type, ast.body.inferred_type)
+    assert_equal(typer.default_type, ast.else.inferred_type)
+    
+    ast2 = AST.parse("def baz; 2.0; end")
+    
+    ast2.infer(typer)
+    ast.infer(typer)
+    
+    assert_nothing_raised {typer.resolve(true)}
+    
+    assert_equal(typer.fixnum_type, ast.condition.inferred_type)
+    assert_equal(typer.float_type, ast.body.inferred_type)
+    assert_equal(typer.float_type, ast.else.inferred_type)
+  end
 end

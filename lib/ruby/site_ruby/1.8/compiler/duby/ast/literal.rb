@@ -14,7 +14,9 @@ module Compiler::Duby::AST
     end
     
     def infer(typer)
-      typer.fixnum_type
+      return @inferred_type if resolved?
+      resolved!
+      @inferred_type = typer.fixnum_type
     end
   end
   
@@ -27,7 +29,9 @@ module Compiler::Duby::AST
     end
     
     def infer(typer)
-      typer.float_type
+      return @inferred_type if resolved?
+      resolved!
+      @inferred_type = typer.float_type
     end
   end
   
@@ -42,6 +46,8 @@ module Compiler::Duby::AST
     end
     
     def infer(typer)
+      return @inferred_type if resolved?
+      resolved!
       @inferred_type ||= typer.string_type
     end
   end
