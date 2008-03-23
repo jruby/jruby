@@ -35,7 +35,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 
-public class TextAreaReadline extends OutputStream implements KeyListener {
+public class TextAreaReadline implements KeyListener {
     
     JTextComponent area;
     private int startPos;
@@ -50,6 +50,8 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
     private BasicComboPopup completePopup;
     private int start;
     private int end;
+
+    private OutputStream outputStream = new Output();
 
     private LinkedBlockingQueue<String> pendingLines = new LinkedBlockingQueue<String>();
     
@@ -104,6 +106,10 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
             append(message, messageStyle);
         }
     }
+
+    public OutputStream getOutputStream() {
+        return outputStream;
+    }
     
     private Ruby runtime;
 
@@ -113,7 +119,7 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
         runtime.getLoadService().require("readline");
         RubyModule readlineM = runtime.fastGetModule("Readline");
         
-        RubyIO out = new RubyIO(runtime, this);
+        RubyIO out = new RubyIO(runtime, getOutputStream());
         runtime.getGlobalVariables().set("$stdout", out);
         runtime.getGlobalVariables().set("$stderr", out);
 
@@ -175,6 +181,10 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
         }
 
         completePopup.show(area, pos.x, pos.y + area.getFontMetrics(area.getFont()).getHeight());
+    }
+
+    public void notifyFinished() {
+        pendingLines.offer(null);
     }
     
     protected void backAction(KeyEvent event) {
@@ -270,10 +280,16 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
         });
         
         try {
-            return pendingLines.take().trim();
+            String line = pendingLines.take();
+            if (line != null) {
+                return line.trim();
+            } else {
+                pendingLines.offer(null);
+                return "exit";
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            return "";
+            return "exit";
         }
     }
     
@@ -325,24 +341,29 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
             });
         }
     }
-    
-    public void write(int b) throws IOException {
-        writeLine("" + b);
-    }
-    
-    public void write(byte[] b, int off, int len) {
-        try {
-            writeLine(new String(b, off, len, "UTF-8"));
-        } catch (UnsupportedEncodingException ex) {
-            writeLine(new String(b, off, len));
+
+    private class Output extends OutputStream {
+        @Override
+        public void write(int b) throws IOException {
+            writeLine("" + b);
         }
-    }
-    
-    public void write(byte[] b) {
-        try {
-            writeLine(new String(b, "UTF-8"));
-        } catch (UnsupportedEncodingException ex) {
-            writeLine(new String(b));
+
+        @Override
+        public void write(byte[] b, int off, int len) {
+            try {
+                writeLine(new String(b, off, len, "UTF-8"));
+            } catch (UnsupportedEncodingException ex) {
+                writeLine(new String(b, off, len));
+            }
+        }
+
+        @Override
+        public void write(byte[] b) {
+            try {
+                writeLine(new String(b, "UTF-8"));
+            } catch (UnsupportedEncodingException ex) {
+                writeLine(new String(b));
+            }
         }
     }
 }

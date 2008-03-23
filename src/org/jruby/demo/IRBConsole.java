@@ -59,8 +59,8 @@ public class IRBConsole extends JFrame {
 
         final RubyInstanceConfig config = new RubyInstanceConfig() {{
             setInput(pipeIn);
-            setOutput(new PrintStream(tar));
-            setError(new PrintStream(tar));
+            setOutput(new PrintStream(tar.getOutputStream()));
+            setError(new PrintStream(tar.getOutputStream()));
             setObjectSpaceEnabled(true); // useful for code completion inside the IRB
             setArgv(args);
         }};

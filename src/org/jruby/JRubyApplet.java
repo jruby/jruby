@@ -390,8 +390,8 @@ public class JRubyApplet extends Applet {
             scrollPane.setDoubleBuffered(true);
             adaptor = new TextAreaReadline(textPane, "  JRuby applet console  \n\n");
             inputStream = new PipedInputStream();
-            outputStream = new PrintStream(adaptor);
-            errorStream = new PrintStream(adaptor);
+            outputStream = new PrintStream(adaptor.getOutputStream());
+            errorStream = new PrintStream(adaptor.getOutputStream());
         }
         public InputStream getInputStream() { return inputStream; }
         public PrintStream getOutputStream() { return outputStream; }
