@@ -2,6 +2,7 @@ package org.jruby.demo;
 
 import java.awt.Color;
 import java.awt.Point;
+import java.awt.EventQueue;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.IOException;
@@ -10,6 +11,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JComboBox;
@@ -39,18 +41,17 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
     private int startPos;
     private String currentLine;
     
-    private Object amEditing = new Object();
-    
-    public MutableAttributeSet promptStyle;
-    public MutableAttributeSet inputStyle;
-    public MutableAttributeSet outputStyle;
-    public MutableAttributeSet resultStyle;
+    public volatile MutableAttributeSet promptStyle;
+    public volatile MutableAttributeSet inputStyle;
+    public volatile MutableAttributeSet outputStyle;
+    public volatile MutableAttributeSet resultStyle;
     
     private JComboBox completeCombo;
     private BasicComboPopup completePopup;
     private int start;
     private int end;
-    private volatile boolean finished = false;
+
+    private LinkedBlockingQueue<String> pendingLines = new LinkedBlockingQueue<String>();
     
     public TextAreaReadline(JTextComponent area) {
         this(area, null);
@@ -254,35 +255,26 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
         }
         
         append("\n", null);
-        synchronized (amEditing) {
-            amEditing.notify();
-        }
+        pendingLines.offer(getLine());
     }
     
-    void notifyFinished() {
-        synchronized (amEditing) {
-            finished = true;
-            amEditing.notify();
-        }
-    }
-
-    public String readLine(final String prompt)
-    {
-        append(prompt.trim(), promptStyle);
-        append(" ", inputStyle); // hack to get right style for input
-        area.setCaretPosition(area.getDocument().getLength());
-        startPos = area.getDocument().getLength();
+    public String readLine(final String prompt) {
+        EventQueue.invokeLater(new Runnable() {
+           public void run() {
+               append(prompt.trim(), promptStyle);
+               append(" ", inputStyle); // hack to get right style for input
+               area.setCaretPosition(area.getDocument().getLength());
+               startPos = area.getDocument().getLength();
+               Readline.getHistory(Readline.getHolder(runtime)).moveToEnd();
+            }
+        });
         
-        Readline.getHistory(Readline.getHolder(runtime)).moveToEnd();
-        
-        synchronized (amEditing) {
-            if (finished) return "exit";
-            try {
-                amEditing.wait();
-            } catch (InterruptedException e) { }
+        try {
+            return pendingLines.take().trim();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return "";
         }
-        String result = finished? "exit": getLine().trim();
-        return result;
     }
     
     public void keyPressed(KeyEvent event) {
@@ -316,10 +308,22 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
            area.getDocument().insertString(area.getDocument().getLength(), toAppend, style);
        } catch (BadLocationException e) { }
     }
-    
-    public void writeLine(final String line) {
+
+    private void writeLineUnsafe(final String line) {
         if (line.startsWith("=>")) append(line, resultStyle);
         else append(line, outputStyle);
+    }
+    
+    private void writeLine(final String line) {
+        if (EventQueue.isDispatchThread()) {
+            writeLineUnsafe(line);
+        } else {
+            EventQueue.invokeLater(new Runnable() {
+                public void run() {
+                    writeLineUnsafe(line);
+                }
+            });
+        }
     }
     
     public void write(int b) throws IOException {
