@@ -37,9 +37,8 @@ import java.awt.Graphics;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
 import java.awt.image.VolatileImage;
-import java.io.InputStream;
 import java.io.IOException;
-import java.io.PipedInputStream;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -115,6 +114,7 @@ public class JRubyApplet extends Applet {
         public PrintStream getOutputStream();
         public PrintStream getErrorStream();
         public void attach(Ruby runtime, Applet applet);
+        public void destroy();
     }
 
     private static RubyProc blockToProc(Ruby runtime, Block block) {
@@ -295,6 +295,7 @@ public class JRubyApplet extends Applet {
         try {
             invokeCallback(destroyProc, new IRubyObject[] {});
         } finally {
+            facade.destroy();
             final Ruby runtime = this.runtime;
             this.runtime = null;
             rubyObject = null;
@@ -364,6 +365,7 @@ public class JRubyApplet extends Applet {
         public PrintStream getOutputStream() { return System.out; }
         public PrintStream getErrorStream() { return System.err; }
         public void attach(Ruby runtime, Applet applet) {}
+        public void destroy() {}
     }
 
     private static class ConsoleFacade implements Facade {
@@ -389,7 +391,7 @@ public class JRubyApplet extends Applet {
             scrollPane = new JScrollPane(textPane);
             scrollPane.setDoubleBuffered(true);
             adaptor = new TextAreaReadline(textPane, "  JRuby applet console  \n\n");
-            inputStream = new PipedInputStream();
+            inputStream = adaptor.getInputStream();
             outputStream = new PrintStream(adaptor.getOutputStream());
             errorStream = new PrintStream(adaptor.getOutputStream());
         }
@@ -400,6 +402,13 @@ public class JRubyApplet extends Applet {
             adaptor.hookIntoRuntime(runtime);
             applet.add(scrollPane);
             applet.validate();
+        }
+
+        public void destroy() {
+            try {
+                adaptor.getInputStream().close();
+            } catch (IOException e) {
+            }
         }
 
         private Font findFont(String otherwise, int style, int size, String[] families) {

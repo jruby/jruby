@@ -7,7 +7,7 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.PipedInputStream;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,7 +29,6 @@ public class IRBConsole extends JFrame {
 
     public static void main(final String[] args) {
         final IRBConsole console = new IRBConsole("JRuby IRB Console");
-        final PipedInputStream pipeIn = new PipedInputStream();
 
         console.getContentPane().setLayout(new BorderLayout());
         console.setSize(700, 600);
@@ -53,12 +52,15 @@ public class IRBConsole extends JFrame {
         final TextAreaReadline tar = new TextAreaReadline(text, " Welcome to the JRuby IRB Console \n\n");
         console.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
-                tar.notifyFinished();
+                try {
+                    tar.getInputStream().close();
+                } catch (IOException ex) {
+                }
             }
         });
 
         final RubyInstanceConfig config = new RubyInstanceConfig() {{
-            setInput(pipeIn);
+            setInput(tar.getInputStream());
             setOutput(new PrintStream(tar.getOutputStream()));
             setError(new PrintStream(tar.getOutputStream()));
             setObjectSpaceEnabled(true); // useful for code completion inside the IRB

@@ -6,6 +6,7 @@ import java.awt.EventQueue;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
@@ -36,8 +37,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 
 public class TextAreaReadline implements KeyListener {
+    private static final String FINISHED = "";
     
-    JTextComponent area;
+    private JTextComponent area;
     private int startPos;
     private String currentLine;
     
@@ -51,7 +53,8 @@ public class TextAreaReadline implements KeyListener {
     private int start;
     private int end;
 
-    private OutputStream outputStream = new Output();
+    private final InputStream inputStream = new Input();
+    private final OutputStream outputStream = new Output();
 
     private LinkedBlockingQueue<String> pendingLines = new LinkedBlockingQueue<String>();
     
@@ -105,6 +108,10 @@ public class TextAreaReadline implements KeyListener {
             StyleConstants.setForeground(messageStyle, area.getBackground());
             append(message, messageStyle);
         }
+    }
+
+    public InputStream getInputStream() {
+        return inputStream;
     }
 
     public OutputStream getOutputStream() {
@@ -183,10 +190,6 @@ public class TextAreaReadline implements KeyListener {
         completePopup.show(area, pos.x, pos.y + area.getFontMetrics(area.getFont()).getHeight());
     }
 
-    public void notifyFinished() {
-        pendingLines.offer(null);
-    }
-    
     protected void backAction(KeyEvent event) {
         if (area.getCaretPosition() <= startPos)
             event.consume();
@@ -281,10 +284,10 @@ public class TextAreaReadline implements KeyListener {
         
         try {
             String line = pendingLines.take();
-            if (line != null) {
+            if (line != FINISHED) {
                 return line.trim();
             } else {
-                pendingLines.offer(null);
+                pendingLines.offer(FINISHED);
                 return "exit";
             }
         } catch (InterruptedException e) {
@@ -339,6 +342,58 @@ public class TextAreaReadline implements KeyListener {
                     writeLineUnsafe(line);
                 }
             });
+        }
+    }
+
+    private class Input extends InputStream {
+        private byte[] bytes = null;
+        private int offset = 0;
+
+        @Override
+        public synchronized int available() {
+            if (bytes != null) {
+                return bytes.length - offset;
+            } else {
+                return 0;
+            }
+        }
+
+        @Override
+        public synchronized int read() throws IOException {
+            if (bytes == null) {
+                String line;
+                try {
+                    line = pendingLines.take();
+                } catch (InterruptedException e) {
+                    throw new IOException("Interrupted", e);
+                }
+                if (line != FINISHED) {
+                    try {
+                        bytes = line.getBytes("UTF-8");
+                    } catch (UnsupportedEncodingException e) {
+                        bytes = line.getBytes();
+                    }
+                } else {
+                    pendingLines.offer(FINISHED);
+                }
+            }
+            if (bytes != null) {
+                int b = bytes[offset];
+                if ( ++offset == bytes.length ) {
+                    offset = 0;
+                    bytes = null;
+                }
+                return b;
+            } else {
+                return -1;
+            }
+        }
+
+        @Override
+        public synchronized void close() {
+            bytes = null;
+            pendingLines.clear();
+            pendingLines.offer(FINISHED);
         }
     }
 
