@@ -15,8 +15,8 @@ set _CP=%CP%
 rem ----- Verify and Set Required Environment Variables -----------------------
 
 if not "%JAVA_HOME%" == "" goto gotJava
-echo You must set JAVA_HOME to point at your Java Development Kit installation
-goto cleanup
+echo You must set JAVA_HOME to point at your JRE/JDK installation
+exit /b 1
 :gotJava
 
 set JRUBY_HOME=%~dp0..
