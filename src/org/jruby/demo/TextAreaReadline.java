@@ -12,6 +12,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.swing.DefaultListCellRenderer;
@@ -27,7 +28,6 @@ import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 
 import org.jruby.Ruby;
-import org.jruby.RubyIO;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ext.Readline;
@@ -37,7 +37,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 
 public class TextAreaReadline implements KeyListener {
-    private static final String FINISHED = "";
+    private static final String EMPTY_LINE = "";
     
     private JTextComponent area;
     private int startPos;
@@ -52,11 +52,12 @@ public class TextAreaReadline implements KeyListener {
     private BasicComboPopup completePopup;
     private int start;
     private int end;
+    private volatile boolean finished = false;
 
     private final InputStream inputStream = new Input();
     private final OutputStream outputStream = new Output();
 
-    private LinkedBlockingQueue<String> pendingLines = new LinkedBlockingQueue<String>();
+    private volatile BlockingQueue<String> pendingLines = new LinkedBlockingQueue<String>();
     
     public TextAreaReadline(JTextComponent area) {
         this(area, null);
@@ -127,16 +128,15 @@ public class TextAreaReadline implements KeyListener {
         /* Hack in to replace usual readline with this */
         runtime.getLoadService().require("readline");
         RubyModule readlineM = runtime.fastGetModule("Readline");
-        
-        RubyIO in = new RubyIO(runtime, getInputStream());
-        runtime.getGlobalVariables().set("$stdin", in);
-        RubyIO out = new RubyIO(runtime, getOutputStream());
-        runtime.getGlobalVariables().set("$stdout", out);
-        runtime.getGlobalVariables().set("$stderr", out);
 
         readlineM.defineModuleFunction("readline", new Callback() {
             public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-                return RubyString.newUnicodeString(runtime, readLine(args[0].toString()));
+                String line = readLine(args[0].toString());
+                if (line != null) {
+                    return RubyString.newUnicodeString(runtime, line);
+                } else {
+                    return runtime.getNil();
+                }
             }
             public Arity getArity() { return Arity.twoArguments(); }
         });
@@ -272,7 +272,12 @@ public class TextAreaReadline implements KeyListener {
         }
         
         append("\n", null);
-        pendingLines.offer(getLine());
+        
+        if (!finished) {
+            String line = getLine();
+            startPos = area.getDocument().getLength();
+            pendingLines.offer(line);
+        }
     }
     
     public String readLine(final String prompt) {
@@ -292,15 +297,17 @@ public class TextAreaReadline implements KeyListener {
         
         try {
             String line = pendingLines.take();
-            if (line != FINISHED) {
+            if (line.length() > 0) {
                 return line.trim();
             } else {
-                pendingLines.offer(FINISHED);
-                return "exit";
+                if (finished) {
+                    pendingLines.offer(EMPTY_LINE);
+                }
+                return null;
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            return "exit";
+            return null;
         }
     }
     
@@ -339,6 +346,7 @@ public class TextAreaReadline implements KeyListener {
     private void writeLineUnsafe(final String line) {
         if (line.startsWith("=>")) append(line, resultStyle);
         else append(line, outputStyle);
+        startPos = area.getDocument().getLength();
     }
     
     private void writeLine(final String line) {
@@ -366,12 +374,7 @@ public class TextAreaReadline implements KeyListener {
             }
         }
 
-        @Override
-        public synchronized int read() throws IOException {
-            if (EventQueue.isDispatchThread()) {
-                throw new IOException("Cannot call read from event dispatch thread");
-            }
-
+        private boolean ensureBytes() throws IOException {
             if (bytes == null) {
                 String line;
                 try {
@@ -381,17 +384,27 @@ public class TextAreaReadline implements KeyListener {
                     ioEx.initCause(e);
                     throw ioEx;
                 }
-                if (line != FINISHED) {
+                if (line.length() > 0) {
                     try {
                         bytes = line.getBytes("UTF-8");
                     } catch (UnsupportedEncodingException e) {
                         bytes = line.getBytes();
                     }
-                } else {
-                    pendingLines.offer(FINISHED);
+                } else if (finished) {
+                    pendingLines.offer(EMPTY_LINE);
                 }
             }
-            if (bytes != null) {
+            return bytes != null;
+        }
+
+        @Override
+        public synchronized int read() throws IOException {
+            if (EventQueue.isDispatchThread()) {
+                throw new IOException("Cannot call read from event dispatch thread");
+            }
+
+            if (ensureBytes()) {
+                assert bytes.length > 0;
                 int b = bytes[offset];
                 if ( ++offset == bytes.length ) {
                     offset = 0;
@@ -404,10 +417,45 @@ public class TextAreaReadline implements KeyListener {
         }
 
         @Override
+        public synchronized int read(byte[] b, int off, int len) throws IOException {
+            if (EventQueue.isDispatchThread()) {
+                throw new IOException("Cannot call read from event dispatch thread");
+            }
+
+            if (b == null) {
+                throw new NullPointerException();
+            }
+            if (off < 0 || len < 0 || off+len > b.length) {
+                throw new IndexOutOfBoundsException();
+            }
+            if (len == 0) {
+                return 0;
+            }
+
+            if (ensureBytes()) {
+                final int remaining = bytes.length - offset;
+                if (len > remaining) {
+                    len = remaining;
+                }
+                System.arraycopy(bytes, offset, b, off, len);
+                offset += len;
+                if (len == remaining) {
+                    offset = 0;
+                    bytes = null;
+                }
+                return len;
+            } else {
+                return -1;
+            }
+        }
+
+        @Override
         public synchronized void close() {
+            offset = 0;
             bytes = null;
+            finished = true;
             pendingLines.clear();
-            pendingLines.offer(FINISHED);
+            pendingLines.offer(EMPTY_LINE);
         }
     }
 
