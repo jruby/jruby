@@ -108,6 +108,8 @@ public class TextAreaReadline implements KeyListener {
             StyleConstants.setForeground(messageStyle, area.getBackground());
             append(message, messageStyle);
         }
+
+        startPos = area.getDocument().getLength();
     }
 
     public InputStream getInputStream() {
