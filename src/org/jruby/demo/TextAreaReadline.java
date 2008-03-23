@@ -377,7 +377,9 @@ public class TextAreaReadline implements KeyListener {
                 try {
                     line = pendingLines.take();
                 } catch (InterruptedException e) {
-                    throw new IOException("Interrupted", e);
+                    IOException ioEx = new IOException("Interrupted");
+                    ioEx.initCause(e);
+                    throw ioEx;
                 }
                 if (line != FINISHED) {
                     try {
