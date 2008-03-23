@@ -427,9 +427,18 @@ public class RubyRange extends RubyObject {
         IRubyObject currentObject = begin;
         int compareMethod = isExclusive ? MethodIndex.OP_LT : MethodIndex.OP_LE;
         // int stepSize = (int) (args.length == 0 ? 1 : args[0].convertToInteger().getLongValue());
+
+        // TODO: Currently, we handle Float range as a special case, but MRI
+        // actually handles all non-fixnum ranges in such way.
+        boolean floatRange = begin instanceof RubyFloat && end instanceof RubyFloat;
+
         double stepSize = 1.0;
         if (args.length != 0) {
-            stepSize = Double.parseDouble(args[0].toString());
+            if (floatRange) {
+                stepSize = RubyFloat.num2dbl(args[0]);
+            } else {
+                stepSize = RubyNumeric.num2long(args[0]);
+            }
         }
         if (stepSize == 0) {
             throw getRuntime().newArgumentError("step can't be 0");

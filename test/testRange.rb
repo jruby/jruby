@@ -71,3 +71,14 @@ r.each {|x| sum += 1}
 test_equal(9, sum)
 test_equal(['A','B','C'],Array[*('A'..'C')])
 
+# JRUBY-2311
+test_exception(TypeError) { (1..10).step(nil) }
+test_exception(TypeError) { (1..10).step("a") }
+test_exception(TypeError) { (1..10).step(Object.new) }
+
+# Float ranges. We currently follow MRI 1.8.6 pl111 behavior.
+# Newer changes in MRI trunk introduced different behavior.
+# See: http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-core/15990
+res = []
+(1.0..10.0).step(1.5){ |x| res << x }
+test_equal([1.0, 2.5, 4.0, 5.5, 7.0, 8.5, 10.0], res)
