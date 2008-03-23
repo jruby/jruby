@@ -272,6 +272,10 @@ public class TextAreaReadline implements KeyListener {
     }
     
     public String readLine(final String prompt) {
+        if (EventQueue.isDispatchThread()) {
+            throw runtime.newThreadError("Cannot call readline from event dispatch thread");
+        }
+
         EventQueue.invokeLater(new Runnable() {
            public void run() {
                append(prompt.trim(), promptStyle);
@@ -360,6 +364,10 @@ public class TextAreaReadline implements KeyListener {
 
         @Override
         public synchronized int read() throws IOException {
+            if (EventQueue.isDispatchThread()) {
+                throw new IOException("Cannot call read from event dispatch thread");
+            }
+
             if (bytes == null) {
                 String line;
                 try {
