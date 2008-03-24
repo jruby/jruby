@@ -108,6 +108,20 @@ module Compiler
 
       module Scope; end
 
+      class Colon2 < Node; end
+      
+      class Constant < Node
+        include Named
+        def initialize(parent, name)
+          @name = name
+          super(parent, [])
+        end
+      end
+      
+      class Self < Node; end
+      
+      class VoidType < Node; end
+    
       class TypeReference < Node
         include Named
         attr_accessor :array
@@ -139,12 +153,12 @@ module Compiler
           # default behavior now is to disallow any polymorphic types
           self == other
         end
-        
+
         def compatible?(other)
           # default behavior is only exact match right now
           self == other
         end
-        
+
         def narrow(other)
           # only exact match allowed for now, so narrowing is a noop
           self
@@ -152,20 +166,16 @@ module Compiler
 
         NoType = TypeReference.new(:notype)
       end
-
-      class Colon2 < Node; end
+    
+      class TypeDefinition < TypeReference
+        attr_accessor :superclass
       
-      class Constant < Node
-        include Named
-        def initialize(parent, name)
-          @name = name
-          super(parent, [])
+        def initialize(name, superclass)
+          super(name, false)
+        
+          @superclass = superclass
         end
       end
-      
-      class Self < Node; end
-      
-      class VoidType < Node; end
     end
   end
 end

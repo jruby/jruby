@@ -8,6 +8,12 @@ module Compiler::Duby::AST
       @name = name
       super(parent, children)
     end
+    
+    def infer(typer)
+      @inferred_type ||= typer.define_type(name, superclass) do
+        body.infer(typer)
+      end
+    end
   end
       
   class FieldAssignment < Node

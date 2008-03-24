@@ -73,7 +73,7 @@ module Compiler::Duby
                   @inferred_type = then_type.narrow(else_type)
                   resolved! if condition_type
                 else
-                  raise InferenceError.new("if statement with incompatible result types")
+                  raise Typer::InferenceError.new("if statement with incompatible result types")
                 end
               end
             else

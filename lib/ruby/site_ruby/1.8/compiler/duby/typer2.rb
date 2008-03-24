@@ -20,14 +20,24 @@ module Compiler::Duby
     end
     
     class Simple < BaseTyper
-      attr_accessor :self_type
+      attr_accessor :known_types
 
       def initialize(self_type)
-        @self_type = type_reference(self_type)
+        @known_types = {}
+        
+        @known_types[:self] = type_reference(self_type)
+        @known_types[:fixnum] = type_reference(:fixnum)
+        @known_types[:float] = type_reference(:float)
+        @known_types[:string] = type_reference(:string)
+        @known_types[:boolean] = type_reference(:boolean)
       end
       
       def name
         "Simple"
+      end
+      
+      def self_type
+        known_types[:self]
       end
 
       def default_type
@@ -35,19 +45,32 @@ module Compiler::Duby
       end
       
       def fixnum_type
-        AST::TypeReference.new :fixnum
+        known_types[:fixnum]
       end
       
       def float_type
-        AST::TypeReference.new :float
+        known_types[:float]
       end
       
       def string_type
-        AST::TypeReference.new :string
+        known_types[:string]
       end
       
       def boolean_type
-        AST::TypeReference.new :boolean
+        known_types[:boolean]
+      end
+      
+      def define_type(name, superclass)
+        name = name.intern unless Symbol === name
+        raise InferenceError.new("Duplicate type definition: #{name} < #{superclass}") if known_types[name]
+        
+        known_types[name] = AST::TypeDefinition.new(name, AST::TypeReference.new(superclass))
+        
+        old_self, known_types[:self] = known_types[:self], known_types[name]
+        yield
+        known_types[:self] = old_self
+        
+        known_types[name]
       end
       
       def learn_local_type(scope, name, type)
@@ -137,6 +160,9 @@ module Compiler::Duby
 
       def resolve(raise = false)
         count = deferred_nodes.size + 1
+        
+        log "Entering type inference cycle"
+            
         count.times do |i|
           old_deferred = @deferred_nodes
           @deferred_nodes = deferred_nodes.select do |node|
@@ -163,8 +189,6 @@ module Compiler::Duby
       end
     end
   end
-  InferenceError = Typer::InferenceError
-  SimpleTyper = Typer::Simple
   
   def self.typer_plugins
     @typer_plugins ||= []
@@ -177,7 +201,7 @@ if __FILE__ == $0
   ast.infer(typer)
   begin
     typer.resolve(true)
-  rescue Compiler::Duby::InferenceError => e
+  rescue Compiler::Duby::Typer::InferenceError => e
     puts e.message
   end
   

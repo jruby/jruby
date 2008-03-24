@@ -10,8 +10,10 @@ module Compiler::Duby::AST
     end
         
     def infer(typer)
+      @self_type ||= typer.self_type
+      
       unless @inferred_type
-        receiver_type = typer.self_type
+        receiver_type = @self_type
         parameter_types = parameters.map {|param| param.infer(typer)}
         @inferred_type = typer.method_type(receiver_type, name, parameter_types)
           
