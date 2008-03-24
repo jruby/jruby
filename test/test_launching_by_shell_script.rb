@@ -39,6 +39,14 @@ class TestLaunchingByShellScript < Test::Unit::TestCase
     end
   end
 
+  if (!WINDOWS)
+    # JRUBY-2295
+    def test_java_props_with_spaces
+      res = jruby(%q{-J-Dfoo='a b c' -e "require 'java'; puts java.lang.System.getProperty('foo')"}).chomp
+      assert_equal("a b c", res)
+    end
+  end
+
   def test_at_exit
     assert_equal "", jruby("-e 'at_exit { exit 0 }'").chomp
     assert_equal 0, $?.exitstatus

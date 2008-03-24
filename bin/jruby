@@ -126,7 +126,7 @@ ruby_args=("${ruby_args[@]}" "$@")
 # Put the ruby_args back into the position arguments $1, $2 etc
 set -- "${ruby_args[@]}"
 
-JAVA_OPTS="$JAVA_OPTS ${java_args[@]} $JAVA_MEM $JAVA_STACK"
+JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_STACK"
 
 if $cygwin; then
   JAVA_HOME=`cygpath --mixed "$JAVA_HOME"`
@@ -141,7 +141,7 @@ if $cygwin; then
   fi
 fi
 
-exec "$JAVA_CMD" $JAVA_OPTS -classpath "$CP" \
+exec "$JAVA_CMD" $JAVA_OPTS "${java_args[@]}" -classpath "$CP" \
   "-Djruby.home=$JRUBY_HOME" \
   "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
   "-Djruby.shell=$JRUBY_SHELL" \
