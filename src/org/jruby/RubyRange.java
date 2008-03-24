@@ -356,11 +356,12 @@ public class RubyRange extends RubyObject {
         if (this == other) return getRuntime().getTrue();
         if (!(other instanceof RubyRange)) return getRuntime().getFalse();
         RubyRange otherRange = (RubyRange) other;
-        boolean result =
-            begin.op_equal(context, otherRange.begin).isTrue() &&
-            end.op_equal(context, otherRange.end).isTrue() &&
-            isExclusive == otherRange.isExclusive;
-        return getRuntime().newBoolean(result);
+
+        if (begin.op_eqq(context, otherRange.begin).isTrue() &&
+            end.op_eqq(context, otherRange.end).isTrue() &&
+            isExclusive == otherRange.isExclusive) return getRuntime().getTrue();
+
+        return getRuntime().getFalse();
     }
     
     @JRubyMethod(name = "eql?", required = 1)
@@ -368,8 +369,12 @@ public class RubyRange extends RubyObject {
         if (this == other) return getRuntime().getTrue();
         if (!(other instanceof RubyRange)) return getRuntime().getFalse();
         RubyRange otherRange = (RubyRange)other;
-        if (!begin.equals(otherRange.begin) || !end.equals(otherRange.end) || isExclusive != otherRange.isExclusive) return getRuntime().getFalse();
-        return getRuntime().getTrue();
+
+        if (begin.eql(otherRange.begin) &&
+            end.eql(otherRange.end) &&
+            isExclusive == otherRange.isExclusive) return getRuntime().getTrue();
+
+        return getRuntime().getFalse();
     }
 
     @JRubyMethod(name = "each", frame = true)
