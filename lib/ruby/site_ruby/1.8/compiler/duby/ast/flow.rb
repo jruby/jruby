@@ -1,4 +1,4 @@
-module Compiler::Duby
+module Duby
   module AST
     class Condition < Node
       attr_accessor :predicate

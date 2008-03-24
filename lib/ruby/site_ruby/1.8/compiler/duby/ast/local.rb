@@ -1,4 +1,4 @@
-module Compiler::Duby::AST
+module Duby::AST
   class LocalAssignment < Node
     include Named
     include Valued

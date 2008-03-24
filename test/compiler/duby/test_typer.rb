@@ -3,7 +3,7 @@ require 'compiler/duby'
 require 'compiler/duby/typer2'
 
 class TestTyper < Test::Unit::TestCase
-  include Compiler::Duby
+  include Duby
   
   def test_fixnum
     ast = AST.parse("1")

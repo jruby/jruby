@@ -1,5 +1,5 @@
 require 'compiler/duby/typer2'
-module Compiler::Duby
+module Duby
   module Typer
     class MathTyper < BaseTyper
       def name

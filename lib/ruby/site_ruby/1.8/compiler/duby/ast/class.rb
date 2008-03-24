@@ -1,4 +1,4 @@
-module Compiler::Duby::AST
+module Duby::AST
   class ClassDefinition < Node
     include Named
     attr_accessor :superclass, :body

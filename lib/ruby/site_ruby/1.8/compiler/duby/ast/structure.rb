@@ -1,4 +1,4 @@
-module Compiler::Duby::AST
+module Duby::AST
   class Body < Node
     def initialize(parent)
       super(parent, yield(self))

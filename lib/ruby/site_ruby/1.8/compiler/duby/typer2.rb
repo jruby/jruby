@@ -1,7 +1,7 @@
 require 'compiler/duby/ast'
 require 'compiler/duby/transform'
 
-module Compiler::Duby
+module Duby
   module Typer
     class InferenceError < Exception
       attr_accessor :node
@@ -12,7 +12,7 @@ module Compiler::Duby
     end
     
     class BaseTyper
-      include Compiler::Duby
+      include Duby
       
       def log(message)
         puts "* [#{name}] #{message}" if $DEBUG
@@ -114,7 +114,7 @@ module Compiler::Duby
           log "Method type for \"#{name}\" #{parameter_types} on #{target_type} not found."
           
           # allow plugins a go
-          Compiler::Duby.typer_plugins.each do |plugin|
+          Duby.typer_plugins.each do |plugin|
             log "Invoking plugin: #{plugin}"
             
             break if simple_type = plugin.method_type(self, target_type, name, parameter_types)
@@ -196,12 +196,12 @@ module Compiler::Duby
 end
 
 if __FILE__ == $0
-  ast = Compiler::Duby::AST.parse(File.read(ARGV[0]))
-  typer = Compiler::Duby::SimpleTyper.new(:script)
+  ast = Duby::AST.parse(File.read(ARGV[0]))
+  typer = Duby::Typer::Simple.new(:script)
   ast.infer(typer)
   begin
     typer.resolve(true)
-  rescue Compiler::Duby::Typer::InferenceError => e
+  rescue Duby::Typer::InferenceError => e
     puts e.message
   end
   

@@ -3,7 +3,7 @@ require 'test/unit'
 require 'jruby'
 
 class TestAst < Test::Unit::TestCase
-  include Compiler::Duby
+  include Duby
   
   def test_args
     new_ast = AST.parse("def foo(a, b = 1, *c, &d); end").body

@@ -1,4 +1,4 @@
-module Compiler::Duby::AST
+module Duby::AST
   class Arguments < Node
     attr_accessor :args, :opt_args, :rest_arg, :block_arg
     

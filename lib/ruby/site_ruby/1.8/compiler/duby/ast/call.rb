@@ -1,4 +1,4 @@
-module Compiler::Duby::AST
+module Duby::AST
   class FunctionalCall < Node
     include Named
     attr_accessor :parameters, :block
