@@ -146,9 +146,9 @@ module Duby
             signature = {:return => TypeReference::NoType}
 
             # TODO: Disabled until parser supports it
-            if false && args_node
-              if args_node.arguments && TypedLocalAsgn === args_node.arguments[0]
-                # do signature creation from args
+            if args_node && args_node.args && TypedArgumentNode === args_node.args[0]
+              args_node.args.each do |arg|
+                signature[arg.name.intern] = arg.type_node.type_reference
               end
             elsif body_node
               first_node = body_node[0]
@@ -172,9 +172,9 @@ module Duby
             signature = {:return => TypeReference::NoType}
 
             # TODO: Disabled until parser supports it
-            if false && args_node
-              if args_node.arguments && TypedLocalAsgn === args_node.arguments[0]
-                # do signature creation from args
+            if args_node && args_node.args && TypedArgumentNode === args_node.args[0]
+              args_node.args.each do |arg|
+                signature[arg.name.intern] = arg.type_node.type_reference
               end
             elsif body_node
               first_node = body_node[0]
@@ -334,6 +334,9 @@ module Duby
         def type_reference(parent)
           TypeReference.new(name)
         end
+      end
+      
+      class TypedArgumentNode
       end
 
       class VCallNode
