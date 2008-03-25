@@ -147,8 +147,8 @@ module Duby
 
             # TODO: Disabled until parser supports it
             if args_node && args_node.args && TypedArgumentNode === args_node.args[0]
-              args_node.args.each do |arg|
-                signature[arg.name.intern] = arg.type_node.type_reference
+              args_node.args.child_nodes.each do |arg|
+                signature[arg.name.intern] = arg.type_node.type_reference(parent)
               end
             elsif body_node
               first_node = body_node[0]
@@ -173,8 +173,8 @@ module Duby
 
             # TODO: Disabled until parser supports it
             if args_node && args_node.args && TypedArgumentNode === args_node.args[0]
-              args_node.args.each do |arg|
-                signature[arg.name.intern] = arg.type_node.type_reference
+              args_node.args.child_nodes.each do |arg|
+                signature[arg.name.intern] = arg.type_node.type_reference(parent)
               end
             elsif body_node
               first_node = body_node[0]
