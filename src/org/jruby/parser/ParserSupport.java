@@ -127,6 +127,12 @@ public class ParserSupport {
         inDefinition = false;
     }
     
+    public void allowDubyExtension(ISourcePosition position) {
+        if (!configuration.isDubyExtensionsEnabled()) {
+            throw new SyntaxException(PID.DUBY_EXTENSIONS_OFF, position, "Duby extensions not configured");
+        }
+    }
+    
     public StaticScope getCurrentScope() {
         return currentScope;
     }

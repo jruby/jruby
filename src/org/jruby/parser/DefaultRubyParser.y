@@ -104,6 +104,7 @@ import org.jruby.ast.StarNode;
 import org.jruby.ast.StrNode;
 import org.jruby.ast.SymbolNode;
 import org.jruby.ast.ToAryNode;
+import org.jruby.ast.TypedArgumentNode;
 import org.jruby.ast.UndefNode;
 import org.jruby.ast.UntilNode;
 import org.jruby.ast.VAliasNode;
@@ -1622,9 +1623,20 @@ f_norm_arg     : tCONSTANT {
                    $$ = $1;
                }
 
-f_arg          : f_norm_arg {
+f_arg          : f_norm_arg tASSOC arg_value {
+                    support.allowDubyExtension($<ISourcePositionHolder>1.getPosition());
+                    $$ = new ListNode($<ISourcePositionHolder>1.getPosition());
+                    ((ListNode) $$).add(new TypedArgumentNode($<ISourcePositionHolder>1.getPosition(), (String) $1.getValue(), $3));
+               }
+               | f_norm_arg {
                     $$ = new ListNode($<ISourcePositionHolder>1.getPosition());
                     ((ListNode) $$).add(new ArgumentNode($<ISourcePositionHolder>1.getPosition(), (String) $1.getValue()));
+               }
+               | f_arg ',' f_norm_arg tASSOC arg_value {
+                   support.allowDubyExtension($<ISourcePositionHolder>1.getPosition());
+                   $1.add(new TypedArgumentNode($<ISourcePositionHolder>3.getPosition(), (String) $3.getValue(), $5));
+                   $1.setPosition(support.union($1, $3));
+		   $$ = $1;
                }
                | f_arg ',' f_norm_arg {
                    $1.add(new ArgumentNode($<ISourcePositionHolder>3.getPosition(), (String) $3.getValue()));
