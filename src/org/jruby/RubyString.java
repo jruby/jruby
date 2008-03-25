@@ -2250,29 +2250,23 @@ public class RubyString extends RubyObject {
 
     /* rb_str_upto */
     public IRubyObject upto(ThreadContext context, IRubyObject str, boolean excl, Block block) {
-        // alias 'this' to 'beg' for ease of comparison with MRI
-        RubyString beg = this;
-        RubyString end = stringValue(str);
+        RubyString end = str.convertToString();
 
-        int n = beg.op_cmp(end);
-        if (n > 0 || (excl && n == 0)) return beg;
+        int n = value.cmp(end.value);
+        if (n > 0 || (excl && n == 0)) return this;
 
-        RubyString afterEnd = stringValue(end.succ());
-        RubyString current = beg;
+        IRubyObject afterEnd = end.callMethod(context, "succ");
+        RubyString current = this;
 
-        while (!current.equals(afterEnd)) {
-            block.yield(context, current);
-            if (!excl && current.equals(end)) break;
-
-            current = (RubyString) current.succ();
-            
-            if (excl && current.equals(end)) break;
-
-            if (current.length().getLongValue() > end.length().getLongValue()) break;
+        while (!current.op_equal(context, afterEnd).isTrue()) {
+            block.yield(context, current);            
+            if (!excl && current.op_equal(context, end).isTrue()) break;
+            current = current.callMethod(context, "succ").convertToString();
+            if (excl && current.op_equal(context, end).isTrue()) break;
+            if (current.value.realSize > end.value.realSize || current.value.realSize == 0) break;
         }
 
-        return beg;
-
+        return this;
     }
 
     /** rb_str_include
