@@ -28,25 +28,24 @@
 package org.jruby.internal.runtime;
 
 import java.util.concurrent.CancellationException;
-import org.jruby.RubyThread;
-
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import org.jruby.RubyThread;
 
 /**
  * @author cnutter
  */
 public class FutureThread implements ThreadLike {
-    private Future future;
+    private volatile Future future;
     private RubyRunnable runnable;
     public RubyThread rubyThread;
+    private final Object startingLock;
     
     public FutureThread(RubyThread rubyThread, RubyRunnable runnable) {
+        this.startingLock = new Object();
         this.rubyThread = rubyThread;
         this.runnable = runnable;
     }
@@ -56,7 +55,9 @@ public class FutureThread implements ThreadLike {
      * a job to the pool.
      */
     public void start() {
-        future = rubyThread.getRuntime().getExecutor().submit(runnable);
+        synchronized (startingLock) {
+            future = rubyThread.getRuntime().getExecutor().submit(runnable);
+        }
     }
     
     /**
@@ -76,10 +77,11 @@ public class FutureThread implements ThreadLike {
     /**
      * If the future has not yet run and or is running and not yet complete.
      * 
-     * @return 
      */
     public boolean isAlive() {
-        return future != null && !future.isDone();
+        synchronized (startingLock) {
+            return future != null && !future.isDone();
+        }
     }
     
     public void join() throws InterruptedException, ExecutionException {
@@ -138,6 +140,8 @@ public class FutureThread implements ThreadLike {
     }
     
     public boolean isInterrupted() {
-        return future.isCancelled();
+        synchronized (startingLock) {
+            return future.isCancelled();
+        }
     }
 }
