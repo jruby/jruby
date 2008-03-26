@@ -188,9 +188,22 @@ class TestThread < Test::Unit::TestCase
 
   def test_socket_accept_can_be_interrupted
     require 'socket'
-    t = Thread.new {
-      TCPServer.new(nil, 10000).accept
+    tcps = nil
+    100.times{|i|
+      begin
+        tcps = TCPServer.new("0.0.0.0", 10000+i)
+        break
+      rescue Errno::EADDRINUSE
+        next
+      end
     }
+
+    flunk "unable to find open port" unless tcps
+
+    t = Thread.new {
+      tcps.accept
+    }
+
     Thread.pass until t.status == "sleep"
     ex = Exception.new
     t.raise ex
