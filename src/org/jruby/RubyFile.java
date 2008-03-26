@@ -88,9 +88,14 @@ public class RubyFile extends RubyIO {
 
     private static boolean startsWithDriveLetterOnWindows(String path) {
         return (path != null)
-            && Platform.IS_WINDOWS && path.length() > 1
-            && isWindowsDriveLetter(path.charAt(0))
-            && path.charAt(1) == ':';
+            && Platform.IS_WINDOWS && 
+            ((path.length()>1 && path.charAt(0) == '/') ? 
+             (path.length() > 2
+              && isWindowsDriveLetter(path.charAt(1))
+              && path.charAt(2) == ':') : 
+             (path.length() > 1
+              && isWindowsDriveLetter(path.charAt(0))
+              && path.charAt(1) == ':'));
     }
     // adjusts paths started with '/' or '\\', on windows.
     static String adjustRootPathOnWindows(Ruby runtime, String path, String dir) {
@@ -104,7 +109,7 @@ public class RubyFile extends RubyIO {
             // Basically, '/path' is treated as a *RELATIVE* path,
             // relative to the current drive. '//path' is treated
             // as absolute one.
-            if (path.startsWith("/") || path.startsWith("\\")) {
+            if ((path.startsWith("/") && !(path.length()>2 && path.charAt(2) == ':')) || path.startsWith("\\")) {
                 if (path.length() > 1 && (path.charAt(1) == '/' || path.charAt(1) == '\\')) {
                     return path;
                 }
