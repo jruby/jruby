@@ -404,3 +404,16 @@ test_equal({'foo' => 'bar'}, YAML.load("---\nfoo: \tbar"))
 
 # JRUBY-1911
 test_equal({'foo' => {'bar' => nil, 'qux' => nil}}, YAML.load("---\nfoo: {bar, qux}"))
+
+# JRUBY-2323
+class YAMLTestException < Exception;end
+class YAMLTestString < String; end
+test_equal('--- !str:YAMLTestString', YAMLTestString.new.to_yaml.strip)
+test_equal(YAMLTestString.new, YAML::load('--- !str:YAMLTestString'))
+
+test_equal(<<EXCEPTION_OUT, YAMLTestException.new.to_yaml) 
+--- !ruby/exception:YAMLTestException
+message: YAMLTestException
+EXCEPTION_OUT
+
+test_equal(YAMLTestException.new.inspect, YAML::load(YAMLTestException.new.to_yaml).inspect)

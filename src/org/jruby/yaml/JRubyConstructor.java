@@ -244,6 +244,43 @@ public class JRubyConstructor extends ConstructorImpl {
         return SafeConstructorImpl.constructJava(ctor,pref,node);
     }
 
+    public static Object constructRubyException(final Constructor ctor, final String tag, final Node node) {
+        final Ruby runtime = ((JRubyConstructor)ctor).runtime;
+        RubyModule objClass = runtime.getObject();
+        if(tag != null) {
+            final String[] nms = tag.split("::");
+            try {
+                for(int i=0,j=nms.length;i<j;i++) {
+                    objClass = (RubyModule)objClass.getConstant(nms[i]);
+                }
+            } catch(Exception e) {
+                // No constant available, so we'll fall back on YAML::Object
+                objClass = (RubyClass)runtime.fastGetModule("YAML").fastGetConstant("Object");
+                final RubyHash vars = (RubyHash)(((JRubyConstructor)ctor).constructRubyMapping(node));
+                return objClass.callMethod(runtime.getCurrentContext(), "new", new IRubyObject[]{runtime.newString(tag), vars});
+            }
+        }
+        final RubyClass theCls = (RubyClass)objClass;
+        final RubyObject oo = (RubyObject)theCls.getAllocator().allocate(runtime, theCls);
+        final Map vars = (Map)(ctor.constructMapping(node));
+        ctor.doRecursionFix(node, oo);
+        for(final Iterator iter = vars.keySet().iterator();iter.hasNext();) {
+            final IRubyObject key = (IRubyObject)iter.next();
+            final Object val = vars.get(key);
+            if(val instanceof LinkNode) {
+                final String KEY = "@" + key.toString();
+                ctor.addFixer((Node)(((LinkNode)val).getValue()), new RecursiveFixer() {
+                        public void replace(Node node, Object real) {
+                            oo.setInstanceVariable(KEY,(IRubyObject)real);
+                        }
+                    });
+            } else {
+                oo.setInstanceVariable("@" + key.toString(),(IRubyObject)val);
+            }
+        }
+        return oo;
+    }
+
     public static Object constructRubyStruct(final Constructor ctor, final String tag, final Node node) {
         final Ruby runtime = ((JRubyConstructor)ctor).runtime;
         RubyModule sClass = runtime.fastGetModule("Struct");
@@ -409,6 +446,22 @@ public class JRubyConstructor extends ConstructorImpl {
         return oo;
     }
 
+    public static Object constructRubyString(final Constructor ctor, final String tag, final Node node) {
+        final Ruby runtime = ((JRubyConstructor)ctor).runtime;
+        RubyModule objClass = runtime.getObject();
+        if(tag != null) {
+            final String[] nms = tag.split("::");
+            for(int i=0,j=nms.length;i<j;i++) {
+                objClass = (RubyModule)objClass.getConstant(nms[i]);
+            }
+        }
+        final RubyClass theCls = (RubyClass)objClass;
+        final RubyObject oo = (RubyObject)theCls.getAllocator().allocate(runtime, theCls);
+        final IRubyObject val = (IRubyObject)constructYamlStr(ctor, node);
+        oo.callInit(new IRubyObject[]{val},org.jruby.runtime.Block.NULL_BLOCK);
+        return oo;
+    }
+
     public static Object constructRubyMap(final Constructor ctor, final String tag, final Node node) {
         final Ruby runtime = ((JRubyConstructor)ctor).runtime;
         RubyModule objClass = runtime.getObject();
@@ -551,6 +604,11 @@ public class JRubyConstructor extends ConstructorImpl {
                     return constructRubySequence(self,pref,node);
                 }
             });
+        addMultiConstructor("tag:yaml.org,2002:str:",new YamlMultiConstructor() {
+                public Object call(final Constructor self, final String pref, final Node node) {
+                    return constructRubyString(self,pref,node);
+                }
+            });
         addMultiConstructor("tag:yaml.org,2002:ruby/object:",new YamlMultiConstructor() {
                 public Object call(final Constructor self, final String pref, final Node node) {
                     return constructRuby(self,pref,node);
@@ -574,6 +632,11 @@ public class JRubyConstructor extends ConstructorImpl {
         addMultiConstructor("tag:ruby.yaml.org,2002:struct:",new YamlMultiConstructor() {
                 public Object call(final Constructor self, final String pref, final Node node) {
                     return constructRubyStruct(self,pref,node);
+                }
+            });
+        addMultiConstructor("tag:ruby.yaml.org,2002:exception:",new YamlMultiConstructor() {
+                public Object call(final Constructor self, final String pref, final Node node) {
+                    return constructRuby(self,pref,node);
                 }
             });
     }
