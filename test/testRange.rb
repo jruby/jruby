@@ -81,4 +81,4 @@ test_exception(TypeError) { (1..10).step(Object.new) }
 # See: http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-core/15990
 res = []
 (1.0..10.0).step(1.5){ |x| res << x }
-test_equal([1.0, 2.5, 4.0, 5.5, 7.0, 8.5, 10.0], res)
+test_equal([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0], res)

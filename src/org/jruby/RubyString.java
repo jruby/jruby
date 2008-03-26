@@ -2160,8 +2160,8 @@ public class RubyString extends RubyObject {
             return args[1];
         }
         if (args[0] instanceof RubyRange) {
-            long[] idxs = ((RubyRange) args[0]).getBeginLength(value.length(), true, true);
-            replace((int) idxs[0], (int) idxs[1], stringValue(args[1]));
+            long[] begLen = ((RubyRange) args[0]).begLen(value.realSize, 2);
+            replace((int) begLen[0], (int) begLen[1], stringValue(args[1]));
             return args[1];
         }
         throw getRuntime().newTypeError("wrong argument type");
