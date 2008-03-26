@@ -739,6 +739,14 @@ public final class ThreadContext {
         getCurrentScope().getStaticScope().setModule(objectClass);
     }
     
+    public void preNodeEval(RubyModule rubyClass, IRubyObject self, String name) {
+        setFile(name);
+        pushRubyClass(rubyClass);
+        pushCallFrame(null, name, self, Block.NULL_BLOCK, null);
+        // set visibility to private, since toplevel of scripts always started out private
+        setCurrentVisibility(Visibility.PRIVATE);
+    }
+
     public void preNodeEval(RubyModule rubyClass, IRubyObject self) {
         pushRubyClass(rubyClass);
         pushCallFrame(null, null, self, Block.NULL_BLOCK, null);

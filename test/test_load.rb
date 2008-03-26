@@ -1,5 +1,9 @@
 require 'test/unit'
 
+def load_behavior_block(&block)
+  eval("__FILE__", block.binding)
+end
+
 class TestLoad < Test::Unit::TestCase
   def test_require
     # Allow us to run MRI against non-Java dependent tests
@@ -40,5 +44,23 @@ class TestLoad < Test::Unit::TestCase
     require 'test/jar_with_ruby_files'
     require 'hello_from_jar'
     assert "hi", $hello
+  end
+  
+  def test_overriding_require_shouldnt_cause_problems
+    eval(<<DEPS, binding, "deps")
+class ::Object
+  alias old_require require
+  
+  def require(file)
+    old_require(file)
+  end
+end
+DEPS
+
+    require 'test/test_loading_behavior'
+
+    res = File.expand_path($loading_behavior_result)
+
+    assert_equal File.expand_path(File.join('test', 'test_loading_behavior.rb')), res
   end
 end

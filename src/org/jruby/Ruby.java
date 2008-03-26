@@ -1849,7 +1849,7 @@ public final class Ruby {
         try {
             secure(4); /* should alter global state */
 
-            context.preNodeEval(objectClass, self);
+            context.preNodeEval(objectClass, self, scriptName);
 
             Node node = parseFile(in, scriptName, null);
             ASTInterpreter.eval(this, context, node, self, Block.NULL_BLOCK);
@@ -1872,7 +1872,7 @@ public final class Ruby {
         try {
             secure(4); /* should alter global state */
 
-            context.preNodeEval(objectClass, self);
+            context.preNodeEval(objectClass, self, filename);
             
             Node scriptNode = parseFile(in, filename, null);
             
