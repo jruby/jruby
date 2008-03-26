@@ -344,7 +344,7 @@ public class RubyThread extends RubyObject {
 
     @JRubyMethod(name = "join", optional = 1)
     public IRubyObject join(IRubyObject[] args) {
-        long timeoutMillis = 0;
+        long timeoutMillis = Long.MAX_VALUE;
         if (args.length > 0) {
             if (args.length > 1) {
                 throw getRuntime().newArgumentError(args.length,1);
@@ -380,11 +380,24 @@ public class RubyThread extends RubyObject {
                 // for them to complete their operation.
                 //threadImpl.interrupt();
             }
-            threadImpl.join(timeoutMillis);
+
+            RubyThread currentThread = getRuntime().getCurrentContext().getThread();
+            final long timeToWait = Math.min(timeoutMillis, 200);
+
+            // We need this loop in order to be able to "unblock" the
+            // join call without actually calling interrupt.
+            long start = System.currentTimeMillis();
+            while(true) {
+                currentThread.pollThreadEvents();
+                threadImpl.join(timeToWait);
+                if (!threadImpl.isAlive()) {
+                    break;
+                }
+                if (System.currentTimeMillis() - start > timeoutMillis) {
+                    break;
+                }
+            }
         } catch (InterruptedException ie) {
-            ie.printStackTrace();
-            assert false : ie;
-        } catch (TimeoutException ie) {
             ie.printStackTrace();
             assert false : ie;
         } catch (ExecutionException ie) {

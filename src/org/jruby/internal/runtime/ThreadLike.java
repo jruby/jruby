@@ -39,7 +39,7 @@ public interface ThreadLike {
     
     public void join() throws InterruptedException, ExecutionException;
     
-    public void join(long millis) throws InterruptedException, ExecutionException, TimeoutException;
+    public void join(long millis) throws InterruptedException, ExecutionException;
     
     public int getPriority();
     

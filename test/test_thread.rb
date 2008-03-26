@@ -209,4 +209,26 @@ class TestThread < Test::Unit::TestCase
     t.raise ex
     assert_raises(Exception) { t.join }
   end
+  
+  # JRUBY-2315
+  def test_exit_from_within_thread
+    begin
+      a = Thread.new do
+        loop do
+          sleep 0.1
+        end
+      end
+
+      b = Thread.new do
+        sleep 0.5
+        Kernel.exit(1)
+      end
+ 
+      a.join
+      b.join
+    rescue SystemExit
+      # rescued!
+      assert(true)
+    end
+  end
 end
