@@ -375,7 +375,7 @@ public class RubyStruct extends RubyObject {
         Ruby runtime = getRuntime();
         RubyStruct otherStruct = (RubyStruct)other;
         for (int i = 0; i < values.length; i++) {
-            if (!equalInternal(context, values[i], otherStruct.values[i]).isTrue()) return runtime.getFalse();
+            if (!equalInternal(context, values[i], otherStruct.values[i])) return runtime.getFalse();
         }
         return runtime.getTrue();
     }

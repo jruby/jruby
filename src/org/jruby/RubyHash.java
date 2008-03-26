@@ -807,7 +807,7 @@ public class RubyHash extends RubyObject implements Map {
         try {
             visitAll(new Visitor() {
                 public void visit(IRubyObject key, IRubyObject value) {
-                    if (equalInternal(context, value, expected).isTrue()) {
+                    if (equalInternal(context, value, expected)) {
                         throw new Found();
                     }
                 }
@@ -921,7 +921,7 @@ public class RubyHash extends RubyObject implements Map {
         try {
             visitAll(new Visitor() {
                 public void visit(IRubyObject key, IRubyObject value) {
-                    if (equalInternal(context, value, expected).isTrue()) {
+                    if (equalInternal(context, value, expected)) {
                         throw new FoundKey(key);
                     }
                 }
@@ -986,8 +986,8 @@ public class RubyHash extends RubyObject implements Map {
     public IRubyObject op_equal(final ThreadContext context, final IRubyObject other) {
         if (this == other) return getRuntime().getTrue();
         if (!(other instanceof RubyHash)) {
-            if (!other.respondsTo("to_hash")) return getRuntime().getFalse();
-            return equalInternal(context, other, this);
+            if (other.respondsTo("to_hash") && equalInternal(context, other, this)) return getRuntime().getTrue();
+            return getRuntime().getFalse();
         }
 
         final RubyHash otherHash = (RubyHash)other;
@@ -996,7 +996,7 @@ public class RubyHash extends RubyObject implements Map {
         final Ruby runtime = getRuntime();
 
         if (EQUAL_CHECK_DEFAULT_VALUE) {
-            if (!equalInternal(context, ifNone, otherHash.ifNone).isTrue() &&
+            if (!equalInternal(context, ifNone, otherHash.ifNone) &&
                (flags & PROCDEFAULT_HASH_F) != (otherHash.flags & PROCDEFAULT_HASH_F)) return runtime.getFalse();
         }
 
@@ -1004,7 +1004,7 @@ public class RubyHash extends RubyObject implements Map {
              visitAll(new Visitor() {
                  public void visit(IRubyObject key, IRubyObject value) {
                      IRubyObject otherValue = otherHash.internalGet(key);
-                     if (otherValue == null || !equalInternal(context, value, otherValue).isTrue()) throw new Mismatch();
+                     if (otherValue == null || !equalInternal(context, value, otherValue)) throw new Mismatch();
                  }
              });
              return runtime.getTrue();

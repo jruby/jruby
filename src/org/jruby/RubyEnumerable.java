@@ -312,7 +312,7 @@ public class RubyEnumerable {
         try {
             callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    if (RubyObject.equalInternal(context, arg, largs[0]).isTrue()) {
+                    if (RubyObject.equalInternal(context, arg, largs[0])) {
                         throw JumpException.SPECIAL_JUMP;
                     }
                     return runtime.getNil();

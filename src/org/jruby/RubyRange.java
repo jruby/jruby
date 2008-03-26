@@ -217,8 +217,8 @@ public class RubyRange extends RubyObject {
         if (!(other instanceof RubyRange)) return getRuntime().getFalse();
         RubyRange otherRange = (RubyRange) other;
 
-        if (equalInternal(context, begin, otherRange.begin).isTrue() &&
-            equalInternal(context, end, otherRange.end).isTrue() &&
+        if (equalInternal(context, begin, otherRange.begin) &&
+            equalInternal(context, end, otherRange.end) &&
             isExclusive == otherRange.isExclusive) return getRuntime().getTrue();
 
         return getRuntime().getFalse();
@@ -355,7 +355,7 @@ public class RubyRange extends RubyObject {
                 Block blockCallback = CallBlock.newCallClosure(this, getRuntime().getRange(), Arity.singleArgument(), callback, context);
                 ((RubyString)tmp).upto(context, end, isExclusive, blockCallback);
             } else if (begin instanceof RubyNumeric) {
-                if (equalInternal(context, step, RubyFixnum.zero(getRuntime())).isTrue()) throw getRuntime().newArgumentError("step can't be 0");
+                if (equalInternal(context, step, RubyFixnum.zero(getRuntime()))) throw getRuntime().newArgumentError("step can't be 0");
                 final String method;
                 final int methodIndex;
                 if (isExclusive) {

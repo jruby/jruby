@@ -494,7 +494,7 @@ public class RubyArray extends RubyObject implements List {
         int begin = this.begin;
         
         for (int i = begin; i < begin + realLength; i++) {
-            if (equalInternal(context, values[i], item).isTrue()) return true;
+            if (equalInternal(context, values[i], item)) return true;
     	}
         
         return false;
@@ -1327,7 +1327,8 @@ public class RubyArray extends RubyObject implements List {
             if (!obj.respondsTo("to_ary")) {
                 return getRuntime().getFalse();
             } else {
-                return equalInternal(context, obj.callMethod(context, "to_ary"), this);
+                if (equalInternal(context, obj.callMethod(context, "to_ary"), this)) return getRuntime().getTrue();
+                return getRuntime().getFalse();                
             }
         }
 
@@ -1336,7 +1337,7 @@ public class RubyArray extends RubyObject implements List {
 
         Ruby runtime = getRuntime();
         for (long i = 0; i < realLength; i++) {
-            if (!equalInternal(context, elt(i), ary.elt(i)).isTrue()) return runtime.getFalse();            
+            if (!equalInternal(context, elt(i), ary.elt(i))) return runtime.getFalse();            
         }
         return runtime.getTrue();
     }
@@ -1509,7 +1510,7 @@ public class RubyArray extends RubyObject implements List {
     public IRubyObject index(ThreadContext context, IRubyObject obj) {
         Ruby runtime = getRuntime();
         for (int i = begin; i < begin + realLength; i++) {
-            if (equalInternal(context, values[i], obj).isTrue()) return runtime.newFixnum(i - begin);            
+            if (equalInternal(context, values[i], obj)) return runtime.newFixnum(i - begin);            
         }
 
         return runtime.getNil();
@@ -1528,7 +1529,7 @@ public class RubyArray extends RubyObject implements List {
                 i = realLength;
                 continue;
             }
-            if (equalInternal(context, values[begin + i], obj).isTrue()) return getRuntime().newFixnum(i);
+            if (equalInternal(context, values[begin + i], obj)) return getRuntime().newFixnum(i);
         }
 
         return runtime.getNil();
@@ -1641,7 +1642,7 @@ public class RubyArray extends RubyObject implements List {
         Ruby runtime = getRuntime();
         for (int i1 = 0; i1 < realLength; i1++) {
             IRubyObject e = values[begin + i1];
-            if (equalInternal(context, e, item).isTrue()) continue;
+            if (equalInternal(context, e, item)) continue;
             if (i1 != i2) store(i2, e);
             i2++;
         }
@@ -1836,7 +1837,7 @@ public class RubyArray extends RubyObject implements List {
             IRubyObject v = values[i];
             if (v instanceof RubyArray) {
                 RubyArray arr = (RubyArray)v;
-                if (arr.realLength > 0 && equalInternal(context, arr.values[arr.begin], key).isTrue()) return arr;
+                if (arr.realLength > 0 && equalInternal(context, arr.values[arr.begin], key)) return arr;
             }
         }
 
@@ -1854,7 +1855,7 @@ public class RubyArray extends RubyObject implements List {
             IRubyObject v = values[i];
             if (v instanceof RubyArray) {
                 RubyArray arr = (RubyArray)v;
-                if (arr.realLength > 1 && equalInternal(context, arr.values[arr.begin + 1], value).isTrue()) return arr;
+                if (arr.realLength > 1 && equalInternal(context, arr.values[arr.begin + 1], value)) return arr;
             }
         }
 

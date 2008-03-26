@@ -684,15 +684,13 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
         return getRuntime().newBoolean(this == other || callMethod(context, MethodIndex.EQUALEQUAL, "==",other).isTrue());
     }
-    
-    protected static IRubyObject equalInternal(final ThreadContext context, final IRubyObject that, final IRubyObject other){
-        if (that == other) return that.getRuntime().getTrue();
-        return that.callMethod(context, MethodIndex.EQUALEQUAL, "==", other);
+
+    protected static boolean equalInternal(final ThreadContext context, final IRubyObject that, final IRubyObject other){
+        return that == other || that.callMethod(context, MethodIndex.EQUALEQUAL, "==", other).isTrue();
     }
 
     protected static boolean eqlInternal(final ThreadContext context, final IRubyObject that, final IRubyObject other){
-        if (that == other) return true;
-        return that.callMethod(context, MethodIndex.EQL_P, "eql?", other).isTrue();
+        return that == other || that.callMethod(context, MethodIndex.EQL_P, "eql?", other).isTrue();
     }
 
     /** rb_obj_init_copy
