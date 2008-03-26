@@ -271,13 +271,13 @@ public class RubyRange extends RubyObject {
     }
 
     private IRubyObject rangeLt(ThreadContext context, IRubyObject a, IRubyObject b) {
-        IRubyObject result = a.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>",b);
+        IRubyObject result = a.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", b);
         if (result.isNil()) return null;
         return RubyComparable.cmpint(context, result, a, b) < 0 ? getRuntime().getTrue() : null;
     }
 
     private IRubyObject rangeLe(ThreadContext context, IRubyObject a, IRubyObject b) {
-        IRubyObject result = a.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>",b);
+        IRubyObject result = a.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", b);
         if (result.isNil()) return null;
         int c = RubyComparable.cmpint(context, result, a, b);
         if (c == 0) return RubyFixnum.zero(getRuntime());
@@ -306,7 +306,7 @@ public class RubyRange extends RubyObject {
         if (!begin.respondsTo("succ")) throw getRuntime().newTypeError("can't iterate from " + begin.getMetaClass().getName());
 
         if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
-            long lim = ((RubyNumeric) end).getLongValue();
+            long lim = ((RubyFixnum) end).getLongValue();
             if (!isExclusive) lim++;
 
             for (long i = ((RubyFixnum) begin).getLongValue(); i < lim; i++) {
