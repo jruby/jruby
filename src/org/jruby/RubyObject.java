@@ -459,8 +459,10 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
 
         RubyClass superClass = RuntimeHelpers.findImplementerIfNecessary(getMetaClass(), klazz).getSuperClass();
         
-        assert superClass != null : "Superclass should always be something for " + klazz.getBaseName();
-
+        if (superClass == null) {
+            String name = context.getFrameName(); 
+            return RuntimeHelpers.callMethodMissing(context, this, klazz.searchMethod(name), name, args, this, CallType.SUPER, block);
+        }
         return RuntimeHelpers.invokeAs(context, superClass, this, context.getFrameName(), args, CallType.SUPER, block);
     }    
 

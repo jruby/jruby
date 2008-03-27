@@ -85,4 +85,13 @@ class TestMethodMissing < Test::Unit::TestCase
         assert_equal(AMethodMissingClass.new.foo=2, 2)
         assert_equal(eval("AMethodMissingClass.new.foo=2"), 2)
     end
+
+    def test_no_super_method_in_module
+        Kernel.module_eval do
+            def a_module_method arg
+                super
+            end
+        end
+        assert_raise(NoMethodError){a_module_method 'foo'}
+    end
 end
