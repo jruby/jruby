@@ -407,3 +407,31 @@ end
 test_ok !Mod.class_variable_defined?(:@@three)
 test_ok Mod.class_variable_defined?(:@@one)
 test_ok Mod.class_variable_defined?(:@@two)
+
+# JRUBY-2330, combination of define_method, rest args and zsuper fails
+class Foo2330
+ def bar(x, y); [x,y]; end
+end
+
+class Bar2330 < Foo2330
+ define_method :bar do |*args|
+    super
+  end
+end
+
+test_equal [1,2], Bar2330.new.bar(1,2)
+
+class Quux2330
+ def bar(x, y);  [x,y]; end
+end
+
+f = Quux2330.new
+module Module2330 
+ define_method :bar do |*args|
+   super
+ end
+end
+
+f.extend Module2330
+
+test_equal [1,2], f.bar(1, 2)
