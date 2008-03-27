@@ -1649,15 +1649,9 @@ public class ASTInterpreter {
     }
     
     private static IRubyObject superNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
+        RuntimeHelpers.checkSuperDisabledOrOutOfMethod(context);
+
         SuperNode iVisited = (SuperNode) node;
-   
-        RubyModule klazz = context.getFrameKlazz();
-        
-        if (klazz == null) {
-            String name = context.getFrameName();
-            throw runtime.newNameError("Superclass method '" + name
-                    + "' disabled.", name);
-        }
         IRubyObject[] args = setupArgs(runtime, context, iVisited.getArgsNode(), self, aBlock);
         Block block = getBlock(runtime, context, self, aBlock, iVisited.getIterNode());
         

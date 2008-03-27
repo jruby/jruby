@@ -400,7 +400,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
 
     public void invokeSuper(CompilerCallback argsCallback, CompilerCallback closureArg) {
         methodCompiler.loadThreadContext();
-        methodCompiler.invokeUtilityMethod("checkSuperDisabled", sig(void.class, ThreadContext.class));
+        methodCompiler.invokeUtilityMethod("checkSuperDisabledOrOutOfMethod", sig(void.class, ThreadContext.class));
         
         methodCompiler.loadSelf();
 

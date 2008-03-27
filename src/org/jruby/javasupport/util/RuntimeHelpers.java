@@ -552,12 +552,8 @@ public class RuntimeHelpers {
     }
     
     public static IRubyObject callZSuper(Ruby runtime, ThreadContext context, Block block, IRubyObject self) {
-        if (context.getFrameKlazz() == null) {
-            String name = context.getFrameName();
-            throw runtime.newNameError("superclass method '" + name
-                    + "' disabled", name);
-        }
-        
+        checkSuperDisabledOrOutOfMethod(context);
+
         // Has the method that is calling super received a block argument
         if (!block.isGiven()) block = context.getCurrentFrame().getBlock(); 
         
@@ -612,13 +608,14 @@ public class RuntimeHelpers {
         return runtime.getFalse();
     }
     
-    public static void checkSuperDisabled(ThreadContext context) {
-        RubyModule klazz = context.getFrameKlazz();
-        
-        if (klazz == null) {
+    public static void checkSuperDisabledOrOutOfMethod(ThreadContext context) {
+        if (context.getFrameKlazz() == null) {
             String name = context.getFrameName();
-            throw context.getRuntime().newNameError("Superclass method '" + name
-                    + "' disabled.", name);
+            if (name != null) {
+                throw context.getRuntime().newNameError("superclass method '" + name + "' disabled", name);
+            } else {
+                throw context.getRuntime().newNoMethodError("super called outside of method", null, context.getRuntime().getNil());
+            }
         }
     }
     
