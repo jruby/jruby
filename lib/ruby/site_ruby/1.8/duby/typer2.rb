@@ -1,5 +1,5 @@
-require 'compiler/duby/ast'
-require 'compiler/duby/transform'
+require 'duby/ast'
+require 'duby/transform'
 
 module Duby
   module Typer

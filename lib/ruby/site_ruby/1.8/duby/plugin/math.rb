@@ -1,4 +1,5 @@
-require 'compiler/duby/typer2'
+require 'duby/typer2'
+
 module Duby
   module Typer
     class MathTyper < BaseTyper

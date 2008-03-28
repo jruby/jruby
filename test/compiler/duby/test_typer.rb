@@ -1,6 +1,6 @@
 require 'test/unit'
-require 'compiler/duby'
-require 'compiler/duby/typer2'
+require 'duby'
+require 'duby/typer2'
 
 class TestTyper < Test::Unit::TestCase
   include Duby

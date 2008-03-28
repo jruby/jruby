@@ -1,4 +1,4 @@
-require 'compiler/duby'
+require 'duby'
 require 'test/unit'
 require 'jruby'
 

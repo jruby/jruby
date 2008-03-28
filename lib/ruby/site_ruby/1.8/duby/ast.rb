@@ -1,4 +1,4 @@
-require 'compiler/duby/transform'
+require 'duby/transform'
 
 module Duby
   module AST
@@ -170,10 +170,10 @@ module Duby
   end
 end
 
-require 'compiler/duby/ast/local'
-require 'compiler/duby/ast/call'
-require 'compiler/duby/ast/flow'
-require 'compiler/duby/ast/literal'
-require 'compiler/duby/ast/method'
-require 'compiler/duby/ast/class'
-require 'compiler/duby/ast/structure'
+require 'duby/ast/local'
+require 'duby/ast/call'
+require 'duby/ast/flow'
+require 'duby/ast/literal'
+require 'duby/ast/method'
+require 'duby/ast/class'
+require 'duby/ast/structure'

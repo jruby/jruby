@@ -1,4 +1,4 @@
-require 'compiler/duby'
+require 'duby'
 
 module Duby
   module Compiler
