@@ -104,9 +104,8 @@ public class FutureThread implements ThreadLike {
      * by another thread.
      * @throws java.util.concurrent.ExecutionException If an execution error is
      * raised by the underlying Future.
-     * @throws java.util.concurrent.TimeoutException If the join timed out.
      */
-    public void join(long millis) throws InterruptedException, ExecutionException, TimeoutException {
+    public void join(long millis) throws InterruptedException, ExecutionException {
         if (millis == 0) {
             join();
         } else {
@@ -115,6 +114,8 @@ public class FutureThread implements ThreadLike {
             } catch (CancellationException ce) {
                 // ignore; job was cancelled
                 // FIXME: Is this ok?
+            } catch (TimeoutException te) {
+                // do nothing, just exit
             }
         }
     }
