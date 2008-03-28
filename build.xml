@@ -844,7 +844,6 @@
     <include name="docs/**"/>
     <include name="COPYING*"/>
     <include name="README"/>
-    <include name="share/**"/>
     <exclude name="lib/ruby/**"/>
   </patternset>
 
@@ -854,10 +853,13 @@
     <exclude name="lib/emma_ant.jar"/>
     <exclude name="lib/junit.jar"/>
     <exclude name="lib/jarjar-1.0rc7.jar"/>
+    <exclude name="docs/rdocs.tar.gz"/>
+    <include name="share/**"/>
   </patternset>
 
   <patternset id="dist.src.files">
     <patternset refid="dist.files"/>
+    <exclude name="share/**"/>
     <include name="src/**"/>
     <include name="test/**"/>
     <include name="build_lib/**"/>
