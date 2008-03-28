@@ -50,7 +50,6 @@ import java.nio.channels.Channel;
 import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectableChannel;
-import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
 import static java.util.logging.Logger.getLogger;
 import org.jruby.Finalizable;
@@ -579,17 +578,30 @@ public class ChannelStream implements Stream, Finalizable {
         
         ReadableByteChannel readChannel = (ReadableByteChannel)descriptor.getChannel();
         int read = BUFSIZE;
-        while (read == BUFSIZE && result.length() != number) { // not complete. try to read more
+        while (result.length() != number) {
+            // try to read more
             buffer.clear(); 
             read = readChannel.read(buffer);
             buffer.flip();
-            if (read == -1) break;
+            
+            if (read == -1) {
+                // if we reach EOF, set EOF flag and bail
+                eof = true;
+                break;
+            }
+            
+            if (read == 0) {
+                // if we read nothing, there's no more available; bail
+                break;
+            }
+            
+            // append what we read into our buffer and allow the loop to continue
             int desired = number - result.length();
             len = (desired < read) ? desired : read;
             result.append(buffer, len);
         }
         
-        if (result.length() == 0 && number != 0) throw new java.io.EOFException();
+        if (result.length() == 0 && number != 0) throw new EOFException();
         return result;
     }
     
