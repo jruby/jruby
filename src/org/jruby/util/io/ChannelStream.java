@@ -584,14 +584,8 @@ public class ChannelStream implements Stream, Finalizable {
             read = readChannel.read(buffer);
             buffer.flip();
             
-            if (read == -1) {
-                // if we reach EOF, set EOF flag and bail
-                eof = true;
-                break;
-            }
-            
-            if (read == 0) {
-                // if we read nothing, there's no more available; bail
+            if (read <= 0) {
+                // if we reach EOF or didn't read anything, bail out
                 break;
             }
             
@@ -787,13 +781,12 @@ public class ChannelStream implements Stream, Finalizable {
 
     public synchronized ByteList readpartial(int number) throws IOException, BadDescriptorException, EOFException {
         if (descriptor.getChannel() instanceof SelectableChannel) {
-            if (ungotc >= 0) {
-                ByteList buf2 = bufferedRead(number - 1);
-                buf2.prepend((byte)ungotc);
-                ungotc = -1;
-                return buf2;
+            if (buffer.hasRemaining()) {
+                // already have some bytes buffered, just return those
+                return bufferedRead(buffer.remaining());
             } else {
-                return bufferedRead(number);
+                // otherwise, we try an unbuffered read to get whatever's available
+                return read(number);
             }
         } else {
             return null;
