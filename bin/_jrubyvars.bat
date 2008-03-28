@@ -10,7 +10,7 @@ rem ----- Save Environment Variables That May Change --------------------------
 
 set _CLASSPATH=%CLASSPATH%
 set _CP=%CP%
-set ERRORLEVEL=
+set ERRORLEVEL=0
 
 rem ----- Verify and Set Required Environment Variables -----------------------
 
