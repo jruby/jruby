@@ -2723,29 +2723,29 @@ public class RubyIO extends RubyObject {
        });
    }
     
-@JRubyMethod(name = "copy_stream", meta = true, compat = RUBY1_9)
-public static IRubyObject copy_stream(
-        IRubyObject recv, IRubyObject stream1, IRubyObject stream2)
-        throws IOException {
-    RubyIO io1 = (RubyIO)stream1;
-    RubyIO io2 = (RubyIO)stream2;
+    @JRubyMethod(name = "copy_stream", meta = true, compat = RUBY1_9)
+    public static IRubyObject copy_stream(
+            IRubyObject recv, IRubyObject stream1, IRubyObject stream2)
+            throws IOException {
+        RubyIO io1 = (RubyIO)stream1;
+        RubyIO io2 = (RubyIO)stream2;
 
-    ChannelDescriptor d1 = io1.openFile.getMainStream().getDescriptor();
-    if (!d1.isSeekable()) {
-        throw recv.getRuntime().newTypeError("only supports file-to-file copy");
+        ChannelDescriptor d1 = io1.openFile.getMainStream().getDescriptor();
+        if (!d1.isSeekable()) {
+            throw recv.getRuntime().newTypeError("only supports file-to-file copy");
+        }
+        ChannelDescriptor d2 = io2.openFile.getMainStream().getDescriptor();
+        if (!d2.isSeekable()) {
+            throw recv.getRuntime().newTypeError("only supports file-to-file copy");
+        }
+
+        FileChannel f1 = (FileChannel)d1.getChannel();
+        FileChannel f2 = (FileChannel)d2.getChannel();
+
+        long size = f1.size();
+
+        f1.transferTo(f2.position(), size, f2);
+
+        return recv.getRuntime().newFixnum(size);
     }
-    ChannelDescriptor d2 = io2.openFile.getMainStream().getDescriptor();
-    if (!d2.isSeekable()) {
-        throw recv.getRuntime().newTypeError("only supports file-to-file copy");
-    }
-
-    FileChannel f1 = (FileChannel)d1.getChannel();
-    FileChannel f2 = (FileChannel)d2.getChannel();
-
-    long size = f1.size();
-
-    f1.transferTo(f2.position(), size, f2);
-
-    return recv.getRuntime().newFixnum(size);
-}
 }
