@@ -46,6 +46,7 @@ import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 import java.nio.channels.Pipe;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -81,6 +82,8 @@ import org.jruby.util.io.FileExistsException;
 import org.jruby.util.io.STDIO;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.ChannelDescriptor;
+
+import static org.jruby.CompatVersion.*;
 
 /**
  * 
@@ -2719,4 +2722,30 @@ public class RubyIO extends RubyObject {
            sink
        });
    }
+    
+@JRubyMethod(name = "copy_stream", meta = true, compat = RUBY1_9)
+public static IRubyObject copy_stream(
+        IRubyObject recv, IRubyObject stream1, IRubyObject stream2)
+        throws IOException {
+    RubyIO io1 = (RubyIO)stream1;
+    RubyIO io2 = (RubyIO)stream2;
+
+    ChannelDescriptor d1 = io1.openFile.getMainStream().getDescriptor();
+    if (!d1.isSeekable()) {
+        throw recv.getRuntime().newTypeError("only supports file-to-file copy");
+    }
+    ChannelDescriptor d2 = io2.openFile.getMainStream().getDescriptor();
+    if (!d2.isSeekable()) {
+        throw recv.getRuntime().newTypeError("only supports file-to-file copy");
+    }
+
+    FileChannel f1 = (FileChannel)d1.getChannel();
+    FileChannel f2 = (FileChannel)d2.getChannel();
+
+    long size = f1.size();
+
+    f1.transferTo(f2.position(), size, f2);
+
+    return recv.getRuntime().newFixnum(size);
+}
 }
