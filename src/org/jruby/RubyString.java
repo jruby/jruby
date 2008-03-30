@@ -2154,9 +2154,8 @@ public class RubyString extends RubyObject {
         if (args[0] instanceof RubyString) {
             RubyString orig = stringValue(args[0]);
             int beg = value.indexOf(orig.value);
-            if (beg != -1) {
-                replace(beg, orig.value.length(), stringValue(args[1]));
-            }
+            if (beg < 0) throw getRuntime().newIndexError("string not matched");
+            replace(beg, orig.value.length(), stringValue(args[1]));
             return args[1];
         }
         if (args[0] instanceof RubyRange) {
