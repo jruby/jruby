@@ -1,18 +1,15 @@
 require 'benchmark'
 
-amount = 1000000
-c = 0
+amount = 100000
 script = <<EOF
-_e = ''; _e.concat '  The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is:   The value of x is: '; _e.concat(( x ).to_s); _e.concat "\n"
-_e
+1 + 1
 EOF
 
-x = 1
 bnd = binding
 
-puts "implicit binding"
-puts Benchmark.realtime { amount.times { eval script } }
-puts "c = #{c}"
-puts "explicit binding"
-puts Benchmark.realtime { amount.times { eval script, bnd } }
-puts "c = #{c}"
+Benchmark.bmbm do |bm|
+  bm.report("Control") { amount.times { 1 + 1 } }
+  bm.report("Binding creation") { amount.times { binding } }
+  bm.report("Implicit binding") { amount.times { eval script } }
+  bm.report("Explicit binding") { amount.times { eval script, bnd } }
+end
