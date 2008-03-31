@@ -420,6 +420,12 @@ public final class ThreadContext {
         getThread().pollThreadEvents(this);
     }
     
+    int calls = 0;
+    
+    public void callThreadPoll() {
+        if ((calls++ & 0xFF) == 0) pollThreadEvents();
+    }
+    
     public void pushRubyClass(RubyModule currentModule) {
         // FIXME: this seems like a good assertion, but it breaks compiled code and the code seems
         // to run without it...
