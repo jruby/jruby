@@ -15,7 +15,7 @@ import static org.jruby.util.CodegenUtils.*;
  * @author headius
  */
 public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
-    public static final int MAX_INHERITED_CALL_SITES = 0;
+    public static final int MAX_INHERITED_CALL_SITES = 50;
     
     int callSiteCount = 0;
 //    int byteListCount = 0;
