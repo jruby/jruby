@@ -33,6 +33,7 @@
 package org.jruby.runtime.marshal;
 
 import java.io.BufferedInputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -207,7 +208,7 @@ public class UnmarshalStream extends BufferedInputStream {
     public int readUnsignedByte() throws IOException {
         int result = read();
         if (result == -1) {
-            throw new IOException("Unexpected end of stream");
+            throw new EOFException("Unexpected end of stream");
         }
         return result;
     }
@@ -231,7 +232,7 @@ public class UnmarshalStream extends BufferedInputStream {
             buffer[i++] = (byte)b;
         }
         if (i < length) {
-            throw new IOException("Unexpected end of stream");
+            throw getRuntime().newArgumentError("marshal data too short");
         }
         return new ByteList(buffer,false);
     }

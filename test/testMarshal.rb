@@ -413,3 +413,32 @@ test_equal(
 test_equal(
   0,
   actual_time <=> Marshal.load(unpacked_marshaled_time.pack('C*')))
+
+# JRUBY-2345
+begin
+  file_name = "test-file-tmp"
+  f = File.new(file_name, "w+")
+  test_exception(EOFError) { Marshal.load(f) }
+ensure
+  f.close
+  File.delete(file_name)
+end
+
+test_exception(ArgumentError) { Marshal.load("\004\b\"\b") }
+
+# borrowed from MRI 1.9 test:
+class C
+  def initialize(str)
+    @str = str
+  end
+  def _dump(limit)
+    @str
+  end
+  def self._load(s)
+    new(s)
+  end
+end
+test_exception(ArgumentError) {
+  (data = Marshal.dump(C.new("a")))[-2, 1] = "\003\377\377\377"
+  Marshal.load(data)
+}
