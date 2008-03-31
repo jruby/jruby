@@ -56,6 +56,11 @@ class TestDir < Test::Unit::TestCase
     assert_equal([], Dir.glob("{"))
   end
 
+  def test_glob_empty_string
+    assert_equal([], Dir.glob(''))
+    assert_equal([], Dir[''])
+  end
+
   def test_glob_double_star
     # Test that glob expansion of ** works ok with non-patterns as path 
     # elements. This used to throw NPE.

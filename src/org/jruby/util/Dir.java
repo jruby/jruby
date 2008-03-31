@@ -300,8 +300,9 @@ public class Dir {
 
     public static List<ByteList> push_glob(String cwd, ByteList globByteList, int flags) {
         List<ByteList> result = new ArrayList<ByteList>();
-
-        push_braces(cwd, result, new GlobPattern(globByteList, flags));
+        if (globByteList.length() > 0) {
+            push_braces(cwd, result, new GlobPattern(globByteList, flags));
+        }
 
         return result;
     }
