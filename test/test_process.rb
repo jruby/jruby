@@ -58,6 +58,8 @@ class TestProcess < Test::Unit::TestCase
       # numerous regressions in this area.
       assert_raise(NotImplementedError) { Process.uid }
       assert_raise(NotImplementedError) { Process.uid = 5 }
+      assert_raise(NotImplementedError) { Process.gid }
+      assert_raise(NotImplementedError) { Process.gid = 5 }
       assert_raise(NotImplementedError) { Process.euid }
       assert_raise(NotImplementedError) { Process.euid = 5 }
       assert_raise(NotImplementedError) { Process.egid }
@@ -66,6 +68,14 @@ class TestProcess < Test::Unit::TestCase
       assert_raise(NotImplementedError) { Process.setpgid(100, 555) }
       assert_raise(NotImplementedError) { Process.setpriority(100, 100, 100) }
       assert_raise(NotImplementedError) { Process.getpriority(100, 100) }
+      assert_raise(NotImplementedError) { Process.setrlimit(100, 100) }
+      assert_raise(NotImplementedError) { Process.getrlimit(100) }
+      assert_raise(NotImplementedError) { Process.groups }
+      assert_raise(NotImplementedError) { Process.groups = [] }
+      assert_raise(NotImplementedError) { Process.maxgroups }
+      assert_raise(NotImplementedError) { Process.maxgroups = 100 }
+      assert_raise(NotImplementedError) { Process.initgroups(100, 100) }
+      assert_raise(NotImplementedError) { Process.ppid }
     end
   end
 end

@@ -65,7 +65,21 @@ public class WindowsPOSIX extends BaseNativePOSIX {
 
         return -1;
     }
-    
+
+    @Override
+    public int getgid() {
+        handler.unimplementedError("getgid");
+
+        return -1;
+    }
+
+    @Override
+    public int setgid(int gid) {
+        handler.unimplementedError("setgid");
+
+        return -1;
+    }
+
     @Override
     public int getpgid(int pid) {
         handler.unimplementedError("getpgid");
@@ -101,6 +115,13 @@ public class WindowsPOSIX extends BaseNativePOSIX {
         return -1;
     }
 
+    @Override
+    public int getppid() {
+        handler.unimplementedError("ppid");
+
+        return -1;
+    }
+    
     @Override
     public int lchmod(String filename, int mode) {
         handler.unimplementedError("lchmod");
