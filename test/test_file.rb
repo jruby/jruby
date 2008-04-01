@@ -495,6 +495,20 @@ class TestFile < Test::Unit::TestCase
     assert(stat2.readable?)
   end
 
+  if (WINDOWS)
+    def test_not_implemented_methods_on_windows
+      # the goal here is to make sure that those "weird"
+      # POSIX methods don't break JRuby, since there were
+      # numerous regressions in this area
+      assert_raises(NotImplementedError) { File.readlink('build.xml') }
+      assert_raises(NotImplementedError) { File.chown(100, 100, 'build.xml') }
+      assert_raises(NotImplementedError) { File.lchown(100, 100, 'build.xml') }
+      assert_raises(NotImplementedError) { File.lchmod(0644, 'build.xml') }
+      assert_raises(NotImplementedError) { Process.euid }
+      assert_raises(NotImplementedError) { Process.uid }
+    end
+  end
+
   unless(WINDOWS) # no symlinks on Windows
     def test_file_symlink
       # Test File.symlink? if possible

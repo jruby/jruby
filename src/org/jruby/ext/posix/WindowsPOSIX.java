@@ -58,6 +58,13 @@ public class WindowsPOSIX extends BaseNativePOSIX {
     }
 
     @Override
+    public String readlink(String oldpath) {
+        handler.unimplementedError("readlink");
+
+        return null;
+    }
+
+    @Override
     public boolean isatty(FileDescriptor fd) {
         return (fd == FileDescriptor.in
                 || fd == FileDescriptor.out
