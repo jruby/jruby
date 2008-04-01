@@ -170,6 +170,11 @@ public class WindowsPOSIX extends BaseNativePOSIX {
     }
 
     @Override
+    public String getlogin() {
+        return helper.getlogin();
+    }
+    
+    @Override
     public boolean isatty(FileDescriptor fd) {
         return (fd == FileDescriptor.in
                 || fd == FileDescriptor.out

@@ -23,6 +23,7 @@ test_dir
 #test_digest2
 test_dup_clone_taint_freeze
 test_env
+test_etc
 test_eval
 test_eval_with_binding
 test_file
