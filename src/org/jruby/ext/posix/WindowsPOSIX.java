@@ -16,7 +16,14 @@ public class WindowsPOSIX extends BaseNativePOSIX {
     public FileStat allocateStat() {
         return new WindowsFileStat(this);
     }
-    
+
+    @Override
+    public int kill(int pid, int signal) {
+        handler.unimplementedError("kill");
+
+        return -1;
+    }
+
     @Override
     public int chown(String filename, int user, int group) {
         handler.unimplementedError("chown");
