@@ -2,6 +2,7 @@ require 'test/unit'
 require 'rbconfig'
 
 class TestProcess < Test::Unit::TestCase
+  WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
   def setup
     @shell = Config::CONFIG['SHELL']
     @shellcmd = "#@shell " + (Config::CONFIG['host_os'] =~ /Windows|mswin/ ? "/c" : "-c")
@@ -46,6 +47,21 @@ class TestProcess < Test::Unit::TestCase
   def test_host_process
     unless Config::CONFIG['host_os'] =~ /Windows|mswin/ || !File.exist?("bin/jruby")
       assert_equal "1", %x{sh -c 'bin/jruby -e "exit 1" ; echo $?'}.strip
+    end
+  end
+
+  if (WINDOWS)
+    # JRUBY-2352
+    def test_not_implemented_methods_on_windows
+      # The goal here is to make sure that those "weird"
+      # POSIX methods don't break JRuby, since there were
+      # numerous regressions in this area.
+      assert_raise(NotImplementedError) { Process.uid }
+      assert_raise(NotImplementedError) { Process.uid = 5 }
+      assert_raise(NotImplementedError) { Process.euid }
+      assert_raise(NotImplementedError) { Process.euid = 5 }
+      assert_raise(NotImplementedError) { Process.egid }
+      assert_raise(NotImplementedError) { Process.egid = 5 }
     end
   end
 end

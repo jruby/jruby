@@ -25,16 +25,44 @@ public class WindowsPOSIX extends BaseNativePOSIX {
     }
 
     @Override
+    public int getegid() {
+        handler.unimplementedError("egid");
+
+        return -1;
+    }
+
+    @Override
+    public int setegid(int egid) {
+        handler.unimplementedError("setegid");
+
+        return -1;
+    }
+
+    @Override
     public int geteuid() {
         handler.unimplementedError("geteuid");
-        
+
+        return -1;
+    }
+
+    @Override
+    public int seteuid(int euid) {
+        handler.unimplementedError("seteuid");
+
         return -1;
     }
 
     @Override
     public int getuid() {
         handler.unimplementedError("getuid");
-        
+
+        return -1;
+    }
+
+    @Override
+    public int setuid(int uid) {
+        handler.unimplementedError("setuid");
+
         return -1;
     }
 

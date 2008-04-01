@@ -496,16 +496,15 @@ class TestFile < Test::Unit::TestCase
   end
 
   if (WINDOWS)
+    # JRUBY-2351
     def test_not_implemented_methods_on_windows
       # the goal here is to make sure that those "weird"
       # POSIX methods don't break JRuby, since there were
       # numerous regressions in this area
-      assert_raises(NotImplementedError) { File.readlink('build.xml') }
-      assert_raises(NotImplementedError) { File.chown(100, 100, 'build.xml') }
-      assert_raises(NotImplementedError) { File.lchown(100, 100, 'build.xml') }
-      assert_raises(NotImplementedError) { File.lchmod(0644, 'build.xml') }
-      assert_raises(NotImplementedError) { Process.euid }
-      assert_raises(NotImplementedError) { Process.uid }
+      assert_raise(NotImplementedError) { File.readlink('build.xml') }
+      assert_raise(NotImplementedError) { File.chown(100, 100, 'build.xml') }
+      assert_raise(NotImplementedError) { File.lchown(100, 100, 'build.xml') }
+      assert_raise(NotImplementedError) { File.lchmod(0644, 'build.xml') }
     end
   end
 
