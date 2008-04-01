@@ -86,6 +86,20 @@ public class WindowsPOSIX extends BaseNativePOSIX {
 
         return -1;
     }
+    
+    @Override
+    public int getpriority(int which, int who) {
+        handler.unimplementedError("getpriority");
+
+        return -1;
+    }
+    
+    @Override
+    public int setpriority(int which, int who, int prio) {
+        handler.unimplementedError("setpriority");
+
+        return -1;
+    }
 
     @Override
     public int lchmod(String filename, int mode) {

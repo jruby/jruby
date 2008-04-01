@@ -64,6 +64,8 @@ class TestProcess < Test::Unit::TestCase
       assert_raise(NotImplementedError) { Process.egid = 5 }
       assert_raise(NotImplementedError) { Process.getpgid(100) }
       assert_raise(NotImplementedError) { Process.setpgid(100, 555) }
+      assert_raise(NotImplementedError) { Process.setpriority(100, 100, 100) }
+      assert_raise(NotImplementedError) { Process.getpriority(100, 100) }
     end
   end
 end
