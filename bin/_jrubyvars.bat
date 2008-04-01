@@ -10,12 +10,13 @@ rem ----- Save Environment Variables That May Change --------------------------
 
 set _CLASSPATH=%CLASSPATH%
 set _CP=%CP%
-set ERRORLEVEL=0
+set JRUBY_BAT_ERROR=0
 
 rem ----- Verify and Set Required Environment Variables -----------------------
 
 if not "%JAVA_HOME%" == "" goto gotJava
 echo You must set JAVA_HOME to point at your JRE/JDK installation
+set JRUBY_BAT_ERROR=1
 exit /b 1
 :gotJava
 
