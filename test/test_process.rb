@@ -76,6 +76,16 @@ class TestProcess < Test::Unit::TestCase
       assert_raise(NotImplementedError) { Process.maxgroups = 100 }
       assert_raise(NotImplementedError) { Process.initgroups(100, 100) }
       assert_raise(NotImplementedError) { Process.ppid }
+
+      # TODO: temporal (JRUBY-2353)
+      assert_raise(NotImplementedError) { Process.kill(100, 100) }
+
+      # TODO: temporal (JRUBY-2354)
+      assert_raise(NotImplementedError) { Process.wait }
+      assert_raise(NotImplementedError) { Process.wait2 }
+      assert_raise(NotImplementedError) { Process.waitpid }
+      assert_raise(NotImplementedError) { Process.waitpid2 }
+      assert_raise(NotImplementedError) { Process.waitall }
     end
   end
 end

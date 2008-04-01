@@ -156,6 +156,20 @@ public class WindowsPOSIX extends BaseNativePOSIX {
     }
 
     @Override
+    public int wait(int[] status) {
+        handler.unimplementedError("wait");
+
+        return -1;
+    }
+
+    @Override
+    public int waitpid(int pid, int[] status, int flags) {
+        handler.unimplementedError("waitpid");
+
+        return -1;
+    }
+
+    @Override
     public boolean isatty(FileDescriptor fd) {
         return (fd == FileDescriptor.in
                 || fd == FileDescriptor.out
