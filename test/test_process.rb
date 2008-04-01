@@ -62,6 +62,8 @@ class TestProcess < Test::Unit::TestCase
       assert_raise(NotImplementedError) { Process.euid = 5 }
       assert_raise(NotImplementedError) { Process.egid }
       assert_raise(NotImplementedError) { Process.egid = 5 }
+      assert_raise(NotImplementedError) { Process.getpgid(100) }
+      assert_raise(NotImplementedError) { Process.setpgid(100, 555) }
     end
   end
 end
