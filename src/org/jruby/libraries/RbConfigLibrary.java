@@ -113,11 +113,11 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "prefix", normalizedHome);
         setConfig(configHash, "exec_prefix", normalizedHome);
 
-        setConfig(configHash, "host_os", Platform.getOSName());
+        setConfig(configHash, "host_os", getOSName());
         setConfig(configHash, "host_vendor", System.getProperty("java.vendor"));
         setConfig(configHash, "host_cpu", Platform.ARCH);
         
-        setConfig(configHash, "target_os", Platform.getOSName());
+        setConfig(configHash, "target_os", getOSName());
         
         setConfig(configHash, "target_cpu", Platform.ARCH);
         
