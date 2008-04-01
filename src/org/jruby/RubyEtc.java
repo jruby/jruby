@@ -5,6 +5,7 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.ext.posix.Passwd;
 import org.jruby.ext.posix.Group;
 import org.jruby.ext.posix.POSIX;
+import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -110,6 +111,9 @@ public class RubyEtc {
         String nam = name.convertToString().toString();
         Passwd pwd = recv.getRuntime().getPosix().getpwnam(nam);
         if(pwd == null) {
+            if (Platform.IS_WINDOWS) {  // MRI behavior
+                return recv.getRuntime().getNil();
+            }
             throw recv.getRuntime().newArgumentError("can't find user for " + nam);
         }
         return setupPasswd(recv.getRuntime(), pwd);
@@ -128,7 +132,13 @@ public class RubyEtc {
             }
             posix.endpwent();
         }
-        return setupPasswd(runtime, posix.getpwent());
+
+        Passwd pw = posix.getpwent();
+        if (pw != null) {
+            return setupPasswd(runtime, pw);
+        } else {
+            return runtime.getNil();
+        }
     }
 
     @JRubyMethod(name = "getlogin", module = true)
@@ -162,8 +172,11 @@ public class RubyEtc {
     public static IRubyObject getpwent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         Passwd passwd = runtime.getPosix().getpwent();
-        
-        return setupPasswd(recv.getRuntime(), passwd);
+        if (passwd != null) {
+            return setupPasswd(recv.getRuntime(), passwd);
+        } else {
+            return runtime.getNil();
+        }
     }
 
     @JRubyMethod(name = "getgrnam", required=1, module = true)
@@ -171,6 +184,9 @@ public class RubyEtc {
         String nam = name.convertToString().toString();
         Group grp = recv.getRuntime().getPosix().getgrnam(nam);
         if(grp == null) {
+            if (Platform.IS_WINDOWS) {  // MRI behavior
+                return recv.getRuntime().getNil();
+            }
             throw recv.getRuntime().newArgumentError("can't find group for " + nam);
         }
         return setupGroup(recv.getRuntime(), grp);
@@ -183,6 +199,9 @@ public class RubyEtc {
         int gid = args.length == 0 ? posix.getgid() : RubyNumeric.fix2int(args[0]);
         Group gr = posix.getgrgid(gid);
         if(gr == null) {
+            if (Platform.IS_WINDOWS) {  // MRI behavior
+                return runtime.getNil();
+            }
             throw runtime.newArgumentError("can't find group for " + gid);
         }
         return setupGroup(runtime, gr);
@@ -215,14 +234,23 @@ public class RubyEtc {
             }
             posix.endgrent();
         }
-        return setupGroup(runtime, posix.getgrent());
+
+        Group gr = posix.getgrent();
+        if (gr != null) {
+            return setupGroup(runtime, gr);
+        } else {
+            return runtime.getNil();
+        }
     }
 
     @JRubyMethod(name = "getgrent", module = true)
     public static IRubyObject getgrent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         Group gr = runtime.getPosix().getgrent();
-        
-        return setupGroup(recv.getRuntime(), gr);
+        if (gr != null) {
+            return setupGroup(recv.getRuntime(), gr);
+        } else {
+            return runtime.getNil();
+        }        
     }
 }

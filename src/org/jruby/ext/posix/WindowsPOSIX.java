@@ -173,7 +173,52 @@ public class WindowsPOSIX extends BaseNativePOSIX {
     public String getlogin() {
         return helper.getlogin();
     }
+
+    @Override
+    public int endgrent() {
+        return 0;
+    }
+
+    @Override
+    public int endpwent() {
+        return helper.endpwent();
+    }
+
+    @Override
+    public Group getgrent() {
+        return null;
+    }
+
+    @Override
+    public Passwd getpwent() {
+        return null;
+    }
+
+    @Override
+    public Group getgrgid(int which) {
+        return null;
+    }
+
+    @Override
+    public Passwd getpwnam(String which) {
+        return null;
+    }
+
+    @Override
+    public Group getgrnam(String which) {
+        return null;
+    }
     
+    @Override
+    public int setgrent() {
+        return 0;
+    }
+    
+    @Override
+    public int setpwent() {
+        return helper.setpwent();
+    }
+
     @Override
     public boolean isatty(FileDescriptor fd) {
         return (fd == FileDescriptor.in
