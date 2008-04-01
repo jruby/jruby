@@ -220,6 +220,11 @@ public class WindowsPOSIX extends BaseNativePOSIX {
     }
 
     @Override
+    public Passwd getpwuid(int which) {
+        return null;
+    }
+
+    @Override
     public boolean isatty(FileDescriptor fd) {
         return (fd == FileDescriptor.in
                 || fd == FileDescriptor.out

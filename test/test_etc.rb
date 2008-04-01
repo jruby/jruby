@@ -28,6 +28,7 @@ class TestEtc < Test::Unit::TestCase
         assert_nil(Etc.getpwuid)
       rescue NotImplementedError
       end
+      assert_nil(Etc.getpwuid(100))
       assert_nil(Etc.group)
       assert_nil(Etc.passwd)
       assert_nil(Etc.setgrent)

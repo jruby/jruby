@@ -101,6 +101,9 @@ public class RubyEtc {
         int uid = args.length == 0 ? posix.getuid() : RubyNumeric.fix2int(args[0]);
         Passwd pwd = posix.getpwuid(uid);
         if(pwd == null) {
+            if (Platform.IS_WINDOWS) {  // MRI behavior
+                return recv.getRuntime().getNil();
+            }
             throw runtime.newArgumentError("can't find user for " + uid);
         }
         return setupPasswd(runtime, pwd);
