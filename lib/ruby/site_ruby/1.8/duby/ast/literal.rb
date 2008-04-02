@@ -53,4 +53,19 @@ module Duby::AST
   end
   
   class Symbol < Node; end
+  
+  class Boolean < Node
+    include Literal
+    
+    def initialize(parent, literal)
+      super(parent)
+      @literal = literal
+    end
+    
+    def infer(typer)
+      return @inferred_type if resolved?
+      resolved!
+      @inferred_type ||= typer.boolean type
+    end
+  end
 end

@@ -23,6 +23,14 @@ class TestTyper < Test::Unit::TestCase
     assert_equal(AST::TypeReference.new(:string), ast.infer(Typer::Simple.new(:bar)))
   end
   
+  def test_boolean
+    ast1 = AST.parse("true")
+    ast2 = AST.parse("false")
+    
+    assert_equal(AST::TypeReference.new(:boolean), ast1.infer(Typer::Simple.new(:bar)))
+    assert_equal(AST::TypeReference.new(:boolean), ast2.infer(Typer::Simple.new(:bar)))
+  end
+  
   def test_body
     ast1 = AST.parse("'foo'; 1.0; 1")
     ast2 = AST.parse("begin; end")

@@ -191,6 +191,12 @@ module Duby
           end
         end
       end
+      
+      class FalseNode
+        def transform(parent)
+          Boolean.new(parent, false)
+        end
+      end
 
       class FCallNode
         def transform(parent)
@@ -333,6 +339,12 @@ module Duby
       class SymbolNode
         def type_reference(parent)
           TypeReference.new(name)
+        end
+      end
+      
+      class TrueNode
+        def transform(parent)
+          Boolean.new(parent, true)
         end
       end
       

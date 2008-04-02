@@ -361,4 +361,16 @@ class TestAst < Test::Unit::TestCase
     assert_not_nil(new_ast)
     assert(AST::Fixnum === new_ast)
   end
+  
+  def test_boolean
+    new_ast1 = AST.parse("true").body
+    new_ast2 = AST.parse("false").body
+    
+    assert_not_nil(new_ast1)
+    assert_not_nil(new_ast2)
+    assert(AST::Boolean === new_ast1)
+    assert(AST::Boolean === new_ast2)
+    assert(new_ast1.literal)
+    assert(!new_ast2.literal)
+  end
 end
