@@ -2760,7 +2760,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         // declare the field
-        cv.visitField(ACC_PRIVATE | ACC_STATIC, realName, type, null, null).visitEnd();
+        cv.visitField(ACC_PRIVATE | ACC_STATIC | ACC_FINAL, realName, type, null, null).visitEnd();
         return realName;
     }
 }
