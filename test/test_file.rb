@@ -647,5 +647,16 @@ class TestFile < Test::Unit::TestCase
 
     assert(!File.exists?(name))
   end
-end
 
+  # JRUBY-2340
+  def test_opening_readonly_file_for_write_raises_eacces
+    filename = "__read_only__"
+
+    begin
+      File.open(filename, "w+", 0444) { }
+      assert_raise(Errno::EACCES) { File.open(filename, "w") { } }
+    ensure
+      File.delete(filename)
+    end
+  end
+end
