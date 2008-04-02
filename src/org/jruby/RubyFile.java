@@ -260,66 +260,6 @@ public class RubyFile extends RubyIO {
         return fileClass;
     }
     
-    public void openInternal(String newPath, ModeFlags newModes) {
-        this.path = newPath;
-        this.openFile.setMode(newModes.getOpenFileFlags());
-        
-        try {
-            if(newPath.startsWith("file:")) {
-                String filePath = path.substring(5, path.indexOf("!"));
-                String internalPath = path.substring(path.indexOf("!") + 2);
-
-                java.util.jar.JarFile jf;
-                try {
-                    jf = new java.util.jar.JarFile(filePath);
-                } catch(IOException e) {
-                    throw getRuntime().newErrnoENOENTError(
-                                                           "File not found - " + newPath);
-                }
-
-                java.util.zip.ZipEntry zf = jf.getEntry(internalPath);
-                
-                if(zf == null) {
-                    throw getRuntime().newErrnoENOENTError(
-                                                           "File not found - " + newPath);
-                }
-
-                InputStream is = jf.getInputStream(zf);
-                openFile.setMainStream(
-                        new ChannelStream(getRuntime(), new ChannelDescriptor(Channels.newChannel(is), getNewFileno(), new FileDescriptor())));
-            } else {
-                try {
-                    openFile.setMainStream(ChannelStream.fopen(getRuntime(), newPath, newModes));
-                } catch (BadDescriptorException e) {
-                    throw getRuntime().newErrnoEBADFError();
-                } catch (FileExistsException fee) {
-                    throw getRuntime().newErrnoEEXISTError(fee.getMessage());
-                }
-            }
-            
-            registerDescriptor(openFile.getMainStream().getDescriptor());
-        } catch (PipeException e) {
-            throw getRuntime().newErrnoEPIPEError();
-        } catch (InvalidValueException e) {
-            throw getRuntime().newErrnoEINVALError();
-        } catch (DirectoryAsFileException e) {
-            throw getRuntime().newErrnoEISDirError();
-        } catch (FileNotFoundException e) {
-            // FNFException can be thrown in both cases, when the file
-            // is not found, or when permission is denied.
-            if (Ruby.isSecurityRestricted() || new File(newPath).exists()) {
-                throw getRuntime().newErrnoEACCESError(
-                        "Permission denied - " + newPath);
-            }
-            throw getRuntime().newErrnoENOENTError(
-                    "File not found - " + newPath);
-        } catch (IOException e) {
-            throw getRuntime().newIOError(e.getMessage());
-        } catch (SecurityException se) {
-            throw getRuntime().newIOError(se.getMessage());
-        }
-    }
-    
     @JRubyMethod
     public IRubyObject close() {
         // Make sure any existing lock is released before we try and close the file
@@ -562,7 +502,14 @@ public class RubyFile extends RubyIO {
         } catch (BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         } catch (FileNotFoundException ex) {
-            throw getRuntime().newErrnoENOENTError();
+            // FNFException can be thrown in both cases, when the file
+            // is not found, or when permission is denied.
+            if (Ruby.isSecurityRestricted() || new File(path).exists()) {
+                throw getRuntime().newErrnoEACCESError(
+                        "Permission denied - " + path);
+            }
+            throw getRuntime().newErrnoENOENTError(
+                    "File not found - " + path);
         } catch (DirectoryAsFileException ex) {
             throw getRuntime().newErrnoEISDirError();
         } catch (FileExistsException ex) {
@@ -1358,46 +1305,6 @@ public class RubyFile extends RubyIO {
         return getLastModified(recv.getRuntime(), filename.convertToString().toString());
     }
     
-    public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, boolean tryToYield, Block block) {
-        Ruby runtime = recv.getRuntime();
-        RubyFile file;
-
-        if (args[0] instanceof RubyInteger) { // open with file descriptor
-            file = new RubyFile(runtime, (RubyClass) recv);
-            file.initialize(args, Block.NULL_BLOCK);            
-        } else {
-            RubyString pathString = RubyString.stringValue(args[0]);
-            runtime.checkSafeString(pathString);
-            String path = pathString.toString();
-
-            ModeFlags modes;
-            try {
-                modes = args.length >= 2 ? getModes(runtime, args[1]) : new ModeFlags(ModeFlags.RDONLY);
-            } catch (InvalidValueException ex) {
-                throw runtime.newErrnoEINVALError();
-            }
-            file = new RubyFile(runtime, (RubyClass) recv);
-
-            RubyInteger fileMode = args.length >= 3 ? args[2].convertToInteger() : null;
-
-            file.openInternal(path, modes);
-
-            if (fileMode != null) chmod(recv, new IRubyObject[] {fileMode, pathString});
-        }
-        
-        if (tryToYield && block.isGiven()) {
-            try {
-                return block.yield(context, file);
-            } finally {
-                if (file.openFile.isOpen()) {
-                    file.close();
-                }
-            }
-        }
-        
-        return file;
-    }
-
     @JRubyMethod(required = 2, meta = true)
     public static IRubyObject rename(IRubyObject recv, IRubyObject oldName, IRubyObject newName) {
         Ruby runtime = recv.getRuntime();
@@ -1500,7 +1407,7 @@ public class RubyFile extends RubyIO {
         }
         
         IRubyObject[] args = new IRubyObject[] { filename, runtime.newString("r+") };
-        RubyFile file = (RubyFile) open(context, recv, args, false, null);
+        RubyFile file = (RubyFile) open(context, recv, args, Block.NULL_BLOCK);
         file.truncate(newLength);
         file.close();
         
