@@ -65,7 +65,7 @@ module Duby::AST
     def infer(typer)
       return @inferred_type if resolved?
       resolved!
-      @inferred_type ||= typer.boolean type
+      @inferred_type ||= typer.boolean_type
     end
   end
 end

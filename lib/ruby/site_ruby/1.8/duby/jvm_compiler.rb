@@ -1,11 +1,13 @@
-#require 'compiler/bytecode'
-require 'compiler/builder'
 require 'duby'
-require 'duby/compiler2'
 
 module Duby
   module Compiler
     class JVM
+      class CallCompiler < Proc
+        def call(method_builder, name, recv_type, signature, recv, args)
+          call(method_builder, name, recv_type, signature, recv, args)
+        end
+      end
       class MathCompiler
         def call(compiler, name, recv_type, recv, args)
           recv.call
@@ -16,12 +18,24 @@ module Duby
         end
       end
       
-      class ReturnCompiler < Proc
-        def ret(method_builder, result); call(method_builder, result); end
+      class BranchCompiler < Proc
+        def branch(method_builder, predicate, body_callback, else_callback)
+          call(method_builder, predicate, body_callback, else_callback)
+        end
       end
       
-      class LocalCompiler < Proc
-        def local(method_builder, name)
+      IntCallCompiler = proc do |builder, name, recv_callback, args_callback|
+        recv_callback.call
+        args_callback.call
+      end
+      
+      IntReturnCompiler = proc do |builder, result|
+        result.call
+        builder.ireturn
+      end
+      
+      IntLocalCompiler = proc do |builder, index|
+        builder.iload(index)
       end
       
       attr_accessor :filename, :src
@@ -30,14 +44,17 @@ module Duby
         @filename = filename
         @file_builder = FileBuilder.new(filename)
         
-        self.type_mapper[AST::TypeReference.new(:fixnum)] = "int"
+        fixnum_type = AST::TypeReference.new(:fixnum)
         
-        self.call_compilers[AST::TypeReference.new(:fixnum)] = MathCompiler.new
+        self.type_mapper[fixnum_type] = Java::int.java_class
         
-        self.return_compilers[AST::TypeReference.new(:fixnum)] = ReturnCompiler.new do |builder, result|
-          result.call
-          builder.ireturn
-        end
+        self.call_compilers[fixnum_type] = MathCompiler.new
+        
+        self.return_compilers[fixnum_type] = IntReturnCompiler
+        
+        self.local_compilers[fixnum_type] = IntLocalCompiler
+        
+        self.branch_compilers[fixnum_type] = IntBranchCompiler
       end
 
       def compile(ast)
@@ -61,7 +78,7 @@ module Duby
       
       def branch(condition_type, condition, body_proc, else_proc)
         #condition compiles itself as appropriate type of jump
-        branch_compilers[condition_type].branch(self, condition, body_proc, else_proc)
+        branch_compilers[condition_type].call(self, condition, body_proc, else_proc)
       end
       
       def call(name, recv_type, signature, recv, args)
@@ -78,7 +95,8 @@ module Duby
       end
       
       def local(local_type, name)
-        local_compilers[local_type].local(self, name)
+        index = @method_builder.local(name)
+        local_compilers[local_type].call(@method_builder, name)
       end
       
       def fixnum(value)
@@ -90,7 +108,7 @@ module Duby
       end
       
       def ret(result_type, &result)
-        return_compilers[result_type].ret(&result)
+        return_compilers[result_type].call(@method_builder, result)
       end
       
       def generate
@@ -111,91 +129,6 @@ module Duby
       
       def return_compilers
         @return_compilers ||= {}
-      end
-    end
-  end
-  
-  module AST
-    class Script
-      def compile(compiler)
-        # preparations for the .c file would go here
-        body.compile(compiler)
-      end
-    end
-    
-    class Body
-      def compile(compiler)
-        last = children[-1]
-        children.each do |child|
-          child.compile(compiler)
-          compiler.newline
-        end
-      end
-    end
-    
-    class MethodDefinition
-      def compile(compiler)
-        args_callback = proc {arguments.compile(compiler)}
-        body_callback = proc {body.compile(compiler)}
-        compiler.define_method(name, signature, args_callback, body_callback)
-      end
-    end
-    
-    class Arguments
-      def compile(compiler)
-        args.each {|arg| compiler.declare_argument(arg.name, arg.inferred_type)} if args
-      end
-    end
-    
-    class Noop
-      def compile(compiler)
-        # nothing
-      end
-    end
-    
-    class Fixnum
-      def compile(compiler)
-        compiler.fixnum(literal)
-      end
-    end
-    
-    class If
-      def compile(compiler)
-        cond_callback = proc { condition.compile(compiler) }
-        body_callback = proc { body.compile(compiler) }
-        else_callback = proc { self.else.compile(compiler)}
-        
-        compiler.branch(cond_callback, body_callback, else_callback)
-      end
-    end
-    
-    class Condition
-      def compile(compiler, body_callback, else_callback)
-        predicate.compile(compiler)
-        compiler.branch(predicate.inferred_type, body_callback, else_callback)
-      end
-    end
-    
-    class FunctionalCall
-      def compile(compiler)
-        args_callback = proc { parameters.each {|param| param.compile(compiler)}}
-        
-        compiler.self_call(name, [inferred_type, *parameters.map {|param| param.type}], args_callback)
-      end
-    end
-    
-    class Call
-      def compile(compiler)
-        recv_callback = proc { target.compile(compiler) }
-        args_callback = proc { parameters.each {|param| param.compile(compiler)}}
-        
-        compiler.call(name, target.inferred_type, [inferred_type, *parameters.map {|param| param.type}], recv_callback, args_callback)
-      end
-    end
-    
-    class Local
-      def compile(compiler)
-        compiler.local(inferred_type, name)
       end
     end
   end
