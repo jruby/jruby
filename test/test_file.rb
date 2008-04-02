@@ -426,6 +426,13 @@ class TestFile < Test::Unit::TestCase
     assert_equal "foobarx\n", values
   end
   
+  # JRUBY-2357
+  def test_truncate_file_in_jar_file
+    File.open("file:" + File.expand_path("test/test_jar2.jar") + "!/test_value.rb", "r+") do |f|
+      assert_raise(Errno::EINVAL) { f.truncate(2) }
+    end
+  end
+  
   def test_file_size_query
     assert(File.size?('build.xml'))
   end

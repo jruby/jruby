@@ -666,9 +666,14 @@ public class ChannelStream implements Stream, Finalizable {
         return 1;
     }
     
-    public synchronized void ftruncate(long newLength) throws IOException, BadDescriptorException {
+    public synchronized void ftruncate(long newLength) throws IOException,
+            BadDescriptorException, InvalidValueException {
+        Channel ch = descriptor.getChannel();
+        if (!(ch instanceof FileChannel)) {
+            throw new InvalidValueException();
+        }
         invalidateBuffer();
-        FileChannel fileChannel = (FileChannel)descriptor.getChannel();
+        FileChannel fileChannel = (FileChannel)ch;
         if (newLength > fileChannel.size()) {
             // truncate can't lengthen files, so we save position, seek/write, and go back
             long position = fileChannel.position();
