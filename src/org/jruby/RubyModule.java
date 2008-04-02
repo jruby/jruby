@@ -1301,10 +1301,12 @@ public class RubyModule extends RubyObject {
         if(isSingleton()){            
             IRubyObject attached = ((MetaClass)this).getAttached();
             StringBuffer buffer = new StringBuffer("#<Class:");
-            if(attached instanceof RubyClass || attached instanceof RubyModule){
-                buffer.append(attached.inspect());
-            }else{
-                buffer.append(attached.anyToString());
+            if (attached != null) { // FIXME: figure out why we get null sometimes
+                if(attached instanceof RubyClass || attached instanceof RubyModule){
+                    buffer.append(attached.inspect());
+                }else{
+                    buffer.append(attached.anyToString());
+                }
             }
             buffer.append(">");
             return getRuntime().newString(buffer.toString());
