@@ -167,6 +167,11 @@ module Duby
         @superclass = superclass
       end
     end
+    
+    # Shortcut method to construct type references
+    def self.type(typesym, array = false)
+      TypeReference.new(typesym, array)
+    end
   end
 end
 
