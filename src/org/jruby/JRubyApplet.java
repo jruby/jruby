@@ -31,6 +31,7 @@ package org.jruby;
 import java.applet.Applet;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.Insets;
 import java.awt.Graphics;
@@ -65,7 +66,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextPane;
-import javax.swing.SwingUtilities;
 
 /**
  * @author <a href="mailto:mental@rydia.net">MenTaLguY</a>
@@ -150,6 +150,18 @@ public class JRubyApplet extends Applet {
         return JRubyApplet.class.getClassLoader().getResourceAsStream(name);
     }
 
+    private static void safeInvokeAndWait(Runnable runnable) throws InvocationTargetException, InterruptedException {
+        if (EventQueue.isDispatchThread()) {
+            try {
+                runnable.run();
+            } catch (Exception e) {
+                throw new InvocationTargetException(e);
+            }
+        } else {
+            EventQueue.invokeAndWait(runnable);
+        }
+    }
+
     public static class RubyMethods {
         @JRubyMethod
         public static IRubyObject on_start(IRubyObject recv, Block block) {
@@ -224,7 +236,7 @@ public class JRubyApplet extends Applet {
 
         try {
             final JRubyApplet applet = this;
-            SwingUtilities.invokeAndWait(new Runnable() {
+            safeInvokeAndWait(new Runnable() {
                 public void run() {
                     applet.setLayout(new BorderLayout());
                     applet.facade.attach(applet.runtime, applet);
@@ -248,7 +260,7 @@ public class JRubyApplet extends Applet {
         }
         final Ruby runtime = this.runtime;
         try {
-            SwingUtilities.invokeAndWait(new Runnable() {
+            safeInvokeAndWait(new Runnable() {
                 public void run() {
                     ThreadContext context = runtime.getCurrentContext();
                     proc.call(context, args, Block.NULL_BLOCK);
