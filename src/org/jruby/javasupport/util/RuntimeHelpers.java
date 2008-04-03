@@ -380,7 +380,11 @@ public class RuntimeHelpers {
             }
         }
         
-        return (RubyModule)rubyModule;
+        if (rubyModule instanceof RubyModule) {
+            return (RubyModule)rubyModule;
+        } else {
+            throw context.getRuntime().newTypeError(rubyModule + " is not a class/module");
+        }
     }
     
     public static IRubyObject setClassVariable(ThreadContext context, Ruby runtime, 

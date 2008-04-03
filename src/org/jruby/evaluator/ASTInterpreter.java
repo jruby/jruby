@@ -2112,7 +2112,11 @@ public class ASTInterpreter {
             IRubyObject result = evalInternal(runtime,context, ((Colon2Node) node).getLeftNode(), self, block);
 
             if (result != null && !result.isNil()) {
-                enclosingModule = (RubyModule) result;
+                if (result instanceof RubyModule) {
+                    enclosingModule = (RubyModule) result;
+                } else {
+                    throw runtime.newTypeError(result + " is not a class/module");
+                }
             }
         } else if (node instanceof Colon3Node) {
             enclosingModule = runtime.getObject();
