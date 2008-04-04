@@ -582,6 +582,7 @@ public class RubyStringIO extends RubyObject {
     @JRubyMethod(name = "rewind")
     public IRubyObject rewind() {
         this.pos = 0L;
+        this.eof = false;
         this.lineno = 0;
         return RubyFixnum.zero(getRuntime());
     }
