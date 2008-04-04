@@ -623,6 +623,7 @@
   	<delete dir="${build.dir}/rubyspec"/>
   	<mkdir dir="${build.dir}/rubyspec"/>
   	<untar src="${build.dir}/rubyspec.tgz" dest="${build.dir}/rubyspec" compression="gzip"/>
+	<chmod file="${build.dir}/rubyspec/code/mspec/bin/mspec" perm="755"/>
   	
   	<!-- Write down the revision of downloaded specs -->
     <propertyfile file="${build.dir}/rubyspecs.current.revision" comment="Revision of downloaded specs.">
@@ -664,6 +665,7 @@
       
       <mkdir dir="${build.dir}/rubyspec"/>
       <untar src="${build.dir}/rubyspec.tgz" dest="${build.dir}/rubyspec" compression="gzip"/>
+      <chmod file="${build.dir}/rubyspec/code/mspec/bin/mspec" perm="755"/>
   </target>
   
   <target name="do-fetch-specs" unless="rubyspec-repo-exists">
