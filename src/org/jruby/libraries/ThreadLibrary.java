@@ -42,6 +42,7 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyFloat;
 import org.jruby.RubyNumeric;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -82,6 +83,7 @@ public class ThreadLibrary implements Library {
     public static class Mutex extends RubyObject {
         private RubyThread owner = null;
 
+        @JRubyMethod(name = "new", rest = true, meta = true)
         public static Mutex newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
             Mutex result = new Mutex(recv.getRuntime(), (RubyClass)recv);
             result.callInit(args, block);
@@ -98,19 +100,15 @@ public class ThreadLibrary implements Library {
                     return new Mutex(runtime, klass);
                 }
             });
-            CallbackFactory cb = runtime.callbackFactory(Mutex.class);
-            cMutex.getMetaClass().defineMethod("new", cb.getOptSingletonMethod("newInstance"));
-            cMutex.defineFastMethod("locked?", cb.getFastMethod("locked_p"));
-            cMutex.defineFastMethod("try_lock", cb.getFastMethod("try_lock"));
-            cMutex.defineFastMethod("lock", cb.getFastMethod("lock"));
-            cMutex.defineFastMethod("unlock", cb.getFastMethod("unlock"));
-            cMutex.defineMethod("synchronize", cb.getMethod("synchronize"));
+            cMutex.defineAnnotatedMethods(Mutex.class);
         }
 
+        @JRubyMethod(name = "locked?")
         public synchronized RubyBoolean locked_p() {
             return ( owner != null ? getRuntime().getTrue() : getRuntime().getFalse() );
         }
 
+        @JRubyMethod
         public RubyBoolean try_lock() throws InterruptedException {
             //if (Thread.interrupted()) {
             //    throw new InterruptedException();
@@ -124,6 +122,7 @@ public class ThreadLibrary implements Library {
             return getRuntime().getTrue();
         }
 
+        @JRubyMethod
         public IRubyObject lock() throws InterruptedException {
             //if (Thread.interrupted()) {
             //    throw new InterruptedException();
@@ -144,6 +143,7 @@ public class ThreadLibrary implements Library {
             return this;
         }
 
+        @JRubyMethod
         public synchronized RubyBoolean unlock() {
             if ( owner != null ) {
                 owner = null;
@@ -154,6 +154,7 @@ public class ThreadLibrary implements Library {
             }
         }
 
+        @JRubyMethod
         public IRubyObject synchronize(Block block) throws InterruptedException {
             try {
                 lock();
