@@ -952,9 +952,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 NodeType argsNodeId,
                 ASTInspector inspector) {
             String closureMethodName = "closure_" + line + "_" + ++innerIndex;
-            String closureFieldName = "_" + closureMethodName;
             
-            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, closureFieldName, inspector);
+            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, inspector);
             
             closureCompiler.beginMethod(args, scope);
             
@@ -963,34 +962,14 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             closureCompiler.endMethod();
 
             // Done with closure compilation
-            /////////////////////////////////////////////////////////////////////////////
-            // Now, store a compiled block object somewhere we can access it in the future
-            // in current method, load the field to see if we've created a BlockCallback yet
-            method.aload(THIS);
-            method.getfield(classname, closureFieldName, ci(CompiledBlockCallback.class));
-            Label alreadyCreated = new Label();
-            method.ifnonnull(alreadyCreated);
-
-            // no callback, construct and cache it
-            method.aload(THIS);
-            getCallbackFactory();
-
-            method.ldc(closureMethodName);
-            method.aload(THIS);
-            method.invokevirtual(p(CallbackFactory.class), "getBlockCallback", sig(CompiledBlockCallback.class, params(String.class, Object.class)));
-            method.putfield(classname, closureFieldName, ci(CompiledBlockCallback.class));
-
-            method.label(alreadyCreated);
-
-            // Construct the block for passing to the target method
             loadThreadContext();
             loadSelf();
             method.ldc(new Integer(arity));
 
             buildStaticScopeNames(method, scope);
+            
+            cacheCompiler.cacheClosure(method, closureMethodName);
 
-            method.aload(THIS);
-            method.getfield(classname, closureFieldName, ci(CompiledBlockCallback.class));
             method.ldc(Boolean.valueOf(hasMultipleArgsHead));
             method.ldc(BlockBody.asArgumentType(argsNodeId));
             // if there's a sub-closure or there's scope-aware methods, it can't be "light"
@@ -1002,9 +981,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void runBeginBlock(StaticScope scope, CompilerCallback body) {
             String closureMethodName = "closure" + ++innerIndex;
-            String closureFieldName = "_" + closureMethodName;
             
-            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, closureFieldName, null);
+            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, null);
             
             closureCompiler.beginMethod(null, scope);
             
@@ -1013,33 +991,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             closureCompiler.endMethod();
 
             // Done with closure compilation
-            /////////////////////////////////////////////////////////////////////////////
-            // Now, store a compiled block object somewhere we can access it in the future
-            // in current method, load the field to see if we've created a BlockCallback yet
-            method.aload(THIS);
-            method.getfield(classname, closureFieldName, ci(CompiledBlockCallback.class));
-            Label alreadyCreated = new Label();
-            method.ifnonnull(alreadyCreated);
-
-            // no callback, construct and cache it
-            method.aload(THIS);
-            getCallbackFactory();
-
-            method.ldc(closureMethodName);
-            method.aload(THIS);
-            method.invokevirtual(p(CallbackFactory.class), "getBlockCallback", sig(CompiledBlockCallback.class, params(String.class, Object.class)));
-            method.putfield(classname, closureFieldName, ci(CompiledBlockCallback.class));
-
-            method.label(alreadyCreated);
-
-            // Construct the block for passing to the target method
             loadThreadContext();
             loadSelf();
 
             buildStaticScopeNames(method, scope);
-
-            method.aload(THIS);
-            method.getfield(classname, closureFieldName, ci(CompiledBlockCallback.class));
+            
+            cacheCompiler.cacheClosure(method, closureMethodName);
 
             invokeUtilityMethod("runBeginBlock", sig(IRubyObject.class,
                     params(ThreadContext.class, IRubyObject.class, String[].class, CompiledBlockCallback.class)));
@@ -1047,9 +1004,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void createNewForLoop(int arity, CompilerCallback body, CompilerCallback args, boolean hasMultipleArgsHead, NodeType argsNodeId) {
             String closureMethodName = "closure" + ++innerIndex;
-            String closureFieldName = "_" + closureMethodName;
             
-            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, closureFieldName, null);
+            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, null);
             
             closureCompiler.beginMethod(args, null);
             
@@ -1058,32 +1014,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             closureCompiler.endMethod();
 
             // Done with closure compilation
-            /////////////////////////////////////////////////////////////////////////////
-            // Now, store a compiled block object somewhere we can access it in the future
-            // in current method, load the field to see if we've created a BlockCallback yet
-            method.aload(THIS);
-            method.getfield(classname, closureFieldName, ci(CompiledBlockCallback.class));
-            Label alreadyCreated = new Label();
-            method.ifnonnull(alreadyCreated);
-
-            // no callback, construct and cache it
-            method.aload(THIS);
-            getCallbackFactory();
-
-            method.ldc(closureMethodName);
-            method.aload(THIS);
-            method.invokevirtual(p(CallbackFactory.class), "getBlockCallback", sig(CompiledBlockCallback.class, params(String.class, Object.class)));
-            method.putfield(classname, closureFieldName, ci(CompiledBlockCallback.class));
-
-            method.label(alreadyCreated);
-
-            // Construct the block for passing to the target method
             loadThreadContext();
             loadSelf();
             method.ldc(new Integer(arity));
-
-            method.aload(THIS);
-            method.getfield(classname, closureFieldName, ci(CompiledBlockCallback.class));
+            
+            cacheCompiler.cacheClosure(method, closureMethodName);
+            
             method.ldc(Boolean.valueOf(hasMultipleArgsHead));
             method.ldc(BlockBody.asArgumentType(argsNodeId));
 
@@ -1093,9 +1029,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void createNewEndBlock(CompilerCallback body) {
             String closureMethodName = "END_closure" + ++innerIndex;
-            String closureFieldName = "_" + closureMethodName;
             
-            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, closureFieldName, null);
+            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, null);
             
             closureCompiler.beginMethod(null, null);
             
@@ -1104,32 +1039,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             closureCompiler.endMethod();
 
             // Done with closure compilation
-            /////////////////////////////////////////////////////////////////////////////
-            // Now, store a compiled block object somewhere we can access it in the future
-            // in current method, load the field to see if we've created a BlockCallback yet
-            method.aload(THIS);
-            method.getfield(classname, closureFieldName, ci(CompiledBlockCallback.class));
-            Label alreadyCreated = new Label();
-            method.ifnonnull(alreadyCreated);
-
-            // no callback, construct and cache it
-            method.aload(THIS);
-            getCallbackFactory();
-
-            method.ldc(closureMethodName);
-            method.aload(THIS);
-            method.invokevirtual(p(CallbackFactory.class), "getBlockCallback", sig(CompiledBlockCallback.class, params(String.class, Object.class)));
-            method.putfield(classname, closureFieldName, ci(CompiledBlockCallback.class));
-
-            method.label(alreadyCreated);
-
-            // Construct the block for passing to the target method
             loadThreadContext();
             loadSelf();
             method.ldc(new Integer(0));
-
-            method.aload(THIS);
-            method.getfield(classname, closureFieldName, ci(CompiledBlockCallback.class));
+            
+            cacheCompiler.cacheClosure(method, closureMethodName);
+            
             method.ldc(false);
             method.ldc(Block.ZERO_ARGS);
 
@@ -1141,23 +1056,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             loadNil();
         }
 
-        private void getCallbackFactory() {
-            // FIXME: Perhaps a bit extra code, but only for defn/s; examine
-            loadRuntime();
-            getCompiledClass();
-            method.dup();
-            method.invokevirtual(p(Class.class), "getClassLoader", sig(ClassLoader.class));
-            method.invokestatic(p(CallbackFactory.class), "createFactory", sig(CallbackFactory.class, params(Ruby.class, Class.class, ClassLoader.class)));
-        }
-
         public void getCompiledClass() {
             method.aload(THIS);
             method.getfield(classname, "$class", ci(Class.class));
-        }
-
-        private void getRubyClass() {
-            loadThreadContext();
-            invokeThreadContext("getRubyClass", sig(RubyModule.class));
         }
 
         public void println() {
@@ -2418,11 +2319,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     public class ASMClosureCompiler extends AbstractMethodCompiler {
         private String closureMethodName;
         
-        public ASMClosureCompiler(String closureMethodName, String closureFieldName, ASTInspector inspector) {
+        public ASMClosureCompiler(String closureMethodName, ASTInspector inspector) {
             this.closureMethodName = closureMethodName;
-
-            // declare the field
-            getClassVisitor().visitField(ACC_PRIVATE, closureFieldName, ci(CompiledBlockCallback.class), null, null);
             
             method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, closureMethodName, CLOSURE_SIGNATURE, null, null));
             if (inspector == null) {

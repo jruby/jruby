@@ -15,6 +15,8 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
@@ -147,5 +149,47 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
         method.aload(StandardASMCompiler.RUNTIME_INDEX);
         method.invokevirtual(scriptCompiler.getClassname(), methodName, 
                 sig(RubySymbol.class, params(Ruby.class)));
+    }
+    
+    public void cacheClosure(SkinnyMethodAdapter method, String closureMethod) {
+        String closureFieldName = scriptCompiler.getNewConstant(ci(CompiledBlockCallback.class), "closure");
+
+        String closureMethodName = "getClosure_" + closureFieldName;
+
+        ClassVisitor cv = scriptCompiler.getClassVisitor();
+
+        {
+            SkinnyMethodAdapter closureGetter = new SkinnyMethodAdapter(
+                    cv.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_SYNTHETIC, closureMethodName, 
+                            sig(CompiledBlockCallback.class, Ruby.class), null, null));
+
+            closureGetter.aload(0);
+            closureGetter.getfield(scriptCompiler.getClassname(), closureFieldName, ci(CompiledBlockCallback.class));
+            closureGetter.dup();
+            Label alreadyCreated = new Label();
+            closureGetter.ifnonnull(alreadyCreated);
+
+            // no callback, construct and cache it
+            closureGetter.pop();
+            closureGetter.aload(0); // [this]
+            closureGetter.aload(1); // [this, runtime]
+            closureGetter.aload(0); // [this, runtime, this]
+            closureGetter.ldc(closureMethod); // [this, runtime, this, str]
+            closureGetter.invokestatic(p(RuntimeHelpers.class), "createBlockCallback",
+                    sig(CompiledBlockCallback.class, Ruby.class, Object.class, String.class)); // [this, callback]
+            closureGetter.putfield(scriptCompiler.getClassname(), closureFieldName, ci(CompiledBlockCallback.class)); // []
+            closureGetter.aload(0); // [this]
+            closureGetter.getfield(scriptCompiler.getClassname(), closureFieldName, ci(CompiledBlockCallback.class)); // [callback]
+
+            closureGetter.label(alreadyCreated);
+            closureGetter.areturn();
+
+            closureGetter.end();
+        }
+
+        method.aload(0);
+        method.aload(StandardASMCompiler.RUNTIME_INDEX);
+        method.invokevirtual(scriptCompiler.getClassname(), closureMethodName, 
+                sig(CompiledBlockCallback.class, params(Ruby.class)));
     }
 }

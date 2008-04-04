@@ -21,4 +21,6 @@ public interface CacheCompiler {
     public void cacheSymbol(SkinnyMethodAdapter method, String symbol);
     
     public void cacheBigInteger(SkinnyMethodAdapter method, BigInteger bigint);
+    
+    public void cacheClosure(SkinnyMethodAdapter method, String closureMethod);
 }

@@ -31,6 +31,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CompiledBlock;
 import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.CompiledBlockLight;
@@ -49,6 +50,14 @@ import org.jruby.util.TypeConverter;
  *
  */
 public class RuntimeHelpers {
+    public static CompiledBlockCallback createBlockCallback(Ruby runtime, Object scriptObject, String closureMethod) {
+        Class scriptClass = scriptObject.getClass();
+        ClassLoader scriptClassLoader = scriptClass.getClassLoader();
+        CallbackFactory factory = CallbackFactory.createFactory(runtime, scriptClass, scriptClassLoader);
+        
+        return factory.getBlockCallback(closureMethod, scriptObject);
+    }
+    
     public static Block createBlock(ThreadContext context, IRubyObject self, int arity, 
             String[] staticScopeNames, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argsNodeType, boolean light) {
         StaticScope staticScope = 
