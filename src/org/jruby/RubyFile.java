@@ -876,7 +876,7 @@ public class RubyFile extends RubyIO {
         String cwd = null;
         
         // Handle ~user paths 
-        relativePath = expandUserPath(context, recv, relativePath);
+        relativePath = expandUserPath(context, relativePath);
         
         // If there's a second argument, it's the path to which the first 
         // argument is relative.
@@ -885,7 +885,7 @@ public class RubyFile extends RubyIO {
             String cwdArg = RubyString.stringValue(args[1]).toString();
             
             // Handle ~user paths.
-            cwd = expandUserPath(context, recv, cwdArg);
+            cwd = expandUserPath(context, cwdArg);
 
             cwd = adjustRootPathOnWindows(runtime, cwd, null);
 
@@ -966,13 +966,13 @@ public class RubyFile extends RubyIO {
     /**
      * This method checks a path, and if it starts with ~, then it expands 
      * the path to the absolute path of the user's home directory. If the 
-     * string does not begin with ~, then the string is simply retuned 
+     * string does not begin with ~, then the string is simply returned.
      * unaltered.
      * @param recv
      * @param path Path to check
      * @return Expanded path
      */
-    private static String expandUserPath(ThreadContext context, IRubyObject recv, String path ) {
+    public static String expandUserPath(ThreadContext context, String path) {
         
         int pathLength = path.length();
 
@@ -983,7 +983,7 @@ public class RubyFile extends RubyIO {
             if (userEnd == -1) {
                 if (pathLength == 1) {
                     // Single '~' as whole path to expand
-                    path = RubyDir.getHomeDirectoryPath(context, recv).toString();
+                    path = RubyDir.getHomeDirectoryPath(context).toString();
                 } else {
                     // No directory delimeter.  Rest of string is username
                     userEnd = pathLength;
@@ -992,15 +992,15 @@ public class RubyFile extends RubyIO {
             
             if (userEnd == 1) {
                 // '~/...' as path to expand
-                path = RubyDir.getHomeDirectoryPath(context, recv).toString() +
+                path = RubyDir.getHomeDirectoryPath(context).toString() +
                         path.substring(1);
             } else if (userEnd > 1){
                 // '~user/...' as path to expand
                 String user = path.substring(1, userEnd);
-                IRubyObject dir = RubyDir.getHomeDirectoryPath(recv, user);
+                IRubyObject dir = RubyDir.getHomeDirectoryPath(context, user);
                 
                 if (dir.isNil()) {
-                    Ruby runtime = recv.getRuntime();
+                    Ruby runtime = context.getRuntime();
                     throw runtime.newArgumentError("user " + user + " does not exist");
                 }
                 

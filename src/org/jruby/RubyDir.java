@@ -244,7 +244,7 @@ public class RubyDir extends RubyObject {
     @JRubyMethod(name = "chdir", optional = 1, frame = true, meta = true)
     public static IRubyObject chdir(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         RubyString path = args.length == 1 ? 
-            (RubyString) args[0].convertToString() : getHomeDirectoryPath(context, recv);
+            (RubyString) args[0].convertToString() : getHomeDirectoryPath(context);
         String adjustedPath = RubyFile.adjustRootPathOnWindows(
                 recv.getRuntime(), path.toString(), null);
         checkDirIsTwoSlashesOnWindows(recv.getRuntime(), adjustedPath);
@@ -519,7 +519,7 @@ public class RubyDir extends RubyObject {
      * system. If the home directory of the specified user cannot be found,
      * an <code>ArgumentError it thrown</code>.
      */
-    public static IRubyObject getHomeDirectoryPath(IRubyObject recv, String user) {
+    public static IRubyObject getHomeDirectoryPath(ThreadContext context, String user) {
         /*
          * TODO: This version is better than the hackish previous one. Windows
          *       behavior needs to be defined though. I suppose this version
@@ -537,7 +537,7 @@ public class RubyDir extends RubyObject {
             stream.close();
             passwd = new String(bytes);
         } catch (IOException e) {
-            return recv.getRuntime().getNil();
+            return context.getRuntime().getNil();
         }
 
         String[] rows = passwd.split("\n");
@@ -545,15 +545,15 @@ public class RubyDir extends RubyObject {
         for (int i = 0; i < rowCount; i++) {
             String[] fields = rows[i].split(":");
             if (fields[0].equals(user)) {
-                return recv.getRuntime().newString(fields[5]);
+                return context.getRuntime().newString(fields[5]);
             }
         }
 
-        throw recv.getRuntime().newArgumentError("user " + user + " doesn't exist");
+        throw context.getRuntime().newArgumentError("user " + user + " doesn't exist");
     }
 
-    public static RubyString getHomeDirectoryPath(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = recv.getRuntime();
+    public static RubyString getHomeDirectoryPath(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
         RubyHash systemHash = (RubyHash) runtime.getObject().fastGetConstant("ENV_JAVA");
         RubyHash envHash = (RubyHash) runtime.getObject().fastGetConstant("ENV");
         IRubyObject home = envHash.op_aref(context, runtime.newString("HOME"));

@@ -48,6 +48,7 @@ import java.util.regex.Pattern;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.ast.executable.Script;
@@ -476,8 +477,9 @@ e.printStackTrace();
             } 
             try {
                 if (!Ruby.isSecurityRestricted()) {
-                    JRubyFile current = JRubyFile.create(JRubyFile.create(
-                            runtime.getCurrentDirectory(),entry).getAbsolutePath(), name);
+                    JRubyFile current = JRubyFile.create(
+                            JRubyFile.create(runtime.getCurrentDirectory(),entry).getAbsolutePath(),
+                            RubyFile.expandUserPath(runtime.getCurrentContext(), name));
                     if (current.isFile()) {
                         try {
                             return new LoadServiceResource(current.toURI().toURL(), current.getPath());
@@ -492,7 +494,9 @@ e.printStackTrace();
         if (checkCWD) {
             // check current directory; if file exists, retrieve URL and return resource
             try {
-                JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), name);
+                JRubyFile file = JRubyFile.create(
+                        runtime.getCurrentDirectory(),
+                        RubyFile.expandUserPath(runtime.getCurrentContext(), name));
                 if (file.isFile() && file.isAbsolute()) {
                     try {
                         return new LoadServiceResource(file.toURI().toURL(), name);
