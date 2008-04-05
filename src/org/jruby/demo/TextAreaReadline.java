@@ -195,6 +195,8 @@ public class TextAreaReadline implements KeyListener {
     
     public TextAreaReadline(JTextComponent area, final String message) {
         this.area = area;
+
+        inputJoin.send(Channel.EMPTY.ordinal(), null);
         
         area.addKeyListener(this);
         
