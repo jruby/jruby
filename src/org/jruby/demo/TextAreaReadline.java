@@ -155,7 +155,7 @@ public class TextAreaReadline implements KeyListener {
             public void react(Join join, Object[] args) {
                 final ReadRequest request = (ReadRequest)args[0];
                 final String line = (String)args[2];
-                if (!line.isEmpty()) {
+                if (line.length() != 0) {
                     byte[] bytes;
                     try {
                         bytes = line.getBytes("UTF-8");
@@ -506,7 +506,9 @@ public class TextAreaReadline implements KeyListener {
             try {
                 return (Integer)request.waitForReply();
             } catch (InterruptedException e) {
-                throw new IOException(e);
+                IOException ioEx = new IOException();
+                ioEx.initCause(e);
+                throw ioEx;
             }
         }
 
@@ -545,7 +547,9 @@ public class TextAreaReadline implements KeyListener {
             try {
                 return (Integer)request.waitForReply();
             } catch (InterruptedException e) {
-                throw new IOException(e);
+                IOException ioEx = new IOException();
+                ioEx.initCause(e);
+                throw ioEx;
             }
         }
 
