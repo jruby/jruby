@@ -205,7 +205,7 @@ public class JRubyApplet extends Applet {
     public void init() {
         super.init();
 
-        if (getBooleanParameter("console", false)) {
+        if (getBooleanParameter("jruby.console", false)) {
             facade = new ConsoleFacade();
         } else {
             facade = new TrivialFacade();
@@ -220,7 +220,7 @@ public class JRubyApplet extends Applet {
                 setInput(facade.getInputStream());
                 setOutput(facade.getOutputStream());
                 setError(facade.getErrorStream());
-                setObjectSpaceEnabled(getBooleanParameter("objectspace", false));
+                setObjectSpaceEnabled(getBooleanParameter("jruby.objectspace", false));
             }};
             Ruby.setSecurityRestricted(true);
             runtime = Ruby.newInstance(config);
@@ -230,9 +230,9 @@ public class JRubyApplet extends Applet {
             rubyObject.getMetaClass().defineAnnotatedMethods(RubyMethods.class);
         }
 
-        final String scriptName = getParameter("script");
+        final String scriptName = getParameter("jruby.script");
         final InputStream scriptStream = getCodeResourceAsStream(scriptName);
-        final String evalString = getParameter("eval");
+        final String evalString = getParameter("jruby.eval");
 
         try {
             final JRubyApplet applet = this;
