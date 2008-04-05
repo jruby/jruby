@@ -35,6 +35,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
+import org.jruby.util.Join;
 
 public class TextAreaReadline implements KeyListener {
     private static final String EMPTY_LINE = "";
@@ -52,13 +53,142 @@ public class TextAreaReadline implements KeyListener {
     private BasicComboPopup completePopup;
     private int start;
     private int end;
-    private volatile boolean finished = false;
 
     private final InputStream inputStream = new Input();
     private final OutputStream outputStream = new Output();
 
-    private volatile BlockingQueue<String> pendingLines = new LinkedBlockingQueue<String>();
-    
+    private static class InputBuffer {
+        public final byte[] bytes;
+        public int offset = 0;
+        public InputBuffer(byte[] bytes) {
+            this.bytes = bytes;
+        }
+    }
+
+    public enum Channel {
+        AVAILABLE,
+        READ,
+        BUFFER,
+        EMPTY,
+        LINE,
+        GET_LINE,
+        SHUTDOWN,
+        FINISHED
+    }
+
+    private static class ReadRequest extends Join.SyncRequest {
+        public final byte[] b;
+        public final int off;
+        public final int len;
+        public ReadRequest(byte[] b, int off, int len) {
+            this.b = b;
+            this.off = off;
+            this.len = len;
+        }
+
+        public void perform(Join join, InputBuffer buffer) {
+            final int available = buffer.bytes.length - buffer.offset;
+            int len = this.len;
+            if ( len > available ) {
+                len = available;
+            }
+            if ( len == available ) {
+                join.send(Channel.EMPTY.ordinal(), null);
+            } else {
+                buffer.offset += len;
+                join.send(Channel.BUFFER.ordinal(), buffer);
+            }
+            System.arraycopy(buffer.bytes, buffer.offset, this.b, this.off, len);
+            sendReply(len);
+        }
+    }
+
+    private static final Join.Reaction[] INPUT_REACTIONS = new Join.Reaction[] {
+        new Join.Reaction(Channel.SHUTDOWN.ordinal(), Channel.BUFFER.ordinal()) {
+            public void react(Join join, Object[] args) {
+                join.send(Channel.FINISHED.ordinal(), null);
+            }
+        },
+        new Join.Reaction(Channel.SHUTDOWN.ordinal(), Channel.EMPTY.ordinal()) {
+            public void react(Join join, Object[] args) {
+                join.send(Channel.FINISHED.ordinal(), null);
+            }
+        },
+        new Join.Reaction(Channel.SHUTDOWN.ordinal(), Channel.FINISHED.ordinal()) {
+            public void react(Join join, Object[] args) {
+                join.send(Channel.FINISHED.ordinal(), null);
+            }
+        },
+
+        new Join.Reaction(Channel.FINISHED.ordinal(), Channel.LINE.ordinal()) {
+            public void react(Join join, Object[] args) {
+                join.send(Channel.FINISHED.ordinal(), null);
+            }
+        },
+
+        new Join.Reaction(Channel.AVAILABLE.ordinal(), Channel.BUFFER.ordinal()) {
+            public void react(Join join, Object[] args) {
+                InputBuffer buffer = (InputBuffer)args[1];
+                join.send(Channel.BUFFER.ordinal(), buffer);
+                ((Join.SyncRequest)args[0]).sendReply(buffer.bytes.length - buffer.offset);
+            }
+        },
+        new Join.Reaction(Channel.AVAILABLE.ordinal(), Channel.EMPTY.ordinal()) {
+            public void react(Join join, Object[] args) {
+                join.send(Channel.EMPTY.ordinal(), null);
+                ((Join.SyncRequest)args[0]).sendReply(0);
+            }
+        },
+        new Join.Reaction(Channel.AVAILABLE.ordinal(), Channel.FINISHED.ordinal()) {
+            public void react(Join join, Object[] args) {
+                join.send(Channel.FINISHED.ordinal(), null);
+                ((Join.SyncRequest)args[0]).sendReply(0);
+            }
+        },
+
+        new Join.Reaction(Channel.READ.ordinal(), Channel.BUFFER.ordinal()) {
+            public void react(Join join, Object[] args) {
+                ((ReadRequest)args[0]).perform(join, (InputBuffer)args[1]);
+            }
+        },
+        new Join.Reaction(Channel.READ.ordinal(), Channel.EMPTY.ordinal(), Channel.LINE.ordinal()) {
+            public void react(Join join, Object[] args) {
+                final ReadRequest request = (ReadRequest)args[0];
+                final String line = (String)args[2];
+                if (!line.isEmpty()) {
+                    byte[] bytes;
+                    try {
+                        bytes = line.getBytes("UTF-8");
+                    } catch (UnsupportedEncodingException e) {
+                        bytes = line.getBytes();
+                    }
+                    request.perform(join, new InputBuffer(bytes));
+                } else {
+                    request.sendReply(-1);
+                }
+            }
+        },
+        new Join.Reaction(Channel.READ.ordinal(), Channel.FINISHED.ordinal()) {
+            public void react(Join join, Object[] args) {
+                join.send(Channel.FINISHED.ordinal(), null);
+                ((ReadRequest)args[0]).sendReply(-1);
+            }
+        },
+
+        new Join.Reaction(Channel.GET_LINE.ordinal(), Channel.LINE.ordinal()) {
+            public void react(Join join, Object[] args) {
+                ((Join.SyncRequest)args[0]).sendReply(args[1]);
+            }
+        },
+        new Join.Reaction(Channel.GET_LINE.ordinal(), Channel.FINISHED.ordinal()) {
+            public void react(Join join, Object[] args) {
+                join.send(Channel.FINISHED.ordinal(), null);
+                ((Join.SyncRequest)args[0]).sendReply(EMPTY_LINE);
+            }
+        }
+    };
+    private final Join inputJoin = new Join(INPUT_REACTIONS);
+
     public TextAreaReadline(JTextComponent area) {
         this(area, null);
     }
@@ -273,11 +403,9 @@ public class TextAreaReadline implements KeyListener {
         
         append("\n", null);
         
-        if (!finished) {
-            String line = getLine();
-            startPos = area.getDocument().getLength();
-            pendingLines.offer(line);
-        }
+        String line = getLine();
+        startPos = area.getDocument().getLength();
+        inputJoin.send(Channel.LINE.ordinal(), line);
     }
     
     public String readLine(final String prompt) {
@@ -296,13 +424,12 @@ public class TextAreaReadline implements KeyListener {
         });
         
         try {
-            String line = pendingLines.take();
+            Join.SyncRequest request = new Join.SyncRequest();
+            inputJoin.send(Channel.GET_LINE.ordinal(), request);
+            String line = (String)request.waitForReply(); 
             if (line.length() > 0) {
                 return line.trim();
             } else {
-                if (finished) {
-                    pendingLines.offer(EMPTY_LINE);
-                }
                 return null;
             }
         } catch (InterruptedException e) {
@@ -334,6 +461,10 @@ public class TextAreaReadline implements KeyListener {
     public void keyReleased(KeyEvent arg0) { }
 
     public void keyTyped(KeyEvent arg0) { }
+
+    public void shutdown() {
+        inputJoin.send(Channel.SHUTDOWN.ordinal(), null);
+    }
     
     /** Output methods **/
     
@@ -362,62 +493,39 @@ public class TextAreaReadline implements KeyListener {
     }
 
     private class Input extends InputStream {
-        private byte[] bytes = null;
-        private int offset = 0;
+        private volatile boolean closed = false;
 
         @Override
-        public synchronized int available() {
-            if (bytes != null) {
-                return bytes.length - offset;
-            } else {
-                return 0;
+        public int available() throws IOException {
+            if (closed) {
+                throw new IOException("Stream is closed");
+            }
+
+            Join.SyncRequest request = new Join.SyncRequest();
+            inputJoin.send(Channel.AVAILABLE.ordinal(), request);
+            try {
+                return (Integer)request.waitForReply();
+            } catch (InterruptedException e) {
+                throw new IOException(e);
             }
         }
 
-        private boolean ensureBytes() throws IOException {
-            if (bytes == null) {
-                String line;
-                try {
-                    line = pendingLines.take();
-                } catch (InterruptedException e) {
-                    IOException ioEx = new IOException("Interrupted");
-                    ioEx.initCause(e);
-                    throw ioEx;
-                }
-                if (line.length() > 0) {
-                    try {
-                        bytes = line.getBytes("UTF-8");
-                    } catch (UnsupportedEncodingException e) {
-                        bytes = line.getBytes();
-                    }
-                } else if (finished) {
-                    pendingLines.offer(EMPTY_LINE);
-                }
-            }
-            return bytes != null;
-        }
-
         @Override
-        public synchronized int read() throws IOException {
-            if (EventQueue.isDispatchThread()) {
-                throw new IOException("Cannot call read from event dispatch thread");
-            }
-
-            if (ensureBytes()) {
-                assert bytes.length > 0;
-                int b = bytes[offset];
-                if ( ++offset == bytes.length ) {
-                    offset = 0;
-                    bytes = null;
-                }
-                return b;
+        public int read() throws IOException {
+            byte[] b = new byte[1];
+            if ( read(b, 0, 1) == 1 ) {
+                return b[0];
             } else {
                 return -1;
             }
         }
 
         @Override
-        public synchronized int read(byte[] b, int off, int len) throws IOException {
+        public int read(byte[] b, int off, int len) throws IOException {
+            if (closed) {
+                throw new IOException("Stream is closed");
+            }
+
             if (EventQueue.isDispatchThread()) {
                 throw new IOException("Cannot call read from event dispatch thread");
             }
@@ -432,30 +540,19 @@ public class TextAreaReadline implements KeyListener {
                 return 0;
             }
 
-            if (ensureBytes()) {
-                final int remaining = bytes.length - offset;
-                if (len > remaining) {
-                    len = remaining;
-                }
-                System.arraycopy(bytes, offset, b, off, len);
-                offset += len;
-                if (len == remaining) {
-                    offset = 0;
-                    bytes = null;
-                }
-                return len;
-            } else {
-                return -1;
+            ReadRequest request = new ReadRequest(b, off, len);
+            inputJoin.send(Channel.READ.ordinal(), request);
+            try {
+                return (Integer)request.waitForReply();
+            } catch (InterruptedException e) {
+                throw new IOException(e);
             }
         }
 
         @Override
-        public synchronized void close() {
-            offset = 0;
-            bytes = null;
-            finished = true;
-            pendingLines.clear();
-            pendingLines.offer(EMPTY_LINE);
+        public void close() {
+            closed = true;
+            inputJoin.send(Channel.SHUTDOWN.ordinal(), null);
         }
     }
 

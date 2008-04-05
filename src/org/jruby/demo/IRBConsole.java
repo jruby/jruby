@@ -52,10 +52,7 @@ public class IRBConsole extends JFrame {
         final TextAreaReadline tar = new TextAreaReadline(text, " Welcome to the JRuby IRB Console \n\n");
         console.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
-                try {
-                    tar.getInputStream().close();
-                } catch (IOException ex) {
-                }
+                tar.shutdown();
             }
         });
 

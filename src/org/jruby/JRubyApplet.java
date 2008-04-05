@@ -417,10 +417,7 @@ public class JRubyApplet extends Applet {
         }
 
         public void destroy() {
-            try {
-                adaptor.getInputStream().close();
-            } catch (IOException e) {
-            }
+            adaptor.shutdown();
         }
 
         private Font findFont(String otherwise, int style, int size, String[] families) {
