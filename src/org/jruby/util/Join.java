@@ -89,10 +89,11 @@ public final class Join {
                     final int[] indices = reaction.indices;
                     args = new Object[indices.length];
                     for ( int i = 0 ; i < indices.length ; ++i ) {
-                        final LinkedList reading = writes[indices[i]];
+                        final int readIndex = indices[i];
+                        final LinkedList reading = writes[readIndex];
                         args[i] = reading.removeFirst();
                         if (reading.isEmpty()) {
-                            mask &= ~(1L << i);
+                            mask &= ~(1L << readIndex);
                         }
                     }
                     break;
