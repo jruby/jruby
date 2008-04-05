@@ -432,7 +432,26 @@ class TestFile < Test::Unit::TestCase
       assert_raise(Errno::EINVAL) { f.truncate(2) }
     end
   end
-  
+
+  # JRUBY-1886
+  def test_file_truncated_after_changing_directory
+    subdir = "./testDir_1"
+    Dir.mkdir(subdir)
+    Dir.chdir(subdir) { |dir|
+      begin
+        file = File.open("__dummy_file.txt", "wb") { |file|
+          file.write("dummy text")
+          file
+        }
+        assert_nothing_raised { File.truncate(file.path, 0) }
+      ensure
+        File.unlink(file.path)
+      end
+    }
+  ensure
+    Dir.rmdir(subdir)
+  end
+
   def test_file_size_query
     assert(File.size?('build.xml'))
   end

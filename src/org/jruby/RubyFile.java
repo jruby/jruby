@@ -1398,8 +1398,9 @@ public class RubyFile extends RubyIO {
         RubyString filename = arg1.convertToString(); // TODO: SafeStringValue here
         RubyInteger newLength = arg2.convertToInteger(); 
         
-        if (!new File(filename.getByteList().toString()).exists()) {
-            throw runtime.newErrnoENOENTError("No such file or directory - " + filename.getByteList().toString());
+        if (!new File(runtime.getCurrentDirectory(), filename.getByteList().toString()).exists()) {
+            throw runtime.newErrnoENOENTError(
+                    "No such file or directory - " + filename.getByteList().toString());
         }
 
         if (newLength.getLongValue() < 0) {
