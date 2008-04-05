@@ -98,7 +98,6 @@ public class JRubyApplet extends Applet {
     private Ruby runtime;
     private boolean doubleBuffered = true;
     private Color backgroundColor = Color.WHITE;
-    private IRubyObject rubyObject;
     private RubyProc startProc;
     private RubyProc stopProc;
     private RubyProc destroyProc;
@@ -224,10 +223,6 @@ public class JRubyApplet extends Applet {
             }};
             Ruby.setSecurityRestricted(true);
             runtime = Ruby.newInstance(config);
-            rubyObject = JavaUtil.convertJavaToUsableRubyObject(runtime, this);
-            rubyObject.dataWrapStruct(this);
-            runtime.defineGlobalConstant("JRUBY_APPLET", rubyObject);
-            rubyObject.getMetaClass().defineAnnotatedMethods(RubyMethods.class);
         }
 
         final String scriptName = getParameter("jruby.script");
@@ -310,7 +305,6 @@ public class JRubyApplet extends Applet {
             facade.destroy();
             final Ruby runtime = this.runtime;
             this.runtime = null;
-            rubyObject = null;
             startProc = null;
             stopProc = null;
             destroyProc = null;
@@ -376,7 +370,12 @@ public class JRubyApplet extends Applet {
         public InputStream getInputStream() { return System.in; }
         public PrintStream getOutputStream() { return System.out; }
         public PrintStream getErrorStream() { return System.err; }
-        public void attach(Ruby runtime, Applet applet) {}
+        public void attach(Ruby runtime, Applet applet) {
+            final IRubyObject wrappedApplet = JavaUtil.convertJavaToUsableRubyObject(runtime, applet);
+            wrappedApplet.dataWrapStruct(applet);
+            runtime.defineGlobalConstant("JRUBY_APPLET", wrappedApplet);
+            wrappedApplet.getMetaClass().defineAnnotatedMethods(RubyMethods.class);
+        }
         public void destroy() {}
     }
 
@@ -410,9 +409,11 @@ public class JRubyApplet extends Applet {
             outputStream = new PrintStream(adaptor.getOutputStream());
             errorStream = new PrintStream(adaptor.getOutputStream());
         }
+
         public InputStream getInputStream() { return inputStream; }
         public PrintStream getOutputStream() { return outputStream; }
         public PrintStream getErrorStream() { return errorStream; }
+
         public void attach(Ruby runtime, Applet applet) {
             adaptor.hookIntoRuntime(runtime);
             applet.add(scrollPane);
