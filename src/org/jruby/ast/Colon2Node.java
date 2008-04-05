@@ -41,7 +41,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /** 
  * Represents a '::' constant access or method call (Java::JavaClass).
  */
-public class Colon2Node extends Colon3Node implements INameNode {
+public final class Colon2Node extends Colon3Node implements INameNode {
     private final Node leftNode;
 
     public Colon2Node(ISourcePosition position, Node leftNode, String name) {

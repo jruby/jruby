@@ -749,7 +749,7 @@ public class ASTInterpreter {
 
     private static IRubyObject classNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         ClassNode iVisited = (ClassNode) node;
-        Node classNameNode = iVisited.getCPath();
+        Colon3Node classNameNode = iVisited.getCPath();
 
         RubyModule enclosingClass = getEnclosingModule(runtime, context, classNameNode, self, aBlock);
 
@@ -1296,7 +1296,7 @@ public class ASTInterpreter {
 
     private static IRubyObject moduleNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         ModuleNode iVisited = (ModuleNode) node;
-        Node classNameNode = iVisited.getCPath();
+        Colon3Node classNameNode = iVisited.getCPath();
 
         RubyModule enclosingModule = getEnclosingModule(runtime, context, classNameNode, self, aBlock);
 
@@ -2105,28 +2105,19 @@ public class ASTInterpreter {
         return null;
     }
 
-    private static RubyModule getEnclosingModule(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block block) {
-        RubyModule enclosingModule = null;
-
+    private static RubyModule getEnclosingModule(Ruby runtime, ThreadContext context, Colon3Node node, IRubyObject self, Block block) {
         if (node instanceof Colon2Node) {
-            IRubyObject result = evalInternal(runtime,context, ((Colon2Node) node).getLeftNode(), self, block);
-
-            if (result != null && !result.isNil()) {
-                if (result instanceof RubyModule) {
-                    enclosingModule = (RubyModule) result;
-                } else {
-                    throw runtime.newTypeError(result + " is not a class/module");
-                }
+            Colon2Node c2Node = (Colon2Node)node;
+            if (c2Node.getLeftNode() != null) {            
+                IRubyObject result = evalInternal(runtime,context, ((Colon2Node) node).getLeftNode(), self, block);
+                return RuntimeHelpers.prepareClassNamespace(context, result);
+            } else {
+                return context.getCurrentScope().getStaticScope().getModule();
             }
-        } else if (node instanceof Colon3Node) {
-            enclosingModule = runtime.getObject();
+            
+        } else { // instanceof Colon3Node
+            return runtime.getObject();
         }
-
-        if (enclosingModule == null) {
-            enclosingModule = context.getCurrentScope().getStaticScope().getModule();
-        }
-
-        return enclosingModule;
     }
 
     /**

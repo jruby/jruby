@@ -381,14 +381,14 @@ public class RuntimeHelpers {
     }
     
     public static RubyModule prepareClassNamespace(ThreadContext context, IRubyObject rubyModule) {
-        if (rubyModule == null || rubyModule.isNil()) {
+        if (rubyModule == null || rubyModule.isNil()) { // the isNil check should go away since class nil::Foo;end is not supposed be correct
             rubyModule = context.getCurrentScope().getStaticScope().getModule();
-            
+
             if (rubyModule == null) {
                 throw context.getRuntime().newTypeError("no outer class/module");
             }
         }
-        
+
         if (rubyModule instanceof RubyModule) {
             return (RubyModule)rubyModule;
         } else {
