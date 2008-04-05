@@ -129,12 +129,12 @@ public class JRubyApplet extends Applet {
         }
     }
 
-    private boolean getBooleanParameter(String name, boolean default_value) {
+    private boolean getBooleanParameter(String name, boolean defaultValue) {
         String value = getParameter(name);
         if ( value != null ) {
             return value.equals("true");
         } else {
-            return default_value;
+            return defaultValue;
         }
     }
 
@@ -206,7 +206,7 @@ public class JRubyApplet extends Applet {
         super.init();
 
         if (getBooleanParameter("jruby.console", false)) {
-            facade = new ConsoleFacade();
+            facade = new ConsoleFacade(getParameter("jruby.banner"));
         } else {
             facade = new TrivialFacade();
         }
@@ -388,7 +388,7 @@ public class JRubyApplet extends Applet {
         private PrintStream outputStream;
         private PrintStream errorStream;
         
-        public ConsoleFacade() {
+        public ConsoleFacade(String bannerText) {
             textPane = new JTextPane();
 	    textPane.setMargin(new Insets(4, 4, 0, 4));
             textPane.setCaretColor(new Color(0xa4, 0x00, 0x00));
@@ -402,7 +402,10 @@ public class JRubyApplet extends Applet {
 
             scrollPane = new JScrollPane(textPane);
             scrollPane.setDoubleBuffered(true);
-            adaptor = new TextAreaReadline(textPane, "  JRuby applet console  \n\n");
+            if ( bannerText != null ) {
+                bannerText = "  " + bannerText + "  \n\n";
+            }
+            adaptor = new TextAreaReadline(textPane, bannerText);
             inputStream = adaptor.getInputStream();
             outputStream = new PrintStream(adaptor.getOutputStream());
             errorStream = new PrintStream(adaptor.getOutputStream());
