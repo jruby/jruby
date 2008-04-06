@@ -157,6 +157,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.IdUtil;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.InterpretedBlock;
 import org.jruby.util.TypeConverter;
@@ -816,15 +817,18 @@ public class ASTInterpreter {
         // TODO: Made this more colon3 friendly because of cpath production
         // rule in grammar (it is convenient to think of them as the same thing
         // at a grammar level even though evaluation is).
+
         if (leftNode == null) {
             return runtime.getObject().fastGetConstantFrom(iVisited.getName());
         } else {
             IRubyObject result = evalInternal(runtime,context, iVisited.getLeftNode(), self, aBlock);
-            if (result instanceof RubyModule) {
-                return ((RubyModule) result).fastGetConstantFrom(iVisited.getName());
-            } else {
-                return result.callMethod(context, iVisited.getName(), IRubyObject.NULL_ARRAY, aBlock);
+            if (IdUtil.isConstant(iVisited.getName())) {
+                if (result instanceof RubyModule) return ((RubyModule) result).fastGetConstantFrom(iVisited.getName());
+
+                throw runtime.newTypeError(result + " is not a class/module");
             }
+
+            return result.callMethod(context, iVisited.getName(), IRubyObject.NULL_ARRAY, aBlock);
         }
     }
 
