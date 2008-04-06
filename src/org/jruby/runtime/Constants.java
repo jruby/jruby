@@ -74,7 +74,7 @@ public final class Constants {
         if (matcher.find()) {
             REVISION = matcher.group(1);
         } else {
-            REVISION = "unknown";
+            REVISION = "0000";
         }
         RUBY_PATCHLEVEL = REVISION;
     }
