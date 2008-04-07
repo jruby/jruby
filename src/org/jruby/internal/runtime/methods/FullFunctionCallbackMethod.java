@@ -55,7 +55,7 @@ public class FullFunctionCallbackMethod extends DynamicMethod implements JumpTar
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         try {
-            callConfig.pre(context, self, clazz, getArity(), name, args, block, null, this);
+            callConfig.pre(context, self, clazz, getArity(), name, block, null, this);
             
             assert args != null;
             Ruby runtime = context.getRuntime();

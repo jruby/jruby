@@ -791,39 +791,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         mv.aload(RECEIVER_INDEX); // self
         mv.aload(NAME_INDEX); // name
         
-        loadArgumentsForPre(mv, specificArity);
-        
         loadBlockForPre(mv, specificArity, block);
         
-        mv.invokevirtual(superClass, "pre", sig(void.class, params(ThreadContext.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class)));
-    }
-    
-    private void loadArgumentsForPre(SkinnyMethodAdapter mv, int specificArity) {
-        switch (specificArity) {
-        default:
-        case -1:
-            mv.aload(ARGS_INDEX); // args
-            break;
-        case 0:
-            // zero arity but we have pre/post; use NULL_ARRAY
-            mv.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
-            break;
-        case 1:
-            mv.aload(ARGS_INDEX);
-            mv.invokestatic(p(RuntimeHelpers.class), "constructObjectArray", sig(IRubyObject[].class, IRubyObject.class));
-            break;
-        case 2:
-            mv.aload(ARGS_INDEX);
-            mv.aload(ARGS_INDEX + 1);
-            mv.invokestatic(p(RuntimeHelpers.class), "constructObjectArray", sig(IRubyObject[].class, IRubyObject.class, IRubyObject.class));
-            break;
-        case 3:
-            mv.aload(ARGS_INDEX);
-            mv.aload(ARGS_INDEX + 1);
-            mv.aload(ARGS_INDEX + 2);
-            mv.invokestatic(p(RuntimeHelpers.class), "constructObjectArray", sig(IRubyObject[].class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
-            break;
-        }
+        mv.invokevirtual(superClass, "pre", sig(void.class, params(ThreadContext.class, IRubyObject.class, String.class, Block.class)));
     }
 
     private void loadArguments(SkinnyMethodAdapter mv, JRubyMethod jrubyMethod, int specificArity) {

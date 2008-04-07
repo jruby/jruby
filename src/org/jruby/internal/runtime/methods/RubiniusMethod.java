@@ -63,7 +63,7 @@ public class RubiniusMethod extends DynamicMethod implements JumpTarget {
         //        System.err.println("--- entering " + cmethod.name);
         Ruby runtime = context.getRuntime();
         
-        callConfig.pre(context, self, klazz, getArity(), name, args, block, staticScope, this);
+        callConfig.pre(context, self, klazz, getArity(), name, block, staticScope, this);
         
         try {
             if (runtime.hasEventHooks()) {

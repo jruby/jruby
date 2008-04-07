@@ -43,6 +43,7 @@ import org.jruby.compiler.JITCompiler;
 import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -121,13 +122,9 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         return staticScope;
     }
 
-    /**
-     * @see AbstractCallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
-     */
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         assert args != null;
-
-        RubyModule implementer = getImplementationClass();
         
         Ruby runtime = context.getRuntime();
 
@@ -137,57 +134,266 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         
         if (jitCompiledScript != null && !runtime.hasEventHooks()) {
             try {
-                // FIXME: For some reason this wants (and works with) clazz instead of implementer,
-                // and needed it for compiled module method_function's called from outside the module. Why?
-                jitCallConfig.pre(context, self, implementer, getArity(), name, args, block, staticScope, this);
+                jitPre(context, self, name, block);
 
                 return jitCompiledScript.__file__(context, self, args, block);
             } catch (JumpException.ReturnJump rj) {
-                if (rj.getTarget() == this) {
-                    return (IRubyObject) rj.getValue();
-                }
-                throw rj;
+                return handleReturn(rj);
             } catch (JumpException.RedoJump rj) {
-                    throw runtime.newLocalJumpError("redo", runtime.getNil(), "unexpected redo");
+                return handleRedo(runtime);
             } finally {
-                if (runtime.hasEventHooks()) {
-                    traceReturn(context, runtime, name);
-                }
-                jitCallConfig.post(context);
+                jitPost(runtime, context, name);
             }
         } else {
-            try {
-                callConfig.pre(context, self, implementer, getArity(), name, args, block, staticScope, this);
-                if (argsNode.getBlockArgNode() != null) {
-                    context.getCurrentScope().setValue(
-                            argsNode.getBlockArgNode().getCount(),
-                            RuntimeHelpers.processBlockArgument(runtime, block),
-                            0);
-                }
-
-                getArity().checkArity(runtime, args);
-
-                prepareArguments(context, runtime, args);
-
-                if (runtime.hasEventHooks()) {
-                    traceCall(context, runtime, name);
-                }
-
-                return ASTInterpreter.eval(runtime, context, body, self, block);
-            } catch (JumpException.ReturnJump rj) {
-                if (rj.getTarget() == this) {
-                    return (IRubyObject) rj.getValue();
-                }
-                throw rj;
-            } catch (JumpException.RedoJump rj) {
-                throw runtime.newLocalJumpError("redo", runtime.getNil(), "unexpected redo");
-            } finally {
-                if (runtime.hasEventHooks()) {
-                    traceReturn(context, runtime, name);
-                }
-                callConfig.post(context);
-            }
+            return interpretedCall(context, runtime, self, clazz, name, args, block);
         }
+    }
+
+    public IRubyObject interpretedCall(ThreadContext context, Ruby runtime, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+        try {
+            RubyModule implementer = getImplementationClass();
+
+            callConfig.pre(context, self, implementer, getArity(), name, block, staticScope, this);
+            if (argsNode.getBlockArgNode() != null) {
+                context.getCurrentScope().setValue(
+                        argsNode.getBlockArgNode().getCount(),
+                        RuntimeHelpers.processBlockArgument(runtime, block),
+                        0);
+            }
+
+            getArity().checkArity(runtime, args);
+
+            prepareArguments(context, runtime, args);
+
+            if (runtime.hasEventHooks()) {
+                traceCall(context, runtime, name);
+            }
+
+            return ASTInterpreter.eval(runtime, context, body, self, block);
+        } catch (JumpException.ReturnJump rj) {
+            return handleReturn(rj);
+        } catch (JumpException.RedoJump rj) {
+            return handleRedo(runtime);
+        } finally {
+            if (runtime.hasEventHooks()) {
+                traceReturn(context, runtime, name);
+            }
+            callConfig.post(context);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+        
+        if (jitCompiledScript != null && !runtime.hasEventHooks()) {
+            try {
+                jitPre(context, self, name, Block.NULL_BLOCK);
+
+                return jitCompiledScript.__file__(context, self, args, Block.NULL_BLOCK);
+            } catch (JumpException.ReturnJump rj) {
+                return handleReturn(rj);
+            } catch (JumpException.RedoJump rj) {
+                return handleRedo(runtime);
+            } finally {
+                jitPost(runtime,context, name);
+            }
+        } else {
+            return call(context, self, clazz, name, args, Block.NULL_BLOCK);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+        Ruby runtime = context.getRuntime();
+        
+        if (jitCompiledScript != null && !runtime.hasEventHooks()) {
+            try {
+                jitPre(context, self, name, Block.NULL_BLOCK);
+
+                return jitCompiledScript.__file__(context, self, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+            } catch (JumpException.ReturnJump rj) {
+                return handleReturn(rj);
+            } catch (JumpException.RedoJump rj) {
+                return handleRedo(runtime);
+            } finally {
+                jitPost(runtime, context, name);
+            }
+        } else {
+            return call(context, self, clazz, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+        Ruby runtime = context.getRuntime();
+        
+        if (jitCompiledScript != null && !runtime.hasEventHooks()) {
+            try {
+                jitPre(context, self, name, block);
+
+                return jitCompiledScript.__file__(context, self, IRubyObject.NULL_ARRAY, block);
+            } catch (JumpException.ReturnJump rj) {
+                return handleReturn(rj);
+            } catch (JumpException.RedoJump rj) {
+                return handleRedo(runtime);
+            } finally {
+                jitPost(runtime, context, name);
+            }
+        } else {
+            return call(context, self, clazz, name, IRubyObject.NULL_ARRAY, block);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
+        Ruby runtime = context.getRuntime();
+        
+        if (jitCompiledScript != null && !runtime.hasEventHooks()) {
+            try {
+                jitPre(context, self, name, Block.NULL_BLOCK);
+
+                return jitCompiledScript.__file__(context, self, new IRubyObject[] {arg0}, Block.NULL_BLOCK);
+            } catch (JumpException.ReturnJump rj) {
+                return handleReturn(rj);
+            } catch (JumpException.RedoJump rj) {
+                return handleRedo(runtime);
+            } finally {
+                jitPost(runtime, context, name);
+            }
+        } else {
+            return call(context, self, clazz, name, new IRubyObject[] {arg0}, Block.NULL_BLOCK);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+        Ruby runtime = context.getRuntime();
+        
+        if (jitCompiledScript != null && !runtime.hasEventHooks()) {
+            try {
+                jitPre(context, self, name, block);
+
+                return jitCompiledScript.__file__(context, self, new IRubyObject[] {arg0}, block);
+            } catch (JumpException.ReturnJump rj) {
+                return handleReturn(rj);
+            } catch (JumpException.RedoJump rj) {
+                return handleRedo(runtime);
+            } finally {
+                jitPost(runtime, context, name);
+            }
+        } else {
+            return call(context, self, clazz, name, new IRubyObject[] {arg0}, block);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+        Ruby runtime = context.getRuntime();
+        
+        if (jitCompiledScript != null && !runtime.hasEventHooks()) {
+            try {
+                jitPre(context, self, name, Block.NULL_BLOCK);
+
+                return jitCompiledScript.__file__(context, self, new IRubyObject[] {arg0, arg1}, Block.NULL_BLOCK);
+            } catch (JumpException.ReturnJump rj) {
+                return handleReturn(rj);
+            } catch (JumpException.RedoJump rj) {
+                return handleRedo(runtime);
+            } finally {
+                jitPost(runtime, context, name);
+            }
+        } else {
+            return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1}, Block.NULL_BLOCK);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+        Ruby runtime = context.getRuntime();
+        
+        if (jitCompiledScript != null && !runtime.hasEventHooks()) {
+            try {
+                jitPre(context, self, name, block);
+
+                return jitCompiledScript.__file__(context, self, new IRubyObject[] {arg0, arg1}, block);
+            } catch (JumpException.ReturnJump rj) {
+                return handleReturn(rj);
+            } catch (JumpException.RedoJump rj) {
+                return handleRedo(runtime);
+            } finally {
+                jitPost(runtime, context, name);
+            }
+        } else {
+            return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1}, block);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        Ruby runtime = context.getRuntime();
+        
+        if (jitCompiledScript != null && !runtime.hasEventHooks()) {
+            try {
+                jitPre(context, self, name, Block.NULL_BLOCK);
+
+                return jitCompiledScript.__file__(context, self, new IRubyObject[] {arg0, arg1, arg2}, Block.NULL_BLOCK);
+            } catch (JumpException.ReturnJump rj) {
+                return handleReturn(rj);
+            } catch (JumpException.RedoJump rj) {
+                return handleRedo(runtime);
+            } finally {
+                jitPost(runtime, context, name);
+            }
+        } else {
+            return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2}, Block.NULL_BLOCK);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        Ruby runtime = context.getRuntime();
+        
+        if (jitCompiledScript != null && !runtime.hasEventHooks()) {
+            try {
+                jitPre(context, self, name, block);
+
+                return jitCompiledScript.__file__(context, self, new IRubyObject[] {arg0, arg1, arg2}, block);
+            } catch (JumpException.ReturnJump rj) {
+                return handleReturn(rj);
+            } catch (JumpException.RedoJump rj) {
+                return handleRedo(runtime);
+            } finally {
+                jitPost(runtime, context, name);
+            }
+        } else {
+            return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2}, block);
+        }
+    }
+
+    private void jitPre(ThreadContext context, IRubyObject self, String name, Block block) {
+        RubyModule implementer = getImplementationClass();
+        // FIXME: For some reason this wants (and works with) clazz instead of implementer,
+        // and needed it for compiled module method_function's called from outside the module. Why?
+        jitCallConfig.pre(context, self, implementer, getArity(), name, block, staticScope, this);
+    }
+
+    private void jitPost(Ruby runtime, ThreadContext context, String name) {
+        if (runtime.hasEventHooks()) {
+            traceReturn(context, runtime, name);
+        }
+        jitCallConfig.post(context);
+    }
+    
+    private IRubyObject handleReturn(JumpException.ReturnJump rj) {
+        if (rj.getTarget() == this) {
+            return (IRubyObject) rj.getValue();
+        }
+        throw rj;
+    }
+
+    private IRubyObject handleRedo(Ruby runtime) throws RaiseException {
+        throw runtime.newLocalJumpError("redo", runtime.getNil(), "unexpected redo");
     }
 
     private void prepareArguments(ThreadContext context, Ruby runtime, IRubyObject[] args) {
