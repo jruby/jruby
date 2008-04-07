@@ -2035,32 +2035,36 @@ public class RubyString extends RubyObject {
     /** rb_str_aref, rb_str_aref_m
      *
      */
-    @JRubyMethod(name = {"[]", "slice"}, required = 1, optional = 1)
-    public IRubyObject op_aref(ThreadContext context, IRubyObject[] args) {
-        if (args.length == 2) {
-            if (args[0] instanceof RubyRegexp) {
-                if(((RubyRegexp)args[0]).search(context, this,0,false) >= 0) {
-                    return RubyRegexp.nth_match(RubyNumeric.fix2int(args[1]), context.getCurrentFrame().getBackRef());
-                }
-                return getRuntime().getNil();
+    @JRubyMethod(name = {"[]", "slice"})
+    public IRubyObject op_aref(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
+        if (arg1 instanceof RubyRegexp) {
+            if(((RubyRegexp)arg1).search(context, this,0,false) >= 0) {
+                return RubyRegexp.nth_match(RubyNumeric.fix2int(arg2), context.getCurrentFrame().getBackRef());
             }
-            return substr(RubyNumeric.fix2int(args[0]), RubyNumeric.fix2int(args[1]));
+            return getRuntime().getNil();
         }
+        return substr(RubyNumeric.fix2int(arg1), RubyNumeric.fix2int(arg2));
+    }
 
-        if (args[0] instanceof RubyRegexp) {
-            if(((RubyRegexp)args[0]).search(context, this,0,false) >= 0) {
+    /** rb_str_aref, rb_str_aref_m
+     *
+     */
+    @JRubyMethod(name = {"[]", "slice"})
+    public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
+        if (arg instanceof RubyRegexp) {
+            if(((RubyRegexp)arg).search(context, this,0,false) >= 0) {
                 return RubyRegexp.nth_match(0, context.getCurrentFrame().getBackRef());
             }
             return getRuntime().getNil();
-        } else if (args[0] instanceof RubyString) {
-            return value.indexOf(stringValue(args[0]).value) != -1 ?
-                args[0] : getRuntime().getNil();
-        } else if (args[0] instanceof RubyRange) {
-            long[] begLen = ((RubyRange) args[0]).begLen(value.length(), 0);
+        } else if (arg instanceof RubyString) {
+            return value.indexOf(stringValue(arg).value) != -1 ?
+                arg : getRuntime().getNil();
+        } else if (arg instanceof RubyRange) {
+            long[] begLen = ((RubyRange) arg).begLen(value.length(), 0);
             return begLen == null ? getRuntime().getNil() :
                 substr((int) begLen[0], (int) begLen[1]);
         }
-        int idx = (int) args[0].convertToInteger().getLongValue();
+        int idx = (int) arg.convertToInteger().getLongValue();
         
         if (idx < 0) idx += value.length();
         if (idx < 0 || idx >= value.length()) return getRuntime().getNil();
@@ -2106,81 +2110,93 @@ public class RubyString extends RubyObject {
     /** rb_str_aset, rb_str_aset_m
      *
      */
-    @JRubyMethod(name = "[]=", required = 2, optional = 1)
-    public IRubyObject op_aset(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod(name = "[]=")
+    public IRubyObject op_aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         int strLen = value.length();
-        if (args.length == 3) {
-            if (args[0] instanceof RubyRegexp) {
-                RubyString repl = stringValue(args[2]);
-                int nth = RubyNumeric.fix2int(args[1]);
-                subpatSet(context, (RubyRegexp) args[0], nth, repl);
-                return repl;
-            }
-            RubyString repl = stringValue(args[2]);
-            int beg = RubyNumeric.fix2int(args[0]);
-            int len = RubyNumeric.fix2int(args[1]);
-            if (len < 0) throw getRuntime().newIndexError("negative length");
-            if (beg < 0) beg += strLen;
-
-            if (beg < 0 || (beg > 0 && beg > strLen)) {
-                throw getRuntime().newIndexError("string index out of bounds");
-            }
-            if (beg + len > strLen) len = strLen - beg;
-
-            replace(beg, len, repl);
-            return repl;
-        }
-        if (args[0] instanceof RubyFixnum || args[0].respondsTo("to_int")) { // FIXME: RubyNumeric or RubyInteger instead?
-            int idx = RubyNumeric.fix2int(args[0]);
+        if (arg0 instanceof RubyFixnum || arg0.respondsTo("to_int")) { // FIXME: RubyNumeric or RubyInteger instead?
+            int idx = RubyNumeric.fix2int(arg0);
             
             if (idx < 0) idx += value.length();
 
             if (idx < 0 || idx >= value.length()) {
                 throw getRuntime().newIndexError("string index out of bounds");
             }
-            if (args[1] instanceof RubyFixnum) {
+            if (arg1 instanceof RubyFixnum) {
                 modify();
-                value.set(idx, (byte) RubyNumeric.fix2int(args[1]));
+                value.set(idx, (byte) RubyNumeric.fix2int(arg1));
             } else {
-                replace(idx, 1, stringValue(args[1]));
+                replace(idx, 1, stringValue(arg1));
             }
-            return args[1];
+            return arg1;
         }
-        if (args[0] instanceof RubyRegexp) {
-            RubyString repl = stringValue(args[1]);
-            subpatSet(context, (RubyRegexp) args[0], 0, repl);
+        if (arg0 instanceof RubyRegexp) {
+            RubyString repl = stringValue(arg1);
+            subpatSet(context, (RubyRegexp) arg0, 0, repl);
             return repl;
         }
-        if (args[0] instanceof RubyString) {
-            RubyString orig = stringValue(args[0]);
+        if (arg0 instanceof RubyString) {
+            RubyString orig = stringValue(arg0);
             int beg = value.indexOf(orig.value);
             if (beg < 0) throw getRuntime().newIndexError("string not matched");
-            replace(beg, orig.value.length(), stringValue(args[1]));
-            return args[1];
+            replace(beg, orig.value.length(), stringValue(arg1));
+            return arg1;
         }
-        if (args[0] instanceof RubyRange) {
-            long[] begLen = ((RubyRange) args[0]).begLen(value.realSize, 2);
-            replace((int) begLen[0], (int) begLen[1], stringValue(args[1]));
-            return args[1];
+        if (arg0 instanceof RubyRange) {
+            long[] begLen = ((RubyRange) arg0).begLen(value.realSize, 2);
+            replace((int) begLen[0], (int) begLen[1], stringValue(arg1));
+            return arg1;
         }
         throw getRuntime().newTypeError("wrong argument type");
+    }
+
+    /** rb_str_aset, rb_str_aset_m
+     *
+     */
+    @JRubyMethod(name = "[]=")
+    public IRubyObject op_aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        int strLen = value.length();
+        if (arg0 instanceof RubyRegexp) {
+            RubyString repl = stringValue(arg2);
+            int nth = RubyNumeric.fix2int(arg1);
+            subpatSet(context, (RubyRegexp) arg0, nth, repl);
+            return repl;
+        }
+        RubyString repl = stringValue(arg2);
+        int beg = RubyNumeric.fix2int(arg0);
+        int len = RubyNumeric.fix2int(arg1);
+        if (len < 0) throw getRuntime().newIndexError("negative length");
+        if (beg < 0) beg += strLen;
+
+        if (beg < 0 || (beg > 0 && beg > strLen)) {
+            throw getRuntime().newIndexError("string index out of bounds");
+        }
+        if (beg + len > strLen) len = strLen - beg;
+
+        replace(beg, len, repl);
+        return repl;
     }
 
     /** rb_str_slice_bang
      *
      */
-    @JRubyMethod(name = "slice!", required = 1, optional = 1)
-    public IRubyObject slice_bang(ThreadContext context, IRubyObject[] args) {
-        int argc = args.length;
-        IRubyObject[] newArgs = new IRubyObject[argc + 1];
-        newArgs[0] = args[0];
-        if (argc > 1) newArgs[1] = args[1];
-
-        newArgs[argc] = newString("");
-        IRubyObject result = op_aref(context, args);
+    @JRubyMethod(name = "slice!")
+    public IRubyObject slice_bang(ThreadContext context, IRubyObject arg0) {
+        IRubyObject result = op_aref(context, arg0);
         if (result.isNil()) return result;
 
-        op_aset(context, newArgs);
+        op_aset(context, arg0, newString(""));
+        return result;
+    }
+
+    /** rb_str_slice_bang
+     *
+     */
+    @JRubyMethod(name = "slice!")
+    public IRubyObject slice_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        IRubyObject result = op_aref(context, arg0, arg1);
+        if (result.isNil()) return result;
+
+        op_aset(context, arg0, arg1, newString(""));
         return result;
     }
 

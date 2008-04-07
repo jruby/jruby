@@ -518,8 +518,71 @@ public class RubyModule extends RubyObject {
             // fallback on non-pregenerated logic
             Method[] declaredMethods = clazz.getDeclaredMethods();
             MethodFactory methodFactory = MethodFactory.createFactory(getRuntime().getJRubyClassLoader());
+            Map<String, List<JavaMethodDescriptor>> annotatedMethods = new HashMap();
+            Map<String, List<JavaMethodDescriptor>> staticAnnotatedMethods = new HashMap();
+            Map<String, List<JavaMethodDescriptor>> annotatedMethods1_8 = new HashMap();
+            Map<String, List<JavaMethodDescriptor>> staticAnnotatedMethods1_8 = new HashMap();
+            Map<String, List<JavaMethodDescriptor>> annotatedMethods1_9 = new HashMap();
+            Map<String, List<JavaMethodDescriptor>> staticAnnotatedMethods1_9 = new HashMap();
             for (Method method: declaredMethods) {
-                defineAnnotatedMethod(method, methodFactory);
+                JRubyMethod anno = method.getAnnotation(JRubyMethod.class);
+                if (anno == null) continue;
+                
+                JavaMethodDescriptor desc = new JavaMethodDescriptor(method);
+                
+                String name = anno.name().length == 0 ? method.getName() : anno.name()[0];
+                
+                List<JavaMethodDescriptor> methodDescs;
+                Map<String, List<JavaMethodDescriptor>> methodsHash = null;
+                if (desc.isStatic) {
+                    if (anno.compat() == CompatVersion.RUBY1_8) {
+                        methodsHash = staticAnnotatedMethods1_8;
+                    } else if (anno.compat() == CompatVersion.RUBY1_9) {
+                        methodsHash = staticAnnotatedMethods1_9;
+                    } else {
+                        methodsHash = staticAnnotatedMethods;
+                    }
+                } else {
+                    if (anno.compat() == CompatVersion.RUBY1_8) {
+                        methodsHash = annotatedMethods1_8;
+                    } else if (anno.compat() == CompatVersion.RUBY1_9) {
+                        methodsHash = annotatedMethods1_9;
+                    } else {
+                        methodsHash = annotatedMethods;
+                    }
+                }
+                
+                methodDescs = methodsHash.get(name);
+                if (methodDescs == null) {
+                    methodDescs = new ArrayList();
+                    methodsHash.put(name, methodDescs);
+                }
+                
+                methodDescs.add(desc);
+            }
+            
+            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : staticAnnotatedMethods.entrySet()) {
+                defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
+            }
+            
+            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : annotatedMethods.entrySet()) {
+                defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
+            }
+            
+            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : staticAnnotatedMethods1_8.entrySet()) {
+                defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
+            }
+            
+            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : annotatedMethods1_8.entrySet()) {
+                defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
+            }
+            
+            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : staticAnnotatedMethods1_9.entrySet()) {
+                defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
+            }
+            
+            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : annotatedMethods1_9.entrySet()) {
+                defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
             }
             
             // FIXME: dispatcher is only supported for non-pregenerated binding logic
@@ -537,8 +600,8 @@ public class RubyModule extends RubyObject {
     }
     
     private static MethodFactory.MethodDefiningCallback methodDefiningCallback = new MethodFactory.MethodDefiningCallback() {
-        public void define(RubyModule module, Method method, DynamicMethod dynamicMethod) {
-            JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
+        public void define(RubyModule module, JavaMethodDescriptor desc, DynamicMethod dynamicMethod) {
+            JRubyMethod jrubyMethod = desc.anno;
             if (jrubyMethod.frame()) {
                 for (String name : jrubyMethod.name()) {
                     ASTInspector.FRAME_AWARE_METHODS.add(name);
@@ -551,7 +614,7 @@ public class RubyModule extends RubyObject {
                 if (jrubyMethod.meta()) {
                     String baseName;
                     if (jrubyMethod.name().length == 0) {
-                        baseName = method.getName();
+                        baseName = desc.name;
                         metaClass.addMethod(baseName, dynamicMethod);
                     } else {
                         baseName = jrubyMethod.name()[0];
@@ -568,8 +631,8 @@ public class RubyModule extends RubyObject {
                 } else {
                     String baseName;
                     if (jrubyMethod.name().length == 0) {
-                        baseName = method.getName();
-                        module.addMethod(method.getName(), dynamicMethod);
+                        baseName = desc.name;
+                        module.addMethod(desc.name, dynamicMethod);
                     } else {
                         baseName = jrubyMethod.name()[0];
                         for (String name : jrubyMethod.name()) {
@@ -591,8 +654,8 @@ public class RubyModule extends RubyObject {
                         RubyModule singletonClass = module.getSingletonClass();
 
                         if (jrubyMethod.name().length == 0) {
-                            baseName = method.getName();
-                            singletonClass.addMethod(method.getName(), moduleMethod);
+                            baseName = desc.name;
+                            singletonClass.addMethod(desc.name, moduleMethod);
                         } else {
                             baseName = jrubyMethod.name()[0];
                             for (String name : jrubyMethod.name()) {
@@ -611,16 +674,44 @@ public class RubyModule extends RubyObject {
         }
     };
     
-    public boolean defineAnnotatedMethod(Method method, MethodFactory methodFactory) {
+    public boolean defineAnnotatedMethod(String name, List<JavaMethodDescriptor> methods, MethodFactory methodFactory) {
+        JavaMethodDescriptor desc = methods.get(0);
+        if (methods.size() == 1) {
+            return defineAnnotatedMethod(desc, methodFactory);
+        } else {
+            DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, methods);
+            methodDefiningCallback.define(this, desc, dynamicMethod);
+            
+            return true;
+        }
+    }
+    
+    public boolean defineAnnotatedMethod(Method method, MethodFactory methodFactory) { 
         JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
 
         if (jrubyMethod == null) return false;
 
             if(jrubyMethod.compat() == CompatVersion.BOTH ||
                     getRuntime().getInstanceConfig().getCompatVersion() == jrubyMethod.compat()) {
-            DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, new JavaMethodDescriptor(method));
-            methodDefiningCallback.define(this, method, dynamicMethod);
-            
+            JavaMethodDescriptor desc = new JavaMethodDescriptor(method);
+            DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc);
+            methodDefiningCallback.define(this, desc, dynamicMethod);
+
+            return true;
+        }
+        return false;
+    }
+    
+    public boolean defineAnnotatedMethod(JavaMethodDescriptor desc, MethodFactory methodFactory) { 
+        JRubyMethod jrubyMethod = desc.anno;
+
+        if (jrubyMethod == null) return false;
+
+            if(jrubyMethod.compat() == CompatVersion.BOTH ||
+                    getRuntime().getInstanceConfig().getCompatVersion() == jrubyMethod.compat()) {
+            DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc);
+            methodDefiningCallback.define(this, desc, dynamicMethod);
+
             return true;
         }
         return false;

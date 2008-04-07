@@ -121,6 +121,34 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         }
     }
     
+    public static abstract class JavaMethodOneOrTwo extends JavaMethod {
+        public JavaMethodOneOrTwo(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
+        }
+        public JavaMethodOneOrTwo(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
+            super(implementationClass, visibility, callConfig, staticScope, arity);
+        }
+        public JavaMethodOneOrTwo(RubyModule implementationClass, Visibility visibility, int methodIndex) {
+            super(implementationClass, visibility, methodIndex);
+        }
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg);
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1, IRubyObject arg2);
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            switch (args.length) {
+            case 1:
+                return call(context, self, clazz, name, args[0]);
+            case 2:
+                return call(context, self, clazz, name, args[0], args[1]);
+            default:
+                Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
+                return null; // never reached
+            }
+        }
+    }
+    
     public static abstract class JavaMethodOneBlock extends JavaMethod {
         public JavaMethodOneBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
@@ -156,6 +184,34 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
             if (args.length != 2) throw context.getRuntime().newArgumentError(args.length, 2);
             return call(context, self, clazz, name, args[0], args[1]);
+        }
+    }
+    
+    public static abstract class JavaMethodTwoOrThree extends JavaMethod {
+        public JavaMethodTwoOrThree(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
+        }
+        public JavaMethodTwoOrThree(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
+            super(implementationClass, visibility, callConfig, staticScope, arity);
+        }
+        public JavaMethodTwoOrThree(RubyModule implementationClass, Visibility visibility, int methodIndex) {
+            super(implementationClass, visibility, methodIndex);
+        }
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1, IRubyObject arg2);
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3);
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            switch (args.length) {
+            case 2:
+                return call(context, self, clazz, name, args[0], args[1]);
+            case 3:
+                return call(context, self, clazz, name, args[0], args[1], args[2]);
+            default:
+                Arity.raiseArgumentError(context.getRuntime(), args.length, 2, 3);
+                return null; // never reached
+            }
         }
     }
     

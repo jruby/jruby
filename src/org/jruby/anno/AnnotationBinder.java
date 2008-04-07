@@ -120,7 +120,8 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                             qualifiedName,
                             isStatic,
                             anno.required(),
-                            anno.optional());
+                            anno.optional(),
+                            false);
                     
                     out.println("        javaMethod = new " + annotatedBindingName + "(cls, Visibility." + anno.visibility() + ");");
                     out.println("        javaMethod.setArity(Arity.createArity(" + Arity.fromAnnotation(anno).getValue() + "));");

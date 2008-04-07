@@ -106,19 +106,23 @@ public abstract class CallConfiguration {
     };
     
     public static CallConfiguration getCallConfigByAnno(JRubyMethod anno) {
-        if (anno.frame()) {
-            if (anno.scope()) {
+        return getCallConfig(anno.frame(), anno.scope(), anno.backtrace());
+    }
+    
+    public static CallConfiguration getCallConfig(boolean frame, boolean scope, boolean backtrace) {
+        if (frame) {
+            if (scope) {
                 return FRAME_AND_SCOPE;
             } else {
                 return FRAME_ONLY;
             }
-        } else if (anno.scope()) {
-            if (anno.backtrace()) {
+        } else if (scope) {
+            if (backtrace) {
                 return BACKTRACE_AND_SCOPE;
             } else {
                 return SCOPE_ONLY;
             }
-        } else if (anno.backtrace()) {
+        } else if (backtrace) {
             return BACKTRACE_ONLY;
         } else {
             return NO_FRAME_NO_SCOPE;

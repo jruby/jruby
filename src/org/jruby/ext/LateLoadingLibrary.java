@@ -30,6 +30,7 @@ package org.jruby.ext;
 
 import java.io.IOException;
 import org.jruby.Ruby;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.load.Library;
 
 public class LateLoadingLibrary implements Library {
@@ -52,6 +53,8 @@ public class LateLoadingLibrary implements Library {
             Library library = (Library) classLoader.loadClass(className).newInstance();
             
             library.load(runtime, wrap);
+        } catch (RaiseException re) {
+            throw re;
         } catch (Throwable e) {
             throw runtime.newLoadError("library `" + libraryName + "' could not be loaded: " + e);
         }

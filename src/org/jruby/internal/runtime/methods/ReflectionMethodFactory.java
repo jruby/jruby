@@ -32,6 +32,8 @@ package org.jruby.internal.runtime.methods;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
@@ -84,6 +86,36 @@ public class ReflectionMethodFactory extends MethodFactory {
             throw new RuntimeException(e);
         }
     }
+    
+    /**
+     * Use reflection to provide a method handle based on an annotated Java
+     * method.
+     * 
+     * @see org.jruby.internal.runtime.methods.MethodFactory#getAnnotatedMethod
+     */
+    public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, List<JavaMethodDescriptor> descs) {
+        try {
+            List<Method> methods = new ArrayList();
+            List<JRubyMethod> annotations = new ArrayList();
+            
+            for (JavaMethodDescriptor desc: descs) {
+                methods.add(desc.declaringClass.getDeclaredMethod(desc.name, desc.parameters));
+                annotations.add(desc.anno);
+            }
+            Method method0 = methods.get(0);
+            JRubyMethod anno0 = annotations.get(0);
+            
+            JavaMethod ic = new ReflectedJavaMultiMethod(implementationClass, methods, annotations);
+
+            ic.setJavaName(method0.getName());
+            ic.setArgumentTypes(method0.getParameterTypes());
+            ic.setSingleton(Modifier.isStatic(method0.getModifiers()));
+            ic.setCallConfig(CallConfiguration.getCallConfigByAnno(anno0));
+            return ic;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     /**
      * Use reflection to generate a set of method handles based on all annotated
@@ -99,7 +131,7 @@ public class ReflectionMethodFactory extends MethodFactory {
 
             if (jrubyMethod == null) continue;
             
-            callback.define(implementationClass, method, getAnnotatedMethod(implementationClass, new JavaMethodDescriptor(method)));
+            callback.define(implementationClass, new JavaMethodDescriptor(method), getAnnotatedMethod(implementationClass, new JavaMethodDescriptor(method)));
         }
     }
 

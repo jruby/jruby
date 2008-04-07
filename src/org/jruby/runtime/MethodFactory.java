@@ -29,6 +29,7 @@
 package org.jruby.runtime;
 
 import java.lang.reflect.Method;
+import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.anno.JavaMethodDescriptor;
@@ -60,7 +61,7 @@ public abstract class MethodFactory {
      * on this MethodFactory.
      */
     public interface MethodDefiningCallback {
-        public void define(RubyModule targetMetaClass, Method method, DynamicMethod dynamicMethod);
+        public void define(RubyModule targetMetaClass, JavaMethodDescriptor desc, DynamicMethod dynamicMethod);
     }
 
     /**
@@ -100,6 +101,20 @@ public abstract class MethodFactory {
             RubyModule implementationClass, String method, 
             Arity arity, Visibility visibility, StaticScope scope, 
             Object scriptObject, CallConfiguration callConfig);
+    
+    /**
+     * Based on a list of annotated Java methods, generate a method handle using
+     * the annotation and the target signatures. The annotation and signatures
+     * will be used to dynamically generate the appropriate call logic for the
+     * handle. This differs from the single-method version in that it will dispatch
+     * multiple specific-arity paths to different target methods.
+     * 
+     * @param implementationClass The target class or module on which the method
+     * will be bound.
+     * @param descs A list of JavaMethodDescriptors describing the target methods
+     * @return A method handle for the target object.
+     */
+    public abstract DynamicMethod getAnnotatedMethod(RubyModule implementationClass, List<JavaMethodDescriptor> desc);
     
     /**
      * Based on an annotated Java method object, generate a method handle using

@@ -717,16 +717,88 @@ public class RubyArray extends RubyObject implements List {
         }
     }
 
+    /** rb_ary_splice
+     * 
+     */
+    private final void spliceOne(long beg, long len, IRubyObject rpl) {
+        if (len < 0) throw getRuntime().newIndexError("negative length (" + len + ")");
+
+        if (beg < 0) {
+            beg += realLength;
+            if (beg < 0) {
+                beg -= realLength;
+                throw getRuntime().newIndexError("index " + beg + " out of array");
+            }
+        }
+        
+        if (beg + len > realLength) len = realLength - beg;
+        
+        modify();
+
+        if (beg >= realLength) {
+            len = beg + 1;
+
+            if (len >= values.length) {
+                int tryNewLength = values.length + (values.length >> 1);
+                
+                realloc(len > tryNewLength ? (int)len : tryNewLength);
+            }
+
+            Arrays.fill(values, realLength, (int) beg, getRuntime().getNil());
+            
+            values[(int)beg] = rpl;
+
+            realLength = (int) len;
+        } else {
+            long alen;
+
+            if (beg + len > realLength) len = realLength - beg;
+
+            alen = realLength + 1;
+            if (alen >= values.length) {
+                int tryNewLength = values.length + (values.length >> 1);
+                
+                realloc(alen > tryNewLength ? (int)alen : tryNewLength);
+            }
+
+            if (len != 1) {
+                System.arraycopy(values, (int) (beg + len), values, (int) beg + 1, realLength - (int) (beg + len));
+                realLength = (int) alen;
+            }
+
+            values[(int)beg] = rpl;
+        }
+    }
+
+    /** rb_ary_insert
+     * 
+     */
+    @JRubyMethod
+    public IRubyObject insert(IRubyObject arg) {
+        return this;
+    }
+
+    /** rb_ary_insert
+     * 
+     */
+    @JRubyMethod
+    public IRubyObject insert(IRubyObject arg1, IRubyObject arg2) {
+        long pos = RubyNumeric.num2long(arg1);
+
+        if (pos == -1) pos = realLength;
+        if (pos < 0) pos++;
+        
+        spliceOne(pos, 0, arg2); // rb_ary_new4
+        
+        return this;
+    }
+
     /** rb_ary_insert
      * 
      */
     @JRubyMethod(name = "insert", required = 1, rest = true)
     public IRubyObject insert(IRubyObject[] args) {
         if (args.length == 1) return this;
-
-        if (args.length < 1) {
-            throw getRuntime().newArgumentError("wrong number of arguments (at least 1)");
-        }
 
         long pos = RubyNumeric.num2long(args[0]);
 
