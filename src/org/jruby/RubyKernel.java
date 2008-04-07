@@ -485,9 +485,19 @@ public class RubyKernel {
         return dup;
     }
 
-    @JRubyMethod(name = "split", optional = 2, frame = true, module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject split(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return getLastlineString(context, recv.getRuntime()).split(context, args);
+    @JRubyMethod(name = "split", frame = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject split(ThreadContext context, IRubyObject recv, Block block) {
+        return getLastlineString(context, recv.getRuntime()).split(context);
+    }
+
+    @JRubyMethod(name = "split", frame = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject split(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
+        return getLastlineString(context, recv.getRuntime()).split(context, arg0);
+    }
+
+    @JRubyMethod(name = "split", frame = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject split(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return getLastlineString(context, recv.getRuntime()).split(context, arg0, arg1);
     }
 
     @JRubyMethod(name = "scan", required = 1, frame = true, module = true, visibility = Visibility.PRIVATE)

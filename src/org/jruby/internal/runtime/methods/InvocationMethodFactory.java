@@ -340,10 +340,23 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 if (c == null) {
                     String superClass = null;
                     switch (min) {
+                    case 0:
+                        switch (max) {
+                        case 1:
+                            superClass = p(JavaMethod.JavaMethodZeroOrOne.class);
+                            break;
+                        case 2:
+                            superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwo.class);
+                            break;
+                        }
+                        break;
                     case 1:
                         switch (max) {
                         case 2:
                             superClass = p(JavaMethod.JavaMethodOneOrTwo.class);
+                            break;
+                        case 3:
+                            superClass = p(JavaMethod.JavaMethodOneOrTwoOrThree.class);
                             break;
                         }
                         break;

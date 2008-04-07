@@ -83,6 +83,66 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         }
     }
     
+    public static abstract class JavaMethodZeroOrOne extends JavaMethod {
+        public JavaMethodZeroOrOne(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
+        }
+        public JavaMethodZeroOrOne(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
+            super(implementationClass, visibility, callConfig, staticScope, arity);
+        }
+        public JavaMethodZeroOrOne(RubyModule implementationClass, Visibility visibility, int methodIndex) {
+            super(implementationClass, visibility, methodIndex);
+        }
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name);
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg);
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            switch (args.length) {
+            case 0:
+                return call(context, self, clazz, name);
+            case 1:
+                return call(context, self, clazz, name, args[0]);
+            default:
+                Arity.raiseArgumentError(context.getRuntime(), args.length, 0, 1);
+                return null; // never reached
+            }
+        }
+    }
+    
+    public static abstract class JavaMethodZeroOrOneOrTwo extends JavaMethod {
+        public JavaMethodZeroOrOneOrTwo(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
+        }
+        public JavaMethodZeroOrOneOrTwo(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
+            super(implementationClass, visibility, callConfig, staticScope, arity);
+        }
+        public JavaMethodZeroOrOneOrTwo(RubyModule implementationClass, Visibility visibility, int methodIndex) {
+            super(implementationClass, visibility, methodIndex);
+        }
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name);
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg);
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1);
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            switch (args.length) {
+            case 0:
+                return call(context, self, clazz, name);
+            case 1:
+                return call(context, self, clazz, name, args[0]);
+            case 2:
+                return call(context, self, clazz, name, args[0], args[1]);
+            default:
+                Arity.raiseArgumentError(context.getRuntime(), args.length, 0, 2);
+                return null; // never reached
+            }
+        }
+    }
+    
     public static abstract class JavaMethodZeroBlock extends JavaMethod {
         public JavaMethodZeroBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
@@ -144,6 +204,38 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
                 return call(context, self, clazz, name, args[0], args[1]);
             default:
                 Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
+                return null; // never reached
+            }
+        }
+    }
+    
+    public static abstract class JavaMethodOneOrTwoOrThree extends JavaMethod {
+        public JavaMethodOneOrTwoOrThree(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
+        }
+        public JavaMethodOneOrTwoOrThree(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
+            super(implementationClass, visibility, callConfig, staticScope, arity);
+        }
+        public JavaMethodOneOrTwoOrThree(RubyModule implementationClass, Visibility visibility, int methodIndex) {
+            super(implementationClass, visibility, methodIndex);
+        }
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg);
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1, IRubyObject arg2);
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3);
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            switch (args.length) {
+            case 1:
+                return call(context, self, clazz, name, args[0]);
+            case 2:
+                return call(context, self, clazz, name, args[0], args[1]);
+            case 3:
+                return call(context, self, clazz, name, args[0], args[1], args[2]);
+            default:
+                Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 3);
                 return null; // never reached
             }
         }

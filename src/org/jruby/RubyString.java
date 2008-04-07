@@ -244,7 +244,7 @@ public class RubyString extends RubyObject {
         }
 
         value.invalidate();
-    }        
+    }
     
     private final void view(ByteList bytes) {
         modifyCheck();
@@ -2305,9 +2305,17 @@ public class RubyString extends RubyObject {
     /** rb_str_to_i
      *
      */
-    @JRubyMethod(name = "to_i", optional = 1)
-    public IRubyObject to_i(IRubyObject[] args) {
-        long base = args.length == 0 ? 10 : args[0].convertToInteger().getLongValue();
+    @JRubyMethod(name = "to_i")
+    public IRubyObject to_i() {
+        return RubyNumeric.str2inum(getRuntime(), this, 10);
+    }
+
+    /** rb_str_to_i
+     *
+     */
+    @JRubyMethod(name = "to_i")
+    public IRubyObject to_i(IRubyObject arg0) {
+        long base = arg0.convertToInteger().getLongValue();
         return RubyNumeric.str2inum(getRuntime(), this, (int) base);
     }
 
@@ -2360,35 +2368,54 @@ public class RubyString extends RubyObject {
     /** rb_str_split_m
      *
      */
-    @JRubyMethod(name = "split", optional = 2)
-    public RubyArray split(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod
+    public RubyArray split(ThreadContext context) {
+        return split(context, null);
+    }
+
+    /** rb_str_split_m
+     *
+     */
+    @JRubyMethod
+    public RubyArray split(ThreadContext context, IRubyObject arg0) {
         final int i, lim;
         final boolean limit;
 
-        if (args.length == 2) {
-            lim = RubyNumeric.fix2int(args[1]);
-            if (lim <= 0) {
-                limit = false;
-            } else {
-                if (lim == 1) return value.realSize == 0 ? getRuntime().newArray() : getRuntime().newArray(this);
-                limit = true;
-            }
-            i = 1;
-        } else {
-            i = 0;
-            lim = 0;
-            limit = false;
-        }
-        
-        IRubyObject spat = (args.length == 0 || args[0].isNil()) ? null : args[0];
+        i = 0;
+        lim = 0;
+        limit = false;
 
+        return splitCommon(arg0, limit, lim, i, context);
+    }
+
+    /** rb_str_split_m
+     *
+     */
+    @JRubyMethod
+    public RubyArray split(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        final int i, lim;
+        final boolean limit;
+
+        lim = RubyNumeric.fix2int(arg1);
+        if (lim <= 0) {
+            limit = false;
+        } else {
+            if (lim == 1) return value.realSize == 0 ? getRuntime().newArray() : getRuntime().newArray(this);
+            limit = true;
+        }
+        i = 1;
+
+        return splitCommon(arg0, limit, lim, i, context);
+    }
+
+    private RubyArray splitCommon(IRubyObject spat, final boolean limit, final int lim, final int i, ThreadContext context) {
         final RubyArray result;
-        if (spat == null && (spat = getRuntime().getGlobalVariables().get("$;")).isNil()) {
+        if ((spat == null || spat.isNil()) && (spat = getRuntime().getGlobalVariables().get("$;")).isNil()) {
             result = awkSplit(limit, lim, i);
         } else {
-            if (spat instanceof RubyString && ((RubyString)spat).value.realSize == 1) {
-                RubyString strSpat = (RubyString)spat;
-                if (strSpat.value.bytes[strSpat.value.begin] == (byte)' ') {
+            if (spat instanceof RubyString && ((RubyString) spat).value.realSize == 1) {
+                RubyString strSpat = (RubyString) spat;
+                if (strSpat.value.bytes[strSpat.value.begin] == (byte) ' ') {
                     result = awkSplit(limit, lim, i);
                 } else {
                     result = split(context, spat, limit, lim, i);
@@ -2399,8 +2426,9 @@ public class RubyString extends RubyObject {
         }
 
         if (!limit && lim == 0) {
-            while (result.size() > 0 && ((RubyString)result.eltInternal(result.size() - 1)).value.realSize == 0)
+            while (result.size() > 0 && ((RubyString) result.eltInternal(result.size() - 1)).value.realSize == 0) {
                 result.pop();
+            }
         }
 
         return result;
