@@ -25,6 +25,12 @@ module Gem::InstallUpdateOptions
       options[:install_dir] = File.expand_path(value)
     end
 
+    add_option(:"Install/Update", '-n', '--bindir DIR',
+	       'Directory where binary files are',
+	       'located') do |value, options|
+      options[:bin_dir] = File.expand_path(value)
+    end
+
     add_option(:"Install/Update", '-d', '--[no-]rdoc',
                'Generate RDoc documentation for the gem on',
                'install') do |value, options|
@@ -37,7 +43,7 @@ module Gem::InstallUpdateOptions
       options[:generate_ri] = value
     end
 
-    add_option(:"Install/Update", '-E', '--env-shebang',
+    add_option(:"Install/Update", '-E', '--[no-]env-shebang',
                "Rewrite the shebang line on installed",
                "scripts to use /usr/bin/env") do |value, options|
       options[:env_shebang] = value
@@ -87,7 +93,7 @@ module Gem::InstallUpdateOptions
 
   # Default options for the gem install command.
   def install_update_defaults_str
-    '--rdoc --no-force --no-test --wrappers --env-shebang'
+    '--rdoc --no-force --no-test --wrappers'
   end
 
 end
