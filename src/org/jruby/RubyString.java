@@ -50,6 +50,7 @@ import org.joni.encoding.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.TypePopulator;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
@@ -2032,6 +2033,22 @@ public class RubyString extends RubyObject {
         return infectBy(replaceWith);
     }
 
+    /**
+     * Variable-arity version of op_aref, for compatibility with libraries. No
+     * longer bound to a Ruby method name.
+     */
+    public IRubyObject op_aref(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+        case 1:
+            return op_aref(context, args[0]);
+        case 2:
+            return op_aref(context, args[0], args[1]);
+        default:
+            Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
+            return null; // not reached
+        }
+    }
+
     /** rb_str_aref, rb_str_aref_m
      *
      */
@@ -2107,6 +2124,21 @@ public class RubyString extends RubyObject {
         replace(start, len, stringValue(repl));
     }
 
+    /**
+     * Variable arity version for compatibility. Not bound to a Ruby method.
+     */
+    public IRubyObject op_aset(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+        case 2:
+            return op_aset(context, args[0], args[1]);
+        case 3:
+            return op_aset(context, args[0], args[1], args[2]);
+        default:
+            Arity.raiseArgumentError(context.getRuntime(), args.length, 2, 3);
+            return null; // not reached
+        }
+    }
+
     /** rb_str_aset, rb_str_aset_m
      *
      */
@@ -2174,6 +2206,21 @@ public class RubyString extends RubyObject {
 
         replace(beg, len, repl);
         return repl;
+    }
+
+    /**
+     * Variable arity version for compatibility. Not bound as a Ruby method.
+     */
+    public IRubyObject slice_bang(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+        case 1:
+            return slice_bang(context, args[0]);
+        case 2:
+            return slice_bang(context, args[0], args[1]);
+        default:
+            Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
+            return null; // not reached
+        }
     }
 
     /** rb_str_slice_bang
@@ -2302,6 +2349,21 @@ public class RubyString extends RubyObject {
         return getRuntime().newBoolean(value.indexOf(str) != -1);
     }
 
+    /**
+     * Variable-arity version for compatibility. Not bound as a Ruby method.
+     */
+    public IRubyObject to_i(IRubyObject[] args) {
+        switch (args.length) {
+        case 0:
+            return to_i();
+        case 1:
+            return to_i(args[0]);
+        default:
+            Arity.raiseArgumentError(getRuntime(), args.length, 0, 1);
+            return null; // not reached
+        }
+    }
+
     /** rb_str_to_i
      *
      */
@@ -2365,12 +2427,29 @@ public class RubyString extends RubyObject {
         return RubyNumeric.str2fnum(getRuntime(), this);
     }
 
+    /**
+     * Variable arity version for compatibility. Not bound to a Ruby method.
+     */
+    public RubyArray split(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+        case 0:
+            return split(context);
+        case 1:
+            return split(context, args[0]);
+        case 2:
+            return split(context, args[0], args[1]);
+        default:
+            Arity.raiseArgumentError(context.getRuntime(), args.length, 0, 2);
+            return null; // not reached
+        }
+    }
+
     /** rb_str_split_m
      *
      */
     @JRubyMethod
     public RubyArray split(ThreadContext context) {
-        return split(context, null);
+        return split(context, (IRubyObject)null);
     }
 
     /** rb_str_split_m

@@ -55,6 +55,7 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
@@ -485,18 +486,39 @@ public class RubyKernel {
         return dup;
     }
 
+    /**
+     * Variable arity version for compatibility. Not bound to a Ruby method.
+     * 
+     * @param context The thread context for the current thread
+     * @param recv The receiver of the method (usually a class that has included Kernel)
+     * @return
+     */
+    public static IRubyObject split(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        switch (args.length) {
+        case 0:
+            return split(context, recv);
+        case 1:
+            return split(context, recv, args[0]);
+        case 2:
+            return split(context, recv, args[0], args[1]);
+        default:
+            Arity.raiseArgumentError(context.getRuntime(), args.length, 0, 2);
+            return null; // not reached
+        }
+    }
+
     @JRubyMethod(name = "split", frame = true, module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject split(ThreadContext context, IRubyObject recv, Block block) {
+    public static IRubyObject split(ThreadContext context, IRubyObject recv) {
         return getLastlineString(context, recv.getRuntime()).split(context);
     }
 
     @JRubyMethod(name = "split", frame = true, module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject split(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
+    public static IRubyObject split(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
         return getLastlineString(context, recv.getRuntime()).split(context, arg0);
     }
 
     @JRubyMethod(name = "split", frame = true, module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject split(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
+    public static IRubyObject split(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
         return getLastlineString(context, recv.getRuntime()).split(context, arg0, arg1);
     }
 
