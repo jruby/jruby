@@ -1,6 +1,6 @@
 require "java"
 
-filename = "./samples/java2.rb"
+filename = __FILE__
 fr = java.io.FileReader.new filename
 br = java.io.BufferedReader.new fr
 
