@@ -655,8 +655,6 @@ public class RubyArray extends RubyObject implements List {
      * 
      */
     private final void splice(long beg, long len, IRubyObject rpl) {
-        int rlen;
-
         if (len < 0) throw getRuntime().newIndexError("negative length (" + len + ")");
 
         if (beg < 0) {
@@ -667,9 +665,9 @@ public class RubyArray extends RubyObject implements List {
             }
         }
         
-        if (beg + len > realLength) len = realLength - beg;
+        final RubyArray rplArr;
+        final int rlen;
 
-        RubyArray rplArr;
         if (rpl == null || rpl.isNil()) {
             rplArr = null;
             rlen = 0;
@@ -685,24 +683,17 @@ public class RubyArray extends RubyObject implements List {
 
             if (len >= values.length) {
                 int tryNewLength = values.length + (values.length >> 1);
-                
                 realloc(len > tryNewLength ? (int)len : tryNewLength);
             }
 
             Arrays.fill(values, realLength, (int) beg, getRuntime().getNil());
-            if (rlen > 0) {
-                System.arraycopy(rplArr.values, rplArr.begin, values, (int) beg, rlen);
-            }
             realLength = (int) len;
         } else {
-            long alen;
-
             if (beg + len > realLength) len = realLength - beg;
 
-            alen = realLength + rlen - len;
+            long alen = realLength + rlen - len;
             if (alen >= values.length) {
                 int tryNewLength = values.length + (values.length >> 1);
-                
                 realloc(alen > tryNewLength ? (int)alen : tryNewLength);
             }
 
@@ -710,11 +701,9 @@ public class RubyArray extends RubyObject implements List {
                 System.arraycopy(values, (int) (beg + len), values, (int) beg + rlen, realLength - (int) (beg + len));
                 realLength = (int) alen;
             }
-
-            if (rlen > 0) {
-                System.arraycopy(rplArr.values, rplArr.begin, values, (int) beg, rlen);
-            }
         }
+
+        if (rlen > 0) System.arraycopy(rplArr.values, rplArr.begin, values, (int) beg, rlen);
     }
 
     /** rb_ary_splice
@@ -730,9 +719,7 @@ public class RubyArray extends RubyObject implements List {
                 throw getRuntime().newIndexError("index " + beg + " out of array");
             }
         }
-        
-        if (beg + len > realLength) len = realLength - beg;
-        
+
         modify();
 
         if (beg >= realLength) {
@@ -740,34 +727,27 @@ public class RubyArray extends RubyObject implements List {
 
             if (len >= values.length) {
                 int tryNewLength = values.length + (values.length >> 1);
-                
                 realloc(len > tryNewLength ? (int)len : tryNewLength);
             }
 
             Arrays.fill(values, realLength, (int) beg, getRuntime().getNil());
-            
-            values[(int)beg] = rpl;
-
             realLength = (int) len;
         } else {
-            long alen;
-
             if (beg + len > realLength) len = realLength - beg;
 
-            alen = realLength + 1;
+            int alen = realLength + 1 - (int)len;
             if (alen >= values.length) {
                 int tryNewLength = values.length + (values.length >> 1);
-                
-                realloc(alen > tryNewLength ? (int)alen : tryNewLength);
+                realloc(alen > tryNewLength ? alen : tryNewLength);
             }
 
             if (len != 1) {
                 System.arraycopy(values, (int) (beg + len), values, (int) beg + 1, realLength - (int) (beg + len));
-                realLength = (int) alen;
+                realLength = alen;
             }
-
-            values[(int)beg] = rpl;
         }
+
+        values[(int)beg] = rpl;
     }
 
     /** rb_ary_insert
