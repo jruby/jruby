@@ -264,7 +264,7 @@ public class RubyBignum extends RubyInteger {
     /** rb_big_div
      * 
      */
-    @JRubyMethod(name = {"/", "div", "quo"}, required = 1)
+    @JRubyMethod(name = {"/", "div"}, required = 1)
     public IRubyObject op_div(ThreadContext context, IRubyObject other) {
         final BigInteger otherValue;
         if (other instanceof RubyFixnum) {
