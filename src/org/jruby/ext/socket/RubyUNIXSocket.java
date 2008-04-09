@@ -47,12 +47,14 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ChannelStream;
@@ -201,19 +203,8 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     static void createUNIXSocket(Ruby runtime) {
         RubyClass rb_cUNIXSocket = runtime.defineClass("UNIXSocket", runtime.fastGetClass("BasicSocket"), UNIXSOCKET_ALLOCATOR);
         runtime.getObject().fastSetConstant("UNIXsocket", rb_cUNIXSocket);
-        CallbackFactory cfact = runtime.callbackFactory(RubyUNIXSocket.class);
-
-        rb_cUNIXSocket.defineFastMethod("initialize", cfact.getFastMethod("initialize", IRubyObject.class));
-        rb_cUNIXSocket.defineFastMethod("path", cfact.getFastMethod("path"));
-        rb_cUNIXSocket.defineFastMethod("addr", cfact.getFastMethod("addr"));
-        rb_cUNIXSocket.defineFastMethod("peeraddr", cfact.getFastMethod("peeraddr"));
-        rb_cUNIXSocket.defineFastMethod("recvfrom", cfact.getFastOptMethod("recvfrom"));
-        rb_cUNIXSocket.defineFastMethod("send_io", cfact.getFastMethod("send_io", IRubyObject.class));
-        rb_cUNIXSocket.defineFastMethod("recv_io", cfact.getFastOptMethod("recv_io"));
         
-        rb_cUNIXSocket.getMetaClass().defineFastMethod("socketpair", cfact.getFastOptSingletonMethod("socketpair"));
-        rb_cUNIXSocket.getMetaClass().defineFastMethod("pair", cfact.getFastOptSingletonMethod("socketpair"));
-        rb_cUNIXSocket.getMetaClass().defineFastMethod("open", cfact.getFastSingletonMethod("open", IRubyObject.class));
+        rb_cUNIXSocket.defineAnnotatedMethods(RubyUNIXSocket.class);
     }
 
     public RubyUNIXSocket(Ruby runtime, RubyClass type) {
@@ -330,6 +321,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         openFile.getMainStream().setSync(true);
     }
 
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject path) throws Exception {
         init_unixsock(path, false);
         return this;
@@ -355,6 +347,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         return getRuntime().newArrayNoCopy(new IRubyObject[]{getRuntime().newString("AF_UNIX"), getRuntime().newString(unixpath(addr, len))});
     }
 
+    @JRubyMethod
     public IRubyObject path() throws Exception {
         if(openFile.getPath() == null) {
             LibCSocket.sockaddr_un addr = new LibCSocket.sockaddr_un();
@@ -367,6 +360,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         return getRuntime().newString(openFile.getPath());
     }
 
+    @JRubyMethod
     public IRubyObject addr() throws Exception {
         LibCSocket.sockaddr_un addr = new LibCSocket.sockaddr_un();
         IntByReference len = new IntByReference(LibCSocket.sockaddr_un.LENGTH);
@@ -375,7 +369,8 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         }
         return unixaddr(addr, len);
     }
-
+    
+    @JRubyMethod
     public IRubyObject peeraddr() throws Exception {
         LibCSocket.sockaddr_un addr = new LibCSocket.sockaddr_un();
         IntByReference len = new IntByReference(LibCSocket.sockaddr_un.LENGTH);
@@ -385,6 +380,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         return unixaddr(addr, len);
     }
 
+    @JRubyMethod(name = "recvfrom", required = 1, optional = 1)
     public IRubyObject recvfrom(IRubyObject[] args) throws Exception {
         ByteBuffer str = ByteBuffer.allocateDirect(1024);
         LibCSocket.sockaddr_un buf = new LibCSocket.sockaddr_un();
@@ -424,11 +420,13 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         return getRuntime().newArrayNoCopy(new IRubyObject[]{_str, unixaddr(buf, alen)});
     }
 
+    @JRubyMethod
     public IRubyObject send_io(IRubyObject path) {
         //TODO: implement, won't do this now
         return  getRuntime().getNil();
     }
 
+    @JRubyMethod(rest = true)
     public IRubyObject recv_io(IRubyObject[] args) {
         //TODO: implement, won't do this now
         return  getRuntime().getNil();
@@ -441,6 +439,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         return getRuntime().getNil();
     }
 
+    @JRubyMethod(meta = true)
     public static IRubyObject open(IRubyObject recv, IRubyObject path) {
         return recv.callMethod(recv.getRuntime().getCurrentContext(), "new", new IRubyObject[]{path}, Block.NULL_BLOCK);
     }
@@ -461,6 +460,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         return RubyNumeric.fix2int(tp);
     }
 
+    @JRubyMethod(name = {"socketpair", "pair"}, optional = 2, meta = true)
     public static IRubyObject socketpair(IRubyObject recv, IRubyObject[] args) throws Exception {
         int domain = RubySocket.PF_UNIX;
         Arity.checkArgumentCount(recv.getRuntime(), args, 0, 2);

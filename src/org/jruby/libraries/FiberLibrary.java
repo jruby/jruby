@@ -30,10 +30,12 @@ package org.jruby.libraries;
 
 import java.io.IOException;
 
+import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.RubyClass;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
@@ -57,6 +59,7 @@ public class FiberLibrary implements Library {
         private Thread thread;
         private boolean alive = false;
         
+        @JRubyMethod(name = "new", rest = true, meta = true, frame = true)
         public static Fiber newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
             Fiber result = new Fiber(recv.getRuntime(), (RubyClass)recv);
             result.initialize(args, block);
@@ -92,16 +95,13 @@ public class FiberLibrary implements Library {
 
         public static void setup(Ruby runtime) {
             RubyClass cFiber = runtime.defineClass("Fiber", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-            CallbackFactory cb = runtime.callbackFactory(Fiber.class);
-            cFiber.getMetaClass().defineMethod("new", cb.getOptSingletonMethod("newInstance"));
-            cFiber.defineFastMethod("resume", cb.getFastOptMethod("resume"));
             // FIXME: Not sure what the semantics of transfer are
             //cFiber.defineFastMethod("transfer", cb.getFastOptMethod("transfer"));
-            cFiber.defineFastMethod("alive?", cb.getFastMethod("alive_p"));
-            cFiber.getMetaClass().defineFastMethod("yield", cb.getFastSingletonMethod("yield", IRubyObject.class));
-            cFiber.getMetaClass().defineFastMethod("current", cb.getFastSingletonMethod("current"));
+            
+            cFiber.defineAnnotatedMethods(Fiber.class);
         }
 
+        @JRubyMethod(rest = true, compat = CompatVersion.RUBY1_9)
         public IRubyObject resume(IRubyObject[] args) throws InterruptedException {
             synchronized (yieldLock) {
                 result = getRuntime().newArrayNoCopyLight(args);
@@ -116,6 +116,7 @@ public class FiberLibrary implements Library {
             return result;
         }
 
+        @JRubyMethod(rest = true, compat = CompatVersion.RUBY1_9)
         public IRubyObject transfer(IRubyObject[] args) throws InterruptedException {
             synchronized (yieldLock) {
                 yieldLock.notify();
@@ -124,10 +125,12 @@ public class FiberLibrary implements Library {
             return result;
         }
 
+        @JRubyMethod(name = "alive?", compat = CompatVersion.RUBY1_9)
         public IRubyObject alive_p() {
             return getRuntime().newBoolean(alive);
         }
 
+        @JRubyMethod(compat = CompatVersion.RUBY1_9, meta = true)
         public static IRubyObject yield(IRubyObject recv, IRubyObject value) throws InterruptedException {
             Fiber fiber = recv.getRuntime().getCurrentContext().getFiber();
             fiber.result = value;
@@ -138,6 +141,7 @@ public class FiberLibrary implements Library {
             return recv.getRuntime().getNil();
         }
 
+        @JRubyMethod(compat = CompatVersion.RUBY1_9, meta = true)
         public static IRubyObject current(IRubyObject recv) {
             return recv.getRuntime().getCurrentContext().getFiber();
         }

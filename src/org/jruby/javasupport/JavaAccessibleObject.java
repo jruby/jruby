@@ -37,125 +37,122 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class JavaAccessibleObject extends RubyObject {
 
-	protected JavaAccessibleObject(Ruby runtime, RubyClass rubyClass) {
-		super(runtime, rubyClass);
-	}
+    protected JavaAccessibleObject(Ruby runtime, RubyClass rubyClass) {
+        super(runtime, rubyClass);
+    }
 
-	public static void registerRubyMethods(Ruby runtime, RubyClass result) {
-        CallbackFactory callbackFactory = runtime.callbackFactory(JavaAccessibleObject.class);
+    public static void registerRubyMethods(Ruby runtime, RubyClass result) {
+        result.defineAnnotatedMethods(JavaAccessibleObject.class);
+    }
 
-        result.defineFastMethod("==", callbackFactory.getFastMethod("op_equal", IRubyObject.class));
-        result.defineFastMethod("eql?", callbackFactory.getFastMethod("op_equal", IRubyObject.class));
-        result.defineFastMethod("equal?", callbackFactory.getFastMethod("same", IRubyObject.class));
-        result.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
-
-        result.defineFastMethod("accessible?", callbackFactory.getFastMethod("isAccessible"));
-        result.defineFastMethod("accessible=", callbackFactory.getFastMethod("setAccessible", IRubyObject.class));
-        result.defineFastMethod("annotations", callbackFactory.getFastMethod("annotations"));
-        result.defineFastMethod("annotations?", callbackFactory.getFastMethod("annotations_p"));
-        result.defineFastMethod("declared_annotations?", callbackFactory.getFastMethod("declared_annotations_p"));
-        result.defineFastMethod("annotation", callbackFactory.getFastMethod("annotation", IRubyObject.class));
-        result.defineFastMethod("annotation_present?", callbackFactory.getFastMethod("annotation_present_p", IRubyObject.class));
-        result.defineFastMethod("declaring_class", callbackFactory.getFastMethod("declaring_class"));
-        result.defineFastMethod("modifiers", callbackFactory.getFastMethod("modifiers"));
-        result.defineFastMethod("name", callbackFactory.getFastMethod("name"));
-        result.defineFastMethod("synthetic?", callbackFactory.getFastMethod("synthetic_p"));
-        result.defineFastMethod("to_string", callbackFactory.getFastMethod("to_string"));
-        result.defineFastMethod("to_s", callbackFactory.getFastMethod("to_string"));
-	}
-	protected abstract AccessibleObject accessibleObject();
+    protected abstract AccessibleObject accessibleObject();
 
     public boolean equals(Object other) {
         return other instanceof JavaAccessibleObject &&
-            this.accessibleObject() == ((JavaAccessibleObject)other).accessibleObject();
+                this.accessibleObject() == ((JavaAccessibleObject) other).accessibleObject();
     }
-    
+
     public int hashCode() {
         return this.accessibleObject().hashCode();
     }
 
-	public RubyFixnum hash() {
-		return getRuntime().newFixnum(hashCode());
+    @JRubyMethod
+    public RubyFixnum hash() {
+        return getRuntime().newFixnum(hashCode());
     }
 
+    @JRubyMethod(name = {"==", "eql?"})
     public IRubyObject op_equal(IRubyObject other) {
-		return other instanceof JavaAccessibleObject && accessibleObject().equals(((JavaAccessibleObject)other).accessibleObject()) ? getRuntime().getTrue() : getRuntime().getFalse();
+        return other instanceof JavaAccessibleObject && accessibleObject().equals(((JavaAccessibleObject) other).accessibleObject()) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
-   
-	public IRubyObject same(IRubyObject other) {
-        return getRuntime().newBoolean(equals(other));
-	}
-       
-	public RubyBoolean isAccessible() {
-		return new RubyBoolean(getRuntime(),accessibleObject().isAccessible());
-	}
 
-	public IRubyObject setAccessible(IRubyObject object) {
-	    accessibleObject().setAccessible(object.isTrue());
-		return object;
-	}
-	
+    @JRubyMethod(name = "equal?")
+    public IRubyObject same(IRubyObject other) {
+        return getRuntime().newBoolean(equals(other));
+    }
+
+    @JRubyMethod(name = "accessible?")
+    public RubyBoolean isAccessible() {
+        return new RubyBoolean(getRuntime(), accessibleObject().isAccessible());
+    }
+
+    @JRubyMethod(name = "accessible=")
+    public IRubyObject setAccessible(IRubyObject object) {
+        accessibleObject().setAccessible(object.isTrue());
+        return object;
+    }
+
     @SuppressWarnings("unchecked")
+    @JRubyMethod
     public IRubyObject annotation(IRubyObject annoClass) {
         if (!(annoClass instanceof JavaClass)) {
             throw getRuntime().newTypeError(annoClass, getRuntime().getJavaSupport().getJavaClassClass());
         }
-        return Java.getInstance(getRuntime(), accessibleObject().getAnnotation(((JavaClass)annoClass).javaClass()));
+        return Java.getInstance(getRuntime(), accessibleObject().getAnnotation(((JavaClass) annoClass).javaClass()));
     }
 
+    @JRubyMethod
     public IRubyObject annotations() {
         return Java.getInstance(getRuntime(), accessibleObject().getAnnotations());
     }
-    
+
+    @JRubyMethod(name = "annotations?")
     public RubyBoolean annotations_p() {
         return getRuntime().newBoolean(accessibleObject().getAnnotations().length > 0);
     }
-    
+
+    @JRubyMethod
     public IRubyObject declared_annotations() {
         return Java.getInstance(getRuntime(), accessibleObject().getDeclaredAnnotations());
     }
-    
+
+    @JRubyMethod(name = "declared_annotations?")
     public RubyBoolean declared_annotations_p() {
         return getRuntime().newBoolean(accessibleObject().getDeclaredAnnotations().length > 0);
     }
-    
+
+    @JRubyMethod(name = "annotation_present?")
     public IRubyObject annotation_present_p(IRubyObject annoClass) {
         if (!(annoClass instanceof JavaClass)) {
             throw getRuntime().newTypeError(annoClass, getRuntime().getJavaSupport().getJavaClassClass());
         }
-        return getRuntime().newBoolean(this.accessibleObject().isAnnotationPresent(((JavaClass)annoClass).javaClass()));
+        return getRuntime().newBoolean(this.accessibleObject().isAnnotationPresent(((JavaClass) annoClass).javaClass()));
     }
 
     // for our purposes, Accessibles are also Members, and vice-versa,
     // so we'll include Member methods here.
-
+    @JRubyMethod
     public IRubyObject declaring_class() {
-        Class<?> clazz = ((Member)accessibleObject()).getDeclaringClass();
+        Class<?> clazz = ((Member) accessibleObject()).getDeclaringClass();
         if (clazz != null) {
             return JavaClass.get(getRuntime(), clazz);
         }
         return getRuntime().getNil();
     }
 
+    @JRubyMethod
     public IRubyObject modifiers() {
-        return getRuntime().newFixnum(((Member)accessibleObject()).getModifiers());
+        return getRuntime().newFixnum(((Member) accessibleObject()).getModifiers());
     }
 
+    @JRubyMethod
     public IRubyObject name() {
-        return getRuntime().newString(((Member)accessibleObject()).getName());
+        return getRuntime().newString(((Member) accessibleObject()).getName());
     }
 
+    @JRubyMethod(name = "synthetic?")
     public IRubyObject synthetic_p() {
-        return getRuntime().newBoolean(((Member)accessibleObject()).isSynthetic());
+        return getRuntime().newBoolean(((Member) accessibleObject()).isSynthetic());
     }
-    
+
+    @JRubyMethod(name = {"to_s", "to_string"})
     public RubyString to_string() {
         return getRuntime().newString(accessibleObject().toString());
     }
-
 }
