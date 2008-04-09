@@ -86,7 +86,7 @@ public class ZlibInflate {
             append(str);
         }
         ByteList result = new ByteList(collected.realSize);
-        byte[] outp = new byte[1024];   
+        byte[] outp = new byte[64 * 1024];
         ByteList buf = collected;
         collected = new ByteList(BASE_SIZE);
         int resultLength = -1;
@@ -95,6 +95,9 @@ public class ZlibInflate {
             while (!flater.finished() && resultLength != 0) {
                 resultLength = flater.inflate(outp);
                 result.append(outp, 0, resultLength);
+                if (resultLength == outp.length) {
+                    outp = new byte[outp.length * 2];
+                }
             }
         } catch (DataFormatException e) {
             flater = new Inflater(true);
@@ -102,6 +105,9 @@ public class ZlibInflate {
             while (!flater.finished() && resultLength != 0) {
                 resultLength = flater.inflate(outp);
                 result.append(outp, 0, resultLength);
+                if (resultLength == outp.length) {
+                    outp = new byte[outp.length * 2];
+                }
             }
         }
         return RubyString.newString(runtime, result);

@@ -112,7 +112,7 @@ public class ZlibDeflate {
     
     public IRubyObject finish() throws IOException {
         ByteList result = new ByteList(collected.realSize);
-        byte[] outp = new byte[1024];
+        byte[] outp = new byte[64 * 1024];
         ByteList buf = collected;
         collected = new ByteList(BASE_SIZE);
         flater.setInput(buf.bytes, buf.begin, buf.realSize);
@@ -121,6 +121,9 @@ public class ZlibDeflate {
         while (!flater.finished() && resultLength != 0) {
             resultLength = flater.deflate(outp);
             result.append(outp, 0, resultLength);
+            if (resultLength == outp.length) {
+                outp = new byte[outp.length * 2];
+            }
         }
         return RubyString.newString(runtime, result);
     }
