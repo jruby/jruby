@@ -76,83 +76,84 @@ public class TextAreaReadline implements KeyListener {
         FINISHED
     }
 
-    private static class ReadRequest extends Join.SyncRequest {
+    private static class ReadRequest {
         public final byte[] b;
         public final int off;
         public final int len;
+
         public ReadRequest(byte[] b, int off, int len) {
             this.b = b;
             this.off = off;
             this.len = len;
         }
 
-        public void perform(Join join, InputBuffer buffer) {
+        public int perform(Join join, InputBuffer buffer) {
             final int available = buffer.bytes.length - buffer.offset;
             int len = this.len;
             if ( len > available ) {
                 len = available;
             }
             if ( len == available ) {
-                join.send(Channel.EMPTY.ordinal(), null);
+                join.send(Channel.EMPTY, null);
             } else {
                 buffer.offset += len;
-                join.send(Channel.BUFFER.ordinal(), buffer);
+                join.send(Channel.BUFFER, buffer);
             }
             System.arraycopy(buffer.bytes, buffer.offset, this.b, this.off, len);
-            sendReply(len);
+            return len;
         }
     }
 
     private static final Join.Reaction[] INPUT_REACTIONS = new Join.Reaction[] {
-        new Join.Reaction(Channel.SHUTDOWN.ordinal(), Channel.BUFFER.ordinal()) {
+        new Join.AsyncReaction(Channel.SHUTDOWN, Channel.BUFFER) {
             public void react(Join join, Object[] args) {
-                join.send(Channel.FINISHED.ordinal(), null);
+                join.send(Channel.FINISHED, null);
             }
         },
-        new Join.Reaction(Channel.SHUTDOWN.ordinal(), Channel.EMPTY.ordinal()) {
+        new Join.AsyncReaction(Channel.SHUTDOWN, Channel.EMPTY) {
             public void react(Join join, Object[] args) {
-                join.send(Channel.FINISHED.ordinal(), null);
+                join.send(Channel.FINISHED, null);
             }
         },
-        new Join.Reaction(Channel.SHUTDOWN.ordinal(), Channel.FINISHED.ordinal()) {
+        new Join.AsyncReaction(Channel.SHUTDOWN, Channel.FINISHED) {
             public void react(Join join, Object[] args) {
-                join.send(Channel.FINISHED.ordinal(), null);
-            }
-        },
-
-        new Join.Reaction(Channel.FINISHED.ordinal(), Channel.LINE.ordinal()) {
-            public void react(Join join, Object[] args) {
-                join.send(Channel.FINISHED.ordinal(), null);
+                join.send(Channel.FINISHED, null);
             }
         },
 
-        new Join.Reaction(Channel.AVAILABLE.ordinal(), Channel.BUFFER.ordinal()) {
+        new Join.AsyncReaction(Channel.FINISHED, Channel.LINE) {
             public void react(Join join, Object[] args) {
+                join.send(Channel.FINISHED, null);
+            }
+        },
+
+        new Join.SyncReaction(Channel.AVAILABLE, Channel.BUFFER) {
+            public Object react(Join join, Object[] args) {
                 InputBuffer buffer = (InputBuffer)args[1];
-                join.send(Channel.BUFFER.ordinal(), buffer);
-                ((Join.SyncRequest)args[0]).sendReply(buffer.bytes.length - buffer.offset);
+                join.send(Channel.BUFFER, buffer);
+                return buffer.bytes.length - buffer.offset;
             }
         },
-        new Join.Reaction(Channel.AVAILABLE.ordinal(), Channel.EMPTY.ordinal()) {
-            public void react(Join join, Object[] args) {
-                join.send(Channel.EMPTY.ordinal(), null);
-                ((Join.SyncRequest)args[0]).sendReply(0);
+        new Join.SyncReaction(Channel.AVAILABLE, Channel.EMPTY) {
+            public Object react(Join join, Object[] args) {
+                join.send(Channel.EMPTY, null);
+                return 0;
             }
         },
-        new Join.Reaction(Channel.AVAILABLE.ordinal(), Channel.FINISHED.ordinal()) {
-            public void react(Join join, Object[] args) {
-                join.send(Channel.FINISHED.ordinal(), null);
-                ((Join.SyncRequest)args[0]).sendReply(0);
+        new Join.SyncReaction(Channel.AVAILABLE, Channel.FINISHED) {
+            public Object react(Join join, Object[] args) {
+                join.send(Channel.FINISHED, null);
+                return 0;
             }
         },
 
-        new Join.Reaction(Channel.READ.ordinal(), Channel.BUFFER.ordinal()) {
-            public void react(Join join, Object[] args) {
-                ((ReadRequest)args[0]).perform(join, (InputBuffer)args[1]);
+        new Join.SyncReaction(Channel.READ, Channel.BUFFER) {
+            public Object react(Join join, Object[] args) {
+                return ((ReadRequest)args[0]).perform(join, (InputBuffer)args[1]);
             }
         },
-        new Join.Reaction(Channel.READ.ordinal(), Channel.EMPTY.ordinal(), Channel.LINE.ordinal()) {
-            public void react(Join join, Object[] args) {
+        new Join.SyncReaction(Channel.READ, Channel.EMPTY, Channel.LINE) {
+            public Object react(Join join, Object[] args) {
                 final ReadRequest request = (ReadRequest)args[0];
                 final String line = (String)args[2];
                 if (line.length() != 0) {
@@ -162,28 +163,28 @@ public class TextAreaReadline implements KeyListener {
                     } catch (UnsupportedEncodingException e) {
                         bytes = line.getBytes();
                     }
-                    request.perform(join, new InputBuffer(bytes));
+                    return request.perform(join, new InputBuffer(bytes));
                 } else {
-                    request.sendReply(-1);
+                    return -1;
                 }
             }
         },
-        new Join.Reaction(Channel.READ.ordinal(), Channel.FINISHED.ordinal()) {
-            public void react(Join join, Object[] args) {
-                join.send(Channel.FINISHED.ordinal(), null);
-                ((ReadRequest)args[0]).sendReply(-1);
+        new Join.SyncReaction(Channel.READ, Channel.FINISHED) {
+            public Object react(Join join, Object[] args) {
+                join.send(Channel.FINISHED, null);
+                return -1;
             }
         },
 
-        new Join.Reaction(Channel.GET_LINE.ordinal(), Channel.LINE.ordinal()) {
-            public void react(Join join, Object[] args) {
-                ((Join.SyncRequest)args[0]).sendReply(args[1]);
+        new Join.SyncReaction(Channel.GET_LINE, Channel.LINE) {
+            public Object react(Join join, Object[] args) {
+                return args[1];
             }
         },
-        new Join.Reaction(Channel.GET_LINE.ordinal(), Channel.FINISHED.ordinal()) {
-            public void react(Join join, Object[] args) {
-                join.send(Channel.FINISHED.ordinal(), null);
-                ((Join.SyncRequest)args[0]).sendReply(EMPTY_LINE);
+        new Join.SyncReaction(Channel.GET_LINE, Channel.FINISHED) {
+            public Object react(Join join, Object[] args) {
+                join.send(Channel.FINISHED, null);
+                return EMPTY_LINE;
             }
         }
     };
@@ -196,7 +197,7 @@ public class TextAreaReadline implements KeyListener {
     public TextAreaReadline(JTextComponent area, final String message) {
         this.area = area;
 
-        inputJoin.send(Channel.EMPTY.ordinal(), null);
+        inputJoin.send(Channel.EMPTY, null);
         
         area.addKeyListener(this);
         
@@ -407,7 +408,7 @@ public class TextAreaReadline implements KeyListener {
         
         String line = getLine();
         startPos = area.getDocument().getLength();
-        inputJoin.send(Channel.LINE.ordinal(), line);
+        inputJoin.send(Channel.LINE, line);
     }
     
     public String readLine(final String prompt) {
@@ -425,17 +426,10 @@ public class TextAreaReadline implements KeyListener {
             }
         });
         
-        try {
-            Join.SyncRequest request = new Join.SyncRequest();
-            inputJoin.send(Channel.GET_LINE.ordinal(), request);
-            String line = (String)request.waitForReply(); 
-            if (line.length() > 0) {
-                return line.trim();
-            } else {
-                return null;
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+        final String line = (String)inputJoin.call(Channel.GET_LINE, null);
+        if (line.length() > 0) {
+            return line.trim();
+        } else {
             return null;
         }
     }
@@ -465,7 +459,7 @@ public class TextAreaReadline implements KeyListener {
     public void keyTyped(KeyEvent arg0) { }
 
     public void shutdown() {
-        inputJoin.send(Channel.SHUTDOWN.ordinal(), null);
+        inputJoin.send(Channel.SHUTDOWN, null);
     }
     
     /** Output methods **/
@@ -503,15 +497,7 @@ public class TextAreaReadline implements KeyListener {
                 throw new IOException("Stream is closed");
             }
 
-            Join.SyncRequest request = new Join.SyncRequest();
-            inputJoin.send(Channel.AVAILABLE.ordinal(), request);
-            try {
-                return (Integer)request.waitForReply();
-            } catch (InterruptedException e) {
-                IOException ioEx = new IOException();
-                ioEx.initCause(e);
-                throw ioEx;
-            }
+            return (Integer)inputJoin.call(Channel.AVAILABLE, null);
         }
 
         @Override
@@ -544,21 +530,14 @@ public class TextAreaReadline implements KeyListener {
                 return 0;
             }
 
-            ReadRequest request = new ReadRequest(b, off, len);
-            inputJoin.send(Channel.READ.ordinal(), request);
-            try {
-                return (Integer)request.waitForReply();
-            } catch (InterruptedException e) {
-                IOException ioEx = new IOException();
-                ioEx.initCause(e);
-                throw ioEx;
-            }
+            final ReadRequest request = new ReadRequest(b, off, len);
+            return (Integer)inputJoin.call(Channel.READ, request);
         }
 
         @Override
         public void close() {
             closed = true;
-            inputJoin.send(Channel.SHUTDOWN.ordinal(), null);
+            inputJoin.send(Channel.SHUTDOWN, null);
         }
     }
 
