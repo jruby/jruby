@@ -34,10 +34,7 @@ public final class Join {
     public static final Executor TRIVIAL_EXECUTOR = new Executor() {
         @Override
         public void execute(Runnable command) {
-            try {
-                command.run();
-            } catch (Exception e) {
-            }
+            (new Thread(command)).start();
         }
     };
 
@@ -83,6 +80,26 @@ public final class Join {
         }
 
         abstract void dispatch(Join join, Object[] args);
+    }
+
+    public static abstract class FastReaction extends Reaction {
+        public FastReaction(int[] indices) {
+            super(indices, true);
+        }
+
+        public FastReaction(Enum<?> ... channels) {
+            super(channels, true);
+        }
+
+        @Override
+        void dispatch(final Join join, final Object[] args) {
+            try {
+                react(join, args);
+            } catch (Exception e) {
+            }
+        }
+
+        public abstract void react(Join join, Object[] args);
     }
 
     public static abstract class AsyncReaction extends Reaction {

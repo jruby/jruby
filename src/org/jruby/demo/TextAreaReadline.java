@@ -105,23 +105,23 @@ public class TextAreaReadline implements KeyListener {
     }
 
     private static final Join.Reaction[] INPUT_REACTIONS = new Join.Reaction[] {
-        new Join.AsyncReaction(Channel.SHUTDOWN, Channel.BUFFER) {
+        new Join.FastReaction(Channel.SHUTDOWN, Channel.BUFFER) {
             public void react(Join join, Object[] args) {
                 join.send(Channel.FINISHED, null);
             }
         },
-        new Join.AsyncReaction(Channel.SHUTDOWN, Channel.EMPTY) {
+        new Join.FastReaction(Channel.SHUTDOWN, Channel.EMPTY) {
             public void react(Join join, Object[] args) {
                 join.send(Channel.FINISHED, null);
             }
         },
-        new Join.AsyncReaction(Channel.SHUTDOWN, Channel.FINISHED) {
+        new Join.FastReaction(Channel.SHUTDOWN, Channel.FINISHED) {
             public void react(Join join, Object[] args) {
                 join.send(Channel.FINISHED, null);
             }
         },
 
-        new Join.AsyncReaction(Channel.FINISHED, Channel.LINE) {
+        new Join.FastReaction(Channel.FINISHED, Channel.LINE) {
             public void react(Join join, Object[] args) {
                 join.send(Channel.FINISHED, null);
             }
