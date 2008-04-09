@@ -307,6 +307,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 boolean frame = false;
                 boolean scope = false;
                 boolean backtrace = false;
+                boolean block = false;
 
                 for (JavaMethodDescriptor desc: descs) {
                     int specificArity = -1;
@@ -333,6 +334,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     frame |= desc.anno.frame();
                     scope |= desc.anno.scope();
                     backtrace |= desc.anno.backtrace();
+                    block |= desc.hasBlock;
                 }
 
                 if (DEBUG) out.println(" min: " + min + ", max: " + max);
@@ -353,7 +355,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     case 1:
                         switch (max) {
                         case 2:
-                            superClass = p(JavaMethod.JavaMethodOneOrTwo.class);
+                            if (block) {
+                                superClass = p(JavaMethod.JavaMethodOneOrTwoBlock.class);
+                            } else {
+                                superClass = p(JavaMethod.JavaMethodOneOrTwo.class);
+                            }
                             break;
                         case 3:
                             superClass = p(JavaMethod.JavaMethodOneOrTwoOrThree.class);
@@ -389,24 +395,24 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                             }
                         }
 
-                        boolean block;
+                        boolean hasBlock;
                         if (desc.parameters.length == 0) {
-                            block = false;
+                            hasBlock = false;
                         } else {
                             if (desc.parameters[desc.parameters.length - 1] == Block.class) {
-                                block = true;
+                                hasBlock = true;
                             } else {
-                                block = false;
+                                hasBlock = false;
                             }
                         }
                         SkinnyMethodAdapter mv = null;
 
-                        mv = beginMethod(cw, "call", specificArity, block);
+                        mv = beginMethod(cw, "call", specificArity, hasBlock);
                         mv.visitCode();
                         Label line = new Label();
                         mv.visitLineNumber(0, line);
 
-                        createAnnotatedMethodInvocation(desc, mv, superClass, specificArity, block);
+                        createAnnotatedMethodInvocation(desc, mv, superClass, specificArity, hasBlock);
 
                         endMethod(mv);
                     }

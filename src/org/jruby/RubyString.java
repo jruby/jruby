@@ -38,6 +38,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.exceptions.RaiseException;
+import org.jruby.util.string.JavaCrypt;
 import java.io.UnsupportedEncodingException;
 import java.util.Locale;
 
@@ -647,15 +649,36 @@ public class RubyString extends RubyObject {
         newString.callInit(args, block);
         return newString;
     }
-
-    @JRubyMethod(name = "initialize", optional = 1, frame = true, visibility = Visibility.PRIVATE)
+    
+    /**
+     * Variable-arity version for compatibility. Not bound to Ruby.
+     * @deprecated Use the versions with zero or one arguments
+     */
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
-        if (args.length == 1) replace(args[0]);
+        switch (args.length) {
+        case 0:
+            return this;
+        case 1:
+            return initialize(args[0]);
+        default:
+            Arity.raiseArgumentError(getRuntime(), args.length, 0, 1);
+            return null; // not reached
+        }
+    }
+
+    @JRubyMethod(frame = true, visibility = Visibility.PRIVATE)
+    public IRubyObject initialize() {
+        return this;
+    }
+
+    @JRubyMethod(frame = true, visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(IRubyObject arg0) {
+        replace(arg0);
 
         return this;
     }
 
-    @JRubyMethod(name = "casecmp", required = 1)
+    @JRubyMethod
     public IRubyObject casecmp(IRubyObject other) {
         int compare = value.caseInsensitiveCmp(stringValue(other).value);
         return RubyFixnum.newFixnum(getRuntime(), compare);
@@ -664,7 +687,7 @@ public class RubyString extends RubyObject {
     /** rb_str_match
      *
      */
-    @JRubyMethod(name = "=~", required = 1)
+    @JRubyMethod(name = "=~")
     public IRubyObject op_match(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyRegexp) return ((RubyRegexp) other).op_match(context, this);
         if (other instanceof RubyString) {
@@ -688,7 +711,7 @@ public class RubyString extends RubyObject {
      *
      * @param pattern Regexp or String
      */
-    @JRubyMethod(name = "match", required = 1)
+    @JRubyMethod
     public IRubyObject match(ThreadContext context, IRubyObject pattern) {
         return getPattern(pattern, false).callMethod(context, "match", this);
     }
@@ -696,7 +719,7 @@ public class RubyString extends RubyObject {
     /** rb_str_capitalize
      *
      */
-    @JRubyMethod(name = "capitalize")
+    @JRubyMethod
     public IRubyObject capitalize() {
         RubyString str = strDup();
         str.capitalize_bang();
@@ -741,7 +764,7 @@ public class RubyString extends RubyObject {
         return getRuntime().getNil();
     }
 
-    @JRubyMethod(name = ">=", required = 1)
+    @JRubyMethod(name = ">=")
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyString) {
             return getRuntime().newBoolean(op_cmp((RubyString) other) >= 0);
@@ -750,7 +773,7 @@ public class RubyString extends RubyObject {
         return RubyComparable.op_ge(context, this, other);
     }
 
-    @JRubyMethod(name = ">", required = 1)
+    @JRubyMethod(name = ">")
     public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyString) {
             return getRuntime().newBoolean(op_cmp((RubyString) other) > 0);
@@ -759,7 +782,7 @@ public class RubyString extends RubyObject {
         return RubyComparable.op_gt(context, this, other);
     }
 
-    @JRubyMethod(name = "<=", required = 1)
+    @JRubyMethod(name = "<=")
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyString) {
             return getRuntime().newBoolean(op_cmp((RubyString) other) <= 0);
@@ -768,7 +791,7 @@ public class RubyString extends RubyObject {
         return RubyComparable.op_le(context, this, other);
     }
 
-    @JRubyMethod(name = "<", required = 1)
+    @JRubyMethod(name = "<")
     public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyString) {
             return getRuntime().newBoolean(op_cmp((RubyString) other) < 0);
@@ -777,7 +800,7 @@ public class RubyString extends RubyObject {
         return RubyComparable.op_lt(context, this, other);
     }
 
-    @JRubyMethod(name = "eql?", required = 1)
+    @JRubyMethod(name = "eql?")
     public IRubyObject str_eql_p(IRubyObject other) {
         if (!(other instanceof RubyString)) return getRuntime().getFalse();
         RubyString otherString = (RubyString)other;
@@ -787,7 +810,7 @@ public class RubyString extends RubyObject {
     /** rb_str_upcase
      *
      */
-    @JRubyMethod(name = "upcase")
+    @JRubyMethod
     public RubyString upcase() {
         RubyString str = strDup();
         str.upcase_bang();
@@ -827,7 +850,7 @@ public class RubyString extends RubyObject {
     /** rb_str_downcase
      *
      */
-    @JRubyMethod(name = "downcase")
+    @JRubyMethod
     public RubyString downcase() {
         RubyString str = strDup();
         str.downcase_bang();
@@ -867,7 +890,7 @@ public class RubyString extends RubyObject {
     /** rb_str_swapcase
      *
      */
-    @JRubyMethod(name = "swapcase")
+    @JRubyMethod
     public RubyString swapcase() {
         RubyString str = strDup();
         str.swapcase_bang();
@@ -910,14 +933,14 @@ public class RubyString extends RubyObject {
     /** rb_str_dump
      *
      */
-    @JRubyMethod(name = "dump")
+    @JRubyMethod
     public IRubyObject dump() {
         RubyString s = new RubyString(getRuntime(), getMetaClass(), inspectIntoByteList(true));
         s.infectBy(this);
         return s;
     }
 
-    @JRubyMethod(name = "insert", required = 2)
+    @JRubyMethod
     public IRubyObject insert(IRubyObject indexArg, IRubyObject stringArg) {
         // MRI behavior: first check for ability to convert to String...
         RubyString s = (RubyString)stringArg.convertToString();
@@ -941,7 +964,7 @@ public class RubyString extends RubyObject {
     /** rb_str_inspect
      *
      */
-    @JRubyMethod(name = "inspect")
+    @JRubyMethod
     public IRubyObject inspect() {
         RubyString s = getRuntime().newString(inspectIntoByteList(false));
         s.infectBy(this);
@@ -1041,7 +1064,7 @@ public class RubyString extends RubyObject {
     /** rb_str_concat
      *
      */
-    @JRubyMethod(name = {"concat", "<<"}, required = 1)
+    @JRubyMethod(name = {"concat", "<<"})
     public RubyString concat(IRubyObject other) {
         if (other instanceof RubyFixnum) {
             long value = ((RubyFixnum) other).getLongValue();
@@ -1053,7 +1076,7 @@ public class RubyString extends RubyObject {
     /** rb_str_crypt
      *
      */
-    @JRubyMethod(name = "crypt", required = 1)
+    @JRubyMethod(name = "crypt")
     public RubyString crypt(IRubyObject other) {
         ByteList salt = stringValue(other).getByteList();
         if (salt.realSize < 2) {
@@ -1067,610 +1090,110 @@ public class RubyString extends RubyObject {
         return s;
     }
 
-    public static class JavaCrypt {
-        private static final int ITERATIONS = 16;
-
-        private static final int con_salt[] = {
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-            0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
-            0x0A, 0x0B, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A,
-            0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12,
-            0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A,
-            0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22,
-            0x23, 0x24, 0x25, 0x20, 0x21, 0x22, 0x23, 0x24,
-            0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C,
-            0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32, 0x33, 0x34,
-            0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x3B, 0x3C,
-            0x3D, 0x3E, 0x3F, 0x00, 0x00, 0x00, 0x00, 0x00,
-        };
-
-        private static final boolean shifts2[] = {
-            false, false, true, true, true, true, true, true,
-            false, true,  true, true, true, true, true, false };
-
-        private static final int skb[][] = {
-            {
-                /* for C bits (numbered as per FIPS 46) 1 2 3 4 5 6 */
-                0x00000000, 0x00000010, 0x20000000, 0x20000010,
-                0x00010000, 0x00010010, 0x20010000, 0x20010010,
-                0x00000800, 0x00000810, 0x20000800, 0x20000810,
-                0x00010800, 0x00010810, 0x20010800, 0x20010810,
-                0x00000020, 0x00000030, 0x20000020, 0x20000030,
-                0x00010020, 0x00010030, 0x20010020, 0x20010030,
-                0x00000820, 0x00000830, 0x20000820, 0x20000830,
-                0x00010820, 0x00010830, 0x20010820, 0x20010830,
-                0x00080000, 0x00080010, 0x20080000, 0x20080010,
-                0x00090000, 0x00090010, 0x20090000, 0x20090010,
-                0x00080800, 0x00080810, 0x20080800, 0x20080810,
-                0x00090800, 0x00090810, 0x20090800, 0x20090810,
-                0x00080020, 0x00080030, 0x20080020, 0x20080030,
-                0x00090020, 0x00090030, 0x20090020, 0x20090030,
-                0x00080820, 0x00080830, 0x20080820, 0x20080830,
-                0x00090820, 0x00090830, 0x20090820, 0x20090830,
-            },{
-                /* for C bits (numbered as per FIPS 46) 7 8 10 11 12 13 */
-                0x00000000, 0x02000000, 0x00002000, 0x02002000,
-                0x00200000, 0x02200000, 0x00202000, 0x02202000,
-                0x00000004, 0x02000004, 0x00002004, 0x02002004,
-                0x00200004, 0x02200004, 0x00202004, 0x02202004,
-                0x00000400, 0x02000400, 0x00002400, 0x02002400,
-                0x00200400, 0x02200400, 0x00202400, 0x02202400,
-                0x00000404, 0x02000404, 0x00002404, 0x02002404,
-                0x00200404, 0x02200404, 0x00202404, 0x02202404,
-                0x10000000, 0x12000000, 0x10002000, 0x12002000,
-                0x10200000, 0x12200000, 0x10202000, 0x12202000,
-                0x10000004, 0x12000004, 0x10002004, 0x12002004,
-                0x10200004, 0x12200004, 0x10202004, 0x12202004,
-                0x10000400, 0x12000400, 0x10002400, 0x12002400,
-                0x10200400, 0x12200400, 0x10202400, 0x12202400,
-                0x10000404, 0x12000404, 0x10002404, 0x12002404,
-                0x10200404, 0x12200404, 0x10202404, 0x12202404,
-            },{
-                /* for C bits (numbered as per FIPS 46) 14 15 16 17 19 20 */
-                0x00000000, 0x00000001, 0x00040000, 0x00040001,
-                0x01000000, 0x01000001, 0x01040000, 0x01040001,
-                0x00000002, 0x00000003, 0x00040002, 0x00040003,
-                0x01000002, 0x01000003, 0x01040002, 0x01040003,
-                0x00000200, 0x00000201, 0x00040200, 0x00040201,
-                0x01000200, 0x01000201, 0x01040200, 0x01040201,
-                0x00000202, 0x00000203, 0x00040202, 0x00040203,
-                0x01000202, 0x01000203, 0x01040202, 0x01040203,
-                0x08000000, 0x08000001, 0x08040000, 0x08040001,
-                0x09000000, 0x09000001, 0x09040000, 0x09040001,
-                0x08000002, 0x08000003, 0x08040002, 0x08040003,
-                0x09000002, 0x09000003, 0x09040002, 0x09040003,
-                0x08000200, 0x08000201, 0x08040200, 0x08040201,
-                0x09000200, 0x09000201, 0x09040200, 0x09040201,
-                0x08000202, 0x08000203, 0x08040202, 0x08040203,
-                0x09000202, 0x09000203, 0x09040202, 0x09040203,
-            },{
-                /* for C bits (numbered as per FIPS 46) 21 23 24 26 27 28 */
-                0x00000000, 0x00100000, 0x00000100, 0x00100100,
-                0x00000008, 0x00100008, 0x00000108, 0x00100108,
-                0x00001000, 0x00101000, 0x00001100, 0x00101100,
-                0x00001008, 0x00101008, 0x00001108, 0x00101108,
-                0x04000000, 0x04100000, 0x04000100, 0x04100100,
-                0x04000008, 0x04100008, 0x04000108, 0x04100108,
-                0x04001000, 0x04101000, 0x04001100, 0x04101100,
-                0x04001008, 0x04101008, 0x04001108, 0x04101108,
-                0x00020000, 0x00120000, 0x00020100, 0x00120100,
-                0x00020008, 0x00120008, 0x00020108, 0x00120108,
-                0x00021000, 0x00121000, 0x00021100, 0x00121100,
-                0x00021008, 0x00121008, 0x00021108, 0x00121108,
-                0x04020000, 0x04120000, 0x04020100, 0x04120100,
-                0x04020008, 0x04120008, 0x04020108, 0x04120108,
-                0x04021000, 0x04121000, 0x04021100, 0x04121100,
-                0x04021008, 0x04121008, 0x04021108, 0x04121108,
-            },{
-                /* for D bits (numbered as per FIPS 46) 1 2 3 4 5 6 */
-                0x00000000, 0x10000000, 0x00010000, 0x10010000,
-                0x00000004, 0x10000004, 0x00010004, 0x10010004,
-                0x20000000, 0x30000000, 0x20010000, 0x30010000,
-                0x20000004, 0x30000004, 0x20010004, 0x30010004,
-                0x00100000, 0x10100000, 0x00110000, 0x10110000,
-                0x00100004, 0x10100004, 0x00110004, 0x10110004,
-                0x20100000, 0x30100000, 0x20110000, 0x30110000,
-                0x20100004, 0x30100004, 0x20110004, 0x30110004,
-                0x00001000, 0x10001000, 0x00011000, 0x10011000,
-                0x00001004, 0x10001004, 0x00011004, 0x10011004,
-                0x20001000, 0x30001000, 0x20011000, 0x30011000,
-                0x20001004, 0x30001004, 0x20011004, 0x30011004,
-                0x00101000, 0x10101000, 0x00111000, 0x10111000,
-                0x00101004, 0x10101004, 0x00111004, 0x10111004,
-                0x20101000, 0x30101000, 0x20111000, 0x30111000,
-                0x20101004, 0x30101004, 0x20111004, 0x30111004,
-            },{
-                /* for D bits (numbered as per FIPS 46) 8 9 11 12 13 14 */
-                0x00000000, 0x08000000, 0x00000008, 0x08000008,
-                0x00000400, 0x08000400, 0x00000408, 0x08000408,
-                0x00020000, 0x08020000, 0x00020008, 0x08020008,
-                0x00020400, 0x08020400, 0x00020408, 0x08020408,
-                0x00000001, 0x08000001, 0x00000009, 0x08000009,
-                0x00000401, 0x08000401, 0x00000409, 0x08000409,
-                0x00020001, 0x08020001, 0x00020009, 0x08020009,
-                0x00020401, 0x08020401, 0x00020409, 0x08020409,
-                0x02000000, 0x0A000000, 0x02000008, 0x0A000008,
-                0x02000400, 0x0A000400, 0x02000408, 0x0A000408,
-                0x02020000, 0x0A020000, 0x02020008, 0x0A020008,
-                0x02020400, 0x0A020400, 0x02020408, 0x0A020408,
-                0x02000001, 0x0A000001, 0x02000009, 0x0A000009,
-                0x02000401, 0x0A000401, 0x02000409, 0x0A000409,
-                0x02020001, 0x0A020001, 0x02020009, 0x0A020009,
-                0x02020401, 0x0A020401, 0x02020409, 0x0A020409,
-            },{
-                /* for D bits (numbered as per FIPS 46) 16 17 18 19 20 21 */
-                0x00000000, 0x00000100, 0x00080000, 0x00080100,
-                0x01000000, 0x01000100, 0x01080000, 0x01080100,
-                0x00000010, 0x00000110, 0x00080010, 0x00080110,
-                0x01000010, 0x01000110, 0x01080010, 0x01080110,
-                0x00200000, 0x00200100, 0x00280000, 0x00280100,
-                0x01200000, 0x01200100, 0x01280000, 0x01280100,
-                0x00200010, 0x00200110, 0x00280010, 0x00280110,
-                0x01200010, 0x01200110, 0x01280010, 0x01280110,
-                0x00000200, 0x00000300, 0x00080200, 0x00080300,
-                0x01000200, 0x01000300, 0x01080200, 0x01080300,
-                0x00000210, 0x00000310, 0x00080210, 0x00080310,
-                0x01000210, 0x01000310, 0x01080210, 0x01080310,
-                0x00200200, 0x00200300, 0x00280200, 0x00280300,
-                0x01200200, 0x01200300, 0x01280200, 0x01280300,
-                0x00200210, 0x00200310, 0x00280210, 0x00280310,
-                0x01200210, 0x01200310, 0x01280210, 0x01280310,
-            },{
-                /* for D bits (numbered as per FIPS 46) 22 23 24 25 27 28 */
-                0x00000000, 0x04000000, 0x00040000, 0x04040000,
-                0x00000002, 0x04000002, 0x00040002, 0x04040002,
-                0x00002000, 0x04002000, 0x00042000, 0x04042000,
-                0x00002002, 0x04002002, 0x00042002, 0x04042002,
-                0x00000020, 0x04000020, 0x00040020, 0x04040020,
-                0x00000022, 0x04000022, 0x00040022, 0x04040022,
-                0x00002020, 0x04002020, 0x00042020, 0x04042020,
-                0x00002022, 0x04002022, 0x00042022, 0x04042022,
-                0x00000800, 0x04000800, 0x00040800, 0x04040800,
-                0x00000802, 0x04000802, 0x00040802, 0x04040802,
-                0x00002800, 0x04002800, 0x00042800, 0x04042800,
-                0x00002802, 0x04002802, 0x00042802, 0x04042802,
-                0x00000820, 0x04000820, 0x00040820, 0x04040820,
-                0x00000822, 0x04000822, 0x00040822, 0x04040822,
-                0x00002820, 0x04002820, 0x00042820, 0x04042820,
-                0x00002822, 0x04002822, 0x00042822, 0x04042822,
-            }
-        };
-
-        private static final int SPtrans[][] = {
-            {
-                /* nibble 0 */
-                0x00820200, 0x00020000, 0x80800000, 0x80820200,
-                0x00800000, 0x80020200, 0x80020000, 0x80800000,
-                0x80020200, 0x00820200, 0x00820000, 0x80000200,
-                0x80800200, 0x00800000, 0x00000000, 0x80020000,
-                0x00020000, 0x80000000, 0x00800200, 0x00020200,
-                0x80820200, 0x00820000, 0x80000200, 0x00800200,
-                0x80000000, 0x00000200, 0x00020200, 0x80820000,
-                0x00000200, 0x80800200, 0x80820000, 0x00000000,
-                0x00000000, 0x80820200, 0x00800200, 0x80020000,
-                0x00820200, 0x00020000, 0x80000200, 0x00800200,
-                0x80820000, 0x00000200, 0x00020200, 0x80800000,
-                0x80020200, 0x80000000, 0x80800000, 0x00820000,
-                0x80820200, 0x00020200, 0x00820000, 0x80800200,
-                0x00800000, 0x80000200, 0x80020000, 0x00000000,
-                0x00020000, 0x00800000, 0x80800200, 0x00820200,
-                0x80000000, 0x80820000, 0x00000200, 0x80020200,
-            },{
-                /* nibble 1 */
-                0x10042004, 0x00000000, 0x00042000, 0x10040000,
-                0x10000004, 0x00002004, 0x10002000, 0x00042000,
-                0x00002000, 0x10040004, 0x00000004, 0x10002000,
-                0x00040004, 0x10042000, 0x10040000, 0x00000004,
-                0x00040000, 0x10002004, 0x10040004, 0x00002000,
-                0x00042004, 0x10000000, 0x00000000, 0x00040004,
-                0x10002004, 0x00042004, 0x10042000, 0x10000004,
-                0x10000000, 0x00040000, 0x00002004, 0x10042004,
-                0x00040004, 0x10042000, 0x10002000, 0x00042004,
-                0x10042004, 0x00040004, 0x10000004, 0x00000000,
-                0x10000000, 0x00002004, 0x00040000, 0x10040004,
-                0x00002000, 0x10000000, 0x00042004, 0x10002004,
-                0x10042000, 0x00002000, 0x00000000, 0x10000004,
-                0x00000004, 0x10042004, 0x00042000, 0x10040000,
-                0x10040004, 0x00040000, 0x00002004, 0x10002000,
-                0x10002004, 0x00000004, 0x10040000, 0x00042000,
-            },{
-                /* nibble 2 */
-                0x41000000, 0x01010040, 0x00000040, 0x41000040,
-                0x40010000, 0x01000000, 0x41000040, 0x00010040,
-                0x01000040, 0x00010000, 0x01010000, 0x40000000,
-                0x41010040, 0x40000040, 0x40000000, 0x41010000,
-                0x00000000, 0x40010000, 0x01010040, 0x00000040,
-                0x40000040, 0x41010040, 0x00010000, 0x41000000,
-                0x41010000, 0x01000040, 0x40010040, 0x01010000,
-                0x00010040, 0x00000000, 0x01000000, 0x40010040,
-                0x01010040, 0x00000040, 0x40000000, 0x00010000,
-                0x40000040, 0x40010000, 0x01010000, 0x41000040,
-                0x00000000, 0x01010040, 0x00010040, 0x41010000,
-                0x40010000, 0x01000000, 0x41010040, 0x40000000,
-                0x40010040, 0x41000000, 0x01000000, 0x41010040,
-                0x00010000, 0x01000040, 0x41000040, 0x00010040,
-                0x01000040, 0x00000000, 0x41010000, 0x40000040,
-                0x41000000, 0x40010040, 0x00000040, 0x01010000,
-            },{
-                /* nibble 3 */
-                0x00100402, 0x04000400, 0x00000002, 0x04100402,
-                0x00000000, 0x04100000, 0x04000402, 0x00100002,
-                0x04100400, 0x04000002, 0x04000000, 0x00000402,
-                0x04000002, 0x00100402, 0x00100000, 0x04000000,
-                0x04100002, 0x00100400, 0x00000400, 0x00000002,
-                0x00100400, 0x04000402, 0x04100000, 0x00000400,
-                0x00000402, 0x00000000, 0x00100002, 0x04100400,
-                0x04000400, 0x04100002, 0x04100402, 0x00100000,
-                0x04100002, 0x00000402, 0x00100000, 0x04000002,
-                0x00100400, 0x04000400, 0x00000002, 0x04100000,
-                0x04000402, 0x00000000, 0x00000400, 0x00100002,
-                0x00000000, 0x04100002, 0x04100400, 0x00000400,
-                0x04000000, 0x04100402, 0x00100402, 0x00100000,
-                0x04100402, 0x00000002, 0x04000400, 0x00100402,
-                0x00100002, 0x00100400, 0x04100000, 0x04000402,
-                0x00000402, 0x04000000, 0x04000002, 0x04100400,
-            },{
-                /* nibble 4 */
-                0x02000000, 0x00004000, 0x00000100, 0x02004108,
-                0x02004008, 0x02000100, 0x00004108, 0x02004000,
-                0x00004000, 0x00000008, 0x02000008, 0x00004100,
-                0x02000108, 0x02004008, 0x02004100, 0x00000000,
-                0x00004100, 0x02000000, 0x00004008, 0x00000108,
-                0x02000100, 0x00004108, 0x00000000, 0x02000008,
-                0x00000008, 0x02000108, 0x02004108, 0x00004008,
-                0x02004000, 0x00000100, 0x00000108, 0x02004100,
-                0x02004100, 0x02000108, 0x00004008, 0x02004000,
-                0x00004000, 0x00000008, 0x02000008, 0x02000100,
-                0x02000000, 0x00004100, 0x02004108, 0x00000000,
-                0x00004108, 0x02000000, 0x00000100, 0x00004008,
-                0x02000108, 0x00000100, 0x00000000, 0x02004108,
-                0x02004008, 0x02004100, 0x00000108, 0x00004000,
-                0x00004100, 0x02004008, 0x02000100, 0x00000108,
-                0x00000008, 0x00004108, 0x02004000, 0x02000008,
-            },{
-                /* nibble 5 */
-                0x20000010, 0x00080010, 0x00000000, 0x20080800,
-                0x00080010, 0x00000800, 0x20000810, 0x00080000,
-                0x00000810, 0x20080810, 0x00080800, 0x20000000,
-                0x20000800, 0x20000010, 0x20080000, 0x00080810,
-                0x00080000, 0x20000810, 0x20080010, 0x00000000,
-                0x00000800, 0x00000010, 0x20080800, 0x20080010,
-                0x20080810, 0x20080000, 0x20000000, 0x00000810,
-                0x00000010, 0x00080800, 0x00080810, 0x20000800,
-                0x00000810, 0x20000000, 0x20000800, 0x00080810,
-                0x20080800, 0x00080010, 0x00000000, 0x20000800,
-                0x20000000, 0x00000800, 0x20080010, 0x00080000,
-                0x00080010, 0x20080810, 0x00080800, 0x00000010,
-                0x20080810, 0x00080800, 0x00080000, 0x20000810,
-                0x20000010, 0x20080000, 0x00080810, 0x00000000,
-                0x00000800, 0x20000010, 0x20000810, 0x20080800,
-                0x20080000, 0x00000810, 0x00000010, 0x20080010,
-            },{
-                /* nibble 6 */
-                0x00001000, 0x00000080, 0x00400080, 0x00400001,
-                0x00401081, 0x00001001, 0x00001080, 0x00000000,
-                0x00400000, 0x00400081, 0x00000081, 0x00401000,
-                0x00000001, 0x00401080, 0x00401000, 0x00000081,
-                0x00400081, 0x00001000, 0x00001001, 0x00401081,
-                0x00000000, 0x00400080, 0x00400001, 0x00001080,
-                0x00401001, 0x00001081, 0x00401080, 0x00000001,
-                0x00001081, 0x00401001, 0x00000080, 0x00400000,
-                0x00001081, 0x00401000, 0x00401001, 0x00000081,
-                0x00001000, 0x00000080, 0x00400000, 0x00401001,
-                0x00400081, 0x00001081, 0x00001080, 0x00000000,
-                0x00000080, 0x00400001, 0x00000001, 0x00400080,
-                0x00000000, 0x00400081, 0x00400080, 0x00001080,
-                0x00000081, 0x00001000, 0x00401081, 0x00400000,
-                0x00401080, 0x00000001, 0x00001001, 0x00401081,
-                0x00400001, 0x00401080, 0x00401000, 0x00001001,
-            },{
-                /* nibble 7 */
-                0x08200020, 0x08208000, 0x00008020, 0x00000000,
-                0x08008000, 0x00200020, 0x08200000, 0x08208020,
-                0x00000020, 0x08000000, 0x00208000, 0x00008020,
-                0x00208020, 0x08008020, 0x08000020, 0x08200000,
-                0x00008000, 0x00208020, 0x00200020, 0x08008000,
-                0x08208020, 0x08000020, 0x00000000, 0x00208000,
-                0x08000000, 0x00200000, 0x08008020, 0x08200020,
-                0x00200000, 0x00008000, 0x08208000, 0x00000020,
-                0x00200000, 0x00008000, 0x08000020, 0x08208020,
-                0x00008020, 0x08000000, 0x00000000, 0x00208000,
-                0x08200020, 0x08008020, 0x08008000, 0x00200020,
-                0x08208000, 0x00000020, 0x00200020, 0x08008000,
-                0x08208020, 0x00200000, 0x08200000, 0x08000020,
-                0x00208000, 0x00008020, 0x08008020, 0x08200000,
-                0x00000020, 0x08208000, 0x00208020, 0x00000000,
-                0x08000000, 0x08200020, 0x00008000, 0x00208020
-            }
-        };
-
-        private static final int cov_2char[] = {
-            0x2E, 0x2F, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35,
-            0x36, 0x37, 0x38, 0x39, 0x41, 0x42, 0x43, 0x44,
-            0x45, 0x46, 0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C,
-            0x4D, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0x53, 0x54,
-            0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 0x61, 0x62,
-            0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A,
-            0x6B, 0x6C, 0x6D, 0x6E, 0x6F, 0x70, 0x71, 0x72,
-            0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A
-        };
-
-        private static final int byteToUnsigned(byte b) {
-            return b & 0xFF;
-        }
-
-        private static int fourBytesToInt(byte b[], int offset) {
-            int value;
-            value  =  byteToUnsigned(b[offset++]);
-            value |= (byteToUnsigned(b[offset++]) <<  8);
-            value |= (byteToUnsigned(b[offset++]) << 16);
-            value |= (byteToUnsigned(b[offset++]) << 24);
-            return(value);
-        }
-
-        private static final void intToFourBytes(int iValue, byte b[], int offset) {
-            b[offset++] = (byte)((iValue)        & 0xff);
-            b[offset++] = (byte)((iValue >>> 8 ) & 0xff);
-            b[offset++] = (byte)((iValue >>> 16) & 0xff);
-            b[offset++] = (byte)((iValue >>> 24) & 0xff);
-        }
-
-        private static final void PERM_OP(int a, int b, int n, int m, int results[]) {
-            int t;
-
-            t = ((a >>> n) ^ b) & m;
-            a ^= t << n;
-            b ^= t;
-
-            results[0] = a;
-            results[1] = b;
-        }
-
-        private static final int HPERM_OP(int a, int n, int m) {
-            int t;
-
-            t = ((a << (16 - n)) ^ a) & m;
-            a = a ^ t ^ (t >>> (16 - n));
-
-            return a;
-        }
-
-        private static int [] des_set_key(byte key[]) {
-            int schedule[] = new int[ITERATIONS * 2];
-
-            int c = fourBytesToInt(key, 0);
-            int d = fourBytesToInt(key, 4);
-
-            int results[] = new int[2];
-
-            PERM_OP(d, c, 4, 0x0f0f0f0f, results);
-            d = results[0]; c = results[1];
-
-            c = HPERM_OP(c, -2, 0xcccc0000);
-            d = HPERM_OP(d, -2, 0xcccc0000);
-
-            PERM_OP(d, c, 1, 0x55555555, results);
-            d = results[0]; c = results[1];
-
-            PERM_OP(c, d, 8, 0x00ff00ff, results);
-            c = results[0]; d = results[1];
-
-            PERM_OP(d, c, 1, 0x55555555, results);
-            d = results[0]; c = results[1];
-
-            d = (((d & 0x000000ff) <<  16) |  (d & 0x0000ff00)     |
-                 ((d & 0x00ff0000) >>> 16) | ((c & 0xf0000000) >>> 4));
-            c &= 0x0fffffff;
-
-            int s, t;
-            int j = 0;
-
-            for(int i = 0; i < ITERATIONS; i ++) {
-                if(shifts2[i]) {
-                    c = (c >>> 2) | (c << 26);
-                    d = (d >>> 2) | (d << 26);
-                } else {
-                    c = (c >>> 1) | (c << 27);
-                    d = (d >>> 1) | (d << 27);
-                }
-
-                c &= 0x0fffffff;
-                d &= 0x0fffffff;
-
-                s = skb[0][ (c       ) & 0x3f                       ]|
-                    skb[1][((c >>>  6) & 0x03) | ((c >>>  7) & 0x3c)]|
-                    skb[2][((c >>> 13) & 0x0f) | ((c >>> 14) & 0x30)]|
-                    skb[3][((c >>> 20) & 0x01) | ((c >>> 21) & 0x06) |
-                           ((c >>> 22) & 0x38)];
-
-                t = skb[4][ (d     )  & 0x3f                       ]|
-                    skb[5][((d >>> 7) & 0x03) | ((d >>>  8) & 0x3c)]|
-                    skb[6][ (d >>>15) & 0x3f                       ]|
-                    skb[7][((d >>>21) & 0x0f) | ((d >>> 22) & 0x30)];
-
-                schedule[j++] = ((t <<  16) | (s & 0x0000ffff)) & 0xffffffff;
-                s             = ((s >>> 16) | (t & 0xffff0000));
-
-                s             = (s << 4) | (s >>> 28);
-                schedule[j++] = s & 0xffffffff;
-            }
-            return(schedule);
-        }
-
-        private static final int D_ENCRYPT(int L, int R, int S, int E0, int E1, int s[]) {
-            int t, u, v;
-
-            v = R ^ (R >>> 16);
-            u = v & E0;
-            v = v & E1;
-            u = (u ^ (u << 16)) ^ R ^ s[S];
-            t = (v ^ (v << 16)) ^ R ^ s[S + 1];
-            t = (t >>> 4) | (t << 28);
-
-            L ^= SPtrans[1][(t       ) & 0x3f] |
-                SPtrans[3][(t >>>  8) & 0x3f] |
-                SPtrans[5][(t >>> 16) & 0x3f] |
-                SPtrans[7][(t >>> 24) & 0x3f] |
-                SPtrans[0][(u       ) & 0x3f] |
-                SPtrans[2][(u >>>  8) & 0x3f] |
-                SPtrans[4][(u >>> 16) & 0x3f] |
-                SPtrans[6][(u >>> 24) & 0x3f];
-
-            return(L);
-        }
-
-        private static final int [] body(int schedule[], int Eswap0, int Eswap1) {
-            int left = 0;
-            int right = 0;
-            int t     = 0;
-
-            for(int j = 0; j < 25; j ++) {
-                for(int i = 0; i < ITERATIONS * 2; i += 4) {
-                    left  = D_ENCRYPT(left,  right, i,     Eswap0, Eswap1, schedule);
-                    right = D_ENCRYPT(right, left,  i + 2, Eswap0, Eswap1, schedule);
-                }
-                t     = left;
-                left  = right;
-                right = t;
-            }
-
-            t = right;
-
-            right = (left >>> 1) | (left << 31);
-            left  = (t    >>> 1) | (t    << 31);
-
-            left  &= 0xffffffff;
-            right &= 0xffffffff;
-
-            int results[] = new int[2];
-
-            PERM_OP(right, left, 1, 0x55555555, results);
-            right = results[0]; left = results[1];
-
-            PERM_OP(left, right, 8, 0x00ff00ff, results);
-            left = results[0]; right = results[1];
-
-            PERM_OP(right, left, 2, 0x33333333, results);
-            right = results[0]; left = results[1];
-
-            PERM_OP(left, right, 16, 0x0000ffff, results);
-            left = results[0]; right = results[1];
-
-            PERM_OP(right, left, 4, 0x0f0f0f0f, results);
-            right = results[0]; left = results[1];
-
-            int out[] = new int[2];
-
-            out[0] = left; out[1] = right;
-
-            return(out);
-        }
-
-        public static final ByteList crypt(ByteList salt, ByteList original) {
-            ByteList buffer = new ByteList(new byte[]{' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '},false);
-
-            byte charZero = salt.bytes[salt.begin];
-            byte charOne  = salt.bytes[salt.begin+1];
-
-            buffer.set(0,charZero);
-            buffer.set(1,charOne);
-
-            int Eswap0 = con_salt[(int)(charZero&0x7F)];
-            int Eswap1 = con_salt[(int)(charOne&0x7F)] << 4;
-
-            byte key[] = new byte[8];
-
-            for(int i = 0; i < key.length; i ++) {
-                key[i] = (byte)0;
-            }
-
-            for(int i = 0; i < key.length && i < original.length(); i ++) {
-                int iChar = (int)(original.bytes[original.begin+i]&0xFF);
-
-                key[i] = (byte)(iChar << 1);
-            }
-
-            int schedule[] = des_set_key(key);
-            int out[]      = body(schedule, Eswap0, Eswap1);
-
-            byte b[] = new byte[9];
-
-            intToFourBytes(out[0], b, 0);
-            intToFourBytes(out[1], b, 4);
-            b[8] = 0;
-
-            for(int i = 2, y = 0, u = 0x80; i < 13; i ++) {
-                for(int j = 0, c = 0; j < 6; j ++) {
-                    c <<= 1;
-
-                    if(((int)b[y] & u) != 0)
-                        c |= 1;
-
-                    u >>>= 1;
-
-                    if(u == 0) {
-                        y++;
-                        u = 0x80;
-                    }
-                    buffer.set(i, cov_2char[c]);
-                }
-            }
-            return buffer;
-        }
-    }
-
     /* RubyString aka rb_string_value */
     public static RubyString stringValue(IRubyObject object) {
         return (RubyString) (object instanceof RubyString ? object :
             object.convertToString());
     }
 
-    /** rb_str_sub
-     *
+    /**
+     * Variable-arity version for compatibility. Not bound to Ruby.
+     * @deprecated Use the versions with one or two args.
      */
-    @JRubyMethod(name = "sub", required = 1, optional = 1, frame = true)
     public IRubyObject sub(ThreadContext context, IRubyObject[] args, Block block) {
         RubyString str = strDup();
         str.sub_bang(context, args, block);
         return str;
     }
 
+    /** rb_str_sub
+     *
+     */
+    @JRubyMethod(name = "sub", frame = true)
+    public IRubyObject sub(ThreadContext context, IRubyObject arg0, Block block) {
+        RubyString str = strDup();
+        str.sub_bang(context, arg0, block);
+        return str;
+    }
+
+    /** rb_str_sub
+     *
+     */
+    @JRubyMethod(name = "sub", frame = true)
+    public IRubyObject sub(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        RubyString str = strDup();
+        str.sub_bang(context, arg0, arg1, block);
+        return str;
+    }
+
+    /**
+     * Variable-arity version for compatibility. Not bound to Ruby.
+     * @deprecated Use the versions with one or two arguments.
+     */
+    public IRubyObject sub_bang(ThreadContext context, IRubyObject[] args, Block block) {
+        switch (args.length) {
+        case 1:
+            return sub_bang(context, args[0], block);
+        case 2:
+            return sub_bang(context, args[0], args[1], block);
+        default:
+            Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
+            return null; // not reached
+        }
+    }
+
     /** rb_str_sub_bang
      *
      */
-    @JRubyMethod(name = "sub!", required = 1, optional = 1, frame = true)
-    public IRubyObject sub_bang(ThreadContext context, IRubyObject[] args, Block block) {
+    @JRubyMethod(name = "sub!", frame = true)
+    public IRubyObject sub_bang(ThreadContext context, IRubyObject arg0, Block block) {
         
         RubyString repl = null;
         final boolean iter;
         boolean tainted = false;
         
-        if(args.length == 1 && block.isGiven()) {
+        if(block.isGiven()) {
             iter = true;
             tainted = false;
-        } else if(args.length == 2) {
-            repl = args[1].convertToString();
-            iter = false;
-            if (repl.isTaint()) tainted = true;
         } else {
-            throw getRuntime().newArgumentError("wrong number of arguments (" + args.length + " for 2)");
+            throw getRuntime().newArgumentError("wrong number of arguments (1 for 2)");
         }
 
-        RubyRegexp rubyRegex = getPattern(args[0], true);
+        RubyRegexp rubyRegex = getPattern(arg0, true);
         Regex regex = rubyRegex.getPattern();
+        
+        return subBangCommon(regex, context, iter, rubyRegex, block, repl, tainted);
+    }
+
+    /** rb_str_sub_bang
+     *
+     */
+    @JRubyMethod(name = "sub!", frame = true)
+    public IRubyObject sub_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        
+        RubyString repl = null;
+        final boolean iter;
+        boolean tainted = false;
+        
+        repl = arg1.convertToString();
+        iter = false;
+        if (repl.isTaint()) tainted = true;
+        
+        RubyRegexp rubyRegex = getPattern(arg0, true);
+        Regex regex = rubyRegex.getPattern();
+        
+        return subBangCommon(regex, context, iter, rubyRegex, block, repl, tainted);
+    }
+
+    private IRubyObject subBangCommon(Regex regex, ThreadContext context, final boolean iter, RubyRegexp rubyRegex, Block block, RubyString repl, boolean tainted) {
 
         int range = value.begin + value.realSize;
         Matcher matcher = regex.matcher(value.bytes, value.begin, range);
-        
+
         Frame frame = context.getPreviousFrame();
         if (matcher.search(value.begin, range, Option.NONE) >= 0) {
-            if (iter) {                
-                byte[]bytes = value.bytes;
+            if (iter) {
+                byte[] bytes = value.bytes;
                 int size = value.realSize;
                 RubyMatchData match = rubyRegex.updateBackRef(this, frame, matcher);
                 match.use();
@@ -1688,7 +1211,8 @@ public class RubyString extends RubyObject {
                 rubyRegex.updateBackRef(this, frame, matcher);
             }
 
-            final int beg, plen;
+            final int beg;
+            final int plen;
             if (regex.numberOfCaptures() == 0) {
                 beg = matcher.getBegin();
                 plen = matcher.getEnd() - beg;
@@ -1704,8 +1228,9 @@ public class RubyString extends RubyObject {
             } else {
                 modify();
             }
-            if (repl.isTaint()) tainted = true;            
-
+            if (repl.isTaint()) {
+                tainted = true;
+            }
             if (replValue.realSize != plen) {
                 int src = value.begin + beg + plen;
                 int dst = value.begin + beg + replValue.realSize;
@@ -1714,76 +1239,144 @@ public class RubyString extends RubyObject {
             }
             System.arraycopy(replValue.bytes, replValue.begin, value.bytes, value.begin + beg, replValue.realSize);
             value.realSize += replValue.realSize - plen;
-            if (tainted) setTaint(true);
-            return this;            
+            if (tainted) {
+                setTaint(true);
+            }
+            return this;
         } else {
             frame.setBackRef(getRuntime().getNil());
             return getRuntime().getNil();
+        }
+    }
+
+    /**
+     * Variable-arity version for compatibility. Not bound to Ruby.
+     * @deprecated Use the versions with one or two arguments.
+     */
+    public IRubyObject gsub(ThreadContext context, IRubyObject[] args, Block block) {
+        switch (args.length) {
+        case 1:
+            return gsub(context, args[0], block);
+        case 2:
+            return gsub(context, args[0], args[1], block);
+        default:
+            Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
+            return null; // not reached
         }
     }
     
     /** rb_str_gsub
      *
      */
-    @JRubyMethod(name = "gsub", required = 1, optional = 1, frame = true)
-    public IRubyObject gsub(ThreadContext context, IRubyObject[] args, Block block) {
-        return gsub(context, args, block, false);
+    @JRubyMethod(name = "gsub", frame = true)
+    public IRubyObject gsub(ThreadContext context, IRubyObject arg0, Block block) {
+        return gsub(context, arg0, block, false);
+    }
+    
+    /** rb_str_gsub
+     *
+     */
+    @JRubyMethod(name = "gsub", frame = true)
+    public IRubyObject gsub(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return gsub(context, arg0, arg1, block, false);
+    }
+
+    /**
+     * Variable-arity version for compatibility. Not bound to Ruby.
+     * @deprecated Use the versions with one or two arguments.
+     */
+    public IRubyObject gsub_bang(ThreadContext context, IRubyObject[] args, Block block) {
+        switch (args.length) {
+        case 1:
+            return gsub_bang(context, args[0], block);
+        case 2:
+            return gsub_bang(context, args[0], args[1], block);
+        default:
+            Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
+            return null; // not reached
+        }
     }
 
     /** rb_str_gsub_bang
      *
      */
-    @JRubyMethod(name = "gsub!", required = 1, optional = 1, frame = true)
-    public IRubyObject gsub_bang(ThreadContext context, IRubyObject[] args, Block block) {
-        return gsub(context, args, block, true);
+    @JRubyMethod(name = "gsub!", frame = true)
+    public IRubyObject gsub_bang(ThreadContext context, IRubyObject arg0, Block block) {
+        return gsub(context, arg0, block, true);
     }
 
-    private final IRubyObject gsub(ThreadContext context, IRubyObject[] args, Block block, final boolean bang) {
+    /** rb_str_gsub_bang
+     *
+     */
+    @JRubyMethod(name = "gsub!", frame = true)
+    public IRubyObject gsub_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return gsub(context, arg0, arg1, block, true);
+    }
+
+    private final IRubyObject gsub(ThreadContext context, IRubyObject arg0, Block block, final boolean bang) {
         IRubyObject repl;
         final boolean iter;
         boolean tainted = false;
         
-        if (args.length == 1 && block.isGiven()) {
+        if (block.isGiven()) {
             iter = true;
             repl = null;
-        } else if (args.length == 2) {
-            iter = false;
-            repl = args[1].convertToString();
-            if (repl.isTaint()) tainted = true; 
         } else {
-            throw getRuntime().newArgumentError("wrong number of arguments (" + args.length + "for 2)");
+            throw getRuntime().newArgumentError("wrong number of arguments (1 for 2)");
         }
         
-        RubyRegexp rubyRegex = getPattern(args[0], true);
+        RubyRegexp rubyRegex = getPattern(arg0, true);
         Regex regex = rubyRegex.getPattern();
+        
+        return gsubCommon(regex, context, bang, iter, rubyRegex, block, repl, tainted);
+    }
+
+    private final IRubyObject gsub(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block, final boolean bang) {
+        IRubyObject repl;
+        final boolean iter;
+        boolean tainted = false;
+        
+        iter = false;
+        repl = arg1.convertToString();
+        if (repl.isTaint()) tainted = true; 
+        
+        RubyRegexp rubyRegex = getPattern(arg0, true);
+        Regex regex = rubyRegex.getPattern();
+        
+        return gsubCommon(regex, context, bang, iter, rubyRegex, block, repl, tainted);
+    }
+
+    private IRubyObject gsubCommon(Regex regex, ThreadContext context, final boolean bang, final boolean iter, RubyRegexp rubyRegex, Block block, IRubyObject repl, boolean tainted) {
 
         int begin = value.begin;
         int range = begin + value.realSize;
         Matcher matcher = regex.matcher(value.bytes, begin, range);
-        
+
         int beg = matcher.search(begin, range, Option.NONE);
 
         Frame frame = context.getPreviousFrame();
-        
+
         if (beg < 0) {
             frame.setBackRef(getRuntime().getNil());
             return bang ? getRuntime().getNil() : strDup(); /* bang: true, no match, no substitution */
         }
-        
+
         int blen = value.realSize + 30; /* len + margin */
         ByteList dest = new ByteList(blen);
         dest.realSize = blen;
-        int buf = 0, bp = 0;
+        int buf = 0;
+        int bp = 0;
         int cp = value.begin;
-        
+
         int offset = 0;
         RubyString val;
 
         RubyMatchData match = null;
         while (beg >= 0) {
-            final int begz, endz;
+            final int begz;
+            final int endz;
             if (iter) {
-                byte[]bytes = value.bytes;
+                byte[] bytes = value.bytes;
                 int size = value.realSize;
                 match = rubyRegex.updateBackRef(this, frame, matcher);
                 match.use();
@@ -1796,12 +1389,13 @@ public class RubyString extends RubyObject {
                     begz = region.beg[0];
                     endz = region.end[0];
                     val = objAsString(context, block.yield(context, substr(begz, endz - begz)));
- 
                 }
                 modifyCheck(bytes, size);
-                if (bang) frozenCheck();
+                if (bang) {
+                    frozenCheck();
+                }
             } else {
-                val = rubyRegex.regsub((RubyString)repl, this, matcher);
+                val = rubyRegex.regsub((RubyString) repl, this, matcher);
                 if (regex.numberOfCaptures() == 0) {
                     begz = matcher.getBegin();
                     endz = matcher.getEnd();
@@ -1811,12 +1405,16 @@ public class RubyString extends RubyObject {
                     endz = region.end[0];
                 }
             }
-            
-            if (val.isTaint()) tainted = true;
+
+            if (val.isTaint()) {
+                tainted = true;
+            }
             ByteList vbuf = val.value;
             int len = (bp - buf) + (beg - offset) + vbuf.realSize + 3;
             if (blen < len) {
-                while (blen < len) blen <<= 1;
+                while (blen < len) {
+                    blen <<= 1;
+                }
                 len = bp - buf;
                 dest.realloc(blen);
                 dest.realSize = blen;
@@ -1828,19 +1426,23 @@ public class RubyString extends RubyObject {
             System.arraycopy(vbuf.bytes, vbuf.begin, dest.bytes, bp, vbuf.realSize);
             bp += vbuf.realSize;
             offset = endz;
-            
+
             if (begz == endz) {
-                if (value.realSize <= endz) break;
+                if (value.realSize <= endz) {
+                    break;
+                }
                 len = regex.getEncoding().length(value.bytes[begin + endz]);
                 System.arraycopy(value.bytes, begin + endz, dest.bytes, bp, len);
                 bp += len;
                 offset = endz + len;
             }
             cp = begin + offset;
-            if (offset > value.realSize) break;
-            beg = matcher.search(cp, range, Option.NONE); 
+            if (offset > value.realSize) {
+                break;
+            }
+            beg = matcher.search(cp, range, Option.NONE);
         }
-        
+
         if (value.realSize > offset) {
             int len = bp - buf;
             if (blen - len < value.realSize - offset) {
@@ -1850,8 +1452,8 @@ public class RubyString extends RubyObject {
             }
             System.arraycopy(value.bytes, cp, dest.bytes, bp, value.realSize - offset);
             bp += value.realSize - offset;
-        }        
-        
+        }
+
         if (match != null) {
             frame.setBackRef(match);
         } else {
@@ -1861,28 +1463,64 @@ public class RubyString extends RubyObject {
         dest.realSize = bp - buf;
         if (bang) {
             view(dest);
-            if (tainted) setTaint(true);
+            if (tainted) {
+                setTaint(true);
+            }
             return this;
         } else {
             RubyString destStr = new RubyString(getRuntime(), getMetaClass(), dest);
             destStr.infectBy(this);
-            if (tainted) destStr.setTaint(true);
+            if (tainted) {
+                destStr.setTaint(true);
+            }
             return destStr;
+        }
+    }
+
+    /**
+     * Variable-arity version for compatibility. Not bound to Ruby.
+     * @deprecated Use the versions with one or two args.
+     */
+    public IRubyObject index(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+        case 1:
+            return index(context, args[0]);
+        case 2:
+            return index(context, args[0], args[1]);
+        default:
+            Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
+            return null; // not reached
         }
     }
 
     /** rb_str_index_m
      *
      */
-    @JRubyMethod(name = "index", required = 1, optional = 1)
-    public IRubyObject index(ThreadContext context, IRubyObject[] args) {
-        int pos = args.length == 2 ? RubyNumeric.num2int(args[1]) : 0;  
-        IRubyObject sub = args[0];
+    @JRubyMethod
+    public IRubyObject index(ThreadContext context, IRubyObject arg0) {
+        int pos = 0;  
+        IRubyObject sub = arg0;
         
+        return indexCommon(pos, sub, context);       
+    }
+
+    /** rb_str_index_m
+     *
+     */
+    @JRubyMethod
+    public IRubyObject index(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        int pos = RubyNumeric.num2int(arg1);
+        IRubyObject sub = arg0;
+        
+        return indexCommon(pos, sub, context);        
+    }
+
+    private IRubyObject indexCommon(int pos, IRubyObject sub, ThreadContext context) throws RaiseException {
+
         if (pos < 0) {
             pos += value.realSize;
             if (pos < 0) {
-                if (sub instanceof RubyRegexp) { 
+                if (sub instanceof RubyRegexp) {
                     context.getPreviousFrame().setBackRef(getRuntime().getNil());
                 }
                 return getRuntime().getNil();
@@ -1890,8 +1528,8 @@ public class RubyString extends RubyObject {
         }
 
         if (sub instanceof RubyRegexp) {
-            RubyRegexp regSub = (RubyRegexp)sub;
-            
+            RubyRegexp regSub = (RubyRegexp) sub;
+
             pos = regSub.adjustStartPos(this, pos, false);
             pos = regSub.search(context, this, pos, false);
         } else if (sub instanceof RubyFixnum) {
@@ -1901,25 +1539,29 @@ public class RubyString extends RubyObject {
                 // there will be no match for sure
                 return getRuntime().getNil();
             }
-            byte c = (byte)c_int;
-            byte[]bytes = value.bytes;
+            byte c = (byte) c_int;
+            byte[] bytes = value.bytes;
             int end = value.begin + value.realSize;
 
-            pos += value.begin; 
-            for (;pos<end; pos++) { 
-                if (bytes[pos] == c) return RubyFixnum.newFixnum(getRuntime(), pos - value.begin);
+            pos += value.begin;
+            for (; pos < end; pos++) {
+                if (bytes[pos] == c) {
+                    return RubyFixnum.newFixnum(getRuntime(), pos - value.begin);
+                }
             }
             return getRuntime().getNil();
         } else if (sub instanceof RubyString) {
-            pos = strIndex((RubyString)sub, pos);
+            pos = strIndex((RubyString) sub, pos);
         } else {
             IRubyObject tmp = sub.checkStringType();
-            
-            if (tmp.isNil()) throw getRuntime().newTypeError("type mismatch: " + sub.getMetaClass().getName() + " given");
-            pos = strIndex((RubyString)tmp, pos);
+
+            if (tmp.isNil()) {
+                throw getRuntime().newTypeError("type mismatch: " + sub.getMetaClass().getName() + " given");
+            }
+            pos = strIndex((RubyString) tmp, pos);
         }
-        
-        return pos == -1  ? getRuntime().getNil() : RubyFixnum.newFixnum(getRuntime(), pos);        
+
+        return pos == -1 ? getRuntime().getNil() : RubyFixnum.newFixnum(getRuntime(), pos);
     }
     
     private int strIndex(RubyString sub, int offset) {
@@ -1933,43 +1575,77 @@ public class RubyString extends RubyObject {
         return value.indexOf(sub.value, offset);
     }
 
+    /**
+     * Variable-arity version for compatibility. Not bound to Ruby.
+     * @deprecated Use the versions with one or two arguments.
+     */
+    public IRubyObject rindex(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+        case 1:
+            return rindex(context, args[0]);
+        case 2:
+            return rindex(context, args[0], args[1]);
+        default:
+            Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
+            return null; // not reached
+        }
+    }
+
     /** rb_str_rindex_m
      *
      */
-    @JRubyMethod(name = "rindex", required = 1, optional = 1)
-    public IRubyObject rindex(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod
+    public IRubyObject rindex(ThreadContext context, IRubyObject arg0) {
         int pos;
         final IRubyObject sub;
         
-        if (args.length == 2) {  
-            sub = args[0];
-            pos = RubyNumeric.num2int(args[1]);
+        sub = arg0;
+        pos = value.realSize;
 
-            if (pos < 0) {
-                pos += value.realSize;
-                if (pos < 0) {
-                    if (sub instanceof RubyRegexp) { 
-                        context.getPreviousFrame().setBackRef(getRuntime().getNil());
-                    }
-                    return getRuntime().getNil();
-                }
-            }            
-            if (pos > value.realSize) pos = value.realSize;
-        } else {
-            sub = args[0];
-            pos = value.realSize;
-        }
+        return rindexCommon(sub, pos, context);
+    }
+
+    /** rb_str_rindex_m
+     *
+     */
+    @JRubyMethod
+    public IRubyObject rindex(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        int pos;
+        final IRubyObject sub;
         
+        sub = arg0;
+        pos = RubyNumeric.num2int(arg1);
+
+        if (pos < 0) {
+            pos += value.realSize;
+            if (pos < 0) {
+                if (sub instanceof RubyRegexp) { 
+                    context.getPreviousFrame().setBackRef(getRuntime().getNil());
+                }
+                return getRuntime().getNil();
+            }
+        }            
+        if (pos > value.realSize) pos = value.realSize;
+        
+        return rindexCommon(sub, pos, context);
+    }
+
+    private IRubyObject rindexCommon(final IRubyObject sub, int pos, ThreadContext context) throws RaiseException {
+
         if (sub instanceof RubyRegexp) {
-            RubyRegexp regSub = (RubyRegexp)sub;
-            if(regSub.length() > 0) {
+            RubyRegexp regSub = (RubyRegexp) sub;
+            if (regSub.length() > 0) {
                 pos = regSub.adjustStartPos(this, pos, true);
                 pos = regSub.search(context, this, pos, true);
             }
-            if (pos >= 0) return RubyFixnum.newFixnum(getRuntime(), pos);
+            if (pos >= 0) {
+                return RubyFixnum.newFixnum(getRuntime(), pos);
+            }
         } else if (sub instanceof RubyString) {
-            pos = strRindex((RubyString)sub, pos);
-            if (pos >= 0) return RubyFixnum.newFixnum(getRuntime(), pos);
+            pos = strRindex((RubyString) sub, pos);
+            if (pos >= 0) {
+                return RubyFixnum.newFixnum(getRuntime(), pos);
+            }
         } else if (sub instanceof RubyFixnum) {
             int c_int = RubyNumeric.fix2int(sub);
             if (c_int < 0x00 || c_int > 0xFF) {
@@ -1977,25 +1653,29 @@ public class RubyString extends RubyObject {
                 // there will be no match for sure
                 return getRuntime().getNil();
             }
-            byte c = (byte)c_int;
+            byte c = (byte) c_int;
 
-            byte[]bytes = value.bytes;
+            byte[] bytes = value.bytes;
             int pbeg = value.begin;
             int p = pbeg + pos;
-            
+
             if (pos == value.realSize) {
-                if (pos == 0) return getRuntime().getNil();
+                if (pos == 0) {
+                    return getRuntime().getNil();
+                }
                 --p;
             }
             while (pbeg <= p) {
-                if (bytes[p] == c) return RubyFixnum.newFixnum(getRuntime(), p - value.begin);
+                if (bytes[p] == c) {
+                    return RubyFixnum.newFixnum(getRuntime(), p - value.begin);
+                }
                 p--;
             }
             return getRuntime().getNil();
         } else {
             throw getRuntime().newTypeError("type mismatch: " + sub.getMetaClass().getName() + " given");
         }
-        
+
         return getRuntime().getNil();
     }
 
@@ -2034,8 +1714,8 @@ public class RubyString extends RubyObject {
     }
 
     /**
-     * Variable-arity version of op_aref, for compatibility with libraries. No
-     * longer bound to a Ruby method name.
+     * Variable-arity version for compatibility. Not bound to Ruby.
+     * @deprecated Use the versions with one or two args
      */
     public IRubyObject op_aref(ThreadContext context, IRubyObject[] args) {
         switch (args.length) {
@@ -2126,6 +1806,7 @@ public class RubyString extends RubyObject {
 
     /**
      * Variable arity version for compatibility. Not bound to a Ruby method.
+     * @deprecated Use the versions with two or three args.
      */
     public IRubyObject op_aset(ThreadContext context, IRubyObject[] args) {
         switch (args.length) {
@@ -2210,6 +1891,7 @@ public class RubyString extends RubyObject {
 
     /**
      * Variable arity version for compatibility. Not bound as a Ruby method.
+     * @deprecated Use the versions with one or two args.
      */
     public IRubyObject slice_bang(ThreadContext context, IRubyObject[] args) {
         switch (args.length) {
@@ -2351,6 +2033,7 @@ public class RubyString extends RubyObject {
 
     /**
      * Variable-arity version for compatibility. Not bound as a Ruby method.
+     * @deprecated Use the versions with zero or one args.
      */
     public IRubyObject to_i(IRubyObject[] args) {
         switch (args.length) {
@@ -2429,6 +2112,7 @@ public class RubyString extends RubyObject {
 
     /**
      * Variable arity version for compatibility. Not bound to a Ruby method.
+     * @deprecated Use the versions with zero, one, or two args.
      */
     public RubyArray split(ThreadContext context, IRubyObject[] args) {
         switch (args.length) {
@@ -2776,99 +2460,199 @@ public class RubyString extends RubyObject {
 
     private static final ByteList SPACE_BYTELIST = new ByteList(ByteList.plain(" "));
     
-    private final IRubyObject justify(IRubyObject[]args, char jflag) {
+    private final IRubyObject justify(IRubyObject arg0, char jflag) {
         Ruby runtime = getRuntime();
         
-        int width = RubyFixnum.num2int(args[0]);
+        int width = RubyFixnum.num2int(arg0);
         
         int f, flen = 0;
         byte[]fbuf;
         
         IRubyObject pad;
 
-        if (args.length == 2) {
-            pad = args[1].convertToString();
-            ByteList fList = ((RubyString)pad).value;
-            f = fList.begin;
-            flen = fList.realSize;
+        f = SPACE_BYTELIST.begin;
+        flen = SPACE_BYTELIST.realSize;
+        fbuf = SPACE_BYTELIST.bytes;
+        pad = runtime.getNil();
+        
+        return justifyCommon(width, jflag, flen, fbuf, f, runtime, pad);
+    }
+    
+    private final IRubyObject justify(IRubyObject arg0, IRubyObject arg1, char jflag) {
+        Ruby runtime = getRuntime();
+        
+        int width = RubyFixnum.num2int(arg0);
+        
+        int f, flen = 0;
+        byte[]fbuf;
+        
+        IRubyObject pad;
 
-            if (flen == 0) throw getRuntime().newArgumentError("zero width padding");
-            
-            fbuf = fList.bytes;
-        } else {
-            f = SPACE_BYTELIST.begin;
-            flen = SPACE_BYTELIST.realSize;
-            fbuf = SPACE_BYTELIST.bytes;
-            pad = runtime.getNil();
+        pad = arg1.convertToString();
+        ByteList fList = ((RubyString)pad).value;
+        f = fList.begin;
+        flen = fList.realSize;
+
+        if (flen == 0) throw getRuntime().newArgumentError("zero width padding");
+
+        fbuf = fList.bytes;
+        
+        return justifyCommon(width, jflag, flen, fbuf, f, runtime, pad);
+    }
+
+    private IRubyObject justifyCommon(int width, char jflag, int flen, byte[] fbuf, int f, Ruby runtime, IRubyObject pad) {
+
+        if (width < 0 || value.realSize >= width) {
+            return strDup();
         }
-        
-        if (width < 0 || value.realSize >= width) return strDup();
-        
         ByteList res = new ByteList(width);
         res.realSize = width;
-        
+
         int p = res.begin;
         int pend;
         byte[] pbuf = res.bytes;
-        
+
         if (jflag != 'l') {
             int n = width - value.realSize;
             pend = p + ((jflag == 'r') ? n : n / 2);
             if (flen <= 1) {
-                while (p < pend) pbuf[p++] = fbuf[f];
+                while (p < pend) {
+                    pbuf[p++] = fbuf[f];
+                }
             } else {
                 int q = f;
                 while (p + flen <= pend) {
                     System.arraycopy(fbuf, f, pbuf, p, flen);
                     p += flen;
                 }
-                while (p < pend) pbuf[p++] = fbuf[q++];
+                while (p < pend) {
+                    pbuf[p++] = fbuf[q++];
+                }
             }
         }
-        
+
         System.arraycopy(value.bytes, value.begin, pbuf, p, value.realSize);
-        
+
         if (jflag != 'r') {
             p += value.realSize;
             pend = res.begin + width;
             if (flen <= 1) {
-                while (p < pend) pbuf[p++] = fbuf[f];
+                while (p < pend) {
+                    pbuf[p++] = fbuf[f];
+                }
             } else {
                 while (p + flen <= pend) {
                     System.arraycopy(fbuf, f, pbuf, p, flen);
                     p += flen;
                 }
-                while (p < pend) pbuf[p++] = fbuf[f++];
+                while (p < pend) {
+                    pbuf[p++] = fbuf[f++];
+                }
             }
-            
         }
-        
+
         RubyString resStr = new RubyString(runtime, getMetaClass(), res);
         resStr.infectBy(this);
-        if (flen > 0) resStr.infectBy(pad);
+        if (flen > 0) {
+            resStr.infectBy(pad);
+        }
         return resStr;
-        
+    }
+
+    /**
+     * Variable-arity version for compatibility. Not bound to Ruby.
+     * @deprecated use the one or two argument versions.
+     */
+    public IRubyObject ljust(IRubyObject [] args) {
+        switch (args.length) {
+        case 1:
+            return ljust(args[0]);
+        case 2:
+            return ljust(args[0], args[1]);
+        default:
+            Arity.raiseArgumentError(getRuntime(), args.length, 1, 2);
+            return null; // not reached
+        }
     }
 
     /** rb_str_ljust
      *
      */
-    @JRubyMethod(name = "ljust", required = 1, optional = 1)
-    public IRubyObject ljust(IRubyObject [] args) {
-        return justify(args, 'l');
+    @JRubyMethod
+    public IRubyObject ljust(IRubyObject arg0) {
+        return justify(arg0, 'l');
+    }
+
+    /** rb_str_ljust
+     *
+     */
+    @JRubyMethod
+    public IRubyObject ljust(IRubyObject arg0, IRubyObject arg1) {
+        return justify(arg0, arg1, 'l');
+    }
+
+    /**
+     * Variable-arity version for compatibility. Not bound to Ruby.
+     * @deprecated use the one or two argument versions.
+     */
+    public IRubyObject rjust(IRubyObject [] args) {
+        switch (args.length) {
+        case 1:
+            return rjust(args[0]);
+        case 2:
+            return rjust(args[0], args[1]);
+        default:
+            Arity.raiseArgumentError(getRuntime(), args.length, 1, 2);
+            return null; // not reached
+        }
     }
 
     /** rb_str_rjust
      *
      */
-    @JRubyMethod(name = "rjust", required = 1, optional = 1)
-    public IRubyObject rjust(IRubyObject [] args) {
-        return justify(args, 'r');
+    @JRubyMethod
+    public IRubyObject rjust(IRubyObject arg0) {
+        return justify(arg0, 'r');
     }
 
-    @JRubyMethod(name = "center", required = 1, optional = 1)
-    public IRubyObject center(IRubyObject[] args) {
-        return justify(args, 'c');
+    /** rb_str_rjust
+     *
+     */
+    @JRubyMethod
+    public IRubyObject rjust(IRubyObject arg0, IRubyObject arg1) {
+        return justify(arg0, arg1, 'r');
+    }
+
+    /**
+     * Variable-arity version for compatibility. Not bound to Ruby.
+     * @deprecated use the one or two argument versions.
+     */
+    public IRubyObject center(IRubyObject [] args) {
+        switch (args.length) {
+        case 1:
+            return center(args[0]);
+        case 2:
+            return center(args[0], args[1]);
+        default:
+            Arity.raiseArgumentError(getRuntime(), args.length, 1, 2);
+            return null; // not reached
+        }
+    }
+
+    /** rb_str_center
+     *
+     */
+    @JRubyMethod
+    public IRubyObject center(IRubyObject arg0) {
+        return justify(arg0, 'c');
+    }
+
+    /** rb_str_center
+     *
+     */
+    @JRubyMethod
+    public IRubyObject center(IRubyObject arg0, IRubyObject arg1) {
+        return justify(arg0, arg1, 'c');
     }
 
     @JRubyMethod(name = "chop")
@@ -2894,14 +2678,59 @@ public class RubyString extends RubyObject {
         return this;
     }
 
+    /**
+     * Variable-arity version for compatibility. Not bound to Ruby
+     * 
+     * @param args
+     * @return
+     * @deprecated Use the zero or one argument versions.
+     */
+    public RubyString chomp(IRubyObject[] args) {
+        switch (args.length) {
+        case 0:
+            return chomp();
+        case 1:
+            return chomp(args[0]);
+        default:
+            Arity.raiseArgumentError(getRuntime(), args.length, 0, 1);
+            return null; // not reached
+        }
+    }
+
     /** rb_str_chop
      * 
      */
-    @JRubyMethod(name = "chomp", optional = 1)
-    public RubyString chomp(IRubyObject[] args) {
+    @JRubyMethod
+    public RubyString chomp() {
         RubyString str = strDup();
-        str.chomp_bang(args);
+        str.chomp_bang();
         return str;
+    }
+
+    /** rb_str_chop
+     * 
+     */
+    @JRubyMethod
+    public RubyString chomp(IRubyObject arg0) {
+        RubyString str = strDup();
+        str.chomp_bang(arg0);
+        return str;
+    }
+
+    /**
+     * Variable-arity version for compatibility. Not bound to Ruby.
+     * @deprecated Use the zero or one argument versions.
+     */
+    public IRubyObject chomp_bang(IRubyObject[] args) {
+        switch (args.length) {
+        case 0:
+            return chomp_bang();
+        case 1:
+            return chomp_bang(args[0]);
+        default:
+            Arity.raiseArgumentError(getRuntime(), args.length, 0, 1);
+            return null; // not reached
+        }
     }
 
     /**
@@ -2915,64 +2744,19 @@ public class RubyString extends RubyObject {
      *   all(!)).
      * @param args See method description.
      */
-    @JRubyMethod(name = "chomp!", optional = 1)
-    public IRubyObject chomp_bang(IRubyObject[] args) {
+    @JRubyMethod(name = "chomp!")
+    public IRubyObject chomp_bang() {
         IRubyObject rsObj;
 
-        if (args.length == 0) {
-            int len = value.length();
-            if (len == 0) return getRuntime().getNil();
-            byte[]buff = value.bytes;
-
-            rsObj = getRuntime().getGlobalVariables().get("$/");
-
-            if (rsObj == getRuntime().getGlobalVariables().getDefaultSeparator()) {
-                int realSize = value.realSize;
-                int begin = value.begin;
-                if (buff[begin + len - 1] == (byte)'\n') {
-                    realSize--;
-                    if (realSize > 0 && buff[begin + realSize - 1] == (byte)'\r') realSize--;
-                    view(0, realSize);
-                } else if (buff[begin + len - 1] == (byte)'\r') {
-                    realSize--;
-                    view(0, realSize);
-                } else {
-                    modifyCheck();
-                    return getRuntime().getNil();
-                }
-                return this;                
-            }
-        } else {
-            rsObj = args[0];
-        }
-
-        if (rsObj.isNil()) return getRuntime().getNil();
-
-        RubyString rs = rsObj.convertToString();
-        int len = value.realSize;
-        int begin = value.begin;
+        int len = value.length();
         if (len == 0) return getRuntime().getNil();
         byte[]buff = value.bytes;
-        int rslen = rs.value.realSize;
 
-        if (rslen == 0) {
-            while (len > 0 && buff[begin + len - 1] == (byte)'\n') {
-                len--;
-                if (len > 0 && buff[begin + len - 1] == (byte)'\r') len--;
-            }
-            if (len < value.realSize) {
-                view(0, len);
-                return this;
-            }
-            return getRuntime().getNil();
-        }
+        rsObj = getRuntime().getGlobalVariables().get("$/");
 
-        if (rslen > len) return getRuntime().getNil();
-        byte newline = rs.value.bytes[rslen - 1];
-
-        if (rslen == 1 && newline == (byte)'\n') {
-            buff = value.bytes;
+        if (rsObj == getRuntime().getGlobalVariables().getDefaultSeparator()) {
             int realSize = value.realSize;
+            int begin = value.begin;
             if (buff[begin + len - 1] == (byte)'\n') {
                 realSize--;
                 if (realSize > 0 && buff[begin + realSize - 1] == (byte)'\r') realSize--;
@@ -2986,10 +2770,81 @@ public class RubyString extends RubyObject {
             }
             return this;                
         }
+        
+        return chompBangCommon(rsObj);
+    }
+
+    /**
+     * rb_str_chomp_bang
+     *
+     * In the common case, removes CR and LF characters in various ways depending on the value of
+     *   the optional args[0].
+     * If args.length==0 removes one instance of CR, CRLF or LF from the end of the string.
+     * If args.length>0 and args[0] is "\n" then same behaviour as args.length==0 .
+     * If args.length>0 and args[0] is "" then removes trailing multiple LF or CRLF (but no CRs at
+     *   all(!)).
+     * @param args See method description.
+     */
+    @JRubyMethod(name = "chomp!")
+    public IRubyObject chomp_bang(IRubyObject arg0) {
+        return chompBangCommon(arg0);
+    }
+
+    private IRubyObject chompBangCommon(IRubyObject rsObj) {
+
+        if (rsObj.isNil()) {
+            return getRuntime().getNil();
+        }
+        RubyString rs = rsObj.convertToString();
+        int len = value.realSize;
+        int begin = value.begin;
+        if (len == 0) {
+            return getRuntime().getNil();
+        }
+        byte[] buff = value.bytes;
+        int rslen = rs.value.realSize;
+
+        if (rslen == 0) {
+            while (len > 0 && buff[begin + len - 1] == (byte) '\n') {
+                len--;
+                if (len > 0 && buff[begin + len - 1] == (byte) '\r') {
+                    len--;
+                }
+            }
+            if (len < value.realSize) {
+                view(0, len);
+                return this;
+            }
+            return getRuntime().getNil();
+        }
+
+        if (rslen > len) {
+            return getRuntime().getNil();
+        }
+        byte newline = rs.value.bytes[rslen - 1];
+
+        if (rslen == 1 && newline == (byte) '\n') {
+            buff = value.bytes;
+            int realSize = value.realSize;
+            if (buff[begin + len - 1] == (byte) '\n') {
+                realSize--;
+                if (realSize > 0 && buff[begin + realSize - 1] == (byte) '\r') {
+                    realSize--;
+                }
+                view(0, realSize);
+            } else if (buff[begin + len - 1] == (byte) '\r') {
+                realSize--;
+                view(0, realSize);
+            } else {
+                modifyCheck();
+                return getRuntime().getNil();
+            }
+            return this;
+        }
 
         if (buff[begin + len - 1] == newline && rslen <= 1 || value.endsWith(rs.value)) {
             view(0, value.realSize - rslen);
-            return this;            
+            return this;
         }
 
         return getRuntime().getNil();
@@ -2998,7 +2853,7 @@ public class RubyString extends RubyObject {
     /** rb_str_lstrip
      * 
      */
-    @JRubyMethod(name = "lstrip")
+    @JRubyMethod
     public IRubyObject lstrip() {
         RubyString str = strDup();
         str.lstrip_bang();
@@ -3025,7 +2880,7 @@ public class RubyString extends RubyObject {
     /** rb_str_rstrip
      *  
      */
-    @JRubyMethod(name = "rstrip")
+    @JRubyMethod
     public IRubyObject rstrip() {
         RubyString str = strDup();
         str.rstrip_bang();
@@ -3053,7 +2908,7 @@ public class RubyString extends RubyObject {
     /** rb_str_strip
      *
      */
-    @JRubyMethod(name = "strip")
+    @JRubyMethod
     public IRubyObject strip() {
         RubyString str = strDup();
         str.strip_bang();
@@ -3205,7 +3060,7 @@ public class RubyString extends RubyObject {
     /** rb_str_tr
      *
      */
-    @JRubyMethod(name = "tr", required = 2)
+    @JRubyMethod
     public IRubyObject tr(IRubyObject src, IRubyObject repl) {
         RubyString str = strDup();
         str.tr_trans(src, repl, false);        
@@ -3215,7 +3070,7 @@ public class RubyString extends RubyObject {
     /** rb_str_tr_bang
     *
     */
-    @JRubyMethod(name = "tr!", required = 2)
+    @JRubyMethod(name = "tr!")
     public IRubyObject tr_bang(IRubyObject src, IRubyObject repl) {
         return tr_trans(src, repl, false);
     }    
@@ -3382,7 +3237,7 @@ public class RubyString extends RubyObject {
     /** rb_str_tr_s
      *
      */
-    @JRubyMethod(name = "tr_s", required = 2)
+    @JRubyMethod
     public IRubyObject tr_s(IRubyObject src, IRubyObject repl) {
         RubyString str = strDup();
         str.tr_trans(src, repl, true);        
@@ -3392,7 +3247,7 @@ public class RubyString extends RubyObject {
     /** rb_str_tr_s_bang
      *
      */
-    @JRubyMethod(name = "tr_s!", required = 2)
+    @JRubyMethod(name = "tr_s!")
     public IRubyObject tr_s_bang(IRubyObject src, IRubyObject repl) {
         return tr_trans(src, repl, true);
     }
@@ -3534,7 +3389,7 @@ public class RubyString extends RubyObject {
     /**
      * @see org.jruby.util.Pack#unpack
      */
-    @JRubyMethod(name = "unpack", required = 1)
+    @JRubyMethod
     public RubyArray unpack(IRubyObject obj) {
         return Pack.unpack(getRuntime(), this.value, stringValue(obj).value);
     }

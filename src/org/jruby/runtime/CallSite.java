@@ -64,8 +64,8 @@ public abstract class CallSite {
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
 
     public static class InlineCachingCallSite extends CallSite implements CacheMap.CacheSite {
-        DynamicMethod cachedMethod;
-        RubyClass cachedType;
+        volatile DynamicMethod cachedMethod;
+        volatile RubyClass cachedType;
         
         public InlineCachingCallSite(String methodName, CallType callType) {
             super(MethodIndex.getIndex(methodName), methodName, callType);

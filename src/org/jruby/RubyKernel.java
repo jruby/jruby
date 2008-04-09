@@ -418,12 +418,28 @@ public class RubyKernel {
         }
     }
 
-    @JRubyMethod(name = "sub!", required = 1, optional = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
+    /**
+     * Variable-arity version for compatibility. Not bound to Ruby.
+     * @deprecated Use the one or two-arg versions.
+     */
     public static IRubyObject sub_bang(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         return getLastlineString(context, recv.getRuntime()).sub_bang(context, args, block);
     }
 
-    @JRubyMethod(name = "sub", required = 1, optional = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "sub!", frame = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject sub_bang(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
+        return getLastlineString(context, recv.getRuntime()).sub_bang(context, arg0, block);
+    }
+
+    @JRubyMethod(name = "sub!", frame = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject sub_bang(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return getLastlineString(context, recv.getRuntime()).sub_bang(context, arg0, arg1, block);
+    }
+
+    /**
+     * Variable-arity version for compatibility. Not bound to Ruby.
+     * @deprecated Use the one or two-arg versions.
+     */
     public static IRubyObject sub(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         RubyString str = (RubyString) getLastlineString(context, recv.getRuntime()).dup();
 
@@ -434,9 +450,44 @@ public class RubyKernel {
         return str;
     }
 
-    @JRubyMethod(name = "gsub!", required = 1, optional = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "sub", frame = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject sub(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
+        RubyString str = (RubyString) getLastlineString(context, recv.getRuntime()).dup();
+
+        if (!str.sub_bang(context, arg0, block).isNil()) {
+            context.getPreviousFrame().setLastLine(str);
+        }
+
+        return str;
+    }
+
+    @JRubyMethod(name = "sub", frame = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject sub(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
+        RubyString str = (RubyString) getLastlineString(context, recv.getRuntime()).dup();
+
+        if (!str.sub_bang(context, arg0, arg1, block).isNil()) {
+            context.getPreviousFrame().setLastLine(str);
+        }
+
+        return str;
+    }
+
+    /**
+     * Variable-arity version for compatibility. Not bound to Ruby.
+     * @deprecated Use the one or two-arg versions.
+     */
     public static IRubyObject gsub_bang(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         return getLastlineString(context, recv.getRuntime()).gsub_bang(context, args, block);
+    }
+
+    @JRubyMethod(name = "gsub!", frame = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject gsub_bang(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
+        return getLastlineString(context, recv.getRuntime()).gsub_bang(context, arg0, block);
+    }
+
+    @JRubyMethod(name = "gsub!", frame = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject gsub_bang(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return getLastlineString(context, recv.getRuntime()).gsub_bang(context, arg0, arg1, block);
     }
 
     @JRubyMethod(name = "gsub", required = 1, optional = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
@@ -468,17 +519,59 @@ public class RubyKernel {
         return str;
     }
 
-    @JRubyMethod(name = "chomp!", optional = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
+    /**
+     * Variable-arity version for compatibility. Not bound to Ruby.
+     * @deprecated Use the zero or one-arg versions.
+     */
     public static IRubyObject chomp_bang(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         return getLastlineString(context, recv.getRuntime()).chomp_bang(args);
     }
 
-    @JRubyMethod(name = "chomp", optional = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "chomp!", frame = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject chomp_bang(ThreadContext context, IRubyObject recv, Block block) {
+        return getLastlineString(context, recv.getRuntime()).chomp_bang();
+    }
+
+    @JRubyMethod(name = "chomp!", frame = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject chomp_bang(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
+        return getLastlineString(context, recv.getRuntime()).chomp_bang(arg0);
+    }
+
+    /**
+     * Variable-arity version for compatibility. Not bound to Ruby.
+     * @deprecated Use the zero or one-arg versions.
+     */
     public static IRubyObject chomp(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         RubyString str = getLastlineString(context, recv.getRuntime());
         RubyString dup = (RubyString) str.dup();
 
         if (dup.chomp_bang(args).isNil()) {
+            return str;
+        } 
+
+        context.getPreviousFrame().setLastLine(dup);
+        return dup;
+    }
+
+    @JRubyMethod(name = "chomp", frame = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject chomp(ThreadContext context, IRubyObject recv, Block block) {
+        RubyString str = getLastlineString(context, recv.getRuntime());
+        RubyString dup = (RubyString) str.dup();
+
+        if (dup.chomp_bang().isNil()) {
+            return str;
+        } 
+
+        context.getPreviousFrame().setLastLine(dup);
+        return dup;
+    }
+
+    @JRubyMethod(name = "chomp", frame = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject chomp(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
+        RubyString str = getLastlineString(context, recv.getRuntime());
+        RubyString dup = (RubyString) str.dup();
+
+        if (dup.chomp_bang(arg0).isNil()) {
             return str;
         } 
 
@@ -492,19 +585,10 @@ public class RubyKernel {
      * @param context The thread context for the current thread
      * @param recv The receiver of the method (usually a class that has included Kernel)
      * @return
+     * @deprecated Use the versions with zero, one, or two args.
      */
     public static IRubyObject split(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        switch (args.length) {
-        case 0:
-            return split(context, recv);
-        case 1:
-            return split(context, recv, args[0]);
-        case 2:
-            return split(context, recv, args[0], args[1]);
-        default:
-            Arity.raiseArgumentError(context.getRuntime(), args.length, 0, 2);
-            return null; // not reached
-        }
+        return getLastlineString(context, recv.getRuntime()).split(context, args);
     }
 
     @JRubyMethod(name = "split", frame = true, module = true, visibility = Visibility.PRIVATE)
