@@ -32,7 +32,6 @@ import java.util.concurrent.Executor;
 
 public final class Join {
     public static final Executor TRIVIAL_EXECUTOR = new Executor() {
-        @Override
         public void execute(Runnable command) {
             (new Thread(command)).start();
         }
@@ -115,7 +114,6 @@ public final class Join {
         void dispatch(final Join join, final Object[] args) {
             final AsyncReaction reaction = this;
             join.executor.execute(new Runnable() {
-                @Override
                 public void run() {
                     reaction.react(join, args);
                 }
@@ -255,7 +253,6 @@ public final class Join {
         
         public void activate(final Join join, final SyncReaction reaction, final Object[] args) {
             join.executor.execute(new Runnable() {
-                @Override
                 public void run() {
                     reaction.react(join, args);
                 }
