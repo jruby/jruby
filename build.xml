@@ -195,6 +195,7 @@
         <zipfileset src="${build.lib.dir}/asm-tree-3.0.jar"/>
         <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
         <zipfileset src="${build.lib.dir}/joni.jar"/>
+        <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
         <zipfileset src="${build.lib.dir}/jna.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
@@ -261,6 +262,7 @@
         <zipfileset src="${build.lib.dir}/asm-tree-3.0.jar"/>
         <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
         <zipfileset src="${build.lib.dir}/joni.jar"/>
+        <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
         <zipfileset src="${build.lib.dir}/jna.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
@@ -1042,6 +1044,7 @@
       <zipfileset src="${build.lib.dir}/asm-tree-3.0.jar"/>
       <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
       <zipfileset src="${build.lib.dir}/joni.jar"/>
+      <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
       <zipfileset src="${build.lib.dir}/jna.jar"/>
       <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
       <zipfileset src="${nailgun.home}/nailgun-0.7.1.jar"/>
