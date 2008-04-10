@@ -258,7 +258,10 @@ public class RubySymbol extends RubyObject {
         char c = s.charAt(0);
         switch (c) {
         case '$':
-            return length > 1 && isSpecialGlobalName(s.substring(1));
+            if (length > 1 && isSpecialGlobalName(s.substring(1))) {
+                return true;
+            }
+            return isIdentifier(s.substring(1));
         case '@':
             int offset = 1;
             if (length >= 2 && s.charAt(1) == '@') {

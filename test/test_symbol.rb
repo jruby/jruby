@@ -74,4 +74,10 @@ class TestSymbol < Test::Unit::TestCase
     assert_inspect_evaled(':$0')
     assert_inspect_evaled(':$1')
   end
+  
+  # JRUBY-2379
+  def test_inspect_with_dollar_2
+    assert_equal(":$ruby", :$ruby.inspect)
+    assert_equal(":$_", :$_.inspect)
+  end
 end
