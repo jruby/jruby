@@ -494,24 +494,21 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     public static RubyClass createJavaProxyClassClass(Ruby runtime, RubyModule javaModule) {
         RubyClass result = javaModule.defineClassUnder("JavaProxyClass",
                 runtime.getObject(),ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        CallbackFactory callbackFactory = runtime.callbackFactory(JavaProxyClass.class);
 
         JavaProxyReflectionObject.registerRubyMethods(runtime, result);
 
-        result.defineFastMethod("constructors", callbackFactory.getFastMethod("constructors"));
-        result.defineFastMethod("superclass", callbackFactory.getFastMethod("superclass"));
-        result.defineFastMethod("interfaces", callbackFactory.getFastMethod("interfaces"));
-        result.defineFastMethod("methods", callbackFactory.getFastMethod("methods"));
-
-        result.getMetaClass().defineFastMethod("get", 
-                callbackFactory.getFastSingletonMethod("get", JavaClass.class));
-        result.getMetaClass().defineFastMethod("get_with_class", 
-                callbackFactory.getFastSingletonMethod("get_with_class", RubyClass.class));
+        result.defineAnnotatedMethods(JavaProxyClass.class);
 
         return result;
     }
 
-    public static RubyObject get(IRubyObject recv, JavaClass type) {
+    @JRubyMethod(meta = true)
+    public static RubyObject get(IRubyObject recv, IRubyObject obj) {
+        if (!(obj instanceof JavaClass)) {
+            throw recv.getRuntime().newTypeError(obj, recv.getRuntime().getJavaSupport().getJavaClassClass());
+        }
+        JavaClass type = (JavaClass)obj;
+        
         try {
             return getProxyClass(recv.getRuntime(), (Class) type.getValue(), new Class[0]);
         } catch (Error e) {
@@ -544,8 +541,15 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         EXCLUDE_METHODS.add("__jsend!");
     }
 
-    public static RubyObject get_with_class(IRubyObject recv, RubyClass clazz) {
+    @JRubyMethod(meta = true)
+    public static RubyObject get_with_class(IRubyObject recv, IRubyObject obj) {
         Ruby runtime = recv.getRuntime();
+        
+        if (!(obj instanceof RubyClass)) {
+            throw runtime.newTypeError(obj, runtime.getClassClass());
+        }
+        
+        RubyClass clazz = (RubyClass)obj;
         
         // Let's only generate methods for those the user may actually 
         // intend to override.  That includes any defined in the current
@@ -696,19 +700,22 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         }
     }
 
-
+    @JRubyMethod
     public RubyObject superclass() {
         return JavaClass.get(getRuntime(), getSuperclass());
     }
 
+    @JRubyMethod
     public RubyArray methods() {
         return buildRubyArray(getMethods());
     }
 
+    @JRubyMethod
     public RubyArray interfaces() {
         return buildRubyArray(getInterfaces());
     }
 
+    @JRubyMethod
     public RubyArray constructors() {
         return this.constructors;
     }

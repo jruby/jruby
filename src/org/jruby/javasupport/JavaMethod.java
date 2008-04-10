@@ -38,23 +38,21 @@ package org.jruby.javasupport;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.proxy.InternalJavaProxy;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyMethod;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -69,19 +67,11 @@ public class JavaMethod extends JavaCallable {
         // this type and it can't be marshalled. Confirm. JRUBY-415
         RubyClass result = 
             javaModule.defineClassUnder("JavaMethod", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        CallbackFactory callbackFactory = runtime.callbackFactory(JavaMethod.class);
 
         JavaAccessibleObject.registerRubyMethods(runtime, result);
         JavaCallable.registerRubyMethods(runtime, result);
         
-        result.defineFastMethod("name", callbackFactory.getFastMethod("name"));
-        result.defineFastMethod("final?", callbackFactory.getFastMethod("final_p"));
-        result.defineFastMethod("static?", callbackFactory.getFastMethod("static_p"));
-        result.defineFastMethod("bridge?", callbackFactory.getFastMethod("bridge_p"));
-        result.defineFastMethod("invoke", callbackFactory.getFastOptMethod("invoke"));
-        result.defineFastMethod("invoke_static", callbackFactory.getFastOptMethod("invoke_static"));
-        result.defineFastMethod("return_type", callbackFactory.getFastMethod("return_type"));
-        result.defineFastMethod("type_parameters", callbackFactory.getFastMethod("type_parameters"));
+        result.defineAnnotatedMethods(JavaMethod.class);
 
         return result;
     }
@@ -172,6 +162,7 @@ public class JavaMethod extends JavaCallable {
         return method.hashCode();
     }
 
+    @JRubyMethod
     public RubyString name() {
         return getRuntime().newString(method.getName());
     }
@@ -180,14 +171,17 @@ public class JavaMethod extends JavaCallable {
         return parameterTypes.length;
     }
 
+    @JRubyMethod(name = "public?")
     public RubyBoolean public_p() {
         return getRuntime().newBoolean(Modifier.isPublic(method.getModifiers()));
     }
 
+    @JRubyMethod(name = "final?")
     public RubyBoolean final_p() {
         return getRuntime().newBoolean(Modifier.isFinal(method.getModifiers()));
     }
 
+    @JRubyMethod(rest = true)
     public IRubyObject invoke(IRubyObject[] args) {
         if (args.length != 1 + getArity()) {
             throw getRuntime().newArgumentError(args.length, 1 + getArity());
@@ -225,6 +219,7 @@ public class JavaMethod extends JavaCallable {
         return invokeWithExceptionHandling(method, javaInvokee, arguments);
     }
 
+    @JRubyMethod(rest = true)
     public IRubyObject invoke_static(IRubyObject[] args) {
         if (args.length != getArity()) {
             throw getRuntime().newArgumentError(args.length, getArity());
@@ -235,6 +230,7 @@ public class JavaMethod extends JavaCallable {
         return invokeWithExceptionHandling(method, null, arguments);
     }
 
+    @JRubyMethod
     public IRubyObject return_type() {
         Class<?> klass = method.getReturnType();
         
@@ -244,6 +240,7 @@ public class JavaMethod extends JavaCallable {
         return JavaClass.get(getRuntime(), klass);
     }
 
+    @JRubyMethod
     public IRubyObject type_parameters() {
         return Java.getInstance(getRuntime(), method.getTypeParameters());
     }
