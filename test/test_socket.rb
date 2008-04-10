@@ -14,6 +14,15 @@ class SocketTest < Test::Unit::TestCase
       t.join
     end
   end
+
+  def test_basic_socket_reverse_lookup
+    assert_nothing_raised do
+      reverse = BasicSocket.do_not_reverse_lookup
+      BasicSocket.do_not_reverse_lookup = !reverse
+      assert_equal(reverse, !BasicSocket.do_not_reverse_lookup)
+      BasicSocket.do_not_reverse_lookup = reverse
+    end
+  end
 end
 
 class UNIXSocketTests < Test::Unit::TestCase
