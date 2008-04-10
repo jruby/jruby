@@ -490,11 +490,36 @@ public class RubyKernel {
         return getLastlineString(context, recv.getRuntime()).gsub_bang(context, arg0, arg1, block);
     }
 
-    @JRubyMethod(name = "gsub", required = 1, optional = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
+    /**
+     * Variable-arity version for compatibility. Not bound to Ruby.
+     * @deprecated Use the one or two-arg versions.
+     */
     public static IRubyObject gsub(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         RubyString str = (RubyString) getLastlineString(context, recv.getRuntime()).dup();
 
         if (!str.gsub_bang(context, args, block).isNil()) {
+            context.getPreviousFrame().setLastLine(str);
+        }
+
+        return str;
+    }
+
+    @JRubyMethod(name = "gsub", frame = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject gsub(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
+        RubyString str = (RubyString) getLastlineString(context, recv.getRuntime()).dup();
+
+        if (!str.gsub_bang(context, arg0, block).isNil()) {
+            context.getPreviousFrame().setLastLine(str);
+        }
+
+        return str;
+    }
+
+    @JRubyMethod(name = "gsub", frame = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject gsub(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
+        RubyString str = (RubyString) getLastlineString(context, recv.getRuntime()).dup();
+
+        if (!str.gsub_bang(context, arg0, arg1, block).isNil()) {
             context.getPreviousFrame().setLastLine(str);
         }
 
