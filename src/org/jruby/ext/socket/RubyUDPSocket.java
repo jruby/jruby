@@ -44,9 +44,10 @@ import org.jruby.RubyIO;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.ModeFlags;
@@ -60,16 +61,10 @@ public class RubyUDPSocket extends RubyIPSocket {
 
     static void createUDPSocket(Ruby runtime) {
         RubyClass rb_cUDPSocket = runtime.defineClass("UDPSocket", runtime.fastGetClass("IPSocket"), UDPSOCKET_ALLOCATOR);
-        CallbackFactory cfact = runtime.callbackFactory(RubyUDPSocket.class);
         try {
             rb_cUDPSocket.includeModule(runtime.fastGetClass("Socket").fastGetConstant("Constants"));
 
-            rb_cUDPSocket.defineFastMethod("initialize", cfact.getFastMethod("initialize"));
-            rb_cUDPSocket.defineFastMethod("bind", cfact.getFastMethod("bind", IRubyObject.class, IRubyObject.class));
-            rb_cUDPSocket.defineFastMethod("connect", cfact.getFastMethod("connect", IRubyObject.class, IRubyObject.class));
-            rb_cUDPSocket.defineFastMethod("recvfrom", cfact.getFastOptMethod("recvfrom"));
-            rb_cUDPSocket.defineFastMethod("send", cfact.getFastOptMethod("send"));
-            rb_cUDPSocket.getMetaClass().defineMethod("open", cfact.getOptSingletonMethod("open"));
+            rb_cUDPSocket.defineAnnotatedMethods(RubyUDPSocket.class);
 
             runtime.getObject().fastSetConstant("UDPsocket", rb_cUDPSocket);
         } catch (Throwable e) {
@@ -87,6 +82,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         super(runtime, type);
     }
 
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize() {
         try {
             DatagramChannel channel = DatagramChannel.open();
@@ -108,6 +104,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         return getRuntime().getNil();
     }
 
+    @JRubyMethod
     public IRubyObject bind(IRubyObject host, IRubyObject port) {
         InetSocketAddress addr = null;
         try {
@@ -125,6 +122,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
     }
 
+    @JRubyMethod
     public IRubyObject connect(IRubyObject host, IRubyObject port) {
         try {
             InetSocketAddress addr;
@@ -138,6 +136,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
     }
 
+    @JRubyMethod(required = 1, rest = true)
     public IRubyObject recvfrom(IRubyObject[] args) {
         try {
             int length = RubyNumeric.fix2int(args[0]);
@@ -170,6 +169,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
     }
 
+    @JRubyMethod(required = 1, rest = true)
     public IRubyObject send(IRubyObject[] args) {
         try {
             if (args.length >= 3) { // host and port given
@@ -192,6 +192,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
     }
 
+    @JRubyMethod(rest = true, frame = true, meta = true)
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
         RubyUDPSocket sock = (RubyUDPSocket) recv.callMethod(recv.getRuntime().getCurrentContext(), "new", args);
         if (!block.isGiven()) {

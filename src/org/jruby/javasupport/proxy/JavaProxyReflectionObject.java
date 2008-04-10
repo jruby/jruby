@@ -35,6 +35,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.CallbackFactory;
@@ -75,14 +76,17 @@ public class JavaProxyReflectionObject extends RubyObject {
         result.getMetaClass().defineAlias("__j_allocate","allocate");
     }
 
+    @JRubyMethod
     public RubyFixnum hash() {
         return getRuntime().newFixnum(hashCode());
     }
 
+    @JRubyMethod
     public IRubyObject to_s() {
         return getRuntime().newString(toString());
     }
 
+    @JRubyMethod(name = {"==", "eql?"})
     public IRubyObject op_equal(IRubyObject other) {
         if (!(other instanceof JavaProxyReflectionObject)) {
             other = other.getInstanceVariables().fastGetInstanceVariable("@java_object");
@@ -107,6 +111,7 @@ public class JavaProxyReflectionObject extends RubyObject {
         return this == other;
     }
     
+    @JRubyMethod(name = "equal?")
     public IRubyObject same(IRubyObject other) {
         if (!(other instanceof JavaObject)) {
             other = other.getInstanceVariables().fastGetInstanceVariable("@java_object");
@@ -119,26 +124,32 @@ public class JavaProxyReflectionObject extends RubyObject {
         return isSame ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
+    @JRubyMethod
     public RubyString java_type() {
         return getRuntime().newString(getJavaClass().getName());
     }
 
+    @JRubyMethod
     public IRubyObject java_class() {
         return JavaClass.get(getRuntime(), getJavaClass());
     }
 
+    @JRubyMethod
     public RubyFixnum length() {
         throw getRuntime().newTypeError("not a java array");
     }
 
+    @JRubyMethod(name = "[]")
     public IRubyObject aref(IRubyObject index) {
         throw getRuntime().newTypeError("not a java array");
     }
 
+    @JRubyMethod(name = "[]=")
     public IRubyObject aset(IRubyObject index, IRubyObject someValue) {
         throw getRuntime().newTypeError("not a java array");
     }
 
+    @JRubyMethod(name = "java_proxy?")
     public IRubyObject is_java_proxy() {
         return getRuntime().getFalse();
     }

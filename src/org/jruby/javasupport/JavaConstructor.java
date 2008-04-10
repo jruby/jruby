@@ -44,6 +44,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -58,14 +59,11 @@ public class JavaConstructor extends JavaCallable {
         // this type and it can't be marshalled. Confirm. JRUBY-415
         RubyClass result =
                 javaModule.defineClassUnder("JavaConstructor", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        CallbackFactory callbackFactory = runtime.callbackFactory(JavaConstructor.class);
 
         JavaAccessibleObject.registerRubyMethods(runtime, result);
         JavaCallable.registerRubyMethods(runtime, result);
-
-        result.defineFastMethod("new_instance", callbackFactory.getFastOptMethod("new_instance"));
-        result.defineFastMethod("type_parameters", callbackFactory.getFastMethod("type_parameters"));
-        result.defineFastMethod("return_type", callbackFactory.getFastMethod("return_type"));
+        
+        result.defineAnnotatedMethods(JavaConstructor.class);
         
         return result;
     }
@@ -173,14 +171,17 @@ public class JavaConstructor extends JavaCallable {
         return constructor;
     }
     
+    @JRubyMethod
     public IRubyObject type_parameters() {
         return Java.getInstance(getRuntime(), constructor.getTypeParameters());
     }
 
+    @JRubyMethod
     public IRubyObject return_type() {
         return getRuntime().getNil();
     }
 
+    @JRubyMethod(rest = true)
     public IRubyObject new_instance(IRubyObject[] args) {
         int length = args.length;
         Class<?>[] types = parameterTypes;
