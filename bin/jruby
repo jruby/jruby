@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # -----------------------------------------------------------------------------
 # jruby.sh - Start Script for the JRuby interpreter
 #
@@ -90,41 +90,38 @@ JAVA_STACK=-Xss1024k
 
 # Split out any -J argument for passing to the JVM.
 # Scanning for args is aborted by '--'.
-declare -a java_args
-declare -a ruby_args
+java_args=""
+ruby_args=""
     while [ $# -gt 0 ]
 do
     case "$1" in
     # Stuff after '-J' in this argument goes to JVM
     -J*)
-        val=${1:2}
-        if [ "${val:0:4}" = "-Xmx" ]; then
+        val=`expr $1 : '^-J\(.*\)$'`
+        if [ "`expr $val : '\(....\)'`" = "-Xmx" ]; then
             JAVA_MEM=$val
-        elif [ "${val:0:4}" = "-Xss" ]; then
+        elif [ "`expr $val : '\(....\)'`" = "-Xss" ]; then
             JAVA_STACK=$val
         else
-            java_args=("${java_args[@]}" "${1:2}")
+            java_args="$j_arg `expr $1 : '^-J\(.*\)$'`"
         fi
         ;;
      # Match switches that take an argument
-     -e|-I|-S) ruby_args=("${ruby_args[@]}" "$1" "$2"); shift ;;
+     -e|-I|-S) ruby_args="$ruby_args $1 $2 "; shift ;;
      # Match same switches with argument stuck together
-     -e*|-I*|-S*) ruby_args=("${ruby_args[@]}" "$1" ) ;;
+     -e*|-I*|-S*) ruby_args="$ruby_args $1 "  ;;
      # Abort processing on the double dash
      --) break ;;
      # Other opts go to ruby
-     -*) ruby_args=("${ruby_args[@]}" "$1") ;;
+     -*) ruby_args="$ruby_args $1 " ;;
      # Abort processing on first non-opt arg
-     *) break ;;
+     *) ruby_args="$ruby_args $1 " ;;
     esac
     shift
 done
 
 # Append the rest of the arguments
-ruby_args=("${ruby_args[@]}" "$@")
-
-# Put the ruby_args back into the position arguments $1, $2 etc
-set -- "${ruby_args[@]}"
+ruby_args=$ruby_args $@
 
 JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_STACK"
 
@@ -141,8 +138,8 @@ if $cygwin; then
   fi
 fi
 
-exec "$JAVA_CMD" $JAVA_OPTS "${java_args[@]}" -classpath "$CP" \
+exec "$JAVA_CMD" $JAVA_OPTS $java_args -classpath "$CP" \
   "-Djruby.home=$JRUBY_HOME" \
   "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
   "-Djruby.shell=$JRUBY_SHELL" \
-  org.jruby.Main $JRUBY_OPTS "$@"
+  org.jruby.Main $JRUBY_OPTS $ruby_args
