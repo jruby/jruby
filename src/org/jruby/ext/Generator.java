@@ -35,6 +35,7 @@ import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -46,6 +47,7 @@ import org.jruby.runtime.load.Library;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.Visibility;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -61,20 +63,7 @@ public class Generator {
     public static void createGenerator(Ruby runtime) throws IOException {
         RubyClass cGen = runtime.defineClass("Generator",runtime.getObject(), runtime.getObject().getAllocator());
         cGen.includeModule(runtime.getEnumerable());
-
-        CallbackFactory callbackFactory = runtime.callbackFactory(Generator.class);
-
-        cGen.getMetaClass().defineMethod("new",callbackFactory.getOptSingletonMethod("new_instance"));
-        cGen.defineMethod("initialize",callbackFactory.getOptSingletonMethod("initialize"));
-        cGen.defineMethod("yield",callbackFactory.getSingletonMethod("yield",IRubyObject.class));
-        cGen.defineFastMethod("end?",callbackFactory.getFastSingletonMethod("end_p"));
-        cGen.defineFastMethod("next?",callbackFactory.getFastSingletonMethod("next_p"));
-        cGen.defineFastMethod("index",callbackFactory.getFastSingletonMethod("index"));
-        cGen.defineAlias("pos","index");
-        cGen.defineMethod("next",callbackFactory.getSingletonMethod("next"));
-        cGen.defineMethod("current",callbackFactory.getSingletonMethod("current"));
-        cGen.defineMethod("rewind",callbackFactory.getSingletonMethod("rewind"));
-        cGen.defineMethod("each",callbackFactory.getSingletonMethod("each"));
+        cGen.defineAnnotatedMethods(Generator.class);
     }
 
     static class GeneratorData implements Runnable {
@@ -239,6 +228,7 @@ public class Generator {
         }
     }
 
+    @JRubyMethod(name = "new", rest = true, frame = true, meta = true)
     public static IRubyObject new_instance(IRubyObject self, IRubyObject[] args, Block block) {
         // Generator#new
         IRubyObject result = new RubyObject(self.getRuntime(),(RubyClass)self);
@@ -247,6 +237,7 @@ public class Generator {
         return result;
     }
 
+    @JRubyMethod(optional = 1, frame = true, visibility = Visibility.PRIVATE)
     public static IRubyObject initialize(IRubyObject self, IRubyObject[] args, Block block) {
         // Generator#initialize
         GeneratorData d = (GeneratorData)self.dataGetStruct();
@@ -262,6 +253,7 @@ public class Generator {
         return self;
     }
 
+    @JRubyMethod(frame = true)
     public static IRubyObject yield(IRubyObject self, IRubyObject value, Block block) {
         // Generator#yield
         self.getInstanceVariables().getInstanceVariable("@queue").callMethod(self.getRuntime().getCurrentContext(),"<<",value);
@@ -270,6 +262,7 @@ public class Generator {
         return self;
     }
 
+    @JRubyMethod(name = "end?")
     public static IRubyObject end_p(IRubyObject self) {
         // Generator#end_p
         GeneratorData d = (GeneratorData)self.dataGetStruct();
@@ -280,6 +273,7 @@ public class Generator {
         return (d.isEnd() && emptyQueue) ? self.getRuntime().getTrue() : self.getRuntime().getFalse();
     }
 
+    @JRubyMethod(name = "next?")
     public static IRubyObject next_p(IRubyObject self) {
         // Generator#next_p        
         return RuntimeHelpers.negate(
@@ -287,11 +281,13 @@ public class Generator {
                 self.getRuntime());
     }
 
+    @JRubyMethod(name = {"index", "pos"})
     public static IRubyObject index(IRubyObject self) {
         // Generator#index
         return self.getInstanceVariables().getInstanceVariable("@index");
     }
 
+    @JRubyMethod(frame = true)
     public static IRubyObject next(IRubyObject self, Block block) {
         // Generator#next
         GeneratorData d = (GeneratorData)self.dataGetStruct();
@@ -305,6 +301,7 @@ public class Generator {
         return self.getInstanceVariables().getInstanceVariable("@queue").callMethod(self.getRuntime().getCurrentContext(),"shift");
     }
 
+    @JRubyMethod(frame = true)
     public static IRubyObject current(IRubyObject self, Block block) {
         // Generator#current
         if(self.getInstanceVariables().getInstanceVariable("@queue").callMethod(self.getRuntime().getCurrentContext(),MethodIndex.EMPTY_P, "empty?").isTrue()) {
@@ -313,6 +310,7 @@ public class Generator {
         return self.getInstanceVariables().getInstanceVariable("@queue").callMethod(self.getRuntime().getCurrentContext(),"first");
     }
 
+    @JRubyMethod(frame = true)
     public static IRubyObject rewind(IRubyObject self, Block block) {
         // Generator#rewind
         if(self.getInstanceVariables().getInstanceVariable("@index").callMethod(self.getRuntime().getCurrentContext(),"nonzero?").isTrue()) {
@@ -327,6 +325,7 @@ public class Generator {
         return self;
     }
 
+    @JRubyMethod(frame = true)
     public static IRubyObject each(IRubyObject self, Block block) {
         // Generator#each
         rewind(self,Block.NULL_BLOCK);

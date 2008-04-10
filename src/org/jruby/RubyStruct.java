@@ -213,10 +213,7 @@ public class RubyStruct extends RubyObject {
         newStruct.fastSetInternalVariable("__size__", member.length());
         newStruct.fastSetInternalVariable("__member__", member);
 
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyStruct.class);
-        newStruct.getSingletonClass().defineMethod("new", callbackFactory.getOptSingletonMethod("newStruct"));
-        newStruct.getSingletonClass().defineMethod("[]", callbackFactory.getOptSingletonMethod("newStruct"));
-        newStruct.getSingletonClass().defineMethod("members", callbackFactory.getSingletonMethod("members"));
+        newStruct.getSingletonClass().defineAnnotatedMethods(StructMethods.class);
 
         // define access methods.
         for (int i = (name == null && !nilName) ? 0 : 1; i < args.length; i++) {
@@ -266,6 +263,19 @@ public class RubyStruct extends RubyObject {
         }
 
         return newStruct;
+    }
+    
+    // For binding purposes on the newly created struct types
+    public static class StructMethods {
+        @JRubyMethod(name = {"new", "[]"}, rest = true, frame = true)
+        public static IRubyObject newStruct(IRubyObject recv, IRubyObject[] args, Block block) {
+            return RubyStruct.newStruct(recv, args, block);
+        }
+        
+        @JRubyMethod
+        public static IRubyObject members(IRubyObject recv, Block block) {
+            return RubyStruct.members(recv, block);
+        }
     }
 
     /** Create new Structure.

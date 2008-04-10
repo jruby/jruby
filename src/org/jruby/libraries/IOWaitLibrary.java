@@ -30,6 +30,7 @@ package org.jruby.libraries;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyIO;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
@@ -43,14 +44,13 @@ public class IOWaitLibrary implements Library {
 
     public void load(Ruby runtime, boolean wrap) {
         RubyClass ioClass = runtime.getIO();
-        CallbackFactory callbackFactory = runtime.callbackFactory(IOWaitLibrary.class);
-        ioClass.defineFastMethod("ready?", callbackFactory.getFastSingletonMethod("ready"));
-        ioClass.defineFastMethod("wait", callbackFactory.getFastSingletonMethod("io_wait"));
+        ioClass.defineAnnotatedMethods(IOWaitLibrary.class);
     }
 
     /**
      * returns non-nil if input available without blocking, false if EOF or not open/readable, otherwise nil.
      */
+    @JRubyMethod(name = "ready?")
     public static IRubyObject ready(IRubyObject obj) {
         RubyIO io = (RubyIO)obj;
         try {
@@ -73,6 +73,7 @@ public class IOWaitLibrary implements Library {
     /**
      * waits until input available or timed out and returns self, or nil when EOF reached.
      */
+    @JRubyMethod
     public static IRubyObject io_wait(IRubyObject obj) {
         RubyIO io = (RubyIO)obj;
         try {
