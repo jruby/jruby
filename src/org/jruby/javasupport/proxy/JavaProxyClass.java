@@ -41,7 +41,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -55,6 +54,7 @@ import org.jruby.RubyObject;
 import org.jruby.RubyNil;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.JavaClass;
@@ -310,18 +310,9 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             RubyClass result = javaProxyModule.defineClassUnder("JavaProxyMethod", 
                     runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
-            CallbackFactory callbackFactory = 
-                runtime.callbackFactory(JavaProxyClass.ProxyMethodImpl.class);
-
             JavaProxyReflectionObject.registerRubyMethods(runtime, result);
 
-            result.defineFastMethod("argument_types", callbackFactory.getFastMethod("argument_types"));
-            result.defineFastMethod("declaring_class", callbackFactory.getFastMethod("getDeclaringClass"));
-            result.defineFastMethod("super?", callbackFactory.getFastMethod("super_p"));
-            result.defineFastMethod("arity", callbackFactory.getFastMethod("arity"));
-            result.defineFastMethod("name", callbackFactory.getFastMethod("name"));
-            result.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
-            result.defineFastMethod("invoke", callbackFactory.getFastOptMethod("do_invoke"));
+            result.defineAnnotatedMethods(ProxyMethodImpl.class);
 
             return result;
         }
@@ -330,18 +321,22 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             return getRuntime().newString(getName());
         }
 
+        @JRubyMethod(name = "declaring_class")
         public JavaProxyClass getDeclaringClass() {
             return clazz;
         }
 
+        @JRubyMethod
         public RubyArray argument_types() {
             return buildRubyArray(getParameterTypes());
         }
 
+        @JRubyMethod(name = "super?")
         public IRubyObject super_p() {
             return hasSuperImplementation() ? getRuntime().getTrue() : getRuntime().getFalse();
         }
 
+        @JRubyMethod
         public RubyFixnum arity() {
             return getRuntime().newFixnum(getArity());
         }
@@ -350,6 +345,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             return getDeclaringClass().nameOnInspection() + "/" + getName();
         }
 
+        @JRubyMethod
         public IRubyObject inspect() {
             StringBuffer result = new StringBuffer();
             result.append(nameOnInspection());
@@ -365,6 +361,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             return getRuntime().newString(result.toString());
         }
 
+        @JRubyMethod(name = "invoke", rest = true)
         public IRubyObject do_invoke(IRubyObject[] nargs) {
             if (nargs.length != 1 + getArity()) {
                 throw getRuntime().newArgumentError(nargs.length, 1 + getArity());

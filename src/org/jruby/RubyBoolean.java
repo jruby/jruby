@@ -33,6 +33,7 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -74,12 +75,8 @@ public class RubyBoolean extends RubyObject {
         runtime.setFalseClass(falseClass);
         falseClass.index = ClassIndex.FALSE;
         
-        CallbackFactory fact = runtime.callbackFactory(RubyBoolean.class);
+        falseClass.defineAnnotatedMethods(False.class);
         
-        falseClass.defineFastMethod("&", fact.getFastMethod("false_and", RubyKernel.IRUBY_OBJECT));
-        falseClass.defineFastMethod("|", fact.getFastMethod("false_or", RubyKernel.IRUBY_OBJECT));
-        falseClass.defineFastMethod("^", fact.getFastMethod("false_xor", RubyKernel.IRUBY_OBJECT));
-        falseClass.defineFastMethod("to_s", fact.getFastMethod("false_to_s"));
         falseClass.getMetaClass().undefineMethod("new");
         
         return falseClass;
@@ -90,12 +87,8 @@ public class RubyBoolean extends RubyObject {
         runtime.setTrueClass(trueClass);
         trueClass.index = ClassIndex.TRUE;
         
-        CallbackFactory fact = runtime.callbackFactory(RubyBoolean.class);
+        trueClass.defineAnnotatedMethods(True.class);
         
-        trueClass.defineFastMethod("&", fact.getFastMethod("true_and", RubyKernel.IRUBY_OBJECT));
-        trueClass.defineFastMethod("|", fact.getFastMethod("true_or", RubyKernel.IRUBY_OBJECT));
-        trueClass.defineFastMethod("^", fact.getFastMethod("true_xor", RubyKernel.IRUBY_OBJECT));
-        trueClass.defineFastMethod("to_s", fact.getFastMethod("true_to_s"));
         trueClass.getMetaClass().undefineMethod("new");
         
         return trueClass;
@@ -105,16 +98,48 @@ public class RubyBoolean extends RubyObject {
         return value ? runtime.getTrue() : runtime.getFalse();
     }
     
-    public IRubyObject false_and(IRubyObject oth) {
-        return this;
+    public static class False {
+        @JRubyMethod(name = "&")
+        public static IRubyObject false_and(IRubyObject f, IRubyObject oth) {
+            return f;
+        }
+
+        @JRubyMethod(name = "|")
+        public static IRubyObject false_or(IRubyObject f, IRubyObject oth) {
+            return oth.isTrue() ? f.getRuntime().getTrue() : f;
+        }
+
+        @JRubyMethod(name = "^")
+        public static IRubyObject false_xor(IRubyObject f, IRubyObject oth) {
+            return oth.isTrue() ? f.getRuntime().getTrue() : f;
+        }
+
+        @JRubyMethod(name = "to_s")
+        public static IRubyObject false_to_s(IRubyObject f) {
+            return f.getRuntime().newString("false");
+        }
     }
     
-    public IRubyObject false_or(IRubyObject oth) {
-        return oth.isTrue() ? getRuntime().getTrue() : this;
-    }
-    
-    public IRubyObject false_xor(IRubyObject oth) {
-        return oth.isTrue() ? getRuntime().getTrue() : this;
+    public static class True {
+        @JRubyMethod(name = "&")
+        public static IRubyObject true_and(IRubyObject t, IRubyObject oth) {
+            return oth.isTrue() ? t : t.getRuntime().getFalse();
+        }
+
+        @JRubyMethod(name = "|")
+        public static IRubyObject true_or(IRubyObject t, IRubyObject oth) {
+            return t;
+        }
+
+        @JRubyMethod(name = "^")
+        public static IRubyObject true_xor(IRubyObject t, IRubyObject oth) {
+            return oth.isTrue() ? t.getRuntime().getFalse() : t;
+        }
+
+        @JRubyMethod(name = "to_s")
+        public static IRubyObject true_to_s(IRubyObject t) {
+            return t.getRuntime().newString("true");
+        }
     }
     
     public RubyFixnum id() {
@@ -131,26 +156,6 @@ public class RubyBoolean extends RubyObject {
 
     public IRubyObject freeze() {
         return this;
-    }
-
-    public IRubyObject false_to_s() {
-        return getRuntime().newString("false");
-    }
-    
-    public IRubyObject true_and(IRubyObject oth) {
-        return oth.isTrue() ? this : getRuntime().getFalse();
-    }
-    
-    public IRubyObject true_or(IRubyObject oth) {
-        return this;
-    }
-    
-    public IRubyObject true_xor(IRubyObject oth) {
-        return oth.isTrue() ? getRuntime().getFalse() : this;
-    }
-    
-    public IRubyObject true_to_s() {
-        return getRuntime().newString("true");
     }
     
     public void marshalTo(MarshalStream output) throws java.io.IOException {

@@ -43,7 +43,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callback.Callback;
 
 
 /**
@@ -83,18 +82,6 @@ public class RubyProcess {
         
         process.defineConstant("WNOHANG", runtime.newFixnum(1));
         
-        // Process::Status methods  
-        Callback notImplemented = process_statusCallbackFactory.getFastMethod("not_implemented");
-        process_status.defineMethod("&", process_statusCallbackFactory.getFastMethod("not_implemented1", IRubyObject.class));
-        process_status.defineMethod("to_int", notImplemented);
-        process_status.defineMethod("pid", notImplemented);
-        process_status.defineMethod("stopped?", notImplemented);
-        process_status.defineMethod("stopsig", notImplemented);
-        process_status.defineMethod("signaled?", notImplemented);
-        process_status.defineMethod("termsig", notImplemented);
-        process_status.defineMethod("exited?", notImplemented);
-        process_status.defineMethod("coredump?", notImplemented);
-        
         return process;
     }
 
@@ -112,43 +99,46 @@ public class RubyProcess {
             return new RubyStatus(runtime, runtime.getProcStatus(), status);
         }
         
+        // Bunch of methods still not implemented
+        @JRubyMethod(name = {"to_int", "pid", "stopped?", "stopsig", "signaled?", "termsig?", "exited?", "coredump?"})
         public IRubyObject not_implemented() {
             String error = "Process::Status#" + getRuntime().getCurrentContext().getFrameName() + " not implemented";
             throw getRuntime().newNotImplementedError(error);
         }
         
+        @JRubyMethod(name = {"&"})
         public IRubyObject not_implemented1(IRubyObject arg) {
             String error = "Process::Status#" + getRuntime().getCurrentContext().getFrameName() + " not implemented";
             throw getRuntime().newNotImplementedError(error);
         }
         
-        @JRubyMethod(name = "exitstatus")
+        @JRubyMethod
         public IRubyObject exitstatus() {
             return getRuntime().newFixnum(status);
         }
         
-        @JRubyMethod(name = ">>", required = 1)
+        @JRubyMethod(name = ">>")
         public IRubyObject op_rshift(IRubyObject other) {
             long shiftValue = other.convertToInteger().getLongValue();
             return getRuntime().newFixnum(status >> shiftValue);
         }
         
-        @JRubyMethod(name = "==", required = 1)
+        @JRubyMethod(name = "==")
         public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
             return other.callMethod(context, MethodIndex.EQUALEQUAL, "==", this.to_i());
         }
 
-        @JRubyMethod(name = "to_i")
+        @JRubyMethod
         public IRubyObject to_i() {
             return getRuntime().newFixnum(shiftedValue());
         }
         
-        @JRubyMethod(name = "to_s")
+        @JRubyMethod
         public IRubyObject to_s() {
             return getRuntime().newString(String.valueOf(shiftedValue()));
         }
         
-        @JRubyMethod(name = "inspect")
+        @JRubyMethod
         public IRubyObject inspect() {
             return getRuntime().newString("#<Process::Status: pid=????,exited(" + String.valueOf(status) + ")>");
         }
@@ -165,7 +155,7 @@ public class RubyProcess {
 
     @JRubyModule(name="Process::UID")
     public static class UserID {
-        @JRubyMethod(name = "change_privilege", required = 1, module = true)
+        @JRubyMethod(name = "change_privilege", module = true)
         public static IRubyObject change_privilege(IRubyObject self, IRubyObject arg) {
             throw self.getRuntime().newNotImplementedError("Process::UID::change_privilege not implemented yet");
         }
@@ -175,12 +165,12 @@ public class RubyProcess {
             return euid(self);
         }
         
-        @JRubyMethod(name = "eid=", required = 1, module = true)
+        @JRubyMethod(name = "eid=", module = true)
         public static IRubyObject eid(IRubyObject self, IRubyObject arg) {
             return euid_set(self, arg);
         }
         
-        @JRubyMethod(name = "grant_privilege", required = 1, module = true)
+        @JRubyMethod(name = "grant_privilege", module = true)
         public static IRubyObject grant_privilege(IRubyObject self, IRubyObject arg) {
             throw self.getRuntime().newNotImplementedError("Process::UID::grant_privilege not implemented yet");
         }
@@ -232,7 +222,7 @@ public class RubyProcess {
     
     @JRubyModule(name="Process::GID")
     public static class GroupID {
-        @JRubyMethod(name = "change_privilege", required = 1, module = true)
+        @JRubyMethod(name = "change_privilege", module = true)
         public static IRubyObject change_privilege(IRubyObject self, IRubyObject arg) {
             throw self.getRuntime().newNotImplementedError("Process::GID::change_privilege not implemented yet");
         }
@@ -242,12 +232,12 @@ public class RubyProcess {
             return egid(self);
         }
         
-        @JRubyMethod(name = "eid=", required = 1, module = true)
+        @JRubyMethod(name = "eid=", module = true)
         public static IRubyObject eid(IRubyObject self, IRubyObject arg) {
             return RubyProcess.egid_set(self, arg);
         }
         
-        @JRubyMethod(name = "grant_privilege", required = 1, module = true)
+        @JRubyMethod(name = "grant_privilege", module = true)
         public static IRubyObject grant_privilege(IRubyObject self, IRubyObject arg) {
             throw self.getRuntime().newNotImplementedError("Process::GID::grant_privilege not implemented yet");
         }
@@ -319,22 +309,22 @@ public class RubyProcess {
             return uid(self);
         }
 
-        @JRubyMethod(name = "setegid", required = 1, module = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(name = "setegid", module = true, visibility = Visibility.PRIVATE)
         public static IRubyObject setegid(IRubyObject recv, IRubyObject arg) {
             return egid_set(recv, arg);
         }
 
-        @JRubyMethod(name = "seteuid", required = 1, module = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(name = "seteuid", module = true, visibility = Visibility.PRIVATE)
         public static IRubyObject seteuid(IRubyObject recv, IRubyObject arg) {
             return euid_set(recv, arg);
         }
 
-        @JRubyMethod(name = "setgid", required = 1, module = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(name = "setgid", module = true, visibility = Visibility.PRIVATE)
         public static IRubyObject setgid(IRubyObject recv, IRubyObject arg) {
             return gid_set(recv, arg);
         }
 
-        @JRubyMethod(name = "setuid", required = 1, module = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(name = "setuid", module = true, visibility = Visibility.PRIVATE)
         public static IRubyObject setuid(IRubyObject recv, IRubyObject arg) {
             return uid_set(recv, arg);
         }

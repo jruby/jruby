@@ -34,8 +34,8 @@ import java.net.UnknownHostException;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -46,11 +46,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RubyIPSocket extends RubyBasicSocket {
     static void createIPSocket(Ruby runtime) {
         RubyClass rb_cIPSocket = runtime.defineClass("IPSocket", runtime.fastGetClass("BasicSocket"), IPSOCKET_ALLOCATOR);
-        CallbackFactory cfact = runtime.callbackFactory(RubyIPSocket.class);
-
-        rb_cIPSocket.defineFastMethod("addr", cfact.getFastMethod("addr"));
-        rb_cIPSocket.defineFastMethod("peeraddr", cfact.getFastMethod("peeraddr"));
-        rb_cIPSocket.getMetaClass().defineFastMethod("getaddress", cfact.getFastSingletonMethod("getaddress", IRubyObject.class));
+        
+        rb_cIPSocket.defineAnnotatedMethods(RubyIPSocket.class);
 
         runtime.getObject().fastSetConstant("IPsocket",rb_cIPSocket);
     }
@@ -83,14 +80,17 @@ public class RubyIPSocket extends RubyBasicSocket {
         return r.newArrayNoCopy(ret);
     }
 
+    @JRubyMethod
     public IRubyObject addr() {
         return addrFor(getLocalSocket());
     }
 
+    @JRubyMethod
     public IRubyObject peeraddr() {
         return addrFor(getRemoteSocket());
     }
 
+    @JRubyMethod(meta = true)
     public static IRubyObject getaddress(IRubyObject recv, IRubyObject hostname) {
         try {
             return recv.getRuntime().newString(InetAddress.getByName(hostname.convertToString().toString()).getHostAddress());
