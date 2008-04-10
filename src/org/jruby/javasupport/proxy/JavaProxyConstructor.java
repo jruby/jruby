@@ -38,6 +38,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyProc;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.Java;
@@ -48,7 +49,6 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -83,6 +83,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         return proxyConstructor.isVarArgs();
     }
 
+    @JRubyMethod(name = "declaring_class")
     public JavaProxyClass getDeclaringClass() {
         return declaringProxyClass;
     }
@@ -106,28 +107,15 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         RubyClass result = javaProxyModule.defineClassUnder("JavaProxyConstructor",
                 runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
-        CallbackFactory callbackFactory = runtime
-                .callbackFactory(JavaProxyConstructor.class);
-
         JavaProxyReflectionObject.registerRubyMethods(runtime, result);
 
-        result.defineFastMethod("argument_types", callbackFactory
-                .getFastMethod("argument_types"));
-
-        result.defineFastMethod("declaring_class", callbackFactory
-                .getFastMethod("getDeclaringClass"));
-
-        result.defineMethod("new_instance", callbackFactory
-                .getOptMethod("new_instance"));
-        
-        result.defineMethod("new_instance2", callbackFactory.getOptMethod("new_instance2"));
-
-        result.defineFastMethod("arity", callbackFactory.getFastMethod("arity"));
+        result.defineAnnotatedMethods(JavaProxyConstructor.class);
 
         return result;
 
     }
 
+    @JRubyMethod
     public RubyFixnum arity() {
         return getRuntime().newFixnum(getParameterTypes().length);
     }
@@ -159,10 +147,12 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         return getRuntime().newString(result.toString());
     }
 
+    @JRubyMethod
     public RubyArray argument_types() {
         return buildRubyArray(getParameterTypes());
     }
     
+    @JRubyMethod(frame = true, rest = true)
     public RubyObject new_instance2(IRubyObject[] args, Block unusedBlock) {
         Arity.checkArgumentCount(getRuntime(), args, 2, 2);
 
@@ -212,6 +202,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         }
     }
 
+    @JRubyMethod(required = 1, optional = 1, frame = true)
     public RubyObject new_instance(IRubyObject[] args, Block block) {
         int size = Arity.checkArgumentCount(getRuntime(), args, 1, 2) - 1;
         final RubyProc proc;

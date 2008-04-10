@@ -46,7 +46,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyIO;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
-import org.jruby.runtime.CallbackFactory;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.BadDescriptorException;
@@ -68,18 +68,7 @@ public class RubyBasicSocket extends RubyIO {
     static void createBasicSocket(Ruby runtime) {
         RubyClass rb_cBasicSocket = runtime.defineClass("BasicSocket", runtime.getIO(), BASICSOCKET_ALLOCATOR);
 
-        CallbackFactory cfact = runtime.callbackFactory(RubyBasicSocket.class);
-        rb_cBasicSocket.defineFastMethod("send", cfact.getFastOptMethod("write_send"));
-        rb_cBasicSocket.defineFastMethod("recv", cfact.getFastOptMethod("recv"));
-        rb_cBasicSocket.defineFastMethod("shutdown", cfact.getFastOptMethod("shutdown"));
-        rb_cBasicSocket.defineFastMethod("__getsockname", cfact.getFastMethod("getsockname"));
-        rb_cBasicSocket.defineFastMethod("__getpeername", cfact.getFastMethod("getpeername"));
-        rb_cBasicSocket.defineFastMethod("getsockname", cfact.getFastMethod("getsockname"));
-        rb_cBasicSocket.defineFastMethod("getpeername", cfact.getFastMethod("getpeername"));
-        rb_cBasicSocket.defineFastMethod("getsockopt", cfact.getFastMethod("getsockopt", IRubyObject.class, IRubyObject.class));
-        rb_cBasicSocket.defineFastMethod("setsockopt", cfact.getFastMethod("setsockopt", IRubyObject.class, IRubyObject.class, IRubyObject.class));
-        rb_cBasicSocket.getMetaClass().defineFastMethod("do_not_reverse_lookup", cfact.getFastSingletonMethod("do_not_reverse_lookup"));
-        rb_cBasicSocket.getMetaClass().defineFastMethod("do_not_reverse_lookup=", cfact.getFastSingletonMethod("set_do_not_reverse_lookup", IRubyObject.class));
+        rb_cBasicSocket.defineAnnotatedMethods(RubyBasicSocket.class);
     }
 
     public RubyBasicSocket(Ruby runtime, RubyClass type) {
@@ -112,10 +101,12 @@ public class RubyBasicSocket extends RubyIO {
         return getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "send", rest = true)
     public IRubyObject write_send(IRubyObject[] args) {
         return syswrite(args[0]);
     }
     
+    @JRubyMethod(rest = true)
     public IRubyObject recv(IRubyObject[] args) {
         OpenFile openFile = getOpenFileChecked();
         try {
@@ -369,6 +360,7 @@ public class RubyBasicSocket extends RubyIO {
         return getRuntime().newString(result.toString());
     }
 
+    @JRubyMethod
     public IRubyObject getsockopt(IRubyObject lev, IRubyObject optname) {
         int level = RubyNumeric.fix2int(lev);
         int opt = RubyNumeric.fix2int(optname);
@@ -421,6 +413,7 @@ public class RubyBasicSocket extends RubyIO {
         }
     }
 
+    @JRubyMethod
     public IRubyObject setsockopt(IRubyObject lev, IRubyObject optname, IRubyObject val) {
         int level = RubyNumeric.fix2int(lev);
         int opt = RubyNumeric.fix2int(optname);
@@ -479,6 +472,7 @@ public class RubyBasicSocket extends RubyIO {
         return getRuntime().newFixnum(0);
     }
 
+    @JRubyMethod(name = {"getsockname", "__getsockname"})
     public IRubyObject getsockname() {
         SocketAddress sock = getLocalSocket();
         if(null == sock) {
@@ -487,6 +481,7 @@ public class RubyBasicSocket extends RubyIO {
         return getRuntime().newString(sock.toString());
     }
 
+    @JRubyMethod(name = {"getpeername", "__getpeername"})
     public IRubyObject getpeername() {
         SocketAddress sock = getRemoteSocket();
         if(null == sock) {
@@ -495,6 +490,7 @@ public class RubyBasicSocket extends RubyIO {
         return getRuntime().newString(sock.toString());
     }
 
+    @JRubyMethod(optional = 1)
     public IRubyObject shutdown(IRubyObject[] args) {
         if (getRuntime().getSafeLevel() >= 4 && tainted_p().isFalse()) {
             throw getRuntime().newSecurityError("Insecure: can't shutdown socket");
@@ -513,10 +509,12 @@ public class RubyBasicSocket extends RubyIO {
         return close();
     }
 
+    @JRubyMethod(meta = true)
     public static IRubyObject do_not_reverse_lookup(IRubyObject recv) {
         return recv.getRuntime().isDoNotReverseLookupEnabled() ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
     }
     
+    @JRubyMethod(meta = true)
     public static IRubyObject set_do_not_reverse_lookup(IRubyObject recv, IRubyObject flag) {
         recv.getRuntime().setDoNotReverseLookupEnabled(flag.isTrue());
         return recv.getRuntime().isDoNotReverseLookupEnabled() ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();

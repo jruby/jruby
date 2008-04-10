@@ -38,15 +38,12 @@ import org.jruby.RubyObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyThread;
-import org.jruby.RubyInteger;
-import org.jruby.RubyFloat;
 import org.jruby.RubyNumeric;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.load.Library;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -167,6 +164,7 @@ public class ThreadLibrary implements Library {
 
     @JRubyClass(name="ConditionVariable")
     public static class ConditionVariable extends RubyObject {
+        @JRubyMethod(name = "new", rest = true, frame = true, meta = true)
         public static ConditionVariable newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
             ConditionVariable result = new ConditionVariable(recv.getRuntime(), (RubyClass)recv);
             result.callInit(args, block);
@@ -183,13 +181,11 @@ public class ThreadLibrary implements Library {
                     return new ConditionVariable(runtime, klass);
                 }
             });
-            CallbackFactory cb = runtime.callbackFactory(ConditionVariable.class);
-            cConditionVariable.getMetaClass().defineMethod("new", cb.getOptSingletonMethod("newInstance"));
-            cConditionVariable.defineFastMethod("wait", cb.getFastOptMethod("wait_ruby"));
-            cConditionVariable.defineFastMethod("broadcast", cb.getFastMethod("broadcast"));
-            cConditionVariable.defineFastMethod("signal", cb.getFastMethod("signal"));
+            
+            cConditionVariable.defineAnnotatedMethods(ConditionVariable.class);
         }
 
+        @JRubyMethod(name = "wait", required = 1, optional = 1)
         public IRubyObject wait_ruby(IRubyObject args[]) throws InterruptedException {
             if ( args.length < 1 ) {
                 throw getRuntime().newArgumentError(args.length, 1);
@@ -237,11 +233,13 @@ public class ThreadLibrary implements Library {
             }
         }
 
+        @JRubyMethod
         public synchronized IRubyObject broadcast() {
             notifyAll();
             return getRuntime().getNil();
         }
 
+        @JRubyMethod
         public synchronized IRubyObject signal() {
             notify();
             return getRuntime().getNil();
@@ -252,6 +250,7 @@ public class ThreadLibrary implements Library {
     public static class Queue extends RubyObject {
         private LinkedList entries;
 
+        @JRubyMethod(name = "new", rest = true, frame = true, meta = true)
         public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
             Queue result = new Queue(recv.getRuntime(), (RubyClass)recv);
             result.callInit(args, block);
@@ -269,38 +268,30 @@ public class ThreadLibrary implements Library {
                     return new Queue(runtime, klass);
                 }
             });
-            CallbackFactory cb = runtime.callbackFactory(Queue.class);
-            cQueue.getMetaClass().defineMethod("new", cb.getOptSingletonMethod("newInstance"));
-
-            cQueue.defineFastMethod("clear", cb.getFastMethod("clear"));
-            cQueue.defineFastMethod("empty?", cb.getFastMethod("empty_p"));
-            cQueue.defineFastMethod("length", cb.getFastMethod("length"));
-            cQueue.defineFastMethod("num_waiting", cb.getFastMethod("num_waiting"));
-            cQueue.defineFastMethod("pop", cb.getFastOptMethod("pop"));
-            cQueue.defineFastMethod("push", cb.getFastMethod("push", IRubyObject.class));
             
-            cQueue.defineAlias("<<", "push");
-            cQueue.defineAlias("deq", "pop");
-            cQueue.defineAlias("shift", "pop");
-            cQueue.defineAlias("size", "length");
-            cQueue.defineAlias("enq", "push");
+            cQueue.defineAnnotatedMethods(Queue.class);
         }
 
+        @JRubyMethod
         public synchronized IRubyObject clear() {
             entries.clear();
             return getRuntime().getNil();
         }
 
+        @JRubyMethod(name = "empty?")
         public synchronized RubyBoolean empty_p() {
             return ( entries.size() == 0 ? getRuntime().getTrue() : getRuntime().getFalse() );
         }
 
+        @JRubyMethod(name = {"length", "size"})
         public synchronized RubyNumeric length() {
             return RubyNumeric.int2fix(getRuntime(), entries.size());
         }
 
+        @JRubyMethod
         public RubyNumeric num_waiting() { return getRuntime().newFixnum(0); }
 
+        @JRubyMethod(name = {"pop", "deq", "shift"}, optional = 1)
         public synchronized IRubyObject pop(IRubyObject[] args) {
             boolean should_block = true;
             if ( Arity.checkArgumentCount(getRuntime(), args, 0, 1) == 1 ) {
@@ -318,6 +309,7 @@ public class ThreadLibrary implements Library {
             return (IRubyObject)entries.removeFirst();
         }
 
+        @JRubyMethod(name = {"push", "<<", "enq"})
         public synchronized IRubyObject push(IRubyObject value) {
             entries.addLast(value);
             notify();
@@ -330,6 +322,7 @@ public class ThreadLibrary implements Library {
     public static class SizedQueue extends Queue {
         private int capacity;
 
+        @JRubyMethod(name = "new", rest = true, frame = true, meta = true)
         public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
             SizedQueue result = new SizedQueue(recv.getRuntime(), (RubyClass)recv);
             result.callInit(args, block);
@@ -347,33 +340,24 @@ public class ThreadLibrary implements Library {
                     return new SizedQueue(runtime, klass);
                 }
             });
-            CallbackFactory cb = runtime.callbackFactory(SizedQueue.class);
-            cSizedQueue.getMetaClass().defineMethod("new", cb.getOptSingletonMethod("newInstance"));
-
-            cSizedQueue.defineFastMethod("initialize", cb.getFastMethod("max_set", RubyInteger.class));
-
-            cSizedQueue.defineFastMethod("clear", cb.getFastMethod("clear"));
-            cSizedQueue.defineFastMethod("max", cb.getFastMethod("max"));
-            cSizedQueue.defineFastMethod("max=", cb.getFastMethod("max_set", RubyInteger.class));
-            cSizedQueue.defineFastMethod("pop", cb.getFastOptMethod("pop"));
-            cSizedQueue.defineFastMethod("push", cb.getFastMethod("push", IRubyObject.class));
-
-            cSizedQueue.defineAlias("<<", "push");
-            cSizedQueue.defineAlias("deq", "pop");
-            cSizedQueue.defineAlias("shift", "pop");
+            
+            cSizedQueue.defineAnnotatedMethods(SizedQueue.class);
         }
 
+        @JRubyMethod
         public synchronized IRubyObject clear() {
             super.clear();
             notifyAll();
             return getRuntime().getNil();
         }
 
+        @JRubyMethod
         public synchronized RubyNumeric max() {
             return RubyNumeric.int2fix(getRuntime(), capacity);
         }
 
-        public synchronized IRubyObject max_set(RubyInteger arg) {
+        @JRubyMethod(name = {"max=", "initialize"})
+        public synchronized IRubyObject max_set(IRubyObject arg) {
             int new_capacity = RubyNumeric.fix2int(arg);
             if ( new_capacity <= 0 ) {
                 getRuntime().newArgumentError("queue size must be positive");
@@ -391,12 +375,14 @@ public class ThreadLibrary implements Library {
             return getRuntime().getNil();
         }
 
+        @JRubyMethod(name = {"pop", "deq", "shift"}, optional = 1)
         public synchronized IRubyObject pop(IRubyObject args[]) {
             IRubyObject result = super.pop(args);
             notifyAll();
             return result;
         }
 
+        @JRubyMethod(name = {"push", "<<"})
         public synchronized IRubyObject push(IRubyObject value) {
             while ( RubyNumeric.fix2int(length()) >= capacity ) {
                 try {

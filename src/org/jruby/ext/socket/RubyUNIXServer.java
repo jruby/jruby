@@ -27,17 +27,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
-import java.io.IOException;
-
 import com.sun.jna.ptr.IntByReference;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.anno.JRubyClass;
-import org.jruby.runtime.CallbackFactory;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -55,24 +53,21 @@ public class RubyUNIXServer extends RubyUNIXSocket {
     static void createUNIXServer(Ruby runtime) {
         RubyClass rb_cUNIXServer = runtime.defineClass("UNIXServer", runtime.fastGetClass("UNIXSocket"), UNIXSERVER_ALLOCATOR);
         runtime.getObject().fastSetConstant("UNIXserver", rb_cUNIXServer);
-        CallbackFactory cfact = runtime.callbackFactory(RubyUNIXServer.class);
-
-        rb_cUNIXServer.defineFastMethod("initialize", cfact.getFastMethod("initialize", IRubyObject.class));
-        rb_cUNIXServer.defineFastMethod("accept", cfact.getFastMethod("accept"));
-        rb_cUNIXServer.defineFastMethod("accept_nonblock", cfact.getFastMethod("accept_nonblock"));
-        rb_cUNIXServer.defineFastMethod("sysaccept", cfact.getFastMethod("sysaccept"));
-        rb_cUNIXServer.defineFastMethod("listen", cfact.getFastMethod("listen", IRubyObject.class));
+        
+        rb_cUNIXServer.defineAnnotatedMethods(RubyUNIXServer.class);
     }
 
     public RubyUNIXServer(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
 
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject path) throws Exception {
         init_unixsock(path, true);
         return this;
     }
 
+    @JRubyMethod
     public IRubyObject accept() throws Exception {
         LibCSocket.sockaddr_un from = new LibCSocket.sockaddr_un();
         int fd2 = INSTANCE.accept(fd, from, new IntByReference(LibCSocket.sockaddr_un.LENGTH));
@@ -90,6 +85,7 @@ public class RubyUNIXServer extends RubyUNIXSocket {
         return sock;
     }
 
+    @JRubyMethod
     public IRubyObject accept_nonblock() throws Exception {
         LibCSocket.sockaddr_un from = new LibCSocket.sockaddr_un();
         IntByReference fromlen = new IntByReference(LibCSocket.sockaddr_un.LENGTH);
@@ -112,10 +108,12 @@ public class RubyUNIXServer extends RubyUNIXSocket {
         return sock;
     }
 
+    @JRubyMethod
     public IRubyObject sysaccept() throws Exception {
         return accept();
     }
 
+    @JRubyMethod
     public IRubyObject listen(IRubyObject log) {
         if(INSTANCE.listen(fd, RubyNumeric.fix2int(log)) < 0) {
             rb_sys_fail("listen(2)");

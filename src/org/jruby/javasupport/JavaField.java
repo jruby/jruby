@@ -43,6 +43,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -91,10 +92,12 @@ public class JavaField extends JavaAccessibleObject {
         return field.hashCode();
     }
 
+    @JRubyMethod
     public RubyString value_type() {
         return getRuntime().newString(field.getType().getName());
     }
 
+    @JRubyMethod(name = {"==", "==="})
     public IRubyObject op_equal(IRubyObject other) {
     	if (!(other instanceof JavaField)) {
     		return getRuntime().getFalse();
@@ -103,26 +106,32 @@ public class JavaField extends JavaAccessibleObject {
         return getRuntime().newBoolean(field.equals(((JavaField) other).field));
     }
 
+    @JRubyMethod(name = "public?")
     public RubyBoolean public_p() {
         return getRuntime().newBoolean(Modifier.isPublic(field.getModifiers()));
     }
 
+    @JRubyMethod(name = "static?")
     public RubyBoolean static_p() {
         return getRuntime().newBoolean(Modifier.isStatic(field.getModifiers()));
     }
     
+    @JRubyMethod(name = "enum_constant?")
     public RubyBoolean enum_constant_p() {
         return getRuntime().newBoolean(field.isEnumConstant());
     }
 
+    @JRubyMethod
     public RubyString to_generic_string() {
         return getRuntime().newString(field.toGenericString());
     }
     
+    @JRubyMethod(name = "type")
     public IRubyObject field_type() {
         return JavaClass.get(getRuntime(), field.getType());
     }
 
+    @JRubyMethod
     public JavaObject value(IRubyObject object) {
         if (! (object instanceof JavaObject)) {
             throw getRuntime().newTypeError("not a java object");
@@ -135,6 +144,7 @@ public class JavaField extends JavaAccessibleObject {
         }
     }
 
+    @JRubyMethod
     public JavaObject set_value(IRubyObject object, IRubyObject value) {
         if (! (object instanceof JavaObject)) {
             throw getRuntime().newTypeError("not a java object: " + object);
@@ -159,10 +169,12 @@ public class JavaField extends JavaAccessibleObject {
         return (JavaObject) value;
     }
 
+    @JRubyMethod(name = "final?")
     public RubyBoolean final_p() {
         return getRuntime().newBoolean(Modifier.isFinal(field.getModifiers()));
     }
 
+    @JRubyMethod
     public JavaObject static_value() {
         try {
             // TODO: Only setAccessible to account for pattern found by
@@ -178,6 +190,7 @@ public class JavaField extends JavaAccessibleObject {
         }
     }
 
+    @JRubyMethod
     public JavaObject set_static_value(IRubyObject value) {
         if (! (value instanceof JavaObject)) {
             throw getRuntime().newTypeError("not a java object:" + value);
@@ -204,6 +217,7 @@ public class JavaField extends JavaAccessibleObject {
         return (JavaObject) value;
     }
     
+    @JRubyMethod
     public RubyString name() {
         return getRuntime().newString(field.getName());
     }

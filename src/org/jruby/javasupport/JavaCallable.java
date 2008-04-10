@@ -40,7 +40,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
-import org.jruby.runtime.CallbackFactory;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class JavaCallable extends JavaAccessibleObject implements ParameterTypes {
@@ -50,20 +50,7 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
     }
 
     public static void registerRubyMethods(Ruby runtime, RubyClass result) {
-        
-        CallbackFactory callbackFactory = runtime.callbackFactory(JavaCallable.class);
-
-        result.defineFastMethod("public?",  callbackFactory.getFastMethod("public_p"));
-        result.defineFastMethod("arity", callbackFactory.getFastMethod("arity"));
-        result.defineFastMethod("argument_types", callbackFactory.getFastMethod("argument_types"));
-        result.defineFastMethod("parameter_types", callbackFactory.getFastMethod("parameter_types"));
-        result.defineFastMethod("exception_types", callbackFactory.getFastMethod("exception_types"));
-        result.defineFastMethod("generic_parameter_types", callbackFactory.getFastMethod("generic_parameter_types"));
-        result.defineFastMethod("generic_exception_types", callbackFactory.getFastMethod("generic_exception_types"));
-        result.defineFastMethod("parameter_annotations", callbackFactory.getFastMethod("parameter_annotations"));
-        result.defineFastMethod("varargs?", callbackFactory.getFastMethod("varargs_p"));
-        result.defineFastMethod("to_generic_string", callbackFactory.getFastMethod("to_generic_string"));
-        result.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
+        result.defineAnnotatedMethods(JavaCallable.class);
     }
 
     public abstract int getArity();
@@ -80,43 +67,53 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
      */
     protected abstract String nameOnInspection();
 
+    @JRubyMethod
     public final RubyFixnum arity() {
         return getRuntime().newFixnum(getArity());
     }
 
+    @JRubyMethod
     public final RubyArray argument_types() {
         return JavaClass.getRubyArray(getRuntime(), getParameterTypes());
     }
 
     // same as argument_types, but matches name in java.lang.reflect.Constructor/Method
+    @JRubyMethod
     public IRubyObject parameter_types() {
         return JavaClass.getRubyArray(getRuntime(), getParameterTypes());
     }
 
+    @JRubyMethod
     public IRubyObject exception_types() {
         return JavaClass.getRubyArray(getRuntime(), getExceptionTypes());
     }
 
+    @JRubyMethod
     public IRubyObject generic_parameter_types() {
         return Java.getInstance(getRuntime(), getGenericParameterTypes());
     }
 
+    @JRubyMethod
     public IRubyObject generic_exception_types() {
         return Java.getInstance(getRuntime(), getGenericExceptionTypes());
     }
 
+    @JRubyMethod
     public IRubyObject parameter_annotations() {
         return Java.getInstance(getRuntime(), getParameterAnnotations());
     }
     
+    @JRubyMethod(name = "varargs?")
     public RubyBoolean varargs_p() {
         return getRuntime().newBoolean(isVarArgs());
     }
     
+    @JRubyMethod
     public RubyString to_generic_string() {
         return getRuntime().newString(toGenericString());
     }
 
+    @JRubyMethod
     public IRubyObject inspect() {
         StringBuffer result = new StringBuffer();
         result.append(nameOnInspection());
@@ -132,6 +129,7 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
     }
 
 
+    @JRubyMethod(name = "public?")
     public RubyBoolean public_p() {
         return RubyBoolean.newBoolean(getRuntime(), Modifier.isPublic(getModifiers()));
     }
