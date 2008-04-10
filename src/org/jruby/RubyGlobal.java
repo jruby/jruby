@@ -39,6 +39,7 @@ import org.jruby.util.io.STDIO;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.environment.OSEnvironmentReaderExcepton;
 import org.jruby.environment.OSEnvironment;
@@ -93,6 +94,7 @@ public class RubyGlobal {
                     value.isNil() ? getRuntime().getNil() : RuntimeHelpers.invoke(context, value, MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY));
         }
         
+        @JRubyMethod
         public IRubyObject to_s(){
             return getRuntime().newString("ENV");
         }
@@ -247,8 +249,7 @@ public class RubyGlobal {
 
         StringOnlyRubyHash h1 = new StringOnlyRubyHash(runtime,
                                                        environmentVariableMap, runtime.getNil());
-        org.jruby.runtime.CallbackFactory cf = org.jruby.runtime.CallbackFactory.createFactory(runtime, StringOnlyRubyHash.class);
-        h1.getSingletonClass().defineFastMethod("to_s", cf.getFastMethod("to_s"));
+        h1.getSingletonClass().defineAnnotatedMethods(StringOnlyRubyHash.class);
         runtime.defineGlobalConstant("ENV", h1);
 
         // Define System.getProperties() in ENV_JAVA

@@ -149,8 +149,7 @@ public class RubyMethod extends RubyObject {
         while (true) {
             try {
                 // FIXME: We should not be regenerating this over and over
-                return f.getSingletonMethod("mproc").execute(getRuntime().getNil(), 
-                        IRubyObject.NULL_ARRAY, block);
+                return mproc(block);
             } catch (JumpException.BreakJump bj) {
                     return (IRubyObject) bj.getValue();
             } catch (JumpException.ReturnJump rj) {
@@ -166,14 +165,14 @@ public class RubyMethod extends RubyObject {
      * Used by the RubyMethod#to_proc method.
      *
      */
-    public static IRubyObject mproc(IRubyObject recv, Block block) {
-    	Ruby runtime = recv.getRuntime();
+    private IRubyObject mproc(Block block) {
+    	Ruby runtime = getRuntime();
     	ThreadContext tc = runtime.getCurrentContext();
         
         tc.preMproc();
         
         try {
-            return RubyKernel.proc(recv, block);
+            return RubyKernel.proc(runtime.getNil(), block);
         } finally {
             tc.postMproc();
         }

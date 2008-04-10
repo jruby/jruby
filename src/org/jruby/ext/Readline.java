@@ -49,21 +49,26 @@ import jline.FileNameCompletor;
 import jline.CandidateListCompletionHandler;
 import jline.History;
 import org.jruby.RubyString;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.Visibility;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  * @author <a href="mailto:pldms@mac.com">Damian Steer</a>
  */
-@JRubyModule(name="Readline", include="Enumerable")
+@JRubyModule(name = "Readline", include = "Enumerable")
 public class Readline {
+
     public static class Service implements Library {
+
         public void load(final Ruby runtime, boolean wrap) throws IOException {
             createReadline(runtime);
         }
     }
 
     public static class ConsoleHolder {
+
         public ConsoleReader readline;
         public Completor currentCompletor;
         public History history;
@@ -73,36 +78,19 @@ public class Readline {
         ConsoleHolder holder = new ConsoleHolder();
         holder.history = new History();
         holder.currentCompletor = null;
-        
+
         RubyModule mReadline = runtime.defineModule("Readline");
 
         mReadline.dataWrapStruct(holder);
 
         CallbackFactory readlinecb = runtime.callbackFactory(Readline.class);
-        mReadline.defineMethod("readline",readlinecb.getFastSingletonMethod("s_readline",IRubyObject.class,IRubyObject.class));
-        mReadline.module_function(new IRubyObject[]{runtime.newSymbol("readline")});
-        mReadline.defineMethod("completion_append_character=",readlinecb.getFastSingletonMethod("s_set_completion_append_character",IRubyObject.class));
-        mReadline.module_function(new IRubyObject[]{runtime.newSymbol("completion_append_character=")});
-        mReadline.defineMethod("completion_proc=",readlinecb.getFastSingletonMethod("s_set_completion_proc",IRubyObject.class));
-        mReadline.module_function(new IRubyObject[]{runtime.newSymbol("completion_proc=")});
+        mReadline.defineAnnotatedMethods(Readline.class);
         IRubyObject hist = runtime.getObject().callMethod(runtime.getCurrentContext(), "new");
-        mReadline.fastSetConstant("HISTORY",hist);
+        mReadline.fastSetConstant("HISTORY", hist);
         hist.getSingletonClass().includeModule(runtime.getEnumerable());
-        hist.getSingletonClass().defineMethod("push",readlinecb.getFastOptSingletonMethod("s_push"));
-        hist.getSingletonClass().defineMethod("pop",readlinecb.getFastSingletonMethod("s_pop"));
-        hist.getSingletonClass().defineMethod("to_a",readlinecb.getFastSingletonMethod("s_hist_to_a"));
-        hist.getSingletonClass().defineMethod("to_s", readlinecb.getFastSingletonMethod("s_hist_to_s"));
-        hist.getSingletonClass().defineMethod("[]", readlinecb.getFastSingletonMethod("s_hist_get", IRubyObject.class));
-        hist.getSingletonClass().defineMethod("[]=", readlinecb.getFastSingletonMethod("s_hist_set", IRubyObject.class, IRubyObject.class));
-        hist.getSingletonClass().defineMethod("<<", readlinecb.getFastOptSingletonMethod("s_push"));
-        hist.getSingletonClass().defineMethod("shift", readlinecb.getFastSingletonMethod("s_hist_shift"));
-        hist.getSingletonClass().defineMethod("each", readlinecb.getSingletonMethod("s_hist_each"));
-        hist.getSingletonClass().defineMethod("length", readlinecb.getFastSingletonMethod("s_hist_length"));
-        hist.getSingletonClass().defineMethod("size", readlinecb.getFastSingletonMethod("s_hist_length"));
-        hist.getSingletonClass().defineMethod("empty?", readlinecb.getFastSingletonMethod("s_hist_empty_p"));
-        hist.getSingletonClass().defineMethod("delete_at", readlinecb.getFastSingletonMethod("s_hist_delete_at", IRubyObject.class));
+        hist.getSingletonClass().defineAnnotatedMethods(HistoryMethods.class);
     }
-    
+
     // We lazily initialise this in case Readline.readline has been overriden in ruby (s_readline)
     protected static void initReadline(Ruby runtime, ConsoleHolder holder) throws IOException {
         holder.readline = new ConsoleReader();
@@ -110,151 +98,184 @@ public class Readline {
         holder.readline.setUsePagination(true);
         holder.readline.setBellEnabled(false);
         ((CandidateListCompletionHandler) holder.readline.getCompletionHandler()).setAlwaysIncludeNewline(false);
-        if (holder.currentCompletor == null)
+        if (holder.currentCompletor == null) {
             holder.currentCompletor = new RubyFileNameCompletor();
+        }
         holder.readline.addCompletor(holder.currentCompletor);
         holder.readline.setHistory(holder.history);
     }
-    
+
     public static History getHistory(ConsoleHolder holder) {
         return holder.history;
     }
 
     public static ConsoleHolder getHolder(Ruby runtime) {
-        return (ConsoleHolder)(runtime.fastGetModule("Readline").dataGetStruct());
+        return (ConsoleHolder) (runtime.fastGetModule("Readline").dataGetStruct());
     }
-    
+
     public static void setCompletor(ConsoleHolder holder, Completor completor) {
-        if (holder.readline != null) holder.readline.removeCompletor(holder.currentCompletor);
+        if (holder.readline != null) {
+            holder.readline.removeCompletor(holder.currentCompletor);
+        }
         holder.currentCompletor = completor;
-        if (holder.readline != null) holder.readline.addCompletor(holder.currentCompletor);
+        if (holder.readline != null) {
+            holder.readline.addCompletor(holder.currentCompletor);
+        }
     }
-    
+
     public static Completor getCompletor(ConsoleHolder holder) {
         return holder.currentCompletor;
     }
-    
+
+    @JRubyMethod(name = "readline", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject s_readline(IRubyObject recv, IRubyObject prompt, IRubyObject add_to_hist) throws IOException {
         ConsoleHolder holder = getHolder(recv.getRuntime());
-        if (holder.readline == null) initReadline(recv.getRuntime(), holder); // not overridden, let's go
+        if (holder.readline == null) {
+            initReadline(recv.getRuntime(), holder); // not overridden, let's go
+
+        }
         IRubyObject line = recv.getRuntime().getNil();
         holder.readline.getTerminal().disableEcho();
         String v = holder.readline.readLine(prompt.toString());
         holder.readline.getTerminal().enableEcho();
-        if(null != v) {
-            if (add_to_hist.isTrue())
+        if (null != v) {
+            if (add_to_hist.isTrue()) {
                 holder.readline.getHistory().addToHistory(v);
+            }
             line = recv.getRuntime().newString(v);
         }
         return line;
     }
 
-    public static IRubyObject s_push(IRubyObject recv, IRubyObject[] lines) throws Exception {
-        ConsoleHolder holder = getHolder(recv.getRuntime());
-        for (int i = 0; i < lines.length; i++) {
-            holder.history.addToHistory(((RubyString)lines[i]).getUnicodeValue());
-        }
-        return recv.getRuntime().getNil();
-    }
-
-    public static IRubyObject s_pop(IRubyObject recv) throws Exception {
-        return recv.getRuntime().getNil();
-    }
-	
-	public static IRubyObject s_hist_to_a(IRubyObject recv) throws Exception {
-        ConsoleHolder holder = getHolder(recv.getRuntime());
-		RubyArray histList = recv.getRuntime().newArray();
-		for (Iterator i = holder.history.getHistoryList().iterator(); i.hasNext();) {
-			histList.append(recv.getRuntime().newString((String) i.next()));
-		}
-		return histList;
-	}
-	
-	public static IRubyObject s_hist_to_s(IRubyObject recv) {
-	    return recv.getRuntime().newString("HISTORY");
-	}
-	
-	public static IRubyObject s_hist_get(IRubyObject recv, IRubyObject index) {
-        ConsoleHolder holder = getHolder(recv.getRuntime());
-	    int i = (int) index.convertToInteger().getLongValue();
-	    return recv.getRuntime().newString((String) holder.history.getHistoryList().get(i));
-	}
-	
-	public static IRubyObject s_hist_set(IRubyObject recv, IRubyObject index, IRubyObject val) {
-	    throw recv.getRuntime().newNotImplementedError("the []=() function is unimplemented on this machine");
-	}
-	
-	public static IRubyObject s_hist_shift(IRubyObject recv) {
-	    throw recv.getRuntime().newNotImplementedError("the shift function is unimplemented on this machine");
-	}
-	
-	public static IRubyObject s_hist_length(IRubyObject recv) {
-        ConsoleHolder holder = getHolder(recv.getRuntime());
-	    return recv.getRuntime().newFixnum(holder.history.size());
-	}
-	
-	public static IRubyObject s_hist_empty_p(IRubyObject recv) {
-        ConsoleHolder holder = getHolder(recv.getRuntime());
-        return recv.getRuntime().newBoolean(holder.history.size() == 0);
-    }
-	
-	public static IRubyObject s_hist_delete_at(IRubyObject recv, IRubyObject index) {
-	    throw recv.getRuntime().newNotImplementedError("the delete_at function is unimplemented on this machine");
-	}
-	
-	public static IRubyObject s_hist_each(IRubyObject recv, Block block) {
-        ConsoleHolder holder = getHolder(recv.getRuntime());
-	    for (Iterator i = holder.history.getHistoryList().iterator(); i.hasNext();) {
-	        block.yield(recv.getRuntime().getCurrentContext(), recv.getRuntime().newString((String) i.next()));
-	    }
-	    return recv;
-	}
-	
+    @JRubyMethod(name = "completion_append_character=", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject s_set_completion_append_character(IRubyObject recv, IRubyObject achar) throws Exception {
         return recv.getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "completion_proc=", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject s_set_completion_proc(IRubyObject recv, IRubyObject proc) throws Exception {
-    	if (!proc.respondsTo("call"))
-    		throw recv.getRuntime().newArgumentError("argument must respond to call");
-		setCompletor(getHolder(recv.getRuntime()), new ProcCompletor(proc));
+        if (!proc.respondsTo("call")) {
+            throw recv.getRuntime().newArgumentError("argument must respond to call");
+        }
+        setCompletor(getHolder(recv.getRuntime()), new ProcCompletor(proc));
         return recv.getRuntime().getNil();
     }
-	
-	// Complete using a Proc object
+
+    public static class HistoryMethods {
+        @JRubyMethod(name = {"push", "<<"}, rest = true)
+        public static IRubyObject s_push(IRubyObject recv, IRubyObject[] lines) throws Exception {
+            ConsoleHolder holder = getHolder(recv.getRuntime());
+            for (int i = 0; i < lines.length; i++) {
+                holder.history.addToHistory(((RubyString) lines[i]).getUnicodeValue());
+            }
+            return recv.getRuntime().getNil();
+        }
+
+        @JRubyMethod(name = "pop")
+        public static IRubyObject s_pop(IRubyObject recv) throws Exception {
+            return recv.getRuntime().getNil();
+        }
+
+        @JRubyMethod(name = "to_a")
+        public static IRubyObject s_hist_to_a(IRubyObject recv) throws Exception {
+            ConsoleHolder holder = getHolder(recv.getRuntime());
+            RubyArray histList = recv.getRuntime().newArray();
+            for (Iterator i = holder.history.getHistoryList().iterator(); i.hasNext();) {
+                histList.append(recv.getRuntime().newString((String) i.next()));
+            }
+            return histList;
+        }
+
+        @JRubyMethod(name = "to_s")
+        public static IRubyObject s_hist_to_s(IRubyObject recv) {
+            return recv.getRuntime().newString("HISTORY");
+        }
+
+        @JRubyMethod(name = "[]")
+        public static IRubyObject s_hist_get(IRubyObject recv, IRubyObject index) {
+            ConsoleHolder holder = getHolder(recv.getRuntime());
+            int i = (int) index.convertToInteger().getLongValue();
+            return recv.getRuntime().newString((String) holder.history.getHistoryList().get(i));
+        }
+
+        @JRubyMethod(name = "[]=")
+        public static IRubyObject s_hist_set(IRubyObject recv, IRubyObject index, IRubyObject val) {
+            throw recv.getRuntime().newNotImplementedError("the []=() function is unimplemented on this machine");
+        }
+
+        @JRubyMethod(name = "shift")
+        public static IRubyObject s_hist_shift(IRubyObject recv) {
+            throw recv.getRuntime().newNotImplementedError("the shift function is unimplemented on this machine");
+        }
+
+        @JRubyMethod(name = {"length", "size"})
+        public static IRubyObject s_hist_length(IRubyObject recv) {
+            ConsoleHolder holder = getHolder(recv.getRuntime());
+            return recv.getRuntime().newFixnum(holder.history.size());
+        }
+
+        @JRubyMethod(name = "empty?")
+        public static IRubyObject s_hist_empty_p(IRubyObject recv) {
+            ConsoleHolder holder = getHolder(recv.getRuntime());
+            return recv.getRuntime().newBoolean(holder.history.size() == 0);
+        }
+
+        @JRubyMethod(name = "delete_at")
+        public static IRubyObject s_hist_delete_at(IRubyObject recv, IRubyObject index) {
+            throw recv.getRuntime().newNotImplementedError("the delete_at function is unimplemented on this machine");
+        }
+
+        @JRubyMethod(name = "each")
+        public static IRubyObject s_hist_each(IRubyObject recv, Block block) {
+            ConsoleHolder holder = getHolder(recv.getRuntime());
+            for (Iterator i = holder.history.getHistoryList().iterator(); i.hasNext();) {
+                block.yield(recv.getRuntime().getCurrentContext(), recv.getRuntime().newString((String) i.next()));
+            }
+            return recv;
+        }
+    }
+
+    // Complete using a Proc object
     public static class ProcCompletor implements Completor {
+
         IRubyObject procCompletor;
-		
-		public ProcCompletor(IRubyObject procCompletor) {
-			this.procCompletor = procCompletor;
-		}
+
+        public ProcCompletor(IRubyObject procCompletor) {
+            this.procCompletor = procCompletor;
+        }
 
         public int complete(String buffer, int cursor, List candidates) {
             buffer = buffer.substring(0, cursor);
             int index = buffer.lastIndexOf(" ");
-            if (index != -1) buffer = buffer.substring(index + 1);
+            if (index != -1) {
+                buffer = buffer.substring(index + 1);
+            }
             ThreadContext context = procCompletor.getRuntime().getCurrentContext();
-            
-            IRubyObject comps = procCompletor.callMethod(context, "call", new IRubyObject[] { procCompletor.getRuntime().newString(buffer) }).callMethod(context, MethodIndex.TO_A, "to_a");
+
+            IRubyObject comps = procCompletor.callMethod(context, "call", new IRubyObject[]{procCompletor.getRuntime().newString(buffer)                    }).callMethod(context, MethodIndex.TO_A, "to_a");
             if (comps instanceof List) {
                 for (Iterator i = ((List) comps).iterator(); i.hasNext();) {
                     Object obj = i.next();
-                    if (obj != null) candidates.add(obj.toString());
+                    if (obj != null) {
+                        candidates.add(obj.toString());
+                    }
                 }
                 Collections.sort(candidates);
             }
             return cursor - buffer.length();
         }
     }
-    
+
     // Fix FileNameCompletor to work mid-line
     public static class RubyFileNameCompletor extends FileNameCompletor {
-    	public int complete(String buffer, int cursor, List candidates) {
-    		buffer = buffer.substring(0, cursor);
+
+        public int complete(String buffer, int cursor, List candidates) {
+            buffer = buffer.substring(0, cursor);
             int index = buffer.lastIndexOf(" ");
-            if (index != -1) buffer = buffer.substring(index + 1);
+            if (index != -1) {
+                buffer = buffer.substring(index + 1);
+            }
             return index + 1 + super.complete(buffer, cursor, candidates);
         }
-   	}
-   	
+    }
 }// Readline

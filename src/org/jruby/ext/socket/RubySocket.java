@@ -46,10 +46,10 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
@@ -141,7 +141,6 @@ public class RubySocket extends RubyBasicSocket {
 
     static void createSocket(Ruby runtime) {
         RubyClass rb_cSocket = runtime.defineClass("Socket", runtime.fastGetClass("BasicSocket"), SOCKET_ALLOCATOR);
-        CallbackFactory cfact = runtime.callbackFactory(RubySocket.class);
         
         RubyModule rb_mConstants = rb_cSocket.defineModuleUnder("Constants");
         // we don't have to define any that we don't support; see socket.c
@@ -211,19 +210,7 @@ public class RubySocket extends RubyBasicSocket {
         
         rb_cSocket.includeModule(rb_mConstants);
 
-        rb_cSocket.defineFastMethod("initialize", cfact.getFastMethod("initialize", IRubyObject.class, IRubyObject.class, IRubyObject.class));
-        rb_cSocket.getMetaClass().defineFastMethod("gethostname", cfact.getFastSingletonMethod("gethostname"));
-        rb_cSocket.getMetaClass().defineFastMethod("gethostbyaddr", cfact.getFastOptSingletonMethod("gethostbyaddr"));
-        rb_cSocket.getMetaClass().defineFastMethod("gethostbyname", cfact.getFastSingletonMethod("gethostbyname", IRubyObject.class));
-        rb_cSocket.getMetaClass().defineFastMethod("getaddrinfo", cfact.getFastOptSingletonMethod("getaddrinfo"));
-        rb_cSocket.getMetaClass().defineFastMethod("getnameinfo", cfact.getFastOptSingletonMethod("getnameinfo"));
-        rb_cSocket.getMetaClass().defineFastMethod("getservbyname", cfact.getFastOptSingletonMethod("getservbyname"));
-
-        rb_cSocket.getMetaClass().defineFastMethod("sockaddr_in", cfact.getFastSingletonMethod("pack_sockaddr_in", IRubyObject.class, IRubyObject.class));
-        rb_cSocket.getMetaClass().defineFastMethod("pack_sockaddr_in", cfact.getFastSingletonMethod("pack_sockaddr_in", IRubyObject.class, IRubyObject.class));
-        rb_cSocket.getMetaClass().defineFastMethod("sockaddr_un", cfact.getFastSingletonMethod("pack_sockaddr_un", IRubyObject.class));
-        rb_cSocket.getMetaClass().defineFastMethod("pack_sockaddr_un", cfact.getFastSingletonMethod("pack_sockaddr_un", IRubyObject.class));
-        rb_cSocket.getMetaClass().defineFastMethod("unpack_sockaddr_in", cfact.getFastSingletonMethod("unpack_sockaddr_in", IRubyObject.class));
+        rb_cSocket.defineAnnotatedMethods(RubySocket.class);
     }
     
     public RubySocket(Ruby runtime, RubyClass type) {
@@ -238,6 +225,7 @@ public class RubySocket extends RubyBasicSocket {
     private int soType;
     private int soProtocol;
 
+    @JRubyMethod
     public IRubyObject initialize(IRubyObject domain, IRubyObject type, IRubyObject protocol) {
         try {
             if(domain instanceof RubyString) {
@@ -288,6 +276,7 @@ public class RubySocket extends RubyBasicSocket {
         return new RaiseException(recv.getRuntime(), recv.getRuntime().fastGetClass("SocketError"), msg, true);
     }
 
+    @JRubyMethod(meta = true)
     public static IRubyObject gethostname(IRubyObject recv) {
         try {
             return recv.getRuntime().newString(InetAddress.getLocalHost().getHostName());
@@ -317,6 +306,7 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
+    @JRubyMethod(required = 1, rest = true, meta = true)
     public static IRubyObject gethostbyaddr(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         IRubyObject[] ret = new IRubyObject[4];
@@ -327,6 +317,7 @@ public class RubySocket extends RubyBasicSocket {
         return runtime.newArrayNoCopy(ret);
     }
 
+    @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject getservbyname(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         int argc = Arity.checkArgumentCount(runtime, args, 1, 2);
@@ -339,6 +330,7 @@ public class RubySocket extends RubyBasicSocket {
         return runtime.newFixnum(port.intValue());
     }
 
+    @JRubyMethod(name = {"pack_sockaddr_un", "sockaddr_un"}, meta = true)
     public static IRubyObject pack_sockaddr_un(IRubyObject recv, IRubyObject filename) {
         StringBuffer sb = new StringBuffer();
         sb.append((char)0);
@@ -351,6 +343,7 @@ public class RubySocket extends RubyBasicSocket {
         return recv.getRuntime().newString(sb.toString());
     }
 
+    @JRubyMethod(name = {"pack_sockaddr_in", "sockaddr_in"}, meta = true)
     public static IRubyObject pack_sockaddr_in(IRubyObject recv, IRubyObject port, IRubyObject host) {
         StringBuffer sb = new StringBuffer();
         sb.append((char)16);
@@ -392,6 +385,7 @@ public class RubySocket extends RubyBasicSocket {
         return recv.getRuntime().newString(sb.toString());
     }
 
+    @JRubyMethod(meta = true)
     public static IRubyObject unpack_sockaddr_in(IRubyObject recv, IRubyObject addr) {
         String val = addr.convertToString().toString();
         if(val.charAt(0) != 16 || val.charAt(1) != 2) {
@@ -415,6 +409,7 @@ public class RubySocket extends RubyBasicSocket {
         return recv.getRuntime().newArrayNoCopy(result);
     }
 
+    @JRubyMethod(meta = true)
     public static IRubyObject gethostbyname(IRubyObject recv, IRubyObject hostname) {
         try {
             InetAddress addr = InetAddress.getByName(hostname.convertToString().toString());
@@ -431,6 +426,7 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     //def self.getaddrinfo(host, port, family = nil, socktype = nil, protocol = nil, flags = nil)
+    @JRubyMethod(required = 2, optional = 4, meta = true)
     public static IRubyObject getaddrinfo(IRubyObject recv, IRubyObject[] args) {
         args = Arity.scanArgs(recv.getRuntime(),args,2,4);
         try {
@@ -496,6 +492,7 @@ public class RubySocket extends RubyBasicSocket {
     private static final int HOST_GROUP = 3;
     private static final int PORT_GROUP = 5;
     
+    @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject getnameinfo(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         int argc = Arity.checkArgumentCount(runtime, args, 1, 2);

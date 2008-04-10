@@ -44,7 +44,6 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -56,24 +55,10 @@ public class JavaField extends JavaAccessibleObject {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here, since we don't intend for people to monkey with
         // this type and it can't be marshalled. Confirm. JRUBY-415
         RubyClass result = javaModule.defineClassUnder("JavaField", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        CallbackFactory callbackFactory = runtime.callbackFactory(JavaField.class);
 
         JavaAccessibleObject.registerRubyMethods(runtime, result);
-
-        result.defineFastMethod("value_type", callbackFactory.getFastMethod("value_type"));
-        result.defineFastMethod("public?", callbackFactory.getFastMethod("public_p"));
-        result.defineFastMethod("static?", callbackFactory.getFastMethod("static_p"));
-        result.defineFastMethod("value", callbackFactory.getFastMethod("value", IRubyObject.class));
-        result.defineFastMethod("set_value", callbackFactory.getFastMethod("set_value", IRubyObject.class, IRubyObject.class));
-        result.defineFastMethod("set_static_value", callbackFactory.getFastMethod("set_static_value", IRubyObject.class));
-        result.defineFastMethod("final?", callbackFactory.getFastMethod("final_p"));
-        result.defineFastMethod("static_value", callbackFactory.getFastMethod("static_value"));
-        result.defineFastMethod("name", callbackFactory.getFastMethod("name"));
-        result.defineFastMethod("==", callbackFactory.getFastMethod("op_equal", IRubyObject.class));
-        result.defineAlias("===", "==");
-        result.defineFastMethod("enum_constant?", callbackFactory.getFastMethod("enum_constant_p"));
-        result.defineFastMethod("to_generic_string", callbackFactory.getFastMethod("to_generic_string"));
-        result.defineFastMethod("type", callbackFactory.getFastMethod("field_type"));
+        
+        result.defineAnnotatedMethods(JavaField.class);
 
         return result;
     }

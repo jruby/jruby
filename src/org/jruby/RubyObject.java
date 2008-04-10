@@ -204,10 +204,16 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     public static RubyClass createObjectClass(Ruby runtime, RubyClass objectClass) {
         objectClass.index = ClassIndex.OBJECT;
 
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyObject.class);
-        objectClass.defineFastPrivateMethod("initialize", callbackFactory.getFastMethod("initialize"));
+        objectClass.defineAnnotatedMethods(ObjectMethods.class);
 
         return objectClass;
+    }
+    
+    public static class ObjectMethods {
+        @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
+        public static IRubyObject intialize(IRubyObject self) {
+            return self.getRuntime().getNil();
+        }
     }
     
     public static final ObjectAllocator OBJECT_ALLOCATOR = new ObjectAllocator() {
@@ -1126,7 +1132,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         return this;
     }
 
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
     public IRubyObject initialize() {
         return getRuntime().getNil();
     }

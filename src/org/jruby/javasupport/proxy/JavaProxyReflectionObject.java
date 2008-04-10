@@ -38,7 +38,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaObject;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name="Java::JavaProxyClass")
@@ -49,29 +48,7 @@ public class JavaProxyReflectionObject extends RubyObject {
     }
 
     protected static void registerRubyMethods(Ruby runtime, RubyClass result) {
-        CallbackFactory callbackFactory = runtime
-                .callbackFactory(JavaProxyReflectionObject.class);
-
-        result.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
-        result.defineFastMethod("==", callbackFactory.getFastMethod("op_equal",
-                IRubyObject.class));
-        result.defineFastMethod("eql?", callbackFactory.getFastMethod("op_equal",
-                IRubyObject.class));
-        result.defineFastMethod("equal?", callbackFactory.getFastMethod("same",
-                IRubyObject.class));
-        result.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
-        result
-                .defineFastMethod("java_type", callbackFactory
-                        .getFastMethod("java_type"));
-        result.defineFastMethod("java_class", callbackFactory
-                .getFastMethod("java_class"));
-        result.defineFastMethod("java_proxy?", callbackFactory
-                .getFastMethod("is_java_proxy"));
-        result.defineFastMethod("length", callbackFactory.getFastMethod("length"));
-        result.defineFastMethod("[]", callbackFactory.getFastMethod("aref",
-                IRubyObject.class));
-        result.defineFastMethod("[]=", callbackFactory.getFastMethod("aset",
-                IRubyObject.class, IRubyObject.class));
+        result.defineAnnotatedMethods(JavaProxyReflectionObject.class);
 
         result.getMetaClass().defineAlias("__j_allocate","allocate");
     }

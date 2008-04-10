@@ -52,8 +52,16 @@ public abstract class CallbackFactory {
      * gets an instance method with no arguments.
      * @param method name of the method
      * @return a CallBack object corresponding to the appropriate method
+     * @deprecated Callbacks are inefficient; use MethodFactory.
      **/
     public abstract Callback getMethod(String method);
+    
+    /**
+     * gets a fast instance method with no arguments.
+     * @param method name of the method
+     * @return a CallBack object corresponding to the appropriate method
+     * @deprecated Callbacks are inefficient; use MethodFactory.
+     **/
     public abstract Callback getFastMethod(String method);
 
     /**
@@ -61,8 +69,17 @@ public abstract class CallbackFactory {
      * @param method name of the method
      * @param arg1 the class of the only argument for this method
      * @return a CallBack object corresponding to the appropriate method
+     * @deprecated Callbacks are inefficient; use MethodFactory.
      **/
     public abstract Callback getMethod(String method, Class arg1);
+
+    /**
+     * gets a fast instance method with 1 argument.
+     * @param method name of the method
+     * @param arg1 the class of the only argument for this method
+     * @return a CallBack object corresponding to the appropriate method
+     * @deprecated Callbacks are inefficient; use MethodFactory.
+     **/
     public abstract Callback getFastMethod(String method, Class arg1);
 
     /**
@@ -71,8 +88,18 @@ public abstract class CallbackFactory {
      * @param arg1 the java class of the first argument for this method
      * @param arg2 the java class of the second argument for this method
      * @return a CallBack object corresponding to the appropriate method
+     * @deprecated Callbacks are inefficient; use MethodFactory.
      **/
     public abstract Callback getMethod(String method, Class arg1, Class arg2);
+
+    /**
+     * gets a fast instance method with two arguments.
+     * @param method name of the method
+     * @param arg1 the java class of the first argument for this method
+     * @param arg2 the java class of the second argument for this method
+     * @return a CallBack object corresponding to the appropriate method
+     * @deprecated Callbacks are inefficient; use MethodFactory.
+     **/
     public abstract Callback getFastMethod(String method, Class arg1, Class arg2);
     
     /**
@@ -82,8 +109,19 @@ public abstract class CallbackFactory {
      * @param arg2 the java class of the second argument for this method
      * @param arg3 the java class of the second argument for this method
      * @return a CallBack object corresponding to the appropriate method
+     * @deprecated Callbacks are inefficient; use MethodFactory.
      **/
     public abstract Callback getMethod(String method, Class arg1, Class arg2, Class arg3);
+    
+    /**
+     * gets a fast instance method with two arguments.
+     * @param method name of the method
+     * @param arg1 the java class of the first argument for this method
+     * @param arg2 the java class of the second argument for this method
+     * @param arg3 the java class of the second argument for this method
+     * @return a CallBack object corresponding to the appropriate method
+     * @deprecated Callbacks are inefficient; use MethodFactory.
+     **/
     public abstract Callback getFastMethod(String method, Class arg1, Class arg2, Class arg3);
 
     /**
