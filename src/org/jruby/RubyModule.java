@@ -510,6 +510,8 @@ public class RubyModule extends RubyObject {
     }
     
     public void defineAnnotatedMethodsIndividually(Class clazz) {
+        String x = clazz.getSimpleName();
+        int a = 1 + 1;
         try {
             Class populatorClass = Class.forName(clazz.getSimpleName() + "Populator");
             TypePopulator populator = (TypePopulator)populatorClass.newInstance();
@@ -584,12 +586,6 @@ public class RubyModule extends RubyObject {
             for (Map.Entry<String, List<JavaMethodDescriptor>> entry : annotatedMethods1_9.entrySet()) {
                 defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
             }
-            
-            // FIXME: dispatcher is only supported for non-pregenerated binding logic
-            CallbackFactory callbackFactory = getRuntime().callbackFactory(RubyString.class);
-//            if (this instanceof RubyClass) {
-//                dispatcher = callbackFactory.createDispatcher((RubyClass)this);
-//            }
         }
         
     }
@@ -632,7 +628,7 @@ public class RubyModule extends RubyObject {
                     String baseName;
                     if (jrubyMethod.name().length == 0) {
                         baseName = desc.name;
-                        module.addMethod(desc.name, dynamicMethod);
+                        module.addMethod(baseName, dynamicMethod);
                     } else {
                         baseName = jrubyMethod.name()[0];
                         for (String name : jrubyMethod.name()) {

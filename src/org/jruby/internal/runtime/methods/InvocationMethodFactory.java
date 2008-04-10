@@ -48,7 +48,6 @@ import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.MethodFactory;
@@ -154,6 +153,13 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
     /** The classloader to use for code loading */
     private JRubyClassLoader classLoader;
+    
+    /**
+     * Whether this factory has seen undefined methods already. This is used to
+     * detect likely method handle collisions when we expect to create a new
+     * handle for each call.
+     */
+    private boolean seenUndefinedClasses = false;
     
     /**
      * Construct a new InvocationMethodFactory using the specified classloader
@@ -295,7 +301,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         
         if (DEBUG) out.println("Binding multiple: " + type.getName() + "." + javaMethodName);
         
-        String generatedClassName = getAnnotatedBindingClassName(javaMethodName, type.getName(), desc1.isStatic, desc1.required, desc1.optional, true);
+        String generatedClassName = getAnnotatedBindingClassName(javaMethodName, type.getName(), desc1.isStatic, desc1.actualRequired, desc1.optional, true);
         String generatedClassPath = generatedClassName.replace('.', '/');
         
         synchronized (classLoader) {
@@ -445,7 +451,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         Class type = desc.declaringClass;
         String javaMethodName = desc.name;
         
-        String generatedClassName = getAnnotatedBindingClassName(javaMethodName, type.getName(), desc.isStatic, desc.required, desc.optional, false);
+        String generatedClassName = getAnnotatedBindingClassName(javaMethodName, type.getName(), desc.isStatic, desc.actualRequired, desc.optional, false);
         String generatedClassPath = generatedClassName.replace('.', '/');
         
         synchronized (classLoader) {
@@ -943,12 +949,21 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
     private Class tryClass(Ruby runtime, String name) {
         try {
+            Class c = null;
             if (classLoader == null) {
-                return Class.forName(name, true, runtime.getJRubyClassLoader());
+                c = Class.forName(name, true, runtime.getJRubyClassLoader());
+            } else {
+                c = classLoader.loadClass(name);
             }
-             
-            return classLoader.loadClass(name);
+            
+            if (c != null && seenUndefinedClasses) {
+                System.err.println("WARNING: while creating new bindings, found an existing binding; likely a collision: " + name);
+                Thread.dumpStack();
+            }
+            
+            return c;
         } catch(Exception e) {
+            seenUndefinedClasses = true;
             return null;
         }
     }
