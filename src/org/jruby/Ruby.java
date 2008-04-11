@@ -823,12 +823,15 @@ public final class Ruby {
                     new SynchronousQueue<Runnable>(),
                     new DaemonThreadFactory());
         }
-
-        // Initialize all the core classes
-        bootstrap();
+        
+        // initialize the root of the class hierarchy completely
+        initRoot();
 
         // Construct the top-level execution frame and scope for the main thread
         tc.prepareTopLevel(objectClass, topSelf);
+
+        // Initialize all the core classes
+        bootstrap();
         
         // Create global constants and variables
         RubyGlobal.createGlobals(this);
@@ -848,7 +851,6 @@ public final class Ruby {
     private void bootstrap() {
         undef = new RubyUndef();
         
-        initRoot();
         initCore();
         initExceptions();
     }
