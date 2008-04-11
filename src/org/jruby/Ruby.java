@@ -1133,6 +1133,7 @@ public final class Ruby {
         addLazyBuiltin("weakref.rb", "weakref", "org.jruby.ext.WeakRef$WeakRefLibrary");
         addLazyBuiltin("socket.rb", "socket", "org.jruby.ext.socket.RubySocket$Service");
         addLazyBuiltin("rbconfig.rb", "rbconfig", "org.jruby.libraries.RbConfigLibrary");
+        addLazyBuiltin("net/protocol.rb", "net/protocol", "org.jruby.libraries.NetProtocolBufferedIOLibrary");
         
         if (config.getCompatVersion() == CompatVersion.RUBY1_9) {
             addLazyBuiltin("fiber.so", "fiber", "org.jruby.libraries.FiberLibrary");

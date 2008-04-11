@@ -378,6 +378,14 @@ e.printStackTrace();
         builtinLibraries.put(name, library);
     }
 
+    public void removeBuiltinLibrary(String name) {
+        builtinLibraries.remove(name);
+    }
+
+    public void removeInternalLoadedFeature(String name) {
+        loadedFeaturesInternal.remove(name);
+    }
+
     private Library findLibrary(String file, boolean checkCWD) {
         if (builtinLibraries.containsKey(file)) return builtinLibraries.get(file);
         
