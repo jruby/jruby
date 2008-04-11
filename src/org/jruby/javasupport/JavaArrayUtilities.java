@@ -30,11 +30,12 @@ package org.jruby.javasupport;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.anno.JRubyModule;
+import org.jruby.runtime.Visibility;
 
 /**
  * @author Bill Dortch
@@ -45,12 +46,11 @@ public class JavaArrayUtilities {
 
     public static RubyModule createJavaArrayUtilitiesModule(Ruby runtime) {
         RubyModule javaArrayUtils = runtime.defineModule("JavaArrayUtilities");
-        CallbackFactory callbackFactory = runtime.callbackFactory(JavaArrayUtilities.class);
-        javaArrayUtils.defineFastModuleFunction("bytes_to_ruby_string", callbackFactory.getFastSingletonMethod("bytes_to_ruby_string", IRubyObject.class));
-        javaArrayUtils.defineFastModuleFunction("ruby_string_to_bytes", callbackFactory.getFastSingletonMethod("ruby_string_to_bytes", IRubyObject.class));
+        javaArrayUtils.defineAnnotatedMethods(JavaArrayUtilities.class);
         return javaArrayUtils;
     }
     
+    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject bytes_to_ruby_string(IRubyObject recv, IRubyObject wrappedObject) {
         Ruby runtime = recv.getRuntime();
         IRubyObject byteArray = wrappedObject.getInstanceVariables().fastGetInstanceVariable("@java_object");
@@ -62,6 +62,7 @@ public class JavaArrayUtilities {
         return runtime.newString(new ByteList((byte[])((JavaArray)byteArray).getValue(), true));
     }
     
+    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject ruby_string_to_bytes(IRubyObject recv, IRubyObject string) {
         Ruby runtime = recv.getRuntime();
         if (!(string instanceof RubyString)) {

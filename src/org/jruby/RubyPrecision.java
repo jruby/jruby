@@ -32,10 +32,11 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callback.Callback;
 
 /**
  *
@@ -61,8 +62,18 @@ public class RubyPrecision {
     public static IRubyObject append_features(IRubyObject receiver, IRubyObject include, Block block) {
         if (include instanceof RubyModule) {
             ((RubyModule) include).includeModule(receiver);
-            CallbackFactory f = receiver.getRuntime().callbackFactory(RubyPrecision.class);
-            include.getSingletonClass().defineMethod("induced_from", f.getSingletonMethod("induced_from", RubyKernel.IRUBY_OBJECT));
+            include.getSingletonClass().defineMethod("induced_from", new Callback() {
+
+                public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
+                    Arity.checkArgumentCount(recv.getRuntime(), args, 1, 1);
+                    
+                    return RubyPrecision.induced_from(recv, args[0], block);
+                }
+
+                public Arity getArity() {
+                    return Arity.ONE_ARGUMENT;
+                }
+            });
         }
         return receiver;
     }

@@ -70,7 +70,6 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CacheMap;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Dispatcher;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -104,16 +103,23 @@ public class RubyModule extends RubyObject {
             }
         };
         
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyModule.class);
-        
         moduleClass.defineAnnotatedMethods(RubyModule.class);
-
-        callbackFactory = runtime.callbackFactory(RubyKernel.class);
-        moduleClass.defineFastMethod("autoload", callbackFactory.getFastSingletonMethod("autoload", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
-        moduleClass.defineFastMethod("autoload?", callbackFactory.getFastSingletonMethod("autoload_p", RubyKernel.IRUBY_OBJECT));
+        moduleClass.defineAnnotatedMethods(ModuleKernelMethods.class);
 
         return moduleClass;
-    }    
+    }
+    
+    public static class ModuleKernelMethods {
+        @JRubyMethod
+        public static IRubyObject autoload(IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
+            return RubyKernel.autoload(recv, arg0, arg1);
+        }
+        
+        @JRubyMethod(name = "autoload?")
+        public static IRubyObject autoload_p(IRubyObject recv, IRubyObject arg0) {
+            return RubyKernel.autoload_p(recv, arg0);
+        }
+    }
     
     static ObjectAllocator MODULE_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {

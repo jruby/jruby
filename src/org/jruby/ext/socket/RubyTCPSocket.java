@@ -45,10 +45,11 @@ import org.jruby.RubyClass;
 import org.jruby.RubyIO;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.ChannelDescriptor;
@@ -57,13 +58,10 @@ import org.jruby.util.io.InvalidValueException;
 public class RubyTCPSocket extends RubyIPSocket {
     static void createTCPSocket(Ruby runtime) {
         RubyClass rb_cTCPSocket = runtime.defineClass("TCPSocket", runtime.fastGetClass("IPSocket"), TCPSOCKET_ALLOCATOR);
-        CallbackFactory cfact = runtime.callbackFactory(RubyTCPSocket.class);
 
         rb_cTCPSocket.includeModule(runtime.fastGetClass("Socket").fastGetConstant("Constants"));
-
-        rb_cTCPSocket.defineFastMethod("initialize", cfact.getFastOptMethod("initialize"));
-        rb_cTCPSocket.getMetaClass().defineFastMethod("gethostbyname", cfact.getFastSingletonMethod("gethostbyname", IRubyObject.class));
-        rb_cTCPSocket.getMetaClass().defineMethod("open", cfact.getOptSingletonMethod("open"));
+        
+        rb_cTCPSocket.defineAnnotatedMethods(RubyTCPSocket.class);
 
         runtime.getObject().fastSetConstant("TCPsocket",rb_cTCPSocket);
     }
@@ -83,6 +81,7 @@ public class RubyTCPSocket extends RubyIPSocket {
                 RubyNumeric.str2inum(getRuntime(), (RubyString) arg, 0, true) : arg);
     }
     
+    @JRubyMethod(required = 2, optional = 2, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args) {
         Arity.checkArgumentCount(getRuntime(), args, 2, 4);
         
@@ -116,6 +115,7 @@ public class RubyTCPSocket extends RubyIPSocket {
         return this;
     }
 
+    @JRubyMethod(frame = true, rest = true, meta = true)
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
         RubyTCPSocket sock = (RubyTCPSocket)recv.callMethod(recv.getRuntime().getCurrentContext(),"new",args);
         if (!block.isGiven()) return sock;
@@ -127,6 +127,7 @@ public class RubyTCPSocket extends RubyIPSocket {
         }
     }
 
+    @JRubyMethod(meta = true)
     public static IRubyObject gethostbyname(IRubyObject recv, IRubyObject hostname) {
         try {
             IRubyObject[] ret = new IRubyObject[4];

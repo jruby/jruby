@@ -145,6 +145,7 @@ public abstract class CallbackFactory {
      * @param method name of the method
      * @param arg1 the class of the only argument for this method
      * @return a CallBack object corresponding to the appropriate method
+     * @deprecated Callbacks are inefficient; use MethodFactory.
      **/
     public abstract Callback getSingletonMethod(String method, Class arg1);
 
