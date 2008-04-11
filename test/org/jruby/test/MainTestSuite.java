@@ -42,7 +42,6 @@ import org.jruby.ext.posix.JavaFileStatTest;
 import org.jruby.javasupport.TestJavaClass;
 import org.jruby.javasupport.test.JavaSupportTestSuite;
 import org.jruby.runtime.callback.TestReflectionCallback;
-import org.jruby.util.ByteListTest;
 import org.jruby.util.JRubyThreadContextTest;
 import org.jruby.util.PlatformTest;
 import org.jruby.util.ShellLauncherTest;
@@ -79,7 +78,6 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(YARVMachineTest.class);
         suite.addTestSuite(TestRaiseException.class);
         suite.addTest(VisitorTestSuite.suite());
-        suite.addTestSuite(ByteListTest.class);
         suite.addTestSuite(PlatformTest.class);
         suite.addTestSuite(ShellLauncherTest.class);
         suite.addTestSuite(TestRbConfigLibrary.class);
