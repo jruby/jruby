@@ -133,9 +133,10 @@ public abstract class CallbackFactory {
     public abstract Callback getSingletonMethod(String method);
 
     /**
-     * gets a singleton (class) method without arguments.
+     * gets a fast singleton (class) method without arguments.
      * @param method name of the method
      * @return a CallBack object corresponding to the appropriate method
+     * @deprecated Callbacks are inefficient; use MethodFactory.
      */
     public abstract Callback getFastSingletonMethod(String method);
 
@@ -146,6 +147,13 @@ public abstract class CallbackFactory {
      * @return a CallBack object corresponding to the appropriate method
      **/
     public abstract Callback getSingletonMethod(String method, Class arg1);
+
+    /**
+     * gets a fast singleton (class) method with 1 argument.
+     * @param method name of the method
+     * @param arg1 the class of the only argument for this method
+     * @return a CallBack object corresponding to the appropriate method
+     **/
     public abstract Callback getFastSingletonMethod(String method, Class arg1);
 
     /**
