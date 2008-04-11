@@ -29,6 +29,10 @@ package org.jruby.yaml;
 
 import java.io.IOException;
 
+import java.util.Iterator;
+import java.util.Map;
+import java.util.HashMap;
+
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyHash;
@@ -46,6 +50,7 @@ import org.jvyamlb.Representer;
 import org.jvyamlb.YAMLConfig;
 import org.jvyamlb.YAMLNodeCreator;
 import org.jvyamlb.nodes.Node;
+import org.jvyamlb.nodes.MappingNode;
 
 import org.jruby.util.ByteList;
 
@@ -96,6 +101,17 @@ public class JRubyRepresenter extends SafeRepresenterImpl {
         } else {
             return scalar(tag,val,style.charAt(0));
         }
+    }
+
+    @Override
+    public Node representMapping(final String tag, final Map mapping, final boolean flowStyle) throws IOException {
+        Map value = new HashMap();
+        final Iterator iter = (mapping instanceof RubyHash) ? ((RubyHash)mapping).directEntrySet().iterator() : mapping.entrySet().iterator();
+        while(iter.hasNext()) {
+            Map.Entry entry = (Map.Entry)iter.next();
+            value.put(representData(entry.getKey()),representData(entry.getValue()));
+        }
+        return new MappingNode(tag,value,flowStyle);
     }
 
     protected boolean ignoreAliases(final Object data) {

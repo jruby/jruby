@@ -53,7 +53,6 @@ import org.jvyamlb.nodes.MappingNode;
 import org.jvyamlb.nodes.ScalarNode;
 import org.jvyamlb.nodes.SequenceNode;
 
-import org.jruby.RubyHash;
 import org.jruby.util.ByteList;
 import org.jruby.util.collections.IntHashMap;
 
@@ -73,7 +72,7 @@ public class RepresenterImpl implements Representer {
         this.links = new IdentityHashMap();
     }
 
-    private Node representData(final Object data) throws IOException {
+    protected Node representData(final Object data) throws IOException {
         Node node = null;
 
         boolean ignoreAlias = ignoreAliases(data);
@@ -136,7 +135,7 @@ public class RepresenterImpl implements Representer {
 
     public Node representMapping(final String tag, final Map mapping, final boolean flowStyle) throws IOException {
         Map value = new HashMap();
-        final Iterator iter = (mapping instanceof RubyHash) ? ((RubyHash)mapping).directEntrySet().iterator() : mapping.entrySet().iterator();
+        final Iterator iter =  mapping.entrySet().iterator();
         while(iter.hasNext()) {
             Map.Entry entry = (Map.Entry)iter.next();
             value.put(representData(entry.getKey()),representData(entry.getValue()));
