@@ -41,6 +41,7 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -105,7 +106,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyBigDecimal.class);
 
-        runtime.getKernel().defineModuleFunction("BigDecimal",callbackFactory.getOptSingletonMethod("newBigDecimal"));
+        runtime.getKernel().defineAnnotatedMethods(BigDecimalKernelMethods.class);
 
         result.setInternalModuleVariable("vpPrecLimit", RubyFixnum.zero(runtime));
         result.setInternalModuleVariable("vpExceptionMode", RubyFixnum.zero(runtime));
@@ -130,6 +131,13 @@ public class RubyBigDecimal extends RubyNumeric {
     public RubyBigDecimal(Ruby runtime, BigDecimal value) {
         super(runtime, runtime.fastGetClass("BigDecimal"));
         this.value = value;
+    }
+    
+    public static class BigDecimalKernelMethods {
+        @JRubyMethod(name = "BigDecimal", rest = true, module = true, visibility = Visibility.PRIVATE)
+        public static IRubyObject newBigDecimal(IRubyObject recv, IRubyObject[] args) {
+            return RubyBigDecimal.newBigDecimal(recv, args, Block.NULL_BLOCK);
+        }
     }
 
     public static RubyBigDecimal newBigDecimal(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {

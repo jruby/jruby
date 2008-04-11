@@ -46,8 +46,9 @@ import org.jruby.util.SafePropertyAccessor;
  * will need to be explicitly created.
  **/
 public abstract class CallbackFactory {
+
     public static final Class[] NULL_CLASS_ARRAY = new Class[0];
-    
+
     /**
      * gets an instance method with no arguments.
      * @param method name of the method
@@ -55,7 +56,7 @@ public abstract class CallbackFactory {
      * @deprecated Callbacks are inefficient; use MethodFactory.
      **/
     public abstract Callback getMethod(String method);
-    
+
     /**
      * gets a fast instance method with no arguments.
      * @param method name of the method
@@ -101,7 +102,7 @@ public abstract class CallbackFactory {
      * @deprecated Callbacks are inefficient; use MethodFactory.
      **/
     public abstract Callback getFastMethod(String method, Class arg1, Class arg2);
-    
+
     /**
      * gets an instance method with two arguments.
      * @param method name of the method
@@ -112,7 +113,7 @@ public abstract class CallbackFactory {
      * @deprecated Callbacks are inefficient; use MethodFactory.
      **/
     public abstract Callback getMethod(String method, Class arg1, Class arg2, Class arg3);
-    
+
     /**
      * gets a fast instance method with two arguments.
      * @param method name of the method
@@ -154,6 +155,7 @@ public abstract class CallbackFactory {
      * @param method name of the method
      * @param arg1 the class of the only argument for this method
      * @return a CallBack object corresponding to the appropriate method
+     * @deprecated Callbacks are inefficient; use MethodFactory.
      **/
     public abstract Callback getFastSingletonMethod(String method, Class arg1);
 
@@ -161,53 +163,94 @@ public abstract class CallbackFactory {
      * gets a singleton (class) method with 2 arguments.
      * @param method name of the method
      * @return a CallBack object corresponding to the appropriate method
+     * @deprecated Callbacks are inefficient; use MethodFactory.
      **/
     public abstract Callback getSingletonMethod(String method, Class arg1, Class arg2);
+
+    /**
+     * gets a fast singleton (class) method with 2 arguments.
+     * @param method name of the method
+     * @return a CallBack object corresponding to the appropriate method
+     * @deprecated Callbacks are inefficient; use MethodFactory.
+     **/
     public abstract Callback getFastSingletonMethod(String method, Class arg1, Class arg2);
 
     /**
      * gets a singleton (class) method with 3 arguments.
      * @param method name of the method
      * @return a CallBack object corresponding to the appropriate method
+     * @deprecated Callbacks are inefficient; use MethodFactory.
      **/
     public abstract Callback getSingletonMethod(String method, Class arg1, Class arg2, Class arg3);
+
+    /**
+     * gets a fast singleton (class) method with 3 arguments.
+     * @param method name of the method
+     * @return a CallBack object corresponding to the appropriate method
+     * @deprecated Callbacks are inefficient; use MethodFactory.
+     **/
     public abstract Callback getFastSingletonMethod(String method, Class arg1, Class arg2, Class arg3);
 
     public abstract Callback getBlockMethod(String method);
+
     public abstract CompiledBlockCallback getBlockCallback(String method, Object scriptObject);
 
     /**
-    * gets a singleton (class) method with no mandatory argument and some optional arguments.
+     * gets a singleton (class) method with no mandatory argument and some optional arguments.
      * @param method name of the method
-    * @return a CallBack object corresponding to the appropriate method
-    **/
+     * @return a CallBack object corresponding to the appropriate method
+     * @deprecated Callbacks are inefficient; use MethodFactory.
+     **/
     public abstract Callback getOptSingletonMethod(String method);
+
+
+    /**
+     * gets a fast singleton (class) method with no mandatory argument and some optional arguments.
+     * @param method name of the method
+     * @return a CallBack object corresponding to the appropriate method
+     * @deprecated Callbacks are inefficient; use MethodFactory.
+     **/
     public abstract Callback getFastOptSingletonMethod(String method);
 
     /**
-    * gets an instance method with no mandatory argument and some optional arguments.
+     * gets an instance method with no mandatory argument and some optional arguments.
      * @param method name of the method
-    * @return a CallBack object corresponding to the appropriate method
-    **/
+     * @return a CallBack object corresponding to the appropriate method
+     * @deprecated Callbacks are inefficient; use MethodFactory.
+     **/
     public abstract Callback getOptMethod(String method);
-    public abstract Callback getFastOptMethod(String method);
-    
-    public abstract Dispatcher createDispatcher(RubyClass metaClass);
 
+    /**
+     * gets a fast instance method with no mandatory argument and some optional arguments.
+     * @param method name of the method
+     * @return a CallBack object corresponding to the appropriate method
+     * @deprecated Callbacks are inefficient; use MethodFactory.
+     **/
+    public abstract Callback getFastOptMethod(String method);
+
+    /**
+     * Create a fast STI-based (selector table indexing) dispatcher.
+     * 
+     * @param metaClass
+     * @return
+     * @deprecated No longer used.
+     */
+    public abstract Dispatcher createDispatcher(RubyClass metaClass);
     private static boolean reflection = false;
     private static boolean dumping = false;
+    
 
     static {
-       if (Ruby.isSecurityRestricted())
-           reflection = true;
-       else {
-           if(SafePropertyAccessor.getProperty("jruby.reflection") != null && SafePropertyAccessor.getBoolean("jruby.reflection")) {
-               reflection = true;
-           }
-           if(SafePropertyAccessor.getProperty("jruby.dump_invocations") != null) {
-               dumping = true;
-           }
-       }
+        if (Ruby.isSecurityRestricted()) {
+            reflection = true;
+        } else {
+            if (SafePropertyAccessor.getProperty("jruby.reflection") != null && SafePropertyAccessor.getBoolean("jruby.reflection")) {
+                reflection = true;
+            }
+            if (SafePropertyAccessor.getProperty("jruby.dump_invocations") != null) {
+                dumping = true;
+            }
+        }
     }
 
     public static CallbackFactory createFactory(Ruby runtime, Class type) {
@@ -216,9 +259,9 @@ public abstract class CallbackFactory {
 
     // used by compiler
     public static CallbackFactory createFactory(Ruby runtime, Class type, ClassLoader classLoader) {
-        if(reflection) {
+        if (reflection) {
             return new ReflectionCallbackFactory(type);
-        } else if(dumping) {
+        } else if (dumping) {
             return new DumpingInvocationCallbackFactory(runtime, type, classLoader);
         } else {
             // FIXME: No, I don't like it.

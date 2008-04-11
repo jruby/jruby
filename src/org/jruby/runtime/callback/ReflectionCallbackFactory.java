@@ -46,82 +46,102 @@ public class ReflectionCallbackFactory extends CallbackFactory {
             this.type = type;
     }
 	
+    @Deprecated
     public Callback getMethod(String method) {
         return new ReflectionCallback(type, method, NULL_CLASS_ARRAY, false, false, Arity.noArguments(), false);
     }
     
+    @Deprecated
     public Callback getFastMethod(String method) {
         return new ReflectionCallback(type, method, NULL_CLASS_ARRAY, false, false, Arity.noArguments(), true);
     }
     
+    @Deprecated
     public Callback getFastMethod(String rubyName, String method) {
         return new ReflectionCallback(type, method, NULL_CLASS_ARRAY, false, false, Arity.noArguments(), true);
     }
 
+    @Deprecated
     public Callback getMethod(String method, Class arg1) {
         return new ReflectionCallback(type, method, new Class[] { arg1 }, false, false, Arity.singleArgument(), false);
     }
 
+    @Deprecated
     public Callback getFastMethod(String method, Class arg1) {
         return new ReflectionCallback(type, method, new Class[] { arg1 }, false, false, Arity.singleArgument(), true);
     }
 
+    @Deprecated
     public Callback getFastMethod(String rubyName, String method, Class arg1) {
         return new ReflectionCallback(type, method, new Class[] { arg1 }, false, false, Arity.singleArgument(), true);
     }
 
+    @Deprecated
     public Callback getMethod(String method, Class arg1, Class arg2) {
         return new ReflectionCallback(type, method, new Class[] { arg1, arg2 }, false, false, Arity.fixed(2), false);
     }
 
+    @Deprecated
     public Callback getFastMethod(String method, Class arg1, Class arg2) {
         return new ReflectionCallback(type, method, new Class[] { arg1, arg2 }, false, false, Arity.fixed(2), true);
     }
 
+    @Deprecated
     public Callback getFastMethod(String rubyName, String method, Class arg1, Class arg2) {
         return new ReflectionCallback(type, method, new Class[] { arg1, arg2 }, false, false, Arity.fixed(2), true);
     }
 
+    @Deprecated
     public Callback getMethod(String method, Class arg1, Class arg2, Class arg3) {
         return new ReflectionCallback(type, method, new Class[] { arg1, arg2, arg3 }, false, false, Arity.fixed(3), false);
     }
 
+    @Deprecated
     public Callback getFastMethod(String method, Class arg1, Class arg2, Class arg3) {
         return new ReflectionCallback(type, method, new Class[] { arg1, arg2, arg3 }, false, false, Arity.fixed(3), true);
     }
 
+    @Deprecated
     public Callback getFastMethod(String rubyName, String method, Class arg1, Class arg2, Class arg3) {
         return new ReflectionCallback(type, method, new Class[] { arg1, arg2, arg3 }, false, false, Arity.fixed(3), true);
     }
 
+    @Deprecated
     public Callback getSingletonMethod(String method) {
         return new ReflectionCallback(type, method, NULL_CLASS_ARRAY, false, true, Arity.noArguments(), false);
     }
 
+    @Deprecated
     public Callback getFastSingletonMethod(String method) {
         return new ReflectionCallback(type, method, NULL_CLASS_ARRAY, false, true, Arity.noArguments(), true);
     }
 
+    @Deprecated
     public Callback getSingletonMethod(String method, Class arg1) {
         return new ReflectionCallback(type, method, new Class[] { arg1 }, false, true, Arity.singleArgument(), false);
     }
 
+    @Deprecated
     public Callback getFastSingletonMethod(String method, Class arg1) {
         return new ReflectionCallback(type, method, new Class[] { arg1 }, false, true, Arity.singleArgument(), true);
     }
 
+    @Deprecated
     public Callback getSingletonMethod(String method, Class arg1, Class arg2) {
         return new ReflectionCallback(type, method, new Class[] { arg1, arg2 }, false, true, Arity.fixed(2), false);
     }
 
+    @Deprecated
     public Callback getFastSingletonMethod(String method, Class arg1, Class arg2) {
         return new ReflectionCallback(type, method, new Class[] { arg1, arg2 }, false, true, Arity.fixed(2), true);
     }
 
+    @Deprecated
     public Callback getSingletonMethod(String method, Class arg1, Class arg2, Class arg3) {
         return new ReflectionCallback(type, method, new Class[] { arg1, arg2, arg3 }, false, true, Arity.fixed(3), false);
     }
 
+    @Deprecated
     public Callback getFastSingletonMethod(String method, Class arg1, Class arg2, Class arg3) {
         return new ReflectionCallback(type, method, new Class[] { arg1, arg2, arg3 }, false, true, Arity.fixed(3), true);
     }
@@ -164,26 +184,32 @@ public class ReflectionCallbackFactory extends CallbackFactory {
         }
     }
 
+    @Deprecated
     public Callback getOptSingletonMethod(String method) {
         return new ReflectionCallback(type, method, new Class[] { IRubyObject[].class }, true, true, Arity.optional(), false);
     }
 
+    @Deprecated
     public Callback getFastOptSingletonMethod(String method) {
         return new ReflectionCallback(type, method, new Class[] { IRubyObject[].class }, true, true, Arity.optional(), true);
     }
 
+    @Deprecated
     public Callback getOptMethod(String method) {
         return new ReflectionCallback(type, method, new Class[] { IRubyObject[].class }, true, false, Arity.optional(), false);
     }
 
+    @Deprecated
     public Callback getFastOptMethod(String method) {
         return new ReflectionCallback(type, method, new Class[] { IRubyObject[].class }, true, false, Arity.optional(), true);
     }
 
+    @Deprecated
     public Callback getFastOptMethod(String rubyName, String method) {
         return new ReflectionCallback(type, method, new Class[] { IRubyObject[].class }, true, false, Arity.optional(), true);
     }
     
+    @Deprecated
     public Dispatcher createDispatcher(RubyClass metaClass) {
         return Dispatcher.DEFAULT_DISPATCHER;
     }

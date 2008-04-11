@@ -293,6 +293,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         return classLoader.defineClass(name, code, protectionDomain);
     }
 
+    @Deprecated
     public Callback getMethod(String method) {
         String mname = type.getName() + "Callback$" + method + "_0";
         String mnamePath = typePath + "Callback$" + method + "_0";
@@ -323,6 +324,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
 
+    @Deprecated
     public Callback getMethod(String method, Class arg1) {
         String mname = type.getName() + "Callback$" + method + "_1";
         String mnamePath = typePath + "Callback$" + method + "_1";
@@ -357,6 +359,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
 
+    @Deprecated
     public Callback getMethod(String method, Class arg1, Class arg2) {
         String mname = type.getName() + "Callback$" + method + "_2";
         String mnamePath = typePath + "Callback$" + method + "_2";
@@ -391,6 +394,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
     
+    @Deprecated
     public Callback getMethod(String method, Class arg1, Class arg2, Class arg3) {
         String mname = type.getName() + "Callback$" + method + "_3";
         String mnamePath = typePath + "Callback$" + method + "_3";
@@ -426,6 +430,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
 
+    @Deprecated
     public Callback getSingletonMethod(String method) {
         String mname = type.getName() + "Callback$" + method + "S0";
         String mnamePath = typePath + "Callback$" + method + "S0";
@@ -456,6 +461,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
 
+    @Deprecated
     public Callback getSingletonMethod(String method, Class arg1) {
         String mname = type.getName() + "Callback$" + method + "_S1";
         String mnamePath = typePath + "Callback$" + method + "_S1";
@@ -491,6 +497,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
 
+    @Deprecated
     public Callback getSingletonMethod(String method, Class arg1, Class arg2) {
         String mname = type.getName() + "Callback$" + method + "_S2";
         String mnamePath = typePath + "Callback$" + method + "_S2";
@@ -525,6 +532,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
 
+    @Deprecated
     public Callback getSingletonMethod(String method, Class arg1, Class arg2, Class arg3) {
         String mname = type.getName() + "Callback$" + method + "_S3";
         String mnamePath = typePath + "Callback$" + method + "_S3";
@@ -600,6 +608,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
 
+    @Deprecated
     public Callback getOptSingletonMethod(String method) {
         String mname = type.getName() + "Callback$" + method + "_Sopt";
         String mnamePath = typePath + "Callback$" + method + "_Sopt";
@@ -634,6 +643,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
 
+    @Deprecated
     public Callback getOptMethod(String method) {
         String mname = type.getName() + "Callback$" + method + "_opt";
         String mnamePath = typePath + "Callback$" + method + "_opt";
@@ -667,6 +677,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
 
+    @Deprecated
     public Callback getFastMethod(String method) {
         String mname = type.getName() + "Callback$" + method + "_F0";
         String mnamePath = typePath + "Callback$" + method + "_F0";
@@ -695,6 +706,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
 
+    @Deprecated
     public Callback getFastMethod(String method, Class arg1) {
         String mname = type.getName() + "Callback$" + method + "_F1";
         String mnamePath = typePath + "Callback$" + method + "_F1";
@@ -728,6 +740,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
 
+    @Deprecated
     public Callback getFastMethod(String method, Class arg1, Class arg2) {
         String mname = type.getName() + "Callback$" + method + "_F2";
         String mnamePath = typePath + "Callback$" + method + "_F2";
@@ -761,6 +774,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
 
+    @Deprecated
     public Callback getFastMethod(String method, Class arg1, Class arg2, Class arg3) {
         String mname = type.getName() + "Callback$" + method + "_F3";
         String mnamePath = typePath + "Callback$" + method + "_F3";
@@ -794,6 +808,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
 
+    @Deprecated
     public Callback getFastSingletonMethod(String method) {
         String mname = type.getName() + "Callback$" + method + "_FS0";
         String mnamePath = typePath + "Callback$" + method + "_FS0";
@@ -824,6 +839,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
 
+    @Deprecated
     public Callback getFastSingletonMethod(String method, Class arg1) {
         String mname = type.getName() + "Callback$" + method + "_FS1";
         String mnamePath = typePath + "Callback$" + method + "_FS1";
@@ -858,6 +874,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
 
+    @Deprecated
     public Callback getFastSingletonMethod(String method, Class arg1, Class arg2) {
         String mname = type.getName() + "Callback$" + method + "_FS2";
         String mnamePath = typePath + "Callback$" + method + "_FS2";
@@ -892,6 +909,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
 
+    @Deprecated
     public Callback getFastSingletonMethod(String method, Class arg1, Class arg2, Class arg3) {
         String mname = type.getName() + "Callback$" + method + "_FS3";
         String mnamePath = typePath + "Callback$" + method + "_FS3";
@@ -926,6 +944,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
 
+    @Deprecated
     public Callback getFastOptMethod(String method) {
         String mname = type.getName() + "Callback$" + method + "_Fopt";
         String mnamePath = typePath + "Callback$" + method + "_Fopt";
@@ -958,6 +977,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
 
+    @Deprecated
     public Callback getFastOptSingletonMethod(String method) {
         String mname = type.getName() + "Callback$" + method + "_FSopt";
         String mnamePath = typePath + "Callback$" + method + "_FSopt";
@@ -991,6 +1011,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
     
+    @Deprecated
     public Dispatcher createDispatcher(RubyClass metaClass) {
         String className = type.getName() + "Dispatcher$" + metaClass.getBaseName();
         String classPath = typePath + "Dispatcher$" + metaClass.getBaseName();
