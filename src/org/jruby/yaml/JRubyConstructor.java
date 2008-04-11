@@ -37,12 +37,13 @@ import java.util.regex.Pattern;
 
 import org.jvyamlb.Composer;
 import org.jvyamlb.Constructor;
-import org.jvyamlb.ConstructorException;
+import org.jvyamlb.exceptions.ConstructorException;
 import org.jvyamlb.ConstructorImpl;
 import org.jvyamlb.SafeConstructorImpl;
 
 import org.jvyamlb.nodes.Node;
 import org.jvyamlb.nodes.LinkNode;
+
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;

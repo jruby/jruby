@@ -62,7 +62,7 @@ import org.jvyamlb.ComposerImpl;
 import org.jvyamlb.Serializer;
 import org.jvyamlb.ResolverImpl;
 import org.jvyamlb.EmitterImpl;
-import org.jvyamlb.YAMLException;
+import org.jvyamlb.exceptions.YAMLException;
 import org.jvyamlb.YAMLConfig;
 import org.jvyamlb.YAML;
 
