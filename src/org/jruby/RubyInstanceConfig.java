@@ -162,6 +162,9 @@ public class RubyInstanceConfig {
             = SafePropertyAccessor.getInt("jruby.thread.pool.min", 0);
     public static final int POOL_TTL
             = SafePropertyAccessor.getInt("jruby.thread.pool.ttl", 60);
+
+    public static final boolean NATIVE_NET_PROTOCOL
+            = SafePropertyAccessor.getBoolean("jruby.native.net.protocol", false);
     
     public static boolean nativeEnabled = true;
 

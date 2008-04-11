@@ -38,11 +38,9 @@ import org.jruby.ext.NetProtocolBufferedIO;
  */
 public class NetProtocolBufferedIOLibrary implements Library {
     public void load(final Ruby runtime, boolean wrap) throws IOException {
-        System.err.println("Before Loading NetProtocolBufferedIO");
         runtime.getLoadService().removeBuiltinLibrary("net/protocol.rb");
         runtime.getLoadService().removeInternalLoadedFeature("net/protocol.rb");
         runtime.getLoadService().require("net/protocol");
-        System.err.println("After Loading NetProtocolBufferedIO");
 
         NetProtocolBufferedIO.create(runtime);
     }

@@ -27,100 +27,98 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext;
 
+import java.io.IOException;
+
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.SelectableChannel;
+
 import java.util.Map;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 
+import org.jruby.RubyObject;
+import org.jruby.RubyNumeric;
+import org.jruby.RubyIO;
 import org.jruby.Ruby;
+import org.jruby.RubyException;
 import org.jruby.RubyModule;
 import org.jruby.RubyClass;
+import org.jruby.RubyString;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.util.io.ChannelStream;
+import org.jruby.exceptions.RaiseException;
 
 /**
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
  */
 @JRubyClass(name="Net::BufferedIO")
-public class NetProtocolBufferedIO {
+public class NetProtocolBufferedIO { 
     public static void create(Ruby runtime) {
         RubyModule mNet = runtime.getModule("Net");
 
-        RubyClass orgBufferedIO = (RubyClass)mNet.getConstant("BufferedIO");
-        mNet.deleteConstant("BufferedIO"); // We want to override this class definition with Java
-
-        RubyClass cBufferedIO = mNet.defineClassUnder("BufferedIO",runtime.getObject(), runtime.getObject().getAllocator());
+        RubyClass cBufferedIO = (RubyClass)mNet.getConstant("BufferedIO");
         cBufferedIO.defineAnnotatedMethods(NetProtocolBufferedIO.class);
 
-
-        // One of these will be mixed into the BufferedIO instance at initialize time to provide
-        // different implementations based on if the io object is a Ruby IO
-        // in which case we can use a native implementation, but otherwise we
-        // can fall back on a straight port of the original Ruby implementation instead
-        RubyModule mRubyImpl = cBufferedIO.defineModuleUnder("RubyImplementation");
-
-        // This will copy all the methods from the original BufferedIO instead of having to recreate this stuff. Yay for internal meta magic
-        for(Map.Entry<String, DynamicMethod> entry : orgBufferedIO.getMethods().entrySet()) {
-            if(!"initialize".equals(entry.getKey())) {
-                DynamicMethod dm = entry.getValue();
-                dm.setImplementationClass(mRubyImpl);
-                mRubyImpl.addMethod(entry.getKey(), dm);
-            }
-        }
-
-        mRubyImpl.defineAnnotatedMethods(RubyImpl.class);
-
         RubyModule mNativeImpl = cBufferedIO.defineModuleUnder("NativeImplementation");
-
-        mNativeImpl.attr_reader(runtime.getCurrentContext(), new IRubyObject[]{runtime.newSymbol("io")});
-        mNativeImpl.attr_accessor(runtime.getCurrentContext(), new IRubyObject[]{runtime.newSymbol("read_timeout")});
-        mNativeImpl.attr_accessor(runtime.getCurrentContext(), new IRubyObject[]{runtime.newSymbol("debug_output")});
 
         mNativeImpl.defineAnnotatedMethods(NativeImpl.class);
     }    
 
     @JRubyMethod(required = 1)
     public static IRubyObject initialize(IRubyObject recv, IRubyObject io) {
-        // do an extend based on the type of IOs IO implementation.
-        /*
-          @io = io
-          @read_timeout = 60
-          @debug_output = nil
-          @rbuf = ''
-        */
-        return recv;
-    }
+        if(io instanceof RubyIO && 
+           (((RubyIO)io).getOpenFile().getMainStream() instanceof ChannelStream) &&
+           (((ChannelStream)((RubyIO)io).getOpenFile().getMainStream()).getDescriptor().getChannel() instanceof SelectableChannel))  {
 
-    @JRubyModule(name="Net::BufferedIO::RubyImplementation")
-    public static class RubyImpl {
+            ((RubyObject)recv).extend(new IRubyObject[]{((RubyModule)recv.getRuntime().getModule("Net").getConstant("BufferedIO")).getConstant("NativeImplementation")});
+            SelectableChannel sc = (SelectableChannel)(((ChannelStream)((RubyIO)io).getOpenFile().getMainStream()).getDescriptor().getChannel());
+            recv.dataWrapStruct(new NativeImpl(sc));
+        }
+
+        recv.getInstanceVariables().setInstanceVariable("@io", io);
+        recv.getInstanceVariables().setInstanceVariable("@read_timeout", recv.getRuntime().newFixnum(60));
+        recv.getInstanceVariables().setInstanceVariable("@debug_output", recv.getRuntime().getNil());
+        recv.getInstanceVariables().setInstanceVariable("@rbuf", recv.getRuntime().newString(""));
+
+        return recv;
     }
 
     @JRubyModule(name="Net::BufferedIO::NativeImplementation")
     public static class NativeImpl {
-        /*
-    def inspect
-    def closed?
-    def close
-    public
-    def read(len, dest = '', ignore_eof = false)
-    def read_all(dest = '')
-    def readuntil(terminator, ignore_eof = false)
-    def readline
-    private
-    def rbuf_fill
-    def rbuf_consume(len)
-    public
-    def write(str)
-    def writeline(str)
-    private
-    def writing
-    def write0(str)
-    private
-    def LOG_off
-    def LOG_on
-    def LOG(msg)
-        */
+        private SelectableChannel channel;
+        public NativeImpl(SelectableChannel channel) {
+            this.channel = channel;
+        }
+        
+        @JRubyMethod
+        public static IRubyObject rbuf_fill(IRubyObject recv) {
+            RubyString buf = (RubyString)recv.getInstanceVariables().getInstanceVariable("@rbuf");
+            RubyIO io = (RubyIO)recv.getInstanceVariables().getInstanceVariable("@io");
+
+            int timeout = RubyNumeric.fix2int(recv.getInstanceVariables().getInstanceVariable("@read_timeout")) * 1000;
+            NativeImpl nim = (NativeImpl)recv.dataGetStruct();
+
+            try {
+                Selector selector = Selector.open();
+                nim.channel.configureBlocking(false);
+                SelectionKey key = nim.channel.register(selector, SelectionKey.OP_READ);
+                int n = selector.select(timeout);
+
+                if(n > 0) {
+                    IRubyObject readItems = io.read(new IRubyObject[]{recv.getRuntime().newFixnum(8196)});
+                    return buf.concat(readItems);
+                } else {
+                    RubyClass exc = (RubyClass)(recv.getRuntime().getModule("Timeout").getConstant("Error"));
+                    throw new RaiseException(RubyException.newException(recv.getRuntime(), exc, "execution expired"),false);
+                }
+            } catch(IOException exception) {
+                throw recv.getRuntime().newIOErrorFromException(exception);
+            }
+        }
     }
 }// NetProtocolBufferedIO
