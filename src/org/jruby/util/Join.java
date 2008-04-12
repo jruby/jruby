@@ -42,15 +42,42 @@ public final class Join {
     private final LinkedList[] writes;
     private final long asyncMask;
     private long mask = 0;
-    private final Reaction[] reactions;
+    private final Reaction[][] reactionsPerChannel;
 
     public static class Spec {
-        private ArrayList<Reaction> reactions = new ArrayList<Reaction>();
+        private ArrayList<ArrayList<Reaction>> reactionsPerChannel = new ArrayList<ArrayList<Reaction>>();
+        private long asyncMask = 0;
+        private long mask = 0;
+        private volatile Reaction[][] cachedReactionsPerChannel = null;
 
         public Spec() {}
 
         public void addReaction(Reaction reaction) {
-            reactions.add(reaction);
+            if ( ( mask & ~asyncMask & reaction.asyncMask ) != 0 ) {
+                throw new IllegalArgumentException("Cannot use a synchronous channel in a non-head position");
+            }
+            if ( ( reaction.mask & ~reaction.asyncMask & asyncMask ) != 0 ) {
+                throw new IllegalArgumentException("Cannot use an asynchronous channel in the head position of a synchronous reaction");
+            }
+            cachedReactionsPerChannel = null;
+            final int[] indices = reaction.indices;
+            for ( int i = 0 ; i < indices.length ; i++ ) {
+                final int index = indices[i];
+                if ( reactionsPerChannel.size() <= index ) {
+                    reactionsPerChannel.ensureCapacity(index+1);
+                    while ( reactionsPerChannel.size() <= index ) {
+                        reactionsPerChannel.add(null);
+                    }
+                }
+                ArrayList<Reaction> reactions = reactionsPerChannel.get(index);
+                if ( reactions == null ) {
+                    reactions = new ArrayList<Reaction>();
+                    reactionsPerChannel.set(index, reactions);
+                }
+                reactions.add(reaction);
+            }
+            asyncMask |= reaction.asyncMask;
+            mask |= reaction.mask;
         }
 
         public Join createJoin() {
@@ -59,7 +86,18 @@ public final class Join {
 
         private static final Reaction[] EMPTY_REACTIONS = new Reaction[0];
         public Join createJoin(final Executor executor) {
-            return new Join(this.reactions.toArray(EMPTY_REACTIONS), executor);
+            if (cachedReactionsPerChannel == null) {
+                final int length = reactionsPerChannel.size();
+                final Reaction[][] localReactionsPerChannel = new Reaction[length][];
+                for ( int i = 0 ; i < length ; ++i ) {
+                    final ArrayList<Reaction> reactions = reactionsPerChannel.get(i);
+                    if ( reactions != null ) {
+                        localReactionsPerChannel[i] = reactions.toArray(EMPTY_REACTIONS);
+                    }
+                }
+                cachedReactionsPerChannel = localReactionsPerChannel;
+            }
+            return new Join(asyncMask, cachedReactionsPerChannel, executor);
         }
     }
 
@@ -68,16 +106,17 @@ public final class Join {
         private final long mask;
         private final long asyncMask;
 
-        private static int[] toIndices(Enum<?>[] channels) {
-            final int[] indices = new int[channels.length];
+        private static int[] toIndices(Enum<?> head, Enum<?>[] channels) {
+            final int[] indices = new int[channels.length+1];
+            indices[0] = head.ordinal();
             for ( int i = 0 ; i < channels.length ; ++i ) {
-                indices[i] = channels[i].ordinal();
+                indices[i+1] = channels[i].ordinal();
             }
             return indices;
         }
 
-        Reaction(Enum<?>[] channels, boolean isAsync) {
-            this(toIndices(channels), isAsync);
+        Reaction(Enum<?> head, Enum<?>[] channels, boolean isAsync) {
+            this(toIndices(head, channels), isAsync);
         }
 
         Reaction(int[] indices, boolean isAsync) {
@@ -87,9 +126,12 @@ public final class Join {
                 if ( index > 63 ) {
                     throw new IndexOutOfBoundsException();
                 }
+                if ( ( mask & ( 1L << index ) ) != 0 ) {
+                    throw new IllegalArgumentException("Duplicate channels in reaction");
+                }
                 mask |= 1L << index;
             }
-            this.indices = indices.clone();
+            this.indices = indices;
             this.mask = mask;
             if (isAsync) {
                 this.asyncMask = mask;
@@ -103,11 +145,11 @@ public final class Join {
 
     public static abstract class FastReaction extends Reaction {
         public FastReaction(int[] indices) {
-            super(indices, true);
+            super(indices.clone(), true);
         }
 
-        public FastReaction(Enum<?> ... channels) {
-            super(channels, true);
+        public FastReaction(Enum<?> head, Enum<?> ... channels) {
+            super(head, channels, true);
         }
 
         @Override
@@ -123,11 +165,11 @@ public final class Join {
 
     public static abstract class AsyncReaction extends Reaction {
         public AsyncReaction(int[] indices) {
-            super(indices, true);
+            super(indices.clone(), true);
         }
 
-        public AsyncReaction(Enum<?> ... channels) {
-            super(channels, true);
+        public AsyncReaction(Enum<?> head, Enum<?> ... channels) {
+            super(head, channels, true);
         }
 
         @Override
@@ -144,12 +186,12 @@ public final class Join {
     }
 
     public static abstract class SyncReaction extends Reaction {
-        public SyncReaction(int ... indices) {
-            super(indices, false);
+        public SyncReaction(int[] indices) {
+            super(indices.clone(), false);
         }
 
-        public SyncReaction(Enum<?> ... channels) {
-            super(channels, false);
+        public SyncReaction(Enum<?> head, Enum<?> ... channels) {
+            super(head, channels, false);
         }
 
         @Override
@@ -162,27 +204,17 @@ public final class Join {
         public abstract Object react(Join join, Object[] args);
     }
 
-    private Join(final Reaction[] reactions, Executor executor) {
-        final LinkedList[] writes = new LinkedList[64];
-        long allMask = 0;
-        long asyncMask = 0;
-        for (Reaction reaction: reactions) {
-            asyncMask |= reaction.asyncMask;
-            allMask |= reaction.mask;
-        }
-        int i;
-        for ( i = 0 ; allMask != 0 && i < 64 ; ++i, allMask >>= 1 ) {
-            if ( ( allMask & 1 ) != 0 ) {
+    private Join(final long asyncMask, final Reaction[][] reactionsPerChannel, Executor executor) {
+        final LinkedList[] writes = new LinkedList[reactionsPerChannel.length];
+        for ( int i = 0 ; i < writes.length ; ++i ) {
+            if ( reactionsPerChannel[i] != null ) {
                 writes[i] = new LinkedList();
-            } else {
-                writes[i] = null;
             }
         }
         this.asyncMask = asyncMask;
-        this.reactions = reactions.clone();
-        this.writes = new LinkedList[i];
+        this.reactionsPerChannel = reactionsPerChannel;
+        this.writes = writes;
         this.executor = executor;
-        System.arraycopy(writes, 0, this.writes, 0, i);
     }
 
     private void sendRaw(int index, Object message) {
@@ -195,6 +227,7 @@ public final class Join {
             }
             writing.addLast(message);
             mask |= 1L << index;
+            final Reaction[] reactions = reactionsPerChannel[index];
             for (Reaction reaction: reactions) {
                 if ( ( reaction.mask & mask ) == reaction.mask ) {
                     final int[] indices = reaction.indices;
