@@ -338,7 +338,9 @@ public class JRubyApplet extends Applet {
             if (backBuffer == null || width != backBuffer.getWidth() || height != backBuffer.getHeight() || backBuffer.validate(config) == VolatileImage.IMAGE_INCOMPATIBLE) {
                 if (backBuffer != null) {
                     backBufferGraphics.dispose();
+                    backBufferGraphics = null;
                     backBuffer.flush();
+                    backBuffer = null;
                 }
                 backBuffer = config.createCompatibleVolatileImage(width, height);
                 backBufferGraphics = backBuffer.createGraphics();
