@@ -345,8 +345,8 @@ public class JRubyApplet extends Applet {
             }
             backBufferGraphics.setClip(g.getClip());
             paintUnbuffered(backBufferGraphics);
+            g.drawImage(backBuffer, 0, 0, this);
         } while (backBuffer.contentsLost());
-        g.drawImage(backBuffer, 0, 0, this);
     }
 
     private synchronized void paintUnbuffered(Graphics g) {
