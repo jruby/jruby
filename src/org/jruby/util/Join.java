@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.concurrent.Executor;
 
@@ -42,6 +43,25 @@ public final class Join {
     private final long asyncMask;
     private long mask = 0;
     private final Reaction[] reactions;
+
+    public static class Spec {
+        private ArrayList<Reaction> reactions = new ArrayList<Reaction>();
+
+        public Spec() {}
+
+        public void addReaction(Reaction reaction) {
+            reactions.add(reaction);
+        }
+
+        public Join createJoin() {
+            return createJoin(TRIVIAL_EXECUTOR);
+        }
+
+        private static final Reaction[] EMPTY_REACTIONS = new Reaction[0];
+        public Join createJoin(final Executor executor) {
+            return new Join(this.reactions.toArray(EMPTY_REACTIONS), executor);
+        }
+    }
 
     public static abstract class Reaction {
         private final int[] indices;
@@ -142,11 +162,7 @@ public final class Join {
         public abstract Object react(Join join, Object[] args);
     }
 
-    public Join(final Reaction[] reactions) {
-        this(reactions, TRIVIAL_EXECUTOR);
-    }
-
-    public Join(final Reaction[] reactions, Executor executor) {
+    private Join(final Reaction[] reactions, Executor executor) {
         final LinkedList[] writes = new LinkedList[64];
         long allMask = 0;
         long asyncMask = 0;

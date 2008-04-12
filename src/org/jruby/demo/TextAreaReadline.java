@@ -104,55 +104,55 @@ public class TextAreaReadline implements KeyListener {
         }
     }
 
-    private static final Join.Reaction[] INPUT_REACTIONS = new Join.Reaction[] {
-        new Join.FastReaction(Channel.SHUTDOWN, Channel.BUFFER) {
+    private static final Join.Spec INPUT_SPEC = new Join.Spec() {{
+        addReaction(new Join.FastReaction(Channel.SHUTDOWN, Channel.BUFFER) {
             public void react(Join join, Object[] args) {
                 join.send(Channel.FINISHED, null);
             }
-        },
-        new Join.FastReaction(Channel.SHUTDOWN, Channel.EMPTY) {
+        });
+        addReaction(new Join.FastReaction(Channel.SHUTDOWN, Channel.EMPTY) {
             public void react(Join join, Object[] args) {
                 join.send(Channel.FINISHED, null);
             }
-        },
-        new Join.FastReaction(Channel.SHUTDOWN, Channel.FINISHED) {
+        });
+        addReaction(new Join.FastReaction(Channel.SHUTDOWN, Channel.FINISHED) {
             public void react(Join join, Object[] args) {
                 join.send(Channel.FINISHED, null);
             }
-        },
+        });
 
-        new Join.FastReaction(Channel.FINISHED, Channel.LINE) {
+        addReaction(new Join.FastReaction(Channel.FINISHED, Channel.LINE) {
             public void react(Join join, Object[] args) {
                 join.send(Channel.FINISHED, null);
             }
-        },
+        });
 
-        new Join.SyncReaction(Channel.AVAILABLE, Channel.BUFFER) {
+        addReaction(new Join.SyncReaction(Channel.AVAILABLE, Channel.BUFFER) {
             public Object react(Join join, Object[] args) {
                 InputBuffer buffer = (InputBuffer)args[1];
                 join.send(Channel.BUFFER, buffer);
                 return buffer.bytes.length - buffer.offset;
             }
-        },
-        new Join.SyncReaction(Channel.AVAILABLE, Channel.EMPTY) {
+        });
+        addReaction(new Join.SyncReaction(Channel.AVAILABLE, Channel.EMPTY) {
             public Object react(Join join, Object[] args) {
                 join.send(Channel.EMPTY, null);
                 return 0;
             }
-        },
-        new Join.SyncReaction(Channel.AVAILABLE, Channel.FINISHED) {
+        });
+        addReaction(new Join.SyncReaction(Channel.AVAILABLE, Channel.FINISHED) {
             public Object react(Join join, Object[] args) {
                 join.send(Channel.FINISHED, null);
                 return 0;
             }
-        },
+        });
 
-        new Join.SyncReaction(Channel.READ, Channel.BUFFER) {
+        addReaction(new Join.SyncReaction(Channel.READ, Channel.BUFFER) {
             public Object react(Join join, Object[] args) {
                 return ((ReadRequest)args[0]).perform(join, (InputBuffer)args[1]);
             }
-        },
-        new Join.SyncReaction(Channel.READ, Channel.EMPTY, Channel.LINE) {
+        });
+        addReaction(new Join.SyncReaction(Channel.READ, Channel.EMPTY, Channel.LINE) {
             public Object react(Join join, Object[] args) {
                 final ReadRequest request = (ReadRequest)args[0];
                 final String line = (String)args[2];
@@ -168,27 +168,27 @@ public class TextAreaReadline implements KeyListener {
                     return -1;
                 }
             }
-        },
-        new Join.SyncReaction(Channel.READ, Channel.FINISHED) {
+        });
+        addReaction(new Join.SyncReaction(Channel.READ, Channel.FINISHED) {
             public Object react(Join join, Object[] args) {
                 join.send(Channel.FINISHED, null);
                 return -1;
             }
-        },
+        });
 
-        new Join.SyncReaction(Channel.GET_LINE, Channel.LINE) {
+        addReaction(new Join.SyncReaction(Channel.GET_LINE, Channel.LINE) {
             public Object react(Join join, Object[] args) {
                 return args[1];
             }
-        },
-        new Join.SyncReaction(Channel.GET_LINE, Channel.FINISHED) {
+        });
+        addReaction(new Join.SyncReaction(Channel.GET_LINE, Channel.FINISHED) {
             public Object react(Join join, Object[] args) {
                 join.send(Channel.FINISHED, null);
                 return EMPTY_LINE;
             }
-        }
-    };
-    private final Join inputJoin = new Join(INPUT_REACTIONS);
+        });
+    }};
+    private final Join inputJoin = INPUT_SPEC.createJoin();
 
     public TextAreaReadline(JTextComponent area) {
         this(area, null);
