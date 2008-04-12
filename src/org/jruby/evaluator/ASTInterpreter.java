@@ -882,8 +882,8 @@ public class ASTInterpreter {
         
         RubyModule containingClass = context.getRubyClass();
    
-        if (containingClass == null) {
-            throw runtime.newTypeError("No class to add method.");
+        if (containingClass == runtime.getDummy()) {
+            throw runtime.newTypeError("no class/module to add method");
         }
    
         String name = iVisited.getName();
@@ -1905,7 +1905,7 @@ public class ASTInterpreter {
     public static RubyModule getClassVariableBase(ThreadContext context, Ruby runtime) {
         StaticScope scope = context.getCurrentScope().getStaticScope();
         RubyModule rubyClass = scope.getModule();
-        if (rubyClass.isSingleton()) {
+        if (rubyClass.isSingleton() || rubyClass == runtime.getDummy()) {
             scope = scope.getPreviousCRefScope();
             rubyClass = scope.getModule();
             if (scope.getPreviousCRefScope() == null) {

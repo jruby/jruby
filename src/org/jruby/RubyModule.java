@@ -1273,6 +1273,7 @@ public class RubyModule extends RubyObject {
         return new ProcMethod(this, proc, visibility);
     }
 
+    @Deprecated
     public IRubyObject executeUnder(ThreadContext context, Callback method, IRubyObject[] args, Block block) {
         context.preExecuteUnder(this, block);
         try {

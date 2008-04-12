@@ -116,8 +116,8 @@ public class RuntimeHelpers {
         RubyModule containingClass = context.getRubyClass();
         Visibility visibility = context.getCurrentVisibility();
         
-        if (containingClass == null) {
-            throw runtime.newTypeError("No class to add method.");
+        if (containingClass == runtime.getDummy()) {
+            throw runtime.newTypeError("no class/module to add method");
         }
         
         if (containingClass == runtime.getObject() && name.equals("initialize")) {

@@ -882,6 +882,10 @@ public final class Ruby {
         // Initialize Kernel and include into Object
         RubyKernel.createKernelModule(this);
         objectClass.includeModule(kernelModule);
+        
+        // Initialize the "dummy" class used as a marker
+        dummyClass = new RubyClass(this);
+        dummyClass.freeze();
 
         // Object is ready, create top self
         topSelf = TopSelfFactory.createTopSelf(this);
@@ -1237,7 +1241,11 @@ public final class Ruby {
     }
     void setKernel(RubyModule kernelModule) {
         this.kernelModule = kernelModule;
-    }    
+    }
+    
+    public RubyClass getDummy() {
+        return dummyClass;
+    }
 
     public RubyModule getComparable() {
         return comparableModule;
@@ -2630,10 +2638,9 @@ public final class Ruby {
             matchDataClass, regexpClass, timeClass, bignumClass, dirClass,
             fileClass, fileStatClass, ioClass, threadClass, threadGroupClass,
             continuationClass, structClass, tmsStruct, passwdStruct,
-        groupStruct, 
-            procStatusClass, exceptionClass, runtimeError, ioError,
+            groupStruct, procStatusClass, exceptionClass, runtimeError, ioError,
             scriptError, nameError, signalException, standardError,
-            systemCallError, rangeError;
+            systemCallError, rangeError, dummyClass;
     
     /**
      * All the core modules we keep direct references to, for quick access and

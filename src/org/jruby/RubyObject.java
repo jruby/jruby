@@ -603,59 +603,50 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     }
 
     public IRubyObject evalUnder(final ThreadContext context, RubyModule under, IRubyObject src, IRubyObject file, IRubyObject line) {
-        return under.executeUnder(context, new Callback() {
-            public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-                IRubyObject source = args[1];
-                IRubyObject filename = args[2];
-                // Line numbers are zero-based so we subtract one
-                int lineNumber = (int) (args[3].convertToInteger().getLongValue() - 1);
+        context.preExecuteUnder(under, Block.NULL_BLOCK);
+        try {
+            // Line numbers are zero-based so we subtract one
+            int lineNumber = (int) (line.convertToInteger().getLongValue() - 1);
 
-                return ASTInterpreter.evalSimple(context, args[0], source, 
-                        filename.convertToString().toString(), lineNumber);
-            }
-
-            public Arity getArity() {
-                return Arity.optional();
-            }
-        }, new IRubyObject[] { this, src, file, line }, Block.NULL_BLOCK);
+            return ASTInterpreter.evalSimple(context, this, src, 
+                    file.convertToString().toString(), lineNumber);
+        } finally {
+            context.postExecuteUnder();
+        }
     }
 
     private IRubyObject yieldUnder(final ThreadContext context, RubyModule under, IRubyObject[] args, Block block) {
-        return under.executeUnder(context, new Callback() {
-            public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-                Visibility savedVisibility = block.getBinding().getVisibility();
-
-                block.getBinding().setVisibility(Visibility.PUBLIC);
-                try {
-                    IRubyObject valueInYield;
-                    boolean aValue;
-                    if (args.length == 1) {
-                        valueInYield = args[0];
-                        aValue = false;
-                    } else {
-                        valueInYield = RubyArray.newArray(getRuntime(), args);
-                        aValue = true;
-                    }
-                    
-                    // FIXME: This is an ugly hack to resolve JRUBY-1381; I'm not proud of it
-                    block = block.cloneBlock();
-                    block.getBinding().setSelf(RubyObject.this);
-                    block.getBinding().getFrame().setSelf(RubyObject.this);
-                    // end hack
-                    
-                    return block.yield(context, valueInYield, RubyObject.this, context.getRubyClass(), aValue);
-                    //TODO: Should next and return also catch here?
-                } catch (JumpException.BreakJump bj) {
-                        return (IRubyObject) bj.getValue();
-                } finally {
-                    block.getBinding().setVisibility(savedVisibility);
-                }
+        context.preExecuteUnder(under, block);
+        
+        Visibility savedVisibility = block.getBinding().getVisibility();
+        block.getBinding().setVisibility(Visibility.PUBLIC);
+        
+        try {
+            IRubyObject valueInYield;
+            boolean aValue;
+            if (args.length == 1) {
+                valueInYield = args[0];
+                aValue = false;
+            } else {
+                valueInYield = RubyArray.newArray(getRuntime(), args);
+                aValue = true;
             }
 
-            public Arity getArity() {
-                return Arity.optional();
-            }
-        }, args, block);
+            // FIXME: This is an ugly hack to resolve JRUBY-1381; I'm not proud of it
+            block = block.cloneBlock();
+            block.getBinding().setSelf(RubyObject.this);
+            block.getBinding().getFrame().setSelf(RubyObject.this);
+            // end hack
+
+            return block.yield(context, valueInYield, RubyObject.this, context.getRubyClass(), aValue);
+            //TODO: Should next and return also catch here?
+        } catch (JumpException.BreakJump bj) {
+            return (IRubyObject) bj.getValue();
+        } finally {
+            block.getBinding().setVisibility(savedVisibility);
+            
+            context.postExecuteUnder();
+        }
     }
 
     // Methods of the Object class (rb_obj_*):
@@ -1091,12 +1082,14 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     @JRubyMethod(name = "instance_eval", optional = 3, frame = true)
     public IRubyObject instance_eval(ThreadContext context, IRubyObject[] args, Block block) {
         RubyModule klazz;
+        
         if (isImmediate()) {
-            klazz = context.getPreviousFrame().getKlazz();
-            if (klazz == null) klazz = getRuntime().getObject();
+            // Ruby uses Qnil here, we use "dummy" because we need a class
+            klazz = getRuntime().getDummy();
         } else {
             klazz = getSingletonClass();
         }
+        
         return specificEval(context, klazz, args, block);
     }
 
@@ -1108,8 +1101,8 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
 
         RubyModule klazz;
         if (isImmediate()) {
-            klazz = context.getPreviousFrame().getKlazz();
-            if (klazz == null) klazz = getRuntime().getObject();            
+            // Ruby uses Qnil here, we use "dummy" because we need a class
+            klazz = getRuntime().getDummy();          
         } else {
             klazz = getSingletonClass();
         }
