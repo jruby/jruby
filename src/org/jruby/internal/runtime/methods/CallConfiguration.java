@@ -24,8 +24,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public abstract class CallConfiguration {
     public static final CallConfiguration FRAME_AND_SCOPE = new CallConfiguration() {
-        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, Arity arity, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
-            context.preMethodFrameAndScope(implementer, name, self, arity.required(), block, scope, jumpTarget);
+        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
+            context.preMethodFrameAndScope(implementer, name, self, block, scope, jumpTarget);
         }
         
         public void post(ThreadContext context) {
@@ -37,8 +37,8 @@ public abstract class CallConfiguration {
         }
     };
     public static final CallConfiguration FRAME_ONLY = new CallConfiguration() {
-        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, Arity arity, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
-            context.preMethodFrameOnly(implementer, name, self, arity.required(), block, jumpTarget);
+        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
+            context.preMethodFrameOnly(implementer, name, self, block, jumpTarget);
         }
         
         public void post(ThreadContext context) {
@@ -50,7 +50,7 @@ public abstract class CallConfiguration {
         }
     };
     public static final CallConfiguration SCOPE_ONLY = new CallConfiguration() {
-        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, Arity arity, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
+        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
             context.preMethodScopeOnly(implementer, scope);
         }
         
@@ -63,7 +63,7 @@ public abstract class CallConfiguration {
         }
     };
     public static final CallConfiguration NO_FRAME_NO_SCOPE = new CallConfiguration() {
-        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, Arity arity, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
+        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
         }
         
         public void post(ThreadContext context) {
@@ -79,7 +79,7 @@ public abstract class CallConfiguration {
         }
     };
     public static final CallConfiguration BACKTRACE_ONLY = new CallConfiguration() {
-        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, Arity arity, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
+        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
             context.preMethodBacktraceOnly(name);
         }
         
@@ -92,7 +92,7 @@ public abstract class CallConfiguration {
         }
     };
     public static final CallConfiguration BACKTRACE_AND_SCOPE = new CallConfiguration() {
-        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, Arity arity, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
+        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
             context.preMethodBacktraceAndScope(name, implementer, scope);
         }
         
@@ -132,7 +132,7 @@ public abstract class CallConfiguration {
     private CallConfiguration() {
     }
     
-    public abstract void pre(ThreadContext context, IRubyObject self, RubyModule implementer, Arity arity, String name, Block block, StaticScope scope, JumpTarget jumpTarget);
+    public abstract void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget);
     public abstract void post(ThreadContext context);
     public abstract String name();
     public boolean isNoop() {

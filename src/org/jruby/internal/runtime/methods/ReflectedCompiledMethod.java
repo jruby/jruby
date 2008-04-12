@@ -64,7 +64,7 @@ public class ReflectedCompiledMethod extends CompiledMethod {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name,
             IRubyObject[] args, Block block) {
-        callConfig.pre(context, self, getImplementationClass(), arity, name, block, staticScope, this);
+        callConfig.pre(context, self, getImplementationClass(), name, block, staticScope, this);
         
         Ruby runtime = context.getRuntime();
         try {

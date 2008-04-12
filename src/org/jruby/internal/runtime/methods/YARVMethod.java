@@ -76,7 +76,7 @@ public class YARVMethod extends DynamicMethod implements JumpTarget {
         
         Ruby runtime = context.getRuntime();
         
-        callConfig.pre(context, self, klazz, getArity(), name, block, staticScope, this);
+        callConfig.pre(context, self, klazz, name, block, staticScope, this);
         
         try {
             prepareArguments(context, runtime, args);

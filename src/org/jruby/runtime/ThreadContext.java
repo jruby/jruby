@@ -670,7 +670,7 @@ public final class ThreadContext {
         popFrame();
     }
     
-    public void preMethodFrameAndScope(RubyModule clazz, String name, IRubyObject self, int req, Block block, 
+    public void preMethodFrameAndScope(RubyModule clazz, String name, IRubyObject self, Block block, 
             StaticScope staticScope, JumpTarget jumpTarget) {
         RubyModule implementationClass = staticScope.getModule();
         // FIXME: This is currently only here because of some problems with IOOutputStream writing to a "bare" runtime without a proper scope
@@ -688,7 +688,7 @@ public final class ThreadContext {
         popFrame();
     }
     
-    public void preMethodFrameOnly(RubyModule clazz, String name, IRubyObject self, int req, Block block,
+    public void preMethodFrameOnly(RubyModule clazz, String name, IRubyObject self, Block block,
             JumpTarget jumpTarget) {
         pushRubyClass(clazz);
         pushCallFrame(clazz, name, self, block, jumpTarget);

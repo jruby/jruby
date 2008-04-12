@@ -89,7 +89,7 @@ public class ReflectedJavaMethod extends JavaMethod {
         Ruby runtime = context.getRuntime();
         Arity.checkArgumentCount(runtime, args, required, max);
         
-        callConfig.pre(context, self, getImplementationClass(), arity, name, block, null, this);
+        callConfig.pre(context, self, getImplementationClass(), name, block, null, this);
         
         try {
             if (! isStatic && ! method.getDeclaringClass().isAssignableFrom(self.getClass())) {

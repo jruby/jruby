@@ -153,7 +153,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         try {
             RubyModule implementer = getImplementationClass();
 
-            callConfig.pre(context, self, implementer, getArity(), name, block, staticScope, this);
+            callConfig.pre(context, self, implementer, name, block, staticScope, this);
             if (argsNode.getBlockArgNode() != null) {
                 context.getCurrentScope().setValue(
                         argsNode.getBlockArgNode().getCount(),
@@ -375,7 +375,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         RubyModule implementer = getImplementationClass();
         // FIXME: For some reason this wants (and works with) clazz instead of implementer,
         // and needed it for compiled module method_function's called from outside the module. Why?
-        jitCallConfig.pre(context, self, implementer, getArity(), name, block, staticScope, this);
+        jitCallConfig.pre(context, self, implementer, name, block, staticScope, this);
     }
 
     private void jitPost(Ruby runtime, ThreadContext context, String name) {
