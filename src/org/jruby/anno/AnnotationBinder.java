@@ -8,9 +8,14 @@ import com.sun.mirror.util.*;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.jruby.CompatVersion;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.InvocationMethodFactory;
 import org.jruby.runtime.Arity;
@@ -82,9 +87,56 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                         out.println("    public void populate(RubyModule cls) {");
                         if (DEBUG) out.println("        System.out.println(\"Using pregenerated populator: \" + \"" + cd.getSimpleName() + "Populator\");");
                         out.println("        JavaMethod javaMethod;");
+                        
+                        Map<String, List<MethodDeclaration>> annotatedMethods = new HashMap();
+                        Map<String, List<MethodDeclaration>> staticAnnotatedMethods = new HashMap();
+                        Map<String, List<MethodDeclaration>> annotatedMethods1_8 = new HashMap();
+                        Map<String, List<MethodDeclaration>> staticAnnotatedMethods1_8 = new HashMap();
+                        Map<String, List<MethodDeclaration>> annotatedMethods1_9 = new HashMap();
+                        Map<String, List<MethodDeclaration>> staticAnnotatedMethods1_9 = new HashMap();
+                        
                         for (MethodDeclaration md : cd.getMethods()) {
-                            processMethodDeclaration(md);
+                            JRubyMethod anno = md.getAnnotation(JRubyMethod.class);
+                            if (anno == null || anno.compat() == CompatVersion.RUBY1_9) continue;
+
+                            String name = anno.name().length == 0 ? md.getSimpleName() : anno.name()[0];
+
+                            List<MethodDeclaration> methodDescs;
+                            Map<String, List<MethodDeclaration>> methodsHash = null;
+                            if (md.getModifiers().contains(Modifier.STATIC)) {
+                                if (anno.compat() == CompatVersion.RUBY1_8) {
+                                    methodsHash = staticAnnotatedMethods1_8;
+                                } else if (anno.compat() == CompatVersion.RUBY1_9) {
+                                    methodsHash = staticAnnotatedMethods1_9;
+                                } else {
+                                    methodsHash = staticAnnotatedMethods;
+                                }
+                            } else {
+                                if (anno.compat() == CompatVersion.RUBY1_8) {
+                                    methodsHash = annotatedMethods1_8;
+                                } else if (anno.compat() == CompatVersion.RUBY1_9) {
+                                    methodsHash = annotatedMethods1_9;
+                                } else {
+                                    methodsHash = annotatedMethods;
+                                }
+                            }
+
+                            methodDescs = methodsHash.get(name);
+                            if (methodDescs == null) {
+                                methodDescs = new ArrayList();
+                                methodsHash.put(name, methodDescs);
+                            }
+
+                            methodDescs.add(md);
                         }
+                        
+                        processMethodDeclarations(staticAnnotatedMethods);
+                        processMethodDeclarations(staticAnnotatedMethods1_8);
+                        processMethodDeclarations(staticAnnotatedMethods1_9);
+                        processMethodDeclarations(annotatedMethods);
+                        processMethodDeclarations(annotatedMethods1_8);
+                        processMethodDeclarations(annotatedMethods1_9);
+                        
                         out.println("    }");
                         out.println("}");
                         out.close();
@@ -94,6 +146,20 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     System.err.println("FAILED TO GENERATE:");
                     ioe.printStackTrace();
                     System.exit(1);
+                }
+            }
+            
+            public void processMethodDeclarations(Map<String, List<MethodDeclaration>> declarations) {
+                for (Map.Entry<String, List<MethodDeclaration>> entry : declarations.entrySet()) {
+                    List<MethodDeclaration> list = entry.getValue();
+                    
+                    if (list.size() == 1) {
+                        // single method, use normal logic
+                        processMethodDeclaration(list.get(0));
+                    } else {
+                        // multimethod, new logic
+                        processMethodDeclarationMulti(list.get(0));
+                    }
                 }
             }
             
@@ -115,11 +181,21 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                         qualifiedName = md.getDeclaringType().getQualifiedName();
                     }
                     
+                    boolean hasContext = false;
+                    boolean hasBlock = false;
+                    
+                    for (ParameterDeclaration pd : md.getParameters()) {
+                        hasContext |= pd.getType().toString().equals("org.jruby.runtime.ThreadContext");
+                        hasBlock |= pd.getType().toString().equals("org.jruby.runtime.Block");
+                    }
+                    
+                    int actualRequired = calculateActualRequired(md.getParameters().size(), anno.optional(), anno.rest(), isStatic, hasContext, hasBlock);
+                    
                     String annotatedBindingName = InvocationMethodFactory.getAnnotatedBindingClassName(
                             md.getSimpleName(),
                             qualifiedName,
                             isStatic,
-                            anno.required(),
+                            actualRequired,
                             anno.optional(),
                             false);
                     
@@ -130,6 +206,91 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     out.println("        javaMethod.setCallConfig(CallConfiguration." + CallConfiguration.getCallConfigByAnno(anno).name() + ");");
                     generateMethodAddCalls(md, anno);
                 }
+            }
+            
+            public void processMethodDeclarationMulti(MethodDeclaration md) {
+                JRubyMethod anno = md.getAnnotation(JRubyMethod.class);
+                if (anno != null && out != null) {
+                    boolean isStatic = md.getModifiers().contains(Modifier.STATIC);
+                    
+                    // declared type returns the qualified name without $ for inner classes!!!
+                    String qualifiedName;
+                    if (md.getDeclaringType().getDeclaringType() != null) {
+                        // inner class, use $ to delimit
+                        if (md.getDeclaringType().getDeclaringType().getDeclaringType() != null) {
+                            qualifiedName = md.getDeclaringType().getDeclaringType().getDeclaringType().getQualifiedName() + "$" + md.getDeclaringType().getDeclaringType().getSimpleName() + "$" + md.getDeclaringType().getSimpleName();
+                        } else {
+                            qualifiedName = md.getDeclaringType().getDeclaringType().getQualifiedName() + "$" + md.getDeclaringType().getSimpleName();
+                        }
+                    } else {
+                        qualifiedName = md.getDeclaringType().getQualifiedName();
+                    }
+                    
+                    boolean hasContext = false;
+                    boolean hasBlock = false;
+                    
+                    for (ParameterDeclaration pd : md.getParameters()) {
+                        hasContext |= pd.getType().toString().equals("org.jruby.runtime.ThreadContext");
+                        hasBlock |= pd.getType().toString().equals("org.jruby.runtime.Block");
+                    }
+                    
+                    int actualRequired = calculateActualRequired(md.getParameters().size(), anno.optional(), anno.rest(), isStatic, hasContext, hasBlock);
+                    
+                    String annotatedBindingName = InvocationMethodFactory.getAnnotatedBindingClassName(
+                            md.getSimpleName(),
+                            qualifiedName,
+                            isStatic,
+                            actualRequired,
+                            anno.optional(),
+                            true);
+                    
+                    out.println("        javaMethod = new " + annotatedBindingName + "(cls, Visibility." + anno.visibility() + ");");
+                    out.println("        javaMethod.setArity(Arity.OPTIONAL);");
+                    out.println("        javaMethod.setJavaName(\"" + md.getSimpleName() + "\");");
+                    out.println("        javaMethod.setSingleton(" + isStatic + ");");
+                    out.println("        javaMethod.setCallConfig(CallConfiguration." + CallConfiguration.getCallConfigByAnno(anno).name() + ");");
+                    generateMethodAddCalls(md, anno);
+                }
+            }
+            
+            private int calculateActualRequired(int paramsLength, int optional, boolean rest, boolean isStatic, boolean hasContext, boolean hasBlock) {
+                int actualRequired;
+                if (optional == 0 && !rest) {
+                    int args = paramsLength;
+                    if (args == 0) {
+                        actualRequired = 0;
+                    } else {
+                        if (isStatic) args--;
+                        if (hasContext) args--;
+                        if (hasBlock) args--;
+
+                        // TODO: confirm expected args are IRubyObject (or similar)
+                        actualRequired = args;
+                    }
+                } else {
+                    // optional args, so we have IRubyObject[]
+                    // TODO: confirm
+                    int args = paramsLength;
+                    if (args == 0) {
+                        actualRequired = 0;
+                    } else {
+                        if (isStatic) args--;
+                        if (hasContext) args--;
+                        if (hasBlock) args--;
+
+                        // minus one more for IRubyObject[]
+                        args--;
+
+                        // TODO: confirm expected args are IRubyObject (or similar)
+                        actualRequired = args;
+                    }
+
+                    if (actualRequired != 0) {
+                        throw new RuntimeException("Combining specific args with IRubyObject[] is not yet supported");
+                    }
+                }
+                
+                return actualRequired;
             }
             
             public void generateMethodAddCalls(MethodDeclaration md, JRubyMethod jrubyMethod) {
