@@ -97,7 +97,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                         
                         for (MethodDeclaration md : cd.getMethods()) {
                             JRubyMethod anno = md.getAnnotation(JRubyMethod.class);
-                            if (anno == null || anno.compat() == CompatVersion.RUBY1_9) continue;
+                            if (anno == null) continue;
 
                             String name = anno.name().length == 0 ? md.getSimpleName() : anno.name()[0];
 
@@ -199,6 +199,11 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                             anno.optional(),
                             false);
                     
+                    if (!tryClass(annotatedBindingName)) {
+                        System.out.println("Could not load class " + annotatedBindingName + ", skipping.");
+                        return;
+                    }
+                    
                     out.println("        javaMethod = new " + annotatedBindingName + "(cls, Visibility." + anno.visibility() + ");");
                     out.println("        javaMethod.setArity(Arity.createArity(" + Arity.fromAnnotation(anno).getValue() + "));");
                     out.println("        javaMethod.setJavaName(\"" + md.getSimpleName() + "\");");
@@ -244,6 +249,11 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                             anno.optional(),
                             true);
                     
+                    if (!tryClass(annotatedBindingName)) {
+                        System.out.println("Could not load class " + annotatedBindingName + ", skipping.");
+                        return;
+                    }
+                    
                     out.println("        javaMethod = new " + annotatedBindingName + "(cls, Visibility." + anno.visibility() + ");");
                     out.println("        javaMethod.setArity(Arity.OPTIONAL);");
                     out.println("        javaMethod.setJavaName(\"" + md.getSimpleName() + "\");");
@@ -251,6 +261,16 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     out.println("        javaMethod.setCallConfig(CallConfiguration." + CallConfiguration.getCallConfigByAnno(anno).name() + ");");
                     generateMethodAddCalls(md, anno);
                 }
+            }
+            
+            private boolean tryClass(String className) {
+                Class tryClass = null;
+                try {
+                    tryClass = Class.forName(className);
+                } catch (ClassNotFoundException cnfe) {
+                }
+                    
+                return tryClass != null;
             }
             
             private int calculateActualRequired(int paramsLength, int optional, boolean rest, boolean isStatic, boolean hasContext, boolean hasBlock) {

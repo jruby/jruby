@@ -128,6 +128,8 @@
   </target>
 
   <target name="compile-jruby" depends="compile.tasks, check-for-optional-packages">
+    <mkdir dir="${basedir}/src_gen"/>
+    
     <javac destdir="${jruby.classes.dir}" debug="true" source="${javac.version}" target="${javac.version}" deprecation="true" encoding="UTF-8">
        <classpath refid="build.classpath"/>
        <src path="${src.dir}"/>
@@ -140,7 +142,6 @@
   </target>
 
   <target name="generate-method-classes" depends="compile">
-    <touch file="${build.dir}/__empty.rb"/>
     <!-- individual invokers -->
     <java classname="org.jruby.Main" fork="true" failonerror="true">
       <classpath refid="build.classpath"/>
@@ -154,20 +155,28 @@
       <arg value="-ryaml"/>
       <arg value="-rstrscan"/>
       <arg value="-riconv"/>
+      <arg value="-rweakref"/>
+      <arg value="-rthread"/>
+      <arg value="-rsocket"/>
+      <arg value="-rgenerator"/>
       <arg value="-e '1'"/>
     </java>
-    <!-- indexed invokers -->
-    <!--
-    <java classname="org.jruby.Main" fork="true" failonerror="true">
+    
+    <!-- Generate binding logic ahead of time -->
+    <apt factory="org.jruby.anno.AnnotationBinder" fork="true" destdir="src_gen" compile="off">
+      <compilerarg value="-nocompile"/>
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
-      <sysproperty key="jruby.dump_invocations" value="${jruby.classes.dir}"/>
-      <sysproperty key="jruby.indexed.methods" value="true"/>
-      <arg value="-rjava"/>
-      <arg value="${build.dir}/__empty.rb"/>
-    </java>
-    -->
-    <delete file="${build.dir}/__empty.rb" quiet="true"/>
+      <src path="${src.dir}"/>
+      <patternset refid="java.src.pattern"/>
+    </apt>
+    
+    <javac destdir="${jruby.classes.dir}" debug="true" source="${javac.version}" target="${javac.version}" deprecation="true" encoding="UTF-8">
+       <classpath refid="build.classpath"/>
+       <classpath path="${jruby.classes.dir}"/>
+       <src path="src_gen"/>
+       <patternset refid="java.src.pattern"/>
+    </javac>
   </target>
 
   <target name="jar-jruby" unless="jar-up-to-date">
@@ -994,6 +1003,7 @@
         <fileset dir="${lib.dir}" includes="jruby*.jar"/>
     </delete>
     <delete dir="${api.docs.dir}"/>
+    <delete dir="src_gen"/>
   </target>
 
   <target name="clean-all" depends="clean" description="Cleans everything, including downloaded specs">
