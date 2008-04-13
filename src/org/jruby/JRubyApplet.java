@@ -31,6 +31,7 @@ package org.jruby;
 import java.applet.Applet;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Container;
 import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.Insets;
@@ -423,7 +424,11 @@ public class JRubyApplet extends Applet {
         }
 
         public void destroy() {
+            Container parent = scrollPane.getParent();
             adaptor.shutdown();
+            if (parent != null) {
+                parent.remove(scrollPane);
+            }
         }
 
         private Font findFont(String otherwise, int style, int size, String[] families) {
