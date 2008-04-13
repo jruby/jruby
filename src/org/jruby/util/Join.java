@@ -123,7 +123,7 @@ public final class Join {
             long mask = 0;
             for ( int i = 0 ; i < indices.length ; ++i ) {
                 final int index = indices[i];
-                if ( index > 63 ) {
+                if ( index < 0 || index > 63 ) {
                     throw new IndexOutOfBoundsException();
                 }
                 if ( ( mask & ( 1L << index ) ) != 0 ) {
