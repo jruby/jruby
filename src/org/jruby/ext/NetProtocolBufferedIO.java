@@ -103,8 +103,9 @@ public class NetProtocolBufferedIO {
             int timeout = RubyNumeric.fix2int(recv.getInstanceVariables().getInstanceVariable("@read_timeout")) * 1000;
             NativeImpl nim = (NativeImpl)recv.dataGetStruct();
 
+            Selector selector = null;
             try {
-                Selector selector = Selector.open();
+                selector = Selector.open();
                 nim.channel.configureBlocking(false);
                 SelectionKey key = nim.channel.register(selector, SelectionKey.OP_READ);
                 int n = selector.select(timeout);
@@ -118,6 +119,13 @@ public class NetProtocolBufferedIO {
                 }
             } catch(IOException exception) {
                 throw recv.getRuntime().newIOErrorFromException(exception);
+            } finally {
+                if (selector != null) {
+                    try {
+                        selector.close();
+                    } catch (IOException ioe) {
+                    }
+                }
             }
         }
     }
