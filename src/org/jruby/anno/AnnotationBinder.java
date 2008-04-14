@@ -205,7 +205,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     }
                     
                     out.println("        javaMethod = new " + annotatedBindingName + "(cls, Visibility." + anno.visibility() + ");");
-                    out.println("        javaMethod.setArity(Arity.createArity(" + Arity.fromAnnotation(anno).getValue() + "));");
+                    out.println("        javaMethod.setArity(Arity.createArity(" + Arity.fromAnnotation(anno, actualRequired).getValue() + "));");
                     out.println("        javaMethod.setJavaName(\"" + md.getSimpleName() + "\");");
                     out.println("        javaMethod.setSingleton(" + isStatic + ");");
                     out.println("        javaMethod.setCallConfig(CallConfiguration." + CallConfiguration.getCallConfigByAnno(anno).name() + ");");

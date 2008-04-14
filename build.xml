@@ -142,11 +142,13 @@
   </target>
 
   <target name="generate-method-classes" depends="compile">
-    <!-- individual invokers -->
+    <!-- individual invokers for 1.8 -->
+    <echo message="Generating invokers for 1.8"/>
     <java classname="org.jruby.Main" fork="true" failonerror="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.dump_invocations" value="${jruby.classes.dir}"/>
+      <sysproperty key="jruby.native.net.protocol" value="true"/>
       <arg value="-rjava"/>
       <arg value="-rjruby"/>
       <arg value="-rbigdecimal"/>
@@ -159,6 +161,17 @@
       <arg value="-rthread"/>
       <arg value="-rsocket"/>
       <arg value="-rgenerator"/>
+      <arg value="-e '1'"/>
+    </java>
+    
+    <!-- individual invokers for 1.9 -->
+    <echo message="Generating invokers for 1.9"/>
+    <java classname="org.jruby.Main" fork="true" failonerror="true">
+      <classpath refid="build.classpath"/>
+      <classpath path="${jruby.classes.dir}"/>
+      <sysproperty key="jruby.dump_invocations" value="${jruby.classes.dir}"/>
+      <sysproperty key="jruby.compat.version" value="RUBY1_9"/>
+      <arg value="-rfiber"/>
       <arg value="-e '1'"/>
     </java>
     
