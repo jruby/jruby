@@ -69,6 +69,14 @@ public class RubyGlobal {
             super(runtime, valueMap, defaultValue);
         }
 
+        @Override
+        public RubyHash to_hash() {
+            Ruby runtime = getRuntime();
+            RubyHash hash = RubyHash.newHash(runtime);
+            hash.replace(runtime.getCurrentContext(), this);
+            return hash;
+        }
+
         public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
             if (!key.respondsTo("to_str")) {
                 throw getRuntime().newTypeError("can't convert " + key.getMetaClass() + " into String");
