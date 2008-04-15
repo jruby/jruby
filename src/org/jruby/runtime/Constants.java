@@ -31,6 +31,7 @@
 package org.jruby.runtime;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -55,10 +56,24 @@ public final class Constants {
     public static final String REVISION;
 
     static {
+        InputStream stream = null;
         try {
-            properties.load(Constants.class.getResourceAsStream("/jruby.properties"));
+            String resourceName = "/jruby.properties";
+            stream = Constants.class.getResourceAsStream(resourceName);
+            if (stream == null) {
+                throw new RuntimeException("Resource not found: " + resourceName);
+            }
+            properties.load(stream);
         } catch (IOException ioe) {
             ioe.printStackTrace();
+        } finally {
+            if (stream != null) {
+                try {
+                    stream.close();
+                } catch (IOException e) {
+                    // silently ignore
+                }
+            }
         }
         
         RUBY_MAJOR_VERSION = properties.getProperty("version.ruby.major");
