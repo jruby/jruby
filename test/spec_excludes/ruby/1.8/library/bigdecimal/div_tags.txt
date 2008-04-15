@@ -1,0 +1,5 @@
+fails(JRUBY-2378):BigDecimal#div returns a / b with optional precision
+fails(JRUBY-2378):BigDecimal#div returns NaN if NaN is involved
+fails(JRUBY-2378):BigDecimal#div returns 0 if divided by Infinity with given precision
+fails(JRUBY-2378):BigDecimal#div returns NaN if (+|-) Infinity divided by 1 and no precision given
+fails(JRUBY-2378):BigDecimal#div returns (+|-)Infinity if (+|-)Infinity by 1 and precision given

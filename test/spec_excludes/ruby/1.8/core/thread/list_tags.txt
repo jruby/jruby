@@ -1,0 +1,1 @@
+fails(JRUBY-2380):Thread::list includes waiting threads

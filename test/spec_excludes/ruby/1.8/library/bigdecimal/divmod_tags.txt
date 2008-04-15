@@ -1,0 +1,3 @@
+fails(JRUBY-2378):BigDecimal#divmod divides value, returns an array
+fails(JRUBY-2378):BigDecimal#divmod array contains quotient and modulus as BigDecimal
+fails(JRUBY-2378):BigDecimal#divmod Can be reversed with * and +

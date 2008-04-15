@@ -1,0 +1,3 @@
+fails(JRUBY-2378):BigDecimal#quo returns NaN if NaN is involved
+fails(JRUBY-2378):BigDecimal#quo returns 0 if divided by Infinity
+fails(JRUBY-2378):BigDecimal#quo returns (+|-) Infinity if (+|-) Infinity divided by one
