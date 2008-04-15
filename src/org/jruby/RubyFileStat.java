@@ -364,7 +364,7 @@ public class RubyFileStat extends RubyObject {
 
     @JRubyMethod(name = "symlink?")
     public IRubyObject symlink_p() {
-        return getRuntime().newBoolean(getRuntime().getPosix().lstat(file.getAbsolutePath()).isSymlink());
+        return getRuntime().newBoolean(stat.isSymlink());
     }
 
     @JRubyMethod(name = "writable?")
