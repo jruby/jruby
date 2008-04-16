@@ -65,6 +65,14 @@ namespace :spec do
   task :all do
     ant "spec-all"
   end
+
+  require 'spec/rake/spectask'
+  desc "Runs Java Integration Specs"
+  Spec::Rake::SpecTask.new("ji" => "build/jruby-test-classes.jar") do |t|
+    t.spec_opts ||= []
+    t.spec_opts << "--options" << "test/spec/java_integration/spec.opts"
+    t.spec_files = FileList['test/spec/java_integration/**/*_spec.rb']
+  end
 end
 
 desc "Clean all built output"
@@ -86,12 +94,4 @@ task :gen do
   system 'apt -nocompile -cp lib/jruby.jar:build_lib/asm-3.0.jar:build_lib/asm-util-3.0.jar -factory org.jruby.anno.AnnotationBinder src/org/jruby/*.java'
   system 'javac -cp lib/jruby.jar src_gen/*.java'
   system 'jar -uf lib/jruby.jar -C src_gen .'
-end
-
-require 'spec/rake/spectask'
-desc "Runs Java Integration Specs"
-Spec::Rake::SpecTask.new("jispec" => "build/jruby-test-classes.jar") do |t|
-  t.spec_opts ||= []
-  t.spec_opts << "--options" << "test/spec/java_integration/spec.opts"
-  t.spec_files = FileList['test/spec/java_integration/**/*_spec.rb']
 end
