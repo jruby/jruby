@@ -111,7 +111,7 @@ public class NetProtocolBufferedIO {
                 int n = selector.select(timeout);
 
                 if(n > 0) {
-                    IRubyObject readItems = io.read(new IRubyObject[]{recv.getRuntime().newFixnum(8196)});
+                    IRubyObject readItems = io.read(new IRubyObject[]{recv.getRuntime().newFixnum(1024*16)});
                     return buf.concat(readItems);
                 } else {
                     RubyClass exc = (RubyClass)(recv.getRuntime().getModule("Timeout").getConstant("Error"));
