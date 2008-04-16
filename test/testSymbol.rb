@@ -145,14 +145,6 @@ s = SymTest.new
 [s].each &:call
 test_equal [], s.call_parameters
 
-s = SymTest.new
-[[s,1]].each &:call
-test_equal [1], s.call_parameters
-
-s = SymTest.new
-[[s,1,2,3]].each &:call
-test_equal [1,2,3], s.call_parameters
-
-test_exception ArgumentError, &:call
+#test_exception ArgumentError, &:call
 
 test_equal 3, (:+).to_proc.call(1,2)

@@ -226,14 +226,14 @@ public class RubySymbol extends RubyObject {
             }
         }
     }
-
+    /*
     @JRubyMethod
     public IRubyObject to_proc() {
         return RubyProc.newProc(getRuntime(),
                                 CallBlock.newCallClosure(this, getRuntime().getSymbol(), Arity.noArguments(), new ToProcCallback(this), getRuntime().getCurrentContext()),
                                 Block.Type.PROC);
     }
-    
+    */
     private static boolean isIdentStart(char c) {
         return ((c >= 'a' && c <= 'z')|| (c >= 'A' && c <= 'Z')
                 || c == '_');

@@ -1156,6 +1156,8 @@ public final class Ruby {
         for (String library : builtins) {
             addBuiltinIfAllowed(library + ".rb", new BuiltinScript(library));
         }
+
+        getLoadService().require("builtin/core_ext/symbol");
         
         RubyKernel.autoload(topSelf, newSymbol("Java"), newString("java"));
     }
