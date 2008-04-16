@@ -388,32 +388,24 @@ e.printStackTrace();
 
     private Library findLibrary(String file, boolean checkCWD) {
         if (builtinLibraries.containsKey(file)) return builtinLibraries.get(file);
-        
-        LoadServiceResource resource = findFile(file, checkCWD);
+        return createLibrary(file, findFile(file, checkCWD));
+    }
+
+    private Library findLibraryWithClassloaders(String file) {
+        return createLibrary(file, findFileInClasspath(file));
+    }
+
+    private Library createLibrary(String file, LoadServiceResource resource) {
         if (resource == null) {
             return null;
         }
-
         if (file.endsWith(".jar")) {
             return new JarredScript(resource);
         } else if (file.endsWith(".class")) {
             return new JavaCompiledScript(resource);
         } else {
             return new ExternalScript(resource, file);
-        }
-    }
-
-    private Library findLibraryWithClassloaders(String file) {
-        LoadServiceResource resource = findFileInClasspath(file);
-        if (resource == null) {
-            return null;
-        }
-
-        if (file.endsWith(".jar")) {
-            return new JarredScript(resource);
-        } else {
-            return new ExternalScript(resource, file);
-        }
+        }      
     }
 
     /**

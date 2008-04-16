@@ -3,7 +3,6 @@ require "fileutils"
 
 # Necessary because of http://jira.codehaus.org/browse/JRUBY-1579
 require "jruby"
-JRuby.runtime.instance_config.run_ruby_in_process = false
 
 class LoadCompiledRubyClassFromClasspathTest < Test::Unit::TestCase
   RubyName = "runner"
@@ -21,11 +20,14 @@ class LoadCompiledRubyClassFromClasspathTest < Test::Unit::TestCase
 
     # This line means we assume the test is running from the jruby root directory
     @jruby_home = Dir.pwd
+    @in_process = JRuby.runtime.instance_config.run_ruby_in_process
+    JRuby.runtime.instance_config.run_ruby_in_process = false
   end
 
   def teardown
     remove_test_artifacts
     ENV["CLASSPATH"] = @original_classpath
+    JRuby.runtime.instance_config.run_ruby_in_process = @in_process
   end
 
   def test_loading_compiled_ruby_class_from_classpath

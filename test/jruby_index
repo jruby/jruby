@@ -71,3 +71,4 @@ test_system_error
 test_base64_strangeness
 test_loading_builtin_libraries
 test_rewriter
+test_load_compiled_ruby_class_from_classpath
