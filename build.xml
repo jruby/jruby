@@ -133,8 +133,16 @@
     <javac destdir="${jruby.classes.dir}" debug="true" source="${javac.version}" target="${javac.version}" deprecation="true" encoding="UTF-8">
        <classpath refid="build.classpath"/>
        <src path="${src.dir}"/>
-       <patternset refid="java.src.pattern"/>
+       <include name="org/jruby/anno/AnnotationBinder.java"/>
     </javac>
+    
+    <!-- Generate binding logic ahead of time -->
+    <apt factory="org.jruby.anno.AnnotationBinder" destdir="${jruby.classes.dir}" debug="true" source="${javac.version}" target="${javac.version}" deprecation="true" encoding="UTF-8">
+      <classpath refid="build.classpath"/>
+      <classpath path="${jruby.classes.dir}"/>
+      <src path="${src.dir}"/>
+      <patternset refid="java.src.pattern"/>
+    </apt>
   </target>
 
   <target name="compile" depends="compile-jruby"
@@ -144,7 +152,7 @@
   <target name="generate-method-classes" depends="compile">
     <!-- individual invokers for 1.8 -->
     <echo message="Generating invokers for 1.8"/>
-    <java classname="org.jruby.Main" fork="true" failonerror="true">
+    <java classname="org.jruby.Main" fork="false" failonerror="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.dump_invocations" value="${jruby.classes.dir}"/>
@@ -161,12 +169,13 @@
       <arg value="-rthread"/>
       <arg value="-rsocket"/>
       <arg value="-rgenerator"/>
+      <arg value="-rnet/protocol"/>
       <arg value="-e '1'"/>
     </java>
     
     <!-- individual invokers for 1.9 -->
     <echo message="Generating invokers for 1.9"/>
-    <java classname="org.jruby.Main" fork="true" failonerror="true">
+    <java classname="org.jruby.Main" fork="false" failonerror="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.dump_invocations" value="${jruby.classes.dir}"/>
@@ -174,15 +183,6 @@
       <arg value="-rfiber"/>
       <arg value="-e '1'"/>
     </java>
-    
-    <!-- Generate binding logic ahead of time -->
-    <apt factory="org.jruby.anno.AnnotationBinder" fork="true" destdir="src_gen" compile="off">
-      <compilerarg value="-nocompile"/>
-      <classpath refid="build.classpath"/>
-      <classpath path="${jruby.classes.dir}"/>
-      <src path="${src.dir}"/>
-      <patternset refid="java.src.pattern"/>
-    </apt>
     
     <javac destdir="${jruby.classes.dir}" debug="true" source="${javac.version}" target="${javac.version}" deprecation="true" encoding="UTF-8">
        <classpath refid="build.classpath"/>
