@@ -118,4 +118,14 @@ public class CodegenUtils {
         classes[0] = cls1;
         return classes;
     }
+    
+    public static String getAnnotatedBindingClassName(String javaMethodName, String typeName, boolean isStatic, int required, int optional, boolean multi) {
+        String commonClassSuffix;
+        if (multi) {
+            commonClassSuffix = "Invoker$" + javaMethodName + (isStatic ? "_s" : "" ) + "_method_multi";
+        } else {
+            commonClassSuffix = "Invoker$" + javaMethodName + (isStatic ? "_s" : "" ) + "_method_" + required + "_" + optional;
+        }
+        return typeName + commonClassSuffix;
+    }
 }

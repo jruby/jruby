@@ -94,6 +94,7 @@ import org.jruby.runtime.MethodIndex;
  */
 @JRubyClass(name="Module")
 public class RubyModule extends RubyObject {
+    private static final boolean DEBUG = false;
     
     public static RubyClass createModuleClass(Ruby runtime, RubyClass moduleClass) {
         moduleClass.index = ClassIndex.MODULE;
@@ -519,10 +520,15 @@ public class RubyModule extends RubyObject {
         String x = clazz.getSimpleName();
         int a = 1 + 1;
         try {
-            Class populatorClass = Class.forName(clazz.getSimpleName() + "Populator");
+            String qualifiedName = clazz.getCanonicalName().replace('.', '$');
+            
+            if (DEBUG) System.out.println("looking for " + qualifiedName + "$Populator");
+            
+            Class populatorClass = Class.forName(qualifiedName + "$Populator");
             TypePopulator populator = (TypePopulator)populatorClass.newInstance();
             populator.populate(this);
         } catch (Throwable t) {
+            if (DEBUG) System.out.println("Could not find it!");
             // fallback on non-pregenerated logic
             Method[] declaredMethods = clazz.getDeclaredMethods();
             MethodFactory methodFactory = MethodFactory.createFactory(getRuntime().getJRubyClassLoader());

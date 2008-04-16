@@ -54,9 +54,11 @@ import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.CodegenUtils;
 import static org.jruby.util.CodegenUtils.*;
 import static java.lang.System.*;
 import org.jruby.util.JRubyClassLoader;
+import org.jruby.util.JavaNameMangler;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.util.CheckClassAdapter;
@@ -277,16 +279,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             }
         }
     }
-    
-    public static String getAnnotatedBindingClassName(String javaMethodName, String typeName, boolean isStatic, int required, int optional, boolean multi) {
-        String commonClassSuffix;
-        if (multi) {
-            commonClassSuffix = "Invoker$" + javaMethodName + (isStatic ? "_s" : "" ) + "_method_multi";
-        } else {
-            commonClassSuffix = "Invoker$" + javaMethodName + (isStatic ? "_s" : "" ) + "_method_" + required + "_" + optional;
-        }
-        return typeName + commonClassSuffix;
-    }
 
     /**
      * Use code generation to provide a method handle based on an annotated Java
@@ -301,7 +293,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         
         if (DEBUG) out.println("Binding multiple: " + type.getName() + "." + javaMethodName);
         
-        String generatedClassName = getAnnotatedBindingClassName(javaMethodName, type.getName(), desc1.isStatic, desc1.actualRequired, desc1.optional, true);
+        String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, type.getName(), desc1.isStatic, desc1.actualRequired, desc1.optional, true);
         String generatedClassPath = generatedClassName.replace('.', '/');
         
         synchronized (classLoader) {
@@ -451,7 +443,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         Class type = desc.declaringClass;
         String javaMethodName = desc.name;
         
-        String generatedClassName = getAnnotatedBindingClassName(javaMethodName, type.getName(), desc.isStatic, desc.actualRequired, desc.optional, false);
+        String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, type.getName(), desc.isStatic, desc.actualRequired, desc.optional, false);
         String generatedClassPath = generatedClassName.replace('.', '/');
         
         synchronized (classLoader) {

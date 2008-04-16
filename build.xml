@@ -98,7 +98,7 @@
   </target>
 
   <!-- Builds the Ant tasks that we need later on in the build -->
-  <target name="compile.tasks" depends="prepare">
+  <target name="compile-tasks" depends="prepare">
     <copy todir="${jruby.classes.dir}">
         <fileset dir="${src.dir}">
             <include name="**/*.rb"/>
@@ -127,15 +127,19 @@
     </copy>
   </target>
 
-  <target name="compile-jruby" depends="compile.tasks, check-for-optional-packages">
+  <target name="compile-annotation-binder" depends="compile.tasks, check-for-optional-packages">
     <mkdir dir="${basedir}/src_gen"/>
-    
-    <javac destdir="${jruby.classes.dir}" debug="true" source="${javac.version}" target="${javac.version}" deprecation="true" encoding="UTF-8">
-       <classpath refid="build.classpath"/>
-       <src path="${src.dir}"/>
-       <include name="org/jruby/anno/AnnotationBinder.java"/>
+        
+    <javac destdir="${jruby.classes.dir}" debug="true" srcdir="${src.dir}" sourcepath="" classpathref="build.classpath" source="${javac.version}" target="${javac.version}" deprecation="true" encoding="UTF-8">
+        <include name="org/jruby/anno/AnnotationBinder.java"/>
+        <include name="org/jruby/anno/JRubyMethod.java"/>
+        <include name="org/jruby/CompatVersion.java"/>
+        <include name="org/jruby/runtime/Visibility.java"/>
+        <include name="org/jruby/util/CodegenUtils.java"/>
     </javac>
-    
+  </target>
+
+  <target name="compile-jruby" depends="compile-tasks, compile-annotation-binder, check-for-optional-packages">
     <!-- Generate binding logic ahead of time -->
     <apt factory="org.jruby.anno.AnnotationBinder" destdir="${jruby.classes.dir}" debug="true" source="${javac.version}" target="${javac.version}" deprecation="true" encoding="UTF-8">
       <classpath refid="build.classpath"/>
@@ -170,6 +174,12 @@
       <arg value="-rsocket"/>
       <arg value="-rgenerator"/>
       <arg value="-rnet/protocol"/>
+      <arg value="-rreadline"/>
+      <arg value="-retc"/>
+      <arg value="-renumerator"/>
+      <arg value="-rjruby/ext"/>
+      <arg value="-rnkf"/>
+      <arg value="-rio/wait"/>
       <arg value="-e '1'"/>
     </java>
     
