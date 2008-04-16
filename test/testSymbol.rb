@@ -154,3 +154,5 @@ s = SymTest.new
 test_equal [1,2,3], s.call_parameters
 
 test_exception ArgumentError, &:call
+
+test_equal 3, (:+).to_proc.call(1,2)

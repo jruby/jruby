@@ -205,17 +205,24 @@ public class RubySymbol extends RubyObject {
 
         public IRubyObject call(ThreadContext ctx, IRubyObject[] args, Block blk) {
             IRubyObject[] currentArgs = args;
-            if(currentArgs.length == 0) {
-                throw symbol.getRuntime().newArgumentError("no receiver given");
+            switch(currentArgs.length) {
+            case 0: throw symbol.getRuntime().newArgumentError("no receiver given");
+            case 1: {
+                if((currentArgs[0] instanceof RubyArray) && ((RubyArray)currentArgs[0]).getLength() != 0) {
+                    // This is needed to unpack stuff
+                    currentArgs = ((RubyArray)currentArgs[0]).toJavaArrayMaybeUnsafe();
+                    IRubyObject[] args2 = new IRubyObject[currentArgs.length-1];
+                    System.arraycopy(currentArgs, 1, args2, 0, args2.length);
+                    return currentArgs[0].callMethod(ctx, symbol.symbol, args2, Block.NULL_BLOCK);
+                } else {
+                    return currentArgs[0].callMethod(ctx, symbol.symbol, new IRubyObject[0], Block.NULL_BLOCK);
+                }
             }
-            if((currentArgs[0] instanceof RubyArray) && ((RubyArray)currentArgs[0]).getLength() != 0) {
-                // This is needed to unpack stuff
-                currentArgs = ((RubyArray)currentArgs[0]).toJavaArrayMaybeUnsafe();
+            default: {
                 IRubyObject[] args2 = new IRubyObject[currentArgs.length-1];
                 System.arraycopy(currentArgs, 1, args2, 0, args2.length);
                 return currentArgs[0].callMethod(ctx, symbol.symbol, args2, Block.NULL_BLOCK);
-            } else {
-                return currentArgs[0].callMethod(ctx, symbol.symbol, new IRubyObject[0], Block.NULL_BLOCK);
+            }
             }
         }
     }
