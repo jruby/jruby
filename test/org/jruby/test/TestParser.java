@@ -12,7 +12,7 @@ public class TestParser extends TestRubyBase {
     
     public void testWarningLineNumber() throws Exception {
         String out;
-        String script = "p String.new 'str'";
+        String script = "$stdout.puts ('str')";
         out = eval(script);
         assertTrue(out.indexOf("test:1") != -1);
     }
