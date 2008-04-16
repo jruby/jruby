@@ -127,7 +127,7 @@
     </copy>
   </target>
 
-  <target name="compile-annotation-binder" depends="compile.tasks, check-for-optional-packages">
+  <target name="compile-annotation-binder">
     <mkdir dir="${basedir}/src_gen"/>
         
     <javac destdir="${jruby.classes.dir}" debug="true" srcdir="${src.dir}" sourcepath="" classpathref="build.classpath" source="${javac.version}" target="${javac.version}" deprecation="true" encoding="UTF-8">
