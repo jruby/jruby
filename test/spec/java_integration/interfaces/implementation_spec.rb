@@ -15,7 +15,7 @@ describe "Single-method Java interfaces implemented in Ruby" do
   end
   
   it "should be kind_of? the interface" do
-    ValueHolder.new(1).kind_of?(SingleMethodInterface).should == true
+    ValueHolder.new(1).should be_kind_of(SingleMethodInterface)
     SingleMethodInterface.should === ValueHolder.new(1)
   end
 
@@ -36,7 +36,7 @@ describe "Single-method Java interfaces" do
   
   it "should be implementable with .impl" do
     impl = SingleMethodInterface.impl {|name| name}
-    impl.kind_of?(SingleMethodInterface).should == true
+    impl.should be_kind_of(SingleMethodInterface)
     SingleMethodInterface.should === impl
     
     UsesSingleMethodInterface.callIt(impl).should == :callIt
