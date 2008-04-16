@@ -132,3 +132,25 @@ test_equal(:"abc#{7 + 8 + 9}#{1 + 2 + 3}".inspect, ":abc246")
 
 #Creating a singleton from Symbol should yield: "TypeError: no virtual class for Symbol"
 test_exception(TypeError) { class << :abc ; end }
+           
+test_ok Symbol.instance_methods.include?('to_proc')
+class SymTest
+  attr_accessor :call_parameters
+  def call(*args)
+    self.call_parameters = args
+  end
+end
+
+s = SymTest.new
+[s].each &:call
+test_equal [], s.call_parameters
+
+s = SymTest.new
+[[s,1]].each &:call
+test_equal [1], s.call_parameters
+
+s = SymTest.new
+[[s,1,2,3]].each &:call
+test_equal [1,2,3], s.call_parameters
+
+test_exception ArgumentError, &:call

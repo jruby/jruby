@@ -44,8 +44,14 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.CallBlock;
+import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.UnmarshalStream;
+
+
 
 /**
  * Represents a Ruby symbol (e.g. :bar)
@@ -189,6 +195,36 @@ public class RubySymbol extends RubyObject {
 
     public IRubyObject taint() {
         return this;
+    }
+
+    private static class ToProcCallback implements BlockCallback {
+        private RubySymbol symbol;
+        public ToProcCallback(RubySymbol symbol) {
+            this.symbol = symbol;
+        }
+
+        public IRubyObject call(ThreadContext ctx, IRubyObject[] args, Block blk) {
+            IRubyObject[] currentArgs = args;
+            if(currentArgs.length == 0) {
+                throw symbol.getRuntime().newArgumentError("no receiver given");
+            }
+            if((currentArgs[0] instanceof RubyArray) && ((RubyArray)currentArgs[0]).getLength() != 0) {
+                // This is needed to unpack stuff
+                currentArgs = ((RubyArray)currentArgs[0]).toJavaArrayMaybeUnsafe();
+                IRubyObject[] args2 = new IRubyObject[currentArgs.length-1];
+                System.arraycopy(currentArgs, 1, args2, 0, args2.length);
+                return currentArgs[0].callMethod(ctx, symbol.symbol, args2, Block.NULL_BLOCK);
+            } else {
+                return currentArgs[0].callMethod(ctx, symbol.symbol, new IRubyObject[0], Block.NULL_BLOCK);
+            }
+        }
+    }
+
+    @JRubyMethod
+    public IRubyObject to_proc() {
+        return RubyProc.newProc(getRuntime(),
+                                CallBlock.newCallClosure(this, getRuntime().getSymbol(), Arity.noArguments(), new ToProcCallback(this), getRuntime().getCurrentContext()),
+                                Block.Type.PROC);
     }
     
     private static boolean isIdentStart(char c) {
