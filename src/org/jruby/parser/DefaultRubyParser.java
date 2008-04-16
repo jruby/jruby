@@ -1843,7 +1843,6 @@ case 216:
 case 218:
 					// line 838 "DefaultRubyParser.y"
   {
-                  warnings.warn(ID.PARENTHISE_ARGUMENTS, getPosition(((Node)yyVals[-1+yyTop])), "parenthesize argument(s) for future version");
                   yyVal = new ArrayNode(getPosition(((Node)yyVals[-1+yyTop])), ((Node)yyVals[-1+yyTop]));
               }
   break;
@@ -1889,21 +1888,18 @@ case 224:
 case 225:
 					// line 864 "DefaultRubyParser.y"
   {
-                  warnings.warn(ID.PARENTHISE_ARGUMENTS, getPosition(((Token)yyVals[-3+yyTop])), "parenthesize argument(s) for future version");
                   yyVal = new ArrayNode(getPosition(((Token)yyVals[-3+yyTop])), ((Node)yyVals[-2+yyTop]));
               }
   break;
 case 226:
 					// line 868 "DefaultRubyParser.y"
   {
-                  warnings.warn(ID.PARENTHISE_ARGUMENTS, getPosition(((Token)yyVals[-5+yyTop])), "parenthesize argument(s) for future version");
                   yyVal = ((ListNode)yyVals[-4+yyTop]).add(((Node)yyVals[-2+yyTop]));
               }
   break;
 case 229:
 					// line 876 "DefaultRubyParser.y"
   {
-                  warnings.warn(ID.PARENTHISE_ARGUMENTS, ((Node)yyVals[0+yyTop]).getPosition(), "parenthesize argument(s) for future version");
                   yyVal = new ArrayNode(getPosition(((Node)yyVals[0+yyTop])), ((Node)yyVals[0+yyTop]));
               }
   break;

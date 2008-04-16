@@ -607,7 +607,6 @@ arg_value     : arg /*{
 
 aref_args     : none
               | command opt_nl /*{
-                  warnings.warn(getPosition($1), "parenthesize argument(s) for future version");
                   $$ = new ArrayNode(getPosition($1), $1);
               }*/
               | args trailer /*{
@@ -634,11 +633,9 @@ paren_args    : LPAREN2 none RPAREN /*{
                   $<Node>$.setPosition(support.union($1, $4));
               }*/
               | LPAREN2 block_call opt_nl RPAREN /*{
-                  warnings.warn(getPosition($1), "parenthesize argument(s) for future version");
                   $$ = new ArrayNode(getPosition($1), $2);
               }*/
               | LPAREN2 args ',' block_call opt_nl RPAREN /*{
-                  warnings.warn(getPosition($1), "parenthesize argument(s) for future version");
                   $$ = $2.add($4);
               }*/
     ;
@@ -648,7 +645,6 @@ opt_paren_args: none | paren_args
 
 // Node:call_args - Arguments for a function call
 call_args     : command /*{
-                  warnings.warn($1.getPosition(), "parenthesize argument(s) for future version");
                   $$ = new ArrayNode(getPosition($1), $1);
               }*/
               | args opt_block_arg /*{
