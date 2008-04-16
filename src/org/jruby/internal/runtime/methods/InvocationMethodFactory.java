@@ -58,7 +58,6 @@ import org.jruby.util.CodegenUtils;
 import static org.jruby.util.CodegenUtils.*;
 import static java.lang.System.*;
 import org.jruby.util.JRubyClassLoader;
-import org.jruby.util.JavaNameMangler;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.util.CheckClassAdapter;
@@ -288,12 +287,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      */
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, List<JavaMethodDescriptor> descs) {
         JavaMethodDescriptor desc1 = descs.get(0);
-        Class type = desc1.declaringClass;
         String javaMethodName = desc1.name;
         
-        if (DEBUG) out.println("Binding multiple: " + type.getName() + "." + javaMethodName);
+        if (DEBUG) out.println("Binding multiple: " + desc1.declaringClassName + "." + javaMethodName);
         
-        String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, type.getName(), desc1.isStatic, desc1.actualRequired, desc1.optional, true);
+        String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, desc1.declaringClassName, desc1.isStatic, desc1.actualRequired, desc1.optional, true);
         String generatedClassPath = generatedClassName.replace('.', '/');
         
         synchronized (classLoader) {
@@ -393,16 +391,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                             }
                         }
 
-                        boolean hasBlock;
-                        if (desc.parameters.length == 0) {
-                            hasBlock = false;
-                        } else {
-                            if (desc.parameters[desc.parameters.length - 1] == Block.class) {
-                                hasBlock = true;
-                            } else {
-                                hasBlock = false;
-                            }
-                        }
+                        boolean hasBlock = desc.hasBlock;
                         SkinnyMethodAdapter mv = null;
 
                         mv = beginMethod(cw, "call", specificArity, hasBlock);
@@ -422,7 +411,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                 ic.setArity(Arity.OPTIONAL);
                 ic.setJavaName(javaMethodName);
-                ic.setArgumentTypes(desc1.parameters);
                 ic.setSingleton(desc1.isStatic);
                 ic.setCallConfig(CallConfiguration.getCallConfig(frame, scope, backtrace));
                 return ic;
@@ -440,10 +428,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      * @see org.jruby.internal.runtime.methods.MethodFactory#getAnnotatedMethod
      */
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc) {
-        Class type = desc.declaringClass;
         String javaMethodName = desc.name;
         
-        String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, type.getName(), desc.isStatic, desc.actualRequired, desc.optional, false);
+        String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, desc.declaringClassName, desc.isStatic, desc.actualRequired, desc.optional, false);
         String generatedClassPath = generatedClassName.replace('.', '/');
         
         synchronized (classLoader) {
@@ -464,16 +451,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                         }
                     }
 
-                    boolean block;
-                    if (desc.parameters.length == 0) {
-                        block = false;
-                    } else {
-                        if (desc.parameters[desc.parameters.length - 1] == Block.class) {
-                            block = true;
-                        } else {
-                            block = false;
-                        }
-                    }
+                    boolean block = desc.hasBlock;
 
                     String superClass = p(selectSuperClass(specificArity, block));
 
@@ -494,9 +472,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                 JavaMethod ic = (JavaMethod)c.getConstructor(new Class[]{RubyModule.class, Visibility.class}).newInstance(new Object[]{implementationClass, desc.anno.visibility()});
 
-                ic.setArity(Arity.fromAnnotation(desc.anno, desc.parameters, desc.isStatic));
+                ic.setArity(Arity.fromAnnotation(desc.anno, desc.actualRequired));
                 ic.setJavaName(javaMethodName);
-                ic.setArgumentTypes(desc.parameters);
                 ic.setSingleton(desc.isStatic);
                 ic.setCallConfig(CallConfiguration.getCallConfigByAnno(desc.anno));
                 return ic;
@@ -516,9 +493,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     public void prepareAnnotatedMethod(RubyModule implementationClass, JavaMethod javaMethod, JavaMethodDescriptor desc) {
         String javaMethodName = desc.name;
         
-        javaMethod.setArity(Arity.fromAnnotation(desc.anno, desc.parameters, desc.isStatic));
+        javaMethod.setArity(Arity.fromAnnotation(desc.anno, desc.actualRequired));
         javaMethod.setJavaName(javaMethodName);
-        javaMethod.setArgumentTypes(desc.parameters);
         javaMethod.setSingleton(desc.isStatic);
         javaMethod.setCallConfig(CallConfiguration.getCallConfigByAnno(desc.anno));
     }
@@ -624,7 +600,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                     ic.setArity(Arity.fromAnnotation(jrubyMethod));
                     ic.setJavaName(method.getName());
-                    ic.setArgumentTypes(method.getParameterTypes());
                     ic.setSingleton(Modifier.isStatic(method.getModifiers()));
                     ic.setCallConfig(CallConfiguration.getCallConfigByAnno(jrubyMethod));
 
@@ -922,7 +897,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     private void loadReceiver(String typePath, JavaMethodDescriptor desc, SkinnyMethodAdapter mv) {
         // load target for invocations
         if (Modifier.isStatic(desc.modifiers)) {
-            if (desc.parameters.length > 1 && desc.parameters[0] == ThreadContext.class) {
+            if (desc.hasContext) {
                 mv.aload(THREADCONTEXT_INDEX);
             }
             
@@ -933,7 +908,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             mv.aload(RECEIVER_INDEX);
             mv.checkcast(typePath);
             
-            if (desc.parameters.length > 0 && desc.parameters[0] == ThreadContext.class) {
+            if (desc.hasContext) {
                 mv.aload(THREADCONTEXT_INDEX);
             }
         }
@@ -1077,9 +1052,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     }
 
     private void createAnnotatedMethodInvocation(JavaMethodDescriptor desc, SkinnyMethodAdapter method, String superClass, int specificArity, boolean block) {
-        String typePath = p(desc.declaringClass);
+        String typePath = desc.declaringClassPath;
         String javaMethodName = desc.name;
-        Class ret = desc.returnType;
 
         checkArity(desc.anno, method, specificArity);
         
@@ -1112,10 +1086,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
             if (Modifier.isStatic(desc.modifiers)) {
                 // static invocation
-                method.invokestatic(typePath, javaMethodName, sig(ret, desc.parameters));
+                method.invokestatic(typePath, javaMethodName, desc.signature);
             } else {
                 // virtual invocation
-                method.invokevirtual(typePath, javaMethodName, sig(ret, desc.parameters));
+                method.invokevirtual(typePath, javaMethodName, desc.signature);
             }
         }
                 

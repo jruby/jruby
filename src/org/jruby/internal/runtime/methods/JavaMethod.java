@@ -448,10 +448,12 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         return arity;
     }
     
+    @Deprecated
     public void setArgumentTypes(Class[] argumentTypes) {
         this.argumentTypes = argumentTypes;
     }
     
+    @Deprecated
     public Class[] getArgumentTypes() {
         return argumentTypes;   
     }

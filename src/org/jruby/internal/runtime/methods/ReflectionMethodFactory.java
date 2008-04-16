@@ -74,11 +74,10 @@ public class ReflectionMethodFactory extends MethodFactory {
      */
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc) {
         try {
-            Method method = desc.declaringClass.getDeclaredMethod(desc.name, desc.parameters);
+            Method method = desc.getDeclaringClass().getDeclaredMethod(desc.name, desc.getParameterClasses());
             JavaMethod ic = new ReflectedJavaMethod(implementationClass, method, desc.anno);
 
             ic.setJavaName(method.getName());
-            ic.setArgumentTypes(method.getParameterTypes());
             ic.setSingleton(Modifier.isStatic(method.getModifiers()));
             ic.setCallConfig(CallConfiguration.getCallConfigByAnno(desc.anno));
             return ic;
@@ -99,7 +98,7 @@ public class ReflectionMethodFactory extends MethodFactory {
             List<JRubyMethod> annotations = new ArrayList();
             
             for (JavaMethodDescriptor desc: descs) {
-                methods.add(desc.declaringClass.getDeclaredMethod(desc.name, desc.parameters));
+                methods.add(desc.getDeclaringClass().getDeclaredMethod(desc.name, desc.getParameterClasses()));
                 annotations.add(desc.anno);
             }
             Method method0 = methods.get(0);
@@ -108,7 +107,6 @@ public class ReflectionMethodFactory extends MethodFactory {
             JavaMethod ic = new ReflectedJavaMultiMethod(implementationClass, methods, annotations);
 
             ic.setJavaName(method0.getName());
-            ic.setArgumentTypes(method0.getParameterTypes());
             ic.setSingleton(Modifier.isStatic(method0.getModifiers()));
             ic.setCallConfig(CallConfiguration.getCallConfigByAnno(anno0));
             return ic;

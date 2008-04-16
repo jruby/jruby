@@ -7,6 +7,7 @@ package org.jruby.anno;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import org.jruby.util.CodegenUtils;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 
@@ -23,20 +24,23 @@ public class JavaMethodDescriptor {
     public final int required;
     public final int optional;
     public final boolean rest;
-    public final Class[] parameters;
+    private final Class[] parameters;
     public final JRubyMethod anno;
     public final int modifiers;
-    public final Class declaringClass;
+    private final Class declaringClass;
+    public final String declaringClassName;
+    public final String declaringClassPath;
     public final String name;
-    public final Class returnType;
+    public final String signature;
     
     public JavaMethodDescriptor(Method method) {
         anno = method.getAnnotation(JRubyMethod.class);
         
         modifiers = method.getModifiers();
         declaringClass = method.getDeclaringClass();
+        declaringClassName = declaringClass.getName();
+        declaringClassPath = CodegenUtils.p(declaringClass);
         name = method.getName();
-        returnType = method.getReturnType();
         isStatic = Modifier.isStatic(modifiers);
         parameters = method.getParameterTypes();
         if (parameters.length > 0) {
@@ -88,5 +92,15 @@ public class JavaMethodDescriptor {
         
         int arityRequired = Math.max(required, actualRequired);
         arity = (optional > 0 || rest) ? -(arityRequired + 1) : arityRequired;
+        
+        signature = CodegenUtils.sig(method.getReturnType(), method.getParameterTypes());
+    }
+    
+    public Class getDeclaringClass() {
+        return declaringClass;
+    }
+    
+    public Class[] getParameterClasses() {
+        return parameters;
     }
 }
