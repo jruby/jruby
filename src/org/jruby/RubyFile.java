@@ -50,6 +50,7 @@ import java.nio.channels.FileLock;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.ast.FixnumNode;
 import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.MethodIndex;
@@ -536,9 +537,16 @@ public class RubyFile extends RubyIO {
 
     @JRubyMethod(required = 2)
     public IRubyObject chown(IRubyObject arg1, IRubyObject arg2) {
-        int owner = (int) arg1.convertToInteger().getLongValue();
-        int group = (int) arg2.convertToInteger().getLongValue();
-        
+        int owner = -1;
+        if (!arg1.isNil()) {
+            owner = RubyNumeric.num2int(arg1);
+        }
+
+        int group = -1;
+        if (!arg2.isNil()) {
+            group = RubyNumeric.num2int(arg2);
+        }
+
         if (!new File(path).exists()) {
             throw getRuntime().newErrnoENOENTError("No such file or directory - " + path);
         }
@@ -567,11 +575,19 @@ public class RubyFile extends RubyIO {
         return getRuntime().newFixnum(getRuntime().getPosix().lchmod(path, mode));
     }
 
+    // TODO: this method is not present in MRI!
     @JRubyMethod(required = 2)
     public IRubyObject lchown(IRubyObject arg1, IRubyObject arg2) {
-        int owner = (int) arg1.convertToInteger().getLongValue();
-        int group = (int) arg2.convertToInteger().getLongValue();
-        
+        int owner = -1;
+        if (!arg1.isNil()) {
+            owner = RubyNumeric.num2int(arg1);
+        }
+
+        int group = -1;
+        if (!arg2.isNil()) {
+            group = RubyNumeric.num2int(arg2);
+        }
+
         if (!new File(path).exists()) {
             throw getRuntime().newErrnoENOENTError("No such file or directory - " + path);
         }
@@ -744,10 +760,17 @@ public class RubyFile extends RubyIO {
     @JRubyMethod(required = 3, rest = true, meta = true)
     public static IRubyObject chown(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
-        
+
         int count = 0;
-        RubyInteger owner = args[0].convertToInteger();
-        RubyInteger group = args[1].convertToInteger();
+        int owner = -1;
+        if (!args[0].isNil()) {
+            owner = RubyNumeric.num2int(args[0]);
+        }
+
+        int group = -1;
+        if (!args[1].isNil()) {
+            group = RubyNumeric.num2int(args[1]);
+        }
         for (int i = 2; i < args.length; i++) {
             IRubyObject filename = args[i];
             
@@ -755,7 +778,7 @@ public class RubyFile extends RubyIO {
                 throw runtime.newErrnoENOENTError("No such file or directory - " + filename);
             }
             
-            boolean result = 0 == runtime.getPosix().chown(filename.toString(), (int)owner.getLongValue(), (int)group.getLongValue());
+            boolean result = 0 == runtime.getPosix().chown(filename.toString(), owner, group);
             if (result) {
                 count++;
             }
@@ -1263,8 +1286,15 @@ public class RubyFile extends RubyIO {
         Ruby runtime = recv.getRuntime();
         
         int count = 0;
-        RubyInteger owner = args[0].convertToInteger();
-        RubyInteger group = args[1].convertToInteger();
+        int owner = -1;
+        if (!args[0].isNil()) {
+            owner = RubyNumeric.num2int(args[0]);
+        }
+
+        int group = -1;
+        if (!args[1].isNil()) {
+            group = RubyNumeric.num2int(args[1]);
+        }
         for (int i = 2; i < args.length; i++) {
             IRubyObject filename = args[i];
             
@@ -1272,7 +1302,7 @@ public class RubyFile extends RubyIO {
                 throw runtime.newErrnoENOENTError("No such file or directory - " + filename);
             }
             
-            boolean result = 0 == runtime.getPosix().lchown(filename.toString(), (int)owner.getLongValue(), (int)group.getLongValue());
+            boolean result = 0 == runtime.getPosix().lchown(filename.toString(), owner, group);
             if (result) {
                 count++;
             }

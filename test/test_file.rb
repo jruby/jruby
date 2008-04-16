@@ -428,6 +428,7 @@ class TestFile < Test::Unit::TestCase
   
   # JRUBY-2357
   def test_truncate_file_in_jar_file
+    jruby_specific_test
     File.open("file:" + File.expand_path("test/test_jar2.jar") + "!/test_value.rb", "r+") do |f|
       assert_raise(Errno::EINVAL) { f.truncate(2) }
     end
@@ -683,6 +684,29 @@ class TestFile < Test::Unit::TestCase
       assert_raise(Errno::EACCES) { File.open(filename, "w") { } }
     ensure
       File.delete(filename)
+    end
+  end
+  
+  # JRUBY-2397
+  unless(WINDOWS)
+    def test_chown_accepts_nil_and_minus_one
+      # chown
+      assert_equal(1, File.chown(-1, -1, 'build.xml'))
+      assert_equal(1, File.chown(nil, nil, 'build.xml'))
+      # lchown
+      assert_equal(1, File.lchown(-1, -1, 'build.xml'))
+      assert_equal(1, File.lchown(nil, nil, 'build.xml'))
+
+      File.open('build.xml') { |file|
+        # chown
+        assert_equal(0, file.chown(-1, -1))
+	assert_equal(0, file.chown(nil, nil))
+        # lchown
+	# NOTE: hmm, it seems that MRI
+	# doesn't have File#lchown method at all!
+        assert_equal(0, file.lchown(-1, -1))
+        assert_equal(0, file.lchown(nil, nil))
+      }
     end
   end
 end
