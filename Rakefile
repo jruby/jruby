@@ -34,6 +34,12 @@ desc "Alias for spec:ci"
 task :spec => "spec:ci"
 
 namespace :test do
+  desc "Compile test code"
+  task :compile do
+    ant "compile-test"
+    system "jar cf build/jruby-test-classes.jar -C build/classes/test ."
+  end
+
   desc "Run the basic set of tests"
   task :short do
     ant "test"
@@ -43,6 +49,10 @@ namespace :test do
   task :all do
     ant "test-all"
   end
+end
+
+file "build/jruby-test-classes.jar" do
+  Rake::Task['test:compile'].invoke
 end
 
 namespace :spec do
@@ -76,4 +86,12 @@ task :gen do
   system 'apt -nocompile -cp lib/jruby.jar:build_lib/asm-3.0.jar:build_lib/asm-util-3.0.jar -factory org.jruby.anno.AnnotationBinder src/org/jruby/*.java'
   system 'javac -cp lib/jruby.jar src_gen/*.java'
   system 'jar -uf lib/jruby.jar -C src_gen .'
+end
+
+require 'spec/rake/spectask'
+desc "Runs Java Integration Specs"
+Spec::Rake::SpecTask.new("jispec" => "build/jruby-test-classes.jar") do |t|
+  t.spec_opts ||= []
+  t.spec_opts << "--options" << "test/spec/java_integration/spec.opts"
+  t.spec_files = FileList['test/spec/java_integration/**/*_spec.rb']
 end
