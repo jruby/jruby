@@ -28,18 +28,15 @@
 package org.jruby;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.jruby.anno.JRubyMethod;
+
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
-import org.jruby.ast.FixnumNode;
-
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
-
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.MethodIndex;
@@ -291,7 +288,9 @@ public class RubyBigDecimal extends RubyNumeric {
         return null;
     }
 
-    private final static Pattern INFINITY_REGEX = Pattern.compile("^\\s*([+-])?Infinity\\s*$");
+    private final static Pattern INFINITY_PATTERN = Pattern.compile("^([+-])?Infinity$");
+    private final static Pattern NUMBER_PATTERN
+            = Pattern.compile("^([+-]?\\d*\\.?\\d*([eE][+-]?)?\\d*).*");
     
     @JRubyMethod(name = "new", required = 1, optional = 1, meta = true)
     public static RubyBigDecimal newInstance(IRubyObject recv, IRubyObject[] args) {
@@ -300,11 +299,12 @@ public class RubyBigDecimal extends RubyNumeric {
             decimal = new BigDecimal(0);
         } else {
             String strValue = args[0].convertToString().toString();
+            strValue = strValue.trim();
             if ("NaN".equals(strValue)) {
                 return newNaN(recv.getRuntime());
             }
-            
-            Matcher m = INFINITY_REGEX.matcher(strValue);
+
+            Matcher m = INFINITY_PATTERN.matcher(strValue);
             if (m.matches()) {
                 int sign = 1;
                 String signGroup = m.group(1);
@@ -313,6 +313,16 @@ public class RubyBigDecimal extends RubyNumeric {
                 }
                 return newInfinity(recv.getRuntime(), sign);
             }
+
+            // Clean-up string representation so that it could be understood
+            // by Java's BigDecimal. Not terribly efficient for now.
+            // 1. MRI allows d and D as exponent separators
+            strValue = strValue.replaceFirst("[dD]", "E");
+            // 2. MRI allows underscores anywhere
+            strValue = strValue.replaceAll("_", "");
+            // 3. MRI ignores the trailing junk
+            strValue = NUMBER_PATTERN.matcher(strValue).replaceFirst("$1");
+
             try {
                 decimal = new BigDecimal(strValue);
             } catch(NumberFormatException e) {
@@ -556,7 +566,19 @@ public class RubyBigDecimal extends RubyNumeric {
             return callCoerced(context, "/",args[0]);
         }
 
-        if (val.isZero() || val.isNaN() || val.isInfinity()) {
+        if (isNaN() || val.isZero() || val.isNaN()) {
+            return newNaN(getRuntime());
+        }
+
+        if (isInfinity() && !val.isInfinity()) {
+            return newInfinity(getRuntime(), infinitySign * val.value.signum());
+        }
+
+        if (!isInfinity() && val.isInfinity()) {
+            return newZero(getRuntime(), value.signum() * val.infinitySign);
+        }
+
+        if (isInfinity() && val.isInfinity()) {
             return newNaN(getRuntime());
         }
 
@@ -580,10 +602,11 @@ public class RubyBigDecimal extends RubyNumeric {
             if (isNaN() | rb.isNaN()) {
                 return getRuntime().getNil();
             }
-            if (infinitySign != rb.infinitySign) {
-                return getRuntime().getFalse();
+            if (infinitySign != 0 || rb.infinitySign != 0) {
+                e = infinitySign - rb.infinitySign;
+            } else {
+                e = value.compareTo(rb.value);
             }
-            e = value.compareTo(rb.value);
         }
         switch(op) {
         case '*': return getRuntime().newFixnum(e);
