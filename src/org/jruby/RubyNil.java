@@ -73,10 +73,6 @@ public class RubyNil extends RubyObject {
     public int getNativeTypeIndex() {
         return ClassIndex.NIL;
     }
-    
-//    public RubyClass getMetaClass() {
-//        return runtime.getNilClass();
-//    }
 
     public boolean isImmediate() {
         return true;

@@ -126,11 +126,10 @@ public class RubyKernel {
         final RubyModule module = recv instanceof RubyModule ? (RubyModule) recv : runtime.getObject();
         String nm = module.getName() + "::" + baseName;
         
-        IRubyObject undef = runtime.getUndef();
         IRubyObject existingValue = module.fastFetchConstant(baseName); 
-        if (existingValue != null && existingValue != undef) return runtime.getNil();
+        if (existingValue != null && existingValue != RubyObject.UNDEF) return runtime.getNil();
         
-        module.fastStoreConstant(baseName, undef);
+        module.fastStoreConstant(baseName, RubyObject.UNDEF);
         
         loadService.addAutoload(nm, new IAutoloadMethod() {
             public String file() {

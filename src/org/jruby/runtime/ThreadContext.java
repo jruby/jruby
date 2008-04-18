@@ -40,6 +40,7 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyObject;
 import org.jruby.RubyKernel.CatchTarget;
 import org.jruby.RubyModule;
 import org.jruby.RubyThread;
@@ -462,13 +463,12 @@ public final class ThreadContext {
     
     public boolean getConstantDefined(String internedName) {
         IRubyObject result;
-        IRubyObject undef = runtime.getUndef();
         
         // flipped from while to do to search current class first
         for (StaticScope scope = getCurrentScope().getStaticScope(); scope != null; scope = scope.getPreviousCRefScope()) {
             RubyModule module = scope.getModule();
             if ((result = module.fastFetchConstant(internedName)) != null) {
-                if (result != undef) return true;
+                if (result != RubyObject.UNDEF) return true;
                 return runtime.getLoadService().autoloadFor(module.getName() + "::" + internedName) != null;
             }
         }
@@ -482,7 +482,6 @@ public final class ThreadContext {
     public IRubyObject getConstant(String internedName) {
         StaticScope scope = getCurrentScope().getStaticScope();
         RubyClass object = runtime.getObject();
-        IRubyObject undef = runtime.getUndef();
         IRubyObject result;
         
         // flipped from while to do to search current class first
@@ -492,7 +491,7 @@ public final class ThreadContext {
             // Not sure how this can happen
             //if (NIL_P(klass)) return rb_const_get(CLASS_OF(self), id);
             if ((result = klass.fastFetchConstant(internedName)) != null) {
-                if (result != undef) {
+                if (result != RubyObject.UNDEF) {
                     return result;
                 }
                 klass.deleteConstant(internedName);

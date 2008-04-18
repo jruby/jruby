@@ -93,10 +93,6 @@ public final class IncludedModuleWrapper extends RubyClass {
         return true;
     }
 
-//    public RubyClass getMetaClass() {
-//		return delegate.getMetaClass();
-//    }
-
     public void setMetaClass(RubyClass newRubyClass) {
         throw new UnsupportedOperationException("An included class is only a wrapper for a module");
     }

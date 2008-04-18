@@ -2093,7 +2093,7 @@ public class RubyModule extends RubyObject {
         String id = validateConstant(name.asJavaString());
         IRubyObject value;
         if ((value = deleteConstant(id)) != null) {
-            if (value != getRuntime().getUndef()) {
+            if (value != UNDEF) {
                 return value;
             }
             getRuntime().getLoadService().removeAutoLoadFor(getName() + "::" + id);
@@ -2295,7 +2295,7 @@ public class RubyModule extends RubyObject {
 
     public IRubyObject getConstantAt(String name) {
         IRubyObject value;
-        if ((value = fetchConstant(name)) != getRuntime().getUndef()) {
+        if ((value = fetchConstant(name)) != UNDEF) {
             return value;
         }
         deleteConstant(name);
@@ -2305,7 +2305,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject fastGetConstantAt(String internedName) {
         assert internedName == internedName.intern() : internedName + " is not interned";
         IRubyObject value;
-        if ((value = fastFetchConstant(internedName)) != getRuntime().getUndef()) {
+        if ((value = fastFetchConstant(internedName)) != UNDEF) {
             return value;
         }
         deleteConstant(internedName);
@@ -2320,7 +2320,6 @@ public class RubyModule extends RubyObject {
      */
     public IRubyObject getConstant(String name) {
         assert IdUtil.isConstant(name);
-        IRubyObject undef = getRuntime().getUndef();
         boolean retryForModule = false;
         IRubyObject value;
         RubyModule p = this;
@@ -2328,7 +2327,7 @@ public class RubyModule extends RubyObject {
         retry: while (true) {
             while (p != null) {
                 if ((value = p.constantTableFetch(name)) != null) {
-                    if (value != undef) {
+                    if (value != UNDEF) {
                         return value;
                     }
                     p.deleteConstant(name);
@@ -2357,7 +2356,6 @@ public class RubyModule extends RubyObject {
     public IRubyObject fastGetConstant(String internedName) {
         assert internedName == internedName.intern() : internedName + " is not interned";
         assert IdUtil.isConstant(internedName);
-        IRubyObject undef = getRuntime().getUndef();
         boolean retryForModule = false;
         IRubyObject value;
         RubyModule p = this;
@@ -2365,7 +2363,7 @@ public class RubyModule extends RubyObject {
         retry: while (true) {
             while (p != null) {
                 if ((value = p.constantTableFastFetch(internedName)) != null) {
-                    if (value != undef) {
+                    if (value != UNDEF) {
                         return value;
                     }
                     p.deleteConstant(internedName);
@@ -2400,14 +2398,13 @@ public class RubyModule extends RubyObject {
         assert internedName == internedName.intern() : internedName + " is not interned";
         assert IdUtil.isConstant(internedName);
         RubyClass objectClass = getRuntime().getObject();
-        IRubyObject undef = getRuntime().getUndef();
         IRubyObject value;
 
         RubyModule p = this;
         
         while (p != null) {
             if ((value = p.constantTableFastFetch(internedName)) != null) {
-                if (value != undef) {
+                if (value != UNDEF) {
                     if (p == objectClass && this != objectClass) {
                         String badCName = getName() + "::" + internedName;
                         getRuntime().getWarnings().warn(ID.CONSTANT_BAD_REFERENCE, "toplevel constant " + 
@@ -2439,7 +2436,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject setConstant(String name, IRubyObject value) {
         IRubyObject oldValue;
         if ((oldValue = fetchConstant(name)) != null) {
-            if (oldValue == getRuntime().getUndef()) {
+            if (oldValue == UNDEF) {
                 getRuntime().getLoadService().removeAutoLoadFor(getName() + "::" + name);
             } else {
                 getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name, name);
@@ -2466,7 +2463,7 @@ public class RubyModule extends RubyObject {
         assert internedName == internedName.intern() : internedName + " is not interned";
         IRubyObject oldValue;
         if ((oldValue = fastFetchConstant(internedName)) != null) {
-            if (oldValue == getRuntime().getUndef()) {
+            if (oldValue == UNDEF) {
                 getRuntime().getLoadService().removeAutoLoadFor(getName() + "::" + internedName);
             } else {
                 getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + internedName, internedName);
@@ -2513,14 +2510,13 @@ public class RubyModule extends RubyObject {
     public boolean isConstantDefined(String name) {
         assert IdUtil.isConstant(name);
         boolean isObject = this == getRuntime().getObject();
-        Object undef = getRuntime().getUndef();
 
         RubyModule module = this;
 
         do {
             Object value;
             if ((value = module.constantTableFetch(name)) != null) {
-                if (value != undef) return true;
+                if (value != UNDEF) return true;
                 return getRuntime().getLoadService().autoloadFor(
                         module.getName() + "::" + name) != null;
             }
@@ -2534,14 +2530,13 @@ public class RubyModule extends RubyObject {
         assert internedName == internedName.intern() : internedName + " is not interned";
         assert IdUtil.isConstant(internedName);
         boolean isObject = this == getRuntime().getObject();
-        Object undef = getRuntime().getUndef();
 
         RubyModule module = this;
 
         do {
             Object value;
             if ((value = module.constantTableFastFetch(internedName)) != null) {
-                if (value != undef) return true;
+                if (value != UNDEF) return true;
                 return getRuntime().getLoadService().autoloadFor(
                         module.getName() + "::" + internedName) != null;
             }

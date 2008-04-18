@@ -85,6 +85,8 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     private RubyObject(){};
     // An instance that never equals any other instance
     public static final IRubyObject NEVER = new RubyObject();
+    // an undef
+    public static final IRubyObject UNDEF = new RubyObject();
     
     // The class of this object
     protected transient RubyClass metaClass;

@@ -849,8 +849,6 @@ public final class Ruby {
     }
 
     private void bootstrap() {
-        undef = new RubyUndef();
-        
         initCore();
         initExceptions();
     }
@@ -1214,10 +1212,6 @@ public final class Ruby {
 
     public String getCurrentDirectory() {
         return currentDirectory;
-    }
-    
-    public IRubyObject getUndef() {
-        return undef;
     }
     
     public RubyModule getEtc() {
@@ -2618,7 +2612,6 @@ public final class Ruby {
     private int safeLevel = -1;
 
     // Default objects
-    private IRubyObject undef;
     private IRubyObject topSelf;
     private RubyNil nilObject;
     private RubyBoolean trueObject;
