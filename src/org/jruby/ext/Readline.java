@@ -37,7 +37,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyArray;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.load.Library;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -83,7 +82,6 @@ public class Readline {
 
         mReadline.dataWrapStruct(holder);
 
-        CallbackFactory readlinecb = runtime.callbackFactory(Readline.class);
         mReadline.defineAnnotatedMethods(Readline.class);
         IRubyObject hist = runtime.getObject().callMethod(runtime.getCurrentContext(), "new");
         mReadline.fastSetConstant("HISTORY", hist);

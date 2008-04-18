@@ -34,7 +34,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -57,7 +56,6 @@ public class NativeException extends RubyException {
         // a real allocator to be used. Otherwise Class.new will fail, as will marshalling. JRUBY-415
     	RubyClass exceptionClass = runtime.defineClass(CLASS_NAME, baseClass, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
     	
-        CallbackFactory callbackFactory = runtime.callbackFactory(NativeException.class);
         exceptionClass.defineAnnotatedMethods(NativeException.class);
 
         return exceptionClass;

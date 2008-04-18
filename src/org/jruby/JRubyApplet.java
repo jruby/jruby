@@ -42,30 +42,19 @@ import java.awt.image.VolatileImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.URL;
 import java.util.Arrays;
 
 import java.lang.reflect.InvocationTargetException;
 
-import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig;
-import org.jruby.RubyModule;
-import org.jruby.RubyProc;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.demo.TextAreaReadline;
-import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import javax.swing.JComponent;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import javax.swing.JTextPane;
 
 /**
