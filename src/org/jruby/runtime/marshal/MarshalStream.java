@@ -145,7 +145,7 @@ public class MarshalStream extends FilterOutputStream {
             int nativeTypeIndex = ((CoreObjectType)value).getNativeTypeIndex();
             
             if (nativeTypeIndex != ClassIndex.OBJECT) {
-                if (!value.isImmediate() && value.hasVariables() && nativeTypeIndex != ClassIndex.CLASS) {
+                if (!value.isImmediate() && value.hasVariables() && nativeTypeIndex != ClassIndex.CLASS && nativeTypeIndex != ClassIndex.MODULE) {
                     // object has instance vars and isn't a class, get a snapshot to be marshalled
                     // and output the ivar header here
 
