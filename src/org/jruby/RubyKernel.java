@@ -679,7 +679,18 @@ public class RubyKernel {
     // FIXME: Add at_exit and finalizers to exit, then make exit_bang not call those.
     @JRubyMethod(name = "exit", optional = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject exit(IRubyObject recv, IRubyObject[] args) {
-        recv.getRuntime().secure(4);
+        exit(recv.getRuntime(), args, false);
+        return recv.getRuntime().getNil(); // not reached
+    }
+
+    @JRubyMethod(name = "exit!", optional = 1, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject exit_bang(IRubyObject recv, IRubyObject[] args) {
+        exit(recv.getRuntime(), args, true);
+        return recv.getRuntime().getNil(); // not reached
+    }
+    
+    private static void exit(Ruby runtime, IRubyObject[] args, boolean hard) {
+        runtime.secure(4);
 
         int status = 1;
         if (args.length > 0) {
@@ -691,13 +702,11 @@ public class RubyKernel {
             }
         }
 
-        throw recv.getRuntime().newSystemExit(status);
-    }
-
-    @JRubyMethod(name = "exit!", optional = 1, module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject exit_bang(IRubyObject recv, IRubyObject[] args) {
-        // This calls normal exit() on purpose because we should probably not expose System.exit(0)
-        return exit(recv, args);
+        if (hard) {
+            throw new MainExitException(status, true);
+        } else {
+            throw runtime.newSystemExit(status);
+        }
     }
 
 
