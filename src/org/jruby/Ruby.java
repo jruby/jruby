@@ -1160,6 +1160,8 @@ public final class Ruby {
         getLoadService().require("builtin/core_ext/symbol");
         
         RubyKernel.autoload(topSelf, newSymbol("Java"), newString("java"));
+
+        getLoadService().require("enumerator");
     }
 
     private void addLazyBuiltin(String name, String shortName, String className) {
