@@ -1,4 +1,4 @@
-package spec.java_integration.methods;
+package spec.java_integration.fixtures;
 
 public class MethodNames {
     public static void lowercase1() {}
