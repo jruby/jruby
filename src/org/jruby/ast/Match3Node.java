@@ -38,11 +38,12 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.MethodIndex;
 
 public class Match3Node extends Node {
     private final Node receiverNode;
     private final Node valueNode;
-    public final CallSite callAdapter = new CallSite.InlineCachingCallSite("=~", CallType.FUNCTIONAL);
+    public final CallSite callAdapter = MethodIndex.getFunctionalCallSite("=~");
 
     public Match3Node(ISourcePosition position, Node receiverNode, Node valueNode) {
         super(position, NodeType.MATCH3NODE);

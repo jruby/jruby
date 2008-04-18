@@ -40,6 +40,7 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.MethodIndex;
 
 /**
  * A method or operator call.
@@ -60,7 +61,7 @@ public final class CallNode extends Node implements INameNode, IArgumentNode, Bl
         this.receiverNode = receiverNode;
         setArgsNode(argsNode);
         this.iterNode = iterNode;
-        this.callAdapter = new CallSite.InlineCachingCallSite(name, CallType.NORMAL);
+        this.callAdapter = MethodIndex.getCallSite(name);
     }
     
     /**
@@ -78,7 +79,7 @@ public final class CallNode extends Node implements INameNode, IArgumentNode, Bl
     public void setIterNode(Node iterNode) {
         this.iterNode = iterNode;
         // refresh call adapter, since it matters if this is iter-based or not
-        callAdapter = new CallSite.InlineCachingCallSite(callAdapter.methodName, CallType.NORMAL);
+        callAdapter = MethodIndex.getCallSite(callAdapter.methodName);
     }
 
     /**

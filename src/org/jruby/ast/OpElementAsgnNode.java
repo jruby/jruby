@@ -38,6 +38,7 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.MethodIndex;
 
 /** Represents an operator assignment to an element.
  * 
@@ -64,9 +65,9 @@ public class OpElementAsgnNode extends Node {
             ((ArrayNode)argsNode).setLightweight(true);
         }
         this.valueNode = valueNode;
-        callAdapter = new CallSite.InlineCachingCallSite(operatorName, CallType.NORMAL);
-        elementAdapter = new CallSite.InlineCachingCallSite("[]", CallType.FUNCTIONAL);
-        elementAsgnAdapter = new CallSite.InlineCachingCallSite("[]=", CallType.FUNCTIONAL);
+        callAdapter = MethodIndex.getCallSite(operatorName);
+        elementAdapter = MethodIndex.getFunctionalCallSite("[]");
+        elementAsgnAdapter = MethodIndex.getFunctionalCallSite("[]=");
     }
     
     /**

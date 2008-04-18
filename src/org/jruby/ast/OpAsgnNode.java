@@ -38,6 +38,7 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.MethodIndex;
 
 /**
  *
@@ -53,9 +54,9 @@ public class OpAsgnNode extends Node {
         super(position, NodeType.OPASGNNODE);
         this.receiverNode = receiverNode;
         this.valueNode = valueNode;
-        this.variableCallAdapter = new CallSite.InlineCachingCallSite(variableName, CallType.NORMAL);
-        this.operatorCallAdapter = new CallSite.InlineCachingCallSite(operatorName, CallType.NORMAL);
-        this.variableAsgnCallAdapter = new CallSite.InlineCachingCallSite((variableName + "=").intern(), CallType.NORMAL);
+        this.variableCallAdapter = MethodIndex.getCallSite(variableName);
+        this.operatorCallAdapter = MethodIndex.getCallSite(operatorName);
+        this.variableAsgnCallAdapter = MethodIndex.getCallSite((variableName + "=").intern());
     }
 
     /**

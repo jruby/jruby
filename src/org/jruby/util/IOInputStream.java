@@ -36,6 +36,7 @@ import org.jruby.RubyString;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.MethodIndex;
 
 /**
  * This class wraps a IRubyObject in an InputStream. Depending on which messages
@@ -50,7 +51,7 @@ public class IOInputStream extends InputStream {
     private IRubyObject io;
     private InputStream in;
     private final IRubyObject numOne;
-    private CallSite readAdapter = new CallSite.InlineCachingCallSite("read", CallType.FUNCTIONAL);
+    private CallSite readAdapter = MethodIndex.getFunctionalCallSite("read");
 
     /**
      * Creates a new InputStream with the object provided.

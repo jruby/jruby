@@ -39,6 +39,7 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.MethodIndex;
 
 /** 
  * Represents a method call with self as an implicit receiver.
@@ -56,7 +57,7 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
         super(position, NodeType.FCALLNODE);
         setArgsNode(argsNode);
         this.iterNode = iterNode;
-        this.callAdapter = new CallSite.InlineCachingCallSite(name, CallType.FUNCTIONAL);
+        this.callAdapter = MethodIndex.getFunctionalCallSite(name);
     }
     
     /**
@@ -76,7 +77,7 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
     
     public void setIterNode(Node iterNode) {
         this.iterNode = iterNode;
-        callAdapter = new CallSite.InlineCachingCallSite(callAdapter.methodName, CallType.FUNCTIONAL);
+        callAdapter = MethodIndex.getFunctionalCallSite(callAdapter.methodName);
     }
 
     /**

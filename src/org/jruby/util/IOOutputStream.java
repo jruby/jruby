@@ -33,6 +33,7 @@ import org.jruby.RubyString;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.MethodIndex;
 
 /**
  * This class wraps a IRubyObject in an OutputStream. Depending on which messages
@@ -48,7 +49,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class IOOutputStream extends OutputStream {
     private IRubyObject io;
     private CallSite writeAdapter;
-    private CallSite closeAdapter = new CallSite.InlineCachingCallSite("close", CallType.FUNCTIONAL);
+    private CallSite closeAdapter = MethodIndex.getFunctionalCallSite("close");
 
     /**
      * Creates a new OutputStream with the object provided.
@@ -57,9 +58,9 @@ public class IOOutputStream extends OutputStream {
      */
     public IOOutputStream(final IRubyObject io) {
         if(io.respondsTo("write")) {
-            writeAdapter = new CallSite.InlineCachingCallSite("write", CallType.FUNCTIONAL);
+            writeAdapter = MethodIndex.getFunctionalCallSite("write");
         } else if (io.respondsTo("<<")) {
-            writeAdapter = new CallSite.InlineCachingCallSite("<<", CallType.FUNCTIONAL);
+            writeAdapter = MethodIndex.getFunctionalCallSite("<<");
         } else {
             throw new IllegalArgumentException("Object: " + io + " is not a legal argument to this wrapper, cause it doesn't respond to \"write\".");
         }

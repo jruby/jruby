@@ -38,6 +38,7 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.MethodIndex;
 
 /**
  * A 'for' statement.  This is implemented using iter and that is how MRI does things,
@@ -46,7 +47,7 @@ import org.jruby.runtime.CallType;
  * @see IterNode
  */
 public class ForNode extends IterNode {
-    public final CallSite callAdapter = new CallSite.InlineCachingCallSite("each", CallType.NORMAL);
+    public final CallSite callAdapter = MethodIndex.getCallSite("each");
 
     private Node iterNode;
 

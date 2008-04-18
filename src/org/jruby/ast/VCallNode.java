@@ -39,6 +39,7 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.MethodIndex;
 
 /**
  * RubyMethod call without any arguments
@@ -50,7 +51,7 @@ public class VCallNode extends Node implements INameNode {
     public VCallNode(ISourcePosition position, String name) {
         super(position, NodeType.VCALLNODE);
 
-        this.callAdapter = new CallSite.InlineCachingCallSite(name, CallType.VARIABLE);
+        this.callAdapter = MethodIndex.getVariableCallSite(name);
     }
     
     /**
