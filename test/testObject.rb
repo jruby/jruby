@@ -159,3 +159,24 @@ end
 test_ok !c1.instance_variable_defined?(:@three)
 test_ok c1.instance_variable_defined?(:@one)
 test_ok c1.instance_variable_defined?(:@two)
+
+# Test tap
+value = nil
+1.tap { |v| value = v }
+test_equal 1, value
+
+[].tap { |v| value = v }
+test_equal [], value
+
+test_equal 1, 1.tap { }
+
+obj = Object.new
+
+test_equal obj, obj.tap { }
+
+test_equal "str", "str".tap { value = "foo" }
+test_equal "foo", value
+
+test_exception(LocalJumpError) do 
+  "str".tap
+end

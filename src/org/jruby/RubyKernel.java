@@ -1299,4 +1299,10 @@ public class RubyKernel {
             return runtime.newFixnum(result);
         }
     }
+
+    @JRubyMethod(frame = true, module = true)
+    public static IRubyObject tap(ThreadContext context, IRubyObject recv, Block block) {
+        block.yield(context, recv);
+        return recv;
+    }
 }
