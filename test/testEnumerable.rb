@@ -74,7 +74,7 @@ test_exception(ArgumentError) {
 }
 
 test_equal([Array],[['foo']].map {|a|a.class})
-=begin
+
 class TestEnumerable
   include Enumerable
   def initialize(value)
@@ -92,13 +92,13 @@ test_equal [1], TestEnumerable.new([[1], 1, 2, 3]).first
 test_equal [], TestEnumerable.new([]).first(0)
 
 test_exception(ArgumentError) do 
-  test_equal [], TestEnumerable.new([]).first(-1)
+  TestEnumerable.new([]).first(-1)
 end
 
 test_equal [], TestEnumerable.new([1,2,3]).first(0)
 
 test_exception(ArgumentError) do 
-  test_equal [], TestEnumerable.new([1,2,3]).first(-1)
+  TestEnumerable.new([1,2,3]).first(-1)
 end
 
 test_equal [1], TestEnumerable.new([1,2,3]).first(1)
@@ -111,4 +111,4 @@ test_equal({5=>["pelle"], 6=>["marcus"], 3=>["ola", "tom"], 4=>["bini", "pele"],
            TestEnumerable.new(%w(ola bini gustafsson pelle tom marcus pele)).group_by(&:length))
 test_equal({[5]=>["pelle"], [6]=>["marcus"], [3]=>["ola", "tom"], [4]=>["bini", "pele"], [10]=>["gustafsson"]},
            TestEnumerable.new(%w(ola bini gustafsson pelle tom marcus pele)).group_by{ |v| [v.length]})
-=end
+

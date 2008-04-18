@@ -64,6 +64,55 @@ public class RubyEnumerable {
                 Arity.noArguments(), callback, context));
     }
 
+    private static class ExitIteration extends RuntimeException {
+        public Throwable fillInStackTrace() {
+            return this;
+        }
+    }
+
+    @JRubyMethod(name = "first")
+    public static IRubyObject first_0(ThreadContext context, IRubyObject self) {
+        Ruby runtime = self.getRuntime();
+        
+        final IRubyObject[] holder = new IRubyObject[]{runtime.getNil()};
+
+        try {
+            callEach(runtime, context, self, new BlockCallback() {
+                    public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                        holder[0] = largs[0];
+                        throw new ExitIteration();
+                    }
+                });
+        } catch(ExitIteration ei) {}
+
+        return holder[0];
+    }
+
+    @JRubyMethod(name = "first")
+    public static IRubyObject first_1(ThreadContext context, IRubyObject self, final IRubyObject num) {
+        final Ruby runtime = self.getRuntime();
+        final RubyArray result = runtime.newArray();
+
+        if(RubyNumeric.fix2int(num) < 0) {
+            throw runtime.newArgumentError("negative index");
+        }
+
+        try {
+            callEach(runtime, context, self, new BlockCallback() {
+                    private int iter = RubyNumeric.fix2int(num);
+                    public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                        if(iter-- == 0) {
+                            throw new ExitIteration();
+                        }
+                        result.append(largs[0]);
+                        return runtime.getNil();
+                    }
+                });
+        } catch(ExitIteration ei) {}
+
+        return result;
+    }
+
     @JRubyMethod(name = {"to_a", "entries"})
     public static IRubyObject to_a(ThreadContext context, IRubyObject self) {
         Ruby runtime = self.getRuntime();
@@ -493,7 +542,7 @@ public class RubyEnumerable {
         }
     }
 
-    @JRubyMethod(name = "group_by", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "group_by", frame = true)
     public static IRubyObject group_by(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = self.getRuntime();
         final RubyHash result = new RubyHash(runtime);
