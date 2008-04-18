@@ -16,11 +16,14 @@ public class InvokerGenerator {
         FileReader fr = new FileReader(args[0]);
         BufferedReader br = new BufferedReader(fr);
         
-        List<String> classNames = new ArrayList();
-        String line = br.readLine();
-        while (line != null) {
-            classNames.add(line);
-            line = br.readLine();
+        List<String> classNames = new ArrayList<String>();
+        try {
+            String line;
+            while ((line = br.readLine()) != null) {
+                classNames.add(line);
+            }
+        } finally {
+            br.close();
         }
 
         DumpingInvocationMethodFactory dumper = new DumpingInvocationMethodFactory(args[1], new JRubyClassLoader(ClassLoader.getSystemClassLoader()));
