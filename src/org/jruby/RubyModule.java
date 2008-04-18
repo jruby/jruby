@@ -524,7 +524,7 @@ public class RubyModule extends RubyObject {
         Map<String, List<JavaMethodDescriptor>> annotatedMethods1_9 = new HashMap();
         Map<String, List<JavaMethodDescriptor>> staticAnnotatedMethods1_9 = new HashMap();
         
-        public void clumpFromClass(Class cls) {
+        public void clump(Class cls) {
             Method[] declaredMethods = cls.getDeclaredMethods();
             for (Method method: declaredMethods) {
                 JRubyMethod anno = method.getAnnotation(JRubyMethod.class);
@@ -606,7 +606,7 @@ public class RubyModule extends RubyObject {
             MethodFactory methodFactory = MethodFactory.createFactory(getRuntime().getJRubyClassLoader());
             
             MethodClumper clumper = new MethodClumper();
-            clumper.clumpFromClass(clazz);
+            clumper.clump(clazz);
             
             for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getStaticAnnotatedMethods().entrySet()) {
                 defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);

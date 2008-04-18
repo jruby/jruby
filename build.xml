@@ -154,46 +154,15 @@
   </target>
 
   <target name="generate-method-classes" depends="compile">
-    <!-- individual invokers for 1.8 -->
-    <echo message="Generating invokers for 1.8"/>
-    <java classname="org.jruby.Main" fork="false" failonerror="true">
+    <echo message="Generating invokers..."/>
+    <java classname="org.jruby.anno.InvokerGenerator" fork="true" failonerror="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
-      <sysproperty key="jruby.dump_invocations" value="${jruby.classes.dir}"/>
-      <sysproperty key="jruby.native.net.protocol" value="true"/>
-      <arg value="-rjava"/>
-      <arg value="-rjruby"/>
-      <arg value="-rbigdecimal"/>
-      <arg value="-rdigest"/>
-      <arg value="-rzlib"/>
-      <arg value="-ryaml"/>
-      <arg value="-rstrscan"/>
-      <arg value="-riconv"/>
-      <arg value="-rweakref"/>
-      <arg value="-rthread"/>
-      <arg value="-rsocket"/>
-      <arg value="-rgenerator"/>
-      <arg value="-rnet/protocol"/>
-      <arg value="-rreadline"/>
-      <arg value="-retc"/>
-      <arg value="-renumerator"/>
-      <arg value="-rjruby/ext"/>
-      <arg value="-rnkf"/>
-      <arg value="-rio/wait"/>
-      <arg value="-e '1'"/>
+      <arg value="src_gen/annotated_classes.txt"/>
+      <arg value="${jruby.classes.dir}"/>
     </java>
     
-    <!-- individual invokers for 1.9 -->
-    <echo message="Generating invokers for 1.9"/>
-    <java classname="org.jruby.Main" fork="false" failonerror="true">
-      <classpath refid="build.classpath"/>
-      <classpath path="${jruby.classes.dir}"/>
-      <sysproperty key="jruby.dump_invocations" value="${jruby.classes.dir}"/>
-      <sysproperty key="jruby.compat.version" value="RUBY1_9"/>
-      <arg value="-rfiber"/>
-      <arg value="-e '1'"/>
-    </java>
-    
+    <echo message="Compiling populators..."/>
     <javac destdir="${jruby.classes.dir}" debug="true" source="${javac.version}" target="${javac.version}" deprecation="true" encoding="UTF-8">
        <classpath refid="build.classpath"/>
        <classpath path="${jruby.classes.dir}"/>

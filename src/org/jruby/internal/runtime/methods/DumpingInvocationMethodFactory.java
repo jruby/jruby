@@ -49,7 +49,8 @@ public class DumpingInvocationMethodFactory extends InvocationMethodFactory {
         this.dumpPath = path;
     }
 
-    protected Class endClass(Ruby runtime, ClassWriter cw, String name) {
+    @Override
+    protected Class endClass(ClassWriter cw, String name) {
         cw.visitEnd();
         byte[] code = cw.toByteArray();
         String cname = name.replace('.','/');
@@ -61,6 +62,6 @@ public class DumpingInvocationMethodFactory extends InvocationMethodFactory {
             fos.close();
         } catch(Exception e) {
         }
-        return runtime.getJRubyClassLoader().defineClass(name, code);
+        return classLoader.defineClass(name, code);
     }
 }// DumpingInvocationMethodFactory

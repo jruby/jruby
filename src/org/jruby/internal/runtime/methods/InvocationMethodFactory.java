@@ -153,7 +153,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     public static final int BLOCK_INDEX = 6;
 
     /** The classloader to use for code loading */
-    private JRubyClassLoader classLoader;
+    protected JRubyClassLoader classLoader;
     
     /**
      * Whether this factory has seen undefined methods already. This is used to
@@ -354,6 +354,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      * @see org.jruby.internal.runtime.methods.MethodFactory#getAnnotatedMethod
      */
     public Class getAnnotatedMethodClass(List<JavaMethodDescriptor> descs) throws Exception {
+        if (descs.size() == 1) {
+            // simple path, no multimethod
+            return getAnnotatedMethodClass(descs.get(0));
+        }
         JavaMethodDescriptor desc1 = descs.get(0);
         String javaMethodName = desc1.name;
         

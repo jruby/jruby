@@ -7,6 +7,7 @@ import com.sun.mirror.util.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -51,6 +52,8 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
 
     private static class AnnotationBindingProcessor implements AnnotationProcessor {
         private final AnnotationProcessorEnvironment env;
+        private final List<String> classNames = new ArrayList();
+        
         AnnotationBindingProcessor(AnnotationProcessorEnvironment env) {
             this.env = env;
         }
@@ -59,17 +62,25 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
 	    for (TypeDeclaration typeDecl : env.getSpecifiedTypeDeclarations())
 		typeDecl.accept(getDeclarationScanner(new RubyClassVisitor(),
 						      NO_OP));
+            
+            try {
+                FileWriter fw = new FileWriter("src_gen/annotated_classes.txt");
+                for (String name : classNames) {
+                    fw.write(name);
+                    fw.write('\n');
+                }
+                fw.close();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
 
-	private static class RubyClassVisitor extends SimpleDeclarationVisitor {
+	private class RubyClassVisitor extends SimpleDeclarationVisitor {
             private PrintStream out;
             private static final boolean DEBUG = false;
             public void visitClassDeclaration(ClassDeclaration cd) {
                 try {
                     String qualifiedName = cd.getQualifiedName().replace('.', '$');
-                    
-                    // FIXME: This is gross, and is temporary until method handles are generated offline too
-                    if (qualifiedName.contains("JRubyApplet")) return;
                     
                     // skip anything not related to jruby
                     if (!qualifiedName.contains("org$jruby")) return;
@@ -146,6 +157,8 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                         // no annotated methods found, skip
                         return;
                     }
+                    
+                    classNames.add(getActualQualifiedName(cd));
 
                     processMethodDeclarations(staticAnnotatedMethods);
                     
@@ -200,19 +213,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                 JRubyMethod anno = md.getAnnotation(JRubyMethod.class);
                 if (anno != null && out != null) {
                     boolean isStatic = md.getModifiers().contains(Modifier.STATIC);
-                    
-                    // declared type returns the qualified name without $ for inner classes!!!
-                    String qualifiedName;
-                    if (md.getDeclaringType().getDeclaringType() != null) {
-                        // inner class, use $ to delimit
-                        if (md.getDeclaringType().getDeclaringType().getDeclaringType() != null) {
-                            qualifiedName = md.getDeclaringType().getDeclaringType().getDeclaringType().getQualifiedName() + "$" + md.getDeclaringType().getDeclaringType().getSimpleName() + "$" + md.getDeclaringType().getSimpleName();
-                        } else {
-                            qualifiedName = md.getDeclaringType().getDeclaringType().getQualifiedName() + "$" + md.getDeclaringType().getSimpleName();
-                        }
-                    } else {
-                        qualifiedName = md.getDeclaringType().getQualifiedName();
-                    }
+                    String qualifiedName = getActualQualifiedName(md.getDeclaringType());
                     
                     boolean hasContext = false;
                     boolean hasBlock = false;
@@ -245,19 +246,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                 JRubyMethod anno = md.getAnnotation(JRubyMethod.class);
                 if (anno != null && out != null) {
                     boolean isStatic = md.getModifiers().contains(Modifier.STATIC);
-                    
-                    // declared type returns the qualified name without $ for inner classes!!!
-                    String qualifiedName;
-                    if (md.getDeclaringType().getDeclaringType() != null) {
-                        // inner class, use $ to delimit
-                        if (md.getDeclaringType().getDeclaringType().getDeclaringType() != null) {
-                            qualifiedName = md.getDeclaringType().getDeclaringType().getDeclaringType().getQualifiedName() + "$" + md.getDeclaringType().getDeclaringType().getSimpleName() + "$" + md.getDeclaringType().getSimpleName();
-                        } else {
-                            qualifiedName = md.getDeclaringType().getDeclaringType().getQualifiedName() + "$" + md.getDeclaringType().getSimpleName();
-                        }
-                    } else {
-                        qualifiedName = md.getDeclaringType().getQualifiedName();
-                    }
+                    String qualifiedName = getActualQualifiedName(md.getDeclaringType());
                     
                     boolean hasContext = false;
                     boolean hasBlock = false;
@@ -285,36 +274,22 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     generateMethodAddCalls(md, anno);
                 }
             }
-            
-            public static int getArityValue(JRubyMethod anno, int actualRequired) {
-                if (anno.optional() > 0 || anno.rest()) {
-                    return -(actualRequired + 1);
-                }
-                return actualRequired;
-            }
-    
-            public static String getCallConfigNameByAnno(JRubyMethod anno) {
-                return getCallConfigName(anno.frame(), anno.scope(), anno.backtrace());
-            }
 
-            public static String getCallConfigName(boolean frame, boolean scope, boolean backtrace) {
-                if (frame) {
-                    if (scope) {
-                        return "FRAME_AND_SCOPE";
+            private String getActualQualifiedName(TypeDeclaration td) {
+                // declared type returns the qualified name without $ for inner classes!!!
+                String qualifiedName;
+                if (td.getDeclaringType() != null) {
+                    // inner class, use $ to delimit
+                    if (td.getDeclaringType().getDeclaringType() != null) {
+                        qualifiedName = td.getDeclaringType().getDeclaringType().getQualifiedName() + "$" + td.getDeclaringType().getSimpleName() + "$" + td.getSimpleName();
                     } else {
-                        return "FRAME_ONLY";
+                        qualifiedName = td.getDeclaringType().getQualifiedName() + "$" + td.getSimpleName();
                     }
-                } else if (scope) {
-                    if (backtrace) {
-                        return "BACKTRACE_AND_SCOPE";
-                    } else {
-                        return "SCOPE_ONLY";
-                    }
-                } else if (backtrace) {
-                    return "BACKTRACE_ONLY";
                 } else {
-                    return "NO_FRAME_NO_SCOPE";
+                    qualifiedName = td.getQualifiedName();
                 }
+
+                return qualifiedName;
             }
             
             private boolean tryClass(String className) {
@@ -441,5 +416,36 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
 //                }
             }
 	}
+        
+        public static int getArityValue(JRubyMethod anno, int actualRequired) {
+            if (anno.optional() > 0 || anno.rest()) {
+                return -(actualRequired + 1);
+            }
+            return actualRequired;
+        }
+
+        public static String getCallConfigNameByAnno(JRubyMethod anno) {
+            return getCallConfigName(anno.frame(), anno.scope(), anno.backtrace());
+        }
+
+        public static String getCallConfigName(boolean frame, boolean scope, boolean backtrace) {
+            if (frame) {
+                if (scope) {
+                    return "FRAME_AND_SCOPE";
+                } else {
+                    return "FRAME_ONLY";
+                }
+            } else if (scope) {
+                if (backtrace) {
+                    return "BACKTRACE_AND_SCOPE";
+                } else {
+                    return "SCOPE_ONLY";
+                }
+            } else if (backtrace) {
+                return "BACKTRACE_ONLY";
+            } else {
+                return "NO_FRAME_NO_SCOPE";
+            }
+        }
     }
 }
