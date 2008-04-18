@@ -206,6 +206,28 @@ public abstract class RubyInteger extends RubyNumeric {
         return this;
     }
 
+    @JRubyMethod(name = {"odd?"})
+    public static RubyBoolean odd_p(ThreadContext context, IRubyObject recv) {
+        if(recv.callMethod(context, "%", recv.getRuntime().newFixnum(2)) != RubyFixnum.zero(recv.getRuntime())) {
+            return recv.getRuntime().getTrue();
+        }
+        return recv.getRuntime().getFalse();
+    }
+
+    @JRubyMethod(name = {"even?"})
+    public static RubyBoolean even_p(ThreadContext context, IRubyObject recv) {
+        if(recv.callMethod(context, "%", recv.getRuntime().newFixnum(2)) == RubyFixnum.zero(recv.getRuntime())) {
+            return recv.getRuntime().getTrue();
+        }
+        return recv.getRuntime().getFalse();
+    }
+
+    @JRubyMethod
+    public static IRubyObject pred(ThreadContext context, IRubyObject recv) {
+        return recv.callMethod(context, "-", recv.getRuntime().newFixnum(1));
+    }
+
+
     /*  ================
      *  Singleton Methods
      *  ================ 

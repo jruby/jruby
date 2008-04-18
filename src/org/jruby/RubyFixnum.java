@@ -312,6 +312,27 @@ public class RubyFixnum extends RubyInteger {
         return idiv(context, other, "/");
     }
 
+    @JRubyMethod(name = {"odd?"})
+    public RubyBoolean odd_p() {
+        if(value%2 != 0) {
+            return getRuntime().getTrue();
+        }
+        return getRuntime().getFalse();
+    }
+
+    @JRubyMethod(name = {"even?"})
+    public RubyBoolean even_p() {
+        if(value%2 == 0) {
+            return getRuntime().getTrue();
+        }
+        return getRuntime().getFalse();
+    }
+
+    @JRubyMethod
+    public IRubyObject pred() {
+        return getRuntime().newFixnum(value-1);
+    }
+
     public IRubyObject idiv(ThreadContext context, IRubyObject other, String method) {
         if (other instanceof RubyFixnum) {
             long x = value;

@@ -72,9 +72,17 @@ test_equal(Fixnum,Integer.induced_from(2.0).class)
 test_equal(Bignum,Integer.induced_from(100**100).class)
 
 class Foo
-    def to_i
-        nil
-    end
+  def to_i
+    nil
+  end
 end
 
 test_exception(TypeError){Integer(Foo.new)}
+
+test_ok 1000000000000000000000000000000.even?
+test_ok 1000000000000000000000000000001.odd?
+
+test_equal 10000000000000000000000000000000, 10000000000000000000000000000001.pred
+test_equal 1, 2.pred
+test_equal 0, 1.pred
+test_equal -1, 0.pred

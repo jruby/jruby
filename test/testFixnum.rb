@@ -61,3 +61,8 @@ test_equal(0,1*0)
 
 h = 2
 test_equal(3, h +1)
+
+test_ok 0.even?
+test_ok 1.odd?
+test_ok -1.odd?
+test_ok 2.even?
