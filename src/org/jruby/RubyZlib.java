@@ -587,22 +587,34 @@ public class RubyZlib {
         @JRubyClass(name="Zlib::GzipFile::LengthError", parent="Zlib::GzipFile::Error")
         public static class LengthError extends Error {}
 
-        @JRubyMethod(name = "wrap", required = 2, frame = true, meta = true)
-        public static IRubyObject wrap(ThreadContext context, IRubyObject recv, IRubyObject io, IRubyObject proc, Block unusedBlock) throws IOException {
-            if (!(io instanceof RubyGzipFile)) throw recv.getRuntime().newTypeError(io, (RubyClass)recv);
-            if (!proc.isNil()) {
+        private static IRubyObject wrap(ThreadContext context, RubyGzipFile instance, 
+                IRubyObject io, Block block) throws IOException {
+            if (block.isGiven()) {
                 try {
-                    ((RubyProc)proc).call(context, new IRubyObject[]{io});
+                    block.yield(context, instance);
+                    
+                    return instance.getRuntime().getNil();
                 } finally {
-                    RubyGzipFile zipIO = (RubyGzipFile)io;
-                    if (!zipIO.isClosed()) {
-                        zipIO.close();
-                    }
+                    if (!instance.isClosed()) instance.close();
                 }
-                return recv.getRuntime().getNil();
+            }
+            
+            return io;
+        }
+        
+        @JRubyMethod(name = "wrap", required = 1, frame = true, meta = true)
+        public static IRubyObject wrap(ThreadContext context, IRubyObject recv, IRubyObject io, Block block) throws IOException {
+            Ruby runtime = recv.getRuntime();
+            RubyGzipFile instance;
+            
+            // TODO: People extending GzipWriter/reader will break.  Find better way here.
+            if (recv == runtime.getModule("Zlib").getClass("GzipWriter")) {
+                instance = RubyGzipWriter.newGzipWriter(recv, new IRubyObject[] { io }, block);
+            } else {
+                instance = RubyGzipReader.newInstance(recv, new IRubyObject[] { io }, block);
             }
 
-            return io;
+            return wrap(context, instance, io, block);
         }
         
         protected static final ObjectAllocator GZIPFILE_ALLOCATOR = new ObjectAllocator() {
@@ -726,12 +738,10 @@ public class RubyZlib {
         @JRubyMethod(name = "open", required = 1, frame = true, meta = true)
         public static IRubyObject open(final ThreadContext context, IRubyObject recv, IRubyObject filename, Block block) throws IOException {
             Ruby runtime = recv.getRuntime();
-            IRubyObject proc = block.isGiven() ? runtime.newProc(Block.Type.PROC, block) : runtime.getNil();
-            RubyGzipReader io = newInstance(recv,
-                    new IRubyObject[]{ runtime.getFile().callMethod(context, "open",
-                            new IRubyObject[]{filename, runtime.newString("rb")})}, block);
-            
-            return RubyGzipFile.wrap(context, recv, io, proc, null);
+            IRubyObject io = runtime.getFile().callMethod(context, "open", new IRubyObject[]{filename, runtime.newString("rb")});
+            RubyGzipFile instance = newInstance(recv, new IRubyObject[]{io}, Block.NULL_BLOCK);
+
+            return RubyGzipFile.wrap(context, instance, io, block);
         }
 
         public RubyGzipReader(Ruby runtime, RubyClass type) {
@@ -980,15 +990,10 @@ public class RubyZlib {
                 if (args.length > 2) strategy = args[2];
             }
 
-            IRubyObject proc = block.isGiven() ? runtime.newProc(Block.Type.PROC, block) : runtime.getNil();
-            RubyGzipWriter io = newGzipWriter(
-                    recv,
-                    new IRubyObject[]{ runtime.getFile().callMethod(
-                            context,
-                            "open",
-                            new IRubyObject[]{args[0],runtime.newString("wb")}),level,strategy},block);
+            IRubyObject io = runtime.getFile().callMethod(context, "open", new IRubyObject[]{args[0],runtime.newString("wb")});
+            RubyGzipFile instance = newGzipWriter(recv, new IRubyObject[]{io, level, strategy}, Block.NULL_BLOCK);
             
-            return RubyGzipFile.wrap(context, recv, io, proc, null);
+            return RubyGzipFile.wrap(context, instance, io, block);
         }
 
         public RubyGzipWriter(Ruby runtime, RubyClass type) {

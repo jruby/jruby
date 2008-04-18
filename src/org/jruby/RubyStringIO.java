@@ -41,8 +41,10 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.Stream;
 import org.jruby.util.ByteList;
+import org.jruby.util.io.ModeFlags;
 
 @JRubyClass(name="StringIO")
 public class RubyStringIO extends RubyObject {
@@ -83,29 +85,52 @@ public class RubyStringIO extends RubyObject {
     private int lineno = 0;
     private boolean eof = false;
     private RubyString internal;
-    // FIXME: Replace these with common IOModes instance and make IOModes work for this and IO.
+
+    // Has read/write been closed or is it still open for business
     private boolean closedRead = false;
     private boolean closedWrite = false;
-    private boolean append = false;
+
+    // Support IO modes that this object was opened with
+    ModeFlags modes;
+    
+    private void initializeModes(Object modeArgument) {
+        try {        
+            if (modeArgument == null) {
+                modes = new ModeFlags(RubyIO.getIOModesIntFromString(getRuntime(), "r+"));            
+            } else if (modeArgument instanceof Long) {
+                modes = new ModeFlags(((Long)modeArgument).longValue());
+            } else {
+                modes = new ModeFlags(RubyIO.getIOModesIntFromString(getRuntime(), (String) modeArgument));            
+            }
+        } catch (InvalidValueException e) {
+            throw getRuntime().newErrnoEINVALError();
+        }
+        setupModes();
+    }
 
     @JRubyMethod(name = "initialize", optional = 2, frame = true, visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if (args.length > 0) {
-            // Share bytelist since stringio is acting on this passed-in string.
-            internal = args[0].convertToString();
-            if (args.length > 1) {
+    public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
+        Object modeArgument = null;
+        switch (args.length) {
+            case 0:
+                internal = getRuntime().newString("");
+                modeArgument = "r+";
+                break;
+            case 1:
+                internal = args[0].convertToString();
+                modeArgument = internal.isFrozen() ? "r" : "r+";
+                break;
+            case 2:
+                internal = args[0].convertToString();
                 if (args[1] instanceof RubyFixnum) {
-                    // FIXME: We should use this somehow. yes?
-                    //int numericModes = RubyNumeric.fix2int(args[1]);
-                    
+                    modeArgument = RubyFixnum.fix2long(args[1]);
+                } else {
+                    modeArgument = args[1].convertToString().toString();
                 }
-                String modes = args[1].convertToString().toString();
-                
-                setupModes(modes);
+                break;
             }
-        } else {
-            internal = getRuntime().newString("");
-        }
+            
+        initializeModes(modeArgument);
         
         return this;
     }
@@ -117,7 +142,7 @@ public class RubyStringIO extends RubyObject {
 
         RubyString val = ((RubyString)obj.callMethod(context, MethodIndex.TO_S, "to_s"));
         internal.modify();
-        if (append) {
+        if (modes.isAppendable()) {
             internal.getByteList().append(val.getByteList());
         } else {
             int left = internal.getByteList().length()-(int)pos;
@@ -359,7 +384,7 @@ public class RubyStringIO extends RubyObject {
         checkFrozen();
 
         internal.modify();
-        if (append) {
+        if (modes.isAppendable()) {
             pos = internal.getByteList().length();
             internal.getByteList().append(c);
         } else {
@@ -550,6 +575,7 @@ public class RubyStringIO extends RubyObject {
             closedRead = ((RubyStringIO)str).closedRead;
             closedWrite = ((RubyStringIO)str).closedWrite;
             internal = ((RubyStringIO)str).internal;
+            modes = ((RubyStringIO)str).modes;
         } else {
             pos = 0L;
             lineno = 0;
@@ -557,20 +583,30 @@ public class RubyStringIO extends RubyObject {
             closedRead = false;
             closedWrite = false;
             internal = str.convertToString();
+            String modeString = internal.isFrozen() ? "r" : "r+";
+            try {
+                modes = new ModeFlags(RubyIO.getIOModesIntFromString(getRuntime(), modeString));
+            } catch (InvalidValueException e) {
+                throw getRuntime().newErrnoEINVALError();
+            }
         }
-        
+
         if (args.length == 2) {
-            setupModes(args[1].convertToString().toString());
-        } else {
-            // reset modes to default if none specified
-            setupModes("");
+            Object modeArgument;
+            if (args[1] instanceof RubyFixnum) {
+                modeArgument = RubyFixnum.fix2long(args[1]);
+            } else {
+                modeArgument = args[1].convertToString().toString();
+            }
+            
+            initializeModes(modeArgument);
         }
         
-        if (internal.isFrozen() && (closedRead || append)) {
+        if (internal.isFrozen() && modes.isWritable()) {
             throw getRuntime().newErrnoEACCESError("not opened for writing");
         }
         
-        if (closedRead) {
+        if (closedRead && !modes.isAppendable()) {
             // if doing explicit write mode, truncate incoming string
             internal.modify();
             internal.setValue("");
@@ -689,23 +725,21 @@ public class RubyStringIO extends RubyObject {
     
     /* rb: readable */
     private void checkReadable() {
-        if (closedRead) throw getRuntime().newIOError("not opened for reading");
+        if (closedRead || !modes.isReadable()) throw getRuntime().newIOError("not opened for reading");
     }
 
     /* rb: writable */
     private void checkWritable() {
-        if (closedWrite) throw getRuntime().newIOError("not opened for writing");
+        if (closedWrite || !modes.isWritable()) throw getRuntime().newIOError("not opened for writing");
 
         // Tainting here if we ever want it. (secure 4)
     }
 
-    private void setupModes(String modes) {
+    private void setupModes() {
         closedWrite = false;
         closedRead = false;
-        append = false;
         
-        if (modes.contains("r")) closedWrite = true;
-        if (modes.contains("w")) closedRead = true;
-        if (modes.contains("a")) append = true;
+        if (modes.isReadOnly()) closedWrite = true;
+        if (!modes.isReadable()) closedRead = true;
     }
 }

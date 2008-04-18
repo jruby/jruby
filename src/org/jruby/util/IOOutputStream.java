@@ -80,6 +80,6 @@ public class IOOutputStream extends OutputStream {
     }
     
     public void close() throws IOException {
-        closeAdapter.call(io.getRuntime().getCurrentContext(), io);
+        if (io.respondsTo("close")) closeAdapter.call(io.getRuntime().getCurrentContext(), io);
     }
 }

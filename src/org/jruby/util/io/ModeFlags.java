@@ -124,7 +124,7 @@ public class ModeFlags implements Cloneable {
      * @return true if readable, false otherwise
      */
     public boolean isReadable() {
-        return ((flags & RDWR) != 0) || isReadOnly() || ((flags & BINARY) != 0);
+        return ((flags & RDWR) != 0) || isReadOnly();
     }
 
     /**

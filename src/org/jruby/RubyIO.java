@@ -812,7 +812,7 @@ public class RubyIO extends RubyObject {
                 if (args[1] instanceof RubyFixnum) {
                     modes = new ModeFlags(RubyFixnum.fix2long(args[1]));
                 } else {
-                    modes = getIOModes(getRuntime(), (args[1].convertToString().toString()));
+                    modes = getIOModes(getRuntime(), args[1].convertToString().toString());
                 }
             } else {
                 // use original modes

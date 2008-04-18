@@ -164,7 +164,7 @@ test_equal(true, n.eof?)
 n = StringIO.new
 
 buf = ""
-s = StringIO.new(buf)
+s = StringIO.new(buf, "r+")
 s.puts "HEH"
 test_equal("HEH\n", buf)
 
@@ -178,7 +178,7 @@ class Foo
   end
 end
 
-s = StringIO.new("abc")
+s = StringIO.new("abc", File::WRONLY)
 s.putc(Foo.new)
 test_equal("Abc", s.string)
 test_exception(TypeError) { s.putc('') }

@@ -99,4 +99,18 @@ class TestZlib < Test::Unit::TestCase
       }
     }
   end
+
+  def test_wrap
+    content = StringIO.new "", "r+"
+    
+    Zlib::GzipWriter.wrap(content) do |io|
+      io.write "hello\nworld\n"
+    end
+
+    content = StringIO.new content.string, "rb"
+
+    gin = Zlib::GzipReader.new(content)
+    assert_equal("hello\n", gin.gets)
+    gin.close
+  end
 end
