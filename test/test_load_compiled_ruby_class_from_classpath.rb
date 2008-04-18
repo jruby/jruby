@@ -1,10 +1,13 @@
 require "test/unit"
 require "fileutils"
+require 'test/test_helper'
 
 # Necessary because of http://jira.codehaus.org/browse/JRUBY-1579
 require "jruby"
 
 class LoadCompiledRubyClassFromClasspathTest < Test::Unit::TestCase
+  include TestHelper
+
   RubyName = "runner"
   RubySource = "#{RubyName}.rb"
   RubyClass = "#{RubyName}.class"
@@ -35,8 +38,9 @@ class LoadCompiledRubyClassFromClasspathTest < Test::Unit::TestCase
 
     append_to_classpath @jruby_home
     result = nil
+
     FileUtils.cd("..") do
-      result = `#{jruby} -r#{RubyName} -e ""`
+      result = jruby("-r#{RubyName} -e '1'")
     end
     assert_equal 0, $?.exitstatus, "did not get 0 for exit status from running jruby against the class"
     assert_equal "hello from runner", result, "wrong text from runner"
@@ -84,20 +88,24 @@ public class #{StarterName} {
 
   def create_compiled_class
     File.open(RubySource, "w") { |f| f << "print 'hello from runner'" }
-    `#{jruby} #{@jruby_home}/bin/jrubyc -p "" #{RubySource}`
+    if (WINDOWS)
+      # Damn you, Windows!
+      jruby(%Q{-S jrubyc -p \\"\\" #{RubySource}})
+    else
+      jruby("-S jrubyc -p '' #{RubySource}")
+    end
     assert_equal 0, $?.exitstatus, "jrubyc failed to compile #{RubySource} into #{RubyClass}"
-  end
-
-  def jruby
-    "#{@jruby_home}/bin/jruby"
+  ensure
+    # just in case, remove the rb file
+    FileUtils.rm_rf RubySource
   end
 
   def jruby_jar
-    "#{@jruby_home}/lib/jruby.jar"
+    "lib/jruby.jar"
   end
 
   def append_to_classpath(*paths)
     current_classpath = ENV["CLASSPATH"].nil? ? "" : ENV["CLASSPATH"]
-    ENV["CLASSPATH"] = "#{current_classpath}:#{paths.join(':')}"
+    ENV["CLASSPATH"] = "#{current_classpath}#{File::PATH_SEPARATOR}#{paths.join(File::PATH_SEPARATOR)}"
   end
 end
