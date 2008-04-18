@@ -45,6 +45,10 @@ public class CoreTypeMethods {
         return null;
     }
     
+    public static void getVoid() {
+        return;
+    }
+    
     public static String setString(String s) {
         return s;
     }

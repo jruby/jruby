@@ -30,6 +30,8 @@ describe "Java String and primitive-typed methods" do
     
     CoreTypeMethods.getNull.should be_kind_of(NilClass)
     CoreTypeMethods.getNull.should == nil
+    
+    CoreTypeMethods.getVoid.should == nil
   end
   
   it "should be coerced from Ruby types when passing parameters" do
