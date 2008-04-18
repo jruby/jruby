@@ -190,7 +190,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         Class scriptClass = scriptObject.getClass();
         String mname = scriptClass.getName() + "Invoker" + method + arity;
         synchronized (classLoader) {
-            Class generatedClass = tryClass(implementationClass.getRuntime(), mname);
+            Class generatedClass = tryClass(mname);
 
             try {
                 if (generatedClass == null) {
@@ -266,7 +266,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                         mv.athrow(); // rethrow it
                     }
 
-                    generatedClass = endCall(implementationClass.getRuntime(), cw,mv,mname);
+                    generatedClass = endCall(cw,mv,mname);
                 }
 
                 return (DynamicMethod)generatedClass
@@ -295,15 +295,14 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         String generatedClassPath = generatedClassName.replace('.', '/');
         
         synchronized (classLoader) {
-            Class c = tryClass(implementationClass.getRuntime(), generatedClassName);
 
             try {
+                Class c = getAnnotatedMethodClass(descs);
                 int min = Integer.MAX_VALUE;
                 int max = 0;
                 boolean frame = false;
                 boolean scope = false;
                 boolean backtrace = false;
-                boolean block = false;
 
                 for (JavaMethodDescriptor desc: descs) {
                     int specificArity = -1;
@@ -330,82 +329,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     frame |= desc.anno.frame();
                     scope |= desc.anno.scope();
                     backtrace |= desc.anno.backtrace();
-                    block |= desc.hasBlock;
                 }
 
                 if (DEBUG) out.println(" min: " + min + ", max: " + max);
-                
-                if (c == null) {
-                    String superClass = null;
-                    switch (min) {
-                    case 0:
-                        switch (max) {
-                        case 1:
-                            superClass = p(JavaMethod.JavaMethodZeroOrOne.class);
-                            break;
-                        case 2:
-                            superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwo.class);
-                            break;
-                        }
-                        break;
-                    case 1:
-                        switch (max) {
-                        case 2:
-                            if (block) {
-                                superClass = p(JavaMethod.JavaMethodOneOrTwoBlock.class);
-                            } else {
-                                superClass = p(JavaMethod.JavaMethodOneOrTwo.class);
-                            }
-                            break;
-                        case 3:
-                            superClass = p(JavaMethod.JavaMethodOneOrTwoOrThree.class);
-                            break;
-                        }
-                        break;
-                    case 2:
-                        switch (max) {
-                        case 3:
-                            superClass = p(JavaMethod.JavaMethodTwoOrThree.class);
-                            break;
-                        }
-                        break;
-                    case -1:
-                        // rest arg, use normal JavaMethod since N case will be defined
-                        superClass = p(JavaMethod.JavaMethodNoBlock.class);
-                        break;
-                    }
-                    if (superClass == null) throw new RuntimeException("invalid multi combination");
-                    ClassWriter cw = createJavaMethodCtor(generatedClassPath, superClass);
-                    
-                    for (JavaMethodDescriptor desc: descs) {
-                        int specificArity = -1;
-                        if (desc.optional == 0 && !desc.rest) {
-                            if (desc.required == 0) {
-                                if (desc.actualRequired <= 3) {
-                                    specificArity = desc.actualRequired;
-                                } else {
-                                    specificArity = -1;
-                                }
-                            } else if (desc.required >= 0 && desc.required <= 3) {
-                                specificArity = desc.required;
-                            }
-                        }
-
-                        boolean hasBlock = desc.hasBlock;
-                        SkinnyMethodAdapter mv = null;
-
-                        mv = beginMethod(cw, "call", specificArity, hasBlock);
-                        mv.visitCode();
-                        Label line = new Label();
-                        mv.visitLineNumber(0, line);
-
-                        createAnnotatedMethodInvocation(desc, mv, superClass, specificArity, hasBlock);
-
-                        endMethod(mv);
-                    }
-
-                    c = endClass(implementationClass.getRuntime(), cw, generatedClassName);
-                }
 
                 JavaMethod ic = (JavaMethod)c.getConstructor(new Class[]{RubyModule.class, Visibility.class}).newInstance(new Object[]{implementationClass, desc1.anno.visibility()});
 
@@ -423,21 +349,96 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
     /**
      * Use code generation to provide a method handle based on an annotated Java
-     * method.
+     * method. Return the resulting generated or loaded class.
      * 
      * @see org.jruby.internal.runtime.methods.MethodFactory#getAnnotatedMethod
      */
-    public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc) {
-        String javaMethodName = desc.name;
+    public Class getAnnotatedMethodClass(List<JavaMethodDescriptor> descs) throws Exception {
+        JavaMethodDescriptor desc1 = descs.get(0);
+        String javaMethodName = desc1.name;
         
-        String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, desc.declaringClassName, desc.isStatic, desc.actualRequired, desc.optional, false);
+        if (DEBUG) out.println("Binding multiple: " + desc1.declaringClassName + "." + javaMethodName);
+        
+        String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, desc1.declaringClassName, desc1.isStatic, desc1.actualRequired, desc1.optional, true);
         String generatedClassPath = generatedClassName.replace('.', '/');
         
         synchronized (classLoader) {
-            Class c = tryClass(implementationClass.getRuntime(), generatedClassName);
+            Class c = tryClass(generatedClassName);
 
-            try {
-                if (c == null) {
+            int min = Integer.MAX_VALUE;
+            int max = 0;
+            boolean block = false;
+
+            for (JavaMethodDescriptor desc: descs) {
+                int specificArity = -1;
+                if (desc.optional == 0 && !desc.rest) {
+                    if (desc.required == 0) {
+                        if (desc.actualRequired <= 3) {
+                            specificArity = desc.actualRequired;
+                        } else {
+                            specificArity = -1;
+                        }
+                    } else if (desc.required >= 0 && desc.required <= 3) {
+                        specificArity = desc.required;
+                    }
+                }
+
+                if (specificArity < min) {
+                    min = specificArity;
+                }
+
+                if (specificArity > max) {
+                    max = specificArity;
+                }
+
+                block |= desc.hasBlock;
+            }
+
+            if (DEBUG) out.println(" min: " + min + ", max: " + max);
+
+            if (c == null) {
+                String superClass = null;
+                switch (min) {
+                case 0:
+                    switch (max) {
+                    case 1:
+                        superClass = p(JavaMethod.JavaMethodZeroOrOne.class);
+                        break;
+                    case 2:
+                        superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwo.class);
+                        break;
+                    }
+                    break;
+                case 1:
+                    switch (max) {
+                    case 2:
+                        if (block) {
+                            superClass = p(JavaMethod.JavaMethodOneOrTwoBlock.class);
+                        } else {
+                            superClass = p(JavaMethod.JavaMethodOneOrTwo.class);
+                        }
+                        break;
+                    case 3:
+                        superClass = p(JavaMethod.JavaMethodOneOrTwoOrThree.class);
+                        break;
+                    }
+                    break;
+                case 2:
+                    switch (max) {
+                    case 3:
+                        superClass = p(JavaMethod.JavaMethodTwoOrThree.class);
+                        break;
+                    }
+                    break;
+                case -1:
+                    // rest arg, use normal JavaMethod since N case will be defined
+                    superClass = p(JavaMethod.JavaMethodNoBlock.class);
+                    break;
+                }
+                if (superClass == null) throw new RuntimeException("invalid multi combination");
+                ClassWriter cw = createJavaMethodCtor(generatedClassPath, superClass);
+
+                for (JavaMethodDescriptor desc: descs) {
                     int specificArity = -1;
                     if (desc.optional == 0 && !desc.rest) {
                         if (desc.required == 0) {
@@ -451,24 +452,41 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                         }
                     }
 
-                    boolean block = desc.hasBlock;
-
-                    String superClass = p(selectSuperClass(specificArity, block));
-
-                    ClassWriter cw = createJavaMethodCtor(generatedClassPath, superClass);
+                    boolean hasBlock = desc.hasBlock;
                     SkinnyMethodAdapter mv = null;
 
-                    mv = beginMethod(cw, "call", specificArity, block);
+                    mv = beginMethod(cw, "call", specificArity, hasBlock);
                     mv.visitCode();
                     Label line = new Label();
                     mv.visitLineNumber(0, line);
 
-                    createAnnotatedMethodInvocation(desc, mv, superClass, specificArity, block);
+                    createAnnotatedMethodInvocation(desc, mv, superClass, specificArity, hasBlock);
 
                     endMethod(mv);
-
-                    c = endClass(implementationClass.getRuntime(), cw, generatedClassName);
                 }
+
+                c = endClass(cw, generatedClassName);
+            }
+
+            return c;
+        }
+    }
+
+    /**
+     * Use code generation to provide a method handle based on an annotated Java
+     * method.
+     * 
+     * @see org.jruby.internal.runtime.methods.MethodFactory#getAnnotatedMethod
+     */
+    public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc) {
+        String javaMethodName = desc.name;
+        
+        String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, desc.declaringClassName, desc.isStatic, desc.actualRequired, desc.optional, false);
+        String generatedClassPath = generatedClassName.replace('.', '/');
+        
+        synchronized (classLoader) {
+            try {
+                Class c = getAnnotatedMethodClass(desc);
 
                 JavaMethod ic = (JavaMethod)c.getConstructor(new Class[]{RubyModule.class, Visibility.class}).newInstance(new Object[]{implementationClass, desc.anno.visibility()});
 
@@ -481,6 +499,58 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 e.printStackTrace();
                 throw implementationClass.getRuntime().newLoadError(e.getMessage());
             }
+        }
+    }
+
+    /**
+     * Use code generation to provide a method handle based on an annotated Java
+     * method.
+     * 
+     * @see org.jruby.internal.runtime.methods.MethodFactory#getAnnotatedMethod
+     */
+    public Class getAnnotatedMethodClass(JavaMethodDescriptor desc) throws Exception {
+        String javaMethodName = desc.name;
+        
+        String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, desc.declaringClassName, desc.isStatic, desc.actualRequired, desc.optional, false);
+        String generatedClassPath = generatedClassName.replace('.', '/');
+        
+        synchronized (classLoader) {
+            Class c = tryClass(generatedClassName);
+
+            if (c == null) {
+                int specificArity = -1;
+                if (desc.optional == 0 && !desc.rest) {
+                    if (desc.required == 0) {
+                        if (desc.actualRequired <= 3) {
+                            specificArity = desc.actualRequired;
+                        } else {
+                            specificArity = -1;
+                        }
+                    } else if (desc.required >= 0 && desc.required <= 3) {
+                        specificArity = desc.required;
+                    }
+                }
+
+                boolean block = desc.hasBlock;
+
+                String superClass = p(selectSuperClass(specificArity, block));
+
+                ClassWriter cw = createJavaMethodCtor(generatedClassPath, superClass);
+                SkinnyMethodAdapter mv = null;
+
+                mv = beginMethod(cw, "call", specificArity, block);
+                mv.visitCode();
+                Label line = new Label();
+                mv.visitLineNumber(0, line);
+
+                createAnnotatedMethodInvocation(desc, mv, superClass, specificArity, block);
+
+                endMethod(mv);
+
+                c = endClass(cw, generatedClassName);
+            }
+            
+            return c;
         }
     }
 
@@ -513,7 +583,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         String generatedClassPath = typePath + "Invoker";
         
         synchronized (classLoader) {
-            Class c = tryClass(implementationClass.getRuntime(), generatedClassName);
+            Class c = tryClass(generatedClassName);
 
             try {
                 ArrayList<Method> annotatedMethods = new ArrayList();
@@ -582,7 +652,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     mv.invokevirtual(p(Ruby.class), "newRuntimeError", sig(RaiseException.class, String.class));
                     mv.athrow();
 
-                    c = endCall(implementationClass.getRuntime(), cw, mv, generatedClassName);
+                    c = endCall(cw, mv, generatedClassName);
                 }
 
                 for (int i = 0; i < annotatedMethods.size(); i++) {
@@ -913,12 +983,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             }
         }
     }
-
-    private Class tryClass(Ruby runtime, String name) {
+    private Class tryClass(String name) {
         try {
             Class c = null;
             if (classLoader == null) {
-                c = Class.forName(name, true, runtime.getJRubyClassLoader());
+                c = Class.forName(name, true, classLoader);
             } else {
                 c = classLoader.loadClass(name);
             }
@@ -935,9 +1004,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    protected Class endCall(Ruby runtime, ClassWriter cw, MethodVisitor mv, String name) {
+    protected Class endCall(ClassWriter cw, MethodVisitor mv, String name) {
         endMethod(mv);
-        return endClass(runtime, cw, name);
+        return endClass(cw, name);
     }
 
     protected void endMethod(MethodVisitor mv) {
@@ -945,19 +1014,12 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         mv.visitEnd();
     }
 
-    protected Class endClass(Ruby runtime, ClassWriter cw, String name) {
+    protected Class endClass(ClassWriter cw, String name) {
         cw.visitEnd();
         byte[] code = cw.toByteArray();
         CheckClassAdapter.verify(new ClassReader(code), false, new PrintWriter(System.err));
-        if (classLoader == null) classLoader = runtime.getJRubyClassLoader();
          
         return classLoader.defineClass(name, code);
-    }
-    
-    private void loadArguments(MethodVisitor mv, int argsIndex, int count) {
-        for (int i = 0; i < count; i++) {
-            loadArgument(mv, argsIndex, i);
-        }
     }
     
     private void loadArgument(MethodVisitor mv, int argsIndex, int argIndex) {
