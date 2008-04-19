@@ -46,7 +46,7 @@ public class NullChannel implements WritableByteChannel, ReadableByteChannel {
             throw new EOFException();
         }
         int length = buffer.remaining();
-        buffer.position(buffer.position());
+        buffer.position(buffer.position() + length);
         return length;
     }
 
