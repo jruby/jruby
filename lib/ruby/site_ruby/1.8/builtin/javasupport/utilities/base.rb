@@ -19,7 +19,7 @@ module JavaUtilities
 
     subclass.send(:define_method, "__jcreate!") {|*args|
       self.class.java_proxy_class ||= Java::JavaProxyClass.get_with_class(self.class)
-      p self.class.java_proxy_class.constructors
+      
       constructors = self.class.java_proxy_class.constructors.select {|c| c.arity == args.length }
       raise NameError.new("wrong # of arguments for constructor") if constructors.empty?
       args.collect! { |v| Java.ruby_to_java(v) }
