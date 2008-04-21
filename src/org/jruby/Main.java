@@ -96,7 +96,6 @@ public class Main {
             }
             return mee.getStatus();
         } catch (ThreadKill kill) {
-            System.out.println("here");
             return 0;
         }
     }
