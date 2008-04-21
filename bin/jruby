@@ -110,6 +110,8 @@ do
      -e|-I|-S) ruby_args=("${ruby_args[@]}" "$1" "$2"); shift ;;
      # Match same switches with argument stuck together
      -e*|-I*|-S*) ruby_args=("${ruby_args[@]}" "$1" ) ;;
+     # Run with the instrumented profiler: http://jiprof.sourceforge.net/
+     --profile) PROFILE_ARGS="-javaagent:$JRUBY_HOME/lib/profile.jar -Dprofile.properties=$JRUBY_HOME/lib/profile.properties" ;;
      # Abort processing on the double dash
      --) break ;;
      # Other opts go to ruby
@@ -141,8 +143,22 @@ if $cygwin; then
   fi
 fi
 
-exec "$JAVA_CMD" $JAVA_OPTS "${java_args[@]}" -classpath "$CP" \
-  "-Djruby.home=$JRUBY_HOME" \
-  "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
-  "-Djruby.shell=$JRUBY_SHELL" \
-  org.jruby.Main $JRUBY_OPTS "$@"
+if [ "$PROFILE_ARGS" != "" ]; then
+  echo "Running with instrumented profiler"
+
+  $JAVA_CMD $PROFILE_ARGS $JAVA_OPTS "${java_args[@]}" -classpath "$CP" \
+    "-Djruby.home=$JRUBY_HOME" \
+    "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
+    "-Djruby.shell=$JRUBY_SHELL" \
+    org.jruby.Main $JRUBY_OPTS "$@"
+
+  echo "Profiling results:"
+
+  cat profile.txt
+else
+  exec "$JAVA_CMD" $JAVA_OPTS "${java_args[@]}" -classpath "$CP" \
+    "-Djruby.home=$JRUBY_HOME" \
+    "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
+    "-Djruby.shell=$JRUBY_SHELL" \
+    org.jruby.Main $JRUBY_OPTS "$@"
+fi

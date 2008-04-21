@@ -18,7 +18,7 @@ public class JavaNameMangler {
     
     public static String mangledFilenameForStartupClasspath(String filename) {
         if (filename.equals("-e")) {
-            return "__dash_e__";
+            return "ruby/__dash_e__";
         }
         
         return mangleFilenameForClasspath(filename, null, "ruby");
