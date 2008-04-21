@@ -112,6 +112,16 @@ do
      -e*|-I*|-S*) ruby_args=("${ruby_args[@]}" "$1" ) ;;
      # Run with the instrumented profiler: http://jiprof.sourceforge.net/
      --profile) PROFILE_ARGS="-javaagent:$JRUBY_HOME/lib/profile.jar -Dprofile.properties=$JRUBY_HOME/lib/profile.properties" ;;
+     # Run under JDB
+     --debug)
+        if [ -z "$JAVA_HOME" ] ; then
+          JAVA_CMD='jdb'
+        else
+          if $cygwin; then
+            JAVA_HOME=`cygpath -u "$JAVA_HOME"`
+          fi
+          JAVA_CMD="$JAVA_HOME/bin/jdb"
+        fi ;;
      # Abort processing on the double dash
      --) break ;;
      # Other opts go to ruby
