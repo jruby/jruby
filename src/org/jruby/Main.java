@@ -42,6 +42,7 @@ import java.io.PrintStream;
 
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.ThreadKill;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.SimpleSampler;
 
@@ -94,6 +95,9 @@ public class Main {
                 }
             }
             return mee.getStatus();
+        } catch (ThreadKill kill) {
+            System.out.println("here");
+            return 0;
         }
     }
 

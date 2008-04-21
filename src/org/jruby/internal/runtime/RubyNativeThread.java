@@ -33,6 +33,7 @@ import org.jruby.RubyProc;
 import org.jruby.RubyThread;
 import org.jruby.RubyThreadGroup;
 import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.runtime.Block;
@@ -80,6 +81,9 @@ public class RubyNativeThread extends Thread {
             rubyThread.exceptionRaised(runtime.newThreadError("return can't jump across threads"));
         } catch (RaiseException e) {
             rubyThread.exceptionRaised(e);
+        } catch (MainExitException mee) {
+            // Someone called exit!, so we need to kill the main thread
+            runtime.getThreadService().getMainThread().kill();
         } finally {
             runtime.getThreadService().setCritical(false);
             runtime.getThreadService().unregisterThread(rubyThread);

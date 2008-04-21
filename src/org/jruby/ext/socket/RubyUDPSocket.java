@@ -61,15 +61,12 @@ public class RubyUDPSocket extends RubyIPSocket {
 
     static void createUDPSocket(Ruby runtime) {
         RubyClass rb_cUDPSocket = runtime.defineClass("UDPSocket", runtime.fastGetClass("IPSocket"), UDPSOCKET_ALLOCATOR);
-        try {
-            rb_cUDPSocket.includeModule(runtime.fastGetClass("Socket").fastGetConstant("Constants"));
+        
+        rb_cUDPSocket.includeModule(runtime.fastGetClass("Socket").fastGetConstant("Constants"));
 
-            rb_cUDPSocket.defineAnnotatedMethods(RubyUDPSocket.class);
+        rb_cUDPSocket.defineAnnotatedMethods(RubyUDPSocket.class);
 
-            runtime.getObject().fastSetConstant("UDPsocket", rb_cUDPSocket);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
+        runtime.getObject().fastSetConstant("UDPsocket", rb_cUDPSocket);
     }
     private static ObjectAllocator UDPSOCKET_ALLOCATOR = new ObjectAllocator() {
 

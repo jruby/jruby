@@ -389,7 +389,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                 throw getRuntime().newTypeError("illegal access on '" + sm.getName() + "': " + 
                         iae.getMessage());
             } catch (InvocationTargetException ite) {
-                ite.getTargetException().printStackTrace();
+                if (getRuntime().getDebug().isTrue()) ite.getTargetException().printStackTrace();
                 getRuntime().getJavaSupport().handleNativeException(ite.getTargetException());
                 // This point is only reached if there was an exception handler
                 // installed.

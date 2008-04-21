@@ -228,7 +228,7 @@ public class JavaUtil {
         try {
             return ((JavaObject) rubyObject).getValue();
         } catch (ClassCastException ex) {
-            ex.printStackTrace();
+            if (rubyObject.getRuntime().getDebug().isTrue()) ex.printStackTrace();
             return null;
         }
     }
