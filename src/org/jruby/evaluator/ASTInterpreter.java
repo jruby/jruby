@@ -647,6 +647,30 @@ public class ASTInterpreter {
         CallNode iVisited = (CallNode) node;
 
         IRubyObject receiver = evalInternal(runtime,context, iVisited.getReceiverNode(), self, aBlock);
+        
+        Node argsNode = iVisited.getArgsNode();
+        
+        if (iVisited.getIterNode() == null && argsNode != null && argsNode.nodeId == NodeType.ARRAYNODE) {
+            ArrayNode arrayNode = (ArrayNode)argsNode;
+            
+            switch (arrayNode.size()) {
+            case 0:
+                return iVisited.callAdapter.call(context, receiver);
+            case 1:
+                IRubyObject arg0 = evalInternal(runtime, context, arrayNode.get(0), self, aBlock);
+                return iVisited.callAdapter.call(context, receiver, arg0);
+            case 2:
+                arg0 = evalInternal(runtime, context, arrayNode.get(0), self, aBlock);
+                IRubyObject arg1 = evalInternal(runtime, context, arrayNode.get(1), self, aBlock);
+                return iVisited.callAdapter.call(context, receiver, arg0, arg1);
+            case 3:
+                arg0 = evalInternal(runtime, context, arrayNode.get(0), self, aBlock);
+                arg1 = evalInternal(runtime, context, arrayNode.get(1), self, aBlock);
+                IRubyObject arg2 = evalInternal(runtime, context, arrayNode.get(2), self, aBlock);
+                return iVisited.callAdapter.call(context, receiver, arg0, arg1, arg2);
+            }
+        }
+        
         IRubyObject[] args = setupArgs(runtime, context, iVisited.getArgsNode(), self, aBlock);
         
         assert receiver.getMetaClass() != null : receiver.getClass().getName();
@@ -1095,6 +1119,28 @@ public class ASTInterpreter {
 
     private static IRubyObject fCallNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         FCallNode iVisited = (FCallNode) node;
+        
+        Node argsNode = iVisited.getArgsNode();
+        if (iVisited.getIterNode() == null && argsNode != null && argsNode.nodeId == NodeType.ARRAYNODE) {
+            ArrayNode arrayNode = (ArrayNode)argsNode;
+            
+            switch (arrayNode.size()) {
+            case 0:
+                return iVisited.callAdapter.call(context, self);
+            case 1:
+                IRubyObject arg0 = evalInternal(runtime, context, arrayNode.get(0), self, aBlock);
+                return iVisited.callAdapter.call(context, self, arg0);
+            case 2:
+                arg0 = evalInternal(runtime, context, arrayNode.get(0), self, aBlock);
+                IRubyObject arg1 = evalInternal(runtime, context, arrayNode.get(1), self, aBlock);
+                return iVisited.callAdapter.call(context, self, arg0, arg1);
+            case 3:
+                arg0 = evalInternal(runtime, context, arrayNode.get(0), self, aBlock);
+                arg1 = evalInternal(runtime, context, arrayNode.get(1), self, aBlock);
+                IRubyObject arg2 = evalInternal(runtime, context, arrayNode.get(2), self, aBlock);
+                return iVisited.callAdapter.call(context, self, arg0, arg1, arg2);
+            }
+        }
         
         IRubyObject[] args = setupArgs(runtime, context, iVisited.getArgsNode(), self, aBlock);
         Block block = getBlock(runtime, context, self, aBlock, iVisited.getIterNode());
