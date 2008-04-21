@@ -949,7 +949,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 boolean hasMultipleArgsHead,
                 NodeType argsNodeId,
                 ASTInspector inspector) {
-            String closureMethodName = "closure_" + line + "_" + ++innerIndex;
+            String closureMethodName = "block_" + ++innerIndex + "$RUBY$" + "__block__";
             
             ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, inspector);
             
@@ -1409,7 +1409,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         protected String getNewEnsureName() {
-            return "__ensure_" + (ensureNumber++);
+            return "ensure_" + (ensureNumber++) + "$RUBY$__ensure__";
         }
 
         public void protect(BranchCallback regularCode, BranchCallback protectedCode, Class ret) {
@@ -1495,7 +1495,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         protected String getNewRescueName() {
-            return "__rescue_" + (rescueNumber++);
+            return "rescue_" + (rescueNumber++) + "$RUBY$__rescue__";
         }
 
         public void rescue(BranchCallback regularCode, Class exception, BranchCallback catchCode, Class ret) {
@@ -1961,7 +1961,13 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 final CompilerCallback pathCallback, 
                 final CompilerCallback bodyCallback, 
                 final CompilerCallback receiverCallback) {
-            String methodName = "rubyclass__" + JavaNameMangler.mangleStringForCleanJavaIdentifier(name) + "__" + ++methodIndex;
+            String methodName = null;
+            if (receiverCallback == null) {
+                String mangledName = JavaNameMangler.mangleStringForCleanJavaIdentifier(name);
+                methodName = "class_" + ++methodIndex + "$RUBY$" + mangledName;
+            } else {
+                methodName = "sclass_" + ++methodIndex + "$RUBY$__singleton__";
+            }
 
             final ASMMethodCompiler methodCompiler = new ASMMethodCompiler(methodName, null);
             
@@ -2060,7 +2066,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void defineModule(final String name, final StaticScope staticScope, final CompilerCallback pathCallback, final CompilerCallback bodyCallback) {
-            String methodName = "rubyclass__" + JavaNameMangler.mangleStringForCleanJavaIdentifier(name) + "__" + ++methodIndex;
+            String mangledName = JavaNameMangler.mangleStringForCleanJavaIdentifier(name);
+            String methodName = "module__" + ++methodIndex + "$RUBY$" + mangledName;
 
             final ASMMethodCompiler methodCompiler = new ASMMethodCompiler(methodName, null);
 
@@ -2233,7 +2240,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             if (root && Boolean.getBoolean("jruby.compile.toplevel")) {
                 methodName = name;
             } else {
-                methodName = JavaNameMangler.mangleStringForCleanJavaIdentifier(name) + "__" + methodIndex;
+                String mangledName = JavaNameMangler.mangleStringForCleanJavaIdentifier(name);
+                methodName = "method__" + methodIndex + "$RUBY$" + mangledName;
             }
 
             MethodCompiler methodCompiler = startMethod(methodName, args, scope, inspector);
@@ -2381,16 +2389,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void loadBlock() {
             loadThreadContext();
             invokeThreadContext("getFrameBlock", sig(Block.class));
-        }
-
-        @Override
-        protected String getNewRescueName() {
-            return closureMethodName + "_" + super.getNewRescueName();
-        }
-
-        @Override
-        protected String getNewEnsureName() {
-            return closureMethodName + "_" + super.getNewEnsureName();
         }
 
         public void performReturn() {
