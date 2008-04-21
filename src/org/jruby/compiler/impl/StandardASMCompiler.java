@@ -978,7 +978,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void runBeginBlock(StaticScope scope, CompilerCallback body) {
-            String closureMethodName = "closure" + ++innerIndex;
+            String closureMethodName = "block_" + ++innerIndex + "$RUBY$__begin__";
             
             ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, null);
             
@@ -1001,7 +1001,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void createNewForLoop(int arity, CompilerCallback body, CompilerCallback args, boolean hasMultipleArgsHead, NodeType argsNodeId) {
-            String closureMethodName = "closure" + ++innerIndex;
+            String closureMethodName = "block_" + ++innerIndex + "$RUBY$__for__";
             
             ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, null);
             
@@ -1026,7 +1026,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void createNewEndBlock(CompilerCallback body) {
-            String closureMethodName = "END_closure" + ++innerIndex;
+            String closureMethodName = "block_" + ++innerIndex + "$RUBY$__end__";
             
             ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, null);
             
