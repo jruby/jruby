@@ -8,6 +8,8 @@ package org.jruby.runtime.builtin;
 import java.util.List;
 
 /**
+ * Interface that gives access to the internal variables of a Ruby
+ * object.
  *
  * @author headius
  */
