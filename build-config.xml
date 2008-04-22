@@ -2,7 +2,7 @@
 
 <jruby>
   <version>
-  	 <jruby>1.1RC3</jruby>
+  	 <jruby>1.1.1</jruby>
   	 <ruby major="1.8" minor="6"/>
   </version>
 </jruby>
