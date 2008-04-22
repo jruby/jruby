@@ -33,6 +33,7 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -54,7 +55,7 @@ public class RubyGC {
         return result;        
     }
 
-    @JRubyMethod(meta = true)
+    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject start(IRubyObject recv) {
         System.gc();
         return recv.getRuntime().getNil();
@@ -66,13 +67,13 @@ public class RubyGC {
         return recv.getRuntime().getNil();
     }
 
-    @JRubyMethod(meta = true)
+    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject enable(IRubyObject recv) {
         recv.getRuntime().getWarnings().warn(ID.EMPTY_IMPLEMENTATION, "GC.enable will not work on JRuby", "GC.enable");
         return recv.getRuntime().getNil();
     }
 
-    @JRubyMethod(meta = true)
+    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject disable(IRubyObject recv) {
         recv.getRuntime().getWarnings().warn(ID.EMPTY_IMPLEMENTATION, "GC.disable will not work on JRuby", "GC.disable");
         return recv.getRuntime().getNil();
