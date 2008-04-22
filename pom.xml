@@ -236,7 +236,6 @@
         <jruby.package>org.jruby</jruby.package>
         <jruby.main.class>org.jruby.Main</jruby.main.class>
         <javac.version>${java.specification.version}</javac.version>
-        <os.arch>${os.arch}</os.arch>
         <jruby.launch.memory>384m</jruby.launch.memory>
       </properties>
     </profile>

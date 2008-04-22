@@ -1,6 +1,7 @@
 require "test/unit"
 require "fileutils"
 require 'test/test_helper'
+require 'rbconfig'
 
 # Necessary because of http://jira.codehaus.org/browse/JRUBY-1579
 require "jruby"
@@ -47,6 +48,7 @@ class LoadCompiledRubyClassFromClasspathTest < Test::Unit::TestCase
   end
 
   def test_loading_compiled_ruby_class_from_jar
+    return if RbConfig::CONFIG['host_os'] == "SunOS"
     create_compiled_class
 
     append_to_classpath jruby_jar
