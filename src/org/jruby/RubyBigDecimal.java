@@ -560,17 +560,43 @@ public class RubyBigDecimal extends RubyNumeric {
     public IRubyObject op_uminus() {
         return new RubyBigDecimal(getRuntime(), value.negate());
     }
-    
-    @JRubyMethod(name = {"/", "div", "quo"}, required = 1, optional = 1)
-    public IRubyObject op_div(ThreadContext context, IRubyObject[] args) {
-        int scale = 0;
-        if(args.length == 2) {
-            scale = RubyNumeric.fix2int(args[1]);
+
+    @JRubyMethod(name = {"/", "quo"})
+    public IRubyObject op_quo(ThreadContext context, IRubyObject other) {
+        // regular division with some default precision
+        // TODO: proper algorithm to set the precision
+        return op_div(context, other, getRuntime().newFixnum(200));
+    }
+
+    @JRubyMethod(name = "div")
+    public IRubyObject op_div(ThreadContext context, IRubyObject other) {
+        // integer division
+        RubyBigDecimal val = getVpValue(other, false);
+        if (val == null) {
+            return callCoerced(context, "div", other);
         }
 
-        RubyBigDecimal val = getVpValue(args[0],false);
-        if(val == null) {
-            return callCoerced(context, "/",args[0]);
+        if (isNaN() || val.isZero() || val.isNaN()) {
+            return newNaN(getRuntime());
+        }
+
+        if (isInfinity() || val.isInfinity()) {
+            return newNaN(getRuntime());
+        }
+
+        return new RubyBigDecimal(getRuntime(),
+                this.value.divideToIntegralValue(val.value)).setResult();
+    }
+
+    @JRubyMethod(name = "div")
+    public IRubyObject op_div(ThreadContext context, IRubyObject other, IRubyObject digits) {
+        // TODO: take BigDecimal.mode into account.
+
+        int scale = RubyNumeric.fix2int(digits);
+
+        RubyBigDecimal val = getVpValue(other, false);
+        if (val == null) {
+            return callCoerced(context, "/", other);
         }
 
         if (isNaN() || val.isZero() || val.isNaN()) {
@@ -589,13 +615,17 @@ public class RubyBigDecimal extends RubyNumeric {
             return newNaN(getRuntime());
         }
 
-        if(scale == 0) {
-            return new RubyBigDecimal(getRuntime(),value.divide(val.value,200,BigDecimal.ROUND_HALF_UP)).setResult();
+        if (scale == 0) {
+            // MRI behavior: "If digits is 0, the result is the same as the / operator."
+            return op_quo(context, other);
         } else {
-            return new RubyBigDecimal(getRuntime(),value.divide(val.value,200,BigDecimal.ROUND_HALF_UP)).setResult(scale);
+            // TODO: better algorithm to set precision needed
+            int prec = Math.max(200, scale);
+            return new RubyBigDecimal(getRuntime(),
+                    value.divide(val.value, prec, BigDecimal.ROUND_HALF_UP)).setResult(scale);
         }
     }
-    
+
     private IRubyObject cmp(ThreadContext context, IRubyObject r, char op) {
         int e = 0;
         RubyBigDecimal rb = getVpValue(r,false);
