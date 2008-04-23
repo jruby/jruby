@@ -659,7 +659,14 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "abs")
     public IRubyObject abs() {
-        return new RubyBigDecimal(getRuntime(),value.abs()).setResult();
+        Ruby runtime = getRuntime();
+        if (isNaN) {
+            return newNaN(runtime);
+        }
+        if (isInfinity()) {
+            return newInfinity(runtime, 1);
+        }
+        return new RubyBigDecimal(getRuntime(), value.abs()).setResult();
     }
 
     @JRubyMethod(name = "ceil", optional = 1)
