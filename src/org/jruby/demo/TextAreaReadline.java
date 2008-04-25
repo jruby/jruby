@@ -28,6 +28,7 @@ import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 
 import org.jruby.Ruby;
+import org.jruby.RubyIO;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ext.Readline;
@@ -256,6 +257,17 @@ public class TextAreaReadline implements KeyListener {
     
     private Ruby runtime;
 
+    /**
+     * Hooks this <code>TextAreaReadline</code> instance into the
+     * runtime, redefining the <code>Readline</code> module so that
+     * it uses this object. This method does not redefine the standard
+     * input-output streams. If you need that, use
+     * {@link #hookIntoRuntimeWithStreams(Ruby)}.
+     *
+     * @param runtime
+     *                The runtime.
+     * @see #hookIntoRuntimeWithStreams(Ruby)
+     */
     public void hookIntoRuntime(final Ruby runtime) {
         this.runtime = runtime;
         /* Hack in to replace usual readline with this */
@@ -273,6 +285,27 @@ public class TextAreaReadline implements KeyListener {
             }
             public Arity getArity() { return Arity.twoArguments(); }
         });
+    }
+
+    /**
+     * Hooks this <code>TextAreaReadline</code> instance into the
+     * runtime, redefining the <code>Readline</code> module so that
+     * it uses this object. This method also redefines the standard
+     * input-output streams accordingly.
+     *
+     * @param runtime
+     *                The runtime.
+     * @see #hookIntoRuntime(Ruby)
+     */
+    public void hookIntoRuntimeWithStreams(final Ruby runtime) {
+        hookIntoRuntime(runtime);
+
+        RubyIO in = new RubyIO(runtime, getInputStream());
+        runtime.getGlobalVariables().set("$stdin", in);
+
+        RubyIO out = new RubyIO(runtime, getOutputStream());
+        runtime.getGlobalVariables().set("$stdout", out);
+        runtime.getGlobalVariables().set("$stderr", out);
     }
     
     protected void completeAction(KeyEvent event) {
