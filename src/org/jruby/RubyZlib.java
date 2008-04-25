@@ -35,6 +35,7 @@ import java.util.ArrayList;
 
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyModule;
@@ -777,7 +778,7 @@ public class RubyZlib {
             return getRuntime().newFixnum(line);
         }
 
-        @JRubyMethod(name = "readline")
+        @JRubyMethod(name = "readline", writes = FrameField.LASTLINE)
         public IRubyObject readline(ThreadContext context) throws IOException {
             IRubyObject dst = gets(context, new IRubyObject[0]);
             if (dst.isNil()) {
@@ -806,7 +807,7 @@ public class RubyZlib {
             return RubyString.newString(getRuntime(),result);
         }
 
-        @JRubyMethod(name = "gets", optional = 1)
+        @JRubyMethod(name = "gets", optional = 1, writes = FrameField.LASTLINE)
         public IRubyObject gets(ThreadContext context, IRubyObject[] args) throws IOException {
             IRubyObject result = internalGets(args);
             if (!result.isNil()) {

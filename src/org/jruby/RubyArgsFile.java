@@ -31,6 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -159,7 +160,7 @@ public class RubyArgsFile {
     /** Read a line.
      * 
      */
-    @JRubyMethod(name = "gets", optional = 1, frame = true)
+    @JRubyMethod(name = "gets", optional = 1, frame = true, writes = FrameField.LASTLINE)
     public static IRubyObject gets(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject result = internalGets(context, recv, args);
 
@@ -173,7 +174,7 @@ public class RubyArgsFile {
     /** Read a line.
      * 
      */
-    @JRubyMethod(name = "readline", optional = 1, frame = true)
+    @JRubyMethod(name = "readline", optional = 1, frame = true, writes = FrameField.LASTLINE)
     public static IRubyObject readline(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject line = gets(context, recv, args);
 

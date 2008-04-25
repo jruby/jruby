@@ -57,6 +57,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
@@ -1293,7 +1294,7 @@ public class RubyIO extends RubyObject {
     /** Print some objects to the stream.
      * 
      */
-    @JRubyMethod(name = "print", rest = true)
+    @JRubyMethod(name = "print", rest = true, reads = FrameField.LASTLINE)
     public IRubyObject print(ThreadContext context, IRubyObject[] args) {
         if (args.length == 0) {
             args = new IRubyObject[] { context.getCurrentFrame().getLastLine() };
@@ -1759,7 +1760,7 @@ public class RubyIO extends RubyObject {
     /** Read a line.
      * 
      */
-    @JRubyMethod(name = "gets", optional = 1)
+    @JRubyMethod(name = "gets", optional = 1, writes = FrameField.LASTLINE)
     public IRubyObject gets(ThreadContext context, IRubyObject[] args) {
         ByteList separator = getSeparatorForGets(args);
         
@@ -1885,7 +1886,7 @@ public class RubyIO extends RubyObject {
     /** Read a line.
      * 
      */
-    @JRubyMethod(name = "readline", optional = 1)
+    @JRubyMethod(name = "readline", optional = 1, writes = FrameField.LASTLINE)
     public IRubyObject readline(ThreadContext context, IRubyObject[] args) {
         IRubyObject line = gets(context, args);
 

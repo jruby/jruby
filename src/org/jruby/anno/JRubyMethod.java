@@ -71,4 +71,28 @@ public @interface JRubyMethod {
      * Whether to use a frame slot for backtrace information
      */
     boolean backtrace() default false;
+    /**
+     * What, if anything, method reads from caller's frame
+     */
+    FrameField[] reads() default {};
+    /**
+     * What, if anything, method writes to caller's frame
+     */
+    FrameField[] writes() default {};
+    /**
+     * Whether the method expects to set caller's backref
+     */
+    boolean setsBackref() default false;
+    /**
+     * Whether the method expects to get caller's backref
+     */
+    boolean getsBackref() default false;
+    /**
+     * Whether the method expects to set caller's lastline
+     */
+    boolean setsLastline() default false;
+    /**
+     * Whether the method expects to get caller's lastline
+     */
+    boolean getsLastline() default false;
 }

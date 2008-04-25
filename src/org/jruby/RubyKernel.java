@@ -44,6 +44,7 @@ package org.jruby;
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 
@@ -425,12 +426,12 @@ public class RubyKernel {
         return getLastlineString(context, recv.getRuntime()).sub_bang(context, args, block);
     }
 
-    @JRubyMethod(name = "sub!", frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "sub!", frame = true, module = true, visibility = Visibility.PRIVATE, reads = FrameField.LASTLINE)
     public static IRubyObject sub_bang(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
         return getLastlineString(context, recv.getRuntime()).sub_bang(context, arg0, block);
     }
 
-    @JRubyMethod(name = "sub!", frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "sub!", frame = true, module = true, visibility = Visibility.PRIVATE, reads = FrameField.LASTLINE)
     public static IRubyObject sub_bang(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
         return getLastlineString(context, recv.getRuntime()).sub_bang(context, arg0, arg1, block);
     }
@@ -449,7 +450,7 @@ public class RubyKernel {
         return str;
     }
 
-    @JRubyMethod(name = "sub", frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "sub", frame = true, module = true, visibility = Visibility.PRIVATE, reads = FrameField.LASTLINE, writes = FrameField.LASTLINE)
     public static IRubyObject sub(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
         RubyString str = (RubyString) getLastlineString(context, recv.getRuntime()).dup();
 
@@ -460,7 +461,7 @@ public class RubyKernel {
         return str;
     }
 
-    @JRubyMethod(name = "sub", frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "sub", frame = true, module = true, visibility = Visibility.PRIVATE, reads = FrameField.LASTLINE, writes = FrameField.LASTLINE)
     public static IRubyObject sub(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
         RubyString str = (RubyString) getLastlineString(context, recv.getRuntime()).dup();
 
@@ -479,12 +480,12 @@ public class RubyKernel {
         return getLastlineString(context, recv.getRuntime()).gsub_bang(context, args, block);
     }
 
-    @JRubyMethod(name = "gsub!", frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "gsub!", frame = true, module = true, visibility = Visibility.PRIVATE, reads = FrameField.LASTLINE, writes = FrameField.LASTLINE)
     public static IRubyObject gsub_bang(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
         return getLastlineString(context, recv.getRuntime()).gsub_bang(context, arg0, block);
     }
 
-    @JRubyMethod(name = "gsub!", frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "gsub!", frame = true, module = true, visibility = Visibility.PRIVATE, reads = FrameField.LASTLINE, writes = FrameField.LASTLINE)
     public static IRubyObject gsub_bang(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
         return getLastlineString(context, recv.getRuntime()).gsub_bang(context, arg0, arg1, block);
     }
@@ -503,7 +504,7 @@ public class RubyKernel {
         return str;
     }
 
-    @JRubyMethod(name = "gsub", frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "gsub", frame = true, module = true, visibility = Visibility.PRIVATE, reads = FrameField.LASTLINE, writes = FrameField.LASTLINE)
     public static IRubyObject gsub(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
         RubyString str = (RubyString) getLastlineString(context, recv.getRuntime()).dup();
 
@@ -514,7 +515,7 @@ public class RubyKernel {
         return str;
     }
 
-    @JRubyMethod(name = "gsub", frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "gsub", frame = true, module = true, visibility = Visibility.PRIVATE, reads = FrameField.LASTLINE, writes = FrameField.LASTLINE)
     public static IRubyObject gsub(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
         RubyString str = (RubyString) getLastlineString(context, recv.getRuntime()).dup();
 
@@ -525,12 +526,12 @@ public class RubyKernel {
         return str;
     }
 
-    @JRubyMethod(name = "chop!", frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "chop!", frame = true, module = true, visibility = Visibility.PRIVATE, reads = FrameField.LASTLINE, writes = FrameField.LASTLINE)
     public static IRubyObject chop_bang(ThreadContext context, IRubyObject recv, Block block) {
         return getLastlineString(context, recv.getRuntime()).chop_bang();
     }
 
-    @JRubyMethod(name = "chop", frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "chop", frame = true, module = true, visibility = Visibility.PRIVATE, reads = FrameField.LASTLINE, writes = FrameField.LASTLINE)
     public static IRubyObject chop(ThreadContext context, IRubyObject recv, Block block) {
         RubyString str = getLastlineString(context, recv.getRuntime());
 
@@ -551,12 +552,12 @@ public class RubyKernel {
         return getLastlineString(context, recv.getRuntime()).chomp_bang(args);
     }
 
-    @JRubyMethod(name = "chomp!", frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "chomp!", frame = true, module = true, visibility = Visibility.PRIVATE, reads = FrameField.LASTLINE, writes = FrameField.LASTLINE)
     public static IRubyObject chomp_bang(ThreadContext context, IRubyObject recv, Block block) {
         return getLastlineString(context, recv.getRuntime()).chomp_bang();
     }
 
-    @JRubyMethod(name = "chomp!", frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "chomp!", frame = true, module = true, visibility = Visibility.PRIVATE, reads = FrameField.LASTLINE, writes = FrameField.LASTLINE)
     public static IRubyObject chomp_bang(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
         return getLastlineString(context, recv.getRuntime()).chomp_bang(arg0);
     }
@@ -577,7 +578,7 @@ public class RubyKernel {
         return dup;
     }
 
-    @JRubyMethod(name = "chomp", frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "chomp", frame = true, module = true, visibility = Visibility.PRIVATE, reads = FrameField.LASTLINE, writes = FrameField.LASTLINE)
     public static IRubyObject chomp(ThreadContext context, IRubyObject recv, Block block) {
         RubyString str = getLastlineString(context, recv.getRuntime());
         RubyString dup = (RubyString) str.dup();
@@ -590,7 +591,7 @@ public class RubyKernel {
         return dup;
     }
 
-    @JRubyMethod(name = "chomp", frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "chomp", frame = true, module = true, visibility = Visibility.PRIVATE, reads = FrameField.LASTLINE, writes = FrameField.LASTLINE)
     public static IRubyObject chomp(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
         RubyString str = getLastlineString(context, recv.getRuntime());
         RubyString dup = (RubyString) str.dup();
@@ -615,22 +616,22 @@ public class RubyKernel {
         return getLastlineString(context, recv.getRuntime()).split(context, args);
     }
 
-    @JRubyMethod(name = "split", frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "split", frame = true, module = true, visibility = Visibility.PRIVATE, reads = FrameField.LASTLINE, writes = FrameField.LASTLINE)
     public static IRubyObject split(ThreadContext context, IRubyObject recv) {
         return getLastlineString(context, recv.getRuntime()).split(context);
     }
 
-    @JRubyMethod(name = "split", frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "split", frame = true, module = true, visibility = Visibility.PRIVATE, reads = FrameField.LASTLINE, writes = FrameField.LASTLINE)
     public static IRubyObject split(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
         return getLastlineString(context, recv.getRuntime()).split(context, arg0);
     }
 
-    @JRubyMethod(name = "split", frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "split", frame = true, module = true, visibility = Visibility.PRIVATE, reads = FrameField.LASTLINE, writes = FrameField.LASTLINE)
     public static IRubyObject split(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
         return getLastlineString(context, recv.getRuntime()).split(context, arg0, arg1);
     }
 
-    @JRubyMethod(name = "scan", required = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "scan", required = 1, frame = true, module = true, visibility = Visibility.PRIVATE, reads = FrameField.LASTLINE, writes = FrameField.LASTLINE)
     public static IRubyObject scan(ThreadContext context, IRubyObject recv, IRubyObject pattern, Block block) {
         return getLastlineString(context, recv.getRuntime()).scan(context, pattern, block);
     }

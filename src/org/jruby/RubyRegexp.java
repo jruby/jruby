@@ -45,6 +45,7 @@ import org.joni.Region;
 import org.joni.Syntax;
 import org.joni.WarnCallback;
 import org.joni.encoding.Encoding;
+import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
@@ -229,7 +230,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
         return getRuntime().getFalse();
     }
 
-    @JRubyMethod(name = "~")
+    @JRubyMethod(name = "~", reads = FrameField.LASTLINE)
     public IRubyObject op_match2(ThreadContext context) {
         IRubyObject line = context.getCurrentFrame().getLastLine();
         if(!(line instanceof RubyString)) {

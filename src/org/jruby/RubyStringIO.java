@@ -31,6 +31,7 @@ package org.jruby;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 
@@ -195,7 +196,7 @@ public class RubyStringIO extends RubyObject {
         return getRuntime().newBoolean(closedWrite);
     }
 
-    @JRubyMethod(name = "each", optional = 1, frame = true)
+    @JRubyMethod(name = "each", optional = 1, frame = true, writes = FrameField.LASTLINE)
     public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
         IRubyObject line = gets(context, args);
        
@@ -288,7 +289,7 @@ public class RubyStringIO extends RubyObject {
         return getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "gets", optional = 1)
+    @JRubyMethod(name = "gets", optional = 1, writes = FrameField.LASTLINE)
     public IRubyObject gets(ThreadContext context, IRubyObject[] args) {
         checkReadable();
 
@@ -545,7 +546,7 @@ public class RubyStringIO extends RubyObject {
         return c;
     }
 
-    @JRubyMethod(name = "readline", optional = 1)
+    @JRubyMethod(name = "readline", optional = 1, writes = FrameField.LASTLINE)
     public IRubyObject readline(ThreadContext context, IRubyObject[] args) {
         IRubyObject line = gets(context, args);
         
@@ -554,7 +555,7 @@ public class RubyStringIO extends RubyObject {
         return line;
     }
     
-    @JRubyMethod(name = "readlines", optional = 1)
+    @JRubyMethod(name = "readlines", optional = 1, writes = FrameField.LASTLINE)
     public IRubyObject readlines(ThreadContext context, IRubyObject[] arg) {
         checkReadable();
         
