@@ -74,6 +74,8 @@ import org.jruby.runtime.Dispatcher;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import static org.jruby.runtime.Visibility.*;
+import static org.jruby.anno.FrameField.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callback.Callback;
@@ -452,7 +454,7 @@ public class RubyModule extends RubyObject {
 
     public void defineMethod(String name, Callback method) {
         Visibility visibility = name.equals("initialize") ?
-                Visibility.PRIVATE : Visibility.PUBLIC;
+                PRIVATE : PUBLIC;
         addMethod(name, new FullFunctionCallbackMethod(this, method, visibility));
     }
     
@@ -690,7 +692,7 @@ public class RubyModule extends RubyObject {
                     if (jrubyMethod.module()) {
                         // module/singleton methods are all defined public
                         DynamicMethod moduleMethod = dynamicMethod.dup();
-                        moduleMethod.setVisibility(Visibility.PUBLIC);
+                        moduleMethod.setVisibility(PUBLIC);
 
                         RubyModule singletonClass = module.getSingletonClass();
 
@@ -760,7 +762,7 @@ public class RubyModule extends RubyObject {
 
     public void defineFastMethod(String name, Callback method) {
         Visibility visibility = name.equals("initialize") ?
-                Visibility.PRIVATE : Visibility.PUBLIC;
+                PRIVATE : PUBLIC;
         addMethod(name, new SimpleCallbackMethod(this, method, visibility));
     }
 
@@ -769,15 +771,15 @@ public class RubyModule extends RubyObject {
     }
 
     public void definePrivateMethod(String name, Callback method) {
-        addMethod(name, new FullFunctionCallbackMethod(this, method, Visibility.PRIVATE));
+        addMethod(name, new FullFunctionCallbackMethod(this, method, PRIVATE));
     }
 
     public void defineFastPrivateMethod(String name, Callback method) {
-        addMethod(name, new SimpleCallbackMethod(this, method, Visibility.PRIVATE));
+        addMethod(name, new SimpleCallbackMethod(this, method, PRIVATE));
     }
 
     public void defineFastProtectedMethod(String name, Callback method) {
-        addMethod(name, new SimpleCallbackMethod(this, method, Visibility.PROTECTED));
+        addMethod(name, new SimpleCallbackMethod(this, method, PROTECTED));
     }
 
     public void undefineMethod(String name) {
@@ -1118,16 +1120,16 @@ public class RubyModule extends RubyObject {
 
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
         Visibility attributeScope = context.getCurrentVisibility();
-        if (attributeScope == Visibility.PRIVATE) {
+        if (attributeScope == PRIVATE) {
             //FIXME warning
-        } else if (attributeScope == Visibility.MODULE_FUNCTION) {
-            attributeScope = Visibility.PRIVATE;
+        } else if (attributeScope == MODULE_FUNCTION) {
+            attributeScope = PRIVATE;
             // FIXME warning
         }
         final String variableName = ("@" + internedName).intern();
         if (readable) {
             // FIXME: should visibility be set to current visibility?
-            addMethod(internedName, new JavaMethod(this, Visibility.PUBLIC) {
+            addMethod(internedName, new JavaMethod(this, PUBLIC) {
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
                     if (args.length != 0) Arity.raiseArgumentError(runtime, args.length, 0, 0);
 
@@ -1145,7 +1147,7 @@ public class RubyModule extends RubyObject {
         if (writeable) {
             internedName = (internedName + "=").intern();
             // FIXME: should visibility be set to current visibility?
-            addMethod(internedName, new JavaMethod(this, Visibility.PUBLIC) {
+            addMethod(internedName, new JavaMethod(this, PUBLIC) {
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
                     // ENEBO: Can anyone get args to be anything but length 1?
                     if (args.length != 1) Arity.raiseArgumentError(runtime, args.length, 1, 1);
@@ -1206,7 +1208,7 @@ public class RubyModule extends RubyObject {
     public boolean isMethodBound(String name, boolean checkVisibility) {
         DynamicMethod method = searchMethod(name);
         if (!method.isUndefined()) {
-            return !(checkVisibility && method.getVisibility() == Visibility.PRIVATE);
+            return !(checkVisibility && method.getVisibility() == PRIVATE);
         }
         return false;
     }
@@ -1236,7 +1238,7 @@ public class RubyModule extends RubyObject {
     }
 
     // What is argument 1 for in this method? A Method or Proc object /OB
-    @JRubyMethod(name = "define_method", required = 1, optional = 1, frame = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "define_method", required = 1, optional = 1, frame = true, visibility = PRIVATE, reads = VISIBILITY)
     public IRubyObject define_method(ThreadContext context, IRubyObject[] args, Block block) {
         if (args.length < 1 || args.length > 2) {
             throw getRuntime().newArgumentError("wrong # of arguments(" + args.length + " for 1)");
@@ -1247,7 +1249,7 @@ public class RubyModule extends RubyObject {
         DynamicMethod newMethod = null;
         Visibility visibility = context.getCurrentVisibility();
 
-        if (visibility == Visibility.MODULE_FUNCTION) visibility = Visibility.PRIVATE;
+        if (visibility == MODULE_FUNCTION) visibility = PRIVATE;
         if (args.length == 1) {
             // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
             RubyProc proc = getRuntime().newProc(Block.Type.LAMBDA, block);
@@ -1280,8 +1282,8 @@ public class RubyModule extends RubyObject {
 
         RubySymbol symbol = getRuntime().fastNewSymbol(name);
 
-        if (context.getPreviousVisibility() == Visibility.MODULE_FUNCTION) {
-            getSingletonClass().addMethod(name, new WrapperMethod(getSingletonClass(), newMethod, Visibility.PUBLIC));
+        if (context.getPreviousVisibility() == MODULE_FUNCTION) {
+            getSingletonClass().addMethod(name, new WrapperMethod(getSingletonClass(), newMethod, PUBLIC));
         }
 
         if(isSingleton()){
@@ -1551,11 +1553,11 @@ public class RubyModule extends RubyObject {
     /** rb_mod_initialize
      *
      */
-    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize", frame = true, visibility = PRIVATE)
     public IRubyObject initialize(Block block) {
         if (block.isGiven()) {
             // class and module bodies default to public, so make the block's visibility public. JRUBY-1185.
-            block.getBinding().setVisibility(Visibility.PUBLIC);
+            block.getBinding().setVisibility(PUBLIC);
             block.yield(getRuntime().getCurrentContext(), null, this, this, false);
         }
 
@@ -1565,7 +1567,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_attr
      *
      */
-    @JRubyMethod(name = "attr", required = 1, optional = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "attr", required = 1, optional = 1, visibility = PRIVATE, reads = VISIBILITY)
     public IRubyObject attr(ThreadContext context, IRubyObject[] args) {
         boolean writeable = args.length > 1 ? args[1].isTrue() : false;
 
@@ -1584,7 +1586,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_attr_reader
      *
      */
-    @JRubyMethod(name = "attr_reader", rest = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "attr_reader", rest = true, visibility = PRIVATE, reads = VISIBILITY)
     public IRubyObject attr_reader(ThreadContext context, IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
             addAccessor(context, args[i].asJavaString().intern(), true, false);
@@ -1596,7 +1598,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_attr_writer
      *
      */
-    @JRubyMethod(name = "attr_writer", rest = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "attr_writer", rest = true, visibility = PRIVATE, reads = VISIBILITY)
     public IRubyObject attr_writer(ThreadContext context, IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
             addAccessor(context, args[i].asJavaString().intern(), false, true);
@@ -1615,7 +1617,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_attr_accessor
      *
      */
-    @JRubyMethod(name = "attr_accessor", rest = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "attr_accessor", rest = true, visibility = PRIVATE, reads = VISIBILITY)
     public IRubyObject attr_accessor(ThreadContext context, IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
             // This is almost always already interned, since it will be called with a symbol in most cases
@@ -1629,7 +1631,7 @@ public class RubyModule extends RubyObject {
 
     /**
      * Get a list of all instance methods names of the provided visibility unless not is true, then 
-     * get all methods which are not the provided visibility.
+     * get all methods which are not the provided 
      * 
      * @param args passed into one of the Ruby instance_method methods
      * @param visibility to find matching instance methods against
@@ -1670,12 +1672,12 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "instance_methods", optional = 1)
     public RubyArray instance_methods(IRubyObject[] args) {
-        return instance_methods(args, Visibility.PRIVATE, true);
+        return instance_methods(args, PRIVATE, true);
     }
 
     @JRubyMethod(name = "public_instance_methods", optional = 1)
     public RubyArray public_instance_methods(IRubyObject[] args) {
-        return instance_methods(args, Visibility.PUBLIC, false);
+        return instance_methods(args, PUBLIC, false);
     }
 
     @JRubyMethod(name = "instance_method", required = 1)
@@ -1688,7 +1690,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "protected_instance_methods", optional = 1)
     public RubyArray protected_instance_methods(IRubyObject[] args) {
-        return instance_methods(args, Visibility.PROTECTED, false);
+        return instance_methods(args, PROTECTED, false);
     }
 
     /** rb_class_private_instance_methods
@@ -1696,13 +1698,13 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "private_instance_methods", optional = 1)
     public RubyArray private_instance_methods(IRubyObject[] args) {
-        return instance_methods(args, Visibility.PRIVATE, false);
+        return instance_methods(args, PRIVATE, false);
     }
 
     /** rb_mod_append_features
      *
      */
-    @JRubyMethod(name = "append_features", required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "append_features", required = 1, visibility = PRIVATE)
     public RubyModule append_features(IRubyObject module) {
         if (!(module instanceof RubyModule)) {
             // MRI error message says Class, even though Module is ok 
@@ -1715,7 +1717,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_extend_object
      *
      */
-    @JRubyMethod(name = "extend_object", required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "extend_object", required = 1, visibility = PRIVATE)
     public IRubyObject extend_object(IRubyObject obj) {
         obj.getSingletonClass().includeModule(this);
         return obj;
@@ -1724,7 +1726,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_include
      *
      */
-    @JRubyMethod(name = "include", required = 1, rest = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "include", required = 1, rest = true, visibility = PRIVATE)
     public RubyModule include(IRubyObject[] modules) {
         ThreadContext context = getRuntime().getCurrentContext();
         // MRI checks all types first:
@@ -1767,34 +1769,34 @@ public class RubyModule extends RubyObject {
     /** rb_mod_public
      *
      */
-    @JRubyMethod(name = "public", rest = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "public", rest = true, visibility = PRIVATE, writes = VISIBILITY)
     public RubyModule rbPublic(ThreadContext context, IRubyObject[] args) {
-        setVisibility(context, args, Visibility.PUBLIC);
+        setVisibility(context, args, PUBLIC);
         return this;
     }
 
     /** rb_mod_protected
      *
      */
-    @JRubyMethod(name = "protected", rest = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "protected", rest = true, visibility = PRIVATE, writes = VISIBILITY)
     public RubyModule rbProtected(ThreadContext context, IRubyObject[] args) {
-        setVisibility(context, args, Visibility.PROTECTED);
+        setVisibility(context, args, PROTECTED);
         return this;
     }
 
     /** rb_mod_private
      *
      */
-    @JRubyMethod(name = "private", rest = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "private", rest = true, visibility = PRIVATE, writes = VISIBILITY)
     public RubyModule rbPrivate(ThreadContext context, IRubyObject[] args) {
-        setVisibility(context, args, Visibility.PRIVATE);
+        setVisibility(context, args, PRIVATE);
         return this;
     }
 
     /** rb_mod_modfunc
      *
      */
-    @JRubyMethod(name = "module_function", rest = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "module_function", rest = true, visibility = PRIVATE, writes = VISIBILITY)
     public RubyModule module_function(IRubyObject[] args) {
         if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
             throw getRuntime().newSecurityError("Insecure: can't change method visibility");
@@ -1803,32 +1805,32 @@ public class RubyModule extends RubyObject {
         ThreadContext context = getRuntime().getCurrentContext();
 
         if (args.length == 0) {
-            context.setCurrentVisibility(Visibility.MODULE_FUNCTION);
+            context.setCurrentVisibility(MODULE_FUNCTION);
         } else {
-            setMethodVisibility(args, Visibility.PRIVATE);
+            setMethodVisibility(args, PRIVATE);
 
             for (int i = 0; i < args.length; i++) {
                 String name = args[i].asJavaString().intern();
                 DynamicMethod method = searchMethod(name);
                 assert !method.isUndefined() : "undefined method '" + name + "'";
-                getSingletonClass().addMethod(name, new WrapperMethod(getSingletonClass(), method, Visibility.PUBLIC));
+                getSingletonClass().addMethod(name, new WrapperMethod(getSingletonClass(), method, PUBLIC));
                 callMethod(context, "singleton_method_added", getRuntime().fastNewSymbol(name));
             }
         }
         return this;
     }
 
-    @JRubyMethod(name = "method_added", required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "method_added", required = 1, visibility = PRIVATE)
     public IRubyObject method_added(IRubyObject nothing) {
         return getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "method_removed", required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "method_removed", required = 1, visibility = PRIVATE)
     public IRubyObject method_removed(IRubyObject nothing) {
         return getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "method_undefined", required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "method_undefined", required = 1, visibility = PRIVATE)
     public IRubyObject method_undefined(IRubyObject nothing) {
         return getRuntime().getNil();
     }
@@ -1842,36 +1844,36 @@ public class RubyModule extends RubyObject {
     public IRubyObject public_method_defined(IRubyObject symbol) {
 	    DynamicMethod method = searchMethod(symbol.asJavaString());
 	    
-		return getRuntime().newBoolean(!method.isUndefined() && method.getVisibility() == Visibility.PUBLIC);
+		return getRuntime().newBoolean(!method.isUndefined() && method.getVisibility() == PUBLIC);
     }
 
     @JRubyMethod(name = "protected_method_defined?", required = 1)
     public IRubyObject protected_method_defined(IRubyObject symbol) {
 	    DynamicMethod method = searchMethod(symbol.asJavaString());
 	    
-		return getRuntime().newBoolean(!method.isUndefined() && method.getVisibility() == Visibility.PROTECTED);
+		return getRuntime().newBoolean(!method.isUndefined() && method.getVisibility() == PROTECTED);
     }
 	
     @JRubyMethod(name = "private_method_defined?", required = 1)
     public IRubyObject private_method_defined(IRubyObject symbol) {
 	    DynamicMethod method = searchMethod(symbol.asJavaString());
 	    
-		return getRuntime().newBoolean(!method.isUndefined() && method.getVisibility() == Visibility.PRIVATE);
+		return getRuntime().newBoolean(!method.isUndefined() && method.getVisibility() == PRIVATE);
     }
 
     @JRubyMethod(name = "public_class_method", rest = true)
     public RubyModule public_class_method(IRubyObject[] args) {
-        getMetaClass().setMethodVisibility(args, Visibility.PUBLIC);
+        getMetaClass().setMethodVisibility(args, PUBLIC);
         return this;
     }
 
     @JRubyMethod(name = "private_class_method", rest = true)
     public RubyModule private_class_method(IRubyObject[] args) {
-        getMetaClass().setMethodVisibility(args, Visibility.PRIVATE);
+        getMetaClass().setMethodVisibility(args, PRIVATE);
         return this;
     }
 
-    @JRubyMethod(name = "alias_method", required = 2, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "alias_method", required = 2, visibility = PRIVATE)
     public RubyModule alias_method(ThreadContext context, IRubyObject newId, IRubyObject oldId) {
         String newName = newId.asJavaString();
         defineAlias(newName, oldId.asJavaString());
@@ -1885,7 +1887,7 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "undef_method", required = 1, rest = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "undef_method", required = 1, rest = true, visibility = PRIVATE)
     public RubyModule undef_method(ThreadContext context, IRubyObject[] args) {
         for (int i=0; i<args.length; i++) {
             undef(context, args[i].asJavaString());
@@ -1898,7 +1900,7 @@ public class RubyModule extends RubyObject {
         return specificEval(context, this, args, block);
     }
 
-    @JRubyMethod(name = "remove_method", required = 1, rest = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "remove_method", required = 1, rest = true, visibility = PRIVATE)
     public RubyModule remove_method(ThreadContext context, IRubyObject[] args) {
         for(int i=0;i<args.length;i++) {
             removeMethod(context, args[i].asJavaString());
@@ -2003,7 +2005,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_cvar_get
      *
      */
-    @JRubyMethod(name = "class_variable_get", required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "class_variable_get", required = 1, visibility = PRIVATE)
     public IRubyObject class_variable_get(IRubyObject var) {
         return fastGetClassVar(validateClassVariable(var.asJavaString()).intern());
     }
@@ -2011,7 +2013,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_cvar_set
      *
      */
-    @JRubyMethod(name = "class_variable_set", required = 2, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "class_variable_set", required = 2, visibility = PRIVATE)
     public IRubyObject class_variable_set(IRubyObject var, IRubyObject value) {
         return fastSetClassVar(validateClassVariable(var.asJavaString()).intern(), value);
     }
@@ -2019,7 +2021,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_remove_cvar
      *
      */
-    @JRubyMethod(name = "remove_class_variable", required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "remove_class_variable", required = 1, visibility = PRIVATE)
     public IRubyObject remove_class_variable(IRubyObject name) {
         String javaName = validateClassVariable(name.asJavaString());
         IRubyObject value;
@@ -2088,7 +2090,7 @@ public class RubyModule extends RubyObject {
         return fastSetConstant(validateConstant(symbol.asJavaString()).intern(), value);
     }
 
-    @JRubyMethod(name = "remove_const", required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "remove_const", required = 1, visibility = PRIVATE)
     public IRubyObject remove_const(IRubyObject name) {
         String id = validateConstant(name.asJavaString());
         IRubyObject value;

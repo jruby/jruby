@@ -134,6 +134,7 @@
         <include name="org/jruby/anno/FrameField.java"/>
         <include name="org/jruby/anno/AnnotationBinder.java"/>
         <include name="org/jruby/anno/JRubyMethod.java"/>
+        <include name="org/jruby/anno/FrameField.java"/>
         <include name="org/jruby/CompatVersion.java"/>
         <include name="org/jruby/runtime/Visibility.java"/>
         <include name="org/jruby/util/CodegenUtils.java"/>

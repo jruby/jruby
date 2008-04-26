@@ -45,7 +45,7 @@ import org.joni.Region;
 import org.joni.Syntax;
 import org.joni.WarnCallback;
 import org.joni.encoding.Encoding;
-import org.jruby.anno.FrameField;
+import static org.jruby.anno.FrameField.*;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
@@ -230,7 +230,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
         return getRuntime().getFalse();
     }
 
-    @JRubyMethod(name = "~", reads = FrameField.LASTLINE)
+    @JRubyMethod(name = "~", reads = {LASTLINE, BACKREF}, writes = BACKREF)
     public IRubyObject op_match2(ThreadContext context) {
         IRubyObject line = context.getCurrentFrame().getLastLine();
         if(!(line instanceof RubyString)) {
@@ -248,7 +248,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     /** rb_reg_eqq
      * 
      */
-    @JRubyMethod(name = "===", required = 1)
+    @JRubyMethod(name = "===", required = 1, writes = BACKREF)
     public IRubyObject eqq(ThreadContext context, IRubyObject str) {
         if(!(str instanceof RubyString)) str = str.checkStringType();
 
@@ -570,7 +570,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     /** rb_reg_match
      * 
      */
-    @JRubyMethod(name = "=~", required = 1)
+    @JRubyMethod(name = "=~", required = 1, reads = BACKREF, writes = BACKREF)
     public IRubyObject op_match(ThreadContext context, IRubyObject str) {
         int start;
         if(str.isNil()) {
@@ -588,7 +588,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     /** rb_reg_match_m
      * 
      */
-    @JRubyMethod(name = "match", required = 1)
+    @JRubyMethod(name = "match", required = 1, reads = BACKREF)
     public IRubyObject match_m(ThreadContext context, IRubyObject str) {
         if(op_match(context, str).isNil()) {
             return getRuntime().getNil();
@@ -1006,7 +1006,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     /** rb_reg_s_last_match
      *
      */
-    @JRubyMethod(name = "last_match", optional = 1, meta = true)
+    @JRubyMethod(name = "last_match", optional = 1, meta = true, reads = BACKREF)
     public static IRubyObject last_match_s(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         if (args.length == 1) {
             return nth_match(RubyNumeric.fix2int(args[0]), context.getCurrentFrame().getBackRef());

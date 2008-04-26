@@ -49,6 +49,7 @@ import org.joni.Regex;
 import org.joni.Region;
 import org.joni.encoding.Encoding;
 import org.joni.encoding.specific.ASCIIEncoding;
+import static org.jruby.anno.FrameField.*;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Arity;
@@ -697,7 +698,7 @@ public class RubyString extends RubyObject {
     /** rb_str_match2
      *
      */
-    @JRubyMethod(name = "~")
+    @JRubyMethod(name = "~", reads = {LASTLINE, BACKREF}, writes = BACKREF)
     public IRubyObject op_match2(ThreadContext context) {
         return RubyRegexp.newRegexp(getRuntime(), value, 0, false).op_match2(context);
     }
@@ -1143,7 +1144,7 @@ public class RubyString extends RubyObject {
     /** rb_str_sub_bang
      *
      */
-    @JRubyMethod(name = "sub!", frame = true)
+    @JRubyMethod(name = "sub!", frame = true, reads = BACKREF, writes = BACKREF)
     public IRubyObject sub_bang(ThreadContext context, IRubyObject arg0, Block block) {
         
         RubyString repl = null;
@@ -1166,7 +1167,7 @@ public class RubyString extends RubyObject {
     /** rb_str_sub_bang
      *
      */
-    @JRubyMethod(name = "sub!", frame = true)
+    @JRubyMethod(name = "sub!", frame = true, reads = BACKREF, writes = BACKREF)
     public IRubyObject sub_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         
         RubyString repl = null;
@@ -1266,7 +1267,7 @@ public class RubyString extends RubyObject {
     /** rb_str_gsub
      *
      */
-    @JRubyMethod(name = "gsub", frame = true)
+    @JRubyMethod(name = "gsub", frame = true, reads = BACKREF, writes = BACKREF)
     public IRubyObject gsub(ThreadContext context, IRubyObject arg0, Block block) {
         return gsub(context, arg0, block, false);
     }
@@ -1274,7 +1275,7 @@ public class RubyString extends RubyObject {
     /** rb_str_gsub
      *
      */
-    @JRubyMethod(name = "gsub", frame = true)
+    @JRubyMethod(name = "gsub", frame = true, reads = BACKREF, writes = BACKREF)
     public IRubyObject gsub(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         return gsub(context, arg0, arg1, block, false);
     }
@@ -1298,7 +1299,7 @@ public class RubyString extends RubyObject {
     /** rb_str_gsub_bang
      *
      */
-    @JRubyMethod(name = "gsub!", frame = true)
+    @JRubyMethod(name = "gsub!", frame = true, reads = BACKREF, writes = BACKREF)
     public IRubyObject gsub_bang(ThreadContext context, IRubyObject arg0, Block block) {
         return gsub(context, arg0, block, true);
     }
@@ -1306,7 +1307,7 @@ public class RubyString extends RubyObject {
     /** rb_str_gsub_bang
      *
      */
-    @JRubyMethod(name = "gsub!", frame = true)
+    @JRubyMethod(name = "gsub!", frame = true, reads = BACKREF, writes = BACKREF)
     public IRubyObject gsub_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         return gsub(context, arg0, arg1, block, true);
     }
@@ -1494,7 +1495,7 @@ public class RubyString extends RubyObject {
     /** rb_str_index_m
      *
      */
-    @JRubyMethod
+    @JRubyMethod(reads = BACKREF, writes = BACKREF)
     public IRubyObject index(ThreadContext context, IRubyObject arg0) {
         int pos = 0;  
         IRubyObject sub = arg0;
@@ -1505,7 +1506,7 @@ public class RubyString extends RubyObject {
     /** rb_str_index_m
      *
      */
-    @JRubyMethod
+    @JRubyMethod(reads = BACKREF, writes = BACKREF)
     public IRubyObject index(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         int pos = RubyNumeric.num2int(arg1);
         IRubyObject sub = arg0;
@@ -1592,7 +1593,7 @@ public class RubyString extends RubyObject {
     /** rb_str_rindex_m
      *
      */
-    @JRubyMethod
+    @JRubyMethod(reads = BACKREF, writes = BACKREF)
     public IRubyObject rindex(ThreadContext context, IRubyObject arg0) {
         int pos;
         final IRubyObject sub;
@@ -1606,7 +1607,7 @@ public class RubyString extends RubyObject {
     /** rb_str_rindex_m
      *
      */
-    @JRubyMethod
+    @JRubyMethod(reads = BACKREF, writes = BACKREF)
     public IRubyObject rindex(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         int pos;
         final IRubyObject sub;
@@ -1730,7 +1731,7 @@ public class RubyString extends RubyObject {
     /** rb_str_aref, rb_str_aref_m
      *
      */
-    @JRubyMethod(name = {"[]", "slice"})
+    @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF)
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
         if (arg1 instanceof RubyRegexp) {
             if(((RubyRegexp)arg1).search(context, this,0,false) >= 0) {
@@ -1744,7 +1745,7 @@ public class RubyString extends RubyObject {
     /** rb_str_aref, rb_str_aref_m
      *
      */
-    @JRubyMethod(name = {"[]", "slice"})
+    @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF)
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
         if (arg instanceof RubyRegexp) {
             if(((RubyRegexp)arg).search(context, this,0,false) >= 0) {
@@ -1821,7 +1822,7 @@ public class RubyString extends RubyObject {
     /** rb_str_aset, rb_str_aset_m
      *
      */
-    @JRubyMethod(name = "[]=")
+    @JRubyMethod(name = "[]=", reads = BACKREF)
     public IRubyObject op_aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         int strLen = value.length();
         if (arg0 instanceof RubyFixnum || arg0.respondsTo("to_int")) { // FIXME: RubyNumeric or RubyInteger instead?
@@ -1863,7 +1864,7 @@ public class RubyString extends RubyObject {
     /** rb_str_aset, rb_str_aset_m
      *
      */
-    @JRubyMethod(name = "[]=")
+    @JRubyMethod(name = "[]=", reads = BACKREF)
     public IRubyObject op_aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         int strLen = value.length();
         if (arg0 instanceof RubyRegexp) {
@@ -1906,7 +1907,7 @@ public class RubyString extends RubyObject {
     /** rb_str_slice_bang
      *
      */
-    @JRubyMethod(name = "slice!")
+    @JRubyMethod(name = "slice!", reads = BACKREF, writes = BACKREF)
     public IRubyObject slice_bang(ThreadContext context, IRubyObject arg0) {
         IRubyObject result = op_aref(context, arg0);
         if (result.isNil()) return result;
@@ -1918,7 +1919,7 @@ public class RubyString extends RubyObject {
     /** rb_str_slice_bang
      *
      */
-    @JRubyMethod(name = "slice!")
+    @JRubyMethod(name = "slice!", reads = BACKREF, writes = BACKREF)
     public IRubyObject slice_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         IRubyObject result = op_aref(context, arg0, arg1);
         if (result.isNil()) return result;
@@ -2129,7 +2130,7 @@ public class RubyString extends RubyObject {
     /** rb_str_split_m
      *
      */
-    @JRubyMethod
+    @JRubyMethod(writes = BACKREF)
     public RubyArray split(ThreadContext context) {
         return split(context, (IRubyObject)null);
     }
@@ -2137,7 +2138,7 @@ public class RubyString extends RubyObject {
     /** rb_str_split_m
      *
      */
-    @JRubyMethod
+    @JRubyMethod(writes = BACKREF)
     public RubyArray split(ThreadContext context, IRubyObject arg0) {
         final int i, lim;
         final boolean limit;
@@ -2152,7 +2153,7 @@ public class RubyString extends RubyObject {
     /** rb_str_split_m
      *
      */
-    @JRubyMethod
+    @JRubyMethod(writes = BACKREF)
     public RubyArray split(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         final int i, lim;
         final boolean limit;
@@ -2347,7 +2348,7 @@ public class RubyString extends RubyObject {
     /** rb_str_scan
      *
      */
-    @JRubyMethod(name = "scan", required = 1, frame = true)
+    @JRubyMethod(name = "scan", required = 1, frame = true, reads = BACKREF, writes = BACKREF)
     public IRubyObject scan(ThreadContext context, IRubyObject arg, Block block) {
         Ruby runtime = getRuntime();
         Frame frame = context.getPreviousFrame();
