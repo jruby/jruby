@@ -131,6 +131,7 @@
     <mkdir dir="${basedir}/src_gen"/>
         
     <javac destdir="${jruby.classes.dir}" debug="true" srcdir="${src.dir}" sourcepath="" classpathref="build.classpath" source="${javac.version}" target="${javac.version}" deprecation="true" encoding="UTF-8">
+        <include name="org/jruby/anno/FrameField.java"/>
         <include name="org/jruby/anno/AnnotationBinder.java"/>
         <include name="org/jruby/anno/JRubyMethod.java"/>
         <include name="org/jruby/CompatVersion.java"/>
