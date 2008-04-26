@@ -154,7 +154,8 @@ public abstract class LexerSource {
             // Only append real characters (EOF does not count). 
             if (c != -1) lineBuffer.append((char) c);
         
-            if (c == '\n' || c == -1) {
+            // Add each line to buffer when encountering newline or EOF for first time.
+            if (c == '\n' || (c == -1 && lineBuffer.length() > 0)) {
                 list.add(lineBuffer.toString());
                 lineBuffer.setLength(0);
             }
