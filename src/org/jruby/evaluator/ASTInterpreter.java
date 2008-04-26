@@ -1532,9 +1532,11 @@ public class ASTInterpreter {
         // its enclosing scope.   ForBlock now represents these node and should be renamed.
         Block block = InterpretedBlock.newInterpretedClosure(context, iVisited, self);
         
-        block.yield(context, null);
-        
-        context.postScopedBody();
+        try {
+            block.yield(context, null);
+        } finally {
+            context.postScopedBody();
+        }
 
         return runtime.getNil();
     }
