@@ -555,9 +555,19 @@ public class RubyBigDecimal extends RubyNumeric {
         }
         return null;
     }
-    
+
     @JRubyMethod(name = "-@")
     public IRubyObject op_uminus() {
+        Ruby runtime = getRuntime();
+        if (isNaN()) {
+            return newNaN(runtime);
+        }
+        if (isInfinity()) {
+            return newInfinity(runtime, -infinitySign);
+        }
+        if (isZero()) {
+            return newZero(runtime, -zeroSign);
+        }
         return new RubyBigDecimal(getRuntime(), value.negate());
     }
 
