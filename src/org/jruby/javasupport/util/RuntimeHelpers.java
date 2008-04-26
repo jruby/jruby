@@ -94,9 +94,11 @@ public class RuntimeHelpers {
         
         Block block = CompiledBlock.newCompiledClosure(context, self, Arity.createArity(0), staticScope, callback, false, Block.ZERO_ARGS);
         
-        block.yield(context, null);
-        
-        context.postScopedBody();
+        try {
+            block.yield(context, null);
+        } finally {
+            context.postScopedBody();
+        }
         
         return context.getRuntime().getNil();
     }
