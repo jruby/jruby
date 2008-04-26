@@ -16,8 +16,8 @@
   </issueManagement>
 
   <scm>
-    <connection>scm:svn:http://svn.codehaus.org/jruby</connection>
-    <developerConnection>scm:svn:https://svn.codehaus.org/jruby</developerConnection>
+    <connection>scm:svn:http://svn.codehaus.org/jruby/trunk/jruby/</connection>
+    <developerConnection>scm:svn:https://svn.codehaus.org/jruby/trunk/jruby/</developerConnection>
     <url>http://svn.codehaus.org/jruby</url>
   </scm>
 
