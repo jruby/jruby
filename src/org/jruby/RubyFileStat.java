@@ -242,20 +242,20 @@ public class RubyFileStat extends RubyObject {
         // FIXME: Obvious issue that not all platforms can display all attributes.  Ugly hacks.
         // Using generic posix library makes pushing inspect behavior into specific system impls
         // rather painful.
-        try { buf.append("dev=0").append(Long.toHexString(stat.dev())).append(", "); } catch (Exception e) {}
+        try { buf.append("dev=0x").append(Long.toHexString(stat.dev())).append(", "); } catch (Exception e) {}
         try { buf.append("ino=").append(stat.ino()).append(", "); } catch (Exception e) {}
         buf.append("mode=0").append(Integer.toOctalString(stat.mode())).append(", "); 
         try { buf.append("nlink=").append(stat.nlink()).append(", "); } catch (Exception e) {}
         try { buf.append("uid=").append(stat.uid()).append(", "); } catch (Exception e) {}
         try { buf.append("gid=").append(stat.gid()).append(", "); } catch (Exception e) {}
-        try { buf.append("rdev=0").append(Long.toHexString(stat.rdev())).append(", "); } catch (Exception e) {}
+        try { buf.append("rdev=0x").append(Long.toHexString(stat.rdev())).append(", "); } catch (Exception e) {}
         buf.append("size=").append(stat.st_size()).append(", ");
         try { buf.append("blksize=").append(stat.blockSize()).append(", "); } catch (Exception e) {}
         try { buf.append("blocks=").append(stat.blocks()).append(", "); } catch (Exception e) {}
         
         buf.append("atime=").append(atime()).append(", ");
         buf.append("mtime=").append(mtime()).append(", ");
-        buf.append("ctime=").append(ctime()).append(", ");
+        buf.append("ctime=").append(ctime());
         buf.append(">");
         
         return getRuntime().newString(buf.toString());
