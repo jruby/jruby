@@ -1,2 +1,1 @@
-fails:Etc.getpwnam returns a Passwd struct instance for the given user
-fails:Etc.getpwnam only accepts strings as argument
+fails(JRUBY-2453):Etc.getpwnam returns a Passwd struct instance for the given user
