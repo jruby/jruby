@@ -405,6 +405,11 @@ public final class ThreadContext {
         this.line = line;
     }
     
+    public void setFileAndLine(String file, int line) {
+        this.file = file;
+        this.line = line;
+    }
+    
     public Visibility getCurrentVisibility() {
         return getCurrentFrame().getVisibility();
     }

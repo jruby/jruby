@@ -305,6 +305,17 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.end();
         }
         
+        // add setPosition impl, which stores filename as constant to speed updates
+        SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC, "setPosition", sig(Void.TYPE, params(ThreadContext.class, int.class)), null, null));
+        method.start();
+
+        method.aload(0); // thread context
+        method.ldc(sourcename);
+        method.iload(1); // line number
+        method.invokevirtual(p(ThreadContext.class), "setFileAndLine", sig(void.class, String.class, int.class));
+        method.voidreturn();
+        method.end();
+        
         endInit();
         endClassInit();
     }
@@ -2351,11 +2362,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void setLinePosition(ISourcePosition position) {
             if (!RubyInstanceConfig.POSITIONLESS_COMPILE_ENABLED) {
-                // TODO: Put these in appropriate places to reduce the number of file sets
-                setFilePosition(position);
                 loadThreadContext();
                 method.pushIntEfficiently(position.getStartLine());
-                invokeThreadContext("setLine", sig(void.class, params(int.class)));
+                method.invokestatic(classname, "setPosition", sig(void.class, params(ThreadContext.class, int.class)));
             }
         }
         
