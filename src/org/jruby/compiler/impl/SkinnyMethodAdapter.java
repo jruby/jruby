@@ -66,7 +66,32 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         
     public void pushIntEfficiently(int value) {
         if (value <= Byte.MAX_VALUE && value >= Byte.MIN_VALUE) {
-            bipush(value);
+            switch (value) {
+            case -1:
+                iconst_m1();
+                break;
+            case 0:
+                iconst_0();
+                break;
+            case 1:
+                iconst_1();
+                break;
+            case 2:
+                iconst_2();
+                break;
+            case 3:
+                iconst_3();
+                break;
+            case 4:
+                iconst_4();
+                break;
+            case 5:
+                iconst_5();
+                break;
+            default:
+                bipush(value);
+                break;
+            }
         } else if (value <= Short.MAX_VALUE && value >= Short.MIN_VALUE) {
             sipush(value);
         } else {
@@ -150,6 +175,10 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         getMethodVisitor().visitIntInsn(NEWARRAY, arg0);
     }
     
+    public void iconst_m1() {
+        getMethodVisitor().visitInsn(ICONST_M1);
+    }
+    
     public void iconst_0() {
         getMethodVisitor().visitInsn(ICONST_0);
     }
@@ -164,6 +193,14 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
     
     public void iconst_3() {
         getMethodVisitor().visitInsn(ICONST_3);
+    }
+    
+    public void iconst_4() {
+        getMethodVisitor().visitInsn(ICONST_4);
+    }
+    
+    public void iconst_5() {
+        getMethodVisitor().visitInsn(ICONST_5);
     }
     
     public void lconst_0() {

@@ -90,7 +90,11 @@ public interface MethodCompiler {
     
     public void assignClassVariable(String name);
     
+    public void assignClassVariable(String name, CompilerCallback value);
+    
     public void declareClassVariable(String name);
+    
+    public void declareClassVariable(String name, CompilerCallback value);
     
     /**
      * Generate a new "Fixnum" value.

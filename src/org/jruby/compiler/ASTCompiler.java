@@ -942,12 +942,15 @@ public class ASTCompiler {
     }
 
     public void compileClassVarAsgn(Node node, MethodCompiler context) {
-        ClassVarAsgnNode classVarAsgnNode = (ClassVarAsgnNode) node;
+        final ClassVarAsgnNode classVarAsgnNode = (ClassVarAsgnNode) node;
 
-        // FIXME: probably more efficient with a callback
-        compile(classVarAsgnNode.getValueNode(), context);
+        CompilerCallback value = new CompilerCallback() {
+            public void call(MethodCompiler context) {
+                compile(classVarAsgnNode.getValueNode(), context);
+            }
+        };
 
-        compileClassVarAsgnAssignment(node, context);
+        context.assignClassVariable(classVarAsgnNode.getName(), value);
     }
 
     public void compileClassVarAsgnAssignment(Node node, MethodCompiler context) {
@@ -957,12 +960,15 @@ public class ASTCompiler {
     }
 
     public void compileClassVarDecl(Node node, MethodCompiler context) {
-        ClassVarDeclNode classVarDeclNode = (ClassVarDeclNode) node;
+        final ClassVarDeclNode classVarDeclNode = (ClassVarDeclNode) node;
 
-        // FIXME: probably more efficient with a callback
-        compile(classVarDeclNode.getValueNode(), context);
+        CompilerCallback value = new CompilerCallback() {
+            public void call(MethodCompiler context) {
+                compile(classVarDeclNode.getValueNode(), context);
+            }
+        };
 
-        compileClassVarDeclAssignment(node, context);
+        context.declareClassVariable(classVarDeclNode.getName(), value);
     }
 
     public void compileClassVarDeclAssignment(Node node, MethodCompiler context) {
@@ -972,6 +978,7 @@ public class ASTCompiler {
     }
 
     public void compileConstDecl(Node node, MethodCompiler context) {
+        // TODO: callback for value would be more efficient, but unlikely to be a big cost (constants are rarely assigned)
         ConstDeclNode constDeclNode = (ConstDeclNode) node;
         Node constNode = constDeclNode.getConstNode();
 
@@ -992,6 +999,7 @@ public class ASTCompiler {
     }
 
     public void compileConstDeclAssignment(Node node, MethodCompiler context) {
+        // TODO: callback for value would be more efficient, but unlikely to be a big cost (constants are rarely assigned)
         ConstDeclNode constDeclNode = (ConstDeclNode) node;
         Node constNode = constDeclNode.getConstNode();
 

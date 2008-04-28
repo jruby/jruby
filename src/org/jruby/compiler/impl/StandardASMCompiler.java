@@ -579,6 +579,16 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             invokeUtilityMethod("fastSetClassVariable", sig(IRubyObject.class, params(ThreadContext.class, Ruby.class, IRubyObject.class, String.class, IRubyObject.class)));
         }
 
+        public void assignClassVariable(String name, CompilerCallback value) {
+            loadThreadContext();
+            loadRuntime();
+            loadSelf();
+            method.ldc(name);
+            value.call(this);
+
+            invokeUtilityMethod("fastSetClassVariable", sig(IRubyObject.class, params(ThreadContext.class, Ruby.class, IRubyObject.class, String.class, IRubyObject.class)));
+        }
+
         public void declareClassVariable(String name) {
             loadThreadContext();
             method.swap();
@@ -588,6 +598,16 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.swap();
             method.ldc(name);
             method.swap();
+
+            invokeUtilityMethod("fastDeclareClassVariable", sig(IRubyObject.class, params(ThreadContext.class, Ruby.class, IRubyObject.class, String.class, IRubyObject.class)));
+        }
+
+        public void declareClassVariable(String name, CompilerCallback value) {
+            loadThreadContext();
+            loadRuntime();
+            loadSelf();
+            method.ldc(name);
+            value.call(this);
 
             invokeUtilityMethod("fastDeclareClassVariable", sig(IRubyObject.class, params(ThreadContext.class, Ruby.class, IRubyObject.class, String.class, IRubyObject.class)));
         }
@@ -2246,7 +2266,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 // TODO: Put these in appropriate places to reduce the number of file sets
                 setFilePosition(position);
                 loadThreadContext();
-                method.ldc(position.getStartLine());
+                method.pushIntEfficiently(position.getStartLine());
                 invokeThreadContext("setLine", sig(void.class, params(int.class)));
             }
         }
