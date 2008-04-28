@@ -128,10 +128,11 @@ public class RubyFixnum extends RubyInteger {
         return value;
     }
 
+    private static final int CACHE_OFFSET = 128;
+    
     public static RubyFixnum newFixnum(Ruby runtime, long value) {
-        final int offset = 128;
         if (value <= 127 && value >= -128) {
-            return runtime.fixnumCache[(int) value + offset];
+            return runtime.fixnumCache[(int) value + CACHE_OFFSET];
         }
         return new RubyFixnum(runtime, value);
     }
@@ -141,15 +142,31 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public static RubyFixnum zero(Ruby runtime) {
-        return newFixnum(runtime, 0);
+        return runtime.fixnumCache[CACHE_OFFSET];
     }
 
     public static RubyFixnum one(Ruby runtime) {
-        return newFixnum(runtime, 1);
+        return runtime.fixnumCache[CACHE_OFFSET + 1];
+    }
+    
+    public static RubyFixnum two(Ruby runtime) {
+        return runtime.fixnumCache[CACHE_OFFSET + 2];
+    }
+    
+    public static RubyFixnum three(Ruby runtime) {
+        return runtime.fixnumCache[CACHE_OFFSET + 3];
+    }
+    
+    public static RubyFixnum four(Ruby runtime) {
+        return runtime.fixnumCache[CACHE_OFFSET + 4];
+    }
+    
+    public static RubyFixnum five(Ruby runtime) {
+        return runtime.fixnumCache[CACHE_OFFSET + 5];
     }
 
     public static RubyFixnum minus_one(Ruby runtime) {
-        return newFixnum(runtime, -1);
+        return runtime.fixnumCache[CACHE_OFFSET - 1];
     }
 
     public RubyFixnum hash() {
