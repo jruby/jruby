@@ -19,6 +19,7 @@ class Gem::Commands::InstallCommand < Gem::Command
       :install_dir => Gem.dir,
       :format_executable => false,
       :test => false,
+      :env_shebang => true,
       :version => Gem::Requirement.default,
     })
 
@@ -36,7 +37,7 @@ class Gem::Commands::InstallCommand < Gem::Command
 
   def defaults_str # :nodoc:
     "--both --version '#{Gem::Requirement.default}' --rdoc --ri --no-force\n" \
-    "--no-test --install-dir #{Gem.dir}"
+    "--no-test --env-shebang --install-dir #{Gem.dir}"
   end
 
   def usage # :nodoc:

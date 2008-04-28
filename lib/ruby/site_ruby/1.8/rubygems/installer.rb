@@ -305,7 +305,9 @@ class Gem::Installer
   # necessary.
   def shebang(bin_file_name)
     if @env_shebang then
-      "#!/usr/bin/env " + Gem::ConfigMap[:ruby_install_name]
+      # JRuby: Cannot use Gem::ConfigMap[:ruby_install_name] here,
+      # because it gets expanded into jruby.bat on Windows.
+      "#!/usr/bin/env " + "jruby"
     else
       path = File.join @gem_dir, @spec.bindir, bin_file_name
 

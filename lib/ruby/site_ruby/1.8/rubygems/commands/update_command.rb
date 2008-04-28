@@ -19,6 +19,7 @@ class Gem::Commands::UpdateCommand < Gem::Command
       :generate_ri => true, 
       :force => false, 
       :test => false,
+      :env_shebang => true,
       :install_dir => Gem.dir
 
     add_install_update_options
@@ -38,7 +39,7 @@ class Gem::Commands::UpdateCommand < Gem::Command
   end
 
   def defaults_str # :nodoc:
-    "--rdoc --ri --no-force --no-test --install-dir #{Gem.dir}"
+    "--rdoc --ri --no-force --no-test --env-shebang --install-dir #{Gem.dir}"
   end
 
   def usage # :nodoc:
