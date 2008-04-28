@@ -482,9 +482,26 @@ test_equal(1, compile_and_run("a = while true; break 1; end; a"))
 test_equal(1, compile_and_run("@a = while true; break 1; end; @a"))
 test_equal(1, compile_and_run("@@a = while true; break 1; end; @@a"))
 test_equal(1, compile_and_run("$a = while true; break 1; end; $a"))
+test_equal(1, compile_and_run("a = until false; break 1; end; a"))
+test_equal(1, compile_and_run("@a = until false; break 1; end; @a"))
+test_equal(1, compile_and_run("@@a = until false; break 1; end; @@a"))
+test_equal(1, compile_and_run("$a = until false; break 1; end; $a"))
 
 # same assignments but loop is within a begin
 test_equal(1, compile_and_run("a = begin; while true; break 1; end; end; a"))
 test_equal(1, compile_and_run("@a = begin; while true; break 1; end; end; @a"))
 test_equal(1, compile_and_run("@@a = begin; while true; break 1; end; end; @@a"))
 test_equal(1, compile_and_run("$a = begin; while true; break 1; end; end; $a"))
+test_equal(1, compile_and_run("a = begin; until false; break 1; end; end; a"))
+test_equal(1, compile_and_run("@a = begin; until false; break 1; end; end; @a"))
+test_equal(1, compile_and_run("@@a = begin; until false; break 1; end; end; @@a"))
+test_equal(1, compile_and_run("$a = begin; until false; break 1; end; end; $a"))
+
+# other contexts that require while to preserve stack
+test_equal(2, compile_and_run("1 + while true; break 1; end"))
+test_equal(2, compile_and_run("1 + begin; while true; break 1; end; end"))
+test_equal(2, compile_and_run("1 + until false; break 1; end"))
+test_equal(2, compile_and_run("1 + begin; until false; break 1; end; end"))
+def foo(a); a; end
+test_equal(nil, compile_and_run("foo(while false; end)"))
+test_equal(nil, compile_and_run("foo(until true; end)"))
