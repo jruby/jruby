@@ -1,9 +1,9 @@
 require 'benchmark'
 
 def bench_symbol(bm)
-  bm.report "100k x100 literal symbols" do
+  bm.report "1m x100 literal symbols" do
     i = 0;
-    while i < 100000
+    while i < 1000000
       :a; :a; :a; :a; :a; :a; :a; :a; :a; :a;
       :a; :a; :a; :a; :a; :a; :a; :a; :a; :a;
       :a; :a; :a; :a; :a; :a; :a; :a; :a; :a;
