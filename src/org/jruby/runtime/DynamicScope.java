@@ -181,7 +181,7 @@ public abstract class DynamicScope {
      * @param value to set
      * @param depth how many captured scopes down this variable should be set
      */
-    public abstract void setValue(int offset, IRubyObject value, int depth);
+    public abstract IRubyObject setValue(int offset, IRubyObject value, int depth);
 
     /**
      * setValue for depth zero
@@ -190,7 +190,7 @@ public abstract class DynamicScope {
      * @param value to set
      * @param depth how many captured scopes down this variable should be set
      */
-    public abstract void setValueDepthZero(IRubyObject value, int offset);
+    public abstract IRubyObject setValueDepthZero(IRubyObject value, int offset);
 
     /**
      * Set value in current dynamic scope or one of its captured scopes.
@@ -199,7 +199,7 @@ public abstract class DynamicScope {
      * @param value to set
      * @param depth how many captured scopes down this variable should be set
      */
-    public abstract void setValueZeroDepthZero(IRubyObject value);
+    public abstract IRubyObject setValueZeroDepthZero(IRubyObject value);
 
     /**
      * Set value in current dynamic scope or one of its captured scopes.
@@ -208,7 +208,7 @@ public abstract class DynamicScope {
      * @param value to set
      * @param depth how many captured scopes down this variable should be set
      */
-    public abstract void setValueOneDepthZero(IRubyObject value);
+    public abstract IRubyObject setValueOneDepthZero(IRubyObject value);
 
     /**
      * Set all values which represent 'normal' parameters in a call list to this dynamic

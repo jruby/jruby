@@ -133,24 +133,44 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
     }
 
     public void assignLocalVariable(int index) {
-        method.dup();
-
         switch (index) {
         case 0:
             method.aload(scopeIndex);
             method.swap();
-            method.invokevirtual(p(DynamicScope.class), "setValueZeroDepthZero", sig(Void.TYPE, params(IRubyObject.class)));
+            method.invokevirtual(p(DynamicScope.class), "setValueZeroDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
             break;
         case 1:
             method.aload(scopeIndex);
             method.swap();
-            method.invokevirtual(p(DynamicScope.class), "setValueOneDepthZero", sig(Void.TYPE, params(IRubyObject.class)));
+            method.invokevirtual(p(DynamicScope.class), "setValueOneDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
             break;
         default:
+            method.dup();
             method.aload(varsIndex);
             method.swap();
             method.pushIntEfficiently(index);
             method.swap();
+            method.arraystore();
+        }
+    }
+
+    public void assignLocalVariable(int index, CompilerCallback value) {
+        switch (index) {
+        case 0:
+            method.aload(scopeIndex);
+            value.call(methodCompiler);
+            method.invokevirtual(p(DynamicScope.class), "setValueZeroDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
+            break;
+        case 1:
+            method.aload(scopeIndex);
+            value.call(methodCompiler);
+            method.invokevirtual(p(DynamicScope.class), "setValueOneDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
+            break;
+        default:
+            method.aload(varsIndex);
+            method.pushIntEfficiently(index);
+            value.call(methodCompiler);
+            method.dup_x2();
             method.arraystore();
         }
     }
@@ -160,8 +180,6 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             assignLocalVariable(index);
             return;
         }
-
-        method.dup();
 
         // unwrap scopes to appropriate depth
         method.aload(scopeIndex);
@@ -173,16 +191,44 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
         switch (index) {
         case 0:
             method.swap();
-            method.invokevirtual(p(DynamicScope.class), "setValueZeroDepthZero", sig(Void.TYPE, params(IRubyObject.class)));
+            method.invokevirtual(p(DynamicScope.class), "setValueZeroDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
             break;
         case 1:
             method.swap();
-            method.invokevirtual(p(DynamicScope.class), "setValueOneDepthZero", sig(Void.TYPE, params(IRubyObject.class)));
+            method.invokevirtual(p(DynamicScope.class), "setValueOneDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
             break;
         default:
             method.swap();
             method.pushIntEfficiently(index);
-            method.invokevirtual(p(DynamicScope.class), "setValueDepthZero", sig(Void.TYPE, params(IRubyObject.class, Integer.TYPE)));
+            method.invokevirtual(p(DynamicScope.class), "setValueDepthZero", sig(IRubyObject.class, params(IRubyObject.class, Integer.TYPE)));
+        }
+    }
+
+    public void assignLocalVariable(int index, int depth, CompilerCallback value) {
+        if (depth == 0) {
+            assignLocalVariable(index, value);
+            return;
+        }
+
+        // unwrap scopes to appropriate depth
+        method.aload(scopeIndex);
+        while (depth > 0) {
+            method.invokevirtual(p(DynamicScope.class), "getNextCapturedScope", sig(DynamicScope.class));
+            depth--;
+        }
+        
+        value.call(methodCompiler);
+        
+        switch (index) {
+        case 0:
+            method.invokevirtual(p(DynamicScope.class), "setValueZeroDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
+            break;
+        case 1:
+            method.invokevirtual(p(DynamicScope.class), "setValueOneDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
+            break;
+        default:
+            method.pushIntEfficiently(index);
+            method.invokevirtual(p(DynamicScope.class), "setValueDepthZero", sig(IRubyObject.class, params(IRubyObject.class, Integer.TYPE)));
         }
     }
 

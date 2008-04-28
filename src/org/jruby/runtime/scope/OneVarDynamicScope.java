@@ -99,25 +99,25 @@ public class OneVarDynamicScope extends DynamicScope {
      * @param value to set
      * @param depth how many captured scopes down this variable should be set
      */
-    public void setValue(int offset, IRubyObject value, int depth) {
+    public IRubyObject setValue(int offset, IRubyObject value, int depth) {
         if (depth > 0) {
             assert parent != null : "If depth > 0, then parent should not ever be null";
             
-            parent.setValue(offset, value, depth - 1);
+            return parent.setValue(offset, value, depth - 1);
         } else {
             assert offset == 0 : "SingleVarDynamicScope only supports one variable";
-            variableValue = value;
+            return variableValue = value;
         }
     }
 
-    public void setValueDepthZero(IRubyObject value, int offset) {
+    public IRubyObject setValueDepthZero(IRubyObject value, int offset) {
         assert offset == 0 : "SingleVarDynamicScope only supports one variable";
-        variableValue = value;
+        return variableValue = value;
     }
-    public void setValueZeroDepthZero(IRubyObject value) {
-        variableValue = value;
+    public IRubyObject setValueZeroDepthZero(IRubyObject value) {
+        return variableValue = value;
     }
-    public void setValueOneDepthZero(IRubyObject value) {
+    public IRubyObject setValueOneDepthZero(IRubyObject value) {
         throw new RuntimeException("SingleVarDynamicScope only supports scopes with one variable");
     }
 

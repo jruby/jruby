@@ -29,7 +29,6 @@
 package org.jruby.compiler;
 
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Arity;
 
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 
@@ -50,6 +49,7 @@ public interface VariableCompiler {
     public void assignBackRef();
     public void retrieveBackRef();
     public void assignLocalVariable(int index, int depth);
+    public void assignLocalVariable(int index, int depth, CompilerCallback value);
     public void retrieveLocalVariable(int index, int depth);
     public void checkMethodArity(int requiredArgs, int optArgs, int restArg);
     public void assignMethodArguments(

@@ -775,14 +775,13 @@ public class ASTInterpreter {
 
     private static IRubyObject classVarAsgnNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         ClassVarAsgnNode iVisited = (ClassVarAsgnNode) node;
-        IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
         RubyModule rubyClass = getClassVariableBase(context, runtime);
    
         if (rubyClass == null) rubyClass = self.getMetaClass();
 
-        rubyClass.fastSetClassVar(iVisited.getName(), result);
-   
-        return result;
+        return rubyClass.fastSetClassVar(
+                iVisited.getName(),
+                evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock));
     }
 
     private static IRubyObject classVarDeclNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -793,10 +792,9 @@ public class ASTInterpreter {
             throw runtime.newTypeError("no class/module to define class variable");
         }
         
-        IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
-        rubyClass.fastSetClassVar(iVisited.getName(), result);
-   
-        return result;
+        return rubyClass.fastSetClassVar(
+                iVisited.getName(),
+                evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock));
     }
 
     private static IRubyObject classVarNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self) {
@@ -856,12 +854,10 @@ public class ASTInterpreter {
     private static IRubyObject dAsgnNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         DAsgnNode iVisited = (DAsgnNode) node;
    
-        IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
-
-        // System.out.println("DSetting: " + iVisited.getName() + " at index " + iVisited.getIndex() + " and at depth " + iVisited.getDepth() + " and set " + result);
-        context.getCurrentScope().setValue(iVisited.getIndex(), result, iVisited.getDepth());
-   
-        return result;
+        return context.getCurrentScope().setValue(
+                iVisited.getIndex(),
+                evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock),
+                iVisited.getDepth());
     }
 
     private static IRubyObject definedNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -1256,10 +1252,9 @@ public class ASTInterpreter {
     private static IRubyObject instAsgnNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         InstAsgnNode iVisited = (InstAsgnNode) node;
    
-        IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
-        self.getInstanceVariables().fastSetInstanceVariable(iVisited.getName(), result);
-   
-        return result;
+        return self.getInstanceVariables().fastSetInstanceVariable(
+                iVisited.getName(), 
+                evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock));
     }
 
     private static IRubyObject instVarNode(Ruby runtime, Node node, IRubyObject self) {
@@ -1276,12 +1271,11 @@ public class ASTInterpreter {
 
     private static IRubyObject localAsgnNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         LocalAsgnNode iVisited = (LocalAsgnNode) node;
-        IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
         
-        //System.out.println("LSetting: " + iVisited.getName() + " at index " + iVisited.getIndex() + " and at depth " + iVisited.getDepth() + " and set " + result);
-        context.getCurrentScope().setValue(iVisited.getIndex(), result, iVisited.getDepth());
-
-        return result;
+        return context.getCurrentScope().setValue(
+                iVisited.getIndex(),
+                evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock),
+                iVisited.getDepth());
     }
 
     private static IRubyObject localVarNode(Ruby runtime, ThreadContext context, Node node) {

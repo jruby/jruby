@@ -83,18 +83,18 @@ public class NoVarsDynamicScope extends DynamicScope {
      * @param value to set
      * @param depth how many captured scopes down this variable should be set
      */
-    public void setValue(int offset, IRubyObject value, int depth) {
-        parent.setValue(offset, value, depth - 1);
+    public IRubyObject setValue(int offset, IRubyObject value, int depth) {
+        return parent.setValue(offset, value, depth - 1);
     }
 
-    public void setValueDepthZero(IRubyObject value, int offset) {
+    public IRubyObject setValueDepthZero(IRubyObject value, int offset) {
         throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
     }
-    public void setValueZeroDepthZero(IRubyObject value) {
-        assert false : "NoVarsDynamicScope only supports scopes with no variables";
+    public IRubyObject setValueZeroDepthZero(IRubyObject value) {
+        throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
     }
-    public void setValueOneDepthZero(IRubyObject value) {
-        assert false : "NoVarsDynamicScope only supports scopes with no variables";
+    public IRubyObject setValueOneDepthZero(IRubyObject value) {
+        throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
     }
 
     /**

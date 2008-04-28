@@ -110,18 +110,33 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
         method.astore(baseVariableIndex + index);
     }
 
+    public void assignLocalVariable(int index, CompilerCallback value) {
+        value.call(methodCompiler);
+        assignLocalVariable(index);
+    }
+
     public void assignLocalVariable(int index, int depth) {
         if (depth == 0) {
             assignLocalVariable(index);
         } else {
-            method.dup();
-
             method.aload(scopeIndex);
             method.swap();
             method.pushIntEfficiently(index);
             method.swap();
             method.pushIntEfficiently(depth);
-            method.invokevirtual(p(DynamicScope.class), "setValue", sig(Void.TYPE, params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
+            method.invokevirtual(p(DynamicScope.class), "setValue", sig(IRubyObject.class, params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
+        }
+    }
+
+    public void assignLocalVariable(int index, int depth, CompilerCallback value) {
+        if (depth == 0) {
+            assignLocalVariable(index, value);
+        } else {
+            method.aload(scopeIndex);
+            method.pushIntEfficiently(index);
+            value.call(methodCompiler);
+            method.pushIntEfficiently(depth);
+            method.invokevirtual(p(DynamicScope.class), "setValue", sig(IRubyObject.class, params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
         }
     }
 

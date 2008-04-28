@@ -1566,11 +1566,15 @@ public class ASTCompiler {
     }
 
     public void compileDAsgn(Node node, MethodCompiler context) {
-        DAsgnNode dasgnNode = (DAsgnNode) node;
+        final DAsgnNode dasgnNode = (DAsgnNode) node;
 
-        compile(dasgnNode.getValueNode(), context);
-
-        compileDAsgnAssignment(dasgnNode, context);
+        CompilerCallback value = new CompilerCallback() {
+            public void call(MethodCompiler context) {
+                compile(dasgnNode.getValueNode(), context);
+            }
+        };
+        
+        context.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth(), value);
     }
 
     public void compileDAsgnAssignment(Node node, MethodCompiler context) {
@@ -2240,11 +2244,15 @@ public class ASTCompiler {
     }
 
     public void compileLocalAsgn(Node node, MethodCompiler context) {
-        LocalAsgnNode localAsgnNode = (LocalAsgnNode) node;
+        final LocalAsgnNode localAsgnNode = (LocalAsgnNode) node;
 
-        compile(localAsgnNode.getValueNode(), context);
+        CompilerCallback value = new CompilerCallback() {
+            public void call(MethodCompiler context) {
+                compile(localAsgnNode.getValueNode(), context);
+            }
+        };
 
-        context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth());
+        context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth(), value);
     }
 
     public void compileLocalAsgnAssignment(Node node, MethodCompiler context) {
