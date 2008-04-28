@@ -207,6 +207,20 @@ public interface MethodCompiler {
      * while loops, pass true for checkFirst. For statement-modifier while loops, pass false. For
      * unless loops, reverse the result of the condition after calculating it.
      * 
+     * This version ensures the stack is maintained so while results can be used in any context.
+     * 
+     * @param condition The code to execute for calculating the loop condition. A Ruby true result will
+     * cause the body to be executed again.
+     * @param body The body to executed for the loop.
+     * @param checkFirst whether to check the condition the first time through or not.
+     */
+    public void performBooleanLoopSafe(BranchCallback condition, BranchCallback body, boolean checkFirst);
+    
+    /**
+     * Perform a boolean loop using the given condition-calculating branch and body branch. For
+     * while loops, pass true for checkFirst. For statement-modifier while loops, pass false. For
+     * unless loops, reverse the result of the condition after calculating it.
+     * 
      * @param condition The code to execute for calculating the loop condition. A Ruby true result will
      * cause the body to be executed again.
      * @param body The body to executed for the loop.

@@ -856,6 +856,73 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.label(falseJmp);
         }
 
+        public void performBooleanLoopSafe(BranchCallback condition, BranchCallback body, boolean checkFirst) {
+            String mname = getNewRescueName();
+            String signature = sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class});
+            SkinnyMethodAdapter mv = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, mname, signature, null, null));
+            SkinnyMethodAdapter old_method = null;
+            SkinnyMethodAdapter var_old_method = null;
+            SkinnyMethodAdapter inv_old_method = null;
+            boolean oldWithinProtection = withinProtection;
+            withinProtection = true;
+            Label[] oldLoopLabels = currentLoopLabels;
+            currentLoopLabels = null;
+            try {
+                old_method = this.method;
+                var_old_method = getVariableCompiler().getMethodAdapter();
+                inv_old_method = getInvocationCompiler().getMethodAdapter();
+                this.method = mv;
+                getVariableCompiler().setMethodAdapter(mv);
+                getInvocationCompiler().setMethodAdapter(mv);
+
+                mv.visitCode();
+
+                // set up a local IRuby variable
+                mv.aload(THREADCONTEXT_INDEX);
+                mv.dup();
+                mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
+                mv.dup();
+                mv.astore(RUNTIME_INDEX);
+                
+                // store previous exception for restoration if we rescue something
+                loadRuntime();
+                invokeUtilityMethod("getErrorInfo", sig(IRubyObject.class, Ruby.class));
+                mv.astore(PREVIOUS_EXCEPTION_INDEX);
+            
+                // grab nil for local variables
+                mv.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
+                mv.astore(NIL_INDEX);
+            
+                mv.invokevirtual(p(ThreadContext.class), "getCurrentScope", sig(DynamicScope.class));
+                mv.dup();
+                mv.astore(DYNAMIC_SCOPE_INDEX);
+                mv.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
+                mv.astore(VARS_ARRAY_INDEX);
+
+                performBooleanLoop(condition, body, checkFirst);
+                
+                mv.areturn();
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            } finally {
+                withinProtection = oldWithinProtection;
+                this.method = old_method;
+                getVariableCompiler().setMethodAdapter(var_old_method);
+                getInvocationCompiler().setMethodAdapter(inv_old_method);
+            }
+            
+            method.aload(THIS);
+            loadThreadContext();
+            loadSelf();
+            method.aload(ARGS_INDEX);
+            if(this instanceof ASMClosureCompiler) {
+                pushNull();
+            } else {
+                loadBlock();
+            }
+            method.invokevirtual(classname, mname, signature);
+        }
+
         public void performBooleanLoop(BranchCallback condition, BranchCallback body, boolean checkFirst) {
             // FIXME: handle next/continue, break, etc
             Label tryBegin = new Label();

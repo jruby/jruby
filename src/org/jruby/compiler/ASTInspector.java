@@ -467,6 +467,7 @@ public class ASTInspector {
             UntilNode untilNode = (UntilNode)node;
             inspect(untilNode.getConditionNode());
             inspect(untilNode.getBodyNode());
+            hasScopeAwareMethods = true;
             break;
         case VALIASNODE:
             break;
@@ -479,6 +480,7 @@ public class ASTInspector {
             WhileNode whileNode = (WhileNode)node;
             inspect(whileNode.getConditionNode());
             inspect(whileNode.getBodyNode());
+            hasScopeAwareMethods = true;
             break;
         case XSTRNODE:
             break;

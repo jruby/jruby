@@ -950,13 +950,7 @@ public class ASTCompiler {
             }
         };
 
-        // FIXME: HACK to get around while/until wiping out the stack
-//        if (classVarAsgnNode.getValueNode() instanceof WhileNode || classVarAsgnNode.getValueNode() instanceof UntilNode) {
-            value.call(context);
-            compileClassVarAsgnAssignment(node, context);
-//        } else {
-//            context.assignClassVariable(classVarAsgnNode.getName(), value);
-//        }
+        context.assignClassVariable(classVarAsgnNode.getName(), value);
     }
 
     public void compileClassVarAsgnAssignment(Node node, MethodCompiler context) {
@@ -973,14 +967,8 @@ public class ASTCompiler {
                 compile(classVarDeclNode.getValueNode(), context);
             }
         };
-
-        // FIXME: HACK to get around while/until wiping out the stack
-//        if (classVarDeclNode.getValueNode() instanceof WhileNode || classVarDeclNode.getValueNode() instanceof UntilNode) {
-            value.call(context);
-            compileClassVarDeclAssignment(node, context);
-//        } else {
-//            context.declareClassVariable(classVarDeclNode.getName(), value);
-//        }
+        
+        context.declareClassVariable(classVarDeclNode.getName(), value);
     }
 
     public void compileClassVarDeclAssignment(Node node, MethodCompiler context) {
@@ -1586,13 +1574,7 @@ public class ASTCompiler {
             }
         };
         
-        // FIXME: HACK to get around while/until wiping out stack
-//        if (dasgnNode.getValueNode() instanceof WhileNode || dasgnNode.getValueNode() instanceof UntilNode) {
-            value.call(context);
-            compileDAsgnAssignment(node, context);
-//        } else {
-//            context.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth(), value);
-//        }
+        context.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth(), value);
     }
 
     public void compileDAsgnAssignment(Node node, MethodCompiler context) {
@@ -2097,40 +2079,20 @@ public class ASTCompiler {
             }
         };
 
-        // FIXME: HACK to work around while/until wiping out the stack
-//        if (globalAsgnNode.getValueNode() instanceof WhileNode || globalAsgnNode.getValueNode() instanceof UntilNode) {
-            value.call(context);
-
-            if (globalAsgnNode.getName().length() == 2) {
-                switch (globalAsgnNode.getName().charAt(1)) {
-                    case '_':
-                        context.getVariableCompiler().assignLastLine();
-                        return;
-                    case '~':
-                        context.getVariableCompiler().assignBackRef();
-                        return;
-                    default:
-                    // fall off the end, handle it as a normal global
-                }
+        if (globalAsgnNode.getName().length() == 2) {
+            switch (globalAsgnNode.getName().charAt(1)) {
+                case '_':
+                    context.getVariableCompiler().assignLastLine(value);
+                    return;
+                case '~':
+                    context.getVariableCompiler().assignBackRef(value);
+                    return;
+                default:
+                // fall off the end, handle it as a normal global
             }
+        }
 
-            context.assignGlobalVariable(globalAsgnNode.getName());
-//        } else {
-//            if (globalAsgnNode.getName().length() == 2) {
-//                switch (globalAsgnNode.getName().charAt(1)) {
-//                    case '_':
-//                        context.getVariableCompiler().assignLastLine(value);
-//                        return;
-//                    case '~':
-//                        context.getVariableCompiler().assignBackRef(value);
-//                        return;
-//                    default:
-//                    // fall off the end, handle it as a normal global
-//                }
-//            }
-//
-//            context.assignGlobalVariable(globalAsgnNode.getName(), value);
-//        }
+        context.assignGlobalVariable(globalAsgnNode.getName(), value);
     }
 
     public void compileGlobalAsgnAssignment(Node node, MethodCompiler context) {
@@ -2230,13 +2192,7 @@ public class ASTCompiler {
             }
         };
 
-        // FIXME: HACK to work around while/until wiping out the stack
-//        if (instAsgnNode.getValueNode() instanceof WhileNode || instAsgnNode.getValueNode() instanceof UntilNode) {
-            value.call(context);
-            compileInstAsgnAssignment(node, context);
-//        } else {
-//            context.assignInstanceVariable(instAsgnNode.getName(), value);
-//        }
+        context.assignInstanceVariable(instAsgnNode.getName(), value);
     }
 
     public void compileInstAsgnAssignment(Node node, MethodCompiler context) {
@@ -2304,13 +2260,7 @@ public class ASTCompiler {
             }
         };
         
-        // FIXME: HACK to get around while/until wiping out stack
-//        if (localAsgnNode.getValueNode() instanceof WhileNode || localAsgnNode.getValueNode() instanceof UntilNode) {
-            value.call(context);
-            compileLocalAsgnAssignment(node, context);
-//        } else {
-//            context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth(), value);
-//        }
+        context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth(), value);
     }
 
     public void compileLocalAsgnAssignment(Node node, MethodCompiler context) {
@@ -3053,7 +3003,7 @@ public class ASTCompiler {
                     }
                 };
 
-        context.performBooleanLoop(condition, body, untilNode.evaluateAtStart());
+        context.performBooleanLoopSafe(condition, body, untilNode.evaluateAtStart());
 
         context.pollThreadEvents();
     }
@@ -3091,7 +3041,7 @@ public class ASTCompiler {
                     }
                 };
 
-        context.performBooleanLoop(condition, body, whileNode.evaluateAtStart());
+        context.performBooleanLoopSafe(condition, body, whileNode.evaluateAtStart());
 
         context.pollThreadEvents();
     }
