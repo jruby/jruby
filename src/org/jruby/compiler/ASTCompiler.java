@@ -950,7 +950,8 @@ public class ASTCompiler {
             }
         };
 
-        context.assignClassVariable(classVarAsgnNode.getName(), value);
+        value.call(context);
+        context.assignClassVariable(classVarAsgnNode.getName());
     }
 
     public void compileClassVarAsgnAssignment(Node node, MethodCompiler context) {
@@ -968,7 +969,8 @@ public class ASTCompiler {
             }
         };
 
-        context.declareClassVariable(classVarDeclNode.getName(), value);
+        value.call(context);
+        context.declareClassVariable(classVarDeclNode.getName());
     }
 
     public void compileClassVarDeclAssignment(Node node, MethodCompiler context) {
@@ -1574,7 +1576,8 @@ public class ASTCompiler {
             }
         };
         
-        context.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth(), value);
+        value.call(context);
+        context.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth());
     }
 
     public void compileDAsgnAssignment(Node node, MethodCompiler context) {
@@ -2252,7 +2255,8 @@ public class ASTCompiler {
             }
         };
 
-        context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth(), value);
+        value.call(context);
+        context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth());
     }
 
     public void compileLocalAsgnAssignment(Node node, MethodCompiler context) {
