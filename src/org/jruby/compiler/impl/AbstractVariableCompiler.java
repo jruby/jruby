@@ -76,12 +76,18 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
     }
 
     public void assignLastLine() {
-        method.dup();
         methodCompiler.loadRuntime();
         method.swap();
         methodCompiler.loadThreadContext();
         method.swap();
-        method.invokestatic(p(RuntimeHelpers.class), "setLastLine", sig(void.class, Ruby.class, ThreadContext.class, IRubyObject.class));
+        method.invokestatic(p(RuntimeHelpers.class), "setLastLine", sig(IRubyObject.class, Ruby.class, ThreadContext.class, IRubyObject.class));
+    }
+
+    public void assignLastLine(CompilerCallback value) {
+        methodCompiler.loadRuntime();
+        methodCompiler.loadThreadContext();
+        value.call(methodCompiler);
+        method.invokestatic(p(RuntimeHelpers.class), "setLastLine", sig(IRubyObject.class, Ruby.class, ThreadContext.class, IRubyObject.class));
     }
 
     public void retrieveLastLine() {
@@ -91,12 +97,18 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
     }
 
     public void assignBackRef() {
-        method.dup();
         methodCompiler.loadRuntime();
         method.swap();
         methodCompiler.loadThreadContext();
         method.swap();
-        method.invokestatic(p(RuntimeHelpers.class), "setBackref", sig(void.class, Ruby.class, ThreadContext.class, IRubyObject.class));
+        method.invokestatic(p(RuntimeHelpers.class), "setBackref", sig(IRubyObject.class, Ruby.class, ThreadContext.class, IRubyObject.class));
+    }    
+
+    public void assignBackRef(CompilerCallback value) {
+        methodCompiler.loadRuntime();
+        methodCompiler.loadThreadContext();
+        value.call(methodCompiler);
+        method.invokestatic(p(RuntimeHelpers.class), "setBackref", sig(IRubyObject.class, Ruby.class, ThreadContext.class, IRubyObject.class));
     }    
 
     public void retrieveBackRef() {

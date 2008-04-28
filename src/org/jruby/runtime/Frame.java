@@ -161,16 +161,16 @@ public final class Frame implements JumpTarget {
         return backref == null ? self.getRuntime().getNil() : backref;
     }
 
-    public void setBackRef(IRubyObject backref) {
-        this.backref = backref;
+    public IRubyObject setBackRef(IRubyObject backref) {
+        return this.backref = backref;
     }
 
     public IRubyObject getLastLine() {
         return lastline == null ? self.getRuntime().getNil() : lastline;
     }
 
-    public void setLastLine(IRubyObject lastline) {
-        this.lastline = lastline;
+    public IRubyObject setLastLine(IRubyObject lastline) {
+        return this.lastline = lastline;
     }
 
     public String getFile() {

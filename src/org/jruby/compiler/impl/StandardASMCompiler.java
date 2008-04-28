@@ -1164,6 +1164,17 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.invokeinterface(p(InstanceVariables.class), "fastSetInstanceVariable", sig(IRubyObject.class, params(String.class, IRubyObject.class)));
         }
 
+        public void assignInstanceVariable(String name, CompilerCallback value) {
+            // FIXME: more efficient with a callback
+            loadSelf();
+            invokeIRubyObject("getInstanceVariables", sig(InstanceVariables.class));
+
+            method.ldc(name);
+            value.call(this);
+
+            method.invokeinterface(p(InstanceVariables.class), "fastSetInstanceVariable", sig(IRubyObject.class, params(String.class, IRubyObject.class)));
+        }
+
         public void retrieveGlobalVariable(String name) {
             loadRuntime();
 
@@ -1180,6 +1191,16 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.swap();
             method.ldc(name);
             method.swap();
+            method.invokevirtual(p(GlobalVariables.class), "set", sig(IRubyObject.class, params(String.class, IRubyObject.class)));
+        }
+
+        public void assignGlobalVariable(String name, CompilerCallback value) {
+            // FIXME: more efficient with a callback
+            loadRuntime();
+
+            invokeIRuby("getGlobalVariables", sig(GlobalVariables.class));
+            method.ldc(name);
+            value.call(this);
             method.invokevirtual(p(GlobalVariables.class), "set", sig(IRubyObject.class, params(String.class, IRubyObject.class)));
         }
 

@@ -950,8 +950,13 @@ public class ASTCompiler {
             }
         };
 
-        value.call(context);
-        context.assignClassVariable(classVarAsgnNode.getName());
+        // FIXME: HACK to get around while/until wiping out the stack
+//        if (classVarAsgnNode.getValueNode() instanceof WhileNode || classVarAsgnNode.getValueNode() instanceof UntilNode) {
+            value.call(context);
+            compileClassVarAsgnAssignment(node, context);
+//        } else {
+//            context.assignClassVariable(classVarAsgnNode.getName(), value);
+//        }
     }
 
     public void compileClassVarAsgnAssignment(Node node, MethodCompiler context) {
@@ -969,8 +974,13 @@ public class ASTCompiler {
             }
         };
 
-        value.call(context);
-        context.declareClassVariable(classVarDeclNode.getName());
+        // FIXME: HACK to get around while/until wiping out the stack
+//        if (classVarDeclNode.getValueNode() instanceof WhileNode || classVarDeclNode.getValueNode() instanceof UntilNode) {
+            value.call(context);
+            compileClassVarDeclAssignment(node, context);
+//        } else {
+//            context.declareClassVariable(classVarDeclNode.getName(), value);
+//        }
     }
 
     public void compileClassVarDeclAssignment(Node node, MethodCompiler context) {
@@ -1576,8 +1586,13 @@ public class ASTCompiler {
             }
         };
         
-        value.call(context);
-        context.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth());
+        // FIXME: HACK to get around while/until wiping out stack
+//        if (dasgnNode.getValueNode() instanceof WhileNode || dasgnNode.getValueNode() instanceof UntilNode) {
+            value.call(context);
+            compileDAsgnAssignment(node, context);
+//        } else {
+//            context.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth(), value);
+//        }
     }
 
     public void compileDAsgnAssignment(Node node, MethodCompiler context) {
@@ -2074,24 +2089,48 @@ public class ASTCompiler {
     }
 
     public void compileGlobalAsgn(Node node, MethodCompiler context) {
-        GlobalAsgnNode globalAsgnNode = (GlobalAsgnNode) node;
+        final GlobalAsgnNode globalAsgnNode = (GlobalAsgnNode) node;
 
-        compile(globalAsgnNode.getValueNode(), context);
-
-        if (globalAsgnNode.getName().length() == 2) {
-            switch (globalAsgnNode.getName().charAt(1)) {
-                case '_':
-                    context.getVariableCompiler().assignLastLine();
-                    return;
-                case '~':
-                    context.getVariableCompiler().assignBackRef();
-                    return;
-                default:
-                // fall off the end, handle it as a normal global
+        CompilerCallback value = new CompilerCallback() {
+            public void call(MethodCompiler context) {
+                compile(globalAsgnNode.getValueNode(), context);
             }
-        }
+        };
 
-        context.assignGlobalVariable(globalAsgnNode.getName());
+        // FIXME: HACK to work around while/until wiping out the stack
+//        if (globalAsgnNode.getValueNode() instanceof WhileNode || globalAsgnNode.getValueNode() instanceof UntilNode) {
+            value.call(context);
+
+            if (globalAsgnNode.getName().length() == 2) {
+                switch (globalAsgnNode.getName().charAt(1)) {
+                    case '_':
+                        context.getVariableCompiler().assignLastLine();
+                        return;
+                    case '~':
+                        context.getVariableCompiler().assignBackRef();
+                        return;
+                    default:
+                    // fall off the end, handle it as a normal global
+                }
+            }
+
+            context.assignGlobalVariable(globalAsgnNode.getName());
+//        } else {
+//            if (globalAsgnNode.getName().length() == 2) {
+//                switch (globalAsgnNode.getName().charAt(1)) {
+//                    case '_':
+//                        context.getVariableCompiler().assignLastLine(value);
+//                        return;
+//                    case '~':
+//                        context.getVariableCompiler().assignBackRef(value);
+//                        return;
+//                    default:
+//                    // fall off the end, handle it as a normal global
+//                }
+//            }
+//
+//            context.assignGlobalVariable(globalAsgnNode.getName(), value);
+//        }
     }
 
     public void compileGlobalAsgnAssignment(Node node, MethodCompiler context) {
@@ -2183,11 +2222,21 @@ public class ASTCompiler {
     }
 
     public void compileInstAsgn(Node node, MethodCompiler context) {
-        InstAsgnNode instAsgnNode = (InstAsgnNode) node;
+        final InstAsgnNode instAsgnNode = (InstAsgnNode) node;
 
-        compile(instAsgnNode.getValueNode(), context);
+        CompilerCallback value = new CompilerCallback() {
+            public void call(MethodCompiler context) {
+                compile(instAsgnNode.getValueNode(), context);
+            }
+        };
 
-        compileInstAsgnAssignment(node, context);
+        // FIXME: HACK to work around while/until wiping out the stack
+//        if (instAsgnNode.getValueNode() instanceof WhileNode || instAsgnNode.getValueNode() instanceof UntilNode) {
+            value.call(context);
+            compileInstAsgnAssignment(node, context);
+//        } else {
+//            context.assignInstanceVariable(instAsgnNode.getName(), value);
+//        }
     }
 
     public void compileInstAsgnAssignment(Node node, MethodCompiler context) {
@@ -2254,9 +2303,14 @@ public class ASTCompiler {
                 compile(localAsgnNode.getValueNode(), context);
             }
         };
-
-        value.call(context);
-        context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth());
+        
+        // FIXME: HACK to get around while/until wiping out stack
+//        if (localAsgnNode.getValueNode() instanceof WhileNode || localAsgnNode.getValueNode() instanceof UntilNode) {
+            value.call(context);
+            compileLocalAsgnAssignment(node, context);
+//        } else {
+//            context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth(), value);
+//        }
     }
 
     public void compileLocalAsgnAssignment(Node node, MethodCompiler context) {

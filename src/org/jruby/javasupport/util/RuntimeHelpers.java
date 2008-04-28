@@ -817,17 +817,17 @@ public class RuntimeHelpers {
         runtime.getGlobalVariables().set("$!", error);
     }
 
-    public static void setLastLine(Ruby runtime, ThreadContext context, IRubyObject value) {
-        context.getCurrentFrame().setLastLine(value);
+    public static IRubyObject setLastLine(Ruby runtime, ThreadContext context, IRubyObject value) {
+        return context.getCurrentFrame().setLastLine(value);
     }
 
     public static IRubyObject getLastLine(Ruby runtime, ThreadContext context) {
         return context.getCurrentFrame().getLastLine();
     }
 
-    public static void setBackref(Ruby runtime, ThreadContext context, IRubyObject value) {
+    public static IRubyObject setBackref(Ruby runtime, ThreadContext context, IRubyObject value) {
         if (!value.isNil() && !(value instanceof RubyMatchData)) throw runtime.newTypeError(value, runtime.getMatchData());
-        context.getCurrentFrame().setBackRef(value);
+        return context.getCurrentFrame().setBackRef(value);
     }
 
     public static IRubyObject getBackref(Ruby runtime, ThreadContext context) {

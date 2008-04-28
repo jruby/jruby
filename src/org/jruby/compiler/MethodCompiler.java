@@ -327,11 +327,28 @@ public interface MethodCompiler {
     public void assignInstanceVariable(String name);
     
     /**
+     * Assign the value on top of the stack to the instance variable with the specified name
+     * on the current "self". The value is consumed.
+     * 
+     * @param name The name of the value to assign.
+     * @param value A callback for compiling the value to assign
+     */
+    public void assignInstanceVariable(String name, CompilerCallback value);
+    
+    /**
      * Assign the top of the stack to the global variable with the specified name.
      * 
      * @param name The name of the global variable.
      */
     public void assignGlobalVariable(String name);
+    
+    /**
+     * Assign the top of the stack to the global variable with the specified name.
+     * 
+     * @param name The name of the global variable.
+     * @param value The callback to compile the value to assign
+     */
+    public void assignGlobalVariable(String name, CompilerCallback value);
     
     /**
      * Retrieve the global variable with the specified name to the top of the stack.

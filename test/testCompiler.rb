@@ -476,3 +476,15 @@ test_equal({"1" => 2}, compile_and_run("def foo; x = {1 => 2}; x.inject({}) do |
 long_src = "a = 1\n"
 5000.times { long_src << "a += 1\n" }
 test_equal(5001, compile_and_run(long_src))
+
+# variable assignment of various types from loop results
+test_equal(1, compile_and_run("a = while true; break 1; end; a"))
+test_equal(1, compile_and_run("@a = while true; break 1; end; @a"))
+test_equal(1, compile_and_run("@@a = while true; break 1; end; @@a"))
+test_equal(1, compile_and_run("$a = while true; break 1; end; $a"))
+
+# same assignments but loop is within a begin
+test_equal(1, compile_and_run("a = begin; while true; break 1; end; end; a"))
+test_equal(1, compile_and_run("@a = begin; while true; break 1; end; end; @a"))
+test_equal(1, compile_and_run("@@a = begin; while true; break 1; end; end; @@a"))
+test_equal(1, compile_and_run("$a = begin; while true; break 1; end; end; $a"))
