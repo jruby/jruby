@@ -125,7 +125,7 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
         if (argsCallback != null) {
             // load args[0] which will be the IRubyObject representing block args
             method.aload(argsIndex);
-            method.ldc(new Integer(0));
+            method.pushIntEfficiently(0);
             method.arrayload();
             argsCallback.call(methodCompiler);
             method.pop(); // clear remaining value on the stack
@@ -149,7 +149,7 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
         default:
             method.aload(varsIndex);
             method.swap();
-            method.ldc(new Integer(index));
+            method.pushIntEfficiently(index);
             method.swap();
             method.arraystore();
         }
@@ -181,7 +181,7 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             break;
         default:
             method.swap();
-            method.ldc(new Integer(index));
+            method.pushIntEfficiently(index);
             method.invokevirtual(p(DynamicScope.class), "setValueDepthZero", sig(Void.TYPE, params(IRubyObject.class, Integer.TYPE)));
         }
     }
@@ -200,7 +200,7 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             break;
         default:
             method.aload(varsIndex);
-            method.ldc(new Integer(index));
+            method.pushIntEfficiently(index);
             method.arrayload();
         }
     }
@@ -228,7 +228,7 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             method.invokevirtual(p(DynamicScope.class), "getValueOneDepthZeroOrNil", sig(IRubyObject.class, IRubyObject.class));
             break;
         default:
-            method.ldc(new Integer(index));
+            method.pushIntEfficiently(index);
             methodCompiler.loadNil();
             method.invokevirtual(p(DynamicScope.class), "getValueDepthZeroOrNil", sig(IRubyObject.class, params(Integer.TYPE, IRubyObject.class)));
         }

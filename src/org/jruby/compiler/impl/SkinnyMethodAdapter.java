@@ -56,6 +56,28 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         getMethodVisitor().visitLdcInsn(arg0);
     }
     
+    public void bipush(int arg) {
+        getMethodVisitor().visitIntInsn(BIPUSH, arg);
+    }
+    
+    public void sipush(int arg) {
+        getMethodVisitor().visitIntInsn(SIPUSH, arg);
+    }
+        
+    public void pushIntEfficiently(int value) {
+        if (value <= Byte.MAX_VALUE && value >= Byte.MIN_VALUE) {
+            bipush(value);
+        } else if (value <= Short.MAX_VALUE && value >= Short.MIN_VALUE) {
+            sipush(value);
+        } else {
+            ldc(value);
+        }
+    }
+        
+    public void pushBoolean(boolean bool) {
+        if (bool) iconst_1(); else iconst_0();
+    }
+    
     public void invokestatic(String arg1, String arg2, String arg3) {
         getMethodVisitor().visitMethodInsn(INVOKESTATIC, arg1, arg2, arg3);
     }

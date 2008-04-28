@@ -97,7 +97,7 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
         if (argsCallback != null) {
             // load args[0] which will be the IRubyObject representing block args
             method.aload(argsIndex);
-            method.ldc(new Integer(0));
+            method.pushIntEfficiently(0);
             method.arrayload();
             argsCallback.call(methodCompiler);
             method.pop(); // clear remaining value on the stack
@@ -118,9 +118,9 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
 
             method.aload(scopeIndex);
             method.swap();
-            method.ldc(new Integer(index));
+            method.pushIntEfficiently(index);
             method.swap();
-            method.ldc(new Integer(depth));
+            method.pushIntEfficiently(depth);
             method.invokevirtual(p(DynamicScope.class), "setValue", sig(Void.TYPE, params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
         }
     }
@@ -134,8 +134,8 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
             retrieveLocalVariable(index);
         } else {
             method.aload(scopeIndex);
-            method.ldc(new Integer(index));
-            method.ldc(new Integer(depth));
+            method.pushIntEfficiently(index);
+            method.pushIntEfficiently(depth);
             methodCompiler.loadNil();
             method.invokevirtual(p(DynamicScope.class), "getValueOrNil", sig(IRubyObject.class, params(Integer.TYPE, Integer.TYPE, IRubyObject.class)));
         }

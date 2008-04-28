@@ -61,6 +61,7 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
         method.getfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
     }
     
+    @Deprecated
     public void cachePosition(SkinnyMethodAdapter method, String file, int line) {
         String cleanName = JavaNameMangler.mangleStringForCleanJavaIdentifier(file + "$" + line);
         String fieldName = sourcePositions.get(cleanName);

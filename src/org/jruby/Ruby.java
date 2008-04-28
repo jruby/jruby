@@ -2141,6 +2141,10 @@ public final class Ruby {
         return RubyFixnum.newFixnum(this, value);
     }
 
+    public RubyFixnum newFixnum(int value) {
+        return RubyFixnum.newFixnum(this, value);
+    }
+
     public RubyFloat newFloat(double value) {
         return RubyFloat.newFloat(this, value);
     }

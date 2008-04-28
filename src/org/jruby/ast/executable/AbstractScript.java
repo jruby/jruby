@@ -15,6 +15,16 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author headius
  */
 public abstract class AbstractScript implements Script {
+    public AbstractScript() {}
+    
+    public IRubyObject load(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        return null;
+    }
+    
+    public IRubyObject run(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        return __file__(context, self, args, block);
+    }
+    
     public CallSite site0;
     public CallSite site1;
     public CallSite site2;
@@ -65,14 +75,4 @@ public abstract class AbstractScript implements Script {
     public CallSite site47;
     public CallSite site48;
     public CallSite site49;
-    
-    public AbstractScript() {}
-    
-    public IRubyObject load(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-        return null;
-    }
-    
-    public IRubyObject run(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-        return __file__(context, self, args, block);
-    }
 }

@@ -519,7 +519,7 @@ public class ASTInterpreter {
         ArgsCatNode iVisited = (ArgsCatNode) node;
    
         IRubyObject args = evalInternal(runtime,context, iVisited.getFirstNode(), self, aBlock);
-        IRubyObject secondArgs = splatValue(runtime, evalInternal(runtime,context, iVisited.getSecondNode(), self, aBlock));
+        IRubyObject secondArgs = RuntimeHelpers.splatValue(evalInternal(runtime,context, iVisited.getSecondNode(), self, aBlock));
         RubyArray list = args instanceof RubyArray ? (RubyArray) args : runtime.newArray(args);
    
         return list.concat(secondArgs);
@@ -547,33 +547,6 @@ public class ASTInterpreter {
         }
         
         return runtime.newArrayNoCopy(array);
-    }
-
-    public static RubyArray arrayValue(Ruby runtime, IRubyObject value) {
-        IRubyObject tmp = value.checkArrayType();
-
-        if (tmp.isNil()) {
-            // Object#to_a is obsolete.  We match Ruby's hack until to_a goes away.  Then we can 
-            // remove this hack too.
-            if (value.getMetaClass().searchMethod("to_a").getImplementationClass() != runtime.getKernel()) {
-                value = value.callMethod(runtime.getCurrentContext(), MethodIndex.TO_A, "to_a");
-                if (!(value instanceof RubyArray)) throw runtime.newTypeError("`to_a' did not return Array");
-                return (RubyArray)value;
-            } else {
-                return runtime.newArray(value);
-            }
-        }
-        return (RubyArray)tmp;
-    }
-
-    public static IRubyObject aryToAry(Ruby runtime, IRubyObject value) {
-        if (value instanceof RubyArray) return value;
-
-        if (value.respondsTo("to_ary")) {
-            return TypeConverter.convertToType(value, runtime.getArray(), MethodIndex.TO_A, "to_ary", false);
-        }
-
-        return runtime.newArray(value);
     }
 
     private static IRubyObject attrAssignNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -731,7 +704,7 @@ public class ASTInterpreter {
                     if (tag instanceof WhenNode) {
                         IRubyObject expressionsObject = evalInternal(runtime,context, ((WhenNode) tag)
                                         .getExpressionNodes(), self, aBlock);
-                        RubyArray expressions = splatValue(runtime, expressionsObject);
+                        RubyArray expressions = RuntimeHelpers.splatValue(expressionsObject);
 
                         for (int j = 0,k = expressions.getLength(); j < k; j++) {
                             IRubyObject condition = expressions.eltInternal(j);
@@ -1372,7 +1345,7 @@ public class ASTInterpreter {
         }
         case SPLATNODE: {
             SplatNode splatNode = (SplatNode)iVisited.getValueNode();
-            RubyArray rubyArray = splatValue(runtime, evalInternal(runtime, context, splatNode.getValue(), self, aBlock));
+            RubyArray rubyArray = RuntimeHelpers.splatValue(evalInternal(runtime, context, splatNode.getValue(), self, aBlock));
             return AssignmentVisitor.multiAssign(runtime, context, self, iVisited, rubyArray, false);
         }
         default:
@@ -1693,7 +1666,7 @@ public class ASTInterpreter {
     }
 
     private static IRubyObject splatNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
-        return splatValue(runtime, evalInternal(runtime, context, ((SplatNode) node).getValue(), self, aBlock));
+        return RuntimeHelpers.splatValue(evalInternal(runtime, context, ((SplatNode) node).getValue(), self, aBlock));
     }
 
     private static IRubyObject strNode(Ruby runtime, Node node) {
@@ -1716,7 +1689,7 @@ public class ASTInterpreter {
     }
     
     private static IRubyObject sValueNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
-        return aValueSplat(runtime, evalInternal(runtime,context, ((SValueNode) node).getValue(), self, aBlock));
+        return RuntimeHelpers.aValueSplat(evalInternal(runtime, context, ((SValueNode) node).getValue(), self, aBlock));
     }
     
     private static IRubyObject symbolNode(Ruby runtime, Node node) {
@@ -1724,7 +1697,7 @@ public class ASTInterpreter {
     }
     
     private static IRubyObject toAryNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
-        return aryToAry(runtime, evalInternal(runtime,context, ((ToAryNode) node).getValue(), self, aBlock));
+        return RuntimeHelpers.aryToAry(evalInternal(runtime,context, ((ToAryNode) node).getValue(), self, aBlock));
     }
 
     private static IRubyObject trueNode(Ruby runtime, ThreadContext context) {
@@ -1870,16 +1843,6 @@ public class ASTInterpreter {
     private static IRubyObject zsuperNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         Block block = getBlock(runtime, context, self, aBlock, ((ZSuperNode) node).getIterNode());
         return RuntimeHelpers.callZSuper(runtime, context, block, self);
-    }
-
-    public static IRubyObject aValueSplat(Ruby runtime, IRubyObject value) {
-        if (!(value instanceof RubyArray) || ((RubyArray) value).length().getLongValue() == 0) {
-            return runtime.getNil();
-        }
-
-        RubyArray array = (RubyArray) value;
-
-        return array.getLength() == 1 ? array.first(IRubyObject.NULL_ARRAY) : array;
     }
 
     private static void callTraceFunction(Ruby runtime, ThreadContext context, int event) {
@@ -2205,6 +2168,47 @@ public class ASTInterpreter {
         return ArgsUtil.convertToJavaArray(evalInternal(runtime,context, node, self, aBlock));
     }
 
+    @Deprecated
+    public static IRubyObject aValueSplat(Ruby runtime, IRubyObject value) {
+        if (!(value instanceof RubyArray) || ((RubyArray) value).length().getLongValue() == 0) {
+            return runtime.getNil();
+        }
+
+        RubyArray array = (RubyArray) value;
+
+        return array.getLength() == 1 ? array.first(IRubyObject.NULL_ARRAY) : array;
+    }
+
+    @Deprecated
+    public static RubyArray arrayValue(Ruby runtime, IRubyObject value) {
+        IRubyObject tmp = value.checkArrayType();
+
+        if (tmp.isNil()) {
+            // Object#to_a is obsolete.  We match Ruby's hack until to_a goes away.  Then we can 
+            // remove this hack too.
+            if (value.getMetaClass().searchMethod("to_a").getImplementationClass() != runtime.getKernel()) {
+                value = value.callMethod(runtime.getCurrentContext(), MethodIndex.TO_A, "to_a");
+                if (!(value instanceof RubyArray)) throw runtime.newTypeError("`to_a' did not return Array");
+                return (RubyArray)value;
+            } else {
+                return runtime.newArray(value);
+            }
+        }
+        return (RubyArray)tmp;
+    }
+
+    @Deprecated
+    public static IRubyObject aryToAry(Ruby runtime, IRubyObject value) {
+        if (value instanceof RubyArray) return value;
+
+        if (value.respondsTo("to_ary")) {
+            return TypeConverter.convertToType(value, runtime.getArray(), MethodIndex.TO_A, "to_ary", false);
+        }
+
+        return runtime.newArray(value);
+    }
+
+    @Deprecated
     public static RubyArray splatValue(Ruby runtime, IRubyObject value) {
         if (value.isNil()) {
             return runtime.newArray(value);
@@ -2214,12 +2218,15 @@ public class ASTInterpreter {
     }
 
     // Used by the compiler to simplify arg processing
+    @Deprecated
     public static RubyArray splatValue(IRubyObject value, Ruby runtime) {
         return splatValue(runtime, value);
     }
+    @Deprecated
     public static IRubyObject aValueSplat(IRubyObject value, Ruby runtime) {
         return aValueSplat(runtime, value);
     }
+    @Deprecated
     public static IRubyObject aryToAry(IRubyObject value, Ruby runtime) {
         return aryToAry(runtime, value);
     }

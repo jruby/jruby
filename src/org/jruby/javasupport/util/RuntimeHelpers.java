@@ -660,7 +660,7 @@ public class RuntimeHelpers {
     }
     
     public static RubyBoolean isWhenTriggered(IRubyObject expression, IRubyObject expressionsObject, ThreadContext context) {
-        RubyArray expressions = ASTInterpreter.splatValue(context.getRuntime(), expressionsObject);
+        RubyArray expressions = RuntimeHelpers.splatValue(expressionsObject);
         for (int j = 0,k = expressions.getLength(); j < k; j++) {
             IRubyObject condition = expressions.eltInternal(j);
 
@@ -913,5 +913,52 @@ public class RuntimeHelpers {
         newArgs[args.length] = value;
         asetSite.call(context, receiver, newArgs);
         return value;
+    }
+
+    public static RubyArray arrayValue(IRubyObject value) {
+        IRubyObject tmp = value.checkArrayType();
+
+        if (tmp.isNil()) {
+            // Object#to_a is obsolete.  We match Ruby's hack until to_a goes away.  Then we can 
+            // remove this hack too.
+            Ruby runtime = value.getRuntime();
+            
+            if (value.getMetaClass().searchMethod("to_a").getImplementationClass() != runtime.getKernel()) {
+                value = value.callMethod(runtime.getCurrentContext(), MethodIndex.TO_A, "to_a");
+                if (!(value instanceof RubyArray)) throw runtime.newTypeError("`to_a' did not return Array");
+                return (RubyArray)value;
+            } else {
+                return runtime.newArray(value);
+            }
+        }
+        return (RubyArray)tmp;
+    }
+
+    public static IRubyObject aryToAry(IRubyObject value) {
+        if (value instanceof RubyArray) return value;
+
+        if (value.respondsTo("to_ary")) {
+            return TypeConverter.convertToType(value, value.getRuntime().getArray(), MethodIndex.TO_A, "to_ary", false);
+        }
+
+        return value.getRuntime().newArray(value);
+    }
+
+    public static IRubyObject aValueSplat(IRubyObject value) {
+        if (!(value instanceof RubyArray) || ((RubyArray) value).length().getLongValue() == 0) {
+            return value.getRuntime().getNil();
+        }
+
+        RubyArray array = (RubyArray) value;
+
+        return array.getLength() == 1 ? array.first(IRubyObject.NULL_ARRAY) : array;
+    }
+
+    public static RubyArray splatValue(IRubyObject value) {
+        if (value.isNil()) {
+            return value.getRuntime().newArray(value);
+        }
+
+        return arrayValue(value);
     }
 }

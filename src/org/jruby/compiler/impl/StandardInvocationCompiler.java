@@ -131,7 +131,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         case 1:
         case 2:
         case 3:
-            // specific-arity args, just save off top of stack
+            // specific-arity args, just save off top value on stack
             method.dup();
             break;
         default:
@@ -144,6 +144,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             // load from array
             method.arrayload(); // [args, val]
         }
+        // save result-to-be-assigned in a temporary local
         methodCompiler.variableCompiler.setTempLocal(tempLocal);
         
         // invoke call site
@@ -152,6 +153,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         // pop the return value and restore the dup'ed arg on the stack
         method.pop();
         
+        // retrieve the result-to-be-assigned to be the expression result
         methodCompiler.variableCompiler.getTempLocal(tempLocal);
         methodCompiler.variableCompiler.releaseTempLocal();
     }

@@ -638,6 +638,8 @@ public class ASTCompiler {
             context.createObjectArray(1);
         }
 
+        // FIXME: This is still using the grossly inefficient version of attr assignment
+        // but it's used only for masgn/block args so it's fairly rare
         context.getInvocationCompiler().invokeAttrAssign(attrAssignNode.getName());
     }
 
