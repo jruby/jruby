@@ -5,6 +5,9 @@
 
 package org.jruby.compiler.impl;
 
+import org.jruby.Ruby;
+import org.jruby.RubySymbol;
+import org.jruby.ast.executable.AbstractScript;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
@@ -16,16 +19,21 @@ import static org.jruby.util.CodegenUtils.*;
  */
 public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
     public static final int MAX_INHERITED_CALL_SITES = 50;
+    public static final int MAX_INHERITED_SYMBOLS = 20;
+    
+    final int runtimeIndex;
     
     int callSiteCount = 0;
 //    int byteListCount = 0;
 //    int sourcePositionsCount = 0;
-//    int symbolCount = 0;
+    int symbolCount = 0;
     
-    public InheritedCacheCompiler(StandardASMCompiler scriptCompiler) {
+    public InheritedCacheCompiler(StandardASMCompiler scriptCompiler, int runtimeIndex) {
         super(scriptCompiler);
+        this.runtimeIndex = runtimeIndex;
     }
     
+    @Override
     public void cacheCallSite(SkinnyMethodAdapter method, String name, CallType callType) {
         String fieldName = "site" + callSiteCount;
         
@@ -52,5 +60,23 @@ public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
             method.getfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
         }
         callSiteCount++;
+    }
+    
+    @Override
+    public void cacheSymbol(SkinnyMethodAdapter method, String symbol) {
+        String methodName = symbols.get(symbol);
+        if (methodName == null && symbolCount < MAX_INHERITED_SYMBOLS) {
+            methodName = "getSymbol" + symbolCount++;
+            symbols.put(symbol, methodName);
+        }
+        
+        if (methodName == null) {
+            super.cacheSymbol(method, symbol);
+        } else {
+            method.aload(0);
+            method.aload(runtimeIndex);
+            method.ldc(symbol);
+            method.invokevirtual(p(AbstractScript.class), methodName, sig(RubySymbol.class, Ruby.class, String.class));
+        }
     }
 }

@@ -209,7 +209,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         beginInit();
         beginClassInit();
         
-        cacheCompiler = new InheritedCacheCompiler(this);
+        cacheCompiler = new InheritedCacheCompiler(this, RUNTIME_INDEX);
     }
 
     public void endScript(boolean generateRun, boolean generateLoad, boolean generateMain) {
