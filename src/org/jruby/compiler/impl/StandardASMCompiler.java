@@ -217,23 +217,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         // root method of a script is always in __file__ method
         String methodName = "__file__";
         
-        if (generateRun) {
-            SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, "run", METHOD_SIGNATURE, null, null));
-            method.start();
-
-            // invoke __file__ with threadcontext, self, args (null), and block (null)
-            method.aload(THIS);
-            method.aload(THREADCONTEXT_INDEX);
-            method.aload(SELF_INDEX);
-            method.aload(ARGS_INDEX);
-            method.aload(CLOSURE_INDEX);
-
-            method.invokevirtual(classname, methodName, METHOD_SIGNATURE);
-            method.areturn();
-
-            method.end();
-        }
-        
         if (generateLoad || generateMain) {
             // the load method is used for loading as a top-level script, and prepares appropriate scoping around the code
             SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, "load", METHOD_SIGNATURE, null, null));
