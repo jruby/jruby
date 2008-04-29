@@ -127,7 +127,7 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
                 // just confirm minimum args provided
                 method.aload(argsIndex);
                 method.arraylength();
-                method.pushIntEfficiently(requiredArgs);
+                method.pushInt(requiredArgs);
                 method.if_icmplt(arityError);
             }
         } else if (optArgs > 0) {
@@ -135,20 +135,20 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
                 // confirm minimum args provided
                 method.aload(argsIndex);
                 method.arraylength();
-                method.pushIntEfficiently(requiredArgs);
+                method.pushInt(requiredArgs);
                 method.if_icmplt(arityError);
             }
 
             // confirm maximum not greater than optional
             method.aload(argsIndex);
             method.arraylength();
-            method.pushIntEfficiently(requiredArgs + optArgs);
+            method.pushInt(requiredArgs + optArgs);
             method.if_icmpgt(arityError);
         } else {
             // just confirm args length == required
             method.aload(argsIndex);
             method.arraylength();
-            method.pushIntEfficiently(requiredArgs);
+            method.pushInt(requiredArgs);
             method.if_icmpne(arityError);
         }
 
@@ -157,8 +157,8 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
         method.label(arityError);
         methodCompiler.loadRuntime();
         method.aload(argsIndex);
-        method.pushIntEfficiently(requiredArgs);
-        method.pushIntEfficiently(requiredArgs + optArgs);
+        method.pushInt(requiredArgs);
+        method.pushInt(requiredArgs + optArgs);
         method.invokestatic(p(Arity.class), "checkArgumentCount", sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
         method.pop();
 
@@ -186,7 +186,7 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
             for (; currentArgElement < requiredArgsCount; currentArgElement++) {
                 // extract item from array
                 method.dup(); // dup the original array
-                method.pushIntEfficiently(currentArgElement); // index for the item
+                method.pushInt(currentArgElement); // index for the item
                 method.arrayload();
                 requiredAssignment.nextValue(methodCompiler, requiredArgs, currentArgElement);
 
@@ -202,12 +202,12 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
                 // confirm we're not past the end of the array
                 method.dup(); // dup the original array
                 method.arraylength();
-                method.pushIntEfficiently(currentArgElement);
+                method.pushInt(currentArgElement);
                 method.if_icmple(noMoreArrayElements); // if length <= start, end loop
 
                 // extract item from array
                 method.dup(); // dup the original array
-                method.pushIntEfficiently(currentArgElement); // index for the item
+                method.pushInt(currentArgElement); // index for the item
                 method.arrayload();
                 optGivenAssignment.nextValue(methodCompiler, optArgs, optArgElement);
                 method.go_to(doneWithElement);
@@ -230,13 +230,13 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
                 // confirm we're not past the end of the array
                 method.dup(); // dup the original array
                 method.arraylength();
-                method.pushIntEfficiently(currentArgElement);
+                method.pushInt(currentArgElement);
                 method.if_icmple(emptyArray); // if length <= start, end loop
 
                 // assign remaining elements as an array for rest args
                 method.dup(); // dup the original array object
                 methodCompiler.loadRuntime();
-                method.pushIntEfficiently(currentArgElement);
+                method.pushInt(currentArgElement);
                 methodCompiler.invokeUtilityMethod("createSubarray", sig(RubyArray.class, IRubyObject[].class, Ruby.class, int.class));
                 method.go_to(readyForArgs);
 

@@ -97,7 +97,7 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
         if (argsCallback != null) {
             // load args[0] which will be the IRubyObject representing block args
             method.aload(argsIndex);
-            method.pushIntEfficiently(0);
+            method.pushInt(0);
             method.arrayload();
             argsCallback.call(methodCompiler);
             method.pop(); // clear remaining value on the stack
@@ -121,9 +121,9 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
         } else {
             method.aload(scopeIndex);
             method.swap();
-            method.pushIntEfficiently(index);
+            method.pushInt(index);
             method.swap();
-            method.pushIntEfficiently(depth);
+            method.pushInt(depth);
             method.invokevirtual(p(DynamicScope.class), "setValue", sig(IRubyObject.class, params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
         }
     }
@@ -133,9 +133,9 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
             assignLocalVariable(index, value);
         } else {
             method.aload(scopeIndex);
-            method.pushIntEfficiently(index);
+            method.pushInt(index);
             value.call(methodCompiler);
-            method.pushIntEfficiently(depth);
+            method.pushInt(depth);
             method.invokevirtual(p(DynamicScope.class), "setValue", sig(IRubyObject.class, params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
         }
     }
@@ -149,8 +149,8 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
             retrieveLocalVariable(index);
         } else {
             method.aload(scopeIndex);
-            method.pushIntEfficiently(index);
-            method.pushIntEfficiently(depth);
+            method.pushInt(index);
+            method.pushInt(depth);
             methodCompiler.loadNil();
             method.invokevirtual(p(DynamicScope.class), "getValueOrNil", sig(IRubyObject.class, params(Integer.TYPE, Integer.TYPE, IRubyObject.class)));
         }

@@ -64,7 +64,7 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         getMethodVisitor().visitIntInsn(SIPUSH, arg);
     }
         
-    public void pushIntEfficiently(int value) {
+    public void pushInt(int value) {
         if (value <= Byte.MAX_VALUE && value >= Byte.MIN_VALUE) {
             switch (value) {
             case -1:

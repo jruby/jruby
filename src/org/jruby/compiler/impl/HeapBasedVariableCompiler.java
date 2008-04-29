@@ -138,7 +138,7 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
         if (argsCallback != null) {
             // load args[0] which will be the IRubyObject representing block args
             method.aload(argsIndex);
-            method.pushIntEfficiently(0);
+            method.pushInt(0);
             method.arrayload();
             argsCallback.call(methodCompiler);
             method.pop(); // clear remaining value on the stack
@@ -161,7 +161,7 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             method.dup();
             method.aload(varsIndex);
             method.swap();
-            method.pushIntEfficiently(index);
+            method.pushInt(index);
             method.swap();
             method.arraystore();
         }
@@ -181,7 +181,7 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             break;
         default:
             method.aload(varsIndex);
-            method.pushIntEfficiently(index);
+            method.pushInt(index);
             value.call(methodCompiler);
             method.dup_x2();
             method.arraystore();
@@ -212,7 +212,7 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             break;
         default:
             method.swap();
-            method.pushIntEfficiently(index);
+            method.pushInt(index);
             method.invokevirtual(p(DynamicScope.class), "setValueDepthZero", sig(IRubyObject.class, params(IRubyObject.class, Integer.TYPE)));
         }
     }
@@ -240,7 +240,7 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             method.invokevirtual(p(DynamicScope.class), "setValueOneDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
             break;
         default:
-            method.pushIntEfficiently(index);
+            method.pushInt(index);
             method.invokevirtual(p(DynamicScope.class), "setValueDepthZero", sig(IRubyObject.class, params(IRubyObject.class, Integer.TYPE)));
         }
     }
@@ -259,7 +259,7 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             break;
         default:
             method.aload(varsIndex);
-            method.pushIntEfficiently(index);
+            method.pushInt(index);
             method.arrayload();
         }
     }
@@ -287,7 +287,7 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             method.invokevirtual(p(DynamicScope.class), "getValueOneDepthZeroOrNil", sig(IRubyObject.class, IRubyObject.class));
             break;
         default:
-            method.pushIntEfficiently(index);
+            method.pushInt(index);
             methodCompiler.loadNil();
             method.invokevirtual(p(DynamicScope.class), "getValueDepthZeroOrNil", sig(IRubyObject.class, params(Integer.TYPE, IRubyObject.class)));
         }

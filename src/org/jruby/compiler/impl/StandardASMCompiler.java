@@ -322,11 +322,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
     public void buildStaticScopeNames(SkinnyMethodAdapter method, StaticScope scope) {
         // construct static scope list of names
-        method.pushIntEfficiently(scope.getNumberOfVariables());
+        method.pushInt(scope.getNumberOfVariables());
         method.anewarray(p(String.class));
         for (int i = 0; i < scope.getNumberOfVariables(); i++) {
             method.dup();
-            method.pushIntEfficiently(i);
+            method.pushInt(i);
             method.ldc(scope.getVariables()[i]);
             method.arraystore();
         }
@@ -657,7 +657,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                     method.invokestatic(p(RubyFixnum.class), "five", sig(RubyFixnum.class, Ruby.class));
                     break;
                 default:
-                    method.pushIntEfficiently((int)value);
+                    method.pushInt((int)value);
                     invokeIRuby("newFixnum", sig(RubyFixnum.class, params(int.class)));
                 }
             } else {
@@ -752,12 +752,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 invokeUtilityMethod("constructObjectArray", sig(IRubyObject[].class, params(IRubyObject.class, sourceArray.length)));
             } else {
                 // brute force construction inline
-                method.pushIntEfficiently(sourceArray.length);
+                method.pushInt(sourceArray.length);
                 method.anewarray(type);
 
                 for (int i = 0; i < sourceArray.length; i++) {
                     method.dup();
-                    method.pushIntEfficiently(i);
+                    method.pushInt(i);
 
                     callback.nextValue(this, sourceArray, i);
 
@@ -1092,7 +1092,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             // Done with closure compilation
             loadThreadContext();
             loadSelf();
-            method.pushIntEfficiently(arity);
+            method.pushInt(arity);
 
             buildStaticScopeNames(method, scope);
             
@@ -1144,7 +1144,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             // Done with closure compilation
             loadThreadContext();
             loadSelf();
-            method.pushIntEfficiently(arity);
+            method.pushInt(arity);
             
             cacheCompiler.cacheClosure(method, closureMethodName);
             
@@ -1319,12 +1319,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 // confirm we're not past the end of the array
                 method.dup(); // dup the original array object
                 method.invokevirtual(p(RubyArray.class), "getLength", sig(Integer.TYPE));
-                method.pushIntEfficiently(start);
+                method.pushInt(start);
                 method.if_icmple(noMoreArrayElements); // if length <= start, end loop
                 
                 // extract item from array
                 method.dup(); // dup the original array object
-                method.pushIntEfficiently(start);
+                method.pushInt(start);
                 method.invokevirtual(p(RubyArray.class), "entry", sig(IRubyObject.class, params(Integer.TYPE))); // extract item
                 callback.nextValue(this, source, start);
                 method.go_to(doneWithElement);
@@ -1345,12 +1345,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 // confirm we're not past the end of the array
                 method.dup(); // dup the original array object
                 method.invokevirtual(p(RubyArray.class), "getLength", sig(Integer.TYPE));
-                method.pushIntEfficiently(start);
+                method.pushInt(start);
                 method.if_icmple(emptyArray); // if length <= start, end loop
                 
                 // assign remaining elements as an array for rest args
                 method.dup(); // dup the original array object
-                method.pushIntEfficiently(start);
+                method.pushInt(start);
                 invokeUtilityMethod("createSubarray", sig(RubyArray.class, RubyArray.class, int.class));
                 method.go_to(readyForArgs);
                 
@@ -1375,7 +1375,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void nthRef(int match) {
-            method.pushIntEfficiently(match);
+            method.pushInt(match);
             backref();
             method.invokestatic(p(RubyRegexp.class), "nth_match", sig(IRubyObject.class, params(Integer.TYPE, IRubyObject.class)));
         }
@@ -1411,7 +1411,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             loadRuntime(); //[R]
             method.ldc(regexpString); //[R, rS]
-            method.pushIntEfficiently(options); //[R, rS, opts]
+            method.pushInt(options); //[R, rS, opts]
 
             method.invokestatic(p(RubyRegexp.class), "newRegexp", sig(RubyRegexp.class, params(Ruby.class, String.class, Integer.TYPE))); //[reg]
 
@@ -1444,7 +1444,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             createStringCallback.call(this);
             method.invokevirtual(p(RubyString.class), "getByteList", sig(ByteList.class));
-            method.pushIntEfficiently(options);
+            method.pushInt(options);
 
             method.invokestatic(p(RubyRegexp.class), "newRegexp", sig(RubyRegexp.class, params(Ruby.class, ByteList.class, Integer.TYPE))); //[reg]
 
@@ -1501,7 +1501,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                     method.visitTypeInsn(CHECKCAST, p(RubyMatchData.class));
                     method.dup();
                     method.invokevirtual(p(RubyMatchData.class), "use", sig(void.class));
-                    method.pushIntEfficiently(number);
+                    method.pushInt(number);
                     method.invokevirtual(p(RubyMatchData.class), "group", sig(IRubyObject.class, params(int.class)));
                     method.invokeinterface(p(IRubyObject.class), "isNil", sig(boolean.class));
                     Label isNil = new Label();
@@ -2363,7 +2363,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void setLinePosition(ISourcePosition position) {
             if (!RubyInstanceConfig.POSITIONLESS_COMPILE_ENABLED) {
                 loadThreadContext();
-                method.pushIntEfficiently(position.getStartLine());
+                method.pushInt(position.getStartLine());
                 method.invokestatic(classname, "setPosition", sig(void.class, params(ThreadContext.class, int.class)));
             }
         }
@@ -2413,12 +2413,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             buildStaticScopeNames(method, scope);
 
-            method.pushIntEfficiently(methodArity);
+            method.pushInt(methodArity);
             
             // arities
-            method.pushIntEfficiently(scope.getRequiredArgs());
-            method.pushIntEfficiently(scope.getOptionalArgs());
-            method.pushIntEfficiently(scope.getRestArg());
+            method.pushInt(scope.getRequiredArgs());
+            method.pushInt(scope.getOptionalArgs());
+            method.pushInt(scope.getRestArg());
             
             // if method has frame aware methods or frameless compilation is NOT enabled
             if (inspector.hasFrameAwareMethods() || !RubyInstanceConfig.FRAMELESS_COMPILE_ENABLED) {
@@ -2558,7 +2558,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             loadRuntime();
             loadThreadContext();
             loadBlock();
-            method.pushIntEfficiently(index);
+            method.pushInt(index);
             invokeUtilityMethod("processBlockArgument", sig(void.class, params(Ruby.class, ThreadContext.class, Block.class, int.class)));
         }
         
