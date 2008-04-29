@@ -652,23 +652,26 @@ public class RubyModule extends RubyObject {
             }
             if(jrubyMethod.compat() == CompatVersion.BOTH ||
                     module.getRuntime().getInstanceConfig().getCompatVersion() == jrubyMethod.compat()) {
-                RubyModule metaClass = module.metaClass;
+                RubyModule singletonClass;
 
                 if (jrubyMethod.meta()) {
+                    singletonClass = module.getSingletonClass();
+                    dynamicMethod.setImplementationClass(singletonClass);
+
                     String baseName;
                     if (jrubyMethod.name().length == 0) {
                         baseName = desc.name;
-                        metaClass.addMethod(baseName, dynamicMethod);
+                        singletonClass.addMethod(baseName, dynamicMethod);
                     } else {
                         baseName = jrubyMethod.name()[0];
                         for (String name : jrubyMethod.name()) {
-                            metaClass.addMethod(name, dynamicMethod);
+                            singletonClass.addMethod(name, dynamicMethod);
                         }
                     }
 
                     if (jrubyMethod.alias().length > 0) {
                         for (String alias : jrubyMethod.alias()) {
-                            metaClass.defineAlias(alias, baseName);
+                            singletonClass.defineAlias(alias, baseName);
                         }
                     }
                 } else {
@@ -690,11 +693,10 @@ public class RubyModule extends RubyObject {
                     }
 
                     if (jrubyMethod.module()) {
+                        singletonClass = module.getSingletonClass();
                         // module/singleton methods are all defined public
                         DynamicMethod moduleMethod = dynamicMethod.dup();
                         moduleMethod.setVisibility(PUBLIC);
-
-                        RubyModule singletonClass = module.getSingletonClass();
 
                         if (jrubyMethod.name().length == 0) {
                             baseName = desc.name;
