@@ -167,6 +167,216 @@ public abstract class AbstractScript implements Script {
         return symbol19;
     }
     
+    public synchronized RubySymbol getSymbol20(Ruby runtime, String symbol) {
+        if (symbol20 == null) {
+            symbol20 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol20;
+    }
+    
+    public synchronized RubySymbol getSymbol21(Ruby runtime, String symbol) {
+        if (symbol21 == null) {
+            symbol21 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol21;
+    }
+    
+    public synchronized RubySymbol getSymbol22(Ruby runtime, String symbol) {
+        if (symbol22 == null) {
+            symbol22 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol22;
+    }
+    
+    public synchronized RubySymbol getSymbol23(Ruby runtime, String symbol) {
+        if (symbol23 == null) {
+            symbol23 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol23;
+    }
+    
+    public synchronized RubySymbol getSymbol24(Ruby runtime, String symbol) {
+        if (symbol24 == null) {
+            symbol24 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol24;
+    }
+    
+    public synchronized RubySymbol getSymbol25(Ruby runtime, String symbol) {
+        if (symbol25 == null) {
+            symbol25 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol25;
+    }
+    
+    public synchronized RubySymbol getSymbol26(Ruby runtime, String symbol) {
+        if (symbol26 == null) {
+            symbol26 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol26;
+    }
+    
+    public synchronized RubySymbol getSymbol27(Ruby runtime, String symbol) {
+        if (symbol27 == null) {
+            symbol27 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol27;
+    }
+    
+    public synchronized RubySymbol getSymbol28(Ruby runtime, String symbol) {
+        if (symbol28 == null) {
+            symbol28 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol28;
+    }
+    
+    public synchronized RubySymbol getSymbol29(Ruby runtime, String symbol) {
+        if (symbol29 == null) {
+            symbol29 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol29;
+    }
+    
+    public synchronized RubySymbol getSymbol30(Ruby runtime, String symbol) {
+        if (symbol30 == null) {
+            symbol30 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol30;
+    }
+    
+    public synchronized RubySymbol getSymbol31(Ruby runtime, String symbol) {
+        if (symbol31 == null) {
+            symbol31 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol31;
+    }
+    
+    public synchronized RubySymbol getSymbol32(Ruby runtime, String symbol) {
+        if (symbol32 == null) {
+            symbol32 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol32;
+    }
+    
+    public synchronized RubySymbol getSymbol33(Ruby runtime, String symbol) {
+        if (symbol33 == null) {
+            symbol33 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol33;
+    }
+    
+    public synchronized RubySymbol getSymbol34(Ruby runtime, String symbol) {
+        if (symbol34 == null) {
+            symbol34 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol34;
+    }
+    
+    public synchronized RubySymbol getSymbol35(Ruby runtime, String symbol) {
+        if (symbol35 == null) {
+            symbol35 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol35;
+    }
+    
+    public synchronized RubySymbol getSymbol36(Ruby runtime, String symbol) {
+        if (symbol36 == null) {
+            symbol36 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol36;
+    }
+    
+    public synchronized RubySymbol getSymbol37(Ruby runtime, String symbol) {
+        if (symbol37 == null) {
+            symbol37 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol37;
+    }
+    
+    public synchronized RubySymbol getSymbol38(Ruby runtime, String symbol) {
+        if (symbol38 == null) {
+            symbol38 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol38;
+    }
+    
+    public synchronized RubySymbol getSymbol39(Ruby runtime, String symbol) {
+        if (symbol39 == null) {
+            symbol39 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol39;
+    }
+    
+    public synchronized RubySymbol getSymbol40(Ruby runtime, String symbol) {
+        if (symbol40 == null) {
+            symbol40 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol40;
+    }
+    
+    public synchronized RubySymbol getSymbol41(Ruby runtime, String symbol) {
+        if (symbol41 == null) {
+            symbol41 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol41;
+    }
+    
+    public synchronized RubySymbol getSymbol42(Ruby runtime, String symbol) {
+        if (symbol42 == null) {
+            symbol42 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol42;
+    }
+    
+    public synchronized RubySymbol getSymbol43(Ruby runtime, String symbol) {
+        if (symbol43 == null) {
+            symbol43 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol43;
+    }
+    
+    public synchronized RubySymbol getSymbol44(Ruby runtime, String symbol) {
+        if (symbol44 == null) {
+            symbol44 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol44;
+    }
+    
+    public synchronized RubySymbol getSymbol45(Ruby runtime, String symbol) {
+        if (symbol45 == null) {
+            symbol45 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol45;
+    }
+    
+    public synchronized RubySymbol getSymbol46(Ruby runtime, String symbol) {
+        if (symbol46 == null) {
+            symbol46 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol46;
+    }
+    
+    public synchronized RubySymbol getSymbol47(Ruby runtime, String symbol) {
+        if (symbol47 == null) {
+            symbol47 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol47;
+    }
+    
+    public synchronized RubySymbol getSymbol48(Ruby runtime, String symbol) {
+        if (symbol48 == null) {
+            symbol48 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol48;
+    }
+    
+    public synchronized RubySymbol getSymbol49(Ruby runtime, String symbol) {
+        if (symbol49 == null) {
+            symbol49 = runtime.fastNewSymbol(symbol);
+        }
+        return symbol49;
+    }
+    
     public CallSite site0;
     public CallSite site1;
     public CallSite site2;
@@ -238,4 +448,34 @@ public abstract class AbstractScript implements Script {
     public RubySymbol symbol17;
     public RubySymbol symbol18;
     public RubySymbol symbol19;
+    public RubySymbol symbol20;
+    public RubySymbol symbol21;
+    public RubySymbol symbol22;
+    public RubySymbol symbol23;
+    public RubySymbol symbol24;
+    public RubySymbol symbol25;
+    public RubySymbol symbol26;
+    public RubySymbol symbol27;
+    public RubySymbol symbol28;
+    public RubySymbol symbol29;
+    public RubySymbol symbol30;
+    public RubySymbol symbol31;
+    public RubySymbol symbol32;
+    public RubySymbol symbol33;
+    public RubySymbol symbol34;
+    public RubySymbol symbol35;
+    public RubySymbol symbol36;
+    public RubySymbol symbol37;
+    public RubySymbol symbol38;
+    public RubySymbol symbol39;
+    public RubySymbol symbol40;
+    public RubySymbol symbol41;
+    public RubySymbol symbol42;
+    public RubySymbol symbol43;
+    public RubySymbol symbol44;
+    public RubySymbol symbol45;
+    public RubySymbol symbol46;
+    public RubySymbol symbol47;
+    public RubySymbol symbol48;
+    public RubySymbol symbol49;
 }

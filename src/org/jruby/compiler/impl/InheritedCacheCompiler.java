@@ -5,9 +5,10 @@
 
 package org.jruby.compiler.impl;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubySymbol;
-import org.jruby.ast.executable.AbstractScript;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
@@ -19,14 +20,14 @@ import static org.jruby.util.CodegenUtils.*;
  */
 public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
     public static final int MAX_INHERITED_CALL_SITES = 50;
-    public static final int MAX_INHERITED_SYMBOLS = 20;
+    public static final int MAX_INHERITED_SYMBOLS = 50;
     
     final int runtimeIndex;
     
     int callSiteCount = 0;
 //    int byteListCount = 0;
 //    int sourcePositionsCount = 0;
-    int symbolCount = 0;
+    int inheritedSymbolCount = 0;
     
     public InheritedCacheCompiler(StandardASMCompiler scriptCompiler, int runtimeIndex) {
         super(scriptCompiler);
@@ -62,12 +63,14 @@ public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
         callSiteCount++;
     }
     
+    Map<String, String> inheritedSymbols = new HashMap<String, String>();
+    
     @Override
     public void cacheSymbol(SkinnyMethodAdapter method, String symbol) {
-        String methodName = symbols.get(symbol);
-        if (methodName == null && symbolCount < MAX_INHERITED_SYMBOLS) {
-            methodName = "getSymbol" + symbolCount++;
-            symbols.put(symbol, methodName);
+        String methodName = inheritedSymbols.get(symbol);
+        if (methodName == null && inheritedSymbolCount < MAX_INHERITED_SYMBOLS) {
+            methodName = "getSymbol" + inheritedSymbolCount++;
+            inheritedSymbols.put(symbol, methodName);
         }
         
         if (methodName == null) {
@@ -76,7 +79,7 @@ public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
             method.aload(0);
             method.aload(runtimeIndex);
             method.ldc(symbol);
-            method.invokevirtual(p(AbstractScript.class), methodName, sig(RubySymbol.class, Ruby.class, String.class));
+            method.invokevirtual(scriptCompiler.getClassname(), methodName, sig(RubySymbol.class, Ruby.class, String.class));
         }
     }
 }
