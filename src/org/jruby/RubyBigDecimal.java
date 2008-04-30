@@ -393,14 +393,25 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = {"%", "modulo"}, required = 1)
     public IRubyObject op_mod(ThreadContext context, IRubyObject arg) {
+        Ruby runtime = context.getRuntime();
+        if (isInfinity() || isNaN()) {
+            return newNaN(runtime);
+        }
         RubyBigDecimal val = getVpValue(arg,false);
         if (val == null) {
             return callCoerced(context, "%", arg);
         }
-        if (val.isZero()) {
-            return newNaN(getRuntime());
+        if (val.isInfinity() || val.isNaN() || val.isZero()) {
+            return newNaN(runtime);
         }
-        return new RubyBigDecimal(getRuntime(),this.value.divideAndRemainder(val.value)[1]).setResult();
+
+        // Java and MRI definition of modulo is different.
+        BigDecimal modulo = value.remainder(val.value);
+        if (modulo.signum() * val.value.signum() < 0) {
+            modulo = modulo.add(val.value);
+        }
+
+        return new RubyBigDecimal(runtime, modulo).setResult();
     }
 
     @JRubyMethod(name = "*", required = 1)
