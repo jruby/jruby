@@ -793,10 +793,34 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     @JRubyMethod(name = "divmod", required = 1)
-    public IRubyObject divmod(IRubyObject arg) {
-        System.err.println("unimplemented: divmod");
-        // TODO: implement
-        return getRuntime().getNil();
+    public IRubyObject divmod(ThreadContext context, IRubyObject other) {
+        // TODO: full-precision divmod is 1000x slower than MRI!
+        Ruby runtime = context.getRuntime();
+        if (isInfinity() || isNaN()) {
+            return RubyArray.newArray(runtime, newNaN(runtime), newNaN(runtime));
+        }
+        RubyBigDecimal val = getVpValue(other, false);
+        if (val == null) {
+            return callCoerced(context, "divmod", other, true);
+        }
+        if (val.isInfinity() || val.isNaN() || val.isZero()) {
+            return RubyArray.newArray(runtime, newNaN(runtime), newNaN(runtime));
+        }
+
+        // Java and MRI definitions of divmod are different.        
+        BigDecimal[] divmod = value.divideAndRemainder(val.value);
+
+        BigDecimal div = divmod[0];
+        BigDecimal mod = divmod[1];
+
+        if (mod.signum() * val.value.signum() < 0) {
+            div = div.subtract(BigDecimal.ONE);
+            mod = mod.add(val.value);
+        }
+
+        return RubyArray.newArray(runtime,
+                new RubyBigDecimal(runtime, div),
+                new RubyBigDecimal(runtime, mod));
     }
 
     @JRubyMethod(name = "exponent")
