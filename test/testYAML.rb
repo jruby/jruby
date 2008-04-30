@@ -417,3 +417,8 @@ message: YAMLTestException
 EXCEPTION_OUT
 
 test_equal(YAMLTestException.new.inspect, YAML::load(YAMLTestException.new.to_yaml).inspect)
+
+# JRUBY-2409
+test_equal("*.rb", YAML::load("---\n*.rb"))
+test_equal("&.rb", YAML::load("---\n&.rb"))
+
