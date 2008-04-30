@@ -74,6 +74,8 @@ public class RubyYAML {
     public static RubyModule createYAMLModule(Ruby runtime) {
         RubyModule result = runtime.defineModule("YAML");
 
+        runtime.getKernel().callMethod(runtime.getCurrentContext(),"require", runtime.newString("stringio"));
+
         result.defineAnnotatedMethods(RubyYAML.class);
 
         RubyClass obj = runtime.getObject();
@@ -159,7 +161,6 @@ public class RubyYAML {
         YAMLConfig cfg = YAML.config().version("1.0");
         IOOutputStream iox = null;
         if(null == io) {
-            self.getRuntime().getKernel().callMethod(context,"require", self.getRuntime().newString("stringio"));
             io2 = self.getRuntime().fastGetClass("StringIO").callMethod(context, "new");
             iox = new IOOutputStream(io2);
         } else {
