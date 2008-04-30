@@ -231,4 +231,23 @@ class TestThread < Test::Unit::TestCase
       assert(true)
     end
   end
+
+  def call_to_s(a)
+    a.to_s
+  end
+  
+  # JRUBY-2477 - polymorphic calls are not thread-safe
+  def test_poly_calls_thread_safe
+    # Note this isn't a perfect test, but it's not possible to test perfectly
+    # This might only fail on multicore machines
+    results = [false, false, false, false, false, false, false, false, false, false]
+    threads = []
+    sym = :foo
+    str = "foo"
+    
+    10.times {|i| threads << Thread.new { 10_000.times { call_to_s(sym); call_to_s(str) }; results[i] = true }}
+    
+    threads.pop.join until threads.empty?
+    assert_equal [true, true, true, true, true, true, true, true, true, true], results
+  end
 end

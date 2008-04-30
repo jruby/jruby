@@ -64,8 +64,18 @@ public abstract class CallSite {
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
 
     public static class InlineCachingCallSite extends CallSite implements CacheMap.CacheSite {
-        volatile DynamicMethod cachedMethod;
-        volatile RubyClass cachedType;
+        private static class CacheEntry {
+            public final DynamicMethod cachedMethod;
+            public final RubyClass cachedType;
+            public CacheEntry(DynamicMethod method, RubyClass type) {
+                cachedMethod = method;
+                cachedType = type;
+            }
+        }
+        
+        private static final CacheEntry NULL_CACHE = new CacheEntry(null, null);
+        
+        private volatile CacheEntry cache = NULL_CACHE;
         
         public InlineCachingCallSite(String methodName, CallType callType) {
             super(MethodIndex.getIndex(methodName), methodName, callType);
@@ -78,12 +88,12 @@ public abstract class CallSite {
                 return RuntimeHelpers.callMethodMissing(context, self, method, methodName, args, context.getFrameSelf(), callType, block);
             }
 
-            cachedMethod = method;
-            cachedType = selfType;
-
+            IRubyObject result = method.call(context, self, selfType, methodName, args, block);
+            
+            cache = new CacheEntry(method, selfType);
             selfType.getRuntime().getCacheMap().add(method, this);
-
-            return method.call(context, self, selfType, methodName, args, block);
+            
+            return result;
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, IRubyObject[] args, ThreadContext context, IRubyObject self) {
@@ -93,12 +103,12 @@ public abstract class CallSite {
                 return RuntimeHelpers.callMethodMissing(context, self, method, methodName, args, context.getFrameSelf(), callType, Block.NULL_BLOCK);
             }
 
-            cachedMethod = method;
-            cachedType = selfType;
-
+            IRubyObject result = method.call(context, self, selfType, methodName, args);
+            
+            cache = new CacheEntry(method, selfType);
             selfType.getRuntime().getCacheMap().add(method, this);
-
-            return method.call(context, self, selfType, methodName, args);
+            
+            return result;
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, ThreadContext context, IRubyObject self) {
@@ -108,12 +118,12 @@ public abstract class CallSite {
                 return RuntimeHelpers.callMethodMissing(context, self, method, methodName, IRubyObject.NULL_ARRAY, context.getFrameSelf(), callType, Block.NULL_BLOCK);
             }
 
-            cachedMethod = method;
-            cachedType = selfType;
-
+            IRubyObject result = method.call(context, self, selfType, methodName);
+            
+            cache = new CacheEntry(method, selfType);
             selfType.getRuntime().getCacheMap().add(method, this);
-
-            return method.call(context, self, selfType, methodName);
+            
+            return result;
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, Block block, ThreadContext context, IRubyObject self) {
@@ -123,12 +133,12 @@ public abstract class CallSite {
                 return RuntimeHelpers.callMethodMissing(context, self, method, methodName, IRubyObject.NULL_ARRAY, context.getFrameSelf(), callType, block);
             }
 
-            cachedMethod = method;
-            cachedType = selfType;
-
+            IRubyObject result = method.call(context, self, selfType, methodName, block);
+            
+            cache = new CacheEntry(method, selfType);
             selfType.getRuntime().getCacheMap().add(method, this);
-
-            return method.call(context, self, selfType, methodName, block);
+            
+            return result;
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg) {
@@ -138,12 +148,12 @@ public abstract class CallSite {
                 return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[] {arg}, context.getFrameSelf(), callType, Block.NULL_BLOCK);
             }
 
-            cachedMethod = method;
-            cachedType = selfType;
-
+            IRubyObject result = method.call(context, self, selfType, methodName, arg);
+            
+            cache = new CacheEntry(method, selfType);
             selfType.getRuntime().getCacheMap().add(method, this);
-
-            return method.call(context, self, selfType, methodName, arg);
+            
+            return result;
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, Block block, ThreadContext context, IRubyObject self, IRubyObject arg) {
@@ -153,12 +163,12 @@ public abstract class CallSite {
                 return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[] {arg}, context.getFrameSelf(), callType, block);
             }
 
-            cachedMethod = method;
-            cachedType = selfType;
-
+            IRubyObject result = method.call(context, self, selfType, methodName, arg, block);
+            
+            cache = new CacheEntry(method, selfType);
             selfType.getRuntime().getCacheMap().add(method, this);
-
-            return method.call(context, self, selfType, methodName, arg, block);
+            
+            return result;
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
@@ -168,12 +178,12 @@ public abstract class CallSite {
                 return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[] {arg1,arg2}, context.getFrameSelf(), callType, Block.NULL_BLOCK);
             }
 
-            cachedMethod = method;
-            cachedType = selfType;
-
+            IRubyObject result = method.call(context, self, selfType, methodName, arg1, arg2);
+            
+            cache = new CacheEntry(method, selfType);
             selfType.getRuntime().getCacheMap().add(method, this);
-
-            return method.call(context, self, selfType, methodName, arg1, arg2);
+            
+            return result;
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, Block block, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
@@ -183,12 +193,12 @@ public abstract class CallSite {
                 return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[] {arg1,arg2}, context.getFrameSelf(), callType, block);
             }
 
-            cachedMethod = method;
-            cachedType = selfType;
-
+            IRubyObject result = method.call(context, self, selfType, methodName, arg1, arg2, block);
+            
+            cache = new CacheEntry(method, selfType);
             selfType.getRuntime().getCacheMap().add(method, this);
-
-            return method.call(context, self, selfType, methodName, arg1, arg2, block);
+            
+            return result;
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
@@ -198,12 +208,12 @@ public abstract class CallSite {
                 return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[] {arg1,arg2,arg3}, context.getFrameSelf(), callType, Block.NULL_BLOCK);
             }
 
-            cachedMethod = method;
-            cachedType = selfType;
-
+            IRubyObject result = method.call(context, self, selfType, methodName, arg1, arg2, arg3);
+            
+            cache = new CacheEntry(method, selfType);
             selfType.getRuntime().getCacheMap().add(method, this);
-
-            return method.call(context, self, selfType, methodName, arg1, arg2, arg3);
+            
+            return result;
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, Block block, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
@@ -213,17 +223,16 @@ public abstract class CallSite {
                 return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[] {arg1,arg2,arg3}, context.getFrameSelf(), callType, block);
             }
 
-            cachedMethod = method;
-            cachedType = selfType;
-
+            IRubyObject result = method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
+            
+            cache = new CacheEntry(method, selfType);
             selfType.getRuntime().getCacheMap().add(method, this);
-
-            return method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
+            
+            return result;
         }
         
         public void removeCachedMethod() {
-            cachedType = null;
-            cachedMethod = null;
+            cache = NULL_CACHE;
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args) {
@@ -231,8 +240,9 @@ public abstract class CallSite {
 
             RubyClass selfType = self.getMetaClass();
             
-            if (cachedType == selfType && cachedMethod != null) {
-                return cachedMethod.call(context, self, selfType, methodName, args);
+            CacheEntry myCache = cache;
+            if (myCache.cachedType == selfType) {
+                return myCache.cachedMethod.call(context, self, selfType, methodName, args);
             }
 
             return cacheAndCall(selfType, args, context, self);
@@ -244,8 +254,9 @@ public abstract class CallSite {
             try {
                 RubyClass selfType = self.getMetaClass();
 
-                if (cachedType == selfType && cachedMethod != null) {
-                    return cachedMethod.call(context, self, selfType, methodName, args, block);
+                CacheEntry myCache = cache;
+                if (myCache.cachedType == selfType) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, args, block);
                 }
 
                 return cacheAndCall(selfType, block, args, context, self);
@@ -263,8 +274,9 @@ public abstract class CallSite {
 
             RubyClass selfType = self.getMetaClass();
 
-            if (cachedType == selfType && cachedMethod != null) {
-                return cachedMethod.call(context, self, selfType, methodName);
+            CacheEntry myCache = cache;
+            if (myCache.cachedType == selfType) {
+                return myCache.cachedMethod.call(context, self, selfType, methodName);
             }
 
             return cacheAndCall(selfType, context, self);
@@ -276,8 +288,9 @@ public abstract class CallSite {
             try {
                 RubyClass selfType = self.getMetaClass();
 
-                if (cachedType == selfType && cachedMethod != null) {
-                    return cachedMethod.call(context, self, selfType, methodName, block);
+                CacheEntry myCache = cache;
+                if (myCache.cachedType == selfType) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, block);
                 }
 
                 return cacheAndCall(selfType, block, context, self);
@@ -295,8 +308,9 @@ public abstract class CallSite {
 
             RubyClass selfType = self.getMetaClass();
 
-            if (cachedType == selfType && cachedMethod != null) {
-                return cachedMethod.call(context, self, selfType, methodName, arg1);
+            CacheEntry myCache = cache;
+            if (myCache.cachedType == selfType) {
+                return myCache.cachedMethod.call(context, self, selfType, methodName, arg1);
             }
 
             return cacheAndCall(selfType, context, self, arg1);
@@ -308,8 +322,9 @@ public abstract class CallSite {
             try {
                 RubyClass selfType = self.getMetaClass();
 
-                if (cachedType == selfType && cachedMethod != null) {
-                    return cachedMethod.call(context, self, selfType, methodName, arg1, block);
+                CacheEntry myCache = cache;
+                if (myCache.cachedType == selfType) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, block);
                 }
 
                 return cacheAndCall(selfType, block, context, self, arg1);
@@ -327,8 +342,9 @@ public abstract class CallSite {
 
             RubyClass selfType = self.getMetaClass();
 
-            if (cachedType == selfType && cachedMethod != null) {
-                return cachedMethod.call(context, self, selfType, methodName, arg1, arg2);
+            CacheEntry myCache = cache;
+                if (myCache.cachedType == selfType) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2);
             }
 
             return cacheAndCall(selfType, context, self, arg1, arg2);
@@ -340,8 +356,9 @@ public abstract class CallSite {
             try {
                 RubyClass selfType = self.getMetaClass();
 
-                if (cachedType == selfType && cachedMethod != null) {
-                    return cachedMethod.call(context, self, selfType, methodName, arg1, arg2, block);
+                CacheEntry myCache = cache;
+                if (myCache.cachedType == selfType) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, block);
                 }
 
                 return cacheAndCall(selfType, block, context, self, arg1, arg2);
@@ -359,8 +376,9 @@ public abstract class CallSite {
 
             RubyClass selfType = self.getMetaClass();
 
-            if (cachedType == selfType && cachedMethod != null) {
-                return cachedMethod.call(context, self, selfType, methodName, arg1, arg2, arg3);
+            CacheEntry myCache = cache;
+            if (myCache.cachedType == selfType) {
+                return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, arg3);
             }
 
             return cacheAndCall(selfType, context, self, arg1, arg2, arg3);
@@ -372,8 +390,9 @@ public abstract class CallSite {
             try {
                 RubyClass selfType = self.getMetaClass();
 
-                if (cachedType == selfType && cachedMethod != null) {
-                    return cachedMethod.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
+                CacheEntry myCache = cache;
+                if (myCache.cachedType == selfType) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
                 }
 
                 return cacheAndCall(selfType, block, context, self, arg1, arg2, arg3);
