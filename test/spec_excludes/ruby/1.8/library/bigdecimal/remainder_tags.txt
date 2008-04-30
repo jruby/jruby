@@ -1,3 +1,0 @@
-fails(JRUBY-2378):BigDecimal#remainder if both values are of same sign it equals modulo
-fails(JRUBY-2378):BigDecimal#remainder Otherwise, it is the modulus minus the value divided by
-fails(JRUBY-2378):BigDecimal#remainder returns NaN used with zero

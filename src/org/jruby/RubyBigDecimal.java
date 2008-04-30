@@ -393,25 +393,45 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = {"%", "modulo"}, required = 1)
     public IRubyObject op_mod(ThreadContext context, IRubyObject arg) {
+        // TODO: full-precision remainder is 1000x slower than MRI!
         Ruby runtime = context.getRuntime();
         if (isInfinity() || isNaN()) {
             return newNaN(runtime);
         }
-        RubyBigDecimal val = getVpValue(arg,false);
+        RubyBigDecimal val = getVpValue(arg, false);
         if (val == null) {
-            return callCoerced(context, "%", arg);
+            return callCoerced(context, "%", arg, true);
         }
         if (val.isInfinity() || val.isNaN() || val.isZero()) {
             return newNaN(runtime);
         }
 
-        // Java and MRI definition of modulo is different.
+        // Java and MRI definitions of modulo are different.
         BigDecimal modulo = value.remainder(val.value);
         if (modulo.signum() * val.value.signum() < 0) {
             modulo = modulo.add(val.value);
         }
 
         return new RubyBigDecimal(runtime, modulo).setResult();
+    }
+
+    @JRubyMethod(name = "remainder", required = 1)
+    public IRubyObject remainder(ThreadContext context, IRubyObject arg) {
+        // TODO: full-precision remainder is 1000x slower than MRI!
+        Ruby runtime = context.getRuntime();
+        if (isInfinity() || isNaN()) {
+            return newNaN(runtime);
+        }
+        RubyBigDecimal val = getVpValue(arg,false);
+        if (val == null) {
+            return callCoerced(context, "remainder", arg, true);
+        }
+        if (val.isInfinity() || val.isNaN() || val.isZero()) {
+            return newNaN(runtime);
+        }
+
+        // Java and MRI definitions of remainder are the same.
+        return new RubyBigDecimal(runtime, value.remainder(val.value)).setResult();
     }
 
     @JRubyMethod(name = "*", required = 1)
@@ -878,13 +898,6 @@ public class RubyBigDecimal extends RubyNumeric {
         array[1] = runtime.newFixnum((pow + 1) * 4);
 
         return RubyArray.newArray(runtime, array);
-    }
-
-    @JRubyMethod(name = "remainder", required = 1)
-    public IRubyObject remainder(IRubyObject arg) {
-        System.err.println("unimplemented: remainder");
-        // TODO: implement
-        return this;
     }
 
     @JRubyMethod(name = "round", optional = 2)
