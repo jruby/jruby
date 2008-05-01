@@ -1904,70 +1904,70 @@ public class ASTCompiler {
         if (flipNode.isExclusive()) {
             context.performBooleanBranch(new BranchCallback() {
 
+                public void branch(MethodCompiler context) {
+                    compile(flipNode.getEndNode(), context);
+                    context.performBooleanBranch(new BranchCallback() {
+
                         public void branch(MethodCompiler context) {
-                            compile(flipNode.getEndNode(), context);
-                            context.performBooleanBranch(new BranchCallback() {
-
-                                        public void branch(MethodCompiler context) {
-                                            context.loadFalse();
-                                            context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth());
-                                            context.consumeCurrentValue();
-                                        }
-                                    }, new BranchCallback() {
-
-                                        public void branch(MethodCompiler context) {
-                                        }
-                                    });
-                            context.loadTrue();
+                            context.loadFalse();
+                            context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth());
+                            context.consumeCurrentValue();
                         }
                     }, new BranchCallback() {
 
                         public void branch(MethodCompiler context) {
-                            compile(flipNode.getBeginNode(), context);
-                            becomeTrueOrFalse(context);
-                            context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth());
                         }
                     });
+                    context.loadTrue();
+                }
+            }, new BranchCallback() {
+
+                public void branch(MethodCompiler context) {
+                    compile(flipNode.getBeginNode(), context);
+                    becomeTrueOrFalse(context);
+                    context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth());
+                }
+            });
         } else {
             context.performBooleanBranch(new BranchCallback() {
 
+                public void branch(MethodCompiler context) {
+                    compile(flipNode.getEndNode(), context);
+                    context.performBooleanBranch(new BranchCallback() {
+
+                        public void branch(MethodCompiler context) {
+                            context.loadFalse();
+                            context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth());
+                            context.consumeCurrentValue();
+                        }
+                    }, new BranchCallback() {
+
+                        public void branch(MethodCompiler context) {
+                        }
+                    });
+                    context.loadTrue();
+                }
+            }, new BranchCallback() {
+
+                public void branch(MethodCompiler context) {
+                    compile(flipNode.getBeginNode(), context);
+                    context.performBooleanBranch(new BranchCallback() {
+
                         public void branch(MethodCompiler context) {
                             compile(flipNode.getEndNode(), context);
-                            context.performBooleanBranch(new BranchCallback() {
-
-                                        public void branch(MethodCompiler context) {
-                                            context.loadFalse();
-                                            context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth());
-                                            context.consumeCurrentValue();
-                                        }
-                                    }, new BranchCallback() {
-
-                                        public void branch(MethodCompiler context) {
-                                        }
-                                    });
+                            flipTrueOrFalse(context);
+                            context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth());
+                            context.consumeCurrentValue();
                             context.loadTrue();
                         }
                     }, new BranchCallback() {
 
                         public void branch(MethodCompiler context) {
-                            compile(flipNode.getBeginNode(), context);
-                            context.performBooleanBranch(new BranchCallback() {
-
-                                        public void branch(MethodCompiler context) {
-                                            compile(flipNode.getEndNode(), context);
-                                            flipTrueOrFalse(context);
-                                            context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth());
-                                            context.consumeCurrentValue();
-                                            context.loadTrue();
-                                        }
-                                    }, new BranchCallback() {
-
-                                        public void branch(MethodCompiler context) {
-                                            context.loadFalse();
-                                        }
-                                    });
+                            context.loadFalse();
                         }
                     });
+                }
+            });
         }
     }
 
