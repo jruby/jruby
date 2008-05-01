@@ -46,13 +46,6 @@ rem ----- Set Up The Runtime Classpath ----------------------------------------
 
 for %%i in ("%JRUBY_HOME%\lib\*.jar") do @call :setcp %%i
 
-if not "%CLASSPATH%" == "" goto gotCP
-set CLASSPATH=%CP%
-goto doneCP
-:gotCP
-set CLASSPATH=%CP%;%CLASSPATH%
-:doneCP
-
 goto :EOF
 
 rem Setcp subroutine

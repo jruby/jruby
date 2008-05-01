@@ -6,6 +6,7 @@ rem ----- Restore Environment Variables ---------------------------------------
 set CLASSPATH=%_CLASSPATH%
 set _CLASSPATH=
 set CP=%_CP%
+set _CP=
 set JAVA_COMMAND=%_JAVA_COMMAND%
 set _LIBJARS=
 set _RUNJAVA=
