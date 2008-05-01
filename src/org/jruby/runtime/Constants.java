@@ -54,6 +54,7 @@ public final class Constants {
     public static final String BUILD;
     public static final String TARGET;
     public static final String REVISION;
+    public static final String ENGINE = "jruby";
 
     static {
         InputStream stream = null;
