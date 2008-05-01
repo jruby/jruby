@@ -1616,6 +1616,16 @@ public final class Ruby {
     public JavaSupport getJavaSupport() {
         return javaSupport;
     }
+    
+    public static ClassLoader getClassLoader() {
+        // we try to get the classloader that loaded JRuby, falling back on System
+        ClassLoader loader = Ruby.class.getClassLoader();
+        if (loader == null) {
+            loader = ClassLoader.getSystemClassLoader();
+        }
+        
+        return loader;
+    }
 
     public synchronized JRubyClassLoader getJRubyClassLoader() {
         // FIXME: Get rid of laziness and handle restricted access elsewhere

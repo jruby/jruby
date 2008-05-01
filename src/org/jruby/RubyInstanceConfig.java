@@ -95,7 +95,8 @@ public class RubyInstanceConfig {
     private final boolean samplingEnabled;
     private CompatVersion compatVersion;
 
-    private ClassLoader loader = Thread.currentThread().getContextClassLoader();
+    private ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
+    private ClassLoader loader = contextLoader == null ? RubyInstanceConfig.class.getClassLoader() : contextLoader;
 
     private ClassCache<Script> classCache;
 

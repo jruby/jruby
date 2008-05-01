@@ -19,6 +19,7 @@ public class ClassCache<T> {
      * @param classLoader to use to generate shared classes
      */
     public ClassCache(ClassLoader classLoader, int max) {
+        assert classLoader != null : "Null classloader provided for ClassCache";
         this.classLoader = classLoader;
         this.max = max;
     }

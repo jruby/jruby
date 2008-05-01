@@ -166,7 +166,7 @@ if [ "$PROFILE_ARGS" != "" ]; then
 
   cat profile.txt
 else
-  exec "$JAVA_CMD" $JAVA_OPTS "${java_args[@]}" -classpath "$CP" \
+  exec "$JAVA_CMD" $JAVA_OPTS "${java_args[@]}" -Xbootclasspath/a:"$CP" \
     "-Djruby.home=$JRUBY_HOME" \
     "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
     "-Djruby.shell=$JRUBY_SHELL" \
