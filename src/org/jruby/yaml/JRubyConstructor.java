@@ -104,16 +104,38 @@ public class JRubyConstructor extends ConstructorImpl {
     }
 
     public Object constructRubyScalar(final Node node) {
-        ByteList sc = (ByteList)super.constructScalar(node);
-        if(sc.length() > 0 && sc.charAt(0) == ':' && ((org.jvyamlb.nodes.ScalarNode)node).getStyle() == 0) {
-            String ss = sc.toString();
-            if(sc.charAt(1) != '"') {
-                ss = ":\"" + ss.substring(1).replaceAll("([^\\\\])\"", "\\1\\\\\"") + "\"";
+        if(node instanceof org.jvyamlb.nodes.ScalarNode) {
+            ByteList sc = (ByteList)super.constructScalar(node);
+            if(sc.length() > 0 && sc.charAt(0) == ':' && ((org.jvyamlb.nodes.ScalarNode)node).getStyle() == 0) {
+                String ss = sc.toString();
+                if(sc.charAt(1) != '"') {
+                    ss = ":\"" + ss.substring(1).replaceAll("([^\\\\])\"", "\\1\\\\\"") + "\"";
+                }
+                return runtime.evalScriptlet(ss);
             }
-            return runtime.evalScriptlet(ss);
-        }
 
-        return RubyString.newString(runtime,(ByteList)super.constructScalar(node));
+            return RubyString.newString(runtime,(ByteList)super.constructScalar(node));
+        } else {
+            // Assume it's a mapping node
+
+            Map val = (Map)(constructMapping(node));
+            RubyString str = (RubyString)val.get(runtime.newString("str"));
+
+            Map props = new HashMap();
+            for(Iterator iter = val.entrySet().iterator();iter.hasNext();) {
+                Map.Entry em = (Map.Entry)iter.next();
+                if(em.getKey().toString().startsWith("@")) {
+                    props.put(em.getKey(),em.getValue());
+                    iter.remove();
+                }
+            }
+            for(Iterator iter = props.entrySet().iterator();iter.hasNext();) {
+                Map.Entry em = (Map.Entry)iter.next();
+                str.instance_variable_set((IRubyObject)em.getKey(),(IRubyObject)em.getValue());
+            }
+
+            return str;
+        }
     }
 
     public Object constructPrivateType(final Node node) {

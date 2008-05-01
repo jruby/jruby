@@ -476,7 +476,7 @@ public class RubyYAML {
             mep.put(self.getRuntime().newString("str"),rt.newString(self.toString()));
             for(Iterator iter = ((RubyArray)self.callMethod(context, "to_yaml_properties")).getList().iterator(); iter.hasNext();) {
                 String m = iter.next().toString();
-                mep.put(self.getRuntime().newString(m.substring(1)), self.callMethod(context,"instance_variable_get", self.getRuntime().newString(m)));
+                mep.put(self.getRuntime().newString(m), self.callMethod(context,"instance_variable_get", self.getRuntime().newString(m)));
             }
             return arg.callMethod(context,"map", new IRubyObject[]{self.callMethod(context, "taguri"),(IRubyObject)mep,self.callMethod(context, "to_yaml_style")});
         }

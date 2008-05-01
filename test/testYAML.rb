@@ -422,3 +422,9 @@ test_equal(YAMLTestException.new.inspect, YAML::load(YAMLTestException.new.to_ya
 test_equal("*.rb", YAML::load("---\n*.rb"))
 test_equal("&.rb", YAML::load("---\n&.rb"))
 
+# JRUBY-2443
+a_str = "foo"
+a_str.instance_variable_set :@bar, "baz"
+
+test_equal("--- !str\nstr: foo\n'@bar': baz\n", a_str.to_yaml)
+test_equal "baz", YAML.load(a_str.to_yaml).instance_variable_get(:@bar)
