@@ -446,12 +446,29 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "mult", required = 2)
     public IRubyObject mult2(ThreadContext context, IRubyObject b, IRubyObject n) {
+        Ruby runtime = context.getRuntime();
+
         RubyBigDecimal val = getVpValue(b,false);
         if(val == null) {
-            return callCoerced(context, "*",b);
+            // TODO: what about n arg?
+            return callCoerced(context, "*", b);
         }
 
-        return new RubyBigDecimal(getRuntime(),value.multiply(val.value)).setResult();
+        int digits = RubyNumeric.fix2int(n);
+
+        if (isNaN() || val.isNaN()) {
+            return newNaN(runtime);
+        }
+        if  ((isInfinity() && val.isZero()) || (isZero() && val.isInfinity())) {
+            return newNaN(runtime);
+        }
+
+        BigDecimal res = value.multiply(val.value);
+        if (res.precision() > digits) {
+            // TODO: rounding mode should not be hard-coded. See #mode.
+            res = res.round(new MathContext(digits,  RoundingMode.HALF_UP));
+        }
+        return new RubyBigDecimal(runtime, res).setResult();
     }
     
     @JRubyMethod(name = {"**", "power"}, required = 1)
