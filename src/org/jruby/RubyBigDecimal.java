@@ -852,7 +852,7 @@ public class RubyBigDecimal extends RubyNumeric {
         
         int precision = value.precision() - value.scale() + n;
         
-        if (precision >= 0) {
+        if (precision > 0) {
             return new RubyBigDecimal(getRuntime(),
                     value.round(new MathContext(precision, RoundingMode.FLOOR)));
         } else if (value.signum() < 0){
