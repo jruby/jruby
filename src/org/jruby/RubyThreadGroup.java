@@ -78,8 +78,9 @@ public class RubyThreadGroup extends RubyObject {
         }
 
         RubyThread thread = (RubyThread)rubyThread;
-        if (thread.group() != getRuntime().getNil()) {
-            RubyThreadGroup threadGroup = (RubyThreadGroup) thread.group();
+        IRubyObject oldGroup = thread.group();
+        if (oldGroup != getRuntime().getNil()) {
+            RubyThreadGroup threadGroup = (RubyThreadGroup) oldGroup;
             threadGroup.rubyThreadList.remove(new Integer(System.identityHashCode(rubyThread)));
         }
 
