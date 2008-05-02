@@ -36,7 +36,8 @@
 package org.jruby;
 
 import java.lang.ref.SoftReference;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
 
 import org.joni.Matcher;
 import org.joni.Option;
@@ -111,16 +112,16 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
         return kcode;
     }
 
-    private static synchronized HashMap<ByteList, Regex> getPatternCache() {
-        HashMap<ByteList, Regex> cache = patternCache.get();
+    private static Map<ByteList, Regex> getPatternCache() {
+        Map<ByteList, Regex> cache = patternCache.get();
         if (cache == null) {
-            cache = new HashMap<ByteList, Regex>(5);
-            patternCache = new SoftReference<HashMap<ByteList, Regex>>(cache);
+            cache = new ConcurrentHashMap<ByteList, Regex>(5);
+            patternCache = new SoftReference<Map<ByteList, Regex>>(cache);
         }
         return cache;
     }
 
-    static SoftReference<HashMap<ByteList, Regex>> patternCache = new SoftReference<HashMap<ByteList, Regex>>(null);    
+    static volatile SoftReference<Map<ByteList, Regex>> patternCache = new SoftReference<Map<ByteList, Regex>>(null);    
 
     public static RubyClass createRegexpClass(Ruby runtime) {
         RubyClass regexpClass = runtime.defineClass("Regexp", runtime.getObject(), REGEXP_ALLOCATOR);
@@ -268,7 +269,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
 
         setKCode(options);
 
-        HashMap<ByteList, Regex> cache = getPatternCache();
+        Map<ByteList, Regex> cache = getPatternCache();
         Regex pat = cache.get(bytes);
 
         if (pat != null &&
