@@ -663,7 +663,7 @@ public class RubyBigDecimal extends RubyNumeric {
             // TODO: better algorithm to set precision needed
             int prec = Math.max(200, scale);
             return new RubyBigDecimal(getRuntime(),
-                    value.divide(val.value, prec, BigDecimal.ROUND_HALF_UP)).setResult(scale);
+                    value.divide(val.value, new MathContext(prec, RoundingMode.HALF_UP))).setResult(scale);
         }
     }
 
