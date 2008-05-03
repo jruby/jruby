@@ -609,32 +609,56 @@ public class RubyArray extends RubyObject implements List {
     public final IRubyObject eltInternalSet(int offset, IRubyObject item) {
         return values[begin + offset] = item;
     }
-    
+
+    /**
+     * Variable arity version for compatibility. Not bound to a Ruby method.
+     * @deprecated Use the versions with zero, one, or two args.
+     */
+    public IRubyObject fetch(ThreadContext context, IRubyObject[] args, Block block) {
+        switch (args.length) {
+        case 1:
+            return fetch(context, args[0], block);
+        case 2:
+            return fetch(context, args[0], args[1], block);
+        default:
+            Arity.raiseArgumentError(getRuntime(), args.length, 1, 2);
+            return null; // not reached
+        }
+    }    
+
     /** rb_ary_fetch
      *
      */
-    @JRubyMethod(name = "fetch", required = 1, optional = 1, frame = true)
-    public IRubyObject fetch(ThreadContext context, IRubyObject[] args, Block block) {
-        if (args.length == 2 && block.isGiven()) {
-            getRuntime().getWarnings().warn(ID.BLOCK_BEATS_DEFAULT_VALUE, "block supersedes default value argument");
-        }
-
-        long index = RubyNumeric.num2long(args[0]);
+    @JRubyMethod(name = "fetch", frame = true)
+    public IRubyObject fetch(ThreadContext context, IRubyObject arg0, Block block) {
+        long index = RubyNumeric.num2long(arg0);
 
         if (index < 0) index += realLength;
-
         if (index < 0 || index >= realLength) {
-            if (block.isGiven()) return block.yield(context, args[0]);
-
-            if (args.length == 1) {
-                throw getRuntime().newIndexError("index " + index + " out of array");
-            }
-            
-            return args[1];
+            if (block.isGiven()) return block.yield(context, arg0);
+            throw getRuntime().newIndexError("index " + index + " out of array");
         }
         
         return values[begin + (int) index];
     }
+
+    /** rb_ary_fetch
+    *
+    */
+   @JRubyMethod(name = "fetch", frame = true)
+   public IRubyObject fetch(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+       if (block.isGiven()) getRuntime().getWarnings().warn(ID.BLOCK_BEATS_DEFAULT_VALUE, "block supersedes default value argument");
+
+       long index = RubyNumeric.num2long(arg0);
+
+       if (index < 0) index += realLength;
+       if (index < 0 || index >= realLength) {
+           if (block.isGiven()) return block.yield(context, arg0);
+           return arg1;
+       }
+       
+       return values[begin + (int) index];
+   }    
 
     /** rb_ary_to_ary
      * 
@@ -1200,39 +1224,77 @@ public class RubyArray extends RubyObject implements List {
         }
     }
 
+    /**
+     * Variable arity version for compatibility. Not bound to a Ruby method.
+     * @deprecated Use the versions with zero, one, or two args.
+     */
+    public IRubyObject first(IRubyObject[] args) {
+        switch (args.length) {
+        case 0:
+            return first();
+        case 1:
+            return first(args[0]);
+        default:
+            Arity.raiseArgumentError(getRuntime(), args.length, 0, 1);
+            return null; // not reached
+        }
+    }
+
     /** rb_ary_first
      *
      */
-    @JRubyMethod(name = "first", optional = 1)
-    public IRubyObject first(IRubyObject[] args) {
-    	if (args.length == 0) {
-            if (realLength == 0) return getRuntime().getNil();
+    @JRubyMethod(name = "first")
+    public IRubyObject first() {
+        if (realLength == 0) return getRuntime().getNil();
+        return values[begin];
+    }
 
-            return values[begin];
-        } 
-            
-        long n = RubyNumeric.num2long(args[0]);
+    /** rb_ary_first
+    *
+    */
+    @JRubyMethod(name = "first")
+    public IRubyObject first(IRubyObject arg0) {
+        long n = RubyNumeric.num2long(arg0);
         if (n > realLength) {
             n = realLength;
         } else if (n < 0) {
             throw getRuntime().newArgumentError("negative array size (or size too big)");
-    	}
-    	
+        }
+
         return makeShared(begin, (int) n, getRuntime().getArray());
+    }
+
+    /**
+     * Variable arity version for compatibility. Not bound to a Ruby method.
+     * @deprecated Use the versions with zero, one, or two args.
+     */
+    public IRubyObject last(IRubyObject[] args) {
+        switch (args.length) {
+        case 0:
+            return last();
+        case 1:
+            return last(args[0]);
+        default:
+            Arity.raiseArgumentError(getRuntime(), args.length, 0, 1);
+            return null; // not reached
+        }
     }
 
     /** rb_ary_last
      *
      */
-    @JRubyMethod(name = "last", optional = 1)
-    public IRubyObject last(IRubyObject[] args) {
-        if (args.length == 0) {
-            if (realLength == 0) return getRuntime().getNil();
+    @JRubyMethod(name = "last")
+    public IRubyObject last() {
+        if (realLength == 0) return getRuntime().getNil();
+        return values[begin + realLength - 1];
+    }
 
-            return values[begin + realLength - 1];
-        } 
-            
-        long n = RubyNumeric.num2long(args[0]);
+    /** rb_ary_last
+    *
+    */
+    @JRubyMethod(name = "last")
+    public IRubyObject last(IRubyObject arg0) {
+        long n = RubyNumeric.num2long(arg0);
         if (n > realLength) {
             n = realLength;
         } else if (n < 0) {
@@ -1865,39 +1927,56 @@ public class RubyArray extends RubyObject implements List {
         return RubyFixnum.minus_one(runtime);
     }
 
+    /**
+     * Variable arity version for compatibility. Not bound to a Ruby method.
+     * @deprecated Use the versions with zero, one, or two args.
+     */
+    public IRubyObject slice_bang(IRubyObject[] args) {
+        switch (args.length) {
+        case 1:
+            return slice_bang(args[0]);
+        case 2:
+            return slice_bang(args[0], args[1]);
+        default:
+            Arity.raiseArgumentError(getRuntime(), args.length, 1, 2);
+            return null; // not reached
+        }
+    }
+
     /** rb_ary_slice_bang
      *
      */
-    @JRubyMethod(name = "slice!", required = 1, optional = 2)
-    public IRubyObject slice_bang(IRubyObject[] args) {
-        if (args.length == 2) {
-            long pos = RubyNumeric.num2long(args[0]);
-            long len = RubyNumeric.num2long(args[1]);
-            
-            if (pos < 0) pos = realLength + pos;
-
-            args[1] = subseq(pos, len);
-            splice(pos, len, null);
-            
-            return args[1];
-        }
-        
-        IRubyObject arg = args[0];
-        if (arg instanceof RubyRange) {
-            long[] beglen = ((RubyRange) arg).begLen(realLength, 1);
+    @JRubyMethod(name = "slice!")
+    public IRubyObject slice_bang(IRubyObject arg0) {
+        if (arg0 instanceof RubyRange) {
+            long[] beglen = ((RubyRange) arg0).begLen(realLength, 1);
             long pos = beglen[0];
             long len = beglen[1];
 
-            if (pos < 0) {
-                pos = realLength + pos;
-            }
-            arg = subseq(pos, len);
-            splice(pos, len, null);
-            return arg;
-        }
+            if (pos < 0) pos = realLength + pos;
 
-        return delete_at((int) RubyNumeric.num2long(args[0]));
+            arg0 = subseq(pos, len);
+            splice(pos, len, null);
+            return arg0;
+        }
+        return delete_at((int) RubyNumeric.num2long(arg0));
     }
+
+    /** rb_ary_slice_bang
+    *
+    */
+    @JRubyMethod(name = "slice!")
+    public IRubyObject slice_bang(IRubyObject arg0, IRubyObject arg1) {
+        long pos = RubyNumeric.num2long(arg0);
+        long len = RubyNumeric.num2long(arg1);
+
+        if (pos < 0) pos = realLength + pos;
+
+        arg1 = subseq(pos, len);
+        splice(pos, len, null);
+
+        return arg1;
+    }    
 
     /** rb_ary_assoc
      *
