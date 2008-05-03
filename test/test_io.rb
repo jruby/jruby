@@ -440,14 +440,16 @@ class TestIO < Test::Unit::TestCase
   end
 
   #JRUBY-2145
-  def test_copy_dev_null
-    require 'fileutils'
-    begin
-      FileUtils.cp(@devnull, 'somefile')
-      assert(File.exists?('somefile'))
-      assert_equal(0, File.size('somefile'))
-    ensure
-      File.delete('somefile') rescue nil
+  if (!WINDOWS)
+    def test_copy_dev_null
+      require 'fileutils'
+      begin
+        FileUtils.cp(@devnull, 'somefile')
+        assert(File.exists?('somefile'))
+        assert_equal(0, File.size('somefile'))
+      ensure
+        File.delete('somefile') rescue nil
+      end
     end
   end
 
