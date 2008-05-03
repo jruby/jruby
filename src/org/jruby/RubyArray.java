@@ -1048,74 +1048,95 @@ public class RubyArray extends RubyObject implements List {
         return getRuntime().newBoolean(isFrozen() || (flags & TMPLOCK_ARR_F) != 0);
     }
 
+    /**
+     * Variable arity version for compatibility. Not bound to a Ruby method.
+     * @deprecated Use the versions with zero, one, or two args.
+     */
+    public IRubyObject aref(IRubyObject[] args) {
+        switch (args.length) {
+        case 1:
+            return aref(args[0]);
+        case 2:
+            return aref(args[0], args[1]);
+        default:
+            Arity.raiseArgumentError(getRuntime(), args.length, 1, 2);
+            return null; // not reached
+        }
+    }
+
     /** rb_ary_aref
      */
-    @JRubyMethod(name = {"[]", "slice"}, required = 1, optional = 1)
-    public IRubyObject aref(IRubyObject[] args) {
-        long beg, len;
-
-        if(args.length == 1) {
-            if (args[0] instanceof RubyFixnum) return entry(((RubyFixnum)args[0]).getLongValue());
-            if (args[0] instanceof RubySymbol) throw getRuntime().newTypeError("Symbol as array index");
+    @JRubyMethod(name = {"[]", "slice"})
+    public IRubyObject aref(IRubyObject arg0) {
+        if (arg0 instanceof RubyFixnum) return entry(((RubyFixnum)arg0).getLongValue());
+        if (arg0 instanceof RubySymbol) throw getRuntime().newTypeError("Symbol as array index");
             
-            long[] beglen;
-            if (!(args[0] instanceof RubyRange)) {
-            } else if ((beglen = ((RubyRange) args[0]).begLen(realLength, 0)) == null) {
-                return getRuntime().getNil();
-            } else {
-                beg = beglen[0];
-                len = beglen[1];
-                return subseq(beg, len);
-            }
-
-            return entry(RubyNumeric.num2long(args[0]));            
-        }        
-
-        if (args.length == 2) {
-            if (args[0] instanceof RubySymbol) {
-                throw getRuntime().newTypeError("Symbol as array index");
-            }
-            beg = RubyNumeric.num2long(args[0]);
-            len = RubyNumeric.num2long(args[1]);
-
-            if (beg < 0) beg += realLength;
-
-            return subseq(beg, len);
+        long[] beglen;
+        if (!(arg0 instanceof RubyRange)) {
+        } else if ((beglen = ((RubyRange) arg0).begLen(realLength, 0)) == null) {
+            return getRuntime().getNil();
+        } else {
+            return subseq(beglen[0], beglen[1]);
         }
-        
-        return null;
+        return entry(RubyNumeric.num2long(arg0));            
+    }        
+
+    /** rb_ary_aref
+     */
+    @JRubyMethod(name = {"[]", "slice"})
+    public IRubyObject aref(IRubyObject arg0, IRubyObject arg1) {
+        if (arg0 instanceof RubySymbol) throw getRuntime().newTypeError("Symbol as array index");
+
+        long beg = RubyNumeric.num2long(arg0);
+        if (beg < 0) beg += realLength;
+
+        return subseq(beg, RubyNumeric.num2long(arg1));
+    }
+
+    /**
+     * Variable arity version for compatibility. Not bound to a Ruby method.
+     * @deprecated Use the versions with zero, one, or two args.
+     */
+    public IRubyObject aset(IRubyObject[] args) {
+        switch (args.length) {
+        case 2:
+            return aset(args[0], args[1]);
+        case 3:
+            return aset(args[0], args[1], args[2]);
+        default:
+            throw getRuntime().newArgumentError("wrong number of arguments (" + args.length + " for 2)");
+        }
     }
 
     /** rb_ary_aset
      *
      */
-    @JRubyMethod(name = "[]=", required = 2, optional = 1)
-    public IRubyObject aset(IRubyObject[] args) {
-        if (args.length == 2) {
-        if (args[0] instanceof RubyFixnum) {
-                store(((RubyFixnum)args[0]).getLongValue(), args[1]);
-            return args[1];
+    @JRubyMethod(name = "[]=")
+    public IRubyObject aset(IRubyObject arg0, IRubyObject arg1) {
+        if (arg0 instanceof RubyFixnum) {
+            store(((RubyFixnum)arg0).getLongValue(), arg1);
+            return arg1;
         }
-        if (args[0] instanceof RubyRange) {
-            long[] beglen = ((RubyRange) args[0]).begLen(realLength, 1);
-            splice(beglen[0], beglen[1], args[1]);
-            return args[1];
+        if (arg0 instanceof RubyRange) {
+            long[] beglen = ((RubyRange) arg0).begLen(realLength, 1);
+            splice(beglen[0], beglen[1], arg1);
+            return arg1;
         }
-            if (args[0] instanceof RubySymbol) throw getRuntime().newTypeError("Symbol as array index");
+        if (arg0 instanceof RubySymbol) throw getRuntime().newTypeError("Symbol as array index");
 
-        store(RubyNumeric.num2long(args[0]), args[1]);
-        return args[1];
+        store(RubyNumeric.num2long(arg0), arg1);
+        return arg1;
     }
 
-        if (args.length == 3) {
-            if (args[0] instanceof RubySymbol) throw getRuntime().newTypeError("Symbol as array index");
-            if (args[1] instanceof RubySymbol) throw getRuntime().newTypeError("Symbol as subarray length");
-
-            splice(RubyNumeric.num2long(args[0]), RubyNumeric.num2long(args[1]), args[2]);
-            return args[2];
-        }
-
-        throw getRuntime().newArgumentError("wrong number of arguments (" + args.length + " for 2)");
+    /** rb_ary_aset
+    *
+    */
+    @JRubyMethod(name = "[]=")
+    public IRubyObject aset(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        if (arg0 instanceof RubySymbol) throw getRuntime().newTypeError("Symbol as array index");
+        if (arg1 instanceof RubySymbol) throw getRuntime().newTypeError("Symbol as subarray length");
+        splice(RubyNumeric.num2long(arg0), RubyNumeric.num2long(arg1), arg2);
+        return arg2;
     }
 
     /** rb_ary_at
