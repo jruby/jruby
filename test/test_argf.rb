@@ -45,7 +45,7 @@ class TestArgf < Test::Unit::TestCase
       File.open('__argf_input_1', 'w') { |f| f.write "1:1\n1:2" }
       File.open('__argf_input_2', 'w') { |f| f.write "2:1\n2:2\n" }
 
-      assert system("#{Config::CONFIG['ruby_install_name']} __argf_script.rb __argf_input_1 __argf_input_2"),
+      assert system("#{Config::CONFIG['exec_prefix']} __argf_script.rb __argf_input_1 __argf_input_2"),
              "Smoke test script for ARGF failed"
     ensure
       File.unlink '__argf_script.rb' rescue nil
