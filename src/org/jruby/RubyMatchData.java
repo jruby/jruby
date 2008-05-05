@@ -185,7 +185,7 @@ public class RubyMatchData extends RubyObject {
                     case 1:
                         return ((RubyArray)to_a()).aref(args[0]);
                     case 2:
-                        return ((RubyArray)to_a()).aref(args[1]);
+                        return ((RubyArray)to_a()).aref(args[0], args[1]);
                     default:
                         // Can't happen
                         throw new IllegalArgumentException();
@@ -198,7 +198,7 @@ public class RubyMatchData extends RubyObject {
         case 1:
             return ((RubyArray)to_a()).aref(args[0]);
         case 2:
-            return ((RubyArray)to_a()).aref(args[1]);
+            return ((RubyArray)to_a()).aref(args[0], args[1]);
         default:
             // Can't happen
             throw new IllegalArgumentException();
