@@ -1794,7 +1794,7 @@ public final class Ruby {
         } else if (((RubyArray) backtrace).getLength() == 0) {
             printErrorPos(context, errorStream);
         } else {
-            IRubyObject mesg = ((RubyArray) backtrace).first(IRubyObject.NULL_ARRAY);
+            IRubyObject mesg = ((RubyArray) backtrace).first();
 
             if (mesg.isNil()) {
                 printErrorPos(context, errorStream);

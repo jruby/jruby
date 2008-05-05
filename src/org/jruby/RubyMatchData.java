@@ -181,12 +181,28 @@ public class RubyMatchData extends RubyObject {
                 } else if (idx instanceof RubyString) {
                     str = (RubyString)idx;
                 } else {
-                    return ((RubyArray)to_a()).aref(args);
+                    switch(args.length) {
+                    case 1:
+                        return ((RubyArray)to_a()).aref(args[0]);
+                    case 2:
+                        return ((RubyArray)to_a()).aref(args[1]);
+                    default:
+                        // Can't happen
+                        throw new IllegalArgumentException();
+                    }
                 }
                 return RubyRegexp.nth_match(nameToBackrefNumber(str), this);
             }
         }
-        return ((RubyArray)to_a()).aref(args);
+        switch(args.length) {
+        case 1:
+            return ((RubyArray)to_a()).aref(args[0]);
+        case 2:
+            return ((RubyArray)to_a()).aref(args[1]);
+        default:
+            // Can't happen
+            throw new IllegalArgumentException();
+        }
     }
 
     /** match_size

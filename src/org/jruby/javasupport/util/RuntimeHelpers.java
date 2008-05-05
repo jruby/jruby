@@ -951,7 +951,7 @@ public class RuntimeHelpers {
 
         RubyArray array = (RubyArray) value;
 
-        return array.getLength() == 1 ? array.first(IRubyObject.NULL_ARRAY) : array;
+        return array.getLength() == 1 ? array.first() : array;
     }
 
     public static RubyArray splatValue(IRubyObject value) {

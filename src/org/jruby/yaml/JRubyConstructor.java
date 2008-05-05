@@ -162,7 +162,7 @@ public class JRubyConstructor extends ConstructorImpl {
                 final IRubyObject ix = runtime.newFixnum(i);
                 addFixer((Node)(((LinkNode)oo).getValue()), new RecursiveFixer() {
                         public void replace(Node node, Object real) {
-                            arr.aset(new IRubyObject[]{ix, (IRubyObject)real});
+                            arr.aset(ix, (IRubyObject)real);
                         }
                     });
             } else {
