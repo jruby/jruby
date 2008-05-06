@@ -1607,6 +1607,7 @@ public class ASTCompiler {
 
         // inspect body and args
         ASTInspector inspector = new ASTInspector();
+        // check args first, since body inspection can depend on args
         inspector.inspect(defnNode.getArgsNode());
         inspector.inspect(defnNode.getBodyNode());
 

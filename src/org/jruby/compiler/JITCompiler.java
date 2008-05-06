@@ -142,8 +142,9 @@ public class JITCompiler {
             };
 
             ASTInspector inspector = new ASTInspector();
-            inspector.inspect(bodyNode);
+            // check args first, since body inspection can depend on args
             inspector.inspect(argsNode);
+            inspector.inspect(bodyNode);
 
             MethodCompiler methodCompiler;
             if (bodyNode != null) {

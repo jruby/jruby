@@ -1587,6 +1587,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             SkinnyMethodAdapter inv_old_method = null;
             boolean oldWithinProtection = withinProtection;
             withinProtection = true;
+            Label[] oldLoopLabels = currentLoopLabels;
+            currentLoopLabels = null;
             try {
                 old_method = this.method;
                 var_old_method = getVariableCompiler().getMethodAdapter();
@@ -1646,6 +1648,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 getVariableCompiler().setMethodAdapter(var_old_method);
                 getInvocationCompiler().setMethodAdapter(inv_old_method);
                 withinProtection = oldWithinProtection;
+                currentLoopLabels = oldLoopLabels;
             }
 
             method.aload(THIS);
@@ -1677,6 +1680,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             Label exitRescue = new Label();
             boolean oldWithinProtection = withinProtection;
             withinProtection = true;
+            Label[] oldLoopLabels = currentLoopLabels;
+            currentLoopLabels = null;
             try {
                 old_method = this.method;
                 var_old_method = getVariableCompiler().getMethodAdapter();
@@ -1761,6 +1766,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 this.method = old_method;
                 getVariableCompiler().setMethodAdapter(var_old_method);
                 getInvocationCompiler().setMethodAdapter(inv_old_method);
+                currentLoopLabels = oldLoopLabels;
             }
             
             method.aload(THIS);
@@ -2581,31 +2587,31 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
         
         public void issueBreakEvent(CompilerCallback value) {
-            if (withinProtection || currentLoopLabels == null) {
-                value.call(this);
-                invokeUtilityMethod("breakJump", sig(IRubyObject.class, IRubyObject.class));
-            } else {
+            if (currentLoopLabels != null) {
                 value.call(this);
                 issueLoopBreak();
+            } else {
+                value.call(this);
+                invokeUtilityMethod("breakJump", sig(IRubyObject.class, IRubyObject.class));
             }
         }
 
         public void issueNextEvent(CompilerCallback value) {
-            if (withinProtection || currentLoopLabels == null) {
-                value.call(this);
-                invokeUtilityMethod("nextJump", sig(IRubyObject.class, IRubyObject.class));
-            } else {
+            if (currentLoopLabels != null) {
                 value.call(this);
                 issueLoopNext();
+            } else {
+                value.call(this);
+                invokeUtilityMethod("nextJump", sig(IRubyObject.class, IRubyObject.class));
             }
         }
 
         public void issueRedoEvent() {
             // FIXME: This isn't right for within ensured/rescued code
-            if (withinProtection) {
-                invokeUtilityMethod("redoJump", sig(IRubyObject.class));
-            } else if (currentLoopLabels != null) {
+            if (currentLoopLabels != null) {
                 issueLoopRedo();
+            } else if (withinProtection) {
+                invokeUtilityMethod("redoJump", sig(IRubyObject.class));
             } else {
                 // jump back to the top of the main body of this closure
                 method.go_to(scopeStart);
@@ -2723,12 +2729,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void issueBreakEvent(CompilerCallback value) {
-            if (withinProtection) {
-                value.call(this);
-                invokeUtilityMethod("breakJump", sig(IRubyObject.class, IRubyObject.class));
-            } else if (currentLoopLabels != null) {
+            if (currentLoopLabels != null) {
                 value.call(this);
                 issueLoopBreak();
+            } else if (withinProtection) {
+                value.call(this);
+                invokeUtilityMethod("breakJump", sig(IRubyObject.class, IRubyObject.class));
             } else {
                 // in method body with no containing loop, issue jump error
                 // load runtime and value, issue jump error
@@ -2739,12 +2745,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void issueNextEvent(CompilerCallback value) {
-            if (withinProtection) {
-                value.call(this);
-                invokeUtilityMethod("nextJump", sig(IRubyObject.class, IRubyObject.class));
-            } else if (currentLoopLabels != null) {
+            if (currentLoopLabels != null) {
                 value.call(this);
                 issueLoopNext();
+            } else if (withinProtection) {
+                value.call(this);
+                invokeUtilityMethod("nextJump", sig(IRubyObject.class, IRubyObject.class));
             } else {
                 // in method body with no containing loop, issue jump error
                 // load runtime and value, issue jump error
@@ -2755,10 +2761,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
 
         public void issueRedoEvent() {
-            if (withinProtection) {
-                invokeUtilityMethod("redoJump", sig(IRubyObject.class));
-            } else if (currentLoopLabels != null) {
+            if (currentLoopLabels != null) {
                 issueLoopRedo();
+            } else if (withinProtection) {
+                invokeUtilityMethod("redoJump", sig(IRubyObject.class));
             } else {
                 // in method body with no containing loop, issue jump error
                 // load runtime and value, issue jump error

@@ -143,7 +143,7 @@ public class ASTInspector {
      * @param nodes The child nodes to walk with a new inspector
      * @return The new inspector resulting from the walk
      */
-    public ASTInspector subInspect(Node... nodes) {
+    public static ASTInspector subInspect(Node... nodes) {
         ASTInspector newInspector = new ASTInspector();
         
         for (Node node : nodes) {
@@ -503,6 +503,10 @@ public class ASTInspector {
             UntilNode untilNode = (UntilNode)node;
             ASTInspector untilInspector = subInspect(
                     untilNode.getConditionNode(), untilNode.getBodyNode());
+            // a while node could receive non-local flow control from any of these:
+            // * a closure within the loop
+            // * an eval within the loop
+            // * a block-arg-based proc called within the loop
             if (untilInspector.hasClosure || untilInspector.hasEval) {
                 untilNode.containsNonlocalFlow = true;
             }
@@ -519,8 +523,15 @@ public class ASTInspector {
             WhileNode whileNode = (WhileNode)node;
             ASTInspector whileInspector = subInspect(
                     whileNode.getConditionNode(), whileNode.getBodyNode());
-            if (whileInspector.hasClosure || whileInspector.hasEval) {
+            // a while node could receive non-local flow control from any of these:
+            // * a closure within the loop
+            // * an eval within the loop
+            // * a block-arg-based proc called within the loop
+            if (whileInspector.hasClosure || whileInspector.hasEval || hasBlockArg) {
                 whileNode.containsNonlocalFlow = true;
+                
+                // we set scope-aware to true to force heap-based locals
+                hasScopeAwareMethods = true;
             }
             integrate(whileInspector);
             break;
