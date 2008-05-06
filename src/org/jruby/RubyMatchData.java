@@ -163,6 +163,16 @@ public class RubyMatchData extends RubyObject {
         }
     }
 
+    final int backrefNumber(IRubyObject obj) {
+        if (obj instanceof RubySymbol) {
+            return nameToBackrefNumber((RubyString)((RubySymbol)obj).id2name());
+        } else if (obj instanceof RubyString) {
+            return nameToBackrefNumber((RubyString)obj);
+        } else {
+            return RubyNumeric.num2int(obj);
+        }
+    }
+
     /**
      * Variable arity version for compatibility. Not bound to a Ruby method.
      * @deprecated Use the versions with zero, one, or two args.
@@ -224,7 +234,7 @@ public class RubyMatchData extends RubyObject {
      */
     @JRubyMethod(name = "begin", required = 1)
     public IRubyObject begin(IRubyObject index) {
-        int i = RubyNumeric.num2int(index);
+        int i = backrefNumber(index);
 
         if (regs == null) {
             if (i != 0) throw getRuntime().newIndexError("index " + i + " out of matches");
@@ -242,7 +252,7 @@ public class RubyMatchData extends RubyObject {
      */
     @JRubyMethod(name = "end", required = 1)
     public IRubyObject end(IRubyObject index) {
-        int i = RubyNumeric.num2int(index);
+        int i = backrefNumber(index);
 
         if (regs == null) {
             if (i != 0) throw getRuntime().newIndexError("index " + i + " out of matches");
@@ -260,7 +270,7 @@ public class RubyMatchData extends RubyObject {
      */
     @JRubyMethod(name = "offset", required = 1)
     public IRubyObject offset(IRubyObject index) {
-        int i = RubyNumeric.num2int(index);
+        int i = backrefNumber(index);
         Ruby runtime = getRuntime();
 
         if (regs == null) {

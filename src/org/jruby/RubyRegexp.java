@@ -51,6 +51,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.parser.ReOptions;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Frame;
@@ -1004,19 +1005,40 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
         return nth_match(0, match);
     }
 
-    /** rb_reg_s_last_match
-     *
+    /**
+     * Variable arity version for compatibility. Not bound to a Ruby method.
+     * @deprecated Use the versions with zero, one, or two args.
      */
-    @JRubyMethod(name = "last_match", optional = 1, meta = true, reads = BACKREF)
     public static IRubyObject last_match_s(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        if (args.length == 1) {
-            return nth_match(RubyNumeric.fix2int(args[0]), context.getCurrentFrame().getBackRef());
+        switch (args.length) {
+        case 0:
+            return last_match_s(context, recv);
+        case 1:
+            return last_match_s(context, recv, args[0]);
+        default:
+            Arity.raiseArgumentError(recv.getRuntime(), args.length, 0, 1);
+            return null; // not reached
         }
+    }
 
-        IRubyObject result = context.getCurrentFrame().getBackRef();
+    /** rb_reg_s_last_match / match_getter
+    *
+    */
+    @JRubyMethod(name = "last_match", meta = true, reads = BACKREF)
+    public static IRubyObject last_match_s(ThreadContext context, IRubyObject recv) {
+        IRubyObject match = context.getCurrentFrame().getBackRef();
+        if (match instanceof RubyMatchData) ((RubyMatchData)match).use();
+        return match;
+    }
 
-        if (result instanceof RubyMatchData) ((RubyMatchData)result).use();
-        return result;
+    /** rb_reg_s_last_match
+    *
+    */
+    @JRubyMethod(name = "last_match", meta = true, reads = BACKREF)
+    public static IRubyObject last_match_s(ThreadContext context, IRubyObject recv, IRubyObject nth) {
+        IRubyObject match = context.getCurrentFrame().getBackRef();
+        if (match.isNil()) return match;
+        return nth_match(((RubyMatchData)match).backrefNumber(nth), match);
     }
 
     /** rb_reg_match_pre
