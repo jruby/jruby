@@ -44,6 +44,8 @@ public class UntilNode extends Node {
     private final Node conditionNode;
     private final Node bodyNode;
     private final boolean evaluateAtStart;
+    
+    public boolean containsNonlocalFlow = false;
 
     public UntilNode(ISourcePosition position, Node conditionNode, Node bodyNode) {
         this(position, conditionNode, bodyNode, true);

@@ -1047,6 +1047,44 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.label(done);
         }
 
+        public void performBooleanLoopLight(BranchCallback condition, BranchCallback body, boolean checkFirst) {
+            Label endOfBody = new Label();
+            Label conditionCheck = new Label();
+            Label topOfBody = new Label();
+            Label done = new Label();
+            
+            Label[] oldLoopLabels = currentLoopLabels;
+
+            currentLoopLabels = new Label[] {endOfBody, topOfBody, done};
+
+            // FIXME: if we terminate immediately, this appears to break while in method arguments
+            // we need to push a nil for the cases where we will never enter the body
+            if (checkFirst) {
+                method.go_to(conditionCheck);
+            }
+
+            method.label(topOfBody);
+
+            body.branch(this);
+
+            method.label(endOfBody);
+
+            // clear body or next result after each successful loop
+            method.pop();
+
+            method.label(conditionCheck);
+
+            // check the condition
+            condition.branch(this);
+            isTrue();
+            method.ifne(topOfBody); // NE == nonzero (i.e. true)
+
+            currentLoopLabels = oldLoopLabels;
+            
+            loadNil();
+            method.label(done);
+        }
+
         public void createNewClosure(
                 int line,
                 StaticScope scope,

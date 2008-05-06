@@ -229,6 +229,22 @@ public interface MethodCompiler {
     public void performBooleanLoop(BranchCallback condition, BranchCallback body, boolean checkFirst);
     
     /**
+     * Perform a boolean loop using the given condition-calculating branch and body branch. For
+     * while loops, pass true for checkFirst. For statement-modifier while loops, pass false. For
+     * unless loops, reverse the result of the condition after calculating it.
+     * 
+     * This version does not handle non-local flow control which can bubble out of
+     * eval or closures, and only expects normal flow control to be used within
+     * its body.
+     * 
+     * @param condition The code to execute for calculating the loop condition. A Ruby true result will
+     * cause the body to be executed again.
+     * @param body The body to executed for the loop.
+     * @param checkFirst whether to check the condition the first time through or not.
+     */
+    public void performBooleanLoopLight(BranchCallback condition, BranchCallback body, boolean checkFirst);
+    
+    /**
      * Return the current value on the top of the stack, taking into consideration surrounding blocks.
      */
     public void performReturn();

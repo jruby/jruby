@@ -52,6 +52,8 @@ public class WhileNode extends Node {
     private final Node conditionNode;
     private final Node bodyNode;
     private final boolean evaluateAtStart;
+    
+    public boolean containsNonlocalFlow = false;
 
     public WhileNode(ISourcePosition position, Node conditionNode, Node bodyNode) {
         this(position, conditionNode, bodyNode, true);

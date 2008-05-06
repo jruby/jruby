@@ -2986,24 +2986,28 @@ public class ASTCompiler {
 
         BranchCallback condition = new BranchCallback() {
 
-                    public void branch(MethodCompiler context) {
-                        compile(untilNode.getConditionNode(), context);
-                        context.negateCurrentValue();
-                    }
-                };
+            public void branch(MethodCompiler context) {
+                compile(untilNode.getConditionNode(), context);
+                context.negateCurrentValue();
+            }
+        };
 
         BranchCallback body = new BranchCallback() {
 
-                    public void branch(MethodCompiler context) {
-                        if (untilNode.getBodyNode() == null) {
-                            context.loadNil();
-                            return;
-                        }
-                        compile(untilNode.getBodyNode(), context);
-                    }
-                };
+            public void branch(MethodCompiler context) {
+                if (untilNode.getBodyNode() == null) {
+                    context.loadNil();
+                    return;
+                }
+                compile(untilNode.getBodyNode(), context);
+            }
+        };
 
-        context.performBooleanLoopSafe(condition, body, untilNode.evaluateAtStart());
+        if (untilNode.containsNonlocalFlow) {
+            context.performBooleanLoopSafe(condition, body, untilNode.evaluateAtStart());
+        } else {
+            context.performBooleanLoopLight(condition, body, untilNode.evaluateAtStart());
+        }
 
         context.pollThreadEvents();
     }
@@ -3025,23 +3029,27 @@ public class ASTCompiler {
 
         BranchCallback condition = new BranchCallback() {
 
-                    public void branch(MethodCompiler context) {
-                        compile(whileNode.getConditionNode(), context);
-                    }
-                };
+            public void branch(MethodCompiler context) {
+                compile(whileNode.getConditionNode(), context);
+            }
+        };
 
         BranchCallback body = new BranchCallback() {
 
-                    public void branch(MethodCompiler context) {
-                        if (whileNode.getBodyNode() == null) {
-                            context.loadNil();
-                        } else {
-                            compile(whileNode.getBodyNode(), context);
-                        }
-                    }
-                };
+            public void branch(MethodCompiler context) {
+                if (whileNode.getBodyNode() == null) {
+                    context.loadNil();
+                } else {
+                    compile(whileNode.getBodyNode(), context);
+                }
+            }
+        };
 
-        context.performBooleanLoopSafe(condition, body, whileNode.evaluateAtStart());
+        if (whileNode.containsNonlocalFlow) {
+            context.performBooleanLoopSafe(condition, body, whileNode.evaluateAtStart());
+        } else {
+            context.performBooleanLoopLight(condition, body, whileNode.evaluateAtStart());
+        }
 
         context.pollThreadEvents();
     }

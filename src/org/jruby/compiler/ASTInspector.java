@@ -89,14 +89,15 @@ import org.jruby.util.SafePropertyAccessor;
  * @author headius
  */
 public class ASTInspector {
+    private boolean hasBlockArg;
     private boolean hasClosure;
     private boolean hasClass;
     private boolean hasDef;
-    private boolean hasScopeAwareMethods;
+    private boolean hasEval;
     private boolean hasFrameAwareMethods;
-    private boolean hasBlockArg;
     private boolean hasOptArgs;
     private boolean hasRestArg;
+    private boolean hasScopeAwareMethods;
     
     public static Set<String> FRAME_AWARE_METHODS = new HashSet<String>();
     private static Set<String> SCOPE_AWARE_METHODS = new HashSet<String>();
@@ -134,6 +135,40 @@ public class ASTInspector {
     }
     
     public static final boolean ENABLED = SafePropertyAccessor.getProperty("jruby.astInspector.enabled", "true").equals("true");
+    
+    /**
+     * Perform an inspection of a subtree or set of subtrees separate from the
+     * parent inspection, to make independent decisions based on that subtree(s).
+     * 
+     * @param nodes The child nodes to walk with a new inspector
+     * @return The new inspector resulting from the walk
+     */
+    public ASTInspector subInspect(Node... nodes) {
+        ASTInspector newInspector = new ASTInspector();
+        
+        for (Node node : nodes) {
+            newInspector.inspect(node);
+        }
+        
+        return newInspector;
+    }
+    
+    /**
+     * Integrate the results of a separate inspection into the state of this
+     * inspector.
+     * 
+     * @param other The other inspector whose state to integrate.
+     */
+    public void integrate(ASTInspector other) {
+        hasBlockArg |= other.hasBlockArg;
+        hasClass |= other.hasClass;
+        hasClosure |= other.hasClosure;
+        hasDef |= other.hasDef;
+        hasFrameAwareMethods |= other.hasFrameAwareMethods;
+        hasOptArgs |= other.hasOptArgs;
+        hasRestArg |= other.hasRestArg;
+        hasScopeAwareMethods |= other.hasScopeAwareMethods;
+    }
     
     public void inspect(Node node) {
         // TODO: This code effectively disables all inspection-based optimizations; none of them are 100% safe yet
@@ -224,6 +259,7 @@ public class ASTInspector {
             INameNode nameNode = (INameNode)node;
             if (FRAME_AWARE_METHODS.contains(nameNode.getName())) {
                 hasFrameAwareMethods = true;
+                hasEval |= nameNode.getName().indexOf("eval") != -1;
             }
             if (SCOPE_AWARE_METHODS.contains(nameNode.getName())) {
                 hasScopeAwareMethods = true;
@@ -465,8 +501,11 @@ public class ASTInspector {
             break;
         case UNTILNODE:
             UntilNode untilNode = (UntilNode)node;
-            inspect(untilNode.getConditionNode());
-            inspect(untilNode.getBodyNode());
+            ASTInspector untilInspector = subInspect(
+                    untilNode.getConditionNode(), untilNode.getBodyNode());
+            if (untilInspector.hasClosure || untilInspector.hasEval) {
+                untilNode.containsNonlocalFlow = true;
+            }
             hasScopeAwareMethods = true;
             break;
         case VALIASNODE:
@@ -478,9 +517,12 @@ public class ASTInspector {
             break;
         case WHILENODE:
             WhileNode whileNode = (WhileNode)node;
-            inspect(whileNode.getConditionNode());
-            inspect(whileNode.getBodyNode());
-            hasScopeAwareMethods = true;
+            ASTInspector whileInspector = subInspect(
+                    whileNode.getConditionNode(), whileNode.getBodyNode());
+            if (whileInspector.hasClosure || whileInspector.hasEval) {
+                whileNode.containsNonlocalFlow = true;
+            }
+            integrate(whileInspector);
             break;
         case XSTRNODE:
             break;
