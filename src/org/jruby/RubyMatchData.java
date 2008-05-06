@@ -38,6 +38,7 @@ import org.joni.Region;
 import org.joni.exception.JOniException;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -162,47 +163,52 @@ public class RubyMatchData extends RubyObject {
         }
     }
 
+    /**
+     * Variable arity version for compatibility. Not bound to a Ruby method.
+     * @deprecated Use the versions with zero, one, or two args.
+     */
+    public IRubyObject op_aref(IRubyObject[] args) {
+        switch (args.length) {
+        case 1:
+            return op_aref(args[0]);
+        case 2:
+            return op_aref(args[0], args[1]);
+        default:
+            Arity.raiseArgumentError(getRuntime(), args.length, 1, 2);
+            return null; // not reached
+        }
+    }
+
     /** match_aref
      *
      */
-    @JRubyMethod(name = "[]", required = 1, optional = 1)
-    public IRubyObject op_aref(IRubyObject[] args) {
-        final IRubyObject rest = args.length == 2 ? args[1] : null;
-        final IRubyObject idx = args[0];
+    @JRubyMethod(name = "[]")
+    public IRubyObject op_aref(IRubyObject idx) {
+        IRubyObject result = op_arefCommon(idx);
+        return result == null ? ((RubyArray)to_a()).aref(idx) : result;
+    }
 
-        if (rest == null || rest.isNil()) {
-            if (idx instanceof RubyFixnum) {
-                int num = RubyNumeric.fix2int(idx);
-                if (num >= 0) return RubyRegexp.nth_match(num, this);                
-            } else {
-                RubyString str;
-                if (idx instanceof RubySymbol) {
-                    str = (RubyString)((RubySymbol)idx).id2name();
-                } else if (idx instanceof RubyString) {
-                    str = (RubyString)idx;
-                } else {
-                    switch(args.length) {
-                    case 1:
-                        return ((RubyArray)to_a()).aref(args[0]);
-                    case 2:
-                        return ((RubyArray)to_a()).aref(args[0], args[1]);
-                    default:
-                        // Can't happen
-                        throw new IllegalArgumentException();
-                    }
-                }
-                return RubyRegexp.nth_match(nameToBackrefNumber(str), this);
+    /** match_aref
+    *
+    */
+    @JRubyMethod(name = "[]")
+    public IRubyObject op_aref(IRubyObject idx, IRubyObject rest) {
+        IRubyObject result;
+        return !rest.isNil() || (result = op_arefCommon(idx)) == null ? ((RubyArray)to_a()).aref(idx, rest) : result;
+    }
+
+    private IRubyObject op_arefCommon(IRubyObject idx) {
+        if (idx instanceof RubyFixnum) {
+            int num = RubyNumeric.fix2int(idx);
+            if (num >= 0) return RubyRegexp.nth_match(num, this);
+        } else {
+            if (idx instanceof RubySymbol) {
+                return RubyRegexp.nth_match(nameToBackrefNumber((RubyString)((RubySymbol)idx).id2name()), this);
+            } else if (idx instanceof RubyString) {
+                return RubyRegexp.nth_match(nameToBackrefNumber((RubyString)idx), this);
             }
         }
-        switch(args.length) {
-        case 1:
-            return ((RubyArray)to_a()).aref(args[0]);
-        case 2:
-            return ((RubyArray)to_a()).aref(args[0], args[1]);
-        default:
-            // Can't happen
-            throw new IllegalArgumentException();
-        }
+        return null;
     }
 
     /** match_size
