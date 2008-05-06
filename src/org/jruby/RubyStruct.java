@@ -67,6 +67,14 @@ public class RubyStruct extends RubyObject {
      */
     public RubyStruct(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
+        
+        int size = RubyNumeric.fix2int(getInternalVariable((RubyClass)rubyClass, "__size__"));
+
+        values = new IRubyObject[size];
+
+        for (int i = 0; i < size; i++) {
+            values[i] = getRuntime().getNil();
+        }
     }
 
     public static RubyClass createStructClass(Ruby runtime) {
@@ -283,14 +291,6 @@ public class RubyStruct extends RubyObject {
      */
     public static RubyStruct newStruct(IRubyObject recv, IRubyObject[] args, Block block) {
         RubyStruct struct = new RubyStruct(recv.getRuntime(), (RubyClass) recv);
-
-        int size = RubyNumeric.fix2int(getInternalVariable((RubyClass) recv, "__size__"));
-
-        struct.values = new IRubyObject[size];
-
-        for (int i = 0; i < size; i++) {
-            struct.values[i] = recv.getRuntime().getNil();
-        }
 
         struct.callInit(args, block);
 

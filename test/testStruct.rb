@@ -131,3 +131,15 @@ class Foo < Struct.new(:heh)
 end
 
 test_equal(nil, Foo.new.heh)
+
+
+# JRUBY-2490
+require 'java'
+
+class JavaComparableStruct < Struct.new(:foo)
+  include java.lang.Comparable
+  
+  def compare_to(other); 0; end
+end
+
+test_equal(:a, JavaComparableStruct.new(:a).foo)
