@@ -202,6 +202,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     mv.visitCode();
                     Label line = new Label();
                     mv.visitLineNumber(0, line);
+                    
+//                    // check arity
+//                    checkArity(mv, scope);
 
                     // invoke pre method stuff
                     if (!callConfig.isNoop()) {
@@ -684,6 +687,61 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 throw implementationClass.getRuntime().newLoadError(e.getMessage());
             }
         }
+    }
+
+    /**
+     * Emit code to check the arity of a call to a Ruby-based method.
+     * 
+     * @param jrubyMethod The annotation of the called method
+     * @param method The code generator for the handle being created
+     */
+    private void checkArity(SkinnyMethodAdapter method, StaticScope scope) {
+        Label arityError = new Label();
+        Label noArityError = new Label();
+
+        if (scope.getRestArg() >= 0) {
+            if (scope.getRequiredArgs() > 0) {
+                // just confirm minimum args provided
+                method.aload(ARGS_INDEX);
+                method.arraylength();
+                method.ldc(scope.getRequiredArgs());
+                method.if_icmplt(arityError);
+            }
+        } else if (scope.getOptionalArgs() > 0) {
+            if (scope.getRequiredArgs() > 0) {
+                // confirm minimum args provided
+                method.aload(ARGS_INDEX);
+                method.arraylength();
+                method.ldc(scope.getRequiredArgs());
+                method.if_icmplt(arityError);
+            }
+
+            // confirm maximum not greater than optional
+            method.aload(ARGS_INDEX);
+            method.arraylength();
+            method.ldc(scope.getRequiredArgs() + scope.getOptionalArgs());
+            method.if_icmpgt(arityError);
+        } else {
+            // just confirm args length == required
+            method.aload(ARGS_INDEX);
+            method.arraylength();
+            method.ldc(scope.getRequiredArgs());
+            method.if_icmpne(arityError);
+        }
+
+        method.go_to(noArityError);
+
+        // Raise an error if arity does not match requirements
+        method.label(arityError);
+        method.aload(THREADCONTEXT_INDEX);
+        method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
+        method.aload(ARGS_INDEX);
+        method.ldc(scope.getRequiredArgs());
+        method.ldc(scope.getRequiredArgs() + scope.getOptionalArgs());
+        method.invokestatic(p(Arity.class), "checkArgumentCount", sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
+        method.pop();
+
+        method.label(noArityError);
     }
 
     /**

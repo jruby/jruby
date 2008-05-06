@@ -51,9 +51,6 @@ import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- * @author jpetersen
- */
 public final class ThreadContext {
     public static synchronized ThreadContext newContext(Ruby runtime) {
         ThreadContext context = new ThreadContext(runtime);
@@ -132,7 +129,7 @@ public final class ThreadContext {
     
     IRubyObject lastExitStatus;
     
-    public Ruby getRuntime() {
+    public final Ruby getRuntime() {
         return runtime;
     }
     
