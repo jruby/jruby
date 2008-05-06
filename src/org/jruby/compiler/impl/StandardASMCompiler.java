@@ -370,6 +370,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         
         methodCompiler.beginMethod(args, scope);
         
+        // Emite a nop, to mark the end of the method preamble
+        methodCompiler.method.nop();
+        
         return methodCompiler;
     }
 
