@@ -33,6 +33,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.util.Iterator;
+
+import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Region;
 import org.joni.exception.JOniException;
@@ -125,7 +128,41 @@ public class RubyMatchData extends RubyObject {
 
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect() {
-        return anyToString();
+        if (pattern == null) return anyToString();
+
+        RubyString result = getRuntime().newString();
+        result.cat((byte)'#').cat((byte)'<');
+        result.append(getMetaClass().getRealClass().to_s());
+
+        NameEntry[]names = new NameEntry[regs == null ? 1 : regs.numRegs];
+
+        if (pattern.numberOfNames() > 0) {
+            for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
+                NameEntry e = i.next();
+                for (int num : e.getBackRefs()) names[num] = e;
+            }
+        }
+
+        for (int i=0; i<names.length; i++) {
+            result.cat((byte)' ');
+            if (i > 0) {
+                NameEntry e = names[i];
+                if (e != null) {
+                    result.cat(e.name, e.nameP, e.nameEnd - e.nameP);
+                } else {
+                    result.cat((byte)('0' + i));
+                }
+                result.cat((byte)':');
+            }
+            IRubyObject v = RubyRegexp.nth_match(i, this);
+            if (v.isNil()) {
+                result.cat("nil".getBytes());
+            } else {
+                result.append(v.inspect());
+            }
+        }
+
+        return result.cat((byte)'>');
     }
 
     /** match_to_a

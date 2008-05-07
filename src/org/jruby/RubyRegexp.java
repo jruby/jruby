@@ -37,9 +37,11 @@ package org.jruby;
 
 import java.lang.ref.SoftReference;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.joni.Matcher;
+import org.joni.NameEntry;
 import org.joni.Option;
 import org.joni.Regex;
 import org.joni.Region;
@@ -1154,6 +1156,40 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
             return recv.callMethod(context, "new", _args);
         }
     }
+
+    /** rb_reg_names
+     * 
+     */
+    @JRubyMethod(name = "names", compat = CompatVersion.RUBY1_9)
+    public IRubyObject names() {
+        if (pattern.numberOfNames() == 0) return getRuntime().newEmptyArray();
+        
+        RubyArray ary = getRuntime().newArray(pattern.numberOfNames());
+        for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
+            NameEntry e = i.next();
+            ary.append(RubyString.newString(getRuntime(), e.name, e.nameP, e.nameEnd - e.nameP));
+        }
+        return ary;
+    }
+
+    /** rb_reg_named_captures
+     * 
+     */
+    @JRubyMethod(name = "named_captures", compat = CompatVersion.RUBY1_9)
+    public IRubyObject named_captures() {
+        RubyHash hash = RubyHash.newHash(getRuntime());
+        if (pattern.numberOfNames() == 0) return hash;
+        
+        for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
+            NameEntry e = i.next();
+            int[]backrefs = e.getBackRefs();
+            RubyArray ary = getRuntime().newArray(backrefs.length);
+
+            for (int backref : backrefs) ary.append(RubyFixnum.newFixnum(getRuntime(), backref));
+            hash.fastASet(RubyString.newString(getRuntime(), e.name, e.nameP, e.nameEnd - e.nameP), ary);
+        }
+        return hash;
+    }    
 
     public static RubyRegexp unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         RubyRegexp result = newRegexp(input.getRuntime(), input.unmarshalString(), input.unmarshalInt(), false);
