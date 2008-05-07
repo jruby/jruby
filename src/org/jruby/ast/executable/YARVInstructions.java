@@ -157,7 +157,7 @@ public abstract class YARVInstructions {
     public static final int UNIFIED_GETLOCAL_GETLOCAL = 119;
     public static final int UNIFIED_GETLOCAL_PUTOBJECT = 120;
 
-    public static final Map INSTS_TO_INDEX = new HashMap();
+    public static final Map<String, Integer> INSTS_TO_INDEX = new HashMap<String, Integer>();
     static {
         INSTS_TO_INDEX.put("nop",new Integer(0));
         INSTS_TO_INDEX.put("getlocal",new Integer(1));

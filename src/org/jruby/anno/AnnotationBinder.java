@@ -45,23 +45,23 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
     }
 
     public AnnotationProcessor getProcessorFor(
-            Set<AnnotationTypeDeclaration> atds,
-            AnnotationProcessorEnvironment env) {
+                                               Set<AnnotationTypeDeclaration> atds,
+                                               AnnotationProcessorEnvironment env) {
         return new AnnotationBindingProcessor(env);
     }
 
     private static class AnnotationBindingProcessor implements AnnotationProcessor {
         private final AnnotationProcessorEnvironment env;
-        private final List<String> classNames = new ArrayList();
+        private final List<String> classNames = new ArrayList<String>();
         
         AnnotationBindingProcessor(AnnotationProcessorEnvironment env) {
             this.env = env;
         }
 
         public void process() {
-	    for (TypeDeclaration typeDecl : env.getSpecifiedTypeDeclarations())
-		typeDecl.accept(getDeclarationScanner(new RubyClassVisitor(),
-						      NO_OP));
+            for (TypeDeclaration typeDecl : env.getSpecifiedTypeDeclarations())
+                typeDecl.accept(getDeclarationScanner(new RubyClassVisitor(),
+                                                      NO_OP));
             
             try {
                 FileWriter fw = new FileWriter("src_gen/annotated_classes.txt");
@@ -75,7 +75,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
             }
         }
 
-	private class RubyClassVisitor extends SimpleDeclarationVisitor {
+        private class RubyClassVisitor extends SimpleDeclarationVisitor {
             private PrintStream out;
             private static final boolean DEBUG = false;
             public void visitClassDeclaration(ClassDeclaration cd) {
@@ -108,12 +108,12 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     out.println("        DynamicMethod moduleMethod;");
                     out.println("        CompatVersion compatVersion = cls.getRuntime().getInstanceConfig().getCompatVersion();");
 
-                    Map<String, List<MethodDeclaration>> annotatedMethods = new HashMap();
-                    Map<String, List<MethodDeclaration>> staticAnnotatedMethods = new HashMap();
-                    Map<String, List<MethodDeclaration>> annotatedMethods1_8 = new HashMap();
-                    Map<String, List<MethodDeclaration>> staticAnnotatedMethods1_8 = new HashMap();
-                    Map<String, List<MethodDeclaration>> annotatedMethods1_9 = new HashMap();
-                    Map<String, List<MethodDeclaration>> staticAnnotatedMethods1_9 = new HashMap();
+                    Map<String, List<MethodDeclaration>> annotatedMethods = new HashMap<String, List<MethodDeclaration>>();
+                    Map<String, List<MethodDeclaration>> staticAnnotatedMethods = new HashMap<String, List<MethodDeclaration>>();
+                    Map<String, List<MethodDeclaration>> annotatedMethods1_8 = new HashMap<String, List<MethodDeclaration>>();
+                    Map<String, List<MethodDeclaration>> staticAnnotatedMethods1_8 = new HashMap<String, List<MethodDeclaration>>();
+                    Map<String, List<MethodDeclaration>> annotatedMethods1_9 = new HashMap<String, List<MethodDeclaration>>();
+                    Map<String, List<MethodDeclaration>> staticAnnotatedMethods1_9 = new HashMap<String, List<MethodDeclaration>>();
 
                     int methodCount = 0;
                     for (MethodDeclaration md : cd.getMethods()) {
@@ -146,7 +146,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
 
                         methodDescs = methodsHash.get(name);
                         if (methodDescs == null) {
-                            methodDescs = new ArrayList();
+                            methodDescs = new ArrayList<MethodDeclaration>();
                             methodsHash.put(name, methodDescs);
                         }
 
@@ -226,12 +226,12 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     int actualRequired = calculateActualRequired(md.getParameters().size(), anno.optional(), anno.rest(), isStatic, hasContext, hasBlock);
                     
                     String annotatedBindingName = CodegenUtils.getAnnotatedBindingClassName(
-                            md.getSimpleName(),
-                            qualifiedName,
-                            isStatic,
-                            actualRequired,
-                            anno.optional(),
-                            false);
+                                                                                            md.getSimpleName(),
+                                                                                            qualifiedName,
+                                                                                            isStatic,
+                                                                                            actualRequired,
+                                                                                            anno.optional(),
+                                                                                            false);
                     
                     out.println("        javaMethod = new " + annotatedBindingName + "(cls, Visibility." + anno.visibility() + ");");
                     out.println("        javaMethod.setArity(Arity.createArity(" + getArityValue(anno, actualRequired) + "));");
@@ -259,12 +259,12 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     int actualRequired = calculateActualRequired(md.getParameters().size(), anno.optional(), anno.rest(), isStatic, hasContext, hasBlock);
                     
                     String annotatedBindingName = CodegenUtils.getAnnotatedBindingClassName(
-                            md.getSimpleName(),
-                            qualifiedName,
-                            isStatic,
-                            actualRequired,
-                            anno.optional(),
-                            true);
+                                                                                            md.getSimpleName(),
+                                                                                            qualifiedName,
+                                                                                            isStatic,
+                                                                                            actualRequired,
+                                                                                            anno.optional(),
+                                                                                            true);
                     
                     out.println("        javaMethod = new " + annotatedBindingName + "(cls, Visibility." + anno.visibility() + ");");
                     out.println("        javaMethod.setArity(Arity.OPTIONAL);");
@@ -350,8 +350,8 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     }
                 }
                 // TODO: compat version
-//                if(jrubyMethod.compat() == CompatVersion.BOTH ||
-//                        module.getRuntime().getInstanceConfig().getCompatVersion() == jrubyMethod.compat()) {
+                //                if(jrubyMethod.compat() == CompatVersion.BOTH ||
+                //                        module.getRuntime().getInstanceConfig().getCompatVersion() == jrubyMethod.compat()) {
                 //RubyModule metaClass = module.metaClass;
 
                 if (jrubyMethod.meta()) {
@@ -394,7 +394,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                         out.println("        moduleMethod = javaMethod.dup();");
                         out.println("        moduleMethod.setVisibility(Visibility.PUBLIC);");
 
-//                        RubyModule singletonClass = module.getSingletonClass();
+                        //                        RubyModule singletonClass = module.getSingletonClass();
 
                         if (jrubyMethod.name().length == 0) {
                             baseName = md.getSimpleName();
@@ -413,9 +413,9 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                         }
                     }
                 }
-//                }
+                //                }
             }
-	}
+        }
         
         public static int getArityValue(JRubyMethod anno, int actualRequired) {
             if (anno.optional() > 0 || anno.rest()) {
