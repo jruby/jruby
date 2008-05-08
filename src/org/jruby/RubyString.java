@@ -194,7 +194,7 @@ public class RubyString extends RubyObject {
         return shared;
     }
 
-    private final void modifyCheck() {
+    final void modifyCheck() {
         if ((flags & FROZEN_F) != 0) throw getRuntime().newFrozenError("string" + getMetaClass().getName());           
 
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
@@ -3330,10 +3330,16 @@ public class RubyString extends RubyObject {
         return Pack.unpack(getRuntime(), this.value, stringValue(obj).value);
     }
 
+    public void empty() {
+        value = ByteList.EMPTY_BYTELIST;
+        shareLevel = SHARE_LEVEL_BYTELIST;
+    }
+
     /**
      * Mutator for internal string representation.
      *
      * @param value The new java.lang.String this RubyString should encapsulate
+     * @deprecated
      */
     public void setValue(CharSequence value) {
         view(ByteList.plain(value));

@@ -36,6 +36,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 public class RubyArgsFile {
     private static final class ArgsFileData {
@@ -59,7 +60,7 @@ public class RubyArgsFile {
             if (args.getLength() == 0) {
                 if (!startedProcessing) { 
                     currentFile = runtime.getGlobalVariables().get("$stdin");
-                    ((RubyString) runtime.getGlobalVariables().get("$FILENAME")).setValue(new StringBuffer("-"));
+                    ((RubyString) runtime.getGlobalVariables().get("$FILENAME")).setValue(new ByteList(new byte[]{'-'}));
                     currentLineNumber = 0;
                     startedProcessing = true;
                     return true;
@@ -69,13 +70,15 @@ public class RubyArgsFile {
                 }
             }
 
-            String filename = args.shift().toString();
-            ((RubyString) runtime.getGlobalVariables().get("$FILENAME")).setValue(new StringBuffer(filename));
+            args.shift();
+            RubyString filename = (RubyString)args.to_s();
+            ByteList filenameBytes = filename.getByteList();
+            ((RubyString) runtime.getGlobalVariables().get("$FILENAME")).setValue(filenameBytes);
 
-            if (filename.equals("-")) {
+            if (filenameBytes.length() == 1 && filenameBytes.get(0) == '-') {
                 currentFile = runtime.getGlobalVariables().get("$stdin");
             } else {
-                currentFile = RubyFile.open(context, runtime.getFile(), new IRubyObject[] {runtime.newString(filename)}, Block.NULL_BLOCK); 
+                currentFile = RubyFile.open(context, runtime.getFile(), new IRubyObject[] {filename.strDup()}, Block.NULL_BLOCK); 
             }
             
             startedProcessing = true;

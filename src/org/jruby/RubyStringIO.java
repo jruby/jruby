@@ -609,8 +609,8 @@ public class RubyStringIO extends RubyObject {
         
         if (closedRead && !modes.isAppendable()) {
             // if doing explicit write mode, truncate incoming string
-            internal.modify();
-            internal.setValue("");
+            internal.modifyCheck(); // prevent eventual COW
+            internal.empty();
         }
         
         return this;
