@@ -56,7 +56,6 @@ public class RubyArgsFile {
             }
 
             RubyArray args = (RubyArray)runtime.getGlobalVariables().get("$*");
-
             if (args.getLength() == 0) {
                 if (!startedProcessing) { 
                     currentFile = runtime.getGlobalVariables().get("$stdin");
@@ -70,8 +69,8 @@ public class RubyArgsFile {
                 }
             }
 
-            args.shift();
-            RubyString filename = (RubyString)args.to_s();
+            IRubyObject arg = args.shift();
+            RubyString filename = (RubyString)((RubyObject)arg).to_s();
             ByteList filenameBytes = filename.getByteList();
             ((RubyString) runtime.getGlobalVariables().get("$FILENAME")).setValue(filenameBytes);
 
