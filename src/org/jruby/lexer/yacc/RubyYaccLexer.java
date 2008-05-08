@@ -1338,20 +1338,19 @@ public class RubyYaccLexer {
                 LexState state = lex_state;
 
                 lex_state = keyword.state;
-                if (lex_state == LexState.EXPR_FNAME) {
+                if (state == LexState.EXPR_FNAME) {
                     yaccValue = new Token(keyword.name, getPosition());
                 } else {
                     yaccValue = new Token(tempVal, getPosition());
-                }
-                if (keyword.id0 == Tokens.kDO) {
-                    if (conditionState.isInState()) return Tokens.kDO_COND;
+                    if (keyword.id0 == Tokens.kDO) {
+                        if (conditionState.isInState()) return Tokens.kDO_COND;
 
-                    if (state != LexState.EXPR_CMDARG && cmdArgumentState.isInState()) {
-                        return Tokens.kDO_BLOCK;
+                        if (state != LexState.EXPR_CMDARG && cmdArgumentState.isInState()) {
+                            return Tokens.kDO_BLOCK;
+                        }
+                        if (state == LexState.EXPR_ENDARG) return Tokens.kDO_BLOCK;
+                        return Tokens.kDO;
                     }
-                    if (state == LexState.EXPR_ENDARG) return Tokens.kDO_BLOCK;
-
-                    return Tokens.kDO;
                 }
 
                 if (state == LexState.EXPR_BEG) return keyword.id0;

@@ -26,4 +26,12 @@ class TestParsing < Test::Unit::TestCase
     s = "proc{\n}"
     eval s, binding, "file.rb", 0
   end
+  
+  # JRUBY-2499
+  def test_parse_of_do_symbol
+    foo :do
+  end
+  
+  def foo(*args)
+  end
 end
