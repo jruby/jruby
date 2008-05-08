@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.jruby.ast.executable.Script;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Constants;
@@ -166,7 +167,7 @@ public class RubyInstanceConfig {
 
     public static final boolean NATIVE_NET_PROTOCOL
             = SafePropertyAccessor.getBoolean("jruby.native.net.protocol", false);
-    
+
     public static boolean nativeEnabled = true;
 
     public static interface LoadServiceCreator {
@@ -300,6 +301,8 @@ public class RubyInstanceConfig {
                 //.append("  -x[directory]   strip off text before #!ruby line and perhaps cd to directory\n")
                 .append("  -X[option]      enable extended option (omit option to list)\n")
                 .append("  --copyright     print the copyright\n")
+                .append("  --debug         sets the execution mode most suitable for debugger functionality\n")
+                .append("  --jdb           runs JRuby process under JDB\n")
                 .append("  --properties    List all configuration Java properties (pass -J-Dproperty=value)\n")
                 .append("  --version       print the version\n");
 
@@ -832,6 +835,10 @@ public class RubyInstanceConfig {
                         shouldRunInterpreter = false;
                         break FOR;
                     } else if (argument.equals("--debug")) {
+                        compileMode = CompileMode.OFF;
+                        System.setProperty("jruby.reflection", "true");
+                        break FOR;
+                    } else if (argument.equals("--jdb")) {
                         debug = true;
                         verbose = Boolean.TRUE;
                         break;

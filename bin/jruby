@@ -104,7 +104,7 @@ do
      # Run with the instrumented profiler: http://jiprof.sourceforge.net/
      --profile) PROFILE_ARGS="-javaagent:$JRUBY_HOME/lib/profile.jar -Dprofile.properties=$JRUBY_HOME/lib/profile.properties" ;;
      # Run under JDB
-     --debug)
+     --jdb)
         if [ -z "$JAVA_HOME" ] ; then
           JAVA_CMD='jdb'
         else
