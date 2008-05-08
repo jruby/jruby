@@ -41,6 +41,7 @@ import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /** Implementation of the Integer class.
  *
@@ -195,7 +196,7 @@ public abstract class RubyInteger extends RubyNumeric {
         if (getLongValue() < 0 || getLongValue() > 0xff) {
             throw getRuntime().newRangeError(this.toString() + " out of char range");
         }
-        return getRuntime().newString(new String(new char[] { (char) getLongValue() }));
+        return RubyString.newString(getRuntime(), new ByteList(new byte[]{(byte)getLongValue()}, false)); 
     }
 
     /** int_to_i
