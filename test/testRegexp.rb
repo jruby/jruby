@@ -202,3 +202,18 @@ test_ok Regexp.new("foo").send(:initialize_copy, Regexp.new("bar"))
 test_exception(SecurityError){/foo/.send(:initialize, "bar")}
 test_exception(SecurityError){/foo/.send(:initialize_copy, Regexp.new("bar"))}
 test_no_exception{Regexp.new("a", 0, "")}
+
+
+/c(.)t/ =~ 'cat'                    
+test_equal MatchData, Regexp.last_match.class
+test_equal 'cat', Regexp.last_match(0)
+test_equal 'a', Regexp.last_match(1)
+test_equal nil, Regexp.last_match(2)
+
+x = ["fb"]
+poo = /^f(.+)$/
+test_equal ['b'], x.grep(poo){|z| Regexp.last_match(1)}
+
+x = "fb".."fc"
+poo = /^f(.+)$/
+test_equal ['b','c'], x.grep(poo){|z| Regexp.last_match(1)}

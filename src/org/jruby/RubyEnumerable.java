@@ -197,9 +197,11 @@ public class RubyEnumerable {
         if (block.isGiven()) {
             callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                    context.setRubyFrameDelta(context.getRubyFrameDelta()+2);
                     if (pattern.callMethod(context, MethodIndex.OP_EQQ, "===", largs[0]).isTrue()) {
                         result.append(block.yield(context, largs[0]));
                     }
+                    context.setRubyFrameDelta(context.getRubyFrameDelta()-2);
                     return runtime.getNil();
                 }
             });

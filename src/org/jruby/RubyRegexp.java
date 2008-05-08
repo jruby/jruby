@@ -515,7 +515,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
      */
     public int search(ThreadContext context, RubyString str, int pos, boolean reverse) {
         Ruby runtime = getRuntime();
-        Frame frame = context.getCurrentFrame();
+        Frame frame = context.getCurrentRubyFrame();
 
         ByteList value = str.getByteList();
         if (pos > value.realSize || pos < 0) {

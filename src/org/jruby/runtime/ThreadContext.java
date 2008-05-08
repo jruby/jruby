@@ -98,6 +98,13 @@ public final class ThreadContext {
     
     // Line where current executing unit is being evaluated
     private int line = 0;
+
+    // In certain places, like grep, we don't use real frames for the
+    // call blocks. This has the effect of not setting the backref in
+    // the correct frame - this delta is activated to the place where
+    // the grep is running in so that the backref will be set in an
+    // appropriate place.
+    private int rubyFrameDelta = 0;
     
     /**
      * Constructor for Context.
@@ -346,6 +353,18 @@ public final class ThreadContext {
     
     public Frame getCurrentFrame() {
         return frameStack[frameIndex];
+    }
+
+    public int getRubyFrameDelta() {
+        return this.rubyFrameDelta;
+    }
+    
+    public void setRubyFrameDelta(int newDelta) {
+        this.rubyFrameDelta = newDelta;
+    }
+
+    public Frame getCurrentRubyFrame() {
+        return frameStack[frameIndex-rubyFrameDelta];
     }
     
     public Frame getNextFrame() {
