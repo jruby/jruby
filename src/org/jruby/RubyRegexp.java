@@ -1114,7 +1114,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
         } else {
             KCode kcode = null;
             IRubyObject kcode_re = recv.getRuntime().getNil();
-            RubyString source = recv.getRuntime().newString("");
+            RubyString source = recv.getRuntime().newString();
             IRubyObject[] _args = new IRubyObject[3];
 
             for(int i = 0; i < args.length; i++) {

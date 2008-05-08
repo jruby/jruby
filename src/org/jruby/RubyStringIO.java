@@ -114,7 +114,7 @@ public class RubyStringIO extends RubyObject {
         Object modeArgument = null;
         switch (args.length) {
             case 0:
-                internal = getRuntime().newString("");
+                internal = RubyString.newEmptyString(getRuntime());
                 modeArgument = "r+";
                 break;
             case 1:

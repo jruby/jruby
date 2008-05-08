@@ -220,7 +220,7 @@ public class RubyIconv extends RubyObject {
     public IRubyObject close() {
         toEncoding = null;
         fromEncoding = null;
-        return getRuntime().newString("");
+        return RubyString.newEmptyString(getRuntime());
     }
 
     @JRubyMethod(name = "iconv", required = 1, optional = 2)
@@ -233,7 +233,7 @@ public class RubyIconv extends RubyObject {
         if (args[0].isNil()) {
             fromEncoding.reset();
             toEncoding.reset();
-            return runtime.newString("");
+            return RubyString.newEmptyString(getRuntime());
         }
         if (!args[0].respondsTo("to_str")) {
             throw runtime.newTypeError("can't convert " + args[0].getMetaClass() + " into String");
@@ -288,7 +288,7 @@ public class RubyIconv extends RubyObject {
     
     @JRubyMethod(name = "conv", required = 3, rest = true, meta = true)
     public static IRubyObject conv(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        return convertWithArgs(recv, args, "conv").join(context, recv.getRuntime().newString(""));
+        return convertWithArgs(recv, args, "conv").join(context, RubyString.newEmptyString(recv.getRuntime()));
     }
     
     public static RubyArray convertWithArgs(IRubyObject recv, IRubyObject[] args, String function) {

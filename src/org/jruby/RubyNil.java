@@ -106,7 +106,7 @@ public class RubyNil extends RubyObject {
      */
     @JRubyMethod(name = "to_s")
     public static RubyString to_s(IRubyObject recv) {
-        return recv.getRuntime().newString("");
+        return RubyString.newEmptyString(recv.getRuntime());
     }
     
     /** nil_to_a

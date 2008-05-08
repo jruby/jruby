@@ -836,7 +836,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     public IRubyObject checkStringType() {
         IRubyObject str = TypeConverter.convertToTypeWithCheck(this, getRuntime().getString(), MethodIndex.TO_STR, "to_str");
         if(!str.isNil() && !(str instanceof RubyString)) {
-            str = getRuntime().newString("");
+            str = RubyString.newEmptyString(getRuntime());
         }
         return str;
     }

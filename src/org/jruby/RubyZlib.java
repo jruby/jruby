@@ -337,7 +337,7 @@ public class RubyZlib {
                 finished = true;
                 return internalFinish();
             }
-            return getRuntime().newString("");
+            return RubyString.newEmptyString(getRuntime());
         }
 
         @JRubyMethod(name = "avail_in")
@@ -850,7 +850,7 @@ public class RubyZlib {
             	return RubyString.newString(getRuntime(),new ByteList(buffer,0,len-toRead,false));
             }
                 
-            return getRuntime().newString("");
+            return RubyString.newEmptyString(getRuntime());
         }
 
         @JRubyMethod(name = "lineno=", required = 1)

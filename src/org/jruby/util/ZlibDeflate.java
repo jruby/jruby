@@ -106,7 +106,7 @@ public class ZlibDeflate {
             if (flush == FINISH) {
                 return finish();
             }
-            return runtime.newString("");
+            return RubyString.newEmptyString(runtime);
         }
     }
     

@@ -83,7 +83,7 @@ public class NetProtocolBufferedIO {
         recv.getInstanceVariables().setInstanceVariable("@io", io);
         recv.getInstanceVariables().setInstanceVariable("@read_timeout", recv.getRuntime().newFixnum(60));
         recv.getInstanceVariables().setInstanceVariable("@debug_output", recv.getRuntime().getNil());
-        recv.getInstanceVariables().setInstanceVariable("@rbuf", recv.getRuntime().newString(""));
+        recv.getInstanceVariables().setInstanceVariable("@rbuf", RubyString.newEmptyString(recv.getRuntime()));
 
         return recv;
     }

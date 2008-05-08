@@ -137,12 +137,13 @@ public class RubyJRuby {
     public static IRubyObject compile(IRubyObject recv, IRubyObject[] args, Block block) {
         Node node;
         String filename;
-        RubyString content = recv.getRuntime().newString("");
+        RubyString content;
         if(block.isGiven()) {
             Arity.checkArgumentCount(recv.getRuntime(),args,0,0);
             if(block.getBody() instanceof org.jruby.runtime.CompiledBlock) {
                 throw new RuntimeException("Cannot compile an already compiled block. Use -J-Djruby.jit.enabled=false to avoid this problem.");
             }
+            content = RubyString.newEmptyString(recv.getRuntime());
             Node bnode = ((InterpretedBlock)block.getBody()).getIterNode().getBodyNode();
             node = new org.jruby.ast.RootNode(bnode.getPosition(), block.getBinding().getDynamicScope(), bnode);
             filename = "__block_" + node.getPosition().getFile();

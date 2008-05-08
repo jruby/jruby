@@ -131,7 +131,7 @@ public class JavaObject extends RubyObject {
 
             return getRuntime().getNil();
         }
-        return getRuntime().newString("");
+        return RubyString.newEmptyString(getRuntime());
     }
 
     @JRubyMethod(name = {"==", "eql?"}, required = 1)

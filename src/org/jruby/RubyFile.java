@@ -675,7 +675,7 @@ public class RubyFile extends RubyIO {
             if (name.length() > 1 && name.charAt(1) == ':' && Character.isLetter(name.charAt(0))) {
                 switch (name.length()) {
                 case 2:
-                    return recv.getRuntime().newString("").infectBy(args[0]);
+                    return RubyString.newEmptyString(recv.getRuntime()).infectBy(args[0]);
                 case 3:
                     return recv.getRuntime().newString(name.substring(2)).infectBy(args[0]);
                 default:
