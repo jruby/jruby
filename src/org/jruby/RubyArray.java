@@ -484,7 +484,7 @@ public class RubyArray extends RubyObject implements List {
      */
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s() {
-        if (realLength == 0) return getRuntime().newString("");
+        if (realLength == 0) return RubyString.newEmptyString(getRuntime());
 
         return join(getRuntime().getCurrentContext(), getRuntime().getGlobalVariables().get("$,"));
     }
@@ -1363,7 +1363,7 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public RubyString join(ThreadContext context, IRubyObject sep) {
-        if (realLength == 0) return getRuntime().newString("");
+        if (realLength == 0) return RubyString.newEmptyString(getRuntime());
 
         boolean taint = isTaint() || sep.isTaint();
 

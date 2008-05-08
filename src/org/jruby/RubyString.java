@@ -1862,7 +1862,7 @@ public class RubyString extends RubyObject {
         IRubyObject result = op_aref(context, arg0);
         if (result.isNil()) return result;
 
-        op_aset(context, arg0, newString(""));
+        op_aset(context, arg0, RubyString.newEmptyString(getRuntime()));
         return result;
     }
 
@@ -1874,7 +1874,7 @@ public class RubyString extends RubyObject {
         IRubyObject result = op_aref(context, arg0, arg1);
         if (result.isNil()) return result;
 
-        op_aset(context, arg0, arg1, newString(""));
+        op_aset(context, arg0, arg1, RubyString.newEmptyString(getRuntime()));
         return result;
     }
 
