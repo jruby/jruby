@@ -1186,7 +1186,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
             RubyArray ary = getRuntime().newArray(backrefs.length);
 
             for (int backref : backrefs) ary.append(RubyFixnum.newFixnum(getRuntime(), backref));
-            hash.fastASet(RubyString.newString(getRuntime(), e.name, e.nameP, e.nameEnd - e.nameP), ary);
+            hash.fastASet(RubyString.newString(getRuntime(), e.name, e.nameP, e.nameEnd - e.nameP).freeze(), ary);
         }
         return hash;
     }    
