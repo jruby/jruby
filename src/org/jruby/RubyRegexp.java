@@ -1163,11 +1163,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     @JRubyMethod(name = "names", compat = CompatVersion.RUBY1_9)
     public IRubyObject names() {
         if (pattern.numberOfNames() == 0) return getRuntime().newEmptyArray();
-        
+
         RubyArray ary = getRuntime().newArray(pattern.numberOfNames());
         for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
             NameEntry e = i.next();
-            ary.append(RubyString.newString(getRuntime(), e.name, e.nameP, e.nameEnd - e.nameP));
+            ary.append(RubyString.newStringShared(getRuntime(), e.name, e.nameP, e.nameEnd - e.nameP));
         }
         return ary;
     }
@@ -1179,14 +1179,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     public IRubyObject named_captures() {
         RubyHash hash = RubyHash.newHash(getRuntime());
         if (pattern.numberOfNames() == 0) return hash;
-        
+
         for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
             NameEntry e = i.next();
             int[]backrefs = e.getBackRefs();
             RubyArray ary = getRuntime().newArray(backrefs.length);
 
             for (int backref : backrefs) ary.append(RubyFixnum.newFixnum(getRuntime(), backref));
-            hash.fastASet(RubyString.newString(getRuntime(), e.name, e.nameP, e.nameEnd - e.nameP).freeze(), ary);
+            hash.fastASet(RubyString.newStringShared(getRuntime(), e.name, e.nameP, e.nameEnd - e.nameP).freeze(), ary);
         }
         return hash;
     }    

@@ -1664,9 +1664,9 @@ public class ASTInterpreter {
     }
 
     private static IRubyObject strNode(Ruby runtime, Node node) {
-        return runtime.newStringShared((ByteList) ((StrNode) node).getValue());
+        return RubyString.newStringShared(runtime, (ByteList) ((StrNode) node).getValue());
     }
-    
+
     private static IRubyObject superNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         RuntimeHelpers.checkSuperDisabledOrOutOfMethod(context);
 
@@ -1814,7 +1814,7 @@ public class ASTInterpreter {
     }
 
     private static IRubyObject xStrNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self) {
-        return self.callMethod(context, "`", runtime.newStringShared((ByteList) ((XStrNode) node).getValue()));
+        return self.callMethod(context, "`", RubyString.newStringShared(runtime, (ByteList) ((XStrNode) node).getValue()));
     }
 
     private static IRubyObject yieldNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {

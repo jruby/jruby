@@ -262,7 +262,7 @@ public class RubyIconv extends RubyObject {
         }
         
         if (start < 0 || end < start) { // invalid ranges result in an empty string
-            return getRuntime().newString();
+            return RubyString.newEmptyString(getRuntime());
         }
         
         ByteBuffer buf = ByteBuffer.wrap(bytes.unsafeBytes(), bytes.begin() + start, end - start);

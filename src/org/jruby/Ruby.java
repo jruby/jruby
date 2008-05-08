@@ -2182,7 +2182,7 @@ public final class Ruby {
     }
 
     public RubyString newString() {
-        return RubyString.newString(this, "");
+        return RubyString.newString(this, new ByteList());
     }
 
     public RubyString newString(String string) {
@@ -2192,7 +2192,8 @@ public final class Ruby {
     public RubyString newString(ByteList byteList) {
         return RubyString.newString(this, byteList);
     }
-    
+
+    @Deprecated
     public RubyString newStringShared(ByteList byteList) {
         return RubyString.newStringShared(this, byteList);
     }    

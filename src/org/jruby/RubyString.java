@@ -90,14 +90,10 @@ public class RubyString extends RubyObject {
 
     private static ObjectAllocator STRING_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            RubyString newString = runtime.newStringShared(ByteList.EMPTY_BYTELIST);
-            
-            newString.setMetaClass(klass);
-            
-            return newString;
+            return RubyString.newEmptyString(runtime, klass);
         }
     };
-    
+
     public static RubyClass createStringClass(Ruby runtime) {
         RubyClass stringClass = runtime.defineClass("String", runtime.getObject(), STRING_ALLOCATOR);
         runtime.setString(stringClass);
@@ -126,7 +122,7 @@ public class RubyString extends RubyObject {
     private RubyString(Ruby runtime, RubyClass rubyClass, CharSequence value) {
         super(runtime, rubyClass);
         assert value != null;
-        this.value = new ByteList(ByteList.plain(value),false);
+        this.value = new ByteList(ByteList.plain(value), false);
     }
 
     private RubyString(Ruby runtime, RubyClass rubyClass, byte[] value) {
@@ -145,7 +141,101 @@ public class RubyString extends RubyObject {
         super(runtime, rubyClass, objectSpace);
         assert value != null;
         this.value = value;
+    }
+    
+
+    /** Create a new String which uses the same Ruby runtime and the same
+     *  class like this String.
+     *
+     *  This method should be used to satisfy RCR #38.
+     *  @deprecated  
+     */
+    public RubyString newString(CharSequence s) {
+        return new RubyString(getRuntime(), getType(), s);
+    }
+
+    /** Create a new String which uses the same Ruby runtime and the same
+     *  class like this String.
+     *
+     *  This method should be used to satisfy RCR #38.
+     *  @deprecated
+     */
+    public RubyString newString(ByteList s) {
+        return new RubyString(getRuntime(), getMetaClass(), s);
+    }
+
+    // Methods of the String class (rb_str_*):
+
+    /** rb_str_new2
+     *
+     */
+    public static RubyString newString(Ruby runtime, CharSequence str) {
+        return new RubyString(runtime, runtime.getString(), str);
+    }
+    
+    public static RubyString newEmptyString(Ruby runtime) {
+        return newEmptyString(runtime, runtime.getString());
+    }
+
+    public static RubyString newEmptyString(Ruby runtime, RubyClass metaClass) {
+        RubyString empty = new RubyString(runtime, metaClass, ByteList.EMPTY_BYTELIST);
+        empty.shareLevel = SHARE_LEVEL_BYTELIST;
+        return empty;
+    }
+
+    public static RubyString newUnicodeString(Ruby runtime, String str) {
+        try {
+            return new RubyString(runtime, runtime.getString(), new ByteList(str.getBytes("UTF8"), false));
+        } catch (UnsupportedEncodingException uee) {
+            return new RubyString(runtime, runtime.getString(), str);
+        }
+    }
+
+    @Deprecated
+    public static RubyString newString(Ruby runtime, RubyClass clazz, CharSequence str) {
+        return new RubyString(runtime, clazz, str);
+    }
+
+    public static RubyString newString(Ruby runtime, byte[] bytes) {
+        return new RubyString(runtime, runtime.getString(), bytes);
+    }
+
+    public static RubyString newString(Ruby runtime, byte[] bytes, int start, int length) {
+        byte[] copy = new byte[length];
+        System.arraycopy(bytes, start, copy, 0, length);
+        return new RubyString(runtime, runtime.getString(), new ByteList(copy, false));
+    }
+
+    public static RubyString newString(Ruby runtime, ByteList bytes) {
+        return new RubyString(runtime, runtime.getString(), bytes);
+    }
+
+    public static RubyString newStringLight(Ruby runtime, ByteList bytes) {
+        return new RubyString(runtime, runtime.getString(), bytes, false);
+    }
+
+    public static RubyString newStringShared(Ruby runtime, RubyString orig) {
+        orig.shareLevel = SHARE_LEVEL_BYTELIST;
+        RubyString str = new RubyString(runtime, runtime.getString(), orig.value);
+        str.shareLevel = SHARE_LEVEL_BYTELIST;
+        return str;
+    }       
+    
+    public static RubyString newStringShared(Ruby runtime, ByteList bytes) {
+        return newStringShared(runtime, runtime.getString(), bytes);
     }    
+
+    public static RubyString newStringShared(Ruby runtime, RubyClass clazz, ByteList bytes) {
+        RubyString str = new RubyString(runtime, clazz, bytes);
+        str.shareLevel = SHARE_LEVEL_BYTELIST;
+        return str;
+    }    
+
+    public static RubyString newStringShared(Ruby runtime, byte[] bytes, int start, int length) {
+        RubyString str = new RubyString(runtime, runtime.getString(), new ByteList(bytes, start, length, false));
+        str.shareLevel = SHARE_LEVEL_BUFFER;
+        return str;
+    }
 
     public int getNativeTypeIndex() {
         return ClassIndex.STRING;
@@ -469,92 +559,6 @@ public class RubyString extends RubyObject {
         // turning that off, and it's unclear if it was needed. Plus, we intern
         // 
         return toString();
-    }
-
-    /** Create a new String which uses the same Ruby runtime and the same
-     *  class like this String.
-     *
-     *  This method should be used to satisfy RCR #38.
-     *
-     */
-    public RubyString newString(CharSequence s) {
-        return new RubyString(getRuntime(), getType(), s);
-    }
-
-    /** Create a new String which uses the same Ruby runtime and the same
-     *  class like this String.
-     *
-     *  This method should be used to satisfy RCR #38.
-     *
-     */
-    public RubyString newString(ByteList s) {
-        return new RubyString(getRuntime(), getMetaClass(), s);
-    }
-
-    // Methods of the String class (rb_str_*):
-
-    /** rb_str_new2
-     *
-     */
-    public static RubyString newString(Ruby runtime, CharSequence str) {
-        return new RubyString(runtime, runtime.getString(), str);
-    }
-    
-    public static RubyString newEmptyString(Ruby runtime) {
-        return newEmptyString(runtime, runtime.getString());
-    }
-
-    public static RubyString newEmptyString(Ruby runtime, RubyClass metaClass) {
-        RubyString empty = new RubyString(runtime, metaClass, ByteList.EMPTY_BYTELIST);
-        empty.shareLevel = SHARE_LEVEL_BYTELIST;
-        return empty;
-    }
-
-    public static RubyString newUnicodeString(Ruby runtime, String str) {
-        try {
-            return new RubyString(runtime, runtime.getString(), new ByteList(str.getBytes("UTF8"), false));
-        } catch (UnsupportedEncodingException uee) {
-            return new RubyString(runtime, runtime.getString(), str);
-        }
-    }
-
-    public static RubyString newString(Ruby runtime, RubyClass clazz, CharSequence str) {
-        return new RubyString(runtime, clazz, str);
-    }
-
-    public static RubyString newString(Ruby runtime, byte[] bytes) {
-        return new RubyString(runtime, runtime.getString(), bytes);
-    }
-
-    public static RubyString newString(Ruby runtime, ByteList bytes) {
-        return new RubyString(runtime, runtime.getString(), bytes);
-    }
-
-    public static RubyString newStringLight(Ruby runtime, ByteList bytes) {
-        return new RubyString(runtime, runtime.getString(), bytes, false);
-    }
-
-    public static RubyString newStringShared(Ruby runtime, RubyString orig) {
-        orig.shareLevel = SHARE_LEVEL_BYTELIST;
-        RubyString str = new RubyString(runtime, runtime.getString(), orig.value);
-        str.shareLevel = SHARE_LEVEL_BYTELIST;
-        return str;
-    }       
-    
-    public static RubyString newStringShared(Ruby runtime, ByteList bytes) {
-        return newStringShared(runtime, runtime.getString(), bytes);
-    }    
-
-    public static RubyString newStringShared(Ruby runtime, RubyClass clazz, ByteList bytes) {
-        RubyString str = new RubyString(runtime, clazz, bytes);
-        str.shareLevel = SHARE_LEVEL_BYTELIST;
-        return str;
-    }    
-
-    public static RubyString newString(Ruby runtime, byte[] bytes, int start, int length) {
-        byte[] bytes2 = new byte[length];
-        System.arraycopy(bytes, start, bytes2, 0, length);
-        return new RubyString(runtime, runtime.getString(), new ByteList(bytes2, false));
     }
 
     public IRubyObject doClone(){

@@ -410,7 +410,7 @@ public class RubyStringIO extends RubyObject {
         // and we should avoid copy-paste.
         
         if (args.length == 0) {
-            callMethod(context, "write", getRuntime().newStringShared(NEWLINE));
+            callMethod(context, "write", RubyString.newStringShared(getRuntime(), NEWLINE));
             return getRuntime().getNil();
         }
 
@@ -431,7 +431,7 @@ public class RubyStringIO extends RubyObject {
             callMethod(context, "write", getRuntime().newString(line));
             
             if (!line.endsWith("\n")) {
-                callMethod(context, "write", getRuntime().newStringShared(NEWLINE));
+                callMethod(context, "write", RubyString.newStringShared(getRuntime(), NEWLINE));
             }
         }
         return getRuntime().getNil();

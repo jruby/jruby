@@ -1869,11 +1869,11 @@ public class RubyIO extends RubyObject {
         }
         return getRuntime().getNil();
     }
-    
+
     protected void write(ThreadContext context, ByteList byteList) {
-        callMethod(context, "write", getRuntime().newStringShared(byteList));
+        callMethod(context, "write", RubyString.newStringShared(getRuntime(), byteList));
     }
-    
+
     private IRubyObject inspectPuts(ThreadContext context, RubyArray array) {
         try {
             getRuntime().registerInspecting(array);
@@ -2188,13 +2188,13 @@ public class RubyIO extends RubyObject {
             // FIXME: I don't like the null checks here
             if (str == null) {
                 if (newBuffer == null) {
-                    str = getRuntime().newString();
+                    str = RubyString.newEmptyString(getRuntime());
                 } else {
                     str = RubyString.newString(getRuntime(), newBuffer);
                 }
             } else {
                 if (newBuffer == null) {
-                    str.setValue(ByteList.EMPTY_BYTELIST.dup());
+                    str.empty();
                 } else {
                     str.setValue(newBuffer);
                 }
@@ -2236,13 +2236,13 @@ public class RubyIO extends RubyObject {
 
         if (str == null) {
             if (newBuffer == null) {
-                str = RubyString.newStringShared(getRuntime(), ByteList.EMPTY_BYTELIST);
+                str = RubyString.newEmptyString(getRuntime());
             } else {
                 str = RubyString.newString(getRuntime(), newBuffer);
             }
         } else {
             if (newBuffer == null) {
-                str.setValue(ByteList.EMPTY_BYTELIST.dup());
+                str.empty();
             } else {
                 str.setValue(newBuffer);
             }
