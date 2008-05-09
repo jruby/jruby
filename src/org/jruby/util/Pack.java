@@ -1826,7 +1826,7 @@ public class Pack {
                     BigInteger bigInt = new BigInteger(stringVal);
                     
                     // we don't deal with negatives.
-                    if(bigInt.compareTo(new BigInteger("0")) >= 0) {
+                    if (bigInt.compareTo(BigInteger.ZERO) >= 0) {
                         int bitLength = bigInt.toString(2).length();
                         byte[] bytes = bigInt.toByteArray();
                         
