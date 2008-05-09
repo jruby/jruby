@@ -184,3 +184,7 @@ test_equal("Abc", s.string)
 test_exception(TypeError) { s.putc('') }
 test_exception(Errno::EINVAL) { s.seek(-40) }
 
+s = StringIO.new("foo\n", "r")
+s.gets
+s.gets
+test_equal(nil ,$_)
