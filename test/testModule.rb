@@ -435,3 +435,12 @@ end
 f.extend Module2330
 
 test_equal [1,2], f.bar(1, 2)
+
+# JRUBY-2503
+test_mod = nil
+m = Module.new do |mod|
+ test_mod = mod
+ test_equal true, (mod.kind_of? Module)
+ Object.new
+end
+test_equal m, test_mod
