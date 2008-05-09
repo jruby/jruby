@@ -436,12 +436,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "*", required = 1)
     public IRubyObject op_mul(ThreadContext context, IRubyObject arg) {
-        RubyBigDecimal val = getVpValue(arg, false);
-        if(val == null) {
-            return callCoerced(context, "*", arg);
-        }
-
-        return new RubyBigDecimal(getRuntime(),value.multiply(val.value)).setResult();
+        return mult2(context, arg, RubyFixnum.zero(context.getRuntime()));
     }
 
     @JRubyMethod(name = "mult", required = 2)
@@ -462,6 +457,12 @@ public class RubyBigDecimal extends RubyNumeric {
 
         if  ((isInfinity() && val.isZero()) || (isZero() && val.isInfinity())) {
             return newNaN(runtime);
+        }
+
+        if (isZero() || val.isZero()) {
+            int sign1 = isZero()? zeroSign : value.signum();
+            int sign2 = val.isZero() ?  val.zeroSign : val.value.signum();
+            return newZero(runtime, sign1 * sign2);
         }
 
         if (isInfinity() || val.isInfinity()) {
