@@ -459,8 +459,15 @@ public class RubyBigDecimal extends RubyNumeric {
         if (isNaN() || val.isNaN()) {
             return newNaN(runtime);
         }
+
         if  ((isInfinity() && val.isZero()) || (isZero() && val.isInfinity())) {
             return newNaN(runtime);
+        }
+
+        if (isInfinity() || val.isInfinity()) {
+            int sign1 = isInfinity() ? infinitySign : value.signum();
+            int sign2 = val.isInfinity() ? val.infinitySign : val.value.signum();
+            return newInfinity(runtime, sign1 * sign2);
         }
 
         BigDecimal res = value.multiply(val.value);
