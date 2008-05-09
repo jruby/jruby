@@ -112,3 +112,10 @@ test_equal({5=>["pelle"], 6=>["marcus"], 3=>["ola", "tom"], 4=>["bini", "pele"],
 test_equal({[5]=>["pelle"], [6]=>["marcus"], [3]=>["ola", "tom"], [4]=>["bini", "pele"], [10]=>["gustafsson"]},
            TestEnumerable.new(%w(ola bini gustafsson pelle tom marcus pele)).group_by{ |v| [v.length]})
 
+class Test2Enumerable
+    def == other
+        true
+    end
+end
+
+test_equal true, [Test2Enumerable.new].member?("foo")
