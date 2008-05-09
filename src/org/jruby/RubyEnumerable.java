@@ -364,7 +364,7 @@ public class RubyEnumerable {
             callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg = largs.length > 1 ? runtime.newArrayNoCopy(largs) : largs[0];
-                    if (arg.equalInternal(context, larg).isTrue()) {
+                    if (larg.equalInternal(context, arg).isTrue()) {
                         throw new JumpException(JumpException.JumpType.SpecialJump);
                     }
                     
