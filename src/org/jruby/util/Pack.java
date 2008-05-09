@@ -343,7 +343,8 @@ public class Pack {
         int lPrevChar = -1;
         byte[] l2Encode = i2Encode.bytes;
         try {
-            for (int i = i2Encode.begin;; i++) {
+            int end = i2Encode.begin + i2Encode.realSize;
+            for (int i = i2Encode.begin; i < end; i++) {
                 byte lCurChar = l2Encode[i];
                 if (lCurChar > 126 || (lCurChar < 32 && lCurChar != '\n' && lCurChar != '\t') || lCurChar == '=') {
                     io2Append.append('=');

@@ -74,4 +74,9 @@ class TestPack < Test::Unit::TestCase
       "M04%!04%!04%!04%!04%!04%!04%!04%!04%!04%!04%!04%!04%!04%!04%!\n%04%!04$`\n",
       ["A"*50].pack('u'))
   end
+
+  # JRUBY-2502
+  def test_pack_M_regression
+    assert_equal("ABCDEF=\n", ['ABCDEF'].pack('M'))
+  end
 end
