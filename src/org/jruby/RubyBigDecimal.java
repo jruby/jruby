@@ -770,16 +770,12 @@ public class RubyBigDecimal extends RubyNumeric {
         if (args.length > 0) {
             n = RubyNumeric.fix2int(args[0]);
         }
-
-        int precision = value.precision() - value.scale() + n;
-
-        if (precision >= 0) {
+        
+        if (value.scale() > n) { // rounding neccessary
             return new RubyBigDecimal(getRuntime(),
-                    value.round(new MathContext(precision, RoundingMode.CEILING)));
-        } else if (value.signum() < 0){
-            return new RubyBigDecimal(getRuntime(), BigDecimal.ZERO);
+                    value.setScale(n, RoundingMode.CEILING));
         } else {
-            return new RubyBigDecimal(getRuntime(), BigDecimal.ONE);
+            return this;
         }
     }
 
@@ -866,16 +862,12 @@ public class RubyBigDecimal extends RubyNumeric {
         if (args.length > 0) {
             n = RubyNumeric.fix2int(args[0]);
         }
-        
-        int precision = value.precision() - value.scale() + n;
-        
-        if (precision > 0) {
+
+        if (value.scale() > n) { // rounding neccessary
             return new RubyBigDecimal(getRuntime(),
-                    value.round(new MathContext(precision, RoundingMode.FLOOR)));
-        } else if (value.signum() < 0){
-            return new RubyBigDecimal(getRuntime(), new BigDecimal(-1));
+                    value.setScale(n, RoundingMode.FLOOR));
         } else {
-            return new RubyBigDecimal(getRuntime(), BigDecimal.ZERO);
+            return this;
         }
     }
  
