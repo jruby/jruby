@@ -1187,22 +1187,20 @@ public class RubyArray extends RubyObject implements List {
      * 
      */
     private IRubyObject inspectAry(ThreadContext context) {
-        StringBuffer buffer = new StringBuffer("[");
-        Ruby runtime = getRuntime();
+        ByteList buffer = new ByteList();
+        buffer.append('[');
         boolean tainted = isTaint();
 
         for (int i = 0; i < realLength; i++) {
-            RubyString s = RubyString.objAsString(context, values[begin + i].callMethod(context, "inspect"));
+            if (i > 0) buffer.append(',').append(' ');
 
-            if (s.isTaint()) tainted = true;
-
-            if (i > 0) buffer.append(", ");
-
-            buffer.append(s.toString());
+            RubyString str = inspect(context, values[begin + i]);
+            if (str.isTaint()) tainted = true;
+            buffer.append(str.getByteList());
         }
-        buffer.append("]");
+        buffer.append(']');
 
-        RubyString str = runtime.newString(buffer.toString());
+        RubyString str = getRuntime().newString(buffer);
         if (tainted) str.setTaint(true);
 
         return str;

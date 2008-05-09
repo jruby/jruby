@@ -197,8 +197,8 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
-        RubyString str = RubyString.objAsString(context, begin.callMethod(context, "inspect")).strDup();
-        RubyString str2 = RubyString.objAsString(context, end.callMethod(context, "inspect"));
+        RubyString str = inspect(context, begin).strDup();
+        RubyString str2 = inspect(context, end);
 
         str.cat(isExclusive ? DOTDOTDOT : DOTDOT);
         str.concat(str2);

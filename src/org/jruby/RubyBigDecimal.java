@@ -286,7 +286,7 @@ public class RubyBigDecimal extends RubyNumeric {
             String err;
             if (isImmediate()) {
                 ThreadContext context = getRuntime().getCurrentContext();
-                err = RubyString.objAsString(context, callMethod(context, "inspect")).toString();
+                err = inspect(context, this).toString();
             } else {
                 err = getMetaClass().getBaseName();
             }

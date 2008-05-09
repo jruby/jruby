@@ -1356,6 +1356,16 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         return part;
     }
 
+    /** rb_inspect
+     * 
+     * The internal helper that ensures a RubyString instance is returned
+     * so dangerous casting can be omitted
+     * Prefered over callMethod(context, "inspect") 
+     */
+    static RubyString inspect(ThreadContext context, IRubyObject object) {
+        return RubyString.objAsString(context, object.callMethod(context, "inspect"));
+    }    
+
     /** rb_obj_inspect
      *
      *  call-seq:

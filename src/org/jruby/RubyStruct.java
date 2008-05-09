@@ -46,6 +46,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
@@ -402,33 +403,40 @@ public class RubyStruct extends RubyObject {
         return runtime.getTrue();        
     }
 
-    @JRubyMethod(name = "to_s")
-    public IRubyObject to_s() {
-        return inspect();
-    }
-
-    @JRubyMethod(name = "inspect")
-    public IRubyObject inspect() {
+    /** inspect_struct
+    *
+    */
+    private IRubyObject inspectStruct(final ThreadContext context) {    
         RubyArray member = (RubyArray) getInternalVariable(classOf(), "__member__");
 
         assert !member.isNil() : "uninitialized struct";
 
-        StringBuffer sb = new StringBuffer(100);
-
-        sb.append("#<struct ").append(getMetaClass().getRealClass().getName()).append(' ');
+        ByteList buffer = new ByteList("#<struct ".getBytes());
+        buffer.append(getMetaClass().getRealClass().getRealClass().getName().getBytes());
+        buffer.append(' ');
 
         for (int i = 0,k=member.getLength(); i < k; i++) {
-            if (i > 0) {
-                sb.append(", ");
-            }
-
-            sb.append(member.eltInternal(i).asJavaString()).append("=");
-            sb.append(values[i].callMethod(getRuntime().getCurrentContext(), "inspect"));
+            if (i > 0) buffer.append(',').append(' ');
+            // FIXME: MRI has special case for constants here 
+            buffer.append(RubyString.objAsString(context, member.eltInternal(i)).getByteList());
+            buffer.append('=');
+            buffer.append(inspect(context, values[i]).getByteList());
         }
 
-        sb.append('>');
+        buffer.append('>');
+        return getRuntime().newString(buffer); // OBJ_INFECT        
+    }
 
-        return getRuntime().newString(sb.toString()); // OBJ_INFECT
+    @JRubyMethod(name = {"inspect", "to_s"})
+    public IRubyObject inspect(ThreadContext context) {
+        if (getRuntime().isInspecting(this)) return getRuntime().newString("#<struct " + getMetaClass().getRealClass().getName() + ":...>");
+
+        try {
+            getRuntime().registerInspecting(this);
+            return inspectStruct(context);
+        } finally {
+            getRuntime().unregisterInspecting(this);
+        }
     }
 
     @JRubyMethod(name = {"to_a", "values"})

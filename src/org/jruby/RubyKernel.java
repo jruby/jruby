@@ -331,7 +331,7 @@ public class RubyKernel {
 
         for (int i = 0; i < args.length; i++) {
             if (args[i] != null) {
-                defout.callMethod(context, "write", args[i].callMethod(context, "inspect"));
+                defout.callMethod(context, "write", RubyObject.inspect(context, args[i]));
                 defout.callMethod(context, "write", runtime.newString("\n"));
             }
         }

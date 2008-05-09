@@ -60,6 +60,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.ByteList;
 
 // Design overview:
 //
@@ -592,22 +593,24 @@ public class RubyHash extends RubyObject implements Map {
     /** inspect_hash
      *
      */
-    public IRubyObject inspectHash(final ThreadContext context) {
-        Ruby runtime = getRuntime();
-        final StringBuffer sb = new StringBuffer("{");
+    private IRubyObject inspectHash(final ThreadContext context) {
+        final ByteList buffer = new ByteList();
+        buffer.append('{');
         final boolean[] firstEntry = new boolean[1];
 
         firstEntry[0] = true;
         visitAll(new Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
-                if (!firstEntry[0]) sb.append(", ");
-                sb.append(key.callMethod(context, "inspect")).append("=>");
-                sb.append(value.callMethod(context, "inspect"));
+                if (!firstEntry[0]) buffer.append(',').append(' ');
+
+                buffer.append(inspect(context, key).getByteList());
+                buffer.append('=').append('>');
+                buffer.append(inspect(context, value).getByteList());
                 firstEntry[0] = false;
             }
         });
-        sb.append("}");
-        return runtime.newString(sb.toString());
+        buffer.append('}');
+        return getRuntime().newString(buffer);
     }
 
     /** rb_hash_inspect
@@ -621,7 +624,8 @@ public class RubyHash extends RubyObject implements Map {
         try {
             getRuntime().registerInspecting(this);
             return inspectHash(context);
-        } finally { getRuntime().unregisterInspecting(this);
+        } finally {
+            getRuntime().unregisterInspecting(this);
         }
     }
 
