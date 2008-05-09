@@ -1774,7 +1774,9 @@ public class Pack {
 
                         byte[] charsToEncode = lCurElemString.bytes;
                         for (int i = 0; i < lCurElemString.length(); i += occurrences) {
-                            encodes(runtime, result, charsToEncode, i + lCurElemString.begin, lCurElemString.length(), occurrences, (byte)type);
+                            encodes(runtime, result, charsToEncode,
+                                    i + lCurElemString.begin, lCurElemString.length() - i,
+                                    occurrences, (byte)type);
                         }
                     }
                     break;

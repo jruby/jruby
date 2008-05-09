@@ -63,4 +63,15 @@ class TestPack < Test::Unit::TestCase
     assert_raises(TypeError){ @char_array.pack("Q") }
     assert_raises(RangeError){ [(2**128)].pack("Q") }
   end
+
+  # JRUBY-2502
+  def test_pack_m_u_regression
+    assert_equal(
+      "QUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJD\nQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJD\nQUJD\n",
+      ["ABC"*31].pack('m'))
+
+    assert_equal(
+      "M04%!04%!04%!04%!04%!04%!04%!04%!04%!04%!04%!04%!04%!04%!04%!\n%04%!04$`\n",
+      ["A"*50].pack('u'))
+  end
 end
