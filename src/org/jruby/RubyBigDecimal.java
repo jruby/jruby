@@ -1231,7 +1231,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private IRubyObject floatingPointValue(String arg) {
-        String values[] = value.abs().stripTrailingZeros().toString().split("\\.");
+        String values[] = value.abs().stripTrailingZeros().toPlainString().split("\\.");
         String whole = "0";
         if (values.length > 0) {
             whole = values[0];
