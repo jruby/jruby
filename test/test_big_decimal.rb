@@ -214,4 +214,9 @@ class TestBigDecimal < Test::Unit::TestCase
     bd_serialized = Marshal.dump(bd)
     assert_equal f, Marshal.restore(bd_serialized).to_f
   end
+  
+  #JRUBY-2272
+  def test_marshal_regression
+    assert_equal BigDecimal('0.0'), Marshal.load(Marshal.dump(BigDecimal.new('0.0')))
+  end
 end
