@@ -19,6 +19,22 @@ import org.jruby.runtime.builtin.IRubyObject;
 public abstract class AbstractScript implements Script {
     public AbstractScript() {}
     
+    public IRubyObject __file__(ThreadContext context, IRubyObject self, Block block) {
+        return __file__(context, self, IRubyObject.NULL_ARRAY, block);
+    }
+    
+    public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject arg, Block block) {
+        return __file__(context, self, new IRubyObject[] {arg}, block);
+    }
+    
+    public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return __file__(context, self, new IRubyObject[] {arg1, arg2}, block);
+    }
+    
+    public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+        return __file__(context, self, new IRubyObject[] {arg1, arg2, arg3}, block);
+    }
+    
     public IRubyObject load(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
         return null;
     }

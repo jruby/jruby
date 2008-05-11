@@ -199,28 +199,56 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     String mnamePath = typePath + "Invoker" + method + arity;
                     ClassWriter cw = createCompiledCtor(mnamePath,sup);
                     SkinnyMethodAdapter mv = null;
+                    String signature = null;
                     boolean specificArity = false;
-                    if (scope.getRestArg() >= 0 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() != 1) {
-                        mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG_BLOCK, null, null));
+                    
+                    if (scope.getRestArg() >= 0 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() == 0 || scope.getRequiredArgs() > 3) {
+                        signature = COMPILED_CALL_SIG_BLOCK;
+                        mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", signature, null, null));
                     } else {
                         specificArity = true;
                         
                         mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG_BLOCK, null, null));
                         mv.start();
+                        
+                        // check arity
+                        mv.aload(1);
+                        mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
+                        mv.aload(5);
+                        mv.pushInt(scope.getRequiredArgs());
+                        mv.pushInt(scope.getRequiredArgs());
+                        mv.invokestatic(p(Arity.class), "checkArgumentCount", sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
+                        mv.pop();
+                        
                         mv.aload(0);
                         mv.aload(1);
                         mv.aload(2);
                         mv.aload(3);
                         mv.aload(4);
-                        mv.aload(5);
-                        mv.ldc(0);
-                        mv.arrayload();
+                        for (int i = 0; i < scope.getRequiredArgs(); i++) {
+                            mv.aload(5);
+                            mv.ldc(i);
+                            mv.arrayload();
+                        }
                         mv.aload(6);
-                        mv.invokevirtual(mnamePath, "call", COMPILED_CALL_SIG_ONE_BLOCK);
+
+                        switch (scope.getRequiredArgs()) {
+                        case 1:
+                            signature = COMPILED_CALL_SIG_ONE_BLOCK;
+                            break;
+                        case 2:
+                            signature = COMPILED_CALL_SIG_TWO_BLOCK;
+                            break;
+                        case 3:
+                            signature = COMPILED_CALL_SIG_THREE_BLOCK;
+                            break;
+                        }
+                        
+                        mv.invokevirtual(mnamePath, "call", signature);
                         mv.areturn();
                         mv.end();
                         
-                        mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG_ONE_BLOCK, null, null));
+                        mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", signature, null, null));
                     }
 
                     mv.visitCode();
@@ -232,7 +260,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                     // invoke pre method stuff
                     if (!callConfig.isNoop()) {
-                        invokeCallConfigPre(mv, COMPILED_SUPER_CLASS, -1, true);
+                        if (specificArity) {
+                            invokeCallConfigPre(mv, COMPILED_SUPER_CLASS, scope.getRequiredArgs(), true);
+                        } else {
+                            invokeCallConfigPre(mv, COMPILED_SUPER_CLASS, -1, true);
+                        }
                     }
 
                     // store null for result var
@@ -258,11 +290,15 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     mv.checkcast(typePath);
                     mv.aload(THREADCONTEXT_INDEX);
                     mv.aload(RECEIVER_INDEX);
-                    mv.aload(ARGS_INDEX);
-                    mv.aload(BLOCK_INDEX);
                     if (specificArity) {
-                        mv.invokevirtual(typePath, method, StandardASMCompiler.METHOD_SIGNATURES[1]);
+                        for (int i = 0; i < scope.getRequiredArgs(); i++) {
+                            mv.aload(ARGS_INDEX + i);
+                        }
+                        mv.aload(ARGS_INDEX + scope.getRequiredArgs());
+                        mv.invokevirtual(typePath, method, StandardASMCompiler.METHOD_SIGNATURES[scope.getRequiredArgs()]);
                     } else {
+                        mv.aload(ARGS_INDEX);
+                        mv.aload(BLOCK_INDEX);
                         mv.invokevirtual(typePath, method, StandardASMCompiler.METHOD_SIGNATURES[4]);
                     }
 

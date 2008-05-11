@@ -389,7 +389,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         protected VariableCompiler variableCompiler;
         protected InvocationCompiler invocationCompiler;
         
-        protected int argParamCount = 1;
+        protected final int argParamCount;
         
         protected Label[] currentLoopLabels;
         protected Label scopeStart;
@@ -401,6 +401,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         
         public AbstractMethodCompiler(StaticScope scope) {
             this.scope = scope;
+            if (scope.getRestArg() >= 0 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() == 0 || scope.getRequiredArgs() > 3) {
+                argParamCount = 1; // use IRubyObject[]
+            } else {
+                argParamCount = scope.getRequiredArgs(); // specific arity
+            }
         }
 
         public abstract void beginMethod(CompilerCallback args, StaticScope scope);
@@ -412,7 +417,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.aload(THIS);
             loadThreadContext();
             loadSelf();
-            method.aload(ARGS_INDEX);
+            loadNull();
             if(this instanceof ASMClosureCompiler) {
                 pushNull();
             } else {
@@ -2680,24 +2685,37 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             this.friendlyName = friendlyName;
 
             String signature = null;
-            if (scope.getRestArg() >= 0 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() != 1) {
+            if (scope.getRestArg() >= 0 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() == 0 || scope.getRequiredArgs() > 3) {
                 signature = METHOD_SIGNATURES[4];
                 method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, friendlyName, signature, null, null));
                 specificArity = false;
             } else {
                 specificArity = true;
-                signature = METHOD_SIGNATURES[1];
+                signature = METHOD_SIGNATURES[scope.getRequiredArgs()];
                 // add a default [] version of the method that calls the specific version
                 method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, friendlyName, METHOD_SIGNATURES[4], null, null));
                 method.start();
+                        
+                // check arity in the variable-arity version
+                method.aload(1);
+                method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
+                method.aload(3);
+                method.pushInt(scope.getRequiredArgs());
+                method.pushInt(scope.getRequiredArgs());
+                method.invokestatic(p(Arity.class), "checkArgumentCount", sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
+                method.pop();
+                
                 loadThis();
                 loadThreadContext();
                 loadSelf();
                 // FIXME: missing arity check
-                method.aload(ARGS_INDEX);
-                method.ldc(0);
-                method.arrayload();
-                loadBlock();
+                for (int i = 0; i < scope.getRequiredArgs(); i++) {
+                    method.aload(ARGS_INDEX);
+                    method.ldc(i);
+                    method.arrayload();
+                }
+                method.aload(ARGS_INDEX + 1); // load block from [] version of method
+                
                 method.invokevirtual(classname, friendlyName, signature);
                 method.areturn();
                 method.end();

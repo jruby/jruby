@@ -136,6 +136,8 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
             try {
                 jitPre(context, self, name, block);
 
+                getArity().checkArity(runtime, args);
+
                 return jitCompiledScript.__file__(context, self, args, block);
             } catch (JumpException.ReturnJump rj) {
                 return handleReturn(rj);
@@ -189,7 +191,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         if (jitCompiledScript != null && !runtime.hasEventHooks()) {
             try {
                 jitPre(context, self, name, Block.NULL_BLOCK);
-
+                
                 return jitCompiledScript.__file__(context, self, args, Block.NULL_BLOCK);
             } catch (JumpException.ReturnJump rj) {
                 return handleReturn(rj);
@@ -211,7 +213,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
             try {
                 jitPre(context, self, name, Block.NULL_BLOCK);
 
-                return jitCompiledScript.__file__(context, self, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+                return jitCompiledScript.__file__(context, self, Block.NULL_BLOCK);
             } catch (JumpException.ReturnJump rj) {
                 return handleReturn(rj);
             } catch (JumpException.RedoJump rj) {
@@ -232,7 +234,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
             try {
                 jitPre(context, self, name, block);
 
-                return jitCompiledScript.__file__(context, self, IRubyObject.NULL_ARRAY, block);
+                return jitCompiledScript.__file__(context, self, block);
             } catch (JumpException.ReturnJump rj) {
                 return handleReturn(rj);
             } catch (JumpException.RedoJump rj) {
@@ -253,7 +255,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
             try {
                 jitPre(context, self, name, Block.NULL_BLOCK);
 
-                return jitCompiledScript.__file__(context, self, new IRubyObject[] {arg0}, Block.NULL_BLOCK);
+                return jitCompiledScript.__file__(context, self, arg0, Block.NULL_BLOCK);
             } catch (JumpException.ReturnJump rj) {
                 return handleReturn(rj);
             } catch (JumpException.RedoJump rj) {
@@ -274,7 +276,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
             try {
                 jitPre(context, self, name, block);
 
-                return jitCompiledScript.__file__(context, self, new IRubyObject[] {arg0}, block);
+                return jitCompiledScript.__file__(context, self, arg0, block);
             } catch (JumpException.ReturnJump rj) {
                 return handleReturn(rj);
             } catch (JumpException.RedoJump rj) {
@@ -295,7 +297,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
             try {
                 jitPre(context, self, name, Block.NULL_BLOCK);
 
-                return jitCompiledScript.__file__(context, self, new IRubyObject[] {arg0, arg1}, Block.NULL_BLOCK);
+                return jitCompiledScript.__file__(context, self, arg0, arg1, Block.NULL_BLOCK);
             } catch (JumpException.ReturnJump rj) {
                 return handleReturn(rj);
             } catch (JumpException.RedoJump rj) {
@@ -316,7 +318,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
             try {
                 jitPre(context, self, name, block);
 
-                return jitCompiledScript.__file__(context, self, new IRubyObject[] {arg0, arg1}, block);
+                return jitCompiledScript.__file__(context, self, arg0, arg1, block);
             } catch (JumpException.ReturnJump rj) {
                 return handleReturn(rj);
             } catch (JumpException.RedoJump rj) {
@@ -337,7 +339,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
             try {
                 jitPre(context, self, name, Block.NULL_BLOCK);
 
-                return jitCompiledScript.__file__(context, self, new IRubyObject[] {arg0, arg1, arg2}, Block.NULL_BLOCK);
+                return jitCompiledScript.__file__(context, self, arg0, arg1, arg2, Block.NULL_BLOCK);
             } catch (JumpException.ReturnJump rj) {
                 return handleReturn(rj);
             } catch (JumpException.RedoJump rj) {
@@ -358,7 +360,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
             try {
                 jitPre(context, self, name, block);
 
-                return jitCompiledScript.__file__(context, self, new IRubyObject[] {arg0, arg1, arg2}, block);
+                return jitCompiledScript.__file__(context, self, arg0, arg1, arg2, block);
             } catch (JumpException.ReturnJump rj) {
                 return handleReturn(rj);
             } catch (JumpException.RedoJump rj) {

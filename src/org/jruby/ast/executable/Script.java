@@ -5,7 +5,12 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public interface Script {
+    public IRubyObject __file__(ThreadContext context, IRubyObject self, Block block);
+    public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject arg, Block block);
+    public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block);
+    public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject arg, IRubyObject arg2, IRubyObject arg3, Block block);
     public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
+    
     public IRubyObject run(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
     public IRubyObject load(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
 }

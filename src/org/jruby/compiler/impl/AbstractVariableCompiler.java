@@ -188,7 +188,7 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
             CompilerCallback blockAssignment) {
         if (specificArity) {
             int currentArgElement = 0;
-            for (; currentArgElement < requiredArgsCount; currentArgElement++) {
+            for (; currentArgElement < scope.getRequiredArgs(); currentArgElement++) {
                 method.aload(argsIndex + currentArgElement);
                 requiredAssignment.nextValue(methodCompiler, requiredArgs, currentArgElement);
 
