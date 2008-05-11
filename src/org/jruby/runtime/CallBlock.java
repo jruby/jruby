@@ -81,13 +81,20 @@ public class CallBlock extends BlockBody {
      */
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
             RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
-        if (klass == null) {
-            self = binding.getSelf();
-            // FIXME: We never set this back!
-            binding.getFrame().setSelf(self);
-        }
+        IRubyObject oldSelf = binding.getFrame().getSelf();
+        try {
+            if (klass == null) {
+                self = binding.getSelf();
+                // FIXME: We never set this back!
+                binding.getFrame().setSelf(self);
+            }
         
-        return callback.call(context, new IRubyObject[] {value}, Block.NULL_BLOCK);
+            return callback.call(context, new IRubyObject[] {value}, Block.NULL_BLOCK);
+        } finally {
+            if (klass == null) {
+                binding.getFrame().setSelf(oldSelf);
+            }
+        }
     }
     
     public StaticScope getStaticScope() {
