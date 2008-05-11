@@ -956,7 +956,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.aload(THIS);
             loadThreadContext();
             loadSelf();
-            method.aload(ARGS_INDEX);
+            loadNull();
             if(this instanceof ASMClosureCompiler) {
                 pushNull();
             } else {
@@ -1705,7 +1705,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.aload(THIS);
             loadThreadContext();
             loadSelf();
-            method.aload(ARGS_INDEX);
+            loadNull();
             if(this instanceof ASMClosureCompiler) {
                 pushNull();
             } else {
@@ -1823,7 +1823,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.aload(THIS);
             loadThreadContext();
             loadSelf();
-            method.aload(ARGS_INDEX);
+            loadNull();
             if(this instanceof ASMClosureCompiler) {
                 pushNull();
             } else {
