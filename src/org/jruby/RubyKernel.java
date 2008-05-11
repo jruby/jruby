@@ -156,74 +156,24 @@ public class RubyKernel {
         Ruby runtime = recv.getRuntime();
 
         if (args.length == 0 || !(args[0] instanceof RubySymbol)) throw runtime.newArgumentError("no id given");
-        
-        String name = args[0].asJavaString();
+
         Visibility lastVis = context.getLastVisibility();
         CallType lastCallType = context.getLastCallType();
 
-        String format = null;
-
-        boolean noMethod = true; // NoMethodError
-
-        if (lastVis == PRIVATE) {
-            format = "private method `%s' called for %s";
-        } else if (lastVis == PROTECTED) {
-            format = "protected method `%s' called for %s";
-        } else if (lastCallType == CallType.VARIABLE) {
-            format = "undefined local variable or method `%s' for %s";
-            noMethod = false; // NameError
-        } else if (lastCallType == CallType.SUPER) {
-            format = "super: no superclass method `%s'";
-        }
-
-        if (format == null) format = "undefined method `%s' for %s";
-
-        String description = null;
-        
-        if (recv.isNil()) {
-            description = "nil";
-        } else if (recv instanceof RubyBoolean && recv.isTrue()) {
-            description = "true";
-        } else if (recv instanceof RubyBoolean && !recv.isTrue()) {
-            description = "false";
-        } else {
-            if (name.equals("inspect") || name.equals("to_s")) {
-                description = recv.anyToString().toString();
-            } else {
-                IRubyObject d;
-                try {
-                    d = recv.callMethod(context, "inspect");
-                    if (d.getMetaClass() == recv.getMetaClass() || (d instanceof RubyString && ((RubyString)d).length().getLongValue() > 65)) {
-                        d = recv.anyToString();
-                    }
-                } catch (JumpException je) {
-                    d = recv.anyToString();
-                }
-                description = d.toString();
-            }
-        }
-        if (description.length() == 0 || (description.length() > 0 && description.charAt(0) != '#')) {
-            description = description + ":" + recv.getMetaClass().getRealClass().getName();            
-        }
-        
-        IRubyObject[]exArgs = new IRubyObject[noMethod ? 3 : 2];
-
-        RubyArray arr = runtime.newArray(args[0], runtime.newString(description));
-        RubyString msg = runtime.newString(Sprintf.sprintf(runtime.newString(format), arr).toString());
-        
-        if (recv.isTaint()) msg.setTaint(true);
-
-        exArgs[0] = msg;
-        exArgs[1] = args[0];
-
-        RubyClass exc;
-        if (noMethod) {
-            IRubyObject[]NMEArgs = new IRubyObject[args.length - 1];
-            System.arraycopy(args, 1, NMEArgs, 0, NMEArgs.length);
-            exArgs[2] = runtime.newArrayNoCopy(NMEArgs);
+        // create a lightweight thunk
+        IRubyObject msg = new RubyNameError.RubyNameErrorMessage(runtime, 
+                                                                 recv,
+                                                                 args[0],
+                                                                 lastVis,
+                                                                 lastCallType);
+        final IRubyObject[]exArgs;
+        final RubyClass exc;
+        if (lastCallType != CallType.VARIABLE) {
             exc = runtime.fastGetClass("NoMethodError");
+            exArgs = new IRubyObject[]{msg, args[0], RubyArray.newArrayNoCopy(runtime, args, 1)};
         } else {
             exc = runtime.fastGetClass("NameError");
+            exArgs = new IRubyObject[]{msg, args[0]};
         }
         
         throw new RaiseException((RubyException)exc.newInstance(context, exArgs, Block.NULL_BLOCK));

@@ -94,4 +94,16 @@ class TestMethodMissing < Test::Unit::TestCase
         end
         assert_raise(NoMethodError){a_module_method 'foo'}
     end
+
+    class TestInspectNotCalled
+        def inspect
+            # raising here wont help since any exception will be swallowed in default method_missing
+            $inspect_not_called = true
+        end
+    end
+
+    def test_inspect_not_called_on_method_missing
+        TestInspectNotCalled.new.foo rescue nil
+        assert_equal nil, $inspect_not_called
+    end
 end

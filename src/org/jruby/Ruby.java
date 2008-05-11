@@ -1024,6 +1024,7 @@ public final class Ruby {
         
         if (profile.allowClass("NameError")) {
             nameError = RubyNameError.createNameErrorClass(this, standardError);
+            nameErrorMessage = RubyNameError.createNameErrorMessageClass(this, nameError);            
         }
         if (profile.allowClass("NoMethodError")) {
             RubyNoMethodError.createNoMethodErrorClass(this, nameError);
@@ -1583,6 +1584,10 @@ public final class Ruby {
     
     public RubyClass getStandardError() {
         return standardError;
+    }
+
+    public RubyClass getNameErrorMessage() {
+        return nameErrorMessage;
     }
 
     /** Getter for property isVerbose.
@@ -2651,7 +2656,7 @@ public final class Ruby {
             fileClass, fileStatClass, ioClass, threadClass, threadGroupClass,
             continuationClass, structClass, tmsStruct, passwdStruct,
             groupStruct, procStatusClass, exceptionClass, runtimeError, ioError,
-            scriptError, nameError, signalException, standardError,
+            scriptError, nameError, nameErrorMessage, signalException, standardError,
             systemCallError, rangeError, dummyClass;
     
     /**
