@@ -114,14 +114,15 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     public static final int THREADCONTEXT_INDEX = 1;
     public static final int SELF_INDEX = 2;
     public static final int ARGS_INDEX = 3;
-    public static final int CLOSURE_INDEX = 4;
-    public static final int DYNAMIC_SCOPE_INDEX = 5;
-    public static final int RUNTIME_INDEX = 6;
-    public static final int VARS_ARRAY_INDEX = 7;
-    public static final int NIL_INDEX = 8;
-    public static final int EXCEPTION_INDEX = 9;
-    public static final int PREVIOUS_EXCEPTION_INDEX = 10;
-    public static final int FIRST_TEMP_INDEX = 11;
+    
+    public static final int CLOSURE_OFFSET = 0;
+    public static final int DYNAMIC_SCOPE_OFFSET = 1;
+    public static final int RUNTIME_OFFSET = 2;
+    public static final int VARS_ARRAY_OFFSET = 3;
+    public static final int NIL_OFFSET = 4;
+    public static final int EXCEPTION_OFFSET = 5;
+    public static final int PREVIOUS_EXCEPTION_OFFSET = 6;
+    public static final int FIRST_TEMP_OFFSET = 7;
     
     private String classname;
     private String sourcename;
@@ -209,7 +210,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         beginInit();
         beginClassInit();
         
-        cacheCompiler = new InheritedCacheCompiler(this, RUNTIME_INDEX);
+        cacheCompiler = new InheritedCacheCompiler(this);
     }
 
     public void endScript(boolean generateRun, boolean generateLoad, boolean generateMain) {
@@ -231,11 +232,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             buildStaticScopeNames(method, topLevelScope);
             method.invokestatic(p(RuntimeHelpers.class), "preLoad", sig(void.class, ThreadContext.class, String[].class));
 
+            // load always uses IRubyObject[], so simple closure offset calculation here
             method.aload(THIS);
             method.aload(THREADCONTEXT_INDEX);
             method.aload(SELF_INDEX);
             method.aload(ARGS_INDEX);
-            method.aload(CLOSURE_INDEX);
+            method.aload(ARGS_INDEX + 1 + CLOSURE_OFFSET);
 
             method.invokevirtual(classname, methodName, METHOD_SIGNATURE);
             method.aload(THREADCONTEXT_INDEX);
@@ -381,6 +383,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         protected VariableCompiler variableCompiler;
         protected InvocationCompiler invocationCompiler;
         
+        protected int argParamCount = 1;
+        
         protected Label[] currentLoopLabels;
         protected Label scopeStart;
         protected Label scopeEnd;
@@ -439,17 +443,53 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void loadSelf() {
             method.aload(SELF_INDEX);
         }
+        
+        protected int getClosureIndex() {
+            return ARGS_INDEX + argParamCount + CLOSURE_OFFSET;
+        }
+        
+        protected int getRuntimeIndex() {
+            return ARGS_INDEX + argParamCount + RUNTIME_OFFSET;
+        }
+        
+        protected int getNilIndex() {
+            return ARGS_INDEX + argParamCount + NIL_OFFSET;
+        }
+        
+        protected int getPreviousExceptionIndex() {
+            return ARGS_INDEX + argParamCount + PREVIOUS_EXCEPTION_OFFSET;
+        }
+        
+        protected int getDynamicScopeIndex() {
+            return ARGS_INDEX + argParamCount + DYNAMIC_SCOPE_OFFSET;
+        }
+        
+        protected int getVarsArrayIndex() {
+            return ARGS_INDEX + argParamCount + VARS_ARRAY_OFFSET;
+        }
+        
+        protected int getFirstTempIndex() {
+            return ARGS_INDEX + argParamCount + FIRST_TEMP_OFFSET;
+        }
+        
+        protected int getExceptionIndex() {
+            return ARGS_INDEX + argParamCount + EXCEPTION_OFFSET;
+        }
+        
+        public void loadThis() {
+            method.aload(THIS);
+        }
 
         public void loadRuntime() {
-            method.aload(RUNTIME_INDEX);
+            method.aload(getRuntimeIndex());
         }
 
         public void loadBlock() {
-            method.aload(CLOSURE_INDEX);
+            method.aload(getClosureIndex());
         }
 
         public void loadNil() {
-            method.aload(NIL_INDEX);
+            method.aload(getNilIndex());
         }
         
         public void loadNull() {
@@ -655,7 +695,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void createNewBignum(BigInteger value) {
             loadRuntime();
-            getCacheCompiler().cacheBigInteger(method, value);
+            getCacheCompiler().cacheBigInteger(this, value);
             method.invokestatic(p(RubyBignum.class), "newBignum", sig(RubyBignum.class, params(Ruby.class, BigInteger.class)));
         }
 
@@ -678,13 +718,13 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void createNewString(ByteList value) {
             // FIXME: this is sub-optimal, storing string value in a java.lang.String again
             loadRuntime();
-            getCacheCompiler().cacheByteList(method, value.toString());
+            getCacheCompiler().cacheByteList(this, value.toString());
 
             invokeIRuby("newStringShared", sig(RubyString.class, params(ByteList.class)));
         }
 
         public void createNewSymbol(String name) {
-            getCacheCompiler().cacheSymbol(method, name);
+            getCacheCompiler().cacheSymbol(this, name);
         }
 
         public void createNewArray(boolean lightweight) {
@@ -873,22 +913,22 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 mv.dup();
                 mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
                 mv.dup();
-                mv.astore(RUNTIME_INDEX);
+                mv.astore(getRuntimeIndex());
                 
                 // store previous exception for restoration if we rescue something
                 loadRuntime();
                 invokeUtilityMethod("getErrorInfo", sig(IRubyObject.class, Ruby.class));
-                mv.astore(PREVIOUS_EXCEPTION_INDEX);
+                mv.astore(getPreviousExceptionIndex());
             
                 // grab nil for local variables
                 mv.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
-                mv.astore(NIL_INDEX);
+                mv.astore(getNilIndex());
             
                 mv.invokevirtual(p(ThreadContext.class), "getCurrentScope", sig(DynamicScope.class));
                 mv.dup();
-                mv.astore(DYNAMIC_SCOPE_INDEX);
+                mv.astore(getDynamicScopeIndex());
                 mv.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
-                mv.astore(VARS_ARRAY_INDEX);
+                mv.astore(getVarsArrayIndex());
 
                 performBooleanLoop(condition, body, checkFirst);
                 
@@ -1114,7 +1154,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             buildStaticScopeNames(method, scope);
             
-            cacheCompiler.cacheClosure(method, closureMethodName);
+            cacheCompiler.cacheClosure(this, closureMethodName);
 
             method.ldc(Boolean.valueOf(hasMultipleArgsHead));
             method.ldc(BlockBody.asArgumentType(argsNodeId));
@@ -1142,7 +1182,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             buildStaticScopeNames(method, scope);
             
-            cacheCompiler.cacheClosure(method, closureMethodName);
+            cacheCompiler.cacheClosure(this, closureMethodName);
 
             invokeUtilityMethod("runBeginBlock", sig(IRubyObject.class,
                     params(ThreadContext.class, IRubyObject.class, String[].class, CompiledBlockCallback.class)));
@@ -1164,7 +1204,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             loadSelf();
             method.pushInt(arity);
             
-            cacheCompiler.cacheClosure(method, closureMethodName);
+            cacheCompiler.cacheClosure(this, closureMethodName);
             
             method.ldc(Boolean.valueOf(hasMultipleArgsHead));
             method.ldc(BlockBody.asArgumentType(argsNodeId));
@@ -1189,7 +1229,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             loadSelf();
             method.iconst_0();
             
-            cacheCompiler.cacheClosure(method, closureMethodName);
+            cacheCompiler.cacheClosure(this, closureMethodName);
             
             method.iconst_0(); // false
             method.iconst_0(); // zero
@@ -1489,7 +1529,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.dup();
             method.ifnonnull(notNull);
             method.pop();
-            method.aload(NIL_INDEX);
+            loadNil();
             method.label(notNull);
         }
 
@@ -1604,17 +1644,17 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 mv.dup();
                 mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
                 mv.dup();
-                mv.astore(RUNTIME_INDEX);
+                mv.astore(getRuntimeIndex());
             
                 // grab nil for local variables
                 mv.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
-                mv.astore(NIL_INDEX);
+                mv.astore(getNilIndex());
             
                 mv.invokevirtual(p(ThreadContext.class), "getCurrentScope", sig(DynamicScope.class));
                 mv.dup();
-                mv.astore(DYNAMIC_SCOPE_INDEX);
+                mv.astore(getDynamicScopeIndex());
                 mv.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
-                mv.astore(VARS_ARRAY_INDEX);
+                mv.astore(getVarsArrayIndex());
 
                 Label codeBegin = new Label();
                 Label codeEnd = new Label();
@@ -1630,12 +1670,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 mv.areturn();
 
                 method.label(ensureBegin);
-                method.astore(EXCEPTION_INDEX);
+                method.astore(getExceptionIndex());
                 method.label(ensureEnd);
 
                 protectedCode.branch(this);
 
-                method.aload(EXCEPTION_INDEX);
+                method.aload(getExceptionIndex());
                 method.athrow();
                 
                 method.trycatch(codeBegin, codeEnd, ensureBegin, null);
@@ -1697,22 +1737,22 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 mv.dup();
                 mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
                 mv.dup();
-                mv.astore(RUNTIME_INDEX);
+                mv.astore(getRuntimeIndex());
                 
                 // store previous exception for restoration if we rescue something
                 loadRuntime();
                 invokeUtilityMethod("getErrorInfo", sig(IRubyObject.class, Ruby.class));
-                mv.astore(PREVIOUS_EXCEPTION_INDEX);
+                mv.astore(getPreviousExceptionIndex());
             
                 // grab nil for local variables
                 mv.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
-                mv.astore(NIL_INDEX);
+                mv.astore(getNilIndex());
             
                 mv.invokevirtual(p(ThreadContext.class), "getCurrentScope", sig(DynamicScope.class));
                 mv.dup();
-                mv.astore(DYNAMIC_SCOPE_INDEX);
+                mv.astore(getDynamicScopeIndex());
                 mv.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
-                mv.astore(VARS_ARRAY_INDEX);
+                mv.astore(getVarsArrayIndex());
 
                 Label beforeBody = new Label();
                 Label afterBody = new Label();
@@ -1725,7 +1765,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 mv.label(afterBody);
                 mv.go_to(exitRescue);
                 mv.label(catchBlock);
-                mv.astore(EXCEPTION_INDEX);
+                mv.astore(getExceptionIndex());
 
                 catchCode.branch(this);
                 
@@ -1747,7 +1787,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 mv.trycatch(beforeBody, afterMethodBody, catchJumps, p(JumpException.class));
                 mv.label(catchJumps);
                 loadRuntime();
-                mv.aload(PREVIOUS_EXCEPTION_INDEX);
+                mv.aload(getPreviousExceptionIndex());
                 invokeUtilityMethod("setErrorInfo", sig(void.class, Ruby.class, IRubyObject.class));
                 mv.athrow();
                 
@@ -1755,7 +1795,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 
                 // restore the original exception
                 loadRuntime();
-                mv.aload(PREVIOUS_EXCEPTION_INDEX);
+                mv.aload(getPreviousExceptionIndex());
                 invokeUtilityMethod("setErrorInfo", sig(void.class, Ruby.class, IRubyObject.class));
                 
                 mv.areturn();
@@ -2373,7 +2413,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
         
         public void loadException() {
-            method.aload(EXCEPTION_INDEX);
+            method.aload(getExceptionIndex());
         }
         
         public void setFilePosition(ISourcePosition position) {
@@ -2500,17 +2540,17 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             
             method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, closureMethodName, CLOSURE_SIGNATURE, null, null));
             if (inspector == null) {
-                variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX, CLOSURE_INDEX, FIRST_TEMP_INDEX);
+                variableCompiler = new HeapBasedVariableCompiler(this, method, getDynamicScopeIndex(), getVarsArrayIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
             } else if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
                 // enable "boxed" variable compilation when only a closure present
                 // this breaks using a proc as a binding
                 if (RubyInstanceConfig.BOXED_COMPILE_ENABLED && !inspector.hasScopeAwareMethods()) {
-                    variableCompiler = new BoxedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX, CLOSURE_INDEX, FIRST_TEMP_INDEX);
+                    variableCompiler = new BoxedVariableCompiler(this, method, getDynamicScopeIndex(), getVarsArrayIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
                 } else {
-                    variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX, CLOSURE_INDEX, FIRST_TEMP_INDEX);
+                    variableCompiler = new HeapBasedVariableCompiler(this, method, getDynamicScopeIndex(), getVarsArrayIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
                 }
             } else {
-                variableCompiler = new StackBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, ARGS_INDEX, CLOSURE_INDEX, FIRST_TEMP_INDEX);
+                variableCompiler = new StackBasedVariableCompiler(this, method, getDynamicScopeIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
             }
             invocationCompiler = new StandardInvocationCompiler(this, method);
         }
@@ -2522,11 +2562,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.aload(THREADCONTEXT_INDEX);
             invokeThreadContext("getRuntime", sig(Ruby.class));
             method.dup();
-            method.astore(RUNTIME_INDEX);
+            method.astore(getRuntimeIndex());
             
             // grab nil for local variables
             invokeIRuby("getNil", sig(IRubyObject.class));
-            method.astore(NIL_INDEX);
+            method.astore(getNilIndex());
             
             variableCompiler.beginClosure(args, scope);
 
@@ -2627,17 +2667,17 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, friendlyName, METHOD_SIGNATURE, null, null));
             if (inspector == null) {
-                variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX, CLOSURE_INDEX, FIRST_TEMP_INDEX);
+                variableCompiler = new HeapBasedVariableCompiler(this, method, getDynamicScopeIndex(), getVarsArrayIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
             } else if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
                 // enable "boxed" variable compilation when only a closure present
                 // this breaks using a proc as a binding
                 if (RubyInstanceConfig.BOXED_COMPILE_ENABLED && !inspector.hasScopeAwareMethods()) {
-                    variableCompiler = new BoxedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX, CLOSURE_INDEX, FIRST_TEMP_INDEX);
+                    variableCompiler = new BoxedVariableCompiler(this, method, getDynamicScopeIndex(), getVarsArrayIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
                 } else {
-                    variableCompiler = new HeapBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, VARS_ARRAY_INDEX, ARGS_INDEX, CLOSURE_INDEX, FIRST_TEMP_INDEX);
+                    variableCompiler = new HeapBasedVariableCompiler(this, method, getDynamicScopeIndex(), getVarsArrayIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
                 }
             } else {
-                variableCompiler = new StackBasedVariableCompiler(this, method, DYNAMIC_SCOPE_INDEX, ARGS_INDEX, CLOSURE_INDEX, FIRST_TEMP_INDEX);
+                variableCompiler = new StackBasedVariableCompiler(this, method, getDynamicScopeIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
             }
             invocationCompiler = new StandardInvocationCompiler(this, method);
         }
@@ -2649,17 +2689,17 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.dup();
             method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
             method.dup();
-            method.astore(RUNTIME_INDEX);
+            method.astore(getRuntimeIndex());
 
             // grab nil for local variables
             method.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
-            method.astore(NIL_INDEX);
+            method.astore(getNilIndex());
 
             method.invokevirtual(p(ThreadContext.class), "getCurrentScope", sig(DynamicScope.class));
             method.dup();
-            method.astore(DYNAMIC_SCOPE_INDEX);
+            method.astore(getDynamicScopeIndex());
             method.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
-            method.astore(VARS_ARRAY_INDEX);
+            method.astore(getVarsArrayIndex());
         }
 
         public void beginMethod(CompilerCallback args, StaticScope scope) {
@@ -2669,12 +2709,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.aload(THREADCONTEXT_INDEX);
             invokeThreadContext("getRuntime", sig(Ruby.class));
             method.dup();
-            method.astore(RUNTIME_INDEX);
+            method.astore(getRuntimeIndex());
             
             
             // grab nil for local variables
             invokeIRuby("getNil", sig(IRubyObject.class));
-            method.astore(NIL_INDEX);
+            method.astore(getNilIndex());
             
             variableCompiler.beginMethod(args, scope);
 
@@ -2692,11 +2732,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.aload(THREADCONTEXT_INDEX);
             invokeThreadContext("getRuntime", sig(Ruby.class));
             method.dup();
-            method.astore(RUNTIME_INDEX);
+            method.astore(getRuntimeIndex());
             
             // grab nil for local variables
             invokeIRuby("getNil", sig(IRubyObject.class));
-            method.astore(NIL_INDEX);
+            method.astore(getNilIndex());
             
             variableCompiler.beginClass(bodyPrep, scope);
 

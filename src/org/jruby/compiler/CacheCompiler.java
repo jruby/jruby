@@ -6,7 +6,7 @@
 package org.jruby.compiler;
 
 import java.math.BigInteger;
-import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.runtime.CallType;
 
 /**
@@ -14,13 +14,13 @@ import org.jruby.runtime.CallType;
  * @author headius
  */
 public interface CacheCompiler {
-    public void cacheCallSite(SkinnyMethodAdapter method, String name, CallType callType);
+    public void cacheCallSite(StandardASMCompiler.AbstractMethodCompiler method, String name, CallType callType);
     
-    public void cacheByteList(SkinnyMethodAdapter method, String contents);
+    public void cacheByteList(StandardASMCompiler.AbstractMethodCompiler method, String contents);
     
-    public void cacheSymbol(SkinnyMethodAdapter method, String symbol);
+    public void cacheSymbol(StandardASMCompiler.AbstractMethodCompiler method, String symbol);
     
-    public void cacheBigInteger(SkinnyMethodAdapter method, BigInteger bigint);
+    public void cacheBigInteger(StandardASMCompiler.AbstractMethodCompiler method, BigInteger bigint);
     
-    public void cacheClosure(SkinnyMethodAdapter method, String closureMethod);
+    public void cacheClosure(StandardASMCompiler.AbstractMethodCompiler method, String closureMethod);
 }

@@ -22,26 +22,21 @@ public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
     public static final int MAX_INHERITED_CALL_SITES = 50;
     public static final int MAX_INHERITED_SYMBOLS = 50;
     
-    final int runtimeIndex;
-    
     int callSiteCount = 0;
-//    int byteListCount = 0;
-//    int sourcePositionsCount = 0;
     int inheritedSymbolCount = 0;
     
-    public InheritedCacheCompiler(StandardASMCompiler scriptCompiler, int runtimeIndex) {
+    public InheritedCacheCompiler(StandardASMCompiler scriptCompiler) {
         super(scriptCompiler);
-        this.runtimeIndex = runtimeIndex;
     }
     
     @Override
-    public void cacheCallSite(SkinnyMethodAdapter method, String name, CallType callType) {
+    public void cacheCallSite(StandardASMCompiler.AbstractMethodCompiler method, String name, CallType callType) {
         String fieldName = "site" + callSiteCount;
         
         // retrieve call adapter
         SkinnyMethodAdapter initMethod = scriptCompiler.getInitMethod();
         initMethod.aload(StandardASMCompiler.THIS);
-        method.aload(StandardASMCompiler.THIS);
+        method.loadThis();
         initMethod.ldc(name);
         
         if (callType.equals(CallType.NORMAL)) {
@@ -55,10 +50,10 @@ public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
         if (callSiteCount >= MAX_INHERITED_CALL_SITES) {
             scriptCompiler.getNewField(ci(CallSite.class), fieldName, null);
             initMethod.putfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
-            method.getfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
+            method.method.getfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
         } else {
             initMethod.putfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
-            method.getfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
+            method.method.getfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
         }
         callSiteCount++;
     }
@@ -66,7 +61,7 @@ public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
     Map<String, String> inheritedSymbols = new HashMap<String, String>();
     
     @Override
-    public void cacheSymbol(SkinnyMethodAdapter method, String symbol) {
+    public void cacheSymbol(StandardASMCompiler.AbstractMethodCompiler method, String symbol) {
         String methodName = inheritedSymbols.get(symbol);
         if (methodName == null && inheritedSymbolCount < MAX_INHERITED_SYMBOLS) {
             methodName = "getSymbol" + inheritedSymbolCount++;
@@ -76,10 +71,10 @@ public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
         if (methodName == null) {
             super.cacheSymbol(method, symbol);
         } else {
-            method.aload(0);
-            method.aload(runtimeIndex);
-            method.ldc(symbol);
-            method.invokevirtual(scriptCompiler.getClassname(), methodName, sig(RubySymbol.class, Ruby.class, String.class));
+            method.loadThis();
+            method.loadRuntime();
+            method.method.ldc(symbol);
+            method.method.invokevirtual(scriptCompiler.getClassname(), methodName, sig(RubySymbol.class, Ruby.class, String.class));
         }
     }
 }

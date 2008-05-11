@@ -40,7 +40,7 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
         this.scriptCompiler = scriptCompiler;
     }
     
-    public void cacheCallSite(SkinnyMethodAdapter method, String name, CallType callType) {
+    public void cacheCallSite(StandardASMCompiler.AbstractMethodCompiler method, String name, CallType callType) {
         String fieldName = scriptCompiler.getNewConstant(ci(CallSite.class), JavaNameMangler.mangleStringForCleanJavaIdentifier(name));
         
         // retrieve call adapter
@@ -58,11 +58,11 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
 
         initMethod.putfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
         
-        method.getfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
+        method.method.getfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
     }
     
     @Deprecated
-    public void cachePosition(SkinnyMethodAdapter method, String file, int line) {
+    public void cachePosition(StandardASMCompiler.AbstractMethodCompiler method, String file, int line) {
         String cleanName = JavaNameMangler.mangleStringForCleanJavaIdentifier(file + "$" + line);
         String fieldName = sourcePositions.get(cleanName);
         if (fieldName == null) {
@@ -76,10 +76,10 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
             clinitMethod.putstatic(scriptCompiler.getClassname(), fieldName, ci(ISourcePosition.class));
         }
         
-        method.getstatic(scriptCompiler.getClassname(), fieldName, ci(ISourcePosition.class));
+        method.method.getstatic(scriptCompiler.getClassname(), fieldName, ci(ISourcePosition.class));
     }
     
-    public void cacheByteList(SkinnyMethodAdapter method, String contents) {
+    public void cacheByteList(StandardASMCompiler.AbstractMethodCompiler method, String contents) {
         String fieldName = byteLists.get(contents);
         if (fieldName == null) {
             SkinnyMethodAdapter clinitMethod = scriptCompiler.getClassInitMethod();
@@ -91,10 +91,10 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
             clinitMethod.putstatic(scriptCompiler.getClassname(), fieldName, ci(ByteList.class));
         }
         
-        method.getstatic(scriptCompiler.getClassname(), fieldName, ci(ByteList.class));
+        method.method.getstatic(scriptCompiler.getClassname(), fieldName, ci(ByteList.class));
     }
     
-    public void cacheBigInteger(SkinnyMethodAdapter method, BigInteger bigint) {
+    public void cacheBigInteger(StandardASMCompiler.AbstractMethodCompiler method, BigInteger bigint) {
         String fieldName = bigIntegers.get(bigint);
         if (fieldName == null) {
             SkinnyMethodAdapter clinitMethod = scriptCompiler.getClassInitMethod();
@@ -108,10 +108,10 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
             clinitMethod.putstatic(scriptCompiler.getClassname(), fieldName, ci(BigInteger.class));
         }
         
-        method.getstatic(scriptCompiler.getClassname(), fieldName, ci(BigInteger.class));
+        method.method.getstatic(scriptCompiler.getClassname(), fieldName, ci(BigInteger.class));
     }
     
-    public void cacheSymbol(SkinnyMethodAdapter method, String symbol) {
+    public void cacheSymbol(StandardASMCompiler.AbstractMethodCompiler method, String symbol) {
         String methodName = symbols.get(symbol);
         if (methodName == null) {
             String fieldName = scriptCompiler.getNewConstant(ci(RubySymbol.class), "symbol");
@@ -145,13 +145,13 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
             symMethod.end();
         }
         
-        method.aload(0);
-        method.aload(StandardASMCompiler.RUNTIME_INDEX);
-        method.invokevirtual(scriptCompiler.getClassname(), methodName, 
+        method.loadThis();
+        method.loadRuntime();
+        method.method.invokevirtual(scriptCompiler.getClassname(), methodName, 
                 sig(RubySymbol.class, params(Ruby.class)));
     }
     
-    public void cacheClosure(SkinnyMethodAdapter method, String closureMethod) {
+    public void cacheClosure(StandardASMCompiler.AbstractMethodCompiler method, String closureMethod) {
         String closureFieldName = scriptCompiler.getNewConstant(ci(CompiledBlockCallback.class), "closure");
 
         String closureMethodName = "getClosure_" + closureFieldName;
@@ -187,9 +187,9 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
             closureGetter.end();
         }
 
-        method.aload(0);
-        method.aload(StandardASMCompiler.RUNTIME_INDEX);
-        method.invokevirtual(scriptCompiler.getClassname(), closureMethodName, 
+        method.loadThis();
+        method.loadRuntime();
+        method.method.invokevirtual(scriptCompiler.getClassname(), closureMethodName, 
                 sig(CompiledBlockCallback.class, params(Ruby.class)));
     }
 }

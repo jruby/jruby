@@ -95,10 +95,10 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         methodCompiler.loadSelf(); // load self
         method.if_acmpeq(variableCallType); // compare
         
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, name, CallType.NORMAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, CallType.NORMAL);
         method.go_to(readyForCall);
         method.label(variableCallType);
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, name, CallType.VARIABLE);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, CallType.VARIABLE);
         method.label(readyForCall);
         
         // call site under receiver
@@ -229,7 +229,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
     
     public void opElementAsgnWithOr(CompilerCallback receiver, ArgumentsCallback args, CompilerCallback valueCallback) {
         // get call site and thread context
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, "[]", CallType.FUNCTIONAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, "[]", CallType.FUNCTIONAL);
         methodCompiler.loadThreadContext();
         
         // evaluate and save receiver and args
@@ -267,7 +267,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         valueCallback.call(methodCompiler);
         
         // call site
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, "[]=", CallType.FUNCTIONAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, "[]=", CallType.FUNCTIONAL);
         
         // depending on size of original args, call appropriate utility method
         switch (args.getArity()) {
@@ -299,7 +299,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
     
     public void opElementAsgnWithAnd(CompilerCallback receiver, ArgumentsCallback args, CompilerCallback valueCallback) {
         // get call site and thread context
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, "[]", CallType.FUNCTIONAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, "[]", CallType.FUNCTIONAL);
         methodCompiler.loadThreadContext();
         
         // evaluate and save receiver and args
@@ -337,7 +337,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         valueCallback.call(methodCompiler);
         
         // call site
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, "[]=", CallType.FUNCTIONAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, "[]=", CallType.FUNCTIONAL);
         
         // depending on size of original args, call appropriate utility method
         switch (args.getArity()) {
@@ -372,9 +372,9 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         receiver.call(methodCompiler);
         args.call(methodCompiler);
         valueCallback.call(methodCompiler); // receiver, args, result, value
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, "[]", CallType.FUNCTIONAL);
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, operator, CallType.NORMAL);
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, "[]=", CallType.FUNCTIONAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, "[]", CallType.FUNCTIONAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, operator, CallType.NORMAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, "[]=", CallType.FUNCTIONAL);
         
         switch (args.getArity()) {
         case 0:
@@ -435,7 +435,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
     }
 
     public void invokeDynamic(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg) {
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, name, callType);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, callType);
 
         methodCompiler.loadThreadContext(); // [adapter, tc]
         
@@ -504,7 +504,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         receiverCallback.call(methodCompiler);
         method.dup();
         methodCompiler.loadThreadContext();
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, attrName, CallType.FUNCTIONAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, attrName, CallType.FUNCTIONAL);
         
         methodCompiler.invokeUtilityMethod("preOpAsgnWithOrAnd", sig(IRubyObject.class, IRubyObject.class, ThreadContext.class, CallSite.class));
         
@@ -518,7 +518,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         method.pop(); // pop extra attr value
         argsCallback.call(methodCompiler);
         methodCompiler.loadThreadContext();
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, attrAsgnName, CallType.NORMAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, attrAsgnName, CallType.NORMAL);
         
         methodCompiler.invokeUtilityMethod("postOpAsgnWithOrAnd",
                 sig(IRubyObject.class, IRubyObject.class, IRubyObject.class, ThreadContext.class, CallSite.class));
@@ -535,7 +535,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         receiverCallback.call(methodCompiler);
         method.dup();
         methodCompiler.loadThreadContext();
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, attrName, CallType.FUNCTIONAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, attrName, CallType.FUNCTIONAL);
         
         methodCompiler.invokeUtilityMethod("preOpAsgnWithOrAnd", sig(IRubyObject.class, IRubyObject.class, ThreadContext.class, CallSite.class));
         
@@ -549,7 +549,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         method.pop(); // pop extra attr value
         argsCallback.call(methodCompiler);
         methodCompiler.loadThreadContext();
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, attrAsgnName, CallType.NORMAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, attrAsgnName, CallType.NORMAL);
         
         methodCompiler.invokeUtilityMethod("postOpAsgnWithOrAnd",
                 sig(IRubyObject.class, IRubyObject.class, IRubyObject.class, ThreadContext.class, CallSite.class));
@@ -566,9 +566,9 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         methodCompiler.loadThreadContext();
         receiverCallback.call(methodCompiler);
         argsCallback.call(methodCompiler);
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, attrName, CallType.FUNCTIONAL);
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, operatorName, CallType.FUNCTIONAL);
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, attrAsgnName, CallType.NORMAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, attrName, CallType.FUNCTIONAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, operatorName, CallType.FUNCTIONAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, attrAsgnName, CallType.NORMAL);
         
         methodCompiler.invokeUtilityMethod("opAsgnWithMethod",
                 sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class, CallSite.class));
@@ -578,9 +578,9 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         methodCompiler.loadThreadContext(); // [adapter, tc]
         receiverCallback.call(methodCompiler);
         argsCallback.call(methodCompiler);
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, "[]", CallType.FUNCTIONAL);
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, operatorName, CallType.FUNCTIONAL);
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, "[]=", CallType.NORMAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, "[]", CallType.FUNCTIONAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, operatorName, CallType.FUNCTIONAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, "[]=", CallType.NORMAL);
         
         methodCompiler.invokeUtilityMethod("opElementAsgnWithMethod",
                 sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class, CallSite.class));
@@ -708,7 +708,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         // receiver and args already present on the stack
         
         // load call adapter under receiver
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(method, "===", CallType.NORMAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, "===", CallType.NORMAL);
         method.dup_x2();
         method.pop();
 
