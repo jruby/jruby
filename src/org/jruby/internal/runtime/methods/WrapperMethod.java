@@ -50,6 +50,42 @@ public class WrapperMethod extends DynamicMethod {
         this.method = method;
     }
     
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
+        return method.call(context, self, klazz, name);
+    }
+    
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg) {
+        return method.call(context, self, klazz, name, arg);
+    }
+    
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2) {
+        return method.call(context, self, klazz, name, arg1, arg2);
+    }
+    
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        return method.call(context, self, klazz, name, arg1, arg2, arg3);
+    }
+    
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args) {
+        return method.call(context, self, klazz, name, args);
+    }
+    
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
+        return method.call(context, self, klazz, name, block);
+    }
+    
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, Block block) {
+        return method.call(context, self, klazz, name, arg1, block);
+    }
+    
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return method.call(context, self, klazz, name, arg1, arg2, block);
+    }
+    
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+        return method.call(context, self, klazz, name, arg1, arg2, arg3, block);
+    }
+    
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
         return method.call(context, self, klazz, name, args, block);
     }

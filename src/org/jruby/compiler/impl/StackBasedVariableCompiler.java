@@ -46,11 +46,13 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
     public StackBasedVariableCompiler(
             StandardASMCompiler.AbstractMethodCompiler methodCompiler,
             SkinnyMethodAdapter method,
+            StaticScope scope,
+            boolean specificArity,
             int scopeIndex,
             int argsIndex,
             int closureIndex,
             int firstTempIndex) {
-        super(methodCompiler, method, argsIndex, closureIndex, firstTempIndex);
+        super(methodCompiler, method, scope, specificArity, argsIndex, closureIndex, firstTempIndex);
         this.baseVariableIndex = firstTempIndex;
         this.scopeIndex = scopeIndex;
     }

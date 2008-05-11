@@ -107,7 +107,13 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     private static final String RUBY = p(Ruby.class);
     private static final String IRUBYOBJECT = p(IRubyObject.class);
 
-    private static final String METHOD_SIGNATURE = sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class});
+    public static final String[] METHOD_SIGNATURES = {
+        sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, Block.class}),
+        sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class}),
+        sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class}),
+        sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class}),
+        sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class}),
+    };
     private static final String CLOSURE_SIGNATURE = sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class});
 
     public static final int THIS = 0;
@@ -220,7 +226,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         
         if (generateLoad || generateMain) {
             // the load method is used for loading as a top-level script, and prepares appropriate scoping around the code
-            SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, "load", METHOD_SIGNATURE, null, null));
+            SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, "load", METHOD_SIGNATURES[4], null, null));
             method.start();
 
             // invoke __file__ with threadcontext, self, args (null), and block (null)
@@ -232,14 +238,14 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             buildStaticScopeNames(method, topLevelScope);
             method.invokestatic(p(RuntimeHelpers.class), "preLoad", sig(void.class, ThreadContext.class, String[].class));
 
-            // load always uses IRubyObject[], so simple closure offset calculation here
             method.aload(THIS);
             method.aload(THREADCONTEXT_INDEX);
             method.aload(SELF_INDEX);
             method.aload(ARGS_INDEX);
+            // load always uses IRubyObject[], so simple closure offset calculation here
             method.aload(ARGS_INDEX + 1 + CLOSURE_OFFSET);
 
-            method.invokevirtual(classname, methodName, METHOD_SIGNATURE);
+            method.invokevirtual(classname, methodName, METHOD_SIGNATURES[4]);
             method.aload(THREADCONTEXT_INDEX);
             method.invokestatic(p(RuntimeHelpers.class), "postLoad", sig(void.class, ThreadContext.class));
             method.areturn();
@@ -285,7 +291,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
             method.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
 
-            method.invokevirtual(classname, "load", METHOD_SIGNATURE);
+            method.invokevirtual(classname, "load", METHOD_SIGNATURES[4]);
             method.voidreturn();
             method.end();
         }
@@ -368,7 +374,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     }
     
     public MethodCompiler startMethod(String friendlyName, CompilerCallback args, StaticScope scope, ASTInspector inspector) {
-        ASMMethodCompiler methodCompiler = new ASMMethodCompiler(friendlyName, inspector);
+        ASMMethodCompiler methodCompiler = new ASMMethodCompiler(friendlyName, inspector, scope);
         
         methodCompiler.beginMethod(args, scope);
         
@@ -391,6 +397,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         protected Label redoJump;
         protected boolean withinProtection = false;
         private int lastLine = -1;
+        protected StaticScope scope;
+        
+        public AbstractMethodCompiler(StaticScope scope) {
+            this.scope = scope;
+        }
 
         public abstract void beginMethod(CompilerCallback args, StaticScope scope);
 
@@ -410,7 +421,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.invokevirtual(classname, methodName, sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class}));
             endMethod();
 
-            ASMMethodCompiler methodCompiler = new ASMMethodCompiler(methodName, inspector);
+            ASMMethodCompiler methodCompiler = new ASMMethodCompiler(methodName, inspector, scope);
 
             methodCompiler.beginChainedMethod();
 
@@ -1139,7 +1150,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 ASTInspector inspector) {
             String closureMethodName = "block_" + ++innerIndex + "$RUBY$" + "__block__";
             
-            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, inspector);
+            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, inspector, scope);
             
             closureCompiler.beginMethod(args, scope);
             
@@ -1168,7 +1179,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void runBeginBlock(StaticScope scope, CompilerCallback body) {
             String closureMethodName = "block_" + ++innerIndex + "$RUBY$__begin__";
             
-            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, null);
+            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, null, scope);
             
             closureCompiler.beginMethod(null, scope);
             
@@ -1191,7 +1202,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void createNewForLoop(int arity, CompilerCallback body, CompilerCallback args, boolean hasMultipleArgsHead, NodeType argsNodeId) {
             String closureMethodName = "block_" + ++innerIndex + "$RUBY$__for__";
             
-            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, null);
+            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, null, scope);
             
             closureCompiler.beginMethod(args, null);
             
@@ -1216,7 +1227,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void createNewEndBlock(CompilerCallback body) {
             String closureMethodName = "block_" + ++innerIndex + "$RUBY$__end__";
             
-            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, null);
+            ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, null, scope);
             
             closureCompiler.beginMethod(null, null);
             
@@ -2181,7 +2192,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 methodName = "sclass_" + ++methodIndex + "$RUBY$__singleton__";
             }
 
-            final ASMMethodCompiler methodCompiler = new ASMMethodCompiler(methodName, null);
+            final ASMMethodCompiler methodCompiler = new ASMMethodCompiler(methodName, null, staticScope);
             
             CompilerCallback bodyPrep = new CompilerCallback() {
                 public void call(MethodCompiler context) {
@@ -2274,14 +2285,14 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             }
             method.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
 
-            method.invokevirtual(classname, methodName, METHOD_SIGNATURE);
+            method.invokevirtual(classname, methodName, METHOD_SIGNATURES[4]);
         }
 
         public void defineModule(final String name, final StaticScope staticScope, final CompilerCallback pathCallback, final CompilerCallback bodyCallback) {
             String mangledName = JavaNameMangler.mangleStringForCleanJavaIdentifier(name);
             String methodName = "module__" + ++methodIndex + "$RUBY$" + mangledName;
 
-            final ASMMethodCompiler methodCompiler = new ASMMethodCompiler(methodName, null);
+            final ASMMethodCompiler methodCompiler = new ASMMethodCompiler(methodName, null, staticScope);
 
             CompilerCallback bodyPrep = new CompilerCallback() {
                 public void call(MethodCompiler context) {
@@ -2344,7 +2355,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
             method.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
 
-            method.invokevirtual(classname, methodName, METHOD_SIGNATURE);
+            method.invokevirtual(classname, methodName, METHOD_SIGNATURES[4]);
         }
         
         public void unwrapPassedBlock() {
@@ -2535,22 +2546,23 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     public class ASMClosureCompiler extends AbstractMethodCompiler {
         private String closureMethodName;
         
-        public ASMClosureCompiler(String closureMethodName, ASTInspector inspector) {
+        public ASMClosureCompiler(String closureMethodName, ASTInspector inspector, StaticScope scope) {
+            super(scope);
             this.closureMethodName = closureMethodName;
             
             method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, closureMethodName, CLOSURE_SIGNATURE, null, null));
             if (inspector == null) {
-                variableCompiler = new HeapBasedVariableCompiler(this, method, getDynamicScopeIndex(), getVarsArrayIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
+                variableCompiler = new HeapBasedVariableCompiler(this, method, scope, false, getDynamicScopeIndex(), getVarsArrayIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
             } else if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
                 // enable "boxed" variable compilation when only a closure present
                 // this breaks using a proc as a binding
                 if (RubyInstanceConfig.BOXED_COMPILE_ENABLED && !inspector.hasScopeAwareMethods()) {
-                    variableCompiler = new BoxedVariableCompiler(this, method, getDynamicScopeIndex(), getVarsArrayIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
+                    variableCompiler = new BoxedVariableCompiler(this, method, scope, false, getDynamicScopeIndex(), getVarsArrayIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
                 } else {
-                    variableCompiler = new HeapBasedVariableCompiler(this, method, getDynamicScopeIndex(), getVarsArrayIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
+                    variableCompiler = new HeapBasedVariableCompiler(this, method, scope, false, getDynamicScopeIndex(), getVarsArrayIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
                 }
             } else {
-                variableCompiler = new StackBasedVariableCompiler(this, method, getDynamicScopeIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
+                variableCompiler = new StackBasedVariableCompiler(this, method, scope, false, getDynamicScopeIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
             }
             invocationCompiler = new StandardInvocationCompiler(this, method);
         }
@@ -2661,23 +2673,50 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
     public class ASMMethodCompiler extends AbstractMethodCompiler {
         private String friendlyName;
+        private boolean specificArity;
 
-        public ASMMethodCompiler(String friendlyName, ASTInspector inspector) {
+        public ASMMethodCompiler(String friendlyName, ASTInspector inspector, StaticScope scope) {
+            super(scope);
             this.friendlyName = friendlyName;
 
-            method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, friendlyName, METHOD_SIGNATURE, null, null));
+            String signature = null;
+            if (scope.getRestArg() >= 0 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() != 1) {
+                signature = METHOD_SIGNATURES[4];
+                method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, friendlyName, signature, null, null));
+                specificArity = false;
+            } else {
+                specificArity = true;
+                signature = METHOD_SIGNATURES[1];
+                // add a default [] version of the method that calls the specific version
+                method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, friendlyName, METHOD_SIGNATURES[4], null, null));
+                method.start();
+                loadThis();
+                loadThreadContext();
+                loadSelf();
+                // FIXME: missing arity check
+                method.aload(ARGS_INDEX);
+                method.ldc(0);
+                method.arrayload();
+                loadBlock();
+                method.invokevirtual(classname, friendlyName, signature);
+                method.areturn();
+                method.end();
+                
+                method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, friendlyName, signature, null, null));
+            }
+            
             if (inspector == null) {
-                variableCompiler = new HeapBasedVariableCompiler(this, method, getDynamicScopeIndex(), getVarsArrayIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
+                variableCompiler = new HeapBasedVariableCompiler(this, method, scope, specificArity, getDynamicScopeIndex(), getVarsArrayIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
             } else if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
                 // enable "boxed" variable compilation when only a closure present
                 // this breaks using a proc as a binding
                 if (RubyInstanceConfig.BOXED_COMPILE_ENABLED && !inspector.hasScopeAwareMethods()) {
-                    variableCompiler = new BoxedVariableCompiler(this, method, getDynamicScopeIndex(), getVarsArrayIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
+                    variableCompiler = new BoxedVariableCompiler(this, method, scope, specificArity, getDynamicScopeIndex(), getVarsArrayIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
                 } else {
-                    variableCompiler = new HeapBasedVariableCompiler(this, method, getDynamicScopeIndex(), getVarsArrayIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
+                    variableCompiler = new HeapBasedVariableCompiler(this, method, scope, specificArity, getDynamicScopeIndex(), getVarsArrayIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
                 }
             } else {
-                variableCompiler = new StackBasedVariableCompiler(this, method, getDynamicScopeIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
+                variableCompiler = new StackBasedVariableCompiler(this, method, scope, specificArity, getDynamicScopeIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
             }
             invocationCompiler = new StandardInvocationCompiler(this, method);
         }

@@ -41,12 +41,14 @@ public class BoxedVariableCompiler extends HeapBasedVariableCompiler {
     public BoxedVariableCompiler(
             StandardASMCompiler.AbstractMethodCompiler methodCompiler,
             SkinnyMethodAdapter method,
+            StaticScope scope,
+            boolean specificArity,
             int scopeIndex,
             int varsIndex,
             int argsIndex,
             int closureIndex,
             int firstTempIndex) {
-        super(methodCompiler, method,scopeIndex, varsIndex, argsIndex, closureIndex, firstTempIndex);
+        super(methodCompiler, method, scope, specificArity, scopeIndex, varsIndex, argsIndex, closureIndex, firstTempIndex);
         this.baseVariableIndex = firstTempIndex;
         this.scopeIndex = scopeIndex;
         this.varsIndex = varsIndex;

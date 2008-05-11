@@ -41,16 +41,18 @@ import static org.jruby.util.CodegenUtils.*;
 public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
     protected int scopeIndex; // the index of the DynamicScope in the local Java scope to use for depth > 0 variable accesses
     protected int varsIndex; // the index of the IRubyObject[] in the local Java scope to use for depth 0 variable accesses
-
+    
     public HeapBasedVariableCompiler(
             StandardASMCompiler.AbstractMethodCompiler methodCompiler,
             SkinnyMethodAdapter method,
+            StaticScope scope,
+            boolean specificArity,
             int scopeIndex,
             int varsIndex,
             int argsIndex,
             int closureIndex,
             int firstTempIndex) {
-        super(methodCompiler, method, argsIndex, closureIndex, firstTempIndex);
+        super(methodCompiler, method, scope, specificArity, argsIndex, closureIndex, firstTempIndex);
         
         this.scopeIndex = scopeIndex;
         this.varsIndex = varsIndex;

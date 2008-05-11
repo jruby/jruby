@@ -35,7 +35,7 @@ import org.jruby.compiler.VariableCompiler;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Frame;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.util.CodegenUtils.*;
@@ -53,10 +53,14 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
     protected int closureIndex;
     protected int tempVariableIndex;
     protected Arity arity;
+    protected StaticScope scope;
+    protected boolean specificArity;
 
     public AbstractVariableCompiler(
             StandardASMCompiler.AbstractMethodCompiler methodCompiler,
             SkinnyMethodAdapter method,
+            StaticScope scope,
+            boolean specificArity,
             int argsIndex,
             int closureIndex,
             int firstTempIndex) {
@@ -65,6 +69,8 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
         this.argsIndex = argsIndex;
         this.closureIndex = closureIndex;
         this.tempVariableIndex = firstTempIndex;
+        this.scope = scope;
+        this.specificArity = specificArity;
     }
     
     public SkinnyMethodAdapter getMethodAdapter() {
@@ -122,47 +128,52 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
         Label arityError = new Label();
         Label noArityError = new Label();
 
-        if (restArg != -1) {
-            if (requiredArgs > 0) {
-                // just confirm minimum args provided
-                method.aload(argsIndex);
-                method.arraylength();
-                method.pushInt(requiredArgs);
-                method.if_icmplt(arityError);
-            }
-        } else if (optArgs > 0) {
-            if (requiredArgs > 0) {
-                // confirm minimum args provided
-                method.aload(argsIndex);
-                method.arraylength();
-                method.pushInt(requiredArgs);
-                method.if_icmplt(arityError);
-            }
-
-            // confirm maximum not greater than optional
-            method.aload(argsIndex);
-            method.arraylength();
-            method.pushInt(requiredArgs + optArgs);
-            method.if_icmpgt(arityError);
+        if (specificArity) {
+            // do nothing; arity check is done before call
+            // FIXME: arity check is not yet done before call :)
         } else {
-            // just confirm args length == required
+            if (restArg != -1) {
+                if (requiredArgs > 0) {
+                    // just confirm minimum args provided
+                    method.aload(argsIndex);
+                    method.arraylength();
+                    method.pushInt(requiredArgs);
+                    method.if_icmplt(arityError);
+                }
+            } else if (optArgs > 0) {
+                if (requiredArgs > 0) {
+                    // confirm minimum args provided
+                    method.aload(argsIndex);
+                    method.arraylength();
+                    method.pushInt(requiredArgs);
+                    method.if_icmplt(arityError);
+                }
+
+                // confirm maximum not greater than optional
+                method.aload(argsIndex);
+                method.arraylength();
+                method.pushInt(requiredArgs + optArgs);
+                method.if_icmpgt(arityError);
+            } else {
+                // just confirm args length == required
+                method.aload(argsIndex);
+                method.arraylength();
+                method.pushInt(requiredArgs);
+                method.if_icmpne(arityError);
+            }
+
+            method.go_to(noArityError);
+
+            method.label(arityError);
+            methodCompiler.loadRuntime();
             method.aload(argsIndex);
-            method.arraylength();
             method.pushInt(requiredArgs);
-            method.if_icmpne(arityError);
+            method.pushInt(requiredArgs + optArgs);
+            method.invokestatic(p(Arity.class), "checkArgumentCount", sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
+            method.pop();
+
+            method.label(noArityError);
         }
-
-        method.go_to(noArityError);
-
-        method.label(arityError);
-        methodCompiler.loadRuntime();
-        method.aload(argsIndex);
-        method.pushInt(requiredArgs);
-        method.pushInt(requiredArgs + optArgs);
-        method.invokestatic(p(Arity.class), "checkArgumentCount", sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
-        method.pop();
-
-        method.label(noArityError);
     }
 
     public void assignMethodArguments(
@@ -175,84 +186,95 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
             ArrayCallback optNotGivenAssignment,
             CompilerCallback restAssignment,
             CompilerCallback blockAssignment) {
-        if (requiredArgsCount > 0 || optArgsCount > 0 || restAssignment != null) {
-            // load arguments array
-            method.aload(argsIndex);
-
-            // NOTE: This assumes arity has already been confirmed, and does not re-check
-
-            // first, iterate over all required args
+        if (specificArity) {
             int currentArgElement = 0;
             for (; currentArgElement < requiredArgsCount; currentArgElement++) {
-                // extract item from array
-                method.dup(); // dup the original array
-                method.pushInt(currentArgElement); // index for the item
-                method.arrayload();
+                method.aload(argsIndex + currentArgElement);
                 requiredAssignment.nextValue(methodCompiler, requiredArgs, currentArgElement);
 
                 // normal assignment leaves the value; pop it.
                 method.pop();
             }
+        } else {
+            if (requiredArgsCount > 0 || optArgsCount > 0 || restAssignment != null) {
+                // load arguments array
+                method.aload(argsIndex);
 
-            // next, iterate over all optional args, until no more arguments
-            for (int optArgElement = 0; optArgElement < optArgsCount; currentArgElement++, optArgElement++) {
-                Label noMoreArrayElements = new Label();
-                Label doneWithElement = new Label();
+                // NOTE: This assumes arity has already been confirmed, and does not re-check
 
-                // confirm we're not past the end of the array
-                method.dup(); // dup the original array
-                method.arraylength();
-                method.pushInt(currentArgElement);
-                method.if_icmple(noMoreArrayElements); // if length <= start, end loop
+                // first, iterate over all required args
+                int currentArgElement = 0;
+                for (; currentArgElement < requiredArgsCount; currentArgElement++) {
+                    // extract item from array
+                    method.dup(); // dup the original array
+                    method.pushInt(currentArgElement); // index for the item
+                    method.arrayload();
+                    requiredAssignment.nextValue(methodCompiler, requiredArgs, currentArgElement);
 
-                // extract item from array
-                method.dup(); // dup the original array
-                method.pushInt(currentArgElement); // index for the item
-                method.arrayload();
-                optGivenAssignment.nextValue(methodCompiler, optArgs, optArgElement);
-                method.go_to(doneWithElement);
+                    // normal assignment leaves the value; pop it.
+                    method.pop();
+                }
 
-                // otherwise no items left available, use the code from nilCallback
-                method.label(noMoreArrayElements);
-                optNotGivenAssignment.nextValue(methodCompiler, optArgs, optArgElement);
+                // next, iterate over all optional args, until no more arguments
+                for (int optArgElement = 0; optArgElement < optArgsCount; currentArgElement++, optArgElement++) {
+                    Label noMoreArrayElements = new Label();
+                    Label doneWithElement = new Label();
 
-                // end of this element
-                method.label(doneWithElement);
-                // normal assignment leaves the value; pop it.
+                    // confirm we're not past the end of the array
+                    method.dup(); // dup the original array
+                    method.arraylength();
+                    method.pushInt(currentArgElement);
+                    method.if_icmple(noMoreArrayElements); // if length <= start, end loop
+
+                    // extract item from array
+                    method.dup(); // dup the original array
+                    method.pushInt(currentArgElement); // index for the item
+                    method.arrayload();
+                    optGivenAssignment.nextValue(methodCompiler, optArgs, optArgElement);
+                    method.go_to(doneWithElement);
+
+                    // otherwise no items left available, use the code from nilCallback
+                    method.label(noMoreArrayElements);
+                    optNotGivenAssignment.nextValue(methodCompiler, optArgs, optArgElement);
+
+                    // end of this element
+                    method.label(doneWithElement);
+                    // normal assignment leaves the value; pop it.
+                    method.pop();
+                }
+
+                // if there's args left and we want them, assign to rest arg
+                if (restAssignment != null) {
+                    Label emptyArray = new Label();
+                    Label readyForArgs = new Label();
+
+                    // confirm we're not past the end of the array
+                    method.dup(); // dup the original array
+                    method.arraylength();
+                    method.pushInt(currentArgElement);
+                    method.if_icmple(emptyArray); // if length <= start, end loop
+
+                    // assign remaining elements as an array for rest args
+                    method.dup(); // dup the original array object
+                    methodCompiler.loadRuntime();
+                    method.pushInt(currentArgElement);
+                    methodCompiler.invokeUtilityMethod("createSubarray", sig(RubyArray.class, IRubyObject[].class, Ruby.class, int.class));
+                    method.go_to(readyForArgs);
+
+                    // create empty array
+                    method.label(emptyArray);
+                    methodCompiler.createEmptyArray();
+
+                    // assign rest args
+                    method.label(readyForArgs);
+                    restAssignment.call(methodCompiler);
+                    //consume leftover assigned value
+                    method.pop();
+                }
+
+                // done with arguments array
                 method.pop();
             }
-
-            // if there's args left and we want them, assign to rest arg
-            if (restAssignment != null) {
-                Label emptyArray = new Label();
-                Label readyForArgs = new Label();
-
-                // confirm we're not past the end of the array
-                method.dup(); // dup the original array
-                method.arraylength();
-                method.pushInt(currentArgElement);
-                method.if_icmple(emptyArray); // if length <= start, end loop
-
-                // assign remaining elements as an array for rest args
-                method.dup(); // dup the original array object
-                methodCompiler.loadRuntime();
-                method.pushInt(currentArgElement);
-                methodCompiler.invokeUtilityMethod("createSubarray", sig(RubyArray.class, IRubyObject[].class, Ruby.class, int.class));
-                method.go_to(readyForArgs);
-
-                // create empty array
-                method.label(emptyArray);
-                methodCompiler.createEmptyArray();
-
-                // assign rest args
-                method.label(readyForArgs);
-                restAssignment.call(methodCompiler);
-                //consume leftover assigned value
-                method.pop();
-            }
-
-            // done with arguments array
-            method.pop();
         }
         
         // block argument assignment, if there's a block arg

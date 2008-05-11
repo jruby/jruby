@@ -46,6 +46,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
@@ -197,7 +198,30 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     String typePath = p(scriptClass);
                     String mnamePath = typePath + "Invoker" + method + arity;
                     ClassWriter cw = createCompiledCtor(mnamePath,sup);
-                    SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG_BLOCK, null, null));
+                    SkinnyMethodAdapter mv = null;
+                    boolean specificArity = false;
+                    if (scope.getRestArg() >= 0 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() != 1) {
+                        mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG_BLOCK, null, null));
+                    } else {
+                        specificArity = true;
+                        
+                        mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG_BLOCK, null, null));
+                        mv.start();
+                        mv.aload(0);
+                        mv.aload(1);
+                        mv.aload(2);
+                        mv.aload(3);
+                        mv.aload(4);
+                        mv.aload(5);
+                        mv.ldc(0);
+                        mv.arrayload();
+                        mv.aload(6);
+                        mv.invokevirtual(mnamePath, "call", COMPILED_CALL_SIG_ONE_BLOCK);
+                        mv.areturn();
+                        mv.end();
+                        
+                        mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG_ONE_BLOCK, null, null));
+                    }
 
                     mv.visitCode();
                     Label line = new Label();
@@ -236,7 +260,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     mv.aload(RECEIVER_INDEX);
                     mv.aload(ARGS_INDEX);
                     mv.aload(BLOCK_INDEX);
-                    mv.invokevirtual(typePath, method, sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class)));
+                    if (specificArity) {
+                        mv.invokevirtual(typePath, method, StandardASMCompiler.METHOD_SIGNATURES[1]);
+                    } else {
+                        mv.invokevirtual(typePath, method, StandardASMCompiler.METHOD_SIGNATURES[4]);
+                    }
 
                     // store result in temporary variable 8
                     mv.astore(8);

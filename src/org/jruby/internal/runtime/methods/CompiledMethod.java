@@ -43,8 +43,22 @@ public abstract class CompiledMethod extends JavaMethod implements JumpTarget, C
     	super(implementationClass, visibility, callConfig, staticScope, arity);
         this.$scriptObject = scriptObject;
     }
-
-    public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block);
+        
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+        return call(context, self, clazz, name, Block.NULL_BLOCK);
+    }
+        
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
+        return call(context, self, clazz, name, arg, Block.NULL_BLOCK);
+    }
+        
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1, IRubyObject arg2) {
+        return call(context, self, clazz, name, arg1, arg2, Block.NULL_BLOCK);
+    }
+        
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        return call(context, self, clazz, name, arg1, arg2, arg3, Block.NULL_BLOCK);
+    }
     
     public DynamicMethod dup() {
         try {
