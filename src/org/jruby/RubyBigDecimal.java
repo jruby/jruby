@@ -665,8 +665,13 @@ public class RubyBigDecimal extends RubyNumeric {
             return callCoerced(context, "/", other);
         }
 
-        if (isNaN() || val.isZero() || val.isNaN()) {
+        if (isNaN() || (isZero() && val.isZero()) || val.isNaN()) {
             return newNaN(getRuntime());
+        }
+
+        if (val.isZero()) {
+            int sign1 = isInfinity() ? infinitySign : value.signum();
+            return newInfinity(getRuntime(), sign1 * val.zeroSign);
         }
 
         if (isInfinity() && !val.isInfinity()) {
