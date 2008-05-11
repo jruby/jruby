@@ -40,7 +40,6 @@ import static org.jruby.util.CodegenUtils.*;
  * @author headius
  */
 public class StackBasedVariableCompiler extends AbstractVariableCompiler {
-    private int scopeIndex; // the index of the dynamic scope for higher scopes
     private int baseVariableIndex;
 
     public StackBasedVariableCompiler(
@@ -48,13 +47,10 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
             SkinnyMethodAdapter method,
             StaticScope scope,
             boolean specificArity,
-            int scopeIndex,
             int argsIndex,
-            int closureIndex,
             int firstTempIndex) {
-        super(methodCompiler, method, scope, specificArity, argsIndex, closureIndex, firstTempIndex);
+        super(methodCompiler, method, scope, specificArity, argsIndex, firstTempIndex);
         this.baseVariableIndex = firstTempIndex;
-        this.scopeIndex = scopeIndex;
     }
 
     public void beginMethod(CompilerCallback argsCallback, StaticScope scope) {
@@ -83,7 +79,7 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
         // store the local vars in a local variable
         methodCompiler.loadThreadContext();
         methodCompiler.invokeThreadContext("getCurrentScope", sig(DynamicScope.class));
-        method.astore(scopeIndex);
+        method.astore(methodCompiler.getDynamicScopeIndex());
         
         if (scope != null) {
             methodCompiler.loadNil();
@@ -121,7 +117,7 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
         if (depth == 0) {
             assignLocalVariable(index);
         } else {
-            method.aload(scopeIndex);
+            method.aload(methodCompiler.getDynamicScopeIndex());
             method.swap();
             method.pushInt(index);
             method.swap();
@@ -134,7 +130,7 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
         if (depth == 0) {
             assignLocalVariable(index, value);
         } else {
-            method.aload(scopeIndex);
+            method.aload(methodCompiler.getDynamicScopeIndex());
             method.pushInt(index);
             value.call(methodCompiler);
             method.pushInt(depth);
@@ -150,7 +146,7 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
         if (depth == 0) {
             retrieveLocalVariable(index);
         } else {
-            method.aload(scopeIndex);
+            method.aload(methodCompiler.getDynamicScopeIndex());
             method.pushInt(index);
             method.pushInt(depth);
             methodCompiler.loadNil();

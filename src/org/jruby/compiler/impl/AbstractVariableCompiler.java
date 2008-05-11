@@ -50,7 +50,6 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
     protected SkinnyMethodAdapter method;
     protected StandardASMCompiler.AbstractMethodCompiler methodCompiler;
     protected int argsIndex;
-    protected int closureIndex;
     protected int tempVariableIndex;
     protected Arity arity;
     protected StaticScope scope;
@@ -62,12 +61,10 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
             StaticScope scope,
             boolean specificArity,
             int argsIndex,
-            int closureIndex,
             int firstTempIndex) {
         this.methodCompiler = methodCompiler;
         this.method = method;
         this.argsIndex = argsIndex;
-        this.closureIndex = closureIndex;
         this.tempVariableIndex = firstTempIndex;
         this.scope = scope;
         this.specificArity = specificArity;
@@ -280,7 +277,7 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
         // block argument assignment, if there's a block arg
         if (blockAssignment != null) {
             methodCompiler.loadRuntime();
-            method.aload(closureIndex);
+            method.aload(methodCompiler.getClosureIndex());
 
             methodCompiler.invokeUtilityMethod("processBlockArgument", sig(IRubyObject.class, params(Ruby.class, Block.class)));
             blockAssignment.call(methodCompiler);

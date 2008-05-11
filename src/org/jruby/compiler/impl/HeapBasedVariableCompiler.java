@@ -39,23 +39,14 @@ import static org.jruby.util.CodegenUtils.*;
  * @author headius
  */
 public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
-    protected int scopeIndex; // the index of the DynamicScope in the local Java scope to use for depth > 0 variable accesses
-    protected int varsIndex; // the index of the IRubyObject[] in the local Java scope to use for depth 0 variable accesses
-    
     public HeapBasedVariableCompiler(
             StandardASMCompiler.AbstractMethodCompiler methodCompiler,
             SkinnyMethodAdapter method,
             StaticScope scope,
             boolean specificArity,
-            int scopeIndex,
-            int varsIndex,
             int argsIndex,
-            int closureIndex,
             int firstTempIndex) {
-        super(methodCompiler, method, scope, specificArity, argsIndex, closureIndex, firstTempIndex);
-        
-        this.scopeIndex = scopeIndex;
-        this.varsIndex = varsIndex;
+        super(methodCompiler, method, scope, specificArity, argsIndex, firstTempIndex);
     }
 
     public void beginMethod(CompilerCallback argsCallback, StaticScope scope) {
@@ -64,12 +55,12 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             methodCompiler.loadThreadContext();
             methodCompiler.invokeThreadContext("getCurrentScope", sig(DynamicScope.class));
             method.dup();
-            method.astore(scopeIndex);
+            method.astore(methodCompiler.getDynamicScopeIndex());
             method.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
-            method.astore(varsIndex);
+            method.astore(methodCompiler.getVarsArrayIndex());
 
             // fill local vars with nil, to avoid checking every access.
-            method.aload(varsIndex);
+            method.aload(methodCompiler.getVarsArrayIndex());
             methodCompiler.loadNil();
             method.invokestatic(p(Arrays.class), "fill", sig(Void.TYPE, params(Object[].class, Object.class)));
         }
@@ -86,9 +77,9 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
         methodCompiler.loadThreadContext();
         methodCompiler.invokeThreadContext("getCurrentScope", sig(DynamicScope.class));
         method.dup();
-        method.astore(scopeIndex);
+        method.astore(methodCompiler.getDynamicScopeIndex());
         method.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
-        method.astore(varsIndex);
+        method.astore(methodCompiler.getVarsArrayIndex());
         
         // class bodies prepare their own dynamic scope, so let it do that
         bodyPrep.call(methodCompiler);
@@ -97,12 +88,12 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
         methodCompiler.loadThreadContext();
         methodCompiler.invokeThreadContext("getCurrentScope", sig(DynamicScope.class));
         method.dup();
-        method.astore(scopeIndex);
+        method.astore(methodCompiler.getDynamicScopeIndex());
         method.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
-        method.astore(varsIndex);
+        method.astore(methodCompiler.getVarsArrayIndex());
 
         // fill local vars with nil, to avoid checking every access.
-        method.aload(varsIndex);
+        method.aload(methodCompiler.getVarsArrayIndex());
         methodCompiler.loadNil();
         method.invokestatic(p(Arrays.class), "fill", sig(Void.TYPE, params(Object[].class, Object.class)));
     }
@@ -110,10 +101,10 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
     public void beginClosure(CompilerCallback argsCallback, StaticScope scope) {
         methodCompiler.loadThreadContext();
         methodCompiler.invokeThreadContext("getCurrentScope", sig(DynamicScope.class));
-        method.astore(scopeIndex);
-        method.aload(scopeIndex);
+        method.astore(methodCompiler.getDynamicScopeIndex());
+        method.aload(methodCompiler.getDynamicScopeIndex());
         method.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
-        method.astore(varsIndex);
+        method.astore(methodCompiler.getVarsArrayIndex());
         
         if (scope != null && scope.getNumberOfVariables() >= 1) {
             switch (scope.getNumberOfVariables()) {
@@ -129,7 +120,7 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
                 method.pop();
                 break;
             default:
-                method.aload(varsIndex);
+                method.aload(methodCompiler.getVarsArrayIndex());
                 methodCompiler.loadNil();
                 assignLocalVariable(0);
                 assignLocalVariable(1);
@@ -150,18 +141,18 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
     public void assignLocalVariable(int index) {
         switch (index) {
         case 0:
-            method.aload(scopeIndex);
+            method.aload(methodCompiler.getDynamicScopeIndex());
             method.swap();
             method.invokevirtual(p(DynamicScope.class), "setValueZeroDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
             break;
         case 1:
-            method.aload(scopeIndex);
+            method.aload(methodCompiler.getDynamicScopeIndex());
             method.swap();
             method.invokevirtual(p(DynamicScope.class), "setValueOneDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
             break;
         default:
             method.dup();
-            method.aload(varsIndex);
+            method.aload(methodCompiler.getVarsArrayIndex());
             method.swap();
             method.pushInt(index);
             method.swap();
@@ -172,17 +163,17 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
     public void assignLocalVariable(int index, CompilerCallback value) {
         switch (index) {
         case 0:
-            method.aload(scopeIndex);
+            method.aload(methodCompiler.getDynamicScopeIndex());
             value.call(methodCompiler);
             method.invokevirtual(p(DynamicScope.class), "setValueZeroDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
             break;
         case 1:
-            method.aload(scopeIndex);
+            method.aload(methodCompiler.getDynamicScopeIndex());
             value.call(methodCompiler);
             method.invokevirtual(p(DynamicScope.class), "setValueOneDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
             break;
         default:
-            method.aload(varsIndex);
+            method.aload(methodCompiler.getVarsArrayIndex());
             method.pushInt(index);
             value.call(methodCompiler);
             method.dup_x2();
@@ -197,7 +188,7 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
         }
 
         // unwrap scopes to appropriate depth
-        method.aload(scopeIndex);
+        method.aload(methodCompiler.getDynamicScopeIndex());
         while (depth > 0) {
             method.invokevirtual(p(DynamicScope.class), "getNextCapturedScope", sig(DynamicScope.class));
             depth--;
@@ -226,7 +217,7 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
         }
 
         // unwrap scopes to appropriate depth
-        method.aload(scopeIndex);
+        method.aload(methodCompiler.getDynamicScopeIndex());
         while (depth > 0) {
             method.invokevirtual(p(DynamicScope.class), "getNextCapturedScope", sig(DynamicScope.class));
             depth--;
@@ -250,17 +241,17 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
     public void retrieveLocalVariable(int index) {
         switch (index) {
         case 0:
-            method.aload(scopeIndex);
+            method.aload(methodCompiler.getDynamicScopeIndex());
             methodCompiler.loadNil();
             method.invokevirtual(p(DynamicScope.class), "getValueZeroDepthZeroOrNil", sig(IRubyObject.class, IRubyObject.class));
             break;
         case 1:
-            method.aload(scopeIndex);
+            method.aload(methodCompiler.getDynamicScopeIndex());
             methodCompiler.loadNil();
             method.invokevirtual(p(DynamicScope.class), "getValueOneDepthZeroOrNil", sig(IRubyObject.class, IRubyObject.class));
             break;
         default:
-            method.aload(varsIndex);
+            method.aload(methodCompiler.getVarsArrayIndex());
             method.pushInt(index);
             method.arrayload();
         }
@@ -273,7 +264,7 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
         }
 
         // unwrap scopes to appropriate depth
-        method.aload(scopeIndex);
+        method.aload(methodCompiler.getDynamicScopeIndex());
         while (depth > 0) {
             method.invokevirtual(p(DynamicScope.class), "getNextCapturedScope", sig(DynamicScope.class));
             depth--;

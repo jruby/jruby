@@ -35,7 +35,6 @@ import org.jruby.parser.StaticScope;
  * @author headius
  */
 public class BoxedVariableCompiler extends HeapBasedVariableCompiler {
-    private StaticScope scope; // the static scope for the currently compiling method
     private int baseVariableIndex;
 
     public BoxedVariableCompiler(
@@ -43,15 +42,10 @@ public class BoxedVariableCompiler extends HeapBasedVariableCompiler {
             SkinnyMethodAdapter method,
             StaticScope scope,
             boolean specificArity,
-            int scopeIndex,
-            int varsIndex,
             int argsIndex,
-            int closureIndex,
             int firstTempIndex) {
-        super(methodCompiler, method, scope, specificArity, scopeIndex, varsIndex, argsIndex, closureIndex, firstTempIndex);
+        super(methodCompiler, method, scope, specificArity, argsIndex, firstTempIndex);
         this.baseVariableIndex = firstTempIndex;
-        this.scopeIndex = scopeIndex;
-        this.varsIndex = varsIndex;
     }
 
     public void beginMethod(CompilerCallback argsCallback, StaticScope scope) {

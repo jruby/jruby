@@ -389,7 +389,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         protected VariableCompiler variableCompiler;
         protected InvocationCompiler invocationCompiler;
         
-        protected final int argParamCount;
+        protected int argParamCount;
         
         protected Label[] currentLoopLabels;
         protected Label scopeStart;
@@ -905,7 +905,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void performBooleanLoopSafe(BranchCallback condition, BranchCallback body, boolean checkFirst) {
             String mname = getNewRescueName();
-            String signature = sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class});
+            String signature = sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, Block.class});
             SkinnyMethodAdapter mv = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, mname, signature, null, null));
             SkinnyMethodAdapter old_method = null;
             SkinnyMethodAdapter var_old_method = null;
@@ -914,6 +914,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             withinProtection = true;
             Label[] oldLoopLabels = currentLoopLabels;
             currentLoopLabels = null;
+            int oldArgCount = argParamCount;
+            argParamCount = 0; // synthetic methods always have zero arg parameters
             try {
                 old_method = this.method;
                 var_old_method = getVariableCompiler().getMethodAdapter();
@@ -956,12 +958,13 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 this.method = old_method;
                 getVariableCompiler().setMethodAdapter(var_old_method);
                 getInvocationCompiler().setMethodAdapter(inv_old_method);
+                currentLoopLabels = oldLoopLabels;
+                argParamCount = oldArgCount;
             }
             
             method.aload(THIS);
             loadThreadContext();
             loadSelf();
-            loadNull();
             if(this instanceof ASMClosureCompiler) {
                 pushNull();
             } else {
@@ -1637,7 +1640,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public void protect(BranchCallback regularCode, BranchCallback protectedCode, Class ret) {
 
             String mname = getNewEnsureName();
-            SkinnyMethodAdapter mv = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, mname, sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class}), null, null));
+            SkinnyMethodAdapter mv = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, mname, sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, Block.class}), null, null));
             SkinnyMethodAdapter old_method = null;
             SkinnyMethodAdapter var_old_method = null;
             SkinnyMethodAdapter inv_old_method = null;
@@ -1645,6 +1648,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             withinProtection = true;
             Label[] oldLoopLabels = currentLoopLabels;
             currentLoopLabels = null;
+            int oldArgCount = argParamCount;
+            argParamCount = 0; // synthetic methods always have zero arg parameters
             try {
                 old_method = this.method;
                 var_old_method = getVariableCompiler().getMethodAdapter();
@@ -1705,18 +1710,18 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 getInvocationCompiler().setMethodAdapter(inv_old_method);
                 withinProtection = oldWithinProtection;
                 currentLoopLabels = oldLoopLabels;
+                argParamCount = oldArgCount;
             }
 
             method.aload(THIS);
             loadThreadContext();
             loadSelf();
-            loadNull();
             if(this instanceof ASMClosureCompiler) {
                 pushNull();
             } else {
                 loadBlock();
             }
-            method.invokevirtual(classname, mname, sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class}));
+            method.invokevirtual(classname, mname, sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, Block.class}));
         }
 
         protected String getNewRescueName() {
@@ -1725,7 +1730,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void rescue(BranchCallback regularCode, Class exception, BranchCallback catchCode, Class ret) {
             String mname = getNewRescueName();
-            SkinnyMethodAdapter mv = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, mname, sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class}), null, null));
+            SkinnyMethodAdapter mv = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, mname, sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, Block.class}), null, null));
             SkinnyMethodAdapter old_method = null;
             SkinnyMethodAdapter var_old_method = null;
             SkinnyMethodAdapter inv_old_method = null;
@@ -1738,6 +1743,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             withinProtection = true;
             Label[] oldLoopLabels = currentLoopLabels;
             currentLoopLabels = null;
+            int oldArgCount = argParamCount;
+            argParamCount = 0; // synthetic methods always have zero arg parameters
             try {
                 old_method = this.method;
                 var_old_method = getVariableCompiler().getMethodAdapter();
@@ -1823,18 +1830,18 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 getVariableCompiler().setMethodAdapter(var_old_method);
                 getInvocationCompiler().setMethodAdapter(inv_old_method);
                 currentLoopLabels = oldLoopLabels;
+                argParamCount = oldArgCount;
             }
             
             method.aload(THIS);
             loadThreadContext();
             loadSelf();
-            loadNull();
             if(this instanceof ASMClosureCompiler) {
                 pushNull();
             } else {
                 loadBlock();
             }
-            method.invokevirtual(classname, mname, sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class}));
+            method.invokevirtual(classname, mname, sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, Block.class}));
         }
 
         public void inDefined() {
@@ -2557,17 +2564,17 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             
             method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, closureMethodName, CLOSURE_SIGNATURE, null, null));
             if (inspector == null) {
-                variableCompiler = new HeapBasedVariableCompiler(this, method, scope, false, getDynamicScopeIndex(), getVarsArrayIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
+                variableCompiler = new HeapBasedVariableCompiler(this, method, scope, false, ARGS_INDEX, getFirstTempIndex());
             } else if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
                 // enable "boxed" variable compilation when only a closure present
                 // this breaks using a proc as a binding
                 if (RubyInstanceConfig.BOXED_COMPILE_ENABLED && !inspector.hasScopeAwareMethods()) {
-                    variableCompiler = new BoxedVariableCompiler(this, method, scope, false, getDynamicScopeIndex(), getVarsArrayIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
+                    variableCompiler = new BoxedVariableCompiler(this, method, scope, false, ARGS_INDEX, getFirstTempIndex());
                 } else {
-                    variableCompiler = new HeapBasedVariableCompiler(this, method, scope, false, getDynamicScopeIndex(), getVarsArrayIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
+                    variableCompiler = new HeapBasedVariableCompiler(this, method, scope, false, ARGS_INDEX, getFirstTempIndex());
                 }
             } else {
-                variableCompiler = new StackBasedVariableCompiler(this, method, scope, false, getDynamicScopeIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
+                variableCompiler = new StackBasedVariableCompiler(this, method, scope, false, ARGS_INDEX, getFirstTempIndex());
             }
             invocationCompiler = new StandardInvocationCompiler(this, method);
         }
@@ -2724,17 +2731,17 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             }
             
             if (inspector == null) {
-                variableCompiler = new HeapBasedVariableCompiler(this, method, scope, specificArity, getDynamicScopeIndex(), getVarsArrayIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
+                variableCompiler = new HeapBasedVariableCompiler(this, method, scope, specificArity, ARGS_INDEX, getFirstTempIndex());
             } else if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
                 // enable "boxed" variable compilation when only a closure present
                 // this breaks using a proc as a binding
                 if (RubyInstanceConfig.BOXED_COMPILE_ENABLED && !inspector.hasScopeAwareMethods()) {
-                    variableCompiler = new BoxedVariableCompiler(this, method, scope, specificArity, getDynamicScopeIndex(), getVarsArrayIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
+                    variableCompiler = new BoxedVariableCompiler(this, method, scope, specificArity, ARGS_INDEX, getFirstTempIndex());
                 } else {
-                    variableCompiler = new HeapBasedVariableCompiler(this, method, scope, specificArity, getDynamicScopeIndex(), getVarsArrayIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
+                    variableCompiler = new HeapBasedVariableCompiler(this, method, scope, specificArity, ARGS_INDEX, getFirstTempIndex());
                 }
             } else {
-                variableCompiler = new StackBasedVariableCompiler(this, method, scope, specificArity, getDynamicScopeIndex(), ARGS_INDEX, getClosureIndex(), getFirstTempIndex());
+                variableCompiler = new StackBasedVariableCompiler(this, method, scope, specificArity, ARGS_INDEX, getFirstTempIndex());
             }
             invocationCompiler = new StandardInvocationCompiler(this, method);
         }
