@@ -709,4 +709,16 @@ class TestFile < Test::Unit::TestCase
       }
     end
   end
+
+  # JRUBY-2491
+  def test_umask_noarg_does_not_zero
+    mask = 0022
+    orig_mask = File.umask(mask)
+    assert_equal(mask, File.umask)
+    # Subsequent calls should still return the same umask, not zero
+    assert_equal(mask, File.umask)
+  ensure
+    File.umask(orig_mask)
+  end
+
 end

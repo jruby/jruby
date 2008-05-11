@@ -1450,6 +1450,7 @@ public class RubyFile extends RubyIO {
         int oldMask = 0;
         if (args.length == 0) {
             oldMask = recv.getRuntime().getPosix().umask(0);
+            recv.getRuntime().getPosix().umask(oldMask);
         } else if (args.length == 1) {
             oldMask = recv.getRuntime().getPosix().umask((int) args[0].convertToInteger().getLongValue()); 
         } else {
