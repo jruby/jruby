@@ -281,7 +281,6 @@ public class RubyInstanceConfig {
                 .append("  -c              check syntax only\n")
                 .append("  -Cdirectory     cd to directory, before executing your script\n")
                 .append("  -d              set debugging flags (set $DEBUG to true)\n")
-                .append("  --debug         runs JRuby process under JDB\n")
                 .append("  -e 'command'    one line of script. Several -e's allowed. Omit [programfile]\n")
                 .append("  -Fpattern       split() pattern for autosplit (-a)\n")
                 //.append("  -i[extension]   edit ARGV files in place (make backup if extension supplied)\n")
