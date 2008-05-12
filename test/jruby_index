@@ -35,6 +35,7 @@ test_higher_javasupport
 test_iconv
 test_io
 test_load
+test_math
 test_nkf
 test_java_accessible_object
 test_java_extension
