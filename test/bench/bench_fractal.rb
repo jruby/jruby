@@ -42,7 +42,9 @@ class Mandelbrot
 
 end
 
+5.times {
 time = Time.now
 Mandelbrot.new
 puts
 puts "Ruby Elapsed %f" % (Time.now - time)
+}
