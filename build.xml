@@ -148,6 +148,7 @@
       <classpath path="${jruby.classes.dir}"/>
       <src path="${src.dir}"/>
       <patternset refid="java.src.pattern"/>
+      <compilerarg line="-XDignore.symbol.file=true"/>
     </apt>
   </target>
 
