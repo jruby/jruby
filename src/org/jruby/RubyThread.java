@@ -608,7 +608,7 @@ public class RubyThread extends RubyObject {
         if(args.length == 0) {
             IRubyObject lastException = runtime.getGlobalVariables().get("$!");
             if(lastException.isNil()) {
-                return new RaiseException(runtime, runtime.fastGetClass("RuntimeError"), "", false).getException();
+                return new RaiseException(runtime, runtime.getRuntimeError(), "", false).getException();
             } 
             return lastException;
         }
@@ -618,7 +618,7 @@ public class RubyThread extends RubyObject {
         
         if(args.length == 1) {
             if(args[0] instanceof RubyString) {
-                return runtime.fastGetClass("RuntimeError").newInstance(context, args, block);
+                return runtime.getRuntimeError().newInstance(context, args, block);
             }
             
             if(!args[0].respondsTo("exception")) {
@@ -756,7 +756,7 @@ public class RubyThread extends RubyObject {
 
         RubyException rubyException = exception.getException();
         Ruby runtime = rubyException.getRuntime();
-        if (runtime.fastGetClass("SystemExit").isInstance(rubyException)) {
+        if (runtime.getSystemExit().isInstance(rubyException)) {
             threadService.getMainThread().raise(new IRubyObject[] {rubyException}, Block.NULL_BLOCK);
         } else if (abortOnException(runtime)) {
             // FIXME: printError explodes on some nullpointer

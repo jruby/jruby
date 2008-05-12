@@ -173,7 +173,7 @@ public class RubySystemCallError extends RubyException {
     
     @JRubyMethod(optional = 2, required=0, frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        RubyClass sCallErorrClass = getRuntime().fastGetClass("SystemCallError");
+        RubyClass sCallErorrClass = getRuntime().getSystemCallError();
         RubyClass klass = getMetaClass().getRealClass();
 
         IRubyObject msg = getRuntime().getNil();

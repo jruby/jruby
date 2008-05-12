@@ -1565,7 +1565,7 @@ public class ASTInterpreter {
 
                     IRubyObject[] exceptions;
                     if (exceptionNodesList == null) {
-                        exceptions = new IRubyObject[] {runtime.fastGetClass("StandardError")};
+                        exceptions = new IRubyObject[] {runtime.getStandardError()};
                     } else {
                         exceptions = setupArgs(runtime, context, exceptionNodes, self, aBlock);
                     }
@@ -1774,7 +1774,7 @@ public class ASTInterpreter {
                     evalInternal(runtime,context, iVisited.getBodyNode(), self, aBlock);
                     break loop;
                 } catch (RaiseException re) {
-                    if (runtime.fastGetClass("LocalJumpError").isInstance(re.getException())) {
+                    if (runtime.getLocalJumpError().isInstance(re.getException())) {
                         RubyLocalJumpError jumpError = (RubyLocalJumpError)re.getException();
                         
                         IRubyObject reason = jumpError.reason();

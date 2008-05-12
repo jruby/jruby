@@ -475,7 +475,7 @@ public class RuntimeHelpers {
     public static String getLocalJumpTypeOrRethrow(RaiseException re) {
         RubyException exception = re.getException();
         Ruby runtime = exception.getRuntime();
-        if (runtime.fastGetClass("LocalJumpError").isInstance(exception)) {
+        if (runtime.getLocalJumpError().isInstance(exception)) {
             RubyLocalJumpError jumpError = (RubyLocalJumpError)re.getException();
 
             IRubyObject reason = jumpError.reason();

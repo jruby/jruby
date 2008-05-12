@@ -73,7 +73,7 @@ public class RubyZlib {
         gzreader.includeModule(runtime.getEnumerable());
         gzreader.defineAnnotatedMethods(RubyGzipReader.class);
         
-        RubyClass standardError = runtime.fastGetClass("StandardError");
+        RubyClass standardError = runtime.getStandardError();
         RubyClass zlibError = result.defineClassUnder("Error", standardError, standardError.getAllocator());
         gzreader.defineClassUnder("Error", zlibError, zlibError.getAllocator());
 

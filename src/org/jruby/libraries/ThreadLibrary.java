@@ -298,7 +298,7 @@ public class ThreadLibrary implements Library {
                 should_block = !args[0].isTrue();
             }
             if ( !should_block && entries.size() == 0 ) {
-                throw new RaiseException(getRuntime(), getRuntime().fastGetClass("ThreadError"), "queue empty", false);
+                throw new RaiseException(getRuntime(), getRuntime().getThreadError(), "queue empty", false);
             }
             while ( entries.size() == 0 ) {
                 try {

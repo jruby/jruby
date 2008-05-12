@@ -169,10 +169,10 @@ public class RubyKernel {
         final IRubyObject[]exArgs;
         final RubyClass exc;
         if (lastCallType != CallType.VARIABLE) {
-            exc = runtime.fastGetClass("NoMethodError");
+            exc = runtime.getNoMethodError();
             exArgs = new IRubyObject[]{msg, args[0], RubyArray.newArrayNoCopy(runtime, args, 1)};
         } else {
-            exc = runtime.fastGetClass("NameError");
+            exc = runtime.getNameError();
             exArgs = new IRubyObject[]{msg, args[0]};
         }
         
@@ -723,7 +723,7 @@ public class RubyKernel {
         if (args.length == 0) {
             IRubyObject lastException = runtime.getGlobalVariables().get("$!");
             if (lastException.isNil()) {
-                throw new RaiseException(runtime, runtime.fastGetClass("RuntimeError"), "", false);
+                throw new RaiseException(runtime, runtime.getRuntimeError(), "", false);
             } 
             throw new RaiseException((RubyException) lastException);
         }
@@ -732,7 +732,7 @@ public class RubyKernel {
         
         if (args.length == 1) {
             if (args[0] instanceof RubyString) {
-                throw new RaiseException((RubyException)runtime.fastGetClass("RuntimeError").newInstance(context, args, block));
+                throw new RaiseException((RubyException)runtime.getRuntimeError().newInstance(context, args, block));
             }
             
             if (!args[0].respondsTo("exception")) {

@@ -224,7 +224,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
         RubyClass instance = runtime.getErrno(n);
         if(instance == null) {
-            instance = runtime.fastGetClass("SystemCallError");
+            instance = runtime.getSystemCallError();
             throw new RaiseException((RubyException)(instance.newInstance(runtime.getCurrentContext(), new IRubyObject[]{arg, runtime.newFixnum(n)}, Block.NULL_BLOCK)));
         } else {
             throw new RaiseException((RubyException)(instance.newInstance(runtime.getCurrentContext(), new IRubyObject[]{arg}, Block.NULL_BLOCK)));

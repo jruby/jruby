@@ -88,7 +88,7 @@ public class RubyIconv extends RubyObject {
         iconvClass.defineAnnotatedMethods(RubyIconv.class);
 
         RubyModule failure = iconvClass.defineModuleUnder("Failure");
-        RubyClass argumentError = runtime.fastGetClass("ArgumentError");
+        RubyClass argumentError = runtime.getArgumentError();
 
         String[] iconvErrors = {"IllegalSequence", "InvalidCharacter", "InvalidEncoding", 
                 "OutOfRange", "BrokenLibrary"};

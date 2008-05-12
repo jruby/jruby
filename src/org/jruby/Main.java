@@ -155,7 +155,7 @@ public class Main {
                 }
             } catch (RaiseException rj) {
                 RubyException raisedException = rj.getException();
-                if (runtime.fastGetClass("SystemExit").isInstance(raisedException)) {
+                if (runtime.getSystemExit().isInstance(raisedException)) {
                     IRubyObject status = raisedException.callMethod(runtime.getCurrentContext(), "status");
 
                     if (status != null && !status.isNil()) {

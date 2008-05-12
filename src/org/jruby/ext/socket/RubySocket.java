@@ -68,7 +68,7 @@ public class RubySocket extends RubyBasicSocket {
 
     public static class Service implements Library {
         public void load(final Ruby runtime, boolean wrap) throws IOException {
-            runtime.defineClass("SocketError",runtime.fastGetClass("StandardError"), runtime.fastGetClass("StandardError").getAllocator());
+            runtime.defineClass("SocketError", runtime.getStandardError(), runtime.getStandardError().getAllocator());
             RubyBasicSocket.createBasicSocket(runtime);
             RubySocket.createSocket(runtime);
 
