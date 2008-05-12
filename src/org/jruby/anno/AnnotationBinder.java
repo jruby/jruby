@@ -100,6 +100,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     out.println("import org.jruby.internal.runtime.methods.DynamicMethod;");
                     out.println("import org.jruby.runtime.Arity;");
                     out.println("import org.jruby.runtime.Visibility;");
+                    out.println("import org.jruby.compiler.ASTInspector;");
 
                     out.println("public class " + qualifiedName + "$Populator implements TypePopulator {");
                     out.println("    public void populate(RubyModule cls) {");
@@ -114,6 +115,8 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     Map<String, List<MethodDeclaration>> staticAnnotatedMethods1_8 = new HashMap<String, List<MethodDeclaration>>();
                     Map<String, List<MethodDeclaration>> annotatedMethods1_9 = new HashMap<String, List<MethodDeclaration>>();
                     Map<String, List<MethodDeclaration>> staticAnnotatedMethods1_9 = new HashMap<String, List<MethodDeclaration>>();
+                    
+                    List<String> frameAwareMethods = new ArrayList();
 
                     int methodCount = 0;
                     for (MethodDeclaration md : cd.getMethods()) {
@@ -151,6 +154,10 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                         }
 
                         methodDescs.add(md);
+                        
+                        if (anno.frame() || (anno.reads() != null && anno.reads().length >= 1) || (anno.writes() != null && anno.writes().length >= 1)) {
+                            frameAwareMethods.add(name);
+                        }
                     }
                     
                     if (methodCount == 0) {
@@ -179,6 +186,10 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     out.println("        if (compatVersion == CompatVersion.RUBY1_9 || compatVersion == CompatVersion.BOTH) {");
                     processMethodDeclarations(annotatedMethods1_9);
                     out.println("        }");
+                    
+                    for (String name : frameAwareMethods) {
+                        out.println("        ASTInspector.FRAME_AWARE_METHODS.add(\"" + name + "\");");
+                    }
 
                     out.println("    }");
                     out.println("}");
