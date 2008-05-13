@@ -274,51 +274,83 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     Label tryBegin = new Label();
                     Label tryEnd = new Label();
                     Label doFinally = new Label();
+                    Label doReturnFinally = new Label();
+                    Label doRedoFinally = new Label();
                     Label catchReturnJump = new Label();
                     Label catchRedoJump = new Label();
-                    Label normalExit = new Label();
 
                     mv.trycatch(tryBegin, tryEnd, catchReturnJump, p(JumpException.ReturnJump.class));
                     mv.trycatch(tryBegin, tryEnd, catchRedoJump, p(JumpException.RedoJump.class));
                     mv.trycatch(tryBegin, tryEnd, doFinally, null);
-                    mv.trycatch(catchReturnJump, doFinally, doFinally, null);
+                    mv.trycatch(catchReturnJump, doReturnFinally, doFinally, null);
+                    mv.trycatch(catchRedoJump, doRedoFinally, doFinally, null);
                     mv.label(tryBegin);
-
-                    mv.aload(0);
-                    // FIXME we want to eliminate these type casts when possible
-                    mv.getfield(mnamePath, "$scriptObject", ci(Object.class));
-                    mv.checkcast(typePath);
-                    mv.aload(THREADCONTEXT_INDEX);
-                    mv.aload(RECEIVER_INDEX);
-                    if (specificArity) {
-                        for (int i = 0; i < scope.getRequiredArgs(); i++) {
-                            mv.aload(ARGS_INDEX + i);
+                    {
+                        mv.aload(0);
+                        // FIXME we want to eliminate these type casts when possible
+                        mv.getfield(mnamePath, "$scriptObject", ci(Object.class));
+                        mv.checkcast(typePath);
+                        mv.aload(THREADCONTEXT_INDEX);
+                        mv.aload(RECEIVER_INDEX);
+                        if (specificArity) {
+                            for (int i = 0; i < scope.getRequiredArgs(); i++) {
+                                mv.aload(ARGS_INDEX + i);
+                            }
+                            mv.aload(ARGS_INDEX + scope.getRequiredArgs());
+                            mv.invokevirtual(typePath, method, StandardASMCompiler.METHOD_SIGNATURES[scope.getRequiredArgs()]);
+                        } else {
+                            mv.aload(ARGS_INDEX);
+                            mv.aload(BLOCK_INDEX);
+                            mv.invokevirtual(typePath, method, StandardASMCompiler.METHOD_SIGNATURES[4]);
                         }
-                        mv.aload(ARGS_INDEX + scope.getRequiredArgs());
-                        mv.invokevirtual(typePath, method, StandardASMCompiler.METHOD_SIGNATURES[scope.getRequiredArgs()]);
-                    } else {
-                        mv.aload(ARGS_INDEX);
-                        mv.aload(BLOCK_INDEX);
-                        mv.invokevirtual(typePath, method, StandardASMCompiler.METHOD_SIGNATURES[4]);
                     }
-
-                    // store result in temporary variable 8
-                    mv.astore(8);
-
                     mv.label(tryEnd);
-
-                    //call post method stuff (non-finally)
-                    mv.label(normalExit);
-                    if (!callConfig.isNoop()) {
-                        invokeCallConfigPost(mv, COMPILED_SUPER_CLASS);
+                    
+                    // normal exit, perform finally and return
+                    {
+                        if (!callConfig.isNoop()) {
+                            invokeCallConfigPost(mv, COMPILED_SUPER_CLASS);
+                        }
+                        mv.visitInsn(ARETURN);
                     }
-                    // reload and return result
-                    mv.aload(8);
-                    mv.visitInsn(ARETURN);
 
-                    handleReturn(catchReturnJump,mv, doFinally, normalExit, COMPILED_SUPER_CLASS);
+                    // return jump handling
+                    mv.label(catchReturnJump);
+                    {
+                        mv.aload(0);
+                        mv.swap();
+                        mv.invokevirtual(COMPILED_SUPER_CLASS, "handleReturnJump", sig(IRubyObject.class, JumpException.ReturnJump.class));
+                        mv.label(doReturnFinally);
+                        
+                        // finally
+                        if (!callConfig.isNoop()) {
+                            invokeCallConfigPost(mv, COMPILED_SUPER_CLASS);
+                        }
+                        
+                        // return result if we're still good
+                        mv.areturn();
+                    }
 
-                    handleRedo(catchRedoJump, mv, doFinally);
+                    // redo jump handling
+                    mv.label(catchRedoJump);
+                    {
+                        // clear the redo
+                        mv.pop();
+                        
+                        // get runtime, create jump error, and throw it
+                        mv.aload(1);
+                        mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
+                        mv.invokevirtual(p(Ruby.class), "newRedoLocalJumpError", sig(RaiseException.class));
+                        mv.label(doRedoFinally);
+                        
+                        // finally
+                        if (!callConfig.isNoop()) {
+                            invokeCallConfigPost(mv, COMPILED_SUPER_CLASS);
+                        }
+                        
+                        // throw redo error if we're still good
+                        mv.athrow();
+                    }
 
                     // finally handling for abnormal exit
                     {
@@ -1253,15 +1285,17 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         Label tryBegin = new Label();
         Label tryEnd = new Label();
         Label doFinally = new Label();
+        Label doReturnFinally = new Label();
+        Label doRedoFinally = new Label();
         Label catchReturnJump = new Label();
         Label catchRedoJump = new Label();
-        Label normalExit = new Label();
 
         if (!callConfig.isNoop() || block) {
             method.trycatch(tryBegin, tryEnd, catchReturnJump, p(JumpException.ReturnJump.class));
             method.trycatch(tryBegin, tryEnd, catchRedoJump, p(JumpException.RedoJump.class));
             method.trycatch(tryBegin, tryEnd, doFinally, null);
-            method.trycatch(catchReturnJump, doFinally, doFinally, null);
+            method.trycatch(catchReturnJump, doReturnFinally, doFinally, null);
+            method.trycatch(catchRedoJump, doRedoFinally, doFinally, null);
         }
         
         method.label(tryBegin);
@@ -1280,32 +1314,64 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 method.invokevirtual(typePath, javaMethodName, desc.signature);
             }
         }
-                
-        // store result in temporary variable 8
-        if (!callConfig.isNoop() || block) {
-            method.astore(8);
-
-            method.label(tryEnd);
- 
-            method.label(normalExit);
-
+        method.label(tryEnd);
+        
+        // normal finally and exit
+        {
             if (!callConfig.isNoop()) {
                 invokeCallConfigPost(method, superClass);
             }
 
-            // reload and return result
-            method.aload(8);
+            // return
+            method.visitInsn(ARETURN);
         }
-        method.visitInsn(ARETURN);
-
+        
+        // these are only needed if we're expecting a block
+        
         if (!callConfig.isNoop() || block) {
-            handleReturn(catchReturnJump,method, doFinally, normalExit, superClass);
+            // return jump handling
+            method.label(catchReturnJump);
+            {
+                method.aload(0);
+                method.swap();
+                method.invokevirtual(superClass, "handleReturnJump", sig(IRubyObject.class, JumpException.ReturnJump.class));
 
-            handleRedo(catchRedoJump, method, doFinally);
+                // finally
+                method.label(doReturnFinally);
+                if (!callConfig.isNoop()) {
+                    invokeCallConfigPost(method, superClass);
+                }
+
+                // return result if we're still good
+                method.areturn();
+            }
+
+            // redo jump handling
+            method.label(catchRedoJump);
+            {
+                // clear the redo
+                method.pop();
+
+                // get runtime, create jump error, and throw it
+                method.aload(1);
+                method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
+                method.invokevirtual(p(Ruby.class), "newRedoLocalJumpError", sig(RaiseException.class));
+
+                // finally
+                method.label(doRedoFinally);
+                if (!callConfig.isNoop()) {
+                    invokeCallConfigPost(method, superClass);
+                }
+
+                // throw redo error if we're still good
+                method.athrow();
+            }
 
             // finally handling for abnormal exit
-            method.label(doFinally);
             {
+                method.label(doFinally);
+
+                //call post method stuff (exception raised)
                 if (!callConfig.isNoop()) {
                     invokeCallConfigPost(method, superClass);
                 }

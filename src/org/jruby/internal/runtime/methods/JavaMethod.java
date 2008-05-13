@@ -423,11 +423,11 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         }
     }
     
-    protected void pre(ThreadContext context, IRubyObject self, String name, Block block) {
+    protected final void pre(ThreadContext context, IRubyObject self, String name, Block block) {
         callConfig.pre(context, self, getImplementationClass(), name, block, staticScope, this);
     }
     
-    protected void post(ThreadContext context) {
+    protected final void post(ThreadContext context) {
         callConfig.post(context);
     }
     
