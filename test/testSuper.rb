@@ -413,3 +413,22 @@ end
 
 test_equal('a', Bar222.new.b)
 test_equal('b', Bar222.new.method(:b).call)
+
+# JRUBY-2267 frames getting overwritten and super failing as a result
+class Foo2267
+  def foo
+    'here'
+  end
+end
+
+class Bar2267 < Foo2267
+  def bar
+    Proc.new { yield }
+  end
+
+  def foo
+    bar { super }
+  end
+end
+
+test_equal('here', Bar2267.new.foo.call)
