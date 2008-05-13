@@ -247,8 +247,8 @@ public class RubyInstanceConfig {
             jitLoggingVerbose = SafePropertyAccessor.getBoolean("jruby.jit.logging.verbose");
             String logEvery = SafePropertyAccessor.getProperty("jruby.jit.logEvery");
             jitLogEvery = logEvery == null ? 0 : Integer.parseInt(logEvery);
-            jitThreshold = threshold == null ? 20 : Integer.parseInt(threshold);
-            jitMax = max == null ? 2048 : Integer.parseInt(max);
+            jitThreshold = threshold == null ? 50 : Integer.parseInt(threshold);
+            jitMax = max == null ? 4096 : Integer.parseInt(max);
         }
 
         // default ClassCache using jitMax as a soft upper bound
