@@ -86,8 +86,7 @@ public final class Frame implements JumpTarget {
     
     private JumpTarget jumpTarget;
     
-    private IRubyObject backref;
-    private IRubyObject lastline;
+    private IRubyObject[] backrefAndLastline;
 
     public JumpTarget getJumpTarget() {
         return jumpTarget;
@@ -122,8 +121,7 @@ public final class Frame implements JumpTarget {
         this.jumpTarget = frame.jumpTarget;
         this.visibility = frame.visibility;
         this.isBindingFrame = frame.isBindingFrame;
-        this.backref = frame.backref;
-        this.lastline = frame.lastline;
+        this.backrefAndLastline = frame.backrefAndLastline;
     }
 
     public void updateFrame(RubyModule klazz, IRubyObject self, String name,
@@ -139,8 +137,7 @@ public final class Frame implements JumpTarget {
         this.jumpTarget = jumpTarget;
         this.visibility = Visibility.PUBLIC;
         this.isBindingFrame = false;
-        this.backref = null;
-        this.lastline = null;
+        this.backrefAndLastline = new IRubyObject[2];
     }
 
     public void updateFrame(String name, String fileName, int line) {
@@ -158,19 +155,19 @@ public final class Frame implements JumpTarget {
     }
 
     public IRubyObject getBackRef() {
-        return backref == null ? self.getRuntime().getNil() : backref;
+        return backrefAndLastline[0] == null ? self.getRuntime().getNil() : backrefAndLastline[0];
     }
 
     public IRubyObject setBackRef(IRubyObject backref) {
-        return this.backref = backref;
+        return this.backrefAndLastline[0] = backref;
     }
 
     public IRubyObject getLastLine() {
-        return lastline == null ? self.getRuntime().getNil() : lastline;
+        return backrefAndLastline[1] == null ? self.getRuntime().getNil() : backrefAndLastline[1];
     }
 
     public IRubyObject setLastLine(IRubyObject lastline) {
-        return this.lastline = lastline;
+        return this.backrefAndLastline[1] = lastline;
     }
 
     public String getFile() {

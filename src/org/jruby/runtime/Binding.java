@@ -60,7 +60,7 @@ public class Binding {
     public Binding(IRubyObject self, Frame frame,
             Visibility visibility, RubyModule klass, DynamicScope dynamicScope) {
         this.self = self;
-        this.frame = frame;
+        this.frame = frame.duplicate();
         this.visibility = visibility;
         this.klass = klass;
         this.dynamicScope = dynamicScope;
@@ -68,7 +68,7 @@ public class Binding {
     
     public Binding(Frame frame, RubyModule bindingClass, DynamicScope dynamicScope) {
         this.self = frame.getSelf();
-        this.frame = frame;
+        this.frame = frame.duplicate();
         this.visibility = frame.getVisibility();
         this.klass = bindingClass;
         this.dynamicScope = dynamicScope;

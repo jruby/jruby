@@ -306,9 +306,10 @@ public final class ThreadContext {
         return frameStack[frameIndex];
     }
     
-    private void pushFrame(Frame frame) {
+    private Frame pushFrame(Frame frame) {
         frameStack[++frameIndex] = frame;
         expandFramesIfNecessary(frameIndex + 1);
+        return frame;
     }
     
     private void pushCallFrame(RubyModule clazz, String name, 
@@ -837,7 +838,7 @@ public final class ThreadContext {
     }
     
     public void preYieldSpecificBlock(Binding binding, StaticScope scope, RubyModule klass) {
-        Frame f = pushFrameCopy(binding.getFrame());
+        Frame f = pushFrame(binding.getFrame());
         f.setFile(file);
         f.setLine(line);
         f.setVisibility(binding.getVisibility());
@@ -847,7 +848,7 @@ public final class ThreadContext {
     }
     
     public void preYieldLightBlock(Binding binding, DynamicScope emptyScope, RubyModule klass) {
-        Frame f = pushFrameCopy(binding.getFrame());
+        Frame f = pushFrame(binding.getFrame());
         f.setFile(file);
         f.setLine(line);
         f.setVisibility(binding.getVisibility());
@@ -857,7 +858,7 @@ public final class ThreadContext {
     }
     
     public void preYieldNoScope(Binding binding, RubyModule klass) {
-        Frame f = pushFrameCopy(binding.getFrame());
+        Frame f = pushFrame(binding.getFrame());
         f.setFile(file);
         f.setLine(line);
         f.setVisibility(binding.getVisibility());
