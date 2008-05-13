@@ -217,3 +217,18 @@ test_equal ['b'], x.grep(poo){|z| Regexp.last_match(1)}
 x = "fb".."fc"
 poo = /^f(.+)$/
 test_equal ['b','c'], x.grep(poo){|z| Regexp.last_match(1)}
+
+# JRUBY-2318
+def f &block
+  re = Regexp.new( "^lib\\/(.*)\\.rb$" )
+  yield re
+end
+
+fn = "lib/foo.rb"
+
+f { |re|
+  fn =~ re
+  test_equal "lib/foo.rb", Regexp.last_match.to_s
+}
+
+test_equal "lib/foo.rb", Regexp.last_match.to_s
