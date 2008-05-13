@@ -51,6 +51,7 @@ import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.AbstractCompiledBlockCallback;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -195,21 +196,16 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
 
     private ClassWriter createBlockCtor(String namePath) throws Exception {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, p(Object.class),
-                new String[] { p(CompiledBlockCallback.class) });
+        cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, p(AbstractCompiledBlockCallback.class), null);
         cw.visitField(ACC_PRIVATE | ACC_FINAL, "$scriptObject", ci(Object.class), null, null);
-        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", sig(Void.TYPE, params(Object.class)), null, null);
-        mv.visitCode();
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESPECIAL, p(Object.class), "<init>", "()V");
-        Label line = new Label();
-        mv.visitLineNumber(0, line);
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitVarInsn(ALOAD, 1);
-        mv.visitFieldInsn(PUTFIELD, namePath, "$scriptObject", ci(Object.class));
-        mv.visitInsn(RETURN);
-        mv.visitMaxs(1, 1);
-        mv.visitEnd();
+        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", sig(Void.TYPE, params(Object.class)), null, null));
+        mv.start();
+        mv.aload(0);
+        mv.aload(1);
+        mv.invokespecial(p(AbstractCompiledBlockCallback.class), "<init>", sig(void.class, Object.class));
+        mv.voidreturn();
+        mv.end();
+        
         return cw;
     }
 
@@ -277,8 +273,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         return mv;
     }
 
-    private MethodVisitor startBlockCall(ClassWriter cw) {
-        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "call", BLOCK_CALL_SIG, null, null);
+    private SkinnyMethodAdapter startBlockCall(ClassWriter cw) {
+        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", BLOCK_CALL_SIG, null, null));
         
         mv.visitCode();
         Label line = new Label();
@@ -583,17 +579,18 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
             try {
                 if (c == null) {
                     ClassWriter cw = createBlockCtor(mnamePath);
-                    MethodVisitor mv = startBlockCall(cw);
-                    mv.visitVarInsn(ALOAD, 0);
-                    mv.visitFieldInsn(GETFIELD, mnamePath, "$scriptObject", ci(Object.class));
-                    mv.visitTypeInsn(CHECKCAST, p(typeClass));
-                    mv.visitVarInsn(ALOAD, 1);
-                    mv.visitVarInsn(ALOAD, 2);
-                    mv.visitVarInsn(ALOAD, 3);
-                    mv.visitMethodInsn(INVOKEVIRTUAL, typePathString, method, sig(
+                    SkinnyMethodAdapter mv = startBlockCall(cw);
+                    mv.aload(0);
+                    mv.getfield(p(AbstractCompiledBlockCallback.class), "$scriptObject", ci(Object.class));
+                    mv.checkcast(p(typeClass));
+                    mv.aload(1);
+                    mv.aload(2);
+                    mv.aload(3);
+                    mv.invokevirtual(typePathString, method, sig(
                             RubyKernel.IRUBY_OBJECT, params(ThreadContext.class,
                                     RubyKernel.IRUBY_OBJECT, IRubyObject[].class)));
-                    mv.visitInsn(ARETURN);
+                    mv.areturn();
+                    
                     mv.visitMaxs(2, 3);
                     c = endCall(cw, mv, mname);
                 }
