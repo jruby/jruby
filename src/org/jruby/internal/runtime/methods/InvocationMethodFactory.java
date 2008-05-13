@@ -1285,17 +1285,16 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         Label tryBegin = new Label();
         Label tryEnd = new Label();
         Label doFinally = new Label();
-        Label doReturnFinally = new Label();
         Label doRedoFinally = new Label();
-        Label catchReturnJump = new Label();
         Label catchRedoJump = new Label();
 
-        if (!callConfig.isNoop() || block) {
-            method.trycatch(tryBegin, tryEnd, catchReturnJump, p(JumpException.ReturnJump.class));
-            method.trycatch(tryBegin, tryEnd, catchRedoJump, p(JumpException.RedoJump.class));
+        if (!callConfig.isNoop()) {
+            // only need return/redo handling for block-receiving methods
+            if (block) {
+                method.trycatch(tryBegin, tryEnd, catchRedoJump, p(JumpException.RedoJump.class));
+                method.trycatch(catchRedoJump, doRedoFinally, doFinally, null);
+            }
             method.trycatch(tryBegin, tryEnd, doFinally, null);
-            method.trycatch(catchReturnJump, doReturnFinally, doFinally, null);
-            method.trycatch(catchRedoJump, doRedoFinally, doFinally, null);
         }
         
         method.label(tryBegin);
@@ -1326,45 +1325,30 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             method.visitInsn(ARETURN);
         }
         
-        // these are only needed if we're expecting a block
-        
-        if (!callConfig.isNoop() || block) {
-            // return jump handling
-            method.label(catchReturnJump);
-            {
-                method.aload(0);
-                method.swap();
-                method.invokevirtual(superClass, "handleReturnJump", sig(IRubyObject.class, JumpException.ReturnJump.class));
+        // these are only needed if we have a non-noop call config
+        if (!callConfig.isNoop()) {
+            // we only need redo jump handling if we've got a block, since it would only come from yields
+            if (block) {
+                // redo jump handling
+                method.label(catchRedoJump);
+                {
+                    // clear the redo
+                    method.pop();
 
-                // finally
-                method.label(doReturnFinally);
-                if (!callConfig.isNoop()) {
-                    invokeCallConfigPost(method, superClass);
+                    // get runtime, create jump error, and throw it
+                    method.aload(1);
+                    method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
+                    method.invokevirtual(p(Ruby.class), "newRedoLocalJumpError", sig(RaiseException.class));
+
+                    // finally
+                    method.label(doRedoFinally);
+                    if (!callConfig.isNoop()) {
+                        invokeCallConfigPost(method, superClass);
+                    }
+
+                    // throw redo error if we're still good
+                    method.athrow();
                 }
-
-                // return result if we're still good
-                method.areturn();
-            }
-
-            // redo jump handling
-            method.label(catchRedoJump);
-            {
-                // clear the redo
-                method.pop();
-
-                // get runtime, create jump error, and throw it
-                method.aload(1);
-                method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-                method.invokevirtual(p(Ruby.class), "newRedoLocalJumpError", sig(RaiseException.class));
-
-                // finally
-                method.label(doRedoFinally);
-                if (!callConfig.isNoop()) {
-                    invokeCallConfigPost(method, superClass);
-                }
-
-                // throw redo error if we're still good
-                method.athrow();
             }
 
             // finally handling for abnormal exit
