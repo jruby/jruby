@@ -56,12 +56,44 @@ public class AliasMethod extends DynamicMethod {
         this.oldMethod = oldMethod;
     }
     
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        return oldMethod.call(context, self, clazz, oldName, args, block);
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
+        return oldMethod.call(context, self, klazz, oldName);
     }
     
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        return oldMethod.call(context, self, clazz, oldName, block);
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg) {
+        return oldMethod.call(context, self, klazz, oldName, arg);
+    }
+    
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2) {
+        return oldMethod.call(context, self, klazz, oldName, arg1, arg2);
+    }
+    
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        return oldMethod.call(context, self, klazz, oldName, arg1, arg2, arg3);
+    }
+    
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args) {
+        return oldMethod.call(context, self, klazz, oldName, args);
+    }
+    
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
+        return oldMethod.call(context, self, klazz, oldName, block);
+    }
+    
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, Block block) {
+        return oldMethod.call(context, self, klazz, oldName, arg1, block);
+    }
+    
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return oldMethod.call(context, self, klazz, oldName, arg1, arg2, block);
+    }
+    
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+        return oldMethod.call(context, self, klazz, oldName, arg1, arg2, arg3, block);
+    }
+    
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
+        return oldMethod.call(context, self, klazz, oldName, args, block);
     }
 
     public DynamicMethod dup() {
