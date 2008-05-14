@@ -429,6 +429,7 @@ stmt          : kALIAS fitem {
 	      }
               | expr 
 
+// Node:expr *CURRENT* all but arg so far
 expr          : command_call 
               | expr kAND expr {
                   $$ = support.newAndNode($1, $3);
@@ -448,6 +449,7 @@ expr_value    : expr {
                   support.checkExpression($1);
 	      }
 
+// Node:command - call with or with block on end [!null]
 command_call  : command
               | block_command
               | kRETURN call_args {
@@ -460,6 +462,7 @@ command_call  : command
                   $$ = new NextNode(support.union($1, $2), support.ret_args($2, getPosition($1)));
               }
 
+// Node:block_command - A call with a block (foo.bar {...}, foo::bar {...}, bar {...}) [!null]
 block_command : block_call
               | block_call tDOT operation2 command_args {
                   $$ = support.new_call($1, $3, $4, null);
@@ -475,6 +478,7 @@ cmd_brace_block	: tLBRACE_ARG {
                     support.popCurrentScope();
 		}
 
+// Node:command - fcall/call/yield/super [!null]
 command       : operation command_args  %prec tLOWEST {
                   $$ = support.new_fcall($1, $2, null);
               }
@@ -1224,9 +1228,9 @@ do_block      : kDO_BLOCK {
                   support.popCurrentScope();
               }
 
+// block_call - A call with a block (foo {...}) [!null]
 block_call    : command do_block {
-	          if ($1 != null && 
-                      $<BlockAcceptingNode>1.getIterNode() instanceof BlockPassNode) {
+	          if ($<BlockAcceptingNode>1.getIterNode() instanceof BlockPassNode) {
                       throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, getPosition($1), "Both block arg and actual block given.");
                   }
 		  $<BlockAcceptingNode>1.setIterNode($2);
@@ -1322,6 +1326,7 @@ opt_ensure    : kENSURE compstmt {
               }
               | none
 
+// literal - Any literal value (5, :foo, :"#{bar}") [!null]
 literal       : numeric
               | symbol {
                   // FIXME: We may be intern'ing more than once.
@@ -1329,19 +1334,18 @@ literal       : numeric
               }
               | dsym
 
+// Node:strings - EvStr wrapper for strings [!null]
 strings       : string {
-                  if ($1 instanceof EvStrNode) {
-                      $$ = new DStrNode(getPosition($1)).add($1);
-                  } else {
-                      $$ = $1;
-                  }
+                  $$ = $1 instanceof EvStrNode ? new DStrNode(getPosition($1)).add($1) : $1;
 	      } 
 
+// Node:string - Collection of strings together (a = "a" "b" "c") [!null]
 string        : string1
               | string string1 {
                   $$ = support.literal_concat(getPosition($1), $1, $2);
               }
 
+// Node:string1 - Simple String form ("foo", %q{foo}) [!null]
 string1       : tSTRING_BEG string_contents tSTRING_END {
                   $$ = $2;
                   $<ISourcePositionHolder>$.setPosition(support.union($1, $3));
@@ -1358,6 +1362,7 @@ string1       : tSTRING_BEG string_contents tSTRING_END {
 		  }
               }
 
+// Node:xstring - `string` [!null]
 xstring	      : tXSTRING_BEG xstring_contents tSTRING_END {
                   ISourcePosition position = support.union($1, $3);
 
@@ -1374,6 +1379,7 @@ xstring	      : tXSTRING_BEG xstring_contents tSTRING_END {
 		  }
               }
 
+// Node:regexp - /foo/ [!null]
 regexp	      : tREGEXP_BEG xstring_contents tREGEXP_END {
 		  int options = $3.getOptions();
 		  Node node = $2;
@@ -1389,6 +1395,7 @@ regexp	      : tREGEXP_BEG xstring_contents tREGEXP_END {
                   }
 	       }
 
+// Node:words - collection of words (e.g. %w{a b c}) with delimeters [!null]
 words	       : tWORDS_BEG ' ' tSTRING_END {
                    $$ = new ZArrayNode(support.union($1, $3));
 	       }
@@ -1397,6 +1404,7 @@ words	       : tWORDS_BEG ' ' tSTRING_END {
                    $<ISourcePositionHolder>$.setPosition(support.union($1, $3));
 	       }
 
+// ListNode:word_list - collection of words (e.g. %W{a b c}) with out delimeters [!null]
 word_list      : /* none */ {
                    $$ = new ArrayNode(getPosition(null));
 	       }
@@ -1409,6 +1417,7 @@ word	       : string_content
                    $$ = support.literal_concat(getPosition($1), $1, $2);
 	       }
 
+// ListNode:qwords - collection of works (e.g. %w{...}) [!null]
 qwords	       : tQWORDS_BEG ' ' tSTRING_END {
                    $$ = new ZArrayNode(support.union($1, $3));
 	       }
@@ -1417,6 +1426,7 @@ qwords	       : tQWORDS_BEG ' ' tSTRING_END {
                    $<ISourcePositionHolder>$.setPosition(support.union($1, $3));
 	       }
 
+// ListNode:qword_list - collection of works (e.g. %w{...}) [!null]
 qword_list     : /* none */ {
                    $$ = new ArrayNode(getPosition(null));
 	       }
@@ -1424,6 +1434,7 @@ qword_list     : /* none */ {
                    $$ = $1.add($2);
 	       }
 
+// Node:string_contents - content of a string in raw hunks
 string_contents: /* none */ {
                    $$ = new StrNode($<Token>0.getPosition(), ByteList.create(""));
 	       }
@@ -1438,6 +1449,7 @@ xstring_contents: /* none */ {
                    $$ = support.literal_concat(getPosition($1), $1, $2);
 	       }
 
+// Node:string_content - string contents not including delimeters [!null]
 string_content : tSTRING_CONTENT {
                    $$ = $1;
                }
@@ -1471,14 +1483,17 @@ string_dvar    : tGVAR {
 	       | backref
 
 
+// Token:symbol - Represents a symbol [!null]
 symbol         : tSYMBEG sym {
                    lexer.setState(LexState.EXPR_END);
                    $$ = $2;
 		   $<ISourcePositionHolder>$.setPosition(support.union($1, $2));
                }
 
+// Token:sym - anything valid after ':' [!null]
 sym            : fname | tIVAR | tGVAR | tCVAR
 
+// Node:dsym - Any symbol which has dynamic evaluation [!null]
 dsym	       : tSYMBEG xstring_contents tSTRING_END {
                    lexer.setState(LexState.EXPR_END);
 
@@ -1537,6 +1552,7 @@ variable       : tIDENTIFIER | tIVAR | tGVAR | tCONSTANT | tCVAR
                    $$ = new Token("__LINE__", Tokens.k__LINE__, $1.getPosition());
                }
 
+// Node:var_ref - Refers to built-in or user-defined variable [!null]
 var_ref        : variable {
                    $$ = support.gettable($1);
                }
@@ -1545,6 +1561,7 @@ var_lhs	       : variable {
                    $$ = support.assignable($1, NilImplicitNode.NIL);
                }
 
+// Token: backref - Back reference (e.g. $3) [!null]
 backref        : tNTH_REF | tBACK_REF
 
 superclass     : term {

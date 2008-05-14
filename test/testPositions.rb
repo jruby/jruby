@@ -9,7 +9,7 @@ def short_name(long_name)
 end
 
 def node_string(node)
-  return "#{short_name(node.java_class.name)}" unless node.position
+  return "#{short_name(node.java_class.name)}" if node.invisible?
   p = node.position
   "#{short_name(node.java_class.name)},#{p.startLine},#{p.endLine},#{p.startOffset},#{p.endOffset}"
 end
@@ -19,6 +19,7 @@ def test_pos_ok(a, b, entry, node, test_name)
 end
 
 def compare_node(node, list, test_name)
+  unless node.invisible?
     entry = list.delete_at(0)
     
     unless entry.nil? 
@@ -30,8 +31,9 @@ def compare_node(node, list, test_name)
       test_pos_ok(entry[3], position.startOffset, entry, node, test_name)
       test_pos_ok(entry[4], position.endOffset, entry, node, test_name)
     end
+  end
 	
-    node.childNodes.each {|child| compare_node(child, list, test_name) }
+  node.childNodes.each {|child| compare_node(child, list, test_name) }
 end
 
 def test_tree(expected_list, script_content, test_name=nil, verbose=false)
