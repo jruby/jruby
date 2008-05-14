@@ -149,7 +149,7 @@ public class ReWriteVisitor implements NodeVisitor {
 	}
 	
 	public void visitNode(Node iVisited) {
-		if (iVisited == null) return;
+            if (iVisited == null || iVisited.isInvisible()) return;
         
         printCommentsBefore(iVisited);
 
@@ -846,7 +846,7 @@ public class ReWriteVisitor implements NodeVisitor {
 
 	private void printAsgnNode(AssignableNode n) {
 		print(((INameNode) n).getName());
-		if (n.getValueNode() == null) return;
+		if (n.getValueNode() == null || n.getValueNode().isInvisible()) return;
 		printAssignmentOperator();
 		visitNewlineInParentheses(n.getValueNode());
 	}
@@ -1006,7 +1006,7 @@ public class ReWriteVisitor implements NodeVisitor {
 		if (iVisited.getHeadNode() != null) {
 			factory.createMultipleAssignmentReWriteVisitor().visitAndPrintWithSeparator(iVisited.getHeadNode().childNodes().iterator());
         }
-		if (iVisited.getValueNode() == null) {
+		if (iVisited.getValueNode() == null || iVisited.getValueNode().isInvisible()) {
 			visitNode(iVisited.getArgsNode());
 			return null;
 		}

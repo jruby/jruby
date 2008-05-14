@@ -44,6 +44,14 @@ public abstract class AssignableNode extends Node implements IArityNode {
         super(position, id);
     }
     
+    public AssignableNode(ISourcePosition position, NodeType id, Node valueNode) {
+        super(position, id);
+        
+        assert valueNode != null : "valueNode is not null";
+        
+        this.valueNode = valueNode;
+    }
+    
     /**
      * Gets the valueNode.
      * @return Returns a Node

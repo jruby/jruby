@@ -81,6 +81,7 @@ import org.jruby.ast.ModuleNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NewlineNode;
 import org.jruby.ast.NextNode;
+import org.jruby.ast.NilImplicitNode;
 import org.jruby.ast.NilNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NotNode;
@@ -543,7 +544,7 @@ mlhs_head     : mlhs_item ',' {
               }
 
 mlhs_node     : variable {
-                  $$ = support.assignable($1, null);
+                  $$ = support.assignable($1, NilImplicitNode.NIL);
               }
               | primary_value '[' aref_args tRBRACK {
                   $$ = support.aryset($1, $3);
@@ -564,7 +565,7 @@ mlhs_node     : variable {
 
 		  ISourcePosition position = support.union($1, $3);
 
-                  $$ = new ConstDeclNode(position, null, new Colon2Node(position, $1, (String) $3.getValue()), null);
+                  $$ = new ConstDeclNode(position, null, new Colon2Node(position, $1, (String) $3.getValue()), NilImplicitNode.NIL);
 	      }
  	      | tCOLON3 tCONSTANT {
                   if (support.isInDef() || support.isInSingle()) {
@@ -573,14 +574,14 @@ mlhs_node     : variable {
 
                   ISourcePosition position = support.union($1, $2);
 
-                  $$ = new ConstDeclNode(position, null, new Colon3Node(position, (String) $2.getValue()), null);
+                  $$ = new ConstDeclNode(position, null, new Colon3Node(position, (String) $2.getValue()), NilImplicitNode.NIL);
 	      }
               | backref {
 	          support.backrefAssignError($1);
               }
 
 lhs           : variable {
-                  $$ = support.assignable($1, null);
+                  $$ = support.assignable($1, NilImplicitNode.NIL);
               }
               | primary_value '[' aref_args tRBRACK {
                   $$ = support.aryset($1, $3);
@@ -601,7 +602,7 @@ lhs           : variable {
 			
 		  ISourcePosition position = support.union($1, $3);
 
-                  $$ = new ConstDeclNode(position, null, new Colon2Node(position, $1, (String) $3.getValue()), null);
+                  $$ = new ConstDeclNode(position, null, new Colon2Node(position, $1, (String) $3.getValue()), NilImplicitNode.NIL);
               }
 	      | tCOLON3 tCONSTANT {
                   if (support.isInDef() || support.isInSingle()) {
@@ -610,7 +611,7 @@ lhs           : variable {
 
                   ISourcePosition position = support.union($1, $2);
 
-                  $$ = new ConstDeclNode(position, null, new Colon3Node(position, (String) $2.getValue()), null);
+                  $$ = new ConstDeclNode(position, null, new Colon3Node(position, (String) $2.getValue()), NilImplicitNode.NIL);
 	      }
               | backref {
                    support.backrefAssignError($1);
@@ -1541,7 +1542,7 @@ var_ref        : variable {
                }
 
 var_lhs	       : variable {
-                   $$ = support.assignable($1, null);
+                   $$ = support.assignable($1, NilImplicitNode.NIL);
                }
 
 backref        : tNTH_REF | tBACK_REF

@@ -47,6 +47,46 @@ import org.jruby.lexer.yacc.IDESourcePosition;
  * Base class for all Nodes in the AST
  */
 public abstract class Node implements ISourcePositionHolder {
+    // For nodes which are added to the AST which are not proper syntactical elements.
+    public static final ISourcePosition INVALID_POSITION = new ISourcePosition() {
+        public String getFile() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public int getStartLine() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public int getEndLine() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public void adjustStartOffset(int relativeValue) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public int getStartOffset() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public int getEndOffset() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public ISourcePosition union(ISourcePosition position) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public Collection<CommentNode> getComments() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public void setComments(Collection<CommentNode> comments) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+        
+    };
+    
     // We define an actual list to get around bug in java integration (1387115)
     static final List<Node> EMPTY_LIST = new ArrayList<Node>();
     public static final List<CommentNode> EMPTY_COMMENT_LIST = new ArrayList<CommentNode>();
@@ -142,6 +182,14 @@ public abstract class Node implements ISourcePositionHolder {
         }       
 
         return commentIncludingPos;
+    }
+
+    /**
+     * Is the current node something that is syntactically visible in the AST.  IDE consumers
+     * should ignore these elements.
+     */
+    public boolean isInvisible() {
+        return this instanceof InvisibleNode;
     }
 
 }
