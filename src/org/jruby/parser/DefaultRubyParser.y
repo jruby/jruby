@@ -504,16 +504,19 @@ command       : operation command_args  %prec tLOWEST {
                   $$ = support.new_yield(support.union($1, $2), $2);
 	      }
 
+// MultipleAssigNode:mlhs - [!null]
 mlhs          : mlhs_basic
               | tLPAREN mlhs_entry tRPAREN {
                   $$ = $2;
 	      }
 
+// MultipleAssignNode:mlhs_entry - mlhs w or w/o parens [!null]
 mlhs_entry    : mlhs_basic
               | tLPAREN mlhs_entry tRPAREN {
                   $$ = new MultipleAsgnNode(getPosition($1), new ArrayNode(getPosition($1), $2), null);
               }
 
+// MultipleAssignNode:mlhs_basic - multiple left hand side (basic because used in multiple context) [!null]
 mlhs_basic    : mlhs_head {
                   $$ = new MultipleAsgnNode(getPosition($1), $1, null);
               }
@@ -540,6 +543,7 @@ mlhs_item     : mlhs_node
                   $$ = $2;
               }
 
+// [!null]
 mlhs_head     : mlhs_item ',' {
                   $$ = new ArrayNode($1.getPosition(), $1);
               }
@@ -584,6 +588,7 @@ mlhs_node     : variable {
 	          support.backrefAssignError($1);
               }
 
+// Node:lhs - left hand side of an assignment [!null]
 lhs           : variable {
                   $$ = support.assignable($1, NilImplicitNode.NIL);
               }
