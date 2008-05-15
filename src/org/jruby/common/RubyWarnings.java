@@ -42,10 +42,16 @@ public class RubyWarnings implements IRubyWarnings {
         this.runtime = runtime;
     }
 
+    /**
+     * Prints a warning, unless $VERBOSE is nil.
+     */
     public void warn(ID id, ISourcePosition position, String message, Object... data) {
         warn(id, position.getFile(), position.getEndLine(), message, data);
     }
 
+    /**
+     * Prints a warning, unless $VERBOSE is nil.
+     */
     public void warn(ID id, String fileName, int lineNumber, String message, Object... data) {
         if (runtime.getVerbose().isNil()) return;
     	
@@ -73,10 +79,16 @@ public class RubyWarnings implements IRubyWarnings {
         warning(id, context.getFile(), context.getLine(), message, data);
     }
     
+    /**
+     * Prints a warning, only in verbose mode.
+     */
     public void warning(ID id, ISourcePosition position, String message, Object... data) {
         warning(id, position.getFile(), position.getEndLine(), message, data);
     }
 
+    /**
+     * Prints a warning, only in verbose mode.
+     */
     public void warning(ID id, String fileName, int lineNumber, String message, Object... data) {
         if (isVerbose()) warn(id, fileName, lineNumber, message, data);
     }

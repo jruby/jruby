@@ -109,7 +109,7 @@ public class RubyStringScanner extends RubyObject {
     @JRubyMethod(name = "clear")
     public IRubyObject clear() {
         check();
-        getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "StringScanner#clear is obsolete; use #terminate instead", "StringScanner#clear", "#terminate");
+        getRuntime().getWarnings().warning(ID.DEPRECATED_METHOD, "StringScanner#clear is obsolete; use #terminate instead", "StringScanner#clear", "#terminate");
         return terminate();
     }
     
@@ -301,7 +301,7 @@ public class RubyStringScanner extends RubyObject {
     
     @JRubyMethod(name = "getbyte")
     public IRubyObject getbyte() {
-        getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "StringScanner#getbyte is obsolete; use #get_byte instead", "StringScanner#getbyte", "#get_byte");
+        getRuntime().getWarnings().warning(ID.DEPRECATED_METHOD, "StringScanner#getbyte is obsolete; use #get_byte instead", "StringScanner#getbyte", "#get_byte");
         return get_byte();
     }
     
@@ -318,7 +318,7 @@ public class RubyStringScanner extends RubyObject {
     
     @JRubyMethod(name = "peep", required = 1)
     public IRubyObject peep(IRubyObject length) {
-        getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "StringScanner#peep is obsolete; use #peek instead", "StringScanner#peep", "#peek");
+        getRuntime().getWarnings().warning(ID.DEPRECATED_METHOD, "StringScanner#peep is obsolete; use #peek instead", "StringScanner#peep", "#peek");
         return peek(length);
     }
     
@@ -349,7 +349,7 @@ public class RubyStringScanner extends RubyObject {
     
     @JRubyMethod(name = "empty?")
     public RubyBoolean empty_p() {
-        getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "StringScanner#empty? is obsolete; use #eos? instead", "StringScanner#empty?", "#eos?");
+        getRuntime().getWarnings().warning(ID.DEPRECATED_METHOD, "StringScanner#empty? is obsolete; use #eos? instead", "StringScanner#empty?", "#eos?");
         return eos_p();
     }
     
@@ -381,7 +381,7 @@ public class RubyStringScanner extends RubyObject {
 
     @JRubyMethod(name = "matchedsize")
     public IRubyObject matchedsize() {
-        getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "StringScanner#matchedsize is obsolete; use #matched_size instead", 
+        getRuntime().getWarnings().warning(ID.DEPRECATED_METHOD, "StringScanner#matchedsize is obsolete; use #matched_size instead", 
                 "StringScanner#matchedize", "#matched_size");
         return matched_size();        
     }
@@ -438,7 +438,7 @@ public class RubyStringScanner extends RubyObject {
 
     @JRubyMethod(name = "restsize")
     public RubyFixnum restsize() {
-        getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "StringScanner#restsize is obsolete; use #rest_size instead", "StringScanner#restsize", "#rest_size");
+        getRuntime().getWarnings().warning(ID.DEPRECATED_METHOD, "StringScanner#restsize is obsolete; use #rest_size instead", "StringScanner#restsize", "#rest_size");
         return rest_size();
     }
     
