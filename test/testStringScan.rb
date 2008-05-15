@@ -117,3 +117,7 @@ test_equal 1, strscan.skip_until(/A/)
 s = StringScanner.new " a"
 s.skip(/\s/)
 test_equal 'a', s.scan_until(/\Aa/)
+
+# JRUBY-2523
+s = StringScanner.new "abc"
+test_equal 'a', s.getbyte

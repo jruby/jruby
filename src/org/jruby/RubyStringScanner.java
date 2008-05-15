@@ -302,7 +302,7 @@ public class RubyStringScanner extends RubyObject {
     @JRubyMethod(name = "getbyte")
     public IRubyObject getbyte() {
         getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "StringScanner#getbyte is obsolete; use #get_byte instead", "StringScanner#getbyte", "#get_byte");
-        return getbyte();
+        return get_byte();
     }
     
     @JRubyMethod(name = "peek", required = 1)
