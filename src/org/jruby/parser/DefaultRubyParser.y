@@ -1557,13 +1557,15 @@ var_ref        : variable {
                    $$ = support.gettable($1);
                }
 
+// AssignableNode:var_lhs - Variable on left hand side of assignment [!null]
 var_lhs	       : variable {
                    $$ = support.assignable($1, NilImplicitNode.NIL);
                }
 
-// Token: backref - Back reference (e.g. $3) [!null]
+// Token:backref - Back reference (e.g. $3) [!null]
 backref        : tNTH_REF | tBACK_REF
 
+// Node:superclass - super class for class definition
 superclass     : term {
                    $$ = null;
                }
@@ -1577,7 +1579,7 @@ superclass     : term {
                    $$ = null;
                }
 
-// f_arglist: Function Argument list for definitions
+// f_arglist - Function Argument list for definitions
 f_arglist      : tLPAREN2 f_args opt_nl tRPAREN {
                    $$ = $2;
                    $<ISourcePositionHolder>$.setPosition(support.union($1, $4));
@@ -1587,6 +1589,7 @@ f_arglist      : tLPAREN2 f_args opt_nl tRPAREN {
                    $$ = $1;
                }
 
+// Node:f_args - Arguments for a method definition [!null]
 f_args         : f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg {
                    $$ = new ArgsNode(support.union($1, $6), $1, $3, ((Integer) $5.getValue()).intValue(), support.getRestArgNode($5), $6);
                }
@@ -1615,6 +1618,7 @@ f_args         : f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg {
                    $$ = new ArgsNode(support.createEmptyArgsNodePosition(getPosition(null)), null, null, -1, null, null);
                }
 
+// Token:f_norm_arg - normal argument to method declaration [!null]
 f_norm_arg     : tCONSTANT {
                    yyerror("formal argument cannot be a constant");
                }
@@ -1637,6 +1641,7 @@ f_norm_arg     : tCONSTANT {
                    $$ = $1;
                }
 
+// ListNode:f_arg - normal arguments in a method definition [!null]
 f_arg          : f_norm_arg tASSOC arg_value {
                     support.allowDubyExtension($<ISourcePositionHolder>1.getPosition());
                     $$ = new ListNode($<ISourcePositionHolder>1.getPosition());
@@ -1658,6 +1663,7 @@ f_arg          : f_norm_arg tASSOC arg_value {
 		   $$ = $1;
                }
 
+// Node:f_opt - optional argument in a method definition [!null]
 f_opt          : tIDENTIFIER '=' arg_value {
                    String identifier = (String) $1.getValue();
 
@@ -1668,6 +1674,7 @@ f_opt          : tIDENTIFIER '=' arg_value {
                    $$ = support.assignable($1, $3);
               }
 
+// ListNode:f_optarg - one or more optional arguments in a method definition [!null]
 f_optarg      : f_opt {
                   $$ = new BlockNode(getPosition($1)).add($1);
               }
@@ -1675,8 +1682,10 @@ f_optarg      : f_opt {
                   $$ = support.appendToBlock($1, $3);
               }
 
+// Token:restarg_mark - '*' as in '*rest' [!null]
 restarg_mark  : tSTAR2 | tSTAR
 
+// Token: rest argument in method declaration (foo(*rest)) [!null]
 f_rest_arg    : restarg_mark tIDENTIFIER {
                   String identifier = (String) $2.getValue();
 
@@ -1691,8 +1700,10 @@ f_rest_arg    : restarg_mark tIDENTIFIER {
                   $$ = $1;
               }
 
+// Token:blkarg_mark - '&' as in '&block' [!null]
 blkarg_mark   : tAMPER2 | tAMPER
 
+// f_block_arg - Block argument def for function (foo(&block)) [!null]
 f_block_arg   : blkarg_mark tIDENTIFIER {
                   String identifier = (String) $2.getValue();
 
