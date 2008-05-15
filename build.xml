@@ -243,12 +243,40 @@
       <property name="mainclass" value="org.jruby.Main"/>
       <property name="filename" value="jruby-complete.jar"/>
       <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0rc7.jar"/>
+      <property name="jar-complete-home" value="${build.dir}/jar-complete/META-INF/jruby.home"/>
+      <mkdir dir="${jar-complete-home}"/>
+      <copy todir="${jar-complete-home}">
+        <fileset dir="${basedir}">
+          <patternset refid="dist.bindir.files"/>
+          <patternset refid="dist.lib.files"/>
+        </fileset>
+      </copy>
+      <copy todir="${build.dir}/jar-complete">
+        <fileset dir="lib/ruby/1.8" includes="**/*"/>
+      </copy>
+
+      <java classname="${mainclass}" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
+        <classpath>
+          <pathelement location="${jruby.classes.dir}"/>
+          <pathelement location="${build.dir}/jar-complete"/>
+          <path refid="build.classpath"/>
+        </classpath>
+        <sysproperty key="jruby.home" value="${build.dir}/jar-complete/META-INF/jruby.home"/>
+        <arg value="-S"/>
+        <arg value="gem"/>
+        <arg value="install"/>
+        <arg value="rspec"/>
+        <arg value="rake"/>
+        <arg value="--no-ri"/>
+        <arg value="--no-rdoc"/>
+        <arg value="--env-shebang"/>
+      </java>
       <jarjar destfile="${lib.dir}/${filename}">
         <fileset dir="${jruby.classes.dir}">
           <exclude name="org/jruby/util/ant/**/*.class"/>
         </fileset>
-        <fileset dir="${basedir}/lib/ruby/1.8">
-          <include name="**/*.rb"/>
+        <fileset dir="${build.dir}/jar-complete">
+          <exclude name="META-INF/jruby.home/lib/ruby/1.8/**"/>
         </fileset>
         <zipfileset src="${build.lib.dir}/asm-3.0.jar"/>
         <zipfileset src="${build.lib.dir}/asm-commons-3.0.jar"/>
@@ -263,20 +291,12 @@
         <zipfileset src="${build.lib.dir}/jna.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
-        <zipfileset dir="${basedir}" prefix="META-INF/jruby.home">
-          <include name="bin/*"/>
-          <include name="lib/ruby/gems/1.8/cache/sources*.gem"/>
-          <include name="lib/ruby/gems/1.8/gems/sources*/**/*"/>
-          <include name="lib/ruby/gems/1.8/specifications/sources*.gemspec"/>
-          <include name="lib/ruby/site_ruby/**/*"/>
-        </zipfileset>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>
           <attribute name="Main-Class" value="${mainclass}"/>
         </manifest>
       </jarjar>
     </target>
-
 
     <target name="jar-console" depends="generate-method-classes" description="Create the jruby graphical console jar">
           <antcall target="jar-complete">
