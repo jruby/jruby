@@ -503,12 +503,12 @@ public class RubyKernel {
     }
 
     @JRubyMethod(name = "chomp!", frame = true, module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
-    public static IRubyObject chomp_bang(ThreadContext context, IRubyObject recv, Block block) {
+    public static IRubyObject chomp_bang(ThreadContext context, IRubyObject recv) {
         return getLastlineString(context, recv.getRuntime()).chomp_bang();
     }
 
     @JRubyMethod(name = "chomp!", frame = true, module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
-    public static IRubyObject chomp_bang(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
+    public static IRubyObject chomp_bang(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
         return getLastlineString(context, recv.getRuntime()).chomp_bang(arg0);
     }
 
@@ -529,7 +529,7 @@ public class RubyKernel {
     }
 
     @JRubyMethod(name = "chomp", frame = true, module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
-    public static IRubyObject chomp(ThreadContext context, IRubyObject recv, Block block) {
+    public static IRubyObject chomp(ThreadContext context, IRubyObject recv) {
         RubyString str = getLastlineString(context, recv.getRuntime());
         RubyString dup = (RubyString) str.dup();
 
@@ -542,7 +542,7 @@ public class RubyKernel {
     }
 
     @JRubyMethod(name = "chomp", frame = true, module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
-    public static IRubyObject chomp(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
+    public static IRubyObject chomp(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
         RubyString str = getLastlineString(context, recv.getRuntime());
         RubyString dup = (RubyString) str.dup();
 

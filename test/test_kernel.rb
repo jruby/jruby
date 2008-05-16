@@ -151,6 +151,21 @@ class TestKernel < Test::Unit::TestCase
   
 #  chomp
 #  chomp!
+
+  # JRUBY-2527
+  def test_chomp_no_block_doesnt_break
+    $_ = "test"
+    assert_equal("test", chomp)
+    assert_equal("te", chomp("st"))
+
+    $_ = "test"
+    chomp!
+    assert_equal("test", $_)
+
+    chomp!("st")
+    assert_equal("te", $_)
+  end
+
 #  chop
 #  chop!
 
