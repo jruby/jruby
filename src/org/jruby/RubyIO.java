@@ -1288,7 +1288,7 @@ public class RubyIO extends RubyObject {
         
         myOpenFile.getMainStream().clearerr();
         
-        return (RubyFixnum) newPosition;
+        return getRuntime().newFixnum(offset);
     }
     
     /** Print some objects to the stream.
