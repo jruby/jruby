@@ -590,7 +590,7 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(name = "abs")
     public IRubyObject abs(ThreadContext context) {
         if (callMethod(context, MethodIndex.OP_LT, "<", RubyFixnum.zero(getRuntime())).isTrue()) {
-            return (RubyNumeric) callMethod(context, "-@");
+            return callMethod(context, "-@");
         }
         return this;
     }
