@@ -1908,6 +1908,14 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     	return getRuntime().getFalse();
     }
     
+    public IRubyObject to_java() {
+        throw getRuntime().newTypeError(getMetaClass().getBaseName() + " cannot coerce to a Java type.");
+    }
+
+    public IRubyObject as(Class javaClass) {
+        throw getRuntime().newTypeError(getMetaClass().getBaseName() + " cannot coerce to a Java type.");
+    }
+    
     /**
      * @see org.jruby.runtime.builtin.IRubyObject#getType()
      */

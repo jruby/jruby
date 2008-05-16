@@ -93,6 +93,7 @@ import org.jruby.ext.posix.POSIXFactory;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.ValueAccessor;
+import org.jruby.java.MiniJava;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.parser.Parser;
 import org.jruby.parser.ParserConfiguration;
@@ -1113,6 +1114,9 @@ public final class Ruby {
     private void initBuiltins() {
         addLazyBuiltin("java.rb", "java", "org.jruby.javasupport.Java");
         addLazyBuiltin("jruby.rb", "jruby", "org.jruby.libraries.JRubyLibrary");
+        
+        addLazyBuiltin("minijava.rb", "minijava", "org.jruby.java.MiniJava");
+        
         addLazyBuiltin("jruby/ext.rb", "jruby/ext", "org.jruby.RubyJRuby$ExtLibrary");
         addLazyBuiltin("iconv.rb", "iconv", "org.jruby.libraries.IConvLibrary");
         addLazyBuiltin("nkf.rb", "nkf", "org.jruby.libraries.NKFLibrary");

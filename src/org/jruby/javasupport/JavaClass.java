@@ -341,9 +341,8 @@ public class JavaClass extends JavaObject {
         }
 
         public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-            if (!initialized) { // read-volatile
-                createJavaMethods(self.getRuntime());
-            }
+            createJavaMethods(self.getRuntime());
+
             // TODO: ok to convert args in place, rather than new array?
             int len = args.length;
             IRubyObject[] convertedArgs = new IRubyObject[len];
@@ -383,12 +382,12 @@ public class JavaClass extends JavaObject {
         }
 
         public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-            if (!initialized) { // read-volatile
-                createJavaMethods(self.getRuntime());
-            }
+            createJavaMethods(self.getRuntime());
+
             // TODO: ok to convert args in place, rather than new array?
             int len = args.length;
-            if (block.isGiven()) { // convert block to argument
+            boolean blockGiven = block.isGiven();
+            if (blockGiven) { // convert block to argument
                 len += 1;
                 IRubyObject[] newArgs = new IRubyObject[args.length+1];
                 System.arraycopy(args, 0, newArgs, 0, args.length);
@@ -398,7 +397,7 @@ public class JavaClass extends JavaObject {
             IRubyObject[] convertedArgs = new IRubyObject[len+1];
             convertedArgs[0] = self.getInstanceVariables().fastGetInstanceVariable("@java_object");
             int i = len;
-            if (block.isGiven()) {
+            if (blockGiven) {
                 convertedArgs[len] = args[len - 1];
                 i -= 1;
             }

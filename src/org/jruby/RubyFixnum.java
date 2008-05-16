@@ -37,15 +37,19 @@
 package org.jruby;
 
 import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.Map;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.java.MiniJava;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.Convert;
+import org.jruby.util.TypeCoercer;
 
 /** 
  * Implementation of the Fixnum class.
@@ -753,5 +757,47 @@ public class RubyFixnum extends RubyInteger {
     @JRubyMethod(meta = true)
     public static IRubyObject induced_from(IRubyObject recv, IRubyObject other) {
         return RubyNumeric.num2fix(other);
+    }
+
+    @Override
+    public IRubyObject to_java() {
+        return MiniJava.javaToRuby(getRuntime(), Long.valueOf(value));
+    }
+
+    @Override
+    public IRubyObject as(Class javaClass) {
+        return MiniJava.javaToRuby(getRuntime(), coerceToJavaType(getRuntime(), this, javaClass));
+    }
+    
+    private static Object coerceToJavaType(Ruby ruby, RubyFixnum self, Class javaClass) {
+        if (!Number.class.isAssignableFrom(javaClass)) {
+            throw ruby.newTypeError(javaClass.getCanonicalName() + " is not a numeric type");
+        }
+        
+        TypeCoercer coercer = JAVA_COERCERS.get(javaClass);
+        
+        if (coercer == null) {
+            throw ruby.newTypeError("Cannot coerce Fixnum to " + javaClass.getCanonicalName());
+        }
+        
+        return coercer.coerce(self);
+    }
+    
+    private static final Map<Class, TypeCoercer> JAVA_COERCERS = new HashMap<Class, TypeCoercer>();
+    
+    static {
+        TypeCoercer intCoercer = new TypeCoercer() {
+            public Object coerce(IRubyObject self) {
+                RubyFixnum fixnum = (RubyFixnum)self;
+                
+                if (fixnum.value > Integer.MAX_VALUE) {
+                    throw self.getRuntime().newRangeError("Fixnum " + fixnum.value + " is too large for Java int");
+                }
+                
+                return Integer.valueOf((int)fixnum.value);
+            }
+        };
+        JAVA_COERCERS.put(int.class, intCoercer);
+        JAVA_COERCERS.put(Integer.class, intCoercer);
     }
 }

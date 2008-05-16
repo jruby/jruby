@@ -41,8 +41,14 @@ public class CodegenUtils {
                     return "[B";
                 } else if (n == Boolean.TYPE) {
                     return "[Z";
+                } else if (n == Short.TYPE) {
+                    return "[S";
+                } else if (n == Character.TYPE) {
+                    return "[C";
                 } else if (n == Integer.TYPE) {
                     return "[I";
+                } else if (n == Float.TYPE) {
+                    return "[Float";
                 } else if (n == Double.TYPE) {
                     return "[D";
                 } else if (n == Long.TYPE) {
@@ -59,8 +65,14 @@ public class CodegenUtils {
                     return "B";
                 } else if (n == Boolean.TYPE) {
                     return "Z";
+                } else if (n == Short.TYPE) {
+                    return "S";
+                } else if (n == Character.TYPE) {
+                    return "C";
                 } else if (n == Integer.TYPE) {
                     return "I";
+                } else if (n == Float.TYPE) {
+                    return "F";
                 } else if (n == Double.TYPE) {
                     return "D";
                 } else if (n == Long.TYPE) {
@@ -74,6 +86,13 @@ public class CodegenUtils {
                 return "L" + p(n) + ";";
             }
         }
+    }
+
+    /**
+     * Creates a human-readable representation, from a Class.
+     */
+    public static String human(Class n) {
+        return n.getCanonicalName();
     }
     
     /**
@@ -98,6 +117,19 @@ public class CodegenUtils {
         StringBuffer signature = new StringBuffer("()");
         
         signature.append(ci(retval));
+        
+        return signature.toString();
+    }
+    
+    public static String pretty(Class retval, Class... params) {
+        StringBuffer signature = new StringBuffer("(");
+        
+        for (int i = 0; i < params.length; i++) {
+            signature.append(human(params[i]));
+            if (i < params.length - 1) signature.append(',');
+        }
+        
+        signature.append(")").append(human(retval));
         
         return signature.toString();
     }

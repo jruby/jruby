@@ -52,6 +52,7 @@ import org.joni.encoding.specific.ASCIIEncoding;
 import static org.jruby.anno.FrameField.*;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.java.MiniJava;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -3374,5 +3375,10 @@ public class RubyString extends RubyObject {
         } catch (Exception e) {
             throw new RuntimeException("Something's seriously broken with encodings", e);
         }
-    }    
+    }
+
+    @Override
+    public IRubyObject to_java() {
+        return MiniJava.javaToRuby(getRuntime(), new String(getBytes()));
+    }
 }
