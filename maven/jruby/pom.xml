@@ -78,7 +78,7 @@
     <dependency>
       <groupId>org.jruby.extras</groupId>
       <artifactId>jvyamlb</artifactId>
-      <version>0.1.1</version>
+      <version>0.1.2</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -156,7 +156,7 @@
                 <artifactItem>
                   <groupId>org.jruby.extras</groupId>
                   <artifactId>jvyamlb</artifactId>
-                  <version>0.1.1</version>
+                  <version>0.1.2</version>
                 </artifactItem>
                 <artifactItem>
                   <groupId>org.jruby.extras</groupId>
