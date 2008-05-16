@@ -48,8 +48,36 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         getMethodVisitor().visitVarInsn(ILOAD, arg0);
     }
     
+    public void lload(int arg0) {
+        getMethodVisitor().visitVarInsn(LLOAD, arg0);
+    }
+    
+    public void fload(int arg0) {
+        getMethodVisitor().visitVarInsn(FLOAD, arg0);
+    }
+    
+    public void dload(int arg0) {
+        getMethodVisitor().visitVarInsn(DLOAD, arg0);
+    }
+    
     public void astore(int arg0) {
         getMethodVisitor().visitVarInsn(ASTORE, arg0);
+    }
+    
+    public void istore(int arg0) {
+        getMethodVisitor().visitVarInsn(ISTORE, arg0);
+    }
+    
+    public void lstore(int arg0) {
+        getMethodVisitor().visitVarInsn(LSTORE, arg0);
+    }
+    
+    public void fstore(int arg0) {
+        getMethodVisitor().visitVarInsn(FSTORE, arg0);
+    }
+    
+    public void dstore(int arg0) {
+        getMethodVisitor().visitVarInsn(DSTORE, arg0);
     }
     
     public void ldc(Object arg0) {
@@ -130,6 +158,22 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         getMethodVisitor().visitInsn(ARETURN);
     }
     
+    public void ireturn() {
+        getMethodVisitor().visitInsn(IRETURN);
+    }
+    
+    public void freturn() {
+        getMethodVisitor().visitInsn(FRETURN);
+    }
+    
+    public void lreturn() {
+        getMethodVisitor().visitInsn(LRETURN);
+    }
+    
+    public void dreturn() {
+        getMethodVisitor().visitInsn(DRETURN);
+    }
+    
     public void newobj(String arg0) {
         getMethodVisitor().visitTypeInsn(NEW, arg0);
     }
@@ -171,6 +215,10 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         getMethodVisitor().visitTypeInsn(ANEWARRAY, arg0);
     }
     
+    public void multianewarray(String arg0, int dims) {
+        getMethodVisitor().visitMultiANewArrayInsn(arg0, dims);
+    }
+    
     public void newarray(int arg0) {
         getMethodVisitor().visitIntInsn(NEWARRAY, arg0);
     }
@@ -205,10 +253,6 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
     
     public void lconst_0() {
         getMethodVisitor().visitInsn(LCONST_0);
-    }
-    
-    public void isub() {
-        getMethodVisitor().visitInsn(ISUB);
     }
     
     public void aconst_null() {
@@ -249,6 +293,86 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
     
     public void barraystore() {
         getMethodVisitor().visitInsn(BASTORE);
+    }
+    
+    public void aaload() {
+        getMethodVisitor().visitInsn(AALOAD);
+    }
+    
+    public void aastore() {
+        getMethodVisitor().visitInsn(AASTORE);
+    }
+    
+    public void iaload() {
+        getMethodVisitor().visitInsn(IALOAD);
+    }
+    
+    public void iastore() {
+        getMethodVisitor().visitInsn(IASTORE);
+    }
+    
+    public void laload() {
+        getMethodVisitor().visitInsn(LALOAD);
+    }
+    
+    public void lastore() {
+        getMethodVisitor().visitInsn(LASTORE);
+    }
+    
+    public void baload() {
+        getMethodVisitor().visitInsn(BALOAD);
+    }
+    
+    public void bastore() {
+        getMethodVisitor().visitInsn(BASTORE);
+    }
+    
+    public void saload() {
+        getMethodVisitor().visitInsn(SALOAD);
+    }
+    
+    public void sastore() {
+        getMethodVisitor().visitInsn(SASTORE);
+    }
+    
+    public void caload() {
+        getMethodVisitor().visitInsn(CALOAD);
+    }
+    
+    public void castore() {
+        getMethodVisitor().visitInsn(CASTORE);
+    }
+    
+    public void faload() {
+        getMethodVisitor().visitInsn(FALOAD);
+    }
+    
+    public void fastore() {
+        getMethodVisitor().visitInsn(FASTORE);
+    }
+    
+    public void daload() {
+        getMethodVisitor().visitInsn(DALOAD);
+    }
+    
+    public void dastore() {
+        getMethodVisitor().visitInsn(DASTORE);
+    }
+    
+    public void fcmpl() {
+        getMethodVisitor().visitInsn(FCMPL);
+    }
+    
+    public void fcmpg() {
+        getMethodVisitor().visitInsn(FCMPG);
+    }
+    
+    public void dcmpl() {
+        getMethodVisitor().visitInsn(DCMPL);
+    }
+    
+    public void dcmpg() {
+        getMethodVisitor().visitInsn(DCMPG);
     }
     
     public void dup_x2() {
@@ -349,20 +473,252 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         getMethodVisitor().visitJumpInsn(IFNULL, arg0);
     }
     
+    public void iflt(Label arg0) {
+        getMethodVisitor().visitJumpInsn(IFLT, arg0);
+    }
+    
     public void ifle(Label arg0) {
         getMethodVisitor().visitJumpInsn(IFLE, arg0);
+    }
+    
+    public void ifgt(Label arg0) {
+        getMethodVisitor().visitJumpInsn(IFGT, arg0);
+    }
+    
+    public void ifge(Label arg0) {
+        getMethodVisitor().visitJumpInsn(IFGE, arg0);
     }
     
     public void arraylength() {
         getMethodVisitor().visitInsn(ARRAYLENGTH);
     }
     
+    public void ishr() {
+        getMethodVisitor().visitInsn(ISHR);
+    }
+    
+    public void ishl() {
+        getMethodVisitor().visitInsn(ISHL);
+    }
+    
+    public void iushr() {
+        getMethodVisitor().visitInsn(IUSHR);
+    }
+    
+    public void lshr() {
+        getMethodVisitor().visitInsn(LSHR);
+    }
+    
+    public void lshl() {
+        getMethodVisitor().visitInsn(LSHL);
+    }
+    
+    public void lushr() {
+        getMethodVisitor().visitInsn(LUSHR);
+    }
+    
+    public void lcmp() {
+        getMethodVisitor().visitInsn(LCMP);
+    }
+    
+    public void iand() {
+        getMethodVisitor().visitInsn(IAND);
+    }
+    
+    public void ior() {
+        getMethodVisitor().visitInsn(IOR);
+    }
+    
+    public void ixor() {
+        getMethodVisitor().visitInsn(IXOR);
+    }
+    
+    public void land() {
+        getMethodVisitor().visitInsn(LAND);
+    }
+    
+    public void lor() {
+        getMethodVisitor().visitInsn(LOR);
+    }
+    
+    public void lxor() {
+        getMethodVisitor().visitInsn(LXOR);
+    }
+    
     public void iadd() {
         getMethodVisitor().visitInsn(IADD);
     }
     
+    public void ladd() {
+        getMethodVisitor().visitInsn(LADD);
+    }
+    
+    public void fadd() {
+        getMethodVisitor().visitInsn(FADD);
+    }
+    
+    public void dadd() {
+        getMethodVisitor().visitInsn(DADD);
+    }
+    
+    public void isub() {
+        getMethodVisitor().visitInsn(ISUB);
+    }
+    
+    public void lsub() {
+        getMethodVisitor().visitInsn(LSUB);
+    }
+    
+    public void fsub() {
+        getMethodVisitor().visitInsn(FSUB);
+    }
+    
+    public void dsub() {
+        getMethodVisitor().visitInsn(DSUB);
+    }
+    
+    public void idiv() {
+        getMethodVisitor().visitInsn(IDIV);
+    }
+    
+    public void irem() {
+        getMethodVisitor().visitInsn(IREM);
+    }
+    
+    public void ineg() {
+        getMethodVisitor().visitInsn(INEG);
+    }
+    
+    public void i2d() {
+        getMethodVisitor().visitInsn(I2D);
+    }
+    
+    public void i2l() {
+        getMethodVisitor().visitInsn(I2L);
+    }
+    
+    public void i2f() {
+        getMethodVisitor().visitInsn(I2F);
+    }
+    
+    public void i2s() {
+        getMethodVisitor().visitInsn(I2S);
+    }
+    
+    public void i2c() {
+        getMethodVisitor().visitInsn(I2C);
+    }
+    
+    public void i2b() {
+        getMethodVisitor().visitInsn(I2B);
+    }
+    
+    public void ldiv() {
+        getMethodVisitor().visitInsn(LDIV);
+    }
+    
+    public void lrem() {
+        getMethodVisitor().visitInsn(LREM);
+    }
+    
+    public void lneg() {
+        getMethodVisitor().visitInsn(LNEG);
+    }
+    
+    public void l2d() {
+        getMethodVisitor().visitInsn(L2D);
+    }
+    
+    public void l2i() {
+        getMethodVisitor().visitInsn(L2I);
+    }
+    
+    public void l2f() {
+        getMethodVisitor().visitInsn(L2F);
+    }
+    
+    public void fdiv() {
+        getMethodVisitor().visitInsn(FDIV);
+    }
+    
+    public void frem() {
+        getMethodVisitor().visitInsn(FREM);
+    }
+    
+    public void fneg() {
+        getMethodVisitor().visitInsn(FNEG);
+    }
+    
+    public void f2d() {
+        getMethodVisitor().visitInsn(F2D);
+    }
+    
+    public void f2i() {
+        getMethodVisitor().visitInsn(F2D);
+    }
+    
+    public void f2l() {
+        getMethodVisitor().visitInsn(F2L);
+    }
+    
+    public void ddiv() {
+        getMethodVisitor().visitInsn(DDIV);
+    }
+    
+    public void drem() {
+        getMethodVisitor().visitInsn(DREM);
+    }
+    
+    public void dneg() {
+        getMethodVisitor().visitInsn(DNEG);
+    }
+    
+    public void d2f() {
+        getMethodVisitor().visitInsn(D2F);
+    }
+    
+    public void d2i() {
+        getMethodVisitor().visitInsn(D2I);
+    }
+    
+    public void d2l() {
+        getMethodVisitor().visitInsn(D2L);
+    }
+    
+    public void imul() {
+        getMethodVisitor().visitInsn(IMUL);
+    }
+    
+    public void lmul() {
+        getMethodVisitor().visitInsn(LMUL);
+    }
+    
+    public void fmul() {
+        getMethodVisitor().visitInsn(FMUL);
+    }
+    
+    public void dmul() {
+        getMethodVisitor().visitInsn(DMUL);
+    }
+    
     public void iinc(int arg0, int arg1) {
         getMethodVisitor().visitIincInsn(arg0, arg1);
+    }
+    
+    public void monitorenter() {
+        getMethodVisitor().visitInsn(MONITORENTER);
+    }
+    
+    public void monitorexit() {
+        getMethodVisitor().visitInsn(MONITOREXIT);
+    }
+    
+    public void jsr(Label branch) {
+        getMethodVisitor().visitJumpInsn(JSR, branch);
+    }
+    
+    public void ret(int arg0) {
+        getMethodVisitor().visitVarInsn(RET, arg0);
     }
     
     public AnnotationVisitor visitAnnotationDefault() {
