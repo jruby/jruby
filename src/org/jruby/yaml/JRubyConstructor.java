@@ -40,6 +40,12 @@ import org.jvyamlb.Constructor;
 import org.jvyamlb.exceptions.ConstructorException;
 import org.jvyamlb.ConstructorImpl;
 import org.jvyamlb.SafeConstructorImpl;
+import org.jvyamlb.Scanner;
+import org.jvyamlb.ScannerImpl;
+import org.jvyamlb.ComposerImpl;
+import org.jvyamlb.ParserImpl;
+import org.jvyamlb.ResolverImpl;
+import org.jvyamlb.YAML;
 
 import org.jvyamlb.nodes.Node;
 import org.jvyamlb.nodes.LinkNode;
@@ -99,19 +105,30 @@ public class JRubyConstructor extends ConstructorImpl {
     private final Ruby runtime;
 
     public JRubyConstructor(final IRubyObject receiver, final Composer composer) {
+        this(receiver.getRuntime(), composer);
+    }
+
+    public JRubyConstructor(final Ruby runtime, final Composer composer) {
         super(composer);
-        this.runtime = receiver.getRuntime();
+        this.runtime = runtime;
     }
 
     public Object constructRubyScalar(final Node node) {
         if(node instanceof org.jvyamlb.nodes.ScalarNode) {
             ByteList sc = (ByteList)super.constructScalar(node);
-            if(sc.length() > 0 && sc.charAt(0) == ':' && ((org.jvyamlb.nodes.ScalarNode)node).getStyle() == 0) {
-                String ss = sc.toString();
-                if(sc.charAt(1) != '"') {
-                    ss = ":\"" + ss.substring(1).replaceAll("([^\\\\])\"", "\\1\\\\\"") + "\"";
+            if(sc.length() > 1 && sc.charAt(0) == ':' && ((org.jvyamlb.nodes.ScalarNode)node).getStyle() == 0) {
+                int first = sc.get(1);
+                int last = sc.get(sc.realSize-1);
+                if((first == '"' && last == '"') ||
+                   (first == '\'' && last == '\'')) {
+
+                    Scanner scn = new ScannerImpl(sc.makeShared(1, sc.realSize-1));
+                    Constructor ctor = new JRubyConstructor(runtime, new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()));
+                    ctor.checkData();
+                    return ((RubyString)ctor.getData()).intern();
                 }
-                return runtime.evalScriptlet(ss);
+
+                return runtime.newSymbol(new String(sc.bytes, sc.begin+1, sc.realSize-1));
             }
 
             return RubyString.newString(runtime,(ByteList)super.constructScalar(node));
