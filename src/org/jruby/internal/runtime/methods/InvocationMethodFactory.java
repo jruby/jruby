@@ -497,7 +497,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 block |= desc.hasBlock;
             }
 
-            if (DEBUG) out.println(" min: " + min + ", max: " + max);
+            if (DEBUG) out.println(" min: " + min + ", max: " + max + ", hasBlock: " + block);
 
             if (c == null) {
                 String superClass = null;
@@ -505,10 +505,18 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 case 0:
                     switch (max) {
                     case 1:
-                        superClass = p(JavaMethod.JavaMethodZeroOrOne.class);
+                        if (block) {
+                            superClass = p(JavaMethod.JavaMethodZeroOrOneBlock.class);
+                        } else {
+                            superClass = p(JavaMethod.JavaMethodZeroOrOne.class);
+                        }
                         break;
                     case 2:
-                        superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwo.class);
+                        if (block) {
+                            superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwoBlock.class);
+                        } else {
+                            superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwo.class);
+                        }
                         break;
                     }
                     break;
