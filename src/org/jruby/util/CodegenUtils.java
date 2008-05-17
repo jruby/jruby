@@ -48,7 +48,7 @@ public class CodegenUtils {
                 } else if (n == Integer.TYPE) {
                     return "[I";
                 } else if (n == Float.TYPE) {
-                    return "[Float";
+                    return "[F";
                 } else if (n == Double.TYPE) {
                     return "[D";
                 } else if (n == Long.TYPE) {
