@@ -34,10 +34,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.JumpTarget;
+import org.jruby.java.MiniJava;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -233,5 +237,23 @@ public class RubyProc extends RubyObject implements JumpTarget {
     @JRubyMethod(name = "to_proc")
     public RubyProc to_proc() {
     	return this;
+    }
+    
+    public IRubyObject as(Class asClass) {
+        final Ruby ruby = getRuntime();
+        if (!asClass.isInterface()) {
+            throw ruby.newTypeError(asClass.getCanonicalName() + " is not an interface");
+        }
+
+        return MiniJava.javaToRuby(ruby, Proxy.newProxyInstance(Ruby.getClassLoader(), new Class[] {asClass}, new InvocationHandler() {
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                IRubyObject[] rubyArgs = new IRubyObject[args.length + 1];
+                rubyArgs[0] = RubySymbol.newSymbol(ruby, method.getName());
+                for (int i = 1; i < rubyArgs.length; i++) {
+                    rubyArgs[i] = MiniJava.javaToRuby(ruby, args[i - 1]);
+                }
+                return MiniJava.rubyToJava(call(ruby.getCurrentContext(), rubyArgs));
+            }
+        }));
     }
 }

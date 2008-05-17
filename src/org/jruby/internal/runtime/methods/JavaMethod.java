@@ -81,6 +81,8 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             if (args.length != 0) throw context.getRuntime().newArgumentError(args.length, 0);
             return call(context, self, clazz, name);
         }
+        
+        public Arity getArity() {return Arity.NO_ARGUMENTS;}
     }
     
     public static abstract class JavaMethodZeroOrOne extends JavaMethod {
@@ -220,6 +222,8 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             if (args.length != 0) throw context.getRuntime().newArgumentError(args.length, 0);
             return call(context, self, clazz, name, block);
         }
+        
+        public Arity getArity() {return Arity.NO_ARGUMENTS;}
     }
     
     public static abstract class JavaMethodOne extends JavaMethod {
@@ -239,6 +243,8 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             if (args.length != 1) throw context.getRuntime().newArgumentError(args.length, 1);
             return call(context, self, clazz, name, args[0]);
         }
+        
+        public Arity getArity() {return Arity.ONE_ARGUMENT;}
     }
     
     public static abstract class JavaMethodOneOrTwo extends JavaMethod {
@@ -318,6 +324,8 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             if (args.length != 1) throw context.getRuntime().newArgumentError(args.length, 1);
             return call(context, self, clazz, name, args[0], block);
         }
+        
+        public Arity getArity() {return Arity.ONE_ARGUMENT;}
     }
     
     public static abstract class JavaMethodOneOrTwoBlock extends JavaMethod {
@@ -365,6 +373,8 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             if (args.length != 2) throw context.getRuntime().newArgumentError(args.length, 2);
             return call(context, self, clazz, name, args[0], args[1]);
         }
+        
+        public Arity getArity() {return Arity.TWO_ARGUMENTS;}
     }
     
     public static abstract class JavaMethodTwoOrThree extends JavaMethod {
@@ -412,6 +422,8 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             if (args.length != 2) throw context.getRuntime().newArgumentError(args.length, 2);
             return call(context, self, clazz, name, args[0], args[1], block);
         }
+        
+        public Arity getArity() {return Arity.TWO_ARGUMENTS;}
     }
     
     public static abstract class JavaMethodThree extends JavaMethod {
@@ -431,6 +443,8 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             if (args.length != 3) throw context.getRuntime().newArgumentError(args.length, 3);
             return call(context, self, clazz, name, args[0], args[1], args[2]);
         }
+        
+        public Arity getArity() {return Arity.THREE_ARGUMENTS;}
     }
     
     public static abstract class JavaMethodThreeBlock extends JavaMethod {
@@ -450,6 +464,8 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             if (args.length != 3) throw context.getRuntime().newArgumentError(args.length, 3);
             return call(context, self, clazz, name, args[0], args[1], args[2], block);
         }
+        
+        public Arity getArity() {return Arity.THREE_ARGUMENTS;}
     }
 
     public JavaMethod(RubyModule implementationClass, Visibility visibility) {

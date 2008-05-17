@@ -46,77 +46,41 @@ public class MiniJava implements Library {
         // load up object and add a few useful methods
         RubyModule javaObject = getMirrorForClass(runtime, Object.class);
         
-        javaObject.defineFastMethod("to_s", new Callback() {
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-                return recv.getRuntime().newString(((JavaObjectWrapper)recv).object.toString());
+        javaObject.addMethod("to_s", new JavaMethod.JavaMethodZero(javaObject, Visibility.PUBLIC) {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+                return context.getRuntime().newString(((JavaObjectWrapper)self).object.toString());
             }
-            public Arity getArity() { return Arity.NO_ARGUMENTS; }
         });
         
-        javaObject.defineFastMethod("hash", new Callback() {
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-                return recv.getRuntime().newFixnum(((JavaObjectWrapper)recv).object.hashCode());
+        javaObject.addMethod("hash", new JavaMethod.JavaMethodZero(javaObject, Visibility.PUBLIC) {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+                return self.getRuntime().newFixnum(((JavaObjectWrapper)self).object.hashCode());
             }
-            public Arity getArity() { return Arity.NO_ARGUMENTS; }
         });
         
-        javaObject.defineFastMethod("==", new Callback() {
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-                if (args[0] instanceof JavaObjectWrapper) {
-                    return recv.getRuntime().newBoolean(((JavaObjectWrapper)recv).object.equals(((JavaObjectWrapper)args[0]).object));
+        javaObject.addMethod("==", new JavaMethod.JavaMethodOne(javaObject, Visibility.PUBLIC) {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
+                if (arg instanceof JavaObjectWrapper) {
+                    return context.getRuntime().newBoolean(((JavaObjectWrapper)self).object.equals(((JavaObjectWrapper)arg).object));
                 } else {
-                    return recv.getRuntime().getFalse();
+                    return context.getRuntime().getFalse();
                 }
             } 
-            public Arity getArity() { return Arity.ONE_ARGUMENT; }
         });
         
         // open up the 'to_java' and 'as' coercion methods on Ruby Objects, via Kernel
         RubyModule rubyKernel = runtime.getKernel();
-        rubyKernel.defineFastPublicModuleFunction("to_java", new Callback() {
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-                return ((RubyObject)recv).to_java();
-            } 
-            public Arity getArity() { return Arity.NO_ARGUMENTS; }
-        });
-        
-        rubyKernel.defineFastPublicModuleFunction("as", new Callback() {
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-                return ((RubyObject)recv).as(getJavaClassFromObject(args[0]));
-            } 
-            public Arity getArity() { return Arity.NO_ARGUMENTS; }
-        });
-        
-        // add an "as" method to proc to allow coercing to specific interface
-        RubyClass rubyProc = runtime.getProc();
-        rubyProc.defineFastMethod("as", new Callback() {
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-                final Ruby ruby = recv.getRuntime();
-                if (!args[0].respondsTo("java_class")) {
-                    throw ruby.newTypeError(args[0].getMetaClass().getBaseName() + " is not a Java type");
-                } else {
-                    final RubyProc proc = (RubyProc)recv;
-                    Class asClass = (Class)rubyToJava(args[0].callMethod(recv.getRuntime().getCurrentContext(), "java_class"));
-                    
-                    if (!asClass.isInterface()) {
-                        throw recv.getRuntime().newTypeError(asClass.getCanonicalName() + " is not an interface");
-                    }
-                    
-                    return javaToRuby(ruby, Proxy.newProxyInstance(Ruby.getClassLoader(), new Class[] {asClass}, new InvocationHandler() {
-                        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                            IRubyObject[] rubyArgs = new IRubyObject[args.length + 1];
-                            rubyArgs[0] = RubySymbol.newSymbol(ruby, method.getName());
-                            for (int i = 1; i < rubyArgs.length; i++) {
-                                rubyArgs[i] = javaToRuby(ruby, args[i - 1]);
-                            }
-                            return rubyToJava(proc.call(proc.getRuntime().getCurrentContext(), rubyArgs));
-                        }
-                    }));
-                }
+        rubyKernel.addModuleFunction("to_java", new JavaMethod.JavaMethodZeroOrOne(rubyKernel, Visibility.PUBLIC) {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+                return ((RubyObject)self).to_java();
             }
-
-            public Arity getArity() {
-                throw new UnsupportedOperationException("Not supported yet.");
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
+                return ((RubyObject)self).as(getJavaClassFromObject(arg));
             }
         });
     }
@@ -246,6 +210,8 @@ public class MiniJava implements Library {
             target.addMethod(name, dynMethod);
         }
         
+        RubyModule rubySing = rubyMod.getSingletonClass();
+        
         // add all constructors
         Constructor[] constructors = cls.getConstructors();
         for (final Constructor constructor : constructors) {
@@ -296,13 +262,10 @@ public class MiniJava implements Library {
         }
         
         // add a few type-specific special methods
-        rubyMod.getSingletonClass().defineFastMethod("java_class", new Callback() {
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-                return javaToRuby(recv.getRuntime(), cls);
-            }
-
-            public Arity getArity() {
-                return Arity.NO_ARGUMENTS;
+        rubySing.addMethod("java_class", new JavaMethod.JavaMethodZero(rubySing, Visibility.PUBLIC) {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+                return javaToRuby(context.getRuntime(), cls);
             }
         });
         

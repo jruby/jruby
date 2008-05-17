@@ -242,4 +242,8 @@ public class HandleFactory {
     public static int dummy2() {
         return 1;
     }
+    
+    public static Object dummy3(Object obj) {
+        return obj;
+    }
 }
