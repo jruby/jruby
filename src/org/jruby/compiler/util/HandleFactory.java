@@ -202,7 +202,6 @@ public class HandleFactory {
             
             Object result = null;
             String prop = "java.class.path";
-            String[] callArgs = new String[] {prop};
             
             for (int i = 0; i < 10; i++) {
                 long time;
@@ -210,14 +209,14 @@ public class HandleFactory {
                 System.out.print("handle invocation: ");
                 time = System.currentTimeMillis();
                 for (int j = 0; j < 10000000; j++) {
-                    result = handle.invoke(null, callArgs);
+                    result = handle.invoke(null, prop);
                 }
                 System.out.println(System.currentTimeMillis() - time);
                 
                 System.out.print("reflected invocation: ");
                 time = System.currentTimeMillis();
                 for (int j = 0; j < 10000000; j++) {
-                    result = method.invoke(null, callArgs);
+                    result = method.invoke(null, prop);
                 }
                 System.out.println(System.currentTimeMillis() - time);
                 
