@@ -3022,7 +3022,11 @@ public class ASTCompiler {
     public void compileVCall(Node node, MethodCompiler context) {
         VCallNode vcallNode = (VCallNode) node;
 
-        context.getInvocationCompiler().invokeDynamic(vcallNode.getName(), null, null, CallType.VARIABLE, null);
+        if (ASTInspector.PRAGMAS.contains(vcallNode.getName())) {
+            context.loadNull();
+        } else {
+            context.getInvocationCompiler().invokeDynamic(vcallNode.getName(), null, null, CallType.VARIABLE, null);
+        }
     }
 
     public void compileWhile(Node node, MethodCompiler context) {

@@ -2508,7 +2508,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.pushInt(scope.getRestArg());
             
             // if method has frame aware methods or frameless compilation is NOT enabled
-            if (inspector.hasFrameAwareMethods() || !RubyInstanceConfig.FRAMELESS_COMPILE_ENABLED) {
+            if (inspector.hasFrameAwareMethods() || !(inspector.noFrame() || RubyInstanceConfig.FRAMELESS_COMPILE_ENABLED)) {
                 if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
                     method.getstatic(p(CallConfiguration.class), CallConfiguration.FRAME_AND_SCOPE.name(), ci(CallConfiguration.class));
                 } else {
@@ -2523,7 +2523,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                         method.getstatic(p(CallConfiguration.class), CallConfiguration.BACKTRACE_AND_SCOPE.name(), ci(CallConfiguration.class));
                     }
                 } else {
-                    if (RubyInstanceConfig.FASTEST_COMPILE_ENABLED) {
+                    if (RubyInstanceConfig.FASTEST_COMPILE_ENABLED || inspector.noFrame()) {
                         method.getstatic(p(CallConfiguration.class), CallConfiguration.NO_FRAME_NO_SCOPE.name(), ci(CallConfiguration.class));
                     } else {
                         method.getstatic(p(CallConfiguration.class), CallConfiguration.BACKTRACE_ONLY.name(), ci(CallConfiguration.class));

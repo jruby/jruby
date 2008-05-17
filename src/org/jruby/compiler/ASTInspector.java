@@ -99,8 +99,13 @@ public class ASTInspector {
     private boolean hasRestArg;
     private boolean hasScopeAwareMethods;
     
+    // pragmas
+    private boolean noFrame;
+    
     public static Set<String> FRAME_AWARE_METHODS = new HashSet<String>();
     private static Set<String> SCOPE_AWARE_METHODS = new HashSet<String>();
+    
+    public static Set<String> PRAGMAS = new HashSet<String>();
     
     static {
         FRAME_AWARE_METHODS.add("eval");
@@ -121,6 +126,8 @@ public class ASTInspector {
         SCOPE_AWARE_METHODS.add("instance_eval");
         SCOPE_AWARE_METHODS.add("binding");
         SCOPE_AWARE_METHODS.add("local_variables");
+        
+        PRAGMAS.add("__NOFRAME__");
     }
     
     public void disable() {
@@ -257,6 +264,12 @@ public class ASTInspector {
             inspect(((BlockAcceptingNode)node).getIterNode());
         case VCALLNODE:
             INameNode nameNode = (INameNode)node;
+            if (PRAGMAS.contains(nameNode.getName())) {
+                if (nameNode.getName().equals("__NOFRAME__")) {
+                    noFrame = true;
+                }
+            }
+            
             if (FRAME_AWARE_METHODS.contains(nameNode.getName())) {
                 hasFrameAwareMethods = true;
                 hasEval |= nameNode.getName().indexOf("eval") != -1;
@@ -586,5 +599,9 @@ public class ASTInspector {
 
     public boolean hasRestArg() {
         return hasRestArg;
+    }
+    
+    public boolean noFrame() {
+        return noFrame;
     }
 }
