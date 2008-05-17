@@ -469,6 +469,46 @@ class TestFile < Test::Unit::TestCase
     File.delete(filename)
   end
 
+  # JRUBY-2524
+  def test_filetest_exists_uri_prefixes
+    assert(!FileTest.exists?("file:/"))
+    assert(!FileTest.exists?("file:/!"))
+  end
+  
+  # JRUBY-2524
+  def test_file_stat_uri_prefixes
+    assert_raise(Errno::ENOENT) do
+      File.lstat("file:")
+    end
+    assert_raise(Errno::ENOENT) do
+      File.lstat("file:!")
+    end
+    
+    assert_raise(Errno::ENOENT) do
+      File.stat("file:")
+    end
+    assert_raise(Errno::ENOENT) do
+      File.stat("file:!")
+    end
+  end
+  
+  # JRUBY-2524
+  def test_file_time_uri_prefixes
+    assert_raise(Errno::ENOENT) do
+      File.atime("file:")
+    end
+    assert_raise(Errno::ENOENT) do
+      File.atime("file:!")
+    end
+    
+    assert_raise(Errno::ENOENT) do
+      File.ctime("file:")
+    end
+    assert_raise(Errno::ENOENT) do
+      File.ctime("file:!") 
+    end    
+  end
+  
   def test_file_open_utime
     filename = "__test__file"
     File.open(filename, "w") {|f| }

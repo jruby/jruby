@@ -96,8 +96,12 @@ public class RubyFileTest {
 
         if(filename.convertToString().toString().startsWith("file:")) {
             String file = filename.convertToString().toString().substring(5);
-            String jar = file.substring(0,file.indexOf("!"));
-            String after = file.substring(file.indexOf("!")+2);
+            int bang = file.indexOf('!');
+            if (bang == -1 || bang == file.length() - 1) {
+                return recv.getRuntime().newBoolean(false);
+            }
+            String jar = file.substring(0, bang);
+            String after = file.substring(bang + 2);
             try {
                 java.util.jar.JarFile jf = new java.util.jar.JarFile(jar);
                 if(jf.getJarEntry(after) != null) {

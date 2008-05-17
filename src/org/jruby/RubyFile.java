@@ -1226,7 +1226,7 @@ public class RubyFile extends RubyIO {
     @JRubyMethod(name = "lstat", required = 1, meta = true)
     public static IRubyObject lstat(IRubyObject recv, IRubyObject filename) {
         String f = filename.convertToString().toString();
-        if(f.startsWith("file:")) {
+        if(f.startsWith("file:") && f.indexOf('!') != -1) {
             f = f.substring(5, f.indexOf("!"));
         }
         return recv.getRuntime().newFileStat(f, true);
@@ -1235,7 +1235,7 @@ public class RubyFile extends RubyIO {
     @JRubyMethod(name = "stat", required = 1, meta = true)
     public static IRubyObject stat(IRubyObject recv, IRubyObject filename) {
         String f = filename.convertToString().toString();
-        if(f.startsWith("file:")) {
+        if(f.startsWith("file:") && f.indexOf('!') != -1) {
             f = f.substring(5, f.indexOf("!"));
         }
         return recv.getRuntime().newFileStat(f, false);
@@ -1244,7 +1244,7 @@ public class RubyFile extends RubyIO {
     @JRubyMethod(name = "atime", required = 1, meta = true)
     public static IRubyObject atime(IRubyObject recv, IRubyObject filename) {
         String f = filename.convertToString().toString();
-        if(f.startsWith("file:")) {
+        if(f.startsWith("file:") && f.indexOf('!') != -1) {
             f = f.substring(5, f.indexOf("!"));
         }
         return recv.getRuntime().newFileStat(f, false).atime();
@@ -1253,7 +1253,7 @@ public class RubyFile extends RubyIO {
     @JRubyMethod(name = "ctime", required = 1, meta = true)
     public static IRubyObject ctime(IRubyObject recv, IRubyObject filename) {
         String f = filename.convertToString().toString();
-        if(f.startsWith("file:")) {
+        if(f.startsWith("file:") && f.indexOf('!') != -1) {
             f = f.substring(5, f.indexOf("!"));
         }
         return recv.getRuntime().newFileStat(f, false).ctime();
