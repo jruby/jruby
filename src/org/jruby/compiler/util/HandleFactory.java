@@ -14,8 +14,15 @@ import static org.objectweb.asm.Opcodes.*;
 public class HandleFactory {
     private static final boolean DEBUG = false;
     
-    public static abstract class Handle {
-        public abstract Object invoke(Object receiver, Object... args);
+    public static class Handle {
+        private Error fail() { return new AbstractMethodError("invalid call signature for target method"); }
+        public Object invoke(Object receiver) { throw fail(); }
+        public Object invoke(Object receiver, Object arg0) { throw fail(); }
+        public Object invoke(Object receiver, Object arg0, Object arg1) { throw fail(); }
+        public Object invoke(Object receiver, Object arg0, Object arg1, Object arg2) { throw fail(); }
+//        public Object invoke(Object receiver, Object arg0, Object arg1, Object arg2, Object arg3) { throw fail(); }
+//        public Object invoke(Object receiver, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4) { throw fail(); }
+        public Object invoke(Object receiver, Object... args) { throw fail(); }
     }
     
     public static Handle createHandle(JRubyClassLoader classLoader, Method method, boolean debug) {
@@ -38,28 +45,72 @@ public class HandleFactory {
         }
         cv.visit(ACC_PUBLIC | ACC_FINAL | ACC_SUPER, V1_5, name, null, p(Handle.class), null);
         
-        SkinnyMethodAdapter m = new SkinnyMethodAdapter(cv.visitMethod(ACC_PUBLIC | ACC_FINAL | ACC_SYNTHETIC, "invoke", sig(Object.class, Object.class, Object[].class), null, null));
+        SkinnyMethodAdapter m;
+        String signature;
+        switch (paramTypes.length) {
+        case 0:
+            signature = sig(Object.class, Object.class);
+            break;
+        case 1:
+            signature = sig(Object.class, Object.class, Object.class);
+            break;
+        case 2:
+            signature = sig(Object.class, Object.class, Object.class, Object.class);
+            break;
+        case 3:
+            signature = sig(Object.class, Object.class, Object.class, Object.class, Object.class);
+            break;
+//        case 4:
+//            signature = sig(Object.class, Object.class, Object.class, Object.class, Object.class);
+//            break;
+//        case 5:
+//            signature = sig(Object.class, Object.class, Object.class, Object.class, Object.class, Object.class);
+//            break;
+        default:
+            signature = sig(Object.class, Object.class, Object[].class);
+            break;
+        }
+        m = new SkinnyMethodAdapter(cv.visitMethod(ACC_PUBLIC | ACC_FINAL | ACC_SYNTHETIC, "invoke", signature, null, null));
         
         m.start();
+        
+        // load receiver
         if (!Modifier.isStatic(method.getModifiers())) {
             m.aload(1); // receiver
             if (method.getDeclaringClass() != Object.class) {
                 m.checkcast(p(method.getDeclaringClass()));
             }
         }
-        for (int i = 0; i < paramTypes.length; i++) {
-            m.aload(2); // Object[] args
-            m.pushInt(i);
-            m.aaload();
-            Class paramClass = paramTypes[i];
-            if (paramClass.isPrimitive()) {
-                Class boxType = getBoxType(paramClass);
-                m.checkcast(p(boxType));
-                m.invokevirtual(p(boxType), paramClass.toString() + "Value", sig(paramClass));
-            } else if (paramClass != Object.class) {
-                m.checkcast(p(paramClass));
+        
+        // load arguments
+        switch (paramTypes.length) {
+        case 0:
+        case 1:
+        case 2:
+        case 3:
+//        case 4:
+//        case 5:
+            for (int i = 0; i < paramTypes.length; i++) {
+                loadUnboxedArgument(m, i + 2, paramTypes[i]);
             }
+            break;
+        default:
+            for (int i = 0; i < paramTypes.length; i++) {
+                m.aload(2); // Object[] args
+                m.pushInt(i);
+                m.aaload();
+                Class paramClass = paramTypes[i];
+                if (paramClass.isPrimitive()) {
+                    Class boxType = getBoxType(paramClass);
+                    m.checkcast(p(boxType));
+                    m.invokevirtual(p(boxType), paramClass.toString() + "Value", sig(paramClass));
+                } else if (paramClass != Object.class) {
+                    m.checkcast(p(paramClass));
+                }
+            }
+            break;
         }
+        
         if (Modifier.isStatic(method.getModifiers())) {
             m.invokestatic(p(method.getDeclaringClass()), method.getName(), sig(returnType, paramTypes));
         } else if (Modifier.isInterface(method.getDeclaringClass().getModifiers())) {
@@ -100,6 +151,21 @@ public class HandleFactory {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
+        }
+    }
+    
+    public static void loadUnboxedArgument(SkinnyMethodAdapter m, int index, Class type) {
+        m.aload(index); // Object arg0
+        unboxAndCast(m, type);
+    }
+    
+    public static void unboxAndCast(SkinnyMethodAdapter m, Class paramClass) {
+        if (paramClass.isPrimitive()) {
+            Class boxType = getBoxType(paramClass);
+            m.checkcast(p(boxType));
+            m.invokevirtual(p(boxType), paramClass.toString() + "Value", sig(paramClass));
+        } else if (paramClass != Object.class) {
+            m.checkcast(p(paramClass));
         }
     }
     

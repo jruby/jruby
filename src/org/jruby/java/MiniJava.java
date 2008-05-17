@@ -22,6 +22,7 @@ import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.compiler.util.HandleFactory;
 import org.jruby.compiler.util.HandleFactory.Handle;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.runtime.Arity;
@@ -364,14 +365,14 @@ public class MiniJava implements Library {
         }
     }
     
-    protected static class JavaObjectWrapperMethodZero extends JavaMethod.JavaMethodZero {
-        private final Handle handle;
-        private final boolean isStatic;
-        private final String className;
-        private final String methodName;
-        private final String prettySig;
+    public static abstract class AbstractJavaWrapperMethodZero extends JavaMethod.JavaMethodZero {
+        protected final Handle handle;
+        protected final boolean isStatic;
+        protected final String className;
+        protected final String methodName;
+        protected final String prettySig;
         
-        public JavaObjectWrapperMethodZero(RubyModule klazz, Method method) {
+        public AbstractJavaWrapperMethodZero(RubyModule klazz, Method method) {
             super(klazz, Visibility.PUBLIC);
             
             this.handle = HandleFactory.createHandle(klazz.getRuntime().getJRubyClassLoader(), method);
@@ -379,6 +380,44 @@ public class MiniJava implements Library {
             this.className = method.getDeclaringClass().getCanonicalName();
             this.methodName = method.getName();
             this.prettySig = pretty(method.getReturnType(), method.getParameterTypes());
+        }
+
+        protected RaiseException error(ThreadContext context, Exception e) throws RaiseException {
+            if (context.getRuntime().getDebug().isTrue()) {
+                e.printStackTrace();
+            }
+            throw context.getRuntime().newTypeError("Could not dispatch to " + className + "#" + methodName + " using " + prettySig);
+        }
+    }
+    
+    public static abstract class AbstractJavaWrapperMethod extends JavaMethod {
+        protected final Handle handle;
+        protected final boolean isStatic;
+        protected final String className;
+        protected final String methodName;
+        protected final String prettySig;
+        
+        public AbstractJavaWrapperMethod(RubyModule klazz, Method method) {
+            super(klazz, Visibility.PUBLIC);
+            
+            this.handle = HandleFactory.createHandle(klazz.getRuntime().getJRubyClassLoader(), method);
+            this.isStatic = Modifier.isStatic(method.getModifiers());
+            this.className = method.getDeclaringClass().getCanonicalName();
+            this.methodName = method.getName();
+            this.prettySig = pretty(method.getReturnType(), method.getParameterTypes());
+        }
+
+        protected RaiseException error(ThreadContext context, Exception e) throws RaiseException {
+            if (context.getRuntime().getDebug().isTrue()) {
+                e.printStackTrace();
+            }
+            throw context.getRuntime().newTypeError("Could not dispatch to " + className + "#" + methodName + " using " + prettySig);
+        }
+    }
+    
+    protected static class JavaObjectWrapperMethodZero extends AbstractJavaWrapperMethodZero {
+        public JavaObjectWrapperMethodZero(RubyModule klazz, Method method) {
+            super(klazz, method);
         }
         
         @Override
@@ -388,27 +427,14 @@ public class MiniJava implements Library {
                 
                 return javaToRuby(context.getRuntime(), result);
             } catch (Exception e) {
-                if (context.getRuntime().getDebug().isTrue()) e.printStackTrace();
-                throw context.getRuntime().newTypeError("Could not dispatch to " + className + "#" + methodName + " using " + prettySig);
+                throw error(context, e);
             }
         }
     }
     
-    protected static class JavaObjectWrapperMethod extends JavaMethod {
-        private final Handle handle;
-        private final boolean isStatic;
-        private final String className;
-        private final String methodName;
-        private final String prettySig;
-        
+    protected static class JavaObjectWrapperMethod extends AbstractJavaWrapperMethod {
         public JavaObjectWrapperMethod(RubyModule klazz, Method method) {
-            super(klazz, Visibility.PUBLIC);
-            
-            this.handle = HandleFactory.createHandle(klazz.getRuntime().getJRubyClassLoader(), method);
-            this.isStatic = Modifier.isStatic(method.getModifiers());
-            this.className = method.getDeclaringClass().getCanonicalName();
-            this.methodName = method.getName();
-            this.prettySig = pretty(method.getReturnType(), method.getParameterTypes());
+            super(klazz, method);
         }
         
         @Override
@@ -424,27 +450,119 @@ public class MiniJava implements Library {
                 
                 return javaToRuby(context.getRuntime(), result);
             } catch (Exception e) {
-                if (context.getRuntime().getDebug().isTrue()) e.printStackTrace();
-                throw context.getRuntime().newTypeError("Could not dispatch to " + className + "#" + methodName + " using " + prettySig);
+                throw error(context, e);
+            }
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+            try {
+                Object result = (Object)handle.invoke(isStatic ? null : ((JavaObjectWrapper)self).object);
+                
+                return javaToRuby(context.getRuntime(), result);
+            } catch (Exception e) {
+                throw error(context, e);
+            }
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+            try {
+                Object result = (Object)handle.invoke(isStatic ? null : ((JavaObjectWrapper)self).object, rubyToJava(arg0));
+                
+                return javaToRuby(context.getRuntime(), result);
+            } catch (Exception e) {
+                throw error(context, e);
+            }
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+            try {
+                Object result = (Object)handle.invoke(isStatic ? null : ((JavaObjectWrapper)self).object, rubyToJava(arg0), rubyToJava(arg1));
+                
+                return javaToRuby(context.getRuntime(), result);
+            } catch (Exception e) {
+                throw error(context, e);
+            }
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+            try {
+                Object result = (Object)handle.invoke(isStatic ? null : ((JavaObjectWrapper)self).object, rubyToJava(arg0), rubyToJava(arg1), rubyToJava(arg2));
+                
+                return javaToRuby(context.getRuntime(), result);
+            } catch (Exception e) {
+                throw error(context, e);
+            }
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+            Object[] newArgs = new Object[args.length];
+            for (int i = 0; i < args.length; i++) {
+                IRubyObject arg = args[i];
+                newArgs[i] = rubyToJava(arg);
+            }
+
+            try {
+                Object result = (Object)handle.invoke(isStatic ? null : ((JavaObjectWrapper)self).object, newArgs);
+                
+                return javaToRuby(context.getRuntime(), result);
+            } catch (Exception e) {
+                throw error(context, e);
+            }
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+            try {
+                Object result = (Object)handle.invoke(isStatic ? null : ((JavaObjectWrapper)self).object);
+                
+                return javaToRuby(context.getRuntime(), result);
+            } catch (Exception e) {
+                throw error(context, e);
+            }
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
+            try {
+                Object result = (Object)handle.invoke(isStatic ? null : ((JavaObjectWrapper)self).object, rubyToJava(arg0));
+                
+                return javaToRuby(context.getRuntime(), result);
+            } catch (Exception e) {
+                throw error(context, e);
+            }
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+            try {
+                Object result = (Object)handle.invoke(isStatic ? null : ((JavaObjectWrapper)self).object, rubyToJava(arg0), rubyToJava(arg1));
+                
+                return javaToRuby(context.getRuntime(), result);
+            } catch (Exception e) {
+                throw error(context, e);
+            }
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+            try {
+                Object result = (Object)handle.invoke(isStatic ? null : ((JavaObjectWrapper)self).object, rubyToJava(arg0), rubyToJava(arg1), rubyToJava(arg2));
+                
+                return javaToRuby(context.getRuntime(), result);
+            } catch (Exception e) {
+                throw error(context, e);
             }
         }
     }
     
-    protected static class JavaVoidWrapperMethod extends JavaMethod {
-        private final Handle handle;
-        private final boolean isStatic;
-        private final String className;
-        private final String methodName;
-        private final String prettySig;
-        
+    protected static class JavaVoidWrapperMethod extends AbstractJavaWrapperMethod {
         public JavaVoidWrapperMethod(RubyModule klazz, Method method) {
-            super(klazz, Visibility.PUBLIC);
-            
-            this.handle = HandleFactory.createHandle(klazz.getRuntime().getJRubyClassLoader(), method);
-            this.isStatic = Modifier.isStatic(method.getModifiers());
-            this.className = method.getDeclaringClass().getCanonicalName();
-            this.methodName = method.getName();
-            this.prettySig = pretty(method.getReturnType(), method.getParameterTypes());
+            super(klazz, method);
         }
         
         @Override
@@ -460,27 +578,69 @@ public class MiniJava implements Library {
                 
                 return self;
             } catch (Exception e) {
-                if (context.getRuntime().getDebug().isTrue()) e.printStackTrace();
-                throw context.getRuntime().newTypeError("Could not dispatch to " + className + "#" + methodName + " using " + prettySig);
+                throw error(context, e);
             }
         }
-    }
-    
-    protected static class JavaVoidWrapperMethodZero extends JavaMethod.JavaMethodZero {
-        private final Handle handle;
-        private final boolean isStatic;
-        private final String className;
-        private final String methodName;
-        private final String prettySig;
         
-        public JavaVoidWrapperMethodZero(RubyModule klazz, Method method) {
-            super(klazz, Visibility.PUBLIC);
-            
-            this.handle = HandleFactory.createHandle(klazz.getRuntime().getJRubyClassLoader(), method);
-            this.isStatic = Modifier.isStatic(method.getModifiers());
-            this.className = method.getDeclaringClass().getCanonicalName();
-            this.methodName = method.getName();
-            this.prettySig = pretty(method.getReturnType(), method.getParameterTypes());
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+            try {
+                handle.invoke(isStatic ? null : ((JavaObjectWrapper)self).object);
+                
+                return self;
+            } catch (Exception e) {
+                throw error(context, e);
+            }
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+            try {
+                handle.invoke(isStatic ? null : ((JavaObjectWrapper)self).object, rubyToJava(arg0));
+                
+                return self;
+            } catch (Exception e) {
+                throw error(context, e);
+            }
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+            try {
+                handle.invoke(isStatic ? null : ((JavaObjectWrapper)self).object, rubyToJava(arg0), rubyToJava(arg1));
+                
+                return self;
+            } catch (Exception e) {
+                throw error(context, e);
+            }
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+            try {
+                handle.invoke(isStatic ? null : ((JavaObjectWrapper)self).object, rubyToJava(arg0), rubyToJava(arg1), rubyToJava(arg2));
+                
+                return self;
+            } catch (Exception e) {
+                throw error(context, e);
+            }
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+            Object[] newArgs = new Object[args.length];
+            for (int i = 0; i < args.length; i++) {
+                IRubyObject arg = args[i];
+                newArgs[i] = rubyToJava(arg);
+            }
+
+            try {
+                handle.invoke(isStatic ? null : ((JavaObjectWrapper)self).object, newArgs);
+                
+                return self;
+            } catch (Exception e) {
+                throw error(context, e);
+            }
         }
         
         @Override
@@ -490,8 +650,57 @@ public class MiniJava implements Library {
                 
                 return self;
             } catch (Exception e) {
-                if (context.getRuntime().getDebug().isTrue()) e.printStackTrace();
-                throw context.getRuntime().newTypeError("Could not dispatch to " + className + "#" + methodName + " using " + prettySig);
+                throw error(context, e);
+            }
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
+            try {
+                handle.invoke(isStatic ? null : ((JavaObjectWrapper)self).object, rubyToJava(arg0));
+                
+                return self;
+            } catch (Exception e) {
+                throw error(context, e);
+            }
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+            try {
+                handle.invoke(isStatic ? null : ((JavaObjectWrapper)self).object, rubyToJava(arg0), rubyToJava(arg1));
+                
+                return self;
+            } catch (Exception e) {
+                throw error(context, e);
+            }
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+            try {
+                handle.invoke(isStatic ? null : ((JavaObjectWrapper)self).object, rubyToJava(arg0), rubyToJava(arg1), rubyToJava(arg2));
+                
+                return self;
+            } catch (Exception e) {
+                throw error(context, e);
+            }
+        }
+    }
+    
+    protected static class JavaVoidWrapperMethodZero extends AbstractJavaWrapperMethodZero {
+        public JavaVoidWrapperMethodZero(RubyModule klazz, Method method) {
+            super(klazz, method);
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+            try {
+                handle.invoke(isStatic ? null : ((JavaObjectWrapper)self).object);
+                
+                return self;
+            } catch (Exception e) {
+                throw error(context, e);
             }
         }
     }
