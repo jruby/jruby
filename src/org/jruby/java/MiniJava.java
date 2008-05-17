@@ -85,7 +85,7 @@ public class MiniJava implements Library {
     public static IRubyObject rb_import(ThreadContext context, IRubyObject self, IRubyObject name) {
         String className = name.toString();
         try {
-            Class cls = context.getRuntime().getJRubyClassLoader().loadClass(className);
+            Class cls = findClass(context.getRuntime().getJRubyClassLoader(), className);
 
             RubyModule namespace;
             if (self instanceof RubyModule) {
@@ -107,7 +107,7 @@ public class MiniJava implements Library {
     public static IRubyObject rb_import(ThreadContext context, IRubyObject self, IRubyObject name, IRubyObject as) {
         String className = name.toString();
         try {
-            Class cls = context.getRuntime().getJRubyClassLoader().loadClass(className);
+            Class cls = findClass(context.getRuntime().getJRubyClassLoader(), className);
 
             RubyModule namespace;
             if (self instanceof RubyModule) {
@@ -122,6 +122,32 @@ public class MiniJava implements Library {
         } catch (Exception e) {
             if (context.getRuntime().getDebug().isTrue()) e.printStackTrace();
             throw context.getRuntime().newTypeError("Could not find class " + className + ", exception: " + e);
+        }
+    }
+    
+    protected static Class findClass(ClassLoader classLoader, String className) throws ClassNotFoundException {
+        if (className.indexOf('.') == -1 && Character.isLowerCase(className.charAt(0))) {
+            // probably a primitive
+            switch (className.charAt(0)) {
+            case 'b':
+                return byte.class;
+            case 's':
+                return short.class;
+            case 'c':
+                return char.class;
+            case 'i':
+                return int.class;
+            case 'l':
+                return long.class;
+            case 'f':
+                return float.class;
+            case 'd':
+                return double.class;
+            default:
+                return classLoader.loadClass(className);
+            }
+        } else {
+            return classLoader.loadClass(className);
         }
     }
     
@@ -307,33 +333,34 @@ public class MiniJava implements Library {
             // add 'new' with full signature, so it's guaranteed to be directly accessible
             // TODO: no need for this to be a full, formal JVM signature
             rubySing.addMethod("new" + pretty(cls, constructor.getParameterTypes()), dynMethod);
-        
-            rubySing.addMethod("[]", new JavaMethod.JavaMethodOneOrTwoOrThree(rubySing, Visibility.PUBLIC) {
-                @Override
-                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
-                    Class javaClass = getJavaClassFromObject(self);
-                    int size = RubyFixnum.fix2int(arg.convertToInteger());
-                    return javaToRuby(context.getRuntime(), Array.newInstance(javaClass, size));
-                }
-
-                @Override
-                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
-                    Class javaClass = getJavaClassFromObject(self);
-                    int x = RubyFixnum.fix2int(arg0.convertToInteger());
-                    int y = RubyFixnum.fix2int(arg1.convertToInteger());
-                    return javaToRuby(context.getRuntime(), Array.newInstance(javaClass, new int[] {x,y}));
-                }
-
-                @Override
-                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-                    Class javaClass = getJavaClassFromObject(self);
-                    int x = RubyFixnum.fix2int(arg0.convertToInteger());
-                    int y = RubyFixnum.fix2int(arg1.convertToInteger());
-                    int z = RubyFixnum.fix2int(arg2.convertToInteger());
-                    return javaToRuby(context.getRuntime(), Array.newInstance(javaClass, new int[] {x,y,z}));
-                }
-            });
         }
+        
+        // add array construction methods
+        rubySing.addMethod("[]", new JavaMethod.JavaMethodOneOrTwoOrThree(rubySing, Visibility.PUBLIC) {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
+                Class javaClass = getJavaClassFromObject(self);
+                int size = RubyFixnum.fix2int(arg.convertToInteger());
+                return javaToRuby(context.getRuntime(), Array.newInstance(javaClass, size));
+            }
+
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+                Class javaClass = getJavaClassFromObject(self);
+                int x = RubyFixnum.fix2int(arg0.convertToInteger());
+                int y = RubyFixnum.fix2int(arg1.convertToInteger());
+                return javaToRuby(context.getRuntime(), Array.newInstance(javaClass, new int[] {x,y}));
+            }
+
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+                Class javaClass = getJavaClassFromObject(self);
+                int x = RubyFixnum.fix2int(arg0.convertToInteger());
+                int y = RubyFixnum.fix2int(arg1.convertToInteger());
+                int z = RubyFixnum.fix2int(arg2.convertToInteger());
+                return javaToRuby(context.getRuntime(), Array.newInstance(javaClass, new int[] {x,y,z}));
+            }
+        });
         
         // add a few type-specific special methods
         rubySing.addMethod("java_class", new JavaMethod.JavaMethodZero(rubySing, Visibility.PUBLIC) {
