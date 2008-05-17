@@ -5,32 +5,28 @@
 
 package org.jruby.java;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
-import org.jruby.RubyProc;
-import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.compiler.util.HandleFactory;
 import org.jruby.compiler.util.HandleFactory.Handle;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.load.Library;
 import static org.jruby.util.CodegenUtils.*;
 import org.jruby.util.IdUtil;
@@ -89,7 +85,7 @@ public class MiniJava implements Library {
     public static IRubyObject rb_import(ThreadContext context, IRubyObject self, IRubyObject name) {
         String className = name.toString();
         try {
-            Class cls = Class.forName(className);
+            Class cls = context.getRuntime().getJRubyClassLoader().loadClass(className);
 
             RubyModule namespace;
             if (self instanceof RubyModule) {
@@ -111,7 +107,7 @@ public class MiniJava implements Library {
     public static IRubyObject rb_import(ThreadContext context, IRubyObject self, IRubyObject name, IRubyObject as) {
         String className = name.toString();
         try {
-            Class cls = Class.forName(className);
+            Class cls = context.getRuntime().getJRubyClassLoader().loadClass(className);
 
             RubyModule namespace;
             if (self instanceof RubyModule) {
@@ -178,6 +174,57 @@ public class MiniJava implements Library {
             return;
         }
         
+        // if it's an array, only add methods for aref, aset, and length
+        if (cls.isArray()) {
+            rubyMod.addMethod("[]", new JavaMethod.JavaMethodOneOrTwo(rubyMod, Visibility.PUBLIC) {
+                @Override
+                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
+                    Object array = rubyToJava(self);
+                    int x = RubyFixnum.fix2int(arg.convertToInteger());
+                    return javaToRuby(context.getRuntime(), Array.get(array, x));
+                }
+
+                @Override
+                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+                    Object array = rubyToJava(self);
+                    int x = RubyFixnum.fix2int(arg0.convertToInteger());
+                    int y = RubyFixnum.fix2int(arg1.convertToInteger());
+                    return javaToRuby(context.getRuntime(), Array.get(Array.get(array, x), y));
+                }
+            });
+            
+            rubyMod.addMethod("[]=", new JavaMethod.JavaMethodTwoOrThree(rubyMod, Visibility.PUBLIC) {
+                @Override
+                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+                    Object array = rubyToJava(self);
+                    int x = RubyFixnum.fix2int(arg0.convertToInteger());
+                    Object obj = rubyToJava(arg1);
+                    Array.set(array, x, obj);
+                    
+                    return arg1;
+                }
+
+                @Override
+                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+                    Object array = rubyToJava(self);
+                    int x = RubyFixnum.fix2int(arg0.convertToInteger());
+                    int y = RubyFixnum.fix2int(arg1.convertToInteger());
+                    Object obj = rubyToJava(arg2);
+                    Array.set(Array.get(array, x), y, obj);
+                    
+                    return arg2;
+                }
+            });
+            
+            rubyMod.addMethod("length", new JavaMethod.JavaMethodZero(rubyMod, Visibility.PUBLIC) {
+                @Override
+                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+                    Object array = rubyToJava(self);
+                    return javaToRuby(context.getRuntime(), Array.getLength(array));
+                }
+            });
+        }
+        
         // add all instance and static methods
         Method[] methods = cls.getDeclaredMethods();
         for (final Method method : methods) {
@@ -222,7 +269,7 @@ public class MiniJava implements Library {
             
             DynamicMethod dynMethod;
             if (constructor.getParameterTypes().length == 0) {
-                dynMethod = new JavaMethod.JavaMethodZero(rubyMod.getSingletonClass(), Visibility.PUBLIC) {
+                dynMethod = new JavaMethod.JavaMethodZero(rubySing, Visibility.PUBLIC) {
                     @Override
                     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
                         try {
@@ -234,7 +281,7 @@ public class MiniJava implements Library {
                     }
                 };
             } else {
-                dynMethod = new JavaMethod.JavaMethodNoBlock(rubyMod.getSingletonClass(), Visibility.PUBLIC) {
+                dynMethod = new JavaMethod.JavaMethodNoBlock(rubySing, Visibility.PUBLIC) {
                     @Override
                     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] rubyArgs) {
                         Object[] args = new Object[rubyArgs.length];
@@ -253,12 +300,39 @@ public class MiniJava implements Library {
             
             // if not already defined, we add a 'new' that guesses at which signature to use
             // TODO: just adding first one right now...add in signature-guessing logic
-            if (rubyMod.getSingletonClass().getMethods().get("new") == null) {
-                rubyMod.getSingletonClass().addMethod("new", dynMethod);
+            if (rubySing.getMethods().get("new") == null) {
+                rubySing.addMethod("new", dynMethod);
             }
+            
             // add 'new' with full signature, so it's guaranteed to be directly accessible
             // TODO: no need for this to be a full, formal JVM signature
-            rubyMod.getSingletonClass().addMethod("new" + pretty(cls, constructor.getParameterTypes()), dynMethod);
+            rubySing.addMethod("new" + pretty(cls, constructor.getParameterTypes()), dynMethod);
+        
+            rubySing.addMethod("[]", new JavaMethod.JavaMethodOneOrTwoOrThree(rubySing, Visibility.PUBLIC) {
+                @Override
+                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
+                    Class javaClass = getJavaClassFromObject(self);
+                    int size = RubyFixnum.fix2int(arg.convertToInteger());
+                    return javaToRuby(context.getRuntime(), Array.newInstance(javaClass, size));
+                }
+
+                @Override
+                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+                    Class javaClass = getJavaClassFromObject(self);
+                    int x = RubyFixnum.fix2int(arg0.convertToInteger());
+                    int y = RubyFixnum.fix2int(arg1.convertToInteger());
+                    return javaToRuby(context.getRuntime(), Array.newInstance(javaClass, new int[] {x,y}));
+                }
+
+                @Override
+                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+                    Class javaClass = getJavaClassFromObject(self);
+                    int x = RubyFixnum.fix2int(arg0.convertToInteger());
+                    int y = RubyFixnum.fix2int(arg1.convertToInteger());
+                    int z = RubyFixnum.fix2int(arg2.convertToInteger());
+                    return javaToRuby(context.getRuntime(), Array.newInstance(javaClass, new int[] {x,y,z}));
+                }
+            });
         }
         
         // add a few type-specific special methods
