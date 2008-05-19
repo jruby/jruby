@@ -7,16 +7,22 @@ package org.jruby.java;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.compiler.util.HandleFactory;
 import org.jruby.compiler.util.HandleFactory.Handle;
 import org.jruby.exceptions.RaiseException;
@@ -29,6 +35,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import static org.jruby.util.CodegenUtils.*;
 import org.jruby.util.IdUtil;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Label;
+import static org.objectweb.asm.Opcodes.*;
 
 /**
  *
@@ -82,6 +91,16 @@ public class MiniJava implements Library {
             }
         });
     }
+    
+    @JRubyMethod(name = "new_class", rest = true, module = true)
+    public static IRubyObject new_class(ThreadContext context, IRubyObject self, IRubyObject[] interfaces) {
+        Class[] javaInterfaces = new Class[interfaces.length];
+        for (int i = 0; i < interfaces.length; i++) {
+            javaInterfaces[i] = getJavaClassFromObject(interfaces[i]);
+        }
+        
+        return createImplClass(javaInterfaces, context.getRuntime(), "I" + System.currentTimeMillis());
+    }
 
     @JRubyMethod(name = "import", module = true)
     public static IRubyObject rb_import(ThreadContext context, IRubyObject self, IRubyObject name) {
@@ -131,6 +150,220 @@ public class MiniJava implements Library {
         }
     }
 
+    public static RubyClass createImplClass(Class[] superTypes, Ruby ruby, String name) {
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        String[] superTypeNames = new String[superTypes.length];
+        Map<String, List<Method>> simpleToAll = new HashMap<String, List<Method>>();
+        Set<String> simpleMethods = new HashSet<String>();
+        for (int i = 0; i < superTypes.length; i++) {
+            superTypeNames[i] = p(superTypes[i]);
+            
+            for (Method method : superTypes[i].getDeclaredMethods()) {
+                simpleMethods.add(method.getName());
+                List<Method> methods = simpleToAll.get(method.getName());
+                if (methods == null) simpleToAll.put(method.getName(), methods = new ArrayList<Method>());
+                methods.add(method);
+            }
+        }
+        
+        // construct the class, implementing all supertypes
+        cw.visit(V1_5, ACC_PUBLIC | ACC_SUPER, name, null, p(Object.class), superTypeNames);
+        
+        // fields needed for dispatch and such
+        cw.visitField(ACC_STATIC | ACC_PRIVATE, "ruby", ci(Ruby.class), null, null).visitEnd();
+        cw.visitField(ACC_STATIC | ACC_PRIVATE, "rubyClass", ci(RubyClass.class), null, null).visitEnd();
+        cw.visitField(ACC_PRIVATE | ACC_FINAL, "self", ci(IRubyObject.class), null, null).visitEnd();
+        
+        // create constructor
+        SkinnyMethodAdapter initMethod = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", sig(void.class), null, null));
+        initMethod.aload(0);
+        initMethod.invokespecial(p(Object.class), "<init>", sig(void.class));
+        
+        // wrap self and store the wrapper
+        initMethod.aload(0);
+        initMethod.getstatic(name, "ruby", ci(Ruby.class));
+        initMethod.aload(0);
+        initMethod.invokestatic(p(MiniJava.class), "javaToRuby", sig(IRubyObject.class, Ruby.class, Object.class));
+        initMethod.putfield(name, "self", ci(IRubyObject.class));
+        
+        // end constructor
+        initMethod.voidreturn();
+        initMethod.end();
+        
+        // start setup method
+        SkinnyMethodAdapter setupMethod = new SkinnyMethodAdapter(cw.visitMethod(ACC_STATIC | ACC_PUBLIC | ACC_SYNTHETIC, "__setup__", sig(void.class, RubyClass.class), null, null));
+        setupMethod.start();
+        
+        // set RubyClass
+        setupMethod.aload(0);
+        setupMethod.dup();
+        setupMethod.putstatic(name, "rubyClass", ci(RubyClass.class));
+        
+        // set Ruby
+        setupMethod.invokevirtual(p(RubyClass.class), "getClassRuntime", sig(Ruby.class));
+        setupMethod.putstatic(name, "ruby", ci(Ruby.class));
+        
+        // load method_missing into local var 1
+        setupMethod.getstatic(name, "rubyClass", ci(RubyClass.class));
+        setupMethod.ldc("method_missing");
+        setupMethod.invokevirtual(p(RubyClass.class), "searchMethod", sig(DynamicMethod.class, String.class));
+        setupMethod.astore(1);
+        
+        // for each simple method name, implement the complex methods, calling the simple version
+        for (Map.Entry<String, List<Method>> entry : simpleToAll.entrySet()) {
+            String simpleName = entry.getKey();
+            
+            // all methods dispatch to the simple version by default, which is method_missing normally
+            cw.visitField(ACC_STATIC | ACC_PUBLIC | ACC_VOLATILE, simpleName, ci(DynamicMethod.class), null, null).visitEnd();
+            setupMethod.aload(1);
+            setupMethod.putstatic(name, simpleName, ci(DynamicMethod.class));
+            
+            for (Method method : entry.getValue()) {
+                Class[] paramTypes = method.getParameterTypes();
+                Class returnType = method.getReturnType();
+                
+                SkinnyMethodAdapter mv = new SkinnyMethodAdapter(
+                        cw.visitMethod(ACC_PUBLIC, simpleName, sig(returnType, paramTypes), null, null));
+                mv.start();
+                String fieldName = mangleMethodFieldName(simpleName, paramTypes);
+                
+                // try specific name first, falling back on simple name
+                Label dispatch = new Label();
+                cw.visitField(ACC_STATIC | ACC_PUBLIC | ACC_VOLATILE, fieldName, ci(DynamicMethod.class), null, null).visitEnd();
+                mv.getstatic(name, fieldName, ci(DynamicMethod.class));
+                mv.dup();
+                mv.ifnonnull(dispatch);
+                mv.pop();
+                mv.getstatic(name, simpleName, ci(DynamicMethod.class));
+                mv.label(dispatch);
+                
+                // get current context
+                mv.getstatic(name, "ruby", ci(Ruby.class));
+                mv.invokevirtual(p(Ruby.class), "getCurrentContext", sig(ThreadContext.class));
+                
+                // load self, class, and name
+                mv.aload(0);
+                mv.getfield(name, "self", ci(IRubyObject.class));
+                mv.getstatic(name, "rubyClass", ci(RubyClass.class));
+                mv.ldc(simpleName);
+                
+                // load arguments into IRubyObject[] for dispatch
+                if (method.getParameterTypes().length != 0) {
+                    mv.pushInt(method.getParameterTypes().length);
+                    mv.anewarray(p(IRubyObject.class));
+                    
+                    for (int i = 0; i < paramTypes.length; i++) {
+                        mv.dup();
+                        mv.pushInt(i);
+                        // convert to IRubyObject
+                        mv.getstatic(name, "ruby", ci(Ruby.class));
+                        mv.aload(i + 1);
+                        mv.invokestatic(p(MiniJava.class), "javaToRuby", sig(IRubyObject.class, Ruby.class, Object.class));
+                        mv.aastore();
+                    }
+                } else {
+                    mv.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
+                }
+                
+                // load null block
+                mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
+                
+                // invoke method
+                mv.invokevirtual(p(DynamicMethod.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class));
+                
+                // if we expect a return value, unwrap it
+                if (method.getReturnType() != void.class) {
+                    mv.invokestatic(p(MiniJava.class), "rubyToJava", sig(Object.class, IRubyObject.class));
+                    mv.checkcast(p(returnType));
+
+                    mv.areturn();
+                } else {
+                    mv.voidreturn();
+                }
+                mv.end();
+            }
+        }
+        
+        // end setup method
+        setupMethod.voidreturn();
+        setupMethod.end();
+        
+        // end class
+        cw.visitEnd();
+        
+        // create the class
+        Class newClass = ruby.getJRubyClassLoader().defineClass(name, cw.toByteArray());
+        RubyClass rubyCls = (RubyClass)getMirrorForClass(ruby, newClass);
+        
+        // setup the class
+        try {
+            newClass.getMethod("__setup__", new Class[]{RubyClass.class}).invoke(null, new Object[]{rubyCls});
+        } catch (IllegalAccessException ex) {
+            throw error(ruby, ex, "Could not setup class: " + newClass);
+        } catch (IllegalArgumentException ex) {
+            throw error(ruby, ex, "Could not setup class: " + newClass);
+        } catch (InvocationTargetException ex) {
+            throw error(ruby, ex, "Could not setup class: " + newClass);
+        } catch (NoSuchMethodException ex) {
+            throw error(ruby, ex, "Could not setup class: " + newClass);
+        }
+
+        // now, create a method_added that can replace the DynamicMethod fields as they're redefined
+        final Map<String, Field> allFields = new HashMap<String, Field>();
+        try {
+            for (Map.Entry<String, List<Method>> entry : simpleToAll.entrySet()) {
+                String simpleName = entry.getKey();
+
+                Field simpleField = newClass.getField(simpleName);
+                allFields.put(simpleName, simpleField);
+
+                for (Method method : entry.getValue()) {
+                    String complexName = simpleName + prettyParams(method.getParameterTypes());
+                    String fieldName = mangleMethodFieldName(simpleName, method.getParameterTypes());
+                    allFields.put(complexName, newClass.getField(fieldName));
+                }
+            }
+        } catch (IllegalArgumentException ex) {
+            throw error(ruby, ex, "Could not prepare method fields: " + newClass);
+        } catch (NoSuchFieldException ex) {
+            throw error(ruby, ex, "Could not prepare method fields: " + newClass);
+        }
+
+        DynamicMethod method_added = new JavaMethod(rubyCls.getSingletonClass(), Visibility.PUBLIC) {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                RubyClass selfClass = (RubyClass)self;
+                Ruby ruby = selfClass.getClassRuntime();
+                String methodName = args[0].asJavaString();
+                Field field = allFields.get(methodName);
+
+                if (field == null) {
+                    // do nothing, it's a non-impl method
+                } else {
+                    try {
+                        field.set(null, selfClass.searchMethod(methodName));
+                    } catch (IllegalAccessException iae) {
+                        throw error(ruby, iae, "Could not set new method into field: " + selfClass + "." + methodName);
+                    } catch (IllegalArgumentException iae) {
+                        throw error(ruby, iae, "Could not set new method into field: " + selfClass + "." + methodName);
+                    }
+                }
+
+                return context.getRuntime().getNil();
+            }
+        };
+        rubyCls.getSingletonClass().addMethod("method_added", method_added);
+        
+        return rubyCls;
+    }
+    
+    protected static String mangleMethodFieldName(String baseName, Class[] paramTypes) {
+        String fieldName = baseName + prettyParams(paramTypes);
+        fieldName = fieldName.replace('.', '\\');
+        
+        return fieldName;
+    }
+    
     protected static Class findClass(ClassLoader classLoader, String className) throws ClassNotFoundException {
         if (className.indexOf('.') == -1 && Character.isLowerCase(className.charAt(0))) {
             // probably a primitive
@@ -253,6 +486,8 @@ public class MiniJava implements Library {
     }
 
     private static void populateConstructors(RubyModule rubySing, final Class cls) {
+        final Ruby ruby = rubySing.getRuntime();
+        
         // add all constructors
         Constructor[] constructors = cls.getConstructors();
         for (final Constructor constructor : constructors) {
@@ -268,11 +503,18 @@ public class MiniJava implements Library {
                     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
                         try {
                             return javaToRuby(context.getRuntime(), constructor.newInstance());
-                        } catch (Exception e) {
-                            if (context.getRuntime().getDebug().isTrue()) {
-                                e.printStackTrace();
-                            }
-                            throw context.getRuntime().newTypeError("Could not instantiate " + cls.getCanonicalName() + " using " + pretty(cls, constructor.getParameterTypes()));
+                        } catch (InstantiationException ex) {
+                            if (ruby.getDebug().isTrue()) ex.printStackTrace();
+                            throw ruby.newTypeError("Could not instantiate " + cls.getCanonicalName() + " using " + prettyParams(constructor.getParameterTypes()));
+                        } catch (IllegalAccessException ex) {
+                            if (ruby.getDebug().isTrue()) ex.printStackTrace();
+                            throw ruby.newTypeError("Could not instantiate " + cls.getCanonicalName() + " using " + prettyParams(constructor.getParameterTypes()));
+                        } catch (IllegalArgumentException ex) {
+                            if (ruby.getDebug().isTrue()) ex.printStackTrace();
+                            throw ruby.newTypeError("Could not instantiate " + cls.getCanonicalName() + " using " + prettyParams(constructor.getParameterTypes()));
+                        } catch (InvocationTargetException ex) {
+                            if (ruby.getDebug().isTrue()) ex.printStackTrace();
+                            throw ruby.newTypeError("Could not instantiate " + cls.getCanonicalName() + " using " + prettyParams(constructor.getParameterTypes()));
                         }
                     }
                 };
@@ -286,12 +528,19 @@ public class MiniJava implements Library {
                             args[i] = rubyToJava(rubyArgs[i]);
                         }
                         try {
-                            return javaToRuby(context.getRuntime(), constructor.newInstance(args));
-                        } catch (Exception e) {
-                            if (context.getRuntime().getDebug().isTrue()) {
-                                e.printStackTrace();
-                            }
-                            throw context.getRuntime().newTypeError("Could not instantiate " + cls.getCanonicalName() + " using " + pretty(cls, constructor.getParameterTypes()));
+                            return javaToRuby(ruby, constructor.newInstance(args));
+                        } catch (InstantiationException ex) {
+                            if (ruby.getDebug().isTrue()) ex.printStackTrace();
+                            throw ruby.newTypeError("Could not instantiate " + cls.getCanonicalName() + " using " + prettyParams(constructor.getParameterTypes()));
+                        } catch (IllegalAccessException ex) {
+                            if (ruby.getDebug().isTrue()) ex.printStackTrace();
+                            throw ruby.newTypeError("Could not instantiate " + cls.getCanonicalName() + " using " + prettyParams(constructor.getParameterTypes()));
+                        } catch (IllegalArgumentException ex) {
+                            if (ruby.getDebug().isTrue()) ex.printStackTrace();
+                            throw ruby.newTypeError("Could not instantiate " + cls.getCanonicalName() + " using " + prettyParams(constructor.getParameterTypes()));
+                        } catch (InvocationTargetException ex) {
+                            if (ruby.getDebug().isTrue()) ex.printStackTrace();
+                            throw ruby.newTypeError("Could not instantiate " + cls.getCanonicalName() + " using " + prettyParams(constructor.getParameterTypes()));
                         }
                     }
                 };
@@ -305,7 +554,7 @@ public class MiniJava implements Library {
 
             // add 'new' with full signature, so it's guaranteed to be directly accessible
             // TODO: no need for this to be a full, formal JVM signature
-            rubySing.addMethod("new" + pretty(cls, constructor.getParameterTypes()), dynMethod);
+            rubySing.addMethod("new" + prettyParams(constructor.getParameterTypes()), dynMethod);
         }
     }
 
@@ -340,17 +589,19 @@ public class MiniJava implements Library {
 
             // add method with full signature, so it's guaranteed to be directly accessible
             // TODO: no need for this to be a full, formal JVM signature
-            name = name + pretty(method.getReturnType(), method.getParameterTypes());
+            name = name + prettyParams(method.getParameterTypes());
             target.addMethod(name, dynMethod);
         }
     }
     
     private static void populateSpecialMethods(RubyModule rubyMod, RubyModule rubySing, final Class cls) {
+        final Ruby ruby = rubyMod.getRuntime();
+        
         // add a few type-specific special methods
         rubySing.addMethod("java_class", new JavaMethod.JavaMethodZero(rubySing, Visibility.PUBLIC) {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-                return javaToRuby(context.getRuntime(), cls);
+                return javaToRuby(ruby, cls);
             }
         });
     }
@@ -375,12 +626,14 @@ public class MiniJava implements Library {
     }
 
     protected static void populateMirrorForArrayClass(RubyModule rubyMod, Class cls) {
+        final Ruby ruby = rubyMod.getRuntime();
+        
         rubyMod.addMethod("[]", new JavaMethod.JavaMethodOneOrTwo(rubyMod, Visibility.PUBLIC) {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
                 Object array = rubyToJava(self);
                 int x = RubyFixnum.fix2int(arg.convertToInteger());
-                return javaToRuby(context.getRuntime(), Array.get(array, x));
+                return javaToRuby(ruby, Array.get(array, x));
             }
 
             @Override
@@ -388,7 +641,7 @@ public class MiniJava implements Library {
                 Object array = rubyToJava(self);
                 int x = RubyFixnum.fix2int(arg0.convertToInteger());
                 int y = RubyFixnum.fix2int(arg1.convertToInteger());
-                return javaToRuby(context.getRuntime(), Array.get(Array.get(array, x), y));
+                return javaToRuby(ruby, Array.get(Array.get(array, x), y));
             }
         });
 
@@ -419,7 +672,7 @@ public class MiniJava implements Library {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
                 Object array = rubyToJava(self);
-                return javaToRuby(context.getRuntime(), Array.getLength(array));
+                return javaToRuby(ruby, Array.getLength(array));
             }
         });
     }
@@ -472,6 +725,7 @@ public class MiniJava implements Library {
         protected final String className;
         protected final String methodName;
         protected final String prettySig;
+        protected final Ruby ruby;
 
         public AbstractJavaWrapperMethodZero(RubyModule klazz, Method method) {
             super(klazz, Visibility.PUBLIC);
@@ -480,14 +734,15 @@ public class MiniJava implements Library {
             this.isStatic = Modifier.isStatic(method.getModifiers());
             this.className = method.getDeclaringClass().getCanonicalName();
             this.methodName = method.getName();
-            this.prettySig = pretty(method.getReturnType(), method.getParameterTypes());
+            this.prettySig = prettyParams(method.getParameterTypes());
+            this.ruby = klazz.getRuntime();
         }
 
         protected RaiseException error(ThreadContext context, Exception e) throws RaiseException {
-            if (context.getRuntime().getDebug().isTrue()) {
+            if (ruby.getDebug().isTrue()) {
                 e.printStackTrace();
             }
-            throw context.getRuntime().newTypeError("Could not dispatch to " + className + "#" + methodName + " using " + prettySig);
+            throw ruby.newTypeError("Could not dispatch to " + className + "#" + methodName + " using " + prettySig);
         }
     }
 
@@ -497,6 +752,7 @@ public class MiniJava implements Library {
         protected final String className;
         protected final String methodName;
         protected final String prettySig;
+        protected final Ruby ruby;
 
         public AbstractJavaWrapperMethod(RubyModule klazz, Method method) {
             super(klazz, Visibility.PUBLIC);
@@ -505,15 +761,20 @@ public class MiniJava implements Library {
             this.isStatic = Modifier.isStatic(method.getModifiers());
             this.className = method.getDeclaringClass().getCanonicalName();
             this.methodName = method.getName();
-            this.prettySig = pretty(method.getReturnType(), method.getParameterTypes());
+            this.prettySig = prettyParams(method.getParameterTypes());
+            this.ruby = klazz.getRuntime();
         }
 
-        protected RaiseException error(ThreadContext context, Exception e) throws RaiseException {
-            if (context.getRuntime().getDebug().isTrue()) {
-                e.printStackTrace();
-            }
-            throw context.getRuntime().newTypeError("Could not dispatch to " + className + "#" + methodName + " using " + prettySig);
+        protected RaiseException error(Exception e) throws RaiseException {
+            return MiniJava.error(ruby, e, "Could not dispatch to " + className + "#" + methodName + " using " + prettySig);
         }
+    }
+    
+    protected static RaiseException error(Ruby ruby, Exception e, String message) throws RaiseException {
+        if (ruby.getDebug().isTrue()) {
+            e.printStackTrace();
+        }
+        throw ruby.newTypeError(message);
     }
 
     protected static class JavaObjectWrapperMethodZero extends AbstractJavaWrapperMethodZero {
@@ -523,13 +784,9 @@ public class MiniJava implements Library {
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-            try {
-                Object result = (Object) handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object);
+            Object result = (Object) handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object);
 
-                return javaToRuby(context.getRuntime(), result);
-            } catch (Exception e) {
-                throw error(context, e);
-            }
+            return javaToRuby(ruby, result);
         }
     }
 
@@ -546,57 +803,37 @@ public class MiniJava implements Library {
                 newArgs[i] = rubyToJava(arg);
             }
 
-            try {
-                Object result = (Object) handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, newArgs);
+            Object result = (Object) handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, newArgs);
 
-                return javaToRuby(context.getRuntime(), result);
-            } catch (Exception e) {
-                throw error(context, e);
-            }
+            return javaToRuby(ruby, result);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-            try {
-                Object result = (Object) handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object);
+            Object result = (Object) handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object);
 
-                return javaToRuby(context.getRuntime(), result);
-            } catch (Exception e) {
-                throw error(context, e);
-            }
-        }
+            return javaToRuby(ruby, result);
+    }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
-            try {
-                Object result = (Object) handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, rubyToJava(arg0));
+            Object result = (Object) handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, rubyToJava(arg0));
 
-                return javaToRuby(context.getRuntime(), result);
-            } catch (Exception e) {
-                throw error(context, e);
-            }
+            return javaToRuby(ruby, result);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-            try {
-                Object result = (Object) handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, rubyToJava(arg0), rubyToJava(arg1));
+            Object result = (Object) handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, rubyToJava(arg0), rubyToJava(arg1));
 
-                return javaToRuby(context.getRuntime(), result);
-            } catch (Exception e) {
-                throw error(context, e);
-            }
+            return javaToRuby(ruby, result);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-            try {
-                Object result = (Object) handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, rubyToJava(arg0), rubyToJava(arg1), rubyToJava(arg2));
+            Object result = (Object) handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, rubyToJava(arg0), rubyToJava(arg1), rubyToJava(arg2));
 
-                return javaToRuby(context.getRuntime(), result);
-            } catch (Exception e) {
-                throw error(context, e);
-            }
+            return javaToRuby(ruby, result);
         }
 
         @Override
@@ -607,57 +844,37 @@ public class MiniJava implements Library {
                 newArgs[i] = rubyToJava(arg);
             }
 
-            try {
-                Object result = (Object) handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, newArgs);
+            Object result = (Object) handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, newArgs);
 
-                return javaToRuby(context.getRuntime(), result);
-            } catch (Exception e) {
-                throw error(context, e);
-            }
+            return javaToRuby(ruby, result);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-            try {
-                Object result = (Object) handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object);
+            Object result = (Object) handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object);
 
-                return javaToRuby(context.getRuntime(), result);
-            } catch (Exception e) {
-                throw error(context, e);
-            }
+            return javaToRuby(ruby, result);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
-            try {
-                Object result = (Object) handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, rubyToJava(arg0));
+            Object result = (Object) handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, rubyToJava(arg0));
 
-                return javaToRuby(context.getRuntime(), result);
-            } catch (Exception e) {
-                throw error(context, e);
-            }
+            return javaToRuby(ruby, result);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
-            try {
-                Object result = (Object) handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, rubyToJava(arg0), rubyToJava(arg1));
+            Object result = (Object) handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, rubyToJava(arg0), rubyToJava(arg1));
 
-                return javaToRuby(context.getRuntime(), result);
-            } catch (Exception e) {
-                throw error(context, e);
-            }
+            return javaToRuby(ruby, result);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-            try {
-                Object result = (Object) handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, rubyToJava(arg0), rubyToJava(arg1), rubyToJava(arg2));
+            Object result = (Object) handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, rubyToJava(arg0), rubyToJava(arg1), rubyToJava(arg2));
 
-                return javaToRuby(context.getRuntime(), result);
-            } catch (Exception e) {
-                throw error(context, e);
-            }
+            return javaToRuby(ruby, result);
         }
     }
 
@@ -674,57 +891,37 @@ public class MiniJava implements Library {
                 newArgs[i] = rubyToJava(arg);
             }
 
-            try {
-                handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, newArgs);
+            handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, newArgs);
 
-                return self;
-            } catch (Exception e) {
-                throw error(context, e);
-            }
+            return self;
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-            try {
-                handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object);
+            handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object);
 
-                return self;
-            } catch (Exception e) {
-                throw error(context, e);
-            }
+            return self;
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
-            try {
-                handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, rubyToJava(arg0));
+            handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, rubyToJava(arg0));
 
-                return self;
-            } catch (Exception e) {
-                throw error(context, e);
-            }
+            return self;
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-            try {
-                handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, rubyToJava(arg0), rubyToJava(arg1));
+            handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, rubyToJava(arg0), rubyToJava(arg1));
 
-                return self;
-            } catch (Exception e) {
-                throw error(context, e);
-            }
+            return self;
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-            try {
-                handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, rubyToJava(arg0), rubyToJava(arg1), rubyToJava(arg2));
+            handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, rubyToJava(arg0), rubyToJava(arg1), rubyToJava(arg2));
 
-                return self;
-            } catch (Exception e) {
-                throw error(context, e);
-            }
+            return self;
         }
 
         @Override
@@ -735,57 +932,37 @@ public class MiniJava implements Library {
                 newArgs[i] = rubyToJava(arg);
             }
 
-            try {
-                handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, newArgs);
+            handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, newArgs);
 
-                return self;
-            } catch (Exception e) {
-                throw error(context, e);
-            }
+            return self;
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-            try {
-                handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object);
+            handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object);
 
-                return self;
-            } catch (Exception e) {
-                throw error(context, e);
-            }
+            return self;
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
-            try {
-                handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, rubyToJava(arg0));
+            handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, rubyToJava(arg0));
 
-                return self;
-            } catch (Exception e) {
-                throw error(context, e);
-            }
+            return self;
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
-            try {
-                handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, rubyToJava(arg0), rubyToJava(arg1));
+            handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, rubyToJava(arg0), rubyToJava(arg1));
 
-                return self;
-            } catch (Exception e) {
-                throw error(context, e);
-            }
+            return self;
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-            try {
-                handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, rubyToJava(arg0), rubyToJava(arg1), rubyToJava(arg2));
+            handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object, rubyToJava(arg0), rubyToJava(arg1), rubyToJava(arg2));
 
-                return self;
-            } catch (Exception e) {
-                throw error(context, e);
-            }
+            return self;
         }
     }
 
@@ -796,13 +973,9 @@ public class MiniJava implements Library {
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-            try {
-                handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object);
+            handle.invoke(isStatic ? null : ((JavaObjectWrapper) self).object);
 
-                return self;
-            } catch (Exception e) {
-                throw error(context, e);
-            }
+            return self;
         }
     }
 

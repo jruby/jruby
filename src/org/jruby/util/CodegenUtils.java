@@ -99,29 +99,26 @@ public class CodegenUtils {
      * Create a method signature from the given param types and return values
      */
     public static String sig(Class retval, Class... params) {
+        return sigParams(params) + ci(retval);
+    }
+    
+    public static String sigParams(Class... params) {
         StringBuffer signature = new StringBuffer("(");
         
         for (int i = 0; i < params.length; i++) {
             signature.append(ci(params[i]));
         }
         
-        signature.append(")").append(ci(retval));
-        
-        return signature.toString();
-    }
-    
-    /**
-     * Create a method signature with just a return value
-     */
-    public static String sig(Class retval) {
-        StringBuffer signature = new StringBuffer("()");
-        
-        signature.append(ci(retval));
+        signature.append(")");
         
         return signature.toString();
     }
     
     public static String pretty(Class retval, Class... params) {
+        return prettyParams(params) + human(retval);
+    }
+    
+    public static String prettyParams(Class... params) {
         StringBuffer signature = new StringBuffer("(");
         
         for (int i = 0; i < params.length; i++) {
@@ -129,7 +126,7 @@ public class CodegenUtils {
             if (i < params.length - 1) signature.append(',');
         }
         
-        signature.append(")").append(human(retval));
+        signature.append(")");
         
         return signature.toString();
     }

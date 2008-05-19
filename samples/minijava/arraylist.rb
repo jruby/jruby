@@ -5,7 +5,7 @@ import "java.lang.Boolean"
 
 class ArrayList
   include Enumerable
-  alias_method :add, :"add(java.lang.Object)boolean"
+  alias_method :add, :"add(java.lang.Object)"
 
   def each
     iter = iterator
@@ -19,7 +19,7 @@ class ArrayList
   end
 
   class << self
-    alias_method :new, :"new()java.util.ArrayList"
+    alias_method :new, :"new()"
   end
 end
 

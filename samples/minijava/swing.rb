@@ -6,8 +6,8 @@ import "java.awt.event.ActionListener"
 import "java.lang.Integer"
 
 class JFrame
-  alias_method :add, :"add(java.awt.Component)java.awt.Component"
-  alias_method :setSize, :"setSize(int,int)void"
+  alias_method :add, :"add(java.awt.Component)"
+  alias_method :setSize, :"setSize(int,int)"
   
   def size=(size)
     x, y = *size
@@ -15,7 +15,7 @@ class JFrame
   end
   
   class << self
-    alias_method :new_with_title, :"new(java.lang.String)javax.swing.JFrame"
+    alias_method :new_with_title, :"new(java.lang.String)"
     
     def new(title)
       new_with_title(title.to_java)
@@ -25,7 +25,7 @@ end
 
 class JButton
   class << self
-    alias_method :new_with_text, :"new(java.lang.String)javax.swing.JButton"
+    alias_method :new_with_text, :"new(java.lang.String)"
     
     def new(text)
       new_with_text(text.to_java)
