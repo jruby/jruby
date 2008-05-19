@@ -4,6 +4,8 @@
  */
 package org.jruby.java;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -12,10 +14,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -44,6 +44,8 @@ import static org.objectweb.asm.Opcodes.*;
  * @author headius
  */
 public class MiniJava implements Library {
+    private static final boolean DEBUG = false;
+    
     public void load(Ruby runtime, boolean wrap) {
         runtime.getErr().print("Warning: minijava is experimental and subject to change\n");
         
@@ -151,20 +153,26 @@ public class MiniJava implements Library {
     }
 
     public static RubyClass createImplClass(Class[] superTypes, Ruby ruby, String name) {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         String[] superTypeNames = new String[superTypes.length];
         Map<String, List<Method>> simpleToAll = new HashMap<String, List<Method>>();
-        Set<String> simpleMethods = new HashSet<String>();
         for (int i = 0; i < superTypes.length; i++) {
             superTypeNames[i] = p(superTypes[i]);
             
             for (Method method : superTypes[i].getDeclaredMethods()) {
-                simpleMethods.add(method.getName());
                 List<Method> methods = simpleToAll.get(method.getName());
                 if (methods == null) simpleToAll.put(method.getName(), methods = new ArrayList<Method>());
                 methods.add(method);
             }
         }
+        
+        Class newClass = defineImplClass(ruby, name, superTypeNames, simpleToAll);
+        RubyClass rubyCls = populateImplClass(ruby, newClass, simpleToAll);
+        
+        return rubyCls;
+    }
+    
+    public static Class defineImplClass(Ruby ruby, String name, String[] superTypeNames, Map<String, List<Method>> simpleToAll) {
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         
         // construct the class, implementing all supertypes
         cw.visit(V1_5, ACC_PUBLIC | ACC_SUPER, name, null, p(Object.class), superTypeNames);
@@ -203,20 +211,12 @@ public class MiniJava implements Library {
         setupMethod.invokevirtual(p(RubyClass.class), "getClassRuntime", sig(Ruby.class));
         setupMethod.putstatic(name, "ruby", ci(Ruby.class));
         
-        // load method_missing into local var 1
-        setupMethod.getstatic(name, "rubyClass", ci(RubyClass.class));
-        setupMethod.ldc("method_missing");
-        setupMethod.invokevirtual(p(RubyClass.class), "searchMethod", sig(DynamicMethod.class, String.class));
-        setupMethod.astore(1);
-        
         // for each simple method name, implement the complex methods, calling the simple version
         for (Map.Entry<String, List<Method>> entry : simpleToAll.entrySet()) {
             String simpleName = entry.getKey();
             
             // all methods dispatch to the simple version by default, which is method_missing normally
             cw.visitField(ACC_STATIC | ACC_PUBLIC | ACC_VOLATILE, simpleName, ci(DynamicMethod.class), null, null).visitEnd();
-            setupMethod.aload(1);
-            setupMethod.putstatic(name, simpleName, ci(DynamicMethod.class));
             
             for (Method method : entry.getValue()) {
                 Class[] paramTypes = method.getParameterTypes();
@@ -235,6 +235,12 @@ public class MiniJava implements Library {
                 mv.ifnonnull(dispatch);
                 mv.pop();
                 mv.getstatic(name, simpleName, ci(DynamicMethod.class));
+                mv.dup();
+                mv.ifnonnull(dispatch);
+                mv.pop();
+                mv.getstatic(name, "rubyClass", ci(RubyClass.class));
+                mv.ldc("method_missing");
+                mv.invokevirtual(p(RubyClass.class), "searchMethod", sig(DynamicMethod.class, String.class));
                 mv.label(dispatch);
                 
                 // get current context
@@ -292,7 +298,25 @@ public class MiniJava implements Library {
         cw.visitEnd();
         
         // create the class
+        byte[] bytes = cw.toByteArray();
         Class newClass = ruby.getJRubyClassLoader().defineClass(name, cw.toByteArray());
+        
+        if (DEBUG) {
+            FileOutputStream fos = null;
+            try {
+                fos = new FileOutputStream(name + ".class");
+                fos.write(bytes);
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
+            } finally {
+                try {fos.close();} catch (Exception e) {}
+            }
+        }
+        
+        return newClass;
+    }
+
+    public static RubyClass populateImplClass(Ruby ruby, Class newClass, Map<String, List<Method>> simpleToAll) {
         RubyClass rubyCls = (RubyClass)getMirrorForClass(ruby, newClass);
         
         // setup the class
