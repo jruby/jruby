@@ -1,1 +1,1 @@
-fails(JRUBY-2213):UNIXServer #new should create a new UNIXServer
+fails(JRUBY-2219):UNIXServer #new should create a new UNIXServer

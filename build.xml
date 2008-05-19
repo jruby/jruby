@@ -3,6 +3,8 @@
 <project basedir="." default="jar" name="JRuby">
   <description>JRuby is a pure Java implementation of a Ruby interpreter.</description>
 
+  <property name="base.dir" location="${basedir}"/>
+
   <!-- First try to load machine-specific properties. -->
   <property file="build.properties"/>
   <!-- Load revision number for the ruby specs, in a known good state.
@@ -620,31 +622,59 @@
   </target>
 
   <target name="detect-stable-specs-need-update">
-    <property file="${build.dir}/rubyspecs.current.revision"/>
+    <property file="${spec.dir}/rubyspecs.current.revision"/>
     <condition property="stable-specs-need-update">
       <or>
-        <not><available file="${build.dir}/rubyspec"/></not>
+        <not> <available file="${rubyspec.dir}"/> </not>
+        <not> <available file="${mspec.dir}"/> </not>
         <not>
           <equals
             arg1="${rubyspecs.revision}"
             arg2="${rubyspecs.current.revision}"/>
+        </not>
+        <not>
+          <equals
+            arg1="${mspec.revision}"
+            arg2="${mspec.current.revision}"/>
         </not>
       </or>
     </condition>
   </target>
 
   <target name="fetch-stable-specs" depends="prepare, detect-stable-specs-need-update" if="stable-specs-need-update">
-  	<echo message="Downlodaing stable rubyspecs..."/>
-  	<get src="http://git.rubini.us/?p=code;a=snapshot;h=${rubyspecs.revision};sf=tgz" dest="${build.dir}/rubyspec.tgz"/>
-  	<!-- Wipe the old specs, if any -->
-  	<delete dir="${build.dir}/rubyspec"/>
-  	<mkdir dir="${build.dir}/rubyspec"/>
-  	<untar src="${build.dir}/rubyspec.tgz" dest="${build.dir}/rubyspec" compression="gzip"/>
-	<chmod file="${build.dir}/rubyspec/code/mspec/bin/mspec" perm="755"/>
-  	
+    <echo message="Downlodaing stable mspec..."/>
+    <get src="http://github.com/brixen/mspec/tarball/${mspec.revision}" dest="${build.dir}/mspec.tgz"/>
+    <echo message="Downlodaing stable rubyspecs..."/>
+    <get src="http://github.com/brixen/rubyspec/tarball/${rubyspecs.revision}" dest="${build.dir}/rubyspec.tgz"/>
+
+    <!-- Wipe the old mspec/rubyspecs, if any, and exctract new ones -->
+
+    <delete dir="${mspec.dir}"/>
+    <mkdir dir="${mspec.dir}"/>
+    <!-- TODO: We use 'tar' binary since Ant doesn't understand tarballs from GitHub,
+         at least in cases when long file names are present
+    <untar src="${build.dir}/mspec.tgz" dest="${mspec.dir}" compression="gzip">
+      <globmapper from="brixen-mspec-${mspec.revision}/*" to="*"/>
+    </untar> -->
+    <exec executable="tar" dir="${mspec.dir}" failonerror="true">
+      <arg line="-xzf ${build.dir}/mspec.tgz --strip-components=1"/>
+    </exec>
+    <chmod file="${mspec.dir}/bin/mspec" perm="755"/>
+
+    <delete dir="${rubyspec.dir}"/>
+    <mkdir dir="${rubyspec.dir}"/>
+    <!-- TODO: disabled 'untar' due to problem, see comment above
+    <untar src="${build.dir}/rubyspec.tgz" dest="${rubyspec.dir}" compression="gzip">
+        <globmapper from="brixen-rubyspec-${rubyspecs.revision}/*" to="*"/>
+    </untar> -->
+    <exec executable="tar" dir="${rubyspec.dir}" failonerror="true">
+      <arg line="-xzf ${build.dir}/rubyspec.tgz --strip-components=1"/>
+    </exec>
+
   	<!-- Write down the revision of downloaded specs -->
-    <propertyfile file="${build.dir}/rubyspecs.current.revision" comment="Revision of downloaded specs.">
+    <propertyfile file="${spec.dir}/rubyspecs.current.revision" comment="Revision of downloaded specs.">
       <entry key="rubyspecs.current.revision" value="${rubyspecs.revision}"/>
+      <entry key="mspec.current.revision" value="${mspec.revision}"/>
     </propertyfile>
   </target>
 
@@ -670,42 +700,51 @@
   
   <target name="fetch-specs">
       <condition property="rubyspec-repo-exists">
-          <available file="${build.dir}/rubyspec/code/.git"/>
+          <available file="${rubyspec.dir}/.git"/>
       </condition>
       
       <antcall target="do-fetch-specs"/>
       <antcall target="do-update-specs"/>
   </target>
-  
-  <target name="download-specs" description="Download the specs as a tgz snapshot and unpack to build/rubyspec/code">
-      <get src="http://git.rubini.us/?p=code;a=snapshot;sf=tgz" dest="${build.dir}/rubyspec.tgz"/>
-      
-      <mkdir dir="${build.dir}/rubyspec"/>
-      <untar src="${build.dir}/rubyspec.tgz" dest="${build.dir}/rubyspec" compression="gzip"/>
-      <chmod file="${build.dir}/rubyspec/code/mspec/bin/mspec" perm="755"/>
-  </target>
-  
+
   <target name="do-fetch-specs" unless="rubyspec-repo-exists">
       <!-- Stable specs might exist, so delete them -->
       <antcall target="clear-specs" inheritall="false"/>
-      <exec dir="${build.dir}" executable="git">
+
+      <echo message="Cloning rubyspec repo to: ${rubyspec.dir}"/>
+      <exec dir="${spec.dir}" executable="git">
           <arg value="clone"/>
           <arg value="--depth"/><arg value="1"/>
-          <arg value="git://git.rubini.us/code"/>
-          <arg value="rubyspec/code"/>
+          <arg value="git://github.com/brixen/rubyspec.git"/>
+          <arg value="${rubyspec.dir}"/>
+      </exec>
+
+      <echo message="Cloning mspec repo to: ${mspec.dir}"/>
+      <exec dir="${spec.dir}" executable="git">
+                <arg value="clone"/>
+                <arg value="--depth"/><arg value="1"/>
+                <arg value="git://github.com/brixen/mspec.git"/>
+                <arg value="${mspec.dir}"/>
       </exec>
   </target>
-  
+
   <target name="do-update-specs" if="rubyspec-repo-exists">
-      <exec dir="${build.dir}/rubyspec/code" executable="git">
-          <arg value="pull"/>
+      <echo message="Updading rubyspec repo -- ${rubyspec.dir}"/>
+      <exec dir="${rubyspec.dir}" executable="git">
+        <arg value="pull"/>
+      </exec>
+      <echo message="Updading mspec repo -- ${mspec.dir}"/>
+      <exec dir="${mspec.dir}" executable="git">
+        <arg value="pull"/>
       </exec>
   </target>
-  
+
   <target name="clear-specs">
-      <delete dir="${build.dir}/rubyspec"/>
+      <delete dir="${rubyspec.dir}"/>
+      <delete dir="${mspec.dir}"/>
       <delete file="${build.dir}/rubyspec.tgz"/>
-      <delete file="${build.dir}/rubyspecs.current.revision"/>
+      <delete file="${build.dir}/mspec.tgz"/>
+      <delete file="${spec.dir}/rubyspecs.current.revision"/>
   </target>
   
   <target name="run-specs" depends="jar">
@@ -720,17 +759,17 @@
   <target name="run-specs-interpreted"><_run_specs_internal/></target>
   
   <target name="update-excludes">
-    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false" dir="${build.dir}/rubyspec/code">
+    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false" dir="${spec.dir}">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <sysproperty key="jruby.launch.inproc" value="false"/>
       
-      <arg line="bin/mspec tag"/>
+      <arg line="${mspec.dir}/bin/mspec tag"/>
       <arg line="-t ${basedir}/bin/jruby"/>
       <arg line="--add fails --fail"/>
-      <arg line="-X ${basedir}/test/spec_excludes"/>
-      <arg value="spec/ruby/1.8"/>
+      <arg line="-X ${spec.tags.dir}"/>
+      <arg value="${rubyspec.dir}/1.8"/>
     </java>
   </target>
 
@@ -738,20 +777,20 @@
     description="Prints out all currently excluded rubyspecs.">
 
     <available property="mspec-available"
-      file="${build.dir}/rubyspec/code/bin/mspec"/>
+      file="${mspec.dir}/bin/mspec"/>
     <fail unless="mspec-available"
       message="No rubyspecs found. Download them via 'ant spec'."/>
 
-    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false" dir="${build.dir}/rubyspec/code">
+    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false" dir="${spec.dir}">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <sysproperty key="jruby.launch.inproc" value="false"/>
-      <arg line="bin/mspec"/>
+      <arg line="${mspec.dir}/bin/mspec"/>
       <arg line="-t ${basedir}/bin/jruby"/>
       <arg line="-f s -g fails --dry-run"/>
-      <arg line="-X ${basedir}/test/spec_excludes"/>
-      <arg value="spec/ruby/1.8"/>
+      <arg line="-X ${spec.tags.dir}"/>
+      <arg value="${rubyspec.dir}/1.8"/>
     </java>
   </target>
 
@@ -767,7 +806,7 @@
     <sequential>
       <echo message="compile=@{compile.mode}, threshold=@{jit.threshold}, objectspace=@{objectspace.enabled} threadpool=@{thread.pooling} reflection=@{reflection}"/>
     
-      <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${build.dir}/rubyspec/code">
+      <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${spec.dir}">
 	<classpath refid="build.classpath"/>
 	<classpath path="${jruby.classes.dir}"/>
       
@@ -783,14 +822,14 @@
 	<sysproperty key="jruby.objectspace.enabled" value="@{objectspace.enabled}"/>
 	<sysproperty key="jruby.thread.pool.enabled" value="@{thread.pooling}"/>
 	<sysproperty key="jruby.reflection" value="@{reflection}"/>
-      
-	<arg line="bin/mspec ci"/>
+
+	<arg line="${mspec.dir}/bin/mspec ci"/>
 	<arg value="-t"/><arg value="${basedir}/bin/jruby"/>
 	<arg line="-T -J-ea"/>
 	<arg value="-f"/><arg value="m"/>
 	<extra-args/>
 
-	<arg value="spec/ruby/1.8"/>
+	<arg value="${rubyspec.dir}/1.8"/>
       </java>
     </sequential>
   </macrodef>
@@ -800,9 +839,10 @@
     <attribute name="jit.threshold" default="20"/>
 
     <sequential>
+      <echo message="Excludes: ${spec.tags.dir}"/>
       <run-specs compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}">
 	<extra-args>
-	  <arg value="-X"/><arg value="${basedir}/test/spec_excludes"/>
+	  <arg value="-X"/><arg value="${spec.tags.dir}"/>
 	</extra-args>
       </run-specs>
     </sequential>
@@ -1010,9 +1050,7 @@
   </target>
 
   <target name="clean" depends="init" description="Cleans almost everything, leaves downloaded specs">
-    <delete includeemptydirs="true" quiet="true">
-        <fileset dir="${build.dir}" excludes="rubyspec**"/>
-    </delete>
+    <delete dir="${build.dir}"/>
     <delete dir="${dist.dir}"/>
     <delete quiet="false">
         <fileset dir="${lib.dir}" includes="jruby*.jar"/>
@@ -1021,8 +1059,7 @@
     <delete dir="src_gen"/>
   </target>
 
-  <target name="clean-all" depends="clean" description="Cleans everything, including downloaded specs">
-  	<delete dir="${build.dir}"/>
+  <target name="clean-all" depends="clean, clear-specs" description="Cleans everything, including downloaded specs">
   </target>
 
   <property name="nailgun.home" value="${basedir}/tool/nailgun"/>

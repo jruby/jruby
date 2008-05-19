@@ -1,0 +1,1 @@
+fails(JRUBY-2540):Complex#** when given 0 returns Complex(1)

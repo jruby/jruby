@@ -1,0 +1,1 @@
+fails(JRUBY-2537):Fixnum#^ coerces arguments correctly even if it is a Bignum

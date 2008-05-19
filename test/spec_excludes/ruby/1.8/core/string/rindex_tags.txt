@@ -1,0 +1,1 @@
+fails(JRUBY-2539):String#rindex with object tries to convert obj to a string via to_str

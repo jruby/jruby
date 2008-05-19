@@ -1,0 +1,2 @@
+fails(JRUBY-2535):Numeric#coerce raises a TypeError when other can't be coerced
+fails(JRUBY-2535):Numeric#coerce raises an ArgumentError when other can't be converted to Float

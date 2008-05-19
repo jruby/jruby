@@ -1,0 +1,3 @@
+fails(JRUBY-2223):UNIXServer#accept accepts what is written by the client
+fails(JRUBY-2223):UNIXServer#accept can be interrupted by Thread#kill
+fails(JRUBY-2223):UNIXServer#accept can be interrupted by Thread#raise
