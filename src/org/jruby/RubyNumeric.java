@@ -484,11 +484,12 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "coerce", required = 1)
     public IRubyObject coerce(IRubyObject other) {
-        if (getMetaClass() == other.getMetaClass()) {
-            return getRuntime().newArray(other, this);
-        } 
+        if (getClass() == other.getClass()) return getRuntime().newArray(other, this);
 
-        return getRuntime().newArray(RubyKernel.new_float(this, other), RubyKernel.new_float(this, this));
+        IRubyObject cdr = RubyKernel.new_float(this, this);
+        IRubyObject car = RubyKernel.new_float(this, other);
+
+        return getRuntime().newArray(car, cdr);
     }
 
     /** num_uplus
@@ -525,10 +526,8 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "eql?", required = 1)
     public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
-        if (getMetaClass() != other.getMetaClass()) {
-            return getRuntime().getFalse();
-        }
-        return op_eqq(context, other);
+        if (getClass() != other.getClass()) return getRuntime().getFalse();
+        return equalInternal(context, this, other) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
     /** num_quo
@@ -572,13 +571,12 @@ public class RubyNumeric extends RubyObject {
         IRubyObject x = this;
         RubyFixnum zero = RubyFixnum.zero(getRuntime());
 
-        if (z.op_equal(context, zero).isTrue()) {
-            return z;
-        } else if (x.callMethod(context, MethodIndex.OP_LT, "<", zero).isTrue()
-                        && dividend.callMethod(context, MethodIndex.OP_GT, ">", zero).isTrue()
-                   || x.callMethod(context, MethodIndex.OP_GT, ">", zero).isTrue()
-                        && (dividend.callMethod(context, MethodIndex.OP_LT, "<", zero)).isTrue()) {
-            return z.callMethod(context, MethodIndex.OP_MINUS, "-",dividend);
+        if (!equalInternal(context, z, zero) &&
+                ((x.callMethod(context, MethodIndex.OP_LT, "<", zero).isTrue() &&
+                dividend.callMethod(context, MethodIndex.OP_GT, ">", zero).isTrue()) ||
+                (x.callMethod(context, MethodIndex.OP_GT, ">", zero).isTrue() &&
+                dividend.callMethod(context, MethodIndex.OP_LT, "<", zero).isTrue()))) {
+            return z.callMethod(context, MethodIndex.OP_MINUS, "-", dividend);
         } else {
             return z;
         }
@@ -616,8 +614,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "zero?")
     public IRubyObject zero_p(ThreadContext context) {
-        // Will always return a boolean
-        return op_equal(context, RubyFixnum.zero(getRuntime())).isTrue() ? getRuntime().getTrue() : getRuntime().getFalse();
+        return equalInternal(context, this, RubyFixnum.zero(getRuntime())) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
     
     /** num_nonzero_p
