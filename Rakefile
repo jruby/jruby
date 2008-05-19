@@ -72,8 +72,8 @@ namespace :spec do
   desc "Runs Java Integration Specs"
   Spec::Rake::SpecTask.new("ji" => "build/jruby-test-classes.jar") do |t|
     t.spec_opts ||= []
-    t.spec_opts << "--options" << "test/spec/java_integration/spec.opts"
-    t.spec_files = FileList['test/spec/java_integration/**/*_spec.rb']
+    t.spec_opts << "--options" << "spec/java_integration/spec.opts"
+    t.spec_files = FileList['spec/java_integration/**/*_spec.rb']
   end
 end
 

@@ -1,4 +1,4 @@
-package spec.java_integration.fixtures;
+package java_integration.fixtures;
 
 public class UsesSingleMethodInterface {
     public static Object callIt(SingleMethodInterface obj) {

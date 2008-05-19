@@ -1,7 +1,7 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
-import "spec.java_integration.fixtures.SingleMethodInterface"
-import "spec.java_integration.fixtures.UsesSingleMethodInterface"
+import "java_integration.fixtures.SingleMethodInterface"
+import "java_integration.fixtures.UsesSingleMethodInterface"
 
 describe "Single-method Java interfaces implemented in Ruby" do
   class ValueHolder

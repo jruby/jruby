@@ -1,6 +1,6 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
-import "spec.java_integration.fixtures.MethodNames"
+import "java_integration.fixtures.MethodNames"
 
 describe "Java static method names" do
   it "should present as both camel-case and ruby-case" do

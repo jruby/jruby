@@ -1,4 +1,4 @@
-package spec.java_integration.fixtures;
+package java_integration.fixtures;
 
 public class CoreTypeMethods {
     public static String getString() {

@@ -1,6 +1,6 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
-import "spec.java_integration.fixtures.CoreTypeMethods"
+import "java_integration.fixtures.CoreTypeMethods"
 
 describe "Java String and primitive-typed methods" do
   it "should coerce to Ruby types when returned" do 
