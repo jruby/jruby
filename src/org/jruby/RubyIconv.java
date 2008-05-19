@@ -248,6 +248,10 @@ public class RubyIconv extends RubyObject {
     // FIXME: We are assuming that original string will be raw bytes.  If -Ku is provided
     // this will not be true, but that is ok for now.  Deal with that when someone needs it.
     private IRubyObject _iconv(RubyString str, int start, int end) {
+        if (fromEncoding == null) {
+            throw getRuntime().newArgumentError("closed iconv");
+        }
+        
         ByteList bytes = str.getByteList();
         
         // treat start and end as start...end for end >= 0, start..end for end < 0
