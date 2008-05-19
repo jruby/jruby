@@ -228,30 +228,59 @@ public class HandleFactory {
             Method method = HandleFactory.class.getMethod("dummy", new Class[] {String.class});
             Handle handle = createHandle(null, method);
             
-            Object result = null;
-            String prop = "java.class.path";
+            String prop1 = "java.class.path";
+            String prop2 = "";
+            String tmp;
+            Object result;
             
             for (int i = 0; i < 10; i++) {
                 long time;
                 
                 System.out.print("handle invocation: ");
                 time = System.currentTimeMillis();
-                for (int j = 0; j < 10000000; j++) {
-                    result = handle.invoke(null, prop);
+                for (int j = 0; j < 50000000; j++) {
+                    result = handle.invoke(null, prop1);
+                    if (j % 10000000 == 0) {
+                        System.out.println(result);
+                    }
+                    handle.invoke(null, prop2);
+                    tmp = prop1;
+                    prop1 = prop2;
+                    prop2 = tmp;
                 }
                 System.out.println(System.currentTimeMillis() - time);
                 
                 System.out.print("reflected invocation: ");
                 time = System.currentTimeMillis();
-                for (int j = 0; j < 10000000; j++) {
-                    result = method.invoke(null, prop);
+                for (int j = 0; j < 50000000; j++) {
+                    result = method.invoke(null, prop1);
+                    if (j % 10000000 == 0) {
+                        System.out.println(result);
+                    }
+                    method.invoke(null, prop2);
+                    tmp = prop1;
+                    prop1 = prop2;
+                    prop2 = tmp;
+                    if (j % 10000000 == 0) {
+                        System.out.println(prop2);
+                    }
                 }
                 System.out.println(System.currentTimeMillis() - time);
                 
                 System.out.print("method invocation: ");
                 time = System.currentTimeMillis();
-                for (int j = 0; j < 10000000; j++) {
-                    result = dummy(prop);
+                for (int j = 0; j < 50000000; j++) {
+                    result = dummy(prop1);
+                    if (j % 10000000 == 0) {
+                        System.out.println(result);
+                    }
+                    dummy(prop2);
+                    tmp = prop1;
+                    prop1 = prop2;
+                    prop2 = tmp;
+                    if (j % 10000000 == 0) {
+                        System.out.println(prop2);
+                    }
                 }
                 System.out.println(System.currentTimeMillis() - time);
             }

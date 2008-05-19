@@ -140,6 +140,7 @@ import org.jruby.ast.ZSuperNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.compiler.ASTInspector;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DefaultMethod;
@@ -1758,6 +1759,10 @@ public class ASTInterpreter {
     private static IRubyObject vcallNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self) {
         VCallNode iVisited = (VCallNode) node;
 
+        // ignore compiler pragmas
+        if (ASTInspector.PRAGMAS.contains(iVisited.getName())) {
+            return runtime.getNil();
+        }
         return iVisited.callAdapter.call(context, self);
     }
 
