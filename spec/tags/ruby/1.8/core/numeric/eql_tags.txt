@@ -1,1 +1,0 @@
-fails(JRUBY-2535):Numeric#eql? returns the result of calling self#== with other when self's and other's types match
