@@ -528,9 +528,9 @@ public class RubyNumeric extends RubyObject {
         if (getMetaClass() != other.getMetaClass()) {
             return getRuntime().getFalse();
         }
-        return op_equal(context, other);
+        return op_eqq(context, other);
     }
-            
+
     /** num_quo
      *
      */
