@@ -1598,9 +1598,7 @@ public class RubyString extends RubyObject {
             }
         } else if (sub instanceof RubyString) {
             pos = strRindex((RubyString) sub, pos);
-            if (pos >= 0) {
-                return RubyFixnum.newFixnum(getRuntime(), pos);
-            }
+            if (pos >= 0) return RubyFixnum.newFixnum(getRuntime(), pos);
         } else if (sub instanceof RubyFixnum) {
             int c_int = RubyNumeric.fix2int(sub);
             if (c_int < 0x00 || c_int > 0xFF) {
@@ -1628,7 +1626,10 @@ public class RubyString extends RubyObject {
             }
             return getRuntime().getNil();
         } else {
-            throw getRuntime().newTypeError("type mismatch: " + sub.getMetaClass().getName() + " given");
+            IRubyObject tmp = sub.checkStringType();
+            if (tmp.isNil()) throw getRuntime().newTypeError("type mismatch: " + sub.getMetaClass().getName() + " given");
+            pos = strRindex((RubyString) tmp, pos);
+            if (pos >= 0) return RubyFixnum.newFixnum(getRuntime(), pos);
         }
 
         return getRuntime().getNil();
