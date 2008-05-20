@@ -1,2 +1,0 @@
-fails(JRUBY-2250):Bignum#>> returns 0 when the given argument is a Bignum and self is positive
-fails(JRUBY-2250):Bignum#>> returns -1 when the given argument is a Bignum and self is negative
