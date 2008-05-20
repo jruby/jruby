@@ -134,9 +134,9 @@ public class RubyBignum extends RubyInteger {
 
         if (big.compareTo(LONG_MIN) < 0 || big.compareTo(LONG_MAX) > 0) {
             throw value.getRuntime().newRangeError("bignum too big to convert into `long'");
-    }
-        return big.longValue();
         }
+        return big.longValue();
+    }
 
     /** rb_big2dbl
      * 
@@ -150,6 +150,14 @@ public class RubyBignum extends RubyInteger {
         return dbl;
     }
     
+    private IRubyObject checkShiftDown(RubyBignum other) {
+        if (other.value.signum() == 0) return RubyFixnum.zero(getRuntime()); 
+        if (value.compareTo(LONG_MIN) < 0 || value.compareTo(LONG_MAX) > 0) {
+            return other.value.signum() >= 0 ? RubyFixnum.zero(getRuntime()) : RubyFixnum.minus_one(getRuntime());
+        }
+        return getRuntime().getNil();
+    }
+
     /**
      * BigInteger#doubleValue is _really_ slow currently.
      * This is faster, and mostly correct (?)
@@ -461,12 +469,31 @@ public class RubyBignum extends RubyInteger {
      */
     @JRubyMethod(name = "<<", required = 1)
     public IRubyObject op_lshift(IRubyObject other) {
-        int width = num2int(other);
-        if (width < 0) {
-            return op_rshift(RubyFixnum.newFixnum(getRuntime(), -width));
+        long shift;
+        boolean neg = false;
+
+        for (;;) {
+            if (other instanceof RubyFixnum) {
+                shift = ((RubyFixnum)other).getLongValue();
+                if (shift < 0) {
+                    neg = true;
+                    shift = -shift;
+                }
+                break;
+            } else if (other instanceof RubyBignum) {
+                RubyBignum otherBignum = (RubyBignum)other;
+                if (otherBignum.value.signum() < 0) {
+                    IRubyObject tmp = otherBignum.checkShiftDown(this);
+                    if (!tmp.isNil()) return tmp;
+                    neg = true;
+                }
+                shift = big2long(otherBignum);
+                break;
+            }
+            other = other.convertToInteger();
         }
-    	
-        return bignorm(getRuntime(), value.shiftLeft(width));
+
+        return bignorm(getRuntime(), neg ? value.shiftRight((int)shift) : value.shiftLeft((int)shift));
     }
 
     /** rb_big_rshift     
@@ -474,16 +501,35 @@ public class RubyBignum extends RubyInteger {
      */
     @JRubyMethod(name = ">>", required = 1)
     public IRubyObject op_rshift(IRubyObject other) {
-        int width = num2int(other);
+        long shift;
+        boolean neg = false;
 
-        if (width < 0) {
-            return op_lshift(RubyFixnum.newFixnum(getRuntime(), -width));
+        for (;;) {
+            if (other instanceof RubyFixnum) {
+                shift = ((RubyFixnum)other).getLongValue();
+                if (shift < 0) {
+                    neg = true;
+                    shift = -shift;
+                }
+                break;
+            } else if (other instanceof RubyBignum) {
+                RubyBignum otherBignum = (RubyBignum)other;
+                if (otherBignum.value.signum() >= 0) {
+                    IRubyObject tmp = otherBignum.checkShiftDown(this);
+                    if (!tmp.isNil()) return tmp;
+                } else {
+                    neg = true;
+                }
+                shift = big2long(otherBignum);
+                break;
+            }
+            other = other.convertToInteger();
         }
-        return bignorm(getRuntime(), value.shiftRight(width));
+        return bignorm(getRuntime(), neg ? value.shiftLeft((int)shift) : value.shiftRight((int)shift));
     }
 
-    /** rb_big_aref     
-     * 
+    /** rb_big_aref
+     *
      */
     @JRubyMethod(name = "[]", required = 1)
     public RubyFixnum op_aref(IRubyObject other) {

@@ -620,24 +620,24 @@ public class RubyFixnum extends RubyInteger {
             if (!(tryFix instanceof RubyFixnum)) {
                 if (big.getValue().signum() == 0 || value >= 0) {
                     return RubyFixnum.zero(getRuntime());
-        }
+                }
                 return RubyFixnum.one(getRuntime());
+            }
         }
-    }
 
         long otherValue = num2long(other);
-            
+
         if (otherValue < 0) {
             return RubyFixnum.zero(getRuntime());
-		    } 
-		      
+        } 
+
         if (BIT_SIZE - 1 < otherValue) {
             if (value < 0) {
                 return RubyFixnum.one(getRuntime());
-        }
+            }
             return RubyFixnum.zero(getRuntime());
         }
-        
+
         return (value & (1L << otherValue)) == 0 ? RubyFixnum.zero(getRuntime()) : RubyFixnum.one(getRuntime());
     }
 
@@ -646,21 +646,18 @@ public class RubyFixnum extends RubyInteger {
      */
     @JRubyMethod(name = "<<")
     public IRubyObject op_lshift(IRubyObject other) {
-        long width = num2long(other);
+        if (!(other instanceof RubyFixnum)) return RubyBignum.newBignum(getRuntime(), value).op_lshift(other);
 
-            if (width < 0) {
-            return op_rshift(RubyFixnum.newFixnum(getRuntime(), -width));
-		    }
-    	
-        if (width == 0) {
-            return this;
+        long width = ((RubyFixnum)other).getLongValue();
+
+        return width < 0 ? rshift(-width) : lshift(width); 
     }
-
+    
+    private IRubyObject lshift(long width) {
         if (width > BIT_SIZE - 1 || ((~0L << BIT_SIZE - width - 1) & value) != 0) {
-            return RubyBignum.newBignum(getRuntime(), value).op_lshift(other);
+            return RubyBignum.newBignum(getRuntime(), value).op_lshift(RubyFixnum.newFixnum(getRuntime(), width));
         }
-        
-        return newFixnum(value << width);
+        return RubyFixnum.newFixnum(getRuntime(), value << width);
     }
 
     /** fix_rshift 
@@ -668,25 +665,21 @@ public class RubyFixnum extends RubyInteger {
      */
     @JRubyMethod(name = ">>")
     public IRubyObject op_rshift(IRubyObject other) {
-        long width = num2long(other);
+        if (!(other instanceof RubyFixnum)) return RubyBignum.newBignum(getRuntime(), value).op_rshift(other);
 
-        if (width < 0) {
-            return op_lshift(RubyFixnum.newFixnum(getRuntime(), -width));
+        long width = ((RubyFixnum)other).getLongValue();
+
+        if (width == 0) return this;
+
+        return width < 0 ? lshift(-width) : rshift(width);  
     }
     
-        if (width == 0) {
-            return this;
-    }
-
+    private IRubyObject rshift(long width) { 
         if (width >= BIT_SIZE - 1) {
-            if (value < 0) {
-                return RubyFixnum.minus_one(getRuntime());
+            return value < 0 ? RubyFixnum.minus_one(getRuntime()) : RubyFixnum.zero(getRuntime()); 
+        }
+        return RubyFixnum.newFixnum(getRuntime(), value >> width);
     }
-            return RubyFixnum.zero(getRuntime());
-        }
-
-        return newFixnum(value >> width);
-        }
 
     /** fix_to_f 
      * 
