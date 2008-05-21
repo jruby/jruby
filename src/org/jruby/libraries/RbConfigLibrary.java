@@ -30,6 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.libraries;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
@@ -108,7 +109,7 @@ public class RbConfigLibrary implements Library {
         } else {
             normalizedHome = runtime.getJRubyHome();
         }
-        setConfig(configHash, "bindir", new NormalizedFile(normalizedHome, "bin").getPath());
+        setConfig(configHash, "bindir", new File(normalizedHome, "bin").getPath());
         setConfig(configHash, "RUBY_INSTALL_NAME", jrubyScript());
         setConfig(configHash, "ruby_install_name", jrubyScript());
         setConfig(configHash, "SHELL", jrubyShell());
@@ -141,7 +142,7 @@ public class RbConfigLibrary implements Library {
         
         String libdir = System.getProperty("jruby.lib");
         if (libdir == null) {
-            libdir = new NormalizedFile(normalizedHome, "lib").getPath();
+            libdir = new File(normalizedHome, "lib").getPath();
         } else {
             try {
             // Our shell scripts pass in non-canonicalized paths, but even if we didn't
@@ -154,16 +155,16 @@ public class RbConfigLibrary implements Library {
         }
 
         setConfig(configHash, "libdir", libdir);
-        setConfig(configHash, "rubylibdir",     new NormalizedFile(libdir, "ruby/1.8").getPath());
-        setConfig(configHash, "sitedir",        new NormalizedFile(libdir, "ruby/site_ruby").getPath());
-        setConfig(configHash, "sitelibdir",     new NormalizedFile(libdir, "ruby/site_ruby/1.8").getPath());
-        setConfig(configHash, "sitearchdir",    new NormalizedFile(libdir, "ruby/site_ruby/1.8/java").getPath());
-        setConfig(configHash, "archdir",    new NormalizedFile(libdir, "ruby/site_ruby/1.8/java").getPath());
+        setConfig(configHash, "rubylibdir",     new File(libdir, "ruby/1.8").getPath());
+        setConfig(configHash, "sitedir",        new File(libdir, "ruby/site_ruby").getPath());
+        setConfig(configHash, "sitelibdir",     new File(libdir, "ruby/site_ruby/1.8").getPath());
+        setConfig(configHash, "sitearchdir",    new File(libdir, "ruby/site_ruby/1.8/java").getPath());
+        setConfig(configHash, "archdir",    new File(libdir, "ruby/site_ruby/1.8/java").getPath());
         setConfig(configHash, "configure_args", "");
-        setConfig(configHash, "datadir", new NormalizedFile(normalizedHome, "share").getPath());
-        setConfig(configHash, "mandir", new NormalizedFile(normalizedHome, "man").getPath());
-        setConfig(configHash, "sysconfdir", new NormalizedFile(normalizedHome, "etc").getPath());
-        setConfig(configHash, "localstatedir", new NormalizedFile(normalizedHome, "var").getPath());
+        setConfig(configHash, "datadir", new File(normalizedHome, "share").getPath());
+        setConfig(configHash, "mandir", new File(normalizedHome, "man").getPath());
+        setConfig(configHash, "sysconfdir", new File(normalizedHome, "etc").getPath());
+        setConfig(configHash, "localstatedir", new File(normalizedHome, "var").getPath());
         setConfig(configHash, "DLEXT", "jar");
 
         if (Platform.IS_WINDOWS) {
