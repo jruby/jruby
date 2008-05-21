@@ -327,4 +327,140 @@ class TestCaching < Test::Unit::TestCase
     $a.the_method
     assert_equal "Bar", $THE_METHOD
   end
+
+  def test_direct
+    a = Class.new do
+      def foo ; false ; end
+    end
+    obj = a.new
+    assert !obj.foo
+    a.class_eval do
+      def foo ; true ; end
+    end
+    assert obj.foo, "redefined method used"
+    assert_raise(NoMethodError) { obj.bar }
+    a.class_eval do
+      def bar ; true ; end
+    end
+    assert obj.bar, "newly defined method used"
+  end
+  
+  def test_parent
+    a = Class.new do
+      def foo ; false ; end
+    end
+    b = Class.new(a)
+    obj = b.new
+    assert !obj.foo
+    a.class_eval do
+      def foo ; true ; end
+    end
+    assert obj.foo, "redefined method used"
+    assert_raise(NoMethodError) { obj.bar }
+    a.class_eval do
+      def bar ; true ; end
+    end
+    assert obj.bar, "newly defined method used"
+  end
+  
+  def test_parent_shadowed
+    a = Class.new do
+      def foo ; :a ; end
+    end
+    b = Class.new(a) do
+      def foo ; :b ; end
+    end
+    obj = b.new
+    assert_equal :b, obj.foo
+    a.class_eval do
+      def foo ; false ; end
+    end
+    assert_equal :b, obj.foo, "shadowed method not used"
+  end
+  
+  def test_intermediate_ancestor
+    a = Class.new do
+      def foo ; :a ; end
+    end
+    b = Class.new(a)
+    c = Class.new(b)
+    obj = c.new
+    assert_equal :a, obj.foo
+    b.class_eval do
+      def foo ; :b ; end
+    end
+    assert_equal :b, obj.foo, "new method used"
+    b.class_eval do
+      def foo ; :b2 ; end
+    end
+    assert_equal :b2, obj.foo, "redefined method used"
+    assert_raise(NoMethodError) { obj.bar }
+    b.class_eval do
+      def bar ; true ; end
+    end
+    assert obj.bar, "newly defined method used"
+  end
+
+  def test_intermediate_module
+    a = Class.new do
+      def foo ; :a ; end
+    end
+    m = Module.new do
+      def foo ; :m ; end
+    end
+    b = Class.new(a)
+    c = Class.new(b)
+    obj = c.new
+    assert_equal :a, obj.foo
+    b.class_eval do
+      include m
+    end
+    assert_equal :m, obj.foo, "method from included module used"
+    m.module_eval do
+      def foo ; :m2 ; end
+    end
+    assert_equal :m2, obj.foo, "redefined method used"
+    assert_raise(NoMethodError) { obj.bar }
+    m.module_eval do
+      def bar ; true ; end
+    end
+    assert obj.bar, "newly defined method used"
+  end
+
+  def test_class_singleton_intermediate
+    a = Class.new
+    def a.foo ; :a ; end
+    b = Class.new(a)
+    c = Class.new(b)
+    assert_equal :a, c.foo
+    def b.foo ; :b ; end
+    assert_equal :b, c.foo, "new shadowing method used"
+    def b.foo ; :b2 ; end
+    assert_equal :b2, c.foo, "redefined method used"
+    assert_raise(NoMethodError) { c.bar }
+    def b.bar ; true ; end
+    assert c.bar, "newly defined method used"
+  end
+
+  def test_class_singleton_intermediate_extension
+    a = Class.new
+    def a.foo ; :a ; end
+    b = Class.new(a)
+    c = Class.new(b)
+    m = Module.new do
+      def foo ; :m ; end
+    end
+    assert_equal :a, c.foo
+    b.extend m
+    assert_equal :m, c.foo, "method from extended module used"
+    m.module_eval do
+      def foo ; :m2 ; end
+    end
+    assert_equal :m2, c.foo, "redefined method used"
+    assert_raise(NoMethodError) { c.bar }
+    m.module_eval do
+      def bar ; true ; end
+    end
+    assert c.bar, "newly defined method used"
+  end
 end
