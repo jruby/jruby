@@ -15,7 +15,7 @@
  * Copyright (C) 2001-2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -42,7 +42,7 @@ public final class Constants {
 
     public static final int MARSHAL_MAJOR = 4;
     public static final int MARSHAL_MINOR = 8;
-    
+
     public static final String RUBY_MAJOR_VERSION;
     public static final String RUBY_VERSION;
     public static final String RUBY1_9_MAJOR_VERSION;
@@ -56,13 +56,14 @@ public final class Constants {
     public static final String REVISION;
     public static final String ENGINE = "jruby";
 
+    public static final String JRUBY_PROPERTIES = "/org/jruby/jruby.properties";
+
     static {
         InputStream stream = null;
         try {
-            String resourceName = "/org/jruby/jruby.properties";
-            stream = Constants.class.getResourceAsStream(resourceName);
+            stream = Constants.class.getResourceAsStream(JRUBY_PROPERTIES);
             if (stream == null) {
-                throw new RuntimeException("Resource not found: " + resourceName);
+                throw new RuntimeException("Resource not found: " + JRUBY_PROPERTIES);
             }
             properties.load(stream);
         } catch (IOException ioe) {
@@ -76,10 +77,10 @@ public final class Constants {
                 }
             }
         }
-        
+
         RUBY_MAJOR_VERSION = properties.getProperty("version.ruby.major");
         RUBY_VERSION = properties.getProperty("version.ruby");
-        
+
         RUBY1_9_MAJOR_VERSION = properties.getProperty("version.ruby1_9.major");
         RUBY1_9_VERSION = properties.getProperty("version.ruby1_9");
         COMPILE_DATE = properties.getProperty("release.date");
@@ -94,6 +95,6 @@ public final class Constants {
         }
         RUBY_PATCHLEVEL = REVISION;
     }
-    
+
     private Constants() {}
 }
