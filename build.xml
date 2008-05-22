@@ -1008,16 +1008,16 @@
   <target name="dist-snapshot" depends="jar">
     <exec executable="${basedir}/bin/jruby" dir="${basedir}">
       <arg value="tool/snapshot.rb"/>
-      <arg value="${jruby.classes.dir}/jruby.properties"/>
+      <arg value="${jruby.classes.dir}/org/jruby/jruby.properties"/>
     </exec>
     <jar destfile="${lib.dir}/jruby.jar" update="true">
       <fileset dir="${jruby.classes.dir}">
-        <include name="jruby.properties"/>
+        <include name="org/jruby/jruby.properties"/>
       </fileset>
     </jar>
     <property name="jar-up-to-date" value="true"/>
     <antcall target="dist-bin">
-      <param file="${jruby.classes.dir}/jruby.properties"/>
+      <param file="${jruby.classes.dir}/org/jruby/jruby.properties"/>
     </antcall>
   </target>
 
@@ -1034,7 +1034,7 @@
 
   <target name="dist-snapshot-install" depends="dist-snapshot" if="snapshot.install.dir">
     <antcall target="dist-snapshot-install-stuff">
-      <param file="${jruby.classes.dir}/jruby.properties"/>
+      <param file="${jruby.classes.dir}/org/jruby/jruby.properties"/>
     </antcall>
   </target>
 
