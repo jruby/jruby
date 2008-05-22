@@ -59,7 +59,7 @@ public final class Constants {
     static {
         InputStream stream = null;
         try {
-            String resourceName = "/jruby.properties";
+            String resourceName = "/org/jruby/jruby.properties";
             stream = Constants.class.getResourceAsStream(resourceName);
             if (stream == null) {
                 throw new RuntimeException("Resource not found: " + resourceName);
