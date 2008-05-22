@@ -286,18 +286,35 @@ public class RubyIconv extends RubyObject {
     }
 
     @JRubyMethod(name = "iconv", required = 2, optional = 1, meta = true)
-    public static IRubyObject iconv(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        return convertWithArgs(recv, args, "iconv");
+    public static IRubyObject iconv(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+        return convertWithArgs(context, recv, args, "iconv");
     }
     
     @JRubyMethod(name = "conv", required = 3, rest = true, meta = true)
     public static IRubyObject conv(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        return convertWithArgs(recv, args, "conv").join(context, RubyString.newEmptyString(recv.getRuntime()));
+        return convertWithArgs(context, recv, args, "conv").join(context, RubyString.newEmptyString(recv.getRuntime()));
     }
-    
-    public static RubyArray convertWithArgs(IRubyObject recv, IRubyObject[] args, String function) {
-        String fromEncoding = args[1].convertToString().toString();
-        String toEncoding = args[0].convertToString().toString();
+
+    @JRubyMethod(name = "charset_map", meta= true)
+    public static IRubyObject charset_map_get(IRubyObject recv) {
+        return recv.getRuntime().getCharsetMap();
+    }
+
+    private static String mapCharset(ThreadContext context, IRubyObject val) {
+        RubyHash charset = val.getRuntime().getCharsetMap();
+        if (charset.size() > 0) {
+            RubyString key = val.callMethod(context, "downcase").convertToString();
+            IRubyObject tryVal = charset.fastARef(key);
+            if (tryVal != null) val = tryVal;
+        }
+
+        return val.convertToString().toString();
+    }
+
+    public static RubyArray convertWithArgs(ThreadContext context, IRubyObject recv, IRubyObject[] args, String function) {
+        String toEncoding = mapCharset(context, args[0]);
+        String fromEncoding = mapCharset(context, args[1]);
+
         RubyArray array = recv.getRuntime().newArray();
         
         for (int i = 2; i < args.length; i++) {

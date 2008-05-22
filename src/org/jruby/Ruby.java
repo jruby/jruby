@@ -1702,6 +1702,12 @@ public final class Ruby {
         return floatDomainError;
     }
 
+    private RubyHash charsetMap;
+    public RubyHash getCharsetMap() {
+        if (charsetMap == null) charsetMap = new RubyHash(this);
+        return charsetMap;
+    }
+
     /** Getter for property isVerbose.
      * @return Value of property isVerbose.
      */
