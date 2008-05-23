@@ -87,6 +87,13 @@ public class RubyFixnum extends RubyInteger {
     public static final long MAX_MARSHAL_FIXNUM = (1L << 30) - 1; // 0x3fff_ffff
     public static final long MIN_MARSHAL_FIXNUM = - (1L << 30);   // -0x4000_0000
 
+    private static IRubyObject fixCoerce(IRubyObject x) {
+        do {
+            x = x.convertToInteger();
+        } while (!(x instanceof RubyFixnum) && !(x instanceof RubyBignum));
+        return x;
+    }
+    
     public RubyFixnum(Ruby runtime) {
         this(runtime, 0);
     }
@@ -569,14 +576,10 @@ public class RubyFixnum extends RubyInteger {
      */
     @JRubyMethod(name = "&")
     public IRubyObject op_and(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyFixnum) {
+        if (other instanceof RubyFixnum || (other = fixCoerce(other)) instanceof RubyFixnum) {
             return newFixnum(value & ((RubyFixnum) other).value);
         }
-        if (other instanceof RubyBignum) {
-            return ((RubyBignum) other).op_and(context, this);
-        }
-
-        return newFixnum(value & num2long(other));
+        return ((RubyBignum) other).op_and(context, this);
     }
 
     /** fix_or 
@@ -584,14 +587,10 @@ public class RubyFixnum extends RubyInteger {
      */
     @JRubyMethod(name = "|")
     public IRubyObject op_or(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyFixnum) {
+        if (other instanceof RubyFixnum || (other = fixCoerce(other)) instanceof RubyFixnum) {
             return newFixnum(value | ((RubyFixnum) other).value);
         }
-        if (other instanceof RubyBignum) {
-            return ((RubyBignum) other).op_or(context, this);
-        }
-
-        return newFixnum(value | num2long(other));
+        return ((RubyBignum) other).op_or(context, this);
     }
 
     /** fix_xor 
@@ -599,14 +598,10 @@ public class RubyFixnum extends RubyInteger {
      */
     @JRubyMethod(name = "^")
     public IRubyObject op_xor(ThreadContext context, IRubyObject other) {
-        if(other instanceof RubyFixnum) {
+        if (other instanceof RubyFixnum || (other = fixCoerce(other)) instanceof RubyFixnum) {
             return newFixnum(value ^ ((RubyFixnum) other).value);
         }
-        if (other instanceof RubyBignum) {
-            return ((RubyBignum) other).op_xor(context, this);
-        }
-
-        return newFixnum(value ^ num2long(other));
+        return ((RubyBignum) other).op_xor(context, this); 
     }
 
     /** fix_aref 
@@ -614,28 +609,20 @@ public class RubyFixnum extends RubyInteger {
      */
     @JRubyMethod(name = "[]")
     public IRubyObject op_aref(IRubyObject other) {
-        if(other instanceof RubyBignum) {
+        if(!(other instanceof RubyFixnum) && !((other = fixCoerce(other)) instanceof RubyFixnum)) {
             RubyBignum big = (RubyBignum) other;
             RubyObject tryFix = RubyBignum.bignorm(getRuntime(), big.getValue());
             if (!(tryFix instanceof RubyFixnum)) {
-                if (big.getValue().signum() == 0 || value >= 0) {
-                    return RubyFixnum.zero(getRuntime());
-                }
-                return RubyFixnum.one(getRuntime());
+                return big.getValue().signum() == 0 || value >= 0 ? RubyFixnum.zero(getRuntime()) : RubyFixnum.one(getRuntime());
             }
         }
 
-        long otherValue = num2long(other);
+        long otherValue = fix2long(other);
 
-        if (otherValue < 0) {
-            return RubyFixnum.zero(getRuntime());
-        } 
+        if (otherValue < 0) return RubyFixnum.zero(getRuntime());
 
         if (BIT_SIZE - 1 < otherValue) {
-            if (value < 0) {
-                return RubyFixnum.one(getRuntime());
-            }
-            return RubyFixnum.zero(getRuntime());
+            return value < 0 ? RubyFixnum.one(getRuntime()) : RubyFixnum.zero(getRuntime());
         }
 
         return (value & (1L << otherValue)) == 0 ? RubyFixnum.zero(getRuntime()) : RubyFixnum.one(getRuntime());
