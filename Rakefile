@@ -75,6 +75,11 @@ namespace :spec do
     t.spec_opts << "--options" << "spec/java_integration/spec.opts"
     t.spec_files = FileList['spec/java_integration/**/*_spec.rb']
   end
+
+  desc "Runs Compiler Specs"
+  Spec::Rake::SpecTask.new("compiler" => "build/jruby-test-classes.jar") do |t|
+    t.spec_files = FileList['spec/compiler/**/*_spec.rb']
+  end
 end
 
 desc "Clean all built output"
