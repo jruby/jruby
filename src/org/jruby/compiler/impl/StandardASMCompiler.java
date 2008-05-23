@@ -2290,8 +2290,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.aload(THIS);
             loadThreadContext();
             if (receiverCallback == null) {
-                method.aconst_null();
+                // if there's no receiver, there could potentially be a superclass like class Foo << self
+                // so we pass in self here
+                method.aload(SELF_INDEX);
             } else {
+                // otherwise, there's a receiver, so we pass that in directly for the sclass logic
                 receiverCallback.call(this);
             }
             method.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
