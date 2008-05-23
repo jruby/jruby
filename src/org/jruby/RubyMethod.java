@@ -209,7 +209,7 @@ public class RubyMethod extends RubyObject {
         buf.append(getMetaClass().getRealClass().getName()).append(": ");
         
         if (implementationModule.isSingleton()) {
-            IRubyObject attached = ((MetaClass) originModule).getAttached();
+            IRubyObject attached = ((MetaClass) implementationModule).getAttached();
             if (receiver == null) {
                 buf.append(implementationModule.inspect().toString());
             } else if (receiver == attached) {
