@@ -155,7 +155,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         try {
             RubyModule implementer = getImplementationClass();
 
-            callConfig.pre(context, self, implementer, name, block, staticScope, this);
+            context.preMethodFrameAndScope(implementer, name, self, block, staticScope, this);
             if (argsNode.getBlockArgNode() != null) {
                 context.getCurrentScope().setValue(
                         argsNode.getBlockArgNode().getCount(),
@@ -180,7 +180,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
             if (runtime.hasEventHooks()) {
                 traceReturn(context, runtime, name);
             }
-            callConfig.post(context);
+            context.postMethodFrameAndScope();
         }
     }
 

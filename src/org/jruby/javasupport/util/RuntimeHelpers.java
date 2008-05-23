@@ -582,8 +582,8 @@ public class RuntimeHelpers {
         return newArray;
     }
     
-    public static IRubyObject returnJump(IRubyObject result, ThreadContext context) {
-        throw new JumpException.ReturnJump(context.getFrameJumpTarget(), result);
+    public static JumpException.ReturnJump returnJump(IRubyObject result, ThreadContext context) {
+        return context.returnJump(result);
     }
     
     public static IRubyObject breakJumpInWhile(JumpException.BreakJump bj, Block aBlock) {

@@ -202,7 +202,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     String signature = null;
                     boolean specificArity = false;
                     
-                    if (scope.getRestArg() >= 0 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() == 0 || scope.getRequiredArgs() > 3) {
+                    if (scope.getRestArg() >= 0 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() > 3) {
                         signature = COMPILED_CALL_SIG_BLOCK;
                         mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", signature, null, null));
                     } else {
@@ -214,7 +214,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                         // check arity
                         mv.aload(1);
                         mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-                        mv.aload(5);
+                        if (scope.getRequiredArgs() == 0) {
+                            mv.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
+                        } else {
+                            mv.aload(5);
+                        }
                         mv.pushInt(scope.getRequiredArgs());
                         mv.pushInt(scope.getRequiredArgs());
                         mv.invokestatic(p(Arity.class), "checkArgumentCount", sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
@@ -233,6 +237,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                         mv.aload(6);
 
                         switch (scope.getRequiredArgs()) {
+                        case 0:
+                            signature = COMPILED_CALL_SIG_ZERO_BLOCK;
+                            break;
                         case 1:
                             signature = COMPILED_CALL_SIG_ONE_BLOCK;
                             break;
@@ -261,9 +268,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     // invoke pre method stuff
                     if (!callConfig.isNoop()) {
                         if (specificArity) {
-                            invokeCallConfigPre(mv, COMPILED_SUPER_CLASS, scope.getRequiredArgs(), true);
+                            invokeCallConfigPre(mv, COMPILED_SUPER_CLASS, scope.getRequiredArgs(), true, callConfig);
                         } else {
-                            invokeCallConfigPre(mv, COMPILED_SUPER_CLASS, -1, true);
+                            invokeCallConfigPre(mv, COMPILED_SUPER_CLASS, -1, true, callConfig);
                         }
                     }
 
@@ -309,7 +316,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     // normal exit, perform finally and return
                     {
                         if (!callConfig.isNoop()) {
-                            invokeCallConfigPost(mv, COMPILED_SUPER_CLASS);
+                            invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
                         }
                         mv.visitInsn(ARETURN);
                     }
@@ -324,7 +331,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                         
                         // finally
                         if (!callConfig.isNoop()) {
-                            invokeCallConfigPost(mv, COMPILED_SUPER_CLASS);
+                            invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
                         }
                         
                         // return result if we're still good
@@ -345,7 +352,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                         
                         // finally
                         if (!callConfig.isNoop()) {
-                            invokeCallConfigPost(mv, COMPILED_SUPER_CLASS);
+                            invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
                         }
                         
                         // throw redo error if we're still good
@@ -358,7 +365,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                         //call post method stuff (exception raised)
                         if (!callConfig.isNoop()) {
-                            invokeCallConfigPost(mv, COMPILED_SUPER_CLASS);
+                            invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
                         }
 
                         // rethrow exception
@@ -992,23 +999,51 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         mv.go_to(normalExit);
     }
 
-    private void invokeCallConfigPost(SkinnyMethodAdapter mv, String superClass) {
-        //call post method stuff (non-finally)
-        mv.aload(0);
-        mv.aload(1);
-        mv.invokevirtual(superClass, "post", sig(void.class, params(ThreadContext.class)));
+    private void invokeCallConfigPost(SkinnyMethodAdapter mv, String superClass, CallConfiguration callConfig) {
+        if (callConfig != CallConfiguration.NO_FRAME_NO_SCOPE) {
+            mv.aload(0);
+            mv.aload(1);
+            if (callConfig == CallConfiguration.FRAME_AND_SCOPE) {
+                mv.invokevirtual(superClass, "postFrameAndScope", sig(void.class, params(ThreadContext.class)));
+            } else if (callConfig == CallConfiguration.FRAME_ONLY) {
+                mv.invokevirtual(superClass, "postFrameOnly", sig(void.class, params(ThreadContext.class)));
+            } else if (callConfig == CallConfiguration.SCOPE_ONLY) {
+                mv.invokevirtual(superClass, "postScopeOnly", sig(void.class, params(ThreadContext.class)));
+            } else if (callConfig == CallConfiguration.BACKTRACE_ONLY) {
+                mv.invokevirtual(superClass, "postBacktraceOnly", sig(void.class, params(ThreadContext.class)));
+            } else if (callConfig == CallConfiguration.BACKTRACE_AND_SCOPE) {
+                mv.invokevirtual(superClass, "postBacktraceAndScope", sig(void.class, params(ThreadContext.class)));
+            }
+        }
     }
 
-    private void invokeCallConfigPre(SkinnyMethodAdapter mv, String superClass, int specificArity, boolean block) {
+    private void invokeCallConfigPre(SkinnyMethodAdapter mv, String superClass, int specificArity, boolean block, CallConfiguration callConfig) {
         // invoke pre method stuff
-        mv.aload(0); 
-        mv.aload(THREADCONTEXT_INDEX); // tc
-        mv.aload(RECEIVER_INDEX); // self
-        mv.aload(NAME_INDEX); // name
-        
-        loadBlockForPre(mv, specificArity, block);
-        
-        mv.invokevirtual(superClass, "pre", sig(void.class, params(ThreadContext.class, IRubyObject.class, String.class, Block.class)));
+        if (callConfig != CallConfiguration.NO_FRAME_NO_SCOPE) {
+            mv.aload(0); 
+            mv.aload(THREADCONTEXT_INDEX); // tc
+
+
+            if (callConfig == CallConfiguration.FRAME_AND_SCOPE) {
+                mv.aload(RECEIVER_INDEX); // self
+                mv.aload(NAME_INDEX); // name
+                loadBlockForPre(mv, specificArity, block);
+                mv.invokevirtual(superClass, "preFrameAndScope", sig(void.class, params(ThreadContext.class, IRubyObject.class, String.class, Block.class)));
+            } else if (callConfig == CallConfiguration.FRAME_ONLY) {
+                mv.aload(RECEIVER_INDEX); // self
+                mv.aload(NAME_INDEX); // name
+                loadBlockForPre(mv, specificArity, block);
+                mv.invokevirtual(superClass, "preFrameOnly", sig(void.class, params(ThreadContext.class, IRubyObject.class, String.class, Block.class)));
+            } else if (callConfig == CallConfiguration.SCOPE_ONLY) {
+                mv.invokevirtual(superClass, "preScopeOnly", sig(void.class, params(ThreadContext.class)));
+            } else if (callConfig == CallConfiguration.BACKTRACE_ONLY) {
+                mv.aload(NAME_INDEX); // name
+                mv.invokevirtual(superClass, "preBacktraceOnly", sig(void.class, params(ThreadContext.class, String.class)));
+            } else if (callConfig == CallConfiguration.BACKTRACE_AND_SCOPE) {
+                mv.aload(NAME_INDEX); // name
+                mv.invokevirtual(superClass, "preBacktraceAndScope", sig(void.class, params(ThreadContext.class, String.class)));
+            }
+        }
     }
 
     private void loadArguments(SkinnyMethodAdapter mv, JRubyMethod jrubyMethod, int specificArity) {
@@ -1287,7 +1322,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         
         CallConfiguration callConfig = CallConfiguration.getCallConfigByAnno(desc.anno);
         if (!callConfig.isNoop()) {
-            invokeCallConfigPre(method, superClass, specificArity, block);
+            invokeCallConfigPre(method, superClass, specificArity, block, callConfig);
         }
 
         Label tryBegin = new Label();
@@ -1326,7 +1361,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         // normal finally and exit
         {
             if (!callConfig.isNoop()) {
-                invokeCallConfigPost(method, superClass);
+                invokeCallConfigPost(method, superClass, callConfig);
             }
 
             // return
@@ -1351,7 +1386,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     // finally
                     method.label(doRedoFinally);
                     if (!callConfig.isNoop()) {
-                        invokeCallConfigPost(method, superClass);
+                        invokeCallConfigPost(method, superClass, callConfig);
                     }
 
                     // throw redo error if we're still good
@@ -1365,7 +1400,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                 //call post method stuff (exception raised)
                 if (!callConfig.isNoop()) {
-                    invokeCallConfigPost(method, superClass);
+                    invokeCallConfigPost(method, superClass, callConfig);
                 }
 
                 // rethrow exception

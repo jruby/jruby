@@ -44,7 +44,7 @@ public class JumpException extends RuntimeException {
     
     public static class FlowControlException extends JumpException {
         protected JumpTarget target;
-        private Object value;
+        protected Object value;
         // FIXME: Remove inKernelLoop from this and come up with something more general
         // Hack to detect a break in Kernel#loop
         private boolean inKernelLoop = false;
@@ -70,8 +70,8 @@ public class JumpException extends RuntimeException {
     public static class RedoJump extends FlowControlException {}
     public static final RedoJump REDO_JUMP = new RedoJump();
     public static class SpecialJump extends FlowControlException {}
-    public static final SpecialJump SPECIAL_JUMP = new SpecialJump(); 
-    public static class ReturnJump extends FlowControlException { public ReturnJump(JumpTarget t, Object v) { super(t, v); }}
+    public static final SpecialJump SPECIAL_JUMP = new SpecialJump();
+    public static class ReturnJump extends FlowControlException { public ReturnJump() {}; public void update(JumpTarget t, Object v) { target = t; value = v; }}
     
     /**
      * Constructor for flow-control-only JumpExceptions.

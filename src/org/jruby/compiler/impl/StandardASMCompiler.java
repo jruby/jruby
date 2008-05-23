@@ -401,7 +401,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         
         public AbstractMethodCompiler(StaticScope scope) {
             this.scope = scope;
-            if (scope.getRestArg() >= 0 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() == 0 || scope.getRequiredArgs() > 3) {
+            if (scope.getRestArg() >= 0 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() > 3) {
                 argParamCount = 1; // use IRubyObject[]
             } else {
                 argParamCount = scope.getRequiredArgs(); // specific arity
@@ -417,13 +417,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.aload(THIS);
             loadThreadContext();
             loadSelf();
-            loadNull();
             if(this instanceof ASMClosureCompiler) {
                 pushNull();
             } else {
                 loadBlock();
             }
-            method.invokevirtual(classname, methodName, sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class}));
+            method.invokevirtual(classname, methodName, sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, Block.class}));
             endMethod();
 
             ASMMethodCompiler methodCompiler = new ASMMethodCompiler(methodName, inspector, scope);
@@ -2234,9 +2233,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                     } else {
                         methodCompiler.loadRuntime();
 
-                        methodCompiler.method.aload(ARGS_INDEX);
-                        methodCompiler.method.iconst_0();
-                        methodCompiler.method.arrayload();
+                        // we re-set self to the class, but store the old self in a temporary local variable
+                        // this is to prevent it GCing in case the singleton is short-lived
+                        methodCompiler.method.aload(SELF_INDEX);
+                        int selfTemp = methodCompiler.getVariableCompiler().grabTempLocal();
+                        methodCompiler.getVariableCompiler().setTempLocal(selfTemp);
+                        methodCompiler.method.aload(SELF_INDEX);
 
                         methodCompiler.invokeUtilityMethod("getSingletonClass", sig(RubyClass.class, params(Ruby.class, IRubyObject.class)));
                     }
@@ -2287,17 +2289,14 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             // prepare to call class definition method
             method.aload(THIS);
             loadThreadContext();
-            loadSelf();
             if (receiverCallback == null) {
-                method.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
+                method.aconst_null();
             } else {
-                // store the receiver in args array, to maintain a live reference until method returns
                 receiverCallback.call(this);
-                createObjectArray(1);
             }
             method.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
 
-            method.invokevirtual(classname, methodName, METHOD_SIGNATURES[4]);
+            method.invokevirtual(classname, methodName, METHOD_SIGNATURES[0]);
         }
 
         public void defineModule(final String name, final StaticScope staticScope, final CompilerCallback pathCallback, final CompilerCallback bodyCallback) {
@@ -2627,7 +2626,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void performReturn() {
             loadThreadContext();
-            invokeUtilityMethod("returnJump", sig(IRubyObject.class, IRubyObject.class, ThreadContext.class));
+            invokeUtilityMethod("returnJump", sig(JumpException.ReturnJump.class, IRubyObject.class, ThreadContext.class));
+            method.athrow();
         }
 
         public void processRequiredArgs(Arity arity, int requiredArgs, int optArgs, int restArg) {
@@ -2692,7 +2692,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             this.friendlyName = friendlyName;
 
             String signature = null;
-            if (scope.getRestArg() >= 0 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() == 0 || scope.getRequiredArgs() > 3) {
+            if (scope.getRestArg() >= 0 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() > 3) {
                 signature = METHOD_SIGNATURES[4];
                 method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, friendlyName, signature, null, null));
                 specificArity = false;
@@ -2826,7 +2826,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             // normal return for method body. return jump for within a begin/rescue/ensure
             if (withinProtection) {
                 loadThreadContext();
-                invokeUtilityMethod("returnJump", sig(IRubyObject.class, IRubyObject.class, ThreadContext.class));
+                invokeUtilityMethod("returnJump", sig(JumpException.ReturnJump.class, IRubyObject.class, ThreadContext.class));
+                method.athrow();
             } else {
                 method.areturn();
             }

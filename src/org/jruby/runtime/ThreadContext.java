@@ -44,6 +44,7 @@ import org.jruby.RubyObject;
 import org.jruby.RubyKernel.CatchTarget;
 import org.jruby.RubyModule;
 import org.jruby.RubyThread;
+import org.jruby.exceptions.JumpException.ReturnJump;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.libraries.FiberLibrary.Fiber;
 import org.jruby.parser.BlockStaticScope;
@@ -106,6 +107,8 @@ public final class ThreadContext {
     // appropriate place.
     private int rubyFrameDelta = 0;
     
+    private static final ReturnJump RETURN_JUMP = new ReturnJump();
+    
     /**
      * Constructor for Context.
      */
@@ -147,6 +150,11 @@ public final class ThreadContext {
     public IRubyObject setErrorInfo(IRubyObject errorInfo) {
         this.errorInfo = errorInfo;
         return errorInfo;
+    }
+    
+    public ReturnJump returnJump(IRubyObject value) {
+        RETURN_JUMP.update(getFrameJumpTarget(), value);
+        return RETURN_JUMP;
     }
     
     /**

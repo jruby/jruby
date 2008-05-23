@@ -1608,7 +1608,7 @@ public class ASTInterpreter {
    
         IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
    
-        throw new JumpException.ReturnJump(context.getFrameJumpTarget(), result);
+        throw context.returnJump(result);
     }
 
     private static IRubyObject rootNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {

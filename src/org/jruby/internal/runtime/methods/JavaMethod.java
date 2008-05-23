@@ -499,12 +499,44 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         }
     }
     
-    protected final void pre(ThreadContext context, IRubyObject self, String name, Block block) {
-        callConfig.pre(context, self, getImplementationClass(), name, block, staticScope, this);
+    protected final void preFrameAndScope(ThreadContext context, IRubyObject self, String name, Block block) {
+        context.preMethodFrameAndScope(implementationClass, name, self, block, staticScope, this);
     }
     
-    protected final void post(ThreadContext context) {
-        callConfig.post(context);
+    protected final void preFrameOnly(ThreadContext context, IRubyObject self, String name, Block block) {
+        context.preMethodFrameOnly(implementationClass, name, self, block, this);
+    }
+    
+    protected final void preScopeOnly(ThreadContext context) {
+        context.preMethodScopeOnly(implementationClass, staticScope);
+    }
+    
+    protected final void preBacktraceOnly(ThreadContext context, String name) {
+        context.preMethodBacktraceOnly(name);
+    }
+    
+    protected final void preBacktraceAndScope(ThreadContext context, String name) {
+        context.preMethodBacktraceAndScope(name, implementationClass, staticScope);
+    }
+    
+    protected final void postFrameAndScope(ThreadContext context) {
+        context.postMethodFrameAndScope();
+    }
+    
+    protected final void postFrameOnly(ThreadContext context) {
+        context.postMethodFrameOnly();
+    }
+    
+    protected final void postScopeOnly(ThreadContext context) {
+        context.postMethodScopeOnly();
+    }
+    
+    protected final void postBacktraceOnly(ThreadContext context) {
+        context.postMethodBacktraceOnly();
+    }
+    
+    protected final void postBacktraceAndScope(ThreadContext context) {
+        context.postMethodBacktraceAndScope();
     }
     
     protected IRubyObject handleReturnJump(ReturnJump rj) {
