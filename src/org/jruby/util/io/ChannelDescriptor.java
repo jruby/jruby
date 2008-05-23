@@ -433,19 +433,12 @@ public class ChannelDescriptor {
     public int read(int number, ByteList byteList) throws IOException, BadDescriptorException {
         checkOpen();
         
-        ByteBuffer buffer = ByteBuffer.allocate(number);
-        int bytesRead = read(buffer);
-
-        byte[] ret;
-        if (buffer.hasRemaining()) {
-            buffer.flip();
-            ret = new byte[buffer.remaining()];
-            buffer.get(ret);
-        } else {
-            ret = buffer.array();
+        byteList.ensure(byteList.length() + number);
+        int bytesRead = read(ByteBuffer.wrap(byteList.unsafeBytes(), 
+                byteList.begin() + byteList.length(), number));
+        if (bytesRead > 0) {
+            byteList.length(byteList.length() + bytesRead);
         }
-        byteList.append(ret);
-
         return bytesRead;
     }
     
