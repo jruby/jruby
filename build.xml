@@ -548,10 +548,16 @@
 
 	<jvmarg value="-ea"/>
 
+	<formatter type="xml"/>
 	<formatter type="brief" usefile="false" />
 
 	<junit-tests/>
       </junit>
+
+      <junitreport todir="${test.results.dir}">
+	<fileset dir="${test.results.dir}" includes="TEST-*.xml"/>
+	<report format="frames" todir="${html.test.results.dir}"/>
+      </junitreport>
     </sequential>
   </macrodef>
   
