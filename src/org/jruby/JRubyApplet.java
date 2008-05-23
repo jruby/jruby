@@ -248,7 +248,7 @@ public class JRubyApplet extends Applet {
             safeInvokeAndWait(new Runnable() {
                 public void run() {
                     ThreadContext context = runtime.getCurrentContext();
-                    proc.call(context, args, Block.NULL_BLOCK);
+                    proc.call(context, args);
                 }
             });
         } catch (InterruptedException e) {
@@ -352,7 +352,7 @@ public class JRubyApplet extends Applet {
                 priorGraphics = g;
             }
             ThreadContext context = runtime.getCurrentContext();
-            paintProc.call(context, new IRubyObject[] {wrappedGraphics}, Block.NULL_BLOCK);
+            paintProc.call(context, new IRubyObject[] {wrappedGraphics});
         }
         super.paint(g);
     }
