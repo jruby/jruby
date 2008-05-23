@@ -184,17 +184,12 @@ public class RubyProc extends RubyObject implements JumpTarget {
         return getRuntime().newBinding(block.getBinding());
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject[] args) {
-        return call(context, args, null, Block.NULL_BLOCK);
-    }
-
-    // ENEBO: For method def others are Java to java versions
     @JRubyMethod(name = {"call", "[]"}, rest = true, frame = true)
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block unusedBlock) {
-        return call(context, args, null, Block.NULL_BLOCK);
+    public IRubyObject call(ThreadContext context, IRubyObject[] args) {
+        return call(context, args, null);
     }
     
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, Block unusedBlock) {
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self) {
         assert args != null;
         
         Ruby runtime = getRuntime();

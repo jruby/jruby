@@ -1298,18 +1298,19 @@ public class RubyModule extends RubyObject {
     }
     
     private DynamicMethod createProcMethod(String name, Visibility visibility, RubyProc proc) {
-        proc.getBlock().getBinding().getFrame().setKlazz(this);
-        proc.getBlock().getBinding().getFrame().setName(name);
+        Block block = proc.getBlock();
+        block.getBinding().getFrame().setKlazz(this);
+        block.getBinding().getFrame().setName(name);
 
         // for zsupers in define_method (blech!) we tell the proc scope to act as the "argument" scope
-        proc.getBlock().getBody().getStaticScope().setArgumentScope(true);
+        block.getBody().getStaticScope().setArgumentScope(true);
 
-        Arity arity = proc.getBlock().arity();
+        Arity arity = block.arity();
         // just using required is broken...but no more broken than before zsuper refactoring
-        proc.getBlock().getBody().getStaticScope().setRequiredArgs(arity.required());
+        block.getBody().getStaticScope().setRequiredArgs(arity.required());
 
         if(!arity.isFixed()) {
-            proc.getBlock().getBody().getStaticScope().setRestArg(arity.required());
+            block.getBody().getStaticScope().setRestArg(arity.required());
         }
 
         return new ProcMethod(this, proc, visibility);
