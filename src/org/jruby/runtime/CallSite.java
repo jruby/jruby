@@ -76,6 +76,8 @@ public abstract class CallSite {
         private static final CacheEntry NULL_CACHE = new CacheEntry(null, null);
         
         private volatile CacheEntry cache = NULL_CACHE;
+        private int misses = 0;
+        private static final int MAX_MISSES = 50;
         
         public InlineCachingCallSite(String methodName, CallType callType) {
             super(MethodIndex.getIndex(methodName), methodName, callType);
@@ -90,8 +92,9 @@ public abstract class CallSite {
 
             IRubyObject result = method.call(context, self, selfType, methodName, args, block);
             
-            cache = new CacheEntry(method, selfType);
-            selfType.getRuntime().getCacheMap().add(method, this);
+            if (misses < MAX_MISSES) {
+                updateCacheEntry(method, selfType);
+            }
             
             return result;
         }
@@ -105,8 +108,9 @@ public abstract class CallSite {
 
             IRubyObject result = method.call(context, self, selfType, methodName, args);
             
-            cache = new CacheEntry(method, selfType);
-            selfType.getRuntime().getCacheMap().add(method, this);
+            if (misses < MAX_MISSES) {
+                updateCacheEntry(method, selfType);
+            }
             
             return result;
         }
@@ -120,8 +124,9 @@ public abstract class CallSite {
 
             IRubyObject result = method.call(context, self, selfType, methodName);
             
-            cache = new CacheEntry(method, selfType);
-            selfType.getRuntime().getCacheMap().add(method, this);
+            if (misses < MAX_MISSES) {
+                updateCacheEntry(method, selfType);
+            }
             
             return result;
         }
@@ -135,8 +140,9 @@ public abstract class CallSite {
 
             IRubyObject result = method.call(context, self, selfType, methodName, block);
             
-            cache = new CacheEntry(method, selfType);
-            selfType.getRuntime().getCacheMap().add(method, this);
+            if (misses < MAX_MISSES) {
+                updateCacheEntry(method, selfType);
+            }
             
             return result;
         }
@@ -150,8 +156,9 @@ public abstract class CallSite {
 
             IRubyObject result = method.call(context, self, selfType, methodName, arg);
             
-            cache = new CacheEntry(method, selfType);
-            selfType.getRuntime().getCacheMap().add(method, this);
+            if (misses < MAX_MISSES) {
+                updateCacheEntry(method, selfType);
+            }
             
             return result;
         }
@@ -165,8 +172,9 @@ public abstract class CallSite {
 
             IRubyObject result = method.call(context, self, selfType, methodName, arg, block);
             
-            cache = new CacheEntry(method, selfType);
-            selfType.getRuntime().getCacheMap().add(method, this);
+            if (misses < MAX_MISSES) {
+                updateCacheEntry(method, selfType);
+            }
             
             return result;
         }
@@ -180,8 +188,9 @@ public abstract class CallSite {
 
             IRubyObject result = method.call(context, self, selfType, methodName, arg1, arg2);
             
-            cache = new CacheEntry(method, selfType);
-            selfType.getRuntime().getCacheMap().add(method, this);
+            if (misses < MAX_MISSES) {
+                updateCacheEntry(method, selfType);
+            }
             
             return result;
         }
@@ -195,8 +204,9 @@ public abstract class CallSite {
 
             IRubyObject result = method.call(context, self, selfType, methodName, arg1, arg2, block);
             
-            cache = new CacheEntry(method, selfType);
-            selfType.getRuntime().getCacheMap().add(method, this);
+            if (misses < MAX_MISSES) {
+                updateCacheEntry(method, selfType);
+            }
             
             return result;
         }
@@ -210,8 +220,9 @@ public abstract class CallSite {
 
             IRubyObject result = method.call(context, self, selfType, methodName, arg1, arg2, arg3);
             
-            cache = new CacheEntry(method, selfType);
-            selfType.getRuntime().getCacheMap().add(method, this);
+            if (misses < MAX_MISSES) {
+                updateCacheEntry(method, selfType);
+            }
             
             return result;
         }
@@ -225,10 +236,17 @@ public abstract class CallSite {
 
             IRubyObject result = method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
             
-            cache = new CacheEntry(method, selfType);
-            selfType.getRuntime().getCacheMap().add(method, this);
+            if (misses < MAX_MISSES) {
+                updateCacheEntry(method, selfType);
+            }
             
             return result;
+        }
+        
+        private void updateCacheEntry(DynamicMethod method, RubyClass selfType) {
+            misses++;
+            cache = new CacheEntry(method, selfType);
+            selfType.getRuntime().getCacheMap().add(method, this);
         }
         
         public void removeCachedMethod() {
@@ -343,7 +361,7 @@ public abstract class CallSite {
             RubyClass selfType = self.getMetaClass();
 
             CacheEntry myCache = cache;
-                if (myCache.cachedType == selfType) {
+            if (myCache.cachedType == selfType) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2);
             }
 
