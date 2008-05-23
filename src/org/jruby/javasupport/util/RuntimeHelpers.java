@@ -118,49 +118,20 @@ public class RuntimeHelpers {
         RubyModule containingClass = context.getRubyClass();
         Visibility visibility = context.getCurrentVisibility();
         
-        if (containingClass == runtime.getDummy()) {
-            throw runtime.newTypeError("no class/module to add method");
-        }
+        performNormalMethodChecks(containingClass, runtime, name);
         
-        if (containingClass == runtime.getObject() && name.equals("initialize")) {
-            runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining Object#initialize may cause infinite loop", "Object#initialize");
-        }
-
-        if (name.equals("__id__") || name.equals("__send__")) {
-            runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining `" + name + "' may cause serious problem", name); 
-        }
-
-        StaticScope scope = new LocalStaticScope(context.getCurrentScope().getStaticScope(), scopeNames);
-        scope.determineModule();
-        scope.setArities(required, optional, rest);
+        StaticScope scope = creatScopeForClass(context, scopeNames, required, optional, rest);
         
         MethodFactory factory = MethodFactory.createFactory(compiledClass.getClassLoader());
-        DynamicMethod method;
-        
-        if (name.equals("initialize") || visibility == Visibility.MODULE_FUNCTION) {
-            method = factory.getCompiledMethod(containingClass, javaName, 
-                    Arity.createArity(arity), Visibility.PRIVATE, scope, scriptObject, callConfig);
-        } else {
-            method = factory.getCompiledMethod(containingClass, javaName, 
-                    Arity.createArity(arity), visibility, scope, scriptObject, callConfig);
-        }
+        DynamicMethod method = constructNormalMethod(name, visibility, factory, containingClass, javaName, arity, scope, scriptObject, callConfig);
         
         containingClass.addMethod(name, method);
         
         if (visibility == Visibility.MODULE_FUNCTION) {
-            containingClass.getSingletonClass().addMethod(name,
-                    new WrapperMethod(containingClass.getSingletonClass(), method,
-                    Visibility.PUBLIC));
-            containingClass.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
+            addModuleMethod(containingClass,name, method, context, runtime);
         }
         
-        // 'class << state.self' and 'class << obj' uses defn as opposed to defs
-        if (containingClass.isSingleton()) {
-            ((MetaClass) containingClass).getAttached().callMethod(
-                    context, "singleton_method_added", runtime.fastNewSymbol(name));
-        } else {
-            containingClass.callMethod(context, "method_added", runtime.fastNewSymbol(name));
-        }
+        callNormalMethodHook(containingClass, context, runtime, name);
         
         return runtime.getNil();
     }
@@ -169,36 +140,17 @@ public class RuntimeHelpers {
             int arity, int required, int optional, int rest, CallConfiguration callConfig) {
         Class compiledClass = scriptObject.getClass();
         Ruby runtime = context.getRuntime();
+
+        RubyClass rubyClass = performSingletonMethodChecks(runtime, receiver, name);
         
-        if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
-            throw runtime.newSecurityError("Insecure; can't define singleton method.");
-        }
-
-        if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
-          throw runtime.newTypeError("can't define singleton method \"" + name
-          + "\" for " + receiver.getMetaClass().getBaseName());
-        }
-
-        if (receiver.isFrozen()) throw runtime.newFrozenError("object");
-
-        RubyClass rubyClass = receiver.getSingletonClass();
-
-        if (runtime.getSafeLevel() >= 4 && rubyClass.getMethods().get(name) != null) {
-            throw runtime.newSecurityError("redefining method prohibited.");
-        }
-        
-        StaticScope scope = new LocalStaticScope(context.getCurrentScope().getStaticScope(), scopeNames);
-        scope.determineModule();
-        scope.setArities(required, optional, rest);
+        StaticScope scope = creatScopeForClass(context, scopeNames, required, optional, rest);
         
         MethodFactory factory = MethodFactory.createFactory(compiledClass.getClassLoader());
-        DynamicMethod method;
-        
-        method = factory.getCompiledMethod(rubyClass, javaName, 
-                Arity.createArity(arity), Visibility.PUBLIC, scope, scriptObject, callConfig);
+        DynamicMethod method = constructSingletonMethod(factory, rubyClass, javaName, arity, scope,scriptObject, callConfig);
         
         rubyClass.addMethod(name, method);
-        receiver.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
+        
+        callSingletonMethodHook(receiver,context, runtime, name);
         
         return runtime.getNil();
     }
@@ -960,5 +912,86 @@ public class RuntimeHelpers {
         }
 
         return arrayValue(value);
+    }
+
+    private static void addModuleMethod(RubyModule containingClass, String name, DynamicMethod method, ThreadContext context, Ruby runtime) {
+        containingClass.getSingletonClass().addMethod(name, new WrapperMethod(containingClass.getSingletonClass(), method, Visibility.PUBLIC));
+        containingClass.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
+    }
+
+    private static void callNormalMethodHook(RubyModule containingClass, ThreadContext context, Ruby runtime, String name) {
+        // 'class << state.self' and 'class << obj' uses defn as opposed to defs
+        if (containingClass.isSingleton()) {
+            callSingletonMethodHook(((MetaClass) containingClass).getAttached(), context, runtime, name);
+        } else {
+            containingClass.callMethod(context, "method_added", runtime.fastNewSymbol(name));
+        }
+    }
+
+    private static void callSingletonMethodHook(IRubyObject receiver, ThreadContext context, Ruby runtime, String name) {
+        receiver.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
+    }
+
+    private static DynamicMethod constructNormalMethod(String name, Visibility visibility, MethodFactory factory, RubyModule containingClass, String javaName, int arity, StaticScope scope, Object scriptObject, CallConfiguration callConfig) {
+        DynamicMethod method;
+
+        if (name.equals("initialize") || visibility == Visibility.MODULE_FUNCTION) {
+            method = factory.getCompiledMethod(containingClass, javaName, Arity.createArity(arity), Visibility.PRIVATE, scope, scriptObject, callConfig);
+        } else {
+            method = factory.getCompiledMethod(containingClass, javaName, Arity.createArity(arity), visibility, scope, scriptObject, callConfig);
+        }
+
+        return method;
+    }
+
+    private static DynamicMethod constructSingletonMethod(MethodFactory factory, RubyClass rubyClass, String javaName, int arity, StaticScope scope, Object scriptObject, CallConfiguration callConfig) {
+        return factory.getCompiledMethod(rubyClass, javaName, Arity.createArity(arity), Visibility.PUBLIC, scope, scriptObject, callConfig);
+    }
+
+    private static StaticScope creatScopeForClass(ThreadContext context, String[] scopeNames, int required, int optional, int rest) {
+
+        StaticScope scope = new LocalStaticScope(context.getCurrentScope().getStaticScope(), scopeNames);
+        scope.determineModule();
+        scope.setArities(required, optional, rest);
+
+        return scope;
+    }
+
+    private static void performNormalMethodChecks(RubyModule containingClass, Ruby runtime, String name) throws RaiseException {
+
+        if (containingClass == runtime.getDummy()) {
+            throw runtime.newTypeError("no class/module to add method");
+        }
+
+        if (containingClass == runtime.getObject() && name.equals("initialize")) {
+            runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining Object#initialize may cause infinite loop", "Object#initialize");
+        }
+
+        if (name.equals("__id__") || name.equals("__send__")) {
+            runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining `" + name + "' may cause serious problem", name);
+        }
+    }
+
+    private static RubyClass performSingletonMethodChecks(Ruby runtime, IRubyObject receiver, String name) throws RaiseException {
+
+        if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
+            throw runtime.newSecurityError("Insecure; can't define singleton method.");
+        }
+
+        if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
+            throw runtime.newTypeError("can't define singleton method \"" + name + "\" for " + receiver.getMetaClass().getBaseName());
+        }
+
+        if (receiver.isFrozen()) {
+            throw runtime.newFrozenError("object");
+        }
+        
+        RubyClass rubyClass = receiver.getSingletonClass();
+
+        if (runtime.getSafeLevel() >= 4 && rubyClass.getMethods().get(name) != null) {
+            throw runtime.newSecurityError("redefining method prohibited.");
+        }
+        
+        return rubyClass;
     }
 }
