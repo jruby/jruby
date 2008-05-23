@@ -348,16 +348,17 @@ class Rational < Numeric
   # Converts the rational to an Integer.  Not the _nearest_ integer, the
   # truncated integer.  Study the following example carefully:
   #   Rational(+7,4).to_i             # -> 1
-  #   Rational(-7,4).to_i             # -> -2
+  #   Rational(-7,4).to_i             # -> -1
   #   (-1.75).to_i                    # -> -1
   #
-  # In other words:
-  #   Rational(-7,4) == -1.75                 # -> true
-  #   Rational(-7,4).to_i == (-1.75).to_i     # false
-  #
-  def to_i
-    Integer(@numerator.div(@denominator))
+  def truncate()
+    if @numerator < 0
+      return -((-@numerator).div(@denominator))
+    end
+    @numerator.div(@denominator)
   end
+
+  alias_method :to_i, :truncate
 
   #
   # Converts the rational to a Float.
