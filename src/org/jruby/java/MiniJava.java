@@ -512,14 +512,9 @@ public class MiniJava implements Library {
     private static void populateConstructors(RubyModule rubySing, final Class cls) {
         final Ruby ruby = rubySing.getRuntime();
         
-        // add all constructors
+        // add all public constructors (note: getConstructors only returns public ones)
         Constructor[] constructors = cls.getConstructors();
         for (final Constructor constructor : constructors) {
-            // only public constructors
-            if (!Modifier.isPublic(constructor.getModifiers())) {
-                continue;
-            }
-
             DynamicMethod dynMethod;
             if (constructor.getParameterTypes().length == 0) {
                 dynMethod = new JavaMethod.JavaMethodZero(rubySing, Visibility.PUBLIC) {

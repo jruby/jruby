@@ -334,7 +334,7 @@ public class JavaProxyClassFactory {
 
     private static void generateConstructors(Class superClass, Type selfType,
             ClassVisitor cw) {
-        Constructor[] cons = superClass.getConstructors();
+        Constructor[] cons = superClass.getDeclaredConstructors();
         for (int i = 0; i < cons.length; i++) {
             Constructor constructor = cons[i];
 
