@@ -1,0 +1,1 @@
+fails(JRUBY-2544):BasicSocket#send accepts flags to specify unusual sending behaviour

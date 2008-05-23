@@ -807,7 +807,7 @@
     <sequential>
       <echo message="compile=@{compile.mode}, threshold=@{jit.threshold}, objectspace=@{objectspace.enabled} threadpool=@{thread.pooling} reflection=@{reflection}"/>
     
-      <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${spec.dir}">
+      <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${base.dir}">
 	<classpath refid="build.classpath"/>
 	<classpath path="${jruby.classes.dir}"/>
       
@@ -830,7 +830,7 @@
 	<arg value="-f"/><arg value="m"/>
 	<extra-args/>
 
-	<arg value="${rubyspec.dir}/1.8"/>
+	<arg value="-B ${spec.dir}/default.mspec"/>
       </java>
     </sequential>
   </macrodef>

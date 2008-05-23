@@ -1,0 +1,21 @@
+fails(JRUBY-2543):Iconv#iconv keeps context between calls
+fails(JRUBY-2543):Iconv#iconv when given nil resets the converter
+fails(JRUBY-2543):Iconv#iconv raises Iconv::IllegalSequence when faced with an invalid byte
+fails(JRUBY-2543):Iconv#iconv raises Iconv::IllegalSequence when a character cannot be represented on the target encoding
+fails(JRUBY-2543):Iconv#iconv raises Iconv::InvalidCharacter when an incomplete character or shift sequence happens at the end of the input buffer
+fails(JRUBY-2543):Iconv#iconv ignores characters which cannot be represented in the target encoding when the //ignore option is set for the target encoding
+fails(JRUBY-2543):Iconv#iconv transliterates characters which cannot be accurately represented in the target encoding when the //translit option is set for the target encoding
+fails(JRUBY-2543):Iconv.iconv converts a series of strings with a single converter
+fails(JRUBY-2543):Iconv.iconv acts exactly as if invoking Iconv#iconv consecutively on the same converter
+fails(JRUBY-2543):Iconv#iconv when given the same source and target encodings still goes through all the decoding and encoding steps
+fails(JRUBY-2543):Iconv#iconv raises Iconv::IllegalSequence when faced with an invalid byte for the source encoding
+fails(JRUBY-2543):The 'us-ascii' decoder accepts only the strict 7-bit ASCII set
+fails(JRUBY-2543):The 'us-ascii' encoder accepts only the strict 7-bit ASCII set
+fails(JRUBY-2543):The 'utf-8' decoder accepts only strictly valid UTF-8 sequences
+fails(JRUBY-2543):The 'utf-8' decoder rejects surrogate characters
+fails(JRUBY-2543):The 'utf-16' decoder rejects surrogates without pairs
+fails(JRUBY-2543):The 'utf-16' encoder emits an empty string when the source input is empty
+fails(JRUBY-2543):The 'utf-16' encoder emits a byte-order mark on first non-empty output
+fails(JRUBY-2543):The 'utf-16be' decoder treats possible byte-order marks as regular characters
+fails(JRUBY-2543):The 'utf-16le' decoder treats possible byte-order marks as regular characters
+fails(JRUBY-2543):The 'iso-8859-1' encoder rejects characters which are not in the ISO-8859-1 range

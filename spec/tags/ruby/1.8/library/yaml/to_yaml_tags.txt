@@ -1,0 +1,3 @@
+fails(JRUBY-2553):Object#to_yaml returns the YAML representation of an Array object
+fails(JRUBY-2553):Object#to_yaml returns the YAML representation of a Class object
+fails(JRUBY-2553):Object#to_yaml returns the YAML representation of a Struct object
