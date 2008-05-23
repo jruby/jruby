@@ -205,6 +205,78 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         }
     }
 
+    public static abstract class JavaMethodZeroOrOneOrTwoOrThree extends JavaMethod {
+        public JavaMethodZeroOrOneOrTwoOrThree(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
+        }
+        public JavaMethodZeroOrOneOrTwoOrThree(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
+            super(implementationClass, visibility, callConfig, staticScope, arity);
+        }
+        public JavaMethodZeroOrOneOrTwoOrThree(RubyModule implementationClass, Visibility visibility, int methodIndex) {
+            super(implementationClass, visibility, methodIndex);
+        }
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name);
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg);
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1);
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2);
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            switch (args.length) {
+            case 0:
+                return call(context, self, clazz, name);
+            case 1:
+                return call(context, self, clazz, name, args[0]);
+            case 2:
+                return call(context, self, clazz, name, args[0], args[1]);
+            case 3:
+                return call(context, self, clazz, name, args[0], args[1], args[2]);
+            default:
+                Arity.raiseArgumentError(context.getRuntime(), args.length, 0, 3);
+                return null; // never reached
+            }
+        }
+    }
+    
+    public static abstract class JavaMethodZeroOrOneOrTwoOrThreeBlock extends JavaMethod {
+        public JavaMethodZeroOrOneOrTwoOrThreeBlock(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
+        }
+        public JavaMethodZeroOrOneOrTwoOrThreeBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
+            super(implementationClass, visibility, callConfig, staticScope, arity);
+        }
+        public JavaMethodZeroOrOneOrTwoOrThreeBlock(RubyModule implementationClass, Visibility visibility, int methodIndex) {
+            super(implementationClass, visibility, methodIndex);
+        }
+
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block);
+
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg, Block block);
+
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block);
+
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block);
+
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            switch (args.length) {
+            case 0:
+                return call(context, self, clazz, name, block);
+            case 1:
+                return call(context, self, clazz, name, args[0], block);
+            case 2:
+                return call(context, self, clazz, name, args[0], args[1], block);
+            case 3:
+                return call(context, self, clazz, name, args[0], args[1], args[2], block);
+            default:
+                Arity.raiseArgumentError(context.getRuntime(), args.length, 0, 3);
+                return null; // never reached
+            }
+        }
+    }
+
     public static abstract class JavaMethodZeroBlock extends JavaMethod {
         public JavaMethodZeroBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);

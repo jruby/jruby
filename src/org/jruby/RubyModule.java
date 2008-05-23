@@ -1897,7 +1897,23 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = {"module_eval", "class_eval"}, optional = 3, frame = true)
+    @JRubyMethod(name = {"module_eval", "class_eval"}, frame = true)
+    public IRubyObject module_eval(ThreadContext context, Block block) {
+        return specificEval(context, this, block);
+    }
+    @JRubyMethod(name = {"module_eval", "class_eval"}, frame = true)
+    public IRubyObject module_eval(ThreadContext context, IRubyObject arg0, Block block) {
+        return specificEval(context, this, arg0, block);
+    }
+    @JRubyMethod(name = {"module_eval", "class_eval"}, frame = true)
+    public IRubyObject module_eval(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return specificEval(context, this, arg0, arg1, block);
+    }
+    @JRubyMethod(name = {"module_eval", "class_eval"}, frame = true)
+    public IRubyObject module_eval(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return specificEval(context, this, arg0, arg1, arg2, block);
+    }
+    @Deprecated
     public IRubyObject module_eval(ThreadContext context, IRubyObject[] args, Block block) {
         return specificEval(context, this, args, block);
     }

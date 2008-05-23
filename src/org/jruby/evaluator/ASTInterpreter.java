@@ -242,8 +242,22 @@ public class ASTInterpreter {
      * @param file The filename to use when reporting errors during the evaluation
      * @param lineNumber that the eval supposedly starts from
      * @return An IRubyObject result from the evaluation
+     * @deprecated Call with a RubyString now.
      */
     public static IRubyObject evalSimple(ThreadContext context, IRubyObject self, IRubyObject src, String file, int lineNumber) {
+        RubyString source = src.convertToString();
+        return evalSimple(context, self, source, file, lineNumber);
+    }
+
+    /**
+     * Evaluate the given string.
+     * @param context TODO
+     * @param evalString The string containing the text to be evaluated
+     * @param file The filename to use when reporting errors during the evaluation
+     * @param lineNumber that the eval supposedly starts from
+     * @return An IRubyObject result from the evaluation
+     */
+    public static IRubyObject evalSimple(ThreadContext context, IRubyObject self, RubyString src, String file, int lineNumber) {
         // this is ensured by the callers
         assert file != null;
 

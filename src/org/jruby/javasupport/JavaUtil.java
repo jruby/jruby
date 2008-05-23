@@ -486,11 +486,9 @@ public class JavaUtil {
                 if (rubyObject instanceof RubyProc) {
                     // Proc implementing an interface, pull in the catch-all code that lets the proc get invoked
                     // no matter what method is called on the interface
-                    rubyObject.instance_eval(context, new IRubyObject[] {
-                        runtime.newString("extend Proc::CatchAll")}, Block.NULL_BLOCK);
+                    rubyObject.instance_eval(context, runtime.newString("extend Proc::CatchAll"), Block.NULL_BLOCK);
                 }
-                JavaObject jo = (JavaObject) rubyObject.instance_eval(context, new IRubyObject[] {
-                    runtime.newString("send :__jcreate_meta!")}, Block.NULL_BLOCK);
+                JavaObject jo = (JavaObject) rubyObject.instance_eval(context, runtime.newString("send :__jcreate_meta!"), Block.NULL_BLOCK);
                 return jo.getValue();
             }
         }
