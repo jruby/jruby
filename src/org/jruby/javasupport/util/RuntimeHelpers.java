@@ -125,13 +125,7 @@ public class RuntimeHelpers {
         MethodFactory factory = MethodFactory.createFactory(compiledClass.getClassLoader());
         DynamicMethod method = constructNormalMethod(name, visibility, factory, containingClass, javaName, arity, scope, scriptObject, callConfig);
         
-        containingClass.addMethod(name, method);
-        
-        if (visibility == Visibility.MODULE_FUNCTION) {
-            addModuleMethod(containingClass,name, method, context, runtime);
-        }
-        
-        callNormalMethodHook(containingClass, context, runtime, name);
+        addInstanceMethod(containingClass, name, method, visibility,context, runtime);
         
         return runtime.getNil();
     }
@@ -150,7 +144,7 @@ public class RuntimeHelpers {
         
         rubyClass.addMethod(name, method);
         
-        callSingletonMethodHook(receiver,context, runtime, name);
+        callSingletonMethodHook(receiver,context, runtime.fastNewSymbol(name));
         
         return runtime.getNil();
     }
@@ -914,22 +908,33 @@ public class RuntimeHelpers {
         return arrayValue(value);
     }
 
-    private static void addModuleMethod(RubyModule containingClass, String name, DynamicMethod method, ThreadContext context, Ruby runtime) {
-        containingClass.getSingletonClass().addMethod(name, new WrapperMethod(containingClass.getSingletonClass(), method, Visibility.PUBLIC));
-        containingClass.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
+    public static void addInstanceMethod(RubyModule containingClass, String name, DynamicMethod method, Visibility visibility, ThreadContext context, Ruby runtime) {
+        containingClass.addMethod(name, method);
+
+        RubySymbol sym = runtime.fastNewSymbol(name);
+        if (visibility == Visibility.MODULE_FUNCTION) {
+            addModuleMethod(containingClass, name, method, context, sym);
+        }
+
+        callNormalMethodHook(containingClass, context, sym);
     }
 
-    private static void callNormalMethodHook(RubyModule containingClass, ThreadContext context, Ruby runtime, String name) {
+    private static void addModuleMethod(RubyModule containingClass, String name, DynamicMethod method, ThreadContext context, RubySymbol sym) {
+        containingClass.getSingletonClass().addMethod(name, new WrapperMethod(containingClass.getSingletonClass(), method, Visibility.PUBLIC));
+        containingClass.callMethod(context, "singleton_method_added", sym);
+    }
+
+    private static void callNormalMethodHook(RubyModule containingClass, ThreadContext context, RubySymbol name) {
         // 'class << state.self' and 'class << obj' uses defn as opposed to defs
         if (containingClass.isSingleton()) {
-            callSingletonMethodHook(((MetaClass) containingClass).getAttached(), context, runtime, name);
+            callSingletonMethodHook(((MetaClass) containingClass).getAttached(), context, name);
         } else {
-            containingClass.callMethod(context, "method_added", runtime.fastNewSymbol(name));
+            containingClass.callMethod(context, "method_added", name);
         }
     }
 
-    private static void callSingletonMethodHook(IRubyObject receiver, ThreadContext context, Ruby runtime, String name) {
-        receiver.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
+    private static void callSingletonMethodHook(IRubyObject receiver, ThreadContext context, RubySymbol name) {
+        receiver.callMethod(context, "singleton_method_added", name);
     }
 
     private static DynamicMethod constructNormalMethod(String name, Visibility visibility, MethodFactory factory, RubyModule containingClass, String javaName, int arity, StaticScope scope, Object scriptObject, CallConfiguration callConfig) {

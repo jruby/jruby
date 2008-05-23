@@ -86,6 +86,7 @@ import org.jruby.util.ClassProvider;
 import org.jruby.util.IdUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.JavaMethod;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.MethodIndex;
@@ -1239,63 +1240,61 @@ public class RubyModule extends RubyObject {
         return newMethod;
     }
 
-    // What is argument 1 for in this method? A Method or Proc object /OB
-    @JRubyMethod(name = "define_method", required = 1, optional = 1, frame = true, visibility = PRIVATE, reads = VISIBILITY)
-    public IRubyObject define_method(ThreadContext context, IRubyObject[] args, Block block) {
-        if (args.length < 1 || args.length > 2) {
-            throw getRuntime().newArgumentError("wrong # of arguments(" + args.length + " for 1)");
-        }
-
-        IRubyObject body;
-        String name = args[0].asJavaString().intern();
+    @JRubyMethod(name = "define_method", frame = true, visibility = PRIVATE, reads = VISIBILITY)
+    public IRubyObject define_method(ThreadContext context, IRubyObject arg0, Block block) {
+        String name = arg0.asJavaString().intern();
         DynamicMethod newMethod = null;
         Visibility visibility = context.getCurrentVisibility();
 
         if (visibility == MODULE_FUNCTION) visibility = PRIVATE;
-        if (args.length == 1) {
+        RubyProc proc = getRuntime().newProc(Block.Type.LAMBDA, block);
+
+        // a normal block passed to define_method changes to do arity checking; make it a lambda
+        proc.getBlock().type = Block.Type.LAMBDA;
+        
+        newMethod = createProcMethod(name, visibility, proc);
+        
+        RuntimeHelpers.addInstanceMethod(this, name, newMethod, context.getPreviousVisibility(), context, context.getRuntime());
+
+        return proc;
+    }
+    @JRubyMethod(name = "define_method", frame = true, visibility = PRIVATE, reads = VISIBILITY)
+    public IRubyObject define_method(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        IRubyObject body;
+        String name = arg0.asJavaString().intern();
+        DynamicMethod newMethod = null;
+        Visibility visibility = context.getCurrentVisibility();
+
+        if (visibility == MODULE_FUNCTION) visibility = PRIVATE;
+        if (getRuntime().getProc().isInstance(arg1)) {
             // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
-            RubyProc proc = getRuntime().newProc(Block.Type.LAMBDA, block);
+            RubyProc proc = (RubyProc)arg1;
             body = proc;
-            
-            // a normal block passed to define_method changes to do arity checking; make it a lambda
-            proc.getBlock().type = Block.Type.LAMBDA;
 
             newMethod = createProcMethod(name, visibility, proc);
-        } else if (args.length == 2) {
-            if (getRuntime().getProc().isInstance(args[1])) {
-                // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
-                RubyProc proc = (RubyProc)args[1];
-                body = proc;
+        } else if (getRuntime().getMethod().isInstance(arg1)) {
+            RubyMethod method = (RubyMethod)arg1;
+            body = method;
 
-                newMethod = createProcMethod(name, visibility, proc);
-            } else if (getRuntime().getMethod().isInstance(args[1])) {
-                RubyMethod method = (RubyMethod)args[1];
-                body = method;
-
-                newMethod = new MethodMethod(this, method.unbind(null), visibility);
-            } else {
-                throw getRuntime().newTypeError("wrong argument type " + args[1].getType().getName() + " (expected Proc/Method)");
-            }
+            newMethod = new MethodMethod(this, method.unbind(null), visibility);
         } else {
-            throw getRuntime().newArgumentError("wrong # of arguments(" + args.length + " for 1)");
+            throw getRuntime().newTypeError("wrong argument type " + arg1.getType().getName() + " (expected Proc/Method)");
         }
-
-        addMethod(name, newMethod);
-
-        RubySymbol symbol = getRuntime().fastNewSymbol(name);
-
-        if (context.getPreviousVisibility() == MODULE_FUNCTION) {
-            getSingletonClass().addMethod(name, new WrapperMethod(getSingletonClass(), newMethod, PUBLIC));
-        }
-
-        if(isSingleton()){
-            IRubyObject singleton = ((MetaClass)this).getAttached(); 
-            singleton.callMethod(context, "singleton_method_added", symbol);
-        }else{
-            callMethod(context, "method_added", symbol);
-        }
+        
+        RuntimeHelpers.addInstanceMethod(this, name, newMethod, context.getPreviousVisibility(), context, context.getRuntime());
 
         return body;
+    }
+    @Deprecated
+    public IRubyObject define_method(ThreadContext context, IRubyObject[] args, Block block) {
+        switch (args.length) {
+        case 1:
+            return define_method(context, args[0], block);
+        case 2:
+            return define_method(context, args[0], args[1], block);
+        default:
+            throw getRuntime().newArgumentError("wrong # of arguments(" + args.length + " for 2)");
+        }
     }
     
     private DynamicMethod createProcMethod(String name, Visibility visibility, RubyProc proc) {
