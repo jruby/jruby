@@ -263,8 +263,16 @@ class Rational < Numeric
   #   r.divmod Rational(1,2)   # -> [3, Rational(1,4)]
   #
   def divmod(other)
-    value = (self / other).to_i
+    value = (self / other).floor
     return value, self - other * value
+  end
+
+  def floor()
+      @numerator.div(@denominator)
+  end
+
+  def ceil()
+      -((-@numerator).div(@denominator))
   end
 
   #
