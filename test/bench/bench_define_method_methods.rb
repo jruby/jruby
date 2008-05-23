@@ -1,6 +1,7 @@
 require 'benchmark'
 
 class Object
+  def quux; 1; end
   define_method(:foo) {1}
   define_method(:bar) {a = 1}
   b = 1
@@ -9,6 +10,23 @@ class Object
 end
 
 def bench_define_method_methods(bm)
+  bm.report "control, simple method, 10k * 100 invocations" do
+    a = 0
+    while a < 10000
+      quux; quux; quux; quux; quux; quux; quux; quux; quux; quux
+      quux; quux; quux; quux; quux; quux; quux; quux; quux; quux
+      quux; quux; quux; quux; quux; quux; quux; quux; quux; quux
+      quux; quux; quux; quux; quux; quux; quux; quux; quux; quux
+      quux; quux; quux; quux; quux; quux; quux; quux; quux; quux
+      quux; quux; quux; quux; quux; quux; quux; quux; quux; quux
+      quux; quux; quux; quux; quux; quux; quux; quux; quux; quux
+      quux; quux; quux; quux; quux; quux; quux; quux; quux; quux
+      quux; quux; quux; quux; quux; quux; quux; quux; quux; quux
+      quux; quux; quux; quux; quux; quux; quux; quux; quux; quux
+      a += 1
+    end
+  end
+
   bm.report "define_method(:foo) {1}, 10k * 100 invocations" do
     a = 0
     while a < 10000
