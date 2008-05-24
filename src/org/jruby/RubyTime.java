@@ -586,7 +586,7 @@ public class RubyTime extends RubyObject {
         return time;
     }
 
-    @JRubyMethod(name = {"new", "now"}, rest = true, frame = true, meta = true)
+    @JRubyMethod(name = {"now"}, rest = true, frame = true, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         IRubyObject obj = ((RubyClass)recv).allocate();
         obj.callMethod(context, "initialize", args, block);

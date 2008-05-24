@@ -180,3 +180,7 @@ test_equal "foo", value
 test_exception(LocalJumpError) do 
   "str".tap
 end
+
+# JRUBY-2247
+test_equal ['now'], Time.methods.grep('now')
+test_equal ["_load", "at", "gm", "local", "mktime", "now", "utc"], Time.methods(false).sort

@@ -243,8 +243,9 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                                                                                             actualRequired,
                                                                                             anno.optional(),
                                                                                             false);
+                    String implClass = anno.meta() ? "cls.getSingletonClass()" : "cls";
                     
-                    out.println("        javaMethod = new " + annotatedBindingName + "(cls, Visibility." + anno.visibility() + ");");
+                    out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility() + ");");
                     out.println("        javaMethod.setArity(Arity.createArity(" + getArityValue(anno, actualRequired) + "));");
                     out.println("        javaMethod.setJavaName(\"" + md.getSimpleName() + "\");");
                     out.println("        javaMethod.setSingleton(" + isStatic + ");");
@@ -403,6 +404,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     if (jrubyMethod.module()) {
                         // module/singleton methods are all defined public
                         out.println("        moduleMethod = javaMethod.dup();");
+                        out.println("        moduleMethod.setImplementationClass(cls.getSingletonClass());");
                         out.println("        moduleMethod.setVisibility(Visibility.PUBLIC);");
 
                         //                        RubyModule singletonClass = module.getSingletonClass();
