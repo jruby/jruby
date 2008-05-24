@@ -76,8 +76,13 @@ fi
 
 # ----- Execute The Requested Command -----------------------------------------
 
-JAVA_MEM=-Xmx378m
-JAVA_STACK=-Xss1024k
+if [ -z "$JAVA_MEM" ] ; then
+  JAVA_MEM=-Xmx500m
+fi
+
+if [ -z "$JAVA_STACK" ] ; then
+  JAVA_STACK=-Xss1024k
+fi
 
 # Split out any -J argument for passing to the JVM.
 # Scanning for args is aborted by '--'.

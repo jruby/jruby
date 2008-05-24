@@ -1,6 +1,15 @@
 @echo off
-set _MEM=-Xmx378m
+
+set _MEM=-Xmx500m
+if not defined JAVA_MEM goto memOptDone
+set _MEM=%JAVA_MEM%
+:memOptDone
+
 set _STK=-Xss1024k
+if not defined JAVA_STACK goto stackOptDone
+set _STK=%JAVA_STACK%
+:stackOptDone
+
 set _VM_OPTS=
 set _RUBY_OPTS=
 set _DFLT_VM_OPTS=%JAVA_OPTS%
