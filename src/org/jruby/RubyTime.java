@@ -245,7 +245,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = {"gmtime", "utc"})
     public RubyTime gmtime() {
-        dt = new DateTime(dt.getMillis()).withZone(DateTimeZone.UTC);
+        dt = dt.withZone(DateTimeZone.UTC);
         return this;
     }
 
@@ -339,14 +339,14 @@ public class RubyTime extends RubyObject {
         long adjustment = (long) (RubyNumeric.num2dbl(other) * 1000000);
         int micro = (int) (adjustment % 1000);
         adjustment = adjustment / 1000;
-        
-		time += adjustment;
 
-		RubyTime newTime = new RubyTime(getRuntime(), getMetaClass());
-		newTime.dt = new DateTime(time).withZone(dt.getZone());
+        time += adjustment;
+
+        RubyTime newTime = new RubyTime(getRuntime(), getMetaClass());
+        newTime.dt = new DateTime(time).withZone(dt.getZone());
         newTime.setUSec(micro);
 
-		return newTime;
+        return newTime;
     }
 
     @JRubyMethod(name = "-", required = 1)
@@ -361,14 +361,14 @@ public class RubyTime extends RubyObject {
         long adjustment = (long) (RubyNumeric.num2dbl(other) * 1000000);
         int micro = (int) (adjustment % 1000);
         adjustment = adjustment / 1000;
-        
+
         time -= adjustment;
 
-		RubyTime newTime = new RubyTime(getRuntime(), getMetaClass());
-		newTime.dt = new DateTime(time).withZone(dt.getZone());
+        RubyTime newTime = new RubyTime(getRuntime(), getMetaClass());
+        newTime.dt = new DateTime(time).withZone(dt.getZone());
         newTime.setUSec(micro);
 
-		return newTime;
+        return newTime;
     }
 
     @JRubyMethod(name = "===", required = 1)
@@ -414,7 +414,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = {"to_s", "inspect"})
     public IRubyObject to_s() {
         DateTimeFormatter simpleDateFormat;
-        if (dt.getZone().equals(DateTimeZone.UTC)) {
+        if (dt.getZone() == DateTimeZone.UTC) {
             simpleDateFormat = TO_S_UTC_FORMATTER;
         } else {
             simpleDateFormat = TO_S_FORMATTER;
@@ -548,7 +548,7 @@ public class RubyTime extends RubyObject {
 
     public RubyObject mdump(final IRubyObject[] args) {
         RubyTime obj = (RubyTime)args[0];
-        DateTime dt = obj.gmtime().dt;
+        DateTime dt = obj.dt.withZone(DateTimeZone.UTC);
         byte dumpValue[] = new byte[8];
         int pe = 
             0x1                                 << 31 |
@@ -581,7 +581,7 @@ public class RubyTime extends RubyObject {
     
     public static IRubyObject s_new(IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
-        RubyTime time = new RubyTime(runtime, (RubyClass) recv, new DateTime());
+        RubyTime time = new RubyTime(runtime, (RubyClass) recv, new DateTime(getLocalTimeZone(runtime)));
         time.callInit(args,block);
         return time;
     }
@@ -678,6 +678,7 @@ public class RubyTime extends RubyObject {
             dt = dt.withSecondOfMinute(((s >>> 20) & 0x3F));
             // marsaling dumps usec, not msec
             dt = dt.withMillisOfSecond((s & 0xFFFFF) / 1000);
+            dt = dt.withZone(getLocalTimeZone(runtime));
             time.setUSec((s & 0xFFFFF) % 1000);
         }
         time.setDateTime(dt);
