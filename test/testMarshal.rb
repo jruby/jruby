@@ -414,6 +414,15 @@ test_equal(
   0,
   actual_time <=> Marshal.load(unpacked_marshaled_time.pack('C*')))
 
+# JRUBY-2392
+time = Time.now
+is_utc = time.to_s =~ /UTC/
+if (is_utc)
+  test_ok(Marshal.load(Marshal.dump(time)).to_s =~ /UTC/)
+else
+  test_ok(!(Marshal.load(Marshal.dump(time)).to_s =~ /UTC/))
+end
+
 # JRUBY-2345
 begin
   file_name = "test-file-tmp"
