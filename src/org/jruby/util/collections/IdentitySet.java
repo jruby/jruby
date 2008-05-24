@@ -33,6 +33,7 @@ import java.util.Collection;
 import java.util.Iterator;
 
 
+@Deprecated
 public class IdentitySet {
     private Collection items = new ArrayList();
 
