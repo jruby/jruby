@@ -438,7 +438,7 @@ public class LoadService {
             // TODO this is really ineffient, ant potentially a problem everytime anyone require's something.
             // we should try to make LoadPath a special array object.
             String entry = ((IRubyObject)pathIter.next()).toString();
-            if (entry.startsWith("jar:") || (entry.startsWith("file:") && entry.indexOf("!/") != -1)) {
+            if (entry.startsWith("jar:") || entry.endsWith(".jar") || (entry.startsWith("file:") && entry.indexOf("!/") != -1)) {
                 JarFile current = jarFiles.get(entry);
                 String after = entry.startsWith("file:") ? entry.substring(entry.indexOf("!/") + 2) + "/" : "";
                 String before = entry.startsWith("file:") ? entry.substring(0, entry.indexOf("!/")) : entry;
@@ -447,6 +447,8 @@ public class LoadService {
                     try {
                         if(entry.startsWith("jar:")) {
                             current = new JarFile(entry.substring(4));
+                        } else if (entry.endsWith(".jar")) {
+                            current = new JarFile(entry);
                         } else {
                             current = new JarFile(entry.substring(5,entry.indexOf("!/")));
                         }
@@ -465,7 +467,9 @@ public class LoadService {
                 }
                 if (current.getJarEntry(canonicalEntry) != null) {
                     try {
-                        if(entry.startsWith("file:")) {
+                        if (entry.endsWith(".jar")) {
+                            return new LoadServiceResource(new URL("jar:file:" + entry + "!/" + canonicalEntry), "/" + name);
+                        } else if (entry.startsWith("file:")) {
                             return new LoadServiceResource(new URL("jar:" + before + "!/" + canonicalEntry), entry + "/" + name);
                         } else {
                             return new LoadServiceResource(new URL("jar:file:" + entry.substring(4) + "!/" + name), entry + name);
