@@ -198,6 +198,11 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     Class getProxyClass() {
         return proxyClass;
     }
+    
+    @Override
+    public Class getJavaClass() {
+        return proxyClass;
+    }
 
     @JRubyClass(name="JavaProxy::JavaProxyMethod")
     public static class ProxyMethodImpl extends JavaProxyReflectionObject

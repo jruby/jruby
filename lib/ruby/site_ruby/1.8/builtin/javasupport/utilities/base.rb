@@ -13,7 +13,7 @@ module JavaUtilities
         attr :java_proxy_class, true
         def java_interfaces
           @java_interfaces.dup if @java_interfaces        
-        end     
+        end
       end #self  
     end
 
