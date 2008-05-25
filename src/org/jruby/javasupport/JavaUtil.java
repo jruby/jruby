@@ -442,8 +442,12 @@ public class JavaUtil {
     }
 
     public static Object convertArgument(Ruby runtime, Object argument, Class<?> parameterType) {
-        if (argument == null && parameterType.isPrimitive()) {
+        if (argument == null) {
+          if(parameterType.isPrimitive()) {
             throw runtime.newTypeError("primitives do not accept null");
+          } else {
+            return null;
+          }
         }
         
         if (argument instanceof JavaObject) {
