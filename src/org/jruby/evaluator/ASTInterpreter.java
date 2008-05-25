@@ -1287,6 +1287,11 @@ public class ASTInterpreter {
     private static IRubyObject localAsgnNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         LocalAsgnNode iVisited = (LocalAsgnNode) node;
         
+        // ignore compiler pragmas
+        if (ASTInspector.PRAGMAS.contains(iVisited.getName())) {
+            return runtime.getNil();
+        }
+        
         return context.getCurrentScope().setValue(
                 iVisited.getIndex(),
                 evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock),
@@ -1772,11 +1777,7 @@ public class ASTInterpreter {
 
     private static IRubyObject vcallNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self) {
         VCallNode iVisited = (VCallNode) node;
-
-        // ignore compiler pragmas
-        if (ASTInspector.PRAGMAS.contains(iVisited.getName())) {
-            return runtime.getNil();
-        }
+        
         return iVisited.callAdapter.call(context, self);
     }
 

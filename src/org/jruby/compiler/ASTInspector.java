@@ -56,6 +56,7 @@ import org.jruby.ast.IArgumentNode;
 import org.jruby.ast.IScopingNode;
 import org.jruby.ast.IfNode;
 import org.jruby.ast.ListNode;
+import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.Match2Node;
 import org.jruby.ast.Match3Node;
 import org.jruby.ast.MatchNode;
@@ -76,6 +77,7 @@ import org.jruby.ast.SValueNode;
 import org.jruby.ast.SplatNode;
 import org.jruby.ast.SuperNode;
 import org.jruby.ast.ToAryNode;
+import org.jruby.ast.TrueNode;
 import org.jruby.ast.UntilNode;
 import org.jruby.ast.WhenNode;
 import org.jruby.ast.WhileNode;
@@ -264,12 +266,6 @@ public class ASTInspector {
             inspect(((BlockAcceptingNode)node).getIterNode());
         case VCALLNODE:
             INameNode nameNode = (INameNode)node;
-            if (PRAGMAS.contains(nameNode.getName())) {
-                if (nameNode.getName().equals("__NOFRAME__")) {
-                    noFrame = true;
-                }
-            }
-            
             if (FRAME_AWARE_METHODS.contains(nameNode.getName())) {
                 hasFrameAwareMethods = true;
                 hasEval |= nameNode.getName().indexOf("eval") != -1;
@@ -296,13 +292,20 @@ public class ASTInspector {
                 hasScopeAwareMethods = true;
             }
             break;
+        case LOCALASGNNODE:
+            LocalAsgnNode localAsgnNode = (LocalAsgnNode)node;
+            if (PRAGMAS.contains(localAsgnNode.getName())) {
+                if (localAsgnNode.getName().equals("__NOFRAME__")) {
+                    noFrame = localAsgnNode.getValueNode() instanceof TrueNode;
+                }
+                break;
+            }
         case CONSTDECLNODE:
         case CLASSVARASGNNODE:
         case CLASSVARDECLNODE:
             hasScopeAwareMethods = true;
         case DASGNNODE:
         case INSTASGNNODE:
-        case LOCALASGNNODE:
             inspect(((AssignableNode)node).getValueNode());
             break;
         case COLON2NODE:

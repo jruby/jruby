@@ -2255,13 +2255,18 @@ public class ASTCompiler {
     public void compileLocalAsgn(Node node, MethodCompiler context) {
         final LocalAsgnNode localAsgnNode = (LocalAsgnNode) node;
 
-        CompilerCallback value = new CompilerCallback() {
-            public void call(MethodCompiler context) {
-                compile(localAsgnNode.getValueNode(), context);
-            }
-        };
-        
-        context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth(), value);
+        // just push null for pragmas
+        if (ASTInspector.PRAGMAS.contains(localAsgnNode.getName())) {
+            context.loadNull();
+        } else {
+            CompilerCallback value = new CompilerCallback() {
+                public void call(MethodCompiler context) {
+                    compile(localAsgnNode.getValueNode(), context);
+                }
+            };
+
+            context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth(), value);
+        }
     }
 
     public void compileLocalAsgnAssignment(Node node, MethodCompiler context) {
@@ -3021,12 +3026,8 @@ public class ASTCompiler {
 
     public void compileVCall(Node node, MethodCompiler context) {
         VCallNode vcallNode = (VCallNode) node;
-
-        if (ASTInspector.PRAGMAS.contains(vcallNode.getName())) {
-            context.loadNull();
-        } else {
-            context.getInvocationCompiler().invokeDynamic(vcallNode.getName(), null, null, CallType.VARIABLE, null);
-        }
+        
+        context.getInvocationCompiler().invokeDynamic(vcallNode.getName(), null, null, CallType.VARIABLE, null);
     }
 
     public void compileWhile(Node node, MethodCompiler context) {
