@@ -132,3 +132,7 @@ class Floatable
 end
 
 test_equal(2.0.coerce(Floatable.new), [2.0, 2.0])
+
+# JRUBY-2568:
+require 'bigdecimal'
+test_equal(0.4, 2.0 / BigDecimal.new('5.0'))

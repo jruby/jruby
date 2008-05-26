@@ -263,7 +263,7 @@ public class RubyFloat extends RubyNumeric {
         case ClassIndex.FLOAT:
             return RubyFloat.newFloat(getRuntime(), value / ((RubyNumeric) other).getDoubleValue());
         default:
-            return coerceBin(context, "div", other);
+            return coerceBin(context, "/", other);
         }
     }
 
