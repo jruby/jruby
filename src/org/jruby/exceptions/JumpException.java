@@ -45,9 +45,6 @@ public class JumpException extends RuntimeException {
     public static class FlowControlException extends JumpException {
         protected JumpTarget target;
         protected Object value;
-        // FIXME: Remove inKernelLoop from this and come up with something more general
-        // Hack to detect a break in Kernel#loop
-        private boolean inKernelLoop = false;
 
         public FlowControlException() {}
         public FlowControlException(JumpTarget target, Object value) {
@@ -58,8 +55,6 @@ public class JumpException extends RuntimeException {
         public void setTarget(JumpTarget target) { this.target = target; }
         public Object getValue() { return value; }
         public void setValue(Object value) { this.value = value; }
-        public void setBreakInKernelLoop(boolean inKernelLoop) { this.inKernelLoop = inKernelLoop; }
-        public boolean isBreakInKernelLoop() { return inKernelLoop; }
     }
     
     public static class BreakJump extends FlowControlException { public BreakJump(JumpTarget t, Object v) { super(t, v); }}

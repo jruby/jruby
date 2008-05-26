@@ -998,23 +998,9 @@ public class RubyKernel {
     @JRubyMethod(name = "loop", frame = true, module = true, visibility = PRIVATE)
     public static IRubyObject loop(ThreadContext context, IRubyObject recv, Block block) {
         while (true) {
-            try {
-                block.yield(context, recv.getRuntime().getNil());
-                
-                context.pollThreadEvents();
-            } catch (JumpException.BreakJump bj) {
-                // JRUBY-530, specifically the Kernel#loop case:
-                // Kernel#loop always takes a block.  But what we're looking
-                // for here is breaking an iteration where the block is one 
-                // used inside loop's block, not loop's block itself.  Set the 
-                // appropriate flag on the JumpException if this is the case
-                // (the FCALLNODE case in EvaluationState will deal with it)
-                if (bj.getTarget() != null && bj.getTarget() != block.getBody()) {
-                    bj.setBreakInKernelLoop(true);
-                }
-                 
-                throw bj;
-            }
+            block.yield(context, recv.getRuntime().getNil());
+
+            context.pollThreadEvents();
         }
     }
     

@@ -422,16 +422,11 @@ public abstract class CallSite {
         }
 
         private IRubyObject handleBreakJump(BreakJump bj, Block block) throws BreakJump {
-            // JRUBY-530, Kernel#loop case:
-            if (bj.isBreakInKernelLoop()) {
-                // consume and rethrow or just keep rethrowing?
-                if (block.getBody() == bj.getTarget()) {
-                    bj.setBreakInKernelLoop(false);
-                }
-                throw bj;
+            // consume and rethrow or just keep rethrowing?
+            if (block.getBody() == bj.getTarget()) {
+                return (IRubyObject) bj.getValue();
             }
-
-            return (IRubyObject) bj.getValue();
+            throw bj;
         }
     }
     
