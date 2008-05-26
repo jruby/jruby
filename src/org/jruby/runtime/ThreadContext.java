@@ -107,8 +107,6 @@ public final class ThreadContext {
     // appropriate place.
     private int rubyFrameDelta = 0;
     
-    private static final ReturnJump RETURN_JUMP = new ReturnJump();
-    
     /**
      * Constructor for Context.
      */
@@ -153,8 +151,7 @@ public final class ThreadContext {
     }
     
     public ReturnJump returnJump(IRubyObject value) {
-        RETURN_JUMP.update(getFrameJumpTarget(), value);
-        return RETURN_JUMP;
+        return new ReturnJump(getFrameJumpTarget(), value);
     }
     
     /**
