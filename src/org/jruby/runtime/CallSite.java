@@ -40,12 +40,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  */
 public abstract class CallSite {
-    public final int methodID;
     public final String methodName;
     protected final CallType callType;
     
-    public CallSite(int methodID, String methodName, CallType callType) {
-        this.methodID = methodID;
+    public CallSite(String methodName, CallType callType) {
         this.methodName = methodName;
         this.callType = callType;
     }
@@ -80,7 +78,7 @@ public abstract class CallSite {
         private static final int MAX_MISSES = 50;
         
         public InlineCachingCallSite(String methodName, CallType callType) {
-            super(MethodIndex.getIndex(methodName), methodName, callType);
+            super(methodName, callType);
         }
         
         protected IRubyObject cacheAndCall(RubyClass selfType, Block block, IRubyObject[] args, ThreadContext context, IRubyObject self) {
