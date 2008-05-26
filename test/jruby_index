@@ -62,6 +62,7 @@ test_symbol
 test_tb_yaml
 test_timeout
 test_thread
+test_threaded_nonlocal_return
 test_time_nil_ops
 test_variables
 test_vietnamese_charset
