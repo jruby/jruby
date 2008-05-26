@@ -1056,13 +1056,15 @@ public class Java implements Library {
         case ClassIndex.FALSE:
             javaObject = Boolean.FALSE;
             break;
+        case ClassIndex.TIME:
+            javaObject = ((RubyTime) object).getJavaDate();
+            break;
         default:
-            if (object instanceof RubyTime) {
-                javaObject = ((RubyTime) object).getJavaDate();
-            } else {
-                javaObject = object;
-            }
+            // it's not one of the types we convert, so just pass it out as-is without wrapping
+            return object;
         }
+
+        // we've found a Java type to which we've coerced the Ruby value, wrap it
         return JavaObject.wrap(runtime, javaObject);
     }
 

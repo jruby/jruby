@@ -60,6 +60,7 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
+import org.jruby.runtime.ClassIndex;
 
 /** The Time class.
  * 
@@ -184,6 +185,7 @@ public class RubyTime extends RubyObject {
     
     public static RubyClass createTimeClass(Ruby runtime) {
         RubyClass timeClass = runtime.defineClass("Time", runtime.getObject(), TIME_ALLOCATOR);
+        timeClass.index = ClassIndex.TIME;
         runtime.setTime(timeClass);
         
         timeClass.includeModule(runtime.getComparable());

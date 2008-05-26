@@ -77,3 +77,4 @@ test_loading_builtin_libraries
 test_rewriter
 test_load_compiled_ruby_class_from_classpath
 test_null_channel
+test_irubyobject_java_passing

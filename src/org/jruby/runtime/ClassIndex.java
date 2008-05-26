@@ -33,7 +33,8 @@ public class ClassIndex {
     public static final int INTEGER = 16;
     public static final int NUMERIC = 17;
     public static final int RANGE = 18;
-    public static final int MAX_CLASSES = 19;
+    public static final int TIME = 19;
+    public static final int MAX_CLASSES = 20;
     
     /** Creates a new instance of ClassIndex */
     public ClassIndex() {
