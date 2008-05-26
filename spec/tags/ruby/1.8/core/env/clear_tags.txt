@@ -1,1 +1,1 @@
-fails(JRUBY-2391):ENV#clear deletes all environment variables
+fails(JRUBY-2391):ENV.clear deletes all environment variables

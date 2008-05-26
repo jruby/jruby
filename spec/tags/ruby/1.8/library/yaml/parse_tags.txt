@@ -1,0 +1,3 @@
+fails(JRUBY-2553):YAML#parse with an empty string returns false
+fails(JRUBY-2553):YAML#parse returns a YAML::Syck::Scalar object 
+fails(JRUBY-2553):YAML#parse returns the value from the object
