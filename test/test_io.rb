@@ -468,6 +468,15 @@ class TestIO < Test::Unit::TestCase
       }
     end
   end
+  
+  def test_file_constants_included
+    assert IO.include?(File::Constants)
+    assert_equal ["APPEND", "BINARY", "CREAT", "EXCL", "Enumerator", "FNM_CASEFOLD",
+                   "FNM_DOTMATCH", "FNM_NOESCAPE", "FNM_PATHNAME", "FNM_SYSCASE",
+                   "LOCK_EX", "LOCK_NB", "LOCK_SH", "LOCK_UN", "NOCTTY", "NONBLOCK",
+                   "RDONLY", "RDWR", "SEEK_CUR", "SEEK_END", "SEEK_SET", "SYNC", "TRUNC",
+                   "WRONLY"], IO.constants.sort
+  end
 
   private
   def ensure_files(*files)

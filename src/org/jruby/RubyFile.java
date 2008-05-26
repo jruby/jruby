@@ -199,7 +199,10 @@ public class RubyFile extends RubyIO {
         RubyString pathSeparator = runtime.newString(File.pathSeparator);
         pathSeparator.freeze();
         fileClass.defineConstant("PATH_SEPARATOR", pathSeparator);
-        
+
+        // TODO: why are we duplicating the constants here, and then in
+        // File::Constants below? File::Constants is included in IO.
+
         // TODO: These were missing, so we're not handling them elsewhere?
         // FIXME: The old value, 32786, didn't match what IOModes expected, so I reference
         // the constant here. THIS MAY NOT BE THE CORRECT VALUE.
@@ -231,11 +234,13 @@ public class RubyFile extends RubyIO {
         RubyModule constants = fileClass.defineModuleUnder("Constants");
         
         // TODO: These were missing, so we're not handling them elsewhere?
-        constants.fastSetConstant("BINARY", runtime.newFixnum(32768));
-        constants.fastSetConstant("FNM_NOESCAPE", runtime.newFixnum(1));
-        constants.fastSetConstant("FNM_CASEFOLD", runtime.newFixnum(8));
-        constants.fastSetConstant("FNM_DOTMATCH", runtime.newFixnum(4));
-        constants.fastSetConstant("FNM_PATHNAME", runtime.newFixnum(2));
+        constants.fastSetConstant("BINARY", runtime.newFixnum(ModeFlags.BINARY));
+        constants.fastSetConstant("SYNC", runtime.newFixnum(0x1000));
+        constants.fastSetConstant("FNM_NOESCAPE", runtime.newFixnum(FNM_NOESCAPE));
+        constants.fastSetConstant("FNM_CASEFOLD", runtime.newFixnum(FNM_CASEFOLD));
+        constants.fastSetConstant("FNM_SYSCASE", runtime.newFixnum(FNM_CASEFOLD));
+        constants.fastSetConstant("FNM_DOTMATCH", runtime.newFixnum(FNM_DOTMATCH));
+        constants.fastSetConstant("FNM_PATHNAME", runtime.newFixnum(FNM_PATHNAME));
         
         // Create constants for open flags
         constants.fastSetConstant("RDONLY", runtime.newFixnum(ModeFlags.RDONLY));
@@ -254,6 +259,9 @@ public class RubyFile extends RubyIO {
         constants.fastSetConstant("LOCK_NB", runtime.newFixnum(RubyFile.LOCK_NB));
         constants.fastSetConstant("LOCK_UN", runtime.newFixnum(RubyFile.LOCK_UN));
         
+        // File::Constants module is included in IO.
+        runtime.getIO().includeModule(constants);
+
         runtime.getFileTest().extend_object(fileClass);
         
         fileClass.defineAnnotatedMethods(RubyFile.class);
