@@ -1,1 +1,0 @@
-fails(JRUBY-2536):Bignum#div returns self divided by float

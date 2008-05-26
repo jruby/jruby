@@ -269,20 +269,27 @@ public class RubyBignum extends RubyInteger {
         return coerceBin(context, "*", other);
     }
 
-    /** rb_big_div
-     * 
+    /**
+     * rb_big_divide. Shared part for both "/" and "div" operations.
      */
-    @JRubyMethod(name = {"/", "div"}, required = 1)
-    public IRubyObject op_div(ThreadContext context, IRubyObject other) {
+    private IRubyObject op_divide(ThreadContext context, IRubyObject other, String op) {
+        assert ("/".equals(op) || "div".equals(op));
+
         final BigInteger otherValue;
         if (other instanceof RubyFixnum) {
             otherValue = fix2big((RubyFixnum) other);
         } else if (other instanceof RubyBignum) {
             otherValue = ((RubyBignum) other).value;
         } else if (other instanceof RubyFloat) {
-            return RubyFloat.newFloat(getRuntime(), big2dbl(this) / ((RubyFloat) other).getDoubleValue());
+            double div = big2dbl(this) / ((RubyFloat) other).getDoubleValue();
+            if ("/".equals(op)) {
+                return RubyFloat.newFloat(getRuntime(),
+                        big2dbl(this) / ((RubyFloat) other).getDoubleValue());
+            } else {
+                return RubyNumeric.dbl2num(getRuntime(), div);
+            }
         } else {
-            return coerceBin(context, "/", other);
+            return coerceBin(context, op, other);
         }
 
         if (otherValue.equals(BigInteger.ZERO)) {
@@ -295,6 +302,22 @@ public class RubyBignum extends RubyInteger {
             return bignorm(getRuntime(), results[0].subtract(BigInteger.ONE));
         }
         return bignorm(getRuntime(), results[0]);
+    }
+
+    /** rb_big_div
+     *
+     */
+    @JRubyMethod(name = {"/"}, required = 1)
+    public IRubyObject op_div(ThreadContext context, IRubyObject other) {
+        return op_divide(context, other, "/");
+    }
+
+    /** rb_big_idiv
+     *
+     */
+    @JRubyMethod(name = {"div"}, required = 1)
+    public IRubyObject op_idiv(ThreadContext context, IRubyObject other) {
+        return op_divide(context, other, "div");
     }
 
     /** rb_big_divmod
