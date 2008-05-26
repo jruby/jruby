@@ -86,6 +86,15 @@ public class RubyFile extends RubyIO {
     private static final int FNM_PATHNAME = 2;
     private static final int FNM_DOTMATCH = 4;
     private static final int FNM_CASEFOLD = 8;
+    private static final int FNM_SYSCASE;
+
+    static {
+        if (Platform.IS_WINDOWS) {
+            FNM_SYSCASE = FNM_CASEFOLD;
+        } else {
+            FNM_SYSCASE = 0;
+        }
+    }
 
     private static boolean startsWithDriveLetterOnWindows(String path) {
         return (path != null)
@@ -209,7 +218,7 @@ public class RubyFile extends RubyIO {
         fileClass.fastSetConstant("BINARY", runtime.newFixnum(ModeFlags.BINARY));
         fileClass.fastSetConstant("FNM_NOESCAPE", runtime.newFixnum(FNM_NOESCAPE));
         fileClass.fastSetConstant("FNM_CASEFOLD", runtime.newFixnum(FNM_CASEFOLD));
-        fileClass.fastSetConstant("FNM_SYSCASE", runtime.newFixnum(FNM_CASEFOLD));
+        fileClass.fastSetConstant("FNM_SYSCASE", runtime.newFixnum(FNM_SYSCASE));
         fileClass.fastSetConstant("FNM_DOTMATCH", runtime.newFixnum(FNM_DOTMATCH));
         fileClass.fastSetConstant("FNM_PATHNAME", runtime.newFixnum(FNM_PATHNAME));
         
@@ -238,7 +247,7 @@ public class RubyFile extends RubyIO {
         constants.fastSetConstant("SYNC", runtime.newFixnum(0x1000));
         constants.fastSetConstant("FNM_NOESCAPE", runtime.newFixnum(FNM_NOESCAPE));
         constants.fastSetConstant("FNM_CASEFOLD", runtime.newFixnum(FNM_CASEFOLD));
-        constants.fastSetConstant("FNM_SYSCASE", runtime.newFixnum(FNM_CASEFOLD));
+        constants.fastSetConstant("FNM_SYSCASE", runtime.newFixnum(FNM_SYSCASE));
         constants.fastSetConstant("FNM_DOTMATCH", runtime.newFixnum(FNM_DOTMATCH));
         constants.fastSetConstant("FNM_PATHNAME", runtime.newFixnum(FNM_PATHNAME));
         

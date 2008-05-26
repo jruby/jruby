@@ -622,8 +622,17 @@ class TestFile < Test::Unit::TestCase
     else
       assert_equal("\\", File::ALT_SEPARATOR)
     end
+  end
 
-    assert_equal(File::FNM_CASEFOLD, File::FNM_SYSCASE)
+  # JRUBY-2572
+  def test_fnm_syscase_constant
+    if (WINDOWS)
+      assert_equal(File::FNM_CASEFOLD, File::FNM_SYSCASE)
+      assert File.fnmatch?('cat', 'CAT', File::FNM_SYSCASE)
+    else
+      assert_not_equal(File::FNM_CASEFOLD, File::FNM_SYSCASE)
+      assert !File.fnmatch?('cat', 'CAT', File::FNM_SYSCASE)
+    end
   end
 
   def test_truncate
