@@ -1096,13 +1096,15 @@ public class RubyBigDecimal extends RubyNumeric {
         if (isNaN()) {
             return RubyFloat.newFloat(getRuntime(), Double.NaN);
         }
-        if (infinitySign == -1) {
-            return RubyFloat.newFloat(getRuntime(), Double.NEGATIVE_INFINITY);
+        if (isInfinity()) {
+            return RubyFloat.newFloat(getRuntime(),
+                    infinitySign < 0 ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY);
         }
-        if (infinitySign == 1) {
-            return RubyFloat.newFloat(getRuntime(), Double.POSITIVE_INFINITY);
+        if (isZero()) {
+            return RubyFloat.newFloat(getRuntime(),
+                    zeroSign < 0 ? -0.0 : 0.0);
         }
-        return RubyFloat.newFloat(getRuntime(),value.doubleValue());
+        return RubyFloat.newFloat(getRuntime(), value.doubleValue());
     }
 
     @JRubyMethod(name = {"to_i", "to_int"})
