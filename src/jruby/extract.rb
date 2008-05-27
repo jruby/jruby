@@ -9,11 +9,11 @@ module JRuby
   # extract META-INF/jruby.home/**/* to somewhere.
   class Extract
     def initialize(dir = nil)
-      @this_archive = __FILE__ =~ /file:([^!]*)!.*/ && $1
+      @this_archive = java.lang.Class.forName('org.jruby.Ruby').classLoader.getResource('jruby/extract.rb').to_s =~ /^(.*!\/)/ && $1
       if need_extract?
         raise "error: can't locate enclosed archive from #{__FILE__}" if @this_archive.nil?
         @this_archive = java.net.URLDecoder.decode(@this_archive, "utf-8")
-        @zip = ZipFile.new(@this_archive)
+        @zip = java.net.URL.new(@this_archive).openConnection.jar_file
         @destination = dir || Config::CONFIG['prefix']
       end
     end
@@ -42,8 +42,11 @@ module JRuby
           write_entry entry, "lib/ruby/1.8/#{entry.name}"
         end
       end
-      puts "copying #{@this_archive} to #{@destination}/lib"
-      FileUtils.cp(@this_archive, "#{@destination}/lib")
+
+      if @this_archive = @this_archive =~ /^jar:file:(.*)!/ && $1
+        puts "copying #{@this_archive} to #{@destination}/lib"
+        FileUtils.cp(@this_archive, "#{@destination}/lib")
+      end
     end
     
     def write_entry(entry, name)
