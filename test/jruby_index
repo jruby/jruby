@@ -79,3 +79,4 @@ test_load_compiled_ruby_class_from_classpath
 test_null_channel
 test_irubyobject_java_passing
 test_jruby_object_input_stream
+test_jar_on_load_path
