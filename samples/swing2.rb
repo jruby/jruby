@@ -24,3 +24,6 @@ frame.get_content_pane.add(button)
 frame.set_default_close_operation(JFrame::EXIT_ON_CLOSE)
 frame.pack
 frame.visible = true
+
+# Sleep the main thread, so we don't exit
+Thread.stop
