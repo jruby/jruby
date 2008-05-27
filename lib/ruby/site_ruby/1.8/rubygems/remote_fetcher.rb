@@ -1,3 +1,4 @@
+require 'stringio'
 require 'net/http'
 require 'uri'
 
