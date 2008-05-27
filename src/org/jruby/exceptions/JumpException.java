@@ -66,7 +66,7 @@ public class JumpException extends RuntimeException {
     public static final RedoJump REDO_JUMP = new RedoJump();
     public static class SpecialJump extends FlowControlException {}
     public static final SpecialJump SPECIAL_JUMP = new SpecialJump();
-    public static class ReturnJump extends FlowControlException { public ReturnJump() {}; public void update(JumpTarget t, Object v) { target = t; value = v; }}
+    public static class ReturnJump extends FlowControlException { public ReturnJump(JumpTarget t, Object v) { target = t; value = v; }}
     
     /**
      * Constructor for flow-control-only JumpExceptions.
