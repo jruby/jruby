@@ -158,13 +158,19 @@ public class RbConfigLibrary implements Library {
                 libdir = new NormalizedFile(libdir).getAbsolutePath();
             }
         }
+        String rubyLibDir = new NormalizedFile(libdir, "ruby/1.8").getPath();
+        String siteDir = new NormalizedFile(libdir, "ruby/site_ruby").getPath();
+        String siteLibDir = new NormalizedFile(libdir, "ruby/site_ruby/1.8").getPath();
+        String siteArchDir = new NormalizedFile(libdir, "ruby/site_ruby/1.8/java").getPath();
+        String archDir = new NormalizedFile(libdir, "ruby/1.8/java").getPath();
 
         setConfig(configHash, "libdir", libdir);
-        setConfig(configHash, "rubylibdir",     new NormalizedFile(libdir, "ruby/1.8").getPath());
-        setConfig(configHash, "sitedir",        new NormalizedFile(libdir, "ruby/site_ruby").getPath());
-        setConfig(configHash, "sitelibdir",     new NormalizedFile(libdir, "ruby/site_ruby/1.8").getPath());
-        setConfig(configHash, "sitearchdir",    new NormalizedFile(libdir, "ruby/site_ruby/1.8/java").getPath());
-        setConfig(configHash, "archdir",    new NormalizedFile(libdir, "ruby/site_ruby/1.8/java").getPath());
+        setConfig(configHash, "rubylibdir",     rubyLibDir);
+        setConfig(configHash, "sitedir",        siteDir);
+        setConfig(configHash, "sitelibdir",     siteLibDir);
+        setConfig(configHash, "sitearchdir",    siteArchDir);
+        setConfig(configHash, "archdir",   archDir);
+        setConfig(configHash, "topdir",   archDir);
         setConfig(configHash, "configure_args", "");
         setConfig(configHash, "datadir", new NormalizedFile(normalizedHome, "share").getPath());
         setConfig(configHash, "mandir", new NormalizedFile(normalizedHome, "man").getPath());
@@ -182,13 +188,14 @@ public class RbConfigLibrary implements Library {
         
 
         setConfig(mkmfHash, "libdir", libdir);
-        setConfig(mkmfHash, "arch", "universal-java" + System.getProperty("java.specification.version"));
-        setConfig(mkmfHash, "rubylibdir",     "$(libdir)/ruby/$(ruby_version)");
-        setConfig(mkmfHash, "sitedir",        "$(libdir)/ruby/site_ruby");
-        setConfig(mkmfHash, "sitelibdir",     "$(sitedir)/1.8");
+        setConfig(mkmfHash, "arch", "java");
+        setConfig(mkmfHash, "rubylibdir",     rubyLibDir);
+        setConfig(mkmfHash, "sitedir",        siteDir);
+        setConfig(mkmfHash, "sitelibdir",     siteLibDir);
         setConfig(mkmfHash, "sitearch", "java");
-        setConfig(mkmfHash, "sitearchdir",    "$(sitelibdir)/$(sitearch)");
-        setConfig(mkmfHash, "archdir",    "$(rubylibdir)/$(arch)");
+        setConfig(mkmfHash, "sitearchdir",    siteArchDir);
+        setConfig(mkmfHash, "archdir",    archDir);
+        setConfig(mkmfHash, "topdir",    archDir);
         setConfig(mkmfHash, "configure_args", "");
         setConfig(mkmfHash, "datadir", new NormalizedFile(normalizedHome, "share").getPath());
         setConfig(mkmfHash, "mandir", new NormalizedFile(normalizedHome, "man").getPath());
