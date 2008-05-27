@@ -35,7 +35,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -542,21 +541,18 @@ public class RubyInstanceConfig {
             if (Ruby.isSecurityRestricted()) {
                 return "SECURITY RESTRICTED";
             }
-            // 1. Use jruby.home if present
-            String home = SafePropertyAccessor.getProperty("jruby.home");
-            // 2. Use /META-INF/jruby.home from complete jar if available
-            if (home == null) {
-                URL res = RubyInstanceConfig.class.getResource("/META-INF/jruby.home/bin/jruby");
-                if (res != null) {
-                    String binjruby = res.getFile();
-                    home = binjruby.substring(0, binjruby.length() - 10);
-                }
-            }
-            // 3. Use ~/.jruby
-            if (home == null) {
-                home = SafePropertyAccessor.getProperty("user.home") + "/.jruby";
-            }
-            jrubyHome = verifyHome(home);
+            jrubyHome = verifyHome(SafePropertyAccessor.getProperty("jruby.home",
+                    SafePropertyAccessor.getProperty("user.home") + "/.jruby"));
+
+            try {
+                // This comment also in rbConfigLibrary
+                // Our shell scripts pass in non-canonicalized paths, but even if we didn't
+                // anyone who did would become unhappy because Ruby apps expect no relative
+                // operators in the pathname (rubygems, for example).
+                jrubyHome = new NormalizedFile(jrubyHome).getCanonicalPath();
+            } catch (IOException e) { }
+
+            jrubyHome = new NormalizedFile(jrubyHome).getAbsolutePath();
         }
         return jrubyHome;
     }
@@ -568,20 +564,14 @@ public class RubyInstanceConfig {
     // We require the home directory to be absolute
     private String verifyHome(String home) {
         if (home.equals(".")) {
-            home = SafePropertyAccessor.getProperty("user.dir");
+            home = System.getProperty("user.dir");
         }
         if (!home.startsWith("file:")) {
             NormalizedFile f = new NormalizedFile(home);
-            f.mkdirs();
-            try {
-                // This comment also in rbConfigLibrary
-                // Our shell scripts pass in non-canonicalized paths, but even if we didn't
-                // anyone who did would become unhappy because Ruby apps expect no relative
-                // operators in the pathname (rubygems, for example).
-                home = f.getCanonicalPath();
-            } catch (IOException e) {
+            if (!f.isAbsolute()) {
                 home = f.getAbsolutePath();
             }
+            f.mkdirs();
         }
         return home;
     }
