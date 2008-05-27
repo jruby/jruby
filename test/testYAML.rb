@@ -431,4 +431,19 @@ test_equal "baz", YAML.load(a_str.to_yaml).instance_variable_get(:@bar)
 
 test_equal :"abc\"flo", YAML.load("---\n:\"abc\\\"flo\"")
 
+# JRUBY-2579
 test_equal [:year], YAML.load("---\n[:year]")
+
+test_equal({
+             'date_select' => { 'order' => [:year, :month, :day] }, 
+             'some' => { 
+               'id' => 1, 
+               'name' => 'some', 
+               'age' => 16}}, YAML.load(<<YAML))
+date_select: 
+  order: [:year, :month, :day]
+some:
+    id: 1
+    name: some
+    age: 16 
+YAML
