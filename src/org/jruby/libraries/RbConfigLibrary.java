@@ -40,11 +40,14 @@ import java.util.regex.Pattern;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
+import org.jruby.RubyString;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.NormalizedFile;
 import org.jruby.anno.JRubyModule;
+import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyModule(name="Config")
 public class RbConfigLibrary implements Library {
@@ -89,6 +92,9 @@ public class RbConfigLibrary implements Library {
      */
     public void load(Ruby runtime, boolean wrap) {
         RubyModule configModule = runtime.defineModule("Config");
+        
+        configModule.defineAnnotatedMethods(RbConfigLibrary.class);
+        
         RubyHash configHash = RubyHash.newHash(runtime);
         configModule.defineConstant("CONFIG", configHash);
         runtime.getObject().defineConstant("RbConfig", configModule);
@@ -171,11 +177,89 @@ public class RbConfigLibrary implements Library {
         } else {
             setConfig(configHash, "EXEEXT", "");
         }
+        
+        RubyHash mkmfHash = RubyHash.newHash(runtime);
+        
+
+        setConfig(mkmfHash, "libdir", libdir);
+        setConfig(mkmfHash, "arch", "universal-java" + System.getProperty("java.specification.version"));
+        setConfig(mkmfHash, "rubylibdir",     "$(libdir)/ruby/$(ruby_version)");
+        setConfig(mkmfHash, "sitedir",        "$(libdir)/ruby/site_ruby");
+        setConfig(mkmfHash, "sitelibdir",     "$(sitedir)/1.8");
+        setConfig(mkmfHash, "sitearch", "java");
+        setConfig(mkmfHash, "sitearchdir",    "$(sitelibdir)/$(sitearch)");
+        setConfig(mkmfHash, "archdir",    "$(rubylibdir)/$(arch)");
+        setConfig(mkmfHash, "configure_args", "");
+        setConfig(mkmfHash, "datadir", new NormalizedFile(normalizedHome, "share").getPath());
+        setConfig(mkmfHash, "mandir", new NormalizedFile(normalizedHome, "man").getPath());
+        setConfig(mkmfHash, "sysconfdir", new NormalizedFile(normalizedHome, "etc").getPath());
+        setConfig(mkmfHash, "localstatedir", new NormalizedFile(normalizedHome, "var").getPath());
+        
+        setupMakefileConfig(configModule, mkmfHash);
+    }
+    
+    private static void setupMakefileConfig(RubyModule configModule, RubyHash mkmfHash) {
+        Ruby ruby = configModule.getRuntime();
+        
+        String jflags = " -fno-omit-frame-pointer -fno-strict-aliasing -DNDEBUG ";
+        String oflags = " -O2 " + jflags;
+        String wflags = " -W -Werror -Wall -Wno-unused -Wno-parentheses ";
+        String picflags = true ? "" : " -fPIC -pthread ";
+        
+        String iflags = " -I\"$(JDK_HOME)/include\" -I\"$(JDK_HOME)/include/$(OS)\" -I\"$(BUILD_DIR)\" ";
+        
+        String cflags = "";
+        String soflags = true ? "" : " -shared -static-libgcc -mimpure-text -Wl,-O1 ";
+        String ldflags = soflags;
+        
+        
+        String archflags = " -arch i386 -arch ppc -arch x86_64 ";
+        
+        cflags += archflags;
+
+        // this set is only for darwin
+        cflags += " -isysroot /Developer/SDKs/MacOSX10.4u.sdk -DTARGET_RT_MAC_CFM=0 ";
+        cflags += " -arch i386 -arch ppc -arch x86_64 ";
+        ldflags += " -arch i386 -arch ppc -arch x86_64 -bundle -framework JavaVM -Wl,-syslibroot,$(SDKROOT) -mmacosx-version-min=10.4 -undefined dynamic_lookup ";
+        String libext = "a";
+        String objext = "o";
+        
+        setConfig(mkmfHash, "configure_args", "");
+        setConfig(mkmfHash, "CFLAGS", cflags);
+        setConfig(mkmfHash, "CPPFLAGS", "");
+        setConfig(mkmfHash, "ARCH_FLAG", "");
+        setConfig(mkmfHash, "LDFLAGS", ldflags);
+        setConfig(mkmfHash, "DLDFLAGS", "");
+        setConfig(mkmfHash, "LIBEXT", libext);
+        setConfig(mkmfHash, "OBJEXT", objext);
+        setConfig(mkmfHash, "LIBRUBYARG_STATIC", "");
+        setConfig(mkmfHash, "LIBRUBYARG_SHARED", "");
+        setConfig(mkmfHash, "LIBS", "");
+        setConfig(mkmfHash, "DLDLIBS", "");
+        setConfig(mkmfHash, "ENABLED_SHARED", "");
+        setConfig(mkmfHash, "LIBRUBY", "");
+        setConfig(mkmfHash, "LIBRUBY_A", "");
+        setConfig(mkmfHash, "LIBRUBYARG", "");
+        setConfig(mkmfHash, "prefix", "");
+        setConfig(mkmfHash, "ruby_install_name", jrubyScript());
+        setConfig(mkmfHash, "DLEXT", "bundle");
+        setConfig(mkmfHash, "CC", "cc ");
+        setConfig(mkmfHash, "LDSHARED", "cc ");
+        setConfig(mkmfHash, "OUTFLAG", "-o ");
+        setConfig(mkmfHash, "PATH_SEPARATOR", ":");
+        setConfig(mkmfHash, "INSTALL", "install -c ");
+        setConfig(mkmfHash, "RM", "rm -f");
+        setConfig(mkmfHash, "CP", "cp ");
+        setConfig(mkmfHash, "MAKEDIRS", "mkdir -p ");
+        
+        ruby.getObject().defineConstant("CROSS_COMPILING", ruby.getNil());
+        
+        configModule.defineConstant("MAKEFILE_CONFIG", mkmfHash);
     }
 
-    private static void setConfig(RubyHash configHash, String key, String value) {
-        Ruby runtime = configHash.getRuntime();
-        configHash.op_aset(runtime.getCurrentContext(), runtime.newString(key), runtime.newString(value));
+    private static void setConfig(RubyHash mkmfHash, String key, String value) {
+        Ruby runtime = mkmfHash.getRuntime();
+        mkmfHash.op_aset(runtime.getCurrentContext(), runtime.newString(key), runtime.newString(value));
     }
 
     public static String jrubyScript() {
