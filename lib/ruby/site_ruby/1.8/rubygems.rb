@@ -544,7 +544,7 @@ module Gem
     if @ruby.nil? then
       @ruby = File.join(ConfigMap[:bindir],
                         ConfigMap[:ruby_install_name])
-      @ruby << ConfigMap[:EXEEXT]
+#      @ruby << ConfigMap[:EXEEXT]
     end
 
     @ruby
