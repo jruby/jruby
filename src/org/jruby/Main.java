@@ -78,9 +78,11 @@ public class Main {
     public static void main(String[] args) {
         Main main = new Main();
         int status = main.run(args);
-        if (status != 0) {
-            System.exit(status);
-        }
+        
+        // For JRUBY-1650, we do a hard exit here, since this entry point
+        // should only be used by command-line execution, and we will want to
+        // shut down the VM at this point
+        System.exit(status);
     }
 
     public int run(String[] args) {
