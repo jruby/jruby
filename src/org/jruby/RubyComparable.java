@@ -111,13 +111,16 @@ public class RubyComparable {
      */
     @JRubyMethod(name = "==", required = 1)
     public static IRubyObject op_equal(ThreadContext context, IRubyObject recv, IRubyObject other) {
+        Ruby runtime = context.getRuntime();
+
         if (recv == other) {
-            return recv.getRuntime().getTrue();
+            return runtime.getTrue();
         }
-        Ruby runtime = recv.getRuntime();
-        IRubyObject result = null;
+
         try {
-            result = recv.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", other);
+            IRubyObject result = recv.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", other);
+            return RubyBoolean.newBoolean(
+                    runtime, cmpint(context, result, recv, other) == 0);
         } catch (RaiseException e) {
             if (e.getException().kind_of_p(recv.getRuntime().getStandardError()).isTrue()) {
                 return recv.getRuntime().getNil();
@@ -125,14 +128,8 @@ public class RubyComparable {
                 throw e;
             }
         }
-            
-        if(!(result instanceof RubyInteger)) {
-            return runtime.getNil();
-        }
-            
-        return RubyBoolean.newBoolean(runtime, cmpint(context, result, recv, other) == 0);
     }
-    
+
     /** cmp_gt
      * 
      */
