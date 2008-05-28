@@ -285,7 +285,7 @@ public class RubyIconv extends RubyObject {
         return getRuntime().newString(new ByteList(arr, 0, buf.limit()));
     }
 
-    @JRubyMethod(name = "iconv", required = 2, optional = 1, meta = true)
+    @JRubyMethod(name = "iconv", required = 2, rest = true, meta = true)
     public static IRubyObject iconv(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         return convertWithArgs(context, recv, args, "iconv");
     }
