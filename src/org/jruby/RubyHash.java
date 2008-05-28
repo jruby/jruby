@@ -61,6 +61,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
+import org.jruby.util.TypeConverter;
 
 // Design overview:
 //
@@ -134,14 +135,22 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "[]", rest = true, frame = true, meta = true)
     public static IRubyObject create(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         RubyClass klass = (RubyClass) recv;
+        Ruby runtime = context.getRuntime();
         RubyHash hash;
 
-        if (args.length == 1 && args[0] instanceof RubyHash) {
-            RubyHash otherHash = (RubyHash)args[0];
-            return new RubyHash(recv.getRuntime(), klass, otherHash);
+        if (args.length == 1) {
+            IRubyObject tmp = TypeConverter.convertToTypeWithCheck(
+                    args[0], runtime.getHash(), MethodIndex.TO_HASH, "to_hash");
+
+            if (!tmp.isNil()) {
+                RubyHash otherHash = (RubyHash) tmp;
+                return new RubyHash(runtime, klass, otherHash);
+            }
         }
 
-        if ((args.length & 1) != 0) throw recv.getRuntime().newArgumentError("odd number of args for Hash");
+        if ((args.length & 1) != 0) {
+            throw runtime.newArgumentError("odd number of args for Hash");
+        }
 
         hash = (RubyHash)klass.allocate();
         for (int i=0; i < args.length; i+=2) hash.op_aset(context, args[i], args[i+1]);
