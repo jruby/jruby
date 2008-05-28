@@ -39,6 +39,7 @@ import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.MalformedInputException;
 import java.nio.charset.UnmappableCharacterException;
 import java.nio.charset.UnsupportedCharsetException;
+
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.anno.JRubyClass;
@@ -170,10 +171,8 @@ public class RubyIconv extends RubyObject {
     @JRubyMethod(name = "open", required = 2, frame = true, meta = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject to, IRubyObject from, Block block) {
         Ruby runtime = context.getRuntime();
-        RubyClass klazz = (RubyClass)recv;
 
-        RubyIconv iconv = (RubyIconv) klazz.newInstance(
-                context, new IRubyObject[] {to, from}, Block.NULL_BLOCK);
+        RubyIconv iconv = newIconv(context, recv, to, from);
 
         if (!block.isGiven()) return iconv;
 
@@ -187,6 +186,14 @@ public class RubyIconv extends RubyObject {
         return result;
     }
     
+    private static RubyIconv newIconv(ThreadContext context, IRubyObject recv,
+            IRubyObject to, IRubyObject from) {
+        RubyClass klazz = (RubyClass)recv;
+
+        return (RubyIconv) klazz.newInstance(
+                context, new IRubyObject[] {to, from}, Block.NULL_BLOCK);
+    }
+
     @JRubyMethod(name = "initialize", required = 2, frame = true)
     public IRubyObject initialize(IRubyObject arg1, IRubyObject arg2, Block unusedBlock) {
         Ruby runtime = getRuntime();
@@ -314,13 +321,17 @@ public class RubyIconv extends RubyObject {
     }
 
     public static RubyArray convertWithArgs(ThreadContext context, IRubyObject recv, IRubyObject[] args, String function) {
-        String toEncoding = mapCharset(context, args[0]);
-        String fromEncoding = mapCharset(context, args[1]);
+        assert args.length >= 2;
 
-        RubyArray array = recv.getRuntime().newArray();
-        
-        for (int i = 2; i < args.length; i++) {
-            array.append(convert2(fromEncoding, toEncoding, args[i].convertToString()));
+        RubyArray array = context.getRuntime().newArray(args.length - 2);
+        RubyIconv iconv = newIconv(context, recv, args[0], args[1]);
+
+        try {
+            for (int i = 2; i < args.length; i++) {
+                array.append(iconv.iconv(new IRubyObject[] { args[i] }));
+            }
+        } finally {
+            iconv.close();
         }
 
         return array;
@@ -337,35 +348,4 @@ public class RubyIconv extends RubyObject {
         return RubyString.newString(original.getRuntime(), string);
     }
     */
-
-    // FIXME: We are assuming that original string will be raw bytes.  If -Ku is provided
-    // this will not be true, but that is ok for now.  Deal with that when someone needs it.
-    private static IRubyObject convert2(String fromEncoding, String toEncoding, RubyString original) {
-        // Don't bother to convert if it is already in toEncoding
-        if (fromEncoding.equals(toEncoding)) return original;
-        
-        try {
-            // Get all bytes from string and pretend they are not encoded in any way.
-            ByteList bytes = original.getByteList();
-            ByteBuffer buf = ByteBuffer.wrap(bytes.unsafeBytes(), bytes.begin(), bytes.length());
-
-            CharsetDecoder decoder = Charset.forName(getCharset(fromEncoding)).newDecoder();
-            
-            if (!isIgnore(fromEncoding)) decoder.onUnmappableCharacter(CodingErrorAction.REPORT);
-
-            CharBuffer cbuf = decoder.decode(buf);
-            CharsetEncoder encoder = Charset.forName(getCharset(toEncoding)).newEncoder();
-            
-            if (!isIgnore(toEncoding)) encoder.onUnmappableCharacter(CodingErrorAction.REPORT);
-
-            buf = encoder.encode(cbuf);
-            byte[] arr = buf.array();
-            return RubyString.newString(original.getRuntime(), new ByteList(arr,0,buf.limit()));
-        } catch (UnsupportedCharsetException e) {
-            throw original.getRuntime().newInvalidEncoding("invalid encoding");
-        } catch (UnmappableCharacterException e) {
-        } catch (CharacterCodingException e) {
-        }
-        return original.getRuntime().getNil();
-    }
 }
