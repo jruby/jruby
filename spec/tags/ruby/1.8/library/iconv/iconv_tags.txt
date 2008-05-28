@@ -14,7 +14,6 @@ fails(JRUBY-2543):The 'us-ascii' encoder accepts only the strict 7-bit ASCII set
 fails(JRUBY-2543):The 'utf-8' decoder accepts only strictly valid UTF-8 sequences
 fails(JRUBY-2543):The 'utf-8' decoder rejects surrogate characters
 fails(JRUBY-2543):The 'utf-16' decoder rejects surrogates without pairs
-fails(JRUBY-2543):The 'utf-16' encoder emits an empty string when the source input is empty
 fails(JRUBY-2543):The 'utf-16' encoder emits a byte-order mark on first non-empty output
 fails(JRUBY-2543):The 'utf-16be' decoder treats possible byte-order marks as regular characters
 fails(JRUBY-2543):The 'utf-16le' decoder treats possible byte-order marks as regular characters

@@ -1,2 +1,0 @@
-fails(JRUBY-2543):Iconv.open raises an Iconv::InvalidEncoding exception when an encoding cannot be found
-fails(JRUBY-2543):Iconv.open when called from a subclass of Iconv instantiates an object of that class
