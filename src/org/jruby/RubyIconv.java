@@ -169,10 +169,12 @@ public class RubyIconv extends RubyObject {
 
     @JRubyMethod(name = "open", required = 2, frame = true, meta = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject to, IRubyObject from, Block block) {
-        Ruby runtime = recv.getRuntime();
-        RubyIconv iconv =
-            (RubyIconv) runtime.fastGetClass("Iconv").newInstance(context,
-                    new IRubyObject[] { to, from }, Block.NULL_BLOCK);
+        Ruby runtime = context.getRuntime();
+        RubyClass klazz = (RubyClass)recv;
+
+        RubyIconv iconv = (RubyIconv) klazz.newInstance(
+                context, new IRubyObject[] {to, from}, Block.NULL_BLOCK);
+
         if (!block.isGiven()) return iconv;
 
         IRubyObject result = runtime.getNil();
