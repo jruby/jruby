@@ -206,9 +206,9 @@ public class RubyIconv extends RubyObject {
             if (!isIgnore(from)) fromEncoding.onUnmappableCharacter(CodingErrorAction.REPORT);
             if (!isIgnore(to)) toEncoding.onUnmappableCharacter(CodingErrorAction.REPORT);
         } catch (IllegalCharsetNameException e) {
-            throw runtime.newArgumentError("invalid encoding");
+            throw runtime.newInvalidEncoding("invalid encoding");
         } catch (UnsupportedCharsetException e) {
-            throw runtime.newArgumentError("invalid encoding");
+            throw runtime.newInvalidEncoding("invalid encoding");
         } catch (Exception e) {
             throw runtime.newSystemCallError(e.toString());
         }
