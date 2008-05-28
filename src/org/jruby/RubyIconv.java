@@ -232,26 +232,55 @@ public class RubyIconv extends RubyObject {
         return RubyString.newEmptyString(getRuntime());
     }
 
-    @JRubyMethod(name = "iconv", required = 1, optional = 2)
-    public IRubyObject iconv(IRubyObject[] args) {
-        Ruby runtime = getRuntime();
-        args = Arity.scanArgs(runtime, args, 1, 2);
+    @JRubyMethod
+    public IRubyObject iconv(IRubyObject str) {
+        return iconv(str, 0, -1);
+    }
+
+    @JRubyMethod
+    public IRubyObject iconv(IRubyObject str, IRubyObject startArg) {
+        int start = 0;
+        if (!startArg.isNil()) start = RubyNumeric.fix2int(startArg);
+        return iconv(str, start, -1);
+    }
+
+    @JRubyMethod
+    public IRubyObject iconv(IRubyObject str, IRubyObject startArg, IRubyObject endArg) {
         int start = 0;
         int end = -1;
 
-        if (args[0].isNil()) {
+        if (!startArg.isNil()) start = RubyNumeric.fix2int(startArg);
+        if (!endArg.isNil()) end = RubyNumeric.fix2int(endArg);
+
+        return iconv(str, start, end);
+    }
+    
+    private IRubyObject iconv(IRubyObject str, int start, int end) {
+        if (str.isNil()) {
             fromEncoding.reset();
             toEncoding.reset();
             return RubyString.newEmptyString(getRuntime());
         }
-        if (!args[0].respondsTo("to_str")) {
-            throw runtime.newTypeError("can't convert " + args[0].getMetaClass() + " into String");
+
+        return _iconv(str.convertToString(), start, end);
+    }
+
+    /**
+     * Variable-arity version for compatibility. Not bound to Ruby.
+     * @deprecated Use the versions with one, two or three arguments.
+     */
+    public IRubyObject iconv(IRubyObject[] args) {
+        switch (args.length) {
+        case 1:
+            return iconv(args[0]);
+        case 2:
+            return iconv(args[0], args[1]);
+        case 3:
+            return iconv(args[0], args[1], args[2]);
+        default:
+            Arity.raiseArgumentError(getRuntime(), args.length, 1, 2);
+            return null; // not reached
         }
-        if (!args[1].isNil()) start = RubyNumeric.fix2int(args[1]);
-        if (!args[2].isNil()) end = RubyNumeric.fix2int(args[2]);
-        
-        IRubyObject result = _iconv(args[0].convertToString(), start, end);
-        return result;
     }
 
     // FIXME: We are assuming that original string will be raw bytes.  If -Ku is provided
@@ -328,7 +357,7 @@ public class RubyIconv extends RubyObject {
 
         try {
             for (int i = 2; i < args.length; i++) {
-                array.append(iconv.iconv(new IRubyObject[] { args[i] }));
+                array.append(iconv.iconv(args[i]));
             }
         } finally {
             iconv.close();
