@@ -423,6 +423,7 @@ public class JRubyConstructor extends ConstructorImpl {
     public static Object constructRubyRegexp(final Constructor ctor, final Node node) {
         final Ruby runtime = ((JRubyConstructor)ctor).runtime;
         String s1 = ctor.constructScalar(node).toString();
+        // This should be fixed in some way
         return runtime.evalScriptlet(s1);
     }
 
