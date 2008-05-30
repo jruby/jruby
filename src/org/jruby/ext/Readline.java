@@ -89,7 +89,7 @@ public class Readline {
         hist.getSingletonClass().defineAnnotatedMethods(HistoryMethods.class);
     }
 
-    // We lazily initialise this in case Readline.readline has been overriden in ruby (s_readline)
+    // We lazily initialize this in case Readline.readline has been overridden in ruby (s_readline)
     protected static void initReadline(Ruby runtime, ConsoleHolder holder) throws IOException {
         holder.readline = new ConsoleReader();
         holder.readline.setUseHistory(false);
@@ -164,14 +164,23 @@ public class Readline {
         public static IRubyObject s_push(IRubyObject recv, IRubyObject[] lines) throws Exception {
             ConsoleHolder holder = getHolder(recv.getRuntime());
             for (int i = 0; i < lines.length; i++) {
-                holder.history.addToHistory(((RubyString) lines[i]).getUnicodeValue());
+                RubyString line = lines[i].convertToString();
+                holder.history.addToHistory(line.getUnicodeValue());
             }
             return recv.getRuntime().getNil();
         }
 
         @JRubyMethod(name = "pop")
+        @SuppressWarnings("unchecked")
         public static IRubyObject s_pop(IRubyObject recv) throws Exception {
-            return recv.getRuntime().getNil();
+            Ruby runtime = recv.getRuntime();
+            ConsoleHolder holder = getHolder(runtime);
+            List histList = holder.history.getHistoryList();
+
+            // TODO: Not fully implemented. We just return the last value,
+            // without really popping it.
+            String current = (String)histList.get(histList.size() - 1);
+            return runtime.newString(current);
         }
 
         @JRubyMethod(name = "to_a")
@@ -191,9 +200,16 @@ public class Readline {
 
         @JRubyMethod(name = "[]")
         public static IRubyObject s_hist_get(IRubyObject recv, IRubyObject index) {
-            ConsoleHolder holder = getHolder(recv.getRuntime());
+            Ruby runtime = recv.getRuntime();
+            ConsoleHolder holder = getHolder(runtime);
             int i = (int) index.convertToInteger().getLongValue();
-            return recv.getRuntime().newString((String) holder.history.getHistoryList().get(i));
+            try {
+                // TODO: MRI behavior is more complicated than that,
+                // there is some magic when dealing with negative indexes.
+                return runtime.newString((String) holder.history.getHistoryList().get(i));
+            } catch (IndexOutOfBoundsException ioobe) {
+                throw runtime.newIndexError("invalid history index: " + i);
+            }
         }
 
         @JRubyMethod(name = "[]=")
