@@ -87,6 +87,9 @@ public class Readline {
         mReadline.fastSetConstant("HISTORY", hist);
         hist.getSingletonClass().includeModule(runtime.getEnumerable());
         hist.getSingletonClass().defineAnnotatedMethods(HistoryMethods.class);
+
+        // MRI does similar thing on MacOS X with 'EditLine wrapper'.
+        mReadline.fastSetConstant("VERSION", runtime.newString("JLine wrapper"));
     }
 
     // We lazily initialize this in case Readline.readline has been overridden in ruby (s_readline)
