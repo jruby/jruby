@@ -1,11 +1,6 @@
-@echo off
-setlocal
-rem ---------------------------------------------------------------------------
-
-call "%~dp0_jrubyvars" %*
-
-if %JRUBY_BAT_ERROR%==0 "%_STARTJAVA%" %_VM_OPTS% -Xbootclasspath/a:"%CP%" -cp "%CLASSPATH%" -Djruby.home="%JRUBY_HOME%" -Djruby.lib="%JRUBY_HOME%\lib" -Djruby.shell="cmd.exe" -Djruby.script=jruby.bat org.jruby.Main %JRUBY_OPTS% "%JRUBY_HOME%\bin\rake" %_RUBY_OPTS%
-set E=%ERRORLEVEL%
-
-call "%~dp0_jrubycleanup"
-endlocal
+@ECHO OFF
+REM IF NOT "%~f0" == "~f0" GOTO :WinNT
+@"jruby.bat" -S "rake" %1 %2 %3 %4 %5 %6 %7 %8 %9
+GOTO :EOF
+:WinNT
+@"jruby.bat" "%~dpn0" %*
