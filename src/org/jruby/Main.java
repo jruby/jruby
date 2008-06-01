@@ -44,6 +44,7 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.SimpleSampler;
 
 /**
@@ -77,6 +78,7 @@ public class Main {
 
     public static void main(String[] args) {
         Main main = new Main();
+        
         int status = main.run(args);
         if (status != 0) {
             System.exit(status);
@@ -95,6 +97,25 @@ public class Main {
                 }
             }
             return mee.getStatus();
+        } catch (OutOfMemoryError oome) {
+            // produce a nicer error since Rubyists aren't used to seeing this
+            System.gc();
+            
+            String memoryMax = SafePropertyAccessor.getProperty("jruby.memory.max");
+            String message = "";
+            if (memoryMax != null) {
+                message = " of " + memoryMax;
+            }
+            System.err.println("Error: Your application used more memory than the safety cap" + message + ".");
+            System.err.println("Specify -J-Xmx####m to increase it (#### = cap size in MB).");
+            
+            if (config.getVerbose()) {
+                System.err.println("Exception trace follows:");
+                oome.printStackTrace();
+            } else {
+                System.err.println("Specify -w for full OutOfMemoryError stack trace");
+            }
+            return 1;
         } catch (ThreadKill kill) {
             return 0;
         }
