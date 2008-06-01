@@ -129,7 +129,7 @@ do
 done
 
 # Add a property to report memory max
-JAVA_OPTS="$JAVA_OPTS -Djruby.memory.max=${JAVA_MEM:4}"
+JAVA_OPTS="$JAVA_OPTS -Djruby.memory.max=${JAVA_MEM:4} -Djruby.stack.max=${JAVA_STACK:4}"
 
 # Append the rest of the arguments
 ruby_args=("${ruby_args[@]}" "$@")

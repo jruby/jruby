@@ -116,6 +116,25 @@ public class Main {
                 System.err.println("Specify -w for full OutOfMemoryError stack trace");
             }
             return 1;
+        } catch (StackOverflowError soe) {
+            // produce a nicer error since Rubyists aren't used to seeing this
+            System.gc();
+            
+            String stackMax = SafePropertyAccessor.getProperty("jruby.stack.max");
+            String message = "";
+            if (stackMax != null) {
+                message = " of " + stackMax;
+            }
+            System.err.println("Error: Your application used more stack memory than the safety cap" + message + ".");
+            System.err.println("Specify -J-Xss####k to increase it (#### = cap size in KB).");
+            
+            if (config.getVerbose()) {
+                System.err.println("Exception trace follows:");
+                soe.printStackTrace();
+            } else {
+                System.err.println("Specify -w for full StackOverflowError stack trace");
+            }
+            return 1;
         } catch (ThreadKill kill) {
             return 0;
         }
