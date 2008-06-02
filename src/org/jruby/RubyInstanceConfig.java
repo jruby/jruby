@@ -52,6 +52,16 @@ import org.jruby.util.SafePropertyAccessor;
 
 public class RubyInstanceConfig {
 
+    /**
+     * The max count of active methods eligible for JIT-compilation.
+     */
+    private static final int JIT_MAX_METHODS_LIMIT = 4096;
+
+    /**
+     * The JIT threshold to the specified method invocation count.
+     */
+    private static final int JIT_THRESHOLD = 50;
+
     public enum CompileMode {
         JIT, FORCE, OFF;
 
@@ -247,8 +257,10 @@ public class RubyInstanceConfig {
             jitLoggingVerbose = SafePropertyAccessor.getBoolean("jruby.jit.logging.verbose");
             String logEvery = SafePropertyAccessor.getProperty("jruby.jit.logEvery");
             jitLogEvery = logEvery == null ? 0 : Integer.parseInt(logEvery);
-            jitThreshold = threshold == null ? 50 : Integer.parseInt(threshold);
-            jitMax = max == null ? 4096 : Integer.parseInt(max);
+            jitThreshold = threshold == null ?
+                    JIT_THRESHOLD : Integer.parseInt(threshold);
+            jitMax = max == null ?
+                    JIT_MAX_METHODS_LIMIT : Integer.parseInt(max);
         }
 
         // default ClassCache using jitMax as a soft upper bound
@@ -347,10 +359,10 @@ public class RubyInstanceConfig {
                 .append("       (EXPERIMENTAL) Turn on fast operators for Fixnum. Default is false\n")
                 .append("\nJIT SETTINGS:\n")
                 .append("    jruby.jit.threshold=<invocation count>\n")
-                .append("       Set the JIT threshold to the specified method invocation count. Default is 20\n")
+                .append("       Set the JIT threshold to the specified method invocation count. Default is " + JIT_THRESHOLD + ".\n")
                 .append("    jruby.jit.max=<method count>\n")
                 .append("       Set the max count of active methods eligible for JIT-compilation.\n")
-                .append("       Default is 2048 per runtime. A value of 0 disables JIT, -1 disables max.\n")
+                .append("       Default is " + JIT_MAX_METHODS_LIMIT + " per runtime. A value of 0 disables JIT, -1 disables max.\n")
                 .append("    jruby.jit.logging=true|false\n")
                 .append("       Enable JIT logging (reports successful compilation). Default is false\n")
                 .append("    jruby.jit.logging.verbose=true|false\n")
