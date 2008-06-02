@@ -644,9 +644,9 @@
 
   <target name="fetch-stable-specs" depends="prepare, detect-stable-specs-need-update" if="stable-specs-need-update">
     <echo message="Downlodaing stable mspec..."/>
-    <get src="http://github.com/brixen/mspec/tarball/${mspec.revision}" dest="${build.dir}/mspec.tgz"/>
+    <get src="http://github.com/rubyspec/mspec/tarball/${mspec.revision}" dest="${build.dir}/mspec.tgz"/>
     <echo message="Downlodaing stable rubyspecs..."/>
-    <get src="http://github.com/brixen/rubyspec/tarball/${rubyspecs.revision}" dest="${build.dir}/rubyspec.tgz"/>
+    <get src="http://github.com/rubyspec/rubyspec/tarball/${rubyspecs.revision}" dest="${build.dir}/rubyspec.tgz"/>
 
     <!-- Wipe the old mspec/rubyspecs, if any, and exctract new ones -->
 
@@ -655,7 +655,7 @@
     <!-- TODO: We use 'tar' binary since Ant doesn't understand tarballs from GitHub,
          at least in cases when long file names are present
     <untar src="${build.dir}/mspec.tgz" dest="${mspec.dir}" compression="gzip">
-      <globmapper from="brixen-mspec-${mspec.revision}/*" to="*"/>
+      <globmapper from="rubyspec-mspec-${mspec.revision}/*" to="*"/>
     </untar> -->
     <exec executable="tar" dir="${mspec.dir}" failonerror="true">
       <arg line="-xzf ${build.dir}/mspec.tgz --strip-components=1"/>
@@ -666,7 +666,7 @@
     <mkdir dir="${rubyspec.dir}"/>
     <!-- TODO: disabled 'untar' due to problem, see comment above
     <untar src="${build.dir}/rubyspec.tgz" dest="${rubyspec.dir}" compression="gzip">
-        <globmapper from="brixen-rubyspec-${rubyspecs.revision}/*" to="*"/>
+        <globmapper from="rubyspec-rubyspec-${rubyspecs.revision}/*" to="*"/>
     </untar> -->
     <exec executable="tar" dir="${rubyspec.dir}" failonerror="true">
       <arg line="-xzf ${build.dir}/rubyspec.tgz --strip-components=1"/>
@@ -716,7 +716,7 @@
       <exec dir="${spec.dir}" executable="git">
           <arg value="clone"/>
           <arg value="--depth"/><arg value="1"/>
-          <arg value="git://github.com/brixen/rubyspec.git"/>
+          <arg value="git://github.com/rubyspec/rubyspec.git"/>
           <arg value="${rubyspec.dir}"/>
       </exec>
 
@@ -724,7 +724,7 @@
       <exec dir="${spec.dir}" executable="git">
                 <arg value="clone"/>
                 <arg value="--depth"/><arg value="1"/>
-                <arg value="git://github.com/brixen/mspec.git"/>
+                <arg value="git://github.com/rubyspec/mspec.git"/>
                 <arg value="${mspec.dir}"/>
       </exec>
   </target>

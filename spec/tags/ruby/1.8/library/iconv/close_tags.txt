@@ -1,0 +1,1 @@
+fails(JRUBY-2543):Iconv#close returns a string containing the byte sequence to change the output buffer to its initial shift state

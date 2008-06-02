@@ -1,0 +1,1 @@
+fails(JRUBY-2603):URI.extract allows the user to specify a list of acceptable protocols of URIs to scan for

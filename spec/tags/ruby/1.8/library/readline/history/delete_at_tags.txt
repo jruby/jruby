@@ -1,0 +1,3 @@
+fails(JRUBY-2602):Readline::HISTORY.delete_at deletes and returns the history entry at the specified index
+fails(JRUBY-2602):Readline::HISTORY.delete_at raises an IndexError when the given index is greater than the history size
+fails(JRUBY-2602):Readline::HISTORY.delete_at taints the returned strings
