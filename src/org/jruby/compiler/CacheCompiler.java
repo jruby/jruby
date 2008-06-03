@@ -20,6 +20,8 @@ public interface CacheCompiler {
     
     public void cacheSymbol(StandardASMCompiler.AbstractMethodCompiler method, String symbol);
     
+    public void cacheFixnum(StandardASMCompiler.AbstractMethodCompiler method, long value);
+    
     public void cacheBigInteger(StandardASMCompiler.AbstractMethodCompiler method, BigInteger bigint);
     
     public void cacheClosure(StandardASMCompiler.AbstractMethodCompiler method, String closureMethod);

@@ -9,6 +9,7 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.Ruby;
+import org.jruby.RubyFixnum;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.CacheCompiler;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -35,6 +36,7 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
     Map<String, String> byteLists = new HashMap<String, String>();
     Map<BigInteger, String> bigIntegers = new HashMap<BigInteger, String>();
     Map<String, String> symbols = new HashMap<String, String>();
+    Map<Long, String> fixnums = new HashMap<Long, String>();
     
     public FieldBasedCacheCompiler(StandardASMCompiler scriptCompiler) {
         this.scriptCompiler = scriptCompiler;
@@ -149,6 +151,46 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
         method.loadRuntime();
         method.method.invokevirtual(scriptCompiler.getClassname(), methodName, 
                 sig(RubySymbol.class, params(Ruby.class)));
+    }
+    
+    public void cacheFixnum(StandardASMCompiler.AbstractMethodCompiler method, long value) {
+        String methodName = fixnums.get(value);
+        if (methodName == null) {
+            String fieldName = scriptCompiler.getNewConstant(ci(RubyFixnum.class), "symbol");
+            
+            methodName = "getFixnum" + fieldName;
+            fixnums.put(value, methodName);
+            
+            ClassVisitor cv = scriptCompiler.getClassVisitor();
+            
+            SkinnyMethodAdapter symMethod = new SkinnyMethodAdapter(
+                    cv.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_SYNTHETIC, methodName, 
+                            sig(RubyFixnum.class, Ruby.class), null, null));
+            symMethod.start();
+            symMethod.aload(0);
+            symMethod.getfield(scriptCompiler.getClassname(), fieldName, ci(RubyFixnum.class));
+            symMethod.dup();
+            symMethod.astore(2);
+            
+            Label ifNullEnd = new Label();
+            symMethod.ifnull(ifNullEnd);
+            symMethod.aload(2);
+            symMethod.areturn();
+            symMethod.label(ifNullEnd);
+            symMethod.aload(0);
+            symMethod.aload(1);
+            symMethod.ldc(value);
+            symMethod.invokevirtual(p(Ruby.class), "newFixnum", sig(RubyFixnum.class, long.class));
+            symMethod.dup_x1();
+            symMethod.putfield(scriptCompiler.getClassname(), fieldName, ci(RubyFixnum.class));
+            symMethod.areturn();
+            symMethod.end();
+        }
+        
+        method.loadThis();
+        method.loadRuntime();
+        method.method.invokevirtual(scriptCompiler.getClassname(), methodName, 
+                sig(RubyFixnum.class, params(Ruby.class)));
     }
     
     public void cacheClosure(StandardASMCompiler.AbstractMethodCompiler method, String closureMethod) {
