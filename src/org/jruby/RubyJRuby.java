@@ -35,6 +35,10 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.anno.JRubyClass;
 
+import org.jruby.ast.ArgsNode;
+import org.jruby.ast.ArgumentNode;
+import org.jruby.ast.ListNode;
+import org.jruby.ast.LocalAsgnNode;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.Arity;
@@ -47,6 +51,8 @@ import org.jruby.ast.Node;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.ASTCompiler;
 import org.jruby.compiler.impl.StandardASMCompiler;
+import org.jruby.internal.runtime.methods.DefaultMethod;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.InterpretedBlock;
 import org.jruby.runtime.ThreadContext;
 import org.objectweb.asm.ClassReader;
@@ -86,6 +92,8 @@ public class RubyJRuby {
     public static class ExtLibrary implements Library {
         public void load(Ruby runtime, boolean wrap) throws IOException {
             RubyJRuby.createJRubyExt(runtime);
+            
+            runtime.getMethod().defineAnnotatedMethods(MethodExtensions.class);
         }
     }
     
@@ -245,6 +253,56 @@ public class RubyJRuby {
                 steal_method(recv, type, args[i]);
             }
             return recv.getRuntime().getNil();
+        }
+    }
+    
+    public static class MethodExtensions {
+        @JRubyMethod(name = "args")
+        public static IRubyObject methodArgs(IRubyObject recv) {
+            Ruby ruby = recv.getRuntime();
+            RubyMethod rubyMethod = (RubyMethod)recv;
+            
+            DynamicMethod method = rubyMethod.method;
+            
+            if (method instanceof DefaultMethod) {
+                DefaultMethod interpMethod = (DefaultMethod)method;
+                ArgsNode args = interpMethod.getArgsNode();
+                StaticScope scope = interpMethod.getStaticScope();
+                
+                RubyArray argsArray = RubyArray.newArray(ruby);
+                
+                RubyArray reqArray = RubyArray.newArray(ruby);
+                ListNode requiredArgs = args.getArgs();
+                for (int i = 0; requiredArgs != null && i < requiredArgs.size(); i++) {
+                    ArgumentNode arg = (ArgumentNode)requiredArgs.get(i);
+                    reqArray.append(RubySymbol.newSymbol(ruby, arg.getName()));
+                }
+                argsArray.append(reqArray);
+                
+                RubyArray optArray = RubyArray.newArray(ruby);
+                ListNode optArgs = args.getOptArgs();
+                for (int i = 0; optArgs != null && i < optArgs.size(); i++) {
+                    LocalAsgnNode arg = (LocalAsgnNode)optArgs.get(i);
+                    optArray.append(RubySymbol.newSymbol(ruby, arg.getName()));
+                }
+                argsArray.append(optArray);
+                
+                if (args.getRestArgNode() != null) {
+                    argsArray.append(RubySymbol.newSymbol(ruby, args.getRestArgNode().getName()));
+                } else {
+                    argsArray.append(ruby.getNil());
+                }
+                
+                if (args.getBlockArgNode() != null) {
+                    argsArray.append(RubySymbol.newSymbol(ruby, args.getBlockArgNode().getName()));
+                } else {
+                    argsArray.append(ruby.getNil());
+                }
+                
+                return argsArray;
+            }
+            
+            throw ruby.newTypeError("Method args are only available for standard interpreted or jitted methods");
         }
     }
 }

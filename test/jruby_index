@@ -80,3 +80,4 @@ test_null_channel
 test_irubyobject_java_passing
 test_jruby_object_input_stream
 test_jar_on_load_path
+test_jruby_ext
