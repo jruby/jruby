@@ -15,9 +15,12 @@ while gets
   print $_
 end
 
+# A little hacky...gets before ARGV to shift off and open file
+yytable_prefix = ARGV.shift || ''
+
 table4 = get_numbers_until_end_block([])
 
-puts "    protected static final short[] yyTable = YyTables.yyTable();"
+puts "    protected static final short[] yyTable = #{yytable_prefix}YyTables.yyTable();"
 
 while gets
   break if /protected static final short\[\] yyCheck = \{/ =~ $_
@@ -26,7 +29,7 @@ end
 
 check4 = get_numbers_until_end_block([])
 
-puts "    protected static final short[] yyCheck = YyTables.yyCheck();"
+puts "    protected static final short[] yyCheck = #{yytable_prefix}YyTables.yyCheck();"
 
 while gets
   print $_
@@ -60,11 +63,11 @@ def printShortMethod(f, table, name)
   f.puts
 end
 
-open("YyTables.java", "w") { |f|
+open("#{yytable_prefix}YyTables.java", "w") { |f|
   f.print <<END
 package org.jruby.parser;
 
-public class YyTables {
+public class #{yytable_prefix}YyTables {
    private static short[] combine(short[] t1, short[] t2, 
                                   short[] t3, short[] t4) {
       short[] t = new short[t1.length + t2.length + t3.length + t4.length];
