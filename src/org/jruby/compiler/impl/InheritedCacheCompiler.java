@@ -8,6 +8,7 @@ package org.jruby.compiler.impl;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.Ruby;
+import org.jruby.RubyFixnum;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
@@ -21,9 +22,11 @@ import static org.jruby.util.CodegenUtils.*;
 public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
     public static final int MAX_INHERITED_CALL_SITES = 50;
     public static final int MAX_INHERITED_SYMBOLS = 50;
+    public static final int MAX_INHERITED_FIXNUMS = 50;
     
     int callSiteCount = 0;
     int inheritedSymbolCount = 0;
+    int inheritedFixnumCount = 0;
     
     public InheritedCacheCompiler(StandardASMCompiler scriptCompiler) {
         super(scriptCompiler);
@@ -75,6 +78,26 @@ public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
             method.loadRuntime();
             method.method.ldc(symbol);
             method.method.invokevirtual(scriptCompiler.getClassname(), methodName, sig(RubySymbol.class, Ruby.class, String.class));
+        }
+    }
+    
+    Map<Long, String> inheritedFixnums = new HashMap<Long, String>();
+    
+    @Override
+    public void cacheFixnum(StandardASMCompiler.AbstractMethodCompiler method, long value) {
+        String methodName = inheritedFixnums.get(value);
+        if (methodName == null && inheritedFixnumCount < MAX_INHERITED_FIXNUMS) {
+            methodName = "getFixnum" + inheritedFixnumCount++;
+            inheritedFixnums.put(value, methodName);
+        }
+        
+        if (methodName == null) {
+            super.cacheFixnum(method, value);
+        } else {
+            method.loadThis();
+            method.loadRuntime();
+            method.method.ldc(value);
+            method.method.invokevirtual(scriptCompiler.getClassname(), methodName, sig(RubyFixnum.class, Ruby.class, long.class));
         }
     }
 }
