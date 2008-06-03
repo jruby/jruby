@@ -23,7 +23,7 @@ def invoking
 end
 
 puts "Test ruby method: 100k loops calling self's foo 100 times"
-10.times {
+(ARGV[0] || 10).to_i.times {
   puts Benchmark.measure {
     invoking
   }
