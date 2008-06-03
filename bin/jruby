@@ -98,6 +98,14 @@ do
             JAVA_MEM=$val
         elif [ "${val:0:4}" = "-Xss" ]; then
             JAVA_STACK=$val
+        elif [ "${val}" = "" ]; then
+            $JAVA_CMD -help
+            echo "(Prepend -J in front of these options when using 'jruby' command)" 
+            exit
+        elif [ "${val}" = "-X" ]; then
+            $JAVA_CMD -X
+            echo "(Prepend -J in front of these options when using 'jruby' command)" 
+            exit
         else
             java_args=("${java_args[@]}" "${1:2}")
         fi
@@ -118,6 +126,12 @@ do
           fi
           JAVA_CMD="$JAVA_HOME/bin/jdb"
         fi ;;
+     --client)
+        java_args=("${java_args[@]}" "-client") ;;
+     --server)
+        java_args=("${java_args[@]}" "-server") ;;
+     --sample)
+        java_args=("${java_args[@]}" "-Xprof") ;;
      # Abort processing on the double dash
      --) break ;;
      # Other opts go to ruby

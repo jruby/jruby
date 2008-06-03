@@ -43,6 +43,18 @@ goto :EOF
 :procarg
 if "%_CMP%" == "" goto vmoptsDone
 
+if "%_CMP%" == "--server" (
+  set _CMP="-J-server"
+)
+
+if "%_CMP%" == "--client" (
+  set _CMP="-J-client"
+)
+
+if "%_CMP%" == "--sample" (
+  set _CMP="-J-Xprof"
+)
+
 rem now unescape -q and -d
 set _CMP=%_CMP:-q="%
 set _CMP=%_CMP:-d=-%

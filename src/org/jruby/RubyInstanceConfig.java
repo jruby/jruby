@@ -299,7 +299,8 @@ public class RubyInstanceConfig {
                 .append("  -Idirectory     specify $LOAD_PATH directory (may be used more than once)\n")
                 .append("  -J[java option] pass an option on to the JVM (e.g. -J-Xmx512m)\n")
                 .append("                    use --properties to list JRuby properties\n")
-                .append("  -Kkcode         specifies KANJI (Japanese) code-set\n")
+                .append("                    run 'java -help' for a list of other Java options\n")
+                .append("  -Kkcode         specifies code-set (e.g. -Ku for Unicode\n")
                 .append("  -l              enable line ending processing\n")
                 .append("  -n              assume 'while gets(); ... end' loop around your script\n")
                 .append("  -p              assume loop like -n but print line also like sed\n")
@@ -316,6 +317,11 @@ public class RubyInstanceConfig {
                 .append("  --debug         sets the execution mode most suitable for debugger functionality\n")
                 .append("  --jdb           runs JRuby process under JDB\n")
                 .append("  --properties    List all configuration Java properties (pass -J-Dproperty=value)\n")
+                .append("  --sample        run with profiling using the JVM's sampling profiler\n")
+                .append("  --client        use the non-optimizing \"client\" JVM (improves startup)\n")
+                .append("                    this is the default on most systems\n")
+                .append("  --server        use the optimizing \"server\" JVM (improves perf)\n")
+                .append("                    may be default on higher-end systems\n")
                 .append("  --version       print the version\n");
 
         return sb.toString();
@@ -806,9 +812,11 @@ public class RubyInstanceConfig {
 //                    case 'x' :
 //                        break;
                 case 'X':
-                    String extendedOption = grabValue("jruby: missing extended option, listing available options\n" + getExtendedHelp());
+                    String extendedOption = grabOptionalValue();
 
-                    if (extendedOption.equals("-O")) {
+                    if (extendedOption == null) {
+                        throw new MainExitException(0, "jruby: missing extended option, listing available options\n" + getExtendedHelp());
+                    } else if (extendedOption.equals("-O")) {
                         objectSpaceEnabled = false;
                     } else if (extendedOption.equals("+O")) {
                         objectSpaceEnabled = true;
