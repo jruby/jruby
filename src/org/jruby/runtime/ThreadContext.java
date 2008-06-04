@@ -379,8 +379,7 @@ public final class ThreadContext {
     }
     
     public Frame getPreviousFrame() {
-        int size = frameIndex + 1;
-        return size <= 1 ? null : frameStack[size - 2];
+        return frameIndex < 1 ? null : frameStack[frameIndex - 1];
     }
     
     public int getFrameCount() {
