@@ -547,6 +547,9 @@
 	<sysproperty key="emma.coverage.out.merge" value="true" />
 
 	<jvmarg value="-ea"/>
+        
+        <!-- force client VM to improve test run times -->
+        <jvmarg value="-client"/>
 
 	<formatter type="xml"/>
 	<formatter type="brief" usefile="false" />
