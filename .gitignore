@@ -1,0 +1,14 @@
+bin/*
+build
+target
+dist
+lib/jruby*.jar
+lib/ruby/gems/1.8/source_cache
+lib/ruby/gems/1.8/doc/*
+lib/ruby/gems/1.8/gems/*
+lib/ruby/gems/1.8/specifications/*
+lib/ruby/gems/1.8/cache/*
+nbproject/private
+share
+latest_source_cache
+src_gen
