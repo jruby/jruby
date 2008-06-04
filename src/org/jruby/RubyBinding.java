@@ -123,7 +123,6 @@ public class RubyBinding extends RubyObject {
         currentFrame.setJumpTarget(previousFrame.getJumpTarget() != null ? previousFrame.getJumpTarget() : previousFrame);
         
         Binding binding = new Binding(previousFrame, context.getBindingRubyClass(), context.getCurrentScope());
-        //Binding.createBinding(previousFrame, context.getCurrentScope());
         
         return new RubyBinding(runtime, runtime.getBinding(), binding);
     }

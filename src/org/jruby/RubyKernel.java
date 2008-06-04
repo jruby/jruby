@@ -692,8 +692,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "binding", frame = true, module = true, visibility = PRIVATE)
     public static RubyBinding binding(IRubyObject recv, Block block) {
-        // FIXME: Pass block into binding
-        return recv.getRuntime().newBinding();
+        return RubyBinding.newBindingForEval(recv.getRuntime());
     }
 
     @JRubyMethod(name = {"block_given?", "iterator?"}, frame = true, module = true, visibility = PRIVATE)
