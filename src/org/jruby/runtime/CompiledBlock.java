@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.ast.util.ArgsUtil;
@@ -85,49 +86,73 @@ public class CompiledBlock extends BlockBody {
 
     @Override
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
-        return yield(context, value, null, null, false, binding, type);
-    }
-    
-    public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
-        if (klass == null) {
-            self = binding.getSelf();
-            binding.getFrame().setSelf(self);
-        }
+        IRubyObject self = prepareSelf(binding);
 
-        // handle as though it's just an array coming in...i.e. it should be multiassigned or just 
-        // assigned as is to var 0.
-        // FIXME for now, since masgn isn't supported, this just wraps args in an IRubyObject[], 
-        // since single vars will want that anyway
-        Visibility oldVis = binding.getFrame().getVisibility();
-        IRubyObject[] realArgs = aValue ? 
-                setupBlockArgs(context, args, self) : setupBlockArg(context, args, self); 
-        pre(context, klass, binding);
+        IRubyObject[] realArgs = setupBlockArg(context.getRuntime(), value, self); 
+        Visibility oldVis = pre(context, null, binding);
         
         try {
             return callback.call(context, self, realArgs);
         } catch (JumpException.BreakJump bj) {
-            if (bj.getTarget() == null) {
-                bj.setTarget(this);
-            }
-            throw bj;
+            return handleBreakJump(context, bj);
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
-            return type == Block.Type.LAMBDA ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
+            return handleNextJump(context, nj, type);
         } finally {
-            binding.getFrame().setVisibility(oldVis);
-            post(context, binding);
+            post(context, binding, oldVis);
         }
     }
     
-    protected void pre(ThreadContext context, RubyModule klass, Binding binding) {
-        context.preYieldSpecificBlock(binding, scope, klass);
+    public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
+        if (klass == null) {
+            self = prepareSelf(binding);
+        }
+
+        IRubyObject[] realArgs = aValue ? 
+                setupBlockArgs(context, args, self) : setupBlockArg(context.getRuntime(), args, self); 
+        Visibility oldVis = pre(context, klass, binding);
+        
+        try {
+            return callback.call(context, self, realArgs);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreakJump(context, bj);
+        } catch (JumpException.NextJump nj) {
+            // A 'next' is like a local return from the block, ending this call or yield.
+            return handleNextJump(context, nj, type);
+        } finally {
+            post(context, binding, oldVis);
+        }
     }
     
-    protected void post(ThreadContext context, Binding binding) {
+    private IRubyObject prepareSelf(Binding binding) {
+        IRubyObject self = binding.getSelf();
+        binding.getFrame().setSelf(self);
+        
+        return self;
+    }
+    
+    private IRubyObject handleBreakJump(ThreadContext context, JumpException.BreakJump bj) {
+        if (bj.getTarget() == null) {
+                bj.setTarget(this);
+        }
+        throw bj;
+    }
+    
+    private IRubyObject handleNextJump(ThreadContext context, JumpException.NextJump nj, Block.Type type) {
+        return type == Block.Type.LAMBDA ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
+    }
+    
+    protected Visibility pre(ThreadContext context, RubyModule klass, Binding binding) {
+        context.preYieldSpecificBlock(binding, scope, klass);
+        return binding.getFrame().getVisibility();
+    }
+    
+    protected void post(ThreadContext context, Binding binding, Visibility vis) {
+        binding.getFrame().setVisibility(vis);
         context.postYield(binding);
     }
 
-    private IRubyObject[] setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self) {
+    protected IRubyObject[] setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self) {
         switch (argumentType) {
         case ZERO_ARGS:
             return IRubyObject.NULL_ARRAY;
@@ -135,36 +160,44 @@ public class CompiledBlock extends BlockBody {
         case SINGLE_RESTARG:
             return new IRubyObject[] {value};
         default:
-            int length = arrayLength(value);
-            switch (length) {
-            case 0:
-                value = context.getRuntime().getNil();
-                break;
-            case 1:
-                value = ((RubyArray)value).eltInternal(0);
-                break;
-            default:
-                context.getRuntime().getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" +
-                        length + " for 1)");
-            }
-            return new IRubyObject[] {value};
+            return defaultArgsLogic(context.getRuntime(), value);
         }
     }
+    
+    private IRubyObject[] defaultArgsLogic(Ruby ruby, IRubyObject value) {
+        int length = arrayLength(value);
+        switch (length) {
+        case 0:
+            value = ruby.getNil();
+            break;
+        case 1:
+            value = ((RubyArray)value).eltInternal(0);
+            break;
+        default:
+            ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" +
+                    length + " for 1)");
+        }
+        return new IRubyObject[] {value};
+    }
 
-    private IRubyObject[] setupBlockArg(ThreadContext context, IRubyObject value, IRubyObject self) {
+    protected IRubyObject[] setupBlockArg(Ruby ruby, IRubyObject value, IRubyObject self) {
         switch (argumentType) {
         case ZERO_ARGS:
             return IRubyObject.NULL_ARRAY;
         case MULTIPLE_ASSIGNMENT:
         case SINGLE_RESTARG:
-            return new IRubyObject[] {ArgsUtil.convertToRubyArray(context.getRuntime(), value, hasMultipleArgsHead)};
+            return new IRubyObject[] {ArgsUtil.convertToRubyArray(ruby, value, hasMultipleArgsHead)};
         default:
-            if (value == null) {
-                context.getRuntime().getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (0 for 1)");
-                return new IRubyObject[] {context.getRuntime().getNil()};
-            }
-            return new IRubyObject[] {value};
+            return defaultArgLogic(ruby, value);
         }
+    }
+    
+    private IRubyObject[] defaultArgLogic(Ruby ruby, IRubyObject value) {
+        if (value == null) {
+            ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (0 for 1)");
+            return new IRubyObject[] {ruby.getNil()};
+        }
+        return new IRubyObject[] {value};
     }
     
     public StaticScope getStaticScope() {

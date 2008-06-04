@@ -56,84 +56,9 @@ public class CompiledSharedScopeBlock extends CompiledBlockLight {
         super(arity, containingScope, callback, hasMultipleArgsHead, argumentType);
     }
     
-    @Override
-    protected void pre(ThreadContext context, RubyModule klass, Binding binding) {
+    protected Visibility pre(ThreadContext context, RubyModule klass, Binding binding) {
         context.preForBlock(binding, klass);
-    }
-    
-    @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
-        if (klass == null) {
-            self = binding.getSelf();
-            binding.getFrame().setSelf(self);
-        }
-
-        // handle as though it's just an array coming in...i.e. it should be multiassigned or just 
-        // assigned as is to var 0.
-        // FIXME for now, since masgn isn't supported, this just wraps args in an IRubyObject[], 
-        // since single vars will want that anyway
-        Visibility oldVis = binding.getFrame().getVisibility();
-        try {
-            IRubyObject[] realArgs = aValue ? 
-                    setupBlockArgs(context, args, self) : setupBlockArg(context, args, self); 
-            pre(context, klass, binding);
-            
-            // NOTE: Redo jump handling is within compiled closure, wrapping the body
-            try {
-                return callback.call(context, self, realArgs);
-            } catch (JumpException.BreakJump bj) {
-                if (bj.getTarget() == null) {
-                    bj.setTarget(this);
-                }
-                throw bj;
-            }
-        } catch (JumpException.NextJump nj) {
-            // A 'next' is like a local return from the block, ending this call or yield.
-            return type == Block.Type.LAMBDA ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
-        } finally {
-            binding.getFrame().setVisibility(oldVis);
-            post(context, binding);
-        }
-    }
-
-    private IRubyObject[] setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self) {
-        switch (argumentType) {
-        case ZERO_ARGS:
-            return IRubyObject.NULL_ARRAY;
-        case MULTIPLE_ASSIGNMENT:
-            return new IRubyObject[] {value};
-        default:
-            int length = arrayLength(value);
-            switch (length) {
-            case 0:
-                value = context.getRuntime().getNil();
-                break;
-            case 1:
-                value = ((RubyArray)value).eltInternal(0);
-                break;
-            default:
-                context.getRuntime().getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" +
-                        length + " for 1)");
-            }
-            return new IRubyObject[] {value};
-        }
-    }
-
-    private IRubyObject[] setupBlockArg(ThreadContext context, IRubyObject value, IRubyObject self) {
-        switch (argumentType) {
-        case ZERO_ARGS:
-            return IRubyObject.NULL_ARRAY;
-        case MULTIPLE_ASSIGNMENT:
-            return new IRubyObject[] {ArgsUtil.convertToRubyArray(context.getRuntime(), value, hasMultipleArgsHead)};
-        default:
-            // FIXME: the test below would be enabled if we could avoid processing block args for the cases where we don't have any args
-            // since we can't do that just yet, it's disabled
-            if (value == null) {
-                context.getRuntime().getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (0 for 1)");
-                return new IRubyObject[] {context.getRuntime().getNil()};
-            }
-            return new IRubyObject[] {value};
-        }
+        return binding.getFrame().getVisibility();
     }
     
     public Block cloneBlock(Binding binding) {

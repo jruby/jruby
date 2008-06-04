@@ -27,11 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.RubyArray;
 import org.jruby.RubyModule;
-import org.jruby.ast.util.ArgsUtil;
-import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.exceptions.JumpException;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -40,10 +36,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * rather than with an ICallable. For lightweight block logic within
  * Java code.
  */
-public class CompiledBlockLight extends BlockBody {
-    protected final CompiledBlockCallback callback;
-    protected final boolean hasMultipleArgsHead;
-    protected final Arity arity;
+public class CompiledBlockLight extends CompiledBlock {
     protected final DynamicScope dummyScope;
     
     public static Block newCompiledClosureLight(IRubyObject self, Frame frame, Visibility visibility, RubyModule klass,
@@ -70,119 +63,19 @@ public class CompiledBlockLight extends BlockBody {
     }
 
     protected CompiledBlockLight(Arity arity, DynamicScope dummyScope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
-        super(argumentType);
-        this.arity = arity;
-        this.callback = callback;
-        this.hasMultipleArgsHead = hasMultipleArgsHead;
+        super(arity, dummyScope.getStaticScope(), callback, hasMultipleArgsHead, argumentType);
         this.dummyScope = dummyScope;
     }
     
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
-        args = prepareArgumentsForCall(context, args, type);
-
-        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding, type);
-    }
-
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
-        return yield(context, value, null, null, false, binding, type);
-    }
-    
-    public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
-        if (klass == null) {
-            self = binding.getSelf();
-            binding.getFrame().setSelf(self);
-        }
-
-        // handle as though it's just an array coming in...i.e. it should be multiassigned or just 
-        // assigned as is to var 0.
-        // FIXME for now, since masgn isn't supported, this just wraps args in an IRubyObject[], 
-        // since single vars will want that anyway
-        Visibility oldVis = binding.getFrame().getVisibility();
-        IRubyObject[] realArgs = aValue ? 
-                setupBlockArgs(context, args, self) : setupBlockArg(context, args, self); 
-        pre(context, klass, binding);
-        
-        try {
-            return callback.call(context, self, realArgs);
-        } catch (JumpException.BreakJump bj) {
-            if (bj.getTarget() == null) {
-                bj.setTarget(this);
-            }
-            throw bj;
-        } catch (JumpException.NextJump nj) {
-            // A 'next' is like a local return from the block, ending this call or yield.
-            return type == Block.Type.LAMBDA ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
-        } finally {
-            binding.getFrame().setVisibility(oldVis);
-            post(context, binding);
-        }
-    }
-    
-    protected void pre(ThreadContext context, RubyModule klass, Binding binding) {
+    protected Visibility pre(ThreadContext context, RubyModule klass, Binding binding) {
         context.preYieldLightBlock(binding, dummyScope, klass);
+        return binding.getFrame().getVisibility();
     }
     
-    protected void post(ThreadContext context, Binding binding) {
-        context.postYieldLight(binding);
-    }
-
-    private IRubyObject[] setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self) {
-        switch (argumentType) {
-        case ZERO_ARGS:
-            return IRubyObject.NULL_ARRAY;
-        case MULTIPLE_ASSIGNMENT:
-        case SINGLE_RESTARG:
-            return new IRubyObject[] {value};
-        default:
-            int length = arrayLength(value);
-            switch (length) {
-            case 0:
-                value = context.getRuntime().getNil();
-                break;
-            case 1:
-                value = ((RubyArray)value).eltInternal(0);
-                break;
-            default:
-                context.getRuntime().getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" +
-                        length + " for 1)");
-            }
-            return new IRubyObject[] {value};
-        }
-    }
-
-    private IRubyObject[] setupBlockArg(ThreadContext context, IRubyObject value, IRubyObject self) {
-        switch (argumentType) {
-        case ZERO_ARGS:
-            return IRubyObject.NULL_ARRAY;
-        case MULTIPLE_ASSIGNMENT:
-        case SINGLE_RESTARG:
-            return new IRubyObject[] {ArgsUtil.convertToRubyArray(context.getRuntime(), value, hasMultipleArgsHead)};
-        default:
-            if (value == null) {
-                context.getRuntime().getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (0 for 1)");
-                return new IRubyObject[] {context.getRuntime().getNil()};
-            }
-            return new IRubyObject[] {value};
-        }
-    }
-    
-    public StaticScope getStaticScope() {
-        return dummyScope.getStaticScope();
-    }
-
-    public Block cloneBlock(Binding binding) {
-        binding = new Binding(binding.getSelf(),
-                binding.getFrame().duplicate(),
-                binding.getVisibility(),
-                binding.getKlass(),
-                binding.getDynamicScope());
-        
-        return new Block(this, binding);
-    }
-
     @Override
-    public Arity arity() {
-        return arity;
+    protected final void post(ThreadContext context, Binding binding, Visibility vis) {
+        binding.getFrame().setVisibility(vis);
+        context.postYieldLight(binding);
     }
 }
