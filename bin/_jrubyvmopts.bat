@@ -13,6 +13,7 @@ set _STK=%JAVA_STACK%
 set _VM_OPTS=
 set _RUBY_OPTS=
 set _DFLT_VM_OPTS=%JAVA_OPTS%
+set _JAVA_VM=-client
 
 rem
 rem Can you believe I'm rewriting batch arg processing in batch files because batch
@@ -44,11 +45,13 @@ goto :EOF
 if "%_CMP%" == "" goto vmoptsDone
 
 if "%_CMP%" == "--server" (
-  set _CMP="-J-server"
+  set _JAVA_VM="-server"
+  goto :getarg
 )
 
 if "%_CMP%" == "--client" (
-  set _CMP="-J-client"
+  set _JAVA_VM="-client"
+  goto :getarg
 )
 
 if "%_CMP%" == "--sample" (
@@ -92,7 +95,7 @@ set _CMP=
 goto vmoptsLoop
 
 :vmoptsDone
-set _VM_OPTS=%_VM_OPTS% %_MEM% %_STK% %_DFLT_VM_OPTS%
+set _VM_OPTS=%_VM_OPTS% %_JAVA_VM% %_MEM% %_STK% %_DFLT_VM_OPTS%
 set _DFLT_VM_OPTS=
 set _MEM=
 set _STK=
@@ -100,3 +103,4 @@ set _ARGS=
 set _VAL=
 set _CMP=
 set _CMP1=
+set _JAVA_VM=

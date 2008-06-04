@@ -84,6 +84,8 @@ if [ -z "$JAVA_STACK" ] ; then
   JAVA_STACK=-Xss1024k
 fi
 
+JAVA_VM=-client
+
 # Split out any -J argument for passing to the JVM.
 # Scanning for args is aborted by '--'.
 declare -a java_args
@@ -127,9 +129,9 @@ do
           JAVA_CMD="$JAVA_HOME/bin/jdb"
         fi ;;
      --client)
-        java_args=("${java_args[@]}" "-client") ;;
+        JAVA_VM=-client ;;
      --server)
-        java_args=("${java_args[@]}" "-server") ;;
+        JAVA_VM=-server ;;
      --sample)
         java_args=("${java_args[@]}" "-Xprof") ;;
      # Abort processing on the double dash
@@ -143,7 +145,7 @@ do
 done
 
 # Add a property to report memory max
-JAVA_OPTS="$JAVA_OPTS -Djruby.memory.max=${JAVA_MEM:4} -Djruby.stack.max=${JAVA_STACK:4}"
+JAVA_OPTS="$JAVA_OPTS $JAVA_VM -Djruby.memory.max=${JAVA_MEM:4} -Djruby.stack.max=${JAVA_STACK:4}"
 
 # Append the rest of the arguments
 ruby_args=("${ruby_args[@]}" "$@")

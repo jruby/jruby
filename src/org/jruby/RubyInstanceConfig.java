@@ -318,10 +318,8 @@ public class RubyInstanceConfig {
                 .append("  --jdb           runs JRuby process under JDB\n")
                 .append("  --properties    List all configuration Java properties (pass -J-Dproperty=value)\n")
                 .append("  --sample        run with profiling using the JVM's sampling profiler\n")
-                .append("  --client        use the non-optimizing \"client\" JVM (improves startup)\n")
-                .append("                    this is the default on most systems\n")
+                .append("  --client        use the non-optimizing \"client\" JVM (improves startup; default)\n")
                 .append("  --server        use the optimizing \"server\" JVM (improves perf)\n")
-                .append("                    may be default on higher-end systems\n")
                 .append("  --version       print the version\n");
 
         return sb.toString();
