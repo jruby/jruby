@@ -286,10 +286,14 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     Label catchReturnJump = new Label();
                     Label catchRedoJump = new Label();
 
-                    mv.trycatch(tryBegin, tryEnd, catchReturnJump, p(JumpException.ReturnJump.class));
+                    if (callConfig != CallConfiguration.FRAME_ONLY) {
+                        mv.trycatch(tryBegin, tryEnd, catchReturnJump, p(JumpException.ReturnJump.class));
+                    }
                     mv.trycatch(tryBegin, tryEnd, catchRedoJump, p(JumpException.RedoJump.class));
                     mv.trycatch(tryBegin, tryEnd, doFinally, null);
-                    mv.trycatch(catchReturnJump, doReturnFinally, doFinally, null);
+                    if (callConfig != CallConfiguration.FRAME_ONLY) {
+                        mv.trycatch(catchReturnJump, doReturnFinally, doFinally, null);
+                    }
                     mv.trycatch(catchRedoJump, doRedoFinally, doFinally, null);
                     mv.label(tryBegin);
                     {
@@ -322,20 +326,22 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     }
 
                     // return jump handling
-                    mv.label(catchReturnJump);
-                    {
-                        mv.aload(0);
-                        mv.swap();
-                        mv.invokevirtual(COMPILED_SUPER_CLASS, "handleReturnJump", sig(IRubyObject.class, JumpException.ReturnJump.class));
-                        mv.label(doReturnFinally);
-                        
-                        // finally
-                        if (!callConfig.isNoop()) {
-                            invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
+                    if (callConfig != CallConfiguration.FRAME_ONLY) {
+                        mv.label(catchReturnJump);
+                        {
+                            mv.aload(0);
+                            mv.swap();
+                            mv.invokevirtual(COMPILED_SUPER_CLASS, "handleReturnJump", sig(IRubyObject.class, JumpException.ReturnJump.class));
+                            mv.label(doReturnFinally);
+
+                            // finally
+                            if (!callConfig.isNoop()) {
+                                invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
+                            }
+
+                            // return result if we're still good
+                            mv.areturn();
                         }
-                        
-                        // return result if we're still good
-                        mv.areturn();
                     }
 
                     // redo jump handling
