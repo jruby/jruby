@@ -77,12 +77,6 @@ public class CompiledBlock extends BlockBody {
         this.callback = callback;
         this.hasMultipleArgsHead = hasMultipleArgsHead;
     }
-    
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
-        args = prepareArgumentsForCall(context, args, type);
-
-        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding, type);
-    }
 
     @Override
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {

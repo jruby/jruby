@@ -114,15 +114,7 @@ public class Block {
         return body.yield(context, value, self, klass, aValue, binding, type);
     }
     
-    protected int arrayLength(IRubyObject node) {
-        return node instanceof RubyArray ? ((RubyArray)node).getLength() : 0;
-    }
-    
     public Block cloneBlock() {
-        // We clone dynamic scope because this will be a new instance of a block.  Any previously
-        // captured instances of this block may still be around and we do not want to start
-        // overwriting those values when we create a new one.
-        // ENEBO: Once we make self, lastClass, and lastMethod immutable we can remove duplicate
         Block newBlock = body.cloneBlock(binding);
         
         newBlock.type = type;

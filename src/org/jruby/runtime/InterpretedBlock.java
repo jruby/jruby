@@ -48,19 +48,31 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- *  Internal live representation of a block ({...} or do ... end).
+ * This branch of the BlockBody hierarchy represents an interpreted block that
+ * passes its AST nodes to the interpreter. It forms the top of the hierarchy
+ * of interpreted blocks. In a typical application, it is the most heavily
+ * consumed type of block.
+ * 
+ * @see SharedScopeBlock, CompiledBlock
  */
 public class InterpretedBlock extends BlockBody {
-    /**
-     * AST Node representing the parameter (VARiable) list to the block.
-     */
+    /** The node wrapping the body and parameter list for this block */
     private final IterNode iterNode;
+    
+    /** Whether this block has an argument list or not */
     private final boolean hasVarNode;
+    
+    /** The argument list, pulled out of iterNode */
     private final Node varNode;
+    
+    /** The body of the block, pulled out of bodyNode */
     private final Node bodyNode;
+    
+    /** The static scope for the block body */
     private final StaticScope scope;
     
-    protected final Arity arity;
+    /** The arity of the block */
+    private final Arity arity;
 
     public static Block newInterpretedClosure(ThreadContext context, IterNode iterNode, IRubyObject self) {
         Frame f = context.getCurrentFrame();
@@ -88,7 +100,20 @@ public class InterpretedBlock extends BlockBody {
     public static Block newInterpretedClosure(IterNode iterNode, IRubyObject self, Arity arity, Frame frame,
             Visibility visibility, RubyModule klass, DynamicScope dynamicScope) {
         NodeType argsNodeId = getArgumentTypeWackyHack(iterNode);
-        return new Block(new InterpretedBlock(iterNode, arity, asArgumentType(argsNodeId)), new Binding(self, frame, visibility, klass, dynamicScope));
+        
+        BlockBody body = new InterpretedBlock(
+                iterNode,
+                arity,
+                asArgumentType(argsNodeId));
+        
+        Binding binding = new Binding(
+                self, 
+                frame,
+                visibility,
+                klass,
+                dynamicScope);
+        
+        return new Block(body, binding);
     }
 
     public InterpretedBlock(IterNode iterNode, int argumentType) {
@@ -103,12 +128,6 @@ public class InterpretedBlock extends BlockBody {
         this.varNode = iterNode.getVarNode();
         this.bodyNode = iterNode.getBodyNode();
         this.scope = iterNode.getScope();
-    }
-
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
-        args = prepareArgumentsForCall(context, args, type);
-
-        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding, type);
     }
     
     protected Visibility pre(ThreadContext context, RubyModule klass, Binding binding) {
@@ -290,14 +309,5 @@ public class InterpretedBlock extends BlockBody {
      */
     public Arity arity() {
         return arity;
-    }
-    
-    /**
-     * Is the current block a real yield'able block instead a null one
-     * 
-     * @return true if this is a valid block or false otherwise
-     */
-    public boolean isGiven() {
-        return true;
     }
 }
