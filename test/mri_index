@@ -52,3 +52,15 @@ externals/mri/stringio/test_stringio
 externals/mri/openssl/test_hmac
 externals/mri/openssl/test_digest
 externals/mri/strscan/test_stringscanner
+# TODO: FAILS for now
+# externals/mri/webrick/test_cgi
+externals/mri/webrick/test_cookie
+# TODO: FAILS for now
+# externals/mri/webrick/test_filehandler
+externals/mri/webrick/test_httpauth
+externals/mri/webrick/test_httprequest
+externals/mri/webrick/test_httpserver
+externals/mri/webrick/test_httputils
+externals/mri/webrick/test_httpversion
+# TODO: HANGS for now
+# externals/mri/webrick/test_server
