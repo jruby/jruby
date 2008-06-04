@@ -44,7 +44,7 @@ import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- *  Internal live representation of a block ({...} or do ... end).
+ * The executable body portion of a closure.
  */
 public abstract class BlockBody implements JumpTarget {
     // FIXME: Maybe not best place, but move it to a good home
@@ -53,38 +53,6 @@ public abstract class BlockBody implements JumpTarget {
     public static final int ARRAY = 2;
     public static final int SINGLE_RESTARG = 3;
     protected final int argumentType;
-    
-    public static final BlockBody NULL_BODY = new BlockBody(ZERO_ARGS) {
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Type type) {
-            return null;
-        }
-
-        @Override
-        public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
-            return null;
-        }
-
-        @Override
-        public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Type type) {
-            return null;
-        }
-        
-        @Override
-        public StaticScope getStaticScope() {
-            return null;
-        }
-
-        @Override
-        public Block cloneBlock(Binding binding) {
-            return null;
-        }
-
-        @Override
-        public Arity arity() {
-            return null;
-        }
-    };
     
     public BlockBody(int argumentType) {
         this.argumentType = argumentType;
@@ -190,4 +158,36 @@ public abstract class BlockBody implements JumpTarget {
         
         return argsNodeId;
     }
+    
+    public static final BlockBody NULL_BODY = new BlockBody(ZERO_ARGS) {
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Type type) {
+            return null;
+        }
+
+        @Override
+        public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
+            return null;
+        }
+
+        @Override
+        public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Type type) {
+            return null;
+        }
+        
+        @Override
+        public StaticScope getStaticScope() {
+            return null;
+        }
+
+        @Override
+        public Block cloneBlock(Binding binding) {
+            return null;
+        }
+
+        @Override
+        public Arity arity() {
+            return null;
+        }
+    };
 }

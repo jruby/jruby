@@ -32,9 +32,8 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * A Block implemented using a Java-based BlockCallback implementation
- * rather than with an ICallable. For lightweight block logic within
- * Java code.
+ * A Block implemented using a Java-based BlockCallback implementation. For
+ * lightweight block logic within Java code.
  */
 public class CallBlock extends BlockBody {
     private Arity arity;
@@ -66,7 +65,7 @@ public class CallBlock extends BlockBody {
     }
     
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
-        return yield(context, value, null, null, false, binding, type);
+        return callback.call(context, new IRubyObject[] {value}, Block.NULL_BLOCK);
     }
 
     /**
@@ -81,20 +80,7 @@ public class CallBlock extends BlockBody {
      */
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
             RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
-        IRubyObject oldSelf = binding.getFrame().getSelf();
-        try {
-            if (klass == null) {
-                self = binding.getSelf();
-                // FIXME: We never set this back!
-                binding.getFrame().setSelf(self);
-            }
-        
-            return callback.call(context, new IRubyObject[] {value}, Block.NULL_BLOCK);
-        } finally {
-            if (klass == null) {
-                binding.getFrame().setSelf(oldSelf);
-            }
-        }
+        return callback.call(context, new IRubyObject[] {value}, Block.NULL_BLOCK);
     }
     
     public StaticScope getStaticScope() {
