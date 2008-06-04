@@ -88,11 +88,11 @@ public class CompiledBlock extends BlockBody {
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
         IRubyObject self = prepareSelf(binding);
 
-        IRubyObject[] realArgs = setupBlockArg(context.getRuntime(), value, self); 
+        IRubyObject realArg = setupBlockArg(context.getRuntime(), value, self); 
         Visibility oldVis = pre(context, null, binding);
         
         try {
-            return callback.call(context, self, realArgs);
+            return callback.call(context, self, realArg);
         } catch (JumpException.BreakJump bj) {
             return handleBreakJump(context, bj);
         } catch (JumpException.NextJump nj) {
@@ -108,12 +108,12 @@ public class CompiledBlock extends BlockBody {
             self = prepareSelf(binding);
         }
 
-        IRubyObject[] realArgs = aValue ? 
+        IRubyObject realArg = aValue ? 
                 setupBlockArgs(context, args, self) : setupBlockArg(context.getRuntime(), args, self); 
         Visibility oldVis = pre(context, klass, binding);
         
         try {
-            return callback.call(context, self, realArgs);
+            return callback.call(context, self, realArg);
         } catch (JumpException.BreakJump bj) {
             return handleBreakJump(context, bj);
         } catch (JumpException.NextJump nj) {
@@ -152,52 +152,50 @@ public class CompiledBlock extends BlockBody {
         context.postYield(binding);
     }
 
-    protected IRubyObject[] setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self) {
+    protected IRubyObject setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self) {
         switch (argumentType) {
         case ZERO_ARGS:
-            return IRubyObject.NULL_ARRAY;
+            return null;
         case MULTIPLE_ASSIGNMENT:
         case SINGLE_RESTARG:
-            return new IRubyObject[] {value};
+            return value;
         default:
             return defaultArgsLogic(context.getRuntime(), value);
         }
     }
     
-    private IRubyObject[] defaultArgsLogic(Ruby ruby, IRubyObject value) {
+    private IRubyObject defaultArgsLogic(Ruby ruby, IRubyObject value) {
         int length = ArgsUtil.arrayLength(value);
         switch (length) {
         case 0:
-            value = ruby.getNil();
-            break;
+            return ruby.getNil();
         case 1:
-            value = ((RubyArray)value).eltInternal(0);
-            break;
+            return ((RubyArray)value).eltInternal(0);
         default:
             ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" +
                     length + " for 1)");
         }
-        return new IRubyObject[] {value};
+        return value;
     }
 
-    protected IRubyObject[] setupBlockArg(Ruby ruby, IRubyObject value, IRubyObject self) {
+    protected IRubyObject setupBlockArg(Ruby ruby, IRubyObject value, IRubyObject self) {
         switch (argumentType) {
         case ZERO_ARGS:
-            return IRubyObject.NULL_ARRAY;
+            return null;
         case MULTIPLE_ASSIGNMENT:
         case SINGLE_RESTARG:
-            return new IRubyObject[] {ArgsUtil.convertToRubyArray(ruby, value, hasMultipleArgsHead)};
+            return ArgsUtil.convertToRubyArray(ruby, value, hasMultipleArgsHead);
         default:
             return defaultArgLogic(ruby, value);
         }
     }
     
-    private IRubyObject[] defaultArgLogic(Ruby ruby, IRubyObject value) {
+    private IRubyObject defaultArgLogic(Ruby ruby, IRubyObject value) {
         if (value == null) {
             ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (0 for 1)");
-            return new IRubyObject[] {ruby.getNil()};
+            return ruby.getNil();
         }
-        return new IRubyObject[] {value};
+        return value;
     }
     
     public StaticScope getStaticScope() {

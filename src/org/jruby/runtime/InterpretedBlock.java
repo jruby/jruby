@@ -157,7 +157,7 @@ public class InterpretedBlock extends BlockBody {
             self = prepareSelf(binding);
         }
         
-        Visibility oldVis = pre(context, null, binding);
+        Visibility oldVis = pre(context, klass, binding);
 
         try {
             if (hasVarNode) {

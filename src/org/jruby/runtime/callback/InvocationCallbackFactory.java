@@ -79,7 +79,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     private final static String FAST_CALL_SIG = sig(RubyKernel.IRUBY_OBJECT, params(
             Object.class, Object[].class));
     private final static String BLOCK_CALL_SIG = sig(RubyKernel.IRUBY_OBJECT, params(
-            ThreadContext.class, RubyKernel.IRUBY_OBJECT, IRubyObject[].class));
+            ThreadContext.class, RubyKernel.IRUBY_OBJECT, IRubyObject.class));
     private final static String IRUB = p(RubyKernel.IRUBY_OBJECT);
     
     
@@ -118,10 +118,12 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
 
+    @Deprecated
     private Class getReturnClass(String method, Class[] args) throws Exception {
         return type.getMethod(method, args).getReturnType();
     }
 
+    @Deprecated
     private ClassWriter createCtor(String namePath) throws Exception {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, SUPER_CLASS, null);
@@ -137,6 +139,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         return cw;
     }
 
+    @Deprecated
     private ClassWriter createCtorDispatcher(String namePath, Map switchMap) throws Exception {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, p(Dispatcher.class), null);
@@ -179,6 +182,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         return cw;
     }
 
+    @Deprecated
     private ClassWriter createCtorFast(String namePath) throws Exception {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, FAST_SUPER_CLASS, null);
@@ -217,6 +221,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
 
+    @Deprecated
     private MethodVisitor startCall(ClassWriter cw) {
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "call", CALL_SIG, null, null);
         
@@ -228,6 +233,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         return mv;
     }
 
+    @Deprecated
     private MethodVisitor startCallS(ClassWriter cw) {
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "call", CALL_SIG, null, null);
         
@@ -239,6 +245,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         return mv;
     }
 
+    @Deprecated
     private MethodVisitor startCallFast(ClassWriter cw) {
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "call", FAST_CALL_SIG, null, null);
         
@@ -250,6 +257,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         return mv;
     }
 
+    @Deprecated
     private MethodVisitor startDispatcher(ClassWriter cw) {
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "callMethod", sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, RubyClass.class, Integer.TYPE, String.class,
                 IRubyObject[].class, CallType.class, Block.class)), null, null);
@@ -262,6 +270,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         return mv;
     }
 
+    @Deprecated
     private MethodVisitor startCallSFast(ClassWriter cw) {
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "call", FAST_CALL_SIG, null, null);
         
@@ -589,7 +598,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     mv.aload(3);
                     mv.invokevirtual(typePathString, method, sig(
                             RubyKernel.IRUBY_OBJECT, params(ThreadContext.class,
-                                    RubyKernel.IRUBY_OBJECT, IRubyObject[].class)));
+                                    RubyKernel.IRUBY_OBJECT, IRubyObject.class)));
                     mv.areturn();
                     
                     mv.visitMaxs(2, 3);
@@ -1208,6 +1217,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
     
+    @Deprecated
     private void dispatchWithoutSTI(SkinnyMethodAdapter mv, Label afterCall) {
         // retrieve method
         mv.aload(DISPATCHER_RUBYMODULE_INDEX); // module
@@ -1233,6 +1243,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class)));
     }
     
+    @Deprecated
     public void callMethodMissingIfNecessary(SkinnyMethodAdapter mv, Label afterCall, Label okCall) {
         Label methodMissing = new Label();
 
@@ -1281,16 +1292,19 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         mv.go_to(afterCall);
     }
     
+    @Deprecated
     private void loadArguments(MethodVisitor mv, int argsIndex, int count, Class[] types) {
         loadArguments(mv, argsIndex, count, types, false);
     }
     
+    @Deprecated
     private void loadArguments(MethodVisitor mv, int argsIndex, int count, Class[] types, boolean contextProvided) {
         for (int i = 0; i < count; i++) {
             loadArgument(mv, argsIndex, i, types[i + (contextProvided ? 1 : 0)]);
         }
     }
     
+    @Deprecated
     private void loadArgument(MethodVisitor mv, int argsIndex, int argIndex, Class type1) {
         mv.visitVarInsn(ALOAD, argsIndex);
         mv.visitLdcInsn(new Integer(argIndex));
@@ -1298,10 +1312,12 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         checkCast(mv, type1);
     }
 
+    @Deprecated
     private void checkCast(MethodVisitor mv, Class clazz) {
         mv.visitTypeInsn(CHECKCAST, p(clazz));
     }
 
+    @Deprecated
     private void checkArity(SkinnyMethodAdapter mv, Arity arity) {
         if (arity.getValue() >= 0) {
             Label arityOk = new Label();

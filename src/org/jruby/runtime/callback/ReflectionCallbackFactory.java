@@ -146,6 +146,7 @@ public class ReflectionCallbackFactory extends CallbackFactory {
         return new ReflectionCallback(type, method, new Class[] { arg1, arg2, arg3 }, false, true, Arity.fixed(3), true);
     }
 
+    @Deprecated
     public Callback getBlockMethod(String method) {
         return new ReflectionCallback(
             type,
@@ -158,9 +159,9 @@ public class ReflectionCallbackFactory extends CallbackFactory {
     
     public CompiledBlockCallback getBlockCallback(String method, final Object scriptObject) {
         try {
-            final Method blockMethod = scriptObject.getClass().getMethod(method, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class});
+            final Method blockMethod = scriptObject.getClass().getMethod(method, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject.class});
             return new CompiledBlockCallback() {
-                public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+                public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject args) {
                     try {
                         return (IRubyObject)blockMethod.invoke(scriptObject, new Object[]{context, self, args});
                     } catch (IllegalAccessException ex) {
