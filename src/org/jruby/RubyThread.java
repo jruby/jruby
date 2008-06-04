@@ -189,6 +189,10 @@ public class RubyThread extends RubyObject {
         }
         threadImpl.start();
         
+        // We yield here to hopefully permit the target thread to schedule
+        // MRI immediately schedules it, so this is close but not exact
+        Thread.yield();
+        
         return this;
     }
     
