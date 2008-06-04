@@ -516,7 +516,7 @@ public class ASTInterpreter {
             }
         } while(true);
     }
-
+    
     private static IRubyObject aliasNode(Ruby runtime, ThreadContext context, Node node) {
         AliasNode iVisited = (AliasNode) node;
         RuntimeHelpers.defineAlias(context, iVisited.getNewName(), iVisited.getOldName());
@@ -573,18 +573,10 @@ public class ASTInterpreter {
         assert receiver.getMetaClass() != null : receiver.getClass().getName();
         
         // If reciever is self then we do the call the same way as vcall
-        CallType callType = (receiver == self ? CallType.VARIABLE : CallType.NORMAL);
-   
-        RubyModule module = receiver.getMetaClass();
-        
-        String name = iVisited.getName();
-
-        DynamicMethod method = module.searchMethod(name);
-
-        if (method.isUndefined() || (!method.isCallableFrom(self, callType))) {
-            RuntimeHelpers.callMethodMissing(context, receiver, method, name, args, self, callType, Block.NULL_BLOCK);
+        if (receiver == self) {
+            iVisited.variableCallAdapter.call(context, receiver, args);
         } else {
-            method.call(context, receiver, module, name, args);
+            iVisited.normalCallAdapter.call(context, receiver, args);
         }
 
         return args[args.length - 1];

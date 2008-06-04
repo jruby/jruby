@@ -34,6 +34,8 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.CallSite;
+import org.jruby.runtime.MethodIndex;
 
 /**
  * Node that represents an assignment of either an array element or attribute.
@@ -42,6 +44,8 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
     private final Node receiverNode;
     private String name;
     private Node argsNode;
+    public CallSite variableCallAdapter;
+    public CallSite normalCallAdapter;
 
     public AttrAssignNode(ISourcePosition position, Node receiverNode, String name, Node argsNode) {
         super(position, NodeType.ATTRASSIGNNODE);
@@ -52,6 +56,8 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
         if (argsNode instanceof ArrayNode) {
             ((ArrayNode)argsNode).setLightweight(true);
         }
+        this.normalCallAdapter = MethodIndex.getCallSite(name);
+        this.variableCallAdapter = MethodIndex.getVariableCallSite(name);
     }
 
     /**
