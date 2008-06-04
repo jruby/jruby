@@ -274,7 +274,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     private SkinnyMethodAdapter startBlockCall(ClassWriter cw) {
-        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", BLOCK_CALL_SIG, null, null));
+        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC | ACC_SYNTHETIC | ACC_FINAL, "call", BLOCK_CALL_SIG, null, null));
         
         mv.visitCode();
         Label line = new Label();
@@ -563,6 +563,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
 
+    @Deprecated
     public Callback getBlockMethod(String method) {
         // TODO: This is probably BAD...
         return new ReflectionCallback(type, method, new Class[] { RubyKernel.IRUBY_OBJECT,

@@ -55,6 +55,10 @@ public class InterpretedBlock extends BlockBody {
      * AST Node representing the parameter (VARiable) list to the block.
      */
     private final IterNode iterNode;
+    private final boolean hasVarNode;
+    private final Node varNode;
+    private final Node bodyNode;
+    private final StaticScope scope;
     
     protected final Arity arity;
 
@@ -95,6 +99,10 @@ public class InterpretedBlock extends BlockBody {
         super(argumentType);
         this.iterNode = iterNode;
         this.arity = arity;
+        this.hasVarNode = iterNode.getVarNode() != null;
+        this.varNode = iterNode.getVarNode();
+        this.bodyNode = iterNode.getBodyNode();
+        this.scope = iterNode.getScope();
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
@@ -103,16 +111,34 @@ public class InterpretedBlock extends BlockBody {
         return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding, type);
     }
     
-    protected void pre(ThreadContext context, RubyModule klass, Binding binding) {
+    protected Visibility pre(ThreadContext context, RubyModule klass, Binding binding) {
         context.preYieldSpecificBlock(binding, iterNode.getScope(), klass);
+        return binding.getFrame().getVisibility();
     }
     
-    protected void post(ThreadContext context, Binding binding) {
+    protected void post(ThreadContext context, Binding binding, Visibility vis) {
+        binding.getFrame().setVisibility(vis);
         context.postYield(binding);
     }
     
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
-        return yield(context, value, null, null, false, binding, type);
+        IRubyObject self = prepareSelf(binding);
+        
+        Visibility oldVis = pre(context, null, binding);
+
+        try {
+            if (hasVarNode) {
+                setupBlockArg(context, varNode, value, self);
+            }
+            
+            return evalBlockBody(context, self);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreakJump(context, bj);
+        } catch (JumpException.NextJump nj) {
+            return handleNextJump(context, nj, type);
+        } finally {
+            post(context, binding, oldVis);
+        }
     }
 
     /**
@@ -128,43 +154,59 @@ public class InterpretedBlock extends BlockBody {
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
             RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
         if (klass == null) {
-            self = binding.getSelf();
-            binding.getFrame().setSelf(self);
+            self = prepareSelf(binding);
         }
         
-        Visibility oldVis = binding.getFrame().getVisibility();
-        pre(context, klass, binding);
+        Visibility oldVis = pre(context, null, binding);
 
         try {
-            if (iterNode.getVarNode() != null) {
+            if (hasVarNode) {
                 if (aValue) {
-                    setupBlockArgs(context, iterNode.getVarNode(), value, self);
+                    setupBlockArgs(context, varNode, value, self);
                 } else {
-                    setupBlockArg(context, iterNode.getVarNode(), value, self);
+                    setupBlockArg(context, varNode, value, self);
                 }
             }
             
             // This while loop is for restarting the block call in case a 'redo' fires.
-            while (true) {
-                try {
-                    return ASTInterpreter.eval(context.getRuntime(), context, iterNode.getBodyNode(), self, Block.NULL_BLOCK);
-                } catch (JumpException.RedoJump rj) {
-                    context.pollThreadEvents();
-                    // do nothing, allow loop to redo
-                } catch (JumpException.BreakJump bj) {
-                    if (bj.getTarget() == null) {
-                        bj.setTarget(this);                            
-                    }                        
-                    throw bj;
-                }
-            }
+            return evalBlockBody(context, self);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreakJump(context, bj);
         } catch (JumpException.NextJump nj) {
-            // A 'next' is like a local return from the block, ending this call or yield.
-            return type == Block.Type.LAMBDA ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
+            return handleNextJump(context, nj, type);
         } finally {
-            binding.getFrame().setVisibility(oldVis);
-            post(context, binding);
+            post(context, binding, oldVis);
         }
+    }
+    
+    private IRubyObject evalBlockBody(ThreadContext context, IRubyObject self) {
+        // This while loop is for restarting the block call in case a 'redo' fires.
+        while (true) {
+            try {
+                return ASTInterpreter.eval(context.getRuntime(), context, bodyNode, self, Block.NULL_BLOCK);
+            } catch (JumpException.RedoJump rj) {
+                context.pollThreadEvents();
+                // do nothing, allow loop to redo
+            }
+        }
+    }
+    
+    private IRubyObject prepareSelf(Binding binding) {
+        IRubyObject self = binding.getSelf();
+        binding.getFrame().setSelf(self);
+        
+        return self;
+    }
+    
+    private IRubyObject handleBreakJump(ThreadContext context, JumpException.BreakJump bj) {
+        if (bj.getTarget() == null) {
+                bj.setTarget(this);
+        }
+        throw bj;
+    }
+    
+    private IRubyObject handleNextJump(ThreadContext context, JumpException.NextJump nj, Block.Type type) {
+        return type == Block.Type.LAMBDA ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
     }
 
     private void setupBlockArgs(ThreadContext context, Node varNode, IRubyObject value, IRubyObject self) {
@@ -177,18 +219,7 @@ public class InterpretedBlock extends BlockBody {
             value = AssignmentVisitor.multiAssign(runtime, context, self, (MultipleAsgnNode)varNode, (RubyArray)value, false);
             break;
         default:
-            int length = arrayLength(value);
-            switch (length) {
-            case 0:
-                value = runtime.getNil();
-                break;
-            case 1:
-                value = ((RubyArray)value).eltInternal(0);
-                break;
-            default:
-                runtime.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + length + " for 1)");
-            }
-            AssignmentVisitor.assign(runtime, context, self, varNode, value, Block.NULL_BLOCK, false);
+            defaultArgsLogic(context, runtime, self, value);
         }
     }
 
@@ -203,19 +234,34 @@ public class InterpretedBlock extends BlockBody {
                     ArgsUtil.convertToRubyArray(runtime, value, ((MultipleAsgnNode)varNode).getHeadNode() != null), false);
             break;
         default:
-            if (value == null) {
-                runtime.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (0 for 1)");
-            }
-            AssignmentVisitor.assign(runtime, context, self, varNode, value, Block.NULL_BLOCK, false);
+            defaultArgLogic(context, runtime, self, value);
         }
     }
     
-    protected int arrayLength(IRubyObject node) {
-        return node instanceof RubyArray ? ((RubyArray)node).getLength() : 0;
+    private final void defaultArgsLogic(ThreadContext context, Ruby ruby, IRubyObject self, IRubyObject value) {
+        int length = ArgsUtil.arrayLength(value);
+        switch (length) {
+        case 0:
+            value = ruby.getNil();
+            break;
+        case 1:
+            value = ((RubyArray)value).eltInternal(0);
+            break;
+        default:
+            ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + length + " for 1)");
+        }
+        AssignmentVisitor.assign(ruby, context, self, varNode, value, Block.NULL_BLOCK, false);
+    }
+    
+    private final void defaultArgLogic(ThreadContext context, Ruby ruby, IRubyObject self, IRubyObject value) {
+        if (value == null) {
+            ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (0 for 1)");
+        }
+        AssignmentVisitor.assign(ruby, context, self, varNode, value, Block.NULL_BLOCK, false);
     }
     
     public StaticScope getStaticScope() {
-        return iterNode.getScope();
+        return scope;
     }
 
     public Block cloneBlock(Binding binding) {
@@ -223,8 +269,13 @@ public class InterpretedBlock extends BlockBody {
         // captured instances of this block may still be around and we do not want to start
         // overwriting those values when we create a new one.
         // ENEBO: Once we make self, lastClass, and lastMethod immutable we can remove duplicate
-        binding = new Binding(binding.getSelf(), binding.getFrame().duplicate(), binding.getVisibility(), binding.getKlass(), 
+        binding = new Binding(
+                binding.getSelf(),
+                binding.getFrame().duplicate(),
+                binding.getVisibility(),
+                binding.getKlass(), 
                 binding.getDynamicScope());
+        
         return new Block(this, binding);
     }
 

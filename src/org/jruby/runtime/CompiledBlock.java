@@ -165,7 +165,7 @@ public class CompiledBlock extends BlockBody {
     }
     
     private IRubyObject[] defaultArgsLogic(Ruby ruby, IRubyObject value) {
-        int length = arrayLength(value);
+        int length = ArgsUtil.arrayLength(value);
         switch (length) {
         case 0:
             value = ruby.getNil();

@@ -43,7 +43,6 @@ import org.jruby.util.TypeConverter;
  * @author  jpetersen
  */
 public final class ArgsUtil {
-    
     public static IRubyObject[] convertToJavaArray(IRubyObject value) {
         if (value == null) {
         	return IRubyObject.NULL_ARRAY;
@@ -100,5 +99,9 @@ public final class ArgsUtil {
     	System.arraycopy(array, 1, newArray, 0, array.length - 1);
     	
     	return newArray;
+    }
+    
+    public static int arrayLength(IRubyObject node) {
+        return node instanceof RubyArray ? ((RubyArray)node).getLength() : 0;
     }
 }

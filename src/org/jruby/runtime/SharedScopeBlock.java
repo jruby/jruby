@@ -54,14 +54,16 @@ public class SharedScopeBlock extends InterpretedBlock {
         return new Block(body, binding);
     }
     
-    protected void pre(ThreadContext context, RubyModule klass, Binding binding) {
+    protected Visibility pre(ThreadContext context, RubyModule klass, Binding binding) {
         context.preForBlock(binding, klass);
+        return binding.getFrame().getVisibility();
     }
     
     public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf, Binding binding, Block.Type type) {
         return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding, type);
     }
     
+    @Override
     public Block cloneBlock(Binding binding) {
         return new Block(this, binding);
     }

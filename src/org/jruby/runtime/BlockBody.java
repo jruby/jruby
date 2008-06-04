@@ -97,10 +97,6 @@ public abstract class BlockBody implements JumpTarget {
     public abstract IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
             RubyModule klass, boolean aValue, Binding binding, Block.Type type);
     
-    protected int arrayLength(IRubyObject node) {
-        return node instanceof RubyArray ? ((RubyArray)node).getLength() : 0;
-    }
-    
     public abstract StaticScope getStaticScope();
 
     public abstract Block cloneBlock(Binding binding);
