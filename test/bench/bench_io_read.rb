@@ -9,23 +9,25 @@ File.open(FILE, 'w'){ |fh|
    }
 }
 
-Benchmark.bm(30) do |x|
-   # Class Methods
-   x.report('IO.foreach(file)'){
-      MAX.times{ IO.foreach(FILE){} }
-   }
+(ARGV[0] || 5).to_i.times do
+  Benchmark.bm(30) do |x|
+     # Class Methods
+     x.report('IO.foreach(file)'){
+        MAX.times{ IO.foreach(FILE){} }
+     }
 
-   x.report('IO.read(file)'){
-      MAX.times{ IO.read(FILE) }
-   }
+     x.report('IO.read(file)'){
+        MAX.times{ IO.read(FILE) }
+     }
 
-   x.report('IO.read(file, 100)'){
-      MAX.times{ IO.read(FILE, 100) }
-   }
+     x.report('IO.read(file, 100)'){
+        MAX.times{ IO.read(FILE, 100) }
+     }
 
-   x.report('IO.read(file, 100, 20)'){
-      MAX.times{ IO.read(FILE, 100, 20) }
-   }
+     x.report('IO.read(file, 100, 20)'){
+        MAX.times{ IO.read(FILE, 100, 20) }
+     }
+  end
 end
 File.delete(FILE) if File.exists?(FILE)
 
