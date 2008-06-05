@@ -12,10 +12,6 @@ File.open(FILE, 'w'){ |fh|
 (ARGV[0] || 5).to_i.times do
   Benchmark.bm(30) do |x|
      # Class Methods
-     x.report('IO.foreach(file)'){
-        MAX.times{ IO.foreach(FILE){} }
-     }
-
      x.report('IO.read(file)'){
         MAX.times{ IO.read(FILE) }
      }
@@ -26,6 +22,10 @@ File.open(FILE, 'w'){ |fh|
 
      x.report('IO.read(file, 100, 20)'){
         MAX.times{ IO.read(FILE, 100, 20) }
+     }
+     
+     x.report('IO.foreach(file)'){
+        MAX.times{ IO.foreach(FILE){} }
      }
   end
 end
