@@ -117,7 +117,9 @@ do
      # Match same switches with argument stuck together
      -e*|-I*|-S*) ruby_args=("${ruby_args[@]}" "$1" ) ;;
      # Run with the instrumented profiler: http://jiprof.sourceforge.net/
-     --profile) PROFILE_ARGS="-javaagent:$JRUBY_HOME/lib/profile.jar -Dprofile.properties=$JRUBY_HOME/lib/profile.properties" ;;
+     --profile) PROFILE_ARGS="-javaagent:$JRUBY_HOME/lib/profile.jar -Dprofile.properties=$JRUBY_HOME/lib/profile-ruby.properties" ;;
+     # Run with the instrumented profiler: http://jiprof.sourceforge.net/
+     --profile-all) PROFILE_ARGS="-javaagent:$JRUBY_HOME/lib/profile.jar -Dprofile.properties=$JRUBY_HOME/lib/profile-all.properties" ;;
      # Run under JDB
      --jdb)
         if [ -z "$JAVA_HOME" ] ; then
