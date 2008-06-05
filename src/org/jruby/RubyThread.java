@@ -241,12 +241,7 @@ public class RubyThread extends RubyObject {
 
         if (DEBUG) System.out.println("thread " + Thread.currentThread() + " after");
         if (receivedException != null) {
-            // clear this so we don't keep re-throwing
-            IRubyObject raiseException = receivedException;
-            receivedException = null;
-            RubyModule kernelModule = getRuntime().getKernel();
-            if (DEBUG) System.out.println("thread " + Thread.currentThread() + " before propagating exception: " + killed);
-            kernelModule.callMethod(context, "raise", raiseException);
+            receivedAnException(context);
         }
     }
 
@@ -837,5 +832,16 @@ public class RubyThread extends RubyObject {
     
     public void afterBlockingCall() {
         isStopped = false;
+    }
+
+    private void receivedAnException(ThreadContext context) {
+        // clear this so we don't keep re-throwing
+        IRubyObject raiseException = receivedException;
+        receivedException = null;
+        RubyModule kernelModule = getRuntime().getKernel();
+        if (DEBUG) {
+            System.out.println("thread " + Thread.currentThread() + " before propagating exception: " + killed);
+        }
+        kernelModule.callMethod(context, "raise", raiseException);
     }
 }

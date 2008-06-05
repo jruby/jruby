@@ -84,15 +84,13 @@ public abstract class CallSite {
         protected IRubyObject cacheAndCall(RubyClass selfType, Block block, IRubyObject[] args, ThreadContext context, IRubyObject self) {
             DynamicMethod method = selfType.searchMethod(methodName);
 
-            if (method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
-                return RuntimeHelpers.callMethodMissing(context, self, method, methodName, args, context.getFrameSelf(), callType, block);
+            if (methodMissing(method, context)) {
+                return callMethodMissing(context, self, method, args, block);
             }
 
             IRubyObject result = method.call(context, self, selfType, methodName, args, block);
             
-            if (misses < MAX_MISSES) {
-                updateCacheEntry(method, selfType);
-            }
+            updateCacheEntry(method, selfType);
             
             return result;
         }
@@ -100,15 +98,13 @@ public abstract class CallSite {
         protected IRubyObject cacheAndCall(RubyClass selfType, IRubyObject[] args, ThreadContext context, IRubyObject self) {
             DynamicMethod method = selfType.searchMethod(methodName);
 
-            if (method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
-                return RuntimeHelpers.callMethodMissing(context, self, method, methodName, args, context.getFrameSelf(), callType, Block.NULL_BLOCK);
+            if (methodMissing(method, context)) {
+                return callMethodMising(context, self, method, args);
             }
 
             IRubyObject result = method.call(context, self, selfType, methodName, args);
             
-            if (misses < MAX_MISSES) {
-                updateCacheEntry(method, selfType);
-            }
+            updateCacheEntry(method, selfType);
             
             return result;
         }
@@ -116,15 +112,13 @@ public abstract class CallSite {
         protected IRubyObject cacheAndCall(RubyClass selfType, ThreadContext context, IRubyObject self) {
             DynamicMethod method = selfType.searchMethod(methodName);
 
-            if (method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
-                return RuntimeHelpers.callMethodMissing(context, self, method, methodName, IRubyObject.NULL_ARRAY, context.getFrameSelf(), callType, Block.NULL_BLOCK);
+            if (methodMissing(method, context)) {
+                return callMethodMissing(context, self, method);
             }
 
             IRubyObject result = method.call(context, self, selfType, methodName);
             
-            if (misses < MAX_MISSES) {
-                updateCacheEntry(method, selfType);
-            }
+            updateCacheEntry(method, selfType);
             
             return result;
         }
@@ -132,15 +126,13 @@ public abstract class CallSite {
         protected IRubyObject cacheAndCall(RubyClass selfType, Block block, ThreadContext context, IRubyObject self) {
             DynamicMethod method = selfType.searchMethod(methodName);
 
-            if (method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
-                return RuntimeHelpers.callMethodMissing(context, self, method, methodName, IRubyObject.NULL_ARRAY, context.getFrameSelf(), callType, block);
+            if (methodMissing(method, context)) {
+                return callMethodMissing(context, self, method, block);
             }
 
             IRubyObject result = method.call(context, self, selfType, methodName, block);
             
-            if (misses < MAX_MISSES) {
-                updateCacheEntry(method, selfType);
-            }
+            updateCacheEntry(method, selfType);
             
             return result;
         }
@@ -148,15 +140,13 @@ public abstract class CallSite {
         protected IRubyObject cacheAndCall(RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg) {
             DynamicMethod method = selfType.searchMethod(methodName);
 
-            if (method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
-                return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[] {arg}, context.getFrameSelf(), callType, Block.NULL_BLOCK);
+            if (methodMissing(method, context)) {
+                return callMethodMissing(context, self, method, arg);
             }
 
             IRubyObject result = method.call(context, self, selfType, methodName, arg);
             
-            if (misses < MAX_MISSES) {
-                updateCacheEntry(method, selfType);
-            }
+            updateCacheEntry(method, selfType);
             
             return result;
         }
@@ -164,15 +154,13 @@ public abstract class CallSite {
         protected IRubyObject cacheAndCall(RubyClass selfType, Block block, ThreadContext context, IRubyObject self, IRubyObject arg) {
             DynamicMethod method = selfType.searchMethod(methodName);
 
-            if (method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
-                return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[] {arg}, context.getFrameSelf(), callType, block);
+            if (methodMissing(method, context)) {
+                return callMethodMissing(context, self, method, arg, block);
             }
 
             IRubyObject result = method.call(context, self, selfType, methodName, arg, block);
             
-            if (misses < MAX_MISSES) {
-                updateCacheEntry(method, selfType);
-            }
+            updateCacheEntry(method, selfType);
             
             return result;
         }
@@ -180,15 +168,13 @@ public abstract class CallSite {
         protected IRubyObject cacheAndCall(RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
             DynamicMethod method = selfType.searchMethod(methodName);
 
-            if (method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
-                return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[] {arg1,arg2}, context.getFrameSelf(), callType, Block.NULL_BLOCK);
+            if (methodMissing(method, context)) {
+                return callMethodMissing(context, self, method, arg1, arg2);
             }
 
             IRubyObject result = method.call(context, self, selfType, methodName, arg1, arg2);
             
-            if (misses < MAX_MISSES) {
-                updateCacheEntry(method, selfType);
-            }
+            updateCacheEntry(method, selfType);
             
             return result;
         }
@@ -196,15 +182,13 @@ public abstract class CallSite {
         protected IRubyObject cacheAndCall(RubyClass selfType, Block block, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
             DynamicMethod method = selfType.searchMethod(methodName);
 
-            if (method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
-                return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[] {arg1,arg2}, context.getFrameSelf(), callType, block);
+            if (methodMissing(method, context)) {
+                return callMethodMissing(context, self, method, arg1, arg2, block);
             }
 
             IRubyObject result = method.call(context, self, selfType, methodName, arg1, arg2, block);
             
-            if (misses < MAX_MISSES) {
-                updateCacheEntry(method, selfType);
-            }
+            updateCacheEntry(method, selfType);
             
             return result;
         }
@@ -212,15 +196,13 @@ public abstract class CallSite {
         protected IRubyObject cacheAndCall(RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
             DynamicMethod method = selfType.searchMethod(methodName);
 
-            if (method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
-                return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[] {arg1,arg2,arg3}, context.getFrameSelf(), callType, Block.NULL_BLOCK);
+            if (methodMissing(method, context)) {
+                return callMethodMissing(context, self, method, arg1, arg2,arg3);
             }
 
             IRubyObject result = method.call(context, self, selfType, methodName, arg1, arg2, arg3);
             
-            if (misses < MAX_MISSES) {
-                updateCacheEntry(method, selfType);
-            }
+            updateCacheEntry(method, selfType);
             
             return result;
         }
@@ -228,23 +210,67 @@ public abstract class CallSite {
         protected IRubyObject cacheAndCall(RubyClass selfType, Block block, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
             DynamicMethod method = selfType.searchMethod(methodName);
 
-            if (method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
-                return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[] {arg1,arg2,arg3}, context.getFrameSelf(), callType, block);
+            if (methodMissing(method, context)) {
+                return callMethodMissing(context, self, method, arg1, arg2, arg3, block);
             }
 
             IRubyObject result = method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
             
-            if (misses < MAX_MISSES) {
-                updateCacheEntry(method, selfType);
-            }
+            updateCacheEntry(method, selfType);
             
             return result;
         }
+
+        private IRubyObject callMethodMising(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject[] args) {
+            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, args, context.getFrameSelf(), callType, Block.NULL_BLOCK);
+        }
+
+        private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method) {
+            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, IRubyObject.NULL_ARRAY, context.getFrameSelf(), callType, Block.NULL_BLOCK);
+        }
+
+        private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, Block block) {
+            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, IRubyObject.NULL_ARRAY, context.getFrameSelf(), callType, block);
+        }
+
+        private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg) {
+            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[]{arg}, context.getFrameSelf(), callType, Block.NULL_BLOCK);
+        }
+
+        private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject[] args, Block block) {
+            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, args, context.getFrameSelf(), callType, block);
+        }
+
+        private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg, Block block) {
+            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[]{arg}, context.getFrameSelf(), callType, block);
+        }
+
+        private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg1, IRubyObject arg2) {
+            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[]{arg1, arg2}, context.getFrameSelf(), callType, Block.NULL_BLOCK);
+        }
+
+        private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg1, IRubyObject arg2, Block block) {
+            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[]{arg1, arg2}, context.getFrameSelf(), callType, block);
+        }
+
+        private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[]{arg1, arg2, arg3}, context.getFrameSelf(), callType, Block.NULL_BLOCK);
+        }
+
+        private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[]{arg1, arg2, arg3}, context.getFrameSelf(), callType, block);
+        }
+
+        private boolean methodMissing(DynamicMethod method, ThreadContext context) {
+            return method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType));
+        }
         
         private void updateCacheEntry(DynamicMethod method, RubyClass selfType) {
-            misses++;
-            cache = new CacheEntry(method, selfType);
-            selfType.getRuntime().getCacheMap().add(method, this);
+            if (misses < MAX_MISSES) {
+                misses++;
+                cache = new CacheEntry(method, selfType);
+                selfType.getRuntime().getCacheMap().add(method, this);
+            }
         }
         
         public void removeCachedMethod() {

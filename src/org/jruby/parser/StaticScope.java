@@ -30,6 +30,7 @@ package org.jruby.parser;
 
 import java.io.Serializable;
 
+import java.util.Arrays;
 import org.jruby.RubyModule;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.Node;
@@ -94,17 +95,9 @@ public abstract class StaticScope implements Serializable {
             
         // This is perhaps innefficient timewise?  Optimal spacewise
         if (variableNames == null) {
-            variableNames = new String[1];
-            variableCaptured = new boolean[1];
-            variableNames[0] = name;
+            initVariableNames(name);
         } else {
-            String[] newVariableNames = new String[variableNames.length + 1];
-            System.arraycopy(variableNames, 0, newVariableNames, 0, variableNames.length);
-            variableNames = newVariableNames;
-            variableNames[variableNames.length - 1] = name;
-            boolean[] newVariableCaptured = new boolean[variableCaptured.length + 1];
-            System.arraycopy(variableCaptured, 0, newVariableCaptured, 0, variableCaptured.length);
-            variableCaptured = newVariableCaptured;
+            growVariableNames(name);
         }
         
         // Returns slot of variable
@@ -148,12 +141,17 @@ public abstract class StaticScope implements Serializable {
      */
     public int exists(String name) {
         if (variableNames != null) {
-            for (int i = 0; i < variableNames.length; i++) {
-                if (name == variableNames[i]) return i;
-            }
+            return findVariableName(name);
         }
         
         return -1;        
+    }
+    
+    private int findVariableName(String name) {
+        for (int i = 0; i < variableNames.length; i++) {
+            if (name == variableNames[i]) return i;
+        }
+        return -1;
     }
     
     /**
@@ -315,5 +313,21 @@ public abstract class StaticScope implements Serializable {
         this.requiredArgs = required;
         this.optionalArgs = optional;
         this.restArg = rest;
+    }
+
+    private void growVariableNames(String name) {
+        String[] newVariableNames = new String[variableNames.length + 1];
+        System.arraycopy(variableNames, 0, newVariableNames, 0, variableNames.length);
+        variableNames = newVariableNames;
+        variableNames[variableNames.length - 1] = name;
+        boolean[] newVariableCaptured = new boolean[variableCaptured.length + 1];
+        System.arraycopy(variableCaptured, 0, newVariableCaptured, 0, variableCaptured.length);
+        variableCaptured = newVariableCaptured;
+    }
+
+    private void initVariableNames(String name) {
+        variableNames = new String[1];
+        variableCaptured = new boolean[1];
+        variableNames[0] = name;
     }
 }

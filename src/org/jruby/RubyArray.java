@@ -147,6 +147,10 @@ public class RubyArray extends RubyObject implements List {
         return new RubyArray(runtime, new IRubyObject[] { obj });
     }
 
+    public static RubyArray newArrayLight(Ruby runtime, IRubyObject obj) {
+        return new RubyArray(runtime, new IRubyObject[] { obj }, false);
+    }
+
     /** rb_assoc_new
      *
      */
@@ -206,6 +210,15 @@ public class RubyArray extends RubyObject implements List {
      */
     private RubyArray(Ruby runtime, IRubyObject[] vals) {
         super(runtime, runtime.getArray());
+        values = vals;
+        realLength = vals.length;
+    }
+
+    /* 
+     * plain internal array assignment
+     */
+    private RubyArray(Ruby runtime, IRubyObject[] vals, boolean objectSpace) {
+        super(runtime, runtime.getArray(), objectSpace);
         values = vals;
         realLength = vals.length;
     }

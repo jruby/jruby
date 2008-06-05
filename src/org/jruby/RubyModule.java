@@ -910,7 +910,7 @@ public class RubyModule extends RubyObject {
     public DynamicMethod searchMethod(String name) {
         for (RubyModule searchModule = this; searchModule != null; searchModule = searchModule.getSuperClass()) {
             // See if current class has method or if it has been cached here already
-            DynamicMethod method = (DynamicMethod) searchModule.getMethods().get(name);
+            DynamicMethod method = searchModule.retrieveMethod(name);
 
             if (method != null) {
                 return method;

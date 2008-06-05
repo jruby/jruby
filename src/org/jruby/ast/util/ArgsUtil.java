@@ -68,15 +68,17 @@ public final class ArgsUtil {
             return RubyArray.newArrayLight(runtime, 0);
         }
         
-        if (!coerce) {
-            // don't attempt to coerce to array, just wrap and return
-            return RubyArray.newArrayNoCopyLight(runtime, new IRubyObject[] {value});
-        }
-        
+        if (coerce) return convertToRubyArrayWithCoerce(runtime, value);
+
+        // don't attempt to coerce to array, just wrap and return
+        return RubyArray.newArrayLight(runtime, value);
+    }
+    
+    public static RubyArray convertToRubyArrayWithCoerce(Ruby runtime, IRubyObject value) {
         IRubyObject newValue = TypeConverter.convertToType(value, runtime.getArray(), MethodIndex.TO_ARY, "to_ary", false);
 
         if (newValue.isNil()) {
-            return RubyArray.newArrayNoCopyLight(runtime, new IRubyObject[] {value});
+            return RubyArray.newArrayLight(runtime, value);
         }
         
         // empirically it appears that to_ary coersions always return array or nil, so this

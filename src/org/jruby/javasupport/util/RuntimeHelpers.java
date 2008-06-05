@@ -229,10 +229,8 @@ public class RuntimeHelpers {
         if (methodIndex == MethodIndex.METHOD_MISSING) {
             return RubyKernel.method_missing(context, self, args, block);
         }
-
-        IRubyObject[] newArgs = new IRubyObject[args.length + 1];
-        System.arraycopy(args, 0, newArgs, 1, args.length);
-        newArgs[0] = context.getRuntime().newSymbol(name);
+        
+        IRubyObject[] newArgs = prepareMethodMissingArgs(args, context, name);
 
         return receiver.callMethod(context, "method_missing", newArgs, block);
     }
@@ -998,5 +996,14 @@ public class RuntimeHelpers {
         }
         
         return rubyClass;
+    }
+
+    private static IRubyObject[] prepareMethodMissingArgs(IRubyObject[] args, ThreadContext context, String name) {
+
+        IRubyObject[] newArgs = new IRubyObject[args.length + 1];
+        System.arraycopy(args, 0, newArgs, 1, args.length);
+        newArgs[0] = context.getRuntime().newSymbol(name);
+
+        return newArgs;
     }
 }

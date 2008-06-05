@@ -47,6 +47,7 @@ public class InputStreamLexerSource extends LexerSource {
      */
     public int read() throws IOException {
         int c;
+        
         if (bufLength >= 0) {
             c = buf[bufLength--];
         } else {
@@ -54,10 +55,8 @@ public class InputStreamLexerSource extends LexerSource {
             
             if (c == -1) return RubyYaccLexer.EOF;
         }
-
-        twoAgo = oneAgo;
-        oneAgo = c;
-        offset++;
+        
+        advance(c);
         
         if (c == '\n') line++;
             
@@ -72,24 +71,14 @@ public class InputStreamLexerSource extends LexerSource {
      */
     public void unread(int c) {
         if (c == RubyYaccLexer.EOF) return;
-            
-        offset--;
-        oneAgo = twoAgo;
-        twoAgo = 0;
+        
+        retreat();
             
         if (c == '\n') line--;
 
         buf[++bufLength] = (char) c;
         
-        // If we outgrow our pushback stack then grow it (this should only happen in pretty 
-        // pathological cases).
-        if (bufLength + 1 == buf.length) {
-            char[] newBuf = new char[buf.length + INITIAL_PUSHBACK_SIZE];
-
-            System.arraycopy(buf, 0, newBuf, 0, buf.length);
-
-            buf = newBuf;
-        }
+        growBuf();
     }
     
     /**
@@ -106,6 +95,45 @@ public class InputStreamLexerSource extends LexerSource {
         twoAgo = captureTwoAgo;
         return c == to;
     }
+
+    private void advance(int c) {
+
+        twoAgo = oneAgo;
+        oneAgo = c;
+        offset++;
+    }
+
+    private int carriageReturn(int c) throws IOException {
+        if ((c = in.read()) != '\n') {
+            unread((char) c);
+            c = '\n';
+        } else {
+            // Position within source must reflect the actual offset and column.  Since
+            // we ate an extra character here (this accounting is normally done in read
+            // ), we should update position info.
+            offset++;
+        }
+        return c;
+    }
+
+    private void growBuf() {
+        // If we outgrow our pushback stack then grow it (this should only happen in pretty 
+        // pathological cases).
+        if (bufLength + 1 == buf.length) {
+            char[] newBuf = new char[buf.length + INITIAL_PUSHBACK_SIZE];
+
+            System.arraycopy(buf, 0, newBuf, 0, buf.length);
+
+            buf = newBuf;
+        }
+    }
+
+    private void retreat() {
+
+        offset--;
+        oneAgo = twoAgo;
+        twoAgo = 0;
+    }
     
     /**
      * Convenience method to hide exception.  If we do hit an exception
@@ -119,15 +147,7 @@ public class InputStreamLexerSource extends LexerSource {
         // If \r\n then just pass along \n (windows). 
         // If \r[^\n] then pass along \n (MAC).
         if (c == '\r') { 
-            if ((c = in.read()) != '\n') {
-                unread((char) c);
-                c = '\n';
-            } else {
-                // Position within source must reflect the actual offset and column.  Since
-                // we ate an extra character here (this accounting is normally done in read
-                // ), we should update position info.
-                offset++;
-            }
+            c = carriageReturn(c);
         }
 
         captureFeature(c);
@@ -179,16 +199,26 @@ public class InputStreamLexerSource extends LexerSource {
         ByteList buffer = new ByteList(length + 1);
         
         if (indent) {
-            int c;
-            while ((c = read()) != RubyYaccLexer.EOF) {
-                if (!Character.isWhitespace(c) || c == '\n') {
-                    unread(c);
-                    break;
-                }
-                buffer.append(c);
-            }
+            indentLoop(buffer);
         }
         
+        if (!matches(match, buffer, length)) return false;
+        
+        return finishMarker(checkNewline, buffer); 
+    }
+
+    private void indentLoop(ByteList buffer) throws IOException {
+        int c;
+        while ((c = read()) != RubyYaccLexer.EOF) {
+            if (!Character.isWhitespace(c) || c == '\n') {
+                unread(c);
+                break;
+            }
+            buffer.append(c);
+        }
+    }
+    
+    private boolean matches(ByteList match, ByteList buffer, int length) throws IOException {
         int c;
         for (int i = 0; i < length; i++) {
             c = read();
@@ -198,17 +228,23 @@ public class InputStreamLexerSource extends LexerSource {
                 return false;
             }
         }
+        return true;
+    }
 
-        if (!checkNewline) return true;
-        
-        c = read();
-        
-        if (c == RubyYaccLexer.EOF || c == '\n') return true;
+    private boolean finishMarker(boolean checkNewline, ByteList buffer) throws IOException {
 
+        if (!checkNewline) {
+            return true;
+        }
+        int c = read();
+
+        if (c == RubyYaccLexer.EOF || c == '\n') {
+            return true;
+        }
         buffer.append(c);
         unreadMany(buffer);
-        
-        return false; 
+
+        return false;
     }
     
     /**

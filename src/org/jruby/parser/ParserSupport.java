@@ -322,13 +322,7 @@ public class ParserSupport {
 
         // Reduces overhead in interp by not set position every single line we encounter. 
         if (!configuration.hasExtraPositionInformation()) {
-            while (head instanceof NewlineNode) {
-                Node nextNode = ((NewlineNode) head).getNextNode();
-                
-                if (!(nextNode instanceof NewlineNode)) break;
-                
-                head = nextNode;
-            }
+            head = compactNewlines(head);
         }
 
         if (!(head instanceof BlockNode)) {
@@ -500,6 +494,18 @@ public class ParserSupport {
         if (!isExpression(node)) {
             warnings.warning(ID.VOID_VALUE_EXPRESSION, node.getPosition(), "void value expression");
         }
+    }
+
+    private Node compactNewlines(Node head) {
+        while (head instanceof NewlineNode) {
+            Node nextNode = ((NewlineNode) head).getNextNode();
+
+            if (!(nextNode instanceof NewlineNode)) {
+                break;
+            }
+            head = nextNode;
+        }
+        return head;
     }
     
     private boolean isExpression(Node node) {

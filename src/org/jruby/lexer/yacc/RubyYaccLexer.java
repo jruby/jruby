@@ -106,6 +106,27 @@ public class RubyYaccLexer {
         map.put("while", Keyword.WHILE);
         map.put("alias", Keyword.ALIAS);
     }
+
+    private int getFloatToken(String number) {
+        double d;
+        try {
+            d = Double.parseDouble(number);
+        } catch (NumberFormatException e) {
+            warnings.warn(ID.FLOAT_OUT_OF_RANGE, getPosition(), "Float " + number + " out of range.", number);
+
+            d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
+        }
+        yaccValue = new FloatNode(getPosition(), d);
+        return Tokens.tFLOAT;
+    }
+
+    private Object newBignumNode(String value, int radix) {
+        return new BignumNode(getPosition(), new BigInteger(value, radix));
+    }
+
+    private Object newFixnumNode(String value, int radix) throws NumberFormatException {
+        return new FixnumNode(getPosition(), Long.parseLong(value, radix));
+    }
     
     public enum Keyword {
         END ("end", Tokens.kEND, Tokens.kEND, LexState.EXPR_END),
@@ -198,6 +219,9 @@ public class RubyYaccLexer {
     private StackState cmdArgumentState = new StackState();
     private StrTerm lex_strterm;
     private boolean commandStart;
+    
+    // Whether we're processing comments
+    private boolean doComments;
 
     // Give a name to a value.  Enebo: This should be used more.
     static final int EOF = -1;
@@ -292,6 +316,9 @@ public class RubyYaccLexer {
      */
     public void setParserSupport(ParserSupport parserSupport) {
         this.parserSupport = parserSupport;
+        if (parserSupport.getConfiguration() != null) {
+            this.doComments = parserSupport.getConfiguration().hasExtraPositionInformation();
+        }
     }
 
     /**
@@ -357,9 +384,9 @@ public class RubyYaccLexer {
 
     private Object getInteger(String value, int radix) {
         try {
-            return new FixnumNode(getPosition(), Long.parseLong(value, radix));
+            return newFixnumNode(value, radix);
         } catch (NumberFormatException e) {
-            return new BignumNode(getPosition(), new BigInteger(value, radix));
+            return newBignumNode(value, radix);
         }
     }
 
@@ -547,10 +574,15 @@ public class RubyYaccLexer {
      * @return newline or eof value 
      */
     protected int readComment(int c) throws IOException {
-        if (!parserSupport.getConfiguration().hasExtraPositionInformation()) {
-            return src.skipUntil('\n');
+        if (doComments) {
+            return readCommentLong(c);
         }
         
+        return src.skipUntil('\n');
+        
+    }
+    
+    private int readCommentLong(int c) throws IOException {
         ISourcePosition startPosition = src.getPosition();
         tokenBuffer.setLength(0);
         tokenBuffer.append((char) c);
@@ -754,7 +786,6 @@ public class RubyYaccLexer {
             case '=':
                 // documentation nodes
                 if (src.wasBeginOfLine()) {
-                    boolean doComments = parserSupport.getConfiguration().hasExtraPositionInformation();
                     if (src.matchMarker(BEGIN_DOC_MARKER, false, false)) {
                         if (doComments) {
                             tokenBuffer.setLength(0);
@@ -2014,21 +2045,11 @@ public class RubyYaccLexer {
     private int getNumberToken(String number, boolean isFloat, int nondigit) {
         if (nondigit != '\0') {
             throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER, getPosition(), "Trailing '_' in number.");
+        } else if (isFloat) {
+            return getFloatToken(number);
         }
-        if (isFloat) {
-            double d;
-            try {
-                d = Double.parseDouble(number);
-            } catch (NumberFormatException e) {
-                warnings.warn(ID.FLOAT_OUT_OF_RANGE, getPosition(), "Float " + number + " out of range.", number);
-                
-                d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
-            }
-            yaccValue = new FloatNode(getPosition(), d);
-            return Tokens.tFLOAT;
-        }
-		yaccValue = getInteger(number, 10);
-		return Tokens.tINTEGER;
+        yaccValue = getInteger(number, 10);
+        return Tokens.tINTEGER;
     }
     
     public int readEscape() throws IOException {
