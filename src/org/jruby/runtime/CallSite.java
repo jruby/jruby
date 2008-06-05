@@ -87,10 +87,10 @@ public abstract class CallSite {
             if (methodMissing(method, context)) {
                 return callMethodMissing(context, self, method, args, block);
             }
-
-            IRubyObject result = method.call(context, self, selfType, methodName, args, block);
             
             updateCacheEntry(method, selfType);
+
+            IRubyObject result = method.call(context, self, selfType, methodName, args, block);
             
             return result;
         }
@@ -101,10 +101,10 @@ public abstract class CallSite {
             if (methodMissing(method, context)) {
                 return callMethodMising(context, self, method, args);
             }
-
-            IRubyObject result = method.call(context, self, selfType, methodName, args);
             
             updateCacheEntry(method, selfType);
+
+            IRubyObject result = method.call(context, self, selfType, methodName, args);
             
             return result;
         }
@@ -115,10 +115,10 @@ public abstract class CallSite {
             if (methodMissing(method, context)) {
                 return callMethodMissing(context, self, method);
             }
-
-            IRubyObject result = method.call(context, self, selfType, methodName);
             
             updateCacheEntry(method, selfType);
+
+            IRubyObject result = method.call(context, self, selfType, methodName);
             
             return result;
         }
@@ -129,10 +129,10 @@ public abstract class CallSite {
             if (methodMissing(method, context)) {
                 return callMethodMissing(context, self, method, block);
             }
-
-            IRubyObject result = method.call(context, self, selfType, methodName, block);
             
             updateCacheEntry(method, selfType);
+
+            IRubyObject result = method.call(context, self, selfType, methodName, block);
             
             return result;
         }
@@ -143,10 +143,10 @@ public abstract class CallSite {
             if (methodMissing(method, context)) {
                 return callMethodMissing(context, self, method, arg);
             }
-
-            IRubyObject result = method.call(context, self, selfType, methodName, arg);
             
             updateCacheEntry(method, selfType);
+
+            IRubyObject result = method.call(context, self, selfType, methodName, arg);
             
             return result;
         }
@@ -157,10 +157,10 @@ public abstract class CallSite {
             if (methodMissing(method, context)) {
                 return callMethodMissing(context, self, method, arg, block);
             }
-
-            IRubyObject result = method.call(context, self, selfType, methodName, arg, block);
             
             updateCacheEntry(method, selfType);
+
+            IRubyObject result = method.call(context, self, selfType, methodName, arg, block);
             
             return result;
         }
@@ -171,10 +171,10 @@ public abstract class CallSite {
             if (methodMissing(method, context)) {
                 return callMethodMissing(context, self, method, arg1, arg2);
             }
-
-            IRubyObject result = method.call(context, self, selfType, methodName, arg1, arg2);
             
             updateCacheEntry(method, selfType);
+
+            IRubyObject result = method.call(context, self, selfType, methodName, arg1, arg2);
             
             return result;
         }
@@ -185,10 +185,10 @@ public abstract class CallSite {
             if (methodMissing(method, context)) {
                 return callMethodMissing(context, self, method, arg1, arg2, block);
             }
-
-            IRubyObject result = method.call(context, self, selfType, methodName, arg1, arg2, block);
             
             updateCacheEntry(method, selfType);
+
+            IRubyObject result = method.call(context, self, selfType, methodName, arg1, arg2, block);
             
             return result;
         }
@@ -199,10 +199,10 @@ public abstract class CallSite {
             if (methodMissing(method, context)) {
                 return callMethodMissing(context, self, method, arg1, arg2,arg3);
             }
-
-            IRubyObject result = method.call(context, self, selfType, methodName, arg1, arg2, arg3);
             
             updateCacheEntry(method, selfType);
+
+            IRubyObject result = method.call(context, self, selfType, methodName, arg1, arg2, arg3);
             
             return result;
         }
@@ -213,10 +213,10 @@ public abstract class CallSite {
             if (methodMissing(method, context)) {
                 return callMethodMissing(context, self, method, arg1, arg2, arg3, block);
             }
-
-            IRubyObject result = method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
             
             updateCacheEntry(method, selfType);
+
+            IRubyObject result = method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
             
             return result;
         }
