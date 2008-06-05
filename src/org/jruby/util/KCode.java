@@ -29,35 +29,32 @@
 package org.jruby.util;
 
 import org.joni.encoding.Encoding;
-import org.joni.encoding.specific.ASCIIEncoding;
-import org.joni.encoding.specific.EUCJPEncoding;
-import org.joni.encoding.specific.SJISEncoding;
-import org.joni.encoding.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public final class KCode {
-    public static final KCode NIL = new KCode(null, 0, ASCIIEncoding.INSTANCE);
-    public static final KCode NONE = new KCode("NONE", 0, ASCIIEncoding.INSTANCE);
-    public static final KCode UTF8 = new KCode("UTF8", 64, UTF8Encoding.INSTANCE);
-    public static final KCode SJIS = new KCode("SJIS", 48, SJISEncoding.INSTANCE);
-    public static final KCode EUC = new KCode("EUC", 32, EUCJPEncoding.INSTANCE);
+    public static final KCode NIL = new KCode(null, "ASCII", 0);
+    public static final KCode NONE = new KCode("NONE", "ASCII", 0);
+    public static final KCode UTF8 = new KCode("UTF8", "UTF8", 64);
+    public static final KCode SJIS = new KCode("SJIS", "SJIS", 48);
+    public static final KCode EUC = new KCode("EUC", "EUCJP", 32);
 
-    private String kcode;
+    private final String kcode;
+    private final String encodingName;
+    private final int code;
+
     private Encoding encoding;
 
-    private int code;
-
-    private KCode(String kcode, int code, Encoding encoding) {
+    private KCode(String kcode, String encodingName, int code) {
         this.kcode = kcode;
+        this.encodingName = encodingName;
         this.code = code;
-        this.encoding = encoding;
     }
 
     public static KCode create(Ruby runtime, String lang) {
-        if(lang == null) return NIL;
+        if (lang == null) return NIL;
 
-        switch(lang.charAt(0)) {
+        switch (lang.charAt(0)) {
         case 'E':
         case 'e':
             return EUC;
@@ -79,7 +76,7 @@ public final class KCode {
     public IRubyObject kcode(Ruby runtime) {
         return kcode == null ? runtime.getNil() : runtime.newString(kcode); 
     }
-    
+
     public String getKCode() {
         return kcode;
     }
@@ -89,14 +86,15 @@ public final class KCode {
     }
 
     public String name() {
-        if(kcode != null) {
-            return kcode.toLowerCase();
-        }
-        return null;
+        return kcode != null ? kcode.toLowerCase() : null;
     }
 
     public Encoding getEncoding() {
+        if (encoding == null) loadEncodng();
         return encoding;
     }
+
+    private void loadEncodng() {
+        encoding = Encoding.load(encodingName);
+    }
 }
-	
