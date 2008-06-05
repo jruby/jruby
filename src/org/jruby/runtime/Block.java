@@ -66,10 +66,6 @@ public class Block {
      * All Block variables should either refer to a real block or this NULL_BLOCK.
      */
     public static final Block NULL_BLOCK = new Block() {
-        public boolean isGiven() {
-            return false;
-        }
-        
         public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
                 RubyModule klass, boolean aValue) {
             throw context.getRuntime().newLocalJumpError("noreason", (IRubyObject)value, "yield called out of block");
@@ -154,8 +150,8 @@ public class Block {
      * 
      * @return true if this is a valid block or false otherwise
      */
-    public boolean isGiven() {
-        return true;
+    final public boolean isGiven() {
+        return this != NULL_BLOCK;
     }
     
     public Binding getBinding() {
