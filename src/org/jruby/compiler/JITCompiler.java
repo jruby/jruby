@@ -29,6 +29,7 @@
 package org.jruby.compiler;
 
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.ArgsNode;
@@ -44,12 +45,26 @@ import org.jruby.util.ClassCache;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JavaNameMangler;
 
-public class JITCompiler {
+public class JITCompiler implements JITCompilerMBean {
     public static final boolean USE_CACHE = true;
     
-    public static void runJIT(final DefaultMethod method, final Ruby runtime, final ThreadContext context, final String name) {
-        Set<Script> jittedMethods = runtime.getJittedMethods();
-        final RubyInstanceConfig instanceConfig = runtime.getInstanceConfig();
+    private Ruby ruby;
+    
+    private AtomicLong compiledCount = new AtomicLong(0);
+    private AtomicLong successCount = new AtomicLong(0);
+    private AtomicLong failCount = new AtomicLong(0);
+    private AtomicLong abandonCount = new AtomicLong(0);
+    private AtomicLong compileTime = new AtomicLong(0);
+    
+    public JITCompiler(Ruby ruby) {
+        this.ruby = ruby;
+        
+        ruby.getBeanManager().register(this);
+    }
+    
+    public void runJIT(final DefaultMethod method, final ThreadContext context, final String name) {
+        Set<Script> jittedMethods = ruby.getJittedMethods();
+        final RubyInstanceConfig instanceConfig = ruby.getInstanceConfig();
         ClassCache classCache = instanceConfig.getClassCache();
         
         // This method has JITed already or has been abandoned. Bail out.
@@ -62,6 +77,7 @@ public class JITCompiler {
         
                 // The cache is full. Abandon JIT for this method and bail out.
                 if (classCache.isFull()) {
+                    abandonCount.incrementAndGet();
                     method.setCallCount(-1);
                     return;
                 }
@@ -74,9 +90,13 @@ public class JITCompiler {
                 
                 if (sourceClass == null) {
                     // class could not be found nor generated; give up on JIT and bail out
+                    failCount.incrementAndGet();
                     method.setCallCount(-1);
                     return;
                 }
+                
+                // successfully got back a jitted method
+                successCount.incrementAndGet();
 
                 // finally, grab the script
                 Script jitCompiledScript = (Script) sourceClass.newInstance();
@@ -105,7 +125,7 @@ public class JITCompiler {
         }
     }
     
-    public static class JITClassGenerator implements ClassCache.ClassGenerator {
+    public class JITClassGenerator implements ClassCache.ClassGenerator {
         private StandardASMCompiler asmCompiler;
         private DefaultMethod method;
         private StaticScope staticScope;
@@ -131,6 +151,9 @@ public class JITCompiler {
         @SuppressWarnings("unchecked")
         protected void compile() {
             if (bytecode != null) return;
+            
+            // Time the compilation
+            long start = System.nanoTime();
             
             asmCompiler.startScript(staticScope);
             final ASTCompiler compiler = new ASTCompiler();
@@ -182,6 +205,9 @@ public class JITCompiler {
             
             bytecode = asmCompiler.getClassByteArray();
             name = CodegenUtils.c(asmCompiler.getClassname());
+            
+            compiledCount.incrementAndGet();
+            compileTime.addAndGet(System.nanoTime() - start);
         }
         
         public byte[] bytecode() {
@@ -223,5 +249,25 @@ public class JITCompiler {
         }
         
         System.err.println("");
+    }
+
+    public long getSuccessCount() {
+        return successCount.get();
+    }
+
+    public long getCompileCount() {
+        return compiledCount.get();
+    }
+
+    public long getFailCount() {
+        return failCount.get();
+    }
+
+    public long getCompileTime() {
+        return compileTime.get() / 1000;
+    }
+
+    public long getAbandonCount() {
+        return abandonCount.get();
     }
 }

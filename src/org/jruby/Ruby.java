@@ -61,7 +61,6 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.Vector;
 import java.util.WeakHashMap;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -71,7 +70,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.jruby.anno.TypePopulator;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.RubiniusRunner;
 import org.jruby.ast.executable.Script;
@@ -80,6 +78,7 @@ import org.jruby.common.RubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.compiler.ASTCompiler;
 import org.jruby.compiler.ASTInspector;
+import org.jruby.compiler.JITCompiler;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.compiler.yarv.StandardYARVCompiler;
@@ -93,8 +92,8 @@ import org.jruby.ext.posix.POSIXFactory;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.ValueAccessor;
-import org.jruby.java.MiniJava;
 import org.jruby.javasupport.JavaSupport;
+import org.jruby.management.BeanManager;
 import org.jruby.parser.Parser;
 import org.jruby.parser.ParserConfiguration;
 import org.jruby.runtime.Binding;
@@ -204,6 +203,8 @@ public final class Ruby {
         this.profile            = config.getProfile();
         this.currentDirectory   = config.getCurrentDirectory();
         this.kcode              = config.getKCode();
+        this.beanManager        = new BeanManager(this, config.isManagementEnabled());
+        this.jitCompiler        = new JITCompiler(this);
     }
     
     /**
@@ -531,6 +532,14 @@ public final class Ruby {
         } catch (JumpException.ReturnJump rj) {
             return (IRubyObject) rj.getValue();
         }
+    }
+    
+    public BeanManager getBeanManager() {
+        return beanManager;
+    }
+    
+    public JITCompiler getJITCompiler() {
+        return jitCompiler;
     }
 
     /**
@@ -2806,6 +2815,12 @@ public final class Ruby {
     // Java support
     private JavaSupport javaSupport;
     private JRubyClassLoader jrubyClassLoader;
+    
+    // Management/monitoring
+    private BeanManager beanManager;
+    
+    // Compilation
+    private JITCompiler jitCompiler;
 
     // Note: this field and the following static initializer
     // must be located be in this order!

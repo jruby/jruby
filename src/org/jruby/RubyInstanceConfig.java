@@ -140,6 +140,7 @@ public class RubyInstanceConfig {
     private String recordSeparator = "\n";
     private boolean shouldCheckSyntax = false;
     private String inputFieldSeparator = null;
+    private boolean managementEnabled = true;
 
     private int safeLevel = 0;
 
@@ -179,6 +180,7 @@ public class RubyInstanceConfig {
             = SafePropertyAccessor.getBoolean("jruby.native.net.protocol", false);
 
     public static boolean nativeEnabled = true;
+    
 
     public static interface LoadServiceCreator {
         LoadService create(Ruby runtime);
@@ -212,6 +214,7 @@ public class RubyInstanceConfig {
             currentDirectory = JRubyFile.getFileProperty("user.dir");
         }
 
+        managementEnabled = SafePropertyAccessor.getBoolean("jruby.management.enabled", true);
         samplingEnabled = SafePropertyAccessor.getBoolean("jruby.sampling.enabled", false);
         String compatString = SafePropertyAccessor.getProperty("jruby.compat.version", "RUBY1_8");
         if (compatString.equalsIgnoreCase("RUBY1_8")) {
@@ -398,7 +401,9 @@ public class RubyInstanceConfig {
                 .append("    jruby.objectspace.enabled=true|false\n")
                 .append("       Enable or disable ObjectSpace.each_object (default is disabled)\n")
                 .append("    jruby.launch.inproc=true|false\n")
-                .append("       Set in-process launching of e.g. system('ruby ...'). Default is true\n");
+                .append("       Set in-process launching of e.g. system('ruby ...'). Default is true\n")
+                .append("    jruby.management.enabled=true|false\n")
+                .append("       Set whether JMX management is enabled. Default is true.\n");
 
         return sb.toString();
     }
@@ -1114,5 +1119,9 @@ public class RubyInstanceConfig {
 
     public Map getOptionGlobals() {
         return optionGlobals;
+    }
+    
+    public boolean isManagementEnabled() {
+        return managementEnabled;
     }
 }
