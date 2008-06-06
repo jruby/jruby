@@ -264,6 +264,14 @@ public abstract class CallSite {
         private boolean methodMissing(DynamicMethod method, ThreadContext context) {
             return method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType));
         }
+
+        private RubyClass pollAndGetClass(ThreadContext context, IRubyObject self) {
+            context.callThreadPoll();
+
+            RubyClass selfType = self.getMetaClass();
+
+            return selfType;
+        }
         
         private void updateCacheEntry(DynamicMethod method, RubyClass selfType) {
             if (misses < MAX_MISSES) {
@@ -278,9 +286,7 @@ public abstract class CallSite {
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-            context.callThreadPoll();
-
-            RubyClass selfType = self.getMetaClass();
+            RubyClass selfType = pollAndGetClass(context, self);
             
             CacheEntry myCache = cache;
             if (myCache.cachedType == selfType) {
@@ -291,11 +297,9 @@ public abstract class CallSite {
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-            context.callThreadPoll();
+            RubyClass selfType = pollAndGetClass(context, self);
 
             try {
-                RubyClass selfType = self.getMetaClass();
-
                 CacheEntry myCache = cache;
                 if (myCache.cachedType == selfType) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, args, block);
@@ -312,9 +316,7 @@ public abstract class CallSite {
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self) {
-            context.callThreadPoll();
-
-            RubyClass selfType = self.getMetaClass();
+            RubyClass selfType = pollAndGetClass(context, self);
 
             CacheEntry myCache = cache;
             if (myCache.cachedType == selfType) {
@@ -325,11 +327,9 @@ public abstract class CallSite {
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self, Block block) {
-            context.callThreadPoll();
+            RubyClass selfType = pollAndGetClass(context, self);
 
             try {
-                RubyClass selfType = self.getMetaClass();
-
                 CacheEntry myCache = cache;
                 if (myCache.cachedType == selfType) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, block);
@@ -346,9 +346,7 @@ public abstract class CallSite {
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1) {
-            context.callThreadPoll();
-
-            RubyClass selfType = self.getMetaClass();
+            RubyClass selfType = pollAndGetClass(context, self);
 
             CacheEntry myCache = cache;
             if (myCache.cachedType == selfType) {
@@ -359,11 +357,9 @@ public abstract class CallSite {
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, Block block) {
-            context.callThreadPoll();
+            RubyClass selfType = pollAndGetClass(context, self);
 
             try {
-                RubyClass selfType = self.getMetaClass();
-
                 CacheEntry myCache = cache;
                 if (myCache.cachedType == selfType) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, block);
@@ -380,9 +376,7 @@ public abstract class CallSite {
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
-            context.callThreadPoll();
-
-            RubyClass selfType = self.getMetaClass();
+            RubyClass selfType = pollAndGetClass(context, self);
 
             CacheEntry myCache = cache;
             if (myCache.cachedType == selfType) {
@@ -393,11 +387,9 @@ public abstract class CallSite {
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
-            context.callThreadPoll();
+            RubyClass selfType = pollAndGetClass(context, self);
 
             try {
-                RubyClass selfType = self.getMetaClass();
-
                 CacheEntry myCache = cache;
                 if (myCache.cachedType == selfType) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, block);
@@ -414,9 +406,7 @@ public abstract class CallSite {
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-            context.callThreadPoll();
-
-            RubyClass selfType = self.getMetaClass();
+            RubyClass selfType = pollAndGetClass(context, self);
 
             CacheEntry myCache = cache;
             if (myCache.cachedType == selfType) {
@@ -427,11 +417,9 @@ public abstract class CallSite {
         }
         
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
-            context.callThreadPoll();
+            RubyClass selfType = pollAndGetClass(context, self);
 
             try {
-                RubyClass selfType = self.getMetaClass();
-
                 CacheEntry myCache = cache;
                 if (myCache.cachedType == selfType) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
