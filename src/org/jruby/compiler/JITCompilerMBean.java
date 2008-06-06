@@ -6,4 +6,7 @@ public interface JITCompilerMBean {
     public long getFailCount();
     public long getAbandonCount();
     public long getCompileTime();
+    public long getCodeSize();
+    public long getAverageCodeSize();
+    public long getAverageCompileTime();
 }

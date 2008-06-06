@@ -55,6 +55,9 @@ public class JITCompiler implements JITCompilerMBean {
     private AtomicLong failCount = new AtomicLong(0);
     private AtomicLong abandonCount = new AtomicLong(0);
     private AtomicLong compileTime = new AtomicLong(0);
+    private AtomicLong averageCompileTime = new AtomicLong(0);
+    private AtomicLong codeSize = new AtomicLong(0);
+    private AtomicLong averageCodeSize = new AtomicLong(0);
     
     public JITCompiler(Ruby ruby) {
         this.ruby = ruby;
@@ -208,6 +211,9 @@ public class JITCompiler implements JITCompilerMBean {
             
             compiledCount.incrementAndGet();
             compileTime.addAndGet(System.nanoTime() - start);
+            codeSize.addAndGet(bytecode.length);
+            averageCompileTime.set(compileTime.get() / compiledCount.get());
+            averageCodeSize.set(codeSize.get() / compiledCount.get());
         }
         
         public byte[] bytecode() {
@@ -269,5 +275,17 @@ public class JITCompiler implements JITCompilerMBean {
 
     public long getAbandonCount() {
         return abandonCount.get();
+    }
+    
+    public long getCodeSize() {
+        return codeSize.get();
+    }
+    
+    public long getAverageCodeSize() {
+        return averageCodeSize.get();
+    }
+    
+    public long getAverageCompileTime() {
+        return averageCompileTime.get() / 1000;
     }
 }

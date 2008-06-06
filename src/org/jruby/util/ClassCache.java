@@ -7,12 +7,16 @@ import java.net.URLClassLoader;
 import java.security.ProtectionDomain;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A Simple cache which maintains a collection of classes that can potentially be shared among
  * multiple runtimes (or whole JVM).
  */
 public class ClassCache<T> {
+    private AtomicInteger classLoadCount = new AtomicInteger(0);
+    private AtomicInteger classReuseCount = new AtomicInteger(0);
+    
     /**
      * The ClassLoader this class cache will use for any classes generated through it.  It is 
      * assumed that the classloader provided will be a parent loader of any runtime using it.
@@ -94,16 +98,37 @@ public class ClassCache<T> {
             
             OneShotClassLoader oneShotCL = new OneShotClassLoader(getClassLoader());
             contents = (Class<T>)oneShotCL.defineClass(classGenerator.name(), classGenerator.bytecode());
+            classLoadCount.incrementAndGet();
             
+            cleanup();
             cache.put(key, new KeyedClassReference(key, contents, referenceQueue));
+        } else {
+            classReuseCount.incrementAndGet();
         }
         
         return contents;
     }
     
+    public void flush() {
+        cache.clear();
+    }
+    
     public boolean isFull() {
         cleanup();
         return max > 0 && cache.size() >= max;
+    }
+    
+    public int getClassLoadCount() {
+        return classLoadCount.get();
+    }
+    
+    public int getLiveClassCount() {
+        cleanup();
+        return cache.size();
+    }
+    
+    public int getClassReuseCount() {
+        return classReuseCount.get();
     }
     
     private void cleanup() {

@@ -36,6 +36,10 @@ public class BeanManager {
         if (managementEnabled) register(base + "service=MethodCache", methodCache);
     }
     
+    public void register(ClassCacheMBean classCache) {
+        if (managementEnabled) register(base + "service=ClassCache", classCache);
+    }
+    
     private void register(String name, Object bean) {
         try {
             MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
