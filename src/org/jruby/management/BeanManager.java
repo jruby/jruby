@@ -13,7 +13,7 @@ import org.jruby.Ruby;
 import org.jruby.compiler.JITCompilerMBean;
 
 public class BeanManager {
-    public static final String BASE = "org.jruby:";
+    public final String base;
     
     private Ruby ruby;
     private boolean managementEnabled;
@@ -21,18 +21,19 @@ public class BeanManager {
     public BeanManager(Ruby ruby, boolean managementEnabled) {
         this.ruby = ruby;
         this.managementEnabled = managementEnabled;
+        this.base = "org.jruby:type=Runtime,name=" + ruby.hashCode() + ",";
     }
     
     public void register(JITCompilerMBean jitCompiler) {
-        if (managementEnabled) register(BASE + "type=JITCompiler", jitCompiler);
+        if (managementEnabled) register(base + "service=JITCompiler", jitCompiler);
     }
     
     public void register(ConfigMBean config) {
-        if (managementEnabled) register(BASE + "type=Config", config);
+        if (managementEnabled) register(base + "service=Config", config);
     }
     
     public void register(MethodCacheMBean methodCache) {
-        if (managementEnabled) register(BASE + "type=MethodCache", methodCache);
+        if (managementEnabled) register(base + "service=MethodCache", methodCache);
     }
     
     private void register(String name, Object bean) {
