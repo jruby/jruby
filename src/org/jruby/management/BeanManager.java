@@ -13,6 +13,8 @@ import org.jruby.Ruby;
 import org.jruby.compiler.JITCompilerMBean;
 
 public class BeanManager {
+    public static final String BASE = "org.jruby:";
+    
     private Ruby ruby;
     private boolean managementEnabled;
     
@@ -22,16 +24,15 @@ public class BeanManager {
     }
     
     public void register(JITCompilerMBean jitCompiler) {
-        if (managementEnabled) register("org.jruby.management:type=JITCompiler", jitCompiler);
+        if (managementEnabled) register(BASE + "type=JITCompiler", jitCompiler);
     }
     
     public void register(ConfigMBean config) {
-        if (managementEnabled) register("org.jruby.management:type=Config", config);
+        if (managementEnabled) register(BASE + "type=Config", config);
     }
     
     private void register(String name, Object bean) {
         try {
-            System.out.println("here");
             MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
             
             ObjectName beanName = new ObjectName(name);
