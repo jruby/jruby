@@ -589,8 +589,7 @@ public class ASTCompiler {
                     }
                 };
 
-        context.createObjectArray(arrayNode.childNodes().toArray(), callback);
-        context.createNewArray(arrayNode.isLightweight());
+        context.createNewArray(arrayNode.childNodes().toArray(), callback, arrayNode.isLightweight());
     }
 
     public void compileArgsCat(Node node, MethodCompiler context) {

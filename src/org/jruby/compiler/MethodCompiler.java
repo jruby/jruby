@@ -145,6 +145,13 @@ public interface MethodCompiler {
     public void createNewArray(boolean lightweight);
 
     /**
+     * Given an aggregated set of objects (likely created through a call to createObjectArray)
+     * create a Ruby array object. This version accepts an array of objects
+     * to feed to an ArrayCallback to construct the elements of the array.
+     */
+    public void createNewArray(Object[] sourceArray, ArrayCallback callback, boolean lightweight);
+
+    /**
      * Create an empty Ruby array
      */
     public void createEmptyArray();

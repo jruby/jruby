@@ -748,9 +748,21 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.swap();
 
             if (lightweight) {
-                invokeIRuby("newArrayNoCopyLight", sig(RubyArray.class, params(IRubyObject[].class)));
+                method.invokestatic(p(RubyArray.class), "newArrayNoCopyLight", sig(RubyArray.class, params(Ruby.class, IRubyObject[].class)));
             } else {
-                invokeIRuby("newArrayNoCopy", sig(RubyArray.class, params(IRubyObject[].class)));
+                method.invokestatic(p(RubyArray.class), "newArrayNoCopy", sig(RubyArray.class, params(Ruby.class, IRubyObject[].class)));
+            }
+        }
+
+        public void createNewArray(Object[] sourceArray, ArrayCallback callback, boolean lightweight) {
+            loadRuntime();
+            
+            createObjectArray(sourceArray, callback);
+
+            if (lightweight) {
+                method.invokestatic(p(RubyArray.class), "newArrayNoCopyLight", sig(RubyArray.class, params(Ruby.class, IRubyObject[].class)));
+            } else {
+                method.invokestatic(p(RubyArray.class), "newArrayNoCopy", sig(RubyArray.class, params(Ruby.class, IRubyObject[].class)));
             }
         }
 
