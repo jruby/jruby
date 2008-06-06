@@ -25,6 +25,10 @@ public class BeanManager {
         if (managementEnabled) register("org.jruby.management:type=JITCompiler", jitCompiler);
     }
     
+    public void register(ConfigMBean config) {
+        if (managementEnabled) register("org.jruby.management:type=Config", config);
+    }
+    
     private void register(String name, Object bean) {
         try {
             System.out.println("here");

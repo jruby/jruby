@@ -94,6 +94,7 @@ import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.management.BeanManager;
+import org.jruby.management.Config;
 import org.jruby.parser.Parser;
 import org.jruby.parser.ParserConfiguration;
 import org.jruby.runtime.Binding;
@@ -205,6 +206,8 @@ public final class Ruby {
         this.kcode              = config.getKCode();
         this.beanManager        = new BeanManager(this, config.isManagementEnabled());
         this.jitCompiler        = new JITCompiler(this);
+        
+        this.beanManager.register(new Config(this));
     }
     
     /**
