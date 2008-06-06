@@ -275,44 +275,39 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         }
     }
 
-    /** standard path for object creation 
-     * 
+    /** 
+     * Standard path for object creation. Objects are entered into ObjectSpace
+     * only if ObjectSpace is enabled.
      */
     public RubyObject(Ruby runtime, RubyClass metaClass) {
-        this(runtime, metaClass, runtime.isObjectSpaceEnabled());
+        this.metaClass = metaClass;
+        
+        if (Ruby.RUNTIME_THREADLOCAL) setMetaClassName(metaClass);
+        if (runtime.isObjectSpaceEnabled()) addToObjectSpace(runtime);
+        if (runtime.getSafeLevel() >= 3) taint();
     }
 
-    /** path for objects who want to decide whether they want to be in ObjectSpace
-     *  regardless of it being turned on or off
-     *  (notably used by objects being considered immediate, they'll always pass false here)
+    /**
+     * Path for objects who want to decide whether they don't want to be in
+     * ObjectSpace even when it is on. (notably used by objects being
+     * considered immediate, they'll always pass false here)
      */
     protected RubyObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace) {
         this.metaClass = metaClass;
-        setMetaClassName(metaClass);
-        addToObjectSpace(useObjectSpace, runtime);
-        doTainting(runtime);
+        
+        if (Ruby.RUNTIME_THREADLOCAL) setMetaClassName(metaClass);
+        if (useObjectSpace) addToObjectSpace(runtime);
+        if (runtime.getSafeLevel() >= 3) taint();
     }
 
-    private void addToObjectSpace(boolean useObjectSpace, Ruby runtime) {
-        if (useObjectSpace) {
-            assert runtime.isObjectSpaceEnabled();
-            runtime.getObjectSpace().add(this);
-        }
-    }
-
-    private void doTainting(Ruby runtime) {
-        // FIXME are there objects who shouldn't be tainted?
-        // (mri: OBJSETUP)
-        if (runtime.getSafeLevel() >= 3) {
-            flags |= TAINTED_F;
-        }
+    private void addToObjectSpace(Ruby runtime) {
+        assert runtime.isObjectSpaceEnabled();
+        runtime.getObjectSpace().add(this);
     }
 
     private void setMetaClassName(RubyClass metaClass) {
-        if (Ruby.RUNTIME_THREADLOCAL) {
-            if (metaClass != null) {
-                metaClassName = metaClass.classId;
-            }
+        if (metaClass != null) {
+            metaClassName = metaClass.classId;
         }
     }
     
