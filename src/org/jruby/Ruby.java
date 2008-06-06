@@ -208,6 +208,8 @@ public final class Ruby {
         this.jitCompiler        = new JITCompiler(this);
         
         this.beanManager.register(new Config(this));
+        
+        this.cacheMap = new CacheMap(this);
     }
     
     /**
@@ -2728,8 +2730,8 @@ public final class Ruby {
         return executor;
     }
 
-    private CacheMap cacheMap = new CacheMap();
-    private ThreadService threadService;
+    private final CacheMap cacheMap;
+    private final ThreadService threadService;
     private Hashtable<Object, Object> runtimeInformation;
     
     private POSIX posix;

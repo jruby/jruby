@@ -32,9 +32,12 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import org.jruby.Ruby;
 import org.jruby.util.collections.WeakHashSet;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.RubyModule;
+import org.jruby.management.MethodCache;
 
 /**
  * This class represents mappings between methods that have been cached and the classes which
@@ -52,10 +55,61 @@ import org.jruby.RubyModule;
  * call this is responsible for synchronization.
  */
 public class CacheMap {
+    private AtomicInteger addCount = new AtomicInteger(0);
+    private AtomicInteger removeCount = new AtomicInteger(0);
+    private AtomicInteger moduleIncludeCount = new AtomicInteger(0);
+    private AtomicInteger moduleTriggeredRemoveCount = new AtomicInteger(0);
+    private AtomicInteger flushTriggeredRemoveCount = new AtomicInteger(0);
+    private AtomicInteger flushCount = new AtomicInteger(0);
+    
+    public CacheMap(Ruby ruby) {
+        ruby.getBeanManager().register(new MethodCache(this));
+    }
+    
     public interface CacheSite {
         public void removeCachedMethod();
     }
     private final Map<DynamicMethod, Set<CacheSite>> mappings = new WeakHashMap<DynamicMethod, Set<CacheSite>>();
+    
+    public int getAddCount() {
+        return addCount.get();
+    }
+    
+    public int getRemoveCount() {
+        return removeCount.get();
+    }
+    
+    public int getModuleIncludeCount() {
+        return moduleIncludeCount.get();
+    }
+    
+    public int getModuleTriggeredRemoveCount() {
+        return moduleTriggeredRemoveCount.get();
+    }
+    
+    public int getFlushCount() {
+        return flushCount.get();
+    }
+    
+    public synchronized void flush() {
+        // track total removed to add to remove count
+        int totalRemoved = 0;
+        
+        for (DynamicMethod method : mappings.keySet()) {
+            Set<CacheSite> cacheSites  = mappings.get(method);
+            if (cacheSites == null) continue;
+            
+            for(CacheSite site : cacheSites) {
+                totalRemoved++;
+                site.removeCachedMethod();
+            }
+        }
+        mappings.clear();
+        
+        flushTriggeredRemoveCount.addAndGet(totalRemoved);
+        removeCount.addAndGet(totalRemoved);
+        flushCount.incrementAndGet();
+    }
     
     /**
      * Add another class to the list of classes which are caching the method.
@@ -72,6 +126,8 @@ public class CacheMap {
         }
 
         siteList.add(site);
+        
+        addCount.incrementAndGet();
     }
     
     /**
@@ -92,12 +148,17 @@ public class CacheMap {
                 site.removeCachedMethod();
             }
         }
+        
+        removeCount.incrementAndGet();
     }
     
     /**
      * Remove method caches for all methods in a module 
      */
     public synchronized void moduleIncluded(RubyModule targetModule, RubyModule includedModule) {
+        // track total removed to add to remove count
+        int totalRemoved = 0;
+        
         for (String methodName : includedModule.getMethods().keySet()) {
 
             for(RubyModule current = targetModule; current != null; current = current.getSuperClass()) {
@@ -107,11 +168,16 @@ public class CacheMap {
                     Set<CacheSite> adapters = mappings.remove(method);
                     if (adapters != null) {
                         for(CacheSite adapter : adapters) {
+                            totalRemoved++;
                             adapter.removeCachedMethod();
                         }
                     }
                 }
             }
         }
+        
+        moduleTriggeredRemoveCount.addAndGet(totalRemoved);
+        removeCount.addAndGet(totalRemoved);
+        moduleIncludeCount.incrementAndGet();
     }
 }
