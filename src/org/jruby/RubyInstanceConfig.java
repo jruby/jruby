@@ -214,7 +214,6 @@ public class RubyInstanceConfig {
             currentDirectory = JRubyFile.getFileProperty("user.dir");
         }
 
-        managementEnabled = SafePropertyAccessor.getBoolean("jruby.management.enabled", true);
         samplingEnabled = SafePropertyAccessor.getBoolean("jruby.sampling.enabled", false);
         String compatString = SafePropertyAccessor.getProperty("jruby.compat.version", "RUBY1_8");
         if (compatString.equalsIgnoreCase("RUBY1_8")) {
@@ -233,10 +232,12 @@ public class RubyInstanceConfig {
             jitLogEvery = 0;
             jitThreshold = -1;
             jitMax = 0;
+            managementEnabled = false;
         } else {
             String threshold = SafePropertyAccessor.getProperty("jruby.jit.threshold");
             String max = SafePropertyAccessor.getProperty("jruby.jit.max");
 
+            managementEnabled = SafePropertyAccessor.getBoolean("jruby.management.enabled", true);
             runRubyInProcess = SafePropertyAccessor.getBoolean("jruby.launch.inproc", true);
             boolean jitProperty = SafePropertyAccessor.getProperty("jruby.jit.enabled") != null;
             if (jitProperty) {
