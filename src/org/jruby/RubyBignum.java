@@ -227,13 +227,28 @@ public class RubyBignum extends RubyInteger {
     @JRubyMethod(name = "+", required = 1)
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
-            return bignorm(getRuntime(), value.add(fix2big(((RubyFixnum) other))));
-        }
-        if (other instanceof RubyBignum) {
-            return bignorm(getRuntime(), value.add(((RubyBignum) other).value));
+            return addFixnum((RubyFixnum)other);
+        } else if (other instanceof RubyBignum) {
+            return addBignum((RubyBignum)other);
         } else if (other instanceof RubyFloat) {
-            return RubyFloat.newFloat(getRuntime(), big2dbl(this) + ((RubyFloat) other).getDoubleValue());
+            return addFloat((RubyFloat)other);
+        }
+        return addOther(context, other);
     }
+    
+    private IRubyObject addFixnum(RubyFixnum other) {
+        return bignorm(getRuntime(), value.add(fix2big(other)));
+    }
+    
+    private IRubyObject addBignum(RubyBignum other) {
+        return bignorm(getRuntime(), value.add(other.value));
+    }
+    
+    private IRubyObject addFloat(RubyFloat other) {
+        return RubyFloat.newFloat(getRuntime(), big2dbl(this) + other.getDoubleValue());
+    }
+    
+    private IRubyObject addOther(ThreadContext context, IRubyObject other) {
         return coerceBin(context, "+", other);
     }
 
@@ -243,13 +258,28 @@ public class RubyBignum extends RubyInteger {
     @JRubyMethod(name = "-", required = 1)
     public IRubyObject op_minus(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
-            return bignorm(getRuntime(), value.subtract(fix2big(((RubyFixnum) other))));
-    }
-        if (other instanceof RubyBignum) {
-            return bignorm(getRuntime(), value.subtract(((RubyBignum) other).value));
+            return subtractFixnum((RubyFixnum)other);
+        } else if (other instanceof RubyBignum) {
+            return subtractBignum((RubyBignum)other);
         } else if (other instanceof RubyFloat) {
-            return RubyFloat.newFloat(getRuntime(), big2dbl(this) - ((RubyFloat) other).getDoubleValue());
+            return subtractFloat((RubyFloat)other);
+        }
+        return subtractOther(context, other);
     }
+    
+    private IRubyObject subtractFixnum(RubyFixnum other) {
+        return bignorm(getRuntime(), value.subtract(fix2big(((RubyFixnum) other))));
+    }
+    
+    private IRubyObject subtractBignum(RubyBignum other) {
+        return bignorm(getRuntime(), value.subtract(((RubyBignum) other).value));
+    }
+    
+    private IRubyObject subtractFloat(RubyFloat other) {
+        return RubyFloat.newFloat(getRuntime(), big2dbl(this) - ((RubyFloat) other).getDoubleValue());
+    }
+    
+    private IRubyObject subtractOther(ThreadContext context, IRubyObject other) {
         return coerceBin(context, "-", other);
     }
 

@@ -90,7 +90,7 @@ public class RubyComparable {
     /** rb_cmperr
      * 
      */
-    public static void cmperr(IRubyObject recv, IRubyObject other) {
+    public static IRubyObject cmperr(IRubyObject recv, IRubyObject other) {
         IRubyObject target;
         if (other.isImmediate() || !(other.isNil() || other.isTrue() || other == recv.getRuntime().getFalse())) {
             target = other.inspect();

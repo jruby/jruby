@@ -209,12 +209,6 @@ public class RubyThread extends RubyObject {
         return rubyThread;
     }
     
-    private void ensureCurrent(ThreadContext context) {
-        if (this != context.getThread()) {
-            throw new RuntimeException("internal thread method called from another thread");
-        }
-    }
-    
     private void ensureNotCurrent() {
         if (this == getRuntime().getCurrentContext().getThread()) {
             throw new RuntimeException("internal thread method called from another thread");
@@ -234,15 +228,20 @@ public class RubyThread extends RubyObject {
         // check for criticalization *before* locking ourselves
         threadService.waitForCritical();
 
-        ensureCurrent(context);
+        assert this == context.getThread();
 
-        if (DEBUG) System.out.println("thread " + Thread.currentThread() + " before");
-        if (killed) throw new ThreadKill();
-
-        if (DEBUG) System.out.println("thread " + Thread.currentThread() + " after");
+        die();
+        raiseException(context);
+    }
+    
+    private void raiseException(ThreadContext context) {
         if (receivedException != null) {
             receivedAnException(context);
         }
+    }
+    
+    private void die() {
+        if (killed) throw new ThreadKill();
     }
 
     /**
@@ -657,7 +656,7 @@ public class RubyThread extends RubyObject {
     }
     
     public void sleep(long millis) throws InterruptedException {
-        ensureCurrent(getRuntime().getCurrentContext());
+        assert this == getRuntime().getCurrentContext().getThread();
         synchronized (stopLock) {
             pollThreadEvents();
             try {

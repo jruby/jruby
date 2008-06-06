@@ -443,15 +443,18 @@ public class RubyNumeric extends RubyObject {
     protected final IRubyObject coerceRelOp(ThreadContext context, String method, IRubyObject other) {
         RubyArray ary = doCoerce(context, other, false);
         if (ary != null) {
-            IRubyObject result = (ary.eltInternal(0)).callMethod(context, method,ary.eltInternal(1));
+            IRubyObject result = unwrapCoerced(context, method, ary);
             if (!result.isNil()) {
                 return result;
             }
         }
     
-        RubyComparable.cmperr(this, other); // MRI also does it that way       
-        return null; // not reachd as in MRI
-    } 
+        return RubyComparable.cmperr(this, other);
+    }
+    
+    private final IRubyObject unwrapCoerced(ThreadContext context, String method, RubyArray ary) {
+        return (ary.eltInternal(0)).callMethod(context, method,ary.eltInternal(1));
+    }
         
     public RubyNumeric asNumeric() {
         return this;
