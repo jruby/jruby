@@ -230,18 +230,8 @@ public class RubyThread extends RubyObject {
 
         assert this == context.getThread();
 
-        die();
-        raiseException(context);
-    }
-    
-    private void raiseException(ThreadContext context) {
-        if (receivedException != null) {
-            receivedAnException(context);
-        }
-    }
-    
-    private void die() {
         if (killed) throw new ThreadKill();
+        if (receivedException != null) receivedAnException(context);
     }
 
     /**

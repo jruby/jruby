@@ -197,35 +197,33 @@ public final class ThreadContext {
         return scopeStack[scopeIndex - 1];
     }
     
-    private void expandFramesIfNecessary(int newMax) {
-        if (newMax == frameStack.length) {
-            int newSize = frameStack.length * 2;
-            Frame[] newFrameStack = new Frame[newSize];
-            
-            System.arraycopy(frameStack, 0, newFrameStack, 0, frameStack.length);
-            
-            for (int i = frameStack.length; i < newSize; i++) {
-                newFrameStack[i] = new Frame();
-            }
-            
-            frameStack = newFrameStack;
+    private void expandFramesIfNecessary() {
+        int newSize = frameStack.length * 2;
+        Frame[] newFrameStack = new Frame[newSize];
+
+        System.arraycopy(frameStack, 0, newFrameStack, 0, frameStack.length);
+
+        for (int i = frameStack.length; i < newSize; i++) {
+            newFrameStack[i] = new Frame();
         }
+
+        frameStack = newFrameStack;
     }
     
     private void expandParentsIfNecessary() {
-        if (parentIndex + 1 == parentStack.length) {
-            int newSize = parentStack.length * 2;
-            RubyModule[] newParentStack = new RubyModule[newSize];
-            
-            System.arraycopy(parentStack, 0, newParentStack, 0, parentStack.length);
-            
-            parentStack = newParentStack;
-        }
+        int newSize = parentStack.length * 2;
+        RubyModule[] newParentStack = new RubyModule[newSize];
+
+        System.arraycopy(parentStack, 0, newParentStack, 0, parentStack.length);
+
+        parentStack = newParentStack;
     }
     
     public void pushScope(DynamicScope scope) {
         scopeStack[++scopeIndex] = scope;
-        expandScopesIfNecessary();
+        if (scopeIndex + 1 == scopeStack.length) {
+            expandScopesIfNecessary();
+        }
     }
     
     public void popScope() {
@@ -233,14 +231,12 @@ public final class ThreadContext {
     }
     
     private void expandScopesIfNecessary() {
-        if (scopeIndex + 1 == scopeStack.length) {
-            int newSize = scopeStack.length * 2;
-            DynamicScope[] newScopeStack = new DynamicScope[newSize];
-            
-            System.arraycopy(scopeStack, 0, newScopeStack, 0, scopeStack.length);
-            
-            scopeStack = newScopeStack;
-        }
+        int newSize = scopeStack.length * 2;
+        DynamicScope[] newScopeStack = new DynamicScope[newSize];
+
+        System.arraycopy(scopeStack, 0, newScopeStack, 0, scopeStack.length);
+
+        scopeStack = newScopeStack;
     }
     
     public RubyThread getThread() {
@@ -272,18 +268,18 @@ public final class ThreadContext {
     
     //////////////////// CATCH MANAGEMENT ////////////////////////
     private void expandCatchIfNecessary() {
-        if (catchIndex + 1 == catchStack.length) {
-            int newSize = catchStack.length * 2;
-            CatchTarget[] newCatchStack = new CatchTarget[newSize];
-            
-            System.arraycopy(catchStack, 0, newCatchStack, 0, catchStack.length);
-            catchStack = newCatchStack;
-        }
+        int newSize = catchStack.length * 2;
+        CatchTarget[] newCatchStack = new CatchTarget[newSize];
+
+        System.arraycopy(catchStack, 0, newCatchStack, 0, catchStack.length);
+        catchStack = newCatchStack;
     }
     
     public void pushCatch(CatchTarget catchTarget) {
         catchStack[++catchIndex] = catchTarget;
-        expandCatchIfNecessary();
+        if (catchIndex + 1 == catchStack.length) {
+            expandCatchIfNecessary();
+        }
     }
     
     public void popCatch() {
@@ -302,24 +298,33 @@ public final class ThreadContext {
     private void pushFrameCopy() {
         Frame currentFrame = getCurrentFrame();
         frameStack[++frameIndex].updateFrame(currentFrame);
-        expandFramesIfNecessary(frameIndex + 1);
+        if (frameIndex + 1 == frameStack.length) {
+            expandFramesIfNecessary();
+        }
     }
     
     private Frame pushFrameCopy(Frame frame) {
         frameStack[++frameIndex].updateFrame(frame);
-        expandFramesIfNecessary(frameIndex + 1);
+        if (frameIndex + 1 == frameStack.length) {
+            expandFramesIfNecessary();
+        }
         return frameStack[frameIndex];
     }
     
     private Frame pushFrame(Frame frame) {
         frameStack[++frameIndex] = frame;
-        expandFramesIfNecessary(frameIndex + 1);
+        if (frameIndex + 1 == frameStack.length) {
+            expandFramesIfNecessary();
+        }
         return frame;
     }
     
     private void pushCallFrame(RubyModule clazz, String name, 
                                IRubyObject self, Block block, JumpTarget jumpTarget) {
-        pushFrame(clazz, name, self, block, jumpTarget);        
+        frameStack[++frameIndex].updateFrame(clazz, self, name, block, file, line, jumpTarget);
+        if (frameIndex + 1 == frameStack.length) {
+            expandFramesIfNecessary();
+        }
     }
     
     private void pushBacktraceFrame(String name) {
@@ -328,18 +333,14 @@ public final class ThreadContext {
     
     private void pushFrame(String name) {
         frameStack[++frameIndex].updateFrame(name, file, line);
-        expandFramesIfNecessary(frameIndex + 1);
-    }
-
-    private void pushFrame(RubyModule clazz, String name, 
-                               IRubyObject self, Block block, JumpTarget jumpTarget) {
-        frameStack[++frameIndex].updateFrame(clazz, self, name, block, file, line, jumpTarget);
-        expandFramesIfNecessary(frameIndex + 1);
+        expandFramesIfNecessary();
     }
     
     private void pushFrame() {
         frameStack[++frameIndex].updateFrame(file, line);
-        expandFramesIfNecessary(frameIndex + 1);
+        if (frameIndex + 1 == frameStack.length) {
+            expandFramesIfNecessary();
+        }
     }
     
     private void popFrame() {
@@ -374,7 +375,7 @@ public final class ThreadContext {
     }
     
     public Frame getNextFrame() {
-        expandFramesIfNecessary(frameIndex + 1);
+        expandFramesIfNecessary();
         return frameStack[frameIndex + 1];
     }
     
@@ -459,7 +460,9 @@ public final class ThreadContext {
         //assert currentModule != null : "Can't push null RubyClass";
         
         parentStack[++parentIndex] = currentModule;
-        expandParentsIfNecessary();
+        if (parentIndex + 1 == parentStack.length) {
+            expandParentsIfNecessary();
+        }
     }
     
     public RubyModule popRubyClass() {
