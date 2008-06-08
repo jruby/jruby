@@ -58,6 +58,10 @@ if "%_CMP%" == "--sample" (
   set _CMP="-J-Xprof"
 )
 
+if "%_CMP%" == "--manage" (
+  set _CMP="-J-Dcom.sun.management.jmxremote"
+)
+
 rem now unescape -q and -d
 set _CMP=%_CMP:-q="%
 set _CMP=%_CMP:-d=-%
