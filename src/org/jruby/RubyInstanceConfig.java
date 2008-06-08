@@ -324,6 +324,7 @@ public class RubyInstanceConfig {
                 .append("  --sample        run with profiling using the JVM's sampling profiler\n")
                 .append("  --client        use the non-optimizing \"client\" JVM (improves startup; default)\n")
                 .append("  --server        use the optimizing \"server\" JVM (improves perf)\n")
+                .append("  --manage        enable remote JMX management and monitoring of the VM and JRuby\n")
                 .append("  --version       print the version\n");
 
         return sb.toString();
