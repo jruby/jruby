@@ -31,21 +31,20 @@ package org.jruby;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.jruby.anno.FrameField;
-import org.jruby.anno.JRubyMethod;
-import org.jruby.anno.JRubyClass;
 
+import org.jruby.anno.FrameField;
+import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import org.jruby.util.io.InvalidValueException;
-import org.jruby.util.io.Stream;
 import org.jruby.util.ByteList;
+import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.ModeFlags;
+import org.jruby.util.io.Stream;
 
 @JRubyClass(name="StringIO")
 public class RubyStringIO extends RubyObject {
@@ -222,13 +221,8 @@ public class RubyStringIO extends RubyObject {
         return each(context, args, block);
     }
 
-    @JRubyMethod(name = "eof")
+    @JRubyMethod(name = {"eof", "eof?"})
     public IRubyObject eof() {
-        return (pos >= internal.getByteList().length() || eof) ? getRuntime().getTrue() : getRuntime().getFalse();
-    }
-
-    @JRubyMethod(name = "eof?")
-    public IRubyObject eof_p() {
         return (pos >= internal.getByteList().length() || eof) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
@@ -260,40 +254,75 @@ public class RubyStringIO extends RubyObject {
         return getRuntime().newFixnum(internal.getByteList().get((int)pos++) & 0xFF);
     }
 
-    public IRubyObject internalGets(IRubyObject[] args) {
+    private IRubyObject internalGets(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+
         if (pos < internal.getByteList().realSize && !eof) {
-            ByteList sep = ((RubyString)getRuntime().getGlobalVariables().get("$/")).getByteList();
-            if (args.length>0) {
+            boolean isParagraph = false;
+
+            ByteList sep;
+            if (args.length > 0) {
                 if (args[0].isNil()) {
-                    ByteList buf = internal.getByteList().makeShared((int)pos, internal.getByteList().realSize-(int)pos);
-                    pos+=buf.realSize;
-                    return RubyString.newString(getRuntime(),buf);
+                    ByteList buf = internal.getByteList().makeShared(
+                            (int)pos, internal.getByteList().realSize - (int)pos);
+                    pos += buf.realSize;
+                    return RubyString.newString(runtime, buf);
                 }
                 sep = args[0].convertToString().getByteList();
+                if (sep.realSize == 0) {
+                    isParagraph = true;
+                    sep = Stream.PARAGRAPH_SEPARATOR;
+                }
+            } else {
+                sep = ((RubyString)runtime.getGlobalVariables().get("$/")).getByteList();
             }
+
             ByteList ss = internal.getByteList();
-            int ix = ss.indexOf(sep,(int)pos);
-            ByteList add = sep;
+
+            if (isParagraph) {
+                swallowLF(ss);
+                if (pos == ss.realSize) {
+                    return runtime.getNil();
+                }
+            }
+
+            int ix = ss.indexOf(sep, (int)pos);
+
+            ByteList add;
             if (-1 == ix) {
                 ix = internal.getByteList().realSize;
                 add = new ByteList(new byte[0], false);
+            } else {
+                add = isParagraph? NEWLINE : sep;
             }
-            ByteList line = internal.getByteList().makeShared((int)pos, ix-(int)pos);
+
+            ByteList line = internal.getByteList().makeShared((int)pos, ix - (int)pos);
             line.unshare();
             line.append(add);
             line.invalidate();
             pos = ix + add.realSize;
             lineno++;
-            return RubyString.newString(getRuntime(),line);
+
+            return RubyString.newString(runtime,line);
         }
-        return getRuntime().getNil();
+        return runtime.getNil();
+    }
+
+    private void swallowLF(ByteList list) {
+        while (pos < list.realSize) {
+            if (list.get((int)pos) == '\n') {
+                pos++;
+            } else {
+                break;
+            }
+        }
     }
 
     @JRubyMethod(name = "gets", optional = 1, writes = FrameField.LASTLINE)
     public IRubyObject gets(ThreadContext context, IRubyObject[] args) {
         checkReadable();
 
-        IRubyObject result = internalGets(args);
+        IRubyObject result = internalGets(context, args);
         context.getCurrentFrame().setLastLine(result);
 
         return result;
@@ -556,14 +585,19 @@ public class RubyStringIO extends RubyObject {
     @JRubyMethod(name = "readlines", optional = 1, writes = FrameField.LASTLINE)
     public IRubyObject readlines(ThreadContext context, IRubyObject[] arg) {
         checkReadable();
-        
+
         List<IRubyObject> lns = new ArrayList<IRubyObject>();
         while (!(pos >= internal.getByteList().length() || eof)) {
-            lns.add(gets(context, arg));
+            IRubyObject line = gets(context, arg);
+            if (line.isNil()) {
+                break;
+            }
+            lns.add(line);
         }
+
         return getRuntime().newArray(lns);
     }
-    
+
     @JRubyMethod(name = "reopen", required = 1, optional = 1)
     public IRubyObject reopen(IRubyObject[] args) {
         IRubyObject str = args[0];
