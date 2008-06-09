@@ -140,7 +140,7 @@ public class RubyStringIO extends RubyObject {
         checkWritable();
         checkFrozen();
 
-        RubyString val = ((RubyString)obj.callMethod(context, MethodIndex.TO_S, "to_s"));
+        RubyString val = obj.asString();
         internal.modify();
         if (modes.isAppendable()) {
             internal.getByteList().append(val.getByteList());
@@ -148,6 +148,10 @@ public class RubyStringIO extends RubyObject {
             int left = internal.getByteList().length()-(int)pos;
             internal.getByteList().replace((int)pos,Math.min(val.getByteList().length(),left),val.getByteList());
             pos += val.getByteList().length();
+        }
+
+        if (val.isTaint()) {
+            internal.setTaint(true);
         }
 
         return this;
@@ -160,6 +164,10 @@ public class RubyStringIO extends RubyObject {
     
     @JRubyMethod(name = "close")
     public IRubyObject close() {
+        if (closedRead && closedWrite) {
+            throw getRuntime().newIOError("closed stream");
+        }
+
         closedRead = true;
         closedWrite = true;
         
@@ -173,6 +181,7 @@ public class RubyStringIO extends RubyObject {
 
     @JRubyMethod(name = "close_read")
     public IRubyObject close_read() {
+        checkReadable();
         closedRead = true;
         
         return getRuntime().getNil();
@@ -185,6 +194,7 @@ public class RubyStringIO extends RubyObject {
 
     @JRubyMethod(name = "close_write")
     public IRubyObject close_write() {
+        checkWritable();
         closedWrite = true;
         
         return getRuntime().getNil();
@@ -714,11 +724,6 @@ public class RubyStringIO extends RubyObject {
         return obj; 
     }
 
-    @JRubyMethod(name = "syswrite", required = 1)
-    public IRubyObject syswrite(ThreadContext context, IRubyObject args) {
-        return write(context, args);
-    }
-
     @JRubyMethod(name = "truncate", required = 1)
     public IRubyObject truncate(IRubyObject arg) {
         checkWritable();
@@ -742,7 +747,7 @@ public class RubyStringIO extends RubyObject {
         return getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "write", required = 1)
+    @JRubyMethod(name = {"write", "syswrite"}, required = 1)
     public IRubyObject write(ThreadContext context, IRubyObject arg) {
         checkWritable();
         String obj = arg.toString();
