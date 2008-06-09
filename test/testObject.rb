@@ -148,6 +148,8 @@ class Class1
     @one = 123
     @two = nil
   end
+  def initialize_copy
+  end
 end
 
 c1 = Class1.new
@@ -159,6 +161,10 @@ end
 test_ok !c1.instance_variable_defined?(:@three)
 test_ok c1.instance_variable_defined?(:@one)
 test_ok c1.instance_variable_defined?(:@two)
+
+# JRUBY-2624: Object#initialize_copy should always be private
+test_ok c1.private_methods.include?("initialize")
+test_ok c1.private_methods.include?("initialize_copy")
 
 # Test tap
 value = nil

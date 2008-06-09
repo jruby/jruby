@@ -938,7 +938,7 @@ public class RuntimeHelpers {
     private static DynamicMethod constructNormalMethod(String name, Visibility visibility, MethodFactory factory, RubyModule containingClass, String javaName, int arity, StaticScope scope, Object scriptObject, CallConfiguration callConfig) {
         DynamicMethod method;
 
-        if (name.equals("initialize") || visibility == Visibility.MODULE_FUNCTION) {
+        if (name.equals("initialize") || name.equals("initialize_copy") || visibility == Visibility.MODULE_FUNCTION) {
             method = factory.getCompiledMethod(containingClass, javaName, Arity.createArity(arity), Visibility.PRIVATE, scope, scriptObject, callConfig);
         } else {
             method = factory.getCompiledMethod(containingClass, javaName, Arity.createArity(arity), visibility, scope, scriptObject, callConfig);

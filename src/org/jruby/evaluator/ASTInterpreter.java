@@ -897,7 +897,7 @@ public class ASTInterpreter {
         }
 
         Visibility visibility = context.getCurrentVisibility();
-        if (name == "initialize" || visibility == Visibility.MODULE_FUNCTION) {
+        if (name == "initialize" || name == "initialize_copy" || visibility == Visibility.MODULE_FUNCTION) {
             visibility = Visibility.PRIVATE;
         }
         
