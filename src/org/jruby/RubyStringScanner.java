@@ -5,10 +5,10 @@ import org.joni.Option;
 import org.joni.Regex;
 import org.joni.Region;
 import org.joni.encoding.Encoding;
-import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.runtime.Arity;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -42,6 +42,16 @@ public class RubyStringScanner extends RubyObject {
         scannerClass.defineAnnotatedMethods(RubyStringScanner.class);
         scannerClass.setConstant("Version", runtime.newString("0.7.0").freeze());
         scannerClass.setConstant("Id", runtime.newString("$Id: strscan.c 13506 2007-09-24 08:56:24Z nobu $").freeze());
+
+        RubyClass standardError = runtime.getStandardError();
+        RubyClass error = scannerClass.defineClassUnder(
+                "Error", standardError, standardError.getAllocator());
+
+        RubyClass objClass = runtime.getObject();
+        if (!objClass.isConstantDefined("ScanError")) {
+            objClass.defineConstant("ScanError", error);
+        }
+
         return scannerClass;
     }
 
@@ -325,8 +335,13 @@ public class RubyStringScanner extends RubyObject {
     @JRubyMethod(name = "unscan")
     public IRubyObject unscan() {
         check();
-        // TODO: should be ScanError here 
-        if (!isMatched()) throw getRuntime().newEOFError("unscan failed: previous match had failed");
+        Ruby runtime = getRuntime();
+
+        if (!isMatched()) {
+            RubyClass errorClass = runtime.fastGetClass("StringScanner").fastGetClass("Error");
+            throw new RaiseException(RubyException.newException(
+                    runtime, errorClass, "unscan failed: previous match had failed"));
+        }
         pos = lastPos;
         clearMatched();
         return this;
