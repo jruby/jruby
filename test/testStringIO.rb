@@ -188,3 +188,8 @@ s = StringIO.new("foo\n", "r")
 s.gets
 s.gets
 test_equal(nil ,$_)
+
+# JRUBY-2629
+test_exception(IOError) { StringIO.allocate.gets }
+test_exception(IOError) { StringIO.allocate << 5 }
+test_exception(IOError) { StringIO.allocate.close }

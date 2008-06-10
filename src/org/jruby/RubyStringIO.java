@@ -172,6 +172,7 @@ public class RubyStringIO extends RubyObject {
     
     @JRubyMethod(name = "close")
     public IRubyObject close() {
+        checkInitialized();
         if (closedRead && closedWrite) {
             throw getRuntime().newIOError("closed stream");
         }
@@ -184,6 +185,7 @@ public class RubyStringIO extends RubyObject {
 
     @JRubyMethod(name = "closed?")
     public IRubyObject closed_p() {
+        checkInitialized();
         return getRuntime().newBoolean(closedRead && closedWrite);
     }
 
@@ -197,6 +199,7 @@ public class RubyStringIO extends RubyObject {
 
     @JRubyMethod(name = "closed_read?")
     public IRubyObject closed_read_p() {
+        checkInitialized();
         return getRuntime().newBoolean(closedRead);
     }
 
@@ -210,6 +213,7 @@ public class RubyStringIO extends RubyObject {
 
     @JRubyMethod(name = "closed_write?")
     public IRubyObject closed_write_p() {
+        checkInitialized();
         return getRuntime().newBoolean(closedWrite);
     }
 
@@ -775,14 +779,27 @@ public class RubyStringIO extends RubyObject {
     
     /* rb: readable */
     private void checkReadable() {
-        if (closedRead || !modes.isReadable()) throw getRuntime().newIOError("not opened for reading");
+        checkInitialized();
+        if (closedRead || !modes.isReadable()) {
+            throw getRuntime().newIOError("not opened for reading");
+        }
     }
+
 
     /* rb: writable */
     private void checkWritable() {
-        if (closedWrite || !modes.isWritable()) throw getRuntime().newIOError("not opened for writing");
+        checkInitialized();
+        if (closedWrite || !modes.isWritable()) {
+            throw getRuntime().newIOError("not opened for writing");
+        }
 
         // Tainting here if we ever want it. (secure 4)
+    }
+
+    private void checkInitialized() {
+        if (modes == null) {
+            throw getRuntime().newIOError("uninitialized stream");
+        }
     }
 
     private void setupModes() {
