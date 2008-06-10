@@ -1,0 +1,1 @@
+fails(JRUBY-2626):SortedSet#delete_if yields each Object in self in sorted order
