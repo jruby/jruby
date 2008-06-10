@@ -286,7 +286,7 @@ public class RubyString extends RubyObject {
     }
 
     final void modifyCheck() {
-        if ((flags & FROZEN_F) != 0) throw getRuntime().newFrozenError("string" + getMetaClass().getName());           
+        if ((flags & FROZEN_F) != 0) throw getRuntime().newFrozenError("string");
 
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
             throw getRuntime().newSecurityError("Insecure: can't modify string");

@@ -128,10 +128,18 @@ public class RubyStringIO extends RubyObject {
                     modeArgument = args[1].convertToString().toString();
                 }
                 break;
-            }
-            
+        }
+
         initializeModes(modeArgument);
-        
+
+        if (modes.isWritable() && internal.isFrozen()) {
+            throw getRuntime().newErrnoEACCESError("Permission denied");
+        }
+
+        if (modes.isTruncate()) {
+            internal.replace(getRuntime().newString());
+        }
+
         return this;
     }
 
@@ -727,8 +735,12 @@ public class RubyStringIO extends RubyObject {
     @JRubyMethod(name = "truncate", required = 1)
     public IRubyObject truncate(IRubyObject arg) {
         checkWritable();
-        
+
         int len = RubyFixnum.fix2int(arg);
+        if (len < 0) {
+            throw getRuntime().newErrnoEINVALError("negative legnth");
+        }
+
         internal.modify();
         internal.getByteList().length(len);
         return getRuntime().newFixnum(len);
