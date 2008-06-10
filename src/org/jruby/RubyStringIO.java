@@ -137,7 +137,8 @@ public class RubyStringIO extends RubyObject {
         }
 
         if (modes.isTruncate()) {
-            internal.replace(getRuntime().newString());
+            internal.modifyCheck();
+            internal.empty();
         }
 
         return this;
@@ -632,8 +633,6 @@ public class RubyStringIO extends RubyObject {
             internal = ((RubyStringIO)str).internal;
             modes = ((RubyStringIO)str).modes;
         } else {
-            pos = 0L;
-            lineno = 0;
             eof = false;
             closedRead = false;
             closedWrite = false;
@@ -661,7 +660,7 @@ public class RubyStringIO extends RubyObject {
             throw getRuntime().newErrnoEACCESError("not opened for writing");
         }
         
-        if (closedRead && !modes.isAppendable()) {
+        if (modes.isTruncate()) {
             // if doing explicit write mode, truncate incoming string
             internal.modifyCheck(); // prevent eventual COW
             internal.empty();
@@ -704,7 +703,10 @@ public class RubyStringIO extends RubyObject {
 
     @JRubyMethod(name = "string=", required = 1)
     public IRubyObject set_string(IRubyObject arg) {
-        return reopen(new IRubyObject[] { arg });
+        reopen(new IRubyObject[] { arg });
+        pos = 0;
+        lineno = 0;
+        return this;
     }
 
     @JRubyMethod(name = "sync=", required = 1)
