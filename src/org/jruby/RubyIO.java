@@ -2517,7 +2517,14 @@ public class RubyIO extends RubyObject {
     public static IRubyObject select(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return select_static(context, recv.getRuntime(), args);
     }
-   
+
+    private static void checkArrayType(Ruby runtime, IRubyObject obj) {
+        if (!(obj instanceof RubyArray)) {
+            throw runtime.newTypeError("wrong argument type "
+                    + obj.getMetaClass().getName() + " (expected Array)");
+        }
+    }
+
     public static IRubyObject select_static(ThreadContext context, Ruby runtime, IRubyObject[] args) {
        try {
            // FIXME: This needs to be ported
@@ -2529,6 +2536,7 @@ public class RubyIO extends RubyObject {
                atLeastOneDescriptor = true;
                
                // read
+               checkArrayType(runtime, args[0]);
                for (Iterator i = ((RubyArray) args[0]).getList().iterator(); i.hasNext(); ) {
                    IRubyObject obj = (IRubyObject) i.next();
                    RubyIO ioObj = registerSelect(context, selector, obj, 
@@ -2537,27 +2545,35 @@ public class RubyIO extends RubyObject {
                    if (ioObj!=null && ioObj.writeDataBuffered()) pending.add(obj);
                }
            }
+
            if (args.length > 1 && !args[1].isNil()) {
                atLeastOneDescriptor = true;
                // write
+               checkArrayType(runtime, args[1]);
                for (Iterator i = ((RubyArray) args[1]).getList().iterator(); i.hasNext(); ) {
                    IRubyObject obj = (IRubyObject) i.next();
                    registerSelect(context, selector, obj, SelectionKey.OP_WRITE);
                }
            }
+
            if (args.length > 2 && !args[2].isNil()) {
                atLeastOneDescriptor = true;
+               checkArrayType(runtime, args[2]);
                // Java's select doesn't do anything about this, so we leave it be.
            }
-           
+
            long timeout = 0;
            if(args.length > 3 && !args[3].isNil()) {
-               if (args[3] instanceof RubyFloat) {
-                   timeout = Math.round(((RubyFloat) args[3]).getDoubleValue() * 1000);
-               } else {
-                   timeout = Math.round(((RubyFixnum) args[3]).getDoubleValue() * 1000);
+               IRubyObject timeArg = args[3];
+               if (timeArg instanceof RubyFloat) {
+                   timeout = Math.round(((RubyFloat) timeArg).getDoubleValue() * 1000);
+               } else if (timeArg instanceof RubyFixnum) {
+                   timeout = Math.round(((RubyFixnum) timeArg).getDoubleValue() * 1000);
+               } else { // TODO: MRI also can hadle Bignum here
+                   throw runtime.newTypeError("can't convert "
+                           + timeArg.getMetaClass().getName() + " into time interval");
                }
-               
+
                if (timeout < 0) {
                    throw runtime.newArgumentError("negative timeout given");
                }
