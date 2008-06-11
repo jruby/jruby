@@ -2491,17 +2491,10 @@ public class RubyIO extends RubyObject {
     }
    
     private static RubyIO registerSelect(ThreadContext context, Selector selector, IRubyObject obj, int ops) throws IOException {
-       RubyIO ioObj;
-       
-       if (!(obj instanceof RubyIO)) {
-           // invoke to_io
-           if (!obj.respondsTo("to_io")) return null;
+       RubyIO ioObj = (RubyIO) TypeConverter.convertToType(
+               obj, context.getRuntime().getIO(),
+               MethodIndex.TO_IO, "to_io");
 
-           ioObj = (RubyIO) obj.callMethod(context, "to_io");
-       } else {
-           ioObj = (RubyIO) obj;
-       }
-       
        Channel channel = ioObj.getChannel();
        if (channel == null || !(channel instanceof SelectableChannel)) {
            return null;
@@ -2609,7 +2602,10 @@ public class RubyIO extends RubyObject {
                SelectionKey key = (SelectionKey) i.next();
                SelectableChannel channel = key.channel();
                synchronized(channel.blockingLock()) {
-                   boolean blocking = ((RubyIO) key.attachment()).getBlocking();
+                   RubyIO originalIO = (RubyIO) TypeConverter.convertToType(
+                           (IRubyObject) key.attachment(), runtime.getIO(),
+                           MethodIndex.TO_IO, "to_io");
+                   boolean blocking = originalIO.getBlocking();
                    key.cancel();
                    channel.configureBlocking(blocking);
                }
