@@ -1,1 +1,0 @@
-fails:IO#readpartial raises IOError on closed stream

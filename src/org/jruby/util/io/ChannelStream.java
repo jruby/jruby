@@ -785,10 +785,33 @@ public class ChannelStream implements Stream, Finalizable {
     }
 
     public synchronized ByteList readpartial(int number) throws IOException, BadDescriptorException, EOFException {
+        assert number >= 0;
+
+        if (number == 0) {
+            return null;
+        }
+
         if (descriptor.getChannel() instanceof SelectableChannel) {
+            // make sure that the ungotc is not forgotten
+            if (ungotc >= 0) {
+                number--;
+                if (number == 0 || !buffer.hasRemaining()) {
+                    ByteList result = new ByteList(new byte[] {(byte)ungotc}, false);
+                    ungotc = -1;
+                    return result;
+                }
+            }
+
             if (buffer.hasRemaining()) {
                 // already have some bytes buffered, just return those
-                return bufferedRead(buffer.remaining());
+
+                ByteList result = bufferedRead(Math.min(buffer.remaining(), number));
+
+                if (ungotc >= 0) {
+                    result.prepend((byte)ungotc);
+                    ungotc = -1;
+                }
+                return result;
             } else {
                 // otherwise, we try an unbuffered read to get whatever's available
                 return read(number);
