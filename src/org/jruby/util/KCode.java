@@ -43,7 +43,7 @@ public final class KCode {
     private final String encodingName;
     private final int code;
 
-    private Encoding encoding;
+    private volatile Encoding encoding;
 
     private KCode(String kcode, String encodingName, int code) {
         this.kcode = kcode;
@@ -90,11 +90,9 @@ public final class KCode {
     }
 
     public Encoding getEncoding() {
-        if (encoding == null) loadEncodng();
+        if (encoding == null) {
+            encoding = Encoding.load(encodingName);
+        }
         return encoding;
-    }
-
-    private void loadEncodng() {
-        encoding = Encoding.load(encodingName);
     }
 }
