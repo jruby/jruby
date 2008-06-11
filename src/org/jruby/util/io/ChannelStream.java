@@ -63,12 +63,13 @@ import org.jruby.util.JRubyFile;
 public class ChannelStream implements Stream, Finalizable {
     private final static boolean DEBUG = false;
     private final static int BUFSIZE = 16 * 1024;
+    private final static ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
     
     private Ruby runtime;
     protected ModeFlags modes;
     protected boolean sync = false;
     
-    protected ByteBuffer buffer; // r/w buffer
+    protected volatile ByteBuffer buffer; // r/w buffer
     protected boolean reading; // are we reading or writing?
     private ChannelDescriptor descriptor;
     private boolean blocking = true;
@@ -299,6 +300,7 @@ public class ChannelStream implements Stream, Finalizable {
             flushWrite();
 
             descriptor.close();
+            buffer = EMPTY_BUFFER;
 
             if (DEBUG) getLogger("ChannelStream").info("Descriptor for fileno " + descriptor.getFileno() + " closed by stream");
         } finally {
