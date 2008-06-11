@@ -42,6 +42,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.TypeConverter;
 import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.Stream;
@@ -142,6 +143,14 @@ public class RubyStringIO extends RubyObject {
         }
 
         return this;
+    }
+
+    @JRubyMethod(visibility = Visibility.PRIVATE)
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject other) {
+        RubyStringIO ioObj = (RubyStringIO) TypeConverter.convertToType(
+                other, context.getRuntime().fastGetClass("StringIO"),
+                MethodIndex.getIndex("to_strio"), "to_strio");
+        return reopen(new IRubyObject[] { ioObj });
     }
 
     @JRubyMethod(name = "<<", required = 1)
@@ -271,6 +280,7 @@ public class RubyStringIO extends RubyObject {
 
     @JRubyMethod(name = "getc")
     public IRubyObject getc() {
+        checkReadable();
         if (pos >= internal.getByteList().length()) {
             return getRuntime().getNil();
         }
@@ -632,6 +642,9 @@ public class RubyStringIO extends RubyObject {
             closedWrite = ((RubyStringIO)str).closedWrite;
             internal = ((RubyStringIO)str).internal;
             modes = ((RubyStringIO)str).modes;
+            if (str.isTaint()) {
+                setTaint(true);
+            }
         } else {
             eof = false;
             closedRead = false;
@@ -659,13 +672,15 @@ public class RubyStringIO extends RubyObject {
         if (internal.isFrozen() && modes.isWritable()) {
             throw getRuntime().newErrnoEACCESError("not opened for writing");
         }
-        
-        if (modes.isTruncate()) {
-            // if doing explicit write mode, truncate incoming string
-            internal.modifyCheck(); // prevent eventual COW
-            internal.empty();
+
+        if (args.length == 2) {
+            if (modes.isTruncate()) {
+                // if doing explicit write mode, truncate incoming string
+                internal.modifyCheck(); // prevent eventual COW
+                internal.empty();
+            }
         }
-        
+
         return this;
     }
 
