@@ -1,5 +1,5 @@
 @ECHO OFF
-REM IF NOT "%~f0" == "~f0" GOTO :WinNT
+IF NOT "%~f0" == "~f0" GOTO :WinNT
 @"jruby.bat" -S "rake" %1 %2 %3 %4 %5 %6 %7 %8 %9
 GOTO :EOF
 :WinNT
