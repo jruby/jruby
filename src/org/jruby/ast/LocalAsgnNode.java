@@ -34,10 +34,15 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.compiler.ASTInspector;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * An assignment to a local variable.
@@ -51,10 +56,9 @@ public class LocalAsgnNode extends AssignableNode implements INameNode {
     private final int location;
 
     public LocalAsgnNode(ISourcePosition position, String name, int location, Node valueNode) {
-        super(position, NodeType.LOCALASGNNODE);
+        super(position, NodeType.LOCALASGNNODE, valueNode);
         this.name = name;
         this.location = location;
-        setValueNode(valueNode);
     }
     
     /**
@@ -103,4 +107,12 @@ public class LocalAsgnNode extends AssignableNode implements INameNode {
         return createList(getValueNode());
     }
 
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        // ignore compiler pragmas
+        if (ASTInspector.PRAGMAS.contains(name)) return runtime.getNil();
+        
+        return context.getCurrentScope().setValue(getIndex(),
+                getValueNode().interpret(runtime,context, self, aBlock), getDepth());
+    }
 }

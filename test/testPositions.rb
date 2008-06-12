@@ -18,14 +18,20 @@ def test_pos_ok(a, b, entry, node, test_name)
   test_ok(a == b, "Expected [#{entry.join(',')}] but got [#{node_string(node)}] for #{test_name}")
 end
 
+$table = {}
+AST = org.jruby.ast
+
 def compare_node(node, list, test_name)
   unless node.invisible?
     entry = list.delete_at(0)
     
     unless entry.nil? 
+      cname = entry[0]
+      
+      $table[cname] = eval "AST.#{cname}" unless $table[cname]
       position = node.position
     
-      test_pos_ok(entry[0], short_name(node.java_class.name), entry, node, test_name)
+      test_ok(node.class.ancestors.include?($table[cname]), "Wrong Class (Expected: #{cname}. Got: #{short_name(node.java_class.name)} in [#{test_name}]")
       test_pos_ok(entry[1], position.startLine, entry, node, test_name)
       test_pos_ok(entry[2], position.endLine, entry, node, test_name)
       test_pos_ok(entry[3], position.startOffset, entry, node, test_name)

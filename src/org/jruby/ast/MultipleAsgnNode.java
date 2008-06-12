@@ -33,10 +33,18 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.ASTInterpreter;
+import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.Instruction;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class MultipleAsgnNode extends AssignableNode {
     private final ListNode headNode;
@@ -75,6 +83,7 @@ public class MultipleAsgnNode extends AssignableNode {
     /**
      * Number of arguments is dependent on headNodes size
      */
+    @Override
     public Arity getArity() {
         if (argsNode != null) {
             return Arity.required(headNode == null ? 0 : headNode.size());
@@ -85,5 +94,28 @@ public class MultipleAsgnNode extends AssignableNode {
     
     public List<Node> childNodes() {
         return Node.createList(headNode, argsNode, getValueNode());
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        switch (getValueNode().nodeId) {
+        case ARRAYNODE: {
+            ArrayNode iVisited2 = (ArrayNode) getValueNode();
+            return ASTInterpreter.multipleAsgnArrayNode(runtime, context, this, iVisited2, self, aBlock);
+        }
+        case SPLATNODE: {
+            SplatNode splatNode = (SplatNode) getValueNode();
+            RubyArray rubyArray = RuntimeHelpers.splatValue(splatNode.getValue().interpret(runtime, context, self, aBlock));
+            return AssignmentVisitor.multiAssign(runtime, context, self, this, rubyArray, false);
+        }
+        default:
+            IRubyObject value = getValueNode().interpret(runtime, context, self, aBlock);
+
+            if (!(value instanceof RubyArray)) {
+                value = RubyArray.newArray(runtime, value);
+            }
+            
+            return AssignmentVisitor.multiAssign(runtime, context, self, this, (RubyArray)value, false);
+        }
     }
 }

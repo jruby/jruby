@@ -33,11 +33,17 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.types.IArityNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.evaluator.Instruction;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * a call to 'super' with no arguments in a method.
@@ -57,12 +63,12 @@ public class ZSuperNode extends Node implements IArityNode, BlockAcceptingNode {
         return iVisitor.visitZSuperNode(this);
     }
 	
-	/**
-	 * 'super' can take any number of arguments.
-	 */
-	public Arity getArity() {
-		return Arity.optional();
-	}
+    /**
+     * 'super' can take any number of arguments.
+     */
+    public Arity getArity() {
+        return Arity.optional();
+    }
     
     public List<Node> childNodes() {
         return iterNode != null ? createList(iterNode) : EMPTY_LIST;
@@ -72,7 +78,16 @@ public class ZSuperNode extends Node implements IArityNode, BlockAcceptingNode {
         return iterNode;
     }
 
-    public void setIterNode(Node iterNode) {
+    public Node setIterNode(Node iterNode) {
         this.iterNode = iterNode;
+        
+        return this;
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        Block block = ASTInterpreter.getBlock(runtime, context, self, aBlock, iterNode);
+        
+        return RuntimeHelpers.callZSuper(runtime, context, block, self);
     }
 }

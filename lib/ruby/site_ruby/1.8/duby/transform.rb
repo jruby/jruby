@@ -58,7 +58,7 @@ module Duby
 
       class BeginNode
         def transform(parent)
-          body_node ? body_node.transform(parent) : Noop.new(parent)
+          body_node.transform(parent)
         end
       end
 
@@ -262,6 +262,12 @@ module Duby
               else_body ? else_body.transform(iff) : nil
             ]
           end
+        end
+      end
+
+      class NilImplicitNode
+        def transform(parent)
+          Noop.new(parent)
         end
       end
 

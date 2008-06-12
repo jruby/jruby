@@ -33,9 +33,13 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * not is !
@@ -45,6 +49,9 @@ public class NotNode extends Node {
 
     public NotNode(ISourcePosition position, Node conditionNode) {
         super(position, NodeType.NOTNODE);
+        
+        assert conditionNode != null : "conditionNode is not null";
+        
         this.conditionNode = conditionNode;
     }
 
@@ -68,4 +75,10 @@ public class NotNode extends Node {
         return createList(conditionNode);
     }
 
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        IRubyObject result = conditionNode.interpret(runtime,context, self, aBlock);
+        
+        return result.isTrue() ? runtime.getFalse() : runtime.getTrue();
+    }
 }

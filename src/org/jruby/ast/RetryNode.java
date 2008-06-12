@@ -32,9 +32,14 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
+import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  * Represents a 'retry' statement.
@@ -56,4 +61,10 @@ public class RetryNode extends Node {
         return EMPTY_LIST;
     }
 
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        context.pollThreadEvents();
+   
+        throw JumpException.RETRY_JUMP;
+    }
 }

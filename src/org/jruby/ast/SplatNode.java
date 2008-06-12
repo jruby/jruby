@@ -31,15 +31,23 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class SplatNode extends Node {
     private final Node node;
 
     public SplatNode(ISourcePosition position, Node node) {
         super(position, NodeType.SPLATNODE);
+        
+        assert node != null : "node is not null";
+        
         this.node = node;
     }
 
@@ -53,5 +61,10 @@ public class SplatNode extends Node {
 
     public List<Node> childNodes() {
         return createList(node);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return RuntimeHelpers.splatValue(node.interpret(runtime, context, self, aBlock));
     }
 }

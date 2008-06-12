@@ -33,10 +33,14 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Access a local variable 
@@ -103,4 +107,11 @@ public class LocalVarNode extends Node implements INameNode {
         return EMPTY_LIST;
     }
 
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        //        System.out.println("DGetting: " + iVisited.getName() + " at index " + iVisited.getIndex() + " and at depth " + iVisited.getDepth());
+        IRubyObject result = context.getCurrentScope().getValue(getIndex(), getDepth());
+
+        return result == null ? runtime.getNil() : result;
+    }
 }

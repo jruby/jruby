@@ -33,13 +33,17 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.InterpretedBlock;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Represents a block.  
@@ -100,5 +104,11 @@ public class IterNode extends Node {
     
     public List<Node> childNodes() {
         return Node.createList(varNode, bodyNode);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        assert false : "Call nodes deal with these directly";
+        return null;
     }
 }

@@ -33,9 +33,13 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  * Represents a return statement.
@@ -46,6 +50,9 @@ public class ReturnNode extends Node {
 
     public ReturnNode(ISourcePosition position, Node valueNode) {
         super(position, NodeType.RETURNNODE);
+        
+        assert valueNode != null : "valueNode is not null";
+        
         this.valueNode = valueNode;
     }
 
@@ -71,5 +78,10 @@ public class ReturnNode extends Node {
     
     public List<Node> childNodes() {
         return createList(valueNode);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        throw context.returnJump(valueNode.interpret(runtime, context, self, aBlock));
     }
 }

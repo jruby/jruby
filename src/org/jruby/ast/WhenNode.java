@@ -33,9 +33,13 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Represents a when condition
@@ -84,5 +88,12 @@ public class WhenNode extends Node {
 
     public List<Node> childNodes() {
         return Node.createList(expressionNodes, bodyNode, nextCase);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        if (bodyNode == null) return runtime.getNil();
+
+        return bodyNode.interpret(runtime, context, self, aBlock);
     }
 }

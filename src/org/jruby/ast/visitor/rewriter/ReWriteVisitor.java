@@ -1216,7 +1216,7 @@ public class ReWriteVisitor implements NodeVisitor {
 	}
 
 	public Instruction visitRescueBodyNode(RescueBodyNode iVisited) {
-		if (config.getLastPosition().getStartLine() == getEndLine(iVisited.getBodyNode())) {
+		if (!iVisited.getBodyNode().isInvisible() && config.getLastPosition().getStartLine() == getEndLine(iVisited.getBodyNode())) {
 			print(" rescue ");
 		} else {
 			print("rescue");
@@ -1266,12 +1266,12 @@ public class ReWriteVisitor implements NodeVisitor {
 		visitNode(iVisited.getBodyNode());
 		config.getIndentor().outdent();
 
-		if (iVisited.getRescueNode().getBodyNode() != null
+		if (!iVisited.getRescueNode().getBodyNode().isInvisible()
 				&& getStartLine(iVisited) != getEndLine(iVisited.getRescueNode().getBodyNode())) {
 			printNewlineAndIndentation();
         }
 
-		if (iVisited.getRescueNode().getBodyNode() == null) {
+		if (iVisited.getRescueNode().getBodyNode().isInvisible()) {
 			printNewlineAndIndentation();
 			print("rescue");
 			printExceptionNode(iVisited.getRescueNode());
@@ -1304,7 +1304,7 @@ public class ReWriteVisitor implements NodeVisitor {
 	public Instruction visitReturnNode(ReturnNode iVisited) {
 		print("return");
 		enterCall();
-		if (iVisited.getValueNode() != null) {
+		if (!iVisited.getValueNode().isInvisible()) {
 			print(' ');
 			visitNode(unwrapSingleArrayNode(iVisited.getValueNode()));
 		}

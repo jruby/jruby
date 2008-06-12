@@ -33,9 +33,13 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  * Represents a yield statement.
@@ -46,6 +50,10 @@ public class YieldNode extends Node {
 
     public YieldNode(ISourcePosition position, Node argsNode, boolean checkState) {
         super(position, NodeType.YIELDNODE);
+        
+        // block.yield depends on null to represent empty and nil to represent nil - [nil] vs []
+        //assert argsNode != null : "argsNode is not null";
+        
         this.argsNode = argsNode;
         // If we have more than one argument, then make sure the array is not ObjectSpaced.
         if (argsNode instanceof ArrayNode) {
@@ -76,5 +84,14 @@ public class YieldNode extends Node {
 
     public List<Node> childNodes() {
         return createList(argsNode);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        IRubyObject result = null;
+        
+        if (argsNode != null) result = argsNode.interpret(runtime, context, self, aBlock);
+
+        return context.getCurrentFrame().getBlock().yield(context, result, null, null, checkState);
     }
 }

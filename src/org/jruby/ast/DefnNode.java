@@ -34,12 +34,21 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.MetaClass;
+import org.jruby.Ruby;
+import org.jruby.RubyModule;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.evaluator.Instruction;
+import org.jruby.internal.runtime.methods.DefaultMethod;
+import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * method definition node.
@@ -69,11 +78,61 @@ public class DefnNode extends MethodDefNode implements INameNode {
     /**
      * Get the name of this method
      */
+    @Override
     public String getName() {
         return nameNode.getName();
     }
     
     public List<Node> childNodes() {
         return Node.createList(nameNode, argsNode, bodyNode);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        RubyModule containingClass = context.getRubyClass();
+   
+        if (containingClass == runtime.getDummy()) {
+            throw runtime.newTypeError("no class/module to add method");
+        }
+   
+        String name = getName();
+
+        if (containingClass == runtime.getObject() && name == "initialize") {
+            runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining Object#initialize may cause infinite loop", "Object#initialize");
+        }
+
+        if (name == "__id__" || name == "__send__") {
+            runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining `" + name + "' may cause serious problem", name); 
+        }
+
+        Visibility visibility = context.getCurrentVisibility();
+        if (name == "initialize" || name == "initialize_copy" || visibility == Visibility.MODULE_FUNCTION) {
+            visibility = Visibility.PRIVATE;
+        }
+        
+        scope.determineModule();
+        
+        DefaultMethod newMethod = new DefaultMethod(containingClass, scope, 
+                bodyNode, (ArgsNode) argsNode, 
+                visibility, getPosition());
+   
+        containingClass.addMethod(name, newMethod);
+   
+        if (context.getCurrentVisibility() == Visibility.MODULE_FUNCTION) {
+            containingClass.getSingletonClass().addMethod(name,
+                    new WrapperMethod(containingClass.getSingletonClass(), newMethod, Visibility.PUBLIC));
+            
+            containingClass.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
+        }
+   
+        // 'class << state.self' and 'class << obj' uses defn as opposed to defs
+        if (containingClass.isSingleton()) {
+            ((MetaClass) containingClass).getAttached().callMethod(context, 
+                    "singleton_method_added", runtime.fastNewSymbol(name));
+        } else {
+            containingClass.callMethod(context, "method_added", runtime.fastNewSymbol(name));
+        }
+   
+        return runtime.getNil();        
     }
 }

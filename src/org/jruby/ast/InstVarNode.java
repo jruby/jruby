@@ -34,12 +34,17 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.types.IArityNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  * Represents an instance variable accessor.
@@ -81,5 +86,17 @@ public class InstVarNode extends Node implements IArityNode, INameNode {
     
     public void setName(String name){
         this.name = name;
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        IRubyObject variable = self.getInstanceVariables().fastGetInstanceVariable(name);
+   
+        if (variable != null) return variable;
+        
+        runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED, getPosition(), 
+                "instance variable " + name + " not initialized", name);
+        
+        return runtime.getNil();        
     }
 }

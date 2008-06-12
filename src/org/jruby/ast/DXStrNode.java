@@ -31,10 +31,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import org.jruby.Ruby;
+import org.jruby.RubyString;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * Dynamic backquote string. Backquote strings are eXecuted using the shell, hence the X 
@@ -54,7 +60,23 @@ public class DXStrNode extends ListNode implements ILiteralNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
+    @Override
     public Instruction accept(NodeVisitor iVisitor) {
         return iVisitor.visitDXStrNode(this);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        RubyString string = runtime.newString(new ByteList());
+        for (int i = 0; i < size(); i++) {
+            Node iterNode = get(i);
+            if (iterNode instanceof StrNode) {
+                string.getByteList().append(((StrNode) iterNode).getValue());
+            } else {
+                string.append(iterNode.interpret(runtime,context, self, aBlock));
+            }
+        }
+   
+        return self.callMethod(context, "`", string);
     }
 }

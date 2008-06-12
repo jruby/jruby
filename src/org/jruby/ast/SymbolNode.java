@@ -42,12 +42,15 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  * Represents a symbol (:symbol_name).
  */
 public class SymbolNode extends Node implements ILiteralNode, INameNode {
-	private String name;
+    private String name;
     private RubySymbol symbol;
 
     public SymbolNode(ISourcePosition position, String name) {
@@ -75,5 +78,10 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode {
         RubySymbol sym;
         if ((sym = symbol) != null) return sym;
         return symbol = runtime.fastNewSymbol(name);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return getSymbol(runtime);
     }
 }

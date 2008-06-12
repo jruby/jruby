@@ -34,9 +34,13 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * an 'if' statement.
@@ -48,6 +52,11 @@ public class IfNode extends Node {
 
     public IfNode(ISourcePosition position, Node condition, Node thenBody, Node elseBody) {
         super(position, NodeType.IFNODE);
+        
+        assert condition != null : "condition is not null";
+//        assert thenBody != null : "thenBody is not null";
+//        assert elseBody != null : "elseBody is not null";
+        
         this.condition = condition;
         this.thenBody = thenBody;
         this.elseBody = elseBody;
@@ -87,5 +96,18 @@ public class IfNode extends Node {
     
     public List<Node> childNodes() {
         return Node.createList(condition, thenBody, elseBody);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        IRubyObject result = condition.interpret(runtime, context, self, aBlock);
+        
+        // TODO: put these nil guards into tree (bigger than I want to do right now)
+
+        if (result.isTrue()) {
+            return thenBody == null ? runtime.getNil() : thenBody.interpret(runtime, context, self, aBlock);
+        } else {
+            return elseBody == null ? runtime.getNil() : elseBody.interpret(runtime, context, self, aBlock);
+        }
     }
 }

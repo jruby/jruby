@@ -30,12 +30,17 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Node that represents an assignment of either an array element or attribute.
@@ -49,6 +54,12 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
 
     public AttrAssignNode(ISourcePosition position, Node receiverNode, String name, Node argsNode) {
         super(position, NodeType.ATTRASSIGNNODE);
+        
+        assert receiverNode != null : "receiverNode is not null";
+        // TODO: At least ParserSupport.attrset passes argsNode as null.  ImplicitNil is wrong magic for 
+        // setupArgs since it will IRubyObject[] { nil }.  So we need to figure out a nice fast
+        // null pattern for setupArgs.
+        // assert argsNode != null : "receiverNode is not null";
         
         this.receiverNode = receiverNode;
         this.name = name;
@@ -109,5 +120,22 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
 
     public List<Node> childNodes() {
         return Node.createList(receiverNode, argsNode);
+    }
+
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
+        IRubyObject[] args = ASTInterpreter.setupArgs(runtime, context, argsNode, self, aBlock);
+        
+        assert receiver.getMetaClass() != null : receiver.getClass().getName();
+        
+        // If reciever is self then we do the call the same way as vcall
+        if (receiver == self) {
+            variableCallAdapter.call(context, receiver, args);
+        } else {
+            normalCallAdapter.call(context, receiver, args);
+        }
+
+        return args[args.length - 1];
     }
 }

@@ -81,14 +81,22 @@ public class SourceRewriteTester extends TestSuite {
 	}
 
 	private static TestSuite createSuite(ArrayList testCases) {
-		TestSuite suite = new TestSuite();
-		Iterator it = testCases.iterator();
-		while(it.hasNext()) {
-			SourceTestCase subject = (SourceTestCase)it.next();
-			subject.setGeneratedSource(generateSource(subject.getSource()));
-			suite.addTest(subject);
-		}
-		return suite;
+            TestSuite suite = new TestSuite();
+            Iterator it = testCases.iterator();
+            while (it.hasNext()) {
+                String source = null;
+                try {
+                    SourceTestCase subject = (SourceTestCase) it.next();
+                    source = subject.getSource();
+                    subject.setGeneratedSource(generateSource(source));
+                    suite.addTest(subject);
+                } catch (Throwable e) {
+                    System.out.println("Problem setting up test: " + e);
+                    e.printStackTrace();
+                    System.out.println("Source: " + source);
+                }
+            }
+            return suite;
 	}
 
 	

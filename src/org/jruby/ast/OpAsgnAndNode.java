@@ -33,9 +33,14 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class OpAsgnAndNode extends Node implements BinaryOperatorNode {
     private final Node firstNode;
@@ -43,6 +48,10 @@ public class OpAsgnAndNode extends Node implements BinaryOperatorNode {
 
     public OpAsgnAndNode(ISourcePosition position, Node headNode, Node valueNode) {
         super(position, NodeType.OPASGNANDNODE);
+        
+        assert headNode != null : "headNode is not null";
+        assert valueNode != null : "valueNode is not null";
+        
         firstNode = headNode;
         secondNode = valueNode;
     }
@@ -73,5 +82,15 @@ public class OpAsgnAndNode extends Node implements BinaryOperatorNode {
 
     public List<Node> childNodes() {
         return Node.createList(firstNode, secondNode);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        // add in reverse order
+        IRubyObject result = firstNode.interpret(runtime, context, self, aBlock);
+        
+        if (!result.isTrue()) return ASTInterpreter.pollAndReturn(context, result);
+        
+        return secondNode.interpret(runtime, context, self, aBlock);
     }
 }

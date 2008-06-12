@@ -33,10 +33,14 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Declaration (and assignment) of a Constant.
@@ -47,10 +51,11 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
     private final String name;
     private final INameNode constNode;
 
+    // TODO: Split this into two sub-classes so that name and constNode can be specified seperately.
     public ConstDeclNode(ISourcePosition position, String name, INameNode constNode, Node valueNode) {
         super(position, NodeType.CONSTDECLNODE, valueNode);
         
-        this.name = name;
+        this.name = name;        
         this.constNode = constNode;
     }
 
@@ -81,5 +86,24 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
     
     public List<Node> childNodes() {
         return createList(getValueNode());
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        IRubyObject result = getValueNode().interpret(runtime, context, self, aBlock);
+        
+        if (constNode == null) {
+            return context.setConstantInCurrent(name, result);
+        } else if (((Node)constNode).nodeId == NodeType.COLON2NODE) {
+            Node leftNode = ((Colon2Node) constNode).getLeftNode();
+            
+            assert leftNode != null : "leftNode is not null";
+            
+            IRubyObject obj = leftNode.interpret(runtime, context, self, aBlock);
+            
+            return context.setConstantInModule(constNode.getName(), obj, result);
+        } else { // colon3
+            return context.setConstantInObject(constNode.getName(), result);
+        }
     }
 }

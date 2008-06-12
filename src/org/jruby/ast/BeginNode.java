@@ -33,9 +33,13 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  * Begin/End block.  A Begin ... End block without rescue.
@@ -45,6 +49,9 @@ public class BeginNode extends Node {
 
     public BeginNode(ISourcePosition position, Node bodyNode) {
         super(position, NodeType.BEGINNODE);
+        
+        assert bodyNode != null : "bodyNode is not null";
+        
         this.bodyNode = bodyNode;
     }
 
@@ -66,5 +73,10 @@ public class BeginNode extends Node {
     
     public List<Node> childNodes() {
         return createList(bodyNode);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return bodyNode.interpret(runtime, context, self, aBlock);
     }
 }

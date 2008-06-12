@@ -28,10 +28,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.InterpretedBlock;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * A pre-execution construction (BEGIN { ... }).
@@ -44,5 +50,24 @@ public class PreExeNode extends IterNode {
     @Override
     public Instruction accept(NodeVisitor iVisitor) {
         return iVisitor.visitPreExeNode(this);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        DynamicScope scope = DynamicScope.newDynamicScope(getScope());
+        // Each root node has a top-level scope that we need to push
+        context.preScopedBody(scope);
+
+        // FIXME: I use a for block to implement END node because we need a proc which captures
+        // its enclosing scope.   ForBlock now represents these node and should be renamed.
+        Block block = InterpretedBlock.newInterpretedClosure(context, this, self);
+        
+        try {
+            block.yield(context, null);
+        } finally {
+            context.postScopedBody();
+        }
+
+        return runtime.getNil();
     }
 }

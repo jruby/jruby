@@ -93,5 +93,25 @@ class TestTraceFunc < Test::Unit::TestCase
  
     assert_equal(expected, results)
   end
+
+  def test_load_trace
+    output = []
+    set_trace_func proc { |event, file, line, id, binding, classname|
+      output << sprintf("%s %d %s %s", event, line, id ? id : 'nil', classname)
+    }
+
+    load('./test/autoloaded.rb')
+
+    set_trace_func nil
+
+    expected = ["line 103 test_load_trace TestTraceFunc",
+      "line 1 nil false",
+      "class 1 nil false",
+      "end 1 nil false",
+      "line 105 test_load_trace TestTraceFunc"]
+
+    assert_equal(expected, output);
+  end
+
 end
 

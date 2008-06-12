@@ -68,6 +68,8 @@ import org.jruby.ast.DotNode;
 import org.jruby.ast.EnsureNode;
 import org.jruby.ast.EvStrNode;
 import org.jruby.ast.FCallNode;
+import org.jruby.ast.FCallNoArgBlockNode;
+import org.jruby.ast.FCallNoArgNode;
 import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FloatNode;
 import org.jruby.ast.ForNode;
@@ -286,6 +288,7 @@ bodystmt      : compstmt opt_rescue opt_else opt_ensure {
                       node = support.appendToBlock($1, $3);
 		  }
 		  if ($4 != null) {
+                      if (node == null) node = NilImplicitNode.NIL;
 		      node = new EnsureNode(getPosition($1), node, $4);
 		  }
 
@@ -348,7 +351,8 @@ stmt          : kALIAS fitem {
                   }
               }
               | stmt kRESCUE_MOD stmt {
-	          $$ = new RescueNode(getPosition($1), $1, new RescueBodyNode(getPosition($1), null,$3, null), null);
+                  Node body = $3 == null ? NilImplicitNode.NIL : $3;
+	          $$ = new RescueNode(getPosition($1), $1, new RescueBodyNode(getPosition($1), null, body, null), null);
               }
               | klBEGIN {
                   if (support.isInDef() || support.isInSingle()) {
@@ -471,6 +475,7 @@ block_command : block_call
                   $$ = support.new_call($1, $3, $4, null);
               }
 
+// :brace_block - [!null]
 cmd_brace_block	: tLBRACE_ARG {
                     support.pushBlockScope();
 		} opt_block_var compstmt tRCURLY {
@@ -686,7 +691,8 @@ arg           : lhs '=' arg {
               }
 	      | lhs '=' arg kRESCUE_MOD arg {
                   ISourcePosition position = support.union($4, $5);
-                  $$ = support.node_assign($1, new RescueNode(position, $3, new RescueBodyNode(position, null, $5, null), null));
+                  Node body = $5 == null ? NilImplicitNode.NIL : $5;
+                  $$ = support.node_assign($1, new RescueNode(position, $3, new RescueBodyNode(position, null, body, null), null));
 	      }
 	      | var_lhs tOP_ASGN arg {
 		  support.checkExpression($3);
@@ -1012,10 +1018,10 @@ primary       : literal
 	      | var_ref
 	      | backref
 	      | tFID {
-                  $$ = new FCallNode($1.getPosition(), (String) $1.getValue(), null);
+                  $$ = new FCallNoArgNode($1.getPosition(), (String) $1.getValue());
 	      }
               | kBEGIN bodystmt kEND {
-                  $$ = new BeginNode(support.union($1, $3), $2);
+                  $$ = new BeginNode(support.union($1, $3), $2 == null ? NilImplicitNode.NIL : $2);
 	      }
               | tLPAREN_ARG expr { 
                   lexer.setState(LexState.EXPR_ENDARG); 
@@ -1056,7 +1062,7 @@ primary       : literal
                   $$ = new HashNode(support.union($1, $3), $2);
               }
               | kRETURN {
-		  $$ = new ReturnNode($1.getPosition(), null);
+		  $$ = new ReturnNode($1.getPosition(), NilImplicitNode.NIL);
               }
               | kYIELD tLPAREN2 call_args tRPAREN {
                   $$ = support.new_yield(support.union($1, $4), $3);
@@ -1071,7 +1077,7 @@ primary       : literal
                   $$ = new DefinedNode(getPosition($1), $4);
               }
               | operation brace_block {
-                  $$ = new FCallNode(support.union($1, $2), (String) $1.getValue(), null, $2);
+                  $$ = new FCallNoArgBlockNode(support.union($1, $2), (String) $1.getValue(), $2);
               }
               | method_call
               | method_call brace_block {
@@ -1079,8 +1085,8 @@ primary       : literal
                       $<BlockAcceptingNode>1.getIterNode() instanceof BlockPassNode) {
                       throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, getPosition($1), "Both block arg and actual block given.");
 		  }
-		  $<BlockAcceptingNode>1.setIterNode($2);
-		  $<Node>1.setPosition(support.union($1, $2));
+		  $$ = $<BlockAcceptingNode>1.setIterNode($2);
+		  $<Node>$.setPosition(support.union($1, $2));
               }
               | kIF expr_value then compstmt if_tail kEND {
                   $$ = new IfNode(support.union($1, $6), support.getConditionNode($2), $4, $5);
@@ -1093,20 +1099,27 @@ primary       : literal
 	      } expr_value do {
 		  lexer.getConditionState().end();
 	      } compstmt kEND {
-                  $$ = new WhileNode(support.union($1, $7), support.getConditionNode($3), $6);
+                  Node body = $6 == null ? NilImplicitNode.NIL : $6;
+                  $$ = new WhileNode(support.union($1, $7), support.getConditionNode($3), body);
               }
               | kUNTIL {
                   lexer.getConditionState().begin();
               } expr_value do {
                   lexer.getConditionState().end();
               } compstmt kEND {
-                  $$ = new UntilNode(getPosition($1), support.getConditionNode($3), $6);
+                  Node body = $6 == null ? NilImplicitNode.NIL : $6;
+                  $$ = new UntilNode(getPosition($1), support.getConditionNode($3), body);
               }
               | kCASE expr_value opt_terms case_body kEND {
                   $$ = new CaseNode(support.union($1, $5), $2, $4);
               }
               | kCASE opt_terms case_body kEND {
-                  $$ = new CaseNode(support.union($1, $4), null, $3);
+// TODO: MRI is just a when node.  We need this extra logic for IDE consumers (null in casenode statement should be implicit nil)
+//                  if (support.getConfiguration().hasExtraPositionInformation()) {
+                      $$ = new CaseNode(support.union($1, $4), null, $3);
+//                  } else {
+//                      $$ = $3;
+//                  }
               }
               | kCASE opt_terms kELSE compstmt kEND {
 		  $$ = $4;
@@ -1124,7 +1137,9 @@ primary       : literal
                   }
 		  support.pushLocalScope();
               } bodystmt kEND {
-                  $$ = new ClassNode(support.union($1, $6), $<Colon3Node>2, support.getCurrentScope(), $5, $3);
+                  Node body = $5 == null ? NilImplicitNode.NIL : $5;
+
+                  $$ = new ClassNode(support.union($1, $6), $<Colon3Node>2, support.getCurrentScope(), body, $3);
                   support.popCurrentScope();
               }
               | kCLASS tLSHFT expr {
@@ -1146,15 +1161,20 @@ primary       : literal
                   }
 		  support.pushLocalScope();
               } bodystmt kEND {
-                  $$ = new ModuleNode(support.union($1, $5), $<Colon3Node>2, support.getCurrentScope(), $4);
+                  Node body = $4 == null ? NilImplicitNode.NIL : $4;
+
+                  $$ = new ModuleNode(support.union($1, $5), $<Colon3Node>2, support.getCurrentScope(), body);
                   support.popCurrentScope();
               }
 	      | kDEF fname {
                   support.setInDef(true);
 		  support.pushLocalScope();
               } f_arglist bodystmt kEND {
-                    /* NOEX_PRIVATE for toplevel */
-                  $$ = new DefnNode(support.union($1, $6), new ArgumentNode($2.getPosition(), (String) $2.getValue()), $<ArgsNode>4, support.getCurrentScope(), $5, Visibility.PRIVATE);
+                  // TODO: We should use implicit nil for body, but problem (punt til later)
+                  Node body = $5; //$5 == null ? NilImplicitNode.NIL : $5;
+
+                  /* NOEX_PRIVATE for toplevel */
+                  $$ = new DefnNode(support.union($1, $6), new ArgumentNode($2.getPosition(), (String) $2.getValue()), $<ArgsNode>4, support.getCurrentScope(), body, Visibility.PRIVATE);
                   support.popCurrentScope();
                   support.setInDef(false);
               }
@@ -1165,15 +1185,18 @@ primary       : literal
 		  support.pushLocalScope();
                   lexer.setState(LexState.EXPR_END); /* force for args */
               } f_arglist bodystmt kEND {
-                  $$ = new DefsNode(support.union($1, $9), $2, new ArgumentNode($5.getPosition(), (String) $5.getValue()), $<ArgsNode>7, support.getCurrentScope(), $8);
+                  // TODO: We should use implicit nil for body, but problem (punt til later)
+                  Node body = $8; //$8 == null ? NilImplicitNode.NIL : $8;
+
+                  $$ = new DefsNode(support.union($1, $9), $2, new ArgumentNode($5.getPosition(), (String) $5.getValue()), $<ArgsNode>7, support.getCurrentScope(), body);
                   support.popCurrentScope();
                   support.setInSingle(support.getInSingle() - 1);
               }
               | kBREAK {
-                  $$ = new BreakNode($1.getPosition());
+                  $$ = new BreakNode($1.getPosition(), NilImplicitNode.NIL);
               }
               | kNEXT {
-                  $$ = new NextNode($1.getPosition());
+                  $$ = new NextNode($1.getPosition(), NilImplicitNode.NIL);
               }
               | kREDO {
                   $$ = new RedoNode($1.getPosition());
@@ -1238,8 +1261,8 @@ block_call    : command do_block {
 	          if ($<BlockAcceptingNode>1.getIterNode() instanceof BlockPassNode) {
                       throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, getPosition($1), "Both block arg and actual block given.");
                   }
-		  $<BlockAcceptingNode>1.setIterNode($2);
-		  $<Node>1.setPosition(support.union($1, $2));
+		  $$ = $<BlockAcceptingNode>1.setIterNode($2);
+		  $<Node>$.setPosition(support.union($1, $2));
               }
               | block_call tDOT operation2 opt_paren_args {
                   $$ = support.new_call($1, $3, $4, null);
@@ -1307,7 +1330,8 @@ opt_rescue    : kRESCUE exc_list exc_var then compstmt opt_rescue {
 		  } else {
 		     node = $5;
                   }
-                  $$ = new RescueBodyNode(getPosition($1, true), $2, node, $6);
+                  Node body = node == null ? NilImplicitNode.NIL : node;
+                  $$ = new RescueBodyNode(getPosition($1, true), $2, body, $6);
 	      }
               | {$$ = null;}
 

@@ -37,11 +37,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
 import org.jruby.lexer.yacc.IDESourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Base class for all Nodes in the AST
@@ -192,4 +196,7 @@ public abstract class Node implements ISourcePositionHolder {
         return this instanceof InvisibleNode;
     }
 
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
+    }
 }

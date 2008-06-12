@@ -34,18 +34,23 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.evaluator.Instruction;
+import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * A method or operator call.
  */
-public final class CallNode extends Node implements INameNode, IArgumentNode, BlockAcceptingNode {
+public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcceptingNode {
     private final Node receiverNode;
     private Node argsNode;
     private Node iterNode;
@@ -58,6 +63,9 @@ public final class CallNode extends Node implements INameNode, IArgumentNode, Bl
     public CallNode(ISourcePosition position, Node receiverNode, String name, Node argsNode, 
             Node iterNode) {
         super(position, NodeType.CALLNODE);
+        
+        assert receiverNode != null : "receiverNode is not null";
+        
         this.receiverNode = receiverNode;
         setArgsNode(argsNode);
         this.iterNode = iterNode;
@@ -76,10 +84,12 @@ public final class CallNode extends Node implements INameNode, IArgumentNode, Bl
         return iterNode;
     }
     
-    public void setIterNode(Node iterNode) {
+    public Node setIterNode(Node iterNode) {
         this.iterNode = iterNode;
         // refresh call adapter, since it matters if this is iter-based or not
         callAdapter = MethodIndex.getCallSite(callAdapter.methodName);
+        
+        return this;
     }
 
     /**
@@ -125,7 +135,55 @@ public final class CallNode extends Node implements INameNode, IArgumentNode, Bl
         return Node.createList(receiverNode, argsNode, iterNode);
     }
     
+    @Override
     public String toString() {
         return "CallNode: " + getName();
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
+        
+        if (iterNode == null && argsNode != null && argsNode.nodeId == NodeType.ARRAYNODE) {
+            ArrayNode arrayNode = (ArrayNode)argsNode;
+            
+            switch (arrayNode.size()) {
+            case 0:
+                return callAdapter.call(context, receiver);
+            case 1:
+                IRubyObject arg0 = arrayNode.get(0).interpret(runtime, context, self, aBlock);
+                return callAdapter.call(context, receiver, arg0);
+            case 2:
+                arg0 = arrayNode.get(0).interpret(runtime, context, self, aBlock);
+                IRubyObject arg1 = arrayNode.get(1).interpret(runtime, context, self, aBlock);
+                return callAdapter.call(context, receiver, arg0, arg1);
+            case 3:
+                arg0 = arrayNode.get(0).interpret(runtime, context, self, aBlock);
+                arg1 = arrayNode.get(1).interpret(runtime, context, self, aBlock);
+                IRubyObject arg2 = arrayNode.get(2).interpret(runtime, context, self, aBlock);
+                return callAdapter.call(context, receiver, arg0, arg1, arg2);
+            }
+        }
+        
+        IRubyObject[] args = ASTInterpreter.setupArgs(runtime, context, argsNode, self, aBlock);
+        
+        assert receiver.getMetaClass() != null : receiver.getClass().getName();
+
+        Block block = ASTInterpreter.getBlock(runtime, context, self, aBlock, iterNode);
+
+        // No block provided lets look at fast path for STI dispatch.
+        if (!block.isGiven()) {
+            return callAdapter.call(context, receiver, args);
+        }
+            
+        while (true) {
+            try {
+                return callAdapter.call(context, receiver, args, block);
+            } catch (JumpException.RetryJump rj) {
+                // allow loop to retry
+            } catch (JumpException.BreakJump bj) {
+                return (IRubyObject) bj.getValue();
+            }
+        }
     }
 }

@@ -33,9 +33,15 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.evaluator.Instruction;
+import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  * Represents an until statement.
@@ -53,6 +59,10 @@ public class UntilNode extends Node {
 
     public UntilNode(ISourcePosition position, Node conditionNode, Node bodyNode, boolean evaluateAtStart) {
         super(position, NodeType.UNTILNODE);
+        
+        assert conditionNode != null : "conditionNode is not null";
+        assert bodyNode != null : "bodyNode is not null";
+        
         this.conditionNode = conditionNode;
         this.bodyNode = bodyNode;
         this.evaluateAtStart = evaluateAtStart;
@@ -92,5 +102,41 @@ public class UntilNode extends Node {
      */
     public boolean evaluateAtStart() {
         return evaluateAtStart;
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        IRubyObject result = null;
+        boolean firstTest = evaluateAtStart;
+        
+        outerLoop: while (!firstTest || !(conditionNode.interpret(runtime, context, self, aBlock)).isTrue()) {
+            firstTest = true;
+            loop: while (true) { // Used for the 'redo' command
+                try {
+                    bodyNode.interpret(runtime,context, self, aBlock);
+                    break loop;
+                } catch (JumpException.RedoJump rj) {
+                    continue;
+                } catch (JumpException.NextJump nj) {
+                    break loop;
+                } catch (JumpException.BreakJump bj) {
+                    // JRUBY-530 until case
+                    if (bj.getTarget() == aBlock.getBody()) {
+                         bj.setTarget(null);
+
+                         throw bj;
+                    }
+
+                    result = (IRubyObject) bj.getValue();
+
+                    break outerLoop;
+                }
+            }
+        }
+
+        if (result == null) {
+            result = runtime.getNil();
+        }
+        return ASTInterpreter.pollAndReturn(context, result);
     }
 }

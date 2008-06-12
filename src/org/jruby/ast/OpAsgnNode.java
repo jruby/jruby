@@ -33,12 +33,16 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -52,6 +56,10 @@ public class OpAsgnNode extends Node {
 
     public OpAsgnNode(ISourcePosition position, Node receiverNode, Node valueNode, String variableName, String operatorName) {
         super(position, NodeType.OPASGNNODE);
+        
+        assert receiverNode != null : "receiverNode is not null";
+        assert valueNode != null : "valueNode is not null";
+        
         this.receiverNode = receiverNode;
         this.valueNode = valueNode;
         this.variableCallAdapter = MethodIndex.getCallSite(variableName);
@@ -105,5 +113,29 @@ public class OpAsgnNode extends Node {
     
     public List<Node> childNodes() {
         return Node.createList(receiverNode, valueNode);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
+        IRubyObject value = variableCallAdapter.call(context, receiver);
+   
+        if (getOperatorName() == "||") {
+            if (value.isTrue()) {
+                return ASTInterpreter.pollAndReturn(context, value);
+            }
+            value = valueNode.interpret(runtime, context, self, aBlock);
+        } else if (getOperatorName() == "&&") {
+            if (!value.isTrue()) {
+                return ASTInterpreter.pollAndReturn(context, value);
+            }
+            value = valueNode.interpret(runtime,context, self, aBlock);
+        } else {
+            value = operatorCallAdapter.call(context, value, valueNode.interpret(runtime, context, self, aBlock));
+        }
+   
+        variableAsgnCallAdapter.call(context, receiver, value);
+   
+        return ASTInterpreter.pollAndReturn(context, value);
     }
 }

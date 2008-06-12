@@ -33,13 +33,20 @@
 package org.jruby.ast;
 
 import java.util.List;
+import org.jruby.Ruby;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.evaluator.Instruction;
+import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
-import org.jruby.runtime.CallType;
+import org.jruby.runtime.InterpretedBlock;
 import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  * Represents a method call with self as an implicit receiver.
@@ -55,7 +62,7 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
     
     public FCallNode(ISourcePosition position, String name, Node argsNode, Node iterNode) {
         super(position, NodeType.FCALLNODE);
-        setArgsNode(argsNode);
+        setArgsInternal(argsNode);
         this.iterNode = iterNode;
         this.callAdapter = MethodIndex.getFunctionalCallSite(name);
     }
@@ -75,9 +82,11 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
         return iterNode;
     }
     
-    public void setIterNode(Node iterNode) {
+    public Node setIterNode(Node iterNode) {
         this.iterNode = iterNode;
         callAdapter = MethodIndex.getFunctionalCallSite(callAdapter.methodName);
+        
+        return this;
     }
 
     /**
@@ -86,6 +95,14 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
      */
     public Node getArgsNode() {
         return argsNode;
+    }
+    
+    public void setArgsInternal(Node argsNode) {
+        this.argsNode = argsNode;
+        // If we have more than one arg, make sure the array created to contain them is not ObjectSpaced
+        if (argsNode instanceof ArrayNode) {
+            ((ArrayNode)argsNode).setLightweight(true);
+        }       
     }
 
     /**
@@ -115,5 +132,56 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
 
     public String toString() {
         return "FCallNode: " + getName();
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        if (iterNode == null && argsNode != null && argsNode.nodeId == NodeType.ARRAYNODE) {
+            ArrayNode arrayNode = (ArrayNode)argsNode;
+            
+            switch (arrayNode.size()) {
+            case 0:
+                return callAdapter.call(context, self);
+            case 1:
+                IRubyObject arg0 = arrayNode.get(0).interpret(runtime, context, self, aBlock);
+                return callAdapter.call(context, self, arg0);
+            case 2:
+                arg0 = arrayNode.get(0).interpret(runtime, context, self, aBlock);
+                IRubyObject arg1 = arrayNode.get(1).interpret(runtime, context, self, aBlock);
+                return callAdapter.call(context, self, arg0, arg1);
+            case 3:
+                arg0 = arrayNode.get(0).interpret(runtime, context, self, aBlock);
+                arg1 = arrayNode.get(1).interpret(runtime, context, self, aBlock);
+                IRubyObject arg2 = arrayNode.get(2).interpret(runtime, context, self, aBlock);
+                return callAdapter.call(context, self, arg0, arg1, arg2);
+            }
+        }
+        
+        IRubyObject[] args = ASTInterpreter.setupArgs(runtime, context, argsNode, self, aBlock);
+        Block block = ASTInterpreter.getBlock(runtime, context, self, aBlock, iterNode);
+
+        // No block provided lets look at fast path for STI dispatch.
+        if (!block.isGiven()) {
+            return callAdapter.call(context, self, args);
+        }
+
+        while (true) {
+            try {
+                return callAdapter.call(context, self, args, block);
+            } catch (JumpException.RetryJump rj) {
+                // allow loop to retry
+            }
+        }
+    }
+    
+    public Block getBlock(ThreadContext context, IRubyObject self, IterNode iter) {
+        if (iter == null) return Block.NULL_BLOCK;
+        
+        StaticScope scope = iter.getScope();
+        scope.determineModule();
+            
+        // Create block for this iter node
+        // FIXME: We shouldn't use the current scope if it's not actually from the same hierarchy of static scopes
+        return InterpretedBlock.newInterpretedClosure(context, iter.getBlockBody(), self);
     }
 }

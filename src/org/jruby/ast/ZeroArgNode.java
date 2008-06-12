@@ -60,12 +60,12 @@ public class ZeroArgNode extends Node implements IArityNode {
     	return null; // never visited, should be ok
     }
 	
-	/**
+    /**
      * Zero arguments...
      */
-	public Arity getArity() {
-		return Arity.noArguments();
-	}
+    public Arity getArity() {
+        return Arity.noArguments();
+    }
 
     public List<Node> childNodes() {
         return EMPTY_LIST;

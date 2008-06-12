@@ -33,10 +33,16 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
+import org.jruby.RubyModule;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  * Represents a module definition.
@@ -48,6 +54,11 @@ public class ModuleNode extends Node implements IScopingNode {
 
     public ModuleNode(ISourcePosition position, Colon3Node cpath, StaticScope scope, Node bodyNode) {
         super(position, NodeType.MODULENODE);
+
+        assert cpath != null : "cpath is not null";
+        assert scope != null : "scope is not null";
+        assert bodyNode != null : "bodyNode is not null";
+
         this.cpath = cpath;
         this.scope = scope;
         this.bodyNode = bodyNode;
@@ -89,5 +100,20 @@ public class ModuleNode extends Node implements IScopingNode {
     
     public List<Node> childNodes() {
         return Node.createList(cpath, bodyNode);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        RubyModule enclosingModule = ASTInterpreter.getEnclosingModule(runtime, context, cpath, self, aBlock);
+
+        if (enclosingModule == null) throw runtime.newTypeError("no outer class/module");
+
+        String name = cpath.getName();        
+
+        RubyModule module = enclosingModule.defineOrGetModuleUnder(name);
+
+        scope.setModule(module);        
+
+        return ASTInterpreter.evalClassDefinitionBody(runtime, context, scope, bodyNode, module, self, aBlock);
     }
 }

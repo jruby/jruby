@@ -30,18 +30,27 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class ArgsPushNode extends Node {
-    private Node node1;
-    private Node node2;
+    private Node firstNode;
+    private Node secondNode;
     
-    public ArgsPushNode(ISourcePosition position, Node node1, Node node2) {
+    public ArgsPushNode(ISourcePosition position, Node firstNode, Node secondNode) {
         super(position, NodeType.ARGSPUSHNODE);
-        this.node1 = node1;
-        this.node2 = node2;
+        
+        assert firstNode != null : "ArgsPushNode.first == null";
+        assert secondNode != null : "ArgsPushNode.second == null";
+        
+        this.firstNode = firstNode;
+        this.secondNode = secondNode;
     }
 
     public Instruction accept(NodeVisitor visitor) {
@@ -49,14 +58,21 @@ public class ArgsPushNode extends Node {
     }
     
     public Node getFirstNode() {
-        return node1;
+        return firstNode;
     }
     
     public Node getSecondNode() {
-        return node2;
+        return secondNode;
     }
 
     public List<Node> childNodes() {
         return EMPTY_LIST;
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        RubyArray args = (RubyArray) firstNode.interpret(runtime, context, self, aBlock).dup();
+        
+        return args.append(secondNode.interpret(runtime, context, self, aBlock));        
     }
 }

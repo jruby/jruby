@@ -32,11 +32,17 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import org.jruby.Ruby;
 import org.jruby.RubyRegexp;
+import org.jruby.RubyString;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * A regexp which contains some expressions which will need to be evaluated everytime the regexp 
@@ -102,5 +108,33 @@ public class DRegexpNode extends ListNode implements ILiteralNode {
      */
     public void setOnceRegexp(RubyRegexp regexp) {
         if (once && onceRegexp == null) this.onceRegexp = regexp;
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        if (once && onceRegexp != null) return onceRegexp;
+
+        RubyString string = runtime.newString(new ByteList());
+        for (int i = 0; i < size(); i++) {
+            Node iterNode = get(i);
+            if (iterNode instanceof StrNode) {
+                string.getByteList().append(((StrNode) iterNode).getValue());
+            } else {
+                string.append(iterNode.interpret(runtime,context, self, aBlock));
+            }
+        }
+
+        RubyRegexp regexp;
+        try {
+            regexp = RubyRegexp.newRegexp(runtime, string.getByteList(), options);
+        } catch(Exception e) {
+        //                    System.err.println(iVisited.getValue().toString());
+        //                    e.printStackTrace();
+            throw runtime.newRegexpError(e.getMessage());
+        }
+        
+        if (once) setOnceRegexp(regexp);
+
+        return regexp;
     }
 }

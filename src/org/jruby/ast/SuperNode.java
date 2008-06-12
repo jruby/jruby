@@ -33,9 +33,15 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.evaluator.Instruction;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * A call to super(...) with arguments to a method.
@@ -78,7 +84,22 @@ public class SuperNode extends Node implements BlockAcceptingNode {
         return iterNode;
     }
 
-    public void setIterNode(Node iterNode) {
+    public Node setIterNode(Node iterNode) {
         this.iterNode = iterNode;
+        
+        return this;
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        RuntimeHelpers.checkSuperDisabledOrOutOfMethod(context);
+
+        IRubyObject[] args = ASTInterpreter.setupArgs(runtime, context, argsNode, self, aBlock);
+        Block block = ASTInterpreter.getBlock(runtime, context, self, aBlock, iterNode);
+        
+        // If no explicit block passed to super, then use the one passed in, unless it's explicitly cleared with nil
+        if (iterNode == null && !block.isGiven()) block = aBlock;
+        
+        return self.callSuper(context, args, block);
     }
 }

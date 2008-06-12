@@ -33,10 +33,17 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
+import org.jruby.RubyModule;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.IdUtil;
 
 /** 
  * Represents a '::' constant access or method call (Java::JavaClass).
@@ -53,6 +60,7 @@ public final class Colon2Node extends Colon3Node implements INameNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
+    @Override
     public Instruction accept(NodeVisitor iVisitor) {
         return iVisitor.visitColon2Node(this);
     }
@@ -65,14 +73,47 @@ public final class Colon2Node extends Colon3Node implements INameNode {
         return leftNode;
     }
 
+    @Override
     public List<Node> childNodes() {
         return Node.createList(leftNode);
     }
     
+    @Override
     public String toString() {
         String result = "Colon2Node [";
         if (leftNode != null) result += leftNode;
         result += getName();
         return result + "]";
     }
-}
+ 
+    /** Get parent module/class that this module represents */
+    @Override
+    public RubyModule getEnclosingModule(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        if (leftNode != null) {
+            IRubyObject result = leftNode.interpret(runtime, context, self, aBlock);
+            return RuntimeHelpers.prepareClassNamespace(context, result);
+        } else {
+            return context.getCurrentScope().getStaticScope().getModule();
+        }
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        // TODO: Made this more colon3 friendly because of cpath production
+        // rule in grammar (it is convenient to think of them as the same thing
+        // at a grammar level even though evaluation is).
+
+        // TODO: Can we eliminate leftnode by making implicit Colon3node?
+        if (leftNode == null) return runtime.getObject().fastGetConstantFrom(name);
+
+        IRubyObject result = leftNode.interpret(runtime, context, self, aBlock);
+        
+        if (IdUtil.isConstant(name)) {
+            if (result instanceof RubyModule) return ((RubyModule) result).fastGetConstantFrom(name);
+
+            throw runtime.newTypeError(result + " is not a class/module");
+        }
+
+        return result.callMethod(context, name, IRubyObject.NULL_ARRAY, aBlock);
+    }
+ }

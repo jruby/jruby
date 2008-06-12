@@ -33,12 +33,16 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /** Represents an operator assignment to an element.
  * 
@@ -59,6 +63,10 @@ public class OpElementAsgnNode extends Node {
 
     public OpElementAsgnNode(ISourcePosition position, Node receiverNode, String operatorName, Node argsNode, Node valueNode) {
         super(position, NodeType.OPELEMENTASGNNODE);
+        
+        assert receiverNode != null : "receiverNode is not null";
+        assert valueNode != null : "valueNode is not null";
+        
         this.receiverNode = receiverNode;
         this.argsNode = argsNode;
         if (argsNode instanceof ArrayNode) {
@@ -112,5 +120,35 @@ public class OpElementAsgnNode extends Node {
 
     public List<Node> childNodes() {
         return Node.createList(receiverNode, argsNode, valueNode);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
+   
+        IRubyObject[] args = ASTInterpreter.setupArgs(runtime, context, argsNode, self, aBlock);
+   
+        IRubyObject firstValue = elementAdapter.call(context, receiver, args);
+        
+        if (getOperatorName() == "||") {
+            if (firstValue.isTrue()) {
+                return firstValue;
+            }
+            firstValue = valueNode.interpret(runtime, context, self, aBlock);
+        } else if (getOperatorName() == "&&") {
+            if (!firstValue.isTrue()) {
+                return firstValue;
+            }
+            firstValue = valueNode.interpret(runtime,context, self, aBlock);
+        } else {
+            firstValue = callAdapter.call(context, firstValue, valueNode.interpret(runtime,context, self, aBlock));
+        }
+   
+        IRubyObject[] expandedArgs = new IRubyObject[args.length + 1];
+        System.arraycopy(args, 0, expandedArgs, 0, args.length);
+        expandedArgs[expandedArgs.length - 1] = firstValue;
+        elementAsgnAdapter.call(context, receiver, expandedArgs);
+        
+        return firstValue;
     }
 }

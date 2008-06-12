@@ -33,9 +33,14 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
+import org.jruby.RubyRegexp;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class Match2Node extends Node {
     private final Node receiverNode;
@@ -43,6 +48,9 @@ public class Match2Node extends Node {
 
     public Match2Node(ISourcePosition position, Node receiverNode, Node valueNode) {
         super(position, NodeType.MATCH2NODE);
+        
+        assert receiverNode != null : "receiverNode is not null";
+        assert valueNode != null : "valueNode is not null";
 
         this.receiverNode = receiverNode;
         this.valueNode = valueNode;
@@ -74,5 +82,13 @@ public class Match2Node extends Node {
     
     public List<Node> childNodes() {
         return Node.createList(receiverNode, valueNode);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        IRubyObject recv = receiverNode.interpret(runtime, context, self, aBlock);
+        IRubyObject value = valueNode.interpret(runtime, context, self, aBlock);
+   
+        return ((RubyRegexp) recv).op_match(context, value);
     }
 }

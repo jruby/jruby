@@ -31,12 +31,17 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class ToAryNode extends Node {
-	private final Node node;
+    private final Node node;
 
     public ToAryNode(ISourcePosition position, Node node) {
         super(position, NodeType.TOARYNODE);
@@ -54,5 +59,10 @@ public class ToAryNode extends Node {
     
     public List<Node> childNodes() {
         return createList(node);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return RuntimeHelpers.aryToAry(node.interpret(runtime, context, self, aBlock));
     }
 }

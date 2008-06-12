@@ -34,9 +34,15 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.EventHook;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * A new (logical) source code line.
@@ -76,5 +82,20 @@ public class NewlineNode extends Node {
     
     public List<Node> childNodes() {
         return createList(nextNode);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        ISourcePosition position = getPosition();
+        // something in here is used to build up ruby stack trace...
+        context.setFile(position.getFile());
+        context.setLine(position.getStartLine());
+
+        if (ASTInterpreter.isTrace(runtime)) {
+            ASTInterpreter.callTraceFunction(runtime, context, EventHook.RUBY_EVENT_LINE);
+        }
+
+        // TODO: do above but not below for additional newline nodes
+        return nextNode.interpret(runtime, context, self, aBlock);
     }
 }

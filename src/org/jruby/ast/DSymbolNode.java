@@ -29,9 +29,15 @@
  ***** END LICENSE BLOCK *****/
  package org.jruby.ast;
 
+import org.jruby.Ruby;
+import org.jruby.RubyString;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * Node representing symbol in a form like ':"3jane"'.
@@ -42,16 +48,34 @@ public class DSymbolNode extends ListNode {
      * 
      * @param node to be copied
      */
-	public DSymbolNode(ISourcePosition position, DStrNode node) {
-		super(position, NodeType.DSYMBOLNODE);
-		addAll(node);
-	}
+    public DSymbolNode(ISourcePosition position, DStrNode node) {
+        super(position, NodeType.DSYMBOLNODE);
+        
+        assert node != null : "node is not null";
+        
+        addAll(node);
+    }
     
     public DSymbolNode(ISourcePosition position) {
         super(position, NodeType.DSYMBOLNODE);
     }
 
-	public Instruction accept(NodeVisitor visitor) {
-		return visitor.visitDSymbolNode(this);
-	}
+    @Override
+    public Instruction accept(NodeVisitor visitor) {
+        return visitor.visitDSymbolNode(this);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        RubyString string = runtime.newString(new ByteList());
+        for (int i = 0; i < size(); i++) {
+            Node iterNode = get(i);
+            if (iterNode instanceof StrNode) {
+                string.getByteList().append(((StrNode) iterNode).getValue());
+            } else {
+                string.append(iterNode.interpret(runtime, context, self, aBlock));
+            }
+        }
+   
+        return runtime.newSymbol(string.toString());    }
 }

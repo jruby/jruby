@@ -34,9 +34,14 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * a defined statement.
@@ -46,6 +51,9 @@ public class DefinedNode extends Node {
 
     public DefinedNode(ISourcePosition position, Node expressionNode) {
         super(position, NodeType.DEFINEDNODE);
+        
+        assert expressionNode != null : "expressionNode is not null";
+        
         this.expressionNode = expressionNode;
     }
 
@@ -69,4 +77,14 @@ public class DefinedNode extends Node {
         return createList(expressionNode);
     }
 
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        String definition = ASTInterpreter.getDefinition(runtime, context, expressionNode, self, aBlock);
+        
+        if (definition != null) {
+            return runtime.newString(definition);
+        } else {
+            return runtime.getNil();
+        }
+    }
 }

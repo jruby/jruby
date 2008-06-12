@@ -33,15 +33,23 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
+import org.jruby.RubyRegexp;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class MatchNode extends Node {
     private final Node regexpNode;
 
     public MatchNode(ISourcePosition position, Node regexpNode) {
         super(position, NodeType.MATCHNODE);
+        
+        assert regexpNode != null : "regexpNode is not null";
+        
         this.regexpNode = regexpNode;
     }
 
@@ -63,5 +71,10 @@ public class MatchNode extends Node {
 
     public List<Node> childNodes() {
         return createList(regexpNode);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+       return ((RubyRegexp) regexpNode.interpret(runtime, context, self, aBlock)).op_match2(context);
     }
 }

@@ -41,5 +41,5 @@ package org.jruby.ast;
 public interface BlockAcceptingNode {
     public Node getIterNode();
     
-    public void setIterNode(Node iterNode);
+    public Node setIterNode(Node iterNode);
 }

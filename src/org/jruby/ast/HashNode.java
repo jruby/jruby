@@ -33,9 +33,14 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
+import org.jruby.RubyHash;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * A Literal Hash that can represent either a {a=&amp;b, c=&amp;d} type expression or the list 
@@ -67,5 +72,25 @@ public class HashNode extends Node {
     
     public List<Node> childNodes() {
         return createList(listNode);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        RubyHash hash = RubyHash.newHash(runtime);
+        
+        if (listNode != null) {
+            int size = listNode.size();
+   
+            for (int i = 0; i < size;) {
+                // insert all nodes in sequence, hash them in the final instruction
+                // KEY
+                IRubyObject key = listNode.get(i++).interpret(runtime, context, self, aBlock);
+                IRubyObject value = listNode.get(i++).interpret(runtime, context, self, aBlock);
+   
+                hash.fastASet(key, value);
+            }
+        }
+      
+        return hash;
     }
 }

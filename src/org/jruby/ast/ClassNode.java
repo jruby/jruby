@@ -33,10 +33,17 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
+import org.jruby.RubyClass;
+import org.jruby.RubyModule;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * A class statement (name, superClass, body). Classes bodies also define their own scope. 
@@ -49,6 +56,11 @@ public class ClassNode extends Node implements IScopingNode {
     
     public ClassNode(ISourcePosition position, Colon3Node cpath, StaticScope scope, Node bodyNode, Node superNode) {
         super(position, NodeType.CLASSNODE);
+        
+        assert cpath != null : "cpath is not null";
+        assert scope != null : "scope is not null";
+        assert bodyNode != null : "bodyNode is not null";
+        
         this.cpath = cpath;
         this.scope = scope;
         this.bodyNode = bodyNode;
@@ -101,7 +113,31 @@ public class ClassNode extends Node implements IScopingNode {
         return Node.createList(cpath, bodyNode, superNode);
     }
     
+    @Override
     public String toString() {
         return "ClassNode [" + cpath + "]";
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        RubyModule enclosingClass = cpath.getEnclosingModule(runtime, context, self, aBlock);
+
+        // TODO: Figure out how this can happen and possibly remove
+        if (enclosingClass == null) throw runtime.newTypeError("no outer class/module");
+
+        RubyClass superClass = null;
+
+        if (superNode != null) {
+            IRubyObject superObj = superNode.interpret(runtime, context, self, aBlock);
+            RubyClass.checkInheritable(superObj);
+            superClass = (RubyClass)superObj;
+        }
+
+
+        RubyClass clazz = enclosingClass.defineOrGetClassUnder(cpath.getName(), superClass);
+
+        scope.setModule(clazz);
+
+        return ASTInterpreter.evalClassDefinitionBody(runtime, context, scope, bodyNode, clazz, self, aBlock);    
     }
 }

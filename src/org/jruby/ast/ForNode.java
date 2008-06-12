@@ -33,12 +33,17 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
+import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.SharedScopeBlock;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * A 'for' statement.  This is implemented using iter and that is how MRI does things,
@@ -58,6 +63,8 @@ public class ForNode extends IterNode {
         // change the way this works to get rid of multiple null checks.
         super(position, varNode, null, bodyNode, NodeType.FORNODE);
         
+        assert iterNode != null : "iterNode is not null";
+        
         this.iterNode = iterNode;
     }
     
@@ -69,11 +76,41 @@ public class ForNode extends IterNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
+    @Override
     public Instruction accept(NodeVisitor iVisitor) {
         return iVisitor.visitForNode(this);
     }
     
+    @Override
     public List<Node> childNodes() {
         return Node.createList(getVarNode(), getBodyNode(), iterNode);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        Block block = SharedScopeBlock.newInterpretedSharedScopeClosure(context, this, context.getCurrentScope(), self);
+   
+        try {
+            while (true) {
+                try {
+                    String savedFile = context.getFile();
+                    int savedLine = context.getLine();
+   
+                    IRubyObject recv = null;
+                    try {
+                        recv = iterNode.interpret(runtime, context, self, aBlock);
+                    } finally {
+                        context.setFile(savedFile);
+                        context.setLine(savedLine);
+                    }
+   
+                    return callAdapter.call(context, recv, block);
+                } catch (JumpException.RetryJump rj) {
+                    // do nothing, allow loop to retry
+                }
+            }
+        } catch (JumpException.BreakJump bj) {
+            return (IRubyObject) bj.getValue();
+        }
     }
 }

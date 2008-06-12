@@ -33,9 +33,14 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
+import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Represents a 'break' statement.
@@ -43,13 +48,11 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class BreakNode extends Node {
     private final Node valueNode;
     
-    public BreakNode(ISourcePosition position) {
-        super(position, NodeType.BREAKNODE);
-        valueNode = null;
-    }
-    
     public BreakNode(ISourcePosition position, Node valueNode) {
         super(position, NodeType.BREAKNODE);
+        
+        assert valueNode != null : "valueNode is not null";
+        
         this.valueNode = valueNode;
     }
 
@@ -71,5 +74,12 @@ public class BreakNode extends Node {
     
     public List<Node> childNodes() {
         return createList(valueNode);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        IRubyObject result = valueNode.interpret(runtime, context, self, aBlock);
+   
+        throw new JumpException.BreakJump(null, result);
     }
 }

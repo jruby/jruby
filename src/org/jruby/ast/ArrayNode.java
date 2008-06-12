@@ -32,10 +32,14 @@
 package org.jruby.ast;
 
 
+import org.jruby.Ruby;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Represents an array. This could be an array literal, quoted words or some args stuff.
@@ -47,6 +51,8 @@ public class ArrayNode extends ListNode implements ILiteralNode {
     
     public ArrayNode(ISourcePosition position, Node firstNode) {
         super(position, NodeType.ARRAYNODE, firstNode);
+        
+        assert firstNode != null : "ArrayNode.first == null";
     }
 
     public ArrayNode(ISourcePosition position) {
@@ -57,6 +63,7 @@ public class ArrayNode extends ListNode implements ILiteralNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
+    @Override
     public Instruction accept(NodeVisitor iVisitor) {
         return iVisitor.visitArrayNode(this);
     }
@@ -67,5 +74,21 @@ public class ArrayNode extends ListNode implements ILiteralNode {
     
     public boolean isLightweight() {
         return lightweight;
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        int size = size();
+        IRubyObject[] array = new IRubyObject[size];
+        
+        for (int i = 0; i < size; i++) {
+            array[i] = get(i).interpret(runtime, context, self, aBlock);
+        }
+   
+        if (lightweight) {
+            return runtime.newArrayNoCopyLight(array);
+        }
+        
+        return runtime.newArrayNoCopy(array);
     }
 }

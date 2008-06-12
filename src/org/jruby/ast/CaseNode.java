@@ -33,9 +33,18 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.evaluator.Instruction;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.EventHook;
+import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * A Case statement.  Represents a complete case statement, including the body with its
@@ -53,6 +62,12 @@ public class CaseNode extends Node {
     
     public CaseNode(ISourcePosition position, Node caseNode, Node caseBody) {
         super(position, NodeType.CASENODE);
+        
+        assert caseBody != null : "caseBody is not null";
+        // TODO: Rewriter and compiler assume case when empty expression.  In MRI this is just
+        // a when.
+//        assert caseNode != null : "caseNode is not null";
+        
         this.caseNode = caseNode;
         this.caseBody = caseBody;
     }
@@ -85,5 +100,80 @@ public class CaseNode extends Node {
     
     public List<Node> childNodes() {
         return Node.createList(caseNode, caseBody);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        IRubyObject expression = null;
+        
+        if (caseNode != null) {
+            expression = caseNode.interpret(runtime, context, self, aBlock);
+        }
+
+        context.pollThreadEvents();
+
+        IRubyObject result = runtime.getNil();
+
+        Node firstWhenNode = caseBody;
+        while (firstWhenNode != null) {
+            if (!(firstWhenNode instanceof WhenNode)) {
+                return firstWhenNode.interpret(runtime, context, self, aBlock);
+            }
+
+            WhenNode whenNode = (WhenNode) firstWhenNode;
+
+            if (whenNode.getExpressionNodes() instanceof ArrayNode) {
+                ArrayNode arrayNode = (ArrayNode)whenNode.getExpressionNodes();
+                // All expressions in a while are in same file
+                context.setFile(arrayNode.getPosition().getFile());
+                for (int i = 0; i < arrayNode.size(); i++) {
+                    Node tag = arrayNode.get(i);
+
+                    context.setLine(tag.getPosition().getStartLine());
+                    
+                    if (ASTInterpreter.isTrace(runtime)) {
+                        ASTInterpreter.callTraceFunction(runtime, context, EventHook.RUBY_EVENT_LINE);
+                    }
+
+                    // Ruby grammar has nested whens in a case body because of
+                    // productions case_body and when_args.
+                    if (tag instanceof WhenNode) {
+                        IRubyObject expressionsObject = ((WhenNode) tag).getExpressionNodes().interpret(runtime, context, self, aBlock);
+                        RubyArray expressions = RuntimeHelpers.splatValue(expressionsObject);
+
+                        for (int j = 0,k = expressions.getLength(); j < k; j++) {
+                            IRubyObject condition = expressions.eltInternal(j);
+
+                            if ((expression != null && condition.callMethod(context, MethodIndex.OP_EQQ, "===", expression)
+                                    .isTrue())
+                                    || (expression == null && condition.isTrue())) {
+                                return firstWhenNode.interpret(runtime, context, self, aBlock);
+                            }
+                        }
+                        continue;
+                    }
+
+                    result = tag.interpret(runtime,context, self, aBlock);
+
+                    if ((expression != null && result.callMethod(context, MethodIndex.OP_EQQ, "===", expression).isTrue())
+                            || (expression == null && result.isTrue())) {
+                        return whenNode.interpret(runtime, context, self, aBlock);
+                    }
+                }
+            } else {
+                result = whenNode.getExpressionNodes().interpret(runtime,context, self, aBlock);
+
+                if ((expression != null && result.callMethod(context, MethodIndex.OP_EQQ, "===", expression).isTrue())
+                        || (expression == null && result.isTrue())) {
+                    return firstWhenNode.interpret(runtime, context, self, aBlock);
+                }
+            }
+
+            context.pollThreadEvents();
+
+            firstWhenNode = whenNode.getNextCase();
+        }
+
+        return runtime.getNil();        
     }
 }

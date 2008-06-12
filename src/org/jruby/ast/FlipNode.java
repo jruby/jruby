@@ -34,9 +34,14 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * A Range in a boolean expression (named after a FlipFlop component in electronic?).
@@ -51,6 +56,10 @@ public class FlipNode extends Node {
     
     public FlipNode(ISourcePosition position, Node beginNode, Node endNode, boolean exclusive, int location) {
         super(position, NodeType.FLIPNODE);
+        
+        assert beginNode != null : "beginNode is not null";
+        assert endNode != null : "endNode is not null";
+        
         this.beginNode = beginNode;
         this.endNode = endNode;
         this.exclusive = exclusive;
@@ -113,5 +122,48 @@ public class FlipNode extends Node {
     
     public List<Node> childNodes() {
         return Node.createList(beginNode, endNode);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        DynamicScope scope = context.getCurrentScope();
+        int index = getIndex();
+        int depth = getDepth();
+
+        // Make sure the appropriate scope has proper size. See JRUBY-2046.
+        DynamicScope nthParent = scope.getNthParentScope(depth);
+        if (nthParent != null) {
+            nthParent.growIfNeeded();
+        }
+
+        IRubyObject result = scope.getValue(index, depth);
+   
+        if (exclusive) {
+            if (result == null || !result.isTrue()) {
+                result = beginNode.interpret(runtime, context, self, aBlock).isTrue() ? runtime.getTrue() : runtime.getFalse();
+                scope.setValue(index, result, depth);
+                return result;
+            } else {
+                if (endNode.interpret(runtime, context, self, aBlock).isTrue()) {
+                    scope.setValue(index, runtime.getFalse(), depth);
+                }
+                
+                return runtime.getTrue();
+            }
+        } else {
+            if (result == null || !result.isTrue()) {
+                if (beginNode.interpret(runtime, context, self, aBlock).isTrue()) {
+                    scope.setValue(index, endNode.interpret(runtime, context, self, aBlock).isTrue() ? runtime.getFalse() : runtime.getTrue(), depth);
+                    return runtime.getTrue();
+                } 
+
+                return runtime.getFalse();
+            } else {
+                if (endNode.interpret(runtime, context, self, aBlock).isTrue()) {
+                    scope.setValue(index, runtime.getFalse(), depth);
+                }
+                return runtime.getTrue();
+            }
+        }
     }
 }

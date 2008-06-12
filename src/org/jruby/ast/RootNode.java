@@ -30,11 +30,15 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Represents the top of the AST.  This is a node not present in MRI.  It was created to
@@ -51,6 +55,8 @@ public class RootNode extends Node {
 
     public RootNode(ISourcePosition position, DynamicScope scope, Node bodyNode) {
         super(position, NodeType.ROOTNODE);
+        
+        assert bodyNode != null : "bodyNode is not null";
         
         this.scope = scope;
         this.staticScope = scope.getStaticScope();
@@ -96,5 +102,30 @@ public class RootNode extends Node {
 
     public List<Node> childNodes() {
         return createList(bodyNode);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        // Serialization killed our dynamic scope.  We can just create an empty one
+        // since serialization cannot serialize an eval (which is the only thing
+        // which is capable of having a non-empty dynamic scope).
+        if (scope == null) {
+            scope = DynamicScope.newDynamicScope(staticScope);
+        }
+        
+        StaticScope theStaticScope = scope.getStaticScope();
+        
+        // Each root node has a top-level scope that we need to push
+        context.preScopedBody(scope);
+        
+        if (theStaticScope.getModule() == null) {
+            theStaticScope.setModule(runtime.getObject());
+        }
+
+        try {
+            return bodyNode.interpret(runtime, context, self, aBlock);
+        } finally {
+            context.postScopedBody();
+        }    
     }
 }

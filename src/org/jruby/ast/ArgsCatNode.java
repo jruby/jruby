@@ -33,9 +33,15 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class ArgsCatNode extends Node {
 	private final Node firstNode;
@@ -43,6 +49,10 @@ public class ArgsCatNode extends Node {
 
     public ArgsCatNode(ISourcePosition position, Node firstNode, Node secondNode) {
         super(position, NodeType.ARGSCATNODE);
+        
+        assert firstNode != null : "ArgsCatNode.first == null";
+        assert secondNode != null : "ArgsCatNode.second == null";
+        
         this.firstNode = firstNode;
         this.secondNode = secondNode;
     }
@@ -61,5 +71,14 @@ public class ArgsCatNode extends Node {
     
     public List<Node> childNodes() {
         return Node.createList(firstNode, secondNode);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        IRubyObject args = firstNode.interpret(runtime, context, self, aBlock);
+        IRubyObject secondArgs = RuntimeHelpers.splatValue(secondNode.interpret(runtime, context, self, aBlock));
+        RubyArray list = args instanceof RubyArray ? (RubyArray) args : runtime.newArray(args);
+   
+        return list.concat(secondArgs);    
     }
 }

@@ -34,9 +34,19 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
+import org.jruby.RubyException;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.evaluator.Instruction;
+import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Represents a rescue statement
@@ -87,5 +97,75 @@ public class RescueNode extends Node {
     
     public List<Node> childNodes() {
         return Node.createList(rescueNode, bodyNode, elseNode);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        RescuedBlock : while (true) {
+            IRubyObject globalExceptionState = runtime.getGlobalVariables().get("$!");
+            boolean anotherExceptionRaised = false;
+            try {
+                // Execute rescue block
+                IRubyObject result = bodyNode.interpret(runtime,context, self, aBlock);
+
+                // If no exception is thrown execute else block
+                if (elseNode != null) {
+                    if (rescueNode == null) {
+                        runtime.getWarnings().warn(ID.ELSE_WITHOUT_RESCUE, elseNode.getPosition(), "else without rescue is useless");
+                    }
+                    result = elseNode.interpret(runtime,context, self, aBlock);
+                }
+
+                return result;
+            } catch (RaiseException raiseJump) {
+                RubyException raisedException = raiseJump.getException();
+                // TODO: Rubicon TestKernel dies without this line.  A cursory glance implies we
+                // falsely set $! to nil and this sets it back to something valid.  This should 
+                // get fixed at the same time we address bug #1296484.
+                runtime.getGlobalVariables().set("$!", raisedException);
+
+                RescueBodyNode cRescueNode = rescueNode;
+
+                while (cRescueNode != null) {
+                    Node  exceptionNodes = cRescueNode.getExceptionNodes();
+                    ListNode exceptionNodesList;
+                    
+                    if (exceptionNodes instanceof SplatNode) {                    
+                        exceptionNodesList = (ListNode) exceptionNodes.interpret(runtime, context, self, aBlock);
+                    } else {
+                        exceptionNodesList = (ListNode) exceptionNodes;
+                    }
+
+                    IRubyObject[] exceptions;
+                    if (exceptionNodesList == null) {
+                        exceptions = new IRubyObject[] {runtime.getStandardError()};
+                    } else {
+                        exceptions = ASTInterpreter.setupArgs(runtime, context, exceptionNodes, self, aBlock);
+                    }
+                    if (RuntimeHelpers.isExceptionHandled(raisedException, exceptions, runtime, context, self).isTrue()) {
+                        try {
+                            return cRescueNode.interpret(runtime,context, self, aBlock);
+                        } catch (JumpException.RetryJump rj) {
+                            // should be handled in the finally block below
+                            //state.runtime.getGlobalVariables().set("$!", state.runtime.getNil());
+                            //state.threadContext.setRaisedException(null);
+                            continue RescuedBlock;
+                        } catch (RaiseException je) {
+                            anotherExceptionRaised = true;
+                            throw je;
+                        }
+                    }
+                    
+                    cRescueNode = cRescueNode.getOptRescueNode();
+                }
+
+                // no takers; bubble up
+                throw raiseJump;
+            } finally {
+                // clear exception when handled or retried
+                if (!anotherExceptionRaised)
+                    runtime.getGlobalVariables().set("$!", globalExceptionState);
+            }
+        }
     }
 }

@@ -34,9 +34,14 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
+import org.jruby.RubyRange;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  * Represents a range literal.
@@ -50,6 +55,10 @@ public class DotNode extends Node {
     public DotNode(ISourcePosition position, Node beginNode, Node endNode, boolean exclusive, 
             boolean isLiteral) {
         super(position, NodeType.DOTNODE);
+        
+        assert beginNode != null : "beginNode is not null";
+        assert endNode != null : "endNode is not null";
+        
         this.beginNode = beginNode;
         this.endNode = endNode;
         this.exclusive = exclusive;
@@ -101,5 +110,13 @@ public class DotNode extends Node {
     
     public List<Node> childNodes() {
         return Node.createList(beginNode, endNode);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return RubyRange.newRange(runtime, context,
+                beginNode.interpret(runtime,context, self, aBlock), 
+                endNode.interpret(runtime,context, self, aBlock), 
+                exclusive);
     }
 }

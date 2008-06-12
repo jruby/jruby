@@ -33,11 +33,20 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
+import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
+import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  * Represents a singleton method definition.
@@ -47,6 +56,8 @@ public class DefsNode extends MethodDefNode implements INameNode {
     public DefsNode(ISourcePosition position, Node receiverNode, ArgumentNode nameNode, ArgsNode argsNode, 
             StaticScope scope, Node bodyNode) {
         super(position, nameNode, argsNode, scope, bodyNode, NodeType.DEFSNODE);
+        
+        assert receiverNode != null : "receiverNode is not null";
         
         this.receiverNode = receiverNode;
     }
@@ -70,11 +81,45 @@ public class DefsNode extends MethodDefNode implements INameNode {
     /**
      * Gets the name of this method
      */
+    @Override
     public String getName() {
         return nameNode.getName();
     }
     
     public List<Node> childNodes() {
         return Node.createList(receiverNode, nameNode, argsNode, bodyNode);
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        IRubyObject receiver = receiverNode.interpret(runtime,context, self, aBlock);
+        String name = getName();
+
+        if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
+            throw runtime.newSecurityError("Insecure; can't define singleton method.");
+        }
+
+        if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
+          throw runtime.newTypeError("can't define singleton method \"" + name
+          + "\" for " + receiver.getMetaClass().getBaseName());
+        }
+
+        if (receiver.isFrozen()) throw runtime.newFrozenError("object");
+
+        RubyClass rubyClass = receiver.getSingletonClass();
+
+        if (runtime.getSafeLevel() >= 4 && rubyClass.getMethods().get(name) != null) {
+            throw runtime.newSecurityError("redefining method prohibited.");
+        }
+
+        scope.determineModule();
+      
+        DefaultMethod newMethod = new DefaultMethod(rubyClass, scope, bodyNode, argsNode, 
+                Visibility.PUBLIC, getPosition());
+   
+        rubyClass.addMethod(name, newMethod);
+        receiver.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
+   
+        return runtime.getNil();
     }
 }

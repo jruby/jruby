@@ -33,9 +33,14 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
+import org.jruby.RubyRegexp;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *	Regexp back reference:
@@ -74,5 +79,24 @@ public class BackRefNode extends Node {
     
     public List<Node> childNodes() {
         return EMPTY_LIST;
+    }
+    
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        IRubyObject backref = context.getCurrentFrame().getBackRef();
+        
+        switch (type) {
+        case '&':
+            return RubyRegexp.last_match(backref);
+        case '`':
+            return RubyRegexp.match_pre(backref);
+        case '\'':
+            return RubyRegexp.match_post(backref);
+        case '+':
+            return RubyRegexp.match_last(backref);
+        default:
+            assert false: "backref with invalid type";
+            return null;
+        }        
     }
 }
