@@ -249,7 +249,7 @@ public class ThreadLibrary implements Library {
     @JRubyClass(name="Queue")
     public static class Queue extends RubyObject {
         private LinkedList entries;
-        private volatile int numWaiting=0;
+        protected volatile int numWaiting=0;
 
         @JRubyMethod(name = "new", rest = true, frame = true, meta = true)
         public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
@@ -287,6 +287,10 @@ public class ThreadLibrary implements Library {
         @JRubyMethod(name = {"length", "size"})
         public synchronized RubyNumeric length() {
             return RubyNumeric.int2fix(getRuntime(), entries.size());
+        }
+
+        protected synchronized long java_length() {
+            return entries.size();
         }
 
         @JRubyMethod
@@ -387,11 +391,15 @@ public class ThreadLibrary implements Library {
 
         @JRubyMethod(name = {"push", "<<"})
         public synchronized IRubyObject push(IRubyObject value) {
-            while ( RubyNumeric.fix2int(length()) >= capacity ) {
-                try {
-                    wait();
-                } catch (InterruptedException e) {
+            if ( java_length() >= capacity ) {
+                numWaiting++;
+                while ( java_length() >= capacity ) {
+                    try {
+                        wait();
+                    } catch (InterruptedException e) {
+                    }
                 }
+                numWaiting--;
             }
             super.push(value);
             notifyAll();
