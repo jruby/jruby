@@ -249,6 +249,7 @@ public class ThreadLibrary implements Library {
     @JRubyClass(name="Queue")
     public static class Queue extends RubyObject {
         private LinkedList entries;
+        private volatile int numWaiting=0;
 
         @JRubyMethod(name = "new", rest = true, frame = true, meta = true)
         public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
@@ -289,7 +290,7 @@ public class ThreadLibrary implements Library {
         }
 
         @JRubyMethod
-        public RubyNumeric num_waiting() { return getRuntime().newFixnum(0); }
+        public RubyNumeric num_waiting() { return getRuntime().newFixnum(numWaiting); }
 
         @JRubyMethod(name = {"pop", "deq", "shift"}, optional = 1)
         public synchronized IRubyObject pop(IRubyObject[] args) {
@@ -300,12 +301,14 @@ public class ThreadLibrary implements Library {
             if ( !should_block && entries.size() == 0 ) {
                 throw new RaiseException(getRuntime(), getRuntime().getThreadError(), "queue empty", false);
             }
+            numWaiting++;
             while ( entries.size() == 0 ) {
                 try {
                     wait();
                 } catch (InterruptedException e) {
                 }
             }
+            numWaiting--;
             return (IRubyObject)entries.removeFirst();
         }
 
