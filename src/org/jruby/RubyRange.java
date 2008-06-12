@@ -38,8 +38,9 @@ package org.jruby;
 
 import java.io.IOException;
 import java.util.List;
-import org.jruby.anno.JRubyMethod;
+
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -315,18 +316,20 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(name = "each", frame = true)
     public IRubyObject each(ThreadContext context, final Block block) {
-        if (!begin.respondsTo("succ")) throw getRuntime().newTypeError("can't iterate from " + begin.getMetaClass().getName());
+        final Ruby runtime = context.getRuntime();
 
         if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
             long lim = ((RubyFixnum) end).getLongValue();
             if (!isExclusive) lim++;
 
             for (long i = ((RubyFixnum) begin).getLongValue(); i < lim; i++) {
-                block.yield(context, RubyFixnum.newFixnum(getRuntime(), i));
+                block.yield(context, RubyFixnum.newFixnum(runtime, i));
             }
         } else if (begin instanceof RubyString) {
             ((RubyString) begin).upto(context, end, isExclusive, block);
         } else {
+            if (!begin.respondsTo("succ")) throw getRuntime().newTypeError(
+                    "can't iterate from " + begin.getMetaClass().getName());
             rangeEach(context, new RangeCallBack() {
                 @Override
                 void call(ThreadContext context, IRubyObject arg) {
@@ -339,35 +342,38 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(name = "step", optional = 1, frame = true)
     public IRubyObject step(ThreadContext context, IRubyObject[] args, Block block) {
+        final Ruby runtime = context.getRuntime();
         final IRubyObject step;
         if (args.length == 0) {
-            step = RubyFixnum.one(getRuntime());
+            step = RubyFixnum.one(runtime);
         } else {
             step = args[0];
         }
 
         long unit = RubyNumeric.num2long(step);
-        if (unit < 0) throw getRuntime().newArgumentError("step can't be negative");
+        if (unit < 0) throw runtime.newArgumentError("step can't be negative");
 
         if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
-            if (unit == 0) throw getRuntime().newArgumentError("step can't be 0");
+            if (unit == 0) throw runtime.newArgumentError("step can't be 0");
 
             long e = ((RubyFixnum)end).getLongValue();
             if (!isExclusive) e++;
             
             for (long i = ((RubyFixnum)begin).getLongValue(); i < e; i += unit) {
-                block.yield(context, RubyFixnum.newFixnum(getRuntime(), i));
+                block.yield(context, RubyFixnum.newFixnum(runtime, i));
             }
         } else {
             IRubyObject tmp = begin.checkStringType();
             if (!tmp.isNil()) {
-                if (unit == 0) throw getRuntime().newArgumentError("step can't be 0");
+                if (unit == 0) throw runtime.newArgumentError("step can't be 0");
                 // rb_iterate((VALUE(*)_((VALUE)))str_step, (VALUE)args, step_i, (VALUE)iter);
-                StepBlockCallBack callback = new StepBlockCallBack(block, RubyFixnum.one(getRuntime()), step);
-                Block blockCallback = CallBlock.newCallClosure(this, getRuntime().getRange(), Arity.singleArgument(), callback, context);
+                StepBlockCallBack callback = new StepBlockCallBack(block, RubyFixnum.one(runtime), step);
+                Block blockCallback = CallBlock.newCallClosure(this, runtime.getRange(), Arity.singleArgument(), callback, context);
                 ((RubyString)tmp).upto(context, end, isExclusive, blockCallback);
             } else if (begin instanceof RubyNumeric) {
-                if (equalInternal(context, step, RubyFixnum.zero(getRuntime()))) throw getRuntime().newArgumentError("step can't be 0");
+                if (equalInternal(context, step, RubyFixnum.zero(runtime))) {
+                    throw runtime.newArgumentError("step can't be 0");
+                }
                 final String method;
                 final int methodIndex;
                 if (isExclusive) {
@@ -383,10 +389,11 @@ public class RubyRange extends RubyObject {
                     beg = beg.callMethod(context, MethodIndex.OP_PLUS, "+", step);
                 }
             } else {
-                if (unit == 0) throw getRuntime().newArgumentError("step can't be 0");
-                if (!begin.respondsTo("succ")) throw getRuntime().newTypeError("can't iterate from " + begin.getMetaClass().getName());
+                if (unit == 0) throw runtime.newArgumentError("step can't be 0");
+                if (!begin.respondsTo("succ")) throw runtime.newTypeError(
+                        "can't iterate from " + begin.getMetaClass().getName());
                 // range_each_func(range, step_i, b, e, args);
-                rangeEach(context, new StepBlockCallBack(block, RubyFixnum.one(getRuntime()), step));
+                rangeEach(context, new StepBlockCallBack(block, RubyFixnum.one(runtime), step));
             }
         }
         return this;
