@@ -274,10 +274,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                         }
                     }
 
-                    // store null for result var
-                    mv.aconst_null();
-                    mv.astore(8);
-
                     Label tryBegin = new Label();
                     Label tryEnd = new Label();
                     Label doFinally = new Label();

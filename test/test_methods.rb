@@ -463,4 +463,33 @@ class TestCaching < Test::Unit::TestCase
     end
     assert c.bar, "newly defined method used"
   end
+
+  # JRUBY-2646
+  def test_methods_with_various_arity_and_blocks
+    a = Class.new do
+      def m()
+        yield
+      end
+      def m1(a)
+        yield
+      end
+      def m2(a,b)
+        yield
+      end
+      def m3(a,b,c)
+        yield
+      end
+      def m4(a,b,c,d)
+        yield
+      end
+    end
+    
+    obj = a.new
+
+    assert_equal(5, obj.m { 5 })
+    assert_equal(5, obj.m1(1) { 5 })
+    assert_equal(5, obj.m2(1,2) { 5 })
+    assert_equal(5, obj.m3(1,2,3) { 5 })
+    assert_equal(5, obj.m4(1,2,3,4) { 5 })
+  end
 end
