@@ -31,7 +31,7 @@ def bench_break(bm)
     end
   end
     
-  bm.report("control, five whiles with blocks") do
+  bm.report("five whiles with blocks that break") do
     100_000.times do
       a = true; while a; 1.times {a = false; break}; end
       a = true; while a; 1.times {a = false; break}; end

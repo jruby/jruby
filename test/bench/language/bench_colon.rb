@@ -5,7 +5,7 @@ def bench_colon(bm)
   oldbm = $bm
   $bm = bm
   class << self
-    class Object
+    class ::Object
       module Foo
         module Bar; end
         $bm.report("control, const access directly") do
@@ -25,10 +25,10 @@ def bench_colon(bm)
         end
       end
       # FIXME: This isn't working right..
-      $bm.report("1m colon3 (broken, not running)") do
-#        1_000_000.times do
-#          ::Foo; ::Foo; ::Foo; ::Foo; ::Foo; ::Foo; ::Foo; ::Foo; ::Foo; ::Foo
-#        end
+      $bm.report("1m colon3") do
+        1_000_000.times do
+          ::Foo; ::Foo; ::Foo; ::Foo; ::Foo; ::Foo; ::Foo; ::Foo; ::Foo; ::Foo
+        end
       end
     end
   end
