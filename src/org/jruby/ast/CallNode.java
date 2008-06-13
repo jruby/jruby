@@ -41,8 +41,10 @@ import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.evaluator.Instruction;
 import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
+import org.jruby.runtime.InterpretedBlock;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -185,5 +187,16 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
                 return (IRubyObject) bj.getValue();
             }
         }
+    }
+    
+    public Block getBlock(ThreadContext context, IRubyObject self, IterNode iter) {
+        assert iter != null : "iter is not null";
+        
+        StaticScope scope = iter.getScope();
+        scope.determineModule();
+            
+        // Create block for this iter node
+        // FIXME: We shouldn't use the current scope if it's not actually from the same hierarchy of static scopes
+        return InterpretedBlock.newInterpretedClosure(context, iter.getBlockBody(), self);
     }
 }

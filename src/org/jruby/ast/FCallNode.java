@@ -175,7 +175,7 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
     }
     
     public Block getBlock(ThreadContext context, IRubyObject self, IterNode iter) {
-        if (iter == null) return Block.NULL_BLOCK;
+        assert iter != null : "iter is not null";
         
         StaticScope scope = iter.getScope();
         scope.determineModule();
