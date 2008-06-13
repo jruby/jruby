@@ -12,8 +12,8 @@ class TestThreadedNonlocalReturn < Test::Unit::TestCase
 
   def test_threaded_nonlocal_return
     t = []
-    aggs = []
-    10.times {|i| t << Thread.new(i) {|j| Thread.stop; aggs[j] = []; 100.times { aggs[j] << foo(j) } } }
+    aggs = [[],[],[],[],[],[],[],[],[],[]]
+    10.times {|i| t << Thread.new(i) {|j| Thread.stop; 100.times { aggs[j] << foo(j) } } }
     # make sure they're all asleep, wake them all up, join them all in sequence
     t.each {|th| Thread.pass until th.status == "sleep"}
     t.each {|th| th.wakeup}
