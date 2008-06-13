@@ -37,25 +37,24 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
-
-@JRubyClass(name = "NativeException", parent="RuntimeError")
+@JRubyClass(name = "NativeException", parent = "RuntimeError")
 public class NativeException extends RubyException {
 
     private final Throwable cause;
     public static final String CLASS_NAME = "NativeException";
-	private final Ruby runtime;
+    private final Ruby runtime;
 
     public NativeException(Ruby runtime, RubyClass rubyClass, Throwable cause) {
-        super(runtime, rubyClass, cause.getClass().getName()+": "+cause.getMessage());
-		this.runtime = runtime;
+        super(runtime, rubyClass, cause.getClass().getName() + ": " + cause.getMessage());
+        this.runtime = runtime;
         this.cause = cause;
     }
-    
+
     public static RubyClass createClass(Ruby runtime, RubyClass baseClass) {
         // FIXME: If NativeException is expected to be used from Ruby code, it should provide
         // a real allocator to be used. Otherwise Class.new will fail, as will marshalling. JRUBY-415
-    	RubyClass exceptionClass = runtime.defineClass(CLASS_NAME, baseClass, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-    	
+        RubyClass exceptionClass = runtime.defineClass(CLASS_NAME, baseClass, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+
         exceptionClass.defineAnnotatedMethods(NativeException.class);
 
         return exceptionClass;
@@ -65,14 +64,15 @@ public class NativeException extends RubyException {
     public IRubyObject cause(Block unusedBlock) {
         return Java.wrap(getRuntime(), JavaObject.wrap(getRuntime(), cause));
     }
-    
+
     public IRubyObject backtrace() {
         IRubyObject rubyTrace = super.backtrace();
-        if (rubyTrace.isNil())
+        if (rubyTrace.isNil()) {
             return rubyTrace;
+        }
         RubyArray array = (RubyArray) rubyTrace.dup();
         StackTraceElement[] stackTrace = cause.getStackTrace();
-        for (int i=stackTrace.length-1; i>=0; i--) {
+        for (int i = stackTrace.length - 1; i >= 0; i--) {
             StackTraceElement element = stackTrace[i];
             String className = element.getClassName();
             String line = null;
@@ -93,10 +93,14 @@ public class NativeException extends RubyException {
         }
         return array;
     }
-    
+
     public void printBacktrace(PrintStream errorStream) {
-    	super.printBacktrace(errorStream);
-    	errorStream.println("Complete Java stackTrace");
-    	cause.printStackTrace(errorStream);
+        super.printBacktrace(errorStream);
+        errorStream.println("Complete Java stackTrace");
+        cause.printStackTrace(errorStream);
+    }
+
+    public Throwable getCause() {
+        return cause;
     }
 }
