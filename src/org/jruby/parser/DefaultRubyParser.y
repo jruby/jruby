@@ -66,7 +66,6 @@ import org.jruby.ast.DefsNode;
 import org.jruby.ast.DotNode;
 import org.jruby.ast.EnsureNode;
 import org.jruby.ast.EvStrNode;
-import org.jruby.ast.FCallNode;
 import org.jruby.ast.FCallNoArgBlockNode;
 import org.jruby.ast.FCallNoArgNode;
 import org.jruby.ast.FixnumNode;
@@ -1043,7 +1042,7 @@ primary       : literal
               }
               | primary_value '[' aref_args tRBRACK {
                   if ($1 instanceof SelfNode) {
-                      $$ = new FCallNode(getPosition($1), "[]", $3);
+                      $$ = support.new_fcall(new Token("[]", support.union($1, $4)), $3, null);
                   } else {
                       $$ = support.new_call($1, new Token("[]", support.union($1, $4)), $3, null);
                   }
