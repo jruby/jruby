@@ -50,7 +50,6 @@ import org.jruby.ast.BlockArgNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.BreakNode;
-import org.jruby.ast.CallNode;
 import org.jruby.ast.CaseNode;
 import org.jruby.ast.ClassNode;
 import org.jruby.ast.ClassVarNode;
@@ -1046,7 +1045,7 @@ primary       : literal
                   if ($1 instanceof SelfNode) {
                       $$ = new FCallNode(getPosition($1), "[]", $3);
                   } else {
-                      $$ = new CallNode(getPosition($1), $1, "[]", $3);
+                      $$ = support.new_call($1, new Token("[]", support.union($1, $4)), $3, null);
                   }
               }
               | tLBRACK aref_args tRBRACK {

@@ -793,9 +793,9 @@ public class ParserSupport {
 
         switch (args.size()) {
             case 0:
-                if (iter != null) return new CallNoArgBlockNode(union(receiver, args), receiver, (String) name.getValue(), argsNode, (IterNode) iter);
+                if (iter != null) return new CallNoArgBlockNode(union(receiver, args), receiver, (String) name.getValue(), args, (IterNode) iter);
                     
-                return new CallNoArgNode(union(receiver, args), receiver, argsNode, (String) name.getValue());
+                return new CallNoArgNode(union(receiver, args), receiver, args, (String) name.getValue());
             case 1:
                 if (iter != null) return new CallOneArgBlockNode(union(receiver, args), receiver, (String) name.getValue(), args, (IterNode) iter);
                 
