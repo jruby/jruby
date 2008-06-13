@@ -14,7 +14,8 @@
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
  * Copyright (C) 2006 Ryan Bell <ryan.l.bell@gmail.com>
  * Copyright (C) 2007 Thomas E Enebo <enebo@acm.org>
- * 
+ * Copyright (C) 2008 Vladimir Sizikov <vsizikov@gmail.com>
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -146,11 +147,28 @@ public class RubyStringIO extends RubyObject {
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
-    public IRubyObject initialize_copy(ThreadContext context, IRubyObject other) {
-        RubyStringIO ioObj = (RubyStringIO) TypeConverter.convertToType(
-                other, context.getRuntime().fastGetClass("StringIO"),
+    public IRubyObject initialize_copy(IRubyObject other) {
+
+        RubyStringIO otherIO = (RubyStringIO) TypeConverter.convertToType(
+                other, getRuntime().fastGetClass("StringIO"),
                 MethodIndex.getIndex("to_strio"), "to_strio");
-        return reopen(new IRubyObject[] { ioObj });
+
+        if (this == otherIO) {
+            return this;
+        }
+
+        pos = otherIO.pos;
+        lineno = otherIO.lineno;
+        eof = otherIO.eof;
+        closedRead = otherIO.closedRead;
+        closedWrite = otherIO.closedWrite;
+        internal = otherIO.internal;
+        modes = otherIO.modes;
+        if (otherIO.isTaint()) {
+            setTaint(true);
+        }
+
+        return this;
     }
 
     @JRubyMethod(name = "<<", required = 1)
@@ -162,6 +180,7 @@ public class RubyStringIO extends RubyObject {
         internal.modify();
         if (modes.isAppendable()) {
             internal.getByteList().append(val.getByteList());
+            pos = internal.getByteList().length();
         } else {
             int left = internal.getByteList().length()-(int)pos;
             internal.getByteList().replace((int)pos,Math.min(val.getByteList().length(),left),val.getByteList());
@@ -180,12 +199,10 @@ public class RubyStringIO extends RubyObject {
         return this;
     }
     
-    @JRubyMethod(name = "close")
+    @JRubyMethod(name = "close", frame=true)
     public IRubyObject close() {
         checkInitialized();
-        if (closedRead && closedWrite) {
-            throw getRuntime().newIOError("closed stream");
-        }
+        checkOpen();
 
         closedRead = true;
         closedWrite = true;
@@ -255,7 +272,11 @@ public class RubyStringIO extends RubyObject {
 
     @JRubyMethod(name = {"eof", "eof?"})
     public IRubyObject eof() {
-        return (pos >= internal.getByteList().length() || eof) ? getRuntime().getTrue() : getRuntime().getFalse();
+        return getRuntime().newBoolean(isEOF());
+    }
+
+    private boolean isEOF() {
+        return (pos >= internal.getByteList().length()) || eof;
     }
 
     @JRubyMethod(name = "fcntl")
@@ -479,17 +500,23 @@ public class RubyStringIO extends RubyObject {
             
             if (args[i].isNil()) {
                 line = "nil";
-            } else if (getRuntime().isInspecting(args[i])) {
-                line = "[...]";
-            } else if (args[i] instanceof RubyArray) {
-                inspectPuts(context, (RubyArray) args[i]);
-                continue;
             } else {
-                line = args[i].toString();
+                IRubyObject tmp = args[i].checkArrayType();
+                if (!tmp.isNil()) {
+                    RubyArray arr = (RubyArray) tmp;
+                    if (getRuntime().isInspecting(arr)) {
+                        line = "[...]";
+                    } else {
+                        inspectPuts(context, arr);
+                        continue;
+                    }
+                } else {
+                    line = args[i].toString();
+                }
             }
-            
+
             callMethod(context, "write", getRuntime().newString(line));
-            
+
             if (!line.endsWith("\n")) {
                 callMethod(context, "write", RubyString.newStringShared(getRuntime(), NEWLINE));
             }
@@ -620,7 +647,7 @@ public class RubyStringIO extends RubyObject {
         checkReadable();
 
         List<IRubyObject> lns = new ArrayList<IRubyObject>();
-        while (!(pos >= internal.getByteList().length() || eof)) {
+        while (!(isEOF())) {
             IRubyObject line = gets(context, arg);
             if (line.isNil()) {
                 break;
@@ -631,69 +658,35 @@ public class RubyStringIO extends RubyObject {
         return getRuntime().newArray(lns);
     }
 
-    @JRubyMethod(name = "reopen", required = 1, optional = 1)
+    @JRubyMethod(name = "reopen", required = 0, optional = 2)
     public IRubyObject reopen(IRubyObject[] args) {
-        IRubyObject str = args[0];
-        if (str instanceof RubyStringIO) {
-            pos = ((RubyStringIO)str).pos;
-            lineno = ((RubyStringIO)str).lineno;
-            eof = ((RubyStringIO)str).eof;
-            closedRead = ((RubyStringIO)str).closedRead;
-            closedWrite = ((RubyStringIO)str).closedWrite;
-            internal = ((RubyStringIO)str).internal;
-            modes = ((RubyStringIO)str).modes;
-            if (str.isTaint()) {
-                setTaint(true);
-            }
-        } else {
-            eof = false;
-            closedRead = false;
-            closedWrite = false;
-            internal = str.convertToString();
-            String modeString = internal.isFrozen() ? "r" : "r+";
-            try {
-                modes = new ModeFlags(RubyIO.getIOModesIntFromString(getRuntime(), modeString));
-            } catch (InvalidValueException e) {
-                throw getRuntime().newErrnoEINVALError();
-            }
+        if (args.length == 1 && !(args[0] instanceof RubyString)) {
+            return initialize_copy(args[0]);
         }
 
-        if (args.length == 2) {
-            Object modeArgument;
-            if (args[1] instanceof RubyFixnum) {
-                modeArgument = RubyFixnum.fix2long(args[1]);
-            } else {
-                modeArgument = args[1].convertToString().toString();
-            }
-            
-            initializeModes(modeArgument);
-        }
-        
-        if (internal.isFrozen() && modes.isWritable()) {
-            throw getRuntime().newErrnoEACCESError("not opened for writing");
-        }
-
-        if (args.length == 2) {
-            if (modes.isTruncate()) {
-                // if doing explicit write mode, truncate incoming string
-                internal.modifyCheck(); // prevent eventual COW
-                internal.empty();
-            }
-        }
-
-        return this;
+        // reset the state
+        doRewind();
+        closedRead = false;
+        closedWrite = false;
+        return initialize(args, Block.NULL_BLOCK);
     }
 
     @JRubyMethod(name = "rewind")
     public IRubyObject rewind() {
-        this.pos = 0L;
-        this.eof = false;
-        this.lineno = 0;
+        doRewind();
         return RubyFixnum.zero(getRuntime());
     }
 
-    @JRubyMethod(name = "seek", required = 1, optional = 1)
+    private void doRewind() {
+        this.pos = 0L;
+        this.eof = false;
+        this.lineno = 0;
+    }
+
+    @JRubyMethod(name = "seek", required = 1, optional = 1, frame=true)
     public IRubyObject seek(IRubyObject[] args) {
+        // MRI 1.8.7 behavior:
+        // checkOpen();
         long amount = RubyNumeric.num2long(args[0]);
         int whence = Stream.SEEK_SET;
         long newPosition = pos;
@@ -718,10 +711,7 @@ public class RubyStringIO extends RubyObject {
 
     @JRubyMethod(name = "string=", required = 1)
     public IRubyObject set_string(IRubyObject arg) {
-        reopen(new IRubyObject[] { arg });
-        pos = 0;
-        lineno = 0;
-        return this;
+        return reopen(new IRubyObject[] { arg.convertToString() });
     }
 
     @JRubyMethod(name = "sync=", required = 1)
@@ -747,9 +737,13 @@ public class RubyStringIO extends RubyObject {
     @JRubyMethod(name = "sysread", optional = 2)
     public IRubyObject sysread(IRubyObject[] args) {
         IRubyObject obj = read(args);
-        
-        if (obj.isNil() || ((RubyString) obj).getByteList().length() == 0) throw getRuntime().newEOFError();
-        
+
+        if (isEOF()) {
+            if (obj.isNil() || ((RubyString) obj).getByteList().length() == 0) {
+                throw getRuntime().newEOFError();
+            }
+        }
+
         return obj; 
     }
 
@@ -802,7 +796,6 @@ public class RubyStringIO extends RubyObject {
         }
     }
 
-
     /* rb: writable */
     private void checkWritable() {
         checkInitialized();
@@ -816,6 +809,12 @@ public class RubyStringIO extends RubyObject {
     private void checkInitialized() {
         if (modes == null) {
             throw getRuntime().newIOError("uninitialized stream");
+        }
+    }
+
+    private void checkOpen() {
+        if (closedRead && closedWrite) {
+            throw getRuntime().newIOError("closed stream");
         }
     }
 
