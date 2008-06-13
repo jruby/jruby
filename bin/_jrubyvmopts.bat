@@ -20,10 +20,10 @@ rem Can you believe I'm rewriting batch arg processing in batch files because ba
 rem file arg processing sucks so bad? Can you believe this is even possible?
 rem http://support.microsoft.com/kb/71247
 
-rem escape any quotes. use -q == ", -d == -.
+rem escape any quotes. use -q == ", -d == '.
 set _ARGS=%*
 if not defined _ARGS goto vmoptsDone
-set _ARGS=%_ARGS:-=-d%
+set _ARGS=%_ARGS:'=-d%
 set _ARGS=%_ARGS:"=-q%
 rem prequote all args for 'for' statement
 set _ARGS="%_ARGS%"
@@ -42,29 +42,36 @@ rem return to line 18
 goto :EOF
 
 :procarg
-if "%_CMP%" == "" goto vmoptsDone
+if [%_CMP%] == [] goto vmoptsDone
 
-if "%_CMP%" == "--server" (
-  set _JAVA_VM="-server"
-  goto :getarg
+if [%_CMP%] == [--server] (
+  set _JAVA_VM=-server
+  goto :vmoptsNext
 )
 
-if "%_CMP%" == "--client" (
-  set _JAVA_VM="-client"
-  goto :getarg
+if [%_CMP%] == [--client] (
+  set _JAVA_VM=-client
+  goto :vmoptsNext
 )
 
-if "%_CMP%" == "--sample" (
-  set _CMP="-J-Xprof"
+if [%_CMP%] == [--jdb] (
+  set _STARTJAVA=%JAVA_HOME%\bin\jdb
+  goto :vmoptsNext
 )
 
-if "%_CMP%" == "--manage" (
-  set _CMP="-J-Dcom.sun.management.jmxremote"
+if [%_CMP%] == [--sample] (
+  set _CMP=-J-Xprof
+  goto :jvmarg
+)
+
+if [%_CMP%] == [--manage] (
+  set _CMP=-J-Dcom.sun.management.jmxremote
+  goto :jvmarg
 )
 
 rem now unescape -q and -d
 set _CMP=%_CMP:-q="%
-set _CMP=%_CMP:-d=-%
+set _CMP=%_CMP:-d='%
 set _CMP1=%_CMP:~0,1%
 set _CMP2=%_CMP:~0,2%
 
@@ -89,6 +96,13 @@ if "%_VAL:~0,4%" == "-Xmx" (
 
 if "%_VAL:~0,4%" == "-Xss" (
   set _STK=%_VAL%
+  goto vmoptsNext
+)
+
+rem Make sure the older way to specify server VM
+rem is still supported.
+if [%_VAL%] == [-server] (
+  set _JAVA_VM=-server
   goto vmoptsNext
 )
 
