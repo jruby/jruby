@@ -769,8 +769,14 @@ public class RubyStringIO extends RubyObject {
         if (pos == 0) return getRuntime().getNil();
         internal.modify();
         pos--;
-        internal.getByteList().set((int) pos, c);
         
+        ByteList bytes = internal.getByteList();
+
+        if (bytes.length() <= pos) {
+            bytes.length((int)pos + 1);
+        }
+
+        bytes.set((int) pos, c);
         return getRuntime().getNil();
     }
 
