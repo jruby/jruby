@@ -62,7 +62,29 @@ import org.jruby.util.JRubyFile;
  */
 public class ChannelStream implements Stream, Finalizable {
     private final static boolean DEBUG = false;
-    private final static int BUFSIZE = 16 * 1024;
+    
+    /**
+     * The size of the read/write buffer allocated for this stream.
+     * 
+     * This size has been scaled back from its original 16k because although
+     * the larger buffer size results in raw File.open times being rather slow
+     * (due to the cost of instantiating a relatively large buffer). We should
+     * try to find a happy medium, or potentially pool buffers, or perhaps even
+     * choose a value based on platform(??), but for now I am reducing it along
+     * with changes for the "large read" patch from JRUBY-2657.
+     */
+    private final static int BUFSIZE = 4 * 1024;
+    
+    /**
+     * The size at which a single read should turn into a chunkier bulk read.
+     * Currently, this size is about 4x a normal buffer size.
+     * 
+     * This size was not really arrived at experimentally, and could potentially
+     * be increased. However, it seems like a "good size" and we should
+     * probably only adjust it if it turns out we would perform better with a
+     * larger buffer for large bulk reads.
+     */
+    private final static int BULK_READ_SIZE = 16 * 1024;
     private final static ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
     
     private Ruby runtime;
@@ -254,8 +276,18 @@ public class ChannelStream implements Stream, Finalizable {
                 eof = true;
                 return null;
             }
-
-            return fread((int) left);
+            ByteList result = new ByteList((int) left);
+            ByteBuffer buf = ByteBuffer.wrap(result.unsafeBytes(), 
+                    result.begin(), (int) left);
+            while (buf.hasRemaining()) {
+                int n = ((ReadableByteChannel) descriptor.getChannel()).read(buf);
+                if (n <= 0) {
+                    break;
+                }
+            }
+            eof = true;
+            result.length(buf.position());
+            return result;
         } else if (descriptor.isNull()) {
             return new ByteList(0);
         } else {
@@ -571,7 +603,8 @@ public class ChannelStream implements Stream, Finalizable {
         checkReadable();
         ensureRead();
         
-        ByteList result = new ByteList();
+        ByteList result = new ByteList(0);
+        
         int len = -1;
         if (buffer.hasRemaining()) { // already have some bytes buffered
             len = (number <= buffer.remaining()) ? number : buffer.remaining();
@@ -579,9 +612,29 @@ public class ChannelStream implements Stream, Finalizable {
         }
         
         ReadableByteChannel readChannel = (ReadableByteChannel)descriptor.getChannel();
+        
         int read = BUFSIZE;
-        while (result.length() != number) {
-            // try to read more
+        boolean done = false;
+        //
+        // Avoid double-copying for reads that are larger than the buffer size
+        //
+        while ((number - result.length()) >= BUFSIZE) {
+            //
+            // limit each iteration to a max of BULK_READ_SIZE to avoid over-size allocations
+            //
+            int bytesToRead = Math.min(BULK_READ_SIZE, number - result.length());
+            int n = descriptor.read(bytesToRead, result);
+            if (n <= 0) {
+                done = true;
+                break;
+            }
+        }
+        
+        //
+        // Complete the request by filling the read buffer first
+        //
+        while (!done && result.length() != number) {
+            
             buffer.clear(); 
             read = readChannel.read(buffer);
             buffer.flip();
