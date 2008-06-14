@@ -64,6 +64,10 @@ public abstract class BlockBody implements JumpTarget {
         return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding, type);
     }
     
+    public int getArgumentType() {
+        return argumentType;
+    }
+    
     public abstract IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type);
     
     public abstract IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 

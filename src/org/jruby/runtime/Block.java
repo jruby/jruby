@@ -32,7 +32,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -41,12 +40,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  *  Internal live representation of a block ({...} or do ... end).
  */
 public class Block {
-    // FIXME: Maybe not best place, but move it to a good home
-    public static final int ZERO_ARGS = 0;
-    public static final int MULTIPLE_ASSIGNMENT = 1;
-    public static final int ARRAY = 2;
-    public static final int SINGLE_RESTARG = 3;
-    
     public enum Type { NORMAL, PROC, LAMBDA, THREAD }
     
     /**

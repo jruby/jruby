@@ -37,6 +37,7 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -160,8 +161,14 @@ public abstract class RubyInteger extends RubyNumeric {
 
         if (this instanceof RubyFixnum) {
             long value = getLongValue();
-            for (long i = 0; i < value; i++) {
-                block.yield(context, RubyFixnum.newFixnum(runtime, i));
+            if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
+                for (long i = 0; i < value; i++) {
+                    block.yield(context, runtime.getNil());
+                }
+            } else {
+                for (long i = 0; i < value; i++) {
+                    block.yield(context, RubyFixnum.newFixnum(runtime, i));
+                }
             }
         } else {
             RubyNumeric i = RubyFixnum.zero(runtime);
