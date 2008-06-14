@@ -97,5 +97,5 @@ def bench_define_method_methods(bm)
 end
 
 if $0 == __FILE__
-  Benchmark.bmbm {|bm| bench_define_method_methods(bm)}
+  (ARGV[0] || 10).to_i.times { Benchmark.bm(60) {|bm| bench_define_method_methods(bm) } }
 end
