@@ -348,6 +348,8 @@ public class RubyModule extends RubyObject {
     public void setBaseName(String name) {
         classId = name;
     }
+    
+    private volatile String bareName;
 
     /**
      * Generate a fully-qualified class name or a #-style name for anonymous and singleton classes.
@@ -358,16 +360,21 @@ public class RubyModule extends RubyObject {
      */
     public String getName() {
         if (getBaseName() == null) {
-            if (isClass()) {
-                return "#<" + "Class" + ":01x" + Integer.toHexString(System.identityHashCode(this)) + ">";
-            } else {
-                return "#<" + "Module" + ":01x" + Integer.toHexString(System.identityHashCode(this)) + ">";
+            if (bareName == null) {
+                if (isClass()) {
+                    bareName = "#<" + "Class" + ":01x" + Integer.toHexString(System.identityHashCode(this)) + ">";
+                } else {
+                    bareName = "#<" + "Module" + ":01x" + Integer.toHexString(System.identityHashCode(this)) + ">";
+                }
             }
+
+            return bareName;
         }
 
-        StringBuffer result = new StringBuffer(getBaseName());
+        String result = getBaseName();
         RubyClass objectClass = getRuntime().getObject();
 
+        // TODO: maybe, we should cache the whole calculation:
         for (RubyModule p = this.getParent(); p != null && p != objectClass; p = p.getParent()) {
             String pName = p.getBaseName();
             // This is needed when the enclosing class or module is a singleton.
@@ -378,10 +385,10 @@ public class RubyModule extends RubyObject {
             if(pName == null) {
                 pName = p.getName();
             }
-            result.insert(0, "::").insert(0, pName);
+            result = pName + "::" + result;
         }
 
-        return result.toString();
+        return result;
     }
 
     /**
