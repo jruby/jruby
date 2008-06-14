@@ -55,11 +55,13 @@ public class RubyStringIO extends RubyObject {
             return new RubyStringIO(runtime, klass);
         }
     };
-    
+
     public static RubyClass createStringIOClass(final Ruby runtime) {
-        RubyClass stringIOClass = runtime.defineClass("StringIO", runtime.getObject(), STRINGIO_ALLOCATOR);
-        
+        RubyClass stringIOClass = runtime.defineClass(
+                "StringIO", runtime.fastGetClass("Data"), STRINGIO_ALLOCATOR);
+
         stringIOClass.defineAnnotatedMethods(RubyStringIO.class);
+        stringIOClass.includeModule(runtime.getEnumerable());
 
         return stringIOClass;
     }
@@ -172,25 +174,8 @@ public class RubyStringIO extends RubyObject {
     }
 
     @JRubyMethod(name = "<<", required = 1)
-    public IRubyObject append(ThreadContext context, IRubyObject obj) {
-        checkWritable();
-        checkFrozen();
-
-        RubyString val = obj.asString();
-        internal.modify();
-        if (modes.isAppendable()) {
-            internal.getByteList().append(val.getByteList());
-            pos = internal.getByteList().length();
-        } else {
-            int left = internal.getByteList().length()-(int)pos;
-            internal.getByteList().replace((int)pos,Math.min(val.getByteList().length(),left),val.getByteList());
-            pos += val.getByteList().length();
-        }
-
-        if (val.isTaint()) {
-            internal.setTaint(true);
-        }
-
+    public IRubyObject append(ThreadContext context, IRubyObject arg) {
+        writeInternal(context, arg);
         return this;
     }
 
@@ -758,7 +743,7 @@ public class RubyStringIO extends RubyObject {
 
         internal.modify();
         internal.getByteList().length(len);
-        return getRuntime().newFixnum(len);
+        return arg;
     }
 
     @JRubyMethod(name = "ungetc", required = 1)
@@ -782,10 +767,29 @@ public class RubyStringIO extends RubyObject {
 
     @JRubyMethod(name = {"write", "syswrite"}, required = 1)
     public IRubyObject write(ThreadContext context, IRubyObject arg) {
+        return context.getRuntime().newFixnum(writeInternal(context, arg));
+    }
+
+    private int writeInternal(ThreadContext context, IRubyObject arg) {
         checkWritable();
-        String obj = arg.toString();
-        append(context, arg);
-        return getRuntime().newFixnum(obj.length());
+        checkFrozen();
+
+        RubyString val = arg.asString();
+        internal.modify();
+        if (modes.isAppendable()) {
+            internal.getByteList().append(val.getByteList());
+            pos = internal.getByteList().length();
+        } else {
+            int left = internal.getByteList().length()-(int)pos;
+            internal.getByteList().replace((int)pos,Math.min(val.getByteList().length(),left),val.getByteList());
+            pos += val.getByteList().length();
+        }
+
+        if (val.isTaint()) {
+            internal.setTaint(true);
+        }
+
+        return val.getByteList().length();
     }
 
     /* rb: check_modifiable */
