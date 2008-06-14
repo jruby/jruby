@@ -230,14 +230,14 @@ public class ASTInterpreter {
         context.preClassEval(scope, type);
 
         try {
-            if (isTrace(runtime)) {
+            if (runtime.hasEventHooks()) {
                 callTraceFunction(runtime, context, EventHook.RUBY_EVENT_CLASS);
             }
 
             if (bodyNode == null) return runtime.getNil();
             return bodyNode.interpret(runtime, context, type, block);
         } finally {
-            if (isTrace(runtime)) {
+            if (runtime.hasEventHooks()) {
                 callTraceFunction(runtime, context, EventHook.RUBY_EVENT_END);
             }
             
@@ -510,16 +510,6 @@ public class ASTInterpreter {
         } else { // instanceof Colon3Node
             return runtime.getObject();
         }
-    }
-
-    /**
-     * Helper method.
-     *
-     * test if a trace function is avaiable.
-     *
-     */
-    public static boolean isTrace(Ruby runtime) {
-        return runtime.hasEventHooks();
     }
 
     public static IRubyObject[] setupArgs(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {

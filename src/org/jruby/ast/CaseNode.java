@@ -131,7 +131,7 @@ public class CaseNode extends Node {
 
                     context.setLine(tag.getPosition().getStartLine());
                     
-                    if (ASTInterpreter.isTrace(runtime)) {
+                    if (runtime.hasEventHooks()) {
                         ASTInterpreter.callTraceFunction(runtime, context, EventHook.RUBY_EVENT_LINE);
                     }
 

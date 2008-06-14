@@ -33,10 +33,6 @@ public class FCallTwoArgBlockNode extends FCallNode {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         Block block = getBlock(context, self, (IterNode) getIterNode());
         
-        if (!block.isGiven()) return callAdapter.call(context, self, 
-                arg1.interpret(runtime, context, self, aBlock),
-                arg2.interpret(runtime, context, self, aBlock));
-        
         while (true) {
             try {
                 return callAdapter.call(context, self, 

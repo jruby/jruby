@@ -31,8 +31,6 @@ public class FCallOneArgBlockNode extends FCallNode {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         Block block = getBlock(context, self, (IterNode) getIterNode());
         
-        if (!block.isGiven()) return callAdapter.call(context, self, arg1.interpret(runtime, context, self, aBlock));
-        
         while (true) {
             try {
                 return callAdapter.call(context, self, arg1.interpret(runtime, context, self, aBlock), block);

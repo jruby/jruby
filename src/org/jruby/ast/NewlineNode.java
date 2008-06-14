@@ -91,7 +91,7 @@ public class NewlineNode extends Node {
         context.setFile(position.getFile());
         context.setLine(position.getStartLine());
 
-        if (ASTInterpreter.isTrace(runtime)) {
+        if (runtime.hasEventHooks()) {
             ASTInterpreter.callTraceFunction(runtime, context, EventHook.RUBY_EVENT_LINE);
         }
 
