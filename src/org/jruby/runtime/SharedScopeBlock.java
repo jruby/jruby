@@ -54,9 +54,8 @@ public class SharedScopeBlock extends InterpretedBlock {
         return new Block(body, binding);
     }
     
-    protected Visibility pre(ThreadContext context, RubyModule klass, Binding binding) {
-        context.preForBlock(binding, klass);
-        return binding.getFrame().getVisibility();
+    protected Frame pre(ThreadContext context, RubyModule klass, Binding binding) {
+        return context.preForBlock(binding, klass);
     }
     
     public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf, Binding binding, Block.Type type) {

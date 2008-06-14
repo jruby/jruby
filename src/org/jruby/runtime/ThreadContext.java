@@ -333,7 +333,9 @@ public final class ThreadContext {
     
     private void pushFrame(String name) {
         frameStack[++frameIndex].updateFrame(name, file, line);
-        expandFramesIfNecessary();
+        if (frameIndex + 1 == frameStack.length) {
+            expandFramesIfNecessary();
+        }
     }
     
     private void pushFrame() {
@@ -350,9 +352,9 @@ public final class ThreadContext {
         setLine(frame.getLine());
     }
         
-    private void popFrameReal() {
+    private void popFrameReal(Frame oldFrame) {
         Frame frame = frameStack[frameIndex];
-        frameStack[frameIndex] = new Frame();
+        frameStack[frameIndex] = oldFrame;
         frameIndex--;
         setFile(frame.getFile());
         setLine(frame.getLine());
@@ -375,7 +377,9 @@ public final class ThreadContext {
     }
     
     public Frame getNextFrame() {
-        expandFramesIfNecessary();
+        if (frameIndex + 1 == frameStack.length) {
+            expandFramesIfNecessary();
+        }
         return frameStack[frameIndex + 1];
     }
     
@@ -834,7 +838,8 @@ public final class ThreadContext {
         setWithinTrace(false);
     }
     
-    public void preForBlock(Binding binding, RubyModule klass) {
+    public Frame preForBlock(Binding binding, RubyModule klass) {
+        Frame lastFrame = getNextFrame();
         Frame f = binding.getFrame();
         f.setFile(file);
         f.setLine(line);
@@ -842,9 +847,11 @@ public final class ThreadContext {
         getCurrentFrame().setVisibility(binding.getVisibility());
         pushScope(binding.getDynamicScope());
         pushRubyClass((klass != null) ? klass : binding.getKlass());
+        return lastFrame;
     }
     
-    public void preYieldSpecificBlock(Binding binding, StaticScope scope, RubyModule klass) {
+    public Frame preYieldSpecificBlock(Binding binding, StaticScope scope, RubyModule klass) {
+        Frame lastFrame = getNextFrame();
         Frame f = pushFrame(binding.getFrame());
         f.setFile(file);
         f.setLine(line);
@@ -852,9 +859,11 @@ public final class ThreadContext {
         // new scope for this invocation of the block, based on parent scope
         pushScope(DynamicScope.newDynamicScope(scope, binding.getDynamicScope()));
         pushRubyClass((klass != null) ? klass : binding.getKlass());
+        return lastFrame;
     }
     
-    public void preYieldLightBlock(Binding binding, DynamicScope emptyScope, RubyModule klass) {
+    public Frame preYieldLightBlock(Binding binding, DynamicScope emptyScope, RubyModule klass) {
+        Frame lastFrame = getNextFrame();
         Frame f = pushFrame(binding.getFrame());
         f.setFile(file);
         f.setLine(line);
@@ -862,44 +871,49 @@ public final class ThreadContext {
         // just push the same empty scope, since we won't use one
         pushScope(emptyScope);
         pushRubyClass((klass != null) ? klass : binding.getKlass());
+        return lastFrame;
     }
     
-    public void preYieldNoScope(Binding binding, RubyModule klass) {
+    public Frame preYieldNoScope(Binding binding, RubyModule klass) {
+        Frame lastFrame = getNextFrame();
         Frame f = pushFrame(binding.getFrame());
         f.setFile(file);
         f.setLine(line);
         f.setVisibility(binding.getVisibility());
         pushRubyClass((klass != null) ? klass : binding.getKlass());
+        return lastFrame;
     }
     
-    public void preEvalWithBinding(Binding binding) {
+    public Frame preEvalWithBinding(Binding binding) {
+        Frame lastFrame = getNextFrame();
         Frame frame = binding.getFrame();
         frame.setIsBindingFrame(true);
         pushFrame(frame);
         getCurrentFrame().setVisibility(binding.getVisibility());
         pushRubyClass(binding.getKlass());
+        return lastFrame;
     }
     
-    public void postEvalWithBinding(Binding binding) {
+    public void postEvalWithBinding(Binding binding, Frame lastFrame) {
         binding.getFrame().setIsBindingFrame(false);
-        popFrameReal();
+        popFrameReal(lastFrame);
         popRubyClass();
     }
     
-    public void postYield(Binding binding) {
+    public void postYield(Binding binding, Frame lastFrame) {
         popScope();
-        popFrameReal();
+        popFrameReal(lastFrame);
         popRubyClass();
     }
     
-    public void postYieldLight(Binding binding) {
+    public void postYieldLight(Binding binding, Frame lastFrame) {
         popScope();
-        popFrameReal();
+        popFrameReal(lastFrame);
         popRubyClass();
     }
     
-    public void postYieldNoScope() {
-        popFrameReal();
+    public void postYieldNoScope(Frame lastFrame) {
+        popFrameReal(lastFrame);
         popRubyClass();
     }
     

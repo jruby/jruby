@@ -68,14 +68,13 @@ public class CompiledBlockLight extends CompiledBlock {
     }
     
     @Override
-    protected Visibility pre(ThreadContext context, RubyModule klass, Binding binding) {
-        context.preYieldLightBlock(binding, dummyScope, klass);
-        return binding.getFrame().getVisibility();
+    protected Frame pre(ThreadContext context, RubyModule klass, Binding binding) {
+        return context.preYieldLightBlock(binding, dummyScope, klass);
     }
     
     @Override
-    protected final void post(ThreadContext context, Binding binding, Visibility vis) {
+    protected final void post(ThreadContext context, Binding binding, Visibility vis, Frame lastFrame) {
         binding.getFrame().setVisibility(vis);
-        context.postYieldLight(binding);
+        context.postYieldLight(binding, lastFrame);
     }
 }

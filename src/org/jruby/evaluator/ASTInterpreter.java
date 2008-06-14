@@ -72,6 +72,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Binding;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.InterpretedBlock;
 import org.jruby.util.TypeConverter;
 
@@ -128,9 +129,9 @@ public class ASTInterpreter {
         // FIXME:  This determine module is in a strange location and should somehow be in block
         evalScope.getStaticScope().determineModule();
 
+        Frame lastFrame = context.preEvalWithBinding(binding);
         try {
             // Binding provided for scope, use it
-            context.preEvalWithBinding(binding);
             IRubyObject newSelf = binding.getSelf();
             RubyString source = src.convertToString();
             Node node = 
@@ -142,7 +143,7 @@ public class ASTInterpreter {
         } catch (JumpException.RedoJump rj) {
             throw runtime.newLocalJumpError("redo", (IRubyObject)rj.getValue(), "unexpected redo");
         } finally {
-            context.postEvalWithBinding(binding);
+            context.postEvalWithBinding(binding, lastFrame);
 
             // restore position
             context.setFile(savedFile);

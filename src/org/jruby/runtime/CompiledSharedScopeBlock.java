@@ -56,9 +56,8 @@ public class CompiledSharedScopeBlock extends CompiledBlockLight {
         super(arity, containingScope, callback, hasMultipleArgsHead, argumentType);
     }
     
-    protected Visibility pre(ThreadContext context, RubyModule klass, Binding binding) {
-        context.preForBlock(binding, klass);
-        return binding.getFrame().getVisibility();
+    protected Frame pre(ThreadContext context, RubyModule klass, Binding binding) {
+        return context.preForBlock(binding, klass);
     }
     
     public Block cloneBlock(Binding binding) {

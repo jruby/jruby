@@ -74,12 +74,12 @@ public class MethodBlock extends BlockBody {
         return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding, type);
     }
     
-    protected void pre(ThreadContext context, RubyModule klass, Binding binding) {
-        context.preYieldNoScope(binding, klass);
+    protected Frame pre(ThreadContext context, RubyModule klass, Binding binding) {
+        return context.preYieldNoScope(binding, klass);
     }
     
-    protected void post(ThreadContext context, Binding binding) {
-        context.postYieldNoScope();
+    protected void post(ThreadContext context, Binding binding, Frame lastFrame) {
+        context.postYieldNoScope(lastFrame);
     }
     
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
@@ -103,7 +103,7 @@ public class MethodBlock extends BlockBody {
             binding.getFrame().setSelf(self);
         }
         
-        pre(context, klass, binding);
+        Frame lastFrame = pre(context, klass, binding);
 
         try {
             // This while loop is for restarting the block call in case a 'redo' fires.
@@ -124,7 +124,7 @@ public class MethodBlock extends BlockBody {
             // A 'next' is like a local return from the block, ending this call or yield.
             return (IRubyObject)nj.getValue();
         } finally {
-            post(context, binding);
+            post(context, binding, lastFrame);
         }
     }
     

@@ -83,7 +83,8 @@ public class CompiledBlock extends BlockBody {
         IRubyObject self = prepareSelf(binding);
 
         IRubyObject realArg = setupBlockArg(context.getRuntime(), value, self); 
-        Visibility oldVis = pre(context, null, binding);
+        Visibility oldVis = binding.getFrame().getVisibility();
+        Frame lastFrame = pre(context, null, binding);
         
         try {
             return callback.call(context, self, realArg);
@@ -93,7 +94,7 @@ public class CompiledBlock extends BlockBody {
             // A 'next' is like a local return from the block, ending this call or yield.
             return handleNextJump(context, nj, type);
         } finally {
-            post(context, binding, oldVis);
+            post(context, binding, oldVis, lastFrame);
         }
     }
     
@@ -104,7 +105,8 @@ public class CompiledBlock extends BlockBody {
 
         IRubyObject realArg = aValue ? 
                 setupBlockArgs(context, args, self) : setupBlockArg(context.getRuntime(), args, self); 
-        Visibility oldVis = pre(context, klass, binding);
+        Visibility oldVis = binding.getFrame().getVisibility();
+        Frame lastFrame = pre(context, klass, binding);
         
         try {
             return callback.call(context, self, realArg);
@@ -114,7 +116,7 @@ public class CompiledBlock extends BlockBody {
             // A 'next' is like a local return from the block, ending this call or yield.
             return handleNextJump(context, nj, type);
         } finally {
-            post(context, binding, oldVis);
+            post(context, binding, oldVis, lastFrame);
         }
     }
     
@@ -136,14 +138,13 @@ public class CompiledBlock extends BlockBody {
         return type == Block.Type.LAMBDA ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
     }
     
-    protected Visibility pre(ThreadContext context, RubyModule klass, Binding binding) {
-        context.preYieldSpecificBlock(binding, scope, klass);
-        return binding.getFrame().getVisibility();
+    protected Frame pre(ThreadContext context, RubyModule klass, Binding binding) {
+        return context.preYieldSpecificBlock(binding, scope, klass);
     }
     
-    protected void post(ThreadContext context, Binding binding, Visibility vis) {
+    protected void post(ThreadContext context, Binding binding, Visibility vis, Frame lastFrame) {
         binding.getFrame().setVisibility(vis);
-        context.postYield(binding);
+        context.postYield(binding, lastFrame);
     }
 
     protected IRubyObject setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self) {

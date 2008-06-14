@@ -130,20 +130,20 @@ public class InterpretedBlock extends BlockBody {
         this.scope = iterNode.getScope();
     }
     
-    protected Visibility pre(ThreadContext context, RubyModule klass, Binding binding) {
-        context.preYieldSpecificBlock(binding, iterNode.getScope(), klass);
-        return binding.getFrame().getVisibility();
+    protected Frame pre(ThreadContext context, RubyModule klass, Binding binding) {
+        return context.preYieldSpecificBlock(binding, iterNode.getScope(), klass);
     }
     
-    protected void post(ThreadContext context, Binding binding, Visibility vis) {
+    protected void post(ThreadContext context, Binding binding, Visibility vis, Frame lastFrame) {
         binding.getFrame().setVisibility(vis);
-        context.postYield(binding);
+        context.postYield(binding, lastFrame);
     }
     
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
         IRubyObject self = prepareSelf(binding);
         
-        Visibility oldVis = pre(context, null, binding);
+        Visibility oldVis = binding.getFrame().getVisibility();
+        Frame lastFrame = pre(context, null, binding);
 
         try {
             if (hasVarNode) {
@@ -156,7 +156,7 @@ public class InterpretedBlock extends BlockBody {
         } catch (JumpException.NextJump nj) {
             return handleNextJump(context, nj, type);
         } finally {
-            post(context, binding, oldVis);
+            post(context, binding, oldVis, lastFrame);
         }
     }
 
@@ -176,7 +176,8 @@ public class InterpretedBlock extends BlockBody {
             self = prepareSelf(binding);
         }
         
-        Visibility oldVis = pre(context, klass, binding);
+        Visibility oldVis = binding.getFrame().getVisibility();
+        Frame lastFrame = pre(context, klass, binding);
 
         try {
             if (hasVarNode) {
@@ -194,7 +195,7 @@ public class InterpretedBlock extends BlockBody {
         } catch (JumpException.NextJump nj) {
             return handleNextJump(context, nj, type);
         } finally {
-            post(context, binding, oldVis);
+            post(context, binding, oldVis, lastFrame);
         }
     }
     
