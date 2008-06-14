@@ -39,7 +39,6 @@ import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
-import org.jruby.compiler.JITCompiler;
 import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
@@ -171,7 +170,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                 traceCall(context, runtime, name);
             }
 
-            return ASTInterpreter.eval(runtime, context, body, self, block);
+            return body.interpret(runtime, context, self, block);
         } catch (JumpException.ReturnJump rj) {
             return handleReturn(rj);
         } catch (JumpException.RedoJump rj) {

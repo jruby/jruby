@@ -114,7 +114,10 @@ public class DefsNode extends MethodDefNode implements INameNode {
 
         scope.determineModule();
       
-        DefaultMethod newMethod = new DefaultMethod(rubyClass, scope, bodyNode, argsNode, 
+        // Make a nil node if no body.  Notice this is not part of AST.
+        Node body = bodyNode == null ? new NilNode(getPosition()) : bodyNode;
+        
+        DefaultMethod newMethod = new DefaultMethod(rubyClass, scope, body, argsNode, 
                 Visibility.PUBLIC, getPosition());
    
         rubyClass.addMethod(name, newMethod);

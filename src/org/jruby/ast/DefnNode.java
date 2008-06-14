@@ -112,8 +112,11 @@ public class DefnNode extends MethodDefNode implements INameNode {
         
         scope.determineModule();
         
+        // Make a nil node if no body.  Notice this is not part of AST.
+        Node body = bodyNode == null ? new NilNode(getPosition()) : bodyNode;
+        
         DefaultMethod newMethod = new DefaultMethod(containingClass, scope, 
-                bodyNode, (ArgsNode) argsNode, 
+                body, (ArgsNode) argsNode, 
                 visibility, getPosition());
    
         containingClass.addMethod(name, newMethod);
