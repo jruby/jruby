@@ -175,6 +175,8 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
             return handleReturn(rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
+        } catch (StackOverflowError sfe) {
+            throw runtime.newSystemStackError("stack level too deep");
         } finally {
             if (runtime.hasEventHooks()) {
                 traceReturn(context, runtime, name);
