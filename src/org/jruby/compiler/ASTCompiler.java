@@ -30,6 +30,7 @@
 package org.jruby.compiler;
 
 import java.util.Iterator;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.AliasNode;
 import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsNode;
@@ -2886,7 +2887,7 @@ public class ASTCompiler {
                 BlockNode blockNode = (BlockNode) nextNode;
 
                 for (int i = 0; i < blockNode.size(); i++) {
-                    if ((i + 1) % 500 == 0) {
+                    if ((i + 1) % RubyInstanceConfig.CHAINED_COMPILE_LINE_COUNT == 0) {
                         methodCompiler = methodCompiler.chainToMethod("__file__from_line_" + (i + 1), inspector);
                     }
                     compile(blockNode.get(i), methodCompiler);

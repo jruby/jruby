@@ -61,6 +61,18 @@ public class RubyInstanceConfig {
      * The JIT threshold to the specified method invocation count.
      */
     private static final int JIT_THRESHOLD = 50;
+    
+    /**
+     * Default size for chained compilation.
+     */
+    private static final int CHAINED_COMPILE_LINE_COUNT_DEFAULT = 500;
+    
+    /**
+     * The number of lines at which a method, class, or block body is split into
+     * chained methods (to dodge 64k method-size limit in JVM).
+     */
+    public static final int CHAINED_COMPILE_LINE_COUNT
+            = SafePropertyAccessor.getInt("jruby.compile.chainsize", CHAINED_COMPILE_LINE_COUNT_DEFAULT);
 
     public enum CompileMode {
         JIT, FORCE, OFF;
@@ -366,6 +378,8 @@ public class RubyInstanceConfig {
                 .append("       (EXPERIMENTAL) Turn on compilation without polling for \"unsafe\" thread events. Default is false\n")
                 .append("    jruby.compile.fastops=true|false\n")
                 .append("       (EXPERIMENTAL) Turn on fast operators for Fixnum. Default is false\n")
+                .append("    jruby.compile.chainsize=<line count>\n")
+                .append("       Set the number of lines at which compiled bodies are \"chained\". Default is " + CHAINED_COMPILE_LINE_COUNT_DEFAULT + "\n")
                 .append("\nJIT SETTINGS:\n")
                 .append("    jruby.jit.threshold=<invocation count>\n")
                 .append("       Set the JIT threshold to the specified method invocation count. Default is " + JIT_THRESHOLD + ".\n")
