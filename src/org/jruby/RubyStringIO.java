@@ -75,7 +75,7 @@ public class RubyStringIO extends RubyObject {
             try {
                 val = block.yield(context, strio);
             } finally {
-                strio.close();
+                strio.doFinalize();
             }
         }
         return val;
@@ -88,6 +88,11 @@ public class RubyStringIO extends RubyObject {
     private long pos = 0L;
     private int lineno = 0;
     private boolean eof = false;
+
+    /**
+     * ATTN: the value of internal might be reset to null
+     * (during StringIO.open with block), so watch out for that.
+     */
     private RubyString internal;
 
     // Has read/write been closed or is it still open for business
@@ -193,6 +198,12 @@ public class RubyStringIO extends RubyObject {
         closedWrite = true;
         
         return getRuntime().getNil();
+    }
+
+    private void doFinalize() {
+        closedRead = true;
+        closedWrite = true;
+        internal = null;
     }
 
     @JRubyMethod(name = "closed?")
@@ -367,18 +378,14 @@ public class RubyStringIO extends RubyObject {
         return result;
     }
 
-    @JRubyMethod(name = "isatty")
+    @JRubyMethod(name = {"tty?", "isatty"})
     public IRubyObject isatty() {
         return getRuntime().getFalse();
     }
 
-    @JRubyMethod(name = "tty?")
-    public IRubyObject tty_p() {
-        return getRuntime().getFalse();
-    }
-
-    @JRubyMethod(name = "length")
+    @JRubyMethod(name = {"length", "size"})
     public IRubyObject length() {
+        checkFinalized();
         return getRuntime().newFixnum(internal.getByteList().length());
     }
 
@@ -404,13 +411,8 @@ public class RubyStringIO extends RubyObject {
         return getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "pos")
+    @JRubyMethod(name = {"pos", "tell"})
     public IRubyObject pos() {
-        return getRuntime().newFixnum(pos);
-    }
-
-    @JRubyMethod(name = "tell")
-    public IRubyObject tell() {
         return getRuntime().newFixnum(pos);
     }
 
@@ -626,19 +628,19 @@ public class RubyStringIO extends RubyObject {
     @JRubyMethod(name = "readline", optional = 1, writes = FrameField.LASTLINE)
     public IRubyObject readline(ThreadContext context, IRubyObject[] args) {
         IRubyObject line = gets(context, args);
-        
+
         if (line.isNil()) throw getRuntime().newEOFError();
         
         return line;
     }
     
-    @JRubyMethod(name = "readlines", optional = 1, writes = FrameField.LASTLINE)
+    @JRubyMethod(name = "readlines", optional = 1)
     public IRubyObject readlines(ThreadContext context, IRubyObject[] arg) {
         checkReadable();
 
         List<IRubyObject> lns = new ArrayList<IRubyObject>();
         while (!(isEOF())) {
-            IRubyObject line = gets(context, arg);
+            IRubyObject line = internalGets(context, arg);
             if (line.isNil()) {
                 break;
             }
@@ -677,6 +679,7 @@ public class RubyStringIO extends RubyObject {
     public IRubyObject seek(IRubyObject[] args) {
         // MRI 1.8.7 behavior:
         // checkOpen();
+        checkFinalized();
         long amount = RubyNumeric.num2long(args[0]);
         int whence = Stream.SEEK_SET;
         long newPosition = pos;
@@ -708,15 +711,14 @@ public class RubyStringIO extends RubyObject {
     public IRubyObject set_sync(IRubyObject args) {
         return args;
     }
-    
-    @JRubyMethod(name = "size")
-    public IRubyObject size() {
-        return getRuntime().newFixnum(internal.getByteList().length());
-    }
 
     @JRubyMethod(name = "string")
     public IRubyObject string() {
-        return internal;
+        if (internal == null) {
+            return getRuntime().getNil();
+        } else {
+            return internal;
+        }
     }
 
     @JRubyMethod(name = "sync")
@@ -801,6 +803,7 @@ public class RubyStringIO extends RubyObject {
     /* rb: check_modifiable */
     @Override
     protected void checkFrozen() {
+        checkInitialized();
         if (internal.isFrozen()) throw getRuntime().newIOError("not modifiable string");
     }
     
@@ -825,6 +828,12 @@ public class RubyStringIO extends RubyObject {
     private void checkInitialized() {
         if (modes == null) {
             throw getRuntime().newIOError("uninitialized stream");
+        }
+    }
+    
+    private void checkFinalized() {
+        if (internal == null) {
+            throw getRuntime().newIOError("not opened");
         }
     }
 
