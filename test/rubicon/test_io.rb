@@ -204,8 +204,9 @@ class TestIO < Test::Unit::TestCase
     end
   end
 =end
-	
-  def test_s_popen_spawn
+
+  # disabled due to JRUBY-1895
+  def XXXtest_s_popen_spawn
     unless WIN32
       # Spawn an interpreter - WRITE
       parent = $$
@@ -256,7 +257,8 @@ class TestIO < Test::Unit::TestCase
     assert_equal(SAMPLE.length*10, lines[0].size)
   end
 
-  def test_s_select
+  # disabled since std streams are not selectable under Java.
+  def XXXtest_s_select
     assert_nil(select(nil, nil, nil, 0))
     assert_raise(ArgumentError) { IO.select(nil, nil, nil, -1) }
     
