@@ -20,10 +20,10 @@ rem Can you believe I'm rewriting batch arg processing in batch files because ba
 rem file arg processing sucks so bad? Can you believe this is even possible?
 rem http://support.microsoft.com/kb/71247
 
-rem escape any quotes. use -q == ", -d == '.
+rem escape any quotes. use -q == ", -_ == '.
 set _ARGS=%*
 if not defined _ARGS goto vmoptsDone
-set _ARGS=%_ARGS:'=-d%
+set _ARGS=%_ARGS:'=-_%
 set _ARGS=%_ARGS:"=-q%
 rem prequote all args for 'for' statement
 set _ARGS="%_ARGS%"
@@ -81,7 +81,7 @@ if ["%_CMP%"] == ["--1.8"] (
 
 rem now unescape -q and -d
 set _CMP=%_CMP:-q="%
-set _CMP=%_CMP:-d='%
+set _CMP=%_CMP:-_='%
 set _CMP1=%_CMP:~0,1%
 set _CMP2=%_CMP:~0,2%
 
