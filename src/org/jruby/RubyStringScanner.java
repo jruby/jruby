@@ -11,6 +11,7 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
@@ -76,13 +77,13 @@ public class RubyStringScanner extends RubyObject {
     }
 
     // second argument is allowed, but ignored (MRI)
-    @JRubyMethod(name = "initialize", required = 1, optional = 1, frame = true)
+    @JRubyMethod(name = "initialize", required = 1, optional = 1, frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         str = args[0].convertToString();        
         return this;
     }
     
-    @JRubyMethod(name = "initialize_copy", required = 1)
+    @JRubyMethod(name = "initialize_copy", frame=true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(IRubyObject other) {
         if (this == other) return this;
         if (!(other instanceof RubyStringScanner)) throw getRuntime().newTypeError("wrong argument type " + other.getMetaClass() + " (expected StringScanner)");
@@ -143,13 +144,13 @@ public class RubyStringScanner extends RubyObject {
         return this;
     }
     
-    @JRubyMethod(name = "pos")
+    @JRubyMethod(name = {"pos", "pointer"})
     public RubyFixnum pos() {
         check();
         return RubyFixnum.newFixnum(getRuntime(), pos);
     }
 
-    @JRubyMethod(name = "pos=", required = 1)
+    @JRubyMethod(name = {"pos=", "pointer="})
     public IRubyObject set_pos(IRubyObject pos) {
         check();
         int i = RubyNumeric.num2int(pos);
@@ -328,7 +329,9 @@ public class RubyStringScanner extends RubyObject {
     
     @JRubyMethod(name = "peep", required = 1)
     public IRubyObject peep(IRubyObject length) {
-        getRuntime().getWarnings().warning(ID.DEPRECATED_METHOD, "StringScanner#peep is obsolete; use #peek instead", "StringScanner#peep", "#peek");
+        getRuntime().getWarnings().warning(
+                ID.DEPRECATED_METHOD, "StringScanner#peep is obsolete; use #peek instead",
+                "StringScanner#peep", "#peek");
         return peek(length);
     }
     
