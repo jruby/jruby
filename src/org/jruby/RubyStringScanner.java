@@ -169,6 +169,7 @@ public class RubyStringScanner extends RubyObject {
     }
     
     private IRubyObject extractBegLen(int beg, int len) {
+        assert len >= 0;
         int size = str.getByteList().realSize;
         if (beg > size) return getRuntime().getNil();
         if (beg + len > size) len = size - beg;
@@ -312,21 +313,28 @@ public class RubyStringScanner extends RubyObject {
     
     @JRubyMethod(name = "getbyte")
     public IRubyObject getbyte() {
-        getRuntime().getWarnings().warning(ID.DEPRECATED_METHOD, "StringScanner#getbyte is obsolete; use #get_byte instead", "StringScanner#getbyte", "#get_byte");
+        getRuntime().getWarnings().warning(ID.DEPRECATED_METHOD,
+                "StringScanner#getbyte is obsolete; use #get_byte instead",
+                "StringScanner#getbyte", "#get_byte");
         return get_byte();
     }
-    
+
     @JRubyMethod(name = "peek", required = 1)
     public IRubyObject peek(IRubyObject length) {
         check();
+
         int len = RubyNumeric.num2int(length);
+        if (len < 0) {
+            throw getRuntime().newArgumentError("negative string size (or size too big)");
+        }
+
         ByteList value = str.getByteList();
         if (pos >= value.realSize) return RubyString.newEmptyString(getRuntime()).infectBy(str);
-        
         if (pos + len > value.realSize) len = value.realSize - pos;
+
         return extractBegLen(pos, len);
     }
-    
+
     @JRubyMethod(name = "peep", required = 1)
     public IRubyObject peep(IRubyObject length) {
         getRuntime().getWarnings().warning(
