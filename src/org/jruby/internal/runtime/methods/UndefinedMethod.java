@@ -53,10 +53,6 @@ public class UndefinedMethod extends DynamicMethod {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
         throw new UnsupportedOperationException();
     }
-
-    public boolean isUndefined() {
-        return true;
-    }
     
     // Dup is not really a dup, but this is a singleton so it hardly matters.
     public DynamicMethod dup() {

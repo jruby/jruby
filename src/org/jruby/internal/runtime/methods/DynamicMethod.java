@@ -39,14 +39,26 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- *
- * @author  jpetersen
+ * DynamicMethod represents a method handle in JRuby, to provide both entry
+ * points into AST and bytecode interpreters, but also to provide handles to
+ * JIT-compiled and hand-implemented Java methods. All methods invokable from
+ * Ruby code are referenced by method handles, either directly or through
+ * delegation or callback mechanisms.
  */
 public abstract class DynamicMethod {
     protected RubyModule implementationClass;
     protected Visibility visibility;
     protected CallConfiguration callConfig;
     
+    /**
+     * Base constructor for dynamic method handles.
+     * 
+     * @param implementationClass The class to which this method will be
+     * immediately bound
+     * @param visibility The visibility assigned to this method
+     * @param callConfig The CallConfiguration to use for this method's
+     * pre/post invocation logic.
+     */
     protected DynamicMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
         this.visibility = visibility;
         this.implementationClass = implementationClass;
@@ -54,52 +66,212 @@ public abstract class DynamicMethod {
     }
 
     /**
-     * Call the method
-     * @param context is the thread-specific information that this method is being invoked on
-     * @param receiver 
+     * The minimum 'call' method required for a dynamic method handle.
+     * Subclasses must impleemnt this method, but may implement the other
+     * signatures to provide faster, non-boxing call paths. Typically
+     * subclasses will implement this method to check variable arity calls,
+     * then performing a specific-arity invocation to the appropriate method
+     * or performing variable-arity logic in-line.
+     * 
+     * @param context The thread context for the currently executing thread
+     * @param self The 'self' or 'receiver' object to use for this call
+     * @param klazz The Ruby class against which this method is binding
+     * @param name The incoming name used to invoke this method
+     * @param args The argument list to this invocation
+     * @param block The block passed to this invocation
+     * @return The result of the call
      */
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, 
             String name, IRubyObject[] args, Block block);
     
+    ////////////////////////////////////////////////////////////////////////////
+    // Now we provide default impls of a number of signatures. First, non-block
+    // versions of all methods, which just add NULL_BLOCK and re-call, allowing
+    // e.g. compiled code, which always can potentially take a block, to only
+    // generate the block-receiving signature and still avoid arg boxing.
+    ////////////////////////////////////////////////////////////////////////////
+    
+    /**
+     * A default implementation of n-arity, non-block 'call' method,
+     * which simply calls the n-arity, block-receiving version with
+     * the arg list and Block.NULL_BLOCK.
+     * 
+     * @param context The thread context for the currently executing thread
+     * @param self The 'self' or 'receiver' object to use for this call
+     * @param klazz The Ruby class against which this method is binding
+     * @param name The incoming name used to invoke this method
+     * @param arg1 The first argument to this invocation
+     * @param arg2 The second argument to this invocation
+     * @return The result of the call
+     */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, 
             String name, IRubyObject[] args) {
         return call(context, self, clazz, name, args, Block.NULL_BLOCK);
     }
     
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
-        return call(context, self, klazz, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+    /**
+     * A default implementation of one-arity, non-block 'call' method,
+     * which simply calls the one-arity, block-receiving version with
+     * the argument and Block.NULL_BLOCK.
+     * 
+     * @param context The thread context for the currently executing thread
+     * @param self The 'self' or 'receiver' object to use for this call
+     * @param klazz The Ruby class against which this method is binding
+     * @param name The incoming name used to invoke this method
+     * @param arg1 The first argument to this invocation
+     * @return The result of the call
+     */
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg) {
+        return call(context, self, klazz, name, arg, Block.NULL_BLOCK);
     }
     
+    /**
+     * A default implementation of two-arity, non-block 'call' method,
+     * which simply calls the two-arity, block-receiving version with
+     * the arguments and Block.NULL_BLOCK.
+     * 
+     * @param context The thread context for the currently executing thread
+     * @param self The 'self' or 'receiver' object to use for this call
+     * @param klazz The Ruby class against which this method is binding
+     * @param name The incoming name used to invoke this method
+     * @param arg1 The first argument to this invocation
+     * @param arg2 The second argument to this invocation
+     * @return The result of the call
+     */
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2) {
+        return call(context, self, klazz, name, arg1,arg2, Block.NULL_BLOCK);
+    }
+    
+    /**
+     * A default implementation of three-arity, non-block 'call' method,
+     * which simply calls the three-arity, block-receiving version with
+     * the arguments and Block.NULL_BLOCK.
+     * 
+     * @param context The thread context for the currently executing thread
+     * @param self The 'self' or 'receiver' object to use for this call
+     * @param klazz The Ruby class against which this method is binding
+     * @param name The incoming name used to invoke this method
+     * @param arg1 The first argument to this invocation
+     * @param arg2 The second argument to this invocation
+     * @param arg2 The third argument to this invocation
+     * @return The result of the call
+     */
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        return call(context, self, klazz, name, arg1,arg2,arg3, Block.NULL_BLOCK);
+    }
+    
+    /**
+     * A default implementation of zero arity, non-block 'call' method,
+     * which simply calls the zero-arity, block-receiving version with
+     * Block.NULL_BLOCK.
+     * 
+     * @param context The thread context for the currently executing thread
+     * @param self The 'self' or 'receiver' object to use for this call
+     * @param klazz The Ruby class against which this method is binding
+     * @param name The incoming name used to invoke this method
+     * @param block The block passed to this invocation
+     * @return The result of the call
+     */
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
+        return call(context, self, klazz, name, Block.NULL_BLOCK);
+    }
+    
+    ////////////////////////////////////////////////////////////////////////////
+    // Next, we provide default implementations of each block-accepting method
+    // that in turn call the IRubyObject[]+Block version of call. This then
+    // finally falls back on the minimum implementation requirement for
+    // dynamic method handles.
+    ////////////////////////////////////////////////////////////////////////////
+    
+    /**
+     * A default implementation of zero arity, block-receiving 'call' method,
+     * which simply calls the n-arity, block-receiving version with
+     * IRubyObject.NULL_ARRAY.
+     * 
+     * @param context The thread context for the currently executing thread
+     * @param self The 'self' or 'receiver' object to use for this call
+     * @param klazz The Ruby class against which this method is binding
+     * @param name The incoming name used to invoke this method
+     * @param block The block passed to this invocation
+     * @return The result of the call
+     */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
         return call(context, self, klazz, name, IRubyObject.NULL_ARRAY, block);
     }
     
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg) {
-        return call(context, self, klazz, name, new IRubyObject[] {arg}, Block.NULL_BLOCK);
-    }
-    
+    /**
+     * A default implementation of one-arity, block-receiving 'call' method,
+     * which simply calls the n-arity, block-receiving version with
+     * a boxed arg list.
+     * 
+     * @param context The thread context for the currently executing thread
+     * @param self The 'self' or 'receiver' object to use for this call
+     * @param klazz The Ruby class against which this method is binding
+     * @param name The incoming name used to invoke this method
+     * @param arg The one argument to this method
+     * @param block The block passed to this invocation
+     * @return The result of the call
+     */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg, Block block) {
         return call(context, self, klazz, name, new IRubyObject[] {arg}, block);
     }
     
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2) {
-        return call(context, self, klazz, name, new IRubyObject[] {arg1,arg2}, Block.NULL_BLOCK);
-    }
-    
+    /**
+     * A default implementation of two-arity, block-receiving 'call' method,
+     * which simply calls the n-arity, block-receiving version with
+     * a boxed arg list.
+     * 
+     * @param context The thread context for the currently executing thread
+     * @param self The 'self' or 'receiver' object to use for this call
+     * @param klazz The Ruby class against which this method is binding
+     * @param name The incoming name used to invoke this method
+     * @param arg1 The first argument to this invocation
+     * @param arg2 The second argument to this invocation
+     * @param block The block passed to this invocation
+     * @return The result of the call
+     */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, Block block) {
         return call(context, self, klazz, name, new IRubyObject[] {arg1,arg2}, block);
     }
     
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        return call(context, self, klazz, name, new IRubyObject[] {arg1,arg2,arg3}, Block.NULL_BLOCK);
-    }
-    
+    /**
+     * A default implementation of three-arity, block-receiving 'call' method,
+     * which simply calls the n-arity, block-receiving version with
+     * a boxed arg list.
+     * 
+     * @param context The thread context for the currently executing thread
+     * @param self The 'self' or 'receiver' object to use for this call
+     * @param klazz The Ruby class against which this method is binding
+     * @param name The incoming name used to invoke this method
+     * @param arg1 The first argument to this invocation
+     * @param arg2 The second argument to this invocation
+     * @param arg2 The third argument to this invocation
+     * @param block The block passed to this invocation
+     * @return The result of the call
+     */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
         return call(context, self, klazz, name, new IRubyObject[] {arg1,arg2,arg3}, block);
     }
     
+    /**
+     * Duplicate this method, returning DynamicMethod referencing the same code
+     * and with the same attributes.
+     * 
+     * It is not required that this method produce a new object if the
+     * semantics of the DynamicMethod subtype do not require such.
+     * 
+     * @return An identical DynamicMethod object to the target.
+     */
     public abstract DynamicMethod dup();
 
+    /**
+     * Determine whether this method is callable from the given object using
+     * the given call type.
+     * 
+     * @param caller The calling object
+     * @param callType The type of call
+     * @return true if the call would not violate visibility; false otherwise
+     */
     public boolean isCallableFrom(IRubyObject caller, CallType callType) {
         switch (visibility) {
         case PUBLIC:
@@ -113,6 +285,14 @@ public abstract class DynamicMethod {
         return true;
     }
     
+    /**
+     * Determine whether the given object can safely invoke protected methods on
+     * the class this method is bound to.
+     * 
+     * @param caller The calling object
+     * @return true if the calling object can call protected methods; false
+     * otherwise
+     */
     private boolean protectedAccessOk(IRubyObject caller) {
         // TODO: Determine whether we should perhaps store non-singleton class instead
         RubyModule defined = getImplementationClass();
@@ -128,44 +308,99 @@ public abstract class DynamicMethod {
         return defined.isInstance(caller);
     }
     
+    /**
+     * Retrieve the class or module on which this method is implemented, used
+     * for 'super' logic among others.
+     * 
+     * @return The class on which this method is implemented
+     */
     public RubyModule getImplementationClass() {
         return implementationClass;
     }
 
+    /**
+     * Set the class on which this method is implemented, used for 'super'
+     * logic, among others.
+     * 
+     * @param implClass The class on which this method is implemented
+     */
     public void setImplementationClass(RubyModule implClass) {
         implementationClass = implClass;
     }
 
+    /**
+     * Get the visibility of this method.
+     * 
+     * @return The visibility of this method
+     */
     public Visibility getVisibility() {
         return visibility;
     }
 
+    /**
+     * Set the visibility of this method.
+     * 
+     * @param visibility The visibility of this method
+     */
     public void setVisibility(Visibility visibility) {
         this.visibility = visibility;
     }
 
-    public boolean isUndefined() {
-        return false;
+    /**
+     * Whether this method is the "undefined" method, used to represent a
+     * missing or undef'ed method. Only returns true for UndefinedMethod
+     * instances, of which there should be only one (a singleton).
+     * 
+     * @return true if this method is the undefined method; false otherwise
+     */
+    public final boolean isUndefined() {
+        return this instanceof UndefinedMethod;
     }
 
+    /**
+     * Retrieve the arity of this method, used for reporting arity to Ruby
+     * code. This arity may or may not reflect the actual specific or variable
+     * arities of the referenced method.
+     * 
+     * @return The arity of the method, as reported to Ruby consumers.
+     */
     public Arity getArity() {
         return Arity.optional();
     }
     
+    /**
+     * Get the "real" method contained within this method. This simply returns
+     * self except in cases where a method is wrapped to give it a new
+     * name or new implementation class (AliasMethod, WrapperMethod, ...).
+     * 
+     * @return The "real" method associated with this one
+     */
     public DynamicMethod getRealMethod() {
         return this;
     }
 
+    /**
+     * Get the CallConfiguration used for pre/post logic for this method handle.
+     * 
+     * @return The CallConfiguration for this method handle
+     */
     public CallConfiguration getCallConfig() {
         return callConfig;
     }
 
+    /**
+     * Set the CallConfiguration used for pre/post logic for this method handle.
+     * 
+     * @param callConfig The CallConfiguration for this method handle
+     */
     public void setCallConfig(CallConfiguration callConfig) {
         this.callConfig = callConfig;
     }
     
     /**
-     * Returns true if this method is backed by native (i.e. Java) code
+     * Returns true if this method is backed by native (i.e. Java) code.
+     * 
+     * @return true If backed by Java code or JVM bytecode; false otherwise
      */
     public boolean isNative() {
         return false;
