@@ -142,10 +142,14 @@ public class RubyFixnum extends RubyInteger {
     private static final int CACHE_OFFSET = 128;
     
     public static RubyFixnum newFixnum(Ruby runtime, long value) {
-        if (value <= 127 && value >= -128) {
+        if (isInCacheRange(value)) {
             return runtime.fixnumCache[(int) value + CACHE_OFFSET];
         }
         return new RubyFixnum(runtime, value);
+    }
+    
+    private static boolean isInCacheRange(long value) {
+        return value <= 127 && value >= -128;
     }
 
     public RubyFixnum newFixnum(long newValue) {

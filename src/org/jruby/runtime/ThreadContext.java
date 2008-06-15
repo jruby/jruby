@@ -199,15 +199,17 @@ public final class ThreadContext {
     
     private void expandFramesIfNecessary() {
         int newSize = frameStack.length * 2;
-        Frame[] newFrameStack = new Frame[newSize];
+        frameStack = fillNewFrameStack(new Frame[newSize], newSize);
+    }
 
+    private Frame[] fillNewFrameStack(Frame[] newFrameStack, int newSize) {
         System.arraycopy(frameStack, 0, newFrameStack, 0, frameStack.length);
 
         for (int i = frameStack.length; i < newSize; i++) {
             newFrameStack[i] = new Frame();
         }
-
-        frameStack = newFrameStack;
+        
+        return newFrameStack;
     }
     
     private void expandParentsIfNecessary() {

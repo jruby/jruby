@@ -90,9 +90,7 @@ public abstract class CallSite {
             
             updateCacheEntry(method, selfType);
 
-            IRubyObject result = method.call(context, self, selfType, methodName, args, block);
-            
-            return result;
+            return method.call(context, self, selfType, methodName, args, block);
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, IRubyObject[] args, ThreadContext context, IRubyObject self) {
@@ -104,9 +102,7 @@ public abstract class CallSite {
             
             updateCacheEntry(method, selfType);
 
-            IRubyObject result = method.call(context, self, selfType, methodName, args);
-            
-            return result;
+            return method.call(context, self, selfType, methodName, args);
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, ThreadContext context, IRubyObject self) {
@@ -118,9 +114,7 @@ public abstract class CallSite {
             
             updateCacheEntry(method, selfType);
 
-            IRubyObject result = method.call(context, self, selfType, methodName);
-            
-            return result;
+            return method.call(context, self, selfType, methodName);
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, Block block, ThreadContext context, IRubyObject self) {
@@ -132,9 +126,7 @@ public abstract class CallSite {
             
             updateCacheEntry(method, selfType);
 
-            IRubyObject result = method.call(context, self, selfType, methodName, block);
-            
-            return result;
+            return method.call(context, self, selfType, methodName, block);
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg) {
@@ -146,9 +138,7 @@ public abstract class CallSite {
             
             updateCacheEntry(method, selfType);
 
-            IRubyObject result = method.call(context, self, selfType, methodName, arg);
-            
-            return result;
+            return method.call(context, self, selfType, methodName, arg);
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, Block block, ThreadContext context, IRubyObject self, IRubyObject arg) {
@@ -160,9 +150,7 @@ public abstract class CallSite {
             
             updateCacheEntry(method, selfType);
 
-            IRubyObject result = method.call(context, self, selfType, methodName, arg, block);
-            
-            return result;
+            return method.call(context, self, selfType, methodName, arg, block);
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
@@ -174,9 +162,7 @@ public abstract class CallSite {
             
             updateCacheEntry(method, selfType);
 
-            IRubyObject result = method.call(context, self, selfType, methodName, arg1, arg2);
-            
-            return result;
+            return method.call(context, self, selfType, methodName, arg1, arg2);
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, Block block, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
@@ -188,9 +174,7 @@ public abstract class CallSite {
             
             updateCacheEntry(method, selfType);
 
-            IRubyObject result = method.call(context, self, selfType, methodName, arg1, arg2, block);
-            
-            return result;
+            return method.call(context, self, selfType, methodName, arg1, arg2, block);
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
@@ -202,9 +186,7 @@ public abstract class CallSite {
             
             updateCacheEntry(method, selfType);
 
-            IRubyObject result = method.call(context, self, selfType, methodName, arg1, arg2, arg3);
-            
-            return result;
+            return method.call(context, self, selfType, methodName, arg1, arg2, arg3);
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, Block block, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
@@ -216,9 +198,7 @@ public abstract class CallSite {
             
             updateCacheEntry(method, selfType);
 
-            IRubyObject result = method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
-            
-            return result;
+            return method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
         }
 
         private IRubyObject callMethodMising(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject[] args) {
