@@ -603,7 +603,7 @@ public class RubyModule extends RubyObject {
         String x = clazz.getSimpleName();
         int a = 1 + 1;
         try {
-            String qualifiedName = clazz.getCanonicalName().replace('.', '$');
+            String qualifiedName = "org.jruby.gen." + clazz.getCanonicalName().replace('.', '$');
             
             if (DEBUG) System.out.println("looking for " + qualifiedName + "$Populator");
             
