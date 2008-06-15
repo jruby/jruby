@@ -29,6 +29,8 @@ public class RubyStringScanner extends RubyObject {
     private Region regs;
     private int beg = -1;
     private int end = -1;
+    // not to be confused with RubyObject's flags
+    private int scannerFlags;
 
     private static final int MATCHED_STR_SCN_F = 1 << 11;     
     
@@ -57,15 +59,15 @@ public class RubyStringScanner extends RubyObject {
     }
 
     private void clearMatched() {
-        flags &= ~MATCHED_STR_SCN_F;
+        scannerFlags &= ~MATCHED_STR_SCN_F;
     }
 
     private void setMatched() {
-        flags |= MATCHED_STR_SCN_F;
+        scannerFlags |= MATCHED_STR_SCN_F;
     }
 
     private boolean isMatched() {
-        return (flags & MATCHED_STR_SCN_F) != 0;
+        return (scannerFlags & MATCHED_STR_SCN_F) != 0;
     }
     
     private void check() {
@@ -86,13 +88,16 @@ public class RubyStringScanner extends RubyObject {
     @JRubyMethod(name = "initialize_copy", frame=true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(IRubyObject other) {
         if (this == other) return this;
-        if (!(other instanceof RubyStringScanner)) throw getRuntime().newTypeError("wrong argument type " + other.getMetaClass() + " (expected StringScanner)");
+        if (!(other instanceof RubyStringScanner)) {
+            throw getRuntime().newTypeError("wrong argument type "
+                    + other.getMetaClass() + " (expected StringScanner)");
+        }
 
         RubyStringScanner otherScanner = (RubyStringScanner)other;
         str = otherScanner.str;
         pos = otherScanner.pos;
         lastPos = otherScanner.lastPos;
-        flags = otherScanner.flags;
+        scannerFlags = otherScanner.scannerFlags;
 
         regs = otherScanner.regs != null ? otherScanner.regs.clone() : null;
         beg = otherScanner.beg;
