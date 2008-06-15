@@ -83,6 +83,9 @@ public class ChannelStream implements Stream, Finalizable {
      * be increased. However, it seems like a "good size" and we should
      * probably only adjust it if it turns out we would perform better with a
      * larger buffer for large bulk reads.
+     * 
+     * NOTE: This bulk read change had to be reverted due to a spec failure.
+     * See JRUBY-2657 for the patch contents.
      */
     private final static int BULK_READ_SIZE = 16 * 1024;
     private final static ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
@@ -276,18 +279,8 @@ public class ChannelStream implements Stream, Finalizable {
                 eof = true;
                 return null;
             }
-            ByteList result = new ByteList((int) left);
-            ByteBuffer buf = ByteBuffer.wrap(result.unsafeBytes(), 
-                    result.begin(), (int) left);
-            while (buf.hasRemaining()) {
-                int n = ((ReadableByteChannel) descriptor.getChannel()).read(buf);
-                if (n <= 0) {
-                    break;
-                }
-            }
-            eof = true;
-            result.length(buf.position());
-            return result;
+
+            return fread((int) left);
         } else if (descriptor.isNull()) {
             return new ByteList(0);
         } else {
@@ -603,8 +596,7 @@ public class ChannelStream implements Stream, Finalizable {
         checkReadable();
         ensureRead();
         
-        ByteList result = new ByteList(0);
-        
+        ByteList result = new ByteList();
         int len = -1;
         if (buffer.hasRemaining()) { // already have some bytes buffered
             len = (number <= buffer.remaining()) ? number : buffer.remaining();
@@ -612,29 +604,9 @@ public class ChannelStream implements Stream, Finalizable {
         }
         
         ReadableByteChannel readChannel = (ReadableByteChannel)descriptor.getChannel();
-        
         int read = BUFSIZE;
-        boolean done = false;
-        //
-        // Avoid double-copying for reads that are larger than the buffer size
-        //
-        while ((number - result.length()) >= BUFSIZE) {
-            //
-            // limit each iteration to a max of BULK_READ_SIZE to avoid over-size allocations
-            //
-            int bytesToRead = Math.min(BULK_READ_SIZE, number - result.length());
-            int n = descriptor.read(bytesToRead, result);
-            if (n <= 0) {
-                done = true;
-                break;
-            }
-        }
-        
-        //
-        // Complete the request by filling the read buffer first
-        //
-        while (!done && result.length() != number) {
-            
+        while (result.length() != number) {
+            // try to read more
             buffer.clear(); 
             read = readChannel.read(buffer);
             buffer.flip();
