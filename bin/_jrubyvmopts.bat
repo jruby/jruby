@@ -42,39 +42,39 @@ rem return to line 18
 goto :EOF
 
 :procarg
-if [%_CMP%] == [] goto vmoptsDone
+if ["%_CMP%"] == [""] goto vmoptsDone
 
-if [%_CMP%] == [--server] (
+if ["%_CMP%"] == ["--server"] (
   set _JAVA_VM=-server
   goto :vmoptsNext
 )
 
-if [%_CMP%] == [--client] (
+if ["%_CMP%"] == ["--client"] (
   set _JAVA_VM=-client
   goto :vmoptsNext
 )
 
-if [%_CMP%] == [--jdb] (
+if ["%_CMP%"] == ["--jdb"] (
   set _STARTJAVA=%JAVA_HOME%\bin\jdb
   goto :vmoptsNext
 )
 
-if [%_CMP%] == [--sample] (
+if ["%_CMP%"] == ["--sample"] (
   set _CMP=-J-Xprof
   goto :jvmarg
 )
 
-if [%_CMP%] == [--manage] (
+if ["%_CMP%"] == ["--manage"] (
   set _CMP=-J-Dcom.sun.management.jmxremote
   goto :jvmarg
 )
 
-if [%_CMP%] == [--1.9] (
+if ["%_CMP%"] == ["--1.9"] (
   set _CMP=-J-Djruby.compat.version=RUBY1_9
   goto :jvmarg
 )
 
-if [%_CMP%] == [--1.8] (
+if ["%_CMP%"] == ["--1.8"] (
   set _CMP=-J-Djruby.compat.version=RUBY1_8
   goto :jvmarg
 )

@@ -954,7 +954,8 @@ class TestIO < Test::Unit::TestCase
   end
 
   # Stat is pretty much tested elsewhere, so we're minimal here
-  def test_stat
+  # Excluded due to JRUBY-2665
+  def XXXtest_stat
     io = IO.new($stdin.fileno)
     assert_instance_of(File::Stat, io.stat)
     io.close
