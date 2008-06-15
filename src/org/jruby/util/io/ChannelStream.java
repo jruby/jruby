@@ -468,15 +468,14 @@ public class ChannelStream implements Stream, Finalizable {
     public synchronized long fgetpos() throws IOException, PipeException, InvalidValueException, BadDescriptorException {
         // Correct position for read / write buffering (we could invalidate, but expensive)
         if (descriptor.isSeekable()) {
-            int ungotcCopy = ungotc;
-            lseek(0, SEEK_CUR);
-            ungotc = ungotcCopy;
-
             FileChannel fileChannel = (FileChannel)descriptor.getChannel();
-            if (ungotc != -1 && fileChannel.position() > 0) {
-                return fileChannel.position() - 1;
+            long pos = fileChannel.position();
+            // Adjust for buffered data
+            if (reading) {
+                pos -= buffer.remaining();
+                return pos - (pos > 0 && ungotc != -1 ? 1 : 0);
             } else {
-                return fileChannel.position();
+                return pos + buffer.position();
             }
         } else if (descriptor.isNull()) {
             return 0;
@@ -498,10 +497,10 @@ public class ChannelStream implements Stream, Finalizable {
         if (descriptor.isSeekable()) {
             FileChannel fileChannel = (FileChannel)descriptor.getChannel();
             ungotc = -1;
+            int adj = 0;
             if (reading) {
-                if (buffer.remaining() > 0) {
-                    fileChannel.position(fileChannel.position() - buffer.remaining());
-                }
+                // for SEEK_CUR, need to adjust for buffered data
+                adj = buffer.remaining();
                 buffer.clear();
                 buffer.flip();
             } else {
@@ -513,7 +512,7 @@ public class ChannelStream implements Stream, Finalizable {
                     fileChannel.position(offset);
                     break;
                 case SEEK_CUR:
-                    fileChannel.position(fileChannel.position() + offset);
+                    fileChannel.position(fileChannel.position() - adj + offset);
                     break;
                 case SEEK_END:
                     fileChannel.position(fileChannel.size() + offset);
