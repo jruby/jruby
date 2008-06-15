@@ -121,6 +121,10 @@ public final class Frame implements JumpTarget {
         this.jumpTarget = frame.jumpTarget;
         this.visibility = frame.visibility;
         this.isBindingFrame = frame.isBindingFrame;
+        
+        // we force the lazy allocation of backref/lastline here to allow
+        // closures to update the original frame
+        frame.lazyBackrefAndLastline();
         this.backrefAndLastline = frame.backrefAndLastline;
     }
 
@@ -137,7 +141,7 @@ public final class Frame implements JumpTarget {
         this.jumpTarget = jumpTarget;
         this.visibility = Visibility.PUBLIC;
         this.isBindingFrame = false;
-        this.backrefAndLastline = new IRubyObject[2];
+        this.backrefAndLastline = null;
     }
 
     public void updateFrame(String name, String fileName, int line) {
@@ -155,19 +159,39 @@ public final class Frame implements JumpTarget {
     }
 
     public IRubyObject getBackRef() {
-        return backrefAndLastline[0] == null ? self.getRuntime().getNil() : backrefAndLastline[0];
+        if (hasBackref()) {
+            return self.getRuntime().getNil();
+        }
+        return backrefAndLastline[0];
+    }
+    
+    public boolean hasBackref() {
+        return backrefAndLastline == null || backrefAndLastline[0] == null;
     }
 
     public IRubyObject setBackRef(IRubyObject backref) {
+        lazyBackrefAndLastline();
         return this.backrefAndLastline[0] = backref;
     }
 
     public IRubyObject getLastLine() {
-        return backrefAndLastline[1] == null ? self.getRuntime().getNil() : backrefAndLastline[1];
+        if (hasLastline()) {
+            return self.getRuntime().getNil();
+        }
+        return backrefAndLastline[1];
+    }
+    
+    public boolean hasLastline() {
+        return backrefAndLastline == null || backrefAndLastline[1] == null;
     }
 
     public IRubyObject setLastLine(IRubyObject lastline) {
+        lazyBackrefAndLastline();
         return this.backrefAndLastline[1] = lastline;
+    }
+    
+    private void lazyBackrefAndLastline() {
+         if (backrefAndLastline == null) backrefAndLastline = new IRubyObject[2];
     }
 
     public String getFile() {
