@@ -426,12 +426,16 @@ public class RubyStringIO extends RubyObject {
 
     @JRubyMethod(name = "print", rest = true)
     public IRubyObject print(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
         if (args.length != 0) {
             for (int i=0,j=args.length;i<j;i++) {
                 append(context, args[i]);
             }
+        } else {
+            IRubyObject arg = runtime.getGlobalVariables().get("$_");
+            append(context, arg.isNil() ? runtime.newString("nil") : arg);
         }
-        IRubyObject sep = getRuntime().getGlobalVariables().get("$\\");
+        IRubyObject sep = runtime.getGlobalVariables().get("$\\");
         if (!sep.isNil()) {
             append(context, sep);
         }
@@ -451,15 +455,16 @@ public class RubyStringIO extends RubyObject {
         checkFrozen();
 
         internal.modify();
+        ByteList bytes = internal.getByteList();
         if (modes.isAppendable()) {
-            pos = internal.getByteList().length();
-            internal.getByteList().append(c);
+            pos = bytes.length();
+            bytes.append(c);
         } else {
-            if (pos >= internal.getByteList().length()) {
-                internal.getByteList().append(c);
-            } else {
-                internal.getByteList().set((int) pos, c);
+            if (pos >= bytes.length()) {
+                bytes.length((int)pos + 1);
             }
+
+            bytes.set((int) pos, c);
             pos++;
         }
 
@@ -776,6 +781,7 @@ public class RubyStringIO extends RubyObject {
 
         RubyString val = arg.asString();
         internal.modify();
+
         if (modes.isAppendable()) {
             internal.getByteList().append(val.getByteList());
             pos = internal.getByteList().length();
