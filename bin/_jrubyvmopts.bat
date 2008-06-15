@@ -69,6 +69,16 @@ if [%_CMP%] == [--manage] (
   goto :jvmarg
 )
 
+if [%_CMP%] == [--1.9] (
+  set _CMP=-J-Djruby.compat.version=RUBY1_9
+  goto :jvmarg
+)
+
+if [%_CMP%] == [--1.8] (
+  set _CMP=-J-Djruby.compat.version=RUBY1_8
+  goto :jvmarg
+)
+
 rem now unescape -q and -d
 set _CMP=%_CMP:-q="%
 set _CMP=%_CMP:-d='%

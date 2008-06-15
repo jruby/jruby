@@ -148,6 +148,10 @@ do
         JAVA_VM=-server ;;
      --sample)
         java_args=("${java_args[@]}" "-Xprof") ;;
+     --1.9)
+        java_args=("${java_args[@]}" "-Djruby.compat.version=RUBY1_9") ;;
+     --1.8)
+        java_args=("${java_args[@]}" "-Djruby.compat.version=RUBY1_8") ;;
      # Abort processing on the double dash
      --) break ;;
      # Other opts go to ruby
