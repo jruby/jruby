@@ -264,9 +264,8 @@
           <path refid="build.classpath"/>
         </classpath>
         <sysproperty key="jruby.home" value="${build.dir}/jar-complete/META-INF/jruby.home"/>
-        <arg value="-S"/>
-        <arg value="gem"/>
-        <arg value="install"/>
+        <arg value="--command"/>
+        <arg value="maybe_install_gems"/>
         <arg value="rspec"/>
         <arg value="rake"/>
         <arg value="--no-ri"/>
