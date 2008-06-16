@@ -105,15 +105,22 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     @JRubyMethod(name = "upto", required = 1, frame = true)
     public IRubyObject upto(ThreadContext context, IRubyObject to, Block block) {
-        Ruby runtime = getRuntime();
+        final Ruby runtime = getRuntime();
 
         if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
-
             RubyFixnum toFixnum = (RubyFixnum) to;
-            long toValue = toFixnum.getLongValue();
-            long fromValue = getLongValue();
-            for (long i = fromValue; i <= toValue; i++) {
-                block.yield(context, RubyFixnum.newFixnum(runtime, i));
+            final long toValue = toFixnum.getLongValue();
+            final long fromValue = getLongValue();
+
+            if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
+                final IRubyObject nil = runtime.getNil();
+                for (long i = fromValue; i <= toValue; i++) {
+                    block.yield(context, nil);
+                }
+            } else {
+                for (long i = fromValue; i <= toValue; i++) {
+                    block.yield(context, RubyFixnum.newFixnum(runtime, i));
+                }
             }
         } else {
             RubyNumeric i = this;
@@ -135,11 +142,20 @@ public abstract class RubyInteger extends RubyNumeric {
     // TODO: Make callCoerced work in block context...then fix downto, step, and upto.
     @JRubyMethod(name = "downto", required = 1, frame = true)
     public IRubyObject downto(ThreadContext context, IRubyObject to, Block block) {
+        final Ruby runtime = getRuntime();
+
         if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
             RubyFixnum toFixnum = (RubyFixnum) to;
-            long toValue = toFixnum.getLongValue();
-            for (long i = getLongValue(); i >= toValue; i--) {
-                block.yield(context, RubyFixnum.newFixnum(getRuntime(), i));
+            final long toValue = toFixnum.getLongValue();
+            if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
+                final IRubyObject nil = runtime.getNil();
+                for (long i = getLongValue(); i >= toValue; i--) {
+                    block.yield(context, nil);
+                }
+            } else {
+                for (long i = getLongValue(); i >= toValue; i--) {
+                    block.yield(context, RubyFixnum.newFixnum(getRuntime(), i));
+                }
             }
         } else {
             RubyNumeric i = this;
@@ -160,10 +176,11 @@ public abstract class RubyInteger extends RubyNumeric {
         final Ruby runtime = context.getRuntime();
 
         if (this instanceof RubyFixnum) {
-            long value = getLongValue();
+            final long value = getLongValue();
             if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
+                final IRubyObject nil = runtime.getNil();
                 for (long i = 0; i < value; i++) {
-                    block.yield(context, runtime.getNil());
+                    block.yield(context, nil);
                 }
             } else {
                 for (long i = 0; i < value; i++) {
