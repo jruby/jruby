@@ -35,14 +35,17 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.evaluator.Instruction;
 import org.jruby.exceptions.JumpException;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.InterpretedBlock;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
@@ -100,18 +103,20 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
     public Node getArgsNode() {
         return argsNode;
     }
-
+    
     /**
-     * Set the argsNode
+     * Set the argsNode.  This is for re-writer and not general interpretation.
      * 
      * @param argsNode set the arguments for this node.
      */
-    public void setArgsNode(Node argsNode) {
+    public Node setArgsNode(Node argsNode) {
         this.argsNode = argsNode;
         // If we have more than one arg, make sure the array created to contain them is not ObjectSpaced
         if (argsNode instanceof ArrayNode) {
             ((ArrayNode)argsNode).setLightweight(true);
         }
+        
+        return argsNode;
     }
 
     /**
@@ -196,5 +201,20 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
         // Create block for this iter node
         // FIXME: We shouldn't use the current scope if it's not actually from the same hierarchy of static scopes
         return InterpretedBlock.newInterpretedClosure(context, iter.getBlockBody(), self);
+    }
+    
+    @Override
+    public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {
+        IRubyObject receiver = receiverNode.interpret(runtime, context, self, block);
+
+        if (argsNode == null) { // attribute set.
+            RuntimeHelpers.invoke(context, receiver, getName(), new IRubyObject[] {value}, CallType.NORMAL, Block.NULL_BLOCK);
+        } else { // element set
+            RubyArray args = (RubyArray)argsNode.interpret(runtime, context, self, block);
+            args.append(value);
+            RuntimeHelpers.invoke(context, receiver, getName(), args.toJavaArray(), CallType.NORMAL, Block.NULL_BLOCK);
+        }
+        
+        return runtime.getNil();
     }
 }

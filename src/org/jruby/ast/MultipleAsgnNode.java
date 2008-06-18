@@ -35,6 +35,7 @@ import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.evaluator.AssignmentVisitor;
@@ -117,5 +118,14 @@ public class MultipleAsgnNode extends AssignableNode {
             
             return AssignmentVisitor.multiAssign(runtime, context, self, this, (RubyArray)value, false);
         }
+    }
+    
+    @Override
+    public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {
+        if (!(value instanceof RubyArray)) {
+            value = ArgsUtil.convertToRubyArray(runtime, value, headNode != null);
+        }
+        
+        return AssignmentVisitor.multiAssign(runtime, context, self, this, (RubyArray) value, checkArity);
     }
 }

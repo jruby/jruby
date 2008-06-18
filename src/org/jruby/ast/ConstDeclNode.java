@@ -34,6 +34,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.RubyModule;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
@@ -105,5 +106,33 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
         } else { // colon3
             return context.setConstantInObject(constNode.getName(), result);
         }
+    }
+
+    @Override
+    public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {
+        IRubyObject module;
+
+        if (constNode == null) {
+            module = context.getCurrentScope().getStaticScope().getModule();
+            
+            if (module == null) {
+                // TODO: wire into new exception handling mechanism
+                throw runtime.newTypeError("no class/module to define constant");
+            }
+        } else if (constNode instanceof Colon2Node) {
+            Node leftNode = ((Colon2Node) constNode).getLeftNode();
+
+            if (leftNode == null) {
+                module = runtime.getNil();
+            } else {
+                module = leftNode.interpret(runtime, context, self, block);
+            }
+        } else { // Colon3
+            module = runtime.getObject();
+        }
+
+        ((RubyModule) module).fastSetConstant(getName(), value);
+        
+        return runtime.getNil();
     }
 }

@@ -115,4 +115,11 @@ public class LocalAsgnNode extends AssignableNode implements INameNode {
         return context.getCurrentScope().setValue(getIndex(),
                 getValueNode().interpret(runtime,context, self, aBlock), getDepth());
     }
+    
+    @Override
+    public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {
+        context.getCurrentScope().setValue(getIndex(), value, getDepth());
+        
+        return runtime.getNil();
+    }
 }

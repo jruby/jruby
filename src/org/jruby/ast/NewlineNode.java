@@ -60,6 +60,8 @@ public class NewlineNode extends Node {
     public NewlineNode(ISourcePosition position, Node nextNode) {
         super(position, NodeType.NEWLINENODE);
 
+        assert nextNode != null : "nextNode is not null";
+        
         this.nextNode = nextNode;
     }
 

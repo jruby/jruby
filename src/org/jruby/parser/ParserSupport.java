@@ -42,6 +42,9 @@ import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.AttrAssignNode;
+import org.jruby.ast.AttrAssignOneArgNode;
+import org.jruby.ast.AttrAssignThreeArgNode;
+import org.jruby.ast.AttrAssignTwoArgNode;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BeginNode;
 import org.jruby.ast.BignumNode;
@@ -402,7 +405,7 @@ public class ParserSupport {
     public Node aryset(Node receiver, Node index) {
         checkExpression(receiver);
 
-        return new AttrAssignNode(receiver.getPosition(), receiver, "[]=", index);
+        return new_attrassign(receiver.getPosition(), receiver, "[]=", index);
     }
 
     /**
@@ -415,7 +418,7 @@ public class ParserSupport {
     public Node attrset(Node receiver, String name) {
         checkExpression(receiver);
 
-        return new AttrAssignNode(receiver.getPosition(), receiver, name + "=", null);
+        return new_attrassign(receiver.getPosition(), receiver, name + "=", null);
     }
 
     public void backrefAssignError(Node node) {
@@ -457,7 +460,7 @@ public class ParserSupport {
         } else if (lhs instanceof IArgumentNode) {
             IArgumentNode invokableNode = (IArgumentNode) lhs;
             
-            invokableNode.setArgsNode(arg_add(lhs.getPosition(), invokableNode.getArgsNode(), rhs));
+            return invokableNode.setArgsNode(arg_add(lhs.getPosition(), invokableNode.getArgsNode(), rhs));
         }
         
         return newNode;
@@ -759,6 +762,23 @@ public class ParserSupport {
             throw new SyntaxException(PID.BLOCK_ARG_UNEXPECTED, node.getPosition(), "Block argument should not be given.");
         }
         return node;
+    }
+    
+    public Node new_attrassign(ISourcePosition position, Node receiver, String name, Node args) {
+        if (!(args instanceof ArrayNode)) return new AttrAssignNode(position, receiver, name, args);
+        
+        ArrayNode argsNode = (ArrayNode) args;
+        
+        switch (argsNode.size()) {
+            case 1:
+                return new AttrAssignOneArgNode(position, receiver, name, argsNode);
+            case 2:
+                return new AttrAssignTwoArgNode(position, receiver, name, argsNode);
+            case 3:
+                return new AttrAssignThreeArgNode(position, receiver, name, argsNode);
+            default:
+                return new AttrAssignNode(position, receiver, name, argsNode);
+        }
     }
     
     private Node new_call_noargs(Node receiver, Token name, IterNode iter) {

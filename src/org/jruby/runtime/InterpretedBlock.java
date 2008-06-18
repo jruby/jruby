@@ -230,7 +230,7 @@ public class InterpretedBlock extends BlockBody {
     }
 
     private void setupBlockArgs(ThreadContext context, Node varNode, IRubyObject value, IRubyObject self) {
-        Ruby runtime = self.getRuntime();
+        Ruby runtime = context.getRuntime();
         
         switch (varNode.nodeId) {
         case ZEROARGNODE:
@@ -244,7 +244,7 @@ public class InterpretedBlock extends BlockBody {
     }
 
     private void setupBlockArg(ThreadContext context, Node varNode, IRubyObject value, IRubyObject self) {
-        Ruby runtime = self.getRuntime();
+        Ruby runtime = context.getRuntime();
         
         switch (varNode.nodeId) {
         case ZEROARGNODE:
@@ -270,14 +270,15 @@ public class InterpretedBlock extends BlockBody {
         default:
             ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + length + " for 1)");
         }
-        AssignmentVisitor.assign(ruby, context, self, varNode, value, Block.NULL_BLOCK, false);
+        
+        varNode.assign(ruby, context, self, value, Block.NULL_BLOCK, false);
     }
     
     private final void defaultArgLogic(ThreadContext context, Ruby ruby, IRubyObject self, IRubyObject value) {
         if (value == null) {
             ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (0 for 1)");
         }
-        AssignmentVisitor.assign(ruby, context, self, varNode, value, Block.NULL_BLOCK, false);
+        varNode.assign(ruby, context, self, value, Block.NULL_BLOCK, false);
     }
     
     public StaticScope getStaticScope() {

@@ -61,7 +61,7 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
     
     public FCallNode(ISourcePosition position, String name, Node argsNode, Node iterNode) {
         super(position, NodeType.FCALLNODE);
-        setArgsInternal(argsNode);
+        setArgsNode(argsNode);
         this.iterNode = iterNode;
         this.callAdapter = MethodIndex.getFunctionalCallSite(name);
     }
@@ -96,25 +96,19 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
         return argsNode;
     }
     
-    public void setArgsInternal(Node argsNode) {
-        this.argsNode = argsNode;
-        // If we have more than one arg, make sure the array created to contain them is not ObjectSpaced
-        if (argsNode instanceof ArrayNode) {
-            ((ArrayNode)argsNode).setLightweight(true);
-        }       
-    }
-
     /**
-     * Set the argsNode
+     * Set the argsNode.  This is for re-writer and general interpretation.
      * 
      * @param argsNode set the arguments for this node.
      */
-    public void setArgsNode(Node argsNode) {
+    public Node setArgsNode(Node argsNode) {
         this.argsNode = argsNode;
         // If we have more than one arg, make sure the array created to contain them is not ObjectSpaced
         if (argsNode instanceof ArrayNode) {
             ((ArrayNode)argsNode).setLightweight(true);
         }
+        
+        return argsNode;
     }
 
     /**

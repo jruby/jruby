@@ -33,7 +33,6 @@
 package org.jruby.ast;
 
 import org.jruby.Ruby;
-import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
@@ -57,7 +56,7 @@ public final class CallNoArgBlockNode extends CallNode {
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
-        Block block = ASTInterpreter.getBlock(runtime, context, self, aBlock, getIterNode());
+        Block block = getBlock(context, self, (IterNode) getIterNode());
             
         while (true) {
             try {
@@ -68,5 +67,9 @@ public final class CallNoArgBlockNode extends CallNode {
                 return (IRubyObject) bj.getValue();
             }
         }    
+    }
+
+    private Block getBlock(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock, IterNode iterNode) {
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 }

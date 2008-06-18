@@ -199,4 +199,8 @@ public abstract class Node implements ISourcePositionHolder {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
     }
+    
+    public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {
+        throw new RuntimeException("Invalid node encountered in interpreter: \"" + getClass().getName() + "\", please report this at www.jruby.org");
+    }
 }

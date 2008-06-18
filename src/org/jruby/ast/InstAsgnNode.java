@@ -88,4 +88,11 @@ public class InstAsgnNode extends AssignableNode implements INameNode {
         return self.getInstanceVariables().fastSetInstanceVariable(name,
                 getValueNode().interpret(runtime, context, self, aBlock));
     }
+    
+    @Override
+    public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {
+        self.getInstanceVariables().fastSetInstanceVariable(name, value);
+                
+        return runtime.getNil();
+    }
 }

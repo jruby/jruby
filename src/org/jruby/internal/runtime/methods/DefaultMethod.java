@@ -39,8 +39,6 @@ import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
-import org.jruby.evaluator.AssignmentVisitor;
-import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.JumpTarget;
@@ -436,13 +434,13 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
             int j = 0;
             for (int i = requiredArgsCount; i < args.length && j < optArgs.size(); i++, j++) {
                 // in-frame EvalState should already have receiver set as self, continue to use it
-                AssignmentVisitor.assign(runtime, context, context.getFrameSelf(), optArgs.get(j), args[i], Block.NULL_BLOCK, true);
+                optArgs.get(j).assign(runtime, context, context.getFrameSelf(), args[i], Block.NULL_BLOCK, true);
                 givenArgsCount++;
             }
    
             // assign the default values, adding to the end of allArgs
             for (int i = 0; j < optArgs.size(); i++, j++) {
-                ASTInterpreter.eval(runtime, context, optArgs.get(j), context.getFrameSelf(), Block.NULL_BLOCK);
+                optArgs.get(j).interpret(runtime, context, context.getFrameSelf(), Block.NULL_BLOCK);
             }
         }
         

@@ -84,4 +84,11 @@ public class GlobalAsgnNode extends AssignableNode implements INameNode {
    
         return result;
     }
+
+    @Override
+    public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {
+        runtime.getGlobalVariables().set(name, value);
+        
+        return runtime.getNil();
+    }
 }

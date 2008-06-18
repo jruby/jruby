@@ -31,13 +31,16 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.evaluator.Instruction;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -63,10 +66,7 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
         
         this.receiverNode = receiverNode;
         this.name = name;
-        this.argsNode = argsNode;
-        if (argsNode instanceof ArrayNode) {
-            ((ArrayNode)argsNode).setLightweight(true);
-        }
+        setArgsInternal(argsNode);
         this.normalCallAdapter = MethodIndex.getCallSite(name);
         this.variableCallAdapter = MethodIndex.getVariableCallSite(name);
     }
@@ -106,16 +106,74 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
         return argsNode;
     }
     
+    
+    protected Node newAttrAssignNode(ArrayNode argsNode) {
+        int size = argsNode.size();
+        
+        switch (size) {
+            case 1:
+                return new AttrAssignOneArgNode(getPosition(), receiverNode, name, argsNode);
+            case 2:
+                return new AttrAssignTwoArgNode(getPosition(), receiverNode, name, argsNode);
+            case 3:
+                return new AttrAssignThreeArgNode(getPosition(), receiverNode, name, argsNode);
+            default:
+                return new AttrAssignNode(getPosition(), receiverNode, name, argsNode);
+        }
+    }
+    
+    protected Node newMutatedAttrAssignNode(ArrayNode argsNode) {
+        int size = argsNode.size();
+        
+        switch (size) {
+            case 1:
+                if (!(this instanceof AttrAssignOneArgNode)) {
+                    return new AttrAssignOneArgNode(getPosition(), receiverNode, name, argsNode);
+                } else {
+                    return this;
+                }
+            case 2:
+                if (!(this instanceof AttrAssignTwoArgNode)) {
+                    return new AttrAssignTwoArgNode(getPosition(), receiverNode, name, argsNode);
+                } else {
+                    return this;
+                }
+            case 3:
+                if (!(this instanceof AttrAssignThreeArgNode)) {
+                    return new AttrAssignThreeArgNode(getPosition(), receiverNode, name, argsNode);
+                } else {
+                    return this;
+                }
+            default:
+                return new AttrAssignNode(getPosition(), receiverNode, name, argsNode);
+        }
+    }
+    
     /**
      * Set the argsNode
      * 
      * @param argsNode set the arguments for this node.
      */
-    public void setArgsNode(Node argsNode) {
-        this.argsNode = argsNode;
-        if (argsNode instanceof ArrayNode) {
-            ((ArrayNode)argsNode).setLightweight(true);
+    public Node setArgsNode(Node argsNode) {
+        // Empirical Observations:
+        // null -> Some arity
+        // argsNode == this.argsNode then check for arity changes
+        // newline(splatnode) -> argspushnode
+        if (this.argsNode == null && argsNode instanceof ArrayNode) {
+            return newAttrAssignNode((ArrayNode) argsNode);
+        } else if (this.argsNode == argsNode) {
+            return newMutatedAttrAssignNode((ArrayNode)argsNode);
         }
+        
+        setArgsInternal(argsNode);
+        
+        return this;
+    }
+    
+    private void setArgsInternal(Node argsNode) {
+        this.argsNode = argsNode;
+        
+        if (argsNode instanceof ArrayNode) ((ArrayNode)argsNode).setLightweight(true);
     }
 
     public List<Node> childNodes() {
@@ -137,5 +195,23 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
         }
 
         return args[args.length - 1];
+    }
+    
+    @Override
+    public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {        
+        IRubyObject receiver = receiverNode.interpret(runtime, context, self, block);
+        
+        // If reciever is self then we do the call the same way as vcall
+        CallType callType = (receiver == self ? CallType.VARIABLE : CallType.NORMAL);
+
+        if (argsNode == null) { // attribute set.
+            RuntimeHelpers.invoke(context, receiver, name, value, callType, Block.NULL_BLOCK);
+        } else { // element set
+            RubyArray args = (RubyArray) argsNode.interpret(runtime, context, self, block);
+            args.append(value);
+            RuntimeHelpers.invoke(context, receiver, name, args.toJavaArray(), callType, Block.NULL_BLOCK);
+        } 
+        
+        return runtime.getNil();
     }
 }

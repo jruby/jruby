@@ -228,7 +228,7 @@ public final class Ruby {
         Node node = parseEval(script, "<script>", context.getCurrentScope(), 0);
         
         try {
-            return ASTInterpreter.eval(this, context, node, context.getFrameSelf(), Block.NULL_BLOCK);
+            return node.interpret(this, context, context.getFrameSelf(), Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
             throw newLocalJumpError("return", (IRubyObject)rj.getValue(), "unexpected return");
         } catch (JumpException.BreakJump bj) {
@@ -534,8 +534,10 @@ public final class Ruby {
     private IRubyObject runInterpreter(Node scriptNode) {
         ThreadContext context = getCurrentContext();
         
+        assert scriptNode != null : "scriptNode is not null";
+        
         try {
-            return ASTInterpreter.eval(this, context, scriptNode, getTopSelf(), Block.NULL_BLOCK);
+            return scriptNode.interpret(this, context, getTopSelf(), Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
             return (IRubyObject) rj.getValue();
         }
@@ -2013,8 +2015,7 @@ public final class Ruby {
 
             context.preNodeEval(objectClass, self, scriptName);
 
-            Node node = parseFile(in, scriptName, null);
-            ASTInterpreter.eval(this, context, node, self, Block.NULL_BLOCK);
+            parseFile(in, scriptName, null).interpret(this, context, self, Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
             return;
         } finally {

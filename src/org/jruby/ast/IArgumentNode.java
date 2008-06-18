@@ -33,5 +33,5 @@ package org.jruby.ast;
  */
 public interface IArgumentNode {
     public Node getArgsNode();
-    public void setArgsNode(Node argsNode);
+    public Node setArgsNode(Node argsNode);
 }

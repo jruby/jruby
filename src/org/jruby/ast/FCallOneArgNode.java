@@ -32,13 +32,6 @@ public class FCallOneArgNode extends FCallNode {
     }
     
     @Override
-    public void setArgsNode(Node argsNode) {
-        System.out.println("ARGS: ");
-        new Exception().printStackTrace();
-        super.setArgsNode(argsNode);
-    }    
-    
-    @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         return callAdapter.call(context, self, arg1.interpret(runtime, context, self, aBlock));
     }
