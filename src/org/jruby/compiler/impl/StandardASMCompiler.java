@@ -396,6 +396,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         protected Label redoJump;
         protected boolean withinProtection = false;
         private int lastLine = -1;
+        private int lastPositionLine = -1;
         protected StaticScope scope;
         
         public AbstractMethodCompiler(StaticScope scope) {
@@ -2462,9 +2463,15 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void setLinePosition(ISourcePosition position) {
             if (!RubyInstanceConfig.POSITIONLESS_COMPILE_ENABLED) {
-                loadThreadContext();
-                method.pushInt(position.getStartLine());
-                method.invokestatic(classname, "setPosition", sig(void.class, params(ThreadContext.class, int.class)));
+                if (lastPositionLine == position.getStartLine()) {
+                    // updating position for same line; skip
+                    return;
+                } else {
+                    lastPositionLine = position.getStartLine();
+                    loadThreadContext();
+                    method.pushInt(position.getStartLine());
+                    method.invokestatic(classname, "setPosition", sig(void.class, params(ThreadContext.class, int.class)));
+                }
             }
         }
         
