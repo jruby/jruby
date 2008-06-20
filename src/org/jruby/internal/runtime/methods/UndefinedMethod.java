@@ -36,47 +36,72 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * 
- * @author jpetersen
+ * This class represents a singleton type of method used as a marker for
+ * missing or "undef'ed" methods. Only one instance is ever created, and it
+ * can't be invoked.
  */
 public class UndefinedMethod extends DynamicMethod {
     private static final UndefinedMethod instance = new UndefinedMethod();
 
     /**
-     * Constructor for UndefinedMethod.
-     * @param visibility
+     * Constructor for the one UndefinedMethod instance.
      */
     private UndefinedMethod() {
     }
 
-    
+    /**
+     * The one implementation of call, which throws an exception because
+     * UndefinedMethod can't be invoked.
+     * 
+     * @see DynamicMethod.call
+     */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
         throw new UnsupportedOperationException();
     }
     
-    // Dup is not really a dup, but this is a singleton so it hardly matters.
+    /**
+     * A dummy implementation of dup that just returns the singleton instance.
+     * 
+     * @return The singleton instance
+     */
     public DynamicMethod dup() {
         return instance;
     }
 
     /**
-     * Returns the instance.
-     * @return UndefinedMethod
+     * Retrieve the singleton instance.
+     * 
+     * @return The singleton instance
      */
     public static UndefinedMethod getInstance() {
         return instance;
     }
 
+    /**
+     * Dummy override of setImplementationClass that does nothing.
+     * 
+     * @param implClass Ignored
+     */
     @Override
     public void setImplementationClass(RubyModule implClass) {
         // UndefinedMethod should be immutable
     }
 
+    /**
+     * Dummy implementation of setVisibility that does nothing.
+     * 
+     * @param visibility Ignored
+     */
     @Override
     public void setVisibility(Visibility visibility) {
         // UndefinedMethod should be immutable
     }
 
+    /**
+     * Dummy implementation of setCallConfig that does nothing.
+     * 
+     * @param callConfig Ignored
+     */
     @Override
     public void setCallConfig(CallConfiguration callConfig) {
         // UndefinedMethod should be immutable

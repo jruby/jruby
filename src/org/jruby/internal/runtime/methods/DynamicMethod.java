@@ -46,9 +46,13 @@ import org.jruby.runtime.builtin.IRubyObject;
  * delegation or callback mechanisms.
  */
 public abstract class DynamicMethod {
+    /** The Ruby module or class in which this method is immediately defined. */
     protected RubyModule implementationClass;
+    /** The "protected class" used for calculating protected access. */
     protected RubyModule protectedClass;
+    /** The visibility of this method. */
     protected Visibility visibility;
+    /** The "call configuration" to use for pre/post call logic. */
     protected CallConfiguration callConfig;
     
     /**
@@ -70,6 +74,10 @@ public abstract class DynamicMethod {
         this.callConfig = callConfig;
     }
     
+    /**
+     * A no-arg constructor used only by the UndefinedMethod subclass. An
+     * assertion makes sure this instanceof UndefinedMethod.
+     */
     protected DynamicMethod() {
         assert this instanceof UndefinedMethod;
     }
@@ -306,6 +314,13 @@ public abstract class DynamicMethod {
         return getProtectedClass().isInstance(caller);
     }
     
+    /**
+     * Calculate, based on given RubyModule, which class in its hierarchy
+     * should be used to determine protected access.
+     * 
+     * @param cls The class from which to calculate
+     * @return The class to be used for protected access checking.
+     */
     protected static RubyModule calculateProtectedClass(RubyModule cls) {
         // singleton classes don't get their own visibility domain
         if (cls.isSingleton()) cls = cls.getSuperClass();
@@ -318,6 +333,11 @@ public abstract class DynamicMethod {
         return cls;
     }
     
+    /**
+     * Retrieve the pre-calculated "protected class" used for access checks.
+     * 
+     * @return The "protected class" for access checks.
+     */
     protected RubyModule getProtectedClass() {
         return protectedClass;
     }
@@ -340,6 +360,7 @@ public abstract class DynamicMethod {
      */
     public void setImplementationClass(RubyModule implClass) {
         implementationClass = implClass;
+        protectedClass = calculateProtectedClass(implClass);
     }
 
     /**
