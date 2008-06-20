@@ -228,10 +228,12 @@ public class RubyThread extends RubyObject {
         // check for criticalization *before* locking ourselves
         threadService.waitForCritical();
 
-        assert this == context.getThread();
-
-        if (killed) throw new ThreadKill();
+        if (killed) throwThreadKill();
         if (receivedException != null) receivedAnException(context);
+    }
+    
+    private void throwThreadKill() {
+        throw new ThreadKill();
     }
 
     /**
