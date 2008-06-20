@@ -27,7 +27,7 @@
     </java>
   </target>
   
-  <target name="profile-rails-server" depends="jar" description="Profile a local gem installation of Rake">
+  <target name="profile-rails-server" depends="jar" description="Profile the Rails server">
     <fail unless="netbeans.home">This target can only run inside the NetBeans IDE.</fail>
     
     <nbprofiledirect>
