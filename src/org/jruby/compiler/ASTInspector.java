@@ -51,6 +51,7 @@ import org.jruby.ast.EvStrNode;
 import org.jruby.ast.FlipNode;
 import org.jruby.ast.ForNode;
 import org.jruby.ast.GlobalAsgnNode;
+import org.jruby.ast.GlobalVarNode;
 import org.jruby.ast.HashNode;
 import org.jruby.ast.IArgumentNode;
 import org.jruby.ast.IScopingNode;
@@ -356,6 +357,11 @@ public class ASTInspector {
             inspect(((ForNode)node).getVarNode());
             break;
         case GLOBALVARNODE:
+            if (((GlobalVarNode)node).getName() == "$_") {
+                hasFrameAwareMethods = true;
+            } else if (((GlobalVarNode)node).getName() == "$~") {
+                hasFrameAwareMethods = true;
+            }
             break;
         case HASHNODE:
             HashNode hashNode = (HashNode)node;
@@ -381,16 +387,19 @@ public class ASTInspector {
             break;
         case MATCHNODE:
             inspect(((MatchNode)node).getRegexpNode());
+            hasFrameAwareMethods = true;
             break;
         case MATCH2NODE:
             Match2Node match2Node = (Match2Node)node;
             inspect(match2Node.getReceiverNode());
             inspect(match2Node.getValueNode());
+            hasFrameAwareMethods = true;
             break;
         case MATCH3NODE:
             Match3Node match3Node = (Match3Node)node;
             inspect(match3Node.getReceiverNode());
             inspect(match3Node.getValueNode());
+            hasFrameAwareMethods = true;
             break;
         case MODULENODE:
             hasClass = true;
