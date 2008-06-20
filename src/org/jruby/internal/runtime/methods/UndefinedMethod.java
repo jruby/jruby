@@ -30,6 +30,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -39,14 +40,13 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author jpetersen
  */
 public class UndefinedMethod extends DynamicMethod {
-    private static final UndefinedMethod instance = new UndefinedMethod(Visibility.PUBLIC);
+    private static final UndefinedMethod instance = new UndefinedMethod();
 
     /**
      * Constructor for UndefinedMethod.
      * @param visibility
      */
-    private UndefinedMethod(Visibility visibility) {
-        super(null, visibility, null);
+    private UndefinedMethod() {
     }
 
     
@@ -80,5 +80,18 @@ public class UndefinedMethod extends DynamicMethod {
     @Override
     public void setCallConfig(CallConfiguration callConfig) {
         // UndefinedMethod should be immutable
+    }
+    
+    /**
+     * UndefinedMethod is always visible because it's only used as a marker for
+     * missing or undef'ed methods.
+     * 
+     * @param caller The calling object
+     * @param callType The type of call
+     * @return true always
+     */
+    @Override
+    public boolean isCallableFrom(IRubyObject caller, CallType callType) {
+        return true;
     }
 }

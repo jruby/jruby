@@ -47,6 +47,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public abstract class DynamicMethod {
     protected RubyModule implementationClass;
+    protected RubyModule protectedClass;
     protected Visibility visibility;
     protected CallConfiguration callConfig;
     
@@ -60,9 +61,17 @@ public abstract class DynamicMethod {
      * pre/post invocation logic.
      */
     protected DynamicMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
+        assert implementationClass != null;
         this.visibility = visibility;
         this.implementationClass = implementationClass;
+        // TODO: Determine whether we should perhaps store non-singleton class
+        // in the implementationClass
+        this.protectedClass = calculateProtectedClass(implementationClass);
         this.callConfig = callConfig;
+    }
+    
+    protected DynamicMethod() {
+        assert this instanceof UndefinedMethod;
     }
 
     /**
@@ -294,18 +303,23 @@ public abstract class DynamicMethod {
      * otherwise
      */
     private boolean protectedAccessOk(IRubyObject caller) {
-        // TODO: Determine whether we should perhaps store non-singleton class instead
-        RubyModule defined = getImplementationClass();
-
+        return getProtectedClass().isInstance(caller);
+    }
+    
+    protected static RubyModule calculateProtectedClass(RubyModule cls) {
         // singleton classes don't get their own visibility domain
-        if (defined.isSingleton()) defined = defined.getSuperClass();
+        if (cls.isSingleton()) cls = cls.getSuperClass();
 
-        while (defined.isIncluded()) defined = defined.getMetaClass();
+        while (cls.isIncluded()) cls = cls.getMetaClass();
 
         // For visibility we need real meta class and not anonymous one from class << self
-        if (defined instanceof MetaClass) defined = ((MetaClass) defined).getRealClass();
-
-        return defined.isInstance(caller);
+        if (cls instanceof MetaClass) cls = ((MetaClass) cls).getRealClass();
+        
+        return cls;
+    }
+    
+    protected RubyModule getProtectedClass() {
+        return protectedClass;
     }
     
     /**
