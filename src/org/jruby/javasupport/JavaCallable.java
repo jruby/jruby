@@ -115,7 +115,7 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
 
     @JRubyMethod
     public IRubyObject inspect() {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         result.append(nameOnInspection());
         Class<?>[] parameterTypes = getParameterTypes();
         for (int i = 0; i < parameterTypes.length; i++) {

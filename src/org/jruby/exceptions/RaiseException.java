@@ -81,7 +81,7 @@ public class RaiseException extends JumpException {
     }
 
     private static String buildMessage(Throwable exception) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         StringWriter stackTrace = new StringWriter();
         exception.printStackTrace(new PrintWriter(stackTrace));
     

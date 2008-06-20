@@ -354,7 +354,7 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     private IRubyObject number(long s) {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         result.append((char) ((s>>24) &0xff)).append((char) ((s>>16) &0xff));
         result.append((char) ((s >> 8) & 0xff)).append((char) (s & 0xff));
         return getRuntime().newString(result.toString());

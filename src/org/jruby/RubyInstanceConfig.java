@@ -300,7 +300,7 @@ public class RubyInstanceConfig {
     }
 
     public String getBasicUsageHelp() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb
                 .append("Usage: jruby [switches] [--] [programfile] [arguments]\n")
                 .append("  -0[octal]       specify record separator (\0, if no argument)\n")
@@ -345,7 +345,7 @@ public class RubyInstanceConfig {
     }
 
     public String getExtendedHelp() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb
                 .append("These flags are for extended JRuby options.\n")
                 .append("Specify them by passing -X<option>\n")
@@ -361,7 +361,7 @@ public class RubyInstanceConfig {
     }
 
     public String getPropertyHelp() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb
                 .append("These properties can be used to alter runtime behavior for perf or compatibility.\n")
                 .append("Specify them by passing -J-D<property>=<value>\n")
@@ -427,7 +427,7 @@ public class RubyInstanceConfig {
     }
 
     public String getVersionString() {
-        StringBuffer buf = new StringBuffer("ruby ");
+        StringBuilder buf = new StringBuilder("ruby ");
         switch (compatVersion) {
         case RUBY1_8:
             buf.append(Constants.RUBY_VERSION);

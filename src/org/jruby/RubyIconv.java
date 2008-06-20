@@ -145,7 +145,7 @@ public class RubyIconv extends RubyObject {
         @JRubyMethod(name = "inspect")
         public IRubyObject inspect() {
             RubyModule rubyClass = getMetaClass();
-            StringBuffer buffer = new StringBuffer("#<");
+            StringBuilder buffer = new StringBuilder("#<");
             buffer.append(rubyClass.getName()).append(": ").append(success.inspect().toString());
             buffer.append(", ").append(failed.inspect().toString()).append(">");
 

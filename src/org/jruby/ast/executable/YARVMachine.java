@@ -344,7 +344,7 @@ public class YARVMachine {
                 push(context.getRuntime().newString(bytecodes[ip].s_op0));
                 break;
             case YARVInstructions.CONCATSTRINGS: {
-                StringBuffer concatter = new StringBuffer();
+                StringBuilder concatter = new StringBuilder();
                 
                 for (int i = 0; i < bytecodes[ip].l_op0; i++) {
                     concatter.append(pop().toString());

@@ -331,7 +331,7 @@ public class RubyDigest {
         }
 
         private static String toHex(byte[] val) {
-            StringBuffer out = new StringBuffer();
+            StringBuilder out = new StringBuilder();
             for(int i=0,j=val.length;i<j;i++) {
                 String ve = Integer.toString((((int)((char)val[i])) & 0xFF),16);
                 if(ve.length() == 1) {

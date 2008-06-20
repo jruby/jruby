@@ -55,7 +55,7 @@ public class RubyInputStream extends PushbackInputStream {
             return null;
         }
 
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
 
         LineLoop : while (true) {
             while (c != separator[0] && c != -1) {
@@ -79,7 +79,7 @@ public class RubyInputStream extends PushbackInputStream {
     }
 
     private String getsEntireStream() throws IOException {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         int c;
         while ((c = read()) != -1) {
             result.append((char) c);

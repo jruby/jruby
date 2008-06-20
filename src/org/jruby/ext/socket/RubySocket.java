@@ -332,7 +332,7 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod(name = {"pack_sockaddr_un", "sockaddr_un"}, meta = true)
     public static IRubyObject pack_sockaddr_un(IRubyObject recv, IRubyObject filename) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append((char)0);
         sb.append((char)1);
         String str = filename.convertToString().toString();
@@ -345,7 +345,7 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod(name = {"pack_sockaddr_in", "sockaddr_in"}, meta = true)
     public static IRubyObject pack_sockaddr_in(IRubyObject recv, IRubyObject port, IRubyObject host) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append((char)16);
         sb.append((char)2);
 
@@ -393,7 +393,7 @@ public class RubySocket extends RubyBasicSocket {
         }
         
         int port = (val.charAt(2) << 8) + (val.charAt(3));
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append((int)val.charAt(4));
         sb.append(".");
         sb.append((int)val.charAt(5));

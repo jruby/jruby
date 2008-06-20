@@ -302,8 +302,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
         throw getRuntime().newRegexpError(err + ": " + rb_reg_desc(s,start, len,flags));
     }
 
-    private final StringBuffer rb_reg_desc(byte[] s, int start, int len, int flags) {
-        StringBuffer sb = new StringBuffer("/");
+    private final StringBuilder rb_reg_desc(byte[] s, int start, int len, int flags) {
+        StringBuilder sb = new StringBuilder("/");
         rb_reg_expr_str(sb, s, start, len);
         sb.append("/");
 
@@ -317,7 +317,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
         return sb;
     }
 
-    private final void rb_reg_expr_str(StringBuffer sb, byte[] s, int start, int len) {
+    private final void rb_reg_expr_str(StringBuilder sb, byte[] s, int start, int len) {
         int p,pend;
         boolean need_escape = false;
         p = start;

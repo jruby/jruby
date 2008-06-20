@@ -351,7 +351,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
         @JRubyMethod
         public IRubyObject inspect() {
-            StringBuffer result = new StringBuffer();
+            StringBuilder result = new StringBuilder();
             result.append(nameOnInspection());
             result.append("(");
             Class[] parameterTypes = getParameterTypes();

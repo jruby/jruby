@@ -588,7 +588,7 @@ public final class ThreadContext {
             return;
         }
         
-        StringBuffer buf = new StringBuffer(60);
+        StringBuilder buf = new StringBuilder(60);
         buf.append(frame.getFile()).append(':').append(frame.getLine() + 1);
         
         if (previousFrame.getName() != null) {

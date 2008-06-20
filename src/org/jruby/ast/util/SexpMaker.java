@@ -40,7 +40,7 @@ import org.jruby.ast.VCallNode;
 import org.jruby.ast.XStrNode;
 
 public class SexpMaker {
-    private StringBuffer sb;
+    private final StringBuilder sb;
     
     public static String create(Node node) {
         SexpMaker maker = new SexpMaker();
@@ -58,8 +58,8 @@ public class SexpMaker {
         return maker.toString();
     }
     
-    protected SexpMaker() {
-        sb = new StringBuffer();
+    private SexpMaker() {
+        sb = new StringBuilder();
     }
     
     private void processMethod(String methodName, Node argsNode, Node body) {

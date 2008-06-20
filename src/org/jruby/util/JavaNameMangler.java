@@ -60,7 +60,7 @@ public class JavaNameMangler {
             }
             
             String[] pathElements = PATH_SPLIT.split(classPath);
-            StringBuffer newPath = new StringBuffer(prefix);
+            StringBuilder newPath = new StringBuilder(prefix);
             
             for (String element : pathElements) {
                 if (element.length() <= 0) {
@@ -92,7 +92,7 @@ public class JavaNameMangler {
     
     public static String mangleStringForCleanJavaIdentifier(String name) {
         char[] characters = name.toCharArray();
-        StringBuffer cleanBuffer = new StringBuffer();
+        StringBuilder cleanBuffer = new StringBuilder();
         boolean prevWasReplaced = false;
         for (int i = 0; i < characters.length; i++) {
             if ((i == 0 && Character.isJavaIdentifierStart(characters[i]))

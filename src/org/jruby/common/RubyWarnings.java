@@ -55,7 +55,7 @@ public class RubyWarnings implements IRubyWarnings {
     public void warn(ID id, String fileName, int lineNumber, String message, Object... data) {
         if (runtime.getVerbose().isNil()) return;
     	
-        StringBuffer buffer = new StringBuffer(100);
+        StringBuilder buffer = new StringBuilder(100);
 
         buffer.append(fileName).append(':').append(lineNumber + 1).append(' ');
         buffer.append("warning: ").append(message).append('\n');

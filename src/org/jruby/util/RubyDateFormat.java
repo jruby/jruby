@@ -235,7 +235,7 @@ public class RubyDateFormat extends DateFormat {
                 }
                 i++;
             } else {
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 for (;i < len && pattern.charAt(i) != '%'; i++) {
                     sb.append(pattern.charAt(i));
                 }

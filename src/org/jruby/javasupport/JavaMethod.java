@@ -263,7 +263,7 @@ public class JavaMethod extends JavaCallable {
     }
 
     private String dumpArgTypes(Object[] arguments) {
-        StringBuffer str = new StringBuffer("[");
+        StringBuilder str = new StringBuilder("[");
         for (int i = 0; i < arguments.length; i++) {
             if (i > 0) {
                 str.append(",");

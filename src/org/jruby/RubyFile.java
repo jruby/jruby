@@ -672,7 +672,7 @@ public class RubyFile extends RubyIO {
 
     @JRubyMethod
     public IRubyObject inspect() {
-        StringBuffer val = new StringBuffer();
+        StringBuilder val = new StringBuilder();
         val.append("#<File:").append(path);
         if(!openFile.isOpen()) {
             val.append(" (closed)");
@@ -1190,7 +1190,7 @@ public class RubyFile extends RubyIO {
     private static RubyString join(IRubyObject recv, RubyArray ary) {
         IRubyObject[] args = ary.toJavaArray();
         boolean isTainted = false;
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         Ruby runtime = recv.getRuntime();
         
         for (int i = 0; i < args.length; i++) {
@@ -1231,7 +1231,7 @@ public class RubyFile extends RubyIO {
         return join(recv, RubyArray.newArrayNoCopyLight(recv.getRuntime(), args));
     }
 
-    private static void chomp(StringBuffer buffer) {
+    private static void chomp(StringBuilder buffer) {
         int lastIndex = buffer.length() - 1;
         
         while (lastIndex >= 0 && (buffer.lastIndexOf("/") == lastIndex || buffer.lastIndexOf("\\") == lastIndex)) {

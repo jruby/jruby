@@ -910,7 +910,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
-        StringBuffer val = new StringBuffer("#<BigDecimal:").append(Integer.toHexString(System.identityHashCode(this))).append(",");
+        StringBuilder val = new StringBuilder("#<BigDecimal:").append(Integer.toHexString(System.identityHashCode(this))).append(",");
         val.append("'").append(this.callMethod(context, MethodIndex.TO_S, "to_s")).append("'").append(",");
 
         val.append(getSignificantDigits().length()).append("(");
@@ -1210,7 +1210,7 @@ public class RubyBigDecimal extends RubyNumeric {
     private IRubyObject engineeringValue(String arg) {
         int exponent = getExponent();
         int signum = value.signum();
-        StringBuffer build = new StringBuffer();
+        StringBuilder build = new StringBuilder();
         build.append(signum == -1 ? "-" : (signum == 1 ? (posSign(arg) ? (posSpace(arg) ? " " : "+") : "") : ""));
         build.append("0.");
         if (0 == groups(arg)) {
@@ -1248,7 +1248,7 @@ public class RubyBigDecimal extends RubyNumeric {
             after = values[1];
         }
         int signum = value.signum();
-        StringBuffer build = new StringBuffer();
+        StringBuilder build = new StringBuilder();
         build.append(signum == -1 ? "-" : (signum == 1 ? (posSign(arg) ? (posSpace(arg) ? " " : "+") : "") : ""));
         if (groups(arg) == 0) {
             build.append(whole);

@@ -319,7 +319,7 @@ public final class Frame implements JumpTarget {
      * @see java.lang.Object#toString()
      */
     public String toString() {
-        StringBuffer sb = new StringBuffer(50);
+        StringBuilder sb = new StringBuilder(50);
         
         sb.append(fileName).append(':').append(line+1).append(':').append(klazz);
         if (name != null) sb.append(" in ").append(name);

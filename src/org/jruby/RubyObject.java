@@ -1516,7 +1516,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * The internal helper method that takes care of the part of the
      * inspection that inspects instance variables.
      */
-    private StringBuffer inspectObj(StringBuffer part) {
+    private StringBuilder inspectObj(StringBuilder part) {
         String sep = "";
         for (Variable<IRubyObject> ivar : getInstanceVariableList()) {
             part.append(sep);
@@ -1565,7 +1565,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
                 // this will work here:
                 hasVariables()) {
 
-            StringBuffer part = new StringBuffer();
+            StringBuilder part = new StringBuilder();
             String cname = getMetaClass().getRealClass().getName();
             part.append("#<").append(cname).append(":0x");
             part.append(Integer.toHexString(System.identityHashCode(this)));

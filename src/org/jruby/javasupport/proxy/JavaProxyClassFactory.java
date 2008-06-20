@@ -570,7 +570,7 @@ public class JavaProxyClassFactory {
         }
 
         public String scrambledSignature() {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             Class[] parms = getParameterTypes();
             for (int i = 0; i < parms.length; i++) {
                 sb.append('$');

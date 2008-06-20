@@ -103,7 +103,7 @@ public class CodegenUtils {
     }
     
     public static String sigParams(Class... params) {
-        StringBuffer signature = new StringBuffer("(");
+        StringBuilder signature = new StringBuilder("(");
         
         for (int i = 0; i < params.length; i++) {
             signature.append(ci(params[i]));
@@ -119,7 +119,7 @@ public class CodegenUtils {
     }
     
     public static String prettyParams(Class... params) {
-        StringBuffer signature = new StringBuffer("(");
+        StringBuilder signature = new StringBuilder("(");
         
         for (int i = 0; i < params.length; i++) {
             signature.append(human(params[i]));

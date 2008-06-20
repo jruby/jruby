@@ -129,7 +129,7 @@ public class ListNode extends Node {
     
     public String toString() {
         String string = super.toString();
-    	StringBuffer b = new StringBuffer();
+    	StringBuilder b = new StringBuilder();
     	for (int i = 0; i < list.size(); i++) {
     		b.append(list.get(i));
             if (i + 1 < list.size()) {

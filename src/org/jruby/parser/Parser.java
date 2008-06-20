@@ -119,7 +119,7 @@ public class Parser {
             	result.setEndOffset(-1);
             }
         } catch (SyntaxException e) {
-            StringBuffer buffer = new StringBuffer(100);
+            StringBuilder buffer = new StringBuilder(100);
             buffer.append(e.getPosition().getFile()).append(':');
             buffer.append(e.getPosition().getEndLine() + 1).append(": ");
             buffer.append(e.getMessage());

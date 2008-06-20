@@ -176,7 +176,7 @@ public class ReflectionCallback implements Callback {
                 throw (Error) e.getTargetException();
             }
         } catch (IllegalAccessException e) {
-            StringBuffer message = new StringBuffer();
+            StringBuilder message = new StringBuilder();
             message.append(e.getMessage());
             message.append(':');
             message.append(" methodName=").append(methodName);
@@ -191,7 +191,7 @@ public class ReflectionCallback implements Callback {
             assert false : message.toString();
             return null;
         } catch (final IllegalArgumentException e) {
-/*            StringBuffer message = new StringBuffer();
+/*            StringBuilder message = new StringBuilder();
             message.append(e.getMessage());
             message.append(':');
             message.append(" methodName=").append(methodName);
