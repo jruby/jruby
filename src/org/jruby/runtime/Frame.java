@@ -86,7 +86,12 @@ public final class Frame implements JumpTarget {
     
     private JumpTarget jumpTarget;
     
-    private IRubyObject[] backrefAndLastline;
+    private static class BackrefAndLastline {
+        public IRubyObject backref;
+        public IRubyObject lastline;
+    }
+    
+    private BackrefAndLastline backrefAndLastline;
 
     public JumpTarget getJumpTarget() {
         return jumpTarget;
@@ -162,36 +167,36 @@ public final class Frame implements JumpTarget {
         if (hasBackref()) {
             return self.getRuntime().getNil();
         }
-        return backrefAndLastline[0];
+        return backrefAndLastline.backref;
     }
     
     public boolean hasBackref() {
-        return backrefAndLastline == null || backrefAndLastline[0] == null;
+        return backrefAndLastline == null || backrefAndLastline.backref == null;
     }
 
     public IRubyObject setBackRef(IRubyObject backref) {
         lazyBackrefAndLastline();
-        return this.backrefAndLastline[0] = backref;
+        return this.backrefAndLastline.backref = backref;
     }
 
     public IRubyObject getLastLine() {
         if (hasLastline()) {
             return self.getRuntime().getNil();
         }
-        return backrefAndLastline[1];
+        return backrefAndLastline.lastline;
     }
     
     public boolean hasLastline() {
-        return backrefAndLastline == null || backrefAndLastline[1] == null;
+        return backrefAndLastline == null || backrefAndLastline.lastline == null;
     }
 
     public IRubyObject setLastLine(IRubyObject lastline) {
         lazyBackrefAndLastline();
-        return this.backrefAndLastline[1] = lastline;
+        return this.backrefAndLastline.lastline = lastline;
     }
     
     private void lazyBackrefAndLastline() {
-         if (backrefAndLastline == null) backrefAndLastline = new IRubyObject[2];
+         if (backrefAndLastline == null) backrefAndLastline = new BackrefAndLastline();
     }
 
     public String getFile() {
