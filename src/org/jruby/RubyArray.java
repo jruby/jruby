@@ -568,7 +568,7 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     private final IRubyObject elt(long offset) {
-        if (realLength == 0 || offset < 0 || offset >= realLength) return getRuntime().getNil();
+        if (emptyOrOutsideRange(offset)) return getRuntime().getNil();
 
         return values[begin + (int) offset];
     }
@@ -577,16 +577,20 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     private final IRubyObject elt(int offset) {
-        if (realLength == 0 || offset < 0 || offset >= realLength) return getRuntime().getNil();
+        if (emptyOrOutsideRange(offset)) return getRuntime().getNil();
 
         return values[begin + offset];
+    }
+    
+    private boolean emptyOrOutsideRange(long offset) {
+        return realLength == 0 || offset < 0 || offset >= realLength;
     }
 
     /** rb_ary_elt - faster
      *
      */
     private final IRubyObject elt_f(long offset) {
-        if (realLength == 0 || offset >= realLength) return getRuntime().getNil();
+        if (emptyOrTooHigh(offset)) return getRuntime().getNil();
 
         return values[begin + (int) offset];
     }
@@ -595,9 +599,13 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     private final IRubyObject elt_f(int offset) {
-        if (realLength == 0 || offset >= realLength) return getRuntime().getNil();
+        if (emptyOrTooHigh(offset)) return getRuntime().getNil();
 
         return values[begin + offset];
+    }
+    
+    private boolean emptyOrTooHigh(long offset) {
+        return realLength == 0 || offset >= realLength;
     }
 
     /** rb_ary_entry
