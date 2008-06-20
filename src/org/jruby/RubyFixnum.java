@@ -272,10 +272,18 @@ public class RubyFixnum extends RubyInteger {
     private IRubyObject addFixnum(ThreadContext context, RubyFixnum other) {
         long otherValue = other.value;
         long result = value + otherValue;
-        if ((~(value ^ otherValue) & (value ^ result) & SIGN_BIT) != 0) {
+        if (additionOverflowed(value, otherValue, result)) {
             return addAsBignum(context, other);
         }
         return newFixnum(result);
+    }
+    
+    private static boolean additionOverflowed(long original, long other, long result) {
+        return (~(original ^ other) & (original ^ result) & SIGN_BIT) != 0;
+    }
+    
+    private static boolean subtractionOverflowed(long original, long other, long result) {
+        return (~(original ^ ~other) & (original ^ result) & SIGN_BIT) != 0;
     }
     
     private IRubyObject addAsBignum(ThreadContext context, RubyFixnum other) {
@@ -306,7 +314,7 @@ public class RubyFixnum extends RubyInteger {
     private IRubyObject subtractFixnum(ThreadContext context, RubyFixnum other) {
         long otherValue = other.value;
         long result = value - otherValue;
-        if ((~(value ^ ~otherValue) & (value ^ result) & SIGN_BIT) != 0) {
+        if (subtractionOverflowed(value, otherValue, result)) {
             return subtractAsBignum(context, other);
         }
         return newFixnum(result);
