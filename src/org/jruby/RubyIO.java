@@ -628,23 +628,25 @@ public class RubyIO extends RubyObject {
             } else {
                 Stream readStream = myOpenFile.getMainStream();
                 int c = -1;
+                int n = -1;
                 int newline = separator.get(separator.length() - 1) & 0xFF;
 
-                ByteList buf = new ByteList(1024);
+                ByteList buf = new ByteList(0);
                 boolean update = false;
                 
                 while (true) {
                     do {
                         readCheck(readStream);
                         readStream.clearerr();
-
+                        
                         try {
-                            c = readStream.fgetc();
+                            n = readStream.getline(buf, (byte) newline);
+                            c = buf.length() > 0 ? buf.get(buf.length() - 1) & 0xff : -1;
                         } catch (EOFException e) {
-                            c = -1;
+                            n = -1;
                         }
 
-                        if(c == -1) {
+                        if (n == -1) {
                             if (!readStream.isBlocking() && (readStream instanceof ChannelStream)) {
                                 if(!(waitReadable(((ChannelStream)readStream).getDescriptor()))) {
                                     throw getRuntime().newIOError("bad file descriptor: " + openFile.getPath());
@@ -655,14 +657,12 @@ public class RubyIO extends RubyObject {
                                 break;
                             }
                         }
-                        
-                        buf.append(c);
             
                         update = true;
                     } while (c != newline); // loop until we see the nth separator char
                     
                     // if we hit EOF, we're done
-                    if (c == -1) {
+                    if (n == -1) {
                         break;
                     }
                     
@@ -739,19 +739,20 @@ public class RubyIO extends RubyObject {
         Stream readStream = openFile.getMainStream();
         int c = -1;
 
-        ByteList buf = new ByteList(1024);
+        ByteList buf = new ByteList(0);
         boolean update = false;
         do {
             readCheck(readStream);
             readStream.clearerr();
-
+            int n;
             try {
-                c = readStream.fgetc();
+                n = readStream.getline(buf, (byte) delim);
+                c = buf.length() > 0 ? buf.get(buf.length() - 1) & 0xff : -1;
             } catch (EOFException e) {
-                c = -1;
+                n = -1;
             }
-
-            if(c == -1) {
+            
+            if (n == -1) {
                 if (!readStream.isBlocking() && (readStream instanceof ChannelStream)) {
                     if(!(waitReadable(((ChannelStream)readStream).getDescriptor()))) {
                         throw getRuntime().newIOError("bad file descriptor: " + openFile.getPath());
@@ -761,8 +762,6 @@ public class RubyIO extends RubyObject {
                     break;
                 }
             }
-            
-            buf.append(c);
             
             update = true;
         } while (c != delim);

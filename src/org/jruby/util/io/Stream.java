@@ -57,7 +57,7 @@ public interface Stream {
 
     public abstract ByteList fgets(ByteList separatorString) throws IOException, BadDescriptorException, EOFException;
     public abstract ByteList readall() throws IOException, BadDescriptorException, EOFException;
-
+    public abstract int getline(ByteList dst, byte terminator) throws IOException, BadDescriptorException;
     // TODO: We overflow on large files...We could increase to long to limit
     // this, but then the impl gets more involved since java io APIs based on
     // int (means we have to chunk up a long into a series of int ops).

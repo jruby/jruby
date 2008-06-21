@@ -181,7 +181,12 @@ public class ChannelStream implements Stream, Finalizable {
     public boolean writeDataBuffered() {
         return !reading && buffer.position() > 0;
     }
-
+    private final int refillBuffer() throws IOException {
+        buffer.clear();
+        int n = ((ReadableByteChannel) descriptor.getChannel()).read(buffer);
+        buffer.flip();
+        return n;
+    }
     public synchronized ByteList fgets(ByteList separatorString) throws IOException, BadDescriptorException {
         checkReadable();
         ensureRead();
@@ -235,9 +240,7 @@ public class ChannelStream implements Stream, Finalizable {
                 
                 // no match, append remainder of buffer and continue with next block
                 buf.append(bytes, offset, buffer.remaining());
-                buffer.clear();
-                int read = ((ReadableByteChannel)descriptor.getChannel()).read(buffer);
-                buffer.flip();
+                int read = refillBuffer();
                 if (read == -1) break LineLoop;
             }
             
@@ -265,6 +268,58 @@ public class ChannelStream implements Stream, Finalizable {
         }
 
         return buf;
+    }
+    
+    /**
+     * An version of read that reads all bytes up to and including a terminator byte.
+     * <p>
+     * If the terminator byte is found, it will be the last byte in the output buffer.
+     * </p>
+     *
+     * @param dst The output buffer.
+     * @param terminator The byte to terminate reading.
+     * @return The number of bytes read, or -1 if EOF is reached.
+     * 
+     * @throws java.io.IOException
+     * @throws org.jruby.util.io.BadDescriptorException
+     */
+    public synchronized int getline(ByteList dst, byte terminator) throws IOException, BadDescriptorException {
+        checkReadable();
+        ensureRead();
+        descriptor.checkOpen();
+        
+        int totalRead = 0;
+        boolean found = false;
+        if (ungotc != -1) {
+            dst.append((byte) ungotc);
+            found = ungotc == terminator;
+            ungotc = -1;
+            ++totalRead;
+        }
+        while (!found) {
+            final byte[] bytes = buffer.array();
+            final int begin = buffer.arrayOffset() + buffer.position();
+            final int end = begin + buffer.remaining();
+            int len = 0;
+            for (int i = begin; i < end && !found; ++i) {
+                found = bytes[i] == terminator;
+                ++len;
+            }
+            if (len > 0) {
+                dst.append(buffer, len);
+                totalRead += len;
+            }
+            if (!found) {
+                int n = refillBuffer();
+                if (n <= 0) {
+                    if (n < 0 && totalRead < 1) {
+                        return -1;
+                    }
+                    break;
+                }
+            }
+        }
+        return totalRead;
     }
     
     public synchronized ByteList readall() throws IOException, BadDescriptorException {
@@ -614,10 +669,6 @@ public class ChannelStream implements Stream, Finalizable {
             len = (number <= buffer.remaining()) ? number : buffer.remaining();
             result.append(buffer, len);
         }
-        
-        ReadableByteChannel readChannel = (ReadableByteChannel)descriptor.getChannel();
-        
-        int read = BUFSIZE;
         boolean done = false;
         //
         // Avoid double-copying for reads that are larger than the buffer size
@@ -638,11 +689,7 @@ public class ChannelStream implements Stream, Finalizable {
         // Complete the request by filling the read buffer first
         //
         while (!done && result.length() != number) {
-            
-            buffer.clear(); 
-            read = readChannel.read(buffer);
-            buffer.flip();
-            
+            int read = refillBuffer();
             if (read <= 0) {
                 // if we reach EOF or didn't read anything, bail out
                 break;
@@ -662,11 +709,7 @@ public class ChannelStream implements Stream, Finalizable {
         ensureRead();
         
         if (!buffer.hasRemaining()) {
-            buffer.clear();
-            int read = descriptor.read(buffer);
-            buffer.flip();
-            
-            if (read <= 0) {
+            if (refillBuffer() <= 0) {
                 eof = true;
                 return -1;
             }
