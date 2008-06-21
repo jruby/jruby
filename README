@@ -20,7 +20,7 @@ Yukihiro Matsumoto <matz@netlab.co.jp>.
 JRuby is the effort to recreate the Ruby (http://www.ruby-lang.org) interpreter
 in Java.
 
-The Java version is be tightly integrated with Java to allow both to script
+The Java version is tightly integrated with Java to allow both to script
 any Java class and to embed the interpreter into any Java application. 
 See the 'docs' directory for more information.
 
