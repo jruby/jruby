@@ -190,7 +190,7 @@ if [ "$VERIFY_JRUBY" != "" ]; then
       echo "Running with instrumented profiler"
   fi
 
-  $JAVA_CMD $PROFILE_ARGS $JAVA_OPTS "${java_args[@]}" -classpath "$CP$CP_SEPARATOR$CLASSPATH" \
+  $JAVA_CMD $PROFILE_ARGS $JAVA_OPTS "${java_args[@]}" -classpath "$CP$CP_DELIMETER$CLASSPATH" \
     "-Djruby.home=$JRUBY_HOME" \
     "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
     "-Djruby.shell=$JRUBY_SHELL" \
