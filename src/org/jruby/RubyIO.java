@@ -2430,11 +2430,6 @@ public class RubyIO extends RubyObject {
     public RubyArray readlines(IRubyObject[] args) {
         ByteList separator;
         if (args.length > 0) {
-            if (!getRuntime().getNilClass().isInstance(args[0]) &&
-                !getRuntime().getString().isInstance(args[0])) {
-                throw getRuntime().newTypeError(args[0], 
-                        getRuntime().getString());
-            } 
             separator = getSeparatorForGets(new IRubyObject[] { args[0] });
         } else {
             separator = getSeparatorForGets(IRubyObject.NULL_ARRAY);
@@ -2671,7 +2666,7 @@ public class RubyIO extends RubyObject {
     public static RubyArray readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         int count = args.length;
 
-        IRubyObject[] fileArguments = new IRubyObject[]{args[0]};
+        IRubyObject[] fileArguments = new IRubyObject[]{ args[0].convertToString() };
         IRubyObject[] separatorArguments = count >= 2 ? new IRubyObject[]{args[1]} : IRubyObject.NULL_ARRAY;
         RubyIO file = (RubyIO) RubyKernel.open(context, recv, fileArguments, block);
         try {
