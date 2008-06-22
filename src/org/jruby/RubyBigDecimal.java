@@ -118,7 +118,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
         result.setInternalModuleVariable("vpPrecLimit", RubyFixnum.zero(runtime));
         result.setInternalModuleVariable("vpExceptionMode", RubyFixnum.zero(runtime));
-        result.setInternalModuleVariable("vpRoundingMode", RubyFixnum.zero(runtime));
+        result.setInternalModuleVariable("vpRoundingMode", runtime.newFixnum(ROUND_HALF_UP));
         
         result.defineAnnotatedMethods(RubyBigDecimal.class);
         result.defineAnnotatedConstants(RubyBigDecimal.class);
@@ -273,6 +273,12 @@ public class RubyBigDecimal extends RubyNumeric {
             return c.searchInternalModuleVariable("vpRoundingMode");
         }
         throw runtime.newTypeError("first argument for BigDecimal#mode invalid");
+    }
+
+    private RoundingMode getRoundingMode(Ruby runtime) {
+        RubyFixnum roundingMode = (RubyFixnum)runtime.fastGetClass("BigDecimal")
+                .searchInternalModuleVariable("vpRoundingMode");
+        return RoundingMode.valueOf((int)roundingMode.getLongValue());
     }
 
     private RubyBigDecimal getVpValue(IRubyObject v, boolean must) {
@@ -507,30 +513,52 @@ public class RubyBigDecimal extends RubyNumeric {
         }
     }
 
-    @JRubyMethod(name = "+", required = 1)
-    public IRubyObject op_plus(ThreadContext context, IRubyObject arg) {
-        RubyBigDecimal val = getVpValue(arg, false);
-        if(val == null) {
-            return callCoerced(context, "+", arg);
-        }
-        IRubyObject res = handleAddSpecialValues(val);
-        if (res != null) {
-            return res;
-        }
-        return new RubyBigDecimal(getRuntime(),value.add(val.value)).setResult();
+    @JRubyMethod(name = "+", required = 1, frame=true)
+    public IRubyObject op_plus(ThreadContext context, IRubyObject b) {
+        return addInternal(context, b, "add", RubyFixnum.zero(context.getRuntime()));
     }
 
-    @JRubyMethod(name = "add", required = 2)
-    public IRubyObject add2(ThreadContext context, IRubyObject b, IRubyObject n) {
+    @JRubyMethod(name = "add", required = 2, frame=true)
+    public IRubyObject add2(ThreadContext context, IRubyObject b, IRubyObject digits) {
+        return addInternal(context, b, "add", digits);
+    }
+
+    private IRubyObject addInternal(ThreadContext context, IRubyObject b, String op, IRubyObject digits) {
+        Ruby runtime = context.getRuntime();
+        int prec = getPositiveInt(context, digits);
+
         RubyBigDecimal val = getVpValue(b, false);
-        if(val == null) {
-            return callCoerced(context, "+", b);
+        if (val == null) {
+            // TODO:
+            // MRI behavior: Call "+" or "add", depending on the call.
+            // But this leads to exceptions when Floats are added. See:
+            // http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-core/17374
+            // return callCoerced(context, op, b, true); -- this is MRI behavior.
+            // We'll use ours for now, thus providing an ability to add Floats.
+            return callCoerced(context, "+", b, true);
         }
+
         IRubyObject res = handleAddSpecialValues(val);
         if (res != null) {
             return res;
         }
-        return new RubyBigDecimal(getRuntime(),value.add(val.value)).setResult();
+        RoundingMode roundMode = getRoundingMode(runtime);
+        return new RubyBigDecimal(runtime, value.add(
+                val.value, new MathContext(prec, roundMode))); // TODO: why this: .setResult();
+    }
+
+    private int getPositiveInt(ThreadContext context, IRubyObject arg) {
+        Ruby runtime = context.getRuntime();
+
+        if (arg instanceof RubyFixnum) {
+            int value = RubyNumeric.fix2int(arg);
+            if (value < 0) {
+                throw runtime.newArgumentError("argument must be positive");
+            }
+            return value;
+        } else {
+            throw runtime.newTypeError(arg, runtime.getFixnum());
+        }
     }
 
     private IRubyObject handleAddSpecialValues(RubyBigDecimal val) {

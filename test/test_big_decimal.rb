@@ -192,8 +192,8 @@ class TestBigDecimal < Test::Unit::TestCase
     BigDecimal.mode(BigDecimal::EXCEPTION_INFINITY | BigDecimal::EXCEPTION_NaN, true)
     assert_equal BigDecimal::EXCEPTION_NaN, BigDecimal.mode(1)
     
-    # rounding mode defaults to 0
-    assert_equal 0, BigDecimal.mode(BigDecimal::ROUND_MODE)
+    # rounding mode defaults to BigDecimal::ROUND_HALF_UP
+    assert_equal BigDecimal::ROUND_HALF_UP, BigDecimal.mode(BigDecimal::ROUND_MODE)
     
     # make sure each setting complete replaces any previous setting
     [BigDecimal::ROUND_UP, BigDecimal::ROUND_DOWN, BigDecimal::ROUND_CEILING, BigDecimal::ROUND_FLOOR,
@@ -202,12 +202,12 @@ class TestBigDecimal < Test::Unit::TestCase
     end
     
     # reset rounding mode to 0 for following tests
-    BigDecimal.mode(BigDecimal::ROUND_MODE, 0)
+    BigDecimal.mode(BigDecimal::ROUND_MODE, BigDecimal::ROUND_HALF_UP)
     
     assert_raises(TypeError) { BigDecimal.mode(BigDecimal::ROUND_MODE, true) } # second argument must be a Fixnum
-    assert_raises(TypeError) { BigDecimal.mode(BigDecimal::ROUND_MODE, 7) } # any Fixnum >= 7 should trigger this error, as the valid rounding modes are currently [0..6]
+    assert_raises(TypeError) { BigDecimal.mode(BigDecimal::ROUND_MODE, 8) } # any Fixnum >= 8 should trigger this error, as the valid rounding modes are currently [0..6]
   end
-    
+
   def test_marshaling
     f = 123.456
     bd = BigDecimal.new(f.to_s)
