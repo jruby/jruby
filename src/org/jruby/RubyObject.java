@@ -866,7 +866,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
 
     /** rb_check_array_type
     *
-    * Returns the ressult of trying to convert this object to an Array
+    * Returns the result of trying to convert this object to an Array
     * with "to_ary".
     */    
     public IRubyObject checkArrayType() {
@@ -1288,7 +1288,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * Will return the hash code of this object. In comparison to MRI,
      * this method will use the Java identity hash code instead of
      * using rb_obj_id, since the usage of id in JRuby will incur the
-     * cost of some. ObjectSpace maintainence.
+     * cost of some. ObjectSpace maintenance.
      */    
     @JRubyMethod(name = "hash")
     public RubyFixnum hash() {
@@ -1312,7 +1312,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     /** rb_obj_class
      *
      * Returns the real class of this object, excluding any
-     * singleton/meta class in the inheritence chain.
+     * singleton/meta class in the inheritance chain.
      */
     @JRubyMethod(name = "class")
     public RubyClass type() {
@@ -1332,7 +1332,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
 
     /** rb_obj_clone
      *
-     * This method should be overriden only by: Proc, Method,
+     * This method should be overridden only by: Proc, Method,
      * UnboundedMethod, Binding. It will use the defined allocated of
      * the object, then clone the singleton class, taint the object,
      * call initCopy and then copy frozen state.
@@ -1354,7 +1354,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
 
     /** rb_obj_dup
      *
-     * This method should be overriden only by: Proc
+     * This method should be overridden only by: Proc
      *
      * Will allocate a new instance of the real class of this object,
      * and then initialize that copy. It's different from {@link

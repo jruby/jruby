@@ -774,7 +774,7 @@ public final class Ruby {
         }
     }
 
-    // FIXME moved this hear to get what's obviously a utility method out of IRubyObject.
+    // FIXME moved this here to get what's obviously a utility method out of IRubyObject.
     // perhaps security methods should find their own centralized home at some point.
     public void checkSafeString(IRubyObject object) {
         if (getSafeLevel() > 0 && object.isTaint()) {
