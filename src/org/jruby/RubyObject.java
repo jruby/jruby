@@ -489,7 +489,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * practice, this is a simple version of Smalltalks Become, except
      * that it doesn't work when we're dealing with subclasses. In
      * practice it's used to change the singleton/meta class used,
-     * without changing the "real" inheritence chain.
+     * without changing the "real" inheritance chain.
      */
     public void setMetaClass(RubyClass metaClass) {
         this.metaClass = metaClass;
@@ -606,7 +606,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * RubyNil and RubyBoolean
      *
      * Will either return the existing singleton class for this
-     * object, or create a new one and rutning that.
+     * object, or create a new one and return that.
      */    
     public RubyClass getSingletonClass() {
         RubyClass klass;
