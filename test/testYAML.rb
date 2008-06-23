@@ -447,3 +447,38 @@ some:
     name: some
     age: 16 
 YAML
+
+
+# Test Scanner exception
+old_debug, $DEBUG = $DEBUG, true
+begin
+  YAML.load("!<abc")
+  test_ok false
+rescue Exception => e
+  test_ok e.to_s =~ /0:5\(5\)/
+ensure
+  $DEBUG = old_debug
+end
+
+# Test Parser exception
+old_debug, $DEBUG = $DEBUG, true
+begin
+  YAML.load("%YAML 2.0")
+  test_ok false
+rescue Exception => e
+  test_ok e.to_s =~ /0:0\(0\)/ && e.to_s =~ /0:9\(9\)/
+ensure
+  $DEBUG = old_debug
+end
+
+# Test Composer exception
+old_debug, $DEBUG = $DEBUG, true
+begin
+  YAML.load("*foobar")
+  test_ok false
+rescue Exception => e
+  test_ok e.to_s =~ /0:0\(0\)/ && e.to_s =~ /0:7\(7\)/
+ensure
+  $DEBUG = old_debug
+end
+

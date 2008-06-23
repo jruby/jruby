@@ -56,15 +56,21 @@ import org.jruby.util.IOOutputStream;
 import org.jvyamlb.Representer;
 import org.jvyamlb.Constructor;
 import org.jvyamlb.ParserImpl;
+import org.jvyamlb.PositioningParserImpl;
 import org.jvyamlb.Scanner;
 import org.jvyamlb.ScannerImpl;
 import org.jvyamlb.ComposerImpl;
+import org.jvyamlb.PositioningScannerImpl;
+import org.jvyamlb.PositioningComposerImpl;
 import org.jvyamlb.Serializer;
 import org.jvyamlb.ResolverImpl;
 import org.jvyamlb.EmitterImpl;
 import org.jvyamlb.exceptions.YAMLException;
 import org.jvyamlb.YAMLConfig;
 import org.jvyamlb.YAML;
+import org.jvyamlb.PositioningScanner;
+import org.jvyamlb.Positionable;
+import org.jvyamlb.Position;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -187,22 +193,31 @@ public class RubyYAML {
 
     @JRubyMethod(name = "load", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject load(IRubyObject self, IRubyObject arg) {
+        boolean debug = self.getRuntime().getDebug().isTrue();
         IRubyObject io = check_yaml_port(arg);
         Scanner scn = null;
         try {
             if(io instanceof RubyString) {
-                scn = new ScannerImpl(((RubyString)io).getByteList());
+                scn = debug ? new PositioningScannerImpl(((RubyString)io).getByteList()) : new ScannerImpl(((RubyString)io).getByteList());
             } else {
-                scn = new ScannerImpl(new IOInputStream(io));
+                scn = debug ? new PositioningScannerImpl(new IOInputStream(io)) : new ScannerImpl(new IOInputStream(io));
             }
-            Constructor ctor = new JRubyConstructor(self,new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()));
+            Constructor ctor = 
+                debug ?
+                new JRubyConstructor(self, new PositioningComposerImpl(new PositioningParserImpl((PositioningScanner)scn,YAML.config().version("1.0")),new ResolverImpl())) :
+                new JRubyConstructor(self, new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()))
+                ;
             if(ctor.checkData()) {
                 return JavaEmbedUtils.javaToRuby(self.getRuntime(),ctor.getData());
             }
             return self.getRuntime().getNil();
         } catch(YAMLException e) {
-            if(self.getRuntime().getDebug().isTrue()) e.printStackTrace();
-            throw self.getRuntime().newArgumentError(e.getMessage());
+            if(self.getRuntime().getDebug().isTrue()) {
+                Position.Range range = ((Positionable)e).getRange();
+                throw self.getRuntime().newArgumentError("syntax error on " + range.start + ":" + range.end + ": " + e.getMessage());
+            } else {
+                throw self.getRuntime().newArgumentError("syntax error:" + e.getMessage());
+            }
         }
     }
 
@@ -217,61 +232,84 @@ public class RubyYAML {
 
     @JRubyMethod(name = "each_document", required = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject each_document(IRubyObject self, IRubyObject arg, Block block) {
+        boolean debug = self.getRuntime().getDebug().isTrue();
         ThreadContext context = self.getRuntime().getCurrentContext();
         IRubyObject io = arg;
         Scanner scn = null;
         try {
             if(io instanceof RubyString) {
-                scn = new ScannerImpl(((RubyString)io).getByteList());
+                scn = debug ? new PositioningScannerImpl(((RubyString)io).getByteList()) : new ScannerImpl(((RubyString)io).getByteList());
             } else {
-                scn = new ScannerImpl(new IOInputStream(io));
+                scn = debug ? new PositioningScannerImpl(new IOInputStream(io)) : new ScannerImpl(new IOInputStream(io));
             }
-            Constructor ctor = new JRubyConstructor(self,new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()));
+            Constructor ctor = 
+                debug ?
+                new JRubyConstructor(self, new PositioningComposerImpl(new PositioningParserImpl((PositioningScanner)scn,YAML.config().version("1.0")),new ResolverImpl())) :
+                new JRubyConstructor(self, new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()))
+                ;
             while(ctor.checkData()) {
                 block.yield(context, JavaEmbedUtils.javaToRuby(self.getRuntime(),ctor.getData()));
             }
             return self.getRuntime().getNil();
         } catch(YAMLException e) {
-            if(self.getRuntime().getDebug().isTrue()) e.printStackTrace();
-            throw self.getRuntime().newArgumentError(e.getMessage());
+            if(self.getRuntime().getDebug().isTrue()) {
+                Position.Range range = ((Positionable)e).getRange();
+                throw self.getRuntime().newArgumentError("syntax error on " + range.start + ":" + range.end + ": " + e.getMessage());
+            } else {
+                throw self.getRuntime().newArgumentError("syntax error:" + e.getMessage());
+            }
         }
     }
 
     @JRubyMethod(name = "load_documents", required = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject load_documents(IRubyObject self, IRubyObject arg, Block block) {
+        boolean debug = self.getRuntime().getDebug().isTrue();
         ThreadContext context = self.getRuntime().getCurrentContext();
         IRubyObject io = check_yaml_port(arg);
         Scanner scn = null;
         try {
             if(io instanceof RubyString) {
-                scn = new ScannerImpl(((RubyString)io).getByteList());
+                scn = debug ? new PositioningScannerImpl(((RubyString)io).getByteList()) : new ScannerImpl(((RubyString)io).getByteList());
             } else {
-                scn = new ScannerImpl(new IOInputStream(io));
+                scn = debug ? new PositioningScannerImpl(new IOInputStream(io)) : new ScannerImpl(new IOInputStream(io));
             }
-            Constructor ctor = new JRubyConstructor(self,new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()));
+            Constructor ctor = 
+                debug ?
+                new JRubyConstructor(self, new PositioningComposerImpl(new PositioningParserImpl((PositioningScanner)scn,YAML.config().version("1.0")),new ResolverImpl())) :
+                new JRubyConstructor(self, new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()))
+                ;
             while(ctor.checkData()) {
                 block.yield(context, JavaEmbedUtils.javaToRuby(self.getRuntime(),ctor.getData()));
             }
             return self.getRuntime().getNil();
         } catch(YAMLException e) {
-            if(self.getRuntime().getDebug().isTrue()) e.printStackTrace();
-            throw self.getRuntime().newArgumentError(e.getMessage());
+            if(self.getRuntime().getDebug().isTrue()) {
+                Position.Range range = ((Positionable)e).getRange();
+                throw self.getRuntime().newArgumentError("syntax error on " + range.start + ":" + range.end + ": " + e.getMessage());
+            } else {
+                throw self.getRuntime().newArgumentError("syntax error:" + e.getMessage());
+            }
         }
     }
 
     @JRubyMethod(name = "load_stream", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject load_stream(IRubyObject self, IRubyObject arg) {
+        boolean debug = self.getRuntime().getDebug().isTrue();
         ThreadContext context = self.getRuntime().getCurrentContext();
         IRubyObject d = self.getRuntime().getNil();
         IRubyObject io = arg;
         Scanner scn = null;
         try {
             if(io instanceof RubyString) {
-                scn = new ScannerImpl(((RubyString)io).getByteList());
+                scn = debug ? new PositioningScannerImpl(((RubyString)io).getByteList()) : new ScannerImpl(((RubyString)io).getByteList());
             } else {
-                scn = new ScannerImpl(new IOInputStream(io));
+                scn = debug ? new PositioningScannerImpl(new IOInputStream(io)) : new ScannerImpl(new IOInputStream(io));
             }
-            Constructor ctor = new JRubyConstructor(self,new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()));
+            Constructor ctor = 
+                debug ?
+                new JRubyConstructor(self, new PositioningComposerImpl(new PositioningParserImpl((PositioningScanner)scn,YAML.config().version("1.0")),new ResolverImpl())) :
+                new JRubyConstructor(self, new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()))
+                ;
             while(ctor.checkData()) {
                 if(d.isNil()) {
                     d = self.getRuntime().fastGetModule("YAML").fastGetClass("Stream").callMethod(context,"new", d);
@@ -280,8 +318,12 @@ public class RubyYAML {
             }
             return d;
         } catch(YAMLException e) {
-            if(self.getRuntime().getDebug().isTrue()) e.printStackTrace();
-            throw self.getRuntime().newArgumentError(e.getMessage());
+            if(self.getRuntime().getDebug().isTrue()) {
+                Position.Range range = ((Positionable)e).getRange();
+                throw self.getRuntime().newArgumentError("syntax error on " + range.start + ":" + range.end + ": " + e.getMessage());
+            } else {
+                throw self.getRuntime().newArgumentError("syntax error:" + e.getMessage());
+            }
         }
     }
 
