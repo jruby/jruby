@@ -264,6 +264,7 @@ class TestBacktraces < Test::Unit::TestCase
       t = Thread.new do
         raise RuntimeError.new "DUMMY_MSG"
       end
+      sleep 3
       t.join
     }
 
