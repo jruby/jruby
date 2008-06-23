@@ -58,6 +58,7 @@ import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -753,10 +754,26 @@ public class RubyKernel {
         if (args.length == 3) {
             ((RubyException) exception).set_backtrace(args[2]);
         }
-        
+
+        if (runtime.getDebug().isTrue()) {
+            printExceptionSummary(context, runtime, (RubyException) exception);
+        }
+
         throw new RaiseException((RubyException) exception);
     }
-    
+
+    private static void printExceptionSummary(ThreadContext context, Ruby runtime, RubyException rEx) {
+        Frame currentFrame = context.getCurrentFrame();
+
+        String msg = String.format("Exception `%s' at %s:%s - %s\n",
+                rEx.getMetaClass(),
+                currentFrame.getFile(), currentFrame.getLine() + 1,
+                rEx.to_s());
+
+        IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
+        errorStream.callMethod(context, "write", runtime.newString(msg));
+    }
+
     /**
      * Require.
      * MRI allows to require ever .rb files or ruby extension dll (.so or .dll depending on system).

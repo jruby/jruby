@@ -300,6 +300,29 @@ class TestKernel < Test::Unit::TestCase
     end
   end
 
+  # JRUBY-2696
+  def test_raise_in_debug_mode
+    require 'stringio'
+    old_debug, $DEBUG = $DEBUG, true
+    $stderr = StringIO.new
+    raise StandardError rescue nil
+    assert_match(
+      /Exception `StandardError' at #{__FILE__}:#{__LINE__ - 2} - StandardError/,
+      $stderr.string
+    )
+
+    $stderr.reopen
+
+    raise RuntimeError.new("TEST_ME") rescue nil
+    assert_match(
+      /Exception `RuntimeError' at #{__FILE__}:#{__LINE__ - 2} - TEST_ME/,
+      $stderr.string
+    )
+  ensure
+    $DEBUG = old_debug
+    $stderr = STDERR
+  end
+
 #  rand
 #  readline
 #  readlines
