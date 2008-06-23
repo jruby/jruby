@@ -6,6 +6,7 @@ test_array
 test_array_subclass_behavior
 test_autoload
 test_backquote
+test_backtraces
 test_big_decimal
 test_bignum
 test_block

@@ -332,7 +332,7 @@ public class RubyThread extends RubyObject {
         return threadImpl.isAlive() ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
-    @JRubyMethod(name = "join", optional = 1)
+    @JRubyMethod(name = "join", optional = 1, backtrace = true)
     public IRubyObject join(IRubyObject[] args) {
         long timeoutMillis = Long.MAX_VALUE;
         if (args.length > 0) {
@@ -343,7 +343,7 @@ public class RubyThread extends RubyObject {
             // than or equal to zero returns immediately; returns nil
             timeoutMillis = (long)(1000.0D * args[0].convertToFloat().getValue());
             if (timeoutMillis <= 0) {
-	        // TODO: not sure that we should skip caling join() altogether.
+	        // TODO: not sure that we should skip calling join() altogether.
 		// Thread.join() has some implications for Java Memory Model, etc.
 	        if (threadImpl.isAlive()) {
 		   return getRuntime().getNil();
@@ -749,10 +749,10 @@ public class RubyThread extends RubyObject {
         if (runtime.getSystemExit().isInstance(rubyException)) {
             threadService.getMainThread().raise(new IRubyObject[] {rubyException}, Block.NULL_BLOCK);
         } else if (abortOnException(runtime)) {
-            // FIXME: printError explodes on some nullpointer
-            //getRuntime().getRuntime().printError(exception.getException());
+            runtime.printError(rubyException);
             RubyException systemExit = RubySystemExit.newInstance(runtime, 1);
             systemExit.message = rubyException.message;
+            systemExit.set_backtrace(rubyException.backtrace());
             threadService.getMainThread().raise(new IRubyObject[] {systemExit}, Block.NULL_BLOCK);
             return;
         } else if (runtime.getDebug().isTrue()) {
