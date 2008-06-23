@@ -33,4 +33,14 @@ class TestCommandLineSwitches < Test::Unit::TestCase
       assert_equal "nil", `#{RUBY} -s #{s.path} -v-a=123`.chomp
     end
   end
+
+  # JRUBY-2693
+  def test_dash_little_r_provides_prorgam_name_to_loaded_library
+    with_temp_script(%q{puts $0; puts $PROGRAM_NAME}) do |s|
+      assert_equal(
+        "#{s.path}\n#{s.path}\n#{s.path}\n#{s.path}\n",
+        jruby("-r#{s.path} #{s.path}")
+      )
+    end
+  end
 end

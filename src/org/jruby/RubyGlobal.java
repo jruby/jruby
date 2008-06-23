@@ -47,6 +47,7 @@ import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.GlobalVariable;
+import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ReadonlyGlobalVariable;
 import org.jruby.runtime.ThreadContext;
@@ -123,7 +124,12 @@ public class RubyGlobal {
         }
         runtime.defineGlobalConstant("ARGV", argvArray);
         runtime.getGlobalVariables().defineReadonly("$*", new ValueAccessor(argvArray));
-        
+
+        IAccessor d = new ValueAccessor(runtime.newString(
+                runtime.getInstanceConfig().displayedFileName()));
+        runtime.getGlobalVariables().define("$PROGRAM_NAME", d);
+        runtime.getGlobalVariables().define("$0", d);
+
         // Version information:
         IRubyObject version = runtime.newString(Constants.RUBY_VERSION).freeze();
         IRubyObject release = runtime.newString(Constants.COMPILE_DATE).freeze();
