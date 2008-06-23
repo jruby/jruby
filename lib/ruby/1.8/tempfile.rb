@@ -4,7 +4,6 @@
 # $Id$
 #
 
-require 'thread'
 require 'delegate'
 require 'tmpdir'
 
@@ -12,13 +11,17 @@ require 'tmpdir'
 # thread safe.
 class Tempfile < DelegateClass(File)
   MAX_TRY = 10
+  @@cleanlist = []
 
-  class FinalizerData < Struct.new :tmpname, :tmpfile, :mutex # :nodoc:
-  end
-
-  # Creates a temporary file of mode 0600 in the temporary directory
-  # whose name is basename.pid.n and opens with mode "w+".  A Tempfile
-  # object works just like a File object.
+  # Creates a temporary file of mode 0600 in the temporary directory,
+  # opens it with mode "w+", and returns a Tempfile object which
+  # represents the created temporary file.  A Tempfile object can be
+  # treated just like a normal File object.
+  #
+  # The basename parameter is used to determine the name of a
+  # temporary file.  If an Array is given, the first element is used
+  # as prefix string and the second as suffix string, respectively.
+  # Otherwise it is treated as prefix string.
   #
   # If tmpdir is omitted, the temporary directory is determined by
   # Dir::tmpdir provided by 'tmpdir.rb'.
@@ -29,60 +32,71 @@ class Tempfile < DelegateClass(File)
       tmpdir = '/tmp'
     end
 
-    failure = 0
+    lock = nil
+    n = failure = 0
+    
     begin
-      @tmpname = File.join(tmpdir, make_tmpname_secure(basename))
-      @tmpfile = File.open(@tmpname, File::RDWR|File::CREAT|File::EXCL, 0600)
-    rescue Exception => e
+      Thread.critical = true
+
+      begin
+	tmpname = File.join(tmpdir, make_tmpname(basename, n))
+	lock = tmpname + '.lock'
+	n += 1
+      end while @@cleanlist.include?(tmpname) or
+	File.exist?(lock) or File.exist?(tmpname)
+
+      Dir.mkdir(lock)
+    rescue
       failure += 1
       retry if failure < MAX_TRY
-      raise "cannot generate tempfile `%s': #{e.message}" % @tmpname
+      raise "cannot generate tempfile `%s'" % tmpname
+    ensure
+      Thread.critical = false
     end
 
-    @mutex = Mutex.new
-
-    @data = FinalizerData[@tmpname, @tmpfile, @mutex]
+    @data = [tmpname]
     @clean_proc = Tempfile.callback(@data)
     ObjectSpace.define_finalizer(self, @clean_proc)
+
+    @tmpfile = File.open(tmpname, File::RDWR|File::CREAT|File::EXCL, 0600)
+    @tmpname = tmpname
+    @@cleanlist << @tmpname
+    @data[1] = @tmpfile
+    @data[2] = @@cleanlist
 
     super(@tmpfile)
 
     # Now we have all the File/IO methods defined, you must not
     # carelessly put bare puts(), etc. after this.
-  end
 
-  @@sequence_number = 0
-  @@sequence_mutex = Mutex.new
-  def make_tmpname_secure(basename) #:nodoc:
-    begin
-      File.open("/dev/urandom", "rb") do |random|
-        basename = "#{random.read(16).unpack('H*')}_#{basename}"
-      end
-    rescue
-    end
-    sequence_number = @@sequence_mutex.synchronize { @@sequence_number += 1 }
-    make_tmpname(basename, sequence_number)
+    Dir.rmdir(lock)
   end
-  private :make_tmpname_secure
 
   def make_tmpname(basename, n)
-    "#{basename}.#{$$}.#{n}"
+    case basename
+    when Array
+      prefix, suffix = *basename
+    else
+      prefix, suffix = basename, ''
+    end
+ 
+    t = Time.now.strftime("%Y%m%d")
+    path = "#{prefix}#{t}-#{$$}-#{rand(0x100000000).to_s(36)}-#{n}#{suffix}"
   end
   private :make_tmpname
 
   # Opens or reopens the file with mode "r+".
   def open
-    @mutex.synchronize do
-      @tmpfile.close if @tmpfile
-      @tmpfile = File.open(@tmpname, 'r+')
-      @data.tmpfile = @tmpfile
-      __setobj__(@tmpfile)
-    end
+    @tmpfile.close if @tmpfile
+    @tmpfile = File.open(@tmpname, 'r+')
+    @data[1] = @tmpfile
+    __setobj__(@tmpfile)
   end
 
   def _close	# :nodoc:
     @tmpfile.close if @tmpfile
-    @data.tmpfile = @tmpfile = nil
+    @tmpfile = nil
+    @data[1] = nil if @data
   end    
   protected :_close
 
@@ -95,18 +109,16 @@ class Tempfile < DelegateClass(File)
     if unlink_now
       close!
     else
-      @mutex.synchronize { _close }
+      _close
     end
   end
 
   # Closes and unlinks the file.
   def close!
-    @mutex.synchronize do
-      _close
-      @data.mutex = nil # @clean_proc does not need to acquire the lock here
-      @clean_proc.call
-      ObjectSpace.undefine_finalizer(self)
-    end
+    _close
+    @clean_proc.call
+    ObjectSpace.undefine_finalizer(self)
+    @data = @tmpname = nil
   end
 
   # Unlinks the file.  On UNIX-like systems, it is often a good idea
@@ -114,36 +126,31 @@ class Tempfile < DelegateClass(File)
   # it, because it leaves other programs zero chance to access the
   # file.
   def unlink
-    @mutex.synchronize do
-      begin
-        begin
-          File.unlink(@tmpname)
-        rescue Errno::ENOENT
-        end
-        @data = @tmpname = nil
-        ObjectSpace.undefine_finalizer(self)
-      rescue Errno::EACCES
-        # may not be able to unlink on Windows; just ignore
-      end
+    # keep this order for thread safeness
+    begin
+      File.unlink(@tmpname) if File.exist?(@tmpname)
+      @@cleanlist.delete(@tmpname)
+      @data = @tmpname = nil
+      ObjectSpace.undefine_finalizer(self)
+    rescue Errno::EACCES
+      # may not be able to unlink on Windows; just ignore
     end
   end
   alias delete unlink
 
   # Returns the full path name of the temporary file.
   def path
-    @mutex.synchronize { @tmpname.dup }
+    @tmpname
   end
 
   # Returns the size of the temporary file.  As a side effect, the IO
   # buffer is flushed before determining the size.
   def size
-    @mutex.synchronize do
-      if @tmpfile
-        @tmpfile.flush
-        @tmpfile.stat.size
-      else
-        0
-      end
+    if @tmpfile
+      @tmpfile.flush
+      @tmpfile.stat.size
+    else
+      0
     end
   end
   alias length size
@@ -153,22 +160,17 @@ class Tempfile < DelegateClass(File)
       pid = $$
       lambda{
 	if pid == $$ 
-          data.mutex.lock if data.mutex
-          begin
-	    print "removing ", data.tmpname, "..." if $DEBUG
+	  path, tmpfile, cleanlist = *data
 
-	    data.tmpfile.close if data.tmpfile
+	  print "removing ", path, "..." if $DEBUG
 
-	    # keep this order for thread safeness
-	    begin
-	      File.unlink(data.tmpname)
-            rescue Errno::ENOENT, Errno::ENOTDIR, Errno::EISDIR
-            end
+	  tmpfile.close if tmpfile
 
-	    print "done\n" if $DEBUG
-          ensure
-            data.mutex.unlock if data.mutex
-          end
+	  # keep this order for thread safeness
+	  File.unlink(path) if File.exist?(path)
+	  cleanlist.delete(path) if cleanlist
+
+	  print "done\n" if $DEBUG
 	end
       }
     end
