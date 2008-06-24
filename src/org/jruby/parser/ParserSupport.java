@@ -702,7 +702,7 @@ public class ParserSupport {
             String label = String.valueOf("FLIP" + node.hashCode());
             currentScope.getLocalScope().addVariable(label);
             int slot = currentScope.isDefined(label);
-
+            
             return new FlipNode(node.getPosition(),
                     getFlipConditionNode(((DotNode) node).getBeginNode()),
                     getFlipConditionNode(((DotNode) node).getEndNode()),

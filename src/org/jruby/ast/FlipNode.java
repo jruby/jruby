@@ -135,7 +135,7 @@ public class FlipNode extends Node {
         if (nthParent != null) {
             nthParent.growIfNeeded();
         }
-
+        
         IRubyObject result = scope.getValue(index, depth);
    
         if (exclusive) {

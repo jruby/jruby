@@ -77,11 +77,9 @@ public abstract class StaticScope implements Serializable {
     // Whether this scope is used as the "argument scope" for e.g. zsuper
     private boolean isArgumentScope = false;
     
-    protected StaticScope(StaticScope enclosingScope) {
-        this.enclosingScope = enclosingScope;
-    }
-    
     protected StaticScope(StaticScope enclosingScope, String[] names) {
+        assert names != null : "names is not null";
+        
         this.enclosingScope = enclosingScope;
         this.variableNames = names;
         this.variableCaptured = new boolean[variableNames.length];
@@ -93,11 +91,7 @@ public abstract class StaticScope implements Serializable {
         if (slot >= 0) return slot;
             
         // This is perhaps innefficient timewise?  Optimal spacewise
-        if (variableNames == null) {
-            initVariableNames(name);
-        } else {
-            growVariableNames(name);
-        }
+        growVariableNames(name);
         
         // Returns slot of variable
         return variableNames.length - 1;
@@ -108,11 +102,11 @@ public abstract class StaticScope implements Serializable {
     }
     
     public int getNumberOfVariables() {
-        return variableNames == null ? 0 : variableNames.length;
+        return variableNames.length;
     }
     
     public void setVariables(String[] names) {
-        if (names == null) return;
+        assert names != null : "names is not null";
         
         variableNames = new String[names.length];
         System.arraycopy(names, 0, variableNames, 0, names.length);
@@ -139,11 +133,7 @@ public abstract class StaticScope implements Serializable {
      * @return index of variable or -1 if it does not exist
      */
     public int exists(String name) {
-        if (variableNames != null) {
-            return findVariableName(name);
-        }
-        
-        return -1;        
+        return findVariableName(name);
     }
     
     private int findVariableName(String name) {
@@ -324,9 +314,18 @@ public abstract class StaticScope implements Serializable {
         variableCaptured = newVariableCaptured;
     }
 
-    private void initVariableNames(String name) {
-        variableNames = new String[1];
-        variableCaptured = new boolean[1];
-        variableNames[0] = name;
+    @Override
+    public String toString() {
+        StringBuilder buf = new StringBuilder("[");
+            
+        for (int i = 0; i < variableNames.length - 1; i++) {
+            buf.append(variableNames[i]).append(", ");
+        }
+        if (variableNames.length > 0) {
+            buf.append(variableNames[variableNames.length - 1]);
+        }
+        buf.append("]");
+            
+        return buf.toString();
     }
 }

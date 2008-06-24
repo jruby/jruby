@@ -103,4 +103,9 @@ public class LocalStaticScope extends StaticScope {
         
         return new VCallNode(position, name);
     }
+    
+    @Override
+    public String toString() {
+        return "LocalScope: " + super.toString();
+    }
 }

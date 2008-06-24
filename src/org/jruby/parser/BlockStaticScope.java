@@ -107,4 +107,9 @@ public class BlockStaticScope extends StaticScope {
         
         return enclosingScope.declare(position, name, depth + 1);
     }
+    
+    @Override
+    public String toString() {
+        return "BlockScope: " + super.toString() + "\n" + getEnclosingScope();
+    }
 }
