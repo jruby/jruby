@@ -481,6 +481,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         runtime.callEventHooks(context, EventHook.RUBY_EVENT_CALL, position.getFile(), position.getStartLine(), name, getImplementationClass());
     }
 
+    @Override
     public Arity getArity() {
         return argsNode.getArity();
     }

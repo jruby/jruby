@@ -256,10 +256,6 @@ public abstract class StaticScope implements Serializable {
         return optionalArgs;
     }
 
-    public void setOptionalArgs(int optionalArgs) {
-        this.optionalArgs = optionalArgs;
-    }
-
     public int getRequiredArgs() {
         return requiredArgs;
     }

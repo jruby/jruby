@@ -1308,16 +1308,18 @@ public class RubyModule extends RubyObject {
         Block block = proc.getBlock();
         block.getBinding().getFrame().setKlazz(this);
         block.getBinding().getFrame().setName(name);
+        
+        StaticScope scope = block.getBody().getStaticScope();
 
         // for zsupers in define_method (blech!) we tell the proc scope to act as the "argument" scope
-        block.getBody().getStaticScope().setArgumentScope(true);
+        scope.setArgumentScope(true);
 
         Arity arity = block.arity();
         // just using required is broken...but no more broken than before zsuper refactoring
-        block.getBody().getStaticScope().setRequiredArgs(arity.required());
+        scope.setRequiredArgs(arity.required());
 
         if(!arity.isFixed()) {
-            block.getBody().getStaticScope().setRestArg(arity.required());
+            scope.setRestArg(arity.required());
         }
 
         return new ProcMethod(this, proc, visibility);
