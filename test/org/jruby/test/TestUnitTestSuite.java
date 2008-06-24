@@ -23,10 +23,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.jruby.Main;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;

@@ -28,7 +28,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import java.lang.reflect.Method;
 import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;

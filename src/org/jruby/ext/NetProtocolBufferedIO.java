@@ -33,8 +33,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SelectableChannel;
 
-import java.util.Map;
-
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -47,9 +45,7 @@ import org.jruby.RubyException;
 import org.jruby.RubyModule;
 import org.jruby.RubyClass;
 import org.jruby.RubyString;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.util.io.ChannelStream;
 import org.jruby.exceptions.RaiseException;
 

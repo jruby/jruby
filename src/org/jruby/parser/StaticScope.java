@@ -30,7 +30,6 @@ package org.jruby.parser;
 
 import java.io.Serializable;
 
-import java.util.Arrays;
 import org.jruby.RubyModule;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.Node;

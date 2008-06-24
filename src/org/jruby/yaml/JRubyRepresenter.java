@@ -38,8 +38,6 @@ import org.jruby.RubyModule;
 import org.jruby.RubyHash;
 import org.jruby.RubyArray;
 import org.jruby.RubyString;
-import org.jruby.internal.runtime.methods.JavaMethod;
-
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.javasupport.JavaEmbedUtils;

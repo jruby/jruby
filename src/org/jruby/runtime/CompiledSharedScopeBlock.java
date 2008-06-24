@@ -27,11 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.RubyArray;
 import org.jruby.RubyModule;
-import org.jruby.ast.util.ArgsUtil;
-import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**

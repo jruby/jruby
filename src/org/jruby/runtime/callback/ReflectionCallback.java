@@ -33,12 +33,10 @@ package org.jruby.runtime.callback;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import org.jruby.anno.JRubyMethod;
 
 import org.jruby.exceptions.JumpException;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.MainExitException;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;

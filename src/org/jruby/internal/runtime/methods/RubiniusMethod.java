@@ -41,7 +41,6 @@ import org.jruby.ast.executable.RubiniusMachine;
 import org.jruby.ast.executable.RubiniusCMethod;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.runtime.EventHook;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>

@@ -28,13 +28,12 @@
 package org.jruby.runtime.callback;
 
 import org.jruby.Ruby;
-import org.jruby.runtime.Arity;
+import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.MainExitException;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.ThreadKill;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.JumpException;
-import org.jruby.exceptions.ThreadKill;
-import org.jruby.exceptions.MainExitException;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>

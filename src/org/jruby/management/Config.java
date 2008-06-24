@@ -1,8 +1,7 @@
 package org.jruby.management;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+
 import org.jruby.Ruby;
 
 public class Config implements ConfigMBean {

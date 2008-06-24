@@ -1,7 +1,6 @@
 package org.jruby.runtime.scope;
 
 import org.jruby.RubyArray;
-import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.StaticScope;

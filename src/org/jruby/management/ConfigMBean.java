@@ -1,8 +1,5 @@
 package org.jruby.management;
 
-import java.util.List;
-import java.util.Map;
-
 public interface ConfigMBean {
     public String getVersionString();
     public String getCopyrightString();

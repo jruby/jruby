@@ -68,7 +68,6 @@ import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.util.IdUtil;
 import org.jruby.util.ShellLauncher;
-import org.jruby.util.Sprintf;
 import org.jruby.util.TypeConverter;
 
 /**

@@ -28,7 +28,6 @@
 package org.jruby.internal.runtime;
 
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 public interface ThreadLike {
     public void start();

@@ -30,7 +30,6 @@ package org.jruby.internal.runtime.methods;
 import java.io.File;
 import java.io.FileOutputStream;
 
-import org.jruby.Ruby;
 import org.objectweb.asm.ClassWriter;
 
 /**

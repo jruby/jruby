@@ -30,11 +30,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.RubyModule;
-import org.jruby.RubyProc;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.WeakIdentityHashMap;
-
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -42,6 +37,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import org.jruby.RubyModule;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.WeakIdentityHashMap;
 
 /**
  * FIXME: This version is faster than the previous, but both suffer from a

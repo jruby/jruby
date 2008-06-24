@@ -33,7 +33,6 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyModule;
-import org.jruby.parser.BlockStaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**

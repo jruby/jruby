@@ -40,14 +40,11 @@ import java.util.regex.Pattern;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
-import org.jruby.RubyString;
-import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.NormalizedFile;
 import org.jruby.anno.JRubyModule;
-import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyModule(name="Config")
 public class RbConfigLibrary implements Library {

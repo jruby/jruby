@@ -31,8 +31,6 @@
 package org.jruby.runtime;
 
 import java.io.Serializable;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.Ruby;

@@ -31,7 +31,6 @@ import java.io.OutputStream;
 import java.io.IOException;
 import org.jruby.RubyString;
 import org.jruby.runtime.CallSite;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.MethodIndex;
 

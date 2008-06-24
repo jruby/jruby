@@ -28,7 +28,6 @@ package org.jruby.util;
 
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class TypeConverter {

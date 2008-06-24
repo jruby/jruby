@@ -30,7 +30,6 @@
 package org.jruby.ast;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;

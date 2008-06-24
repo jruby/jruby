@@ -1,7 +1,6 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyClass;
-import org.jruby.RubyModule;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
 

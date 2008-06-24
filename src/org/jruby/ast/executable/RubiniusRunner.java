@@ -28,7 +28,6 @@
 package org.jruby.ast.executable;
 
 import java.io.InputStream;
-import java.io.Reader;
 import java.io.IOException;
 
 import java.util.Map;
@@ -42,7 +41,6 @@ import org.jruby.parser.LocalStaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.lexer.yacc.SimpleSourcePosition;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
