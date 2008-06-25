@@ -2210,7 +2210,7 @@ public final class Ruby {
         while (!atExitBlocks.empty()) {
             RubyProc proc = atExitBlocks.pop();
 
-            proc.call(proc.getRuntime().getCurrentContext(), IRubyObject.NULL_ARRAY);
+            proc.call(getCurrentContext(), IRubyObject.NULL_ARRAY);
         }
         if (finalizers != null) {
             synchronized (finalizers) {
