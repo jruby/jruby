@@ -189,7 +189,7 @@ public class LoadService {
         if (path == null || path.length() == 0) return;
         
         synchronized(loadPath) {
-            loadPath.add(runtime.newString(path.replace('\\', '/')));
+            loadPath.append(runtime.newString(path.replace('\\', '/')));
         }
     }
 

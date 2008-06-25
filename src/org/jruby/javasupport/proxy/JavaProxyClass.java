@@ -644,7 +644,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                         for (String methodName: methods.keySet()) {
                             if (!EXCLUDE_METHODS.contains(methodName)) {
                                 names.add(methodName);
-                                methodNames.add(runtime.newString(methodName));
+                                methodNames.append(runtime.newString(methodName));
                             }
                         }
                     }

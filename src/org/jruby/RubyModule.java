@@ -2081,7 +2081,7 @@ public class RubyModule extends RubyObject {
         RubyArray ary = runtime.newArray();
 
         for (String name : names) {
-            ary.add(runtime.newString(name));
+            ary.append(runtime.newString(name));
         }
 
         return ary;
@@ -2175,13 +2175,13 @@ public class RubyModule extends RubyObject {
         if (getRuntime().getModule() == this) {
 
             for (String name : objectClass.getStoredConstantNameList()) {
-                array.add(runtime.newString(name));
+                array.append(runtime.newString(name));
             }
 
         } else if (objectClass == this) {
 
             for (String name : getStoredConstantNameList()) {
-                array.add(runtime.newString(name));
+                array.append(runtime.newString(name));
             }
 
         } else {
@@ -2194,7 +2194,7 @@ public class RubyModule extends RubyObject {
                 }
             }
             for (String name : names) {
-                array.add(runtime.newString(name));
+                array.append(runtime.newString(name));
             }
         }
 

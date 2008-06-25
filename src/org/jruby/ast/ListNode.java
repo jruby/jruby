@@ -42,7 +42,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * the editor projects who want position info saved.
  */
 public class ListNode extends Node {
-    private List<Node> list;
+    static final Node[] EMPTY = new Node[0];
+    protected Node[] list;
 
     /**
      * Create a new ListNode.
@@ -53,25 +54,37 @@ public class ListNode extends Node {
     public ListNode(ISourcePosition position, NodeType id, Node firstNode) {
         this(position, id);
         
-        list = new ArrayList<Node>(4);
-        list.add(firstNode);
+        list = new Node[1];
+        list[0] = firstNode;
     }
     
     public ListNode(ISourcePosition position, NodeType id) {
         super(position, id);
         
-        list = new ArrayList<Node>(0);
+        list = EMPTY;
     }
 
     public ListNode(ISourcePosition position) {
         this(position, NodeType.LISTNODE);
+    }
+
+    private int grow(int amount) {
+        int oldSize = list.length;
+        Node newList[] = new Node[oldSize + amount];
+
+        System.arraycopy(list, 0, newList, 0, oldSize);
+
+        list = newList;
+        
+        return oldSize;
     }
     
     public ListNode add(Node node) {
         // Ruby Grammar productions return plenty of nulls.
         if (node == null) return this;
 
-        list.add(node);
+        grow(1);
+        list[list.length - 1] = node;
 
         if (getPosition() == null) {
             setPosition(node.getPosition());
@@ -85,15 +98,20 @@ public class ListNode extends Node {
     public ListNode prepend(Node node) {
         // Ruby Grammar productions return plenty of nulls.
         if (node == null) return this;
-        
-        list.add(0, node);
+
+        Node newList[] = new Node[list.length + 1];
+
+        System.arraycopy(list, 0, newList, 1, list.length);
+
+        list = newList;
+        list[0] = node;
         
         setPosition(getPosition().union(node.getPosition()));
         return this;
     }
     
     public int size() {
-        return list.size();
+        return list.length;
     }
     
     
@@ -105,7 +123,9 @@ public class ListNode extends Node {
      */
     public ListNode addAll(ListNode other) {
         if (other != null && other.size() > 0) {
-            list.addAll(other.list);
+            int oldSize = grow(other.size());
+            
+            System.arraycopy(other.list, 0, list, oldSize, other.size());
             
             setPosition(getPosition().union(getLast().getPosition()));
         }
@@ -123,15 +143,17 @@ public class ListNode extends Node {
     }
     
     public Node getLast() {
-    	return list.size() == 0 ? null : list.get(list.size() - 1);
+    	return list.length == 0 ? null : list[list.length - 1];
     }
     
+    @Override
     public String toString() {
         String string = super.toString();
     	StringBuilder b = new StringBuilder();
-    	for (int i = 0; i < list.size(); i++) {
-    		b.append(list.get(i));
-            if (i + 1 < list.size()) {
+
+    	for (int i = 0; i < list.length; i++) {
+    		b.append(list[i]);
+            if (i + 1 < list.length) {
                 b.append(", ");
             }
     	}
@@ -139,14 +161,19 @@ public class ListNode extends Node {
     }
     
     public List<Node> childNodes() {
-        return list;
+        List<Node> aList = new ArrayList<Node>();
+        
+        for (int i = 0; i < list.length; i++) {
+            aList.add(list[i]);
+        }
+        return aList;
     }
     
     public Instruction accept(NodeVisitor visitor) {
         throw new RuntimeException("Base class ListNode should never be evaluated");
     }
     
-    public Node get(int idx) {
-        return list.get(idx);
+    public Node get(int index) {
+        return list[index];
     }
 }
