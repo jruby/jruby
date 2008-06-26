@@ -24,4 +24,16 @@ module Gem
     @ruby
   end
 
+  ##
+  # Is this a windows platform?
+  #
+  # JRuby: Look in CONFIG['host_os'] as well.
+  def self.win_platform?
+    if @@win_platform.nil? then
+      @@win_platform = !!WIN_PATTERNS.find { |r| RUBY_PLATFORM =~ r || Config::CONFIG["host_os"] =~ r }
+    end
+
+    @@win_platform
+  end
+
 end
