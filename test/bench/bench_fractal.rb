@@ -42,7 +42,7 @@ class Mandelbrot
 
 end
 
-5.times {
+(ARGV[0] || 1).to_i.times {
 time = Time.now
 Mandelbrot.new
 puts
