@@ -2,7 +2,7 @@ module Gem
 
   # An Array of the default sources that come with RubyGems.
   def self.default_sources
-    %w[http://gems.rubyforge.org]
+    %w[http://gems.rubyforge.org/]
   end
 
   # Default home directory path to be used if an alternate value is not
@@ -11,9 +11,9 @@ module Gem
     if defined? RUBY_FRAMEWORK_VERSION then
       File.join File.dirname(ConfigMap[:sitedir]), 'Gems',
                 ConfigMap[:ruby_version]
-    #elsif defined? RUBY_ENGINE then
-    #  File.join ConfigMap[:libdir], RUBY_ENGINE, 'gems',
-    #            ConfigMap[:ruby_version]
+    elsif defined? RUBY_ENGINE then
+      File.join ConfigMap[:libdir], RUBY_ENGINE, 'gems',
+                ConfigMap[:ruby_version]
     else
       File.join ConfigMap[:libdir], 'ruby', 'gems', ConfigMap[:ruby_version]
     end

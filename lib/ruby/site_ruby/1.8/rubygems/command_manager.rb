@@ -16,7 +16,7 @@ module Gem
   class CommandManager
     include UserInteraction
     
-    # Return the authoratative instance of the command manager.
+    # Return the authoritative instance of the command manager.
     def self.instance
       @command_manager ||= CommandManager.new
     end
@@ -46,6 +46,7 @@ module Gem
       register_command :server
       register_command :sources
       register_command :specification
+      register_command :stale
       register_command :uninstall
       register_command :unpack
       register_command :update
@@ -69,7 +70,7 @@ module Gem
       @commands.keys.collect {|key| key.to_s}.sort
     end
     
-    # Run the config specificed by +args+.
+    # Run the config specified by +args+.
     def run(args)
       process_args(args)
     rescue StandardError, Timeout::Error => ex
