@@ -199,10 +199,11 @@ public class RubyGlobal {
         runtime.defineVariable(new InputGlobalVariable(runtime, "$stdin", stdin));
 
         runtime.defineVariable(new OutputGlobalVariable(runtime, "$stdout", stdout));
+        runtime.getGlobalVariables().alias("$>", "$stdout");
+        runtime.getGlobalVariables().alias("$defout", "$stdout");
+
         runtime.defineVariable(new OutputGlobalVariable(runtime, "$stderr", stderr));
-        runtime.defineVariable(new OutputGlobalVariable(runtime, "$>", stdout));
-        runtime.defineVariable(new OutputGlobalVariable(runtime, "$defout", stdout));
-        runtime.defineVariable(new OutputGlobalVariable(runtime, "$deferr", stderr));
+        runtime.getGlobalVariables().alias("$deferr", "$stderr");
 
         runtime.defineGlobalConstant("STDIN", stdin);
         runtime.defineGlobalConstant("STDOUT", stdout);
@@ -557,24 +558,16 @@ public class RubyGlobal {
                 // we set anything assigned to stdout/stderr to sync
                 io.getHandler().setSync(true);
             }
-            if (! value.respondsTo("write")) {
+
+            if (!value.respondsTo("write")) {
                 throw runtime.newTypeError(name() + " must have write method, " +
                                     value.getType().getName() + " given");
-            }
-            
-            if ("$stderr".equals(name())) {
-                runtime.defineVariable(new OutputGlobalVariable(runtime, "$deferr", value));
-            }
-            
-            if ("$stdout".equals(name())) {
-                runtime.defineVariable(new OutputGlobalVariable(runtime, "$defout", value));
-                runtime.defineVariable(new OutputGlobalVariable(runtime, "$>", value));
             }
 
             return super.set(value);
         }
     }
-    
+
     private static class LoadPath extends ReadonlyGlobalVariable {
         public LoadPath(Ruby runtime, String name) {
             super(runtime, name, null);
