@@ -1326,24 +1326,10 @@ public class RubyIO extends RubyObject {
         callMethod(context, "write", RubyKernel.sprintf(this, args));
         return getRuntime().getNil();
     }
-    
-    @JRubyMethod(name = "putc", required = 1)
+
+    @JRubyMethod(name = "putc", required = 1, backtrace = true)
     public IRubyObject putc(ThreadContext context, IRubyObject object) {
-        int c;
-        
-        if (getRuntime().getString().isInstance(object)) {
-            String value = ((RubyString) object).toString();
-            
-            if (value.length() > 0) {
-                c = value.charAt(0);
-            } else {
-                throw getRuntime().newTypeError("Cannot convert String to Integer");
-            }
-        } else if (getRuntime().getFixnum().isInstance(object)){
-            c = RubyNumeric.fix2int(object);
-        } else { // What case will this work for?
-            c = RubyNumeric.fix2int(object.callMethod(context, MethodIndex.TO_I, "to_i"));
-        }
+        int c = RubyNumeric.num2chr(object);
 
         try {
             getOpenFileChecked().getMainStream().fputc(c);
@@ -1352,10 +1338,10 @@ public class RubyIO extends RubyObject {
         } catch (IOException e) {
             return RubyFixnum.zero(getRuntime());
         }
-        
+
         return object;
     }
-    
+
     // This was a getOpt with one mandatory arg, but it did not work
     // so I am parsing it for now.
     @JRubyMethod(name = "seek", required = 1, optional = 1)
