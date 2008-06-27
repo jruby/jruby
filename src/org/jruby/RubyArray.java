@@ -1571,6 +1571,10 @@ public class RubyArray extends RubyObject implements List {
             isShared = true;
         } else if (values.length > ARRAY_DEFAULT_SIZE << 1){
             alloc(ARRAY_DEFAULT_SIZE << 1);
+        } else {
+            for (int i = 0; i < realLength; i++) {
+                values[begin + i] = null;
+            }
         }
 
         begin = 0;
@@ -1800,7 +1804,7 @@ public class RubyArray extends RubyObject implements List {
             if (i1 != i2) store(i2, e);
             i2++;
         }
-        
+
         if (realLength == i2) {
             if (block.isGiven()) return block.yield(context, item);
 
@@ -1810,6 +1814,9 @@ public class RubyArray extends RubyObject implements List {
         modify();
 
         if (realLength > i2) {
+            for (int i = i2; i < realLength; i++) {
+                values[begin + i] = null;
+            }
             realLength = i2;
             if (i2 << 1 < values.length && values.length > ARRAY_DEFAULT_SIZE) realloc(i2 << 1);
         }
@@ -1834,6 +1841,7 @@ public class RubyArray extends RubyObject implements List {
         System.arraycopy(values, pos + 1, values, pos, len - (pos + 1));
 
         realLength--;
+        values[realLength] = null;
 
         return obj;
     }
@@ -1873,7 +1881,12 @@ public class RubyArray extends RubyObject implements List {
         }
         if (realLength == i2) return getRuntime().getNil();
 
-        if (i2 < realLength) realLength = i2;
+        if (i2 < realLength) {
+            for (int i = i2; i < realLength; i++) {
+                values[i] = null;
+            }
+            realLength = i2;
+        }
 
         return this;
     }
