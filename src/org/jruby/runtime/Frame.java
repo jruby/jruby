@@ -37,33 +37,38 @@ import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * <p>Frame for a full (read: not 'fast') Ruby method invocation.  Any Ruby method which calls 
- * another Ruby method (or yields to a block) will get a Frame.  A fast method by contrast does 
- * not get a Frame because we know that we will not be calling/yielding.</p>  
- * 
- * A Frame is also needed for a few special cases:
+ * A Frame holds per-call information that needs to persist outside the
+ * execution of a given method. Currently a frame holds the following:
  * <ul>
- * <li>Proc.new must check previous frame to get the block it is getting constructed for
- * <li>block_given? must check the previous frame to see if a block is active
- * </li>
+ * <li>The class against which this method is being invoked. This is usually
+ * (always?) the class of "self" within this call.</li>
+ * <li>The current "self" for the call.</li>
+ * <li>The name of the method being invoked during this frame, used for
+ * backtraces and "super" invocations.</li>
+ * <li>The block passed to this invocation. If the given code body can't
+ * accept a block, it will be Block.NULL_BLOCK.</li>
+ * <li>Whether this is the frame used for a binding-related call like eval. This
+ * is used to determine where to terminate evaled code's backtrace.</li>
+ * <li>The current visibility for methods defined during this call. Starts out
+ * as PUBLIC by default (in most cases) and can be modified by appropriate
+ * Kernel.public/private/protected calls.</li>
+ * <li>The jump target marker for non-local returns.</li>
+ * </ul>
+ * Frames are allocated for all Ruby methods (in compatibility mode, default)
+ * and for some core methods. In general, a frame is required for a method to
+ * show up in a backtrace, and so some methods only use frame for backtrace
+ * information (so-called "backtrace frames").
  * 
+ * @see ThreadContext
  */
 public final class Frame implements JumpTarget {
-    /**
-     * The class for the method we are invoking for this frame.  Note: This may not be the
-     * class where the implementation of the method lives.
-     */
+    /** The class against which this call is executing. */
     private RubyModule klazz;
     
-    /**
-     * The 'self' for this frame.
-     */
+    /** The 'self' for this frame. */
     private IRubyObject self;
     
-    /**
-     * The name of the method being invoked in this frame.  Note: Blocks are backed by frames
-     * and do not have a name.
-     */
+    /** The name of the method being invoked in this frame. */
     private String name;
 
     /**
@@ -74,46 +79,68 @@ public final class Frame implements JumpTarget {
      */ 
     private Block block;
     
-    /**
-     * Does this delimit a frame where an eval with binding occurred.  Used for stack traces.
-     */
+    /** Delimit a frame where an eval with binding occurred.  Used for stack traces. */
     private boolean isBindingFrame = false;
 
-    /**
-     * The current visibility for anything defined under this frame
-     */
+    /** The current visibility for anything defined under this frame */
     private Visibility visibility = Visibility.PUBLIC;
     
+    /** The target for non-local jumps, like return from a block */
     private JumpTarget jumpTarget;
     
+    /** A tuple representing the $_ and $~ values for this frame */
     private static class BackrefAndLastline {
         public IRubyObject backref;
         public IRubyObject lastline;
     }
     
+    /** The current backref/lastline tuple for this frame */
     private BackrefAndLastline backrefAndLastline;
-
-    public JumpTarget getJumpTarget() {
-        return jumpTarget;
-    }
-
-    public void setJumpTarget(JumpTarget jumpTarget) {
-        this.jumpTarget = jumpTarget;
-    }
     
+    /** The filename where the calling method is located */
+    private String fileName;
+    
+    /** The line number in the calling method where this call is made */
+    private int line;
+    
+    /**
+     * Empty constructor, since Frame objects are pre-allocated and updated
+     * when needed.
+     */
     public Frame() {
     }
-    /**
-     * The location in source where this block/method invocation is happening
-     */
-    
-    private String fileName;
-    private int line;
 
+    /**
+     * Update the frame with just filename and line, used for top-level frames
+     * and method.
+     * 
+     * @param fileName The file where the calling method is located
+     * @param line The line number in the calling method where the call is made
+     */
     public void updateFrame(String fileName, int line) {
         updateFrame(null, null, null, Block.NULL_BLOCK, fileName, line, null); 
     }
 
+    /**
+     * Update the frame with caller information and method name, so it will
+     * show up correctly in call stacks.
+     * 
+     * @param name The name of the method being called
+     * @param fileName The file of the calling method
+     * @param line The line number of the call to this method
+     */
+    public void updateFrame(String name, String fileName, int line) {
+        this.name = name;
+        this.fileName = fileName;
+        this.line = line;
+    }
+
+    /**
+     * Update the frame based on information from another frame. Used for
+     * cloning frames (for blocks, usually) and when entering class bodies.
+     * 
+     * @param frame The frame whose data to duplicate in this frame
+     */
     public void updateFrame(Frame frame) {
         assert frame.block != null : "Block uses null object pattern.  It should NEVER be null";
 
@@ -133,6 +160,17 @@ public final class Frame implements JumpTarget {
         this.backrefAndLastline = frame.backrefAndLastline;
     }
 
+    /**
+     * Update the frame based on the given values.
+     * 
+     * @param klazz The class against which the method is being called
+     * @param self The 'self' for the method
+     * @param name The name under which the method is being invoked
+     * @param block The block passed to the method
+     * @param fileName The filename of the calling method
+     * @param line The line number where the call is being made
+     * @param jumpTarget The target for non-local jumps (return in block)
+     */
     public void updateFrame(RubyModule klazz, IRubyObject self, String name,
                  Block block, String fileName, int line, JumpTarget jumpTarget) {
         assert block != null : "Block uses null object pattern.  It should NEVER be null";
@@ -149,6 +187,10 @@ public final class Frame implements JumpTarget {
         this.backrefAndLastline = null;
     }
 
+    /**
+     * Clear the frame, as when the call completes. Clearing prevents cached
+     * frames from holding references after the call is done.
+     */
     public void clear() {
         this.self = null;
         this.klazz = null;
@@ -156,13 +198,12 @@ public final class Frame implements JumpTarget {
         this.jumpTarget = null;
         this.backrefAndLastline = null;
     }
-
-    public void updateFrame(String name, String fileName, int line) {
-        this.name = name;
-        this.fileName = fileName;
-        this.line = line;
-    }
     
+    /**
+     * Clone this frame.
+     * 
+     * @return A new frame with duplicate information to the target frame
+     */
     public Frame duplicate() {
         Frame newFrame = new Frame();
         
@@ -171,6 +212,29 @@ public final class Frame implements JumpTarget {
         return newFrame;
     }
 
+    /**
+     * Get the jump target for non-local returns in this frame.
+     * 
+     * @return The jump target for non-local returns
+     */
+    public JumpTarget getJumpTarget() {
+        return jumpTarget;
+    }
+
+    /**
+     * Set the jump target for non-local returns in this frame.
+     * 
+     * @param jumpTarget The new jump target for non-local returns
+     */
+    public void setJumpTarget(JumpTarget jumpTarget) {
+        this.jumpTarget = jumpTarget;
+    }
+
+    /**
+     * Get the backref for this frame.
+     * 
+     * @return The backref for this frame
+     */
     public IRubyObject getBackRef() {
         if (hasBackref()) {
             return self.getRuntime().getNil();
@@ -178,15 +242,31 @@ public final class Frame implements JumpTarget {
         return backrefAndLastline.backref;
     }
     
-    public boolean hasBackref() {
+    /**
+     * Whether a backref has been set for this frame.
+     * 
+     * @return True if a backref has been set; false otherwise
+     */
+    private boolean hasBackref() {
         return backrefAndLastline == null || backrefAndLastline.backref == null;
     }
 
+    /**
+     * Set the backref for this frame.
+     * 
+     * @param backref The new backref for this frame
+     * @return The passed-in backref value
+     */
     public IRubyObject setBackRef(IRubyObject backref) {
         lazyBackrefAndLastline();
         return this.backrefAndLastline.backref = backref;
     }
 
+    /**
+     * Get the lastline for this frame.
+     * 
+     * @return The lastline for this frame.
+     */
     public IRubyObject getLastLine() {
         if (hasLastline()) {
             return self.getRuntime().getNil();
@@ -194,47 +274,78 @@ public final class Frame implements JumpTarget {
         return backrefAndLastline.lastline;
     }
     
-    public boolean hasLastline() {
+    /**
+     * Whether a lastline has been set for this frame.
+     * 
+     * @return True if a lastline has been set; false otherwise
+     */
+    private boolean hasLastline() {
         return backrefAndLastline == null || backrefAndLastline.lastline == null;
     }
 
+    /**
+     * Set the lastline for this frame.
+     * 
+     * @param lastline The new lastline for this frame
+     * @return The passed-in lastline value
+     */
     public IRubyObject setLastLine(IRubyObject lastline) {
         lazyBackrefAndLastline();
         return this.backrefAndLastline.lastline = lastline;
     }
     
+    /**
+     * Initialize the backref/lastline tuple.
+     */
     private void lazyBackrefAndLastline() {
          if (backrefAndLastline == null) backrefAndLastline = new BackrefAndLastline();
     }
 
+    /**
+     * Get the filename of the caller.
+     * 
+     * @return The filename of the caller
+     */
     public String getFile() {
         return fileName;
     }
-    
-    public int getLine() {
-        return line;
-    }
 
+    /**
+     * Set the filename of the caller.
+     * @param fileName
+     */
     public void setFile(String fileName) {
         this.fileName = fileName;
     }
     
+    /**
+     * Get the line number where this call is being made.
+     * 
+     * @return The line number where this call is being made
+     */
+    public int getLine() {
+        return line;
+    }
+    
+    /**
+     * Set the line number where this call is being made
+     * @param line The new line number where this call is being made
+     */
     public void setLine(int line) {
         this.line = line;
     }
 
     /** 
-     * Return class that we are supposedly calling for this invocation
+     * Return class that we are calling against
      * 
-     * @return the current class
+     * @return The class we are calling against
      */
     public RubyModule getKlazz() {
         return klazz;
     }
 
     /**
-     * Set class that this method is supposedly calling on.  Note: This is different than
-     * a native method's implementation class.
+     * Set the class we are calling against.
      * 
      * @param klazz the new class
      */
@@ -263,7 +374,7 @@ public final class Frame implements JumpTarget {
     /**
      * Get the self associated with this frame
      * 
-     * @return the self
+     * @return The self for the frame
      */
     IRubyObject getSelf() {
         return self;
@@ -272,7 +383,7 @@ public final class Frame implements JumpTarget {
     /** 
      * Set the self associated with this frame
      * 
-     * @param self is the new value of self
+     * @param self The new value of self
      */
     public void setSelf(IRubyObject self) {
         this.self = self;
@@ -281,7 +392,7 @@ public final class Frame implements JumpTarget {
     /**
      * Get the visibility at the time of this frame
      * 
-     * @return the visibility
+     * @return The visibility
      */
     public Visibility getVisibility() {
         return visibility;
@@ -290,7 +401,7 @@ public final class Frame implements JumpTarget {
     /**
      * Change the visibility associated with this frame
      * 
-     * @param visibility the new visibility
+     * @param visibility The new visibility
      */
     public void setVisibility(Visibility visibility) {
         this.visibility = visibility;
@@ -299,7 +410,7 @@ public final class Frame implements JumpTarget {
     /**
      * Is this frame the frame which started a binding eval?
      * 
-     * @return true if it is a binding frame
+     * @return Whether this is a binding frame
      */
     public boolean isBindingFrame() {
         return isBindingFrame;
@@ -308,16 +419,16 @@ public final class Frame implements JumpTarget {
     /**
      * Set whether this is a binding frame or not
      * 
-     * @param isBindingFrame true if it is
+     * @param isBindingFrame Whether this is a binding frame
      */
     public void setIsBindingFrame(boolean isBindingFrame) {
         this.isBindingFrame = isBindingFrame;
     }
     
     /**
-     * What block is associated with this frame?
+     * Retrieve the block associated with this frame.
      * 
-     * @return the block of this frame or NULL_BLOCK if no block given
+     * @return The block of this frame or NULL_BLOCK if no block given
      */
     public Block getBlock() {
         return block;
