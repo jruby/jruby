@@ -149,6 +149,14 @@ public final class Frame implements JumpTarget {
         this.backrefAndLastline = null;
     }
 
+    public void clear() {
+        this.self = null;
+        this.klazz = null;
+        this.block = null;
+        this.jumpTarget = null;
+        this.backrefAndLastline = null;
+    }
+
     public void updateFrame(String name, String fileName, int line) {
         this.name = name;
         this.fileName = fileName;

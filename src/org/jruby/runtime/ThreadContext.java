@@ -352,6 +352,8 @@ public final class ThreadContext {
         frameIndex--;
         setFile(frame.getFile());
         setLine(frame.getLine());
+        
+        frame.clear();
     }
         
     private void popFrameReal(Frame oldFrame) {
