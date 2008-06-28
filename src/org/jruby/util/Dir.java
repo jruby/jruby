@@ -585,7 +585,7 @@ public class Dir {
                 } catch(Exception e) {}
             } else if ((end - begin) > 0) { // Length check is a hack.  We should not be reeiving "" as a filename ever. 
                 if (new File(cwd, newStringFromUTF8(bytes, begin, end - begin)).exists()) {
-                    status = func.call(bytes, begin, end, arg);
+                    status = func.call(bytes, begin, end - begin, arg);
                 }
             }
 

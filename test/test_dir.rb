@@ -89,6 +89,10 @@ class TestDir < Test::Unit::TestCase
     Dir['.','.','.','.']
   end
 
+  def test_glob_on_shared_string
+    Dir["blahtest/test_argf.rb"[4..-1]]
+  end
+
   # http://jira.codehaus.org/browse/JRUBY-300
   def test_chdir_and_pwd
     java_test_classes = File.expand_path(File.dirname(__FILE__) + '/../build/classes/test')
