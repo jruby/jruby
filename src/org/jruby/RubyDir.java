@@ -157,7 +157,7 @@ public class RubyDir extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "[]", required = 1, optional = 1, meta = true)
+    @JRubyMethod(name = "[]", required = 1, rest=true, meta = true)
     public static IRubyObject aref(IRubyObject recv, IRubyObject[] args) {
         List<ByteList> dirs;
         if (args.length == 1) {

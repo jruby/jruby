@@ -84,6 +84,11 @@ class TestDir < Test::Unit::TestCase
     Dir['.']
   end
 
+  # JRUBY-2717
+  def test_more_than_two_arguments_to_aref_does_not_throw_exception
+    Dir['.','.','.','.']
+  end
+
   # http://jira.codehaus.org/browse/JRUBY-300
   def test_chdir_and_pwd
     java_test_classes = File.expand_path(File.dirname(__FILE__) + '/../build/classes/test')
