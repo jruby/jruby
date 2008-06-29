@@ -1,4 +1,4 @@
-require 'duby/typer2'
+require 'duby/typer'
 
 module Duby
   module Typer
