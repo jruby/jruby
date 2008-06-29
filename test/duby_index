@@ -1,3 +1,4 @@
 compiler/duby/test_compilation
 compiler/duby/test_ast
 compiler/duby/test_typer
+compiler/duby/test_math_plugin
