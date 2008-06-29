@@ -27,6 +27,20 @@ module Duby
             else
               nil
             end
+          when :*
+            case parameter_types[0]
+            when typer.fixnum_type
+              typer.fixnum_type
+            else
+              nil
+            end
+          when :/
+            case parameter_types[0]
+            when typer.fixnum_type
+              typer.fixnum_type
+            else
+              nil
+            end
           when :<
             case parameter_types[0]
             when typer.fixnum_type
