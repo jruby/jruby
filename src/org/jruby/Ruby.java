@@ -2390,6 +2390,10 @@ public final class Ruby {
         return newRaiseException(getErrno().fastGetClass("ECONNREFUSED"), "Connection refused");
     }
 
+    public RaiseException newErrnoECONNRESETError() {
+        return newRaiseException(getErrno().fastGetClass("ECONNRESET"), "Connection reset by peer");
+    }
+
     public RaiseException newErrnoEADDRINUSEError() {
         return newRaiseException(getErrno().fastGetClass("EADDRINUSE"), "Address in use");
     }
@@ -2544,6 +2548,12 @@ public final class Ruby {
     }
 
     public RaiseException newIOErrorFromException(IOException ioe) {
+        // TODO: this is kinda gross
+        if (ioe.getMessage().equals("Broken pipe")) {
+            throw newErrnoEPIPEError();
+        } else if (ioe.getMessage().equals("Connection reset by peer")) {
+            throw newErrnoECONNRESETError();
+        }
         return newRaiseException(getIOError(), ioe.getMessage());
     }
 

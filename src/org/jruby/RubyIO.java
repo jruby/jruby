@@ -1168,10 +1168,6 @@ public class RubyIO extends RubyObject {
 
 //            return len - n;
         } catch (IOException ex) {
-            // TODO: this is kinda gross
-            if (ex.getMessage().equals("Broken pipe")) {
-                throw getRuntime().newErrnoEPIPEError();
-            }
             throw getRuntime().newIOErrorFromException(ex);
         } catch (BadDescriptorException ex) {
             throw getRuntime().newErrnoEBADFError();
