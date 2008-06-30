@@ -39,6 +39,7 @@ import java.nio.channels.Selector;
 
 import java.nio.channels.ServerSocketChannel;
 
+import java.nio.channels.SocketChannel;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -147,8 +148,10 @@ public class RubyTCPServer extends RubyTCPSocket {
                     getRuntime().getCurrentContext().pollThreadEvents();
                 } else {
                     try {
+                        SocketChannel connected = ssc.accept();
+                        connected.finishConnect();
                         // otherwise one key has been selected (ours) so we get the channel and hand it off
-                        socket.initSocket(new ChannelDescriptor(ssc.accept(), RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
+                        socket.initSocket(new ChannelDescriptor(connected, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
                     } catch (InvalidValueException ex) {
                         throw getRuntime().newErrnoEINVALError();
                     }
