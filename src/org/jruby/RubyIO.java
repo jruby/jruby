@@ -57,6 +57,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
@@ -107,16 +108,14 @@ public class RubyIO extends RubyObject {
         if (reference == null) {
             return null;
         }
-        return (ChannelDescriptor) reference.get();
+        return reference.get();
     }
     
     // FIXME can't use static; would interfere with other runtimes in the same JVM
-    protected static int filenoIndex = 2;
+    protected static AtomicInteger filenoIndex = new AtomicInteger(2);
     
     public static int getNewFileno() {
-        filenoIndex++;
-        
-        return filenoIndex;
+        return filenoIndex.incrementAndGet();
     }
 
     // This should only be called by this and RubyFile.
@@ -1169,6 +1168,10 @@ public class RubyIO extends RubyObject {
 
 //            return len - n;
         } catch (IOException ex) {
+            // TODO: this is kinda gross
+            if (ex.getMessage().equals("Broken pipe")) {
+                throw getRuntime().newErrnoEPIPEError();
+            }
             throw getRuntime().newIOErrorFromException(ex);
         } catch (BadDescriptorException ex) {
             throw getRuntime().newErrnoEBADFError();

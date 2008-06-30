@@ -810,6 +810,7 @@ public class ChannelStream implements Stream, Finalizable {
     /**
      * Ensure close (especially flush) when we're finished with
      */
+    @Override
     public void finalize() {
         // FIXME: I got a bunch of NPEs when I didn't check for nulls here...HOW?!
         if (descriptor != null && descriptor.isSeekable() && descriptor.isOpen()) closeForFinalize(); // close without removing from finalizers

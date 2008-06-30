@@ -136,6 +136,7 @@ public class RubyTCPServer extends RubyTCPSocket {
         RubyTCPSocket socket = new RubyTCPSocket(getRuntime(),getRuntime().fastGetClass("TCPSocket"));
         ThreadContext context = getRuntime().getCurrentContext();
         
+        boolean oldBlocking = ssc.isBlocking();
         try {
             ssc.configureBlocking(false);
             
@@ -156,6 +157,8 @@ public class RubyTCPServer extends RubyTCPSocket {
             }
         } catch(IOException e) {
             throw sockerr(this, "problem when accepting");
+        } finally {
+            try { ssc.configureBlocking(oldBlocking); } catch (IOException ioe) {}
         }
     }
 
