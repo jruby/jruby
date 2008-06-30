@@ -53,7 +53,7 @@ public final class KCode {
 
     public static KCode create(Ruby runtime, String lang) {
         if (lang == null) return NIL;
-        if (lang.isEmpty()) return NONE;
+        if (lang.length() == 0) return NONE;
 
         switch (lang.charAt(0)) {
         case 'E':
