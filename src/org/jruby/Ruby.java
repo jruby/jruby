@@ -1504,7 +1504,14 @@ public final class Ruby {
     }
     void setThreadGroup(RubyClass threadGroupClass) {
         this.threadGroupClass = threadGroupClass;
-    }    
+    }
+    
+    public RubyThreadGroup getDefaultThreadGroup() {
+        return defaultThreadGroup;
+    }
+    void setDefaultThreadGroup(RubyThreadGroup defaultThreadGroup) {
+        this.defaultThreadGroup = defaultThreadGroup;
+    }
 
     public RubyClass getContinuation() {
         return continuationClass;
@@ -2783,6 +2790,8 @@ public final class Ruby {
 
     private IRubyObject verbose;
     private IRubyObject debug;
+    
+    private RubyThreadGroup defaultThreadGroup;
 
     /**
      * All the core classes we keep hard references to. These are here largely

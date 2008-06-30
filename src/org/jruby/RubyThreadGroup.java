@@ -59,6 +59,7 @@ public class RubyThreadGroup extends RubyObject {
         
         // create the default thread group
         RubyThreadGroup defaultThreadGroup = new RubyThreadGroup(runtime, threadGroupClass);
+        runtime.setDefaultThreadGroup(defaultThreadGroup);
         threadGroupClass.defineConstant("Default", defaultThreadGroup);
 
         return threadGroupClass;
@@ -73,21 +74,32 @@ public class RubyThreadGroup extends RubyObject {
     public synchronized IRubyObject add(IRubyObject rubyThread, Block block) {
         if (!(rubyThread instanceof RubyThread)) throw getRuntime().newTypeError(rubyThread, getRuntime().getThread());
         
+        // synchronize on the RubyThread for threadgroup updates
         if (isFrozen()) {
             throw getRuntime().newTypeError("can't add to frozen ThreadGroup");
         }
 
         RubyThread thread = (RubyThread)rubyThread;
-        IRubyObject oldGroup = thread.group();
-        if (oldGroup != getRuntime().getNil()) {
-            RubyThreadGroup threadGroup = (RubyThreadGroup) oldGroup;
-            threadGroup.rubyThreadList.remove(new Integer(System.identityHashCode(rubyThread)));
+
+        // we only add live threads
+        if (thread.alive_p().isTrue()) {
+            addDirectly(thread);
         }
-
-        thread.setThreadGroup(this);
-        rubyThreadList.put(new Integer(System.identityHashCode(rubyThread)), rubyThread);
-
+        
         return this;
+    }
+    
+    void addDirectly(RubyThread rubyThread) {
+        synchronized (rubyThread) {
+            IRubyObject oldGroup = rubyThread.group();
+            if (oldGroup != getRuntime().getNil()) {
+                RubyThreadGroup threadGroup = (RubyThreadGroup) oldGroup;
+                threadGroup.rubyThreadList.remove(new Integer(System.identityHashCode(rubyThread)));
+            }
+
+            rubyThread.setThreadGroup(this);
+            rubyThreadList.put(new Integer(System.identityHashCode(rubyThread)), rubyThread);
+        }
     }
     
     public synchronized void remove(RubyThread rubyThread) {

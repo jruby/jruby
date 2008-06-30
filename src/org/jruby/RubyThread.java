@@ -86,6 +86,7 @@ public class RubyThread extends RubyObject {
 
     private final ThreadService threadService;
     private volatile boolean isStopped = false;
+    private volatile boolean isDead = false;
     public Object stopLock = new Object();
     
     private volatile boolean killed = false;
@@ -98,9 +99,6 @@ public class RubyThread extends RubyObject {
     protected RubyThread(Ruby runtime, RubyClass type) {
         super(runtime, type);
         this.threadService = runtime.getThreadService();
-        // set to default thread group
-        RubyThreadGroup defaultThreadGroup = (RubyThreadGroup)runtime.getThreadGroup().fastGetConstant("Default");
-        defaultThreadGroup.add(this, Block.NULL_BLOCK);
         finalResult = runtime.getNil();
     }
     
@@ -124,6 +122,9 @@ public class RubyThread extends RubyObject {
         // TODO: need to isolate the "current" thread from class creation
         rubyThread.threadImpl = new NativeThread(rubyThread, Thread.currentThread());
         runtime.getThreadService().setMainThread(rubyThread);
+        
+        // set to default thread group
+        runtime.getDefaultThreadGroup().addDirectly(rubyThread);
         
         threadClass.setMarshal(ObjectMarshal.NOT_MARSHALABLE_MARSHAL);
         
@@ -174,18 +175,26 @@ public class RubyThread extends RubyObject {
         
         context.preAdoptThread();
         
+        // set to default thread group
+        runtime.getDefaultThreadGroup().addDirectly(rubyThread);
+        
         return rubyThread;
     }
     
     @JRubyMethod(name = "initialize", rest = true, frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if (!block.isGiven()) throw getRuntime().newThreadError("must be called with a block");
+        Ruby runtime = getRuntime();
+        if (!block.isGiven()) throw runtime.newThreadError("must be called with a block");
 
         if (RubyInstanceConfig.POOLING_ENABLED) {
             threadImpl = new FutureThread(this, new RubyRunnable(this, args, block));
         } else {
             threadImpl = new NativeThread(this, new RubyNativeThread(this, args, block));
         }
+        
+        // set to default thread group
+        runtime.getDefaultThreadGroup().addDirectly(this);
+        
         threadImpl.start();
         
         // We yield here to hopefully permit the target thread to schedule
@@ -216,7 +225,7 @@ public class RubyThread extends RubyObject {
     
     public synchronized void cleanTerminate(IRubyObject result) {
         finalResult = result;
-        isStopped = true;
+        isDead = true;
     }
 
     public void pollThreadEvents() {
@@ -328,7 +337,7 @@ public class RubyThread extends RubyObject {
 
     @JRubyMethod(name = "alive?")
     public RubyBoolean alive_p() {
-        return threadImpl.isAlive() ? getRuntime().getTrue() : getRuntime().getFalse();
+        return !isDead && threadImpl.isAlive() ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
     @JRubyMethod(name = "join", optional = 1, backtrace = true)

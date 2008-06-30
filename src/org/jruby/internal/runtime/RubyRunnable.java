@@ -89,7 +89,11 @@ public class RubyRunnable implements Runnable {
         } finally {
             runtime.getThreadService().setCritical(false);
             runtime.getThreadService().unregisterThread(rubyThread);
-            ((RubyThreadGroup)rubyThread.group()).remove(rubyThread);
+            
+            // synchronize on the RubyThread object for threadgroup updates
+            synchronized (rubyThread) {
+                ((RubyThreadGroup)rubyThread.group()).remove(rubyThread);
+            }
         }
     }
 }
