@@ -52,16 +52,6 @@ module Duby
       end
     end
     
-    class Body
-      def compile(compiler)
-        last = children[-1]
-        children.each do |child|
-          child.compile(compiler)
-          compiler.newline
-        end
-      end
-    end
-    
     class MethodDefinition
       def compile(compiler)
         args_callback = proc {arguments.compile(compiler)}
@@ -79,12 +69,6 @@ module Duby
     class Noop
       def compile(compiler)
         # nothing
-      end
-    end
-    
-    class Fixnum
-      def compile(compiler)
-        compiler.fixnum(literal)
       end
     end
     
@@ -118,12 +102,6 @@ module Duby
         args_callback = proc { parameters.each {|param| param.compile(compiler)}}
         
         compiler.call(name, target.inferred_type, recv_callback, args_callback)
-      end
-    end
-    
-    class Local
-      def compile(compiler)
-        compiler.local(name)
       end
     end
   end
