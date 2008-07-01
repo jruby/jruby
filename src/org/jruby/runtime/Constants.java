@@ -80,6 +80,7 @@ public final class Constants {
 
         RUBY_MAJOR_VERSION = properties.getProperty("version.ruby.major");
         RUBY_VERSION = properties.getProperty("version.ruby");
+        RUBY_PATCHLEVEL = properties.getProperty("version.ruby.patchlevel");
 
         RUBY1_9_MAJOR_VERSION = properties.getProperty("version.ruby1_9.major");
         RUBY1_9_VERSION = properties.getProperty("version.ruby1_9");
@@ -93,7 +94,6 @@ public final class Constants {
         } else {
             REVISION = "0000";
         }
-        RUBY_PATCHLEVEL = REVISION;
     }
 
     private Constants() {}
