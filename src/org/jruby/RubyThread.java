@@ -225,6 +225,7 @@ public class RubyThread extends RubyObject {
     
     public synchronized void cleanTerminate(IRubyObject result) {
         finalResult = result;
+        isStopped = true;
         isDead = true;
     }
 
