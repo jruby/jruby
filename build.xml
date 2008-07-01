@@ -176,8 +176,12 @@
     </javac>
   </target>
 
-  <target name="jar-jruby" unless="jar-up-to-date">
+  <target name="jar-jruby" unless="jar-up-to-date">    
       <antcall target="generate-method-classes" inheritall="true"/>
+      <exec executable="ruby" dir="${basedir}">
+        <arg value="tool/snapshot.rb"/>
+        <arg value="${jruby.classes.dir}/org/jruby/jruby.properties"/>
+      </exec>
       <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0rc7.jar"/>
       <jarjar destfile="${lib.dir}/jruby.jar">
         <fileset dir="${jruby.classes.dir}">
@@ -1011,10 +1015,6 @@
   </target>
 
   <target name="dist-snapshot" depends="jar">
-    <exec executable="${basedir}/bin/jruby" dir="${basedir}">
-      <arg value="tool/snapshot.rb"/>
-      <arg value="${jruby.classes.dir}/org/jruby/jruby.properties"/>
-    </exec>
     <jar destfile="${lib.dir}/jruby.jar" update="true">
       <fileset dir="${jruby.classes.dir}">
         <include name="org/jruby/jruby.properties"/>
