@@ -105,6 +105,9 @@ public class RescueNode extends Node {
             IRubyObject globalExceptionState = runtime.getGlobalVariables().get("$!");
             boolean anotherExceptionRaised = false;
             try {
+                // FIXME: Make bodyNode non-null in parser
+                if (bodyNode == null) return runtime.getNil();
+                
                 // Execute rescue block
                 IRubyObject result = bodyNode.interpret(runtime,context, self, aBlock);
 
@@ -128,16 +131,9 @@ public class RescueNode extends Node {
 
                 while (cRescueNode != null) {
                     Node  exceptionNodes = cRescueNode.getExceptionNodes();
-                    ListNode exceptionNodesList;
-                    
-                    if (exceptionNodes instanceof SplatNode) {                    
-                        exceptionNodesList = (ListNode) exceptionNodes.interpret(runtime, context, self, aBlock);
-                    } else {
-                        exceptionNodesList = (ListNode) exceptionNodes;
-                    }
-
                     IRubyObject[] exceptions;
-                    if (exceptionNodesList == null) {
+                    
+                    if (exceptionNodes == null) {
                         exceptions = new IRubyObject[] {runtime.getStandardError()};
                     } else {
                         exceptions = ASTInterpreter.setupArgs(runtime, context, exceptionNodes, self, aBlock);

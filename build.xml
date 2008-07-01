@@ -694,6 +694,8 @@
       description="Runs known good version of rubyspecs."/>
   <target name="spec-all" depends="fetch-stable-specs, run-specs-all"
       description="Runs known good version of rubyspecs without exclusions."/>
+  <target name="spec-all-interpreted" depends="fetch-stable-specs, run-specs-all-interpreted"
+      description="Runs known good version of rubyspecs without exclusions."/>
 
   <!-- latest, unstable specs -->
   <target name="spec-latest" depends="fetch-specs, run-specs"
@@ -758,6 +760,7 @@
   <target name="run-specs-all" depends="jar"><antcall target="run-specs-all-precompiled"/></target>
   <target name="run-specs-compiled"><_run_specs_internal compile.mode="JIT" jit.threshold="0"/></target>
   <target name="run-specs-precompiled"><_run_specs_internal compile.mode="FORCE" jit.threshold="0"/></target>
+  <target name="run-specs-all-interpreted"><_run_specs_all_internal compile.mode="OFF"/></target>
   <target name="run-specs-all-precompiled"><_run_specs_all_internal compile.mode="FORCE" jit.threshold="0"/></target>
   <target name="run-specs-interpreted"><_run_specs_internal/></target>
   
