@@ -250,4 +250,12 @@ class TestThread < Test::Unit::TestCase
     threads.pop.join until threads.empty?
     assert_equal [true, true, true, true, true, true, true, true, true, true], results
   end
+
+  def test_thread_exit_does_not_deadlock
+    100.times do
+      t = Thread.new { Thread.stop; Thread.current.exit }
+      Thread.pass until t.status == "sleep"
+      t.wakeup; t.join
+    end
+  end
 end
