@@ -58,6 +58,7 @@ public class JITCompiler implements JITCompilerMBean {
     private AtomicLong averageCompileTime = new AtomicLong(0);
     private AtomicLong codeSize = new AtomicLong(0);
     private AtomicLong averageCodeSize = new AtomicLong(0);
+    private AtomicLong largestCodeSize = new AtomicLong(0);
     
     public JITCompiler(Ruby ruby) {
         this.ruby = ruby;
@@ -214,6 +215,11 @@ public class JITCompiler implements JITCompilerMBean {
             codeSize.addAndGet(bytecode.length);
             averageCompileTime.set(compileTime.get() / compiledCount.get());
             averageCodeSize.set(codeSize.get() / compiledCount.get());
+            synchronized (largestCodeSize) {
+                if (largestCodeSize.get() < bytecode.length) {
+                    largestCodeSize.set(bytecode.length);
+                }
+            }
         }
         
         public byte[] bytecode() {
@@ -287,5 +293,9 @@ public class JITCompiler implements JITCompilerMBean {
     
     public long getAverageCompileTime() {
         return averageCompileTime.get() / 1000;
+    }
+    
+    public long getLargestCodeSize() {
+        return largestCodeSize.get();
     }
 }

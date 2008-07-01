@@ -9,4 +9,5 @@ public interface JITCompilerMBean {
     public long getCodeSize();
     public long getAverageCodeSize();
     public long getAverageCompileTime();
+    public long getLargestCodeSize();
 }
