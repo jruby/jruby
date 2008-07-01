@@ -427,24 +427,24 @@ public class RubyInstanceConfig {
     }
 
     public String getVersionString() {
-        StringBuilder buf = new StringBuilder("ruby ");
+        String ver = Constants.RUBY_VERSION;
         switch (compatVersion) {
         case RUBY1_8:
-            buf.append(Constants.RUBY_VERSION);
+            ver = Constants.RUBY_VERSION;
             break;
         case RUBY1_9:
-            buf.append(Constants.RUBY1_9_VERSION);
+            ver = Constants.RUBY1_9_VERSION;
             break;
         }
-        buf
-                .append(" (")
-                .append(Constants.COMPILE_DATE + " rev " + Constants.REVISION)
-                .append(") [")
-                .append(SafePropertyAccessor.getProperty("os.arch", "unknown") + "-jruby" + Constants.VERSION)
-                .append("]")
-                .append("\n");
 
-        return buf.toString();
+        String fullVersion = String.format(
+                "jruby %s (ruby %s patchlevel %s) (%s rev %s) [%s-java]\n",
+                Constants.VERSION, ver, Constants.RUBY_PATCHLEVEL,
+                Constants.COMPILE_DATE, Constants.REVISION,
+                SafePropertyAccessor.getProperty("os.arch", "unknown")
+                );
+
+        return fullVersion;
     }
 
     public String getCopyrightString() {

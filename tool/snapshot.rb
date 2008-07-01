@@ -6,7 +6,7 @@ abort "jruby.properties filename location needed" unless ARGV[0]
 
 def update_jruby_properties(url, tag, revision)
   properties = File.open(ARGV[0]) {|f| f.read}
-  properties.sub!(/^version.jruby=.*$/, "version.jruby=#{tag}-#{revision}")
+#  properties.sub!(/^version.jruby=.*$/, "version.jruby=#{tag}-#{revision}")
   properties.sub!(/Revision: \d+/, "Revision: #{revision}")
   properties << "\nurl=#{url}\nrevision=#{revision}\n"
   File.open(ARGV[0], "w") {|f| f << properties }
