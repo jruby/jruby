@@ -692,6 +692,9 @@ public class RubyThread extends RubyObject {
     	// need to reexamine this
         RubyThread currentThread = getRuntime().getCurrentContext().getThread();
         
+        // If the killee thread is the same as the killer thread, just die
+        if (currentThread == this) throwThreadKill();
+        
         try {
             if (DEBUG) System.out.println("thread " + Thread.currentThread() + " trying to kill");
             while (!(currentThread.lock.tryLock() && this.lock.tryLock())) {
