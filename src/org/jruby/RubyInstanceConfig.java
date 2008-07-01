@@ -58,6 +58,11 @@ public class RubyInstanceConfig {
     private static final int JIT_MAX_METHODS_LIMIT = 4096;
 
     /**
+     * The max size of JIT-compiled methods (full class size) allowed.
+     */
+    private static final int JIT_MAX_SIZE_LIMIT = Integer.MAX_VALUE;
+
+    /**
      * The JIT threshold to the specified method invocation count.
      */
     private static final int JIT_THRESHOLD = 50;
@@ -115,6 +120,7 @@ public class RubyInstanceConfig {
     private final int jitLogEvery;
     private final int jitThreshold;
     private final int jitMax;
+    private final int jitMaxSize;
     private final boolean samplingEnabled;
     private CompatVersion compatVersion;
 
@@ -244,10 +250,12 @@ public class RubyInstanceConfig {
             jitLogEvery = 0;
             jitThreshold = -1;
             jitMax = 0;
+            jitMaxSize = -1;
             managementEnabled = false;
         } else {
             String threshold = SafePropertyAccessor.getProperty("jruby.jit.threshold");
             String max = SafePropertyAccessor.getProperty("jruby.jit.max");
+            String maxSize = SafePropertyAccessor.getProperty("jruby.jit.maxsize");
 
             managementEnabled = SafePropertyAccessor.getBoolean("jruby.management.enabled", true);
             runRubyInProcess = SafePropertyAccessor.getBoolean("jruby.launch.inproc", true);
@@ -277,6 +285,8 @@ public class RubyInstanceConfig {
                     JIT_THRESHOLD : Integer.parseInt(threshold);
             jitMax = max == null ?
                     JIT_MAX_METHODS_LIMIT : Integer.parseInt(max);
+            jitMaxSize = maxSize == null ?
+                    JIT_MAX_SIZE_LIMIT : Integer.parseInt(maxSize);
         }
 
         // default ClassCache using jitMax as a soft upper bound
@@ -388,6 +398,8 @@ public class RubyInstanceConfig {
                 .append("    jruby.jit.max=<method count>\n")
                 .append("       Set the max count of active methods eligible for JIT-compilation.\n")
                 .append("       Default is " + JIT_MAX_METHODS_LIMIT + " per runtime. A value of 0 disables JIT, -1 disables max.\n")
+                .append("    jruby.jit.maxsize=<jitted method size (full .class)>\n")
+                .append("       Set the maximum full-class byte size allowed for jitted methods. Default is Integer.MAX_VALUE\n")
                 .append("    jruby.jit.logging=true|false\n")
                 .append("       Enable JIT logging (reports successful compilation). Default is false\n")
                 .append("    jruby.jit.logging.verbose=true|false\n")
@@ -485,6 +497,10 @@ public class RubyInstanceConfig {
 
     public int getJitMax() {
         return jitMax;
+    }
+
+    public int getJitMaxSize() {
+        return jitMaxSize;
     }
 
     public boolean isRunRubyInProcess() {

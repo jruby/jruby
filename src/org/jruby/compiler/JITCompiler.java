@@ -90,7 +90,7 @@ public class JITCompiler implements JITCompilerMBean {
 
                 String key = SexpMaker.create(name, method.getArgsNode(), method.getBodyNode());
 
-                Class<Script> sourceClass = instanceConfig.getClassCache().cacheClassByKey(key, generator);
+                Class<Script> sourceClass = (Class<Script>)instanceConfig.getClassCache().cacheClassByKey(key, generator);
                 
                 if (sourceClass == null) {
                     // class could not be found nor generated; give up on JIT and bail out
@@ -103,7 +103,7 @@ public class JITCompiler implements JITCompilerMBean {
                 successCount.incrementAndGet();
 
                 // finally, grab the script
-                Script jitCompiledScript = (Script) sourceClass.newInstance();
+                Script jitCompiledScript = sourceClass.newInstance();
 
                 // add to the jitted methods set
                 jittedMethods.add(jitCompiledScript);
@@ -125,6 +125,7 @@ public class JITCompiler implements JITCompilerMBean {
         } catch (Throwable t) {
             if (instanceConfig.isJitLoggingVerbose()) log(method, name, "could not compile", t.getMessage());
 
+            failCount.incrementAndGet();
             method.setCallCount(-1);
         }
     }
@@ -209,6 +210,13 @@ public class JITCompiler implements JITCompilerMBean {
             
             bytecode = asmCompiler.getClassByteArray();
             name = CodegenUtils.c(asmCompiler.getClassname());
+            
+            if (bytecode.length > ruby.getInstanceConfig().getJitMaxSize()) {
+                bytecode = null;
+                throw new NotCompilableException(
+                        "JITed method size exceeds configured max of " +
+                        ruby.getInstanceConfig().getJitMaxSize());
+            }
             
             compiledCount.incrementAndGet();
             compileTime.addAndGet(System.nanoTime() - start);
