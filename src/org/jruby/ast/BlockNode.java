@@ -61,12 +61,12 @@ public class BlockNode extends ListNode {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        if (list.length == 0) return runtime.getNil();
+        IRubyObject result = runtime.getNil();
         
-        for (int i = 0; i < list.length - 1; i++) {
-            list[i].interpret(runtime, context, self, aBlock);
+        for (int i = 0; i < size(); i++) {
+            result = get(i).interpret(runtime,context, self, aBlock);
         }
    
-        return list[list.length - 1].interpret(runtime, context, self, aBlock);
+        return result;
     }
 }
