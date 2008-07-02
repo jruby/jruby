@@ -1227,7 +1227,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     protected Class endClass(ClassWriter cw, String name) {
         cw.visitEnd();
         byte[] code = cw.toByteArray();
-        CheckClassAdapter.verify(new ClassReader(code), false, new PrintWriter(System.err));
+        if (DEBUG) CheckClassAdapter.verify(new ClassReader(code), false, new PrintWriter(System.err));
          
         return classLoader.defineClass(name, code);
     }
