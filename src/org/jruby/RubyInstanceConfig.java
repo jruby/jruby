@@ -229,6 +229,7 @@ public class RubyInstanceConfig {
             }
         } catch (SecurityException se) {
             nativeEnabled = false;
+            specVersion = "1.5";
         }
         
         if (specVersion.equals("1.5")) {
