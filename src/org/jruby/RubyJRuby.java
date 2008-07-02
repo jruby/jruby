@@ -55,6 +55,7 @@ import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.InterpretedBlock;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.util.TypeConverter;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.util.TraceClassVisitor;
 
@@ -94,6 +95,30 @@ public class RubyJRuby {
             RubyJRuby.createJRubyExt(runtime);
             
             runtime.getMethod().defineAnnotatedMethods(MethodExtensions.class);
+        }
+    }
+    
+    public static class TypeLibrary implements Library {
+        public void load(Ruby runtime, boolean wrap) throws IOException {
+            RubyModule jrubyType = runtime.defineModule("Type");
+            jrubyType.defineAnnotatedMethods(TypeLibrary.class);
+        }
+        
+        @JRubyMethod(module = true)
+        public static IRubyObject coerce_to(ThreadContext context, IRubyObject self, IRubyObject object, IRubyObject clazz, IRubyObject method) {
+            Ruby ruby = object.getRuntime();
+            
+            if (!(clazz instanceof RubyClass)) {
+                throw ruby.newTypeError(clazz, ruby.getClassClass());
+            }
+            if (!(method instanceof RubySymbol)) {
+                throw ruby.newTypeError(method, ruby.getSymbol());
+            }
+            
+            RubyClass rubyClass = (RubyClass)clazz;
+            RubySymbol methodSym = (RubySymbol)method;
+            
+            return TypeConverter.convertToTypeOrRaise(object, rubyClass, methodSym.asJavaString());
         }
     }
     
