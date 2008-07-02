@@ -45,22 +45,21 @@ import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.jruby.anno.JRubyMethod;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.RubyDateFormat;
 import org.jruby.util.ByteList;
-
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
-import org.jruby.runtime.ClassIndex;
+import org.jruby.util.RubyDateFormat;
 
 /** The Time class.
  * 
@@ -588,49 +587,76 @@ public class RubyTime extends RubyObject {
         return time;
     }
 
-    @JRubyMethod(name = {"now"}, rest = true, frame = true, meta = true)
+    /**
+     * @deprecated Use {@link #newInstance(ThreadContext, IRubyObject)}
+     */
+    @Deprecated
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        IRubyObject obj = ((RubyClass)recv).allocate();
-        obj.callMethod(context, "initialize", args, block);
+        return newInstance(context, recv);
+    }
+
+    @JRubyMethod(name = "now", backtrace = true, meta = true)
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv) {
+        IRubyObject obj = ((RubyClass) recv).allocate();
+        obj.callMethod(context, "initialize");
         return obj;
     }
-    
-    @JRubyMethod(name = "at", required = 1, optional = 1, meta = true)
-    public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = recv.getRuntime();
 
-        RubyTime time = new RubyTime(runtime, (RubyClass) recv, new DateTime(getLocalTimeZone(runtime)));
+    @JRubyMethod(name = "at",  meta = true)
+    public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        Ruby runtime = context.getRuntime();
+        final RubyTime time;
 
-        if (args[0] instanceof RubyTime) {
-            RubyTime other = (RubyTime) args[0];
-            time.dt = other.dt;
+        if (arg instanceof RubyTime) {
+            RubyTime other = (RubyTime) arg;
+            time = new RubyTime(runtime, (RubyClass) recv, other.dt);
             time.setUSec(other.getUSec());
         } else {
-            long seconds = RubyNumeric.num2long(args[0]);
+            time = new RubyTime(runtime, (RubyClass) recv,
+                    new DateTime(0L, getLocalTimeZone(runtime)));
+
+            long seconds = RubyNumeric.num2long(arg);
             long millisecs = 0;
             long microsecs = 0;
-            if (args.length > 1) {
-                long tmp = RubyNumeric.num2long(args[1]);
-                millisecs = tmp / 1000;
-                microsecs = tmp % 1000;
-            }
-            else {
-                // In the case of two arguments, MRI will discard the portion of
-                // the first argument after a decimal point (i.e., "floor").
-                // However in the case of a single argument, any portion after
-                // the decimal point is honored.
-                if (args[0] instanceof RubyFloat) {
-                    double dbl = ((RubyFloat) args[0]).getDoubleValue();
-                    long micro = (long) ((dbl - seconds) * 1000000);
-                    millisecs = micro / 1000;
-                    microsecs = micro % 1000;
-                }
+
+            // In the case of two arguments, MRI will discard the portion of
+            // the first argument after a decimal point (i.e., "floor").
+            // However in the case of a single argument, any portion after
+            // the decimal point is honored.
+            if (arg instanceof RubyFloat) {
+                double dbl = ((RubyFloat) arg).getDoubleValue();
+                long micro = (long) ((dbl - seconds) * 1000000);
+                millisecs = micro / 1000;
+                microsecs = micro % 1000;
             }
             time.setUSec(microsecs);
             time.dt = time.dt.withMillis(seconds * 1000 + millisecs);
         }
 
-        time.callInit(IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+        time.callMethod(context, "initialize");
+
+        return time;
+    }
+
+    @JRubyMethod(name = "at", meta = true)
+    public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
+        Ruby runtime = context.getRuntime();
+
+        RubyTime time = new RubyTime(runtime, (RubyClass) recv,
+                new DateTime(0L, getLocalTimeZone(runtime)));
+
+            long seconds = RubyNumeric.num2long(arg1);
+            long millisecs = 0;
+            long microsecs = 0;
+
+            long tmp = RubyNumeric.num2long(arg2);
+            millisecs = tmp / 1000;
+            microsecs = tmp % 1000;
+
+            time.setUSec(microsecs);
+            time.dt = time.dt.withMillis(seconds * 1000 + millisecs);
+
+            time.callMethod(context, "initialize");
 
         return time;
     }
@@ -686,23 +712,32 @@ public class RubyTime extends RubyObject {
         time.setDateTime(dt);
         return time;
     }
-    
-    private static final String[] months = {"jan", "feb", "mar", "apr", "may", "jun",
+
+    private static final String[] MONTHS = {"jan", "feb", "mar", "apr", "may", "jun",
                                             "jul", "aug", "sep", "oct", "nov", "dec"};
+
+    private static final Map<String, Integer> MONTHS_MAP = new HashMap<String, Integer>();
+    static {
+        for (int i = 0; i < MONTHS.length; i++) {
+            MONTHS_MAP.put(MONTHS[i], i + 1);
+        }
+    }
+
     private static final int[] time_min = {1, 0, 0, 0, Integer.MIN_VALUE};
     private static final int[] time_max = {31, 23, 59, 60, Integer.MAX_VALUE};
 
     private static final int ARG_SIZE = 7;
+
     private static RubyTime createTime(IRubyObject recv, IRubyObject[] args, boolean gmt) {
         Ruby runtime = recv.getRuntime();
         int len = ARG_SIZE;
-        
+
         if (args.length == 10) {
             args = new IRubyObject[] { args[5], args[4], args[3], args[2], args[1], args[0], runtime.getNil() };
         } else {
             // MRI accepts additional wday argument which appears to be ignored.
             len = args.length;
-            
+
             if (len < ARG_SIZE) {
                 IRubyObject[] newArgs = new IRubyObject[ARG_SIZE];
                 System.arraycopy(args, 0, newArgs, 0, args.length);
@@ -713,27 +748,24 @@ public class RubyTime extends RubyObject {
                 len = ARG_SIZE;
             }
         }
-        ThreadContext context = runtime.getCurrentContext();
-        
-        if(args[0] instanceof RubyString) {
+
+        if (args[0] instanceof RubyString) {
             args[0] = RubyNumeric.str2inum(runtime, (RubyString) args[0], 10, false);
         }
-        
+
         int year = (int) RubyNumeric.num2long(args[0]);
         int month = 1;
-        
+
         if (len > 1) {
             if (!args[1].isNil()) {
                 IRubyObject tmp = args[1].checkStringType();
                 if (!tmp.isNil()) {
-                    String monthString = tmp.toString();
-                    month = -1;
-                    for (int i = 0; i < 12; i++) {
-                        if (months[i].equalsIgnoreCase(monthString)) {
-                            month = i+1;
-                        }
-                    }
-                    if (month == -1) {
+                    String monthString = tmp.toString().toLowerCase();
+                    Integer monthInt = MONTHS_MAP.get(monthString);
+
+                    if (monthInt != null) {
+                        month = monthInt;
+                    } else {
                         try {
                             month = Integer.parseInt(monthString);
                         } catch (NumberFormatException nfExcptn) {
@@ -741,7 +773,7 @@ public class RubyTime extends RubyObject {
                         }
                     }
                 } else {
-                    month = (int)RubyNumeric.num2long(args[1]);
+                    month = (int) RubyNumeric.num2long(args[1]);
                 }
             }
             if (1 > month || month > 12) {
@@ -753,9 +785,11 @@ public class RubyTime extends RubyObject {
 
         for (int i = 0; int_args.length >= i + 2; i++) {
             if (!args[i + 2].isNil()) {
-                if(!(args[i+2] instanceof RubyNumeric)) {
-                    args[i+2] = args[i+2].callMethod(context,"to_i");
+                if (!(args[i + 2] instanceof RubyNumeric)) {
+                    args[i + 2] = args[i + 2].callMethod(
+                            runtime.getCurrentContext(), "to_i");
                 }
+
                 long value = RubyNumeric.num2long(args[i + 2]);
                 if (time_min[i] > value || value > time_max[i]) {
                     throw runtime.newArgumentError("argument out of range.");
@@ -763,27 +797,25 @@ public class RubyTime extends RubyObject {
                 int_args[i] = (int) value;
             }
         }
-        
+
         if (0 <= year && year < 39) {
             year += 2000;
         } else if (69 <= year && year < 139) {
             year += 1900;
         }
 
-        DateTime dt = new DateTime();
+        DateTimeZone dtz;
         if (gmt) {
-            dt = dt.withZone(DateTimeZone.UTC);
+            dtz = DateTimeZone.UTC;
         } else {
-            dt = dt.withZone(getLocalTimeZone(runtime));
+            dtz = getLocalTimeZone(runtime);
         }
 
+        DateTime dt;
         // set up with min values and then add to allow rolling over
         try {
-            dt = dt.withDate(year, 1, 1)
-                    .withHourOfDay(0)
-                    .withMinuteOfHour(0)
-                    .withSecondOfMinute(0)
-                    .withMillisOfSecond(0);
+            dt = new DateTime(year, 1, 1, 0, 0 , 0, 0, dtz);
+
             dt = dt.plusMonths(month - 1)
                     .plusDays(int_args[0] - 1)
                     .plusHours(int_args[1])
@@ -803,7 +835,7 @@ public class RubyTime extends RubyObject {
                 msec -= 1;
                 usec += 1000;
             }
-            time.dt = dt.withMillis(dt.getMillis()+msec);
+            time.dt = dt.withMillis(dt.getMillis() + msec);
             time.setUSec(usec);
         }
 

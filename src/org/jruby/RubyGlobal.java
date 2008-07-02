@@ -79,11 +79,7 @@ public class RubyGlobal {
         }
 
         public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
-            if (!key.respondsTo("to_str")) {
-                throw getRuntime().newTypeError("can't convert " + key.getMetaClass() + " into String");
-            }
-
-            return super.op_aref(context, RuntimeHelpers.invoke(context, key, MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY));
+            return super.op_aref(context, key.convertToString());
         }
 
         public IRubyObject op_aset(ThreadContext context, IRubyObject key, IRubyObject value) {
