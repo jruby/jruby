@@ -282,7 +282,7 @@ public class LoadService {
         if (library == null) {
             String className = file;
             if (file.lastIndexOf(".") != -1) className = file.substring(0, file.lastIndexOf("."));
-            className = className.replace('-', '_').replace('.', '_');
+            className = className.replace("-", "_minus_").replace('.', '_');
             int lastSlashIndex = className.lastIndexOf('/');
             if (lastSlashIndex > -1 &&
                     lastSlashIndex < className.length() - 1 &&
