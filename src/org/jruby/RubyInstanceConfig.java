@@ -49,6 +49,7 @@ import org.jruby.util.JRubyFile;
 import org.jruby.util.KCode;
 import org.jruby.util.NormalizedFile;
 import org.jruby.util.SafePropertyAccessor;
+import org.objectweb.asm.Opcodes;
 
 public class RubyInstanceConfig {
 
@@ -66,6 +67,9 @@ public class RubyInstanceConfig {
      * The JIT threshold to the specified method invocation count.
      */
     private static final int JIT_THRESHOLD = 50;
+    
+    /** The version to use for generated classes. Set to current JVM version by default */
+    public static final int JAVA_VERSION;
     
     /**
      * Default size for chained compilation.
@@ -214,12 +218,23 @@ public class RubyInstanceConfig {
 
 
     static {
+        String specVersion = null;
         try {
+            specVersion = System.getProperty("jruby.bytecode.version");
+            if (specVersion == null) {
+                specVersion = System.getProperty("java.specification.version");
+            }
             if (System.getProperty("jruby.native.enabled") != null) {
                 nativeEnabled = Boolean.getBoolean("jruby.native.enabled");
             }
         } catch (SecurityException se) {
             nativeEnabled = false;
+        }
+        
+        if (specVersion.equals("1.5")) {
+            JAVA_VERSION = Opcodes.V1_5;
+        } else {
+            JAVA_VERSION = Opcodes.V1_6;
         }
     }
 
@@ -432,6 +447,8 @@ public class RubyInstanceConfig {
                 .append("       Enable or disable ObjectSpace.each_object (default is disabled)\n")
                 .append("    jruby.launch.inproc=true|false\n")
                 .append("       Set in-process launching of e.g. system('ruby ...'). Default is true\n")
+                .append("    jruby.bytecode.version=1.5|1.6\n")
+                .append("       Set bytecode version for JRuby to generate. Default is current JVM version.\n")
                 .append("    jruby.management.enabled=true|false\n")
                 .append("       Set whether JMX management is enabled. Default is true.\n");
 

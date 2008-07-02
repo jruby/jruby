@@ -43,23 +43,35 @@ public abstract class CompiledMethod extends JavaMethod implements JumpTarget, C
     	super(implementationClass, visibility, callConfig, staticScope, arity);
         this.$scriptObject = scriptObject;
     }
+    
+    protected CompiledMethod() {}
+    
+    protected void init(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope, Object scriptObject, CallConfiguration callConfig) {
+        this.$scriptObject = scriptObject;
+        super.init(implementationClass, arity, visibility, staticScope, callConfig);
+    }
         
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
         return call(context, self, clazz, name, Block.NULL_BLOCK);
     }
         
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
         return call(context, self, clazz, name, arg, Block.NULL_BLOCK);
     }
         
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1, IRubyObject arg2) {
         return call(context, self, clazz, name, arg1, arg2, Block.NULL_BLOCK);
     }
         
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         return call(context, self, clazz, name, arg1, arg2, arg3, Block.NULL_BLOCK);
     }
     
+    @Override
     public DynamicMethod dup() {
         try {
             CompiledMethod msm = (CompiledMethod)clone();
@@ -67,10 +79,6 @@ public abstract class CompiledMethod extends JavaMethod implements JumpTarget, C
         } catch (CloneNotSupportedException cnse) {
             return null;
         }
-    }
-
-    public Arity getArity() {
-        return arity;
     }
 
     @Override

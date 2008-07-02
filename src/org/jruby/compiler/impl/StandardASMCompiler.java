@@ -203,10 +203,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     static boolean USE_INHERITED_CACHE_FIELDS = true;
 
     public void startScript(StaticScope scope) {
-        classWriter = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        classWriter = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
 
         // Create the class with the appropriate class name and source file
-        classWriter.visit(V1_4, ACC_PUBLIC + ACC_SUPER, classname, null, p(AbstractScript.class), null);
+        classWriter.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, classname, null, p(AbstractScript.class), null);
         classWriter.visitSource(sourcename, null);
         
         topLevelScope = scope;

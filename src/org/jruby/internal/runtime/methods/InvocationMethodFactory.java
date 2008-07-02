@@ -37,6 +37,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.parser.StaticScope;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
@@ -121,10 +122,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG_THREE = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
-    
-    /** The super constructor signature for compile Ruby method handles. */
-    private final static String COMPILED_SUPER_SIG = 
-            sig(Void.TYPE, RubyModule.class, Arity.class, Visibility.class, StaticScope.class, Object.class, CallConfiguration.class);
     
     /** The super constructor signature for Java-based method handles. */
     private final static String JAVA_SUPER_SIG = sig(Void.TYPE, params(RubyModule.class, Visibility.class));
@@ -377,9 +374,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     generatedClass = endCall(cw,mv,mname);
                 }
 
-                return (DynamicMethod)generatedClass
-                        .getConstructor(RubyModule.class, Arity.class, Visibility.class, StaticScope.class, Object.class, CallConfiguration.class)
-                        .newInstance(implementationClass, arity, visibility, scope, scriptObject, callConfig);
+                CompiledMethod compiledMethod = (CompiledMethod)generatedClass.newInstance();
+                compiledMethod.init(implementationClass, arity, visibility, scope, scriptObject, callConfig);
+                return compiledMethod;
             } catch(Exception e) {
                 e.printStackTrace();
                 throw implementationClass.getRuntime().newLoadError(e.getMessage());
@@ -929,18 +926,12 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     }
 
     private ClassWriter createCompiledCtor(String namePath, String sup) throws Exception {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, sup, null);
-        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", COMPILED_SUPER_SIG, null, null);
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+        cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, sup, null);
+        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);
-        mv.visitVarInsn(ALOAD, 1);
-        mv.visitVarInsn(ALOAD, 2);
-        mv.visitVarInsn(ALOAD, 3);
-        mv.visitVarInsn(ALOAD, 4);
-        mv.visitVarInsn(ALOAD, 5);
-        mv.visitVarInsn(ALOAD, 6);
-        mv.visitMethodInsn(INVOKESPECIAL, sup, "<init>", COMPILED_SUPER_SIG);
+        mv.visitMethodInsn(INVOKESPECIAL, sup, "<init>", "()V");
         Label line = new Label();
         mv.visitLineNumber(0, line);
         mv.visitInsn(RETURN);
@@ -950,8 +941,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     }
 
     private ClassWriter createJavaMethodCtor(String namePath, String sup) throws Exception {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, sup, null);
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+        cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, sup, null);
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", JAVA_SUPER_SIG, null, null);
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);
@@ -967,8 +958,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     }
 
     private ClassWriter createIndexedJavaMethodCtor(String namePath, String sup) throws Exception {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, sup, null);
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+        cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, sup, null);
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", JAVA_INDEXED_SUPER_SIG, null, null);
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);

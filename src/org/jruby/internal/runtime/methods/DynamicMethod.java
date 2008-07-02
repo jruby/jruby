@@ -66,20 +66,25 @@ public abstract class DynamicMethod {
      */
     protected DynamicMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
         assert implementationClass != null;
+        init(implementationClass, visibility, callConfig);
+    }
+    
+    /**
+     * A no-arg constructor used only by the UndefinedMethod subclass and
+     * CompiledMethod handles. instanceof assertions make sure this is so.
+     */
+    protected DynamicMethod() {
+        assert (this instanceof UndefinedMethod ||
+                this instanceof CompiledMethod);
+    }
+    
+    protected void init(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
         this.visibility = visibility;
         this.implementationClass = implementationClass;
         // TODO: Determine whether we should perhaps store non-singleton class
         // in the implementationClass
         this.protectedClass = calculateProtectedClass(implementationClass);
         this.callConfig = callConfig;
-    }
-    
-    /**
-     * A no-arg constructor used only by the UndefinedMethod subclass. An
-     * assertion makes sure this instanceof UndefinedMethod.
-     */
-    protected DynamicMethod() {
-        assert this instanceof UndefinedMethod;
     }
 
     /**

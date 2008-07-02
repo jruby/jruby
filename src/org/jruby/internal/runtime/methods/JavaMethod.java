@@ -43,8 +43,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
     private Class[] argumentTypes;
     private String javaName;
     private boolean isSingleton;
-    protected final int methodIndex;
-    protected final StaticScope staticScope;
+    protected StaticScope staticScope;
     
     public static abstract class JavaMethodNoBlock extends JavaMethod {
         public JavaMethodNoBlock(RubyModule implementationClass, Visibility visibility) {
@@ -542,13 +541,11 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
 
     public JavaMethod(RubyModule implementationClass, Visibility visibility) {
         super(implementationClass, visibility, CallConfiguration.FRAME_ONLY);
-        this.methodIndex = -1;
         this.staticScope = null;
     }
 
     public JavaMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
         super(implementationClass, visibility, callConfig);
-        this.methodIndex = -1;
         this.staticScope = staticScope;
         this.arity = arity;
         this.arityValue = arity.getValue();
@@ -556,8 +553,16 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
 
     public JavaMethod(RubyModule implementationClass, Visibility visibility, int methodIndex) {
         super(implementationClass, visibility, CallConfiguration.FRAME_ONLY);
-        this.methodIndex = methodIndex;
         this.staticScope = null;
+    }
+    
+    protected JavaMethod() {}
+    
+    public void init(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope, CallConfiguration callConfig) {
+        this.staticScope = staticScope;
+        this.arity = arity;
+        this.arityValue = arity.getValue();
+        super.init(implementationClass, visibility, callConfig);
     }
 
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block);
