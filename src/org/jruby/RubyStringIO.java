@@ -255,10 +255,15 @@ public class RubyStringIO extends RubyObject {
     @JRubyMethod(name = "each_byte", frame = true)
     public IRubyObject each_byte(ThreadContext context, Block block) {
         checkReadable();
-        
-        RubyString.newString(getRuntime(),new ByteList(internal.getByteList(), (int)pos, internal.getByteList().length())).each_byte(context, block);
-        
-        return getRuntime().getNil();
+        Ruby runtime = context.getRuntime();
+        ByteList bytes = internal.getByteList();
+
+        // Check the length every iteration, since
+        // the block can modify this string.
+        while (pos < bytes.length()) {
+            block.yield(context, runtime.newFixnum(bytes.get((int) pos++) & 0xFF));
+        }
+        return runtime.getNil();
     }
 
     @JRubyMethod(name = "each_line", optional = 1, frame = true)
