@@ -292,8 +292,9 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                             actualRequired,
                             anno.optional(),
                             true);
+                    String implClass = anno.meta() ? "cls.getSingletonClass()" : "cls";
 
-                    out.println("        javaMethod = new " + annotatedBindingName + "(cls, Visibility." + anno.visibility() + ");");
+                    out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility() + ");");
                     out.println("        populateMethod(javaMethod, " +
                             "-1, \"" +
                             md.getSimpleName() + "\", " +
