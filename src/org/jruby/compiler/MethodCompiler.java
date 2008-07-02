@@ -59,6 +59,11 @@ public interface MethodCompiler {
     public void duplicateCurrentValue();
     
     /**
+     * For logging, println the object reference currently atop the stack
+     */
+    public void aprintln();
+    
+    /**
      * Swap the top and second values on the stack.
      */
     public void swapValues();

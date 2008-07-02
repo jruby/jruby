@@ -2060,6 +2060,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             invokeIRubyObject("getMetaClass", sig(RubyClass.class));
         }
         
+        public void aprintln() {
+            method.aprintln();
+        }
+        
         public void getVisibilityFor(String name) {
             method.ldc(name);
             method.invokevirtual(p(RubyClass.class), "searchMethod", sig(DynamicMethod.class, params(String.class)));
@@ -2067,9 +2071,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
         
         public void isPrivate(Object gotoToken, int toConsume) {
-            method.invokevirtual(p(Visibility.class), "isPrivate", sig(boolean.class));
+            method.getstatic(p(Visibility.class), "PRIVATE", ci(Visibility.class));
             Label temp = new Label();
-            method.ifeq(temp); // EQ == 0 (i.e. false)
+            method.if_acmpne(temp);
             while((toConsume--) > 0) {
                   method.pop();
             }
@@ -2078,9 +2082,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
         
         public void isNotProtected(Object gotoToken, int toConsume) {
-            method.invokevirtual(p(Visibility.class), "isProtected", sig(boolean.class));
+            method.getstatic(p(Visibility.class), "PROTECTED", ci(Visibility.class));
             Label temp = new Label();
-            method.ifne(temp);
+            method.if_acmpeq(temp);
             while((toConsume--) > 0) {
                   method.pop();
             }
