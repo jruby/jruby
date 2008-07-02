@@ -55,6 +55,17 @@ public class ReflectionMethodFactory extends MethodFactory {
      * 
      * @see org.jruby.internal.runtime.methods.MethodFactory#getCompiledMethod
      */
+    public DynamicMethod getCompiledMethodLazily(RubyModule implementationClass,
+            String methodName, Arity arity, Visibility visibility, 
+            StaticScope scope, Object scriptObject, CallConfiguration callConfig) {
+        return getCompiledMethod(implementationClass, methodName, arity, visibility, scope, scriptObject, callConfig);
+    }
+    
+    /**
+     * Use reflection to provide a method handle for a compiled Ruby method.
+     * 
+     * @see org.jruby.internal.runtime.methods.MethodFactory#getCompiledMethod
+     */
     public DynamicMethod getCompiledMethod(RubyModule implementationClass,
             String methodName, Arity arity, Visibility visibility, 
             StaticScope scope, Object scriptObject, CallConfiguration callConfig) {

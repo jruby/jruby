@@ -181,6 +181,18 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      * 
      * @see org.jruby.internal.runtime.methods.MethodFactory#getCompiledMethod
      */
+    public DynamicMethod getCompiledMethodLazily(
+            RubyModule implementationClass, String method, Arity arity, 
+            Visibility visibility, StaticScope scope, Object scriptObject, CallConfiguration callConfig) {
+        return new CompiledMethod.LazyCompiledMethod(implementationClass, method, arity, visibility, scope, scriptObject, callConfig, this);
+    }
+            
+
+    /**
+     * Use code generation to provide a method handle for a compiled Ruby method.
+     * 
+     * @see org.jruby.internal.runtime.methods.MethodFactory#getCompiledMethod
+     */
     public DynamicMethod getCompiledMethod(
             RubyModule implementationClass, String method, Arity arity, 
             Visibility visibility, StaticScope scope, Object scriptObject, CallConfiguration callConfig) {

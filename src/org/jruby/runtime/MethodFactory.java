@@ -102,6 +102,27 @@ public abstract class MethodFactory {
             Object scriptObject, CallConfiguration callConfig);
     
     /**
+     * Like getCompiledMethod, but postpones any heavy lifting involved in
+     * creating the method until first invocation. This helps reduce the cost
+     * of starting up AOT-compiled code, by spreading out the heavy lifting
+     * across the run rather than causing all method handles to be immediately
+     * instantiated.
+     * 
+     * @param implementationClass The class to which the method will be bound.
+     * @param method The name of the method
+     * @param arity The Arity of the method
+     * @param visibility The method's visibility on the target type.
+     * @param scope The methods static scoping information.
+     * @param scriptObject An instace of the target compiled method class.
+     * @param callConfig The call configuration to use for this method.
+     * @return A new method handle for the target compiled method.
+     */
+    public abstract DynamicMethod getCompiledMethodLazily(
+            RubyModule implementationClass, String method, 
+            Arity arity, Visibility visibility, StaticScope scope, 
+            Object scriptObject, CallConfiguration callConfig);
+    
+    /**
      * Based on a list of annotated Java methods, generate a method handle using
      * the annotation and the target signatures. The annotation and signatures
      * will be used to dynamically generate the appropriate call logic for the

@@ -31,13 +31,171 @@ import org.jruby.RubyModule;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.MethodFactory;
 
-public abstract class CompiledMethod extends JavaMethod implements JumpTarget, Cloneable{
+public abstract class CompiledMethod extends JavaMethod implements JumpTarget, Cloneable {
     protected Object $scriptObject;
+    
+    public static class LazyCompiledMethod extends DynamicMethod implements JumpTarget, Cloneable {
+        private final String method;
+        private final Arity arity;
+        private final StaticScope scope;
+        private final Object scriptObject;
+        private final MethodFactory factory;
+        private DynamicMethod compiledMethod;
+    
+        public LazyCompiledMethod(RubyModule implementationClass, String method, Arity arity, 
+            Visibility visibility, StaticScope scope, Object scriptObject, CallConfiguration callConfig, MethodFactory factory) {
+            super(implementationClass, visibility, callConfig);
+            this.method = method;
+            this.arity = arity;
+            this.scope = scope;
+            this.scriptObject = scriptObject;
+            this.factory = factory;
+        }
+        
+        private void initializeMethod() {
+            compiledMethod = factory.getCompiledMethod(implementationClass, method, arity, visibility, scope, scriptObject, callConfig);
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+            if (compiledMethod == null) initializeMethod();
+            return compiledMethod.call(context, self, clazz, name);
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
+            if (compiledMethod == null) initializeMethod();
+            return compiledMethod.call(context, self, clazz, name, arg0);
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+            if (compiledMethod == null) initializeMethod();
+            return compiledMethod.call(context, self, clazz, name, arg0, arg1);
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+            if (compiledMethod == null) initializeMethod();
+            return compiledMethod.call(context, self, clazz, name, arg0, arg1, arg2);
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+            if (compiledMethod == null) initializeMethod();
+            return compiledMethod.call(context, self, clazz, name, args);
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+            if (compiledMethod == null) initializeMethod();
+            return compiledMethod.call(context, self, clazz, name, block);
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+            if (compiledMethod == null) initializeMethod();
+            return compiledMethod.call(context, self, clazz, name, arg0, block);
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+            if (compiledMethod == null) initializeMethod();
+            return compiledMethod.call(context, self, clazz, name, arg0, arg1, block);
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+            if (compiledMethod == null) initializeMethod();
+            return compiledMethod.call(context, self, clazz, name, arg0, arg1, arg2, block);
+        }
+        
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            if (compiledMethod == null) initializeMethod();
+            return compiledMethod.call(context, self, clazz, name, args, block);
+        }
+
+        @Override
+        public Arity getArity() {
+            if (compiledMethod == null) initializeMethod();
+            return compiledMethod.getArity();
+        }
+
+        @Override
+        public CallConfiguration getCallConfig() {
+            if (compiledMethod == null) initializeMethod();
+            return compiledMethod.getCallConfig();
+        }
+
+        @Override
+        public RubyModule getImplementationClass() {
+            if (compiledMethod == null) initializeMethod();
+            return compiledMethod.getImplementationClass();
+        }
+
+        @Override
+        protected RubyModule getProtectedClass() {
+            if (compiledMethod == null) initializeMethod();
+            return compiledMethod.getProtectedClass();
+        }
+
+        @Override
+        public DynamicMethod getRealMethod() {
+            if (compiledMethod == null) initializeMethod();
+            return compiledMethod.getRealMethod();
+        }
+
+        @Override
+        public Visibility getVisibility() {
+            if (compiledMethod == null) initializeMethod();
+            return compiledMethod.getVisibility();
+        }
+
+        @Override
+        public boolean isCallableFrom(IRubyObject caller, CallType callType) {
+            if (compiledMethod == null) initializeMethod();
+            return compiledMethod.isCallableFrom(caller, callType);
+        }
+
+        @Override
+        public boolean isNative() {
+            if (compiledMethod == null) initializeMethod();
+            return compiledMethod.isNative();
+        }
+
+        @Override
+        public void setCallConfig(CallConfiguration callConfig) {
+            if (compiledMethod == null) initializeMethod();
+            compiledMethod.setCallConfig(callConfig);
+        }
+
+        @Override
+        public void setImplementationClass(RubyModule implClass) {
+            if (compiledMethod == null) initializeMethod();
+            compiledMethod.setImplementationClass(implClass);
+        }
+
+        @Override
+        public void setVisibility(Visibility visibility) {
+            if (compiledMethod == null) initializeMethod();
+            compiledMethod.setVisibility(visibility);
+        }
+
+        @Override
+        public DynamicMethod dup() {
+            if (compiledMethod == null) initializeMethod();
+            return compiledMethod.dup();
+        }
+        
+    }
     
     public CompiledMethod(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope, Object scriptObject, CallConfiguration callConfig) {
     	super(implementationClass, visibility, callConfig, staticScope, arity);
