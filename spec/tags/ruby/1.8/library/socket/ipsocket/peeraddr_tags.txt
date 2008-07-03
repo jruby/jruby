@@ -1,0 +1,1 @@
+fails(JRUBY-2738):Socket::IPSocket#peeraddr raises error if socket is not connected

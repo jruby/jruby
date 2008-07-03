@@ -1,0 +1,1 @@
+fails(JRUBY-2683):Regexp#to_s returns a string in (?xxx:yyy) notation

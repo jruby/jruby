@@ -778,7 +778,7 @@
       <arg line="${mspec.dir}/bin/mspec tag"/>
       <arg line="-t ${basedir}/bin/jruby"/>
       <arg line="--add fails --fail"/>
-      <arg line="-X ${spec.tags.dir}"/>
+      <arg line="-B ${spec.dir}/default.mspec"/>
       <arg value="${rubyspec.dir}/1.8"/>
     </java>
   </target>
@@ -799,7 +799,7 @@
       <arg line="${mspec.dir}/bin/mspec"/>
       <arg line="-t ${basedir}/bin/jruby"/>
       <arg line="-f s -g fails --dry-run"/>
-      <arg line="-X ${spec.tags.dir}"/>
+        <arg line="-B ${spec.dir}/default.mspec"/>
       <arg value="${rubyspec.dir}/1.8"/>
     </java>
   </target>
@@ -839,7 +839,7 @@
 	<arg value="-f"/><arg value="m"/>
 	<extra-args/>
 
-	<arg value="-B ${spec.dir}/default.mspec"/>
+	<arg line="-B ${spec.dir}/default.mspec"/>
       </java>
     </sequential>
   </macrodef>
@@ -852,7 +852,7 @@
       <echo message="Excludes: ${spec.tags.dir}"/>
       <run-specs compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}">
 	<extra-args>
-	  <arg value="-X"/><arg value="${spec.tags.dir}"/>
+	    <arg line="-B ${spec.dir}/default.mspec"/>
 	</extra-args>
       </run-specs>
     </sequential>

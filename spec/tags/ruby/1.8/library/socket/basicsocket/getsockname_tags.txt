@@ -1,0 +1,3 @@
+fails(JRUBY-2739):Socket::BasicSocket#getsockname returns the sockaddr associacted with the socket
+fails(JRUBY-2739):Socket::BasicSocket#getsockname works on server sockets
+fails(JRUBY-2739):Socket::BasicSocket#getsockname returns empty sockaddr for unbinded sockets
