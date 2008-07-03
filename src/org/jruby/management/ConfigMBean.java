@@ -10,6 +10,7 @@ public interface ConfigMBean {
     public boolean isSamplingEnabled();
     public int getJitThreshold();
     public int getJitMax();
+    public int getJitMaxSize();
     public boolean isRunRubyInProcess();
     public String getCompatVersion();
     public String getCurrentDirectory();
@@ -37,4 +38,6 @@ public interface ConfigMBean {
     public int getSafeLevel();
     public String getOptionGlobals();
     public boolean isManagementEnabled();
+    public boolean isFullTraceEnabled();
+    public boolean isLazyHandlesEnabled();
 }

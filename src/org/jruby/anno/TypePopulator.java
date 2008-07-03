@@ -5,10 +5,13 @@
 
 package org.jruby.anno;
 
+import java.util.List;
+import java.util.Map;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.MethodFactory;
 
 /**
  *
@@ -22,5 +25,40 @@ public abstract class TypePopulator {
         javaMethod.setCallConfig(callConfig);
     }
     
-    public abstract void populate(RubyModule clsmod);
+    public abstract void populate(RubyModule clsmod, Class clazz);
+    
+    public static final TypePopulator DEFAULT = new DefaultTypePopulator();
+    public static class DefaultTypePopulator extends TypePopulator {
+        public void populate(RubyModule clsmod, Class clazz) {
+            // fallback on non-pregenerated logic
+            MethodFactory methodFactory = MethodFactory.createFactory(clsmod.getRuntime().getJRubyClassLoader());
+            
+            RubyModule.MethodClumper clumper = new RubyModule.MethodClumper();
+            clumper.clump(clazz);
+            
+            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getStaticAnnotatedMethods().entrySet()) {
+                clsmod.defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
+            }
+            
+            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getAnnotatedMethods().entrySet()) {
+                clsmod.defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
+            }
+            
+            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getStaticAnnotatedMethods1_8().entrySet()) {
+                clsmod.defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
+            }
+            
+            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getAnnotatedMethods1_8().entrySet()) {
+                clsmod.defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
+            }
+            
+            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getStaticAnnotatedMethods1_9().entrySet()) {
+                clsmod.defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
+            }
+            
+            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getAnnotatedMethods1_9().entrySet()) {
+                clsmod.defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
+            }
+        }
+    }
 }

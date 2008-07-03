@@ -601,48 +601,27 @@ public class RubyModule extends RubyObject {
     
     public void defineAnnotatedMethodsIndividually(Class clazz) {
         String x = clazz.getSimpleName();
-        int a = 1 + 1;
-        try {
-            String qualifiedName = "org.jruby.gen." + clazz.getCanonicalName().replace('.', '$');
-            
-            if (DEBUG) System.out.println("looking for " + qualifiedName + "$Populator");
-            
-            Class populatorClass = Class.forName(qualifiedName + "$Populator");
-            TypePopulator populator = (TypePopulator)populatorClass.newInstance();
-            populator.populate(this);
-        } catch (Throwable t) {
-            if (DEBUG) System.out.println("Could not find it!");
-            // fallback on non-pregenerated logic
-            MethodFactory methodFactory = MethodFactory.createFactory(getRuntime().getJRubyClassLoader());
-            
-            MethodClumper clumper = new MethodClumper();
-            clumper.clump(clazz);
-            
-            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getStaticAnnotatedMethods().entrySet()) {
-                defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
-            }
-            
-            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getAnnotatedMethods().entrySet()) {
-                defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
-            }
-            
-            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getStaticAnnotatedMethods1_8().entrySet()) {
-                defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
-            }
-            
-            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getAnnotatedMethods1_8().entrySet()) {
-                defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
-            }
-            
-            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getStaticAnnotatedMethods1_9().entrySet()) {
-                defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
-            }
-            
-            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getAnnotatedMethods1_9().entrySet()) {
-                defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
+        TypePopulator populator = null;
+        
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            // we need full traces, use default (slow) populator
+            if (DEBUG) System.out.println("trace mode, using default populator");
+            populator = TypePopulator.DEFAULT;
+        } else {
+            try {
+                String qualifiedName = "org.jruby.gen." + clazz.getCanonicalName().replace('.', '$');
+
+                if (DEBUG) System.out.println("looking for " + qualifiedName + "$Populator");
+
+                Class populatorClass = Class.forName(qualifiedName + "$Populator");
+                populator = (TypePopulator)populatorClass.newInstance();
+            } catch (Throwable t) {
+                if (DEBUG) System.out.println("Could not find it, using default populator");
+                populator = TypePopulator.DEFAULT;
             }
         }
         
+        populator.populate(this, clazz);
     }
     
     private void defineAnnotatedMethodsIndexed(Class clazz) {

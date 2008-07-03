@@ -408,11 +408,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         
         if (DEBUG) out.println("Binding multiple: " + desc1.declaringClassName + "." + javaMethodName);
         
-        String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, desc1.declaringClassName, desc1.isStatic, desc1.actualRequired, desc1.optional, true);
-        String generatedClassPath = generatedClassName.replace('.', '/');
-        
         synchronized (classLoader) {
-
             try {
                 Class c = getAnnotatedMethodClass(descs);
                 int min = Integer.MAX_VALUE;
@@ -475,12 +471,17 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             // simple path, no multimethod
             return getAnnotatedMethodClass(descs.get(0));
         }
+        
         JavaMethodDescriptor desc1 = descs.get(0);
         String javaMethodName = desc1.name;
         
         if (DEBUG) out.println("Binding multiple: " + desc1.declaringClassName + "." + javaMethodName);
         
         String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, desc1.declaringClassName, desc1.isStatic, desc1.actualRequired, desc1.optional, true);
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            // in debug mode we append _DBG to class name to force it to regenerate (or use pre-generated debug version)
+            generatedClassName += "_DBG";
+        }
         String generatedClassPath = generatedClassName.replace('.', '/');
         
         synchronized (classLoader) {
@@ -648,6 +649,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         String javaMethodName = desc.name;
         
         String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, desc.declaringClassName, desc.isStatic, desc.actualRequired, desc.optional, false);
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            // in debug mode we append _DBG to class name to force it to regenerate (or use pre-generated debug version)
+            generatedClassName += "_DBG";
+        }
         String generatedClassPath = generatedClassName.replace('.', '/');
         
         synchronized (classLoader) {
@@ -1336,6 +1341,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         if (!callConfig.isNoop()) {
             invokeCallConfigPre(method, superClass, specificArity, block, callConfig);
         }
+        
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            invokeCCallTrace(method);
+        }
 
         Label tryBegin = new Label();
         Label tryEnd = new Label();
@@ -1372,6 +1381,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         
         // normal finally and exit
         {
+            if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+                invokeCReturnTrace(method);
+            }
+            
             if (!callConfig.isNoop()) {
                 invokeCallConfigPost(method, superClass, callConfig);
             }
@@ -1395,10 +1408,17 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
                     method.invokevirtual(p(Ruby.class), "newRedoLocalJumpError", sig(RaiseException.class));
 
-                    // finally
-                    method.label(doRedoFinally);
-                    if (!callConfig.isNoop()) {
-                        invokeCallConfigPost(method, superClass, callConfig);
+                    // finally logic
+                    {
+                        method.label(doRedoFinally);
+
+                        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+                            invokeCReturnTrace(method);
+                        }
+
+                        if (!callConfig.isNoop()) {
+                            invokeCallConfigPost(method, superClass, callConfig);
+                        }
                     }
 
                     // throw redo error if we're still good
@@ -1409,6 +1429,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             // finally handling for abnormal exit
             {
                 method.label(doFinally);
+                
+                if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+                    invokeCReturnTrace(method);
+                }
 
                 //call post method stuff (exception raised)
                 if (!callConfig.isNoop()) {
@@ -1419,5 +1443,19 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 method.athrow(); // rethrow it
             }
         }
+    }
+    
+    private void invokeCCallTrace(SkinnyMethodAdapter method) {
+        method.aload(0); // method itself
+        method.aload(1); // ThreadContext
+        method.aload(4); // invoked name
+        method.invokevirtual(p(JavaMethod.class), "callTrace", sig(void.class, ThreadContext.class, String.class));
+    }
+    
+    private void invokeCReturnTrace(SkinnyMethodAdapter method) {
+        method.aload(0); // method itself
+        method.aload(1); // ThreadContext
+        method.aload(4); // invoked name
+        method.invokevirtual(p(JavaMethod.class), "returnTrace", sig(void.class, ThreadContext.class, String.class));
     }
 }

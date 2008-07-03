@@ -3,6 +3,7 @@ package org.jruby.management;
 import java.util.Arrays;
 
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 
 public class Config implements ConfigMBean {
     private Ruby ruby;
@@ -45,6 +46,10 @@ public class Config implements ConfigMBean {
 
     public int getJitMax() {
         return ruby.getInstanceConfig().getJitMax();
+    }
+
+    public int getJitMaxSize() {
+        return ruby.getInstanceConfig().getJitMaxSize();
     }
 
     public boolean isRunRubyInProcess() {
@@ -153,5 +158,13 @@ public class Config implements ConfigMBean {
     
     public boolean isManagementEnabled() {
         return ruby.getInstanceConfig().isManagementEnabled();
+    }
+    
+    public boolean isFullTraceEnabled() {
+        return RubyInstanceConfig.FULL_TRACE_ENABLED;
+    }
+    
+    public boolean isLazyHandlesEnabled() {
+        return RubyInstanceConfig.LAZYHANDLES_COMPILE;
     }
 }

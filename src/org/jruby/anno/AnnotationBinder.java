@@ -105,7 +105,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     out.println("import org.jruby.compiler.ASTInspector;");
 
                     out.println("public class " + qualifiedName + "$Populator extends TypePopulator {");
-                    out.println("    public void populate(RubyModule cls) {");
+                    out.println("    public void populate(RubyModule cls, Class clazz) {");
                     if (DEBUG) {
                         out.println("        System.out.println(\"Using pregenerated populator: \" + \"" + cd.getSimpleName() + "Populator\");");
                     }

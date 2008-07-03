@@ -202,6 +202,9 @@ public class RubyInstanceConfig {
     public static final boolean NATIVE_NET_PROTOCOL
             = SafePropertyAccessor.getBoolean("jruby.native.net.protocol", false);
 
+    public static boolean FULL_TRACE_ENABLED
+            = SafePropertyAccessor.getBoolean("jruby.debug.fullTrace", false);
+
     public static boolean nativeEnabled = true;
     
 
@@ -454,7 +457,9 @@ public class RubyInstanceConfig {
                 .append("    jruby.bytecode.version=1.5|1.6\n")
                 .append("       Set bytecode version for JRuby to generate. Default is current JVM version.\n")
                 .append("    jruby.management.enabled=true|false\n")
-                .append("       Set whether JMX management is enabled. Default is true.\n");
+                .append("       Set whether JMX management is enabled. Default is true.\n")
+                .append("    jruby.debug.fullTrace=true|false\n")
+                .append("       Set whether full traces are enabled (c-call/c-return). Default is false.\n");
 
         return sb.toString();
     }
@@ -914,6 +919,7 @@ public class RubyInstanceConfig {
                         break FOR;
                     } else if (argument.equals("--debug")) {
                         compileMode = CompileMode.OFF;
+                        FULL_TRACE_ENABLED = true;
                         System.setProperty("jruby.reflection", "true");
                         break FOR;
                     } else if (argument.equals("--jdb")) {
