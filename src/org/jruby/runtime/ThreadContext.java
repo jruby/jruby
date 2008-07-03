@@ -608,6 +608,17 @@ public final class ThreadContext {
      * @return an Array with the backtrace
      */
     public static IRubyObject createBacktraceFromFrames(Ruby runtime, Frame[] backtraceFrames) {
+        return createBacktraceFromFrames(runtime, backtraceFrames, true);
+    }
+    
+    /**
+     * Create an Array with backtrace information.
+     * @param runtime
+     * @param level
+     * @param nativeException
+     * @return an Array with the backtrace
+     */
+    public static IRubyObject createBacktraceFromFrames(Ruby runtime, Frame[] backtraceFrames, boolean cropAtEval) {
         RubyArray backtrace = runtime.newArray();
         
         if (backtraceFrames == null || backtraceFrames.length <= 0) return backtrace;
@@ -617,7 +628,7 @@ public final class ThreadContext {
         for (int i = traceSize - 1; i > 0; i--) {
             Frame frame = backtraceFrames[i];
             // We are in eval with binding break out early
-            if (frame.isBindingFrame()) break;
+            if (cropAtEval && frame.isBindingFrame()) break;
 
             addBackTraceElement(backtrace, frame, backtraceFrames[i - 1]);
         }
