@@ -53,26 +53,22 @@ for %%i in ("%JRUBY_HOME%\lib\*.jar") do @call :setcp %%i
 
 goto :EOF
 
-rem setcp subroutine
-:setcp
-if not "%JRUBY_CP%" == "" goto add
-
+rem setjrubycp subroutine
+:setjrubycp
+if not "%JRUBY_CP%" == "" goto addjrubycp
 set JRUBY_CP=%*
 goto :EOF
 
-:add
+:addjrubycp
 set JRUBY_CP=%JRUBY_CP%;%*
-
 goto :EOF
 
-rem setjrubycp subroutine
+rem setcp subroutine
 :setcp
 if not "%CP%" == "" goto add
-
 set CP=%*
 goto :EOF
 
 :add
 set CP=%CP%;%*
-
 goto :EOF
