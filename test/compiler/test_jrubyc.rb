@@ -24,12 +24,12 @@ class TestJrubyc < Test::Unit::TestCase
       output = File.read(@tempfile.path)
 
       assert_equal(
-        "Compiling #{__FILE__} to class ruby/test/compiler/test_jrubyc\n",
+        "Compiling #{__FILE__} to class test/compiler/test_jrubyc\n",
         output)
 
-      assert(File.exist?("ruby/test/compiler/test_jrubyc.class"))
+      assert(File.exist?("test/compiler/test_jrubyc.class"))
     ensure
-      File.delete("ruby") rescue nil
+      File.delete("test/compiler/test_jrubyc.class") rescue nil
     end
   end
   
@@ -39,11 +39,11 @@ class TestJrubyc < Test::Unit::TestCase
     output = File.read(@tempfile.path)
 
     assert_equal(
-      "Compiling #{__FILE__} to class ruby/test/compiler/test_jrubyc\n",
+      "Compiling #{__FILE__} to class test/compiler/test_jrubyc\n",
       output)
 
-    assert(File.exist?(tempdir + "/ruby/test/compiler/test_jrubyc.class"))
-    FileUtils.rm_rf(tempdir + "/ruby")
+    assert(File.exist?(tempdir + "/test/compiler/test_jrubyc.class"))
+    FileUtils.rm_rf(tempdir + "/test/compiler/test_jrubyc.class")
   end
   
   def test_bad_target
@@ -77,12 +77,12 @@ class TestJrubyc < Test::Unit::TestCase
     output = File.read(@tempfile.path)
 
     assert_equal(
-      "Compiling test_file1.rb to class ruby/test_file1\n",
+      "Compiling test_file1.rb to class test_file1\n",
       output)
 
     File.delete("test_file1.rb")
 
-    assert_nothing_raised { require 'ruby/test_file1' }
+    assert_nothing_raised { require 'test_file1' }
     assert($compile_test)
   end
 end
