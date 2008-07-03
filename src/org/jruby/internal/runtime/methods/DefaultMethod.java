@@ -472,7 +472,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
     }
 
     private void traceReturn(ThreadContext context, Ruby runtime, String name) {
-        runtime.callEventHooks(context, EventHook.RUBY_EVENT_RETURN, position.getFile(), position.getStartLine(), name, getImplementationClass());
+        runtime.callEventHooks(context, EventHook.RUBY_EVENT_RETURN, context.getFile(), context.getLine(), name, getImplementationClass());
     }
     
     private void traceCall(ThreadContext context, Ruby runtime, String name) {
