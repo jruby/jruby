@@ -12,6 +12,7 @@ test_bignum
 test_block
 test_block_arg_processing
 test_cache_map_leak
+test_caller
 test_case
 test_class
 test_command_line_switches
