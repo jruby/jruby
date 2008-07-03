@@ -39,6 +39,7 @@ import java.io.PushbackInputStream;
  * 
  * @author jpetersen
  */
+@Deprecated
 public class RubyInputStream extends PushbackInputStream {
     public RubyInputStream(InputStream in) {
         super(new BufferedInputStream(in));
