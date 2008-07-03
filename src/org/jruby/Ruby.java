@@ -2442,6 +2442,10 @@ public final class Ruby {
         return newRaiseException(getErrno().fastGetClass("ENOTDIR"), message);
     }
 
+    public RaiseException newErrnoENOTSOCKError(String message) {
+        return newRaiseException(getErrno().fastGetClass("ENOTSOCK"), message);
+    }
+
     public RaiseException newErrnoENOENTError(String message) {
         return newRaiseException(getErrno().fastGetClass("ENOENT"), message);
     }

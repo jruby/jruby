@@ -82,12 +82,20 @@ public class RubyIPSocket extends RubyBasicSocket {
 
     @JRubyMethod
     public IRubyObject addr() {
-        return addrFor(getLocalSocket());
+        InetSocketAddress address = getLocalSocket();
+        if (address == null) {
+            throw getRuntime().newErrnoENOTSOCKError("Not socket or not connected");
+        }
+        return addrFor(address);
     }
 
     @JRubyMethod
     public IRubyObject peeraddr() {
-        return addrFor(getRemoteSocket());
+        InetSocketAddress address = getRemoteSocket();
+        if (address == null) {
+            throw getRuntime().newErrnoENOTSOCKError("Not socket or not connected");
+        }
+        return addrFor(address);
     }
 
     @JRubyMethod(meta = true)
