@@ -96,6 +96,12 @@ public class RubyUDPSocket extends RubyIPSocket {
         return this;
     }
 
+    @JRubyMethod(visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(IRubyObject protocol) {
+        // we basically ignore protocol. let someone report it...
+        return initialize();
+    }
+
     public IRubyObject setsockopt(IRubyObject[] args) {
         // Stubbed out
         return getRuntime().getNil();
