@@ -34,6 +34,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.RubyModule;
 import org.jruby.ast.types.IArityNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
@@ -89,5 +90,17 @@ public class ZSuperNode extends Node implements IArityNode, BlockAcceptingNode {
         Block block = ASTInterpreter.getBlock(runtime, context, self, aBlock, iterNode);
         
         return RuntimeHelpers.callZSuper(runtime, context, block, self);
+    }
+    
+    @Override
+    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        String name = context.getFrameName();
+        RubyModule klazz = context.getFrameKlazz();
+        
+        if (name != null && klazz != null && klazz.getSuperClass().isMethodBound(name, false)) {
+            return "super";
+        }
+        
+        return null;
     }
 }

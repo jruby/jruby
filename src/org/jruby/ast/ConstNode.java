@@ -87,4 +87,8 @@ public class ConstNode extends Node implements INameNode {
         return context.getConstant(name);
     }
 
+    @Override
+    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return context.getConstantDefined(name) ? "constant" : null;
+    }
 }

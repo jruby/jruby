@@ -34,6 +34,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.RubyModule;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.evaluator.Instruction;
@@ -89,7 +90,7 @@ public class SuperNode extends Node implements BlockAcceptingNode {
         
         return this;
     }
-    
+
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         RuntimeHelpers.checkSuperDisabledOrOutOfMethod(context);
@@ -101,5 +102,17 @@ public class SuperNode extends Node implements BlockAcceptingNode {
         if (iterNode == null && !block.isGiven()) block = aBlock;
         
         return self.callSuper(context, args, block);
+    }
+    
+    @Override
+    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        String name = context.getFrameName();
+        RubyModule klazz = context.getFrameKlazz();
+        
+        if (name != null && klazz != null && klazz.getSuperClass().isMethodBound(name, false)) {
+            return ASTInterpreter.getArgumentDefinition(runtime, context, argsNode, "super", self, aBlock);
+        }
+            
+        return null;
     }
 }

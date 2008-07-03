@@ -34,6 +34,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.RubyMatchData;
 import org.jruby.RubyRegexp;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
@@ -76,5 +77,17 @@ public class NthRefNode extends Node {
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         return RubyRegexp.nth_match(matchNumber, context.getCurrentFrame().getBackRef());
+    }
+    
+    @Override
+    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        IRubyObject backref = context.getCurrentFrame().getBackRef();
+        if (backref instanceof RubyMatchData) {
+            ((RubyMatchData) backref).use();
+            
+            if (!((RubyMatchData) backref).group(matchNumber).isNil()) return "$" + matchNumber;
+        }
+        
+        return null;
     }
 }

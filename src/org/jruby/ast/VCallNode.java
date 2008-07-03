@@ -81,4 +81,9 @@ public class VCallNode extends Node implements INameNode {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         return callAdapter.call(context, self);
     }
+    
+    @Override
+    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return self.getMetaClass().isMethodBound(getName(), false) ? "method" : null;
+    }
 }

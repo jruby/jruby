@@ -74,4 +74,9 @@ public class SelfNode extends Node implements INameNode {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         return ASTInterpreter.pollAndReturn(context, self);
     }
+    
+    @Override
+    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return "self";
+    }
 }

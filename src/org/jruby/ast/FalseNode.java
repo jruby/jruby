@@ -74,4 +74,9 @@ public class FalseNode extends Node implements INameNode {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         return ASTInterpreter.pollAndReturn(context, runtime.getFalse());
     }
+    
+    @Override
+    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return "false";
+    }
 }

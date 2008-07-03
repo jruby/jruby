@@ -86,7 +86,13 @@ public class OpAsgnOrNode extends Node implements BinaryOperatorNode {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        String def = ASTInterpreter.getDefinition(runtime, context, firstNode, self, aBlock);
+        String def;
+        try {
+            context.setWithinDefined(true);
+            def = firstNode.definition(runtime, context, self, aBlock);
+        } finally {
+            context.setWithinDefined(false);
+        }
    
         IRubyObject result = runtime.getNil();
         if (def != null) {

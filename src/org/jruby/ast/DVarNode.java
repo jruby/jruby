@@ -114,4 +114,9 @@ public class DVarNode extends Node implements INameNode {
         // FIXME: null check is removable once we figure out how to assign to unset named block args
         return obj == null ? runtime.getNil() : obj;
     }
+    
+    @Override
+    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return "local-variable(in-block)";
+    }
 }

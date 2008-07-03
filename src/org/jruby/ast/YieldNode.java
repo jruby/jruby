@@ -94,4 +94,9 @@ public class YieldNode extends Node {
 
         return context.getCurrentFrame().getBlock().yield(context, result, null, null, checkState);
     }
+    
+    @Override
+    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return aBlock.isGiven() ? "yield" : null;
+    }
 }

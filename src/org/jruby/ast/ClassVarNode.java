@@ -33,6 +33,7 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ast.types.INameNode;
@@ -86,5 +87,25 @@ public class ClassVarNode extends Node implements INameNode {
         if (rubyClass == null) rubyClass = self.getMetaClass();
 
         return rubyClass.getClassVar(name);
+    }
+    
+    @Override
+    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        //RubyModule module = context.getRubyClass();
+        RubyModule module = context.getCurrentScope().getStaticScope().getModule();
+        
+        if (module == null && self.getMetaClass().fastIsClassVarDefined(name)) {
+            return "class variable";
+        } else if (module.fastIsClassVarDefined(name)) {
+            return "class variable";
+        }
+
+        IRubyObject attached = module.isSingleton() ? ((MetaClass)module).getAttached() : null;
+        
+        if (attached instanceof RubyModule && ((RubyModule) attached).fastIsClassVarDefined(name)) {
+            return "class variable"; 
+        }
+
+        return null;
     }
 }

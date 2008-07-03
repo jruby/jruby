@@ -176,4 +176,13 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
         // FIXME: We shouldn't use the current scope if it's not actually from the same hierarchy of static scopes
         return InterpretedBlock.newInterpretedClosure(context, iter.getBlockBody(), self);
     }
+    
+    @Override
+    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        if (self.getMetaClass().isMethodBound(getName(), false)) {
+            return ASTInterpreter.getArgumentDefinition(runtime, context, getArgsNode(), "method", self, aBlock);
+        }
+            
+        return null;
+    }
 }

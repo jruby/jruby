@@ -36,7 +36,6 @@ import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
@@ -79,12 +78,12 @@ public class DefinedNode extends Node {
 
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        String definition = ASTInterpreter.getDefinition(runtime, context, expressionNode, self, aBlock);
-        
-        if (definition != null) {
-            return runtime.newString(definition);
-        } else {
-            return runtime.getNil();
+        try {
+            context.setWithinDefined(true);
+            String definition = expressionNode.definition(runtime, context, self, aBlock);
+            return definition != null ? runtime.newString(definition) : runtime.getNil();
+        } finally {
+            context.setWithinDefined(false);
         }
     }
 }

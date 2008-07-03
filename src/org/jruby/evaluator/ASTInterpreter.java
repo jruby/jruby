@@ -245,15 +245,17 @@ public class ASTInterpreter {
         }
     }
 
-    private static String getArgumentDefinition(Ruby runtime, ThreadContext context, Node node, String type, IRubyObject self, Block block) {
+    public static String getArgumentDefinition(Ruby runtime, ThreadContext context, Node node, String type, IRubyObject self, Block block) {
         if (node == null) return type;
             
         if (node instanceof ArrayNode) {
-            for (int i = 0; i < ((ArrayNode)node).size(); i++) {
-                Node iterNode = ((ArrayNode)node).get(i);
-                if (getDefinitionInner(runtime, context, iterNode, self, block) == null) return null;
+            ArrayNode list = (ArrayNode) node;
+            int size = list.size();
+
+            for (int i = 0; i < size; i++) {
+                if (list.get(i).definition(runtime, context, self, block) == null) return null;
             }
-        } else if (getDefinitionInner(runtime, context, node, self, block) == null) {
+        } else if (node.definition(runtime, context, self, block) == null) {
             return null;
         }
 
@@ -303,212 +305,13 @@ public class ASTInterpreter {
         return rubyClass;
     }
 
+    @Deprecated
     public static String getDefinition(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         try {
             context.setWithinDefined(true);
-            return getDefinitionInner(runtime, context, node, self, aBlock);
+            return node.definition(runtime, context, self, aBlock);
         } finally {
             context.setWithinDefined(false);
-        }
-    }
-
-    private static String getDefinitionInner(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
-        if (node == null) return "expression";
-        
-        switch(node.nodeId) {
-        case ATTRASSIGNNODE: {
-            AttrAssignNode iVisited = (AttrAssignNode) node;
-            
-            if (getDefinitionInner(runtime, context, iVisited.getReceiverNode(), self, aBlock) != null) {
-                try {
-                    IRubyObject receiver = eval(runtime, context, iVisited.getReceiverNode(), self, aBlock);
-                    RubyClass metaClass = receiver.getMetaClass();
-                    DynamicMethod method = metaClass.searchMethod(iVisited.getName());
-                    Visibility visibility = method.getVisibility();
-
-                    if (visibility != Visibility.PRIVATE && 
-                            (visibility != Visibility.PROTECTED || metaClass.getRealClass().isInstance(self))) {
-                        if (metaClass.isMethodBound(iVisited.getName(), false)) {
-                            return getArgumentDefinition(runtime,context, iVisited.getArgsNode(), "assignment", self, aBlock);
-                        }
-                    }
-                } catch (JumpException excptn) {
-                }
-            }
-
-            return null;
-        }
-        case BACKREFNODE: {
-            IRubyObject backref = context.getCurrentFrame().getBackRef();
-            if(backref instanceof RubyMatchData) {
-                return "$" + ((BackRefNode) node).getType();
-            } else {
-                return null;
-            }
-        }
-        case CALLNODE: {
-            CallNode iVisited = (CallNode) node;
-            
-            if (getDefinitionInner(runtime, context, iVisited.getReceiverNode(), self, aBlock) != null) {
-                try {
-                    IRubyObject receiver = eval(runtime, context, iVisited.getReceiverNode(), self, aBlock);
-                    RubyClass metaClass = receiver.getMetaClass();
-                    DynamicMethod method = metaClass.searchMethod(iVisited.getName());
-                    Visibility visibility = method.getVisibility();
-
-                    if (visibility != Visibility.PRIVATE && 
-                            (visibility != Visibility.PROTECTED || metaClass.getRealClass().isInstance(self))) {
-                        if (metaClass.isMethodBound(iVisited.getName(), false)) {
-                            return getArgumentDefinition(runtime, context, iVisited.getArgsNode(), "method", self, aBlock);
-                        }
-                    }
-                } catch (JumpException excptn) {
-                }
-            }
-
-            return null;
-        }
-        case CLASSVARASGNNODE: case CLASSVARDECLNODE: case CONSTDECLNODE:
-        case DASGNNODE: case GLOBALASGNNODE: case LOCALASGNNODE:
-        case MULTIPLEASGNNODE: case OPASGNNODE: case OPELEMENTASGNNODE:
-            return "assignment";
-            
-        case CLASSVARNODE: {
-            ClassVarNode iVisited = (ClassVarNode) node;
-            //RubyModule module = context.getRubyClass();
-            RubyModule module = context.getCurrentScope().getStaticScope().getModule();
-            if (module == null && self.getMetaClass().fastIsClassVarDefined(iVisited.getName())) {
-                return "class variable";
-            } else if (module.fastIsClassVarDefined(iVisited.getName())) {
-                return "class variable";
-            } 
-            IRubyObject attached = null;
-            if (module.isSingleton()) attached = ((MetaClass)module).getAttached();
-            if (attached instanceof RubyModule) {
-                module = (RubyModule)attached;
-
-                if (module.fastIsClassVarDefined(iVisited.getName())) return "class variable"; 
-            }
-
-            return null;
-        }
-        case COLON3NODE:
-        case COLON2NODE: {
-            Colon3Node iVisited = (Colon3Node) node;
-
-            try {
-                IRubyObject left = runtime.getObject();
-                if (iVisited instanceof Colon2Node) {
-                    left = ASTInterpreter.eval(runtime, context, ((Colon2Node) iVisited).getLeftNode(), self, aBlock);
-                }
-
-                if (left instanceof RubyModule &&
-                        ((RubyModule) left).fastGetConstantAt(iVisited.getName()) != null) {
-                    return "constant";
-                } else if (left.getMetaClass().isMethodBound(iVisited.getName(), true)) {
-                    return "method";
-                }
-            } catch (JumpException excptn) {}
-            
-            return null;
-        }
-        case CONSTNODE:
-            if (context.getConstantDefined(((ConstNode) node).getName())) {
-                return "constant";
-            }
-            return null;
-        case DVARNODE:
-            return "local-variable(in-block)";
-        case FALSENODE:
-            return "false";
-        case FCALLNODE: {
-            FCallNode iVisited = (FCallNode) node;
-            if (self.getMetaClass().isMethodBound(iVisited.getName(), false)) {
-                return getArgumentDefinition(runtime, context, iVisited.getArgsNode(), "method", self, aBlock);
-            }
-            
-            return null;
-        }
-        case GLOBALVARNODE:
-            if (runtime.getGlobalVariables().isDefined(((GlobalVarNode) node).getName())) {
-                return "global-variable";
-            }
-            return null;
-        case INSTVARNODE:
-            if (self.getInstanceVariables().fastHasInstanceVariable(((InstVarNode) node).getName())) {
-                return "instance-variable";
-            }
-            return null;
-        case LOCALVARNODE:
-            return "local-variable";
-        case MATCH2NODE: case MATCH3NODE:
-            return "method";
-        case NILNODE:
-            return "nil";
-        case NTHREFNODE: {
-            IRubyObject backref = context.getCurrentFrame().getBackRef();
-            if(backref instanceof RubyMatchData) {
-                ((RubyMatchData)backref).use();
-                if(!((RubyMatchData)backref).group(((NthRefNode) node).getMatchNumber()).isNil()) {
-                    return "$" + ((NthRefNode) node).getMatchNumber();
-                }
-            }
-            return null;
-        }
-        case SELFNODE:
-            return "self";
-        case SUPERNODE: {
-            SuperNode iVisited = (SuperNode) node;
-            String name = context.getFrameName();
-            RubyModule klazz = context.getFrameKlazz();
-            if (name != null && klazz != null && klazz.getSuperClass().isMethodBound(name, false)) {
-                return getArgumentDefinition(runtime, context, iVisited.getArgsNode(), "super", self, aBlock);
-            }
-            
-            return null;
-        }
-        case TRUENODE:
-            return "true";
-        case VCALLNODE: {
-            VCallNode iVisited = (VCallNode) node;
-            if (self.getMetaClass().isMethodBound(iVisited.getName(), false)) {
-                return "method";
-            }
-            
-            return null;
-        }
-        case YIELDNODE:
-            return aBlock.isGiven() ? "yield" : null;
-        case ZSUPERNODE: {
-            String name = context.getFrameName();
-            RubyModule klazz = context.getFrameKlazz();
-            if (name != null && klazz != null && klazz.getSuperClass().isMethodBound(name, false)) {
-                return "super";
-            }
-            return null;
-        }
-        default:
-            try {
-                ASTInterpreter.eval(runtime, context, node, self, aBlock);
-                return "expression";
-            } catch (JumpException jumpExcptn) {}
-        }
-        
-        return null;
-    }
-
-    // TODO: Remove when we switch to Colon3Node.getEnclosingModule
-    public static RubyModule getEnclosingModule(Ruby runtime, ThreadContext context, Colon3Node node, IRubyObject self, Block block) {
-        if (node instanceof Colon2Node) {
-            Node leftNode = ((Colon2Node) node).getLeftNode();
-            if (leftNode != null) {            
-                return RuntimeHelpers.prepareClassNamespace(context, leftNode.interpret(runtime, context, self, block));
-            } else {
-                return context.getCurrentScope().getStaticScope().getModule();
-            }
-            
-        } else { // instanceof Colon3Node
-            return runtime.getObject();
         }
     }
 

@@ -34,6 +34,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.RubyMatchData;
 import org.jruby.RubyRegexp;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
@@ -98,5 +99,12 @@ public class BackRefNode extends Node {
             assert false: "backref with invalid type";
             return null;
         }        
+    }
+    
+    @Override
+    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        IRubyObject backref = context.getCurrentFrame().getBackRef();
+        
+        return backref instanceof RubyMatchData ? "$" + type : null;
     }
 }

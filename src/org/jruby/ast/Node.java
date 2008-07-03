@@ -40,6 +40,7 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
+import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
 import org.jruby.lexer.yacc.IDESourcePosition;
@@ -202,5 +203,15 @@ public abstract class Node implements ISourcePositionHolder {
     
     public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {
         throw new RuntimeException("Invalid node encountered in interpreter: \"" + getClass().getName() + "\", please report this at www.jruby.org");
+    }
+    
+    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        try {
+            interpret(runtime, context, self, aBlock);
+            return "expression";
+        } catch (JumpException jumpExcptn) {
+        }
+        
+        return null;
     }
 }

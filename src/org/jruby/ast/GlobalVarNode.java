@@ -77,4 +77,9 @@ public class GlobalVarNode extends Node implements INameNode {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         return runtime.getGlobalVariables().get(name);
     }
+    
+    @Override
+    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return runtime.getGlobalVariables().isDefined(name) ? "global-variable" : null;
+    }
 }

@@ -38,6 +38,7 @@ import org.jruby.RubyModule;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
+import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -92,5 +93,21 @@ public class Colon3Node extends Node implements INameNode {
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         return runtime.getObject().fastGetConstantFrom(name);
+    }
+    
+    @Override
+    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        try {
+            RubyModule left = runtime.getObject();
+
+            if (left.fastGetConstantAt(name) != null) {
+                return "constant";
+            } else if (left.getMetaClass().isMethodBound(name, true)) {
+                return "method";
+            }
+        } catch (JumpException excptn) {
+        }
+            
+        return null;
     }
 }

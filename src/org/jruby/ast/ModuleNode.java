@@ -104,7 +104,7 @@ public class ModuleNode extends Node implements IScopingNode {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        RubyModule enclosingModule = ASTInterpreter.getEnclosingModule(runtime, context, cpath, self, aBlock);
+        RubyModule enclosingModule = cpath.getEnclosingModule(runtime, context, self, aBlock);
 
         if (enclosingModule == null) throw runtime.newTypeError("no outer class/module");
 

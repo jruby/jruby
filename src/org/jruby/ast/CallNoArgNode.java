@@ -33,9 +33,13 @@
 package org.jruby.ast;
 
 import org.jruby.Ruby;
+import org.jruby.RubyClass;
+import org.jruby.exceptions.JumpException;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -61,4 +65,23 @@ public final class CallNoArgNode extends CallNode {
     public Node setIterNode(Node iterNode) {
         return new CallNoArgBlockNode(getPosition(), getReceiverNode(), getName(), getArgsNode(), (IterNode) iterNode);
     }
+    
+    @Override
+    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+       if (getReceiverNode().definition(runtime, context, self, aBlock) != null) {
+            try {
+                IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
+                RubyClass metaClass = receiver.getMetaClass();
+                DynamicMethod method = metaClass.searchMethod(getName());
+                Visibility visibility = method.getVisibility();
+                
+                if (visibility != Visibility.PRIVATE &&
+                        (visibility != Visibility.PROTECTED || metaClass.getRealClass().isInstance(self))) {
+                    return !method.isUndefined() ? "method" : null;
+                }
+            } catch (JumpException excptn) {
+            }
+        }
+
+        return null;    }
 }

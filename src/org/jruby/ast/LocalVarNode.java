@@ -114,4 +114,9 @@ public class LocalVarNode extends Node implements INameNode {
 
         return result == null ? runtime.getNil() : result;
     }
+    
+    @Override
+    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return "local-variable";
+    }
 }

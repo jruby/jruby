@@ -32,10 +32,13 @@ import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyClass;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.evaluator.Instruction;
+import org.jruby.exceptions.JumpException;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
@@ -43,6 +46,7 @@ import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -213,5 +217,27 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
         } 
         
         return runtime.getNil();
+    }
+    
+    @Override
+    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        if (receiverNode.definition(runtime, context, self, aBlock) != null) {
+            try {
+                IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
+                RubyClass metaClass = receiver.getMetaClass();
+                DynamicMethod method = metaClass.searchMethod(name);
+                Visibility visibility = method.getVisibility();
+
+                if (visibility != Visibility.PRIVATE && 
+                        (visibility != Visibility.PROTECTED || metaClass.getRealClass().isInstance(self))) {
+                    if (metaClass.isMethodBound(name, false)) {
+                        return ASTInterpreter.getArgumentDefinition(runtime, context, argsNode, "assignment", self, aBlock);
+                    }
+                }
+            } catch (JumpException e) {
+            }
+        }
+
+        return null;
     }
 }

@@ -99,4 +99,9 @@ public class Match3Node extends Node {
             return callAdapter.call(context, value, recv);
         }
     }
+    
+    @Override
+    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return "method";
+    }
 }
