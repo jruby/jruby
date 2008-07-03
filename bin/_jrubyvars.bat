@@ -10,6 +10,7 @@ rem ----- Save Environment Variables That May Change --------------------------
 
 set _CLASSPATH=%CLASSPATH%
 set _CP=%CP%
+set _JRUBY_CP=%JRUBY_CP%
 set JRUBY_BAT_ERROR=0
 
 rem ----- Verify and Set Required Environment Variables -----------------------
@@ -42,13 +43,29 @@ rem ----- Set up the VM options
 call "%~dp0_jrubyvmopts" %*
 set _RUNJAVA="%JAVA_HOME%\bin\java"
 
-rem ----- Set Up The Runtime Classpath ----------------------------------------
+rem ----- Set Up The Boot Classpath ----------------------------------------
+
+for %%i in ("%JRUBY_HOME%\lib\jruby*.jar") do @call :setjrubycp %%i
+
+rem ----- Set Up The System Classpath ----------------------------------------
 
 for %%i in ("%JRUBY_HOME%\lib\*.jar") do @call :setcp %%i
 
 goto :EOF
 
-rem Setcp subroutine
+rem setcp subroutine
+:setcp
+if not "%JRUBY_CP%" == "" goto add
+
+set JRUBY_CP=%*
+goto :EOF
+
+:add
+set JRUBY_CP=%JRUBY_CP%;%*
+
+goto :EOF
+
+rem setjrubycp subroutine
 :setcp
 if not "%CP%" == "" goto add
 

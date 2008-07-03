@@ -52,15 +52,30 @@ fi
 
 JRUBY_SHELL=/bin/sh
 
+# ----- Set Up The Boot Classpath -------------------------------------------
+
+CP_DELIMETER=":"
+
+# add jruby jars for command-line execution
+for j in "$JRUBY_HOME"/lib/jruby*.jar; do
+    if [ "$JRUBY_CP" ]; then
+        JRUBY_CP="$JRUBY_CP$CP_DELIMETER$j"
+        else
+        JRUBY_CP="$j"
+    fi
+done
+
+if $cygwin; then
+    JRUBY_CP=`cygpath -p -w "$JRUBY_CP"`
+fi
+
 # ----- Set Up The System Classpath -------------------------------------------
 
 if [ "$JRUBY_PARENT_CLASSPATH" != "" ]; then
     # Use same classpath propagated from parent jruby
     CP=$JRUBY_PARENT_CLASSPATH
 else
-    CP_DELIMETER=":"
-
-    # add necessary jars for command-line execution
+    # add other jars in lib to CP for command-line execution
     for j in "$JRUBY_HOME"/lib/*.jar; do
         if [ "$CP" ]; then
             CP="$CP$CP_DELIMETER$j"
@@ -190,7 +205,7 @@ if [ "$VERIFY_JRUBY" != "" ]; then
       echo "Running with instrumented profiler"
   fi
 
-  $JAVA_CMD $PROFILE_ARGS $JAVA_OPTS "${java_args[@]}" -classpath "$CP$CP_DELIMETER$CLASSPATH" \
+  $JAVA_CMD $PROFILE_ARGS $JAVA_OPTS "${java_args[@]}" -classpath "$JRUBY_CP$CP_DELIMETER$CP$CP_DELIMETER$CLASSPATH" \
     "-Djruby.home=$JRUBY_HOME" \
     "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
     "-Djruby.shell=$JRUBY_SHELL" \
@@ -202,7 +217,7 @@ if [ "$VERIFY_JRUBY" != "" ]; then
       cat profile.txt
   fi
 else
-  exec "$JAVA_CMD" $JAVA_OPTS "${java_args[@]}" -Xbootclasspath/a:"$CP" -classpath "$CLASSPATH" \
+  exec "$JAVA_CMD" $JAVA_OPTS "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMETER$CLASSPATH" \
     "-Djruby.home=$JRUBY_HOME" \
     "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
     "-Djruby.shell=$JRUBY_SHELL" \
