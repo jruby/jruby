@@ -11,7 +11,7 @@ module JRubyCompiler
   module_function
   def compile_argv(argv)
     basedir = Dir.pwd
-    prefix = "ruby"
+    prefix = ""
     target = Dir.pwd
 
     opt_parser = OptionParser.new("", 24, '  ') do |opts|
@@ -22,7 +22,7 @@ module JRubyCompiler
         basedir = dir
       end
 
-      opts.on("-p", "--prefix PREFIX", "Prepend PREFIX to the file path and package. \"ruby\" is default") do |pre|
+      opts.on("-p", "--prefix PREFIX", "Prepend PREFIX to the file path and package. Default is no prefix.") do |pre|
         prefix = pre
       end
 
