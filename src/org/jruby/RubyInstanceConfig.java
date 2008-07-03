@@ -950,13 +950,18 @@ public class RubyInstanceConfig {
             if (scriptName.equals("irb")) {
                 scriptName = "jirb";
             }
-            try {
-                String jrubyHome = JRubyFile.create(System.getProperty("user.dir"), JRubyFile.getFileProperty("jruby.home")).getCanonicalPath();
-                scriptFileName = JRubyFile.create(jrubyHome + JRubyFile.separator + "bin", scriptName).getCanonicalPath();
-            } catch (IOException io) {
-                MainExitException mee = new MainExitException(1, "jruby: Can't determine script filename");
-                mee.setUsageError(true);
-                throw mee;
+
+            scriptFileName = scriptName;
+
+            if (!new File(scriptFileName).exists()) {
+                try {
+                    String jrubyHome = JRubyFile.create(System.getProperty("user.dir"), JRubyFile.getFileProperty("jruby.home")).getCanonicalPath();
+                    scriptFileName = JRubyFile.create(jrubyHome + JRubyFile.separator + "bin", scriptName).getCanonicalPath();
+                } catch (IOException io) {
+                    MainExitException mee = new MainExitException(1, "jruby: Can't determine script filename");
+                    mee.setUsageError(true);
+                    throw mee;
+                }
             }
 
             // route 'gem' through ruby code in case we're running out of the complete jar
