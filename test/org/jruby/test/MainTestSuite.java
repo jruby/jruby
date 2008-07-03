@@ -85,6 +85,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(JRubyThreadContextTest.class);
         suite.addTestSuite(JavaFileStatTest.class);
         suite.addTestSuite(TestCodeCache.class);
+        suite.addTestSuite(TestJavaReentrantExceptions.class);
         return suite;
     }
 }
