@@ -31,6 +31,7 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
@@ -41,6 +42,7 @@ import java.util.regex.Pattern;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
@@ -50,13 +52,16 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.ChannelDescriptor;
+import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.InvalidValueException;
+import org.jruby.util.io.OpenFile;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -225,6 +230,45 @@ public class RubySocket extends RubyBasicSocket {
     private int soType;
     private int soProtocol;
 
+    @JRubyMethod(frame = true, meta = true)
+    public static IRubyObject for_fd(IRubyObject socketClass, IRubyObject fd) {
+        Ruby ruby = socketClass.getRuntime();
+        if (fd instanceof RubyFixnum) {
+            RubySocket socket = (RubySocket)((RubyClass)socketClass).allocate();
+            
+            // normal file descriptor..try to work with it
+            ChannelDescriptor descriptor = socket.getDescriptorByFileno((int)((RubyFixnum)fd).getLongValue());
+            
+            if (descriptor == null) {
+                throw ruby.newErrnoEBADFError();
+            }
+            
+            Channel mainChannel = descriptor.getChannel();
+
+            if (mainChannel instanceof SocketChannel) {
+                // ok, it's a socket...set values accordingly
+                // just using AF_INET since we can't tell from SocketChannel...
+                socket.soDomain = AF_INET;
+                socket.soType = SOCK_STREAM;
+                socket.soProtocol = 0;
+            } else if (mainChannel instanceof DatagramChannel) {
+                // datagram, set accordingly
+                // again, AF_INET
+                socket.soDomain = AF_INET;
+                socket.soType = SOCK_DGRAM;
+                socket.soProtocol = 0;
+            } else {
+                throw socket.getRuntime().newErrnoENOTSOCKError("can't Socket.new/for_fd against a non-socket");
+            }
+
+            socket.initSocket(descriptor);
+            
+            return socket;
+        } else {
+            throw socketClass.getRuntime().newTypeError(fd, socketClass.getRuntime().getFixnum());
+        }
+    }
+
     @JRubyMethod
     public IRubyObject initialize(IRubyObject domain, IRubyObject type, IRubyObject protocol) {
         try {
@@ -256,13 +300,14 @@ public class RubySocket extends RubyBasicSocket {
 
             soProtocol = RubyNumeric.fix2int(protocol);
         
+            Channel channel = null;
             if(soType == SOCK_STREAM) {
-                SocketChannel channel = SocketChannel.open();
-                initSocket(new ChannelDescriptor(channel, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
+                channel = SocketChannel.open();
             } else if(soType == SOCK_DGRAM) {
-                DatagramChannel channel = DatagramChannel.open();
-                initSocket(new ChannelDescriptor(channel, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
+                channel = DatagramChannel.open();
             }
+            
+            initSocket(new ChannelDescriptor(channel, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
         } catch (InvalidValueException ex) {
             throw getRuntime().newErrnoEINVALError();
         } catch(IOException e) {
