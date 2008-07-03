@@ -503,8 +503,17 @@ public class RubyString extends RubyObject {
 
     @JRubyMethod(name = "%", required = 1)
     public IRubyObject op_format(IRubyObject arg) {
-        // FIXME: Should we make this work with platform's locale, or continue hardcoding US?
-        RubyString s = Sprintf.sprintf(getRuntime(), Locale.US, value, arg);
+        final RubyString s;
+
+        IRubyObject tmp = arg.checkArrayType();
+        if (tmp.isNil()) {
+            tmp = arg;
+        }
+
+        // FIXME: Should we make this work with platform's locale,
+        // or continue hardcoding US?
+        s = Sprintf.sprintf(getRuntime(), Locale.US, value, tmp);
+
         s.infectBy(this);
         return s;
     }
