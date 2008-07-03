@@ -142,22 +142,18 @@ public class JavaProxyClassFactory {
         if (proxyClass == null) {
 
             if (targetClassName == null) {
-                String pkg = packageName(superClass);
+                // We always prepend an org.jruby.proxy package to the beginning
+                // because java and javax packages are protected and signed
+                // jars prevent us generating new classes with those package
+                // names. See JRUBY-2439.
+                String pkg = "org.jruby.proxy." + packageName(superClass);
                 String fullName = superClass.getName();
                 int ix = fullName.lastIndexOf('.');
                 String cName = fullName;
                 if(ix != -1) {
                     cName = fullName.substring(ix+1);
                 }
-                if (pkg.startsWith("java.") || pkg.startsWith("javax.")) {
-                    pkg = packageName(JavaProxyClassFactory.class) + ".gen";
-                }
-                if(ix == -1) {
-                    targetClassName = cName + "$Proxy" + nextId();
-                } else {
-                    targetClassName = pkg + "." + cName + "$Proxy"
-                        + nextId();
-                }
+                targetClassName = pkg + "." + cName + "$Proxy" + nextId();
             }
 
             validateArgs(targetClassName, superClass);
