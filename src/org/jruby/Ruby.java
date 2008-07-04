@@ -257,11 +257,18 @@ public final class Ruby {
         }
 
         Node node = parseInline(new ByteArrayInputStream(bytes), filename, null);
-        Frame frame = getCurrentContext().getCurrentFrame(); 
+        ThreadContext context = getCurrentContext();
         
-        frame.setFile(node.getPosition().getFile());
-        frame.setLine(node.getPosition().getStartLine());
-        return runNormally(node, false);
+        String oldFile = context.getFile();
+        int oldLine = context.getLine();
+        try {
+            context.setFile(node.getPosition().getFile());
+            context.setLine(node.getPosition().getStartLine());
+            return runNormally(node, false);
+        } finally {
+            context.setFile(oldFile);
+            context.setLine(oldLine);
+        }
     }
     
     /**
@@ -307,16 +314,23 @@ public final class Ruby {
             new RubiniusRunner(this, inputStream, filename).run();
         } else {
             Node scriptNode = parseFromMain(inputStream, filename);
-            Frame frame = getCurrentContext().getCurrentFrame(); 
-            
-            frame.setFile(scriptNode.getPosition().getFile());
-            frame.setLine(scriptNode.getPosition().getStartLine());
+            ThreadContext context = getCurrentContext();
 
-            if (config.isAssumePrinting() || config.isAssumeLoop()) {
-                runWithGetsLoop(scriptNode, config.isAssumePrinting(), config.isProcessLineEnds(),
-                        config.isSplit(), config.isYARVCompileEnabled());
-            } else {
-                runNormally(scriptNode, config.isYARVCompileEnabled());
+            String oldFile = context.getFile();
+            int oldLine = context.getLine();
+            try {
+                context.setFile(scriptNode.getPosition().getFile());
+                context.setLine(scriptNode.getPosition().getStartLine());
+
+                if (config.isAssumePrinting() || config.isAssumeLoop()) {
+                    runWithGetsLoop(scriptNode, config.isAssumePrinting(), config.isProcessLineEnds(),
+                            config.isSplit(), config.isYARVCompileEnabled());
+                } else {
+                    runNormally(scriptNode, config.isYARVCompileEnabled());
+                }
+            } finally {
+                context.setFile(oldFile);
+                context.setLine(oldLine);
             }
         }
     }
@@ -2017,9 +2031,11 @@ public final class Ruby {
         }
         ThreadContext context = getCurrentContext();
 
+        String file = context.getFile();
         try {
             secure(4); /* should alter global state */
 
+            context.setFile(scriptName);
             context.preNodeEval(objectClass, self, scriptName);
 
             parseFile(in, scriptName, null).interpret(this, context, self, Block.NULL_BLOCK);
@@ -2027,6 +2043,7 @@ public final class Ruby {
             return;
         } finally {
             context.postNodeEval();
+            context.setFile(file);
         }
     }
     
@@ -2039,9 +2056,11 @@ public final class Ruby {
         }
         ThreadContext context = getCurrentContext();
 
+        String file = context.getFile();
         try {
             secure(4); /* should alter global state */
 
+            context.setFile(filename);
             context.preNodeEval(objectClass, self, filename);
             
             Node scriptNode = parseFile(in, filename, null);
@@ -2056,6 +2075,7 @@ public final class Ruby {
             return;
         } finally {
             context.postNodeEval();
+            context.setFile(file);
         }
     }
 
