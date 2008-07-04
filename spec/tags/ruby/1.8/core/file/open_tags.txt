@@ -1,2 +1,1 @@
 fails:File.open opens a file that no exists when use File::NOCTTY mode
-fails:File.open raises an Errno::EACCES when opening non-permitted file

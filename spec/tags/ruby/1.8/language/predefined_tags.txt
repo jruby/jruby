@@ -1,3 +1,0 @@
-fails(JRUBY-2452):Predefined global $~ is set at the method-scoped level rather than block-scoped
-fails(JRUBY-2452):Predefined global $_ is set to the last line read by e.g. StringIO#gets
-fails(JRUBY-2452):Predefined global $_ is set at the method-scoped level rather than block-scoped
