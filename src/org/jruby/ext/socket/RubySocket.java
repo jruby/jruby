@@ -135,6 +135,7 @@ public class RubySocket extends RubyBasicSocket {
     public static final int PF_UNIX = 1;
     public static final int AF_INET = 2;
     public static final int PF_INET = 2;
+    public static final int AF_INET6 = 30;
 
     public static final int IPPROTO_IP = 0;
     public static final int IPPROTO_ICMP = 1;
@@ -157,6 +158,7 @@ public class RubySocket extends RubyBasicSocket {
         rb_mConstants.fastSetConstant("AF_UNSPEC", runtime.newFixnum(AF_UNSPEC));
         rb_mConstants.fastSetConstant("PF_INET", runtime.newFixnum(PF_INET));
         rb_mConstants.fastSetConstant("AF_INET", runtime.newFixnum(AF_INET));
+        rb_mConstants.fastSetConstant("AF_INET6", runtime.newFixnum(AF_INET6));
         // mandatory constants we haven't implemented
         rb_mConstants.fastSetConstant("MSG_OOB", runtime.newFixnum(0x01));
         rb_mConstants.fastSetConstant("SOL_SOCKET", runtime.newFixnum(SOL_SOCKET));

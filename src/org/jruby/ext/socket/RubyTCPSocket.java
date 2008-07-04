@@ -33,6 +33,8 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 
 import java.net.ConnectException;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -132,11 +134,21 @@ public class RubyTCPSocket extends RubyIPSocket {
         try {
             IRubyObject[] ret = new IRubyObject[4];
             Ruby r = recv.getRuntime();
-            InetAddress addr = InetAddress.getByName(hostname.convertToString().toString());
+            InetAddress addr;
+            String hostString = hostname.convertToString().toString();
+            addr = InetAddress.getByName(hostString);
+            
             ret[0] = r.newString(addr.getCanonicalHostName());
             ret[1] = r.newArray();
-            ret[2] = r.newFixnum(2); //AF_INET
             ret[3] = r.newString(addr.getHostAddress());
+            
+            if (addr instanceof Inet4Address) {
+                Inet4Address addr4 = (Inet4Address)addr;
+                ret[2] = r.newFixnum(RubySocket.AF_INET); //AF_INET
+            } else if (addr instanceof Inet6Address) {
+                Inet6Address addr6 = (Inet6Address)addr;
+                ret[2] = r.newFixnum(RubySocket.AF_INET6); //AF_INET
+            }
             return r.newArrayNoCopy(ret);
         } catch(UnknownHostException e) {
             throw sockerr(recv, "gethostbyname: name or service not known");
