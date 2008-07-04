@@ -1629,16 +1629,24 @@ public class RubyArray extends RubyObject implements List {
             // TODO: In MRI 1.9, an explicit check for negative length is
             // added here. IndexError is raised when length is negative.
             // See [ruby-core:12953] for more details.
+            //
+            // New note: This is actually under re-evaluation,
+            // see [ruby-core:17483].
             break;
         }
 
         modify();
 
-        end = beg + len;
-        // apparently, that's how MRI does overflow check
-        if (end < 0) {
+        // See [ruby-core:17483]
+        if (len < 0) {
+            return this;
+        }
+
+        if (len > Integer.MAX_VALUE - beg) {
             throw getRuntime().newArgumentError("argument too big");
         }
+
+        end = beg + len;
         if (end > realLength) {
             if (end >= values.length) realloc(end);
 
@@ -1657,7 +1665,7 @@ public class RubyArray extends RubyObject implements List {
         } else {
             if(len > 0) Arrays.fill(values, beg, beg + len, item);
         }
-        
+
         return this;
     }
 
