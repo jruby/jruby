@@ -1,1 +1,2 @@
 fails:The break statement raises a LocalJumpError if used not within block or while/for loop
+fails(JRUBY-2756):Executing break from within a block returns from the original invoking method even in case of chained calls
