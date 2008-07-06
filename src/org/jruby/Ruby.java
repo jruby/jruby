@@ -2581,12 +2581,16 @@ public final class Ruby {
 
     public RaiseException newIOErrorFromException(IOException ioe) {
         // TODO: this is kinda gross
-        if (ioe.getMessage().equals("Broken pipe")) {
-            throw newErrnoEPIPEError();
-        } else if (ioe.getMessage().equals("Connection reset by peer")) {
-            throw newErrnoECONNRESETError();
+        if(ioe.getMessage() != null) {
+            if (ioe.getMessage().equals("Broken pipe")) {
+                throw newErrnoEPIPEError();
+            } else if (ioe.getMessage().equals("Connection reset by peer")) {
+                throw newErrnoECONNRESETError();
+            }
+            return newRaiseException(getIOError(), ioe.getMessage());
+        } else {
+            return newRaiseException(getIOError(), "IO Error");
         }
-        return newRaiseException(getIOError(), ioe.getMessage());
     }
 
     public RaiseException newTypeError(IRubyObject receivedObject, RubyClass expectedType) {
