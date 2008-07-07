@@ -30,4 +30,12 @@ module TestHelper
       end
     end
   end
+
+  def with_jruby_shell_spawning
+    prev_in_process = JRuby.runtime.instance_config.run_ruby_in_process
+    JRuby.runtime.instance_config.run_ruby_in_process = false
+    yield
+    JRuby.runtime.instance_config.run_ruby_in_process = prev_in_process
+  end
 end
+

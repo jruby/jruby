@@ -284,7 +284,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         
         if (Ruby.RUNTIME_THREADLOCAL) setMetaClassName(metaClass);
         if (runtime.isObjectSpaceEnabled()) addToObjectSpace(runtime);
-        if (runtime.getSafeLevel() >= 3) taint();
+        if (runtime.getSafeLevel() >= 3) taint(runtime);
     }
 
     /**
@@ -297,7 +297,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         
         if (Ruby.RUNTIME_THREADLOCAL) setMetaClassName(metaClass);
         if (useObjectSpace) addToObjectSpace(runtime);
-        if (runtime.getSafeLevel() >= 3) taint();
+        if (runtime.getSafeLevel() >= 3) taint(runtime);
     }
 
     private void addToObjectSpace(Ruby runtime) {
@@ -1438,12 +1438,16 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      */
     @JRubyMethod(name = "taint")
     public IRubyObject taint() {
-        getRuntime().secure(4);
+        taint(getRuntime());
+        return this;
+    }
+    
+    private void taint(Ruby runtime) {
+        runtime.secure(4);
         if (!isTaint()) {
         	testFrozen("object");
             setTaint(true);
         }
-        return this;
     }
 
     /** rb_obj_untaint
