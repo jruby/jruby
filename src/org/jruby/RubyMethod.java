@@ -151,11 +151,11 @@ public class RubyMethod extends RubyObject {
                 // FIXME: We should not be regenerating this over and over
                 return mproc(block);
             } catch (JumpException.BreakJump bj) {
-                    return (IRubyObject) bj.getValue();
+                return (IRubyObject) bj.getValue();
             } catch (JumpException.ReturnJump rj) {
-                    return (IRubyObject) rj.getValue();
+                return (IRubyObject) rj.getValue();
             } catch (JumpException.RetryJump rj) {
-                    // Execute iterateMethod again.
+                // Execute iterateMethod again.
             }
         }
     }

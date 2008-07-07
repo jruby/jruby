@@ -190,8 +190,6 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
                 return callAdapter.call(context, receiver, args, block);
             } catch (JumpException.RetryJump rj) {
                 // allow loop to retry
-            } catch (JumpException.BreakJump bj) {
-                return (IRubyObject) bj.getValue();
             }
         }
     }

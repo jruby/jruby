@@ -625,8 +625,8 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         context.trace(EventHook.RUBY_EVENT_C_CALL, name, getImplementationClass());
     }
     
-    protected IRubyObject handleReturnJump(ReturnJump rj) {
-        if (rj.getTarget() == this) {
+    protected IRubyObject handleReturnJump(ReturnJump rj, ThreadContext context) {
+        if (rj.getTarget() == context.getFrameJumpTarget()) {
             return (IRubyObject)rj.getValue();
         } else {
             throw rj;

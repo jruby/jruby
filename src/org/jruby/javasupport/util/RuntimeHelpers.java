@@ -446,7 +446,7 @@ public class RuntimeHelpers {
         if (block.getProcObject() != null) {
             blockArg = block.getProcObject();
         } else {
-            blockArg = runtime.newProc(Block.Type.PROC, block);
+            blockArg = runtime.newBlockPassProc(Block.Type.PROC, block);
             blockArg.getBlock().type = Block.Type.PROC;
         }
         
@@ -553,8 +553,8 @@ public class RuntimeHelpers {
         return (IRubyObject) bj.getValue();
     }
     
-    public static IRubyObject breakJump(IRubyObject value) {
-        throw new JumpException.BreakJump(null, value);
+    public static IRubyObject breakJump(ThreadContext context, IRubyObject value) {
+        throw new JumpException.BreakJump(context.getFrameJumpTarget(), value);
     }
     
     public static IRubyObject breakLocalJumpError(Ruby runtime, IRubyObject value) {

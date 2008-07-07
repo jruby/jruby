@@ -64,8 +64,6 @@ public final class CallOneArgBlockNode extends CallNode {
                         arg1.interpret(runtime, context, self, aBlock), block);
             } catch (JumpException.RetryJump rj) {
                 // allow loop to retry
-            } catch (JumpException.BreakJump bj) {
-                return (IRubyObject) bj.getValue();
             }
         }    
     }

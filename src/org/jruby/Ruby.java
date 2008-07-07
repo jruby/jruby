@@ -2341,6 +2341,15 @@ public final class Ruby {
         return proc;
     }
 
+    public RubyProc newBlockPassProc(Block.Type type, Block block) {
+        if (type != Block.Type.LAMBDA && block.getProcObject() != null) return block.getProcObject();
+
+        RubyProc proc =  RubyProc.newProc(this, type);
+        proc.initialize(getCurrentContext(), block);
+
+        return proc;
+    }
+
     public RubyBinding newBinding() {
         return RubyBinding.newBinding(this);
     }

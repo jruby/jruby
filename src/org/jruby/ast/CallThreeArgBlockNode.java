@@ -70,8 +70,6 @@ public final class CallThreeArgBlockNode extends CallNode {
                         arg3.interpret(runtime, context, self, aBlock), block);
             } catch (JumpException.RetryJump rj) {
                 // allow loop to retry
-            } catch (JumpException.BreakJump bj) {
-                return (IRubyObject) bj.getValue();
             }
         }    
     }

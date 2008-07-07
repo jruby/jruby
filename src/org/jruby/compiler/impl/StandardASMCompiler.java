@@ -2679,8 +2679,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 value.call(this);
                 issueLoopBreak();
             } else {
+                loadThreadContext();
                 value.call(this);
-                invokeUtilityMethod("breakJump", sig(IRubyObject.class, IRubyObject.class));
+                invokeUtilityMethod("breakJump", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
             }
         }
 
@@ -2862,8 +2863,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 value.call(this);
                 issueLoopBreak();
             } else if (withinProtection) {
+                loadThreadContext();
                 value.call(this);
-                invokeUtilityMethod("breakJump", sig(IRubyObject.class, IRubyObject.class));
+                invokeUtilityMethod("breakJump", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
             } else {
                 // in method body with no containing loop, issue jump error
                 // load runtime and value, issue jump error

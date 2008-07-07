@@ -137,7 +137,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
 
                 return jitCompiledScript.__file__(context, self, args, block);
             } catch (JumpException.ReturnJump rj) {
-                return handleReturn(rj);
+                return handleReturn(context, rj);
             } catch (JumpException.RedoJump rj) {
                 return handleRedo(runtime);
             } finally {
@@ -170,7 +170,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
 
             return body.interpret(runtime, context, self, block);
         } catch (JumpException.ReturnJump rj) {
-            return handleReturn(rj);
+            return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
         } catch (StackOverflowError sfe) {
@@ -193,7 +193,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
                 
                 return jitCompiledScript.__file__(context, self, args, Block.NULL_BLOCK);
             } catch (JumpException.ReturnJump rj) {
-                return handleReturn(rj);
+                return handleReturn(context, rj);
             } catch (JumpException.RedoJump rj) {
                 return handleRedo(runtime);
             } finally {
@@ -214,7 +214,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
 
                 return jitCompiledScript.__file__(context, self, Block.NULL_BLOCK);
             } catch (JumpException.ReturnJump rj) {
-                return handleReturn(rj);
+                return handleReturn(context, rj);
             } catch (JumpException.RedoJump rj) {
                 return handleRedo(runtime);
             } finally {
@@ -235,7 +235,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
 
                 return jitCompiledScript.__file__(context, self, block);
             } catch (JumpException.ReturnJump rj) {
-                return handleReturn(rj);
+                return handleReturn(context, rj);
             } catch (JumpException.RedoJump rj) {
                 return handleRedo(runtime);
             } finally {
@@ -256,7 +256,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
 
                 return jitCompiledScript.__file__(context, self, arg0, Block.NULL_BLOCK);
             } catch (JumpException.ReturnJump rj) {
-                return handleReturn(rj);
+                return handleReturn(context, rj);
             } catch (JumpException.RedoJump rj) {
                 return handleRedo(runtime);
             } finally {
@@ -277,7 +277,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
 
                 return jitCompiledScript.__file__(context, self, arg0, block);
             } catch (JumpException.ReturnJump rj) {
-                return handleReturn(rj);
+                return handleReturn(context, rj);
             } catch (JumpException.RedoJump rj) {
                 return handleRedo(runtime);
             } finally {
@@ -298,7 +298,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
 
                 return jitCompiledScript.__file__(context, self, arg0, arg1, Block.NULL_BLOCK);
             } catch (JumpException.ReturnJump rj) {
-                return handleReturn(rj);
+                return handleReturn(context, rj);
             } catch (JumpException.RedoJump rj) {
                 return handleRedo(runtime);
             } finally {
@@ -319,7 +319,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
 
                 return jitCompiledScript.__file__(context, self, arg0, arg1, block);
             } catch (JumpException.ReturnJump rj) {
-                return handleReturn(rj);
+                return handleReturn(context, rj);
             } catch (JumpException.RedoJump rj) {
                 return handleRedo(runtime);
             } finally {
@@ -340,7 +340,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
 
                 return jitCompiledScript.__file__(context, self, arg0, arg1, arg2, Block.NULL_BLOCK);
             } catch (JumpException.ReturnJump rj) {
-                return handleReturn(rj);
+                return handleReturn(context, rj);
             } catch (JumpException.RedoJump rj) {
                 return handleRedo(runtime);
             } finally {
@@ -361,7 +361,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
 
                 return jitCompiledScript.__file__(context, self, arg0, arg1, arg2, block);
             } catch (JumpException.ReturnJump rj) {
-                return handleReturn(rj);
+                return handleReturn(context, rj);
             } catch (JumpException.RedoJump rj) {
                 return handleRedo(runtime);
             } finally {
@@ -386,8 +386,8 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         jitCallConfig.post(context);
     }
     
-    private IRubyObject handleReturn(JumpException.ReturnJump rj) {
-        if (rj.getTarget() == this) {
+    private IRubyObject handleReturn(ThreadContext context, JumpException.ReturnJump rj) {
+        if (rj.getTarget() == context.getFrameJumpTarget()) {
             return (IRubyObject) rj.getValue();
         }
         throw rj;

@@ -336,7 +336,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                         {
                             mv.aload(0);
                             mv.swap();
-                            mv.invokevirtual(COMPILED_SUPER_CLASS, "handleReturnJump", sig(IRubyObject.class, JumpException.ReturnJump.class));
+                            mv.aload(1);
+                            mv.invokevirtual(COMPILED_SUPER_CLASS, "handleReturnJump", sig(IRubyObject.class, JumpException.ReturnJump.class, ThreadContext.class));
                             mv.label(doReturnFinally);
 
                             // finally

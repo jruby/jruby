@@ -193,13 +193,11 @@ public class RubyProc extends RubyObject implements JumpTarget {
         assert args != null;
         
         Ruby runtime = getRuntime();
+        Block newBlock = block.cloneBlock();
+        JumpTarget jumpTarget = newBlock.getBinding().getFrame().getJumpTarget();
         
         try {
-            Block newBlock = block.cloneBlock();
             if (self != null) newBlock.getBinding().setSelf(self);
-            
-            // lambdas want returns
-            if (newBlock.type == Block.Type.LAMBDA) newBlock.getBinding().getFrame().setJumpTarget(this);
             
             return newBlock.call(context, args);
         } catch (JumpException.BreakJump bj) {
@@ -208,15 +206,11 @@ public class RubyProc extends RubyObject implements JumpTarget {
             throw runtime.newLocalJumpError("break", (IRubyObject)bj.getValue(), "break from proc-closure");
         } catch (JumpException.ReturnJump rj) {
             Object target = rj.getTarget();
+            
+            if (target == jumpTarget && block.type == Block.Type.LAMBDA) return (IRubyObject) rj.getValue();
 
-            if (target == this || block.type == Block.Type.LAMBDA) return (IRubyObject) rj.getValue();
-
-            if (target == null) {
-                if (type == Block.Type.THREAD) {
-                    throw runtime.newThreadError("return can't jump across threads");
-                } else {
-                    throw runtime.newLocalJumpError("return", (IRubyObject)rj.getValue(), "unexpected return");
-                }
+            if (type == Block.Type.THREAD) {
+                throw runtime.newThreadError("return can't jump across threads");
             }
             throw rj;
         } catch (JumpException.RetryJump rj) {

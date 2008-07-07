@@ -67,8 +67,6 @@ public final class CallTwoArgBlockNode extends CallNode {
                         arg2.interpret(runtime, context, self, aBlock), block);
             } catch (JumpException.RetryJump rj) {
                 // allow loop to retry
-            } catch (JumpException.BreakJump bj) {
-                return (IRubyObject) bj.getValue();
             }
         }    
     }

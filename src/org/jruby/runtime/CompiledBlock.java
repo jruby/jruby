@@ -88,8 +88,6 @@ public class CompiledBlock extends BlockBody {
         
         try {
             return callback.call(context, self, realArg);
-        } catch (JumpException.BreakJump bj) {
-            return handleBreakJump(context, bj);
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
             return handleNextJump(context, nj, type);
@@ -110,8 +108,6 @@ public class CompiledBlock extends BlockBody {
         
         try {
             return callback.call(context, self, realArg);
-        } catch (JumpException.BreakJump bj) {
-            return handleBreakJump(context, bj);
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
             return handleNextJump(context, nj, type);
@@ -125,13 +121,6 @@ public class CompiledBlock extends BlockBody {
         binding.getFrame().setSelf(self);
         
         return self;
-    }
-    
-    private IRubyObject handleBreakJump(ThreadContext context, JumpException.BreakJump bj) {
-        if (bj.getTarget() == null) {
-                bj.setTarget(this);
-        }
-        throw bj;
     }
     
     private IRubyObject handleNextJump(ThreadContext context, JumpException.NextJump nj, Block.Type type) {

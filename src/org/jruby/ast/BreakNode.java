@@ -37,6 +37,7 @@ import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.exceptions.JumpException;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -80,6 +81,6 @@ public class BreakNode extends Node {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject result = valueNode.interpret(runtime, context, self, aBlock);
    
-        throw new JumpException.BreakJump(null, result);
+        return RuntimeHelpers.breakJump(context, result);
     }
 }

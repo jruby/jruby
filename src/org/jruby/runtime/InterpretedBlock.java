@@ -151,8 +151,6 @@ public class InterpretedBlock extends BlockBody {
             }
             
             return evalBlockBody(context, self);
-        } catch (JumpException.BreakJump bj) {
-            return handleBreakJump(context, bj);
         } catch (JumpException.NextJump nj) {
             return handleNextJump(context, nj, type);
         } finally {
@@ -190,8 +188,6 @@ public class InterpretedBlock extends BlockBody {
             
             // This while loop is for restarting the block call in case a 'redo' fires.
             return evalBlockBody(context, self);
-        } catch (JumpException.BreakJump bj) {
-            return handleBreakJump(context, bj);
         } catch (JumpException.NextJump nj) {
             return handleNextJump(context, nj, type);
         } finally {
@@ -216,13 +212,6 @@ public class InterpretedBlock extends BlockBody {
         binding.getFrame().setSelf(self);
         
         return self;
-    }
-    
-    private IRubyObject handleBreakJump(ThreadContext context, JumpException.BreakJump bj) {
-        if (bj.getTarget() == null) {
-                bj.setTarget(this);
-        }
-        throw bj;
     }
     
     private IRubyObject handleNextJump(ThreadContext context, JumpException.NextJump nj, Block.Type type) {

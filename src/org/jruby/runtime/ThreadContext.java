@@ -407,8 +407,8 @@ public final class ThreadContext {
         return getCurrentFrame().getJumpTarget();
     }
     
+    @Deprecated
     public void setFrameJumpTarget(JumpTarget target) {
-        getCurrentFrame().setJumpTarget(target);
     }
     
     public RubyModule getFrameKlazz() {

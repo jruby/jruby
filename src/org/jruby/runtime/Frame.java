@@ -86,7 +86,7 @@ public final class Frame implements JumpTarget {
     private Visibility visibility = Visibility.PUBLIC;
     
     /** The target for non-local jumps, like return from a block */
-    private JumpTarget jumpTarget;
+    private final JumpTarget jumpTarget;
     
     /** A tuple representing the $_ and $~ values for this frame */
     private static class BackrefAndLastline {
@@ -108,6 +108,30 @@ public final class Frame implements JumpTarget {
      * when needed.
      */
     public Frame() {
+        jumpTarget = new JumpTarget() {};
+    }
+    
+    /**
+     * Copy constructor, since Frame objects are pre-allocated and updated
+     * when needed.
+     */
+    private Frame(Frame frame) {
+        assert frame.block != null : "Block uses null object pattern.  It should NEVER be null";
+
+        this.self = frame.self;
+        this.name = frame.name;
+        this.klazz = frame.klazz;
+        this.fileName = frame.fileName;
+        this.line = frame.line;
+        this.block = frame.block;
+        this.visibility = frame.visibility;
+        this.isBindingFrame = frame.isBindingFrame;
+        this.jumpTarget = frame.jumpTarget;
+        
+        // we force the lazy allocation of backref/lastline here to allow
+        // closures to update the original frame
+        frame.lazyBackrefAndLastline();
+        this.backrefAndLastline = frame.backrefAndLastline;
     }
 
     /**
@@ -150,7 +174,6 @@ public final class Frame implements JumpTarget {
         this.fileName = frame.fileName;
         this.line = frame.line;
         this.block = frame.block;
-        this.jumpTarget = frame.jumpTarget;
         this.visibility = frame.visibility;
         this.isBindingFrame = frame.isBindingFrame;
         
@@ -181,7 +204,6 @@ public final class Frame implements JumpTarget {
         this.fileName = fileName;
         this.line = line;
         this.block = block;
-        this.jumpTarget = jumpTarget;
         this.visibility = Visibility.PUBLIC;
         this.isBindingFrame = false;
         this.backrefAndLastline = null;
@@ -195,7 +217,6 @@ public final class Frame implements JumpTarget {
         this.self = null;
         this.klazz = null;
         this.block = null;
-        this.jumpTarget = null;
         this.backrefAndLastline = null;
     }
     
@@ -205,7 +226,7 @@ public final class Frame implements JumpTarget {
      * @return A new frame with duplicate information to the target frame
      */
     public Frame duplicate() {
-        Frame newFrame = new Frame();
+        Frame newFrame = new Frame(this);
         
         newFrame.updateFrame(this);
         
@@ -226,8 +247,8 @@ public final class Frame implements JumpTarget {
      * 
      * @param jumpTarget The new jump target for non-local returns
      */
+    @Deprecated
     public void setJumpTarget(JumpTarget jumpTarget) {
-        this.jumpTarget = jumpTarget;
     }
 
     /**

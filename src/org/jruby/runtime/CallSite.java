@@ -287,7 +287,7 @@ public abstract class CallSite {
 
                 return cacheAndCall(selfType, block, args, context, self);
             } catch (JumpException.BreakJump bj) {
-                return handleBreakJump(bj, block);
+                return handleBreakJump(context, bj);
             } catch (JumpException.RetryJump rj) {
                 throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
             } catch (StackOverflowError soe) {
@@ -317,7 +317,7 @@ public abstract class CallSite {
 
                 return cacheAndCall(selfType, block, context, self);
             } catch (JumpException.BreakJump bj) {
-                return handleBreakJump(bj, block);
+                return handleBreakJump(context, bj);
             } catch (JumpException.RetryJump rj) {
                 throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
             } catch (StackOverflowError soe) {
@@ -347,7 +347,7 @@ public abstract class CallSite {
 
                 return cacheAndCall(selfType, block, context, self, arg1);
             } catch (JumpException.BreakJump bj) {
-                return handleBreakJump(bj, block);
+                return handleBreakJump(context, bj);
             } catch (JumpException.RetryJump rj) {
                 throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
             } catch (StackOverflowError soe) {
@@ -377,7 +377,7 @@ public abstract class CallSite {
 
                 return cacheAndCall(selfType, block, context, self, arg1, arg2);
             } catch (JumpException.BreakJump bj) {
-                return handleBreakJump(bj, block);
+                return handleBreakJump(context, bj);
             } catch (JumpException.RetryJump rj) {
                 throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
             } catch (StackOverflowError soe) {
@@ -407,7 +407,7 @@ public abstract class CallSite {
 
                 return cacheAndCall(selfType, block, context, self, arg1, arg2, arg3);
             } catch (JumpException.BreakJump bj) {
-                return handleBreakJump(bj, block);
+                return handleBreakJump(context, bj);
             } catch (JumpException.RetryJump rj) {
                 throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
             } catch (StackOverflowError soe) {
@@ -415,9 +415,9 @@ public abstract class CallSite {
             }
         }
 
-        private IRubyObject handleBreakJump(BreakJump bj, Block block) throws BreakJump {
+        private IRubyObject handleBreakJump(ThreadContext context, BreakJump bj) throws BreakJump {
             // consume and rethrow or just keep rethrowing?
-            if (block.getBody() == bj.getTarget()) {
+            if (context.getFrameJumpTarget() == bj.getTarget()) {
                 return (IRubyObject) bj.getValue();
             }
             throw bj;
