@@ -1061,7 +1061,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 {
                     method.label(catchBreak);
                     loadBlock();
-                    invokeUtilityMethod("breakJumpInWhile", sig(IRubyObject.class, JumpException.BreakJump.class, Block.class));
+                    loadThreadContext();
+                    invokeUtilityMethod("breakJumpInWhile", sig(IRubyObject.class, JumpException.BreakJump.class, Block.class, ThreadContext.class));
                     method.go_to(done);
                 }
 

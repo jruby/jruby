@@ -542,15 +542,13 @@ public class RuntimeHelpers {
         return context.returnJump(result);
     }
     
-    public static IRubyObject breakJumpInWhile(JumpException.BreakJump bj, Block aBlock) {
+    public static IRubyObject breakJumpInWhile(JumpException.BreakJump bj, Block aBlock, ThreadContext context) {
         // JRUBY-530, while case
-        if (bj.getTarget() == aBlock.getBody()) {
-            bj.setTarget(null);
-            
-            throw bj;
+        if (bj.getTarget() == context.getFrameJumpTarget()) {
+            return (IRubyObject) bj.getValue();
         }
 
-        return (IRubyObject) bj.getValue();
+        throw bj;
     }
     
     public static IRubyObject breakJump(ThreadContext context, IRubyObject value) {
