@@ -37,12 +37,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Java code.
  */
 public class CompiledBlockLight extends CompiledBlock {
-    protected final DynamicScope dummyScope;
-    
     public static Block newCompiledClosureLight(IRubyObject self, Frame frame, Visibility visibility, RubyModule klass,
         DynamicScope dynamicScope, Arity arity, StaticScope scope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
         Binding binding = new Binding(self, frame, visibility, klass, dynamicScope);
-        BlockBody body = new CompiledBlockLight(arity, DynamicScope.newDynamicScope(scope, dynamicScope), callback, hasMultipleArgsHead, argumentType);
+        BlockBody body = new CompiledBlockLight(arity, scope, callback, hasMultipleArgsHead, argumentType);
         
         return new Block(body, binding);
     }
@@ -61,15 +59,19 @@ public class CompiledBlockLight extends CompiledBlock {
                 hasMultipleArgsHead,
                 argumentType);
     }
+    
+    public static BlockBody newCompiledBlockLight(Arity arity,
+            StaticScope scope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
+        return new CompiledBlockLight(arity, scope, callback, hasMultipleArgsHead, argumentType);
+    }
 
-    protected CompiledBlockLight(Arity arity, DynamicScope dummyScope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
-        super(arity, dummyScope.getStaticScope(), callback, hasMultipleArgsHead, argumentType);
-        this.dummyScope = dummyScope;
+    protected CompiledBlockLight(Arity arity, StaticScope scope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
+        super(arity, scope, callback, hasMultipleArgsHead, argumentType);
     }
     
     @Override
     protected Frame pre(ThreadContext context, RubyModule klass, Binding binding) {
-        return context.preYieldLightBlock(binding, dummyScope, klass);
+        return context.preYieldLightBlock(binding, DynamicScope.newDummyScope(scope, binding.getDynamicScope()), klass);
     }
     
     @Override

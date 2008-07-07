@@ -11,13 +11,19 @@ import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.RubySymbol;
+import org.jruby.ast.NodeType;
+import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.CacheCompiler;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
 import org.objectweb.asm.ClassVisitor;
@@ -193,7 +199,59 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
                 sig(RubyFixnum.class, params(Ruby.class)));
     }
     
-    public void cacheClosure(StandardASMCompiler.AbstractMethodCompiler method, String closureMethod) {
+    public void cacheClosure(StandardASMCompiler.AbstractMethodCompiler method, String closureMethod, int arity, StaticScope scope, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector) {
+        String closureFieldName = scriptCompiler.getNewConstant(ci(BlockBody.class), "closure");
+
+        String closureMethodName = "getClosure_" + closureFieldName;
+
+        ClassVisitor cv = scriptCompiler.getClassVisitor();
+
+        {
+            SkinnyMethodAdapter closureGetter = new SkinnyMethodAdapter(
+                    cv.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_SYNTHETIC, closureMethodName, 
+                            sig(BlockBody.class, ThreadContext.class), null, null));
+
+            closureGetter.aload(0);
+            closureGetter.getfield(scriptCompiler.getClassname(), closureFieldName, ci(BlockBody.class));
+            closureGetter.dup();
+            Label alreadyCreated = new Label();
+            closureGetter.ifnonnull(alreadyCreated);
+
+            // no callback, construct and cache it
+            closureGetter.pop();
+            closureGetter.aload(0); // [this]
+            
+            // create callbackloadThreadContext();
+            closureGetter.aload(1);
+            closureGetter.aload(0);
+            closureGetter.ldc(closureMethod); // [this, runtime, this, str]
+            closureGetter.pushInt(arity);
+            StandardASMCompiler.buildStaticScopeNames(closureGetter, scope);
+            closureGetter.ldc(Boolean.valueOf(hasMultipleArgsHead));
+            closureGetter.pushInt(BlockBody.asArgumentType(argsNodeId));
+            // if there's a sub-closure or there's scope-aware methods, it can't be "light"
+            closureGetter.ldc(!(inspector.hasClosure() || inspector.hasScopeAwareMethods()));
+            closureGetter.invokestatic(p(RuntimeHelpers.class), "createCompiledBlockBody",
+                    sig(BlockBody.class, ThreadContext.class, Object.class, String.class, int.class, 
+                    String[].class, boolean.class, int.class, boolean.class));
+            
+            closureGetter.putfield(scriptCompiler.getClassname(), closureFieldName, ci(BlockBody.class)); // []
+            closureGetter.aload(0); // [this]
+            closureGetter.getfield(scriptCompiler.getClassname(), closureFieldName, ci(BlockBody.class)); // [callback]
+
+            closureGetter.label(alreadyCreated);
+            closureGetter.areturn();
+
+            closureGetter.end();
+        }
+
+        method.loadThis();
+        method.loadThreadContext();
+        method.method.invokevirtual(scriptCompiler.getClassname(), closureMethodName, 
+                sig(BlockBody.class, ThreadContext.class));
+    }
+    
+    public void cacheClosureOld(StandardASMCompiler.AbstractMethodCompiler method, String closureMethod) {
         String closureFieldName = scriptCompiler.getNewConstant(ci(CompiledBlockCallback.class), "closure");
 
         String closureMethodName = "getClosure_" + closureFieldName;

@@ -46,6 +46,10 @@ public abstract class DynamicScope {
             return new ManyVarsDynamicScope(staticScope, parent);
         }
     }
+    
+    public static DynamicScope newDummyScope(StaticScope staticScope, DynamicScope parent) {
+        return new ManyVarsDynamicScope(staticScope, parent);
+    }
 
     /**
      * Returns the n-th parent scope of this scope.

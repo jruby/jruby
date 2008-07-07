@@ -69,6 +69,16 @@ public class CompiledBlock extends BlockBody {
                 hasMultipleArgsHead,
                 argumentType);
     }
+    
+    public static Block newCompiledClosure(ThreadContext context, IRubyObject self, BlockBody body) {
+        Binding binding = new Binding(self, context.getCurrentFrame(), Visibility.PUBLIC, context.getRubyClass(), context.getCurrentScope());
+        return new Block(body, binding);
+    }
+    
+    public static BlockBody newCompiledBlock(Arity arity,
+            StaticScope scope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
+        return new CompiledBlock(arity, scope, callback, hasMultipleArgsHead, argumentType);
+    }
 
     protected CompiledBlock(Arity arity, StaticScope scope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
         super(argumentType);

@@ -309,7 +309,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         endClassInit();
     }
 
-    public void buildStaticScopeNames(SkinnyMethodAdapter method, StaticScope scope) {
+    public static void buildStaticScopeNames(SkinnyMethodAdapter method, StaticScope scope) {
         // construct static scope list of names
         method.pushInt(scope.getNumberOfVariables());
         method.anewarray(p(String.class));
@@ -1178,21 +1178,13 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             closureCompiler.endMethod();
 
             // Done with closure compilation
+            
             loadThreadContext();
             loadSelf();
-            method.pushInt(arity);
-
-            buildStaticScopeNames(method, scope);
-            
-            cacheCompiler.cacheClosure(this, closureMethodName);
-
-            method.ldc(Boolean.valueOf(hasMultipleArgsHead));
-            method.ldc(BlockBody.asArgumentType(argsNodeId));
-            // if there's a sub-closure or there's scope-aware methods, it can't be "light"
-            method.ldc(!(inspector.hasClosure() || inspector.hasScopeAwareMethods()));
+            cacheCompiler.cacheClosure(this, closureMethodName, arity, scope, hasMultipleArgsHead, argsNodeId, inspector);
 
             invokeUtilityMethod("createBlock", sig(Block.class,
-                    params(ThreadContext.class, IRubyObject.class, Integer.TYPE, String[].class, CompiledBlockCallback.class, Boolean.TYPE, Integer.TYPE, boolean.class)));
+                    params(ThreadContext.class, IRubyObject.class, BlockBody.class)));
         }
 
         public void runBeginBlock(StaticScope scope, CompilerCallback body) {
@@ -1212,7 +1204,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             buildStaticScopeNames(method, scope);
             
-            cacheCompiler.cacheClosure(this, closureMethodName);
+            cacheCompiler.cacheClosureOld(this, closureMethodName);
 
             invokeUtilityMethod("runBeginBlock", sig(IRubyObject.class,
                     params(ThreadContext.class, IRubyObject.class, String[].class, CompiledBlockCallback.class)));
@@ -1234,7 +1226,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             loadSelf();
             method.pushInt(arity);
             
-            cacheCompiler.cacheClosure(this, closureMethodName);
+            cacheCompiler.cacheClosureOld(this, closureMethodName);
             
             method.ldc(Boolean.valueOf(hasMultipleArgsHead));
             method.ldc(BlockBody.asArgumentType(argsNodeId));
@@ -1259,7 +1251,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             loadSelf();
             method.iconst_0();
             
-            cacheCompiler.cacheClosure(this, closureMethodName);
+            cacheCompiler.cacheClosureOld(this, closureMethodName);
             
             method.iconst_0(); // false
             method.iconst_0(); // zero

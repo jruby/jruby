@@ -5,6 +5,9 @@ def bench_block_arg(bm)
     1
   end
   
+  bm.report("control: 10m.times") do
+    10_000_000.times { }
+  end
   bm.report("10m calls with no block, no arg") do
     10_000_000.times { foo1 }
   end

@@ -60,31 +60,30 @@ public class RuntimeHelpers {
         return factory.getBlockCallback(closureMethod, scriptObject);
     }
     
-    public static Block createBlock(ThreadContext context, IRubyObject self, int arity, 
-            String[] staticScopeNames, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argsNodeType, boolean light) {
+    public static BlockBody createCompiledBlockBody(ThreadContext context, Object scriptObject, String closureMethod, int arity, 
+            String[] staticScopeNames, boolean hasMultipleArgsHead, int argsNodeType, boolean light) {
         StaticScope staticScope = 
             new BlockStaticScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
         staticScope.determineModule();
         
         if (light) {
-            return CompiledBlockLight.newCompiledClosureLight(
-                    context,
-                    self,
-                    Arity.createArity(arity),
-                    staticScope,
-                    callback,
-                    hasMultipleArgsHead,
-                    argsNodeType);
+            return CompiledBlockLight.newCompiledBlockLight(
+                    Arity.createArity(arity), staticScope,
+                    createBlockCallback(context.getRuntime(), scriptObject, closureMethod),
+                    hasMultipleArgsHead, argsNodeType);
         } else {
-            return CompiledBlock.newCompiledClosure(
-                    context,
-                    self,
-                    Arity.createArity(arity),
-                    staticScope,
-                    callback,
-                    hasMultipleArgsHead,
-                    argsNodeType);
+            return CompiledBlock.newCompiledBlock(
+                    Arity.createArity(arity), staticScope,
+                    createBlockCallback(context.getRuntime(), scriptObject, closureMethod),
+                    hasMultipleArgsHead, argsNodeType);
         }
+    }
+    
+    public static Block createBlock(ThreadContext context, IRubyObject self, BlockBody body) {
+        return CompiledBlock.newCompiledClosure(
+                context,
+                self,
+                body);
     }
     
     public static IRubyObject runBeginBlock(ThreadContext context, IRubyObject self, String[] staticScopeNames, CompiledBlockCallback callback) {

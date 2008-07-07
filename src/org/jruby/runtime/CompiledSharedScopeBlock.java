@@ -49,7 +49,7 @@ public class CompiledSharedScopeBlock extends CompiledBlockLight {
     }
 
     private CompiledSharedScopeBlock(Arity arity, DynamicScope containingScope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
-        super(arity, containingScope, callback, hasMultipleArgsHead, argumentType);
+        super(arity, containingScope.getStaticScope(), callback, hasMultipleArgsHead, argumentType);
     }
     
     protected Frame pre(ThreadContext context, RubyModule klass, Binding binding) {
