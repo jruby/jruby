@@ -461,19 +461,29 @@ public class RuntimeHelpers {
 
         // If not already a proc then we should try and make it one.
         if (!(proc instanceof RubyProc)) {
-            proc = TypeConverter.convertToType(proc, runtime.getProc(), 0, "to_proc", false);
-
-            if (!(proc instanceof RubyProc)) {
-                throw runtime.newTypeError("wrong argument type "
-                        + proc.getMetaClass().getName() + " (expected Proc)");
-            }
+            proc = coerceProc(proc, runtime);
         }
 
+        return getBlockFromProc(currentBlock, proc);
+    }
+
+    private static IRubyObject coerceProc(IRubyObject proc, Ruby runtime) throws RaiseException {
+        proc = TypeConverter.convertToType(proc, runtime.getProc(), 0, "to_proc", false);
+
+        if (!(proc instanceof RubyProc)) {
+            throw runtime.newTypeError("wrong argument type " + proc.getMetaClass().getName() + " (expected Proc)");
+        }
+        return proc;
+    }
+
+    private static Block getBlockFromProc(Block currentBlock, IRubyObject proc) {
         // TODO: Add safety check for taintedness
         if (currentBlock != null && currentBlock.isGiven()) {
             RubyProc procObject = currentBlock.getProcObject();
             // The current block is already associated with proc.  No need to create a new one
-            if (procObject != null && procObject == proc) return currentBlock;
+            if (procObject != null && procObject == proc) {
+                return currentBlock;
+            }
         }
 
         return ((RubyProc) proc).getBlock();

@@ -266,28 +266,36 @@ public class ASTInterpreter {
         if (blockNode == null) return Block.NULL_BLOCK;
         
         if (blockNode instanceof IterNode) {
-            IterNode iterNode = (IterNode) blockNode;
-
-            StaticScope scope = iterNode.getScope();
-            scope.determineModule();
-            
-            // Create block for this iter node
-            // FIXME: We shouldn't use the current scope if it's not actually from the same hierarchy of static scopes
-            return InterpretedBlock.newInterpretedClosure(context, iterNode.getBlockBody(), self);
+            return getIterNodeBlock(blockNode, context,self);
         } else if (blockNode instanceof BlockPassNode) {
-            Node bodyNode = ((BlockPassNode) blockNode).getBodyNode();
-            IRubyObject proc;
-            if (bodyNode == null) {
-                proc = runtime.getNil();
-            } else {
-                proc = bodyNode.interpret(runtime, context, self, currentBlock);
-            }
-            
-            return RuntimeHelpers.getBlockFromBlockPassBody(proc, currentBlock);
+            return getBlockPassBlock(blockNode, runtime,context, self, currentBlock);
         }
          
         assert false: "Trying to get block from something which cannot deliver";
         return null;
+    }
+
+    private static Block getBlockPassBlock(Node blockNode, Ruby runtime, ThreadContext context, IRubyObject self, Block currentBlock) {
+        Node bodyNode = ((BlockPassNode) blockNode).getBodyNode();
+        IRubyObject proc;
+        if (bodyNode == null) {
+            proc = runtime.getNil();
+        } else {
+            proc = bodyNode.interpret(runtime, context, self, currentBlock);
+        }
+
+        return RuntimeHelpers.getBlockFromBlockPassBody(proc, currentBlock);
+    }
+
+    private static Block getIterNodeBlock(Node blockNode, ThreadContext context, IRubyObject self) {
+        IterNode iterNode = (IterNode) blockNode;
+
+        StaticScope scope = iterNode.getScope();
+        scope.determineModule();
+
+        // Create block for this iter node
+        // FIXME: We shouldn't use the current scope if it's not actually from the same hierarchy of static scopes
+        return InterpretedBlock.newInterpretedClosure(context, iterNode.getBlockBody(), self);
     }
 
     /* Something like cvar_cbase() from eval.c, factored out for the benefit
