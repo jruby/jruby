@@ -48,6 +48,8 @@ import org.joni.Region;
 import org.joni.Syntax;
 import org.joni.WarnCallback;
 import org.joni.encoding.Encoding;
+import org.joni.exception.JOniException;
+
 import static org.jruby.anno.FrameField.*;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
@@ -75,14 +77,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     private KCode kcode;
     private Regex pattern;
     private ByteList str;
-
-    private final static byte[] PIPE = new byte[]{'|'};
-    private final static byte[] DASH = new byte[]{'-'};
-    private final static byte[] R_PAREN = new byte[]{')'};
-    private final static byte[] COLON = new byte[]{':'};
-    private final static byte[] M_CHAR = new byte[]{'m'};
-    private final static byte[] I_CHAR = new byte[]{'i'};
-    private final static byte[] X_CHAR = new byte[]{'x'};
 
     private static final int REGEXP_LITERAL_F =     1 << 11;
     private static final int REGEXP_KCODE_DEFAULT = 1 << 12;
@@ -742,127 +736,120 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     public IRubyObject to_s() {
         RubyString ss = getRuntime().newString("(?");
         check();
+
         int options = pattern.getOptions();
-        int p = str.begin;
-        int l = str.realSize;
-        byte[] _str = str.bytes;
-
-
+        int ptr = str.begin;
+        int len = str.realSize;
+        byte[] bytes = str.bytes;
         again: do {
-            if(l >= 4 && _str[p] == '(' && _str[p+1] == '?') {
+            if (len >= 4 && bytes[ptr] == '(' && bytes[ptr + 1] == '?') {
                 boolean err = true;
-                p += 2;
-                if((l -= 2) > 0) {
+                ptr += 2;
+                if ((len -= 2) > 0) {
                     do {
-                        if(_str[p] == 'm') {
+                        if (bytes[ptr] == 'm') {
                             options |= RE_OPTION_MULTILINE;
-                        } else if(_str[p] == 'i') {
+                        } else if (bytes[ptr] == 'i') {
                             options |= RE_OPTION_IGNORECASE;
-                        } else if(_str[p] == 'x') {
+                        } else if (bytes[ptr] == 'x') {
                             options |= RE_OPTION_EXTENDED;
                         } else {
                             break;
                         }
-                        p++;
-                    } while(--l > 0);
+                        ptr++;
+                    } while(--len > 0);
                 }
-                if(l > 1 && _str[p] == '-') {
-                    ++p;
-                    --l;
+                if (len > 1 && bytes[ptr] == '-') {
+                    ++ptr;
+                    --len;
                     do {
-                        if(_str[p] == 'm') {
+                        if (bytes[ptr] == 'm') {
                             options &= ~RE_OPTION_MULTILINE;
-                        } else if(_str[p] == 'i') {
+                        } else if (bytes[ptr] == 'i') {
                             options &= ~RE_OPTION_IGNORECASE;
-                        } else if(_str[p] == 'x') {
+                        } else if (bytes[ptr] == 'x') {
                             options &= ~RE_OPTION_EXTENDED;
                         } else {
                             break;
                         }
-                        p++;
-                    } while(--l > 0);
+                        ptr++;
+                    } while(--len > 0);
                 }
-                if(_str[p] == ')') {
-                    --l;
-                    ++p;
+
+                if (bytes[ptr] == ')') {
+                    --len;
+                    ++ptr;
                     continue again;
                 }
-                if(_str[p] == ':' && _str[p+l-1] == ')') {
+
+                if (bytes[ptr] == ':' && bytes[ptr + len - 1] == ')') {
                     try {
-                        new Regex(_str,++p,l-=2,Option.DEFAULT,kcode.getEncoding(),Syntax.DEFAULT);
+                        new Regex(bytes, ++ptr, ptr + (len-=2) ,Option.DEFAULT, kcode.getEncoding(), Syntax.DEFAULT);
                         err = false;
-                    } catch(Exception e) {
+                    } catch (JOniException e) {
                         err = true;
                     }
                 }
-                if(err) {
+
+                if (err) {
                     options = (int)pattern.getOptions();
-                    p = str.begin;
-                    l = str.realSize;
+                    ptr = str.begin;
+                    len = str.realSize;
                 }
             }
+            if ((options & RE_OPTION_MULTILINE) !=0 ) ss.cat((byte)'m');
+            if ((options & RE_OPTION_IGNORECASE) !=0 ) ss.cat((byte)'i');
+            if ((options & RE_OPTION_EXTENDED) !=0 ) ss.cat((byte)'x');
 
-            if((options & RE_OPTION_MULTILINE)!=0) ss.cat(M_CHAR);
-            if((options & RE_OPTION_IGNORECASE)!=0) ss.cat(I_CHAR);
-            if((options & RE_OPTION_EXTENDED)!=0) ss.cat(X_CHAR);
-
-            if((options&EMBEDDABLE) != EMBEDDABLE) {
-                ss.cat(DASH);
-                if((options & RE_OPTION_MULTILINE)==0) ss.cat(M_CHAR);
-                if((options & RE_OPTION_IGNORECASE)==0) ss.cat(I_CHAR);
-                if((options & RE_OPTION_EXTENDED)==0) ss.cat(X_CHAR);
+            if ((options & EMBEDDABLE) != EMBEDDABLE) {
+                ss.cat((byte)'-');
+                if ((options & RE_OPTION_MULTILINE) == 0) ss.cat((byte)'m');
+                if ((options & RE_OPTION_IGNORECASE) == 0) ss.cat((byte)'i');
+                if ((options & RE_OPTION_EXTENDED) == 0) ss.cat((byte)'x');
             }
-            ss.cat(COLON);
-            rb_reg_expr_str(ss,p,l);
-            ss.cat(R_PAREN);
+            ss.cat((byte)':');
+            rb_reg_expr_str(ss, ptr, len);
+            ss.cat((byte)')');
             ss.infectBy(this);
             return ss;
         } while(true);
     }
 
-    private final boolean ISPRINT(byte c) {
-        return ISPRINT((char)(c&0xFF));
-    }
-
-    private final boolean ISPRINT(char c) {
-        return (' ' == c || (!Character.isWhitespace(c) && !Character.isISOControl(c)));
-    }
-
-    private final void rb_reg_expr_str(RubyString ss, int s, int l) {
+    private final void rb_reg_expr_str(RubyString ss, int s, int len) {
         int p = s;
-        int pend = l;
+        int pend = p + len;
         boolean need_escape = false;
-        while(p<pend) {
-            if(str.bytes[p] == '/' || (!ISPRINT(str.bytes[p]) && kcode.getEncoding().length(str.bytes[p]) == 1)) {
+        Encoding enc = kcode.getEncoding();
+        while (p < pend) {
+            if (str.bytes[p] == '/' || (!enc.isPrint(str.bytes[p] & 0xff) && enc.length(str.bytes[p]) == 1)) {
                 need_escape = true;
                 break;
             }
-            p += kcode.getEncoding().length(str.bytes[p]);
+            p += enc.length(str.bytes[p]);
         }
-        if(!need_escape) {
-            ss.cat(str.bytes,s,l);
+        if (!need_escape) {
+            ss.cat(str.bytes, s, len);
         } else {
             p = s; 
-            while(p<pend) {
-                if(str.bytes[p] == '\\') {
-                    int n = kcode.getEncoding().length(str.bytes[p+1]) + 1;
-                    ss.cat(str.bytes,p,n);
+            while (p<pend) {
+                if (str.bytes[p] == '\\') {
+                    int n = enc.length(str.bytes[p+1]) + 1;
+                    ss.cat(str.bytes, p, n);
                     p += n;
                     continue;
-                } else if(str.bytes[p] == '/') {
-                    char c = '\\';
-                    ss.cat((byte)c);
-                    ss.cat(str.bytes,p,1);
-                } else if(kcode.getEncoding().length(str.bytes[p]) != 1) {
-                    ss.cat(str.bytes,p,kcode.getEncoding().length(str.bytes[p]));
-                    p += kcode.getEncoding().length(str.bytes[p]);
+                } else if (str.bytes[p] == '/') {
+                    ss.cat((byte)'\\');
+                    ss.cat(str.bytes, p, 1);
+                } else if (enc.length(str.bytes[p]) != 1) {
+                    ss.cat(str.bytes, p, enc.length(str.bytes[p]));
+                    p += enc.length(str.bytes[p]);
                     continue;
-                } else if(ISPRINT(str.bytes[p])) {
+                } else if (enc.isPrint(str.bytes[p] & 0xff)) {
                     ss.cat(str.bytes,p,1);
-                } else if(!Character.isWhitespace(str.bytes[p])) {
-                    ss.cat(ByteList.create(Integer.toString(str.bytes[p]&0377,8)));
+                } else if (!enc.isSpace(str.bytes[p] & 0xff)) {
+                    ss.cat(ByteList.create(Integer.toString(str.bytes[p] & 0377, 8)));
                 } else {
-                    ss.cat(str.bytes,p,1);
+                    ss.cat(str.bytes, p, 1);
                 }
                 p++;
             }
@@ -1117,9 +1104,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
             RubyString source = recv.getRuntime().newString();
             IRubyObject[] _args = new IRubyObject[3];
 
-            for(int i = 0; i < args.length; i++) {
-                if(0 < i) {
-                    source.cat(PIPE);
+            for (int i = 0; i < args.length; i++) {
+                if (0 < i) {
+                    source.cat((byte)'|');
                 }
                 IRubyObject v = TypeConverter.convertToTypeWithCheck(args[i], recv.getRuntime().getRegexp(), 0, "to_regexp");
                 if (!v.isNil()) {
