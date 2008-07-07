@@ -67,7 +67,10 @@ public class JavaCompiledScript implements Library {
                 clazz = jcl.defineClass(className, buf);
             }
             
-            ((Script)clazz.newInstance()).load(runtime.getCurrentContext(), runtime.getTopSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+            // if it's a compiled JRuby script, instantiate and run it
+            if (Script.class.isAssignableFrom(clazz)) {
+                ((Script)clazz.newInstance()).load(runtime.getCurrentContext(), runtime.getTopSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+            }
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
         } catch (InstantiationException ie) {
