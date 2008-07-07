@@ -20,7 +20,7 @@ MAX_GIT_COMMITS = 100
 def find_last_git_svn_rev
   re = /git-svn-id: https:\/\/svn.codehaus.org\/jruby\/(.*)\/(.*)@(.*) /
   return (0..MAX_GIT_COMMITS).each do |n|
-    last_commit = `git-rev-list HEAD --pretty=raw --no-color --max-count=1 --skip=#{n}`
+    last_commit = `git rev-list HEAD --pretty=raw --no-color --max-count=1 --skip=#{n}`
     break nil if last_commit.empty? || n == MAX_GIT_COMMITS
     next unless match = re.match(last_commit)
     if match[1][/(tags|branches)/]
