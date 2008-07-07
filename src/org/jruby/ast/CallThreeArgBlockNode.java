@@ -60,7 +60,7 @@ public final class CallThreeArgBlockNode extends CallNode {
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
-        Block block = getBlock(context, self, (IterNode) getIterNode());
+        Block block = getBlock(context, self);
             
         while (true) {
             try {

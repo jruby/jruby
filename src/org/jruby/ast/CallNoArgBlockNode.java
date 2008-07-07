@@ -56,7 +56,7 @@ public final class CallNoArgBlockNode extends CallNode {
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
-        Block block = getBlock(context, self, (IterNode) getIterNode());
+        Block block = getBlock(context, self);
             
         while (true) {
             try {
@@ -65,9 +65,5 @@ public final class CallNoArgBlockNode extends CallNode {
                 // allow loop to retry
             }
         }    
-    }
-
-    private Block getBlock(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock, IterNode iterNode) {
-        throw new UnsupportedOperationException("Not yet implemented");
     }
 }

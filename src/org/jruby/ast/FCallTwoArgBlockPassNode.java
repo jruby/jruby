@@ -16,11 +16,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author enebo
  */
-public class FCallTwoArgBlockNode extends FCallNode {
+public class FCallTwoArgBlockPassNode extends FCallNode {
     private Node arg1;
     private Node arg2;
     
-    public FCallTwoArgBlockNode(ISourcePosition position, String name, ArrayNode args, IterNode iter) {
+    public FCallTwoArgBlockPassNode(ISourcePosition position, String name, ArrayNode args, BlockPassNode iter) {
         super(position, name, args, iter);
         
         assert args.size() == 2 : "args.size() is 2";
@@ -31,11 +31,11 @@ public class FCallTwoArgBlockNode extends FCallNode {
 
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        Block block = getBlock(context, self);
+        Block block = getBlock(runtime, context, self, aBlock);
         
         while (true) {
             try {
-                return callAdapter.call(context, self, 
+                return callAdapter.call(context, self,
                         arg1.interpret(runtime, context, self, aBlock),
                         arg2.interpret(runtime, context, self, aBlock), block);
             } catch (JumpException.RetryJump rj) {

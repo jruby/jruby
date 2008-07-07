@@ -453,9 +453,7 @@ public class RuntimeHelpers {
         return blockArg;
     }
     
-    public static Block getBlockFromBlockPassBody(IRubyObject proc, Block currentBlock) {
-        Ruby runtime = proc.getRuntime();
-
+    public static Block getBlockFromBlockPassBody(Ruby runtime, IRubyObject proc, Block currentBlock) {
         // No block from a nil proc
         if (proc.isNil()) return Block.NULL_BLOCK;
 
@@ -486,7 +484,12 @@ public class RuntimeHelpers {
             }
         }
 
-        return ((RubyProc) proc).getBlock();
+        return ((RubyProc) proc).getBlock();       
+    }
+    
+    public static Block getBlockFromBlockPassBody(IRubyObject proc, Block currentBlock) {
+        return getBlockFromBlockPassBody(proc.getRuntime(), proc, currentBlock);
+
     }
     
     public static IRubyObject backref(ThreadContext context) {

@@ -30,11 +30,14 @@ package org.jruby.parser;
 
 import java.io.Serializable;
 
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.RubyObject;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.Node;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * StaticScope represents lexical scoping of variables and module/class constants.
@@ -111,6 +114,35 @@ public abstract class StaticScope implements Serializable {
         variableNames = new String[names.length];
         System.arraycopy(names, 0, variableNames, 0, names.length);
         variableCaptured = new boolean[variableNames.length];
+    }
+    
+    public IRubyObject getConstant(Ruby runtime, String internedName, RubyModule object) {
+        IRubyObject result = getConstantInner(runtime, internedName, object);
+
+        // If we could not find the constant from cref..then try getting from inheritence hierarchy
+        return result == null ? cref.fastGetConstant(internedName) : result;
+    }
+    
+    private IRubyObject getConstantInner(Ruby runtime, String internedName, RubyModule object) {
+        if (cref == object) return null;
+        
+        IRubyObject result = cref.fastFetchConstant(internedName);
+
+        if (result != null) {
+            if (result == RubyObject.UNDEF) return getUndefConstant(runtime, internedName, object);
+            return result;
+        }
+        
+        return previousCRefScope == null ? null : previousCRefScope.getConstantInner(runtime, internedName, object);
+    }
+
+    /* Try and unload the autoload specified from internedName */
+    private IRubyObject getUndefConstant(Ruby runtime, String internedName, RubyModule object) {
+        cref.deleteConstant(internedName);
+
+        if (runtime.getLoadService().autoload(cref.getName() + "::" + internedName) == null) return null;
+
+        return getConstantInner(runtime, internedName, object);
     }
     
     /**

@@ -12,6 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
+ * Copyright (C) 2001 Alan Moore <alan_moore@gmx.net>
  * Copyright (C) 2001-2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2001-2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
@@ -31,71 +32,39 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import java.util.List;
-
 import org.jruby.Ruby;
-import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
+import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * Block passed explicitly as an argument in a method call.
- * A block passing argument in a method call (last argument prefixed by an ampersand).
+ * A method or operator call.
  */
-public class BlockPassNode extends Node {
-    private final Node bodyNode;
-
-    /** Used by the arg_blk_pass and new_call, new_fcall and new_super
-     * methods in ParserSupport to temporary save the args node.
-     */
-    private Node argsNode;
-
-    public BlockPassNode(ISourcePosition position, Node bodyNode) {
-        super(position, NodeType.BLOCKPASSNODE);
-        this.bodyNode = bodyNode;
-    }
-
-    /**
-     * Accept for the visitor pattern.
-     * @param iVisitor the visitor
-     **/
-    public Instruction accept(NodeVisitor iVisitor) {
-        return iVisitor.visitBlockPassNode(this);
-    }
-
-    /**
-     * Gets the bodyNode.
-     * @return Returns a Node
-     */
-    public Node getBodyNode() {
-        return bodyNode;
-    }
-
-    /**
-     * Gets the argsNode.
-     * @return Returns a IListNode
-     */
-    public Node getArgsNode() {
-        return argsNode;
-    }
-
-    /**
-     * Sets the argsNode.
-     * @param argsNode The argsNode to set
-     */
-    public void setArgsNode(Node argsNode) {
-        this.argsNode = argsNode;
-    }
+public final class CallOneArgBlockPassNode extends CallNode {
+    private Node arg1;
     
-    public List<Node> childNodes() {
-        return Node.createList(argsNode, bodyNode);
+    public CallOneArgBlockPassNode(ISourcePosition position, Node receiverNode, String name, ArrayNode args, BlockPassNode iter) {
+        super(position, receiverNode, name, args, iter);
+        
+        assert args.size() == 1 : "args.size() is 1";
+        
+        arg1 = args.get(0);        
     }
-    
+        
     @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block block) {
-        return bodyNode == null ? runtime.getNil() : bodyNode.interpret(runtime, context, self, block);
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
+        Block block = getBlock(runtime, context, self, aBlock);
+            
+        while (true) {
+            try {
+                return callAdapter.call(context, receiver, 
+                        arg1.interpret(runtime, context, self, aBlock), block);
+            } catch (JumpException.RetryJump rj) {
+                // allow loop to retry
+            }
+        }    
     }
 }

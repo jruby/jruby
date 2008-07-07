@@ -16,28 +16,31 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author enebo
  */
-public class FCallTwoArgBlockNode extends FCallNode {
+public class FCallThreeArgBlockPassNode extends FCallNode {
     private Node arg1;
     private Node arg2;
+    private Node arg3;
     
-    public FCallTwoArgBlockNode(ISourcePosition position, String name, ArrayNode args, IterNode iter) {
+    public FCallThreeArgBlockPassNode(ISourcePosition position, String name, ArrayNode args, BlockPassNode iter) {
         super(position, name, args, iter);
         
-        assert args.size() == 2 : "args.size() is 2";
+        assert args.size() == 3 : "args.size() is 3";
         
         arg1 = args.get(0);
         arg2 = args.get(1);
+        arg3 = args.get(2);
     }
 
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        Block block = getBlock(context, self);
+        Block block = getBlock(runtime, context, self, aBlock);
         
         while (true) {
             try {
-                return callAdapter.call(context, self, 
+                return callAdapter.call(context, self,
                         arg1.interpret(runtime, context, self, aBlock),
-                        arg2.interpret(runtime, context, self, aBlock), block);
+                        arg2.interpret(runtime, context, self, aBlock),
+                        arg3.interpret(runtime, context, self, aBlock), block);
             } catch (JumpException.RetryJump rj) {
                 // allow loop to retry
             }

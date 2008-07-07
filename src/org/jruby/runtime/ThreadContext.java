@@ -521,28 +521,7 @@ public final class ThreadContext {
      * Used by the evaluator and the compiler to look up a constant by name
      */
     public IRubyObject getConstant(String internedName) {
-        StaticScope scope = getCurrentScope().getStaticScope();
-        RubyClass object = runtime.getObject();
-        IRubyObject result;
-        
-        // flipped from while to do to search current class first
-        do {
-            RubyModule klass = scope.getModule();
-            
-            // Not sure how this can happen
-            //if (NIL_P(klass)) return rb_const_get(CLASS_OF(self), id);
-            if ((result = klass.fastFetchConstant(internedName)) != null) {
-                if (result != RubyObject.UNDEF) {
-                    return result;
-                }
-                klass.deleteConstant(internedName);
-                if (runtime.getLoadService().autoload(klass.getName() + "::" + internedName) == null) break;
-                continue;
-            }
-            scope = scope.getPreviousCRefScope();
-        } while (scope != null && scope.getModule() != object);
-        
-        return getCurrentScope().getStaticScope().getModule().fastGetConstant(internedName);
+        return getCurrentScope().getStaticScope().getConstant(runtime, internedName, runtime.getObject());
     }
     
     /**

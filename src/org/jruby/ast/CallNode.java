@@ -152,28 +152,6 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
-        
-        if (iterNode == null && argsNode != null && argsNode.nodeId == NodeType.ARRAYNODE) {
-            ArrayNode arrayNode = (ArrayNode)argsNode;
-            
-            switch (arrayNode.size()) {
-            case 0:
-                return callAdapter.call(context, receiver);
-            case 1:
-                IRubyObject arg0 = arrayNode.get(0).interpret(runtime, context, self, aBlock);
-                return callAdapter.call(context, receiver, arg0);
-            case 2:
-                arg0 = arrayNode.get(0).interpret(runtime, context, self, aBlock);
-                IRubyObject arg1 = arrayNode.get(1).interpret(runtime, context, self, aBlock);
-                return callAdapter.call(context, receiver, arg0, arg1);
-            case 3:
-                arg0 = arrayNode.get(0).interpret(runtime, context, self, aBlock);
-                arg1 = arrayNode.get(1).interpret(runtime, context, self, aBlock);
-                IRubyObject arg2 = arrayNode.get(2).interpret(runtime, context, self, aBlock);
-                return callAdapter.call(context, receiver, arg0, arg1, arg2);
-            }
-        }
-        
         IRubyObject[] args = ASTInterpreter.setupArgs(runtime, context, argsNode, self, aBlock);
         
         assert receiver.getMetaClass() != null : receiver.getClass().getName();
@@ -194,14 +172,17 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
         }
     }
     
-    public Block getBlock(ThreadContext context, IRubyObject self, IterNode iter) {
-        assert iter != null : "iter is not null";
-        
+    public Block getBlock(ThreadContext context, IRubyObject self) {
+        IterNode iter = (IterNode) iterNode;
         iter.getScope().determineModule();
             
         // Create block for this iter node
         // FIXME: We shouldn't use the current scope if it's not actually from the same hierarchy of static scopes
         return InterpretedBlock.newInterpretedClosure(context, iter.getBlockBody(), self);
+    }
+    
+    public Block getBlock(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return RuntimeHelpers.getBlockFromBlockPassBody(runtime, iterNode.interpret(runtime, context, self, aBlock), aBlock);
     }
     
     @Override
@@ -230,7 +211,6 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
                 
                 if (visibility != Visibility.PRIVATE &&
                         (visibility != Visibility.PROTECTED || metaClass.getRealClass().isInstance(self))) {
-//                    if (metaClass.isMethodBound(getName(), false)) {
                     if (!method.isUndefined()) {
                         return ASTInterpreter.getArgumentDefinition(runtime, context, getArgsNode(), "method", self, aBlock);
                     }

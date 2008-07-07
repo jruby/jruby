@@ -29,7 +29,7 @@ public class FCallOneArgBlockNode extends FCallNode {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        Block block = getBlock(context, self, (IterNode) getIterNode());
+        Block block = getBlock(context, self);
         while (true) {
             try {
                 return callAdapter.call(context, self, arg1.interpret(runtime, context, self, aBlock), block);
