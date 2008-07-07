@@ -28,7 +28,7 @@ public class AttrAssignOneArgNode extends AttrAssignNode {
 
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
+        IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
         IRubyObject param1 = arg1.interpret(runtime, context, self, aBlock);
         
         assert receiver.getMetaClass() != null : receiver.getClass().getName();
@@ -46,7 +46,7 @@ public class AttrAssignOneArgNode extends AttrAssignNode {
         
     @Override
     public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block aBlock, boolean checkArity) {
-        IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
+        IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
         IRubyObject param1 = arg1.interpret(runtime, context, self, aBlock);
         
         assert receiver.getMetaClass() != null : receiver.getClass().getName();

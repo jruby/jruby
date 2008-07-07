@@ -683,7 +683,7 @@ public class RubyThread extends RubyObject {
         } else if (exitingException != null) {
             return getRuntime().getNil();
         } else {
-            return getRuntime().newBoolean(false);
+            return getRuntime().getFalse();
         }
     }
 

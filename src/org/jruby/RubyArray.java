@@ -77,6 +77,7 @@ public class RubyArray extends RubyObject implements List {
         runtime.setArray(arrayc);
         arrayc.index = ClassIndex.ARRAY;
         arrayc.kindOf = new RubyModule.KindOf() {
+            @Override
             public boolean isKindOf(IRubyObject obj, RubyModule type) {
                 return obj instanceof RubyArray;
             }
@@ -94,6 +95,7 @@ public class RubyArray extends RubyObject implements List {
         }
     };
 
+    @Override
     public int getNativeTypeIndex() {
         return ClassIndex.ARRAY;
     }
@@ -467,6 +469,7 @@ public class RubyArray extends RubyObject implements List {
      * 
      */
     @JRubyMethod(name = {"initialize_copy"}, required = 1, visibility=Visibility.PRIVATE)
+    @Override
     public IRubyObject initialize_copy(IRubyObject orig) {
         return this.replace(orig);
     }
@@ -496,6 +499,7 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     @JRubyMethod(name = "to_s")
+    @Override
     public IRubyObject to_s() {
         if (realLength == 0) return RubyString.newEmptyString(getRuntime());
 
@@ -1082,13 +1086,14 @@ public class RubyArray extends RubyObject implements List {
      */
     @JRubyMethod(name = "include?", required = 1)
     public RubyBoolean include_p(ThreadContext context, IRubyObject item) {
-        return getRuntime().newBoolean(includes(context, item));
+        return context.getRuntime().newBoolean(includes(context, item));
     }
 
     /** rb_ary_frozen_p
      *
      */
     @JRubyMethod(name = "frozen?")
+    @Override
     public RubyBoolean frozen_p() {
         return getRuntime().newBoolean(isFrozen() || (flags & TMPLOCK_ARR_F) != 0);
     }
@@ -1231,6 +1236,7 @@ public class RubyArray extends RubyObject implements List {
     *
     */
     @JRubyMethod(name = "inspect")
+    @Override
     public IRubyObject inspect() {
         if (realLength == 0) return getRuntime().newString("[]");
         if (getRuntime().isInspecting(this)) return  getRuntime().newString("[...]");
@@ -1442,6 +1448,7 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     @JRubyMethod(name = "to_a")
+    @Override
     public RubyArray to_a() {
         if(getMetaClass() != getRuntime().getArray()) {
             RubyArray dup = new RubyArray(getRuntime(), getRuntime().isObjectSpaceEnabled());
@@ -1462,10 +1469,12 @@ public class RubyArray extends RubyObject implements List {
     	return this;
     }
 
+    @Override
     public RubyArray convertToArray() {
         return this;
     }
     
+    @Override
     public IRubyObject checkArrayType(){
         return this;
     }
@@ -1474,6 +1483,7 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     @JRubyMethod(name = "==", required = 1)
+    @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
         if (this == obj) return getRuntime().getTrue();
 
@@ -2379,6 +2389,7 @@ public class RubyArray extends RubyObject implements List {
         return Pack.pack(getRuntime(), this, iFmt.getByteList());
     }
 
+    @Override
     public Class getJavaClass() {
         return List.class;
     }

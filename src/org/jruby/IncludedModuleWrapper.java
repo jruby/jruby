@@ -66,6 +66,7 @@ public final class IncludedModuleWrapper extends RubyClass {
      * 
      * @see org.jruby.RubyModule#newIncludeClass(RubyClass)
      */
+    @Override
     public IncludedModuleWrapper newIncludeClass(RubyClass superClass) {
         IncludedModuleWrapper includedModule = new IncludedModuleWrapper(getRuntime(), superClass, getNonIncludedClass());
         
@@ -77,22 +78,27 @@ public final class IncludedModuleWrapper extends RubyClass {
         return includedModule;
     }
 
+    @Override
     public boolean isModule() {
         return false;
     }
 
+    @Override
     public boolean isClass() {
         return false;
     }
 
+    @Override
     public boolean isIncluded() {
         return true;
     }
     
+    @Override
     public boolean isImmediate() {
         return true;
     }
 
+    @Override
     public void setMetaClass(RubyClass newRubyClass) {
         throw new UnsupportedOperationException("An included class is only a wrapper for a module");
     }
@@ -111,18 +117,22 @@ public final class IncludedModuleWrapper extends RubyClass {
         throw new UnsupportedOperationException("An included class is only a wrapper for a module");
     }
 
+    @Override
     public String getName() {
-		return delegate.getName();
+        return delegate.getName();
     }
 
+    @Override
     public RubyModule getNonIncludedClass() {
         return delegate;
     }
     
+    @Override
     public RubyClass getRealClass() {
         return getSuperClass().getRealClass();
     }
 
+    @Override
     protected boolean isSame(RubyModule module) {
         return delegate.isSame(module);
     }
@@ -131,6 +141,7 @@ public final class IncludedModuleWrapper extends RubyClass {
     * We don't want to reveal ourselves to Ruby code, so delegate this
     * operation.
     */    
+    @Override
     public IRubyObject id() {
         return delegate.id();
     }

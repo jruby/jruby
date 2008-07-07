@@ -208,9 +208,10 @@ public class RubyStruct extends RubyObject {
 
             IRubyObject type = superClass.getConstantAt(name);
             if (type != null) {
-                Frame frame = runtime.getCurrentContext().getCurrentFrame();
+                ThreadContext context = runtime.getCurrentContext();
+                Frame frame = context.getCurrentFrame();
                 runtime.getWarnings().warn(ID.STRUCT_CONSTANT_REDEFINED, frame.getFile(), frame.getLine(), "redefining constant Struct::" + name, name);
-                superClass.remove_const(runtime.newString(name));
+                superClass.remove_const(context, runtime.newString(name));
             }
             newStruct = superClass.defineClassUnder(name, superClass, STRUCT_INSTANCE_ALLOCATOR);
         }

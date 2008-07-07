@@ -358,7 +358,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = {"include?", "member?"}, required = 1, frame = true)
     public static IRubyObject include_p(final ThreadContext context, IRubyObject self, final IRubyObject arg) {
-        final Ruby runtime = self.getRuntime();
+        final Ruby runtime = context.getRuntime();
 
         try {
             callEach(runtime, context, self, new BlockCallback() {

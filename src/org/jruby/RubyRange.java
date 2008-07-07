@@ -403,12 +403,12 @@ public class RubyRange extends RubyObject {
     public RubyBoolean include_p(ThreadContext context, IRubyObject obj) {
         if (rangeLe(context, begin, obj) != null) {
             if (isExclusive) {
-                if (rangeLt(context, obj, end) != null) return getRuntime().getTrue();
+                if (rangeLt(context, obj, end) != null) return context.getRuntime().getTrue();
             } else {
-                if (rangeLe(context, obj, end) != null) return getRuntime().getTrue();
+                if (rangeLe(context, obj, end) != null) return context.getRuntime().getTrue();
             }
         }
-        return getRuntime().getFalse();
+        return context.getRuntime().getFalse();
     }
 
     private static final ObjectMarshal RANGE_MARSHAL = new ObjectMarshal() {

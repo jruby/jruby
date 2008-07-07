@@ -53,7 +53,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Node that represents an assignment of either an array element or attribute.
  */
 public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
-    private final Node receiverNode;
+    protected final Node receiverNode;
     private String name;
     private Node argsNode;
     public CallSite variableCallAdapter;

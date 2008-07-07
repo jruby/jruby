@@ -166,7 +166,7 @@ public class RubyProc extends RubyObject implements JumpTarget {
         if (!(other instanceof RubyProc)) return getRuntime().getFalse();
         
         if (this == other || this.block == ((RubyProc)other).block) {
-            return getRuntime().newBoolean(true);
+            return getRuntime().getTrue();
         }
         
         return getRuntime().getFalse();

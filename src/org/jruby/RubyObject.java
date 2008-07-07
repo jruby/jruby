@@ -261,6 +261,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
             finalizers = null;
         }
     
+        @Override
         public void finalize() {
             if (finalized.compareAndSet(false, true)) {
                 if (finalizers != null) {
@@ -435,6 +436,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * provided so that RubyObjects can be used as keys in the Java
      * HashMap object underlying RubyHash.
      */
+    @Override
     public boolean equals(Object other) {
         return other == this || 
                 other instanceof IRubyObject && 
@@ -445,6 +447,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * The default toString method is just a wrapper that calls the
      * Ruby "to_s" method.
      */
+    @Override
     public String toString() {
         return RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, MethodIndex.TO_S, "to_s", IRubyObject.NULL_ARRAY).toString();
     }
@@ -1301,6 +1304,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * Ruby "hash" method doesn't return a number, the Object#hashCode
      * implementation will be used instead.
      */
+    @Override
     public int hashCode() {
         IRubyObject hashValue = callMethod(getRuntime().getCurrentContext(), MethodIndex.HASH, "hash");
         
@@ -1521,13 +1525,12 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * inspection that inspects instance variables.
      */
     private StringBuilder inspectObj(StringBuilder part) {
+        ThreadContext context = getRuntime().getCurrentContext();
         String sep = "";
+        
         for (Variable<IRubyObject> ivar : getInstanceVariableList()) {
-            part.append(sep);
-            part.append(" ");
-            part.append(ivar.getName());
-            part.append("=");
-            part.append(ivar.getValue().callMethod(getRuntime().getCurrentContext(), "inspect"));
+            part.append(sep).append(" ").append(ivar.getName()).append("=");
+            part.append(ivar.getValue().callMethod(context, "inspect"));
             sep = ",";
         }
         part.append(">");
