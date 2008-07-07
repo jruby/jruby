@@ -1967,7 +1967,7 @@ public class RubyIO extends RubyObject {
         return getRuntime().getNil();
     }
     
-    @JRubyMethod(name = "readpartial", required = 1, optional = 1)
+    @JRubyMethod(name = {"readpartial", "read_nonblock"}, required = 1, optional = 1)
     public IRubyObject readpartial(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
 
@@ -2072,12 +2072,6 @@ public class RubyIO extends RubyObject {
     	} finally {
             context.getThread().afterBlockingCall();
         }
-    }
-    
-    @JRubyMethod(name = "read_nonblock", required = 1, optional = 1)
-    public IRubyObject read_nonblock(IRubyObject[] args) {
-        // TODO: Obviously, we're not doing a nonblocking read here...
-        return read(args);
     }
     
     @JRubyMethod(name = "read", optional = 2)
