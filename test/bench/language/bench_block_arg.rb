@@ -15,12 +15,19 @@ def bench_block_arg(bm)
   def foo2(&b)
   end
     
-  bm.report("10m falls with no block,  arg") do
+  bm.report("10m calls with no block,  arg") do
     10_000_000.times { foo2 }
   end
-  bm.report("10m falls with block arg") do
+  bm.report("10m calls with block arg") do
     10_000_000.times { foo2 {} }
   end
+
+  a = proc {}
+
+  bm.report("10m calls with block pass arg") do
+    10_000_000.times { foo2(&a) }
+  end
+
 end
 
 if $0 == __FILE__

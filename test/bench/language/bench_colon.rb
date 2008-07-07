@@ -7,13 +7,19 @@ def bench_colon(bm)
   class << self
     class ::Object
       module Foo
+        def self.a; end
         module Bar; end
         $bm.report("control, const access directly") do
           1_000_000.times do
             Foo; Bar; Foo; Bar; Foo; Bar; Foo; Bar; Foo; Bar; Foo; Bar; Foo; Bar; Foo; Bar; Foo; Bar; Foo; Bar
           end
         end
-        $bm.report("1m colon2") do
+        $bm.report("1m colon2 (constant)") do
+          1_000_000.times do
+            Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar
+          end
+        end
+        $bm.report("1m colon2 (method)") do
           1_000_000.times do
             Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar
           end
