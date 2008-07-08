@@ -293,7 +293,7 @@ public class RuntimeHelpers {
         return (RubyArray) value;
     }
 
-    public static RubyArray ensureMultipleAssignableRubyArray(Ruby runtime, IRubyObject value, boolean masgnHasHead) {
+    public static RubyArray ensureMultipleAssignableRubyArray(IRubyObject value, Ruby runtime, boolean masgnHasHead) {
         if (!(value instanceof RubyArray)) {
             value = ArgsUtil.convertToRubyArray(runtime, value, masgnHasHead);
         }
@@ -1055,11 +1055,26 @@ public class RuntimeHelpers {
     }
 
     private static IRubyObject[] prepareMethodMissingArgs(IRubyObject[] args, ThreadContext context, String name) {
-
         IRubyObject[] newArgs = new IRubyObject[args.length + 1];
         System.arraycopy(args, 0, newArgs, 1, args.length);
         newArgs[0] = context.getRuntime().newSymbol(name);
 
         return newArgs;
+    }
+    
+    public static IRubyObject arrayEntryOrNil(RubyArray array, IRubyObject nil, int index) {
+        if (index < array.getLength()) {
+            return array.entry(index);
+        } else {
+            return nil;
+        }
+    }
+    
+    public static RubyArray subarrayOrEmpty(RubyArray array, Ruby runtime, int index) {
+        if (index < array.getLength()) {
+            return createSubarray(array, index);
+        } else {
+            return RubyArray.newEmptyArray(runtime);
+        }
     }
 }

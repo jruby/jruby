@@ -1435,63 +1435,27 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void ensureMultipleAssignableRubyArray(boolean masgnHasHead) {
             loadRuntime();
-            method.swap();
             method.pushBoolean(masgnHasHead);
-            invokeUtilityMethod("ensureMultipleAssignableRubyArray", sig(RubyArray.class, params(Ruby.class, IRubyObject.class, boolean.class)));
+            invokeUtilityMethod("ensureMultipleAssignableRubyArray", sig(RubyArray.class, params(IRubyObject.class, Ruby.class, boolean.class)));
         }
 
         public void forEachInValueArray(int start, int count, Object source, ArrayCallback callback, ArrayCallback nilCallback, CompilerCallback argsCallback) {
             // FIXME: This could probably be made more efficient
             for (; start < count; start++) {
-                Label noMoreArrayElements = new Label();
-                Label doneWithElement = new Label();
-                
-                // confirm we're not past the end of the array
                 method.dup(); // dup the original array object
-                method.invokevirtual(p(RubyArray.class), "getLength", sig(Integer.TYPE));
+                loadNil();
                 method.pushInt(start);
-                method.if_icmple(noMoreArrayElements); // if length <= start, end loop
-                
-                // extract item from array
-                method.dup(); // dup the original array object
-                method.pushInt(start);
-                method.invokevirtual(p(RubyArray.class), "entry", sig(IRubyObject.class, params(Integer.TYPE))); // extract item
+                invokeUtilityMethod("arrayEntryOrNil", sig(IRubyObject.class, RubyArray.class, IRubyObject.class, int.class));
                 callback.nextValue(this, source, start);
-                method.go_to(doneWithElement);
-                
-                // otherwise no items left available, use the code from nilCallback
-                method.label(noMoreArrayElements);
-                nilCallback.nextValue(this, source, start);
-                
-                // end of this element
-                method.label(doneWithElement);
-                // normal assignment leaves the value; pop it.
                 method.pop();
             }
             
             if (argsCallback != null) {
-                Label emptyArray = new Label();
-                Label readyForArgs = new Label();
-                // confirm we're not past the end of the array
                 method.dup(); // dup the original array object
-                method.invokevirtual(p(RubyArray.class), "getLength", sig(Integer.TYPE));
+                loadRuntime();
                 method.pushInt(start);
-                method.if_icmple(emptyArray); // if length <= start, end loop
-                
-                // assign remaining elements as an array for rest args
-                method.dup(); // dup the original array object
-                method.pushInt(start);
-                invokeUtilityMethod("createSubarray", sig(RubyArray.class, RubyArray.class, int.class));
-                method.go_to(readyForArgs);
-                
-                // create empty array
-                method.label(emptyArray);
-                createEmptyArray();
-                
-                // assign rest args
-                method.label(readyForArgs);
+                invokeUtilityMethod("subarrayOrEmpty", sig(RubyArray.class, RubyArray.class, Ruby.class, int.class));
                 argsCallback.call(this);
-                //consume leftover assigned value
                 method.pop();
             }
         }
