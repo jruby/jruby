@@ -676,6 +676,46 @@ public class RuntimeHelpers {
         return new IRubyObject[] {one, two, three, four, five};
     }
     
+    public static String[] constructStringArray(String one) {
+        return new String[] {one};
+    }
+    
+    public static String[] constructStringArray(String one, String two) {
+        return new String[] {one, two};
+    }
+    
+    public static String[] constructStringArray(String one, String two, String three) {
+        return new String[] {one, two, three};
+    }
+    
+    public static String[] constructStringArray(String one, String two, String three, String four) {
+        return new String[] {one, two, three, four};
+    }
+    
+    public static String[] constructStringArray(String one, String two, String three, String four, String five) {
+        return new String[] {one, two, three, four, five};
+    }
+    
+    public static String[] constructStringArray(String one, String two, String three, String four, String five, String six) {
+        return new String[] {one, two, three, four, five, six};
+    }
+    
+    public static String[] constructStringArray(String one, String two, String three, String four, String five, String six, String seven) {
+        return new String[] {one, two, three, four, five, six, seven};
+    }
+    
+    public static String[] constructStringArray(String one, String two, String three, String four, String five, String six, String seven, String eight) {
+        return new String[] {one, two, three, four, five, six, seven, eight};
+    }
+    
+    public static String[] constructStringArray(String one, String two, String three, String four, String five, String six, String seven, String eight, String nine) {
+        return new String[] {one, two, three, four, five, six, seven, eight, nine};
+    }
+    
+    public static String[] constructStringArray(String one, String two, String three, String four, String five, String six, String seven, String eight, String nine, String ten) {
+        return new String[] {one, two, three, four, five, six, seven, eight, nine, ten};
+    }
+    
     public static final int MAX_SPECIFIC_ARITY_HASH = 3;
     
     public static RubyHash constructHash(Ruby runtime, IRubyObject key1, IRubyObject value1) {

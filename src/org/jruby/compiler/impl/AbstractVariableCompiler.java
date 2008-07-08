@@ -129,8 +129,10 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
             // do nothing; arity check is done before call
             // FIXME: arity check is not yet done before call :)
         } else {
+            boolean needsError = false;
             if (restArg != -1) {
                 if (requiredArgs > 0) {
+                    needsError = true;
                     // just confirm minimum args provided
                     method.aload(argsIndex);
                     method.arraylength();
@@ -138,6 +140,7 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
                     method.if_icmplt(arityError);
                 }
             } else if (optArgs > 0) {
+                needsError = true;
                 if (requiredArgs > 0) {
                     // confirm minimum args provided
                     method.aload(argsIndex);
@@ -152,6 +155,7 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
                 method.pushInt(requiredArgs + optArgs);
                 method.if_icmpgt(arityError);
             } else {
+                needsError = true;
                 // just confirm args length == required
                 method.aload(argsIndex);
                 method.arraylength();
@@ -159,17 +163,19 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
                 method.if_icmpne(arityError);
             }
 
-            method.go_to(noArityError);
+            if (needsError) {
+                method.go_to(noArityError);
 
-            method.label(arityError);
-            methodCompiler.loadRuntime();
-            method.aload(argsIndex);
-            method.pushInt(requiredArgs);
-            method.pushInt(requiredArgs + optArgs);
-            method.invokestatic(p(Arity.class), "checkArgumentCount", sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
-            method.pop();
+                method.label(arityError);
+                methodCompiler.loadRuntime();
+                method.aload(argsIndex);
+                method.pushInt(requiredArgs);
+                method.pushInt(requiredArgs + optArgs);
+                method.invokestatic(p(Arity.class), "checkArgumentCount", sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
+                method.pop();
 
-            method.label(noArityError);
+                method.label(noArityError);
+            }
         }
     }
 
@@ -230,7 +236,7 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
                     optGivenAssignment.nextValue(methodCompiler, optArgs, optArgElement);
                     method.go_to(doneWithElement);
 
-                    // otherwise no items left available, use the code from nilCallback
+                    // otherwise no items left available, use the code for default
                     method.label(noMoreArrayElements);
                     optNotGivenAssignment.nextValue(methodCompiler, optArgs, optArgElement);
 

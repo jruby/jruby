@@ -311,13 +311,30 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
     public static void buildStaticScopeNames(SkinnyMethodAdapter method, StaticScope scope) {
         // construct static scope list of names
-        method.pushInt(scope.getNumberOfVariables());
-        method.anewarray(p(String.class));
-        for (int i = 0; i < scope.getNumberOfVariables(); i++) {
-            method.dup();
-            method.pushInt(i);
-            method.ldc(scope.getVariables()[i]);
-            method.arraystore();
+        String signature = null;
+        switch (scope.getNumberOfVariables()) {
+        case 0:
+            method.pushInt(0);
+            method.anewarray(p(String.class));
+            break;
+        case 1: case 2: case 3: case 4: case 5:
+        case 6: case 7: case 8: case 9: case 10:
+            signature = sig(String[].class, params(String.class, scope.getNumberOfVariables()));
+            for (int i = 0; i < scope.getNumberOfVariables(); i++) {
+                method.ldc(scope.getVariables()[i]);
+            }
+            method.invokestatic(p(RuntimeHelpers.class), "constructStringArray", signature);
+            break;
+        default:
+            method.pushInt(scope.getNumberOfVariables());
+            method.anewarray(p(String.class));
+            for (int i = 0; i < scope.getNumberOfVariables(); i++) {
+                method.dup();
+                method.pushInt(i);
+                method.ldc(scope.getVariables()[i]);
+                method.arraystore();
+            }
+            break;
         }
     }
 
