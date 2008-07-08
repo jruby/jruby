@@ -397,34 +397,67 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         private int lastLine = -1;
         private int lastPositionLine = -1;
         protected StaticScope scope;
+        protected ASTInspector inspector;
+        protected String methodName;
         
-        public AbstractMethodCompiler(StaticScope scope) {
+        public AbstractMethodCompiler(StaticScope scope, ASTInspector inspector, String methodName) {
             this.scope = scope;
+            this.inspector = inspector;
+            this.methodName = methodName;
             if (scope.getRestArg() >= 0 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() > 3) {
                 argParamCount = 1; // use IRubyObject[]
             } else {
                 argParamCount = scope.getRequiredArgs(); // specific arity
             }
+            
+            method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, methodName, getSignature(), null, null));
+            
+            createVariableCompiler();
+            invocationCompiler = new StandardInvocationCompiler(this, method);
         }
+        
+        protected abstract String getSignature();
+        
+        protected abstract void createVariableCompiler();
 
         public abstract void beginMethod(CompilerCallback args, StaticScope scope);
 
         public abstract void endMethod();
         
+        public class ASMMethodContinuationCompiler extends ASMMethodCompiler {
+            public ASMMethodContinuationCompiler(String methodName, ASTInspector inspector, StaticScope scope) {
+                super(methodName, inspector, scope);
+            }
+
+            public void endMethod() {
+                // return last value from execution
+                method.areturn();
+
+                // end of variable scope
+                Label end = new Label();
+                method.label(end);
+
+                method.end();
+            }
+        }
+        
         public MethodCompiler chainToMethod(String methodName, ASTInspector inspector) {
+            MethodCompiler compiler = outline(methodName, inspector);
+            endMethod();
+            return compiler;
+        }
+        
+        public MethodCompiler outline(String methodName, ASTInspector inspector) {
             // chain to the next segment of this giant method
             method.aload(THIS);
-            loadThreadContext();
-            loadSelf();
-            if(this instanceof ASMClosureCompiler) {
-                pushNull();
-            } else {
-                loadBlock();
+            
+            // load all arguments straight through
+            for (int i = 1; i <= getClosureIndex(); i++) {
+                method.aload(i);
             }
-            method.invokevirtual(classname, methodName, sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, Block.class}));
-            endMethod();
+            method.invokevirtual(classname, methodName, getSignature());
 
-            ASMMethodCompiler methodCompiler = new ASMMethodCompiler(methodName, inspector, scope);
+            ASMMethodContinuationCompiler methodCompiler = new ASMMethodContinuationCompiler(methodName, inspector, scope);
 
             methodCompiler.beginChainedMethod();
 
@@ -2572,13 +2605,15 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     }
 
     public class ASMClosureCompiler extends AbstractMethodCompiler {
-        private String closureMethodName;
-        
         public ASMClosureCompiler(String closureMethodName, ASTInspector inspector, StaticScope scope) {
-            super(scope);
-            this.closureMethodName = closureMethodName;
-            
-            method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, closureMethodName, CLOSURE_SIGNATURE, null, null));
+            super(scope, inspector, closureMethodName);
+        }
+        
+        protected String getSignature() {
+            return CLOSURE_SIGNATURE;
+        }
+        
+        protected void createVariableCompiler() {
             if (inspector == null) {
                 variableCompiler = new HeapBasedVariableCompiler(this, method, scope, false, ARGS_INDEX, getFirstTempIndex());
             } else if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
@@ -2592,7 +2627,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             } else {
                 variableCompiler = new StackBasedVariableCompiler(this, method, scope, false, ARGS_INDEX, getFirstTempIndex());
             }
-            invocationCompiler = new StandardInvocationCompiler(this, method);
         }
 
         public void beginMethod(CompilerCallback args, StaticScope scope) {
@@ -2702,52 +2736,23 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     }
 
     public class ASMMethodCompiler extends AbstractMethodCompiler {
-        private String friendlyName;
         private boolean specificArity;
 
         public ASMMethodCompiler(String friendlyName, ASTInspector inspector, StaticScope scope) {
-            super(scope);
-            this.friendlyName = friendlyName;
-
-            String signature = null;
+            super(scope, inspector, friendlyName);
+        }
+        
+        protected String getSignature() {
             if (scope.getRestArg() >= 0 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() > 3) {
-                signature = METHOD_SIGNATURES[4];
-                method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, friendlyName, signature, null, null));
                 specificArity = false;
+                return METHOD_SIGNATURES[4];
             } else {
                 specificArity = true;
-                signature = METHOD_SIGNATURES[scope.getRequiredArgs()];
-                // add a default [] version of the method that calls the specific version
-                method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, friendlyName, METHOD_SIGNATURES[4], null, null));
-                method.start();
-                        
-                // check arity in the variable-arity version
-                method.aload(1);
-                method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-                method.aload(3);
-                method.pushInt(scope.getRequiredArgs());
-                method.pushInt(scope.getRequiredArgs());
-                method.invokestatic(p(Arity.class), "checkArgumentCount", sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
-                method.pop();
-                
-                loadThis();
-                loadThreadContext();
-                loadSelf();
-                // FIXME: missing arity check
-                for (int i = 0; i < scope.getRequiredArgs(); i++) {
-                    method.aload(ARGS_INDEX);
-                    method.ldc(i);
-                    method.arrayload();
-                }
-                method.aload(ARGS_INDEX + 1); // load block from [] version of method
-                
-                method.invokevirtual(classname, friendlyName, signature);
-                method.areturn();
-                method.end();
-                
-                method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, friendlyName, signature, null, null));
+                return METHOD_SIGNATURES[scope.getRequiredArgs()];
             }
-            
+        }
+        
+        protected void createVariableCompiler() {
             if (inspector == null) {
                 variableCompiler = new HeapBasedVariableCompiler(this, method, scope, specificArity, ARGS_INDEX, getFirstTempIndex());
             } else if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
@@ -2761,7 +2766,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             } else {
                 variableCompiler = new StackBasedVariableCompiler(this, method, scope, specificArity, ARGS_INDEX, getFirstTempIndex());
             }
-            invocationCompiler = new StandardInvocationCompiler(this, method);
         }
         
         public void beginChainedMethod() {
@@ -2838,6 +2842,35 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.label(end);
 
             method.end();
+            
+            if (specificArity) {// add a default [] version of the method that calls the specific version
+                method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, methodName, METHOD_SIGNATURES[4], null, null));
+                method.start();
+                        
+                // check arity in the variable-arity version
+                method.aload(1);
+                method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
+                method.aload(3);
+                method.pushInt(scope.getRequiredArgs());
+                method.pushInt(scope.getRequiredArgs());
+                method.invokestatic(p(Arity.class), "checkArgumentCount", sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
+                method.pop();
+                
+                loadThis();
+                loadThreadContext();
+                loadSelf();
+                // FIXME: missing arity check
+                for (int i = 0; i < scope.getRequiredArgs(); i++) {
+                    method.aload(ARGS_INDEX);
+                    method.ldc(i);
+                    method.arrayload();
+                }
+                method.aload(ARGS_INDEX + 1); // load block from [] version of method
+                
+                method.invokevirtual(classname, methodName, getSignature());
+                method.areturn();
+                method.end();
+            }
         }
         
         public void performReturn() {
