@@ -105,21 +105,7 @@ public class RescueNode extends Node {
             IRubyObject globalExceptionState = runtime.getGlobalVariables().get("$!");
             boolean anotherExceptionRaised = false;
             try {
-                // FIXME: Make bodyNode non-null in parser
-                if (bodyNode == null) return runtime.getNil();
-                
-                // Execute rescue block
-                IRubyObject result = bodyNode.interpret(runtime,context, self, aBlock);
-
-                // If no exception is thrown execute else block
-                if (elseNode != null) {
-                    if (rescueNode == null) {
-                        runtime.getWarnings().warn(ID.ELSE_WITHOUT_RESCUE, elseNode.getPosition(), "else without rescue is useless");
-                    }
-                    result = elseNode.interpret(runtime,context, self, aBlock);
-                }
-
-                return result;
+                return executeBody(runtime, context, self, aBlock);
             } catch (RaiseException raiseJump) {
                 RubyException raisedException = raiseJump.getException();
                 // TODO: Rubicon TestKernel dies without this line.  A cursory glance implies we
@@ -130,14 +116,8 @@ public class RescueNode extends Node {
                 RescueBodyNode cRescueNode = rescueNode;
 
                 while (cRescueNode != null) {
-                    Node  exceptionNodes = cRescueNode.getExceptionNodes();
-                    IRubyObject[] exceptions;
+                    IRubyObject[] exceptions = getExceptions(cRescueNode, runtime, context, self, aBlock);
                     
-                    if (exceptionNodes == null) {
-                        exceptions = new IRubyObject[] {runtime.getStandardError()};
-                    } else {
-                        exceptions = ASTInterpreter.setupArgs(runtime, context, exceptionNodes, self, aBlock);
-                    }
                     if (RuntimeHelpers.isExceptionHandled(raisedException, exceptions, runtime, context, self).isTrue()) {
                         try {
                             return cRescueNode.interpret(runtime,context, self, aBlock);
@@ -163,5 +143,36 @@ public class RescueNode extends Node {
                     runtime.getGlobalVariables().set("$!", globalExceptionState);
             }
         }
+    }
+
+    private IRubyObject executeBody(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        // FIXME: Make bodyNode non-null in parser
+        if (bodyNode == null) {
+            return runtime.getNil();
+        }
+        // Execute rescue block
+        IRubyObject result = bodyNode.interpret(runtime, context, self, aBlock);
+
+        // If no exception is thrown execute else block
+        if (elseNode != null) {
+            if (rescueNode == null) {
+                runtime.getWarnings().warn(ID.ELSE_WITHOUT_RESCUE, elseNode.getPosition(), "else without rescue is useless");
+            }
+            result = elseNode.interpret(runtime, context, self, aBlock);
+        }
+
+        return result;
+    }
+
+    private IRubyObject[] getExceptions(RescueBodyNode cRescueNode, Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        Node exceptionNodes = cRescueNode.getExceptionNodes();
+        IRubyObject[] exceptions;
+
+        if (exceptionNodes == null) {
+            exceptions = new IRubyObject[]{runtime.getStandardError()};
+        } else {
+            exceptions = ASTInterpreter.setupArgs(runtime, context, exceptionNodes, self, aBlock);
+        }
+        return exceptions;
     }
 }
