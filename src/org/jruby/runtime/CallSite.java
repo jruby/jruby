@@ -54,12 +54,18 @@ public abstract class CallSite {
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2);
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3);
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args);
-    // with block
+    // with block pass
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, Block block);
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, Block block);
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block);
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block);
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
+    // with block literal (iter)
+    public abstract IRubyObject callIter(ThreadContext context, IRubyObject self, Block block);
+    public abstract IRubyObject callIter(ThreadContext context, IRubyObject self, IRubyObject arg1, Block block);
+    public abstract IRubyObject callIter(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block);
+    public abstract IRubyObject callIter(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block);
+    public abstract IRubyObject callIter(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
 
     public static class InlineCachingCallSite extends CallSite implements CacheMap.CacheSite {
         private static class CacheEntry {
@@ -295,6 +301,27 @@ public abstract class CallSite {
             }
         }
         
+        public IRubyObject callIter(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+            RubyClass selfType = pollAndGetClass(context, self);
+
+            try {
+                CacheEntry myCache = cache;
+                if (myCache.cachedType == selfType) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, args, block);
+                }
+
+                return cacheAndCall(selfType, block, args, context, self);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(context, bj);
+            } catch (JumpException.RetryJump rj) {
+                throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
+            } catch (StackOverflowError soe) {
+                throw context.getRuntime().newSystemStackError("stack level too deep");
+            } finally {
+                block.escape();
+            }
+        }
+        
         public IRubyObject call(ThreadContext context, IRubyObject self) {
             RubyClass selfType = pollAndGetClass(context, self);
 
@@ -322,6 +349,27 @@ public abstract class CallSite {
                 throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
             } catch (StackOverflowError soe) {
                 throw context.getRuntime().newSystemStackError("stack level too deep");
+            }
+        }
+        
+        public IRubyObject callIter(ThreadContext context, IRubyObject self, Block block) {
+            RubyClass selfType = pollAndGetClass(context, self);
+
+            try {
+                CacheEntry myCache = cache;
+                if (myCache.cachedType == selfType) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, block);
+                }
+
+                return cacheAndCall(selfType, block, context, self);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(context, bj);
+            } catch (JumpException.RetryJump rj) {
+                throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
+            } catch (StackOverflowError soe) {
+                throw context.getRuntime().newSystemStackError("stack level too deep");
+            } finally {
+                block.escape();
             }
         }
         
@@ -355,6 +403,27 @@ public abstract class CallSite {
             }
         }
         
+        public IRubyObject callIter(ThreadContext context, IRubyObject self, IRubyObject arg1, Block block) {
+            RubyClass selfType = pollAndGetClass(context, self);
+
+            try {
+                CacheEntry myCache = cache;
+                if (myCache.cachedType == selfType) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, block);
+                }
+
+                return cacheAndCall(selfType, block, context, self, arg1);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(context, bj);
+            } catch (JumpException.RetryJump rj) {
+                throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
+            } catch (StackOverflowError soe) {
+                throw context.getRuntime().newSystemStackError("stack level too deep");
+            } finally {
+                block.escape();
+            }
+        }
+        
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
             RubyClass selfType = pollAndGetClass(context, self);
 
@@ -385,6 +454,27 @@ public abstract class CallSite {
             }
         }
         
+        public IRubyObject callIter(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
+            RubyClass selfType = pollAndGetClass(context, self);
+
+            try {
+                CacheEntry myCache = cache;
+                if (myCache.cachedType == selfType) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, block);
+                }
+
+                return cacheAndCall(selfType, block, context, self, arg1, arg2);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(context, bj);
+            } catch (JumpException.RetryJump rj) {
+                throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
+            } catch (StackOverflowError soe) {
+                throw context.getRuntime().newSystemStackError("stack level too deep");
+            } finally {
+                block.escape();
+            }
+        }
+        
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
             RubyClass selfType = pollAndGetClass(context, self);
 
@@ -412,6 +502,27 @@ public abstract class CallSite {
                 throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
             } catch (StackOverflowError soe) {
                 throw context.getRuntime().newSystemStackError("stack level too deep");
+            }
+        }
+        
+        public IRubyObject callIter(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+            RubyClass selfType = pollAndGetClass(context, self);
+
+            try {
+                CacheEntry myCache = cache;
+                if (myCache.cachedType == selfType) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
+                }
+
+                return cacheAndCall(selfType, block, context, self, arg1, arg2, arg3);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(context, bj);
+            } catch (JumpException.RetryJump rj) {
+                throw context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not yet supported");
+            } catch (StackOverflowError soe) {
+                throw context.getRuntime().newSystemStackError("stack level too deep");
+            } finally {
+                block.escape();
             }
         }
 

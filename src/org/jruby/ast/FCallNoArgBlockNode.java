@@ -6,7 +6,6 @@
 package org.jruby.ast;
 
 import org.jruby.Ruby;
-import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -31,12 +30,6 @@ public class FCallNoArgBlockNode extends FCallNode {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         Block block = getBlock(context, self);
         
-        while (true) {
-            try {
-                return callAdapter.call(context, self, block);
-            } catch (JumpException.RetryJump rj) {
-                // allow loop to retry
-            }
-        }
+        return callAdapter.callIter(context, self, block);
     }
 }

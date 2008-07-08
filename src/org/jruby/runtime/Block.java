@@ -55,6 +55,8 @@ public class Block {
     
     private final BlockBody body;
     
+    private boolean[] escaped = new boolean[] {false};
+    
     /**
      * All Block variables should either refer to a real block or this NULL_BLOCK.
      */
@@ -107,6 +109,7 @@ public class Block {
         Block newBlock = body.cloneBlock(binding);
         
         newBlock.type = type;
+        newBlock.escaped = escaped;
 
         return newBlock;
     }
@@ -162,5 +165,13 @@ public class Block {
      */
     public Frame getFrame() {
         return binding.getFrame();
+    }
+    
+    public boolean isEscaped() {
+        return escaped[0];
+    }
+    
+    public void escape() {
+        this.escaped[0] = true;
     }
 }

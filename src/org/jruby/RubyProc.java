@@ -201,9 +201,20 @@ public class RubyProc extends RubyObject implements JumpTarget {
             
             return newBlock.call(context, args);
         } catch (JumpException.BreakJump bj) {
-            if (block.type == Block.Type.LAMBDA) return (IRubyObject) bj.getValue();
-            
-            throw runtime.newLocalJumpError("break", (IRubyObject)bj.getValue(), "break from proc-closure");
+            switch(block.type) {
+            case LAMBDA: if (bj.getTarget() == jumpTarget) {
+                return (IRubyObject) bj.getValue();
+            } else {
+                throw runtime.newLocalJumpError("break", (IRubyObject)bj.getValue(), "unexpected break");
+            }
+            case PROC:
+                if (newBlock.isEscaped()) {
+                    throw runtime.newLocalJumpError("break", (IRubyObject)bj.getValue(), "break from proc-closure");
+                } else {
+                    throw bj;
+                }
+            default: throw bj;
+            }
         } catch (JumpException.ReturnJump rj) {
             Object target = rj.getTarget();
             

@@ -162,14 +162,10 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
         if (!block.isGiven()) {
             return callAdapter.call(context, receiver, args);
         }
-            
-        while (true) {
-            try {
-                return callAdapter.call(context, receiver, args, block);
-            } catch (JumpException.RetryJump rj) {
-                // allow loop to retry
-            }
-        }
+        
+        return iterNode instanceof IterNode ?
+            callAdapter.callIter(context, receiver, args, block) :
+            callAdapter.call(context, receiver, args, block);
     }
     
     public Block getBlock(ThreadContext context, IRubyObject self) {

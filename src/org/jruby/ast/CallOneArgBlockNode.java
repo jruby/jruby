@@ -57,14 +57,8 @@ public final class CallOneArgBlockNode extends CallNode {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
         Block block = getBlock(context, self);
-            
-        while (true) {
-            try {
-                return callAdapter.call(context, receiver, 
-                        arg1.interpret(runtime, context, self, aBlock), block);
-            } catch (JumpException.RetryJump rj) {
-                // allow loop to retry
-            }
-        }    
+        
+        return callAdapter.call(context, receiver, 
+                arg1.interpret(runtime, context, self, aBlock), block);
     }
 }

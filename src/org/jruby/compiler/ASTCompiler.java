@@ -703,7 +703,7 @@ public class ASTCompiler {
         ArgumentsCallback argsCallback = getArgsCallback(callNode.getArgsNode());
         CompilerCallback closureArg = getBlock(callNode.getIterNode());
 
-        context.getInvocationCompiler().invokeDynamic(callNode.getName(), receiverCallback, argsCallback, CallType.NORMAL, closureArg);
+        context.getInvocationCompiler().invokeDynamic(callNode.getName(), receiverCallback, argsCallback, CallType.NORMAL, closureArg, callNode.getIterNode() instanceof IterNode);
     }
 
     public void compileCase(Node node, MethodCompiler context) {
@@ -1047,7 +1047,7 @@ public class ASTCompiler {
             BranchCallback notModuleCallback = new BranchCallback() {
 
                         public void branch(MethodCompiler context) {
-                            context.getInvocationCompiler().invokeDynamic(name, receiverCallback, null, CallType.FUNCTIONAL, null);
+                            context.getInvocationCompiler().invokeDynamic(name, receiverCallback, null, CallType.FUNCTIONAL, null, false);
                         }
                     };
 
@@ -1805,7 +1805,7 @@ public class ASTCompiler {
                     }
                 };
 
-        context.getInvocationCompiler().invokeDynamic("`", null, argsCallback, CallType.FUNCTIONAL, null);
+        context.getInvocationCompiler().invokeDynamic("`", null, argsCallback, CallType.FUNCTIONAL, null, false);
     }
 
     public void compileEnsureNode(Node node, MethodCompiler context) {
@@ -1858,7 +1858,7 @@ public class ASTCompiler {
         
         CompilerCallback closureArg = getBlock(fcallNode.getIterNode());
 
-        context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, closureArg);
+        context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, closureArg, fcallNode.getIterNode() instanceof IterNode);
     }
 
     private CompilerCallback getBlock(Node node) {
@@ -2023,7 +2023,7 @@ public class ASTCompiler {
                     }
                 };
 
-        context.getInvocationCompiler().invokeDynamic("each", receiverCallback, null, CallType.NORMAL, closureArg);
+        context.getInvocationCompiler().invokeDynamic("each", receiverCallback, null, CallType.NORMAL, closureArg, true);
     }
 
     public void compileForIter(Node node, MethodCompiler context) {
@@ -3027,7 +3027,7 @@ public class ASTCompiler {
     public void compileVCall(Node node, MethodCompiler context) {
         VCallNode vcallNode = (VCallNode) node;
         
-        context.getInvocationCompiler().invokeDynamic(vcallNode.getName(), null, null, CallType.VARIABLE, null);
+        context.getInvocationCompiler().invokeDynamic(vcallNode.getName(), null, null, CallType.VARIABLE, null, false);
     }
 
     public void compileWhile(Node node, MethodCompiler context) {
@@ -3072,7 +3072,7 @@ public class ASTCompiler {
                 context.createNewString(xstrNode.getValue());
             }
         };
-        context.getInvocationCompiler().invokeDynamic("`", null, argsCallback, CallType.FUNCTIONAL, null);
+        context.getInvocationCompiler().invokeDynamic("`", null, argsCallback, CallType.FUNCTIONAL, null, false);
     }
 
     public void compileYield(Node node, MethodCompiler context) {

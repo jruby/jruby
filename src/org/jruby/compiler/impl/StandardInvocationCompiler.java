@@ -434,7 +434,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         method.invokeinterface(p(IRubyObject.class), "callSuper", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, Block.class));
     }
 
-    public void invokeDynamic(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg) {
+    public void invokeDynamic(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean iterator) {
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, callType);
 
         methodCompiler.loadThreadContext(); // [adapter, tc]
@@ -446,6 +446,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         }
         
         String signature;
+        String callSiteMethod = "call";
         // args
         if (argsCallback == null) {
             // block
@@ -454,6 +455,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
                 signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class));
             } else {
                 // no args, with block
+                if (iterator) callSiteMethod = "callIter";
                 closureArg.call(methodCompiler);
                 signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, Block.class));
             }
@@ -477,6 +479,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
                 }
             } else {
                 // with args, with block
+                if (iterator) callSiteMethod = "callIter";
                 closureArg.call(methodCompiler);
                 
                 switch (argsCallback.getArity()) {
@@ -497,7 +500,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         
         // adapter, tc, recv, args{0,1}, block{0,1}]
 
-        method.invokevirtual(p(CallSite.class), "call", signature);
+        method.invokevirtual(p(CallSite.class), callSiteMethod, signature);
     }
 
     public void invokeOpAsgnWithOr(String attrName, String attrAsgnName, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {

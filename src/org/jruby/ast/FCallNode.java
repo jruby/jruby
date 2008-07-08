@@ -139,13 +139,9 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
             return callAdapter.call(context, self, args);
         }
 
-        while (true) {
-            try {
-                return callAdapter.call(context, self, args, block);
-            } catch (JumpException.RetryJump rj) {
-                // allow loop to retry
-            }
-        }
+        return iterNode instanceof IterNode ?
+            callAdapter.callIter(context, self, args, block) :
+            callAdapter.call(context, self, args, block);
     }
     
     public Block getBlock(ThreadContext context, IRubyObject self) {
