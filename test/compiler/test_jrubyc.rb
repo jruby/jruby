@@ -80,9 +80,10 @@ class TestJrubyc < Test::Unit::TestCase
       "Compiling test_file1.rb to class test_file1\n",
       output)
 
-    File.delete("test_file1.rb")
-
     assert_nothing_raised { require 'test_file1' }
     assert($compile_test)
+  ensure
+    File.delete("test_file1.rb") rescue nil
+    File.delete("test_file1.class") rescue nil
   end
 end
