@@ -107,42 +107,43 @@ public class RescueNode extends Node {
             try {
                 return executeBody(runtime, context, self, aBlock);
             } catch (RaiseException raiseJump) {
-                RubyException raisedException = raiseJump.getException();
-                // TODO: Rubicon TestKernel dies without this line.  A cursory glance implies we
-                // falsely set $! to nil and this sets it back to something valid.  This should 
-                // get fixed at the same time we address bug #1296484.
-                runtime.getGlobalVariables().set("$!", raisedException);
-
-                RescueBodyNode cRescueNode = rescueNode;
-
-                while (cRescueNode != null) {
-                    IRubyObject[] exceptions = getExceptions(cRescueNode, runtime, context, self, aBlock);
-                    
-                    if (RuntimeHelpers.isExceptionHandled(raisedException, exceptions, runtime, context, self).isTrue()) {
-                        try {
-                            return cRescueNode.interpret(runtime,context, self, aBlock);
-                        } catch (JumpException.RetryJump rj) {
-                            // should be handled in the finally block below
-                            //state.runtime.getGlobalVariables().set("$!", state.runtime.getNil());
-                            //state.threadContext.setRaisedException(null);
-                            continue RescuedBlock;
-                        } catch (RaiseException je) {
-                            anotherExceptionRaised = true;
-                            throw je;
-                        }
-                    }
-                    
-                    cRescueNode = cRescueNode.getOptRescueNode();
+                try {
+                    return handleException(runtime, context, self, aBlock, raiseJump);
+                } catch (JumpException.RetryJump rj) {
+                    // let RescuedBlock continue
+                } catch (RaiseException je) {
+                    anotherExceptionRaised = true;
+                    throw je;
                 }
-
-                // no takers; bubble up
-                throw raiseJump;
             } finally {
                 // clear exception when handled or retried
                 if (!anotherExceptionRaised)
                     runtime.getGlobalVariables().set("$!", globalExceptionState);
             }
         }
+    }
+    
+    private IRubyObject handleException(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock, RaiseException raiseJump) {
+        RubyException raisedException = raiseJump.getException();
+        // TODO: Rubicon TestKernel dies without this line.  A cursory glance implies we
+        // falsely set $! to nil and this sets it back to something valid.  This should 
+        // get fixed at the same time we address bug #1296484.
+        runtime.getGlobalVariables().set("$!", raisedException);
+
+        RescueBodyNode cRescueNode = rescueNode;
+
+        while (cRescueNode != null) {
+            IRubyObject[] exceptions = getExceptions(cRescueNode, runtime, context, self, aBlock);
+
+            if (RuntimeHelpers.isExceptionHandled(raisedException, exceptions, runtime, context, self).isTrue()) {
+                    return cRescueNode.interpret(runtime,context, self, aBlock);
+            }
+
+            cRescueNode = cRescueNode.getOptRescueNode();
+        }
+
+        // no takers; bubble up
+        throw raiseJump;
     }
 
     private IRubyObject executeBody(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
