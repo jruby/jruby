@@ -2873,6 +2873,10 @@ public class ASTCompiler {
     }
 
     public void compileRoot(Node node, ScriptCompiler context, ASTInspector inspector) {
+        compileRoot(node, context, inspector, true, true);
+    }
+
+    public void compileRoot(Node node, ScriptCompiler context, ASTInspector inspector, boolean load, boolean main) {
         RootNode rootNode = (RootNode) node;
 
         context.startScript(rootNode.getStaticScope());
@@ -2907,7 +2911,7 @@ public class ASTCompiler {
 
         methodCompiler.endMethod();
 
-        context.endScript(true, true, true);
+        context.endScript(load, main);
     }
 
     public void compileSelf(Node node, MethodCompiler context) {

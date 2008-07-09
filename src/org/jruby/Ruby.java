@@ -308,8 +308,10 @@ public final class Ruby {
 
         
         if(config.isYARVEnabled()) {
+            if (config.isShowBytecode()) System.err.print("error: bytecode printing only works with JVM bytecode");
             new YARVCompiledRunner(this, inputStream, filename).run();
         } else if(config.isRubiniusEnabled()) {
+            if (config.isShowBytecode()) System.err.print("error: bytecode printing only works with JVM bytecode");
             new RubiniusRunner(this, inputStream, filename).run();
         } else {
             Node scriptNode = parseFromMain(inputStream, filename);
@@ -449,10 +451,15 @@ public final class Ruby {
         }
         
         if (script != null) {
-            return runScript(script);
+            if (config.isShowBytecode()) {
+                return nilObject;
+            } else {
+                return runScript(script);
+            }
         } else if (runner != null) {
             return runYarv(runner);
         } else {
+            if (config.isShowBytecode()) System.err.print("error: bytecode printing only works with JVM bytecode");
             return runInterpreter(scriptNode);
         }
     }
@@ -472,7 +479,12 @@ public final class Ruby {
 
             StandardASMCompiler asmCompiler = new StandardASMCompiler(classname, filename);
             ASTCompiler compiler = new ASTCompiler();
-            compiler.compileRoot(node, asmCompiler, inspector);
+            if (config.isShowBytecode()) {
+                compiler.compileRoot(node, asmCompiler, inspector, false, false);
+                asmCompiler.dumpClass(System.out);
+            } else {
+                compiler.compileRoot(node, asmCompiler, inspector, true, false);
+            }
             script = (Script)asmCompiler.loadClass(classLoader).newInstance();
 
             if (config.isJitLogging()) {

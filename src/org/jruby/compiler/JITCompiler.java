@@ -194,7 +194,7 @@ public class JITCompiler implements JITCompilerMBean {
                 }
             }
             methodCompiler.endMethod();
-            asmCompiler.endScript(false, false, false);
+            asmCompiler.endScript(false, false);
             
             // if we haven't already decided on a do-nothing call
             if (jitCallConfig == null) {

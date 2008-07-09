@@ -51,7 +51,7 @@ public interface ScriptCompiler {
      * End compilation for the current script, closing all context and structures
      * used for the compilation.
      */
-    public void endScript(boolean generateRun, boolean generateLoad, boolean generateMain);
+    public void endScript(boolean generateLoad, boolean generateMain);
     
     /**
      * Begin compilation for a method that has the specified number of local variables.

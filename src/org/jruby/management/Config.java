@@ -167,4 +167,8 @@ public class Config implements ConfigMBean {
     public boolean isLazyHandlesEnabled() {
         return RubyInstanceConfig.LAZYHANDLES_COMPILE;
     }
+    
+    public boolean isShowBytecode() {
+        return ruby.getInstanceConfig().isShowBytecode();
+    }
 }

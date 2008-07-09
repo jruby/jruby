@@ -150,6 +150,7 @@ public class RubyInstanceConfig {
     private Boolean verbose = Boolean.FALSE;
     private boolean debug = false;
     private boolean showVersion = false;
+    private boolean showBytecode = false;
     private boolean showCopyright = false;
     private boolean endOfArguments = false;
     private boolean shouldRunInterpreter = true;
@@ -369,6 +370,7 @@ public class RubyInstanceConfig {
                 .append("  --manage        enable remote JMX management and monitoring of the VM and JRuby\n")
                 .append("  --1.8           specify Ruby 1.8.x compatibility (default)\n")
                 .append("  --1.9           specify Ruby 1.9.x compatibility\n")
+                .append("  --bytecode      show the JVM bytecode produced by compiling specified code\n")
                 .append("  --version       print the version\n");
 
         return sb.toString();
@@ -937,6 +939,9 @@ public class RubyInstanceConfig {
                     } else if (argument.equals("--version")) {
                         setShowVersion(true);
                         break FOR;
+                    } else if (argument.equals("--bytecode")) {
+                        setShowBytecode(true);
+                        break FOR;
                     } else {
                         if (argument.equals("--")) {
                             // ruby interpreter compatibilty
@@ -1122,6 +1127,10 @@ public class RubyInstanceConfig {
     public boolean isShowVersion() {
         return showVersion;
     }
+    
+    public boolean isShowBytecode() {
+        return showBytecode;
+    }
 
     public boolean isShowCopyright() {
         return showCopyright;
@@ -1129,6 +1138,10 @@ public class RubyInstanceConfig {
 
     protected void setShowVersion(boolean showVersion) {
         this.showVersion = showVersion;
+    }
+    
+    protected void setShowBytecode(boolean showBytecode) {
+        this.showBytecode = showBytecode;
     }
 
     protected void setShowCopyright(boolean showCopyright) {

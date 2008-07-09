@@ -40,4 +40,5 @@ public interface ConfigMBean {
     public boolean isManagementEnabled();
     public boolean isFullTraceEnabled();
     public boolean isLazyHandlesEnabled();
+    public boolean isShowBytecode();
 }

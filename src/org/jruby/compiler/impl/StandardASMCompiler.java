@@ -32,6 +32,7 @@ package org.jruby.compiler.impl;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.math.BigInteger;
@@ -95,6 +96,7 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.util.CheckClassAdapter;
+import org.objectweb.asm.util.TraceClassVisitor;
 
 /**
  *
@@ -157,6 +159,13 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         classLoader.defineClass(c(classname), classWriter.toByteArray());
         return classLoader.loadClass(c(classname));
     }
+    
+    public void dumpClass(PrintStream out) {
+        TraceClassVisitor tcv = new TraceClassVisitor(new PrintWriter(out));
+        new ClassReader(classWriter.toByteArray()).accept(tcv, 0);
+        
+        tcv.print(new PrintWriter(out));
+    }
 
     public void writeClass(File destination) throws IOException {
         writeClass(classname, destination, classWriter);
@@ -217,7 +226,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         cacheCompiler = new InheritedCacheCompiler(this);
     }
 
-    public void endScript(boolean generateRun, boolean generateLoad, boolean generateMain) {
+    public void endScript(boolean generateLoad, boolean generateMain) {
         // add Script#run impl, used for running this script with a specified threadcontext and self
         // root method of a script is always in __file__ method
         String methodName = "__file__";
