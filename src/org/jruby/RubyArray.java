@@ -1094,8 +1094,8 @@ public class RubyArray extends RubyObject implements List {
      */
     @JRubyMethod(name = "frozen?")
     @Override
-    public RubyBoolean frozen_p() {
-        return getRuntime().newBoolean(isFrozen() || (flags & TMPLOCK_ARR_F) != 0);
+    public RubyBoolean frozen_p(ThreadContext context) {
+        return context.getRuntime().newBoolean(isFrozen() || (flags & TMPLOCK_ARR_F) != 0);
     }
 
     /**

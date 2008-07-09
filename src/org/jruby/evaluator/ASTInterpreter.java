@@ -32,36 +32,19 @@
 package org.jruby.evaluator;
 
 import org.jruby.Ruby;
-import org.jruby.MetaClass;
 import org.jruby.RubyArray;
 import org.jruby.RubyBinding;
-import org.jruby.RubyClass;
-import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.ast.ArrayNode;
-import org.jruby.ast.AttrAssignNode;
-import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BlockPassNode;
-import org.jruby.ast.CallNode;
-import org.jruby.ast.ClassVarNode;
-import org.jruby.ast.Colon2Node;
-import org.jruby.ast.Colon3Node;
-import org.jruby.ast.ConstNode;
-import org.jruby.ast.FCallNode;
-import org.jruby.ast.GlobalVarNode;
-import org.jruby.ast.InstVarNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
-import org.jruby.ast.NthRefNode;
-import org.jruby.ast.SuperNode;
-import org.jruby.ast.VCallNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.JumpException;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -69,7 +52,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.EventHook;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Frame;
@@ -77,6 +59,7 @@ import org.jruby.runtime.InterpretedBlock;
 import org.jruby.util.TypeConverter;
 
 public class ASTInterpreter {
+    @Deprecated
     public static IRubyObject eval(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block block) {
         assert self != null : "self during eval must never be null";
         
@@ -134,14 +117,15 @@ public class ASTInterpreter {
             // Binding provided for scope, use it
             IRubyObject newSelf = binding.getSelf();
             RubyString source = src.convertToString();
-            Node node = 
-                runtime.parseEval(source.getByteList(), file, evalScope, lineNumber);
+            Node node = runtime.parseEval(source.getByteList(), file, evalScope, lineNumber);
 
-            return eval(runtime, context, node, newSelf, binding.getFrame().getBlock());
+            return node.interpret(runtime, context, newSelf, binding.getFrame().getBlock());
         } catch (JumpException.BreakJump bj) {
             throw runtime.newLocalJumpError("break", (IRubyObject)bj.getValue(), "unexpected break");
         } catch (JumpException.RedoJump rj) {
             throw runtime.newLocalJumpError("redo", (IRubyObject)rj.getValue(), "unexpected redo");
+        } catch (StackOverflowError sfe) {
+            throw runtime.newSystemStackError("stack level too deep");            
         } finally {
             context.postEvalWithBinding(binding, lastFrame);
 
@@ -190,9 +174,11 @@ public class ASTInterpreter {
         try {
             Node node = runtime.parseEval(source.getByteList(), file, evalScope, lineNumber);
             
-            return ASTInterpreter.eval(runtime, context, node, self, Block.NULL_BLOCK);
+            return node.interpret(runtime, context, self, Block.NULL_BLOCK);
         } catch (JumpException.BreakJump bj) {
             throw runtime.newLocalJumpError("break", (IRubyObject)bj.getValue(), "unexpected break");
+        } catch (StackOverflowError sfe) {
+            throw runtime.newSystemStackError("stack level too deep");
         } finally {
             // restore position
             context.setFile(savedFile);

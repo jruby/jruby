@@ -63,27 +63,15 @@ public class RubyComparable {
      * 
      */
     public static int cmpint(ThreadContext context, IRubyObject val, IRubyObject a, IRubyObject b) {
-        if (val.isNil()) {
-            cmperr(a, b);
-        }
-        if (val instanceof RubyFixnum) {
-            return RubyNumeric.fix2int((RubyFixnum) val);
-        }
-        if (val instanceof RubyBignum) {
-            if (((RubyBignum) val).getValue().signum() == -1) {
-                return 1;
-            }
-            return -1;
-        }
+        if (val.isNil()) cmperr(a, b);
+        if (val instanceof RubyFixnum) return RubyNumeric.fix2int((RubyFixnum) val);
+        if (val instanceof RubyBignum) return ((RubyBignum) val).getValue().signum() == -1 ? 1 : -1;
 
-        final Ruby runtime = val.getRuntime();
-        final RubyFixnum zero = RubyFixnum.zero(runtime);
-        if (val.callMethod(context, MethodIndex.OP_GT, ">", zero).isTrue()) {
-            return 1;
-        }
-        if (val.callMethod(context, MethodIndex.OP_LT, "<", zero).isTrue()) {
-            return -1;
-        }
+        RubyFixnum zero = RubyFixnum.zero(context.getRuntime());
+        
+        if (val.callMethod(context, MethodIndex.OP_GT, ">", zero).isTrue()) return 1;
+        if (val.callMethod(context, MethodIndex.OP_LT, "<", zero).isTrue()) return -1;
+
         return 0;
     }
 
@@ -113,17 +101,15 @@ public class RubyComparable {
     public static IRubyObject op_equal(ThreadContext context, IRubyObject recv, IRubyObject other) {
         Ruby runtime = context.getRuntime();
 
-        if (recv == other) {
-            return runtime.getTrue();
-        }
+        if (recv == other) return runtime.getTrue();
 
         try {
             IRubyObject result = recv.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", other);
-            return RubyBoolean.newBoolean(
-                    runtime, cmpint(context, result, recv, other) == 0);
+            
+            return RubyBoolean.newBoolean(runtime, cmpint(context, result, recv, other) == 0);
         } catch (RaiseException e) {
-            if (e.getException().kind_of_p(recv.getRuntime().getStandardError()).isTrue()) {
-                return recv.getRuntime().getNil();
+            if (e.getException().kind_of_p(context, runtime.getStandardError()).isTrue()) {
+                return runtime.getNil();
             } else {
                 throw e;
             }
@@ -136,14 +122,11 @@ public class RubyComparable {
     // <=> may return nil in many circumstances, e.g. 3 <=> NaN        
     @JRubyMethod(name = ">", required = 1)
     public static RubyBoolean op_gt(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        final Ruby runtime = recv.getRuntime();
         IRubyObject result = recv.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", other);
         
-        if (result.isNil()) {
-            cmperr(recv, other);
-        }
+        if (result.isNil()) cmperr(recv, other);
 
-        return RubyBoolean.newBoolean(runtime, cmpint(context, result, recv, other) > 0);
+        return RubyBoolean.newBoolean(context.getRuntime(), cmpint(context, result, recv, other) > 0);
     }
 
     /** cmp_ge
@@ -151,14 +134,11 @@ public class RubyComparable {
      */
     @JRubyMethod(name = ">=", required = 1)
     public static RubyBoolean op_ge(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        final Ruby runtime = recv.getRuntime();
         IRubyObject result = recv.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", other);
         
-        if (result.isNil()) {
-            cmperr(recv, other);
-        }
+        if (result.isNil()) cmperr(recv, other);
 
-        return RubyBoolean.newBoolean(runtime, cmpint(context, result, recv, other) >= 0);
+        return RubyBoolean.newBoolean(context.getRuntime(), cmpint(context, result, recv, other) >= 0);
     }
 
     /** cmp_lt
@@ -166,14 +146,11 @@ public class RubyComparable {
      */
     @JRubyMethod(name = "<", required = 1)
     public static RubyBoolean op_lt(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        final Ruby runtime = recv.getRuntime();
         IRubyObject result = recv.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", other);
 
-        if (result.isNil()) {
-            cmperr(recv, other);
-        }
+        if (result.isNil()) cmperr(recv, other);
 
-        return RubyBoolean.newBoolean(runtime, cmpint(context, result, recv, other) < 0);
+        return RubyBoolean.newBoolean(context.getRuntime(), cmpint(context, result, recv, other) < 0);
     }
 
     /** cmp_le
@@ -181,14 +158,11 @@ public class RubyComparable {
      */
     @JRubyMethod(name = "<=", required = 1)
     public static RubyBoolean op_le(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        final Ruby runtime = recv.getRuntime();
         IRubyObject result = recv.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", other);
 
-        if (result.isNil()) {
-            cmperr(recv, other);
-        }
+        if (result.isNil()) cmperr(recv, other);
 
-        return RubyBoolean.newBoolean(runtime, cmpint(context, result, recv, other) <= 0);
+        return RubyBoolean.newBoolean(context.getRuntime(), cmpint(context, result, recv, other) <= 0);
     }
 
     /** cmp_between
@@ -196,7 +170,6 @@ public class RubyComparable {
      */
     @JRubyMethod(name = "between?", required = 2)
     public static RubyBoolean between_p(ThreadContext context, IRubyObject recv, IRubyObject first, IRubyObject second) {
-
-        return recv.getRuntime().newBoolean(op_lt(context, recv, first).isFalse() && op_gt(context, recv, second).isFalse());
+        return context.getRuntime().newBoolean(op_lt(context, recv, first).isFalse() && op_gt(context, recv, second).isFalse());
     }
 }

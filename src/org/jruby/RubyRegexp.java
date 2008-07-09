@@ -125,6 +125,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
         runtime.setRegexp(regexpClass);
         regexpClass.index = ClassIndex.REGEXP;
         regexpClass.kindOf = new RubyModule.KindOf() {
+            @Override
                 public boolean isKindOf(IRubyObject obj, RubyModule type) {
                     return obj instanceof RubyRegexp;
                 }
@@ -183,10 +184,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     }
 
     @JRubyMethod(name = "kcode")
-    public IRubyObject kcode() {
-        return (!isKCodeDefault() && kcode != null) ? getRuntime().newString(kcode.name()) : getRuntime().getNil();
+    public IRubyObject kcode(ThreadContext context) {
+        return (!isKCodeDefault() && kcode != null) ? 
+            context.getRuntime().newString(kcode.name()) : context.getRuntime().getNil();
     }
 
+    @Override
     public int getNativeTypeIndex() {
         return ClassIndex.REGEXP;
     }
@@ -200,6 +203,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     }
 
     @JRubyMethod(name = "hash")
+    @Override
     public RubyFixnum hash() {
         check();
         int hashval = (int)pattern.getOptions();
@@ -213,33 +217,32 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     }
 
     @JRubyMethod(name = {"==", "eql?"}, required = 1)
-    public IRubyObject op_equal(IRubyObject other) {
-        if(this == other) return getRuntime().getTrue();
-        if(!(other instanceof RubyRegexp)) return getRuntime().getFalse();
+    @Override
+    public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
+        if(this == other) return context.getRuntime().getTrue();
+        if(!(other instanceof RubyRegexp)) return context.getRuntime().getFalse();
         RubyRegexp otherRegex = (RubyRegexp)other;
         
         check();
         otherRegex.check();
         
-        if(str.equal(otherRegex.str) && kcode == otherRegex.kcode &&
-                                      pattern.getOptions() == otherRegex.pattern.getOptions()) {
-            return getRuntime().getTrue();
-        }
-        return getRuntime().getFalse();
+        return context.getRuntime().newBoolean(str.equal(otherRegex.str) && 
+                kcode == otherRegex.kcode && pattern.getOptions() == otherRegex.pattern.getOptions());
     }
 
     @JRubyMethod(name = "~", reads = {LASTLINE, BACKREF}, writes = BACKREF)
     public IRubyObject op_match2(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
         IRubyObject line = context.getCurrentFrame().getLastLine();
         if(!(line instanceof RubyString)) {
-            context.getCurrentFrame().setBackRef(getRuntime().getNil());
-            return getRuntime().getNil();
+            context.getCurrentFrame().setBackRef(runtime.getNil());
+            return runtime.getNil();
         }
         int start = search(context, (RubyString)line, 0, false);
         if(start < 0) {
-            return getRuntime().getNil();
+            return runtime.getNil();
         } else {
-            return getRuntime().newFixnum(start);
+            return runtime.newFixnum(start);
         }
     }
 
@@ -248,14 +251,15 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
      */
     @JRubyMethod(name = "===", required = 1, writes = BACKREF)
     public IRubyObject eqq(ThreadContext context, IRubyObject str) {
+        Ruby runtime = context.getRuntime();        
         if(!(str instanceof RubyString)) str = str.checkStringType();
 
         if (str.isNil()) {
-            context.getCurrentFrame().setBackRef(getRuntime().getNil());
-            return getRuntime().getFalse();
+            context.getCurrentFrame().setBackRef(runtime.getNil());
+            return runtime.getFalse();
         }
         int start = search(context, (RubyString)str, 0, false);
-        return (start < 0) ? getRuntime().getFalse() : getRuntime().getTrue();
+        return (start < 0) ? runtime.getFalse() : runtime.getTrue();
     }
 
     private static final int REGEX_QUOTED = 1;
@@ -359,6 +363,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     /** rb_reg_init_copy
      */
     @JRubyMethod(name = "initialize_copy", required = 1)
+    @Override
     public IRubyObject initialize_copy(IRubyObject re) {
         if(this == re) return this;
 
@@ -366,7 +371,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
 
         if (getMetaClass().getRealClass() != re.getMetaClass().getRealClass()) {
             throw getRuntime().newTypeError("wrong argument type");
-	    }
+        }
 
         RubyRegexp regexp = (RubyRegexp)re;
         regexp.check();
@@ -508,7 +513,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     /** rb_reg_search
      */
     public int search(ThreadContext context, RubyString str, int pos, boolean reverse) {
-        Ruby runtime = getRuntime();
+        Ruby runtime = context.getRuntime();
         Frame frame = context.getCurrentRubyFrame();
 
         ByteList value = str.getByteList();
@@ -532,30 +537,27 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
             return result;
         }
         
-        updateBackRef(str, frame, matcher);
+        updateBackRef(context, str, frame, matcher);
 
         return result;
     }
     
-    final RubyMatchData updateBackRef(RubyString str, Frame frame, Matcher matcher) {
+    final RubyMatchData updateBackRef(ThreadContext context, RubyString str, Frame frame, Matcher matcher) {
+        Ruby runtime = context.getRuntime();
         IRubyObject backref = frame.getBackRef();
         final RubyMatchData match;
         if (backref == null || backref.isNil() || ((RubyMatchData)backref).used()) {
-            match = new RubyMatchData(getRuntime());
+            match = new RubyMatchData(runtime);
         } else {
             match = (RubyMatchData)backref;
-            if(getRuntime().getSafeLevel() >= 3) {
-                match.setTaint(true);
-            } else {
-                match.setTaint(false);
-            }
+            match.setTaint(runtime.getSafeLevel() >= 3);
         }
         
         match.regs = matcher.getRegion(); // lazy, null when no groups defined
         match.begin = matcher.getBegin();
         match.end = matcher.getEnd();
         
-        match.str = (RubyString)str.strDup().freeze();
+        match.str = (RubyString)str.strDup(runtime).freeze(context);
         match.pattern = pattern;
 
         frame.setBackRef(match);
@@ -569,18 +571,19 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
      * 
      */
     @JRubyMethod(name = "=~", required = 1, reads = BACKREF, writes = BACKREF)
+    @Override
     public IRubyObject op_match(ThreadContext context, IRubyObject str) {
         int start;
         if(str.isNil()) {
-            context.getCurrentFrame().setBackRef(getRuntime().getNil());
+            context.getCurrentFrame().setBackRef(context.getRuntime().getNil());
             return str;
         }
         
         start = search(context, str.convertToString(), 0, false);
 
-        if(start < 0) return getRuntime().getNil();
+        if (start < 0) return context.getRuntime().getNil();
 
-        return RubyFixnum.newFixnum(getRuntime(), start);
+        return RubyFixnum.newFixnum(context.getRuntime(), start);
     }
 
     /** rb_reg_match_m
@@ -588,11 +591,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
      */
     @JRubyMethod(name = "match", required = 1, reads = BACKREF)
     public IRubyObject match_m(ThreadContext context, IRubyObject str) {
-        if(op_match(context, str).isNil()) {
-            return getRuntime().getNil();
-        }
+        if (op_match(context, str).isNil()) return context.getRuntime().getNil();
+
         IRubyObject result =  context.getCurrentFrame().getBackRef();
-        if(result instanceof RubyMatchData) {
+        if (result instanceof RubyMatchData) {
             ((RubyMatchData)result).use();
         }
         return result;
@@ -696,12 +698,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     }
 
     @JRubyMethod(name = "casefold?")
-    public IRubyObject casefold_p() {
+    public IRubyObject casefold_p(ThreadContext context) {
         check();
-        if ((pattern.getOptions() & RE_OPTION_IGNORECASE) != 0) {
-            return getRuntime().getTrue();
-        }
-        return getRuntime().getFalse();
+        
+        return context.getRuntime().newBoolean((pattern.getOptions() & RE_OPTION_IGNORECASE) != 0);
     }
 
     /** rb_reg_source
@@ -709,10 +709,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
      */
     @JRubyMethod(name = "source")
     public IRubyObject source() {
+        Ruby runtime = getRuntime();
         check();
-        RubyString str = RubyString.newStringShared(getRuntime(), this.str);
+        RubyString str = RubyString.newStringShared(runtime, this.str);
         if(isTaint()) {
-            str.taint();
+            str.taint(runtime.getCurrentContext());
         }
         return str;
     }
@@ -725,6 +726,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
      *
      */
     @JRubyMethod(name = "inspect")
+    @Override
     public IRubyObject inspect() {
         check();
         return getRuntime().newString(ByteList.create(rb_reg_desc(str.bytes, str.begin, str.realSize, pattern.getOptions()).toString()));
@@ -733,6 +735,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
     private final static int EMBEDDABLE = RE_OPTION_MULTILINE|RE_OPTION_IGNORECASE|RE_OPTION_EXTENDED;
 
     @JRubyMethod(name = "to_s")
+    @Override
     public IRubyObject to_s() {
         RubyString ss = getRuntime().newString("(?");
         check();
@@ -1163,7 +1166,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
      * 
      */
     @JRubyMethod(name = "named_captures", compat = CompatVersion.RUBY1_9)
-    public IRubyObject named_captures() {
+    public IRubyObject named_captures(ThreadContext context) {
         RubyHash hash = RubyHash.newHash(getRuntime());
         if (pattern.numberOfNames() == 0) return hash;
 
@@ -1173,7 +1176,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
             RubyArray ary = getRuntime().newArray(backrefs.length);
 
             for (int backref : backrefs) ary.append(RubyFixnum.newFixnum(getRuntime(), backref));
-            hash.fastASet(RubyString.newStringShared(getRuntime(), e.name, e.nameP, e.nameEnd - e.nameP).freeze(), ary);
+            hash.fastASet(RubyString.newStringShared(getRuntime(), e.name, e.nameP, e.nameEnd - e.nameP).freeze(context), ary);
         }
         return hash;
     }    

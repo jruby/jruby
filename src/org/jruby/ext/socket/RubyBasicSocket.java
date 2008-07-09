@@ -48,6 +48,7 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.ChannelStream;
@@ -93,7 +94,7 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     @Override
-    public IRubyObject close_write() {
+    public IRubyObject close_write(ThreadContext context) {
         try {
             ((SocketChannel)openFile.getWriteStream().getDescriptor().getChannel()).socket().shutdownOutput();
             openFile.getWriteStream().fclose();
@@ -106,8 +107,8 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     @JRubyMethod(name = "send", rest = true)
-    public IRubyObject write_send(IRubyObject[] args) {
-        return syswrite(args[0]);
+    public IRubyObject write_send(ThreadContext context, IRubyObject[] args) {
+        return syswrite(context, args[0]);
     }
     
     @JRubyMethod(rest = true)
@@ -495,8 +496,8 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     @JRubyMethod(optional = 1)
-    public IRubyObject shutdown(IRubyObject[] args) {
-        if (getRuntime().getSafeLevel() >= 4 && tainted_p().isFalse()) {
+    public IRubyObject shutdown(ThreadContext context, IRubyObject[] args) {
+        if (getRuntime().getSafeLevel() >= 4 && tainted_p(context).isFalse()) {
             throw getRuntime().newSecurityError("Insecure: can't shutdown socket");
         }
         

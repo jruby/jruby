@@ -451,7 +451,7 @@ public class RubyStringIO extends RubyObject {
     
     @JRubyMethod(name = "printf", required = 1, rest = true)
     public IRubyObject printf(ThreadContext context, IRubyObject[] args) {
-        append(context, RubyKernel.sprintf(this,args));
+        append(context, RubyKernel.sprintf(context, this, args));
         return getRuntime().getNil();
     }
 

@@ -33,6 +33,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -79,43 +80,47 @@ public class RubyUnboundMethod extends RubyMethod {
      * @see org.jruby.RubyMethod#call(IRubyObject[])
      */
     @JRubyMethod(name = {"call", "[]"}, rest = true, frame = true)
-    public IRubyObject call(IRubyObject[] args, Block block) {
-        throw getRuntime().newTypeError("you cannot call unbound method; bind first");
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
+        throw context.getRuntime().newTypeError("you cannot call unbound method; bind first");
     }
 
     /**
      * @see org.jruby.RubyMethod#unbind()
      */
     @JRubyMethod(name = "unbind", frame = true)
+    @Override
     public RubyUnboundMethod unbind(Block block) {
         return this;
     }
 
     @JRubyMethod(name = "bind", required = 1, frame = true)
-    public RubyMethod bind(IRubyObject aReceiver, Block block) {
+    public RubyMethod bind(ThreadContext context, IRubyObject aReceiver, Block block) {
         RubyClass receiverClass = aReceiver.getMetaClass();
         
         if (!originModule.isInstance(aReceiver)) {
             if (originModule instanceof MetaClass) {
-                throw getRuntime().newTypeError("singleton method called for a different object");
+                throw context.getRuntime().newTypeError("singleton method called for a different object");
             } else if (receiverClass instanceof MetaClass && receiverClass.getMethods().containsKey(originName)) {
-                throw getRuntime().newTypeError("method `" + originName + "' overridden");
+                throw context.getRuntime().newTypeError("method `" + originName + "' overridden");
             } else if (
                 !(originModule.isModule() ? originModule.isInstance(aReceiver) : aReceiver.getType() == originModule)) {
                 // FIX replace type() == ... with isInstanceOf(...)
-                throw getRuntime().newTypeError("bind argument must be an instance of " + originModule.getName());
+                throw context.getRuntime().newTypeError("bind argument must be an instance of " + originModule.getName());
             }
         }
         return RubyMethod.newMethod(implementationModule, methodName, receiverClass, originName, method, aReceiver);
     }
     
     @JRubyMethod(name = "clone")
+    @Override
     public RubyMethod rbClone() {
         return newUnboundMethod(implementationModule, methodName, originModule, originName, method);
     }
 
     @JRubyMethod(name = "to_proc", frame = true)
-    public IRubyObject to_proc(Block unusedBlock) {
-        return super.to_proc(unusedBlock);
+    @Override
+    public IRubyObject to_proc(ThreadContext context, Block unusedBlock) {
+        return super.to_proc(context, unusedBlock);
     }
 }

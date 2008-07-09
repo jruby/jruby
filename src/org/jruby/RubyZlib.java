@@ -1028,9 +1028,9 @@ public class RubyZlib {
         }
 
         @JRubyMethod(name = "printf", required = 1, rest = true)
-        public IRubyObject printf(IRubyObject[] args) throws IOException {
-            write(RubyKernel.sprintf(this, args));
-            return getRuntime().getNil();
+        public IRubyObject printf(ThreadContext context, IRubyObject[] args) throws IOException {
+            write(RubyKernel.sprintf(context, this, args));
+            return context.getRuntime().getNil();
         }
 
         @JRubyMethod(name = "print", rest = true)

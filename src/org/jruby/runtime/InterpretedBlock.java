@@ -37,6 +37,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.MultipleAsgnNode;
+import org.jruby.ast.NilImplicitNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NodeType;
 import org.jruby.ast.util.ArgsUtil;
@@ -126,7 +127,7 @@ public class InterpretedBlock extends BlockBody {
         this.arity = arity;
         this.hasVarNode = iterNode.getVarNode() != null;
         this.varNode = iterNode.getVarNode();
-        this.bodyNode = iterNode.getBodyNode();
+        this.bodyNode = iterNode.getBodyNode() == null ? NilImplicitNode.NIL : iterNode.getBodyNode();
         this.scope = iterNode.getScope();
     }
     
@@ -199,10 +200,12 @@ public class InterpretedBlock extends BlockBody {
         // This while loop is for restarting the block call in case a 'redo' fires.
         while (true) {
             try {
-                return ASTInterpreter.eval(context.getRuntime(), context, bodyNode, self, Block.NULL_BLOCK);
+                return bodyNode.interpret(context.getRuntime(), context, self, Block.NULL_BLOCK);
             } catch (JumpException.RedoJump rj) {
                 context.pollThreadEvents();
                 // do nothing, allow loop to redo
+            } catch (StackOverflowError sfe) {
+                throw context.getRuntime().newSystemStackError("stack level too deep");
             }
         }
     }

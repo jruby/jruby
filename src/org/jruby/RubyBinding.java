@@ -100,9 +100,7 @@ public class RubyBinding extends RubyObject {
      * Create a binding appropriate for a bare "eval", by using the previous (caller's) frame and current
      * scope.
      */
-    public static RubyBinding newBindingForEval(Ruby runtime) {
-        ThreadContext context = runtime.getCurrentContext();
-        
+    public static RubyBinding newBindingForEval(ThreadContext context) {
         // This requires some explaining.  We use Frame values when executing blocks to fill in 
         // various values in ThreadContext and EvalState.eval like rubyClass, cref, and self.
         // Largely, for an eval that is using the logical binding at a place where the eval is 
@@ -123,6 +121,7 @@ public class RubyBinding extends RubyObject {
 //        currentFrame.setJumpTarget(previousFrame.getJumpTarget() != null ? previousFrame.getJumpTarget() : previousFrame);
         
         Binding binding = new Binding(previousFrame, context.getBindingRubyClass(), context.getCurrentScope());
+        Ruby runtime = context.getRuntime();
         
         return new RubyBinding(runtime, runtime.getBinding(), binding);
     }

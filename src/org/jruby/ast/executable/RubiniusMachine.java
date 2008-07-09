@@ -190,7 +190,7 @@ public class RubiniusMachine {
                 break;
             }
             case RubiniusInstructions.STRING_DUP: {
-                stack[stackTop] = ((RubyString)stack[stackTop]).strDup();
+                stack[stackTop] = ((RubyString)stack[stackTop]).strDup(context.getRuntime());
                 break;
             }
             case RubiniusInstructions.PUSH_LITERAL: {

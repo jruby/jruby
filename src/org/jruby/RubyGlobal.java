@@ -78,10 +78,12 @@ public class RubyGlobal {
             return hash;
         }
 
+        @Override
         public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
             return super.op_aref(context, key.convertToString());
         }
 
+        @Override
         public IRubyObject op_aset(ThreadContext context, IRubyObject key, IRubyObject value) {
             if (!key.respondsTo("to_str")) {
                 throw getRuntime().newTypeError("can't convert " + key.getMetaClass() + " into String");
@@ -100,12 +102,13 @@ public class RubyGlobal {
         }
         
         @JRubyMethod
+        @Override
         public IRubyObject to_s(){
             return getRuntime().newString("ENV");
         }
     }
     
-    public static void createGlobals(Ruby runtime) {
+    public static void createGlobals(ThreadContext context, Ruby runtime) {
         runtime.defineGlobalConstant("TOPLEVEL_BINDING", runtime.newBinding());
         
         runtime.defineGlobalConstant("TRUE", runtime.getTrue());
@@ -127,13 +130,13 @@ public class RubyGlobal {
         runtime.getGlobalVariables().define("$0", d);
 
         // Version information:
-        IRubyObject version = runtime.newString(Constants.RUBY_VERSION).freeze();
-        IRubyObject release = runtime.newString(Constants.COMPILE_DATE).freeze();
-        IRubyObject platform = runtime.newString(Constants.PLATFORM).freeze();
-        IRubyObject engine = runtime.newString(Constants.ENGINE).freeze();
+        IRubyObject version = runtime.newString(Constants.RUBY_VERSION).freeze(context);
+        IRubyObject release = runtime.newString(Constants.COMPILE_DATE).freeze(context);
+        IRubyObject platform = runtime.newString(Constants.PLATFORM).freeze(context);
+        IRubyObject engine = runtime.newString(Constants.ENGINE).freeze(context);
 
         runtime.defineGlobalConstant("RUBY_VERSION", version);
-        runtime.defineGlobalConstant("RUBY_PATCHLEVEL", runtime.newString(Constants.RUBY_PATCHLEVEL).freeze());
+        runtime.defineGlobalConstant("RUBY_PATCHLEVEL", runtime.newString(Constants.RUBY_PATCHLEVEL).freeze(context));
         runtime.defineGlobalConstant("RUBY_RELEASE_DATE", release);
         runtime.defineGlobalConstant("RUBY_PLATFORM", platform);
         runtime.defineGlobalConstant("RUBY_ENGINE", engine);
@@ -142,13 +145,13 @@ public class RubyGlobal {
         runtime.defineGlobalConstant("RELEASE_DATE", release);
         runtime.defineGlobalConstant("PLATFORM", platform);
         
-        IRubyObject jrubyVersion = runtime.newString(Constants.VERSION).freeze();
+        IRubyObject jrubyVersion = runtime.newString(Constants.VERSION).freeze(context);
         runtime.defineGlobalConstant("JRUBY_VERSION", jrubyVersion);
 		
         GlobalVariable kcodeGV = new KCodeGlobalVariable(runtime, "$KCODE", runtime.newString("NONE"));
         runtime.defineVariable(kcodeGV);
         runtime.defineVariable(new GlobalVariable.Copy(runtime, "$-K", kcodeGV));
-        IRubyObject defaultRS = runtime.newString(runtime.getInstanceConfig().getRecordSeparator()).freeze();
+        IRubyObject defaultRS = runtime.newString(runtime.getInstanceConfig().getRecordSeparator()).freeze(context);
         GlobalVariable rs = new StringGlobalVariable(runtime, "$/", defaultRS);
         runtime.defineVariable(rs);
         runtime.setRecordSeparatorVar(rs);
@@ -277,11 +280,13 @@ public class RubyGlobal {
             super(runtime, name, value);
         }
 
+        @Override
         public IRubyObject set(IRubyObject value) {
             runtime.getWarnings().warn(ID.INEFFECTIVE_GLOBAL, "warning: variable " + name + " is no longer effective; ignored", name);
             return value;
         }
 
+        @Override
         public IRubyObject get() {
             runtime.getWarnings().warn(ID.INEFFECTIVE_GLOBAL, "warning: variable " + name + " is no longer effective", name);
             return runtime.getFalse();
@@ -293,11 +298,13 @@ public class RubyGlobal {
             super(runtime, name, runtime.getNil());
         }
         
+        @Override
         public IRubyObject get() {
             IRubyObject lastExitStatus = runtime.getCurrentContext().getLastExitStatus();
             return lastExitStatus == null ? runtime.getNil() : lastExitStatus;
         }
         
+        @Override
         public IRubyObject set(IRubyObject lastExitStatus) {
             runtime.getCurrentContext().setLastExitStatus(lastExitStatus);
             
@@ -310,6 +317,7 @@ public class RubyGlobal {
             super(runtime, name, runtime.getNil());
         }
         
+        @Override
         public IRubyObject get() {
             return RubyRegexp.last_match(runtime.getCurrentContext().getCurrentFrame().getBackRef());
         }
@@ -320,6 +328,7 @@ public class RubyGlobal {
             super(runtime, name, runtime.getNil());
         }
         
+        @Override
         public IRubyObject get() {
             return RubyRegexp.match_pre(runtime.getCurrentContext().getCurrentFrame().getBackRef());
         }
@@ -330,6 +339,7 @@ public class RubyGlobal {
             super(runtime, name, runtime.getNil());
         }
         
+        @Override
         public IRubyObject get() {
             return RubyRegexp.match_post(runtime.getCurrentContext().getCurrentFrame().getBackRef());
         }
@@ -340,6 +350,7 @@ public class RubyGlobal {
             super(runtime, name, runtime.getNil());
         }
         
+        @Override
         public IRubyObject get() {
             return RubyRegexp.match_last(runtime.getCurrentContext().getCurrentFrame().getBackRef());
         }
@@ -350,10 +361,12 @@ public class RubyGlobal {
             super(runtime, name, runtime.getNil());
         }
         
+        @Override
         public IRubyObject get() {
             return RuntimeHelpers.getBackref(runtime, runtime.getCurrentContext());
         }
 
+        @Override
         public IRubyObject set(IRubyObject value) {
             RuntimeHelpers.setBackref(runtime, runtime.getCurrentContext(), value);
             return value;
@@ -367,6 +380,7 @@ public class RubyGlobal {
             super(runtime, name, value);
         }
 
+        @Override
         public IRubyObject set(IRubyObject value) {
             RubyArgsFile.setCurrentLineNumber(runtime.getGlobalVariables().get("$<"),RubyNumeric.fix2int(value));
             return super.set(value);
@@ -379,6 +393,7 @@ public class RubyGlobal {
             set(value);
         }
 
+        @Override
         public IRubyObject set(IRubyObject value) {
             if (!value.isNil() && ! runtime.getException().isInstance(value)) {
                 throw runtime.newTypeError("assigning non-exception to $!");
@@ -387,6 +402,7 @@ public class RubyGlobal {
             return runtime.getCurrentContext().setErrorInfo(value);
         }
 
+        @Override
         public IRubyObject get() {
             return runtime.getCurrentContext().getErrorInfo();
         }
@@ -398,6 +414,7 @@ public class RubyGlobal {
             super(runtime, name, value);
         }
 
+        @Override
         public IRubyObject set(IRubyObject value) {
             if (!value.isNil() && ! (value instanceof RubyString)) {
                 throw runtime.newTypeError("value of " + name() + " must be a String");
@@ -411,10 +428,12 @@ public class RubyGlobal {
             super(runtime, name, value);
         }
 
+        @Override
         public IRubyObject get() {
             return runtime.getKCode().kcode(runtime);
         }
 
+        @Override
         public IRubyObject set(IRubyObject value) {
             runtime.setKCode(KCode.create(runtime, value.convertToString().toString()));
             return value;
@@ -426,10 +445,12 @@ public class RubyGlobal {
             super(runtime, name, null);
         }
 
+        @Override
         public IRubyObject get() {
             return runtime.newFixnum(runtime.getSafeLevel());
         }
 
+        @Override
         public IRubyObject set(IRubyObject value) {
 //            int level = RubyNumeric.fix2int(value);
 //            if (level < runtime.getSafeLevel()) {
@@ -449,10 +470,12 @@ public class RubyGlobal {
             set(initialValue);
         }
         
+        @Override
         public IRubyObject get() {
             return runtime.getVerbose();
         }
 
+        @Override
         public IRubyObject set(IRubyObject newValue) {
             if (newValue.isNil()) {
                 runtime.setVerbose(newValue);
@@ -470,10 +493,12 @@ public class RubyGlobal {
             set(initialValue);
         }
 
+        @Override
         public IRubyObject get() {
             return runtime.getDebug();
         }
 
+        @Override
         public IRubyObject set(IRubyObject newValue) {
             if (newValue.isNil()) {
                 runtime.setDebug(newValue);
@@ -490,6 +515,7 @@ public class RubyGlobal {
             super(runtime, name, null);
         }
 
+        @Override
         public IRubyObject get() {
             IRubyObject errorInfo = runtime.getGlobalVariables().get("$!");
             IRubyObject backtrace = errorInfo.isNil() ? runtime.getNil() : errorInfo.callMethod(errorInfo.getRuntime().getCurrentContext(), "backtrace");
@@ -500,6 +526,7 @@ public class RubyGlobal {
             return backtrace;
         }
 
+        @Override
         public IRubyObject set(IRubyObject value) {
             if (runtime.getGlobalVariables().get("$!").isNil()) {
                 throw runtime.newArgumentError("$! not set.");
@@ -514,10 +541,12 @@ public class RubyGlobal {
             super(runtime, name, null);
         }
 
+        @Override
         public IRubyObject get() {
             return RuntimeHelpers.getLastLine(runtime, runtime.getCurrentContext());
         }
 
+        @Override
         public IRubyObject set(IRubyObject value) {
             RuntimeHelpers.setLastLine(runtime, runtime.getCurrentContext(), value);
             return value;
@@ -529,6 +558,7 @@ public class RubyGlobal {
             super(runtime, name, value);
         }
 
+        @Override
         public IRubyObject set(IRubyObject value) {
             if (value == get()) {
                 return value;
@@ -543,6 +573,7 @@ public class RubyGlobal {
             super(runtime, name, value);
         }
 
+        @Override
         public IRubyObject set(IRubyObject value) {
             if (value == get()) {
                 return value;
@@ -572,6 +603,7 @@ public class RubyGlobal {
         /**
          * @see org.jruby.runtime.GlobalVariable#get()
          */
+        @Override
         public IRubyObject get() {
             return runtime.getLoadService().getLoadPath();
         }

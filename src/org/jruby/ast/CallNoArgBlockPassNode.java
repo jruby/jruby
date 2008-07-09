@@ -49,9 +49,8 @@ public final class CallNoArgBlockPassNode extends CallNode {
         
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
-        Block block = getBlock(runtime, context, self, aBlock);
-
-        return callAdapter.call(context, receiver, block);
+        return callAdapter.call(context,
+                getReceiverNode().interpret(runtime, context, self, aBlock),
+                getBlock(runtime, context, self, aBlock));
     }
 }

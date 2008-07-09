@@ -39,6 +39,7 @@ import java.util.Map;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
@@ -96,16 +97,18 @@ public class RubyNKF {
         RubyString nkfVersion = runtime.newString("2.0.7");
         RubyString nkfDate = runtime.newString("2007-05-11");
 
-        version.freeze();
-        nkfVersion.freeze();
-        nkfDate.freeze();
+        ThreadContext context = runtime.getCurrentContext();
+        
+        version.freeze(context);
+        nkfVersion.freeze(context);
+        nkfDate.freeze(context);
 
         nkfModule.defineAnnotatedMethods(RubyNKF.class);
     }
 
     @JRubyMethod(name = "guess", required = 1, module = true)
-    public static IRubyObject guess(IRubyObject recv, IRubyObject s) {
-        Ruby runtime = recv.getRuntime();
+    public static IRubyObject guess(ThreadContext context, IRubyObject recv, IRubyObject s) {
+        Ruby runtime = context.getRuntime();
         if (!s.respondsTo("to_str")) {
             throw runtime.newTypeError("can't convert " + s.getMetaClass() + " into String");
         }
@@ -136,21 +139,23 @@ public class RubyNKF {
     }
     
     @JRubyMethod(name = "guess1", required = 1, module = true)
-    public static IRubyObject guess1(IRubyObject recv, IRubyObject str) {
-        return guess(recv, str);
+    public static IRubyObject guess1(ThreadContext context, IRubyObject recv, IRubyObject str) {
+        return guess(context, recv, str);
     }
     
     @JRubyMethod(name = "guess2", required = 1, module = true)
-    public static IRubyObject guess2(IRubyObject recv, IRubyObject str) {
-        return guess(recv, str);
+    public static IRubyObject guess2(ThreadContext context, IRubyObject recv, IRubyObject str) {
+        return guess(context, recv, str);
     }
     
     @JRubyMethod(name = "nkf", required = 2, module = true)
-    public static IRubyObject nkf(IRubyObject recv, IRubyObject opt, IRubyObject str) {
-        Ruby runtime = recv.getRuntime();
+    public static IRubyObject nkf(ThreadContext context, IRubyObject recv, IRubyObject opt, IRubyObject str) {
+        Ruby runtime = context.getRuntime();
+        
         if (!opt.respondsTo("to_str")) {
             throw runtime.newTypeError("can't convert " + opt.getMetaClass() + " into String");
         }
+        
         if (!str.respondsTo("to_str")) {
             throw runtime.newTypeError("can't convert " + str.getMetaClass() + " into String");
         }
@@ -171,11 +176,12 @@ public class RubyNKF {
         String decodeCharset = nc.getCharset();
         String encodeCharset = options.get("output").getCharset();
         
-        return convert(decodeCharset, encodeCharset, str);
+        return convert(context, decodeCharset, encodeCharset, str);
     }
     
-    private static IRubyObject convert(String decodeCharset, String encodeCharset, IRubyObject str) {
-        Ruby runtime = str.getRuntime();
+    private static IRubyObject convert(ThreadContext context, String decodeCharset, 
+            String encodeCharset, IRubyObject str) {
+        Ruby runtime = context.getRuntime();
         CharsetDecoder decoder;
         CharsetEncoder encoder;
         try {

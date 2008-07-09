@@ -102,14 +102,13 @@ public class RubyMethod extends RubyObject {
      * 
      */
     @JRubyMethod(name = {"call", "[]"}, rest = true, frame = true)
-    public IRubyObject call(IRubyObject[] args, Block block) {
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
     	assert args != null;
-        ThreadContext tc = getRuntime().getCurrentContext();
 
-    	method.getArity().checkArity(getRuntime(), args);
+    	method.getArity().checkArity(context.getRuntime(), args);
         
         // FIXME: should lastClass be implementation module for a Method?
-        return method.call(tc, receiver, implementationModule, methodName, args, block);
+        return method.call(context, receiver, implementationModule, methodName, args, block);
     }
 
     /** Returns the number of arguments a method accepted.
@@ -122,16 +121,18 @@ public class RubyMethod extends RubyObject {
     }
 
     @JRubyMethod(name = "==", required = 1)
-    public RubyBoolean op_equal(IRubyObject other) {
-        if (!(other instanceof RubyMethod)) return getRuntime().getFalse();
+    @Override
+    public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
+        if (!(other instanceof RubyMethod)) return context.getRuntime().getFalse();
         RubyMethod otherMethod = (RubyMethod)other;
-        return getRuntime().newBoolean(implementationModule == otherMethod.implementationModule &&
+        return context.getRuntime().newBoolean(implementationModule == otherMethod.implementationModule &&
                                        originModule == otherMethod.originModule &&
                                        receiver == otherMethod.receiver &&
                                        method.getRealMethod() == otherMethod.method.getRealMethod());
     }
 
     @JRubyMethod(name = "clone")
+    @Override
     public RubyMethod rbClone() {
         return newMethod(implementationModule, methodName, originModule, originName, method, receiver);
     }
@@ -140,16 +141,16 @@ public class RubyMethod extends RubyObject {
      * 
      */
     @JRubyMethod(name = "to_proc", frame = true)
-    public IRubyObject to_proc(Block unusedBlock) {
-        CallbackFactory f = getRuntime().callbackFactory(RubyMethod.class);
-        Ruby r = getRuntime();
-        ThreadContext tc = r.getCurrentContext();
-        Block block = MethodBlock.createMethodBlock(tc, tc.getCurrentScope(), f.getBlockMethod("bmcall"), this, r.getTopSelf());
+    public IRubyObject to_proc(ThreadContext context, Block unusedBlock) {
+        Ruby runtime = context.getRuntime();
+        CallbackFactory f = runtime.callbackFactory(RubyMethod.class);
+        Block block = MethodBlock.createMethodBlock(context, context.getCurrentScope(), 
+                f.getBlockMethod("bmcall"), this, runtime.getTopSelf());
         
         while (true) {
             try {
                 // FIXME: We should not be regenerating this over and over
-                return mproc(block);
+                return mproc(context, block);
             } catch (JumpException.BreakJump bj) {
                 return (IRubyObject) bj.getValue();
             } catch (JumpException.ReturnJump rj) {
@@ -165,16 +166,13 @@ public class RubyMethod extends RubyObject {
      * Used by the RubyMethod#to_proc method.
      *
      */
-    private IRubyObject mproc(Block block) {
-    	Ruby runtime = getRuntime();
-    	ThreadContext tc = runtime.getCurrentContext();
-        
-        tc.preMproc();
-        
+    private IRubyObject mproc(ThreadContext context, Block block) {
         try {
-            return RubyKernel.proc(runtime.getNil(), block);
+            context.preMproc();
+            
+            return RubyKernel.proc(context, context.getRuntime().getNil(), block);
         } finally {
-            tc.postMproc();
+            context.postMproc();
         }
     }
 
@@ -183,13 +181,16 @@ public class RubyMethod extends RubyObject {
      * Used by the RubyMethod#to_proc method.
      *
      */
-    public static IRubyObject bmcall(IRubyObject blockArg, IRubyObject arg1, IRubyObject self, Block unusedBlock) {
+    public static IRubyObject bmcall(IRubyObject blockArg, IRubyObject arg1,
+            IRubyObject self, Block unusedBlock) {
+        ThreadContext context = blockArg.getRuntime().getCurrentContext();
+        
         if (blockArg instanceof RubyArray) {
             // ENEBO: Very wrong
-            return ((RubyMethod) arg1).call(((RubyArray) blockArg).toJavaArray(), Block.NULL_BLOCK);
+            return ((RubyMethod) arg1).call(context, ((RubyArray) blockArg).toJavaArray(), Block.NULL_BLOCK);
         }
         // ENEBO: Very wrong
-        return ((RubyMethod) arg1).call(new IRubyObject[] { blockArg }, Block.NULL_BLOCK);
+        return ((RubyMethod) arg1).call(context, new IRubyObject[] { blockArg }, Block.NULL_BLOCK);
     }
 
     @JRubyMethod(name = "unbind", frame = true)
@@ -202,6 +203,7 @@ public class RubyMethod extends RubyObject {
     }
     
     @JRubyMethod(name = {"inspect", "to_s"})
+    @Override
     public IRubyObject inspect() {
         StringBuilder buf = new StringBuilder("#<");
         char delimeter = '#';

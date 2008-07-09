@@ -103,7 +103,6 @@ import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.EventHook;
-import org.jruby.runtime.Frame;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ObjectAllocator;
@@ -845,7 +844,7 @@ public final class Ruby {
         posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this), RubyInstanceConfig.nativeEnabled);
         javaSupport = new JavaSupport(this);
         
-        if (config.POOLING_ENABLED) {
+        if (RubyInstanceConfig.POOLING_ENABLED) {
             Executors.newCachedThreadPool();
             executor = new ThreadPoolExecutor(
                     RubyInstanceConfig.POOL_MIN,
@@ -857,7 +856,7 @@ public final class Ruby {
         }
         
         // initialize the root of the class hierarchy completely
-        initRoot();
+        initRoot(tc);
 
         // Construct the top-level execution frame and scope for the main thread
         tc.prepareTopLevel(objectClass, topSelf);
@@ -866,7 +865,7 @@ public final class Ruby {
         bootstrap();
         
         // Create global constants and variables
-        RubyGlobal.createGlobals(this);
+        RubyGlobal.createGlobals(tc, this);
 
         // Prepare LoadService and load path
         getLoadService().init(config.loadPaths());
@@ -885,7 +884,7 @@ public final class Ruby {
         initExceptions();
     }
 
-    private void initRoot() {
+    private void initRoot(ThreadContext context) {
         // Bootstrap the top of the hierarchy
         objectClass = RubyClass.createBootstrapClass(this, "Object", null, RubyObject.OBJECT_ALLOCATOR);
         moduleClass = RubyClass.createBootstrapClass(this, "Module", objectClass, RubyModule.MODULE_ALLOCATOR);
@@ -915,7 +914,7 @@ public final class Ruby {
         
         // Initialize the "dummy" class used as a marker
         dummyClass = new RubyClass(this);
-        dummyClass.freeze();
+        dummyClass.freeze(context);
 
         // Object is ready, create top self
         topSelf = TopSelfFactory.createTopSelf(this);

@@ -11,6 +11,7 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -43,8 +44,9 @@ public class RubyStringScanner extends RubyObject {
     public static RubyClass createScannerClass(final Ruby runtime) {
         RubyClass scannerClass = runtime.defineClass("StringScanner", runtime.getObject(), STRINGSCANNER_ALLOCATOR);
         scannerClass.defineAnnotatedMethods(RubyStringScanner.class);
-        scannerClass.setConstant("Version", runtime.newString("0.7.0").freeze());
-        scannerClass.setConstant("Id", runtime.newString("$Id: strscan.c 13506 2007-09-24 08:56:24Z nobu $").freeze());
+        ThreadContext context = runtime.getCurrentContext();
+        scannerClass.setConstant("Version", runtime.newString("0.7.0").freeze(context));
+        scannerClass.setConstant("Id", runtime.newString("$Id: strscan.c 13506 2007-09-24 08:56:24Z nobu $").freeze(context));
 
         RubyClass standardError = runtime.getStandardError();
         RubyClass error = scannerClass.defineClassUnder(
@@ -86,6 +88,7 @@ public class RubyStringScanner extends RubyObject {
     }
     
     @JRubyMethod(name = "initialize_copy", frame=true, visibility = Visibility.PRIVATE)
+    @Override
     public IRubyObject initialize_copy(IRubyObject other) {
         if (this == other) return this;
         if (!(other instanceof RubyStringScanner)) {
@@ -135,8 +138,8 @@ public class RubyStringScanner extends RubyObject {
     }
 
     @JRubyMethod(name = "string=", required = 1)
-    public IRubyObject set_string(IRubyObject str) {
-        this.str = (RubyString)str.convertToString().strDup().freeze();
+    public IRubyObject set_string(ThreadContext context, IRubyObject str) {
+        this.str = (RubyString) str.convertToString().strDup(context.getRuntime()).freeze(context);
         pos = 0;
         clearMatched();
         return str;

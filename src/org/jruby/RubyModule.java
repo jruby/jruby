@@ -102,6 +102,7 @@ public class RubyModule extends RubyObject {
     public static RubyClass createModuleClass(Ruby runtime, RubyClass moduleClass) {
         moduleClass.index = ClassIndex.MODULE;
         moduleClass.kindOf = new RubyModule.KindOf() {
+            @Override
             public boolean isKindOf(IRubyObject obj, RubyModule type) {
                 return obj instanceof RubyModule;
             }
@@ -120,8 +121,8 @@ public class RubyModule extends RubyObject {
         }
         
         @JRubyMethod(name = "autoload?")
-        public static IRubyObject autoload_p(IRubyObject recv, IRubyObject arg0) {
-            return RubyKernel.autoload_p(recv, arg0);
+        public static IRubyObject autoload_p(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
+            return RubyKernel.autoload_p(context, recv, arg0);
         }
     }
     
@@ -131,14 +132,17 @@ public class RubyModule extends RubyObject {
         }
     };
     
+    @Override
     public int getNativeTypeIndex() {
         return ClassIndex.MODULE;
     }
 
+    @Override
     public boolean isModule() {
         return true;
     }
 
+    @Override
     public boolean isClass() {
         return false;
     }
@@ -1127,6 +1131,7 @@ public class RubyModule extends RubyObject {
                     return variable == null ? runtime.getNil() : variable;
                 }
 
+                @Override
                 public Arity getArity() {
                     return Arity.noArguments();
                 }
@@ -1144,6 +1149,7 @@ public class RubyModule extends RubyObject {
                     return self.getInstanceVariables().fastSetInstanceVariable(variableName, args[0]);
                 }
 
+                @Override
                 public Arity getArity() {
                     return Arity.singleArgument();
                 }
@@ -1345,6 +1351,7 @@ public class RubyModule extends RubyObject {
      * 
      */
     @JRubyMethod(name = "initialize_copy", required = 1)
+    @Override
     public IRubyObject initialize_copy(IRubyObject original) {
         super.initialize_copy(original);
 
@@ -1410,11 +1417,13 @@ public class RubyModule extends RubyObject {
         return false;
     }
 
+    @Override
     public int hashCode() {
         return id;
     }
 
     @JRubyMethod(name = "hash")
+    @Override
     public RubyFixnum hash() {
         return getRuntime().newFixnum(id);
     }
@@ -1423,6 +1432,7 @@ public class RubyModule extends RubyObject {
      *
      */
     @JRubyMethod(name = "to_s")
+    @Override
     public IRubyObject to_s() {
         if(isSingleton()){            
             IRubyObject attached = ((MetaClass)this).getAttached();
@@ -1444,11 +1454,13 @@ public class RubyModule extends RubyObject {
      *
      */
     @JRubyMethod(name = "===", required = 1)
-    public RubyBoolean op_eqq(IRubyObject obj) {
-        return getRuntime().newBoolean(isInstance(obj));
+    @Override
+    public RubyBoolean op_eqq(ThreadContext context, IRubyObject obj) {
+        return context.getRuntime().newBoolean(isInstance(obj));
     }
 
     @JRubyMethod(name = "==", required = 1)
+    @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         return super.op_equal(context, other);
     }
@@ -1457,9 +1469,10 @@ public class RubyModule extends RubyObject {
      *
      */
     @JRubyMethod(name = "freeze")
-    public IRubyObject freeze() {
+    @Override
+    public IRubyObject freeze(ThreadContext context) {
         to_s();
-        return super.freeze();
+        return super.freeze(context);
     }
 
     /** rb_mod_le
@@ -2345,7 +2358,7 @@ public class RubyModule extends RubyObject {
                     continue;
                 }
                 p = p.getSuperClass();
-            };
+            }
 
             if (!retryForModule && !isClass()) {
                 retryForModule = true;
@@ -2381,7 +2394,7 @@ public class RubyModule extends RubyObject {
                     continue;
                 }
                 p = p.getSuperClass();
-            };
+            }
 
             if (!retryForModule && !isClass()) {
                 retryForModule = true;
@@ -2427,7 +2440,7 @@ public class RubyModule extends RubyObject {
                 continue;
             }
             p = p.getSuperClass();
-        };
+        }
 
         return callMethod(getRuntime().getCurrentContext(),
                 "const_missing", getRuntime().fastNewSymbol(internedName));

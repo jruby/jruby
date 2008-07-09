@@ -86,8 +86,10 @@ public class JRubyEngine extends BSFEngineImpl {
             //runtime.setPosition(file, line);
 
             Node node = runtime.parseEval(file, funcBody.toString(), null, 0);
-            IRubyObject result = ASTInterpreter.eval(runtime, context, node, runtime.getTopSelf(), Block.NULL_BLOCK);
+            IRubyObject result = node.interpret(runtime, context, runtime.getTopSelf(), Block.NULL_BLOCK);
             return JavaEmbedUtils.rubyToJava(runtime, result, Object.class);
+        } catch (StackOverflowError sfe) {
+            throw runtime.newSystemStackError("stack level too deep");
         } finally {
             context.postBsfApply();
         }

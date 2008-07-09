@@ -91,6 +91,7 @@ public class RubySymbol extends RubyObject {
         return symbolClass;
     }
     
+    @Override
     public int getNativeTypeIndex() {
         return ClassIndex.SYMBOL;
     }
@@ -99,6 +100,7 @@ public class RubySymbol extends RubyObject {
      * 
      * @return a String representation of the symbol 
      */
+    @Override
     public String asJavaString() {
         return symbol;
     }
@@ -106,14 +108,17 @@ public class RubySymbol extends RubyObject {
     /** short circuit for Symbol key comparison
      * 
      */
+    @Override
     public final boolean eql(IRubyObject other) {
         return other == this;
     }
 
+    @Override
     public boolean isImmediate() {
     	return true;
     }
 
+    @Override
     public RubyClass getSingletonClass() {
         throw getRuntime().newTypeError("can't define singleton");
     }
@@ -144,12 +149,15 @@ public class RubySymbol extends RubyObject {
     }
 
     @JRubyMethod(name = "inspect")
+    @Override
     public IRubyObject inspect() {
-        return getRuntime().newString(":" + 
-            (isSymbolName(symbol) ? symbol : getRuntime().newString(symbol).dump().toString())); 
+        Ruby runtime = getRuntime();
+        return runtime.newString(":" + 
+            (isSymbolName(symbol) ? symbol : runtime.newString(symbol).dump().toString())); 
     }
 
     @JRubyMethod(name = "to_s")
+    @Override
     public IRubyObject to_s() {
         return getRuntime().newString(symbol);
     }
@@ -160,14 +168,17 @@ public class RubySymbol extends RubyObject {
     }
 
     @JRubyMethod(name = "===", required = 1)
+    @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
         return super.op_equal(context, other);
     }
 
+    @Override
     public RubyFixnum hash() {
         return getRuntime().newFixnum(hashCode());
     }
     
+    @Override
     public int hashCode() {
         return id;
     }
@@ -176,6 +187,7 @@ public class RubySymbol extends RubyObject {
         return id;
     }
     
+    @Override
     public boolean equals(Object other) {
         return other == this;
     }
@@ -185,11 +197,13 @@ public class RubySymbol extends RubyObject {
         return this;
     }
 
-    public IRubyObject freeze() {
+    @Override
+    public IRubyObject freeze(ThreadContext context) {
         return this;
     }
 
-    public IRubyObject taint() {
+    @Override
+    public IRubyObject taint(ThreadContext context) {
         return this;
     }
 

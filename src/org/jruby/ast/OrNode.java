@@ -94,5 +94,6 @@ public class OrNode extends Node implements BinaryOperatorNode {
             result = secondNode.interpret(runtime,context, self, aBlock);
         }
    
-        return result;    }
+        return result;    
+    }
 }

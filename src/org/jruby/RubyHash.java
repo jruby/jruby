@@ -748,7 +748,7 @@ public class RubyHash extends RubyObject implements Map {
                 RubyString realKey = (RubyString)key;
                 
                 if (!realKey.isFrozen()) {
-                    realKey = realKey.strDup(realKey.getMetaClass().getRealClass());;
+                    realKey = realKey.strDup(context.getRuntime(), realKey.getMetaClass().getRealClass());;
                     realKey.setFrozen(true);
                 }
                 

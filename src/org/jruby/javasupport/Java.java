@@ -156,8 +156,8 @@ public class Java implements Library {
         }
         
         @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
-        public static IRubyObject get_deprecated_interface_proxy(IRubyObject recv, IRubyObject arg0) {
-            return Java.get_deprecated_interface_proxy(recv, arg0);
+        public static IRubyObject get_deprecated_interface_proxy(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
+            return Java.get_deprecated_interface_proxy(context, recv, arg0);
         }
         
         @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
@@ -196,13 +196,13 @@ public class Java implements Library {
         }
         
         @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
-        public static IRubyObject get_top_level_proxy_or_package(IRubyObject recv, IRubyObject arg0) {
-            return Java.get_top_level_proxy_or_package(recv, arg0);
+        public static IRubyObject get_top_level_proxy_or_package(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
+            return Java.get_top_level_proxy_or_package(context, recv, arg0);
         }
         
         @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
-        public static IRubyObject get_proxy_or_package_under_package(IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
-            return Java.get_proxy_or_package_under_package(recv, arg0, arg1);
+        public static IRubyObject get_proxy_or_package_under_package(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
+            return Java.get_proxy_or_package_under_package(context, recv, arg0, arg1);
         }
         
         @Deprecated
@@ -406,8 +406,8 @@ public class Java implements Library {
     // Note: this isn't really all that deprecated, as it is used for
     // internal purposes, at least for now. But users should be discouraged
     // from calling this directly; eventually it will go away.
-    public static IRubyObject get_deprecated_interface_proxy(IRubyObject recv, IRubyObject javaClassObject) {
-        Ruby runtime = recv.getRuntime();
+    public static IRubyObject get_deprecated_interface_proxy(ThreadContext context, IRubyObject recv, IRubyObject javaClassObject) {
+        Ruby runtime = context.getRuntime();
         JavaClass javaClass;
         if (javaClassObject instanceof RubyString) {
             javaClass = JavaClass.for_name(recv, javaClassObject);
@@ -433,7 +433,7 @@ public class Java implements Library {
                 proxyClass.makeMetaClass(interfaceJavaProxy.getMetaClass());
                 // parent.setConstant(name, proxyClass); // where the name should come from ?
                 proxyClass.inherit(interfaceJavaProxy);
-                proxyClass.callMethod(recv.getRuntime().getCurrentContext(), "java_class=", javaClass);
+                proxyClass.callMethod(context, "java_class=", javaClass);
                 // including interface module so old-style interface "subclasses" will
                 // respond correctly to #kind_of?, etc.
                 proxyClass.includeModule(interfaceModule);
@@ -640,7 +640,8 @@ public class Java implements Library {
         return module == null ? runtime.getNil() : module;
     }
 
-    public static RubyModule getProxyOrPackageUnderPackage(final Ruby runtime, RubyModule parentPackage, String sym) {
+    public static RubyModule getProxyOrPackageUnderPackage(ThreadContext context, final Ruby runtime, 
+            RubyModule parentPackage, String sym) {
         IRubyObject packageNameObj = parentPackage.fastGetInstanceVariable("@package_name");
         if (packageNameObj == null) {
             throw runtime.newArgumentError("invalid package module");
@@ -663,7 +664,7 @@ public class Java implements Library {
                 return getProxyClass(runtime, JavaClass.forNameQuiet(runtime, fullName));
             } catch (RaiseException re) { /* expected */
                 RubyException rubyEx = re.getException();
-                if (rubyEx.kind_of_p(runtime.getStandardError()).isTrue()) {
+                if (rubyEx.kind_of_p(context, runtime.getStandardError()).isTrue()) {
                     RuntimeHelpers.setErrorInfo(runtime, runtime.getNil());
                 }
             } catch (Exception e) { /* expected */ }
@@ -691,6 +692,7 @@ public class Java implements Library {
                     return runtime.getNil();
                 }
 
+                @Override
                 public Arity getArity() {
                     return Arity.noArguments();
                 }
@@ -717,6 +719,7 @@ public class Java implements Library {
     }
 
     public static IRubyObject get_proxy_or_package_under_package(
+            ThreadContext context,
             IRubyObject recv,
             IRubyObject parentPackage,
             IRubyObject sym) {
@@ -725,14 +728,14 @@ public class Java implements Library {
             throw runtime.newTypeError(parentPackage, runtime.getModule());
         }
         RubyModule result;
-        if ((result = getProxyOrPackageUnderPackage(runtime,
+        if ((result = getProxyOrPackageUnderPackage(context, runtime,
                 (RubyModule) parentPackage, sym.asJavaString())) != null) {
             return result;
         }
         return runtime.getNil();
     }
 
-    public static RubyModule getTopLevelProxyOrPackage(final Ruby runtime, String sym) {
+    public static RubyModule getTopLevelProxyOrPackage(ThreadContext context, final Ruby runtime, String sym) {
         final String name = sym.trim().intern();
         if (name.length() == 0) {
             throw runtime.newArgumentError("empty class or package name");
@@ -743,7 +746,7 @@ public class Java implements Library {
                 return getProxyClass(runtime, JavaClass.forNameQuiet(runtime, name));
             } catch (RaiseException re) { /* not primitive or lc class */
                 RubyException rubyEx = re.getException();
-                if (rubyEx.kind_of_p(runtime.getStandardError()).isTrue()) {
+                if (rubyEx.kind_of_p(context, runtime.getStandardError()).isTrue()) {
                     RuntimeHelpers.setErrorInfo(runtime, runtime.getNil());
                 }
             } catch (Exception e) { /* not primitive or lc class */ }
@@ -777,6 +780,7 @@ public class Java implements Library {
                     return runtime.getNil();
                 }
 
+                @Override
                 public Arity getArity() {
                     return Arity.noArguments();
                 }
@@ -787,7 +791,7 @@ public class Java implements Library {
                 return getProxyClass(runtime, JavaClass.forNameQuiet(runtime, name));
             } catch (RaiseException re) { /* not a class */
                 RubyException rubyEx = re.getException();
-                if (rubyEx.kind_of_p(runtime.getStandardError()).isTrue()) {
+                if (rubyEx.kind_of_p(context, runtime.getStandardError()).isTrue()) {
                     RuntimeHelpers.setErrorInfo(runtime, runtime.getNil());
                 }
             } catch (Exception e) { /* not a class */ }
@@ -800,10 +804,10 @@ public class Java implements Library {
         }
     }
 
-    public static IRubyObject get_top_level_proxy_or_package(IRubyObject recv, IRubyObject sym) {
-        Ruby runtime = recv.getRuntime();
+    public static IRubyObject get_top_level_proxy_or_package(ThreadContext context, IRubyObject recv, IRubyObject sym) {
+        Ruby runtime = context.getRuntime();
         RubyModule result;
-        if ((result = getTopLevelProxyOrPackage(runtime, sym.asJavaString())) != null) {
+        if ((result = getTopLevelProxyOrPackage(context, runtime, sym.asJavaString())) != null) {
             return result;
         }
         return runtime.getNil();

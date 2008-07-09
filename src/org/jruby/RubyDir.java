@@ -430,10 +430,10 @@ public class RubyDir extends RubyObject {
     }
 
     @JRubyMethod(name = "path")
-    public IRubyObject path() {
+    public IRubyObject path(ThreadContext context) {
         checkDir();
         
-        return path.strDup();
+        return path.strDup(context.getRuntime());
     }
 
     /** Returns the next entry from this directory. */

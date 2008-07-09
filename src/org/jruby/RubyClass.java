@@ -62,6 +62,7 @@ public class RubyClass extends RubyModule {
     public static void createClassClass(Ruby runtime, RubyClass classClass) {
         classClass.index = ClassIndex.CLASS;
         classClass.kindOf = new RubyModule.KindOf() {
+            @Override
             public boolean isKindOf(IRubyObject obj, RubyModule type) {
                 return obj instanceof RubyClass;
             }
@@ -104,18 +105,22 @@ public class RubyClass extends RubyModule {
         return obj;
     }    
 
+    @Override
     public int getNativeTypeIndex() {
         return ClassIndex.CLASS;
     }
     
+    @Override
     public boolean isModule() {
         return false;
     }
 
+    @Override
     public boolean isClass() {
         return true;
     }
 
+    @Override
     public boolean isSingleton() {
         return false;
     }
@@ -203,6 +208,7 @@ public class RubyClass extends RubyModule {
     /** rb_make_metaclass
      *
      */
+    @Override
     public RubyClass makeMetaClass(RubyClass superClass) {
         if (isSingleton()) { // could be pulled down to RubyClass in future
             MetaClass klass = new MetaClass(getRuntime(), superClass); // rb_class_boot
@@ -313,6 +319,7 @@ public class RubyClass extends RubyModule {
      * 
      */
     @JRubyMethod(name = "initialize_copy", required = 1)
+    @Override
     public IRubyObject initialize_copy(IRubyObject original){
         if (superClass != null) throw runtime.newTypeError("already initialized class");
         if (original instanceof MetaClass) throw getRuntime().newTypeError("can't copy singleton class");        
@@ -324,17 +331,17 @@ public class RubyClass extends RubyModule {
     
     // TODO: Someday, enable.
     // @JRubyMethod(name = "subclasses", optional = 1)
-    public IRubyObject subclasses(IRubyObject[] args) {
+    public IRubyObject subclasses(ThreadContext context, IRubyObject[] args) {
         boolean recursive = false;
         if (args.length == 1) {
             if (args[0] instanceof RubyBoolean) {
                 recursive = args[0].isTrue();
             } else {
-                getRuntime().newTypeError(args[0], getRuntime().fastGetClass("Boolean"));
+                context.getRuntime().newTypeError(args[0], context.getRuntime().fastGetClass("Boolean"));
             }
         }
         
-        return RubyArray.newArray(getRuntime(), subclasses(recursive)).freeze();
+        return RubyArray.newArray(context.getRuntime(), subclasses(recursive)).freeze(context);
     }
     
     public Collection subclasses(boolean includeDescendants) {
@@ -366,8 +373,8 @@ public class RubyClass extends RubyModule {
     }    
 
     @JRubyMethod(name = "inherited", required = 1)
-    public IRubyObject inherited(IRubyObject arg) {
-        return getRuntime().getNil();
+    public IRubyObject inherited(ThreadContext context, IRubyObject arg) {
+        return context.getRuntime().getNil();
     }
 
     /** rb_class_inherited (reversed semantics!)
@@ -375,9 +382,8 @@ public class RubyClass extends RubyModule {
      */
     public void inherit(RubyClass superClazz) {
         if (superClazz == null) superClazz = getRuntime().getObject();
-        superClazz.invokeInherited(
-                getRuntime().getCurrentContext(), superClazz,
-                this);
+        
+        superClazz.invokeInherited(getRuntime().getCurrentContext(), superClazz, this);
     }
 
     /** Return the real super class of this class.
@@ -386,15 +392,15 @@ public class RubyClass extends RubyModule {
      *
      */
     @JRubyMethod(name = "superclass")
-    public IRubyObject superclass() {
+    public IRubyObject superclass(ThreadContext context) {
         RubyClass superClazz = superClass;
 
-        if (superClazz == null) throw runtime.newTypeError("uninitialized class");
+        if (superClazz == null) throw context.getRuntime().newTypeError("uninitialized class");
         
-        if(isSingleton()) superClazz = metaClass;
+        if (isSingleton()) superClazz = metaClass;
         while (superClazz != null && superClazz.isIncluded()) superClazz = superClazz.superClass;
 
-        return superClazz != null ? superClazz : getRuntime().getNil();
+        return superClazz != null ? superClazz : context.getRuntime().getNil();
     }
 
     /** rb_check_inheritable

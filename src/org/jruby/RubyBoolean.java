@@ -36,6 +36,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 
@@ -53,18 +54,22 @@ public class RubyBoolean extends RubyObject {
         if (!value) flags = FALSE_F;
     }
     
+    @Override
     public int getNativeTypeIndex() {
         return (flags & FALSE_F) == 0 ? ClassIndex.TRUE : ClassIndex.FALSE;
     }
     
+    @Override
     public boolean isImmediate() {
         return true;
     }
 
+    @Override
     public RubyClass getSingletonClass() {
         return metaClass;
     }
 
+    @Override
     public Class<?> getJavaClass() {
         return Boolean.TYPE;
     }
@@ -141,6 +146,7 @@ public class RubyBoolean extends RubyObject {
         }
     }
     
+    @Override
     public RubyFixnum id() {
         if ((flags & FALSE_F) == 0) {
             return RubyFixnum.newFixnum(getRuntime(), 2);
@@ -149,11 +155,13 @@ public class RubyBoolean extends RubyObject {
         }
     }
 
-    public IRubyObject taint() {
+    @Override
+    public IRubyObject taint(ThreadContext context) {
         return this;
     }
 
-    public IRubyObject freeze() {
+    @Override
+    public IRubyObject freeze(ThreadContext context) {
         return this;
     }
     

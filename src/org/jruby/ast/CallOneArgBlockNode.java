@@ -33,7 +33,6 @@
 package org.jruby.ast;
 
 import org.jruby.Ruby;
-import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -57,7 +56,7 @@ public final class CallOneArgBlockNode extends CallNode {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
         Block block = getBlock(context, self);
-        
+            
         return callAdapter.call(context, receiver, 
                 arg1.interpret(runtime, context, self, aBlock), block);
     }

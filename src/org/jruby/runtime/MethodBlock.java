@@ -70,6 +70,7 @@ public class MethodBlock extends BlockBody {
         this.staticScope = staticScope;
     }
 
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
         return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding, type);
     }

@@ -185,27 +185,29 @@ public class RubyFile extends RubyIO {
         RubyClass fileClass = runtime.defineClass("File", runtime.getIO(), FILE_ALLOCATOR);
         runtime.setFile(fileClass);
         RubyString separator = runtime.newString("/");
+        ThreadContext context = runtime.getCurrentContext();
         
         fileClass.kindOf = new RubyModule.KindOf() {
-                public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                    return obj instanceof RubyFile;
-                }
-            };
+            @Override
+            public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                return obj instanceof RubyFile;
+            }
+        };
 
-        separator.freeze();
+        separator.freeze(context);
         fileClass.defineConstant("SEPARATOR", separator);
         fileClass.defineConstant("Separator", separator);
         
         if (File.separatorChar == '\\') {
             RubyString altSeparator = runtime.newString("\\");
-            altSeparator.freeze();
+            altSeparator.freeze(context);
             fileClass.defineConstant("ALT_SEPARATOR", altSeparator);
         } else {
             fileClass.defineConstant("ALT_SEPARATOR", runtime.getNil());
         }
         
         RubyString pathSeparator = runtime.newString(File.pathSeparator);
-        pathSeparator.freeze();
+        pathSeparator.freeze(context);
         fileClass.defineConstant("PATH_SEPARATOR", pathSeparator);
 
         // TODO: why are we duplicating the constants here, and then in
@@ -278,6 +280,7 @@ public class RubyFile extends RubyIO {
     }
     
     @JRubyMethod
+    @Override
     public IRubyObject close() {
         // Make sure any existing lock is released before we try and close the file
         if (currentLock != null) {
@@ -291,13 +294,13 @@ public class RubyFile extends RubyIO {
     }
 
     @JRubyMethod(required = 1)
-    public IRubyObject flock(IRubyObject lockingConstant) {
+    public IRubyObject flock(ThreadContext context, IRubyObject lockingConstant) {
         // TODO: port exact behavior from MRI, and move most locking logic into ChannelDescriptor
         // TODO: for all LOCK_NB cases, return false if they would block
         ChannelDescriptor descriptor = openFile.getMainStream().getDescriptor();
         
         // null channel always succeeds for all locking operations
-        if (descriptor.isNull()) return RubyFixnum.zero(getRuntime());
+        if (descriptor.isNull()) return RubyFixnum.zero(context.getRuntime());
         
         FileChannel fileChannel = (FileChannel)descriptor.getChannel();
         int lockMode = RubyNumeric.num2int(lockingConstant);
@@ -320,7 +323,7 @@ public class RubyFile extends RubyIO {
                         currentLock.release();
                         currentLock = null;
 
-                        return RubyFixnum.zero(getRuntime());
+                        return RubyFixnum.zero(context.getRuntime());
                     }
                     break;
                 case LOCK_EX:
@@ -330,7 +333,7 @@ public class RubyFile extends RubyIO {
                     }
                     currentLock = fileChannel.lock();
                     if (currentLock != null) {
-                        return RubyFixnum.zero(getRuntime());
+                        return RubyFixnum.zero(context.getRuntime());
                     }
 
                     break;
@@ -341,7 +344,7 @@ public class RubyFile extends RubyIO {
                     }
                     currentLock = fileChannel.tryLock();
                     if (currentLock != null) {
-                        return RubyFixnum.zero(getRuntime());
+                        return RubyFixnum.zero(context.getRuntime());
                     }
 
                     break;
@@ -353,7 +356,7 @@ public class RubyFile extends RubyIO {
 
                     currentLock = fileChannel.lock(0L, Long.MAX_VALUE, true);
                     if (currentLock != null) {
-                        return RubyFixnum.zero(getRuntime());
+                        return RubyFixnum.zero(context.getRuntime());
                     }
 
                     break;
@@ -365,28 +368,29 @@ public class RubyFile extends RubyIO {
 
                     currentLock = fileChannel.tryLock(0L, Long.MAX_VALUE, true);
                     if (currentLock != null) {
-                        return RubyFixnum.zero(getRuntime());
+                        return RubyFixnum.zero(context.getRuntime());
                     }
 
                     break;
                 default:
             }
         } catch (IOException ioe) {
-            if (getRuntime().getDebug().isTrue()) {
+            if (context.getRuntime().getDebug().isTrue()) {
                 ioe.printStackTrace(System.err);
             }
             // Return false here
         } catch (java.nio.channels.OverlappingFileLockException ioe) {
-            if (getRuntime().getDebug().isTrue()) {
+            if (context.getRuntime().getDebug().isTrue()) {
                 ioe.printStackTrace(System.err);
             }
             // Return false here
         }
 
-        return getRuntime().getFalse();
+        return context.getRuntime().getFalse();
     }
 
     @JRubyMethod(required = 1, optional = 2, frame = true, visibility = Visibility.PRIVATE)
+    @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         if (openFile == null) {
             throw getRuntime().newRuntimeError("reinitializing File");
@@ -541,18 +545,18 @@ public class RubyFile extends RubyIO {
     }
 
     @JRubyMethod(required = 1)
-    public IRubyObject chmod(IRubyObject arg) {
+    public IRubyObject chmod(ThreadContext context, IRubyObject arg) {
         int mode = (int) arg.convertToInteger().getLongValue();
 
         if (!new File(path).exists()) {
-            throw getRuntime().newErrnoENOENTError("No such file or directory - " + path);
+            throw context.getRuntime().newErrnoENOENTError("No such file or directory - " + path);
         }
 
-        return getRuntime().newFixnum(getRuntime().getPosix().chmod(path, mode));
+        return context.getRuntime().newFixnum(context.getRuntime().getPosix().chmod(path, mode));
     }
 
     @JRubyMethod(required = 2)
-    public IRubyObject chown(IRubyObject arg1, IRubyObject arg2) {
+    public IRubyObject chown(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
         int owner = -1;
         if (!arg1.isNil()) {
             owner = RubyNumeric.num2int(arg1);
@@ -564,36 +568,36 @@ public class RubyFile extends RubyIO {
         }
 
         if (!new File(path).exists()) {
-            throw getRuntime().newErrnoENOENTError("No such file or directory - " + path);
+            throw context.getRuntime().newErrnoENOENTError("No such file or directory - " + path);
         }
 
-        return getRuntime().newFixnum(getRuntime().getPosix().chown(path, owner, group));
+        return context.getRuntime().newFixnum(context.getRuntime().getPosix().chown(path, owner, group));
     }
 
     @JRubyMethod
-    public IRubyObject atime() {
-        return getRuntime().newFileStat(path, false).atime();
+    public IRubyObject atime(ThreadContext context) {
+        return context.getRuntime().newFileStat(path, false).atime();
     }
 
     @JRubyMethod
-    public IRubyObject ctime() {
-        return getRuntime().newFileStat(path, false).ctime();
+    public IRubyObject ctime(ThreadContext context) {
+        return context.getRuntime().newFileStat(path, false).ctime();
     }
 
     @JRubyMethod(required = 1)
-    public IRubyObject lchmod(IRubyObject arg) {
+    public IRubyObject lchmod(ThreadContext context, IRubyObject arg) {
         int mode = (int) arg.convertToInteger().getLongValue();
 
         if (!new File(path).exists()) {
-            throw getRuntime().newErrnoENOENTError("No such file or directory - " + path);
+            throw context.getRuntime().newErrnoENOENTError("No such file or directory - " + path);
         }
 
-        return getRuntime().newFixnum(getRuntime().getPosix().lchmod(path, mode));
+        return context.getRuntime().newFixnum(context.getRuntime().getPosix().lchmod(path, mode));
     }
 
     // TODO: this method is not present in MRI!
     @JRubyMethod(required = 2)
-    public IRubyObject lchown(IRubyObject arg1, IRubyObject arg2) {
+    public IRubyObject lchown(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
         int owner = -1;
         if (!arg1.isNil()) {
             owner = RubyNumeric.num2int(arg1);
@@ -605,55 +609,57 @@ public class RubyFile extends RubyIO {
         }
 
         if (!new File(path).exists()) {
-            throw getRuntime().newErrnoENOENTError("No such file or directory - " + path);
+            throw context.getRuntime().newErrnoENOENTError("No such file or directory - " + path);
         }
 
-        return getRuntime().newFixnum(getRuntime().getPosix().lchown(path, owner, group));
+        return context.getRuntime().newFixnum(context.getRuntime().getPosix().lchown(path, owner, group));
     }
 
     @JRubyMethod
-    public IRubyObject lstat() {
-        return getRuntime().newFileStat(path, true);
+    public IRubyObject lstat(ThreadContext context) {
+        return context.getRuntime().newFileStat(path, true);
     }
     
     @JRubyMethod
-    public IRubyObject mtime() {
-        return getLastModified(getRuntime(), path);
+    public IRubyObject mtime(ThreadContext context) {
+        return getLastModified(context.getRuntime(), path);
     }
 
     @JRubyMethod
-    public RubyString path() {
-        return getRuntime().newString(path);
+    public RubyString path(ThreadContext context) {
+        return context.getRuntime().newString(path);
     }
 
     @JRubyMethod
-    public IRubyObject stat() {
-        openFile.checkClosed(getRuntime());
-        return getRuntime().newFileStat(path, false);
+    @Override
+    public IRubyObject stat(ThreadContext context) {
+        openFile.checkClosed(context.getRuntime());
+        return context.getRuntime().newFileStat(path, false);
     }
 
     @JRubyMethod(required = 1)
-    public IRubyObject truncate(IRubyObject arg) {
+    public IRubyObject truncate(ThreadContext context, IRubyObject arg) {
         RubyInteger newLength = arg.convertToInteger();
         if (newLength.getLongValue() < 0) {
-            throw getRuntime().newErrnoEINVALError("invalid argument: " + path);
+            throw context.getRuntime().newErrnoEINVALError("invalid argument: " + path);
         }
         try {
-            openFile.checkWritable(getRuntime());
+            openFile.checkWritable(context.getRuntime());
             openFile.getMainStream().ftruncate(newLength.getLongValue());
         } catch (BadDescriptorException e) {
-            throw getRuntime().newErrnoEBADFError();
+            throw context.getRuntime().newErrnoEBADFError();
         } catch (PipeException e) {
-            throw getRuntime().newErrnoESPIPEError();
+            throw context.getRuntime().newErrnoESPIPEError();
         } catch (InvalidValueException ex) {
-            throw getRuntime().newErrnoEINVALError();
+            throw context.getRuntime().newErrnoEINVALError();
         } catch (IOException e) {
             // Should we do anything?
         }
 
-        return RubyFixnum.zero(getRuntime());
+        return RubyFixnum.zero(context.getRuntime());
     }
 
+    @Override
     public String toString() {
         return "RubyFile(" + path + ", " + openFile.getMode() + ", " + openFile.getMainStream().getDescriptor().getFileno() + ")";
     }
@@ -670,6 +676,7 @@ public class RubyFile extends RubyIO {
     }
 
     @JRubyMethod
+    @Override
     public IRubyObject inspect() {
         StringBuilder val = new StringBuilder();
         val.append("#<File:").append(path);
@@ -683,7 +690,7 @@ public class RubyFile extends RubyIO {
     /* File class methods */
     
     @JRubyMethod(required = 1, optional = 1, meta = true)
-    public static IRubyObject basename(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject basename(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         String name = RubyString.stringValue(args[0]).toString();
 
         // MRI-compatible basename handling for windows drive letter paths
@@ -691,9 +698,9 @@ public class RubyFile extends RubyIO {
             if (name.length() > 1 && name.charAt(1) == ':' && Character.isLetter(name.charAt(0))) {
                 switch (name.length()) {
                 case 2:
-                    return RubyString.newEmptyString(recv.getRuntime()).infectBy(args[0]);
+                    return RubyString.newEmptyString(context.getRuntime()).infectBy(args[0]);
                 case 3:
-                    return recv.getRuntime().newString(name.substring(2)).infectBy(args[0]);
+                    return context.getRuntime().newString(name.substring(2)).infectBy(args[0]);
                 default:
                     switch (name.charAt(2)) {
                     case '/':
@@ -748,12 +755,12 @@ public class RubyFile extends RubyIO {
                 name = name.substring(0, name.length() - ext.length());
             }
         }
-        return recv.getRuntime().newString(name).infectBy(args[0]);
+        return context.getRuntime().newString(name).infectBy(args[0]);
     }
 
     @JRubyMethod(required = 2, rest = true, meta = true)
-    public static IRubyObject chmod(IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = recv.getRuntime();
+    public static IRubyObject chmod(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
         
         int count = 0;
         RubyInteger mode = args[0].convertToInteger();
@@ -774,8 +781,8 @@ public class RubyFile extends RubyIO {
     }
     
     @JRubyMethod(required = 3, rest = true, meta = true)
-    public static IRubyObject chown(IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = recv.getRuntime();
+    public static IRubyObject chown(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
 
         int count = 0;
         int owner = -1;
@@ -804,15 +811,14 @@ public class RubyFile extends RubyIO {
     }
     
     @JRubyMethod(required = 1, meta = true)
-    public static IRubyObject dirname(IRubyObject recv, IRubyObject arg) {
+    public static IRubyObject dirname(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         RubyString filename = RubyString.stringValue(arg);
         String jfilename = filename.toString();
         String name = jfilename.replace('\\', '/');
         int minPathLength = 1;
         boolean trimmedSlashes = false;
 
-        boolean startsWithDriveLetterOnWindows
-                = startsWithDriveLetterOnWindows(name);
+        boolean startsWithDriveLetterOnWindows = startsWithDriveLetterOnWindows(name);
 
         if (startsWithDriveLetterOnWindows) {
             minPathLength = 3;
@@ -836,13 +842,12 @@ public class RubyFile extends RubyIO {
             int index = name.lastIndexOf('/');
             if (index == -1) {
                 if (startsWithDriveLetterOnWindows) {
-                    return recv.getRuntime().newString(
-                            jfilename.substring(0, 2) + ".");
+                    return context.getRuntime().newString(jfilename.substring(0, 2) + ".");
                 } else {
-                    return recv.getRuntime().newString(".");
+                    return context.getRuntime().newString(".");
                 }
             }
-            if (index == 0) return recv.getRuntime().newString("/");
+            if (index == 0) return context.getRuntime().newString("/");
 
             if (startsWithDriveLetterOnWindows && index == 2) {
                 // Include additional path separator
@@ -864,7 +869,7 @@ public class RubyFile extends RubyIO {
             }
         }
 
-        return recv.getRuntime().newString(result).infectBy(filename);
+        return context.getRuntime().newString(result).infectBy(filename);
     }
 
     private static boolean isWindowsDriveLetter(char c) {
@@ -880,19 +885,19 @@ public class RubyFile extends RubyIO {
      * @return Extension, including the dot, or an empty string
      */
     @JRubyMethod(required = 1, meta = true)
-           public static IRubyObject extname(IRubyObject recv, IRubyObject arg) {
-                   IRubyObject baseFilename = basename(recv, new IRubyObject[] { arg });
-                   String filename = RubyString.stringValue(baseFilename).toString();
-                   String result = "";
+    public static IRubyObject extname(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        IRubyObject baseFilename = basename(context, recv, new IRubyObject[]{arg});
+        String filename = RubyString.stringValue(baseFilename).toString();
+        String result = "";
 
-                   int dotIndex = filename.lastIndexOf(".");
-                   if (dotIndex > 0  && dotIndex != (filename.length() - 1)) {
-                           // Dot is not at beginning and not at end of filename. 
-                           result = filename.substring(dotIndex);
-                   }
+        int dotIndex = filename.lastIndexOf(".");
+        if (dotIndex > 0 && dotIndex != (filename.length() - 1)) {
+            // Dot is not at beginning and not at end of filename. 
+            result = filename.substring(dotIndex);
+        }
 
-                   return recv.getRuntime().newString(result);
-           }
+        return context.getRuntime().newString(result);
+    }
 
     /**
      * Converts a pathname to an absolute pathname. Relative paths are 
@@ -906,7 +911,7 @@ public class RubyFile extends RubyIO {
      */
     @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject expand_path(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = recv.getRuntime();
+        Ruby runtime = context.getRuntime();
         
         String relativePath = RubyString.stringValue(args[0]).toString();
 
@@ -936,8 +941,7 @@ public class RubyFile extends RubyIO {
             // If the path isn't absolute, then prepend the current working
             // directory to the path.
             if (!startsWithSlashNotOnWindows && !startsWithDriveLetterOnWindows(cwd)) {
-                cwd = new File(runtime.getCurrentDirectory(), cwd)
-                    .getAbsolutePath();
+                cwd = new File(runtime.getCurrentDirectory(), cwd).getAbsolutePath();
             }
         } else {
             // If there's no second argument, simply use the working directory 
@@ -1039,12 +1043,10 @@ public class RubyFile extends RubyIO {
                 IRubyObject dir = RubyDir.getHomeDirectoryPath(context, user);
                 
                 if (dir.isNil()) {
-                    Ruby runtime = context.getRuntime();
-                    throw runtime.newArgumentError("user " + user + " does not exist");
+                    throw context.getRuntime().newArgumentError("user " + user + " does not exist");
                 }
                 
-                path = "" + dir +
-                        (pathLength == userEnd ? "" : path.substring(userEnd));
+                path = "" + dir + (pathLength == userEnd ? "" : path.substring(userEnd));
             }
         }
         return path;
@@ -1146,51 +1148,43 @@ public class RubyFile extends RubyIO {
      *
      */
     @JRubyMethod(name = {"fnmatch", "fnmatch?"}, required = 2, optional = 1, meta = true)
-    public static IRubyObject fnmatch(IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = recv.getRuntime();
-        int flags;
-        if (args.length == 3) {
-            flags = RubyNumeric.num2int(args[2]);
-        } else {
-            flags = 0;
-        }
+    public static IRubyObject fnmatch(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        int flags = args.length == 3 ? RubyNumeric.num2int(args[2]) : 0;
 
         ByteList pattern = args[0].convertToString().getByteList();
         ByteList path = args[1].convertToString().getByteList();
 
         if (org.jruby.util.Dir.fnmatch(pattern.bytes, pattern.begin, pattern.begin+pattern.realSize, 
                                        path.bytes, path.begin, path.begin+path.realSize, flags) == 0) {
-            return runtime.getTrue();
+            return context.getRuntime().getTrue();
         }
-        return runtime.getFalse();
+        return context.getRuntime().getFalse();
     }
     
     @JRubyMethod(name = "ftype", required = 1, meta = true)
-    public static IRubyObject ftype(IRubyObject recv, IRubyObject filename) {
-        return recv.getRuntime().newFileStat(filename.convertToString().toString(), true).ftype();
+    public static IRubyObject ftype(ThreadContext context, IRubyObject recv, IRubyObject filename) {
+        return context.getRuntime().newFileStat(filename.convertToString().toString(), true).ftype();
     }
 
-    private static String inspectJoin(IRubyObject recv, RubyArray parent, RubyArray array) {
-        Ruby runtime = recv.getRuntime();
-
+    private static String inspectJoin(ThreadContext context, IRubyObject recv, RubyArray parent, RubyArray array) {
+        Ruby runtime = context.getRuntime();
+        
         // If already inspecting, there is no need to register/unregister again.
-        if (runtime.isInspecting(parent)) {
-            return join(recv, array).toString();
-        }
+        if (runtime.isInspecting(parent)) return join(context, recv, array).toString();
 
         try {
             runtime.registerInspecting(parent);
-            return join(recv, array).toString();
+            return join(context, recv, array).toString();
         } finally {
             runtime.unregisterInspecting(parent);
         }
     }
 
-    private static RubyString join(IRubyObject recv, RubyArray ary) {
+    private static RubyString join(ThreadContext context, IRubyObject recv, RubyArray ary) {
         IRubyObject[] args = ary.toJavaArray();
         boolean isTainted = false;
         StringBuilder buffer = new StringBuilder();
-        Ruby runtime = recv.getRuntime();
+        Ruby runtime = context.getRuntime();
         
         for (int i = 0; i < args.length; i++) {
             if (args[i].isTaint()) {
@@ -1203,7 +1197,7 @@ public class RubyFile extends RubyIO {
                 if (runtime.isInspecting(args[i])) {
                     element = "[...]";
                 } else {
-                    element = inspectJoin(recv, ary, ((RubyArray)args[i]));
+                    element = inspectJoin(context, recv, ary, ((RubyArray)args[i]));
                 }
             } else {
                 element = args[i].convertToString().toString();
@@ -1216,7 +1210,7 @@ public class RubyFile extends RubyIO {
             buffer.append(element);
         }
         
-        RubyString fixedStr = RubyString.newString(recv.getRuntime(), buffer.toString());
+        RubyString fixedStr = RubyString.newString(runtime, buffer.toString());
         fixedStr.setTaint(isTainted);
         return fixedStr;
     }
@@ -1226,8 +1220,8 @@ public class RubyFile extends RubyIO {
      * probably could be consolidated (perhaps as join(args[], sep, doChomp)).
      */
     @JRubyMethod(rest = true, meta = true)
-    public static RubyString join(IRubyObject recv, IRubyObject[] args) {
-        return join(recv, RubyArray.newArrayNoCopyLight(recv.getRuntime(), args));
+    public static RubyString join(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return join(context, recv, RubyArray.newArrayNoCopyLight(context.getRuntime(), args));
     }
 
     private static void chomp(StringBuilder buffer) {
@@ -1240,44 +1234,44 @@ public class RubyFile extends RubyIO {
     }
     
     @JRubyMethod(name = "lstat", required = 1, meta = true)
-    public static IRubyObject lstat(IRubyObject recv, IRubyObject filename) {
+    public static IRubyObject lstat(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         String f = filename.convertToString().toString();
         if(f.startsWith("file:") && f.indexOf('!') != -1) {
             f = f.substring(5, f.indexOf("!"));
         }
-        return recv.getRuntime().newFileStat(f, true);
+        return context.getRuntime().newFileStat(f, true);
     }
 
     @JRubyMethod(name = "stat", required = 1, meta = true)
-    public static IRubyObject stat(IRubyObject recv, IRubyObject filename) {
+    public static IRubyObject stat(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         String f = filename.convertToString().toString();
         if(f.startsWith("file:") && f.indexOf('!') != -1) {
             f = f.substring(5, f.indexOf("!"));
         }
-        return recv.getRuntime().newFileStat(f, false);
+        return context.getRuntime().newFileStat(f, false);
     }
 
     @JRubyMethod(name = "atime", required = 1, meta = true)
-    public static IRubyObject atime(IRubyObject recv, IRubyObject filename) {
+    public static IRubyObject atime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         String f = filename.convertToString().toString();
         if(f.startsWith("file:") && f.indexOf('!') != -1) {
             f = f.substring(5, f.indexOf("!"));
         }
-        return recv.getRuntime().newFileStat(f, false).atime();
+        return context.getRuntime().newFileStat(f, false).atime();
     }
 
     @JRubyMethod(name = "ctime", required = 1, meta = true)
-    public static IRubyObject ctime(IRubyObject recv, IRubyObject filename) {
+    public static IRubyObject ctime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         String f = filename.convertToString().toString();
         if(f.startsWith("file:") && f.indexOf('!') != -1) {
             f = f.substring(5, f.indexOf("!"));
         }
-        return recv.getRuntime().newFileStat(f, false).ctime();
+        return context.getRuntime().newFileStat(f, false).ctime();
     }
 
     @JRubyMethod(required = 2, rest = true, meta = true)
-    public static IRubyObject lchmod(IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = recv.getRuntime();
+    public static IRubyObject lchmod(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
         
         int count = 0;
         RubyInteger mode = args[0].convertToInteger();
@@ -1298,19 +1292,12 @@ public class RubyFile extends RubyIO {
     }
     
     @JRubyMethod(required = 3, rest = true, meta = true)
-    public static IRubyObject lchown(IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = recv.getRuntime();
-        
+    public static IRubyObject lchown(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+        int owner = !args[0].isNil() ? RubyNumeric.num2int(args[0]) : -1;
+        int group = !args[1].isNil() ? RubyNumeric.num2int(args[1]) : -1;
         int count = 0;
-        int owner = -1;
-        if (!args[0].isNil()) {
-            owner = RubyNumeric.num2int(args[0]);
-        }
-
-        int group = -1;
-        if (!args[1].isNil()) {
-            group = RubyNumeric.num2int(args[1]);
-        }
+        
         for (int i = 2; i < args.length; i++) {
             IRubyObject filename = args[i];
             
@@ -1328,32 +1315,32 @@ public class RubyFile extends RubyIO {
     }
 
     @JRubyMethod(required = 2, meta = true)
-    public static IRubyObject link(IRubyObject recv, IRubyObject from, IRubyObject to) {
+    public static IRubyObject link(ThreadContext context, IRubyObject recv, IRubyObject from, IRubyObject to) {
+        Ruby runtime = context.getRuntime();
         RubyString fromStr = RubyString.stringValue(from);
         RubyString toStr = RubyString.stringValue(to);
         try {
-            if (recv.getRuntime().getPosix().link(
+            if (runtime.getPosix().link(
                     fromStr.toString(),toStr.toString()) == -1) {
                 // FIXME: When we get JNA3 we need to properly write this to errno.
-                throw recv.getRuntime().newErrnoEEXISTError("File exists - " 
+                throw runtime.newErrnoEEXISTError("File exists - " 
                                + fromStr + " or " + toStr);
             }
         } catch (java.lang.UnsatisfiedLinkError ule) {
-            throw recv.getRuntime().newNotImplementedError(
-                    "link() function is unimplemented on this machine");
+            throw runtime.newNotImplementedError("link() function is unimplemented on this machine");
         }
         
-        return recv.getRuntime().newFixnum(0);
+        return runtime.newFixnum(0);
     }
 
     @JRubyMethod(name = "mtime", required = 1, meta = true)
-    public static IRubyObject mtime(IRubyObject recv, IRubyObject filename) {
-        return getLastModified(recv.getRuntime(), filename.convertToString().toString());
+    public static IRubyObject mtime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
+        return getLastModified(context.getRuntime(), filename.convertToString().toString());
     }
     
     @JRubyMethod(required = 2, meta = true)
-    public static IRubyObject rename(IRubyObject recv, IRubyObject oldName, IRubyObject newName) {
-        Ruby runtime = recv.getRuntime();
+    public static IRubyObject rename(ThreadContext context, IRubyObject recv, IRubyObject oldName, IRubyObject newName) {
+        Ruby runtime = context.getRuntime();
         RubyString oldNameString = RubyString.stringValue(oldName);
         RubyString newNameString = RubyString.stringValue(newName);
         runtime.checkSafeString(oldNameString);
@@ -1375,7 +1362,7 @@ public class RubyFile extends RubyIO {
         // rename via Java API call wasn't successful, let's try some tricks, similar to MRI 
 
         if (newFile.exists()) {
-            recv.getRuntime().getPosix().chmod(newNameString.toString(), 0666);
+            runtime.getPosix().chmod(newNameString.toString(), 0666);
             newFile.delete();
         }
 
@@ -1388,59 +1375,61 @@ public class RubyFile extends RubyIO {
     }
     
     @JRubyMethod(required = 1, meta = true)
-    public static RubyArray split(IRubyObject recv, IRubyObject arg) {
+    public static RubyArray split(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         RubyString filename = RubyString.stringValue(arg);
         
-        return filename.getRuntime().newArray(dirname(recv, filename),
-                basename(recv, new IRubyObject[] { filename }));
+        return context.getRuntime().newArray(dirname(context, recv, filename),
+                basename(context, recv, new IRubyObject[] { filename }));
     }
     
     @JRubyMethod(required = 2, meta = true)
-    public static IRubyObject symlink(IRubyObject recv, IRubyObject from, IRubyObject to) {
+    public static IRubyObject symlink(ThreadContext context, IRubyObject recv, IRubyObject from, IRubyObject to) {
+        Ruby runtime = context.getRuntime();
         RubyString fromStr = RubyString.stringValue(from);
         RubyString toStr = RubyString.stringValue(to);
         try {
-            if (recv.getRuntime().getPosix().symlink(
+            if (runtime.getPosix().symlink(
                     fromStr.toString(), toStr.toString()) == -1) {
                 // FIXME: When we get JNA3 we need to properly write this to errno.
-                throw recv.getRuntime().newErrnoEEXISTError("File exists - " 
+                throw runtime.newErrnoEEXISTError("File exists - " 
                                + fromStr + " or " + toStr);
             }
         } catch (java.lang.UnsatisfiedLinkError ule) {
-            throw recv.getRuntime().newNotImplementedError(
-                    "symlink() function is unimplemented on this machine");
+            throw runtime.newNotImplementedError("symlink() function is unimplemented on this machine");
         }
         
-        return recv.getRuntime().newFixnum(0);
+        return runtime.newFixnum(0);
     }
     
     @JRubyMethod(required = 1, meta = true)
-    public static IRubyObject readlink(IRubyObject recv, IRubyObject path) {
+    public static IRubyObject readlink(ThreadContext context, IRubyObject recv, IRubyObject path) {
+        Ruby runtime = context.getRuntime();
+        
         try {
-            String realPath = recv.getRuntime().getPosix().readlink(path.toString());
+            String realPath = runtime.getPosix().readlink(path.toString());
         
             if (!RubyFileTest.exist_p(recv, path).isTrue()) {
-                throw recv.getRuntime().newErrnoENOENTError("No such file or directory - " + path);
+                throw runtime.newErrnoENOENTError("No such file or directory - " + path);
             }
         
             if (!RubyFileTest.symlink_p(recv, path).isTrue()) {
-                throw recv.getRuntime().newErrnoEINVALError("invalid argument - " + path);
+                throw runtime.newErrnoEINVALError("invalid argument - " + path);
             }
         
             if (realPath == null) {
                 //FIXME: When we get JNA3 we need to properly write this to errno.
             }
 
-            return recv.getRuntime().newString(realPath);
+            return runtime.newString(realPath);
         } catch (IOException e) {
-            throw recv.getRuntime().newIOError(e.getMessage());
+            throw runtime.newIOError(e.getMessage());
         }
     }
 
     // Can we produce IOError which bypasses a close?
     @JRubyMethod(required = 2, meta = true)
     public static IRubyObject truncate(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
-        Ruby runtime = recv.getRuntime();
+        Ruby runtime = context.getRuntime();
         RubyString filename = arg1.convertToString(); // TODO: SafeStringValue here
         RubyInteger newLength = arg2.convertToInteger(); 
         
@@ -1455,33 +1444,34 @@ public class RubyFile extends RubyIO {
         
         IRubyObject[] args = new IRubyObject[] { filename, runtime.newString("r+") };
         RubyFile file = (RubyFile) open(context, recv, args, Block.NULL_BLOCK);
-        file.truncate(newLength);
+        file.truncate(context, newLength);
         file.close();
         
         return RubyFixnum.zero(runtime);
     }
 
     @JRubyMethod(meta = true, optional = 1)
-    public static IRubyObject umask(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject umask(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
         int oldMask = 0;
         if (args.length == 0) {
-            oldMask = recv.getRuntime().getPosix().umask(0);
-            recv.getRuntime().getPosix().umask(oldMask);
+            oldMask = runtime.getPosix().umask(0);
+            runtime.getPosix().umask(oldMask);
         } else if (args.length == 1) {
-            oldMask = recv.getRuntime().getPosix().umask((int) args[0].convertToInteger().getLongValue()); 
+            oldMask = runtime.getPosix().umask((int) args[0].convertToInteger().getLongValue()); 
         } else {
-            recv.getRuntime().newArgumentError("wrong number of arguments");
+            runtime.newArgumentError("wrong number of arguments");
         }
         
-        return recv.getRuntime().newFixnum(oldMask);
+        return runtime.newFixnum(oldMask);
     }
 
     /**
      * This method does NOT set atime, only mtime, since Java doesn't support anything else.
      */
     @JRubyMethod(required = 2, rest = true, meta = true)
-    public static IRubyObject utime(IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = recv.getRuntime();
+    public static IRubyObject utime(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
         
         // Ignore access_time argument since Java does not support it.
         
@@ -1513,8 +1503,8 @@ public class RubyFile extends RubyIO {
     }
     
     @JRubyMethod(name = {"unlink", "delete"}, rest = true, meta = true)
-    public static IRubyObject unlink(IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = recv.getRuntime();
+    public static IRubyObject unlink(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
         
         for (int i = 0; i < args.length; i++) {
             RubyString filename = RubyString.stringValue(args[i]);

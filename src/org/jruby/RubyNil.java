@@ -36,6 +36,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -70,14 +71,17 @@ public class RubyNil extends RubyObject {
         return nilClass;
     }
     
+    @Override
     public int getNativeTypeIndex() {
         return ClassIndex.NIL;
     }
 
+    @Override
     public boolean isImmediate() {
         return true;
     }
 
+    @Override
     public RubyClass getSingletonClass() {
         return metaClass;
     }
@@ -162,15 +166,18 @@ public class RubyNil extends RubyObject {
         return getRuntime().getTrue();
     }
     
+    @Override
     public RubyFixnum id() {
         return getRuntime().newFixnum(4);
     }
     
-    public IRubyObject taint() {
+    @Override
+    public IRubyObject taint(ThreadContext context) {
         return this;
     }
 
-    public IRubyObject freeze() {
+    @Override
+    public IRubyObject freeze(ThreadContext context) {
         return this;
     }
 }

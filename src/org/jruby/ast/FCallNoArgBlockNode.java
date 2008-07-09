@@ -28,8 +28,6 @@ public class FCallNoArgBlockNode extends FCallNode {
 
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        Block block = getBlock(context, self);
-        
-        return callAdapter.callIter(context, self, block);
+        return callAdapter.callIter(context, self, getBlock(context, self));
     }
 }

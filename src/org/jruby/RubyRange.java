@@ -198,7 +198,7 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
-        RubyString str = inspect(context, begin).strDup();
+        RubyString str = inspect(context, begin).strDup(context.getRuntime());
         RubyString str2 = inspect(context, end);
 
         str.cat(isExclusive ? DOTDOTDOT : DOTDOT);
@@ -209,7 +209,7 @@ public class RubyRange extends RubyObject {
     
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
-        RubyString str = RubyString.objAsString(context, begin).strDup();
+        RubyString str = RubyString.objAsString(context, begin).strDup(context.getRuntime());
         RubyString str2 = RubyString.objAsString(context, end);
 
         str.cat(isExclusive ? DOTDOTDOT : DOTDOT);

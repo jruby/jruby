@@ -759,12 +759,12 @@ public class RubyFixnum extends RubyInteger {
     }
 
     @Override
-    public IRubyObject taint() {
+    public IRubyObject taint(ThreadContext context) {
         return this;
     }
 
     @Override
-    public IRubyObject freeze() {
+    public IRubyObject freeze(ThreadContext context) {
         return this;
     }
     
