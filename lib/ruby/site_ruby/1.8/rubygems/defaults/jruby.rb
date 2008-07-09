@@ -1,4 +1,9 @@
+require 'rubygems/config_file'
+
 module Gem
+
+  ConfigFile::PLATFORM_DEFAULTS['install'] = '--env-shebang'
+  ConfigFile::PLATFORM_DEFAULTS['update']  = '--env-shebang'
 
   # Default home directory path to be used if an alternate value is not
   # specified in the environment.
