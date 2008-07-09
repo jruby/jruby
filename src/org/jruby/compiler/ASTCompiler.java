@@ -2356,8 +2356,6 @@ public class ASTCompiler {
     public void compileMultipleAsgnAssignment(Node node, MethodCompiler context) {
         final MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode) node;
 
-        context.ensureMultipleAssignableRubyArray(multipleAsgnNode.getHeadNode() != null);
-
         // normal items at the "head" of the masgn
         ArrayCallback headAssignCallback = new ArrayCallback() {
 
@@ -2402,9 +2400,17 @@ public class ASTCompiler {
             if (multipleAsgnNode.getArgsNode() == null) {
                 throw new NotCompilableException("Something's wrong, multiple assignment with no head or args at: " + multipleAsgnNode.getPosition());
             } else {
-                context.forEachInValueArray(0, 0, null, null, null, argsCallback);
+                if (multipleAsgnNode.getArgsNode() instanceof StarNode) {
+                    // do nothing
+                } else {
+                    context.ensureMultipleAssignableRubyArray(multipleAsgnNode.getHeadNode() != null);
+
+                    context.forEachInValueArray(0, 0, null, null, null, argsCallback);
+                }
             }
         } else {
+            context.ensureMultipleAssignableRubyArray(multipleAsgnNode.getHeadNode() != null);
+            
             if (multipleAsgnNode.getArgsNode() == null) {
                 context.forEachInValueArray(0, multipleAsgnNode.getHeadNode().size(), multipleAsgnNode.getHeadNode(), headAssignCallback, headNilCallback, null);
             } else {
