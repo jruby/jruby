@@ -29,6 +29,7 @@ package org.jruby;
 
 import java.util.Comparator;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 
@@ -73,12 +74,16 @@ public class RubyEnumerable {
     @JRubyMethod(name = "first")
     public static IRubyObject first_0(ThreadContext context, IRubyObject self) {
         Ruby runtime = self.getRuntime();
+        final ThreadContext localContext = context;
         
         final IRubyObject[] holder = new IRubyObject[]{runtime.getNil()};
 
         try {
             callEach(runtime, context, self, new BlockCallback() {
                     public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                        if (localContext != ctx) {
+                            throw ctx.getRuntime().newThreadError("Enumerable#first cannot be parallelized");
+                        }
                         holder[0] = largs[0];
                         throw new ExitIteration();
                     }
@@ -92,6 +97,7 @@ public class RubyEnumerable {
     public static IRubyObject first_1(ThreadContext context, IRubyObject self, final IRubyObject num) {
         final Ruby runtime = self.getRuntime();
         final RubyArray result = runtime.newArray();
+        final ThreadContext localContext = context;
 
         if(RubyNumeric.fix2int(num) < 0) {
             throw runtime.newArgumentError("negative index");
@@ -101,6 +107,9 @@ public class RubyEnumerable {
             callEach(runtime, context, self, new BlockCallback() {
                     private int iter = RubyNumeric.fix2int(num);
                     public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                        if (localContext != ctx) {
+                            throw runtime.newThreadError("Enumerable#first cannot be parallelized");
+                        }
                         if(iter-- == 0) {
                             throw new ExitIteration();
                         }
@@ -144,11 +153,12 @@ public class RubyEnumerable {
             final IRubyObject[][] valuesAndCriteria = new IRubyObject[selfArray.size()][2];
 
             callEach(runtime, context, self, new BlockCallback() {
-                int i = 0;
+                AtomicInteger i = new AtomicInteger(0);
 
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    valuesAndCriteria[i][0] = largs[0];
-                    valuesAndCriteria[i++][1] = block.yield(ctx, largs[0]);
+                    IRubyObject[] myVandC = valuesAndCriteria[i.getAndIncrement()];
+                    myVandC[0] = largs[0];
+                    myVandC[1] = block.yield(ctx, largs[0]);
                     return runtime.getNil();
                 }
             });
@@ -200,7 +210,10 @@ public class RubyEnumerable {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     ctx.setRubyFrameDelta(ctx.getRubyFrameDelta()+2);
                     if (pattern.callMethod(ctx, MethodIndex.OP_EQQ, "===", largs[0]).isTrue()) {
-                        result.append(block.yield(ctx, largs[0]));
+                        IRubyObject value = block.yield(ctx, largs[0]);
+                        synchronized (result) {
+                            result.append(value);
+                        }
                     }
                     ctx.setRubyFrameDelta(ctx.getRubyFrameDelta()-2);
                     return runtime.getNil();
@@ -210,7 +223,9 @@ public class RubyEnumerable {
             callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     if (pattern.callMethod(ctx, MethodIndex.OP_EQQ, "===", largs[0]).isTrue()) {
-                        result.append(largs[0]);
+                        synchronized (result) {
+                            result.append(largs[0]);
+                        }
                     }
                     return runtime.getNil();
                 }
@@ -224,6 +239,7 @@ public class RubyEnumerable {
     public static IRubyObject detect(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
         final Ruby runtime = self.getRuntime();
         final IRubyObject result[] = new IRubyObject[] { null };
+        final ThreadContext localContext = context;
         IRubyObject ifnone = null;
 
         if (args.length == 1) ifnone = args[0];
@@ -231,6 +247,9 @@ public class RubyEnumerable {
         try {
             callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                    if (localContext != ctx) {
+                        throw runtime.newThreadError("Enumerable#detect/find cannot be parallelized");
+                    }
                     if (block.yield(ctx, largs[0]).isTrue()) {
                         result[0] = largs[0];
                         throw JumpException.SPECIAL_JUMP;
@@ -252,7 +271,11 @@ public class RubyEnumerable {
 
         callEach(runtime, context, self, new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                if (block.yield(ctx, largs[0]).isTrue()) result.append(largs[0]);
+                if (block.yield(ctx, largs[0]).isTrue()) {
+                    synchronized (result) {
+                        result.append(largs[0]);
+                    }
+                }
                 return runtime.getNil();
             }
         });
@@ -267,7 +290,11 @@ public class RubyEnumerable {
 
         callEach(runtime, context, self, new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                if (!block.yield(ctx, largs[0]).isTrue()) result.append(largs[0]);
+                if (!block.yield(ctx, largs[0]).isTrue()) {
+                    synchronized (result) {
+                        result.append(largs[0]);
+                    }
+                }
                 return runtime.getNil();
             }
         });
@@ -283,7 +310,10 @@ public class RubyEnumerable {
         if (block.isGiven()) {
             callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    result.append(block.yield(ctx, largs[0]));
+                    IRubyObject value = block.yield(ctx, largs[0]);
+                    synchronized (result) {
+                        result.append(value);
+                    }
                     return runtime.getNil();
                 }
             });
@@ -297,11 +327,15 @@ public class RubyEnumerable {
     public static IRubyObject inject(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
         final Ruby runtime = self.getRuntime();
         final IRubyObject result[] = new IRubyObject[] { null };
+        final ThreadContext localContext = context;
 
         if (args.length == 1) result[0] = args[0];
 
         callEach(runtime, context, self, new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                if (localContext != ctx) {
+                    throw runtime.newThreadError("Enumerable#inject cannot be parallelized");
+                }
                 result[0] = result[0] == null ? 
                         largs[0] : block.yield(ctx, runtime.newArray(result[0], largs[0]), null, null, true);
 
@@ -321,9 +355,13 @@ public class RubyEnumerable {
         callEach(runtime, context, self, new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                 if (block.yield(ctx, largs[0]).isTrue()) {
-                    arr_true.append(largs[0]);
+                    synchronized (arr_true) {
+                        arr_true.append(largs[0]);
+                    }
                 } else {
-                    arr_false.append(largs[0]);
+                    synchronized (arr_false) {
+                        arr_false.append(largs[0]);
+                    }
                 }
 
                 return runtime.getNil();
@@ -360,10 +398,14 @@ public class RubyEnumerable {
     @JRubyMethod(name = {"include?", "member?"}, required = 1, frame = true)
     public static IRubyObject include_p(ThreadContext context, IRubyObject self, final IRubyObject arg) {
         final Ruby runtime = context.getRuntime();
+        final ThreadContext localContext = context;
 
         try {
             callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                    if (localContext != ctx) {
+                        throw runtime.newThreadError("Enumerable#include?/member? cannot be parallelized");
+                    }
                     if (RubyObject.equalInternal(ctx, largs[0], arg)) {
                         throw JumpException.SPECIAL_JUMP;
                     }
@@ -381,10 +423,14 @@ public class RubyEnumerable {
     public static IRubyObject max(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = self.getRuntime();
         final IRubyObject result[] = new IRubyObject[] { null };
+        final ThreadContext localContext = context;
 
         if (block.isGiven()) {
             callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                    if (localContext != ctx) {
+                        throw runtime.newThreadError("Enumerable#max{} cannot be parallelized");
+                    }
                     if (result[0] == null || RubyComparable.cmpint(ctx, block.yield(ctx, 
                             runtime.newArray(largs[0], result[0])), largs[0], result[0]) > 0) {
                         result[0] = largs[0];
@@ -395,9 +441,11 @@ public class RubyEnumerable {
         } else {
             callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    if (result[0] == null || RubyComparable.cmpint(ctx, largs[0].callMethod(ctx,
-                            MethodIndex.OP_SPACESHIP, "<=>", result[0]), largs[0], result[0]) > 0) {
-                        result[0] = largs[0];
+                    synchronized (result) {
+                        if (result[0] == null || RubyComparable.cmpint(ctx, largs[0].callMethod(ctx,
+                                MethodIndex.OP_SPACESHIP, "<=>", result[0]), largs[0], result[0]) > 0) {
+                            result[0] = largs[0];
+                        }
                     }
                     return runtime.getNil();
                 }
@@ -411,10 +459,14 @@ public class RubyEnumerable {
     public static IRubyObject min(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = self.getRuntime();
         final IRubyObject result[] = new IRubyObject[] { null };
+        final ThreadContext localContext = context;
 
         if (block.isGiven()) {
             callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                    if (localContext != ctx) {
+                        throw runtime.newThreadError("Enumerable#min{} cannot be parallelized");
+                    }
                     if (result[0] == null || RubyComparable.cmpint(ctx, block.yield(ctx, 
                             runtime.newArray(largs[0], result[0])), largs[0], result[0]) < 0) {
                         result[0] = largs[0];
@@ -425,9 +477,11 @@ public class RubyEnumerable {
         } else {
             callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    if (result[0] == null || RubyComparable.cmpint(ctx, largs[0].callMethod(ctx,
-                            MethodIndex.OP_SPACESHIP, "<=>", result[0]), largs[0], result[0]) < 0) {
-                        result[0] = largs[0];
+                    synchronized (result) {
+                        if (result[0] == null || RubyComparable.cmpint(ctx, largs[0].callMethod(ctx,
+                                MethodIndex.OP_SPACESHIP, "<=>", result[0]), largs[0], result[0]) < 0) {
+                            result[0] = largs[0];
+                        }
                     }
                     return runtime.getNil();
                 }
@@ -440,11 +494,15 @@ public class RubyEnumerable {
     @JRubyMethod(name = "all?", frame = true)
     public static IRubyObject all_p(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = self.getRuntime();
+        final ThreadContext localContext = context;
 
         try {
             if (block.isGiven()) {
                 callEach(runtime, context, self, new BlockCallback() {
                     public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                        if (localContext != ctx) {
+                            throw runtime.newThreadError("Enumerable#all? cannot be parallelized");
+                        }
                         if (!block.yield(ctx, largs[0]).isTrue()) {
                             throw JumpException.SPECIAL_JUMP;
                         }
@@ -454,6 +512,9 @@ public class RubyEnumerable {
             } else {
                 callEach(runtime, context, self, new BlockCallback() {
                     public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                        if (localContext != ctx) {
+                            throw runtime.newThreadError("Enumerable#all? cannot be parallelized");
+                        }
                         if (!largs[0].isTrue()) {
                             throw JumpException.SPECIAL_JUMP;
                         }
@@ -471,11 +532,15 @@ public class RubyEnumerable {
     @JRubyMethod(name = "any?", frame = true)
     public static IRubyObject any_p(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = self.getRuntime();
+        final ThreadContext localContext = context;
 
         try {
             if (block.isGiven()) {
                 callEach(runtime, context, self, new BlockCallback() {
                     public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                        if (localContext != ctx) {
+                            throw runtime.newThreadError("Enumerable#any? cannot be parallelized");
+                        }
                         if (block.yield(ctx, largs[0]).isTrue()) {
                             throw JumpException.SPECIAL_JUMP;
                         }
@@ -485,6 +550,9 @@ public class RubyEnumerable {
             } else {
                 callEach(runtime, context, self, new BlockCallback() {
                     public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                        if (localContext != ctx) {
+                            throw runtime.newThreadError("Enumerable#any? cannot be parallelized");
+                        }
                         if (largs[0].isTrue()) {
                             throw JumpException.SPECIAL_JUMP;
                         }
@@ -511,16 +579,16 @@ public class RubyEnumerable {
 
         if (block.isGiven()) {
             callEach(runtime, context, self, new BlockCallback() {
-                int ix = 0;
+                AtomicInteger ix = new AtomicInteger(0);
 
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     RubyArray array = runtime.newArray(aLen);
+                    int myIx = ix.getAndIncrement();
                     array.append(largs[0]);
                     for (int i = 0, j = args.length; i < j; i++) {
-                        array.append(((RubyArray) args[i]).entry(ix));
+                        array.append(((RubyArray) args[i]).entry(myIx));
                     }
                     block.yield(ctx, array);
-                    ix++;
                     return runtime.getNil();
                 }
             });
@@ -528,16 +596,18 @@ public class RubyEnumerable {
         } else {
             final RubyArray zip = runtime.newArray();
             callEach(runtime, context, self, new BlockCallback() {
-                int ix = 0;
+                AtomicInteger ix = new AtomicInteger(0);
 
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     RubyArray array = runtime.newArray(aLen);
                     array.append(largs[0]);
+                    int myIx = ix.getAndIncrement();
                     for (int i = 0, j = args.length; i < j; i++) {
-                        array.append(((RubyArray) args[i]).entry(ix));
+                        array.append(((RubyArray) args[i]).entry(myIx));
                     }
-                    zip.append(array);
-                    ix++;
+                    synchronized (zip) {
+                        zip.append(array);
+                    }
                     return runtime.getNil();
                 }
             });
@@ -553,13 +623,15 @@ public class RubyEnumerable {
         callEach(runtime, context, self, new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                 IRubyObject key = block.yield(ctx, largs[0]);
-                IRubyObject curr = result.fastARef(key);
+                synchronized (result) {
+                    IRubyObject curr = result.fastARef(key);
 
-                if (curr == null) {
-                    curr = runtime.newArray();
-                    result.fastASet(key, curr);
+                    if (curr == null) {
+                        curr = runtime.newArray();
+                        result.fastASet(key, curr);
+                    }
+                    curr.callMethod(ctx, MethodIndex.OP_LSHIFT, "<<", largs[0]);
                 }
-                curr.callMethod(ctx, MethodIndex.OP_LSHIFT, "<<", largs[0]);
                 return runtime.getNil();
             }
         });
