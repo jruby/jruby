@@ -554,6 +554,9 @@
         <!-- force client VM to improve test run times -->
         <jvmarg value="-client"/>
 
+        <!-- set a larger max permgen, since the tests load a lot of bytecode -->
+        <jvmarg value="-XX:MaxPermSize=128M"/>
+
 	<formatter type="xml"/>
 	<formatter type="brief" usefile="false" />
 
