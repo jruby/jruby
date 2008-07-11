@@ -2341,22 +2341,31 @@ public class RubyArray extends RubyObject implements List {
     static final class DefaultComparator implements Comparator {
         public int compare(Object o1, Object o2) {
             if (o1 instanceof RubyFixnum && o2 instanceof RubyFixnum) {
-                long a = ((RubyFixnum) o1).getLongValue();
-                long b = ((RubyFixnum) o2).getLongValue();
-                if (a > b) return 1;
-                if (a < b) return -1;
-                return 0;
+                return compareFixnums(o1, o2);
             }
             if (o1 instanceof RubyString && o2 instanceof RubyString) {
                 return ((RubyString) o1).op_cmp((RubyString) o2);
             }
+            //TODO: ary_sort_check should be done here
+            return compareOthers((IRubyObject)o1, (IRubyObject)o2);
+        }
 
-            IRubyObject obj1 = (IRubyObject) o1;
-            IRubyObject obj2 = (IRubyObject) o2;
+        private int compareFixnums(Object o1, Object o2) {
+            long a = ((RubyFixnum) o1).getLongValue();
+            long b = ((RubyFixnum) o2).getLongValue();
+            if (a > b) {
+                return 1;
+            }
+            if (a < b) {
+                return -1;
+            }
+            return 0;
+        }
 
-            ThreadContext context = obj1.getRuntime().getCurrentContext();
-            IRubyObject ret = obj1.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", obj2);
-            int n = RubyComparable.cmpint(context, ret, obj1, obj2);
+        private int compareOthers(IRubyObject o1, IRubyObject o2) {
+            ThreadContext context = o1.getRuntime().getCurrentContext();
+            IRubyObject ret = o1.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", o2);
+            int n = RubyComparable.cmpint(context, ret, o1, o2);
             //TODO: ary_sort_check should be done here
             return n;
         }

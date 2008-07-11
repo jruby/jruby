@@ -166,10 +166,14 @@ public class CompiledBlock extends BlockBody {
         case 1:
             return ((RubyArray)value).eltInternal(0);
         default:
-            ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" +
-                    length + " for 1)");
+            blockArgWarning(ruby, length);
         }
         return value;
+    }
+    
+    private void blockArgWarning(Ruby ruby, int length) {
+        ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" +
+                    length + " for 1)");
     }
 
     protected IRubyObject setupBlockArg(Ruby ruby, IRubyObject value, IRubyObject self) {

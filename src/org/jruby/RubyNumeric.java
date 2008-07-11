@@ -81,6 +81,14 @@ public class RubyNumeric extends RubyObject {
     };
 
     public static double DBL_EPSILON=2.2204460492503131e-16;
+
+    private static IRubyObject convertToNum(double val, Ruby runtime) {
+
+        if (val >= (double) RubyFixnum.MAX || val < (double) RubyFixnum.MIN) {
+            return RubyBignum.newBignum(runtime, val);
+        }
+        return RubyFixnum.newFixnum(runtime, (long) val);
+    }
     
     public RubyNumeric(Ruby runtime, RubyClass metaClass) {
         super(runtime, metaClass);
@@ -183,11 +191,7 @@ public class RubyNumeric extends RubyObject {
         if (Double.isNaN(val)) {
             throw runtime.newFloatDomainError("NaN");
         }
-
-        if (val >= (double) RubyFixnum.MAX || val < (double) RubyFixnum.MIN) {
-            return RubyBignum.newBignum(runtime, val);
-        }
-        return RubyFixnum.newFixnum(runtime, (long) val);
+        return convertToNum(val,runtime);
     }
 
     /** rb_num2dbl and NUM2DBL
@@ -286,28 +290,30 @@ public class RubyNumeric extends RubyObject {
     public static RubyInteger str2inum(Ruby runtime, RubyString str, int base, boolean strict) {
         if (base != 0 && (base < 2 || base > 36)) {
             throw runtime.newArgumentError("illegal radix " + base);
-            }
+        }
         ByteList bytes = str.getByteList();
         try {
-            return runtime.newFixnum(Convert.byteListToLong(bytes,base,strict));
-
+            return runtime.newFixnum(Convert.byteListToLong(bytes, base, strict));
         } catch (InvalidIntegerException e) {
-            if (strict) {
-                throw runtime.newArgumentError("invalid value for Integer: "
-                        + str.callMethod(runtime.getCurrentContext(), "inspect").toString());
-            }
-            return RubyFixnum.zero(runtime);
+            return str2inumIIE(strict, runtime, str);
         } catch (NumberTooLargeException e) {
+            return str2inumNTLE(strict, runtime, str, bytes, base);
+        }
+    }
+
+    private static RubyInteger str2inumIIE(boolean strict, Ruby runtime, RubyString str) throws RaiseException {
+        if (strict) {
+            throw runtime.newArgumentError("invalid value for Integer: " + str.callMethod(runtime.getCurrentContext(), "inspect").toString());
+        }
+        return RubyFixnum.zero(runtime);
+    }
+    
+    private static RubyInteger str2inumNTLE(boolean strict, Ruby runtime, RubyString str, ByteList bytes, int base) {
         try {
-                BigInteger bi = Convert.byteListToBigInteger(bytes,base,strict);
-                return new RubyBignum(runtime,bi);
-            } catch (InvalidIntegerException e2) {
-                if(strict) {
-                    throw runtime.newArgumentError("invalid value for Integer: "
-                            + str.callMethod(runtime.getCurrentContext(), "inspect").toString());
-                }
-                return RubyFixnum.zero(runtime);
-            }
+            BigInteger bi = Convert.byteListToBigInteger(bytes, base, strict);
+            return new RubyBignum(runtime, bi);
+        } catch (InvalidIntegerException e2) {
+            return str2inumIIE(strict, runtime, str);
         }
     }
 
