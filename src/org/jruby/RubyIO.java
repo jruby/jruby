@@ -608,8 +608,10 @@ public class RubyIO extends RubyObject {
     public IRubyObject getline(Ruby runtime, ByteList separator) {
         try {
             OpenFile myOpenFile = getOpenFileChecked();
-            
+
             myOpenFile.checkReadable(runtime);
+            myOpenFile.setReadBuffered();
+
             boolean isParagraph = separator == Stream.PARAGRAPH_DELIMETER;
             separator = (separator == Stream.PARAGRAPH_DELIMETER) ?
                     Stream.PARAGRAPH_SEPARATOR : separator;
@@ -1483,9 +1485,10 @@ public class RubyIO extends RubyObject {
         
         try {
             OpenFile myOpenFile = getOpenFileChecked();
-            
+
             myOpenFile.checkReadable(runtime);
-            
+            myOpenFile.setReadBuffered();
+
             if (myOpenFile.getMainStream().feof()) {
                 return runtime.getTrue();
             }
@@ -1896,8 +1899,9 @@ public class RubyIO extends RubyObject {
     public IRubyObject getc() {
         try {
             OpenFile myOpenFile = getOpenFileChecked();
-            
+
             myOpenFile.checkReadable(getRuntime());
+            myOpenFile.setReadBuffered();
 
             Stream stream = myOpenFile.getMainStream();
             
@@ -1954,7 +1958,8 @@ public class RubyIO extends RubyObject {
         
         try {
             myOpenFile.checkReadable(getRuntime());
-        
+            myOpenFile.setReadBuffered();
+
             if (myOpenFile.getMainStream().ungetc(ch) == -1 && ch != -1) {
                 throw getRuntime().newIOError("ungetc failed");
             }
@@ -2089,6 +2094,7 @@ public class RubyIO extends RubyObject {
         if (argCount == 0 || args[0].isNil()) {
             try {
                 myOpenFile.checkReadable(getRuntime());
+                myOpenFile.setReadBuffered();
 
                 if (args.length == 2) {
                     return readAll(args[1]);
@@ -2132,6 +2138,7 @@ public class RubyIO extends RubyObject {
 
         try {
             myOpenFile.checkReadable(getRuntime());
+            myOpenFile.setReadBuffered();
 
             if (myOpenFile.getMainStream().feof()) {
                 return getRuntime().getNil();
@@ -2361,7 +2368,8 @@ public class RubyIO extends RubyObject {
             
             while (true) {
                 myOpenFile.checkReadable(runtime);
-                
+                myOpenFile.setReadBuffered();
+
                 // TODO: READ_CHECK from MRI
                 
                 int c = myOpenFile.getMainStream().fgetc();

@@ -92,11 +92,10 @@ public class OpenFile {
             throw runtime.newIOError("not opened for reading");
         }
 
-        if (((mode & WBUF) != 0 || (mode & (SYNCWRITE | RBUF)) == SYNCWRITE) && !mainStream.feof() && pipeStream == null) {
+        if (((mode & WBUF) != 0 || (mode & (SYNCWRITE | RBUF)) == SYNCWRITE)
+                && !mainStream.feof() && pipeStream == null) {
             seek(0, Stream.SEEK_CUR);
         }
-
-        mode |= RBUF;
     }
 
     public void seek(long offset, int whence) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
