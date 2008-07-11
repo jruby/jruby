@@ -154,16 +154,7 @@ public class ReflectedJavaMethod extends JavaMethod {
             throw RaiseException.createNativeRaiseException(runtime, e);
         } catch (InvocationTargetException e) {
             Throwable cause = e.getCause();
-            if (cause instanceof JumpException.ReturnJump) {
-                JumpException.FlowControlException f = (JumpException.FlowControlException)cause;
-                if (f.getTarget() == this) {
-                    return (IRubyObject)f.getValue();
-                } else {
-                    throw f;
-                }
-            } else if (cause instanceof JumpException.RedoJump) {
-                throw runtime.newLocalJumpError("redo", runtime.getNil(), "unexpected redo");
-            } else if (cause instanceof RuntimeException) {
+            if (cause instanceof RuntimeException) {
                 throw (RuntimeException)cause;
             } else if (cause instanceof Error) {
                 throw (Error)cause;

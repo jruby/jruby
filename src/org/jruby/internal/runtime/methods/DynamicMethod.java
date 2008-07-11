@@ -30,7 +30,10 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.MetaClass;
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -444,5 +447,16 @@ public abstract class DynamicMethod {
      */
     public boolean isNative() {
         return false;
+    }
+
+    protected IRubyObject handleRedo(Ruby runtime) throws RaiseException {
+        throw runtime.newLocalJumpError("redo", runtime.getNil(), "unexpected redo");
+    }
+
+    protected IRubyObject handleReturn(ThreadContext context, JumpException.ReturnJump rj) {
+        if (rj.getTarget() == context.getFrameJumpTarget()) {
+            return (IRubyObject) rj.getValue();
+        }
+        throw rj;
     }
 }

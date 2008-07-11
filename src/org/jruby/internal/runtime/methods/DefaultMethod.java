@@ -385,17 +385,6 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         }
         jitCallConfig.post(context);
     }
-    
-    private IRubyObject handleReturn(ThreadContext context, JumpException.ReturnJump rj) {
-        if (rj.getTarget() == context.getFrameJumpTarget()) {
-            return (IRubyObject) rj.getValue();
-        }
-        throw rj;
-    }
-
-    private IRubyObject handleRedo(Ruby runtime) throws RaiseException {
-        throw runtime.newLocalJumpError("redo", runtime.getNil(), "unexpected redo");
-    }
 
     private void prepareArguments(ThreadContext context, Ruby runtime, IRubyObject[] args) {
         if (requiredArgsCount > args.length) {

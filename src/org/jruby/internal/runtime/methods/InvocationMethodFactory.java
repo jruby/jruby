@@ -337,7 +337,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                             mv.aload(0);
                             mv.swap();
                             mv.aload(1);
-                            mv.invokevirtual(COMPILED_SUPER_CLASS, "handleReturnJump", sig(IRubyObject.class, JumpException.ReturnJump.class, ThreadContext.class));
+                            mv.swap();
+                            mv.invokevirtual(COMPILED_SUPER_CLASS, "handleReturn", sig(IRubyObject.class, ThreadContext.class, JumpException.ReturnJump.class));
                             mv.label(doReturnFinally);
 
                             // finally
@@ -993,30 +994,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         return cw;
     }
 
-    private void handleRedo(Label tryRedoJump, SkinnyMethodAdapter mv, Label tryFinally) {
-        mv.label(tryRedoJump);
-
-        // clear the redo
-        mv.pop();
-
-        // get runtime, dup it
-        mv.aload(1);
-        mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-        mv.invokevirtual(p(Ruby.class), "newRedoLocalJumpError", sig(RaiseException.class));
-        mv.go_to(tryFinally);
-    }
-
-    private void handleReturn(Label catchReturnJump, SkinnyMethodAdapter mv, Label doFinally, Label normalExit, String typePath) {
-        mv.label(catchReturnJump);
-
-        mv.aload(0);
-        mv.swap();
-        mv.invokevirtual(typePath, "handleReturnJump", sig(IRubyObject.class, JumpException.ReturnJump.class));
-
-        mv.astore(8);
-        mv.go_to(normalExit);
-    }
-
     private void invokeCallConfigPost(SkinnyMethodAdapter mv, String superClass, CallConfiguration callConfig) {
         if (callConfig != CallConfiguration.NO_FRAME_NO_SCOPE) {
             mv.aload(0);
@@ -1354,11 +1331,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         Label catchRedoJump = new Label();
 
         if (!callConfig.isNoop()) {
-            // only need return/redo handling for block-receiving methods
-            if (block) {
-                method.trycatch(tryBegin, tryEnd, catchRedoJump, p(JumpException.RedoJump.class));
-                method.trycatch(catchRedoJump, doRedoFinally, doFinally, null);
-            }
             method.trycatch(tryBegin, tryEnd, doFinally, null);
         }
         
@@ -1396,37 +1368,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         
         // these are only needed if we have a non-noop call config
         if (!callConfig.isNoop()) {
-            // we only need redo jump handling if we've got a block, since it would only come from yields
-            if (block) {
-                // redo jump handling
-                method.label(catchRedoJump);
-                {
-                    // clear the redo
-                    method.pop();
-
-                    // get runtime, create jump error, and throw it
-                    method.aload(1);
-                    method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-                    method.invokevirtual(p(Ruby.class), "newRedoLocalJumpError", sig(RaiseException.class));
-
-                    // finally logic
-                    {
-                        method.label(doRedoFinally);
-
-                        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                            invokeCReturnTrace(method);
-                        }
-
-                        if (!callConfig.isNoop()) {
-                            invokeCallConfigPost(method, superClass, callConfig);
-                        }
-                    }
-
-                    // throw redo error if we're still good
-                    method.athrow();
-                }
-            }
-
             // finally handling for abnormal exit
             {
                 method.label(doFinally);
