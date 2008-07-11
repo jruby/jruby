@@ -88,10 +88,10 @@ public class CallBlock extends BlockBody {
     }
 
     public Block cloneBlock(Binding binding) {
-        binding = new Binding(binding.getSelf(), context.getCurrentFrame().duplicate(),
+        binding = new Binding(binding.getSelf(), binding.getFrame().duplicate(),
                 Visibility.PUBLIC,
-                context.getRubyClass(),
-                context.getCurrentScope());
+                binding.getKlass(),
+                binding.getDynamicScope());
         return new Block(this, binding);
     }
 
