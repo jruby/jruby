@@ -127,25 +127,23 @@ public class FlipNode extends Node {
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         DynamicScope scope = context.getCurrentScope();
+        IRubyObject nil = runtime.getNil();
         int index = getIndex();
-        int depth = getDepth();
 
         // Make sure the appropriate scope has proper size. See JRUBY-2046.
-        DynamicScope nthParent = scope.getNthParentScope(depth);
-        if (nthParent != null) {
-            nthParent.growIfNeeded();
-        }
+        DynamicScope flipScope = scope.getFlipScope();
+        flipScope.growIfNeeded();
         
-        IRubyObject result = scope.getValue(index, depth);
+        IRubyObject result = flipScope.getValueDepthZeroOrNil(index, nil);
    
         if (exclusive) {
             if (result == null || !result.isTrue()) {
                 result = beginNode.interpret(runtime, context, self, aBlock).isTrue() ? runtime.getTrue() : runtime.getFalse();
-                scope.setValue(index, result, depth);
+                flipScope.setValueDepthZero(result, index);
                 return result;
             } else {
                 if (endNode.interpret(runtime, context, self, aBlock).isTrue()) {
-                    scope.setValue(index, runtime.getFalse(), depth);
+                    flipScope.setValueDepthZero(runtime.getFalse(), index);
                 }
                 
                 return runtime.getTrue();
@@ -153,14 +151,14 @@ public class FlipNode extends Node {
         } else {
             if (result == null || !result.isTrue()) {
                 if (beginNode.interpret(runtime, context, self, aBlock).isTrue()) {
-                    scope.setValue(index, endNode.interpret(runtime, context, self, aBlock).isTrue() ? runtime.getFalse() : runtime.getTrue(), depth);
+                    flipScope.setValueDepthZero(endNode.interpret(runtime, context, self, aBlock).isTrue() ? runtime.getFalse() : runtime.getTrue(), index);
                     return runtime.getTrue();
                 } 
 
                 return runtime.getFalse();
             } else {
                 if (endNode.interpret(runtime, context, self, aBlock).isTrue()) {
-                    scope.setValue(index, runtime.getFalse(), depth);
+                    flipScope.setValueDepthZero(runtime.getFalse(), index);
                 }
                 return runtime.getTrue();
             }

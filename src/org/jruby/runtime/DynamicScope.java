@@ -4,6 +4,7 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.runtime.scope.NoVarsDynamicScope;
 import org.jruby.runtime.scope.OneVarDynamicScope;
 import org.jruby.parser.BlockStaticScope;
+import org.jruby.parser.EvalStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -30,13 +31,6 @@ public abstract class DynamicScope {
     }
     
     public static DynamicScope newDynamicScope(StaticScope staticScope, DynamicScope parent) {
-        // Dynamic scopes with local static scopes must always
-        // be ManyVarsDynamicScopes, since local scopes might grow
-        // (e.g., when evaling the flip). See JRUBY-2046.
-        if (staticScope.getLocalScope() == staticScope) {
-            return new ManyVarsDynamicScope(staticScope, parent);
-        }
-
         switch (staticScope.getNumberOfVariables()) {
         case 0:
             return new NoVarsDynamicScope(staticScope, parent);
@@ -98,11 +92,25 @@ public abstract class DynamicScope {
                 evalScope = this;
             } else {
                 // bindings scopes must always be ManyVars scopes since evals can grow them
-                evalScope = new ManyVarsDynamicScope(new BlockStaticScope(getStaticScope()), this);
+                evalScope = new ManyVarsDynamicScope(new EvalStaticScope(getStaticScope()), this);
             }
         }
         
         return evalScope;
+    }
+    
+    /**
+     * Find the scope to use for flip-flops. Flip-flops live either in the
+     * topmost "method scope" or in their nearest containing "eval scope".
+     * 
+     * @return The scope to use for flip-flops
+     */
+    public DynamicScope getFlipScope() {
+        if (staticScope.getLocalScope() == staticScope) {
+            return this;
+        } else {
+            return parent.getFlipScope();
+        }
     }
     
     /**
