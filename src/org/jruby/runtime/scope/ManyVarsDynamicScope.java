@@ -29,13 +29,15 @@ public class ManyVarsDynamicScope extends DynamicScope {
 
     public ManyVarsDynamicScope(StaticScope staticScope, DynamicScope parent) {
         super(staticScope, parent);
+        allocate();
     }
 
     public ManyVarsDynamicScope(StaticScope staticScope) {
         super(staticScope);
+        allocate();
     }
 
-    private void lazy() {
+    private void allocate() {
         if(variableValues == null) {
             int size = staticScope.getNumberOfVariables();
             variableValues = new IRubyObject[size];
@@ -47,7 +49,6 @@ public class ManyVarsDynamicScope extends DynamicScope {
     }
 
     public IRubyObject[] getValues() {
-        lazy();
         return variableValues;
     }
     
@@ -65,7 +66,6 @@ public class ManyVarsDynamicScope extends DynamicScope {
         if (depth > 0) {
             return parent.getValue(offset, depth - 1);
         }
-        lazy();
         assert variableValues != null : "No variables in getValue for off: " + offset + ", Dep: " + depth;
         assert offset < variableValues.length : "Index to big for getValue off: " + offset + ", Dep: " + depth + ", O: " + this;
         // &foo are not getting set from somewhere...I want the following assert to be true though
@@ -85,7 +85,6 @@ public class ManyVarsDynamicScope extends DynamicScope {
     }
     
     public IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil) {
-        lazy();
         assert variableValues != null : "No variables in getValue for off: " + offset + ", Dep: " + 0;
         assert offset < variableValues.length : "Index to big for getValue off: " + offset + ", Dep: " + 0 + ", O: " + this;
         // &foo are not getting set from somewhere...I want the following assert to be true though
@@ -98,7 +97,6 @@ public class ManyVarsDynamicScope extends DynamicScope {
         return value;
     }
     public IRubyObject getValueZeroDepthZeroOrNil(IRubyObject nil) {
-        lazy();
         assert variableValues != null : "No variables in getValue for off: " + 0 + ", Dep: " + 0;
         assert 0 < variableValues.length : "Index to big for getValue off: " + 0 + ", Dep: " + 0 + ", O: " + this;
         // &foo are not getting set from somewhere...I want the following assert to be true though
@@ -111,7 +109,6 @@ public class ManyVarsDynamicScope extends DynamicScope {
         return value;
     }
     public IRubyObject getValueOneDepthZeroOrNil(IRubyObject nil) {
-        lazy();
         assert variableValues != null : "No variables in getValue for off: " + 1 + ", Dep: " + 0;
         assert 1 < variableValues.length : "Index to big for getValue off: " + 1 + ", Dep: " + 0 + ", O: " + this;
         // &foo are not getting set from somewhere...I want the following assert to be true though
@@ -137,7 +134,6 @@ public class ManyVarsDynamicScope extends DynamicScope {
             
             return parent.setValue(offset, value, depth - 1);
         } else {
-            lazy();
             assert offset < variableValues.length : "Setting " + offset + " to " + value + ", O: " + this; 
             
             return variableValues[offset] = value;
@@ -145,19 +141,16 @@ public class ManyVarsDynamicScope extends DynamicScope {
     }
 
     public IRubyObject setValueDepthZero(IRubyObject value, int offset) {
-        lazy();
         assert offset < variableValues.length : "Setting " + offset + " to " + value + ", O: " + this; 
 
         return variableValues[offset] = value;
     }
     public IRubyObject setValueZeroDepthZero(IRubyObject value) {
-        lazy();
         assert 0 < variableValues.length : "Setting " + 0 + " to " + value + ", O: " + this; 
 
         return variableValues[0] = value;
     }
     public IRubyObject setValueOneDepthZero(IRubyObject value) {
-        lazy();
         assert 1 < variableValues.length : "Setting " + 1 + " to " + value + ", O: " + this; 
 
         return variableValues[1] = value;
@@ -175,7 +168,6 @@ public class ManyVarsDynamicScope extends DynamicScope {
      * @param size is the number of values to assign as ordinary parm values
      */
     public void setArgValues(IRubyObject[] values, int size) {
-        lazy();
         System.arraycopy(values, 0, variableValues, 0, size);
     }
 
@@ -187,7 +179,6 @@ public class ManyVarsDynamicScope extends DynamicScope {
         if (!staticScope.isArgumentScope()) {
             return parent.getArgValues();
         }
-        lazy();
         int totalArgs = staticScope.getRequiredArgs() + staticScope.getOptionalArgs();
         
         // copy and splat arguments out of the scope to use for zsuper call
@@ -221,7 +212,6 @@ public class ManyVarsDynamicScope extends DynamicScope {
      *
      */
     public void growIfNeeded() {
-        lazy();
         int dynamicSize = variableValues == null ? 0: variableValues.length;
         
         if (staticScope.getNumberOfVariables() > dynamicSize) {
@@ -237,7 +227,6 @@ public class ManyVarsDynamicScope extends DynamicScope {
 
     // Helper function to give a good view of current dynamic scope with captured scopes
     public String toString(StringBuffer buf, String indent) {
-        lazy();
         buf.append(indent).append("Static Type[" + hashCode() + "]: " + 
                 (staticScope instanceof BlockStaticScope ? "block" : "local")+" [");
         int size = staticScope.getNumberOfVariables();
