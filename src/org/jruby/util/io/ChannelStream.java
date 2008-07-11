@@ -96,6 +96,7 @@ public class ChannelStream implements Stream, Finalizable {
     private ChannelDescriptor descriptor;
     private boolean blocking = true;
     protected int ungotc = -1;
+    private volatile boolean closedExplicitly = false;
 
     public ChannelStream(Ruby runtime, ChannelDescriptor descriptor, ModeFlags modes, FileDescriptor fileDescriptor) throws InvalidValueException {
         descriptor.checkNewModes(modes);
@@ -378,13 +379,14 @@ public class ChannelStream implements Stream, Finalizable {
      * @see org.jruby.util.IOHandler#close()
      */
     public synchronized void fclose() throws IOException, BadDescriptorException {
-        close(false); // not closing from finalise
+        closedExplicitly = true;
+        close(false); // not closing from finalize
     }
-    
+
     /**
      * Internal close, to safely work for finalizing.
      * @param finalizing true if this is in a finalizing context
-     * @throws IOException 
+     * @throws IOException
      * @throws BadDescriptorException
      */
     private void close(boolean finalizing) throws IOException, BadDescriptorException {
@@ -394,12 +396,13 @@ public class ChannelStream implements Stream, Finalizable {
             descriptor.close();
             buffer = EMPTY_BUFFER;
 
-            if (DEBUG) getLogger("ChannelStream").info("Descriptor for fileno " + descriptor.getFileno() + " closed by stream");
+            if (DEBUG) getLogger("ChannelStream").info("Descriptor for fileno "
+                    + descriptor.getFileno() + " closed by stream");
         } finally {
             if (!finalizing) getRuntime().removeInternalFinalizer(this);
         }
     }
-    
+
     /**
      * Internal close, to safely work for finalizing.
      * @param finalizing true if this is in a finalizing context
@@ -806,16 +809,20 @@ public class ChannelStream implements Stream, Finalizable {
             if (posOverrun != 0) fileChannel.position(fileChannel.position() - posOverrun);
         }
     }
-    
+
     /**
      * Ensure close (especially flush) when we're finished with
      */
     @Override
-    public void finalize() {
+    public synchronized void finalize() {
+        if (closedExplicitly) return;
+
         // FIXME: I got a bunch of NPEs when I didn't check for nulls here...HOW?!
-        if (descriptor != null && descriptor.isSeekable() && descriptor.isOpen()) closeForFinalize(); // close without removing from finalizers
+        if (descriptor != null && descriptor.isSeekable() && descriptor.isOpen()) {
+            closeForFinalize(); // close without removing from finalizers
+        }
     }
-    
+
     public int ready() throws IOException {
         return newInputStream().available();
     }
