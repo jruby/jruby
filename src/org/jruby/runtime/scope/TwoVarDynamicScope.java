@@ -163,8 +163,12 @@ public class TwoVarDynamicScope extends DynamicScope {
      */
     public void setArgValues(IRubyObject[] values, int size) {
         assert values.length == 2 : "TwoVarDynamicScope only supports scopes with two variables";
-        variableValueZero = values[0];
-        variableValueZero = values[1];
+        switch (size) {
+        case 2:
+            variableValueOne = values[1];
+        case 1:
+            variableValueZero = values[0];
+        }
     }
 
     @Override
@@ -178,10 +182,15 @@ public class TwoVarDynamicScope extends DynamicScope {
         
         // copy and splat arguments out of the scope to use for zsuper call
         if (staticScope.getRestArg() < 0) {
-            if (totalArgs == 1) {
-                return new IRubyObject[] {variableValueZero, variableValueOne};
-            } else {
+            switch (totalArgs) {
+            case 0:
                 return IRubyObject.NULL_ARRAY;
+            case 1:
+                return new IRubyObject[] {variableValueZero};
+            case 2:
+                return new IRubyObject[] {variableValueZero, variableValueOne};
+            default:
+                throw new RuntimeException("more args requested than available variables");
             }
         } else {
             // rest arg must be splatted
@@ -192,6 +201,12 @@ public class TwoVarDynamicScope extends DynamicScope {
             RubyArray splattedArgs = RuntimeHelpers.splatValue(restArg);            
             IRubyObject[] argValues = new IRubyObject[totalArgs + splattedArgs.size()];
             System.arraycopy(splattedArgs.toJavaArray(), 0, argValues, totalArgs, splattedArgs.size());
+            switch (totalArgs) {
+            case 2:
+                argValues[1] = variableValueOne;
+            case 1:
+                argValues[0] = variableValueZero;
+            }
             
             return argValues;
         }

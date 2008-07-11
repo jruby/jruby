@@ -133,7 +133,9 @@ public class OneVarDynamicScope extends DynamicScope {
      */
     public void setArgValues(IRubyObject[] values, int size) {
         assert values.length == 1 : "SingleVarDynamicScope only supports one variable";
-        variableValue = values[0];
+        if (size == 1) {
+            variableValue = values[0];
+        }
     }
 
     @Override
@@ -161,6 +163,10 @@ public class OneVarDynamicScope extends DynamicScope {
             RubyArray splattedArgs = RuntimeHelpers.splatValue(restArg);            
             IRubyObject[] argValues = new IRubyObject[totalArgs + splattedArgs.size()];
             System.arraycopy(splattedArgs.toJavaArray(), 0, argValues, totalArgs, splattedArgs.size());
+            
+            if (totalArgs == 1) {
+                argValues[0] = variableValue;
+            }
             
             return argValues;
         }
