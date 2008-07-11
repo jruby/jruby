@@ -178,10 +178,14 @@
 
   <target name="jar-jruby" unless="jar-up-to-date">    
       <antcall target="generate-method-classes" inheritall="true"/>
-      <exec executable="ruby" dir="${basedir}">
+
+      <!-- TODO: Unfortunate dependency on ruby executable, and ruby might
+           not be present on user's side, so we ignore errors caused by that. -->
+      <exec executable="ruby" dir="${basedir}" failifexecutionfails="false">
         <arg value="tool/snapshot.rb"/>
         <arg value="${jruby.classes.dir}/org/jruby/jruby.properties"/>
       </exec>
+
       <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0rc7.jar"/>
       <jarjar destfile="${lib.dir}/jruby.jar">
         <fileset dir="${jruby.classes.dir}">
