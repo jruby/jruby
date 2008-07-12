@@ -111,7 +111,8 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     }
                     out.println("        JavaMethod javaMethod;");
                     out.println("        DynamicMethod moduleMethod;");
-                    out.println("        RubyClass metaClass;");
+                    out.println("        RubyClass metaClass = cls.getMetaClass();");
+                    out.println("        RubyModule singletonClass;");
                     out.println("        CompatVersion compatVersion = cls.getRuntime().getInstanceConfig().getCompatVersion();");
 
                     Map<String, List<MethodDeclaration>> annotatedMethods = new HashMap<String, List<MethodDeclaration>>();
@@ -257,7 +258,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                             actualRequired,
                             anno.optional(),
                             false);
-                    String implClass = anno.meta() ? "cls.getSingletonClass()" : "cls";
+                    String implClass = anno.meta() ? "metaClass" : "cls";
 
                     out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility() + ");");
                     out.println("        populateMethod(javaMethod, " +
@@ -292,7 +293,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                             actualRequired,
                             anno.optional(),
                             true);
-                    String implClass = anno.meta() ? "cls.getSingletonClass()" : "cls";
+                    String implClass = anno.meta() ? "metaClass" : "cls";
 
                     out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility() + ");");
                     out.println("        populateMethod(javaMethod, " +
@@ -392,7 +393,6 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                 //RubyModule metaClass = module.metaClass;
 
                 if (jrubyMethod.meta()) {
-                    out.println("        metaClass = cls.getMetaClass();");
                     String baseName;
                     if (jrubyMethod.name().length == 0) {
                         baseName = md.getSimpleName();
@@ -428,27 +428,24 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     }
 
                     if (jrubyMethod.module()) {
-                        out.println("        metaClass = cls.getSingletonClass();");
-                        // module/singleton methods are all defined public
-                        out.println("        moduleMethod = javaMethod.dup();");
-                        out.println("        moduleMethod.setImplementationClass(cls.getSingletonClass());");
-                        out.println("        moduleMethod.setVisibility(Visibility.PUBLIC);");
+                        out.println("        moduleMethod = populateModuleMethod(cls, javaMethod);");
+                        out.println("        singletonClass = moduleMethod.getImplementationClass();");
 
                         //                        RubyModule singletonClass = module.getSingletonClass();
 
                         if (jrubyMethod.name().length == 0) {
                             baseName = md.getSimpleName();
-                            out.println("        metaClass.addMethod(\"" + baseName + "\", moduleMethod);");
+                            out.println("        singletonClass.addMethod(\"" + baseName + "\", moduleMethod);");
                         } else {
                             baseName = jrubyMethod.name()[0];
                             for (String name : jrubyMethod.name()) {
-                                out.println("        metaClass.addMethod(\"" + name + "\", moduleMethod);");
+                                out.println("        singletonClass.addMethod(\"" + name + "\", moduleMethod);");
                             }
                         }
 
                         if (jrubyMethod.alias().length > 0) {
                             for (String alias : jrubyMethod.alias()) {
-                                out.println("        metaClass.defineAlias(\"" + alias + "\", \"" + baseName + "\");");
+                                out.println("        singletonClass.defineAlias(\"" + alias + "\", \"" + baseName + "\");");
                             }
                         }
                     }
