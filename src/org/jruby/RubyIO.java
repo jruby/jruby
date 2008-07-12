@@ -64,6 +64,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.posix.util.FieldAccess;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
@@ -1347,9 +1348,6 @@ public class RubyIO extends RubyObject {
         return object;
     }
 
-    // This was a getOpt with one mandatory arg, but it did not work
-    // so I am parsing it for now.
-    @JRubyMethod(name = "seek", required = 1, optional = 1)
     public RubyFixnum seek(ThreadContext context, IRubyObject[] args) {
         long offset = RubyNumeric.num2long(args[0]);
         int whence = Stream.SEEK_SET;
@@ -1358,6 +1356,26 @@ public class RubyIO extends RubyObject {
             whence = RubyNumeric.fix2int(args[1].convertToInteger());
         }
         
+        return doSeek(context, offset, whence);
+    }
+
+    @JRubyMethod(name = "seek")
+    public RubyFixnum seek(ThreadContext context, IRubyObject arg0) {
+        long offset = RubyNumeric.num2long(arg0);
+        int whence = Stream.SEEK_SET;
+        
+        return doSeek(context, offset, whence);
+    }
+
+    @JRubyMethod(name = "seek")
+    public RubyFixnum seek(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        long offset = RubyNumeric.num2long(arg0);
+        int whence = RubyNumeric.fix2int(arg1.convertToInteger());
+        
+        return doSeek(context, offset, whence);
+    }
+    
+    private RubyFixnum doSeek(ThreadContext context, long offset, int whence) {
         OpenFile myOpenFile = getOpenFileChecked();
         
         try {
@@ -2085,22 +2103,69 @@ public class RubyIO extends RubyObject {
         }
     }
     
-    @JRubyMethod(name = "read", optional = 2)
     public IRubyObject read(IRubyObject[] args) {
-        int argCount = args.length;
+        ThreadContext context = getRuntime().getCurrentContext();
+        
+        switch (args.length) {
+        case 0: return read(context);
+        case 1: return read(context, args[0]);
+        case 2: return read(context, args[0], args[1]);
+        default: throw getRuntime().newArgumentError(args.length, 2);
+        }
+    }
+    
+    @JRubyMethod(name = "read")
+    public IRubyObject read(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        OpenFile myOpenFile = getOpenFileChecked();
+        
+        try {
+            myOpenFile.checkReadable(runtime);
+            myOpenFile.setReadBuffered();
+
+            return readAll(getRuntime().getNil());
+        } catch (PipeException ex) {
+            throw getRuntime().newErrnoEPIPEError();
+        } catch (InvalidValueException ex) {
+            throw getRuntime().newErrnoEINVALError();
+        } catch (EOFException ex) {
+            throw getRuntime().newEOFError();
+        } catch (IOException ex) {
+            throw getRuntime().newIOErrorFromException(ex);
+        } catch (BadDescriptorException ex) {
+            throw getRuntime().newErrnoEBADFError();
+        }
+    }
+    
+    @JRubyMethod(name = "read")
+    public IRubyObject read(ThreadContext context, IRubyObject arg0) {
+        if (arg0.isNil()) {
+            return read(context);
+        }
         
         OpenFile myOpenFile = getOpenFileChecked();
         
-        if (argCount == 0 || args[0].isNil()) {
+        int length = RubyNumeric.num2int(arg0);
+        
+        if (length < 0) {
+            throw getRuntime().newArgumentError("negative length " + length + " given");
+        }
+        
+        RubyString str = null;
+
+        return readNotAll(context, myOpenFile, length, str);
+    }
+    
+    @JRubyMethod(name = "read")
+    public IRubyObject read(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        OpenFile myOpenFile = getOpenFileChecked();
+        
+        if (arg0.isNil()) {
             try {
                 myOpenFile.checkReadable(getRuntime());
                 myOpenFile.setReadBuffered();
 
-                if (args.length == 2) {
-                    return readAll(args[1]);
-                } else {
-                    return readAll(getRuntime().getNil());
-                }
+                return readAll(arg1);
             } catch (PipeException ex) {
                 throw getRuntime().newErrnoEPIPEError();
             } catch (InvalidValueException ex) {
@@ -2114,7 +2179,7 @@ public class RubyIO extends RubyObject {
             }
         }
         
-        int length = RubyNumeric.num2int(args[0]);
+        int length = RubyNumeric.num2int(arg0);
         
         if (length < 0) {
             throw getRuntime().newArgumentError("negative length " + length + " given");
@@ -2122,11 +2187,11 @@ public class RubyIO extends RubyObject {
         
         RubyString str = null;
 //        ByteList buffer = null;
-        if (args.length == 1 || args[1].isNil()) {
+        if (arg1.isNil()) {
 //            buffer = new ByteList(length);
 //            str = RubyString.newString(getRuntime(), buffer);
         } else {
-            str = args[1].convertToString();
+            str = arg1.convertToString();
             str.modify(length);
 
             if (length == 0) {
@@ -2135,13 +2200,19 @@ public class RubyIO extends RubyObject {
 
 //            buffer = str.getByteList();
         }
-
+        
+        return readNotAll(context, myOpenFile, length, str);
+    }
+    
+    private IRubyObject readNotAll(ThreadContext context, OpenFile myOpenFile, int length, RubyString str) {
+        Ruby runtime = context.getRuntime();
+        
         try {
-            myOpenFile.checkReadable(getRuntime());
+            myOpenFile.checkReadable(runtime);
             myOpenFile.setReadBuffered();
 
             if (myOpenFile.getMainStream().feof()) {
-                return getRuntime().getNil();
+                return runtime.getNil();
             }
 
             // TODO: Ruby locks the string here
@@ -2165,7 +2236,7 @@ public class RubyIO extends RubyObject {
             
             if (newBuffer == null || newBuffer.length() == 0) {
                 if (myOpenFile.getMainStream() == null) {
-                    return getRuntime().getNil();
+                    return runtime.getNil();
                 }
 
                 if (myOpenFile.getMainStream().feof()) {
@@ -2174,7 +2245,7 @@ public class RubyIO extends RubyObject {
                         str.setValue(ByteList.EMPTY_BYTELIST.dup());
                     }
                 
-                    return getRuntime().getNil();
+                    return runtime.getNil();
                 }
 
                 // Removed while working on JRUBY-2386, since fixes for that
@@ -2193,9 +2264,9 @@ public class RubyIO extends RubyObject {
             // FIXME: I don't like the null checks here
             if (str == null) {
                 if (newBuffer == null) {
-                    str = RubyString.newEmptyString(getRuntime());
+                    str = RubyString.newEmptyString(runtime);
                 } else {
-                    str = RubyString.newString(getRuntime(), newBuffer);
+                    str = RubyString.newString(runtime, newBuffer);
                 }
             } else {
                 if (newBuffer == null) {
@@ -2208,15 +2279,15 @@ public class RubyIO extends RubyObject {
 
             return str;
         } catch (EOFException ex) {
-            throw getRuntime().newEOFError();
+            throw runtime.newEOFError();
         } catch (PipeException ex) {
-            throw getRuntime().newErrnoEPIPEError();
+            throw runtime.newErrnoEPIPEError();
         } catch (InvalidValueException ex) {
-            throw getRuntime().newErrnoEINVALError();
+            throw runtime.newErrnoEINVALError();
         } catch (IOException ex) {
-            throw getRuntime().newIOErrorFromException(ex);
+            throw runtime.newIOErrorFromException(ex);
         } catch (BadDescriptorException ex) {
-            throw getRuntime().newErrnoEBADFError();
+            throw runtime.newErrnoEBADFError();
         }
     }
     
@@ -2634,29 +2705,63 @@ public class RubyIO extends RubyObject {
        }
    }
    
-    @JRubyMethod(name = "read", required = 1, optional = 2, meta = true)
     public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-       IRubyObject[] fileArguments = new IRubyObject[] {args[0]};
+        switch (args.length) {
+        case 0: throw context.getRuntime().newArgumentError(0, 1);
+        case 1: return read(context, recv, args[0], block);
+        case 2: return read(context, recv, args[0], args[1], block);
+        case 3: return read(context, recv, args[0], args[1], args[2], block);
+        default: throw context.getRuntime().newArgumentError(args.length, 3);
+        }
+   }
+   
+    @JRubyMethod(name = "read", meta = true)
+    public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
+       IRubyObject[] fileArguments = new IRubyObject[] {arg0};
        RubyIO file = (RubyIO) RubyKernel.open(context, recv, fileArguments, block);
-       IRubyObject[] readArguments;
-       
-       if (args.length >= 2 && !args[1].isNil()) {
-           readArguments = new IRubyObject[] {args[1].convertToInteger()};
-       } else {
-           readArguments = new IRubyObject[] {};
-       }
        
        try {
-           
-           if (args.length == 3 && !args[2].isNil()) {
-               file.seek(context, new IRubyObject[] {args[2].convertToInteger()});
-           }
-           
-           return file.read(readArguments);
+           return file.read(context);
        } finally {
            file.close();
        }
    }
+   
+    @JRubyMethod(name = "read", meta = true)
+    public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
+       IRubyObject[] fileArguments = new IRubyObject[] {arg0};
+       RubyIO file = (RubyIO) RubyKernel.open(context, recv, fileArguments, block);
+       
+        try {
+            if (!arg1.isNil()) {
+                return file.read(context, arg1);
+            } else {
+                return file.read(context);
+            }
+        } finally  {
+            file.close();
+        }
+   }
+   
+    @JRubyMethod(name = "read", meta = true)
+    public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        IRubyObject[] fileArguments = new IRubyObject[]{arg0};
+        RubyIO file = (RubyIO) RubyKernel.open(context, recv, fileArguments, block);
+
+        if (!arg2.isNil()) {
+            file.seek(context, arg2);
+        }
+
+        try {
+            if (!arg1.isNil()) {
+                return file.read(context, arg1);
+            } else {
+                return file.read(context);
+            }
+        } finally  {
+            file.close();
+        }
+    }
    
     @JRubyMethod(name = "readlines", required = 1, optional = 1, meta = true)
     public static RubyArray readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {

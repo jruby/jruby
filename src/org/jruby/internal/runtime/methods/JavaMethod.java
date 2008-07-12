@@ -428,6 +428,34 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         }
     }
     
+    public static abstract class JavaMethodOneOrTwoOrThreeBlock extends JavaMethod {
+        public JavaMethodOneOrTwoOrThreeBlock(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
+        }
+        public JavaMethodOneOrTwoOrThreeBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
+            super(implementationClass, visibility, callConfig, staticScope, arity);
+        }
+        public JavaMethodOneOrTwoOrThreeBlock(RubyModule implementationClass, Visibility visibility, int methodIndex) {
+            super(implementationClass, visibility, methodIndex);
+        }
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block);
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block);
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block);
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            switch (args.length) {
+            case 0: throw context.getRuntime().newArgumentError(0, 1);
+            case 1: return call(context, self, clazz, name, args[0], block);
+            case 2: return call(context, self, clazz, name, args[0], args[1], block);
+            case 3: return call(context, self, clazz, name, args[0], args[1], args[2], block);
+            default: throw context.getRuntime().newArgumentError(args.length, 3);
+            }
+        }
+    }
+    
     public static abstract class JavaMethodTwo extends JavaMethod {
         public JavaMethodTwo(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);

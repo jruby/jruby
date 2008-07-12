@@ -165,7 +165,7 @@ public class RubyNumeric extends RubyObject {
         }
         if (arg.isNil()) {
             throw arg.getRuntime().newTypeError("no implicit conversion from nil to integer");
-    }
+        }
 
         if (arg instanceof RubyFloat) {
             double aFloat = ((RubyFloat) arg).getDoubleValue();
