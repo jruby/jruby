@@ -227,14 +227,29 @@ public class RubyFixnum extends RubyInteger {
     /** fix_to_s
      * 
      */
-    @JRubyMethod(optional = 1)
     public RubyString to_s(IRubyObject[] args) {
-        int base = args.length == 0 ? 10 : num2int(args[0]);
+        switch (args.length) {
+        case 0: return to_s();
+        case 1: return to_s(args[0]);
+        default: throw getRuntime().newArgumentError(args.length, 1);
+        }
+    }
+    
+    @JRubyMethod
+    @Override
+    public RubyString to_s() {
+        int base = 10;
+        return getRuntime().newString(Convert.longToByteList(value, base));
+    }
+    
+    @JRubyMethod
+    public RubyString to_s(IRubyObject arg0) {
+        int base = num2int(arg0);
         if (base < 2 || base > 36) {
             throw getRuntime().newArgumentError("illegal radix " + base);
-            }
-        return getRuntime().newString(Convert.longToByteList(value, base));
         }
+        return getRuntime().newString(Convert.longToByteList(value, base));
+    }
 
     /** fix_id2name
      * 

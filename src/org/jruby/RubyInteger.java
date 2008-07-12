@@ -103,7 +103,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /** int_upto
      * 
      */
-    @JRubyMethod(name = "upto", required = 1, frame = true)
+    @JRubyMethod(name = "upto", frame = true)
     public IRubyObject upto(ThreadContext context, IRubyObject to, Block block) {
         final Ruby runtime = getRuntime();
 
@@ -140,7 +140,7 @@ public abstract class RubyInteger extends RubyNumeric {
      * 
      */
     // TODO: Make callCoerced work in block context...then fix downto, step, and upto.
-    @JRubyMethod(name = "downto", required = 1, frame = true)
+    @JRubyMethod(name = "downto", frame = true)
     public IRubyObject downto(ThreadContext context, IRubyObject to, Block block) {
         final Ruby runtime = getRuntime();
 
@@ -262,7 +262,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /** rb_int_induced_from
      * 
      */
-    @JRubyMethod(name = "induced_from", meta = true, required = 1)
+    @JRubyMethod(name = "induced_from", meta = true)
     public static IRubyObject induced_from(ThreadContext context, IRubyObject recv, IRubyObject other) {
         if (other instanceof RubyFixnum || other instanceof RubyBignum) {
             return other;

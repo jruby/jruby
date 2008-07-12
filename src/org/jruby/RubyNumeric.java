@@ -475,7 +475,7 @@ public class RubyNumeric extends RubyObject {
     /** num_sadded
      *
      */
-    @JRubyMethod(name = "singleton_method_added", required = 1)
+    @JRubyMethod(name = "singleton_method_added")
     public IRubyObject sadded(IRubyObject name) {
         throw getRuntime().newTypeError("can't define singleton method " + name + " for " + getType().getName());
     } 
@@ -484,7 +484,7 @@ public class RubyNumeric extends RubyObject {
      *
      */
     @Override
-    @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(IRubyObject arg) {
         throw getRuntime().newTypeError("can't copy " + getType().getName());
     }
@@ -492,7 +492,7 @@ public class RubyNumeric extends RubyObject {
     /** num_coerce
      *
      */
-    @JRubyMethod(name = "coerce", required = 1)
+    @JRubyMethod(name = "coerce")
     public IRubyObject coerce(IRubyObject other) {
         if (getClass() == other.getClass()) return getRuntime().newArray(other, this);
 
@@ -523,7 +523,7 @@ public class RubyNumeric extends RubyObject {
     /** num_cmp
      *
      */
-    @JRubyMethod(name = "<=>", required = 1)
+    @JRubyMethod(name = "<=>")
     public IRubyObject op_cmp(IRubyObject other) {
         if (this == other) { // won't hurt fixnums
             return RubyFixnum.zero(getRuntime());
@@ -534,7 +534,7 @@ public class RubyNumeric extends RubyObject {
     /** num_eql
      *
      */
-    @JRubyMethod(name = "eql?", required = 1)
+    @JRubyMethod(name = "eql?")
     public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
         if (getClass() != other.getClass()) return getRuntime().getFalse();
         return equalInternal(context, this, other) ? getRuntime().getTrue() : getRuntime().getFalse();
@@ -543,7 +543,7 @@ public class RubyNumeric extends RubyObject {
     /** num_quo
      *
      */
-    @JRubyMethod(name = "quo", required = 1)
+    @JRubyMethod(name = "quo")
     public IRubyObject quo(ThreadContext context, IRubyObject other) {
         return callMethod(context, "/", other);
     }
@@ -551,7 +551,7 @@ public class RubyNumeric extends RubyObject {
     /** num_div
      * 
      */
-    @JRubyMethod(name = "div", required = 1)
+    @JRubyMethod(name = "div")
     public IRubyObject div(ThreadContext context, IRubyObject other) {
         return callMethod(context, "/", other).convertToFloat().floor();
     }
@@ -559,7 +559,7 @@ public class RubyNumeric extends RubyObject {
     /** num_divmod
      * 
      */
-    @JRubyMethod(name = "divmod", required = 1)
+    @JRubyMethod(name = "divmod")
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
         return RubyArray.newArray(getRuntime(), div(context, other), modulo(context, other));
     }
@@ -567,7 +567,7 @@ public class RubyNumeric extends RubyObject {
     /** num_modulo
      *
      */
-    @JRubyMethod(name = "modulo", required = 1)
+    @JRubyMethod(name = "modulo")
     public IRubyObject modulo(ThreadContext context, IRubyObject other) {
         return callMethod(context, "%", other);
     }
@@ -575,7 +575,7 @@ public class RubyNumeric extends RubyObject {
     /** num_remainder
      *
      */
-    @JRubyMethod(name = "remainder", required = 1)
+    @JRubyMethod(name = "remainder")
     public IRubyObject remainder(ThreadContext context, IRubyObject dividend) {
         IRubyObject z = callMethod(context, "%", dividend);
         IRubyObject x = this;
@@ -672,19 +672,21 @@ public class RubyNumeric extends RubyObject {
     
     @JRubyMethod(name = "step", required = 1, optional = 1, frame = true)
     public IRubyObject step(ThreadContext context, IRubyObject[] args, Block block) {
-        IRubyObject to;
-        IRubyObject step;
-        
-        if(args.length == 1){ 
-            to = args[0];
-            step = RubyFixnum.one(getRuntime());
-        } else if (args.length == 2) {
-            to = args[0];
-            step = args[1];
-        }else{
-            throw getRuntime().newTypeError("wrong number of arguments");
+        switch (args.length) {
+        case 0: throw context.getRuntime().newArgumentError(0, 1);
+        case 1: return step(context, args[0], block);
+        case 2: return step(context, args[0], args[1], block);
+        default: throw context.getRuntime().newArgumentError(args.length, 2);
         }
-        
+    }
+    
+    @JRubyMethod(name = "step", frame = true)
+    public IRubyObject step(ThreadContext context, IRubyObject arg0, Block block) {
+        return step(context, arg0, RubyFixnum.one(context.getRuntime()), block);
+    }
+    
+    @JRubyMethod(name = "step", frame = true)
+    public IRubyObject step(ThreadContext context, IRubyObject to, IRubyObject step, Block block) {
         if (this instanceof RubyFixnum && to instanceof RubyFixnum && step instanceof RubyFixnum) {
             long value = getLongValue();
             long end = ((RubyFixnum) to).getLongValue();
@@ -782,5 +784,4 @@ public class RubyNumeric extends RubyObject {
             return this;
         }
     }
-    
 }
