@@ -658,6 +658,10 @@ public class ChannelStream implements Stream, Finalizable {
         // TODO this should entry into error handling somewhere
         int bytesRead = descriptor.read(number, byteList);
         
+        if (bytesRead == -1) {
+            eof = true;
+        }
+        
         return byteList;
     }
 
@@ -682,7 +686,11 @@ public class ChannelStream implements Stream, Finalizable {
             //
             int bytesToRead = Math.min(BULK_READ_SIZE, number - result.length());
             int n = descriptor.read(bytesToRead, result);
-            if (n <= 0) {
+            if (n == -1) {
+                eof = true;
+                done = true;
+                break;
+            } else if (n == 0) {
                 done = true;
                 break;
             }
@@ -693,8 +701,11 @@ public class ChannelStream implements Stream, Finalizable {
         //
         while (!done && result.length() != number) {
             int read = refillBuffer();
-            if (read <= 0) {
-                // if we reach EOF or didn't read anything, bail out
+            
+            if (read == -1) {
+                eof = true;
+                break;
+            } else if (read == 0) {
                 break;
             }
             
@@ -704,7 +715,11 @@ public class ChannelStream implements Stream, Finalizable {
             result.append(buffer, len);
         }
         
-        if (result.length() == 0 && number != 0) throw new EOFException();
+        if (result.length() == 0 && number != 0) {
+            if (eof) {
+                throw new EOFException();
+            }
+        }
         return result;
     }
     
@@ -712,8 +727,11 @@ public class ChannelStream implements Stream, Finalizable {
         ensureRead();
         
         if (!buffer.hasRemaining()) {
-            if (refillBuffer() <= 0) {
+            int len = refillBuffer();
+            if (len == -1) {
                 eof = true;
+                return -1;
+            } else if (len == 0) {
                 return -1;
             }
         }

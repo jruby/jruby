@@ -2177,10 +2177,14 @@ public class RubyIO extends RubyObject {
                     return getRuntime().getNil();
                 }
 
-                if (length > 0) {
-                    // I think this is only partly correct; sys fail based on errno in Ruby
-                    throw getRuntime().newEOFError();
-                }
+                // Removed while working on JRUBY-2386, since fixes for that
+                // modified EOF logic such that this check is not really valid.
+                // We expect that an EOFException will be thrown now in EOF
+                // cases.
+//                if (length > 0) {
+//                    // I think this is only partly correct; sys fail based on errno in Ruby
+//                    throw getRuntime().newEOFError();
+//                }
             }
 
 
