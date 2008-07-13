@@ -32,7 +32,7 @@ end
 def compile_and_run(src)
   cls = compile_to_class(src)
 
-  cls.new_instance.run(JRuby.runtime.current_context, JRuby.runtime.top_self, IRubyObject[0].new, Block::NULL_BLOCK)
+  cls.new_instance.load(JRuby.runtime.current_context, JRuby.runtime.top_self, IRubyObject[0].new, Block::NULL_BLOCK)
 end
 
 asgnFixnumCode = "a = 5; a"
@@ -175,9 +175,10 @@ test_equal(1..2, compile_and_run("1..2"))
 test_equal(1, compile_and_run("def a=(x); 2; end; self.a = 1"))
 
 test_equal(1, compile_and_run("def a; 1; end; def a=(arg); fail; end; self.a ||= 2"))
+# JRUBY-2787, still broken
 #test_equal([1, 1], compile_and_run("def a; @a; end; def a=(arg); @a = arg; 4; end; x = self.a ||= 1; [x, self.a]"))
 test_equal(nil, compile_and_run("def a; nil; end; def a=(arg); fail; end; self.a &&= 2"))
-#test_equal([1, 1], compile_and_run("def a; @a; end; def a=(arg); @a = arg; end; @a = 3; x = self.a &&= 1; [x, self.a]"))
+test_equal([1, 1], compile_and_run("def a; @a; end; def a=(arg); @a = arg; end; @a = 3; x = self.a &&= 1; [x, self.a]"))
 
 test_equal(1, compile_and_run("def foo; $_ = 1; bar; $_; end; def bar; $_ = 2; end; foo"))
 
@@ -188,10 +189,9 @@ test_no_exception {
 
 test_no_exception {
   # fcall with empty block
-  test_equal(nil, compile_and_run("proc { }.call"))
+  test_equal(nil, compile_and_run("def myfcall; yield; end; myfcall {}"))
   # call with empty block
-  # FIXME: can't call proc this way, it's private
-  #test_equal(nil, compile_and_run("self.proc {}.call"))
+  test_equal(nil, compile_and_run("def mycall; yield; end; public :mycall; self.mycall {}"))
 }
 
 # blocks with some basic single arguments
@@ -282,12 +282,10 @@ test_equal([1, 2, 3], compile_and_run("foo(1, *CoercibleToArray.new)"))
 
 # multiple assignment
 test_equal([1, 2, 3], compile_and_run("a = nil; 1.times { a, b, @c = 1, 2, 3; a = [a, b, @c] }; a"))
-
-# There's a bug in this test script that prevents these succeeding; commenting out for now
-#test_equal([1, nil, nil], compile_and_run("a, (b, c) = 1; [a, b, c]"))
-#test_equal([1, 2, nil], compile_and_run("a, (b, c) = 1, 2; [a, b, c]"))
-#test_equal([1, 2, 3], compile_and_run("a, (b, c) = 1, [2, 3]; [a, b, c]"))
-#test_equal([1, 2, 3], compile_and_run("a, (b, c) = 1, CoercibleToArray.new; [a, b, c]"))
+test_equal([1, nil, nil], compile_and_run("a, (b, c) = 1; [a, b, c]"))
+test_equal([1, 2, nil], compile_and_run("a, (b, c) = 1, 2; [a, b, c]"))
+test_equal([1, 2, 3], compile_and_run("a, (b, c) = 1, [2, 3]; [a, b, c]"))
+test_equal([1, 2, 3], compile_and_run("a, (b, c) = 1, CoercibleToArray.new; [a, b, c]"))
 
 # until loops
 test_equal(3, compile_and_run("a = 1; until a == 3; a += 1; end; a"))
@@ -409,8 +407,7 @@ test_equal(["foo", "bar"], compile_and_run("a = []; a[0], a[1] = 'foo', 'bar'; a
 
 # for loops
 test_equal([2, 4, 6], compile_and_run("a = []; for b in [1, 2, 3]; a << b * 2; end; a"))
-# FIXME: scoping is all wrong for running these tests, so c doesn't scope right here
-#test_equal([1, 2, 3], compile_and_run("a = []; for b, c in {:a => 1, :b => 2, :c => 3}; a << c; end; a.sort"))
+test_equal([1, 2, 3], compile_and_run("a = []; for b, c in {:a => 1, :b => 2, :c => 3}; a << c; end; a.sort"))
 
 # ensure blocks
 test_equal(1, compile_and_run("a = 2; begin; a = 3; ensure; a = 1; end; a"))
