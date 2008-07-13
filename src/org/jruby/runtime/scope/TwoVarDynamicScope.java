@@ -162,7 +162,7 @@ public class TwoVarDynamicScope extends DynamicScope {
      * @param size is the number of values to assign as ordinary parm values
      */
     public void setArgValues(IRubyObject[] values, int size) {
-        assert values.length == 2 : "TwoVarDynamicScope only supports scopes with two variables";
+        assert size <= 2 : "TwoVarDynamicScope only supports scopes with two variables, not " + size;
         switch (size) {
         case 2:
             variableValueOne = values[1];
