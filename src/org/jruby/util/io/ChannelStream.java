@@ -912,6 +912,29 @@ public class ChannelStream implements Stream, Finalizable {
         }
     }
 
+    public synchronized ByteList readnonblock(int number) throws IOException, BadDescriptorException, EOFException {
+        assert number >= 0;
+
+        if (number == 0) {
+            return null;
+        }
+
+        if (descriptor.getChannel() instanceof SelectableChannel) {
+            SelectableChannel selectableChannel = (SelectableChannel)descriptor.getChannel();
+            synchronized (selectableChannel.blockingLock()) {
+                boolean oldBlocking = selectableChannel.isBlocking();
+                try {
+                    selectableChannel.configureBlocking(false);
+                    return readpartial(number);
+                } finally {
+                    selectableChannel.configureBlocking(oldBlocking);
+                }
+            }
+        } else {
+            return null;
+        }
+    }
+
     public synchronized ByteList readpartial(int number) throws IOException, BadDescriptorException, EOFException {
         assert number >= 0;
 

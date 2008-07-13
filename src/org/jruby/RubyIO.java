@@ -1996,7 +1996,39 @@ public class RubyIO extends RubyObject {
         return getRuntime().getNil();
     }
     
-    @JRubyMethod(name = {"readpartial", "read_nonblock"}, required = 1, optional = 1)
+    @JRubyMethod(name = "read_nonblock", required = 1, optional = 1)
+    public IRubyObject read_nonblock(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+
+        openFile.checkClosed(runtime);
+
+        if(!(openFile.getMainStream() instanceof ChannelStream)) {
+            // cryptic for the uninitiated...
+            throw runtime.newNotImplementedError("read_nonblock only works with Nio based handlers");
+        }
+        try {
+            int maxLength = RubyNumeric.fix2int(args[0]);
+            if (maxLength < 0) {
+                throw runtime.newArgumentError("negative length " + maxLength + " given");
+            }
+            ByteList buf = ((ChannelStream)openFile.getMainStream()).readnonblock(RubyNumeric.fix2int(args[0]));
+            IRubyObject strbuf = RubyString.newString(runtime, buf == null ? new ByteList(ByteList.NULL_ARRAY) : buf);
+            if(args.length > 1) {
+                args[1].callMethod(context, MethodIndex.OP_LSHIFT, "<<", strbuf);
+                return args[1];
+            }
+
+            return strbuf;
+        } catch (BadDescriptorException e) {
+            throw runtime.newErrnoEBADFError();
+        } catch (EOFException e) {
+            return runtime.getNil();
+        } catch (IOException e) {
+            throw runtime.newIOError(e.getMessage());
+        }
+    }
+    
+    @JRubyMethod(name = "readpartial", required = 1, optional = 1)
     public IRubyObject readpartial(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
 
