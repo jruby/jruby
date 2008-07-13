@@ -328,7 +328,7 @@ public class ChannelStream implements Stream, Finalizable {
             invalidateBuffer();
             FileChannel channel = (FileChannel)descriptor.getChannel();
             long left = channel.size() - channel.position();
-            if (left == 0) {
+            if (left <= 0) {
                 eof = true;
                 return null;
             }
