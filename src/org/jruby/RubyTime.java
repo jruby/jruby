@@ -163,25 +163,27 @@ public class RubyTime extends RubyObject {
         super(runtime, rubyClass);
         this.dt = dt;
     }
-    
+
     // We assume that these two time instances
     // occurred at the same time.
     private static final long BASE_TIME_MILLIS = System.currentTimeMillis();
     private static final long BASE_TIME_NANOS = System.nanoTime();
-    
+
     private static ObjectAllocator TIME_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            long nanosPassed = System.nanoTime() - BASE_TIME_NANOS;
-            long millisTime = BASE_TIME_MILLIS + nanosPassed / 1000000;
-            long usecs = nanosPassed % 1000;
+            long usecsPassed = (System.nanoTime() - BASE_TIME_NANOS) / 1000L;
+            long millisTime = BASE_TIME_MILLIS + usecsPassed / 1000L;
+            long usecs = usecsPassed % 1000L;
+
             DateTimeZone dtz = getLocalTimeZone(runtime);
             DateTime dt = new DateTime(millisTime, dtz);
             RubyTime rt =  new RubyTime(runtime, klass, dt);
             rt.setUSec(usecs);
+
             return rt;
         }
     };
-    
+
     public static RubyClass createTimeClass(Ruby runtime) {
         RubyClass timeClass = runtime.defineClass("Time", runtime.getObject(), TIME_ALLOCATOR);
         timeClass.index = ClassIndex.TIME;
