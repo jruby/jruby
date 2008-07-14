@@ -585,7 +585,6 @@
       <run-junit compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}" reflection="@{reflection}" thread.pooling="@{thread.pooling}">
 	<junit-tests>
 	  <test name="${test}" if="test"/>
-	  <test name="org.jruby.test.MainTestSuite" todir="${test.results.dir}" unless="test"/>
 	  <test name="org.jruby.test.ScriptTestSuite" todir="${test.results.dir}" unless="test"/>
 	  <test name="org.jruby.test.BFTSTestSuite" todir="${test.results.dir}" unless="test"/>
 	  <test name="org.jruby.test.JRubyTestSuite" todir="${test.results.dir}" unless="test"/>
@@ -593,6 +592,7 @@
 	  <test name="org.jruby.test.MRITestSuite" todir="${test.results.dir}" unless="test"/>
 	  <test name="org.jruby.test.RubiconTestSuite" todir="${test.results.dir}" unless="test"/>
 	  <test name="org.jruby.test.RubyTestTestSuite" todir="${test.results.dir}" unless="test"/>
+	  <test name="org.jruby.test.MainTestSuite" todir="${test.results.dir}" unless="test"/>
 	</junit-tests>
       </run-junit>
     </sequential>
