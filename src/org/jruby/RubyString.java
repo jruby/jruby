@@ -286,15 +286,15 @@ public class RubyString extends RubyObject {
         return dup;
     }
 
-    public final RubyString makeShared(int index, int len) {
+    public final RubyString makeShared(Ruby runtime, int index, int len) {
         if (len == 0) {
-            RubyString s = newEmptyString(getRuntime(), getMetaClass());
+            RubyString s = newEmptyString(runtime, getMetaClass());
             s.infectBy(this);
             return s;
         }
 
         if (shareLevel == SHARE_LEVEL_NONE) shareLevel = SHARE_LEVEL_BUFFER;
-        RubyString shared = new RubyString(getRuntime(), getMetaClass(), value.makeShared(index, len));
+        RubyString shared = new RubyString(runtime, getMetaClass(), value.makeShared(index, len));
         shared.shareLevel = SHARE_LEVEL_BUFFER;
 
         shared.infectBy(this);
@@ -1393,12 +1393,12 @@ public class RubyString extends RubyObject {
                 if (regex.numberOfCaptures() == 0) {
                     begz = matcher.getBegin();
                     endz = matcher.getEnd();
-                    val = objAsString(context, block.yield(context, substr(begz, endz - begz)));
+                    val = objAsString(context, block.yield(context, substr(context.getRuntime(), begz, endz - begz)));
                 } else {
                     Region region = matcher.getRegion();
                     begz = region.beg[0];
                     endz = region.end[0];
-                    val = objAsString(context, block.yield(context, substr(begz, endz - begz)));
+                    val = objAsString(context, block.yield(context, substr(context.getRuntime(), begz, endz - begz)));
                 }
                 modifyCheck(bytes, size);
                 if (bang) {
@@ -1687,6 +1687,10 @@ public class RubyString extends RubyObject {
     
     /* rb_str_substr */
     public IRubyObject substr(int beg, int len) {
+        return substr(getRuntime(), beg, len);
+    }
+    
+    public IRubyObject substr(Ruby runtime, int beg, int len) {    
         int length = value.length();
         if (len < 0 || beg > length) return getRuntime().getNil();
 
@@ -1696,8 +1700,10 @@ public class RubyString extends RubyObject {
         }
         
         int end = Math.min(length, beg + len);
-        return makeShared(beg, end - beg);
+        return makeShared(getRuntime(), beg, end - beg);
     }
+    
+    
 
     /* rb_str_replace */
     public IRubyObject replace(int beg, int len, RubyString replaceWith) {
@@ -1736,7 +1742,7 @@ public class RubyString extends RubyObject {
             }
             return context.getRuntime().getNil();
         }
-        return substr(RubyNumeric.fix2int(arg1), RubyNumeric.fix2int(arg2));
+        return substr(context.getRuntime(), RubyNumeric.fix2int(arg1), RubyNumeric.fix2int(arg2));
     }
 
     /** rb_str_aref, rb_str_aref_m
@@ -1755,7 +1761,7 @@ public class RubyString extends RubyObject {
         } else if (arg instanceof RubyRange) {
             long[] begLen = ((RubyRange) arg).begLen(value.length(), 0);
             return begLen == null ? context.getRuntime().getNil() :
-                substr((int) begLen[0], (int) begLen[1]);
+                substr(context.getRuntime(), (int) begLen[0], (int) begLen[1]);
         }
         int idx = (int) arg.convertToInteger().getLongValue();
         
@@ -2201,7 +2207,7 @@ public class RubyString extends RubyObject {
                         result.append(newEmptyString(runtime, getMetaClass()));
                         break;
                     } else if (lastNull) {
-                        result.append(substr(beg, regex.getEncoding().length(value.bytes[begin + beg])));
+                        result.append(substr(runtime, beg, regex.getEncoding().length(value.bytes[begin + beg])));
                         beg = start - begin;
                     } else {
                         if (start == range) {
@@ -2273,7 +2279,8 @@ public class RubyString extends RubyObject {
     }
     
     private RubyArray awkSplit(boolean limit, int lim, int i) {
-        RubyArray result = getRuntime().newArray();
+        Ruby runtime = getRuntime();
+        RubyArray result = runtime.newArray();
         
         byte[]bytes = value.bytes;
         int p = value.begin; 
@@ -2293,7 +2300,7 @@ public class RubyString extends RubyObject {
                 }
             } else {
                 if (ASCII.isSpace(bytes[p] & 0xff)) {
-                    result.append(makeShared(beg, end - beg));
+                    result.append(makeShared(runtime, beg, end - beg));
                     skip = true;
                     beg = end + 1;
                     if (limit) i++;
@@ -2305,9 +2312,9 @@ public class RubyString extends RubyObject {
         
         if (value.realSize > 0 && (limit || value.realSize > beg || lim < 0)) {
             if (value.realSize == beg) {
-                result.append(newEmptyString(getRuntime(), getMetaClass()));
+                result.append(newEmptyString(runtime, getMetaClass()));
             } else {
-                result.append(makeShared(beg, value.realSize - beg));
+                result.append(makeShared(runtime, beg, value.realSize - beg));
             }
         }
         return result;

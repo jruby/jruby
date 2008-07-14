@@ -92,13 +92,13 @@ public class RubyMatchData extends RubyObject {
         return (flags & MATCH_BUSY) != 0;
     }
 
-    private RubyArray match_array(int start) {
+    private RubyArray match_array(Ruby runtime, int start) {
         if (regs == null) {
-            if (start != 0) return getRuntime().newEmptyArray();
+            if (start != 0) return runtime.newEmptyArray();
             if (begin == -1) {
-                return getRuntime().newArray(getRuntime().getNil());
+                return getRuntime().newArray(runtime.getNil());
             } else {
-                RubyString ss = str.makeShared(begin, end - begin);
+                RubyString ss = str.makeShared(runtime, begin, end - begin);
                 if (isTaint()) ss.setTaint(true);
                 return getRuntime().newArray(ss);
             }
@@ -108,7 +108,7 @@ public class RubyMatchData extends RubyObject {
                 if (regs.beg[i] == -1) {
                     arr.append(getRuntime().getNil());
                 } else {
-                    RubyString ss = str.makeShared(regs.beg[i], regs.end[i] - regs.beg[i]);
+                    RubyString ss = str.makeShared(runtime, regs.beg[i], regs.end[i] - regs.beg[i]);
                     if (isTaint()) ss.setTaint(true); 
                     arr.append(ss);
                 }
@@ -169,8 +169,9 @@ public class RubyMatchData extends RubyObject {
      *
      */
     @JRubyMethod(name = "to_a")
+    @Override
     public RubyArray to_a() {
-        return match_array(0);
+        return match_array(getRuntime(), 0);
     }
 
     @JRubyMethod(name = "values_at", required = 1, rest = true)
@@ -187,8 +188,8 @@ public class RubyMatchData extends RubyObject {
      *
      */
     @JRubyMethod(name = "captures")
-    public IRubyObject captures() {
-        return match_array(1);
+    public IRubyObject captures(ThreadContext context) {
+        return match_array(context.getRuntime(), 1);
     }
 
     private int nameToBackrefNumber(RubyString str) {
@@ -325,15 +326,15 @@ public class RubyMatchData extends RubyObject {
      *
      */
     @JRubyMethod(name = "pre_match")
-    public IRubyObject pre_match() {
+    public IRubyObject pre_match(ThreadContext context) {
         RubyString ss;
         
         if (regs == null) {
-            if(begin == -1) return getRuntime().getNil();
-            ss = str.makeShared(0, begin);
+            if(begin == -1) return context.getRuntime().getNil();
+            ss = str.makeShared(context.getRuntime(), 0, begin);
         } else {
-            if(regs.beg[0] == -1) return getRuntime().getNil();
-            ss = str.makeShared(0, regs.beg[0]);
+            if(regs.beg[0] == -1) return context.getRuntime().getNil();
+            ss = str.makeShared(context.getRuntime(), 0, regs.beg[0]);
         }
         
         if (isTaint()) ss.setTaint(true);
@@ -344,15 +345,15 @@ public class RubyMatchData extends RubyObject {
      *
      */
     @JRubyMethod(name = "post_match")
-    public IRubyObject post_match() {
+    public IRubyObject post_match(ThreadContext context) {
         RubyString ss;
         
         if (regs == null) {
-            if (begin == -1) return getRuntime().getNil();
-            ss = str.makeShared(end, str.getByteList().length() - end);
+            if (begin == -1) return context.getRuntime().getNil();
+            ss = str.makeShared(context.getRuntime(), end, str.getByteList().length() - end);
         } else {
-            if (regs.beg[0] == -1) return getRuntime().getNil();
-            ss = str.makeShared(regs.end[0], str.getByteList().length() - regs.end[0]);
+            if (regs.beg[0] == -1) return context.getRuntime().getNil();
+            ss = str.makeShared(context.getRuntime(), regs.end[0], str.getByteList().length() - regs.end[0]);
         }
         
         if(isTaint()) ss.setTaint(true);

@@ -382,7 +382,7 @@ public class RubyEnumerable {
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject[] iargs, Block block) {
-            this.block.yield(context, runtime.newArray(iargs[0], runtime.newFixnum(index++)));
+            this.block.call(context, new IRubyObject[] { runtime.newArray(iargs[0], runtime.newFixnum(index++)) });
             return runtime.getNil();            
         }
     }

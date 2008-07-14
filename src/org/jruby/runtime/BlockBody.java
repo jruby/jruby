@@ -113,7 +113,7 @@ public abstract class BlockBody implements JumpTarget {
     public IRubyObject[] prepareArgumentsForCall(ThreadContext context, IRubyObject[] args, Block.Type type) {
         switch (type) {
         case NORMAL: {
-            assert false : "can this happen?";
+//            assert false : "can this happen?";
             if (args.length == 1 && args[0] instanceof RubyArray) {
                 if (argumentType == MULTIPLE_ASSIGNMENT || argumentType == SINGLE_RESTARG) {
                     args = ((RubyArray) args[0]).toJavaArray();

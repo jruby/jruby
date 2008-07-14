@@ -233,8 +233,7 @@ public class RubyClass extends RubyModule {
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
             IRubyObject[] args, CallType callType, Block block) {
         assert args != null;
-        DynamicMethod method = null;
-        method = searchMethod(name);
+        DynamicMethod method = searchMethod(name);
         
 
         if (method.isUndefined() || (!name.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
@@ -246,28 +245,25 @@ public class RubyClass extends RubyModule {
     
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
             IRubyObject arg, CallType callType, Block block) {
-        DynamicMethod method = null;
-        method = searchMethod(name);
-        
+        DynamicMethod method = searchMethod(name);
 
         if (method.isUndefined() || (!name.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
-            return RuntimeHelpers.callMethodMissing(context, self, method, name, new IRubyObject[] {arg}, context.getFrameSelf(), callType, block);
+            return RuntimeHelpers.callMethodMissing(context, self, method, name, 
+                    new IRubyObject[] {arg}, context.getFrameSelf(), callType, block);
         }
 
         return method.call(context, self, this, name, arg, block);
     }
     
-    public IRubyObject invokeInherited(ThreadContext context, IRubyObject self,
-            IRubyObject subclass) {
-        String name = "inherited";
-        DynamicMethod method = getMetaClass().searchMethod(name);
-        IRubyObject[] args = new IRubyObject[] {subclass};
+    public IRubyObject invokeInherited(ThreadContext context, IRubyObject self, IRubyObject subclass) {
+        DynamicMethod method = getMetaClass().searchMethod("inherited");
 
         if (method.isUndefined()) {
-            return RuntimeHelpers.callMethodMissing(context, self, method, name, args, context.getFrameSelf(), CallType.FUNCTIONAL, Block.NULL_BLOCK);
+            return RuntimeHelpers.callMethodMissing(context, self, method, "inherited", 
+                    new IRubyObject[] {subclass}, context.getFrameSelf(), CallType.FUNCTIONAL, Block.NULL_BLOCK);
         }
 
-        return method.call(context, self, getMetaClass(), name, args, Block.NULL_BLOCK);
+        return method.call(context, self, getMetaClass(), "inherited", subclass, Block.NULL_BLOCK);
     }
 
     /** rb_class_new_instance
@@ -286,7 +282,6 @@ public class RubyClass extends RubyModule {
     @JRubyMethod(name = "initialize", optional = 1, frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         if (superClass != null) {
-            System.out.println(classId);
             throw getRuntime().newTypeError("already initialized class");
         }
  

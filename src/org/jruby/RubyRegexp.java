@@ -987,9 +987,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
             end = m.regs.end[nth];
         }
         
-        if(start == -1) return match.getRuntime().getNil();
+        if (start == -1) return match.getRuntime().getNil();
 
-        RubyString str = m.str.makeShared(start, end - start);
+        RubyString str = m.str.makeShared(match.getRuntime(), start, end - start);
         str.infectBy(match);
         return str;
     }
@@ -1048,7 +1048,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
         
         if(beg == -1) match.getRuntime().getNil(); 
 
-        RubyString str = m.str.makeShared(0, beg);
+        RubyString str = m.str.makeShared(match.getRuntime(), 0, beg);
         str.infectBy(match);
         return str;
     }
@@ -1069,7 +1069,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
             end = m.regs.end[0];
         }
         
-        RubyString str = m.str.makeShared(end, m.str.getByteList().realSize - end);
+        RubyString str = m.str.makeShared(match.getRuntime(), end, m.str.getByteList().realSize - end);
         str.infectBy(match);
         return str;
     }
