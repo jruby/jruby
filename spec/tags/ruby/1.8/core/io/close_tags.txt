@@ -1,1 +1,3 @@
 fails:IO#close sets $? if the stream is opened by IO.popen
+fails:IO#close on an IO.popen stream clears #pid
+fails:IO#close on an IO.popen stream waits for the child to exit
