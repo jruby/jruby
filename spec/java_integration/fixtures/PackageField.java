@@ -1,7 +1,7 @@
 package java_integration.fixtures;
 
 public class PackageField {
-  String strField;
+  String strField = "1766";
   
   public String getStrField() {
     return strField;

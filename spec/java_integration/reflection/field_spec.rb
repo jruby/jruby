@@ -211,4 +211,3 @@ describe "A JavaField" do
     end
   end
 end
-
