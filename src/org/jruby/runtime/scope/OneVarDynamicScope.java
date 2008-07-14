@@ -8,24 +8,10 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * Represents the the dynamic portion of scoping information.  The variableValues are the
- * values of assigned local or block variables.  The staticScope identifies which sort of
- * scope this is (block or local).
- * 
- * Properties of Dynamic Scopes:
- * 1. static and dynamic scopes have the same number of names to values
- * 2. size of variables (and thus names) is determined during parsing.  So those structured do
- *    not need to change
- *
- * FIXME: When creating dynamic scopes we sometimes accidentally pass in extra parents.  This
- * is harmless (other than wasting memory), but we should not do that.  We can fix this in two
- * ways:
- * 1. Fix all callers
- * 2. Check parent that is passed in and make if new instance is local, then its parent is not local
+ * This is a DynamicScope that supports exactly three variables.
  */
-public class OneVarDynamicScope extends DynamicScope {
-    // Our values holder (name of variables are kept in staticScope)
-    private IRubyObject variableValue;
+public class OneVarDynamicScope extends NoVarsDynamicScope {
+    protected IRubyObject variableValueZero;
 
     public OneVarDynamicScope(StaticScope staticScope, DynamicScope parent) {
         super(staticScope, parent);
@@ -46,7 +32,7 @@ public class OneVarDynamicScope extends DynamicScope {
     }
 
     public IRubyObject[] getValues() {
-        return new IRubyObject[] {variableValue};
+        return new IRubyObject[] {variableValueZero};
     }
     
     /**
@@ -64,7 +50,7 @@ public class OneVarDynamicScope extends DynamicScope {
             return parent.getValue(offset, depth - 1);
         }
         assert offset == 0 : "SingleVarDynamicScope only supports scopes with one variable";
-        return variableValue;
+        return variableValueZero;
     }
     
     /**
@@ -80,18 +66,12 @@ public class OneVarDynamicScope extends DynamicScope {
     
     public IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil) {
         assert offset == 0 : "SingleVarDynamicScope only supports scopes with one variable";
-        if (variableValue == null) return variableValue = nil;
-        return variableValue;
+        if (variableValueZero == null) return variableValueZero = nil;
+        return variableValueZero;
     }
     public IRubyObject getValueZeroDepthZeroOrNil(IRubyObject nil) {
-        if (variableValue == null) return variableValue = nil;
-        return variableValue;
-    }
-    public IRubyObject getValueOneDepthZeroOrNil(IRubyObject nil) {
-        throw new RuntimeException("SingleVarDynamicScope only supports scopes with one variable");
-    }
-    public IRubyObject getValueTwoDepthZeroOrNil(IRubyObject nil) {
-        throw new RuntimeException("SingleVarDynamicScope only supports scopes with one variable");
+        if (variableValueZero == null) return variableValueZero = nil;
+        return variableValueZero;
     }
 
     /**
@@ -108,22 +88,16 @@ public class OneVarDynamicScope extends DynamicScope {
             return parent.setValue(offset, value, depth - 1);
         } else {
             assert offset == 0 : "SingleVarDynamicScope only supports one variable";
-            return variableValue = value;
+            return variableValueZero = value;
         }
     }
 
     public IRubyObject setValueDepthZero(IRubyObject value, int offset) {
         assert offset == 0 : "SingleVarDynamicScope only supports one variable";
-        return variableValue = value;
+        return variableValueZero = value;
     }
     public IRubyObject setValueZeroDepthZero(IRubyObject value) {
-        return variableValue = value;
-    }
-    public IRubyObject setValueOneDepthZero(IRubyObject value) {
-        throw new RuntimeException("SingleVarDynamicScope only supports scopes with one variable");
-    }
-    public IRubyObject setValueTwoDepthZero(IRubyObject value) {
-        throw new RuntimeException("SingleVarDynamicScope only supports scopes with one variable");
+        return variableValueZero = value;
     }
 
     /**
@@ -140,7 +114,7 @@ public class OneVarDynamicScope extends DynamicScope {
     public void setArgValues(IRubyObject[] values, int size) {
         assert values.length == 1 : "SingleVarDynamicScope only supports one variable";
         if (size == 1) {
-            variableValue = values[0];
+            variableValueZero = values[0];
         }
     }
 
@@ -156,7 +130,7 @@ public class OneVarDynamicScope extends DynamicScope {
         // copy and splat arguments out of the scope to use for zsuper call
         if (staticScope.getRestArg() < 0) {
             if (totalArgs == 1) {
-                return new IRubyObject[] {variableValue};
+                return new IRubyObject[] {variableValueZero};
             } else {
                 return IRubyObject.NULL_ARRAY;
             }
@@ -171,7 +145,7 @@ public class OneVarDynamicScope extends DynamicScope {
             System.arraycopy(splattedArgs.toJavaArray(), 0, argValues, totalArgs, splattedArgs.size());
             
             if (totalArgs == 1) {
-                argValues[0] = variableValue;
+                argValues[0] = variableValueZero;
             }
             
             return argValues;
@@ -186,10 +160,10 @@ public class OneVarDynamicScope extends DynamicScope {
         String names[] = staticScope.getVariables();
         buf.append(names[0]).append("=");
 
-        if (variableValue == null) {
+        if (variableValueZero == null) {
             buf.append("null");
         } else {
-            buf.append(variableValue);
+            buf.append(variableValueZero);
         }
         
         buf.append("]");

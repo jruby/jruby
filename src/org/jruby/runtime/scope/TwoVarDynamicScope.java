@@ -8,24 +8,10 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * Represents the the dynamic portion of scoping information.  The variableValues are the
- * values of assigned local or block variables.  The staticScope identifies which sort of
- * scope this is (block or local).
- * 
- * Properties of Dynamic Scopes:
- * 1. static and dynamic scopes have the same number of names to values
- * 2. size of variables (and thus names) is determined during parsing.  So those structured do
- *    not need to change
- *
- * FIXME: When creating dynamic scopes we sometimes accidentally pass in extra parents.  This
- * is harmless (other than wasting memory), but we should not do that.  We can fix this in two
- * ways:
- * 1. Fix all callers
- * 2. Check parent that is passed in and make if new instance is local, then its parent is not local
+ * This is a DynamicScope that supports exactly three variables.
  */
-public class TwoVarDynamicScope extends DynamicScope {
-    private IRubyObject variableValueZero;
-    private IRubyObject variableValueOne;
+public class TwoVarDynamicScope extends OneVarDynamicScope {
+    protected IRubyObject variableValueOne;
 
     public TwoVarDynamicScope(StaticScope staticScope, DynamicScope parent) {
         super(staticScope, parent);
@@ -74,17 +60,6 @@ public class TwoVarDynamicScope extends DynamicScope {
         }
     }
     
-    /**
-     * Variation of getValue that checks for nulls, returning and setting the given value (presumably nil)
-     */
-    public IRubyObject getValueOrNil(int offset, int depth, IRubyObject nil) {
-        if (depth > 0) {
-            return parent.getValueOrNil(offset, depth - 1, nil);
-        } else {
-            return getValueDepthZeroOrNil(offset, nil);
-        }
-    }
-    
     public IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil) {
         assert offset < 2 : "TwoVarDynamicScope only supports scopes with two variables";
         switch (offset) {
@@ -98,16 +73,9 @@ public class TwoVarDynamicScope extends DynamicScope {
             throw new RuntimeException("TwoVarDynamicScope only supports scopes with two variables");
         }
     }
-    public IRubyObject getValueZeroDepthZeroOrNil(IRubyObject nil) {
-        if (variableValueZero == null) return variableValueZero = nil;
-        return variableValueZero;
-    }
     public IRubyObject getValueOneDepthZeroOrNil(IRubyObject nil) {
         if (variableValueOne == null) return variableValueOne = nil;
         return variableValueOne;
-    }
-    public IRubyObject getValueTwoDepthZeroOrNil(IRubyObject nil) {
-        throw new RuntimeException("TwoVarDynamicScope only supports scopes with two variables");
     }
 
     /**
@@ -146,14 +114,8 @@ public class TwoVarDynamicScope extends DynamicScope {
             throw new RuntimeException("TwoVarDynamicScope only supports scopes with two variables");
         }
     }
-    public IRubyObject setValueZeroDepthZero(IRubyObject value) {
-        return variableValueZero = value;
-    }
     public IRubyObject setValueOneDepthZero(IRubyObject value) {
         return variableValueOne = value;
-    }
-    public IRubyObject setValueTwoDepthZero(IRubyObject value) {
-        throw new RuntimeException("TwoVarDynamicScope only supports scopes with two variables");
     }
 
     /**

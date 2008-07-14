@@ -10,14 +10,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * This is a DynamicScope that supports exactly three variables.
  */
-public class ThreeVarDynamicScope extends DynamicScope {
+public class ThreeVarDynamicScope extends TwoVarDynamicScope {
     private static final int SIZE = 3;
     private static final String SIZE_ERROR = "ThreeVarDynamicScope only supports scopes with three variables";
     private static final String GROW_ERROR = "ThreeVarDynamicScope cannot be grown; use ManyVarsDynamicScope";
     
-    private IRubyObject variableValueZero;
-    private IRubyObject variableValueOne;
-    private IRubyObject variableValueTwo;
+    protected IRubyObject variableValueTwo;
 
     public ThreeVarDynamicScope(StaticScope staticScope, DynamicScope parent) {
         super(staticScope, parent);
@@ -95,14 +93,6 @@ public class ThreeVarDynamicScope extends DynamicScope {
             throw new RuntimeException(SIZE_ERROR);
         }
     }
-    public IRubyObject getValueZeroDepthZeroOrNil(IRubyObject nil) {
-        if (variableValueZero == null) return variableValueZero = nil;
-        return variableValueZero;
-    }
-    public IRubyObject getValueOneDepthZeroOrNil(IRubyObject nil) {
-        if (variableValueOne == null) return variableValueOne = nil;
-        return variableValueOne;
-    }
     public IRubyObject getValueTwoDepthZeroOrNil(IRubyObject nil) {
         if (variableValueOne == null) return variableValueOne = nil;
         return variableValueTwo;
@@ -147,12 +137,6 @@ public class ThreeVarDynamicScope extends DynamicScope {
         default:
             throw new RuntimeException(SIZE_ERROR);
         }
-    }
-    public IRubyObject setValueZeroDepthZero(IRubyObject value) {
-        return variableValueZero = value;
-    }
-    public IRubyObject setValueOneDepthZero(IRubyObject value) {
-        return variableValueOne = value;
     }
     public IRubyObject setValueTwoDepthZero(IRubyObject value) {
         return variableValueTwo = value;

@@ -64,20 +64,16 @@ public class NoVarsDynamicScope extends DynamicScope {
     }
     
     public IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil) {
-        assert false : "NoVarsDynamicScope only supports scopes with no variables";
-        return null;
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with any variables");
     }
     public IRubyObject getValueZeroDepthZeroOrNil(IRubyObject nil) {
-        assert false : "NoVarsDynamicScope only supports scopes with no variables";
-        return null;
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with one or more variables");
     }
     public IRubyObject getValueOneDepthZeroOrNil(IRubyObject nil) {
-        assert false : "NoVarsDynamicScope only supports scopes with no variables";
-        return null;
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with two or more variables");
     }
     public IRubyObject getValueTwoDepthZeroOrNil(IRubyObject nil) {
-        assert false : "NoVarsDynamicScope only supports scopes with no variables";
-        return null;
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with three or more variables");
     }
 
     /**
@@ -92,16 +88,16 @@ public class NoVarsDynamicScope extends DynamicScope {
     }
 
     public IRubyObject setValueDepthZero(IRubyObject value, int offset) {
-        throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with any variables");
     }
     public IRubyObject setValueZeroDepthZero(IRubyObject value) {
-        throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with one or more variables");
     }
     public IRubyObject setValueOneDepthZero(IRubyObject value) {
-        throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with two or more variables");
     }
     public IRubyObject setValueTwoDepthZero(IRubyObject value) {
-        throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with three or more variables");
     }
 
     /**
