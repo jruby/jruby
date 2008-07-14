@@ -39,8 +39,8 @@ public abstract class DynamicScope {
             return new OneVarDynamicScope(staticScope, parent);
         case 2:
             return new TwoVarDynamicScope(staticScope, parent);
-//        case 3:
-//            return new ThreeVarDynamicScope(staticScope, parent);
+        case 3:
+            return new ThreeVarDynamicScope(staticScope, parent);
         default:
             return new ManyVarsDynamicScope(staticScope, parent);
         }

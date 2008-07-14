@@ -25,16 +25,19 @@ public class ThreeVarDynamicScope extends TwoVarDynamicScope {
         super(staticScope);
     }
     
+    @Override
     public void growIfNeeded() {
         if (staticScope.getNumberOfVariables() != SIZE) {
             throw new RuntimeException(GROW_ERROR);
         }
     }
     
+    @Override
     public DynamicScope cloneScope() {
         return new ThreeVarDynamicScope(staticScope, parent);
     }
 
+    @Override
     public IRubyObject[] getValues() {
         return new IRubyObject[] {variableValueZero, variableValueOne, variableValueTwo};
     }
@@ -49,6 +52,7 @@ public class ThreeVarDynamicScope extends TwoVarDynamicScope {
      * @param depth how many captured scopes down this variable should be set
      * @return the value here
      */
+    @Override
     public IRubyObject getValue(int offset, int depth) {
         if (depth > 0) {
             return parent.getValue(offset, depth - 1);
@@ -69,6 +73,7 @@ public class ThreeVarDynamicScope extends TwoVarDynamicScope {
     /**
      * Variation of getValue that checks for nulls, returning and setting the given value (presumably nil)
      */
+    @Override
     public IRubyObject getValueOrNil(int offset, int depth, IRubyObject nil) {
         if (depth > 0) {
             return parent.getValueOrNil(offset, depth - 1, nil);
@@ -77,6 +82,7 @@ public class ThreeVarDynamicScope extends TwoVarDynamicScope {
         }
     }
     
+    @Override
     public IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil) {
         assert offset < SIZE : SIZE_ERROR;
         switch (offset) {
@@ -93,8 +99,9 @@ public class ThreeVarDynamicScope extends TwoVarDynamicScope {
             throw new RuntimeException(SIZE_ERROR);
         }
     }
+    @Override
     public IRubyObject getValueTwoDepthZeroOrNil(IRubyObject nil) {
-        if (variableValueOne == null) return variableValueOne = nil;
+        if (variableValueTwo == null) return variableValueTwo = nil;
         return variableValueTwo;
     }
 
@@ -105,6 +112,7 @@ public class ThreeVarDynamicScope extends TwoVarDynamicScope {
      * @param value to set
      * @param depth how many captured scopes down this variable should be set
      */
+    @Override
     public IRubyObject setValue(int offset, IRubyObject value, int depth) {
         if (depth > 0) {
             assert parent != null : "If depth > 0, then parent should not ever be null";
@@ -125,6 +133,7 @@ public class ThreeVarDynamicScope extends TwoVarDynamicScope {
         }
     }
 
+    @Override
     public IRubyObject setValueDepthZero(IRubyObject value, int offset) {
         assert offset < SIZE : SIZE_ERROR;
         switch (offset) {
@@ -138,6 +147,7 @@ public class ThreeVarDynamicScope extends TwoVarDynamicScope {
             throw new RuntimeException(SIZE_ERROR);
         }
     }
+    @Override
     public IRubyObject setValueTwoDepthZero(IRubyObject value) {
         return variableValueTwo = value;
     }
@@ -153,6 +163,7 @@ public class ThreeVarDynamicScope extends TwoVarDynamicScope {
      * @param values up to size specified to be mapped as ordinary parm values
      * @param size is the number of values to assign as ordinary parm values
      */
+    @Override
     public void setArgValues(IRubyObject[] values, int size) {
         assert size <= SIZE : "ThreeVarDynamicScope only supports scopes with three variables, not " + size;
         switch (size) {

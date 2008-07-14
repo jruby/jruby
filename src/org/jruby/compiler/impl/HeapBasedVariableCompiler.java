@@ -265,6 +265,11 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             methodCompiler.loadNil();
             method.invokevirtual(p(DynamicScope.class), "getValueOneDepthZeroOrNil", sig(IRubyObject.class, IRubyObject.class));
             break;
+        case 2:
+            method.aload(methodCompiler.getDynamicScopeIndex());
+            methodCompiler.loadNil();
+            method.invokevirtual(p(DynamicScope.class), "getValueTwoDepthZeroOrNil", sig(IRubyObject.class, IRubyObject.class));
+            break;
         default:
             method.aload(methodCompiler.getVarsArrayIndex());
             method.pushInt(index);
@@ -293,6 +298,10 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
         case 1:
             methodCompiler.loadNil();
             method.invokevirtual(p(DynamicScope.class), "getValueOneDepthZeroOrNil", sig(IRubyObject.class, IRubyObject.class));
+            break;
+        case 2:
+            methodCompiler.loadNil();
+            method.invokevirtual(p(DynamicScope.class), "getValueTwoDepthZeroOrNil", sig(IRubyObject.class, IRubyObject.class));
             break;
         default:
             method.pushInt(index);

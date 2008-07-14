@@ -6,20 +6,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * Represents the the dynamic portion of scoping information.  The variableValues are the
- * values of assigned local or block variables.  The staticScope identifies which sort of
- * scope this is (block or local).
- * 
- * Properties of Dynamic Scopes:
- * 1. static and dynamic scopes have the same number of names to values
- * 2. size of variables (and thus names) is determined during parsing.  So those structured do
- *    not need to change
- *
- * FIXME: When creating dynamic scopes we sometimes accidentally pass in extra parents.  This
- * is harmless (other than wasting memory), but we should not do that.  We can fix this in two
- * ways:
- * 1. Fix all callers
- * 2. Check parent that is passed in and make if new instance is local, then its parent is not local
+ * This is a DynamicScope that does not support any variables.
  */
 public class NoVarsDynamicScope extends DynamicScope {
     public NoVarsDynamicScope(StaticScope staticScope, DynamicScope parent) {
