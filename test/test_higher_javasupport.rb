@@ -767,4 +767,11 @@ CLASSDEF
     end
     assert_nothing_raised { String.send("alias_method", name, "to_str") }
   end
+
+  # JRUBY-2671
+  def test_coerce_array_to_java_with_javaobject_inside
+    x = nil
+    assert_nothing_raised { x = java.util.ArrayList.new([java.lang.Integer.new(1)]) }
+    assert_equal("[1]", x.to_string)
+  end
 end

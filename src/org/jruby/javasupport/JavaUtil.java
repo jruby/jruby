@@ -173,7 +173,7 @@ public class JavaUtil {
         if (rubyObject instanceof JavaObject) {
             Object value =  ((JavaObject) rubyObject).getValue();
             
-            return convertArgument(rubyObject.getRuntime(), value, javaClass);
+            return convertArgument(rubyObject.getRuntime(), value, value.getClass());
             
         } else if (javaClass == Object.class || javaClass == null) {
             /* The Java method doesn't care what class it is, but we need to
