@@ -51,6 +51,15 @@ namespace :test do
   task :all do
     ant "test-all"
   end
+
+  desc "Run tracing tests (do not forget to pass --debug)"
+  task :tracing do
+    require 'rake/testtask'
+    Rake::TestTask.new('test:tracing') do |t|
+      t.pattern = 'test/tracing/test_*.rb'
+      t.verbose = true
+    end
+  end
 end
 
 file "build/jruby-test-classes.jar" do
