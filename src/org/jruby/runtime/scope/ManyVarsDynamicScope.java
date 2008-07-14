@@ -132,6 +132,18 @@ public class ManyVarsDynamicScope extends DynamicScope {
         }
         return value;
     }
+    public IRubyObject getValueThreeDepthZeroOrNil(IRubyObject nil) {
+        assert variableValues != null : "No variables in getValue for off: " + 3 + ", Dep: " + 0;
+        assert 3 < variableValues.length : "Index to big for getValue off: " + 3 + ", Dep: " + 0 + ", O: " + this;
+        // &foo are not getting set from somewhere...I want the following assert to be true though
+        //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
+        IRubyObject value = variableValues[3];
+        if (value == null) {
+            variableValues[3] = nil;
+            value = nil;
+        }
+        return value;
+    }
 
     /**
      * Set value in current dynamic scope or one of its captured scopes.
@@ -171,6 +183,11 @@ public class ManyVarsDynamicScope extends DynamicScope {
         assert 2 < variableValues.length : "Setting " + 2 + " to " + value + ", O: " + this; 
 
         return variableValues[2] = value;
+    }
+    public IRubyObject setValueThreeDepthZero(IRubyObject value) {
+        assert 3 < variableValues.length : "Setting " + 3 + " to " + value + ", O: " + this; 
+
+        return variableValues[3] = value;
     }
 
     /**

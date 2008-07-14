@@ -62,6 +62,9 @@ public class NoVarsDynamicScope extends DynamicScope {
     public IRubyObject getValueTwoDepthZeroOrNil(IRubyObject nil) {
         throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with three or more variables");
     }
+    public IRubyObject getValueThreeDepthZeroOrNil(IRubyObject nil) {
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with four or more variables");
+    }
 
     /**
      * Set value in current dynamic scope or one of its captured scopes.
@@ -85,6 +88,9 @@ public class NoVarsDynamicScope extends DynamicScope {
     }
     public IRubyObject setValueTwoDepthZero(IRubyObject value) {
         throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with three or more variables");
+    }
+    public IRubyObject setValueThreeDepthZero(IRubyObject value) {
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with four or more variables");
     }
 
     /**

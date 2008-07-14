@@ -6,6 +6,7 @@ import org.jruby.runtime.scope.OneVarDynamicScope;
 import org.jruby.parser.EvalStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.scope.FourVarDynamicScope;
 import org.jruby.runtime.scope.ThreeVarDynamicScope;
 import org.jruby.runtime.scope.TwoVarDynamicScope;
 
@@ -41,6 +42,8 @@ public abstract class DynamicScope {
             return new TwoVarDynamicScope(staticScope, parent);
         case 3:
             return new ThreeVarDynamicScope(staticScope, parent);
+        case 4:
+            return new FourVarDynamicScope(staticScope, parent);
         default:
             return new ManyVarsDynamicScope(staticScope, parent);
         }
@@ -192,9 +195,14 @@ public abstract class DynamicScope {
     public abstract IRubyObject getValueOneDepthZeroOrNil(IRubyObject nil);
     
     /**
-     * getValueOrNil for index 1, depth 0
+     * getValueOrNil for index 2, depth 0
      */
     public abstract IRubyObject getValueTwoDepthZeroOrNil(IRubyObject nil);
+    
+    /**
+     * getValueOrNil for index 3, depth 0
+     */
+    public abstract IRubyObject getValueThreeDepthZeroOrNil(IRubyObject nil);
 
     /**
      * Set value in current dynamic scope or one of its captured scopes.
@@ -228,6 +236,11 @@ public abstract class DynamicScope {
      * Set value two in this scope.
      */
     public abstract IRubyObject setValueTwoDepthZero(IRubyObject value);
+
+    /**
+     * Set value three in this scope.
+     */
+    public abstract IRubyObject setValueThreeDepthZero(IRubyObject value);
 
     /**
      * Set all values which represent 'normal' parameters in a call list to this dynamic
