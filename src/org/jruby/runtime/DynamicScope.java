@@ -6,6 +6,7 @@ import org.jruby.runtime.scope.OneVarDynamicScope;
 import org.jruby.parser.EvalStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.scope.ThreeVarDynamicScope;
 import org.jruby.runtime.scope.TwoVarDynamicScope;
 
 public abstract class DynamicScope {
@@ -38,6 +39,8 @@ public abstract class DynamicScope {
             return new OneVarDynamicScope(staticScope, parent);
         case 2:
             return new TwoVarDynamicScope(staticScope, parent);
+//        case 3:
+//            return new ThreeVarDynamicScope(staticScope, parent);
         default:
             return new ManyVarsDynamicScope(staticScope, parent);
         }
