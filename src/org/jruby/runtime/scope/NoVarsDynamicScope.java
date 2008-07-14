@@ -75,6 +75,10 @@ public class NoVarsDynamicScope extends DynamicScope {
         assert false : "NoVarsDynamicScope only supports scopes with no variables";
         return null;
     }
+    public IRubyObject getValueTwoDepthZeroOrNil(IRubyObject nil) {
+        assert false : "NoVarsDynamicScope only supports scopes with no variables";
+        return null;
+    }
 
     /**
      * Set value in current dynamic scope or one of its captured scopes.
@@ -94,6 +98,9 @@ public class NoVarsDynamicScope extends DynamicScope {
         throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
     }
     public IRubyObject setValueOneDepthZero(IRubyObject value) {
+        throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
+    }
+    public IRubyObject setValueTwoDepthZero(IRubyObject value) {
         throw new RuntimeException("NoVarsDynamicScope only supports scopes with no variables");
     }
 

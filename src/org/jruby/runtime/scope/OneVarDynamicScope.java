@@ -90,6 +90,9 @@ public class OneVarDynamicScope extends DynamicScope {
     public IRubyObject getValueOneDepthZeroOrNil(IRubyObject nil) {
         throw new RuntimeException("SingleVarDynamicScope only supports scopes with one variable");
     }
+    public IRubyObject getValueTwoDepthZeroOrNil(IRubyObject nil) {
+        throw new RuntimeException("SingleVarDynamicScope only supports scopes with one variable");
+    }
 
     /**
      * Set value in current dynamic scope or one of its captured scopes.
@@ -117,6 +120,9 @@ public class OneVarDynamicScope extends DynamicScope {
         return variableValue = value;
     }
     public IRubyObject setValueOneDepthZero(IRubyObject value) {
+        throw new RuntimeException("SingleVarDynamicScope only supports scopes with one variable");
+    }
+    public IRubyObject setValueTwoDepthZero(IRubyObject value) {
         throw new RuntimeException("SingleVarDynamicScope only supports scopes with one variable");
     }
 

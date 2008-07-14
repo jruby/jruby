@@ -103,6 +103,10 @@ public class ThreeVarDynamicScope extends DynamicScope {
         if (variableValueOne == null) return variableValueOne = nil;
         return variableValueOne;
     }
+    public IRubyObject getValueTwoDepthZeroOrNil(IRubyObject nil) {
+        if (variableValueOne == null) return variableValueOne = nil;
+        return variableValueTwo;
+    }
 
     /**
      * Set value in current dynamic scope or one of its captured scopes.
@@ -149,6 +153,9 @@ public class ThreeVarDynamicScope extends DynamicScope {
     }
     public IRubyObject setValueOneDepthZero(IRubyObject value) {
         return variableValueOne = value;
+    }
+    public IRubyObject setValueTwoDepthZero(IRubyObject value) {
+        return variableValueTwo = value;
     }
 
     /**

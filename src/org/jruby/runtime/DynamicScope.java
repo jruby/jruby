@@ -190,6 +190,11 @@ public abstract class DynamicScope {
      * getValueOrNil for index 1, depth 0
      */
     public abstract IRubyObject getValueOneDepthZeroOrNil(IRubyObject nil);
+    
+    /**
+     * getValueOrNil for index 1, depth 0
+     */
+    public abstract IRubyObject getValueTwoDepthZeroOrNil(IRubyObject nil);
 
     /**
      * Set value in current dynamic scope or one of its captured scopes.
@@ -210,22 +215,19 @@ public abstract class DynamicScope {
     public abstract IRubyObject setValueDepthZero(IRubyObject value, int offset);
 
     /**
-     * Set value in current dynamic scope or one of its captured scopes.
-     * 
-     * @param offset zero-indexed value that represents where variable lives
-     * @param value to set
-     * @param depth how many captured scopes down this variable should be set
+     * Set value zero in this scope;
      */
     public abstract IRubyObject setValueZeroDepthZero(IRubyObject value);
 
     /**
-     * Set value in current dynamic scope or one of its captured scopes.
-     * 
-     * @param offset zero-indexed value that represents where variable lives
-     * @param value to set
-     * @param depth how many captured scopes down this variable should be set
+     * Set value one in this scope.
      */
     public abstract IRubyObject setValueOneDepthZero(IRubyObject value);
+
+    /**
+     * Set value two in this scope.
+     */
+    public abstract IRubyObject setValueTwoDepthZero(IRubyObject value);
 
     /**
      * Set all values which represent 'normal' parameters in a call list to this dynamic
