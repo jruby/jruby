@@ -1,1 +1,2 @@
 fails:File.open opens a file that no exists when use File::NOCTTY mode
+fails(JRUBY-2798,macos):File.open opens the file when call with fd

@@ -1,2 +1,3 @@
 fails:Process::Constants should have the correct constant values on BSD-like systems
 fails:Process::Constants should have the correct constant values on Linux
+fails(JRUBY-2796,macos):Process::Constants should have the correct constant values on Darwin
