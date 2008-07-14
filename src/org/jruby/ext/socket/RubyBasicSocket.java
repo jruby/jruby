@@ -95,15 +95,56 @@ public class RubyBasicSocket extends RubyIO {
 
     @Override
     public IRubyObject close_write(ThreadContext context) {
-        try {
-            ((SocketChannel)openFile.getWriteStream().getDescriptor().getChannel()).socket().shutdownOutput();
-            openFile.getWriteStream().fclose();
-        } catch (BadDescriptorException ex) {
-            throw getRuntime().newErrnoEBADFError();
-        } catch (IOException e) {
-            throw getRuntime().newIOError(e.getMessage());
+        if (getRuntime().getSafeLevel() >= 4 && isTaint()) {
+            throw getRuntime().newSecurityError("Insecure: can't close");
+        }
+        
+        if (openFile.getPipeStream() == null && openFile.isReadable()) {
+            throw getRuntime().newIOError("closing non-duplex IO for writing");
+        }
+        
+        if (!openFile.isReadable()) {
+            close();
+        } else {
+            Channel socketChannel = openFile.getMainStream().getDescriptor().getChannel();
+            if (socketChannel instanceof SocketChannel
+                    || socketChannel instanceof DatagramChannel) {
+                try {
+                    asSocket().shutdownOutput();
+                } catch (IOException e) {
+                    throw getRuntime().newIOError(e.getMessage());
+                }
+            }
+            openFile.setPipeStream(null);
+            openFile.setMode(openFile.getMode() & ~OpenFile.WRITABLE);
         }
         return getRuntime().getNil();
+    }
+    
+    @Override
+    public IRubyObject close_read(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        if (runtime.getSafeLevel() >= 4 && isTaint()) {
+            throw getRuntime().newSecurityError("Insecure: can't close");
+        }
+        
+        if (!openFile.isWritable()) {
+            close();
+        } else {
+            Channel socketChannel = openFile.getMainStream().getDescriptor().getChannel();
+            if (socketChannel instanceof SocketChannel
+                    || socketChannel instanceof DatagramChannel) {
+                try {
+                    asSocket().shutdownInput();
+                } catch (IOException e) {
+                    throw runtime.newIOError(e.getMessage());
+                }
+            }
+            openFile.setMainStream(openFile.getPipeStream());
+            openFile.setPipeStream(null);
+            openFile.setMode(openFile.getMode() & ~OpenFile.READABLE);
+        }
+        return runtime.getNil();
     }
 
     @JRubyMethod(name = "send", rest = true)

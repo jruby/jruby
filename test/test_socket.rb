@@ -23,6 +23,30 @@ class SocketTest < Test::Unit::TestCase
       BasicSocket.do_not_reverse_lookup = reverse
     end
   end
+  
+  #JRUBY-2147
+  def test_tcp_close_read
+    socket = TCPServer.new(nil, 9999)
+    socket.close_read
+    assert(!socket.closed?)
+    socket.close
+  end
+  
+  #JRUBY-2146
+  def test_tcp_close_write
+    socket = TCPServer.new(nil, 8888)
+    socket.close_write
+    assert(!socket.closed?)
+    socket.close
+  end
+  
+  def test_tcp_close_read_then_write_should_close_socket
+    socket = TCPServer.new(nil, 7777)
+    socket.close_write
+    assert(!socket.closed?)
+    socket.close_read
+    assert(socket.closed?)
+  end
 end
 
 class UNIXSocketTests < Test::Unit::TestCase
