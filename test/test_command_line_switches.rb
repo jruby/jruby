@@ -7,7 +7,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   # FIXME: currently fails on Windows
   if (!WINDOWS)
     def test_dash_0_splits_records
-      output = %x{echo 1,2,3 | #{RUBY} -054 -n -e "puts $_ + ' '"}.chomp
+      output = jruby_with_pipe("echo '1,2,3'", %Q{ -054 -n -e 'puts $_ + " "'})
       assert_equal "1, ,2, ,3\n ,", output
     end
   end
@@ -20,7 +20,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     else
       output = jruby_with_pipe("echo '1,2,3'", args)
     end
-    assert_equal "1,2,3", output
+    assert_equal "1,2,3", output.chomp
   end
 
   def test_dash_little_b_benchmarks
@@ -58,7 +58,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   end
 
   def test_dash_big_f_changes_autosplit_pattern
-    args = %q{-a -F, -n -e "print $F.join(';')"}
+    args = %q{-a -F, -n -e 'print $F.join(";")'}
 
     if (WINDOWS)
       # FIXME: fails on windows
