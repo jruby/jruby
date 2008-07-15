@@ -171,4 +171,8 @@ public class Config implements ConfigMBean {
     public boolean isShowBytecode() {
         return ruby.getInstanceConfig().isShowBytecode();
     }
+    
+    public String getExcludedMethods() {
+        return ruby.getInstanceConfig().getExcludedMethods().toString();
+    }
 }

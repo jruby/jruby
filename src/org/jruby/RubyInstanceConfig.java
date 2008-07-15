@@ -37,9 +37,12 @@ import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import java.util.Set;
+import java.util.StringTokenizer;
 import org.jruby.ast.executable.Script;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Constants;
@@ -135,6 +138,7 @@ public class RubyInstanceConfig {
 
     // from CommandlineParser
     private List<String> loadPaths = new ArrayList<String>();
+    private Set<String> excludedMethods = new HashSet<String>();
     private StringBuffer inlineScript = new StringBuffer();
     private boolean hasInlineScript = false;
     private String scriptFileName = null;
@@ -206,6 +210,8 @@ public class RubyInstanceConfig {
     public static boolean FULL_TRACE_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.debug.fullTrace", false);
 
+    public static final String COMPILE_EXCLUDE
+            = SafePropertyAccessor.getProperty("jruby.jit.exclude");
     public static boolean nativeEnabled = true;
     
 
@@ -277,7 +283,12 @@ public class RubyInstanceConfig {
             String threshold = SafePropertyAccessor.getProperty("jruby.jit.threshold");
             String max = SafePropertyAccessor.getProperty("jruby.jit.max");
             String maxSize = SafePropertyAccessor.getProperty("jruby.jit.maxsize");
-
+            
+            if (COMPILE_EXCLUDE != null) {
+                String[] elements = COMPILE_EXCLUDE.split(",");
+                for (String element : elements) excludedMethods.add(element);
+            }
+            
             managementEnabled = SafePropertyAccessor.getBoolean("jruby.management.enabled", true);
             runRubyInProcess = SafePropertyAccessor.getBoolean("jruby.launch.inproc", true);
             boolean jitProperty = SafePropertyAccessor.getProperty("jruby.jit.enabled") != null;
@@ -430,6 +441,9 @@ public class RubyInstanceConfig {
                 .append("       Enable verbose JIT logging (reports failed compilation). Default is false\n")
                 .append("    jruby.jit.logEvery=<method count>\n")
                 .append("       Log a message every n methods JIT compiled. Default is 0 (off).\n")
+                .append("    jruby.jit.exclude=<ClsOrMod,ClsOrMod::method_name,-::method_name>\n")
+                .append("       Exclude methods from JIT by class/module short name, c/m::method_name,\n")
+                .append("       or -::method_name for anon/singleton classes/modules. Comma-delimited.\n")
                 .append("\nNATIVE SUPPORT:\n")
                 .append("    jruby.native.enabled=true|false\n")
                 .append("       Enable/disable native extensions (like JNA for non-Java APIs; Default is true\n")
@@ -1203,4 +1217,9 @@ public class RubyInstanceConfig {
     public boolean isManagementEnabled() {
         return managementEnabled;
     }
+    
+    public Set getExcludedMethods() {
+        return excludedMethods;
+    }
+    
 }

@@ -85,7 +85,16 @@ public class JITCompiler implements JITCompilerMBean {
                     method.setCallCount(-1);
                     return;
                 }
-
+                
+                // Check if the method has been explicitly excluded
+                String moduleName = method.getImplementationClass().getName();
+                moduleName = moduleName.replaceAll("#<.*>", "-");
+                if (instanceConfig.getExcludedMethods().contains(moduleName) ||
+                        instanceConfig.getExcludedMethods().contains(moduleName+"::"+name)) {
+                    method.setCallCount(-1);
+                    return;
+                }
+                
                 JITClassGenerator generator = new JITClassGenerator(name, method, context);
 
                 String key = SexpMaker.create(name, method.getArgsNode(), method.getBodyNode());

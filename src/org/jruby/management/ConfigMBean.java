@@ -41,4 +41,5 @@ public interface ConfigMBean {
     public boolean isFullTraceEnabled();
     public boolean isLazyHandlesEnabled();
     public boolean isShowBytecode();
+    public String getExcludedMethods();
 }
