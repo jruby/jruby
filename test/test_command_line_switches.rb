@@ -220,12 +220,12 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     # server VM when explicitly set --server
     result = jruby(%Q{--server -rjava \
       -e "print java.lang.management.ManagementFactory.getCompilationMXBean.name"})
-    assert_match /tiered/, result.downcase
+    assert_match /(tiered|server)/, result.downcase
 
     # server VM when explicitly set via -J-server
     result = jruby(%Q{-J-server -rjava \
       -e "print java.lang.management.ManagementFactory.getCompilationMXBean.name"})
-    assert_match /tiered/, result.downcase
+    assert_match /(tiered|server)/, result.downcase
   end
 
   # JRUBY-2648
