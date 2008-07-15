@@ -1,1 +1,1 @@
-fails:IO::popen allows the io to be closed inside the block
+fails(JRUBY-2677,macos):IO::popen allows the io to be closed inside the block
