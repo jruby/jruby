@@ -56,7 +56,6 @@ class TestProcess < Test::Unit::TestCase
       # The goal here is to make sure that those "weird"
       # POSIX methods don't break JRuby, since there were
       # numerous regressions in this area.
-      assert_raise(NotImplementedError) { Process.uid }
       assert_raise(NotImplementedError) { Process.uid = 5 }
       assert_raise(NotImplementedError) { Process.gid }
       assert_raise(NotImplementedError) { Process.gid = 5 }

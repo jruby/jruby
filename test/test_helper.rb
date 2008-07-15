@@ -14,6 +14,14 @@ module TestHelper
     JRuby.runtime.instance_config.run_ruby_in_process = prev_in_process
   end
 
+  def jruby_with_pipe(pipe, *args)
+    prev_in_process = JRuby.runtime.instance_config.run_ruby_in_process
+    JRuby.runtime.instance_config.run_ruby_in_process = false
+    `#{pipe} | "#{RUBY}" #{args.join(' ')}`
+   ensure
+    JRuby.runtime.instance_config.run_ruby_in_process = prev_in_process
+  end
+
   def with_temp_script(script)
     Tempfile.open(["test-script", ".rb"]) do |f|
       begin

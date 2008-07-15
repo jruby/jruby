@@ -4,14 +4,6 @@ require 'test/test_helper'
 class TestLaunchingByShellScript < Test::Unit::TestCase
   include TestHelper
 
-  def jruby_with_pipe(pipe, *args)
-    prev_in_process = JRuby.runtime.instance_config.run_ruby_in_process
-    JRuby.runtime.instance_config.run_ruby_in_process = false
-    `#{pipe} | "#{RUBY}" #{args.join(' ')}`
-   ensure
-    JRuby.runtime.instance_config.run_ruby_in_process = prev_in_process
-  end
-
   def test_minus_e
     assert_equal "true", jruby('-e "puts true"').chomp
     assert_equal 0, $?.exitstatus
