@@ -95,6 +95,7 @@ import static org.jruby.CompatVersion.*;
 @JRubyClass(name="IO", include="Enumerable")
 public class RubyIO extends RubyObject {
     protected OpenFile openFile;
+    protected List<RubyThread> blockingThreads;
     
     public void registerDescriptor(ChannelDescriptor descriptor) {
         getRuntime().getDescriptors().put(new Integer(descriptor.getFileno()), new WeakReference<ChannelDescriptor>(descriptor));
@@ -1662,6 +1663,8 @@ public class RubyIO extends RubyObject {
         if (openFile == null) return runtime.getNil();
         
         // These would be used when we notify threads...if we notify threads
+        interruptBlockingThreads();
+        
         ChannelDescriptor main, pipe;
         if (openFile.getPipeStream() != null) {
             pipe = openFile.getPipeStream().getDescriptor();
@@ -2892,5 +2895,49 @@ public class RubyIO extends RubyObject {
         f1.transferTo(f2.position(), size, f2);
 
         return context.getRuntime().newFixnum(size);
+    }
+    
+    /**
+     * Add a thread to the list of blocking threads for this IO.
+     * 
+     * @param thread A thread blocking on this IO
+     */
+    public synchronized void addBlockingThread(RubyThread thread) {
+        if (blockingThreads == null) {
+            blockingThreads = new ArrayList<RubyThread>(1);
+        }
+        blockingThreads.add(thread);
+    }
+    
+    /**
+     * Remove a thread from the list of blocking threads for this IO.
+     * 
+     * @param thread A thread blocking on this IO
+     */
+    public synchronized void removeBlockingThread(RubyThread thread) {
+        if (blockingThreads == null) {
+            return;
+        }
+        for (int i = 0; i < blockingThreads.size(); i++) {
+            if (blockingThreads.get(i) == thread) {
+                // not using remove(Object) here to avoid the equals() call
+                blockingThreads.remove(i);
+            }
+        }
+    }
+    
+    /**
+     * Fire an IOError in all threads blocking on this IO object
+     */
+    protected synchronized void interruptBlockingThreads() {
+        if (blockingThreads == null) {
+            return;
+        }
+        for (int i = 0; i < blockingThreads.size(); i++) {
+            RubyThread thread = blockingThreads.get(i);
+            
+            // raise will also wake the thread from selection
+            thread.raise(new IRubyObject[] {getRuntime().newIOError("stream closed").getException()}, Block.NULL_BLOCK);
+        }
     }
 }

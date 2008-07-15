@@ -790,11 +790,15 @@ public class RubyThread extends RubyObject {
             SelectableChannel selectable = (SelectableChannel)channel;
             
             try {
+                io.addBlockingThread(this);
                 currentSelector = selectable.provider().openSelector();
             
                 SelectionKey key = selectable.register(currentSelector, SelectionKey.OP_ACCEPT);
 
                 int result = currentSelector.select();
+                
+                // check for thread events, in case we've been woken up to die
+                pollThreadEvents();
 
                 if (result == 1) {
                     Set<SelectionKey> keySet = currentSelector.selectedKeys();
@@ -816,6 +820,7 @@ public class RubyThread extends RubyObject {
                     }
                 }
                 currentSelector = null;
+                io.removeBlockingThread(this);
             }
         } else {
             // can't select, just have to do a blocking call
@@ -827,6 +832,7 @@ public class RubyThread extends RubyObject {
         if (currentSelector != null) {
             currentSelector.wakeup();
         }
+        pollThreadEvents();
     }
     
     public void beforeBlockingCall() {

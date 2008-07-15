@@ -1,5 +1,6 @@
 require 'test/unit'
 require 'socket'
+require 'thread'
 
 class SocketTest < Test::Unit::TestCase
   def test_tcp_socket_allows_nil_for_hostname
@@ -314,3 +315,24 @@ class UNIXSocketTests < Test::Unit::TestCase
     end
   end
 end
+
+class ServerTest < Test::Unit::TestCase
+  def test_server_close_interrupts_pending_accepts
+    # unfortunately this test is going to not be 100% reliable
+    # since it involves thread interaction and it's impossible to
+    # do things like wait until the other thread blocks
+    port = 41258
+    server = TCPServer.new('localhost', port)
+    queue = Queue.new
+    thread = Thread.new do
+      server.accept
+    end
+    # wait until the thread is sleeping (ready to accept)
+    Thread.pass while thread.alive? && thread.status != "sleep"
+    # close the server
+    server.close
+    # propagate the thread's termination error, checking it for IOError
+    assert_raise(IOError) {thread.value}
+  end
+end
+
