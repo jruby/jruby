@@ -111,7 +111,7 @@ if "%_VAL:~0,4%" == "-Xss" (
 
 rem Make sure the older way to specify server VM
 rem is still supported.
-if [%_VAL%] == [-server] (
+if ["%_VAL%"] == ["-server"] (
   set _JAVA_VM=-server
   goto vmoptsNext
 )

@@ -180,4 +180,41 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     assert_match /ruby \d+\.\d+\.\d+/, version_string
     assert_match /jruby \d+\.\d+\.\d+/, version_string
   end
+
+  # JRUBY-2805
+  def test_args_with_equals_sign
+    result = jruby(%q{ -rjava -J-Dfoo=bar -e "print java.lang.System.getProperty('foo')"})
+    assert_equal("bar", result)
+  end
+
+  # JRUBY-2648
+  def test_server_vm_option
+    # server VM when explicitly set --server
+    result = jruby("--server -rjava \
+      -e 'print java.lang.management.ManagementFactory.getCompilationMXBean.name'")
+    assert_match /tiered/, result.downcase
+
+    # server VM when explicitly set via -J-server
+    result = jruby("-J-server -rjava \
+      -e 'print java.lang.management.ManagementFactory.getCompilationMXBean.name'")
+    assert_match /tiered/, result.downcase
+  end
+
+  # JRUBY-2648
+  def test_client_vm_option
+    # client VM by default:
+    result = jruby("-rjava \
+      -e 'print java.lang.management.ManagementFactory.getCompilationMXBean.name'")
+    assert_match /client/, result.downcase
+
+    # client VM when explicitly set via --client
+    result = jruby("--client -rjava \
+      -e 'print java.lang.management.ManagementFactory.getCompilationMXBean.name'")
+    assert_match /client/, result.downcase
+
+    # client VM when explicitly set via -J-client
+    result = jruby("-J-client -rjava \
+      -e 'print java.lang.management.ManagementFactory.getCompilationMXBean.name'")
+    assert_match /client/, result.downcase
+  end
 end
