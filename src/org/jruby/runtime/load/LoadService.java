@@ -281,7 +281,9 @@ public class LoadService {
         Script script = null;
         if (library == null) {
             String className = file;
-            if (file.lastIndexOf(".") != -1) className = file.substring(0, file.lastIndexOf("."));
+            // Remove any relative prefix, e.g. "./foo/bar" becomes "foo/bar".
+            className = className.replaceFirst("^\\.\\/", "");
+            if (className.lastIndexOf(".") != -1) className = className.substring(0, className.lastIndexOf("."));
             className = className.replace("-", "_minus_").replace('.', '_');
             int lastSlashIndex = className.lastIndexOf('/');
             if (lastSlashIndex > -1 &&
