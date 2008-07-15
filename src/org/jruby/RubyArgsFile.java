@@ -112,28 +112,26 @@ public class RubyArgsFile {
         runtime.defineReadonlyVariable("$FILENAME", runtime.newString("-"));
     }
 
-
-
     @JRubyMethod(name = {"fileno", "to_i"})
     public static IRubyObject fileno(ThreadContext context, IRubyObject recv) {
         ArgsFileData data = ArgsFileData.getDataFrom(recv);
 
-        if(!data.startedProcessing && !data.nextArgsFile(context)) {
+        if (data.currentFile == null && !data.nextArgsFile(context)) {
             throw context.getRuntime().newArgumentError("no stream");
         }
-        return ((RubyIO)data.currentFile).fileno(context);
+        return ((RubyIO) data.currentFile).fileno(context);
     }
 
     @JRubyMethod(name = "to_io")
     public static IRubyObject to_io(ThreadContext context, IRubyObject recv) {
         ArgsFileData data = ArgsFileData.getDataFrom(recv);
 
-        if(!data.startedProcessing && !data.nextArgsFile(context)) {
+        if (data.currentFile == null && !data.nextArgsFile(context)) {
             throw context.getRuntime().newArgumentError("no stream");
         }
         return data.currentFile;
     }
-    
+
     public static IRubyObject internalGets(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         ArgsFileData data = ArgsFileData.getDataFrom(recv);
 
@@ -308,11 +306,11 @@ public class RubyArgsFile {
     @JRubyMethod(name = {"eof", "eof?"})
     public static IRubyObject eof(ThreadContext context, IRubyObject recv) {
         ArgsFileData data = ArgsFileData.getDataFrom(recv);
-        if(data.currentFile != null && !data.nextArgsFile(context)) {
+        if (data.currentFile == null && !data.nextArgsFile(context)) {
             return context.getRuntime().getTrue();
         }
 
-        return ((RubyIO)data.currentFile).eof_p(context);
+        return ((RubyIO) data.currentFile).eof_p(context);
     }
 
     @JRubyMethod(name = "pos=", required = 1)
