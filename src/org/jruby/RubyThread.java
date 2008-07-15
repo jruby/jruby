@@ -832,7 +832,6 @@ public class RubyThread extends RubyObject {
         if (currentSelector != null) {
             currentSelector.wakeup();
         }
-        pollThreadEvents();
     }
     
     public void beforeBlockingCall() {
