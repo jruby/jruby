@@ -411,7 +411,7 @@ public class RubyFile extends RubyIO {
         IRubyObject filename = args[0].convertToString();
         getRuntime().checkSafeString(filename);
         
-        path = filename.toString();
+        path = filename.convertToString().getUnicodeValue();
         
         String modeString;
         ModeFlags modes;

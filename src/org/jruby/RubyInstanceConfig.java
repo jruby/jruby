@@ -1025,11 +1025,7 @@ public class RubyInstanceConfig {
     }
 
     public byte[] inlineScript() {
-        try {
-            return inlineScript.toString().getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            return inlineScript.toString().getBytes();
-        }
+        return inlineScript.toString().getBytes();
     }
 
     public List<String> requiredLibraries() {

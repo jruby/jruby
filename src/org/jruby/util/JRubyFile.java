@@ -46,11 +46,6 @@ public class JRubyFile extends File {
     private static final long serialVersionUID = 435364547567567L;
 
     public static JRubyFile create(String cwd, String pathname) {
-        try {
-            pathname = new String(pathname.getBytes("ISO-8859-1"), "UTF-8");
-        } catch (java.io.UnsupportedEncodingException ex) {
-            // NOT REACHED HERE
-        }
         return createNoUnicodeConversion(cwd, pathname);
     }
 
