@@ -351,6 +351,9 @@
       <arg value="rake"/>
       <arg value="--env-shebang"/>
     </java>
+    <delete>
+      <fileset dir="dist/lib/ruby/gems/1.8/cache" includes="*.gem"/>
+    </delete>
   </target>
   
   <target name="compile-stdlib" unless="test">
@@ -906,7 +909,6 @@
     <include name="lib/ruby/1.8/**"/>
     <include name="lib/ruby/site_ruby/1.8/**"/>
     <include name="lib/ruby/gems/1.8/specifications/sources-0.0.1.gemspec"/>
-    <include name="lib/ruby/gems/1.8/cache/sources-0.0.1.gem"/>
     <include name="lib/ruby/gems/1.8/gems/sources-0.0.1/**"/>
   </patternset>
 
