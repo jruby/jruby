@@ -837,7 +837,8 @@ public class RuntimeHelpers {
     }
     
     public static IRubyObject postOpAsgnWithOrAnd(IRubyObject receiver, IRubyObject value, ThreadContext context, CallSite varAsgnSite) {
-        return varAsgnSite.call(context, receiver, value);
+        varAsgnSite.call(context, receiver, value);
+        return value;
     }
     
     public static IRubyObject opAsgnWithMethod(ThreadContext context, IRubyObject receiver, IRubyObject arg, CallSite varSite, CallSite opSite, CallSite opAsgnSite) {
