@@ -31,6 +31,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 
+import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.CallBlock;
@@ -60,6 +61,8 @@ public class SunSignalFacade implements SignalFacade {
                     runtime.getThread().callMethod(runtime.getCurrentContext(), "main", new IRubyObject[0])
                         .callMethod(runtime.getCurrentContext(), "raise", new IRubyObject[]{e.getException()});
                 } catch(Exception ignored) {}
+            } catch (MainExitException mee) {
+                runtime.getThreadService().getMainThread().kill();
             } finally {
                 Signal.handle(new Signal(this.signal), this);
             }
