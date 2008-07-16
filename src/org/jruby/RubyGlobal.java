@@ -119,7 +119,7 @@ public class RubyGlobal {
         RubyArray argvArray = runtime.newArray();
         String[] argv = runtime.getInstanceConfig().getArgv();
         for (int i = 0; i < argv.length; i++) {
-            argvArray.append(RubyString.newUnicodeString(runtime, argv[i]));
+            argvArray.append(RubyString.newString(runtime, argv[i].getBytes()));
         }
         runtime.defineGlobalConstant("ARGV", argvArray);
         runtime.getGlobalVariables().defineReadonly("$*", new ValueAccessor(argvArray));
