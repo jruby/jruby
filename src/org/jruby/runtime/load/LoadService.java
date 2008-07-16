@@ -46,6 +46,7 @@ import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import java.util.zip.ZipException;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyFile;
@@ -455,6 +456,11 @@ public class LoadService {
                             current = new JarFile(entry.substring(5,entry.indexOf("!/")));
                         }
                         jarFiles.put(entry,current);
+                    } catch (ZipException ignored) {
+                        if (runtime.getInstanceConfig().isVerbose()) {
+                            runtime.getErr().println("ZipException trying to access " + entry + ", stack trace follows:");
+                            ignored.printStackTrace(runtime.getErr());
+                        }
                     } catch (FileNotFoundException ignored) {
                     } catch (IOException e) {
                         throw runtime.newIOErrorFromException(e);
