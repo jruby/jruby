@@ -162,6 +162,16 @@ public class Main {
         InputStream in   = config.getScriptSource();
         String filename  = config.displayedFileName();
         Ruby runtime     = Ruby.newInstance(config);
+        
+        // set thread context JRuby classloader here, for the main thread
+        try {
+            Thread.currentThread().setContextClassLoader(runtime.getJRubyClassLoader());
+        } catch (SecurityException se) {
+            // can't set TC classloader
+            if (runtime.getInstanceConfig().isVerbose()) {
+                System.err.println("WARNING: Security restrictions disallowed setting context classloader for main thread.");
+            }
+        }
 
         if (in == null) {
             // no script to run, return success below

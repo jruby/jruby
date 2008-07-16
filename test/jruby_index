@@ -84,3 +84,4 @@ test_jruby_object_input_stream
 test_jar_on_load_path
 test_jruby_ext
 test_thread_context_frame_dereferences_unreachable_variables
+test_context_classloader

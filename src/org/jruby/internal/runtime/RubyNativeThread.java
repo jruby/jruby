@@ -64,8 +64,21 @@ public class RubyNativeThread extends Thread {
         return rubyThread;
     }
     
+    private static boolean warnedAboutTC = false;
+    
     public void run() {
         ThreadContext context = runtime.getThreadService().registerNewThread(rubyThread);
+        
+        // set thread context JRuby classloader here, for Ruby-owned thread
+        try {
+            Thread.currentThread().setContextClassLoader(runtime.getJRubyClassLoader());
+        } catch (SecurityException se) {
+            // can't set TC classloader
+            if (!warnedAboutTC && runtime.getInstanceConfig().isVerbose()) {
+                System.err.println("WARNING: Security restrictions disallowed setting context classloader for Ruby threads.");
+            }
+        }
+        
         context.preRunThread(currentFrame);
 
         // Call the thread's code
