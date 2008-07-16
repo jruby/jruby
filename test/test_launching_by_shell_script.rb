@@ -37,6 +37,22 @@ class TestLaunchingByShellScript < Test::Unit::TestCase
       res = jruby(%q{-J-Dfoo='a b c' -e "require 'java'; puts java.lang.System.getProperty('foo')"}).chomp
       assert_equal("a b c", res)
     end
+    
+    # JRUBY-2615
+    def test_interactive_child_process
+      lines = []
+      IO.popen(%q{sh -c 'echo enter something:; read value; echo got: $value; read value'}, 'r+') do |handle|
+        begin
+          while (line = handle.readline)
+            lines << line
+            handle.puts('foobar')
+          end
+        rescue EOFError
+          lines << "STDIN closed"
+        end
+      end
+      assert_equal(["enter something:\n", "got: foobar\n", "STDIN closed"], lines)
+    end
   end
 
   def test_at_exit

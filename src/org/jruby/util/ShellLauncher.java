@@ -28,13 +28,21 @@
 
 package org.jruby.util;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FilterInputStream;
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.PrintStream;
+import static java.lang.System.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -44,6 +52,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.ext.posix.util.FieldAccess;
 import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.ModeFlags;
@@ -54,6 +63,7 @@ import org.jruby.util.io.ModeFlags;
  * @author nicksieger
  */
 public class ShellLauncher {
+    private static final boolean DEBUG = false;
     private static class ScriptThreadProcess extends Process implements Runnable {
         private String[] argArray;
         private int result;
@@ -225,9 +235,10 @@ public class ShellLauncher {
         return run(runtime, new IRubyObject[] {string});
     }
 
-    public static Process popen(Ruby runtime, IRubyObject string, ModeFlags modes) throws IOException {
+    public static POpenProcess popen(Ruby runtime, IRubyObject string, ModeFlags modes) throws IOException {
         String shell = getShell(runtime);
-        Process aProcess = null;
+        POpenProcess aProcess = null;
+        Process childProcess = null;
         File pwd = new File(runtime.getCurrentDirectory());
         String[] args = parseCommandLine(runtime, new IRubyObject[] {string});
 
@@ -240,14 +251,56 @@ public class ShellLauncher {
             argArray[0] = shell;
             argArray[1] = shell.endsWith("sh") ? "-c" : "/c";
             argArray[2] = cmdline;
-            aProcess = Runtime.getRuntime().exec(argArray, getCurrentEnv(runtime), pwd);
+            childProcess = Runtime.getRuntime().exec(argArray, getCurrentEnv(runtime), pwd);
         } else {
-            aProcess = Runtime.getRuntime().exec(args, getCurrentEnv(runtime), pwd);        
+            childProcess = Runtime.getRuntime().exec(args, getCurrentEnv(runtime), pwd);        
         }
             
-        aProcess = new POpenProcess(aProcess, runtime, modes);
+        aProcess = new POpenProcess(childProcess, runtime, modes);
         
         return aProcess;
+    }
+    
+    /**
+     * Unwrap all filtering streams between the given stream and its actual
+     * unfiltered stream. This is primarily to unwrap streams that have
+     * buffers that would interfere with interactivity.
+     * 
+     * @param filteredStream The stream to unwrap
+     * @return An unwrapped stream, presumably unbuffered
+     */
+    public static OutputStream unwrapBufferedStream(OutputStream filteredStream) {
+        while (filteredStream instanceof FilterOutputStream) {
+            try {
+                filteredStream = (OutputStream)
+                    FieldAccess.getProtectedFieldValue(FilterOutputStream.class,
+                        "out", filteredStream);
+            } catch (Exception e) {
+                break; // break out if we've dug as deep as we can
+            }
+        }
+        return filteredStream;
+    }
+    
+    /**
+     * Unwrap all filtering streams between the given stream and its actual
+     * unfiltered stream. This is primarily to unwrap streams that have
+     * buffers that would interfere with interactivity.
+     * 
+     * @param filteredStream The stream to unwrap
+     * @return An unwrapped stream, presumably unbuffered
+     */
+    public static InputStream unwrapBufferedStream(InputStream filteredStream) {
+        while (filteredStream instanceof FilterInputStream) {
+            try {
+                filteredStream = (InputStream)
+                    FieldAccess.getProtectedFieldValue(FilterInputStream.class,
+                        "in", filteredStream);
+            } catch (Exception e) {
+                break; // break out if we've dug as deep as we can
+            }
+        }
+        return filteredStream;
     }
     
     public static class POpenProcess extends Process {
@@ -257,7 +310,10 @@ public class ShellLauncher {
         
         private InputStream in;
         private OutputStream out;
-        private StreamPumper pumper;
+        private FileChannel outChannel;
+        private FileChannel inChannel;
+        private Pumper readPumper;
+        private Pumper writePumper;
         
         public POpenProcess(Process child, Ruby runtime, ModeFlags modes) {
             this.child = child;
@@ -266,37 +322,54 @@ public class ShellLauncher {
             
             if (modes.isWritable()) {
                 // popen caller wants to be able to write, provide subprocess out directly
-                out = child.getOutputStream();
-            } else {
-                // popen caller will not be writing, provide a bogus stream
-                try {
-                    child.getOutputStream().close();
-                } catch (IOException ioe) {
-                    throw runtime.newIOErrorFromException(ioe);
+                out = unwrapBufferedStream(child.getOutputStream());
+                if (out instanceof FileOutputStream) {
+                    outChannel = ((FileOutputStream)out).getChannel();
                 }
-                
-                out = new OutputStream() {
-                    @Override
-                    public void write(int b) throws IOException {
-                    }
-                };
+            } else {
+                // no write requested, hook up write to parent runtime's input
+                OutputStream childOut = unwrapBufferedStream(child.getOutputStream());
+                FileChannel childOutChannel = null;
+                if (childOut instanceof FileOutputStream) {
+                    childOutChannel = ((FileOutputStream)childOut).getChannel();
+                }
+                InputStream parentIn = unwrapBufferedStream(runtime.getIn());
+                FileChannel parentInChannel = null;
+                if (parentIn instanceof FileInputStream) {
+                    parentInChannel = ((FileInputStream)parentIn).getChannel();
+                }
+                if (parentInChannel != null && childOutChannel != null) {
+                    writePumper = new ChannelPumper(parentInChannel, childOutChannel, Pumper.Slave.OUT);
+                } else {
+                    writePumper = new StreamPumper(parentIn, childOut, false, Pumper.Slave.OUT);
+                }
+                writePumper.start();
             }
             
             if (modes.isReadable()) {
                 // popen callers wants to be able to read, provide subprocess in directly
-                in = child.getInputStream();
+                in = unwrapBufferedStream(child.getInputStream());
+                if (in instanceof FileInputStream) {
+                    inChannel = ((FileInputStream)in).getChannel();
+                }
             } else {
-                // TODO: Should this call runtime.getOutputStream() instead?
-                pumper = new StreamPumper(child.getInputStream(), runtime.getOut(), false);
-                pumper.setDaemon(true);
-                pumper.start();
-                
-                in = new InputStream() {
-                    @Override
-                    public int read() throws IOException {
-                        return -1;
-                    }
-                };
+                // no read requested, hook up read to parents output
+                InputStream childIn = unwrapBufferedStream(child.getInputStream());
+                FileChannel childInChannel = null;
+                if (childIn instanceof FileInputStream) {
+                    childInChannel = ((FileInputStream)childIn).getChannel();
+                }
+                OutputStream parentOut = unwrapBufferedStream(runtime.getOut());
+                FileChannel parentOutChannel = null;
+                if (parentOut instanceof FileOutputStream) {
+                    parentOutChannel = ((FileOutputStream)parentOut).getChannel();
+                }
+                if (childInChannel != null && parentOutChannel != null) {
+                    readPumper = new ChannelPumper(childInChannel, parentOutChannel, Pumper.Slave.IN);
+                } else {
+                    readPumper = new StreamPumper(childIn, parentOut, false, Pumper.Slave.IN);
+                }
+                readPumper.start();
             }
         }
 
@@ -314,17 +387,28 @@ public class ShellLauncher {
         public InputStream getErrorStream() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
+        
+        public FileChannel getInput() {
+            return inChannel;
+        }
+        
+        public FileChannel getOutput() {
+            return outChannel;
+        }
 
         @Override
         public int waitFor() throws InterruptedException {
-            try {
-                out.close();
-            } catch (IOException ioe) {
-                // ignore, we're on the way out
+            if (writePumper == null) {
+                try {
+                    out.close();
+                } catch (IOException ioe) {
+                    // ignore, we're on the way out
+                }
+            } else {
+                writePumper.quit();
             }
             
             int result = child.waitFor();
-            if (pumper != null) pumper.quit();
             
             return result;
         }
@@ -336,7 +420,6 @@ public class ShellLauncher {
 
         @Override
         public void destroy() {
-            if (pumper != null) pumper.quit();
             try {
                 in.close();
                 out.close();
@@ -382,16 +465,25 @@ public class ShellLauncher {
         return aProcess;
     }
 
-    private static class StreamPumper extends Thread {
+    private interface Pumper extends Runnable {
+        public enum Slave { IN, OUT };
+        public void start();
+        public void quit();
+    }
+
+    private static class StreamPumper extends Thread implements Pumper {
         private InputStream in;
         private OutputStream out;
         private boolean onlyIfAvailable;
         private volatile boolean quit;
         private final Object waitLock = new Object();
-        StreamPumper(InputStream in, OutputStream out, boolean avail) {
+        private final Slave slave;
+        StreamPumper(InputStream in, OutputStream out, boolean avail, Slave slave) {
             this.in = in;
             this.out = out;
             this.onlyIfAvailable = avail;
+            this.slave = slave;
+            setDaemon(true);
         }
         @Override
         public void run() {
@@ -420,7 +512,7 @@ public class ShellLauncher {
                             hasReadSomething = true;
                         }
                     }
-
+                    
                     if ((numRead = in.read(buf)) == -1) {
                         break;
                     }
@@ -433,8 +525,12 @@ public class ShellLauncher {
                     // processes would just wait for the stream
                     // to be closed before they process its content,
                     // and produce the output. E.g.: "cat".
-                    try { out.close(); } catch (IOException ioe) {}
-                }                
+                    if (slave == Slave.OUT) {
+                        // we only close out if it's the slave stream, to avoid
+                        // closing a directly-mapped stream from parent process
+                        try { out.close(); } catch (IOException ioe) {}
+                    }
+                }
             }
         }
         public void quit() {
@@ -445,18 +541,59 @@ public class ShellLauncher {
         }
     }
 
+    private static class ChannelPumper extends Thread implements Pumper {
+        private FileChannel inChannel;
+        private FileChannel outChannel;
+        private volatile boolean quit;
+        private final Slave slave;
+        ChannelPumper(FileChannel inChannel, FileChannel outChannel, Slave slave) {
+            if (DEBUG) out.println("using channel pumper");
+            this.inChannel = inChannel;
+            this.outChannel = outChannel;
+            this.slave = slave;
+            setDaemon(true);
+        }
+        @Override
+        public void run() {
+            ByteBuffer buf = ByteBuffer.allocateDirect(1024);
+            buf.clear();
+            try {
+                while (!quit && inChannel.isOpen() && outChannel.isOpen()) {
+                    int read = inChannel.read(buf);
+                    if (read == -1) break;
+                    buf.flip();
+                    outChannel.write(buf);
+                    buf.clear();
+                }
+            } catch (Exception e) {
+            } finally {
+                switch (slave) {
+                case OUT:
+                    try { outChannel.close(); } catch (IOException ioe) {}
+                    break;
+                case IN:
+                    try { inChannel.close(); } catch (IOException ioe) {}
+                }
+            }
+        }
+        public void quit() {
+            interrupt();
+            this.quit = true;
+        }
+    }
+
     private static void handleStreams(Process p, InputStream in, OutputStream out, OutputStream err) throws IOException {
         InputStream pOut = p.getInputStream();
         InputStream pErr = p.getErrorStream();
         OutputStream pIn = p.getOutputStream();
 
-        StreamPumper t1 = new StreamPumper(pOut, out, false);
-        StreamPumper t2 = new StreamPumper(pErr, err, false);
+        StreamPumper t1 = new StreamPumper(pOut, out, false, Pumper.Slave.IN);
+        StreamPumper t2 = new StreamPumper(pErr, err, false, Pumper.Slave.IN);
 
         // The assumption here is that the 'in' stream provides
         // proper available() support. If available() always
         // returns 0, we'll hang!
-        StreamPumper t3 = new StreamPumper(in, pIn, true);
+        StreamPumper t3 = new StreamPumper(in, pIn, true, Pumper.Slave.OUT);
 
         t1.start();
         t2.start();

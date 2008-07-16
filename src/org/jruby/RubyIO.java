@@ -190,7 +190,7 @@ public class RubyIO extends RubyObject {
         registerDescriptor(openFile.getMainStream().getDescriptor());
     }
 
-    public RubyIO(Ruby runtime, Process process, ModeFlags modes) {
+    public RubyIO(Ruby runtime, ShellLauncher.POpenProcess process, ModeFlags modes) {
     	super(runtime, runtime.getIO());
         
         openFile = new OpenFile();
@@ -200,17 +200,17 @@ public class RubyIO extends RubyObject {
 
         try {
             if (openFile.isReadable()) {
-                InputStream pipeIn = process.getInputStream();
-                if (pipeIn instanceof FilterInputStream) {
-                    try {
-                        pipeIn = (InputStream)
-                            FieldAccess.getProtectedFieldValue(FilterInputStream.class,
-                                "in", pipeIn);
-                    } catch (Exception e) {
-                    }
+                Channel inChannel;
+                if (process.getInput() != null) {
+                    // NIO-based
+                    inChannel = process.getInput();
+                } else {
+                    // Stream-based
+                    inChannel = Channels.newChannel(process.getInputStream());
                 }
+                
                 ChannelDescriptor main = new ChannelDescriptor(
-                        Channels.newChannel(pipeIn),
+                        inChannel,
                         getNewFileno(),
                         new FileDescriptor());
                 main.setCanBeSeekable(false);
@@ -220,17 +220,16 @@ public class RubyIO extends RubyObject {
             }
             
             if (openFile.isWritable()) {
-                OutputStream pipeOut = process.getOutputStream();
-                if (pipeOut instanceof FilterOutputStream) {
-                    try {
-                        pipeOut = (OutputStream)
-                            FieldAccess.getProtectedFieldValue(FilterOutputStream.class,
-                                "out", pipeOut);
-                    } catch (Exception e) {
-                    }
+                Channel outChannel;
+                if (process.getOutput() != null) {
+                    // NIO-based
+                    outChannel = process.getOutput();
+                } else {
+                    outChannel = Channels.newChannel(process.getOutputStream());
                 }
+
                 ChannelDescriptor pipe = new ChannelDescriptor(
-                        Channels.newChannel(pipeOut),
+                        outChannel,
                         getNewFileno(),
                         new FileDescriptor());
                 pipe.setCanBeSeekable(false);
@@ -2835,7 +2834,7 @@ public class RubyIO extends RubyObject {
 
             ModeFlags modes = new ModeFlags(mode);
         
-            Process process = ShellLauncher.popen(runtime, cmdObj, modes);
+            ShellLauncher.POpenProcess process = ShellLauncher.popen(runtime, cmdObj, modes);
             RubyIO io = new RubyIO(runtime, process, modes);
 
             if (block.isGiven()) {
