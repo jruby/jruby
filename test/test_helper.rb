@@ -31,7 +31,7 @@ module TestHelper
         begin
           # Should always yield, even in case of exceptions, otherwise
           # some tests won't even execute, and no failures will be shown
-          yield f
+          return yield f
         ensure
           f.unlink rescue nil
         end

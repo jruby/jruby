@@ -2246,11 +2246,27 @@ public final class Ruby {
      * things that need to be cleaned up at shutdown.
      */
     public void tearDown() {
+        int status = 0;
+
         while (!atExitBlocks.empty()) {
             RubyProc proc = atExitBlocks.pop();
-
-            proc.call(getCurrentContext(), IRubyObject.NULL_ARRAY);
+            try {
+                proc.call(getCurrentContext(), IRubyObject.NULL_ARRAY);
+            } catch (RaiseException rj) {
+                RubyException raisedException = rj.getException();
+                if (!getSystemExit().isInstance(raisedException)) {
+                    status = 1;
+                    printError(raisedException);
+                } else {
+                    IRubyObject statusObj = raisedException.callMethod(
+                            getCurrentContext(), "status");
+                    if (statusObj != null && !statusObj.isNil()) {
+                        status = RubyNumeric.fix2int(statusObj);
+                    }
+                }
+            }
         }
+
         if (finalizers != null) {
             synchronized (finalizers) {
                 for (Iterator<Finalizable> finalIter = new ArrayList<Finalizable>(finalizers.keySet()).iterator(); finalIter.hasNext();) {
@@ -2267,9 +2283,14 @@ public final class Ruby {
                     finalIter.next().finalize();
                     finalIter.remove();
                 }
-            } 
+            }
         }
+
         getThreadService().disposeCurrentThread();
+
+        if (status != 0) {
+            throw newSystemExit(status);
+        }
     }
 
     // new factory methods ------------------------------------------------------------------------

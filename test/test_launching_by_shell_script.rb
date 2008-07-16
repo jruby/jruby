@@ -61,4 +61,65 @@ class TestLaunchingByShellScript < Test::Unit::TestCase
     assert_equal "", jruby('-e "at_exit { exit 1 }"').chomp
     assert_equal 1, $?.exitstatus
   end
+
+  # JRUBY-2809
+  def test_mulitple_at_exit
+    assert_equal "", jruby('-e "at_exit { exit 1 }; at_exit { exit 2 }"').chomp
+    # first exit status wins
+    assert_equal 1, $?.exitstatus
+
+    # exception in one at_exit doesn't affect other at_exit blocks
+    result = with_temp_script(%Q{
+      at_exit { exit 111 }
+      at_exit { raise ArgumentError }
+      at_exit { exit 222 }
+      at_exit { raise RuntimeError }
+    }) do |s|
+      jruby("#{s.path} 2>&1")
+    end
+
+    # first goes RuntimeError, then ArgumentError
+    assert_match(/RuntimeError.*ArgumentError/m, result)
+    # the first exit status wins
+    assert_equal 111, $?.exitstatus
+
+    # exit status from exception is 1
+    result = with_temp_script(%Q{
+      at_exit { raise ArgumentError }
+      at_exit { exit 222 }
+    }) do |s|
+      jruby("#{s.path} 2>&1")
+    end
+
+    # first goes RuntimeError, then ArgumentError
+    assert_match(/ArgumentError/m, result)
+    # the first exit status wins
+    assert_equal 1, $?.exitstatus
+
+    # exit in one block doesn't stop other blocks from executing
+    result = with_temp_script(%Q{
+      at_exit { exit 111 }
+      at_exit { print "one" }
+      at_exit { exit 222 }
+      at_exit { print "two" }
+    }) do |s|
+      jruby("#{s.path}")
+    end
+
+    assert_equal "twoone", result
+    assert_equal 111, $?.exitstatus
+
+    # exit! in one block prevents execution of others
+    result = with_temp_script(%Q{
+      at_exit { exit! 1 }
+      at_exit { print "one" }
+      at_exit { exit! 2 }
+      at_exit { print "two" }
+    }) do |s|
+      jruby("#{s.path}")
+    end
+
+    assert_equal "two", result
+    assert_equal 2, $?.exitstatus
+  end
 end
