@@ -1,0 +1,7 @@
+version=@JRUBY_VERSION@
+Export-Package: *;resolution:=optional
+Import-Package: *;resolution:=optional
+Bundle-Version: ${version}
+Bundle-Description: JRuby @JRUBY_VERSION@ OSGi bundle
+Bundle-Name: JRuby @JRUBY_VERSION@
+Bundle-SymbolicName: org.jruby:jruby
