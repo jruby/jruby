@@ -992,6 +992,11 @@ public class RubyKernel {
         return context.getRuntime().newProc(Block.Type.LAMBDA, block);
     }
     
+    @Deprecated
+    public static RubyProc proc(IRubyObject recv, Block block) {
+        return recv.getRuntime().newProc(Block.Type.LAMBDA, block);
+    }
+    
     @JRubyMethod(name = {"lambda"}, frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
     public static RubyProc lambda(ThreadContext context, IRubyObject recv, Block block) {
         return context.getRuntime().newProc(Block.Type.LAMBDA, block);

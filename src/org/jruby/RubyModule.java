@@ -1392,6 +1392,11 @@ public class RubyModule extends RubyObject {
     public RubyArray ancestors(ThreadContext context) {
         return context.getRuntime().newArray(getAncestorList());
     }
+    
+    @Deprecated
+    public RubyArray ancestors() {
+        return getRuntime().newArray(getAncestorList());
+    }
 
     public List<IRubyObject> getAncestorList() {
         ArrayList<IRubyObject> list = new ArrayList<IRubyObject>();
