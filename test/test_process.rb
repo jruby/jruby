@@ -59,7 +59,7 @@ class TestProcess < Test::Unit::TestCase
       assert_raise(NotImplementedError) { Process.uid = 5 }
       assert_raise(NotImplementedError) { Process.gid }
       assert_raise(NotImplementedError) { Process.gid = 5 }
-      assert_raise(NotImplementedError) { Process.euid }
+      assert_equal 0, Process.euid
       assert_raise(NotImplementedError) { Process.euid = 5 }
       assert_raise(NotImplementedError) { Process.egid }
       assert_raise(NotImplementedError) { Process.egid = 5 }
