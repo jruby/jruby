@@ -184,7 +184,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     public DynamicMethod getCompiledMethodLazily(
             RubyModule implementationClass, String method, Arity arity, 
             Visibility visibility, StaticScope scope, Object scriptObject, CallConfiguration callConfig) {
-        return new CompiledMethod.LazyCompiledMethod(implementationClass, method, arity, visibility, scope, scriptObject, callConfig, this);
+        return new CompiledMethod.LazyCompiledMethod(implementationClass, method, arity, visibility, scope, scriptObject, callConfig,
+                new InvocationMethodFactory(classLoader));
     }
             
 

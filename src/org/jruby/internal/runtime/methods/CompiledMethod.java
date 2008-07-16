@@ -46,7 +46,7 @@ public abstract class CompiledMethod extends JavaMethod implements JumpTarget, C
         private final Arity arity;
         private final StaticScope scope;
         private final Object scriptObject;
-        private final MethodFactory factory;
+        private MethodFactory factory;
         private DynamicMethod compiledMethod;
     
         public LazyCompiledMethod(RubyModule implementationClass, String method, Arity arity, 
@@ -59,8 +59,10 @@ public abstract class CompiledMethod extends JavaMethod implements JumpTarget, C
             this.factory = factory;
         }
         
-        private void initializeMethod() {
+        private synchronized void initializeMethod() {
+            if (compiledMethod != null) return;
             compiledMethod = factory.getCompiledMethod(implementationClass, method, arity, visibility, scope, scriptObject, callConfig);
+            factory = null;
         }
         
         @Override
