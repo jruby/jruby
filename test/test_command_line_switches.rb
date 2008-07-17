@@ -251,4 +251,20 @@ class TestCommandLineSwitches < Test::Unit::TestCase
       -e "print java.lang.management.ManagementFactory.getCompilationMXBean.name"})
     assert_match /client/, result.downcase
   end
+  
+  # JRUBY-2821
+  def test_with_interesting_file_names
+    names = ["test-q", "test-d", "test--", "test-_", "test_U", "test_S_", "___D_",
+             "test__", "test_U_D", "_P_U_S_D"]
+    rgxes = [/test-q/, /test-d/, /test--/, /test-_/, /test_U/, /test_S_/, /___D_/,
+             /test__/, /test_U_D/, /_P_U_S_D/]
+
+    names.each_with_index do |name, idx|
+      with_jruby_shell_spawning do
+        with_temp_script('print __FILE__', name) do |s|
+          assert_match rgxes[idx], jruby("#{s.path}")
+        end
+      end
+    end
+  end
 end

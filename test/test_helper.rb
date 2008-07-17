@@ -25,8 +25,8 @@ module TestHelper
     JRuby.runtime.instance_config.run_ruby_in_process = prev_in_process
   end
 
-  def with_temp_script(script)
-    Tempfile.open(["test-script", ".rb"]) do |f|
+  def with_temp_script(script, filename="test-script")
+    Tempfile.open([filename, ".rb"]) do |f|
       begin
         f << script
         f.close
