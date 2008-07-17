@@ -72,7 +72,7 @@ class TestTraceFunc < Test::Unit::TestCase
                 "      line #{__FILE__}:#{line - 10}      sample_method  TestTraceFunc",
                 "    c-call #{__FILE__}:#{line - 10}                  +         Fixnum",
                 "  c-return #{__FILE__}:#{line - 10}                  +         Fixnum",
-                "    return #{__FILE__}:#{line - 10}      sample_method  TestTraceFunc",
+                "    return #{__FILE__}:#{line - 9}      sample_method  TestTraceFunc",
                 "      line #{__FILE__}:#{line + 2}  test_method_trace  TestTraceFunc",
                 "    c-call #{__FILE__}:#{line + 2}     set_trace_func         Kernel"];
     assert_equal(expected, output)
@@ -145,11 +145,11 @@ class TestTraceFunc < Test::Unit::TestCase
     set_trace_func nil
 
     line = __LINE__ - 4
-    expected = ["./test/tracing/test_trace_func.rb line #{line} test_require_trace_full_paths TestTraceFunc",
+    expected = ["test/tracing/test_trace_func.rb line #{line} test_require_trace_full_paths TestTraceFunc",
       "./test/tracing/dummy1.rb line 1 nil false",
       "./test/tracing/dummy1.rb class 1 nil false",
       "./test/tracing/dummy1.rb end 1 nil false",
-      "./test/tracing/test_trace_func.rb line #{line + 2} test_require_trace_full_paths TestTraceFunc"]
+      "test/tracing/test_trace_func.rb line #{line + 2} test_require_trace_full_paths TestTraceFunc"]
 
     assert_equal(expected, output);
   end
@@ -199,7 +199,7 @@ class TestTraceFunc < Test::Unit::TestCase
       "other.rb line 2 in_other Object",
       "other.rb c-call 2 sleep Kernel",
       "other.rb c-return 2 sleep Kernel",
-      "other.rb return 2 in_other Object",
+      "other.rb return 3 in_other Object",
       "test_trace_func.rb line #{line + 3} test_return TestTraceFunc",
       "test_trace_func.rb c-call #{line + 3} set_trace_func Kernel"]
 

@@ -2125,7 +2125,7 @@ public final class Ruby {
                     traceFunc.call(context, new IRubyObject[] {
                         newString(EVENT_NAMES[event]), // event name
                         newString(file), // filename
-                        newFixnum(line + 1), // line numbers should be 1-based
+                        newFixnum(line + (event == RUBY_EVENT_RETURN ? 2 : 1)), // line numbers should be 1-based
                         name != null ? newSymbol(name) : getNil(),
                         binding,
                         type
