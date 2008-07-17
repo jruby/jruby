@@ -84,4 +84,15 @@ public class TestLoadService extends TestRubyBase {
             assertNull("Require of non-existent library should , exception should only be RaiseException with no root cause", e.getCause());
         }
     }
+    
+    public void testRequireJavaClassFile() {
+        try {
+            // Test that requiring a normal Java class does not raise an error
+            // but does load the class. JRUBY-2630
+            loadService.load("build/classes/test/org/jruby/test/NormalJavaClass.class", false);
+            assertNotNull(runtime.getJRubyClassLoader().loadClass("org.jruby.test.NormalJavaClass"));
+        } catch (Exception e) {
+            fail("Exception when requiring a Java class file: " + e);
+        }
+    }
 }
