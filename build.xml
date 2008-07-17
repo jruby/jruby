@@ -209,24 +209,7 @@
           <attribute name="Main-Class" value="org.jruby.Main"/>
         </manifest>
       </jarjar>
-      <antcall target="osgify-jruby"/>
   </target>
-
-    <target name="osgify-jruby">
-        <mkdir dir="${build.dir}/osgi"/>
-        <filter token="JRUBY_VERSION" value="${version.jruby}"/>
-        <copy file="${basedir}/jruby-osgi-properties.bnd" tofile="${build.dir}/osgi/jruby.bnd" filtering="true"/>
-
-        <taskdef resource="aQute/bnd/ant/taskdef.properties"
-              classpath="${build.lib.dir}/bnd-0.0.249.jar"/>
-        <bndwrap  definitions="${build.dir}/osgi" output="${build.dir}/osgi">
-            <fileset file="${lib.dir}/jruby.jar" />
-        </bndwrap>
-        <copy file="${build.dir}/osgi/jruby.jar$" tofile="${lib.dir}/jruby.jar"/>
-        
-    </target>
-
-    
 
   <path id="lib.classpath">
     <pathelement location="${build.lib.dir}/retroweaver-rt-2.0.5.jar"/>
