@@ -42,3 +42,12 @@ module Gem
   end
 
 end
+
+if (Gem::win_platform?)
+  module Process
+    def self.uid
+      0
+    end
+  end
+end
+
