@@ -494,7 +494,7 @@ public class LoadService {
                             RubyFile.expandUserPath(runtime.getCurrentContext(), name));
                     if (current.isFile()) {
                         try {
-                            return new LoadServiceResource(current.toURI().toURL(), name);
+                            return new LoadServiceResource(current.toURI().toURL(), current.getPath());
                         } catch (MalformedURLException e) {
                             throw runtime.newIOErrorFromException(e);
                         }
