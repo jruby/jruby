@@ -1841,7 +1841,7 @@ public final class Ruby {
     }
     
     public Node parseFile(InputStream in, String file, DynamicScope scope) {
-        return parser.parse(tweakPath(file), in, scope, new ParserConfiguration(0, false, false, true));
+        return parser.parse(file, in, scope, new ParserConfiguration(0, false, false, true));
     }
 
     public Node parseInline(InputStream in, String file, DynamicScope scope) {
