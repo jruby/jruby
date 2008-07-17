@@ -88,9 +88,10 @@ public class JITCompiler implements JITCompilerMBean {
                 
                 // Check if the method has been explicitly excluded
                 String moduleName = method.getImplementationClass().getName();
-                moduleName = moduleName.replaceAll("#<.*>", "-");
-                if (instanceConfig.getExcludedMethods().contains(moduleName) ||
-                        instanceConfig.getExcludedMethods().contains(moduleName+"::"+name)) {
+                if (instanceConfig.getExcludedMethods().size() > 0 &&
+                        (instanceConfig.getExcludedMethods().contains(moduleName) ||
+                        instanceConfig.getExcludedMethods().contains(moduleName+"#"+name) ||
+                        instanceConfig.getExcludedMethods().contains(name))) {
                     method.setCallCount(-1);
                     return;
                 }
