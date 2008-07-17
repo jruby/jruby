@@ -230,6 +230,12 @@ class TestCommandLineSwitches < Test::Unit::TestCase
 
   # JRUBY-2648
   def test_client_vm_option
+    arch = java.lang.System.getProperty('sun.arch.data.model')
+    if (arch == nil || arch == '64')
+      # Either non-Sun JVM, or x64 JVM (which doesn't have client VM)
+      return
+    end
+
     # client VM by default:
     result = jruby(%Q{-rjava \
       -e "print java.lang.management.ManagementFactory.getCompilationMXBean.name"})
