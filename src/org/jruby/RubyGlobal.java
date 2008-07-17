@@ -617,6 +617,7 @@ public class RubyGlobal {
         /**
          * @see org.jruby.runtime.GlobalVariable#get()
          */
+        @Override
         public IRubyObject get() {
             return runtime.getLoadService().getLoadedFeatures();
         }
