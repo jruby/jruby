@@ -1830,9 +1830,18 @@ public final class Ruby {
     public void defineReadonlyVariable(String name, IRubyObject value) {
         globalVariables.defineReadonly(name, new ValueAccessor(value));
     }
+
+    /* FIXME: Helper method...we need to do something better than this */
+    private String tweakPath(String filename) {
+        File f = new File(filename);
+        
+        if (f.exists() && !f.isAbsolute() && !filename.startsWith("./")) filename = "./" + filename;
+
+        return filename;
+    }
     
     public Node parseFile(InputStream in, String file, DynamicScope scope) {
-        return parser.parse(file, in, scope, new ParserConfiguration(0, false, false, true));
+        return parser.parse(tweakPath(file), in, scope, new ParserConfiguration(0, false, false, true));
     }
 
     public Node parseInline(InputStream in, String file, DynamicScope scope) {
@@ -2027,22 +2036,12 @@ public final class Ruby {
     }
     
     public void loadFile(String scriptName, InputStream in, boolean wrap) {
-        if (!Ruby.isSecurityRestricted()) {
-            File f = new File(scriptName);
-            if(f.exists() && !f.isAbsolute() && !scriptName.startsWith("./")) {
-                scriptName = "./" + scriptName;
-            }
-        }
+        if (!Ruby.isSecurityRestricted()) scriptName = tweakPath(scriptName);
 
-        IRubyObject self = null;
-        if (wrap) {
-            self = TopSelfFactory.createTopSelf(this);
-        } else {
-            self = getTopSelf();
-        }
+        IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this) : getTopSelf();
         ThreadContext context = getCurrentContext();
-
         String file = context.getFile();
+        
         try {
             secure(4); /* should alter global state */
 
