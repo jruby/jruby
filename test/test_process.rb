@@ -74,7 +74,7 @@ class TestProcess < Test::Unit::TestCase
       assert_raise(NotImplementedError) { Process.maxgroups }
       assert_raise(NotImplementedError) { Process.maxgroups = 100 }
       assert_raise(NotImplementedError) { Process.initgroups(100, 100) }
-      assert_raise(NotImplementedError) { Process.ppid }
+      assert_equal 0, Process.ppid
 
       # TODO: temporal (JRUBY-2353)
       assert_raise(NotImplementedError) { Process.kill(100, 100) }
