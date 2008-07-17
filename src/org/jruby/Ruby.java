@@ -1830,15 +1830,6 @@ public final class Ruby {
     public void defineReadonlyVariable(String name, IRubyObject value) {
         globalVariables.defineReadonly(name, new ValueAccessor(value));
     }
-
-    /* FIXME: Helper method...we need to do something better than this */
-    private String tweakPath(String filename) {
-        File f = new File(filename);
-        
-        if (f.exists() && !f.isAbsolute() && !filename.startsWith("./")) filename = "./" + filename;
-
-        return filename;
-    }
     
     public Node parseFile(InputStream in, String file, DynamicScope scope) {
         return parser.parse(file, in, scope, new ParserConfiguration(0, false, false, true));
@@ -2036,8 +2027,6 @@ public final class Ruby {
     }
     
     public void loadFile(String scriptName, InputStream in, boolean wrap) {
-        if (!Ruby.isSecurityRestricted()) scriptName = tweakPath(scriptName);
-
         IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this) : getTopSelf();
         ThreadContext context = getCurrentContext();
         String file = context.getFile();
