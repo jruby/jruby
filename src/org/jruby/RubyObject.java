@@ -124,7 +124,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     
     // The class of this object
     protected transient RubyClass metaClass;
-    protected String metaClassName;
 
     /**
      * The variableTable contains variables for an object, defined as:
@@ -283,7 +282,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     public RubyObject(Ruby runtime, RubyClass metaClass) {
         this.metaClass = metaClass;
         
-        if (Ruby.RUNTIME_THREADLOCAL) setMetaClassName(metaClass);
         if (runtime.isObjectSpaceEnabled()) addToObjectSpace(runtime);
         if (runtime.getSafeLevel() >= 3) taint(runtime);
     }
@@ -296,7 +294,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     protected RubyObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace) {
         this.metaClass = metaClass;
         
-        if (Ruby.RUNTIME_THREADLOCAL) setMetaClassName(metaClass);
         if (useObjectSpace) addToObjectSpace(runtime);
         if (runtime.getSafeLevel() >= 3) taint(runtime);
     }
@@ -304,12 +301,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     private void addToObjectSpace(Ruby runtime) {
         assert runtime.isObjectSpaceEnabled();
         runtime.getObjectSpace().add(this);
-    }
-
-    private void setMetaClassName(RubyClass metaClass) {
-        if (metaClass != null) {
-            metaClassName = metaClass.classId;
-        }
     }
     
     /**
@@ -466,24 +457,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *
      */
     public final RubyClass getMetaClass() {
-        if (Ruby.RUNTIME_THREADLOCAL) {
-            return lazyMetaClass();
-        }
-        return metaClass;
-    }
-    
-    private final RubyClass lazyMetaClass() {
-        RubyClass mc;
-        
-        if ((mc = metaClass) != null) {
-            return mc;
-        }
-
-        if (metaClassName != null) {
-            // this should only happen when we're persisting objects, so go after getCurrentInstance directly
-            metaClass = Ruby.getCurrentInstance().getClass(metaClassName);
-        }
-        
         return metaClass;
     }
 
@@ -496,11 +469,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      */
     public void setMetaClass(RubyClass metaClass) {
         this.metaClass = metaClass;
-        if (Ruby.RUNTIME_THREADLOCAL) {
-            if (metaClass != null) {
-                metaClassName = metaClass.classId;
-            }
-        }
     }
 
     /**
