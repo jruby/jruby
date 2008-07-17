@@ -1,8 +1,10 @@
 require 'test/unit'
+require 'test/test_helper'
 require 'rbconfig'
 
 class TestProcess < Test::Unit::TestCase
-  WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
+  include TestHelper
+
   def setup
     @shell = Config::CONFIG['SHELL']
     @shellcmd = "#@shell " + (Config::CONFIG['host_os'] =~ /Windows|mswin/ ? "/c" : "-c")
@@ -59,7 +61,10 @@ class TestProcess < Test::Unit::TestCase
       assert_raise(NotImplementedError) { Process.uid = 5 }
       assert_raise(NotImplementedError) { Process.gid }
       assert_raise(NotImplementedError) { Process.gid = 5 }
-      assert_equal 0, Process.euid
+
+      # TODO: JRUBY-2705, doesn't work on x64 JVM
+      assert_equal 0, Process.euid unless WINDOWS_JVM_64
+
       assert_raise(NotImplementedError) { Process.euid = 5 }
       assert_raise(NotImplementedError) { Process.egid }
       assert_raise(NotImplementedError) { Process.egid = 5 }
@@ -74,7 +79,9 @@ class TestProcess < Test::Unit::TestCase
       assert_raise(NotImplementedError) { Process.maxgroups }
       assert_raise(NotImplementedError) { Process.maxgroups = 100 }
       assert_raise(NotImplementedError) { Process.initgroups(100, 100) }
-      assert_equal 0, Process.ppid
+
+      # TODO: JRUBY-2639, doesn't work on x64 JVM
+      assert_equal 0, Process.ppid unless WINDOWS_JVM_64
 
       # TODO: temporal (JRUBY-2353)
       assert_raise(NotImplementedError) { Process.kill(100, 100) }

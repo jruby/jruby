@@ -5,6 +5,9 @@ require 'tempfile'
 module TestHelper
   RUBY = File.join(Config::CONFIG['bindir'], Config::CONFIG['ruby_install_name'])
   WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
+  
+  arch = java.lang.System.getProperty('sun.arch.data.model')
+  WINDOWS_JVM_64 = (WINDOWS && arch == '64')
 
   def jruby(*args)
     prev_in_process = JRuby.runtime.instance_config.run_ruby_in_process
