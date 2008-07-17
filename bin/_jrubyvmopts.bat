@@ -20,11 +20,15 @@ rem Can you believe I'm rewriting batch arg processing in batch files because ba
 rem file arg processing sucks so bad? Can you believe this is even possible?
 rem http://support.microsoft.com/kb/71247
 
-rem escape any quotes. use -q == ", -_ == '.
+rem Escape any quotes. Use _S for ', _D for ", and _U to escape _ itself.
+rem We have to escape _ itself, otherwise file names with _S and _D
+rem will be converted to to wrong ones, when we un-escape. See JRUBY-2821.
 set _ARGS=%*
 if not defined _ARGS goto vmoptsDone
-set _ARGS=%_ARGS:'=-_%
-set _ARGS=%_ARGS:"=-q%
+set _ARGS=%_ARGS:_=_U%
+set _ARGS=%_ARGS:'=_S%
+set _ARGS=%_ARGS:"=_D%
+
 rem prequote all args for 'for' statement
 set _ARGS="%_ARGS%"
 
@@ -43,6 +47,9 @@ goto :EOF
 
 :procarg
 if ["%_CMP%"] == [""] goto vmoptsDone
+
+REM NOTE: If you'd like to use a parameter with underscore in its name,
+REM NOTE: use the quoted value: --do_stuff -> --do_Ustuff
 
 if ["%_CMP%"] == ["--server"] (
   set _JAVA_VM=-server
@@ -79,9 +86,10 @@ if ["%_CMP%"] == ["--1.8"] (
   goto :jvmarg
 )
 
-rem now unescape -q and -d
-set _CMP=%_CMP:-q="%
-set _CMP=%_CMP:-_='%
+rem now unescape _D, _S and _Q
+set _CMP=%_CMP:_D="%
+set _CMP=%_CMP:_S='%
+set _CMP=%_CMP:_U=_%
 set _CMP1=%_CMP:~0,1%
 set _CMP2=%_CMP:~0,2%
 
