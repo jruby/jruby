@@ -736,47 +736,49 @@ public class JavaClass extends JavaObject {
 
     private static void assignAliases(MethodCallback callback, Map<String, AssignedName> assignedNames) {
         String name = callback.name;
-        addUnassignedAlias(getRubyCasedName(name),assignedNames,callback);
-        // logic adapted from java.beans.Introspector
-        if (!(name.length() > 3 || name.startsWith("is")))
-            return;
+        String rubyCasedName = getRubyCasedName(name);
+        addUnassignedAlias(rubyCasedName,assignedNames,callback);
 
         String javaPropertyName = getJavaPropertyName(name);
-        if (javaPropertyName == null)
-            return; // not a Java property name, done with this method
+        String rubyPropertyName = null;
 
         for (Method method: callback.methods) {
             Class<?>[] argTypes = method.getParameterTypes();
             Class<?> resultType = method.getReturnType();
             int argCount = argTypes.length;
-            if (argCount == 0) {
-                if (name.startsWith("get")) {
-                    addUnassignedAlias(getRubyCasedName(name).substring(4),assignedNames,callback);
-                    addUnassignedAlias(javaPropertyName,assignedNames,callback);
-                } else if (resultType == boolean.class && name.startsWith("is")) {
-                    String rubyName = getRubyCasedName(name).substring(3);
-                    if (rubyName != null) {
-                        addUnassignedAlias(rubyName,assignedNames,callback);
-                        addUnassignedAlias(rubyName+'?',assignedNames,callback);
-                    }
-                    if (!javaPropertyName.equals(rubyName)) {
+
+            // Add property name aliases
+            if (javaPropertyName != null) {
+                if (rubyCasedName.startsWith("get_")) {
+                    rubyPropertyName = rubyCasedName.substring(4);
+                    if (argCount == 0 ||                                // getFoo      => foo
+                        argCount == 1 && argTypes[0] == int.class) {    // getFoo(int) => foo(int)
+
                         addUnassignedAlias(javaPropertyName,assignedNames,callback);
-                        addUnassignedAlias(javaPropertyName+'?',assignedNames,callback);
+                        addUnassignedAlias(rubyPropertyName,assignedNames,callback);
+                    }
+                } else if (rubyCasedName.startsWith("set_")) {
+                    rubyPropertyName = rubyCasedName.substring(4);
+                    if (argCount == 1 && resultType == void.class) {    // setFoo(Foo) => foo=(Foo)
+                        addUnassignedAlias(javaPropertyName+'=',assignedNames,callback);
+                        addUnassignedAlias(rubyPropertyName+'=',assignedNames,callback);
+                    }
+                } else if (rubyCasedName.startsWith("is_")) {
+                    rubyPropertyName = rubyCasedName.substring(3);
+                    if (resultType == boolean.class) {                  // isFoo() => foo, isFoo(*) => foo(*)
+                        addUnassignedAlias(javaPropertyName,assignedNames,callback);
+                        addUnassignedAlias(rubyPropertyName,assignedNames,callback);
                     }
                 }
-            } else if (argCount == 1) {
-                // indexed get
-                if (argTypes[0] == int.class && name.startsWith("get")) {
-                    addUnassignedAlias(getRubyCasedName(name).substring(4),assignedNames,callback);
-                    addUnassignedAlias(javaPropertyName,assignedNames,callback);
-                } else if (resultType == void.class && name.startsWith("set")) {
-                    String rubyName = getRubyCasedName(name).substring(4);
-                    if (rubyName != null) {
-                        addUnassignedAlias(rubyName + '=',assignedNames,callback);
-                    }
-                    if (!javaPropertyName.equals(rubyName)) {
-                        addUnassignedAlias(javaPropertyName + '=',assignedNames,callback);
-                    }
+            }
+
+            // Additionally add ?-postfixed aliases to any boolean methods and properties.
+            if (resultType == boolean.class) {
+                // is_something?, contains_thing?
+                addUnassignedAlias(rubyCasedName+'?',assignedNames,callback);
+                if (rubyPropertyName != null) {
+                    // something?
+                    addUnassignedAlias(rubyPropertyName+'?',assignedNames,callback);
                 }
             }
         }
@@ -812,11 +814,7 @@ public class JavaClass extends JavaObject {
     private static final Pattern CAMEL_CASE_SPLITTER = Pattern.compile("([a-z][0-9]*)([A-Z])");    
     public static String getRubyCasedName(String javaCasedName) {
         Matcher m = CAMEL_CASE_SPLITTER.matcher(javaCasedName);
-        String rubyCasedName = m.replaceAll("$1_$2").toLowerCase();
-        if (rubyCasedName.equals(javaCasedName)) {
-            return null;
-        }
-        return rubyCasedName;
+        return m.replaceAll("$1_$2").toLowerCase();
     }
     
     

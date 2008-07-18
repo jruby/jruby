@@ -28,6 +28,9 @@ public class MethodNames {
     public void setValue2(Object value) {}
     public void setValues2(Object value, Object otherValue) {}
     
+    public Object getJConsecutiveCaps() {return null;}
+    public void setJConsecutiveCaps(Object value) {}
+
     public boolean isFirst2() {return false;}
     public boolean isSecond2(Object something) {return false;}
     public boolean hasThird2() {return false;}

@@ -39,23 +39,30 @@ describe "Java static method names" do
     methods.should include("set_values1")
     methods.should_not include("values1=")
   end
-  
+
   it "should present boolean javabean property accessors as '?' method" do
     methods = MethodNames.methods
     
-    pending("missing") do
-      methods.should include("isFirst2")
-    end
-    methods.should include("isSecond2")
-    methods.should include("first2?")
-    methods.should_not include("second2?")
+    methods.should include("isFirst1")
+    methods.should include("first1")
+    methods.should include("first1?")
+
+    methods.should include("isSecond1")
+    methods.should include("second1")
+    methods.should include("second1?")
     
-    methods.should include("hasThird2")
-    methods.should include("hasFourth2")
+    methods.should include("hasThird1")
+    methods.should include("has_third1")
+    methods.should include("has_third1?")
+
+    methods.should include("hasFourth1")
+    methods.should include("has_fourth1");
+    methods.should include("has_fourth1?");
+
     pending("not implemented") do
-      methods.should include("third2?")
+      methods.should include("third1?")
     end
-    methods.should_not include("fourth2?")
+    methods.should_not include("fourth1?")
   end
   
   it "should not overwrite critical core Ruby methods" do
@@ -101,16 +108,32 @@ describe "Java instance method names" do
     methods.should_not include("values2=")
   end
   
+  it "should treat consecutive caps as part of one property name" do
+    methods = MethodNames.instance_methods
+
+    methods.should include("jconsecutive_caps")
+    methods.should include("jconsecutive_caps=")
+  end
+  
   it "should present boolean javabean property accessors as '?' method" do
     methods = MethodNames.instance_methods
     
     methods.should include("isFirst2")
-    methods.should include("isSecond2")
+    methods.should include("first2")
     methods.should include("first2?")
-    methods.should_not include("second2?")
+
+    methods.should include("isSecond2")
+    methods.should include("second2")
+    methods.should include("second2?")
     
     methods.should include("hasThird2")
+    methods.should include("has_third2")
+    methods.should include("has_third2?")
+
     methods.should include("hasFourth2")
+    methods.should include("has_fourth2")
+    methods.should include("has_fourth2?")
+
     pending("not implemented") do
       methods.should include("third2?")
     end
