@@ -288,6 +288,10 @@ public class RubyIO extends RubyObject {
         registerDescriptor(openFile.getMainStream().getDescriptor());        
     }
     
+    public static RubyIO newIO(Ruby runtime, Channel channel) {
+        return new RubyIO(runtime, channel);
+    }
+    
     public OpenFile getOpenFile() {
         return openFile;
     }
