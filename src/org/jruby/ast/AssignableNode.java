@@ -69,7 +69,7 @@ public abstract class AssignableNode extends Node implements IArityNode {
      * @param valueNode The valueNode to set
      */
     public void setValueNode(Node valueNode) {
-        this.valueNode = valueNode;
+        this.valueNode = valueNode == null ? NilImplicitNode.NIL : valueNode;
     }
     
     /**

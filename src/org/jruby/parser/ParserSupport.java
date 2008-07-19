@@ -273,7 +273,7 @@ public class ParserSupport {
             case Tokens.k__LINE__:
                 throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(), "Can't assign to __LINE__", "__LINE__");
             case Tokens.tIDENTIFIER:
-                return currentScope.assign(value != NilImplicitNode.NIL ? union(lhs, value) : lhs.getPosition(), (String) lhs.getValue(), value);
+                return currentScope.assign(value != NilImplicitNode.NIL ? union(lhs, value) : lhs.getPosition(), (String) lhs.getValue(), makeNullNil(value));
             case Tokens.tCONSTANT:
                 if (isInDef() || isInSingle()) {
                     throw new SyntaxException(PID.DYNAMIC_CONSTANT_ASSIGNMENT, lhs.getPosition(), "dynamic constant assignment");
@@ -315,7 +315,7 @@ public class ParserSupport {
             second = ((NewlineNode) second).getNextNode();
         }
         
-        if (second == null)	return first.getPosition();
+        if (second == null) return first.getPosition();
         if (first == null) return second.getPosition();
         
         return first.getPosition().union(second.getPosition());
@@ -687,9 +687,16 @@ public class ParserSupport {
 
         return false;
     }
+    
+    private Node makeNullNil(Node node) {
+        return node == null ? NilImplicitNode.NIL : node;
+    }
 
     private Node cond0(Node node) {
         checkAssignmentInCondition(node);
+        
+        Node leftNode = null;
+        Node rightNode = null;
 
         switch(node.nodeId) {
         case DREGEXPNODE: {
@@ -698,11 +705,15 @@ public class ParserSupport {
             return new Match2Node(position, node, new GlobalVarNode(position, "$_"));
         }
         case ANDNODE:
-            return new AndNode(node.getPosition(), cond0(((AndNode) node).getFirstNode()), 
-                    cond0(((AndNode) node).getSecondNode()));
+            leftNode = cond0(((AndNode) node).getFirstNode());
+            rightNode = cond0(((AndNode) node).getSecondNode());
+            
+            return new AndNode(node.getPosition(), makeNullNil(leftNode), makeNullNil(rightNode));
         case ORNODE:
-            return new OrNode(node.getPosition(), cond0(((OrNode) node).getFirstNode()), 
-                    cond0(((OrNode) node).getSecondNode()));
+            leftNode = cond0(((OrNode) node).getFirstNode());
+            rightNode = cond0(((OrNode) node).getSecondNode());
+            
+            return new OrNode(node.getPosition(), makeNullNil(leftNode), makeNullNil(rightNode));
         case DOTNODE: {
             DotNode dotNode = (DotNode) node;
             if (dotNode.isLiteral()) return node; 
@@ -726,7 +737,7 @@ public class ParserSupport {
     }
 
     public Node getConditionNode(Node node) {
-        if (node == null) return null;
+        if (node == null) return NilImplicitNode.NIL;
 
         if (node instanceof NewlineNode) {
             return new NewlineNode(node.getPosition(), cond0(((NewlineNode) node).getNextNode()));
@@ -750,17 +761,29 @@ public class ParserSupport {
 
         return node;
     }
-
-    public AndNode newAndNode(Node left, Node right) {
-        checkExpression(left);
-        
-        return new AndNode(union(left, right), left, right);
+    
+    public SplatNode newSplatNode(ISourcePosition position, Node node) {
+        return new SplatNode(position, makeNullNil(node));
+    }
+    
+    public ArrayNode newArrayNode(ISourcePosition position, Node firstNode) {
+        return new ArrayNode(position, makeNullNil(firstNode));
     }
 
-    public OrNode newOrNode(Node left, Node right) {
+    public AndNode newAndNode(ISourcePosition position, Node left, Node right) {
         checkExpression(left);
         
-        return new OrNode(union(left, right), left, right);
+        if (left == null && right == null) return new AndNode(position, makeNullNil(left), makeNullNil(right));
+        
+        return new AndNode(union(left, right), makeNullNil(left), makeNullNil(right));
+    }
+
+    public OrNode newOrNode(ISourcePosition position, Node left, Node right) {
+        checkExpression(left);
+
+        if (left == null && right == null) return new OrNode(position, makeNullNil(left), makeNullNil(right));
+        
+        return new OrNode(union(left, right), makeNullNil(left), makeNullNil(right));
     }
 
     public Node getReturnArgsNode(Node node) {

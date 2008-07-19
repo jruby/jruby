@@ -52,7 +52,7 @@ public class AndNode extends Node implements BinaryOperatorNode {
         super(position, NodeType.ANDNODE);
         
         assert firstNode != null : "AndNode.first == null";
-        assert secondNode != null : "AndNode.first == null";
+        assert secondNode != null : "AndNode.second == null";
         
         this.firstNode = firstNode;
         this.secondNode = secondNode;
