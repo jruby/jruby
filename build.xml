@@ -936,6 +936,8 @@
     <exclude name="share/**"/>
     <include name="src/**"/>
     <include name="test/**"/>
+    <include name="spec/**"/>
+    <include name="tool/**"/>
     <include name="build_lib/**"/>
     <include name="Rakefile"/>
     <include name="build.xml"/>
