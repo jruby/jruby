@@ -66,11 +66,13 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import static org.jruby.internal.runtime.methods.JavaMethod.*;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
@@ -130,7 +132,7 @@ public class JavaClass extends JavaObject {
     }
     private static final Map<String, AssignedName> INSTANCE_RESERVED_NAMES = new HashMap<String, AssignedName>(RESERVED_NAMES);
 
-    private static abstract class NamedCallback implements Callback {
+    private static abstract class NamedInstaller implements Callback {
         static final int STATIC_FIELD = 1;
         static final int STATIC_METHOD = 2;
         static final int INSTANCE_FIELD = 3;
@@ -139,12 +141,18 @@ public class JavaClass extends JavaObject {
         int type;
         Visibility visibility = Visibility.PUBLIC;
         boolean isProtected;
-        NamedCallback () {}
-        NamedCallback (String name, int type) {
+        NamedInstaller () {}
+        NamedInstaller (String name, int type) {
             this.name = name;
             this.type = type;
         }
         abstract void install(RubyClass proxy);
+        public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
+            throw new RuntimeException("Not implemented");
+        }
+        public Arity getArity() {
+            throw new RuntimeException("Not implemented");
+        }
         // small hack to save a cast later on
         boolean hasLocalMethod() {
             return true;
@@ -157,12 +165,70 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private static abstract class FieldCallback extends NamedCallback {
+    private static abstract class FieldInstaller extends NamedInstaller {
         Field field;
-        FieldCallback(){}
-        FieldCallback(String name, int type, Field field) {
+        FieldInstaller(){}
+        FieldInstaller(String name, int type, Field field) {
             super(name,type);
             this.field = field;
+        }
+    }
+
+    private class StaticFieldGetterInstaller extends FieldInstaller {
+        StaticFieldGetterInstaller(){}
+        StaticFieldGetterInstaller(String name, Field field) {
+            super(name,STATIC_FIELD,field);
+        }
+        void install(RubyClass proxy) {
+            if (Modifier.isPublic(field.getModifiers())) {
+                proxy.getSingletonClass().addMethod(name, new StaticFieldGetter(name, proxy, field));
+            }
+        }
+    }
+
+    private class StaticFieldSetterInstaller extends FieldInstaller {
+        StaticFieldSetterInstaller(){}
+        StaticFieldSetterInstaller(String name, Field field) {
+            super(name,STATIC_FIELD,field);
+        }
+        void install(RubyClass proxy) {
+            if (Modifier.isPublic(field.getModifiers())) {
+                proxy.getSingletonClass().addMethod(name, new StaticFieldSetter(name, proxy, field));
+            }
+        }
+    }
+
+    private class InstanceFieldGetterInstaller extends FieldInstaller {
+        InstanceFieldGetterInstaller(){}
+        InstanceFieldGetterInstaller(String name, Field field) {
+            super(name,INSTANCE_FIELD,field);
+        }
+        void install(RubyClass proxy) {
+            if (Modifier.isPublic(field.getModifiers())) {
+                proxy.addMethod(name, new InstanceFieldGetter(name, proxy, field));
+            }
+        }
+    }
+
+    private class InstanceFieldSetterInstaller extends FieldInstaller {
+        InstanceFieldSetterInstaller(){}
+        InstanceFieldSetterInstaller(String name, Field field) {
+            super(name,INSTANCE_FIELD,field);
+        }
+        void install(RubyClass proxy) {
+            if (Modifier.isPublic(field.getModifiers())) {
+                proxy.addMethod(name, new InstanceFieldSetter(name, proxy, field));
+            }
+        }
+    }
+
+    private static abstract class FieldMethodZero extends JavaMethodZero {
+        Field field;
+        String name;
+        FieldMethodZero(String name, RubyModule host, Field field) {
+            super(host, Visibility.PUBLIC);
+            this.field = field;
+            this.name = name;
         }
         
         protected Object safeConvert(IRubyObject value) {
@@ -179,17 +245,36 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private class StaticFieldGetter extends FieldCallback {
-        StaticFieldGetter(){}
-        StaticFieldGetter(String name, Field field) {
-            super(name,STATIC_FIELD,field);
+    private static abstract class FieldMethodOne extends JavaMethodOne {
+        Field field;
+        String name;
+        FieldMethodOne(String name, RubyModule host, Field field) {
+            super(host, Visibility.PUBLIC);
+            this.field = field;
+            this.name = name;
         }
-        void install(RubyClass proxy) {
-            if (Modifier.isPublic(field.getModifiers())) {
-                proxy.getSingletonClass().defineFastMethod(this.name,this,this.visibility);
+        
+        protected Object safeConvert(IRubyObject value) {
+            Object newValue = JavaUtil.convertRubyToJava(value);
+            if (newValue == null) {
+                if (field.getType().isPrimitive()) {
+                    throw value.getRuntime().newTypeError("wrong type for " + field.getType().getName() + ": null");
+                }
+            } else if (!field.getType().isInstance(newValue)) {
+                throw value.getRuntime().newTypeError("wrong type for " + field.getType().getName() + ": " +
+                        newValue.getClass().getName());
             }
+            return newValue;
         }
-        public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
+    }
+
+    private class StaticFieldGetter extends FieldMethodZero {
+        StaticFieldGetter(String name, RubyModule host, Field field) {
+            super(name, host, field);
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
             try {
                 return JavaUtil.convertJavaToUsableRubyObject(self.getRuntime(), field.get(null));
             } catch (IllegalAccessException iae) {
@@ -197,21 +282,13 @@ public class JavaClass extends JavaObject {
                                     "illegal access getting variable: " + iae.getMessage());
             }
         }
-        public Arity getArity() {
-            return Arity.NO_ARGUMENTS;
-        }
     }
 
-    private class StaticFieldSetter extends FieldCallback {
-        StaticFieldSetter(){}
-        StaticFieldSetter(String name, Field field) {
-            super(name,STATIC_FIELD,field);
+    private class StaticFieldSetter extends FieldMethodOne {
+        StaticFieldSetter(String name, RubyModule host, Field field) {
+            super(name, host, field);
         }
-        void install(RubyClass proxy) {
-            if (Modifier.isPublic(field.getModifiers())) {
-                proxy.getSingletonClass().defineFastMethod(this.name,this,this.visibility);
-            }
-        }
+        
         public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
             try {
                 Object newValue = safeConvert(args[0]);
@@ -222,22 +299,27 @@ public class JavaClass extends JavaObject {
             }
             return args[0];
         }
-        public Arity getArity() {
-            return Arity.ONE_ARGUMENT;
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
+            try {
+                Object newValue = safeConvert(arg);
+                field.set(null, newValue);
+            } catch (IllegalAccessException iae) {
+                throw getRuntime().newTypeError(
+                                    "illegal access setting variable: " + iae.getMessage());
+            }
+            return arg;
         }
     }
 
-    private class InstanceFieldGetter extends FieldCallback {
-        InstanceFieldGetter(){}
-        InstanceFieldGetter(String name, Field field) {
-            super(name,INSTANCE_FIELD,field);
+    private class InstanceFieldGetter extends FieldMethodZero {
+        InstanceFieldGetter(String name, RubyModule host, Field field) {
+            super(name, host, field);
         }
-        void install(RubyClass proxy) {
-            if (Modifier.isPublic(field.getModifiers())) {
-                proxy.defineFastMethod(this.name,this,this.visibility);
-            }
-        }
-        public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
             try {
                 return JavaUtil.convertJavaToUsableRubyObject(self.getRuntime(), field.get(((JavaObject)self.dataGetStruct()).getValue()));
             } catch (IllegalAccessException iae) {
@@ -245,37 +327,27 @@ public class JavaClass extends JavaObject {
                                     "illegal access getting variable: " + iae.getMessage());
             }
         }
-        public Arity getArity() {
-            return Arity.NO_ARGUMENTS;
-        }
     }
 
-    private class InstanceFieldSetter extends FieldCallback {
-        InstanceFieldSetter(){}
-        InstanceFieldSetter(String name, Field field) {
-            super(name,INSTANCE_FIELD,field);
+    private class InstanceFieldSetter extends FieldMethodOne {
+        InstanceFieldSetter(String name, RubyModule host, Field field) {
+            super(name, host, field);
         }
-        void install(RubyClass proxy) {
-            if (Modifier.isPublic(field.getModifiers())) {
-                proxy.defineFastMethod(this.name,this,this.visibility);
-            }
-        }
-        public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
             try {
-                Object newValue = safeConvert(args[0]);
+                Object newValue = safeConvert(arg);
                 field.set(((JavaObject)self.dataGetStruct()).getValue(), newValue);
             } catch (IllegalAccessException iae) {
                 throw getRuntime().newTypeError(
                                     "illegal access setting variable: " + iae.getMessage());
             }
-            return args[0];
-        }
-        public Arity getArity() {
-            return Arity.ONE_ARGUMENT;
+            return arg;
         }
     }
 
-    private static abstract class MethodCallback extends NamedCallback {
+    private static abstract class MethodCallback extends NamedInstaller {
         private boolean haveLocalMethod;
         private List<Method> methods;
         protected List<String> aliases;
@@ -477,8 +549,8 @@ public class JavaClass extends JavaObject {
     
     private Map<String, AssignedName> staticAssignedNames;
     private Map<String, AssignedName> instanceAssignedNames;
-    private Map<String, NamedCallback> staticCallbacks;
-    private Map<String, NamedCallback> instanceCallbacks;
+    private Map<String, NamedInstaller> staticCallbacks;
+    private Map<String, NamedInstaller> instanceCallbacks;
     private List<ConstantField> constantFields;
     // caching constructors, as they're accessed for each new instance
     private volatile RubyArray constructors;
@@ -598,8 +670,8 @@ public class JavaClass extends JavaObject {
         }
         staticNames.putAll(STATIC_RESERVED_NAMES);
         instanceNames.putAll(INSTANCE_RESERVED_NAMES);
-        Map<String, NamedCallback> staticCallbacks = new HashMap<String, NamedCallback>();
-        Map<String, NamedCallback> instanceCallbacks = new HashMap<String, NamedCallback>();
+        Map<String, NamedInstaller> staticCallbacks = new HashMap<String, NamedInstaller>();
+        Map<String, NamedInstaller> instanceCallbacks = new HashMap<String, NamedInstaller>();
         List<ConstantField> constantFields = new ArrayList<ConstantField>(); 
         Field[] fields = EMPTY_FIELD_ARRAY;
         try {
@@ -621,20 +693,20 @@ public class JavaClass extends JavaObject {
                 if (assignedName != null && assignedName.type < AssignedName.FIELD)
                     continue;
                 staticNames.put(name,new AssignedName(name,AssignedName.FIELD));
-                staticCallbacks.put(name,new StaticFieldGetter(name,field));
+                staticCallbacks.put(name,new StaticFieldGetterInstaller(name,field));
                 if (!Modifier.isFinal(modifiers)) {
                     String setName = name + '=';
-                    staticCallbacks.put(setName,new StaticFieldSetter(setName,field));
+                    staticCallbacks.put(setName,new StaticFieldSetterInstaller(setName,field));
                 }
             } else {
                 AssignedName assignedName = instanceNames.get(name);
                 if (assignedName != null && assignedName.type < AssignedName.FIELD)
                     continue;
                 instanceNames.put(name, new AssignedName(name,AssignedName.FIELD));
-                instanceCallbacks.put(name, new InstanceFieldGetter(name,field));
+                instanceCallbacks.put(name, new InstanceFieldGetterInstaller(name,field));
                 if (!Modifier.isFinal(modifiers)) {
                     String setName = name + '=';
-                    instanceCallbacks.put(setName, new InstanceFieldSetter(setName,field));
+                    instanceCallbacks.put(setName, new InstanceFieldSetterInstaller(setName,field));
                 }
             }
         }
@@ -720,16 +792,16 @@ public class JavaClass extends JavaObject {
         for (ConstantField field: constantFields) {
             field.install(proxy);
         }
-        for (Iterator<NamedCallback> iter = staticCallbacks.values().iterator(); iter.hasNext(); ) {
-            NamedCallback callback = iter.next();
-            if (callback.type == NamedCallback.STATIC_METHOD && callback.hasLocalMethod()) {
+        for (Iterator<NamedInstaller> iter = staticCallbacks.values().iterator(); iter.hasNext(); ) {
+            NamedInstaller callback = iter.next();
+            if (callback.type == NamedInstaller.STATIC_METHOD && callback.hasLocalMethod()) {
                 assignAliases((MethodCallback)callback,staticAssignedNames);
             }
             callback.install(proxy);
         }
-        for (Iterator<NamedCallback> iter = instanceCallbacks.values().iterator(); iter.hasNext(); ) {
-            NamedCallback callback = iter.next();
-            if (callback.type == NamedCallback.INSTANCE_METHOD && callback.hasLocalMethod()) {
+        for (Iterator<NamedInstaller> iter = instanceCallbacks.values().iterator(); iter.hasNext(); ) {
+            NamedInstaller callback = iter.next();
+            if (callback.type == NamedInstaller.INSTANCE_METHOD && callback.hasLocalMethod()) {
                 assignAliases((MethodCallback)callback,instanceAssignedNames);
             }
             callback.install(proxy);
