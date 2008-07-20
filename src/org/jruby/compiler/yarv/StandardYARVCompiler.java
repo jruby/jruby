@@ -42,6 +42,7 @@ import org.jruby.ast.ArrayNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.CallNode;
+import org.jruby.ast.ConstDeclNode;
 import org.jruby.ast.ConstNode;
 import org.jruby.ast.DefnNode;
 import org.jruby.ast.NewlineNode;
@@ -384,14 +385,19 @@ public class StandardYARVCompiler {
                 break compileLoop;
             case CONSTNODE:
                 // Check for inline const cache here
-                ADD_INSN(ret, nd_line(node), YARVInstructions.PUTNIL);
                 ADD_INSN1(ret, nd_line(node), YARVInstructions.GETCONSTANT, ((ConstNode)node).getName());
                 if(poped) {
                     ADD_INSN(ret, nd_line(node), YARVInstructions.POP);
                 }
                 break compileLoop;
+            case CONSTDECLNODE:
+                if (!poped) {
+                    ADD_INSN(ret, nd_line(node), YARVInstructions.DUP);
+                }
+                ADD_INSN1(ret, nd_line(node), YARVInstructions.SETCONSTANT, ((ConstDeclNode)node).getName());
+                break compileLoop;
             case LOCALASGNNODE:
-                int idx = ((LocalAsgnNode)node).getIndex()-2;
+                int idx = ((LocalAsgnNode)node).getIndex();
                 debugs("lvar: " + idx);
                 COMPILE(ret, "lvalue", ((LocalAsgnNode)node).getValueNode());
                 if(!poped) {
@@ -401,7 +407,7 @@ public class StandardYARVCompiler {
                 break compileLoop;
             case LOCALVARNODE:
                 if(!poped) {
-                    int idx2 = ((LocalVarNode)node).getIndex()-2;
+                    int idx2 = ((LocalVarNode)node).getIndex();
                     debugs("idx: "+idx2);
                     ADD_INSN1(ret, nd_line(node), YARVInstructions.GETLOCAL, idx2);
                 }

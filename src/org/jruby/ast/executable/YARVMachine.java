@@ -21,6 +21,7 @@ import org.jruby.internal.runtime.methods.YARVMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 public class YARVMachine {
     private static final boolean TAILCALL_OPT = Boolean.getBoolean("jruby.tailcall.enabled");
@@ -252,7 +253,11 @@ public class YARVMachine {
         try {
             IRubyObject self = context.getRuntime().getObject();
             
-            context.preScopedBody(DynamicScope.newDynamicScope(scope));
+            context.preScopedBody(new ManyVarsDynamicScope(scope));
+        
+            if (scope.getModule() == null) {
+                scope.setModule(context.getRuntime().getObject());
+            }
             
             return exec(context, self, bytecodes);
         } finally {
@@ -326,8 +331,7 @@ public class YARVMachine {
                 push(context.getConstant(bytecodes[ip].s_op0));
                 break;
             case YARVInstructions.SETCONSTANT:
-                RubyModule module = context.getCurrentScope().getStaticScope().getModule();
-                module.fastSetConstant(bytecodes[ip].s_op0, pop());
+                context.setConstantInCurrent(bytecodes[ip].s_op0, pop());
                 runtime.incGlobalState();
                 break;
             case YARVInstructions.PUTNIL:
