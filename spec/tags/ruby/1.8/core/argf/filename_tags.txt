@@ -1,0 +1,2 @@
+fails(JRUBY-2834):ARGF.filename returns the current file name on each file
+fails(JRUBY-2834):ARGF.filename it sets the $FILENAME global variable with the current file name on each file

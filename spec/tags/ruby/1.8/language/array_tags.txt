@@ -1,0 +1,1 @@
+fails(JRUBY-2837):Array literals [] treats empty expressions as nil elements

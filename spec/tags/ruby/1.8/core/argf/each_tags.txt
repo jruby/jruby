@@ -1,0 +1,1 @@
+fails(JRUBY-2834):ARGF.each reads each line of files

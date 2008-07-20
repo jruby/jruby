@@ -1,0 +1,1 @@
+fails(JRUBY-2834):ARGF.fileno returns the current file number on each file

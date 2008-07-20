@@ -1,0 +1,4 @@
+fails(JRUBY-2834):ARGF.gets reads one line of a file
+fails(JRUBY-2834):ARGF.gets reads all lines of a file
+fails(JRUBY-2834):ARGF.gets reads all lines of two files
+fails(JRUBY-2834):ARGF.gets sets $_ global variable with each line read

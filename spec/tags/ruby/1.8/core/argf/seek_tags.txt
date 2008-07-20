@@ -1,0 +1,3 @@
+fails(JRUBY-2834):ARGF.seek sets the correct absolute position relative to beginning of file
+fails(JRUBY-2834):ARGF.seek sets the correct position relative to current position in file
+fails(JRUBY-2834):ARGF.seek sets the correct absolute position relative to end of file

@@ -1,0 +1,2 @@
+fails(JRUBY-2834):ARGF.skip skips the current file
+fails(JRUBY-2834):ARGF.skip has no effect when called twice in a row

@@ -1,0 +1,11 @@
+fails(JRUBY-2834):ARGF.read reads the contents of a file
+fails(JRUBY-2834):ARGF.read treats first nil argument as no length limit
+fails(JRUBY-2834):ARGF.read treats second nil argument as no output buffer
+fails(JRUBY-2834):ARGF.read treats second argument as an output buffer
+fails(JRUBY-2834):ARGF.read reads a number of bytes from the first file
+fails(JRUBY-2834):ARGF.read reads from a single file consecutively
+fails(JRUBY-2834):ARGF.read reads the contents of two files
+fails(JRUBY-2834):ARGF.read reads the contents of one file and some characters from the second
+fails(JRUBY-2834):ARGF.read reads across two files consecutively
+fails(JRUBY-2834):ARGF.read reads the contents of the same file twice
+fails(JRUBY-2834):ARGF.read reads the contents of a special device file

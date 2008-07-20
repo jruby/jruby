@@ -1,0 +1,1 @@
+fails(JRUBY-2834):ARGF.readchar reads each char of files

@@ -1,0 +1,2 @@
+fails(JRUBY-2834):ARGF.readlines reads all lines of all files
+fails(JRUBY-2834):ARGF.readlines returns nil when end of stream reached

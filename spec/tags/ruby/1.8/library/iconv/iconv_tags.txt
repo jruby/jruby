@@ -18,3 +18,5 @@ fails(JRUBY-2543):The 'utf-16' encoder emits a byte-order mark on first non-empt
 fails(JRUBY-2543):The 'utf-16be' decoder treats possible byte-order marks as regular characters
 fails(JRUBY-2543):The 'utf-16le' decoder treats possible byte-order marks as regular characters
 fails(JRUBY-2543):The 'iso-8859-1' encoder rejects characters which are not in the ISO-8859-1 range
+fails(JRUBY-2543):Iconv#iconv when given a positive length
+fails(JRUBY-2543):Iconv#iconv when given a negative length

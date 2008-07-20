@@ -1,0 +1,4 @@
+fails(JRUBY-2834):ARGF.eof returns true when reaching the end of a file
+fails(JRUBY-2834):ARGF.eof raises IOError when called on a closed stream
+fails(JRUBY-2834):ARGF.eof? returns true when reaching the end of a file
+fails(JRUBY-2834):ARGF.eof? raises IOError when called on a closed stream

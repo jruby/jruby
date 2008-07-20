@@ -1,2 +1,1 @@
-fails:IO #print writes $_.to_s followed by $\ (if any) to the stream if no arguments given
-fails(JRUBY-2286):IO #print writes $_.to_s followed by $\ (if any) to the stream if no arguments given
+fails(JRUBY-2286):IO#print writes $_.to_s followed by $\ (if any) to the stream if no arguments given

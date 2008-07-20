@@ -1,0 +1,1 @@
+fails(JRUBY-2834):ARGF.closed? says it is closed 
