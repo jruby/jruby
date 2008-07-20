@@ -159,7 +159,6 @@ public class JavaClass extends JavaObject {
 
     private static abstract class FieldCallback extends NamedCallback {
         Field field;
-        JavaField javaField;
         FieldCallback(){}
         FieldCallback(String name, int type, Field field) {
             super(name,type);
@@ -173,13 +172,17 @@ public class JavaClass extends JavaObject {
             super(name,STATIC_FIELD,field);
         }
         void install(RubyClass proxy) {
-            proxy.getSingletonClass().defineFastMethod(this.name,this,this.visibility);
+            if (Modifier.isPublic(field.getModifiers())) {
+                proxy.getSingletonClass().defineFastMethod(this.name,this,this.visibility);
+            }
         }
         public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-            if (javaField == null) {
-                javaField = new JavaField(getRuntime(),field);
+            try {
+                return JavaUtil.convertJavaToUsableRubyObject(self.getRuntime(), field.get(null));
+            } catch (IllegalAccessException iae) {
+                throw getRuntime().newTypeError(
+                                    "illegal access getting variable: " + iae.getMessage());
             }
-            return Java.java_to_ruby(self,javaField.static_value(),Block.NULL_BLOCK);
         }
         public Arity getArity() {
             return Arity.NO_ARGUMENTS;
@@ -192,15 +195,27 @@ public class JavaClass extends JavaObject {
             super(name,STATIC_FIELD,field);
         }
         void install(RubyClass proxy) {
-            proxy.getSingletonClass().defineFastMethod(this.name,this,this.visibility);
+            if (Modifier.isPublic(field.getModifiers())) {
+                proxy.getSingletonClass().defineFastMethod(this.name,this,this.visibility);
+            }
         }
         public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-            if (javaField == null) {
-                javaField = new JavaField(getRuntime(),field);
+            try {
+                Object newValue = JavaUtil.convertRubyToJava(args[0]);
+                if (newValue == null) {
+                    if (field.getType().isPrimitive()) {
+                        throw self.getRuntime().newTypeError("wrong type for " + field.getType().getName() + ": null");
+                    }
+                } else if (!field.getType().isInstance(newValue)) {
+                    throw self.getRuntime().newTypeError("wrong type for " + field.getType().getName() + ": " +
+                            newValue.getClass().getName());
+                }
+                field.set(null, newValue);
+            } catch (IllegalAccessException iae) {
+                throw getRuntime().newTypeError(
+                                    "illegal access setting variable: " + iae.getMessage());
             }
-            return Java.java_to_ruby(self,
-                    javaField.set_static_value(Java.ruby_to_java(self,args[0],Block.NULL_BLOCK)),
-                    Block.NULL_BLOCK);
+            return args[0];
         }
         public Arity getArity() {
             return Arity.ONE_ARGUMENT;
@@ -213,15 +228,17 @@ public class JavaClass extends JavaObject {
             super(name,INSTANCE_FIELD,field);
         }
         void install(RubyClass proxy) {
-            proxy.defineFastMethod(this.name,this,this.visibility);
+            if (Modifier.isPublic(field.getModifiers())) {
+                proxy.defineFastMethod(this.name,this,this.visibility);
+            }
         }
         public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-            if (javaField == null) {
-                javaField = new JavaField(getRuntime(),field);
+            try {
+                return JavaUtil.convertJavaToUsableRubyObject(self.getRuntime(), field.get(((JavaObject)self.dataGetStruct()).getValue()));
+            } catch (IllegalAccessException iae) {
+                throw getRuntime().newTypeError(
+                                    "illegal access getting variable: " + iae.getMessage());
             }
-            return Java.java_to_ruby(self,
-                    javaField.value(self.getInstanceVariables().fastGetInstanceVariable("@java_object")),
-                    Block.NULL_BLOCK);
         }
         public Arity getArity() {
             return Arity.NO_ARGUMENTS;
@@ -234,16 +251,27 @@ public class JavaClass extends JavaObject {
             super(name,INSTANCE_FIELD,field);
         }
         void install(RubyClass proxy) {
-            proxy.defineFastMethod(this.name,this,this.visibility);
+            if (Modifier.isPublic(field.getModifiers())) {
+                proxy.defineFastMethod(this.name,this,this.visibility);
+            }
         }
         public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-            if (javaField == null) {
-                javaField = new JavaField(getRuntime(),field);
+            try {
+                Object newValue = JavaUtil.convertRubyToJava(args[0]);
+                if (newValue == null) {
+                    if (field.getType().isPrimitive()) {
+                        throw self.getRuntime().newTypeError("wrong type for " + field.getType().getName() + ": null");
+                    }
+                } else if (!field.getType().isInstance(newValue)) {
+                    throw self.getRuntime().newTypeError("wrong type for " + field.getType().getName() + ": " +
+                            newValue.getClass().getName());
+                }
+                field.set(((JavaObject)self.dataGetStruct()).getValue(), newValue);
+            } catch (IllegalAccessException iae) {
+                throw getRuntime().newTypeError(
+                                    "illegal access setting variable: " + iae.getMessage());
             }
-            return Java.java_to_ruby(self,
-                    javaField.set_value(self.getInstanceVariables().fastGetInstanceVariable("@java_object"),
-                            Java.ruby_to_java(self,args[0],Block.NULL_BLOCK)),
-                    Block.NULL_BLOCK);
+            return args[0];
         }
         public Arity getArity() {
             return Arity.ONE_ARGUMENT;
@@ -395,7 +423,7 @@ public class JavaClass extends JavaObject {
                 args = newArgs;
             }
             IRubyObject[] convertedArgs = new IRubyObject[len+1];
-            convertedArgs[0] = self.getInstanceVariables().fastGetInstanceVariable("@java_object");
+            convertedArgs[0] = (JavaObject)self.dataGetStruct();
             int i = len;
             if (blockGiven) {
                 convertedArgs[len] = args[len - 1];
@@ -429,10 +457,17 @@ public class JavaClass extends JavaObject {
         }
         void install(final RubyModule proxy) {
             if (proxy.fastGetConstantAt(field.getName()) == null) {
-                JavaField javaField = new JavaField(proxy.getRuntime(),field);
                 // TODO: catch exception if constant is already set by other
                 // thread
-                proxy.const_set(javaField.name(),Java.java_to_ruby(proxy,javaField.static_value(),Block.NULL_BLOCK));
+                if (!Ruby.isSecurityRestricted()) {
+                    field.setAccessible(true);
+                }
+                try {
+                    proxy.setConstant(field.getName(), JavaUtil.convertJavaToUsableRubyObject(proxy.getRuntime(), field.get(null)));
+                } catch (IllegalAccessException iae) {
+                    throw proxy.getRuntime().newTypeError(
+                                        "illegal access on setting variable: " + iae.getMessage());
+                }
             }
         }
         static boolean isConstant(final Field field) {

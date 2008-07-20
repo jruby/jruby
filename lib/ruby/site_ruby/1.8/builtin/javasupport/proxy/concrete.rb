@@ -16,7 +16,7 @@ class ConcreteJavaProxy < JavaProxy
     constructors = constructors.select {|c| c.arity == args.length }
     raise NameError, "wrong # of arguments for constructor" if constructors.empty?
     args.collect! { |v| Java.ruby_to_java(v) }
-    self.java_object = JavaUtilities.matching_method(constructors, args).new_instance(*args)
+    JavaUtilities.set_java_object(self, JavaUtilities.matching_method(constructors, args).new_instance(*args))
   end
   
   def initialize(*args, &block)

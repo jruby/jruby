@@ -51,7 +51,7 @@ class ArrayJavaProxy < JavaProxy
     def new(java_array_or_size, fill_value=nil)
       proxy = new_proxy
       if java_array_or_size.kind_of?(Java::JavaArray)
-        proxy.java_object = java_array_or_size
+        JavaUtilities.set_java_object(proxy, java_array_or_size)
         return proxy      
       end
       puts " ** Warning: the 'ClassName[].new(size)' form is deprecated; use ClassName[size].new"

@@ -156,6 +156,13 @@ public class Java implements Library {
         }
         
         @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+        public static IRubyObject set_java_object(IRubyObject recv, IRubyObject self, IRubyObject java_object) {
+            self.getInstanceVariables().fastSetInstanceVariable("@java_object", java_object);
+            self.dataWrapStruct(java_object);
+            return java_object;
+        }
+        
+        @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
         public static IRubyObject get_deprecated_interface_proxy(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
             return Java.get_deprecated_interface_proxy(context, recv, arg0);
         }
@@ -303,6 +310,7 @@ public class Java implements Library {
         // in theory we should never get here, keeping around temporarily
         IRubyObject new_instance = ((RubyClass) recv).allocate();
         new_instance.getInstanceVariables().fastSetInstanceVariable("@java_object", java_object);
+        new_instance.dataWrapStruct(java_object);
         return new_instance;
     }
 
@@ -1090,7 +1098,7 @@ public class Java implements Library {
     @JRubyMethod(frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject ruby_to_java(final IRubyObject recv, IRubyObject object, Block unusedBlock) {
         if (object.respondsTo("to_java_object")) {
-            IRubyObject result = object.getInstanceVariables().fastGetInstanceVariable("@java_object");
+            IRubyObject result = (JavaObject)object.dataGetStruct();
             if (result == null) {
                 result = object.callMethod(recv.getRuntime().getCurrentContext(), "to_java_object");
             }

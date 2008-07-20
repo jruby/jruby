@@ -17,10 +17,10 @@ class InterfaceJavaProxy < JavaProxy
 
     def new(*outer_args, &block)
       proxy = allocate
-      proxy.java_object = Java.new_proxy_instance(proxy.class.java_class) { |proxy2, method, *args|
+      JavaUtilities.set_java_object(proxy, Java.new_proxy_instance(proxy.class.java_class) { |proxy2, method, *args|
         args.collect! { |arg| Java.java_to_ruby(arg) }
         Java.ruby_to_java(proxy.send(method.name, *args))
-      }
+      })
       proxy.send(:initialize,*outer_args,&block)
       proxy
     end
@@ -72,10 +72,10 @@ class MultipleInterfaceJavaProxy
   def new(*outer_args, &block)
     @interfaces.freeze unless @interfaces.frozen?
     proxy = @creator.call(*outer_args)
-    proxy.java_object = Java.new_proxy_instance(*@interfaces) { |proxy2, method, *args|
+    JavaUtilities.set_java_object(proxy, Java.new_proxy_instance(*@interfaces) { |proxy2, method, *args|
       args.collect! { |arg| Java.java_to_ruby(arg) }
       Java.ruby_to_java(proxy.__jsend!(method.name, *args))
-    }
+    })
     proxy
   end
 
@@ -169,10 +169,10 @@ public
 
             def __jcreate_proxy!(interfaces, *ignored_args)
               interfaces.freeze unless interfaces.frozen?
-              self.java_object = Java.new_proxy_instance(*interfaces) do |proxy2, method, *args|
+              JavaUtilities.set_java_object(self, Java.new_proxy_instance(*interfaces) do |proxy2, method, *args|
                 args.collect! { |arg| Java.java_to_ruby(arg) }
                 Java.ruby_to_java(self.__send__(method.name, *args))
-              end
+              end)
             end
             private :__jcreate!, :__jcreate_meta!, :__jcreate_proxy!
 

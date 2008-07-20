@@ -53,7 +53,7 @@ public class JavaArrayUtilities {
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject bytes_to_ruby_string(IRubyObject recv, IRubyObject wrappedObject) {
         Ruby runtime = recv.getRuntime();
-        IRubyObject byteArray = wrappedObject.getInstanceVariables().fastGetInstanceVariable("@java_object");
+        IRubyObject byteArray = (JavaObject)wrappedObject.dataGetStruct();
         if (!(byteArray instanceof JavaArray &&
                 ((JavaArray)byteArray).getValue() instanceof byte[])) {
             throw runtime.newTypeError("wrong argument type " + wrappedObject.getMetaClass() +
