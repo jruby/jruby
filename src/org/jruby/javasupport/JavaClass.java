@@ -168,7 +168,7 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private class StaticFieldGetterInstaller extends FieldInstaller {
+    private static class StaticFieldGetterInstaller extends FieldInstaller {
         StaticFieldGetterInstaller(){}
         StaticFieldGetterInstaller(String name, Field field) {
             super(name,STATIC_FIELD,field);
@@ -180,7 +180,7 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private class StaticFieldSetterInstaller extends FieldInstaller {
+    private static class StaticFieldSetterInstaller extends FieldInstaller {
         StaticFieldSetterInstaller(){}
         StaticFieldSetterInstaller(String name, Field field) {
             super(name,STATIC_FIELD,field);
@@ -192,7 +192,7 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private class InstanceFieldGetterInstaller extends FieldInstaller {
+    private static class InstanceFieldGetterInstaller extends FieldInstaller {
         InstanceFieldGetterInstaller(){}
         InstanceFieldGetterInstaller(String name, Field field) {
             super(name,INSTANCE_FIELD,field);
@@ -204,7 +204,7 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private class InstanceFieldSetterInstaller extends FieldInstaller {
+    private static class InstanceFieldSetterInstaller extends FieldInstaller {
         InstanceFieldSetterInstaller(){}
         InstanceFieldSetterInstaller(String name, Field field) {
             super(name,INSTANCE_FIELD,field);
@@ -262,7 +262,7 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private class StaticFieldGetter extends FieldMethodZero {
+    private static class StaticFieldGetter extends FieldMethodZero {
         StaticFieldGetter(String name, RubyModule host, Field field) {
             super(name, host, field);
         }
@@ -270,28 +270,17 @@ public class JavaClass extends JavaObject {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
             try {
-                return JavaUtil.convertJavaToUsableRubyObject(self.getRuntime(), field.get(null));
+                return JavaUtil.convertJavaToUsableRubyObject(context.getRuntime(), field.get(null));
             } catch (IllegalAccessException iae) {
-                throw getRuntime().newTypeError(
+                throw context.getRuntime().newTypeError(
                                     "illegal access getting variable: " + iae.getMessage());
             }
         }
     }
 
-    private class StaticFieldSetter extends FieldMethodOne {
+    private static class StaticFieldSetter extends FieldMethodOne {
         StaticFieldSetter(String name, RubyModule host, Field field) {
             super(name, host, field);
-        }
-        
-        public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-            try {
-                Object newValue = safeConvert(args[0]);
-                field.set(null, newValue);
-            } catch (IllegalAccessException iae) {
-                throw getRuntime().newTypeError(
-                                    "illegal access setting variable: " + iae.getMessage());
-            }
-            return args[0];
         }
 
         @Override
@@ -300,14 +289,14 @@ public class JavaClass extends JavaObject {
                 Object newValue = safeConvert(arg);
                 field.set(null, newValue);
             } catch (IllegalAccessException iae) {
-                throw getRuntime().newTypeError(
+                throw context.getRuntime().newTypeError(
                                     "illegal access setting variable: " + iae.getMessage());
             }
             return arg;
         }
     }
 
-    private class InstanceFieldGetter extends FieldMethodZero {
+    private static class InstanceFieldGetter extends FieldMethodZero {
         InstanceFieldGetter(String name, RubyModule host, Field field) {
             super(name, host, field);
         }
@@ -317,13 +306,13 @@ public class JavaClass extends JavaObject {
             try {
                 return JavaUtil.convertJavaToUsableRubyObject(self.getRuntime(), field.get(((JavaObject)self.dataGetStruct()).getValue()));
             } catch (IllegalAccessException iae) {
-                throw getRuntime().newTypeError(
+                throw context.getRuntime().newTypeError(
                                     "illegal access getting variable: " + iae.getMessage());
             }
         }
     }
 
-    private class InstanceFieldSetter extends FieldMethodOne {
+    private static class InstanceFieldSetter extends FieldMethodOne {
         InstanceFieldSetter(String name, RubyModule host, Field field) {
             super(name, host, field);
         }
@@ -334,7 +323,7 @@ public class JavaClass extends JavaObject {
                 Object newValue = safeConvert(arg);
                 field.set(((JavaObject)self.dataGetStruct()).getValue(), newValue);
             } catch (IllegalAccessException iae) {
-                throw getRuntime().newTypeError(
+                throw context.getRuntime().newTypeError(
                                     "illegal access setting variable: " + iae.getMessage());
             }
             return arg;
@@ -374,7 +363,7 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private class StaticMethodInvokerInstaller extends MethodInstaller {
+    private static class StaticMethodInvokerInstaller extends MethodInstaller {
         StaticMethodInvokerInstaller(String name) {
             super(name,STATIC_METHOD);
         }
@@ -392,7 +381,7 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private class InstanceMethodInvokerInstaller extends MethodInstaller {
+    private static class InstanceMethodInvokerInstaller extends MethodInstaller {
         InstanceMethodInvokerInstaller(String name) {
             super(name,INSTANCE_METHOD);
         }
@@ -408,7 +397,7 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private abstract class MethodInvoker extends org.jruby.internal.runtime.methods.JavaMethod {
+    private static abstract class MethodInvoker extends org.jruby.internal.runtime.methods.JavaMethod {
         private Method[] methods;
         protected JavaMethod javaMethod;
         protected IntHashMap javaMethods;
@@ -463,13 +452,13 @@ public class JavaClass extends JavaObject {
                 if (methods == null) {
                     raiseNoMatchingMethodError(name, self, args, 0);
                 }
-                method = (JavaMethod)Java.matching_method_internal(JAVA_UTILITIES, methods, args, 0, arity);
+                method = (JavaMethod)Java.matching_method_internal(self, methods, args, 0, arity);
             }
             return method;
         }
     }
 
-    private class StaticMethodInvoker extends MethodInvoker {
+    private static class StaticMethodInvoker extends MethodInvoker {
         StaticMethodInvoker(RubyClass host, List<Method> methods) {
             super(host, methods);
         }
@@ -548,7 +537,7 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private class InstanceMethodInvoker extends MethodInvoker {
+    private static class InstanceMethodInvoker extends MethodInvoker {
         InstanceMethodInvoker(RubyClass host, List<Method> methods) {
             super(host, methods);
         }
