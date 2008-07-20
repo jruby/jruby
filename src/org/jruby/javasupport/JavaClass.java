@@ -132,7 +132,7 @@ public class JavaClass extends JavaObject {
     }
     private static final Map<String, AssignedName> INSTANCE_RESERVED_NAMES = new HashMap<String, AssignedName>(RESERVED_NAMES);
 
-    private static abstract class NamedInstaller implements Callback {
+    private static abstract class NamedInstaller {
         static final int STATIC_FIELD = 1;
         static final int STATIC_METHOD = 2;
         static final int INSTANCE_FIELD = 3;
@@ -147,12 +147,6 @@ public class JavaClass extends JavaObject {
             this.type = type;
         }
         abstract void install(RubyClass proxy);
-        public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-            throw new RuntimeException("Not implemented");
-        }
-        public Arity getArity() {
-            throw new RuntimeException("Not implemented");
-        }
         // small hack to save a cast later on
         boolean hasLocalMethod() {
             return true;
@@ -347,15 +341,12 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private static abstract class MethodCallback extends NamedInstaller {
+    private static abstract class MethodInstaller extends NamedInstaller {
         private boolean haveLocalMethod;
-        private List<Method> methods;
+        protected List<Method> methods;
         protected List<String> aliases;
-        protected JavaMethod javaMethod;
-        protected IntHashMap javaMethods;
-        protected volatile boolean initialized;
-        MethodCallback(){}
-        MethodCallback(String name, int type) {
+        MethodInstaller(){}
+        MethodInstaller(String name, int type) {
             super(name,type);
         }
 
@@ -381,6 +372,51 @@ public class JavaClass extends JavaObject {
         boolean hasLocalMethod () {
             return haveLocalMethod;
         }
+    }
+
+    private class StaticMethodInvokerInstaller extends MethodInstaller {
+        StaticMethodInvokerInstaller(String name) {
+            super(name,STATIC_METHOD);
+        }
+
+        void install(RubyClass proxy) {
+            if (hasLocalMethod()) {
+                RubyClass singleton = proxy.getSingletonClass();
+                DynamicMethod method = new StaticMethodInvoker(singleton, methods);
+                singleton.addMethod(name, method);
+                if (aliases != null && isPublic() ) {
+                    singleton.defineAliases(aliases, this.name);
+                    aliases = null;
+                }
+            }
+        }
+    }
+
+    private class InstanceMethodInvokerInstaller extends MethodInstaller {
+        InstanceMethodInvokerInstaller(String name) {
+            super(name,INSTANCE_METHOD);
+        }
+        void install(RubyClass proxy) {
+            if (hasLocalMethod()) {
+                DynamicMethod method = new InstanceMethodInvoker(proxy, methods);
+                proxy.addMethod(name, method);
+                if (aliases != null && isPublic()) {
+                    proxy.defineAliases(aliases, this.name);
+                    aliases = null;
+                }
+            }
+        }
+    }
+
+    private abstract class MethodInvoker extends org.jruby.internal.runtime.methods.JavaMethod {
+        private Method[] methods;
+        protected JavaMethod javaMethod;
+        protected IntHashMap javaMethods;
+        protected volatile boolean initialized;
+        MethodInvoker(RubyClass host, List<Method> methods) {
+            super(host, Visibility.PUBLIC);
+            this.methods = methods.toArray(new Method[methods.size()]);
+        }
 
         // TODO: varargs?
         // TODO: rework Java.matching_methods_internal and
@@ -389,8 +425,8 @@ public class JavaClass extends JavaObject {
         synchronized void createJavaMethods(Ruby runtime) {
             if (!initialized) { // read-volatile
                 if (methods != null) {
-                    if (methods.size() == 1) {
-                        javaMethod = JavaMethod.create(runtime, methods.get(0));
+                    if (methods.length == 1) {
+                        javaMethod = JavaMethod.create(runtime, methods[0]);
                     } else {
                         javaMethods = new IntHashMap();
                         for (Method method: methods) {
@@ -410,34 +446,35 @@ public class JavaClass extends JavaObject {
             }
         }
 
-        void raiseNoMatchingMethodError(IRubyObject proxy, IRubyObject[] args, int start) {
+        void raiseNoMatchingMethodError(String name, IRubyObject proxy, IRubyObject[] args, int start) {
             int len = args.length;
             List<Object> argTypes = new ArrayList<Object>(len - start);
             for (int i = start ; i < len; i++) {
                 argTypes.add(((JavaClass)((JavaObject)args[i]).java_class()).getValue());
             }
-            throw proxy.getRuntime().newNameError("no " + this.name + " with arguments matching " + argTypes + " on object " + proxy.callMethod(proxy.getRuntime().getCurrentContext(),"inspect"), null);
+            throw proxy.getRuntime().newNameError("no " + name + " with arguments matching " + argTypes + " on object " + proxy.callMethod(proxy.getRuntime().getCurrentContext(),"inspect"), null);
+        }
+        
+        protected JavaMethod findMethod(IRubyObject self, String name, IRubyObject[] args, int arity) {
+            JavaMethod method;
+            if ((method = javaMethod) == null) {
+                // TODO: varargs?
+                RubyArray methods = (RubyArray)javaMethods.get(arity);
+                if (methods == null) {
+                    raiseNoMatchingMethodError(name, self, args, 0);
+                }
+                method = (JavaMethod)Java.matching_method_internal(JAVA_UTILITIES, methods, args, 0, arity);
+            }
+            return method;
         }
     }
 
-    private class StaticMethodInvoker extends MethodCallback {
-        StaticMethodInvoker(){}
-        StaticMethodInvoker(String name) {
-            super(name,STATIC_METHOD);
+    private class StaticMethodInvoker extends MethodInvoker {
+        StaticMethodInvoker(RubyClass host, List<Method> methods) {
+            super(host, methods);
         }
 
-        void install(RubyClass proxy) {
-            if (hasLocalMethod()) {
-                RubyClass singleton = proxy.getSingletonClass();
-                singleton.defineFastMethod(this.name,this,this.visibility);
-                if (aliases != null && isPublic() ) {
-                    singleton.defineAliases(aliases, this.name);
-                    aliases = null;
-                }
-            }
-        }
-
-        public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
             createJavaMethods(self.getRuntime());
 
             // TODO: ok to convert args in place, rather than new array?
@@ -446,75 +483,244 @@ public class JavaClass extends JavaObject {
             for (int i = len; --i >= 0; ) {
                 convertedArgs[i] = Java.ruby_to_java(self,args[i],Block.NULL_BLOCK);
             }
-            JavaMethod method;
-            if ((method = javaMethod) == null) {
-                // TODO: varargs?
-                RubyArray methods = (RubyArray)javaMethods.get(len);
-                if (methods == null) {
-                    raiseNoMatchingMethodError(self,convertedArgs,0);
-                }
-                method = (JavaMethod)Java.matching_method_internal(JAVA_UTILITIES, methods, convertedArgs, 0, len);
-            }
+            JavaMethod method = findMethod(self, name, convertedArgs, len);
             return Java.java_to_ruby(self, method.invoke_static(convertedArgs), Block.NULL_BLOCK);
         }
 
-        public Arity getArity() {
-            return Arity.OPTIONAL;
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+            createJavaMethods(self.getRuntime());
+
+            JavaMethod method = findMethod(self, name, IRubyObject.NULL_ARRAY, 0);
+            return Java.java_to_ruby(self, method.invoke_static(IRubyObject.NULL_ARRAY), Block.NULL_BLOCK);
+        }
+
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
+            createJavaMethods(self.getRuntime());
+
+            // TODO: ok to convert args in place, rather than new array?
+            IRubyObject[] convertedArgs = new IRubyObject[1];
+            convertedArgs[0] = Java.ruby_to_java(self,arg0,Block.NULL_BLOCK);
+            JavaMethod method = findMethod(self, name, convertedArgs, 1);
+            return Java.java_to_ruby(self, method.invoke_static(convertedArgs), Block.NULL_BLOCK);
+        }
+
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+            createJavaMethods(self.getRuntime());
+
+            // TODO: ok to convert args in place, rather than new array?
+            IRubyObject[] convertedArgs = new IRubyObject[2];
+            convertedArgs[0] = Java.ruby_to_java(self,arg0,Block.NULL_BLOCK);
+            convertedArgs[1] = Java.ruby_to_java(self,arg1,Block.NULL_BLOCK);
+            JavaMethod method = findMethod(self, name, convertedArgs, 2);
+            return Java.java_to_ruby(self, method.invoke_static(convertedArgs), Block.NULL_BLOCK);
+        }
+
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+            createJavaMethods(self.getRuntime());
+
+            // TODO: ok to convert args in place, rather than new array?
+            IRubyObject[] convertedArgs = new IRubyObject[3];
+            convertedArgs[0] = Java.ruby_to_java(self,arg0,Block.NULL_BLOCK);
+            convertedArgs[1] = Java.ruby_to_java(self,arg1,Block.NULL_BLOCK);
+            convertedArgs[2] = Java.ruby_to_java(self,arg2,Block.NULL_BLOCK);
+            JavaMethod method = findMethod(self, name, convertedArgs, 3);
+            return Java.java_to_ruby(self, method.invoke_static(convertedArgs), Block.NULL_BLOCK);
+        }
+
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            return call(context, self, clazz, name, args);
+        }
+
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+            return call(context, self, clazz, name);
+        }
+
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+            return call(context, self, clazz, name, arg0);
+        }
+
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+            return call(context, self, clazz, name, arg0, arg1);
+        }
+
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+            return call(context, self, clazz, name, arg0, arg1, arg2);
         }
     }
 
-    private class InstanceMethodInvoker extends MethodCallback {
-        InstanceMethodInvoker(){}
-        InstanceMethodInvoker(String name) {
-            super(name,INSTANCE_METHOD);
-        }
-        void install(RubyClass proxy) {
-            if (hasLocalMethod()) {
-                proxy.defineFastMethod(this.name,this,this.visibility);
-                if (aliases != null && isPublic()) {
-                    proxy.defineAliases(aliases, this.name);
-                    aliases = null;
-                }
-            }
+    private class InstanceMethodInvoker extends MethodInvoker {
+        InstanceMethodInvoker(RubyClass host, List<Method> methods) {
+            super(host, methods);
         }
 
-        public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+            createJavaMethods(self.getRuntime());
+
+            // TODO: ok to convert args in place, rather than new array?
+            int len = args.length;
+            IRubyObject[] convertedArgs = new IRubyObject[len];
+            for (int i = 0; i < len; i++) {
+                convertedArgs[i] = Java.ruby_to_java(self,args[i],Block.NULL_BLOCK);
+            }
+            JavaMethod method = findMethod(self, name, convertedArgs, len);
+            return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
+        }
+
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+            createJavaMethods(self.getRuntime());
+
+            // TODO: ok to convert args in place, rather than new array?
+            JavaMethod method = findMethod(self, name, IRubyObject.NULL_ARRAY, 0);
+            return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), IRubyObject.NULL_ARRAY), Block.NULL_BLOCK);
+        }
+
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
+            createJavaMethods(self.getRuntime());
+
+            // TODO: ok to convert args in place, rather than new array?
+            int len = 1;
+            IRubyObject[] convertedArgs = new IRubyObject[len];
+            convertedArgs[0] = Java.ruby_to_java(self,arg0,Block.NULL_BLOCK);
+            JavaMethod method = findMethod(self, name, convertedArgs, len);
+            return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
+        }
+
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+            createJavaMethods(self.getRuntime());
+
+            int len = 2;
+            IRubyObject[] convertedArgs = new IRubyObject[len];
+            convertedArgs[0] = Java.ruby_to_java(self,arg0,Block.NULL_BLOCK);
+            convertedArgs[1] = Java.ruby_to_java(self,arg1,Block.NULL_BLOCK);
+            JavaMethod method = findMethod(self, name, convertedArgs, len);
+            return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
+        }
+
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+            createJavaMethods(self.getRuntime());
+
+            int len = 3;
+            IRubyObject[] convertedArgs = new IRubyObject[len];
+            convertedArgs[0] = Java.ruby_to_java(self,arg0,Block.NULL_BLOCK);
+            convertedArgs[1] = Java.ruby_to_java(self,arg1,Block.NULL_BLOCK);
+            convertedArgs[2] = Java.ruby_to_java(self,arg2,Block.NULL_BLOCK);
+            JavaMethod method = findMethod(self, name, convertedArgs, len);
+            return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
+        }
+
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
             createJavaMethods(self.getRuntime());
 
             // TODO: ok to convert args in place, rather than new array?
             int len = args.length;
             boolean blockGiven = block.isGiven();
+            IRubyObject convertedProc = null;
             if (blockGiven) { // convert block to argument
-                len += 1;
-                IRubyObject[] newArgs = new IRubyObject[args.length+1];
-                System.arraycopy(args, 0, newArgs, 0, args.length);
-                newArgs[args.length] = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
-                args = newArgs;
-            }
-            IRubyObject[] convertedArgs = new IRubyObject[len+1];
-            convertedArgs[0] = (JavaObject)self.dataGetStruct();
-            int i = len;
-            if (blockGiven) {
-                convertedArgs[len] = args[len - 1];
-                i -= 1;
-            }
-            for (; --i >= 0; ) {
-                convertedArgs[i+1] = Java.ruby_to_java(self,args[i],Block.NULL_BLOCK);
-            }
-            JavaMethod method;
-            if ((method = javaMethod) == null) {
-                // TODO: varargs?
-                RubyArray methods = (RubyArray)javaMethods.get(len);
-                if (methods == null) {
-                    raiseNoMatchingMethodError(self,convertedArgs,1);
+                convertedProc = Java.ruby_to_java(self, RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA), Block.NULL_BLOCK);
+                IRubyObject[] convertedArgs = new IRubyObject[len+1];
+                convertedArgs[len] = convertedProc;
+                for (int i = 0; i < len; i++) {
+                    convertedArgs[i] = Java.ruby_to_java(self,args[i],Block.NULL_BLOCK);
                 }
-                method = (JavaMethod)Java.matching_method_internal(JAVA_UTILITIES, methods, convertedArgs, 1, len);
+                JavaMethod method = findMethod(self, name, convertedArgs, len + 1);
+                return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
+            } else {
+                IRubyObject[] convertedArgs = new IRubyObject[len];
+                for (int i = 0; i < len; i++) {
+                    convertedArgs[i] = Java.ruby_to_java(self,args[i],Block.NULL_BLOCK);
+                }
+                JavaMethod method = findMethod(self, name, convertedArgs, len);
+                return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
             }
-            return Java.java_to_ruby(self, method.invoke(convertedArgs), Block.NULL_BLOCK);
         }
 
-        public Arity getArity() {
-            return Arity.OPTIONAL;
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+            createJavaMethods(self.getRuntime());
+
+            // TODO: ok to convert args in place, rather than new array?
+            boolean blockGiven = block.isGiven();
+            IRubyObject convertedProc = null;
+            if (blockGiven) { // convert block to argument
+                convertedProc = Java.ruby_to_java(self, RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA), Block.NULL_BLOCK);
+                IRubyObject[] convertedArgs = new IRubyObject[] {convertedProc};
+                JavaMethod method = findMethod(self, name, convertedArgs, 1);
+                return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
+            } else {
+                JavaMethod method = findMethod(self, name, IRubyObject.NULL_ARRAY, 0);
+                return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), IRubyObject.NULL_ARRAY), Block.NULL_BLOCK);
+            }
+        }
+
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+            createJavaMethods(self.getRuntime());
+
+            // TODO: ok to convert args in place, rather than new array?
+            int len = 1;
+            boolean blockGiven = block.isGiven();
+            IRubyObject convertedProc = null;
+            if (blockGiven) { // convert block to argument
+                convertedProc = Java.ruby_to_java(self, RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA), Block.NULL_BLOCK);
+                IRubyObject[] convertedArgs = new IRubyObject[len+1];
+                convertedArgs[len] = convertedProc;
+                convertedArgs[0] = Java.ruby_to_java(self,arg0,Block.NULL_BLOCK);
+                JavaMethod method = findMethod(self, name, convertedArgs, len + 1);
+                return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
+            } else {
+                IRubyObject[] convertedArgs = new IRubyObject[len];
+                convertedArgs[0] = Java.ruby_to_java(self,arg0,Block.NULL_BLOCK);
+                JavaMethod method = findMethod(self, name, convertedArgs, len);
+                return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
+            }
+        }
+
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+            createJavaMethods(self.getRuntime());
+
+            // TODO: ok to convert args in place, rather than new array?
+            int len = 2;
+            boolean blockGiven = block.isGiven();
+            IRubyObject convertedProc = null;
+            if (blockGiven) { // convert block to argument
+                convertedProc = Java.ruby_to_java(self, RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA), Block.NULL_BLOCK);
+                IRubyObject[] convertedArgs = new IRubyObject[len+1];
+                convertedArgs[len] = convertedProc;
+                convertedArgs[0] = Java.ruby_to_java(self,arg0,Block.NULL_BLOCK);
+                convertedArgs[1] = Java.ruby_to_java(self,arg1,Block.NULL_BLOCK);
+                JavaMethod method = findMethod(self, name, convertedArgs, len + 1);
+                return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
+            } else {
+                IRubyObject[] convertedArgs = new IRubyObject[len];
+                convertedArgs[0] = Java.ruby_to_java(self,arg0,Block.NULL_BLOCK);
+                convertedArgs[1] = Java.ruby_to_java(self,arg1,Block.NULL_BLOCK);
+                JavaMethod method = findMethod(self, name, convertedArgs, len);
+                return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
+            }
+        }
+
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+            createJavaMethods(self.getRuntime());
+
+            // TODO: ok to convert args in place, rather than new array?
+            int len = 3;
+            boolean blockGiven = block.isGiven();
+            IRubyObject convertedProc = null;
+            if (blockGiven) { // convert block to argument
+                convertedProc = Java.ruby_to_java(self, RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA), Block.NULL_BLOCK);
+                IRubyObject[] convertedArgs = new IRubyObject[len+1];
+                convertedArgs[len] = convertedProc;
+                convertedArgs[0] = Java.ruby_to_java(self,arg0,Block.NULL_BLOCK);
+                convertedArgs[1] = Java.ruby_to_java(self,arg1,Block.NULL_BLOCK);
+                convertedArgs[2] = Java.ruby_to_java(self,arg2,Block.NULL_BLOCK);
+                JavaMethod method = findMethod(self, name, convertedArgs, len + 1);
+                return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
+            } else {
+                IRubyObject[] convertedArgs = new IRubyObject[len];
+                convertedArgs[0] = Java.ruby_to_java(self,arg0,Block.NULL_BLOCK);
+                convertedArgs[1] = Java.ruby_to_java(self,arg1,Block.NULL_BLOCK);
+                convertedArgs[2] = Java.ruby_to_java(self,arg2,Block.NULL_BLOCK);
+                JavaMethod method = findMethod(self, name, convertedArgs, len);
+                return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
+            }
         }
     }
 
@@ -549,8 +755,8 @@ public class JavaClass extends JavaObject {
     
     private Map<String, AssignedName> staticAssignedNames;
     private Map<String, AssignedName> instanceAssignedNames;
-    private Map<String, NamedInstaller> staticCallbacks;
-    private Map<String, NamedInstaller> instanceCallbacks;
+    private Map<String, NamedInstaller> staticInstallers;
+    private Map<String, NamedInstaller> instanceInstallers;
     private List<ConstantField> constantFields;
     // caching constructors, as they're accessed for each new instance
     private volatile RubyArray constructors;
@@ -738,9 +944,9 @@ public class JavaClass extends JavaObject {
                         staticNames.put(name,new AssignedName(name,AssignedName.METHOD));
                     }
                 }
-                StaticMethodInvoker invoker = (StaticMethodInvoker)staticCallbacks.get(name);
+                StaticMethodInvokerInstaller invoker = (StaticMethodInvokerInstaller)staticCallbacks.get(name);
                 if (invoker == null) {
-                    invoker = new StaticMethodInvoker(name);
+                    invoker = new StaticMethodInvokerInstaller(name);
                     staticCallbacks.put(name,invoker);
                 }
                 invoker.addMethod(method,javaClass);
@@ -757,9 +963,9 @@ public class JavaClass extends JavaObject {
                         instanceNames.put(name,new AssignedName(name,AssignedName.METHOD));
                     }
                 }
-                InstanceMethodInvoker invoker = (InstanceMethodInvoker)instanceCallbacks.get(name);
+                InstanceMethodInvokerInstaller invoker = (InstanceMethodInvokerInstaller)instanceCallbacks.get(name);
                 if (invoker == null) {
-                    invoker = new InstanceMethodInvoker(name);
+                    invoker = new InstanceMethodInvokerInstaller(name);
                     instanceCallbacks.put(name,invoker);
                 }
                 invoker.addMethod(method,javaClass);
@@ -767,8 +973,8 @@ public class JavaClass extends JavaObject {
         }
         this.staticAssignedNames = staticNames;
         this.instanceAssignedNames = instanceNames;
-        this.staticCallbacks = staticCallbacks;
-        this.instanceCallbacks = instanceCallbacks;
+        this.staticInstallers = staticCallbacks;
+        this.instanceInstallers = instanceCallbacks;
         this.constantFields = constantFields;
     }
     
@@ -792,19 +998,19 @@ public class JavaClass extends JavaObject {
         for (ConstantField field: constantFields) {
             field.install(proxy);
         }
-        for (Iterator<NamedInstaller> iter = staticCallbacks.values().iterator(); iter.hasNext(); ) {
-            NamedInstaller callback = iter.next();
-            if (callback.type == NamedInstaller.STATIC_METHOD && callback.hasLocalMethod()) {
-                assignAliases((MethodCallback)callback,staticAssignedNames);
+        for (Iterator<NamedInstaller> iter = staticInstallers.values().iterator(); iter.hasNext(); ) {
+            NamedInstaller installer = iter.next();
+            if (installer.type == NamedInstaller.STATIC_METHOD && installer.hasLocalMethod()) {
+                assignAliases((MethodInstaller)installer,staticAssignedNames);
             }
-            callback.install(proxy);
+            installer.install(proxy);
         }
-        for (Iterator<NamedInstaller> iter = instanceCallbacks.values().iterator(); iter.hasNext(); ) {
-            NamedInstaller callback = iter.next();
-            if (callback.type == NamedInstaller.INSTANCE_METHOD && callback.hasLocalMethod()) {
-                assignAliases((MethodCallback)callback,instanceAssignedNames);
+        for (Iterator<NamedInstaller> iter = instanceInstallers.values().iterator(); iter.hasNext(); ) {
+            NamedInstaller installer = iter.next();
+            if (installer.type == NamedInstaller.INSTANCE_METHOD && installer.hasLocalMethod()) {
+                assignAliases((MethodInstaller)installer,instanceAssignedNames);
             }
-            callback.install(proxy);
+            installer.install(proxy);
         }
         // setup constants for public inner classes
         Class<?>[] classes = EMPTY_CLASS_ARRAY;
@@ -838,15 +1044,15 @@ public class JavaClass extends JavaObject {
         // array and static/instance callback hashes at this point. 
     }
 
-    private static void assignAliases(MethodCallback callback, Map<String, AssignedName> assignedNames) {
-        String name = callback.name;
+    private static void assignAliases(MethodInstaller installer, Map<String, AssignedName> assignedNames) {
+        String name = installer.name;
         String rubyCasedName = getRubyCasedName(name);
-        addUnassignedAlias(rubyCasedName,assignedNames,callback);
+        addUnassignedAlias(rubyCasedName,assignedNames,installer);
 
         String javaPropertyName = getJavaPropertyName(name);
         String rubyPropertyName = null;
 
-        for (Method method: callback.methods) {
+        for (Method method: installer.methods) {
             Class<?>[] argTypes = method.getParameterTypes();
             Class<?> resultType = method.getReturnType();
             int argCount = argTypes.length;
@@ -858,20 +1064,20 @@ public class JavaClass extends JavaObject {
                     if (argCount == 0 ||                                // getFoo      => foo
                         argCount == 1 && argTypes[0] == int.class) {    // getFoo(int) => foo(int)
 
-                        addUnassignedAlias(javaPropertyName,assignedNames,callback);
-                        addUnassignedAlias(rubyPropertyName,assignedNames,callback);
+                        addUnassignedAlias(javaPropertyName,assignedNames,installer);
+                        addUnassignedAlias(rubyPropertyName,assignedNames,installer);
                     }
                 } else if (rubyCasedName.startsWith("set_")) {
                     rubyPropertyName = rubyCasedName.substring(4);
                     if (argCount == 1 && resultType == void.class) {    // setFoo(Foo) => foo=(Foo)
-                        addUnassignedAlias(javaPropertyName+'=',assignedNames,callback);
-                        addUnassignedAlias(rubyPropertyName+'=',assignedNames,callback);
+                        addUnassignedAlias(javaPropertyName+'=',assignedNames,installer);
+                        addUnassignedAlias(rubyPropertyName+'=',assignedNames,installer);
                     }
                 } else if (rubyCasedName.startsWith("is_")) {
                     rubyPropertyName = rubyCasedName.substring(3);
                     if (resultType == boolean.class) {                  // isFoo() => foo, isFoo(*) => foo(*)
-                        addUnassignedAlias(javaPropertyName,assignedNames,callback);
-                        addUnassignedAlias(rubyPropertyName,assignedNames,callback);
+                        addUnassignedAlias(javaPropertyName,assignedNames,installer);
+                        addUnassignedAlias(rubyPropertyName,assignedNames,installer);
                     }
                 }
             }
@@ -879,28 +1085,28 @@ public class JavaClass extends JavaObject {
             // Additionally add ?-postfixed aliases to any boolean methods and properties.
             if (resultType == boolean.class) {
                 // is_something?, contains_thing?
-                addUnassignedAlias(rubyCasedName+'?',assignedNames,callback);
+                addUnassignedAlias(rubyCasedName+'?',assignedNames,installer);
                 if (rubyPropertyName != null) {
                     // something?
-                    addUnassignedAlias(rubyPropertyName+'?',assignedNames,callback);
+                    addUnassignedAlias(rubyPropertyName+'?',assignedNames,installer);
                 }
             }
         }
     }
     
     private static void addUnassignedAlias(String name, Map<String, AssignedName> assignedNames,
-            MethodCallback callback) {
+            MethodInstaller installer) {
         if (name != null) {
             AssignedName assignedName = (AssignedName)assignedNames.get(name);
             if (assignedName == null) {
-                callback.addAlias(name);
+                installer.addAlias(name);
                 assignedNames.put(name,new AssignedName(name,AssignedName.ALIAS));
             } else if (assignedName.type == AssignedName.ALIAS) {
-                callback.addAlias(name);
+                installer.addAlias(name);
             } else if (assignedName.type > AssignedName.ALIAS) {
                 // TODO: there will be some additional logic in this branch
                 // dealing with conflicting protected fields. 
-                callback.addAlias(name);
+                installer.addAlias(name);
                 assignedNames.put(name,new AssignedName(name,AssignedName.ALIAS));
             }
         }
