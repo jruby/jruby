@@ -970,6 +970,100 @@ public class Java implements Library {
             throw recv.getRuntime().newNameError("no " + ((JavaMethod) o1).name() + " with arguments matching " + arg_types + " on object " + recv.callMethod(recv.getRuntime().getCurrentContext(), "inspect"), null);
         }
     }
+    
+    public static int argsHashCode(Object[] a) {
+        if (a == null)
+            return 0;
+ 
+        int result = 1;
+ 
+        for (Object element : a)
+            result = 31 * result + (element == null ? 0 : element.getClass().hashCode());
+ 
+        return result;
+    }
+    
+    public static Class argClass(Object a) {
+        if (a == null) return Void.TYPE;
+        
+        return a.getClass();
+    }
+
+    public static IRubyObject matching_method_internal(IRubyObject recv, IRubyObject methods, Object[] args, int len) {
+        Map matchCache = recv.getRuntime().getJavaSupport().getMatchCache();
+        int signatureCode = argsHashCode(args);
+
+        Map ms = (Map) matchCache.get(methods);
+        if (ms == null) {
+            ms = new HashMap();
+            matchCache.put(methods, ms);
+        } else {
+            IRubyObject method = (IRubyObject) ms.get(signatureCode);
+            if (method != null) {
+                return method;
+            }
+        }
+
+        int mlen = ((RubyArray) methods).getLength();
+        IRubyObject[] margs = ((RubyArray) methods).toJavaArrayMaybeUnsafe();
+
+        mfor:
+        for (int k = 0; k < mlen; k++) {
+            IRubyObject method = margs[k];
+            Class<?>[] types = ((ParameterTypes) method).getParameterTypes();
+            // Compatible (by inheritance)
+            if (len == types.length) {
+                // Exact match
+                boolean same = true;
+                for (int x = 0, y = len; x < y; x++) {
+                    if (!types[x].equals(argClass(args[x]))) {
+                        same = false;
+                        break;
+                    }
+                }
+                if (same) {
+                    ms.put(signatureCode, method);
+                    return method;
+                }
+
+                for (int j = 0, m = len; j < m; j++) {
+                    if (!(JavaClass.assignable(types[j], argClass(args[j])) &&
+                            primitive_match(types[j], argClass(args[j])))) {
+                        continue mfor;
+                    }
+                }
+                ms.put(signatureCode, method);
+                return method;
+            }
+        }
+
+        mfor:
+        for (int k = 0; k < mlen; k++) {
+            IRubyObject method = margs[k];
+            Class<?>[] types = ((ParameterTypes) method).getParameterTypes();
+            // Compatible (by inheritance)
+            if (len == types.length) {
+                for (int j = 0, m = len; j < m; j++) {
+                    if (!JavaClass.assignable(types[j], argClass(args[j])) && !JavaUtil.isDuckTypeConvertable(argClass(args[j]), types[j])) {
+                        continue mfor;
+                    }
+                }
+                ms.put(signatureCode, method);
+                return method;
+            }
+        }
+
+        // We've fallen and can't get up...prepare for error message
+        Object o1 = margs[0];
+        ArrayList argTypes = new ArrayList(args.length);
+        for (Object o : args) argTypes.add(argClass(o));
+
+        if (o1 instanceof JavaConstructor || o1 instanceof JavaProxyConstructor) {
+            throw recv.getRuntime().newNameError("no constructor with arguments matching " + argTypes + " on object " + recv.callMethod(recv.getRuntime().getCurrentContext(), "inspect"), null);
+        } else {
+            throw recv.getRuntime().newNameError("no " + ((JavaMethod) o1).name() + " with arguments matching " + argTypes + " on object " + recv.callMethod(recv.getRuntime().getCurrentContext(), "inspect"), null);
+        }
+    }
 
     public static IRubyObject access(IRubyObject recv, IRubyObject java_type) {
         int modifiers = ((JavaClass) java_type).javaClass().getModifiers();

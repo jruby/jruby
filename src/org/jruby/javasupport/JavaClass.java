@@ -38,6 +38,7 @@ package org.jruby.javasupport;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -54,13 +55,16 @@ import java.util.regex.Pattern;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
+import org.jruby.RubyTime;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
@@ -71,6 +75,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -87,6 +92,7 @@ public class JavaClass extends JavaObject {
     private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[] {};
     private static final Method[] EMPTY_METHOD_ARRAY = new Method[] {};
     private static final Field[] EMPTY_FIELD_ARRAY = new Field[] {};
+    private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
 
     private static class AssignedName {
         // to override an assigned name, the type must be less than
@@ -435,11 +441,11 @@ public class JavaClass extends JavaObject {
             }
         }
 
-        void raiseNoMatchingMethodError(String name, IRubyObject proxy, IRubyObject[] args, int start) {
+        void raiseNoMatchingMethodError(String name, IRubyObject proxy, Object[] args, int start) {
             int len = args.length;
             List<Object> argTypes = new ArrayList<Object>(len - start);
             for (int i = start ; i < len; i++) {
-                argTypes.add(((JavaClass)((JavaObject)args[i]).java_class()).getValue());
+                argTypes.add(args[i].getClass());
             }
             throw proxy.getRuntime().newNameError("no " + name + " with arguments matching " + argTypes + " on object " + proxy.callMethod(proxy.getRuntime().getCurrentContext(),"inspect"), null);
         }
@@ -456,6 +462,80 @@ public class JavaClass extends JavaObject {
             }
             return method;
         }
+        
+        protected JavaMethod findMethod(IRubyObject self, String name, Object[] args, int arity) {
+            JavaMethod method;
+            if ((method = javaMethod) == null) {
+                // TODO: varargs?
+                RubyArray methods = (RubyArray)javaMethods.get(arity);
+                if (methods == null) {
+                    raiseNoMatchingMethodError(name, self, args, 0);
+                }
+                method = (JavaMethod)Java.matching_method_internal(self, methods, args, arity);
+            }
+            return method;
+        }
+    }
+        
+    protected static Object convertArgument(ThreadContext context, IRubyObject object) {
+        if (object.dataGetStruct() instanceof JavaObject) {
+            return ((JavaObject)object.dataGetStruct()).getValue();
+        }
+
+        return primitive_to_java(context, object);
+    }
+
+    public static Object primitive_to_java(ThreadContext context, IRubyObject object) {
+        Ruby runtime = context.getRuntime();
+        if (object instanceof JavaObject) {
+            return ((JavaObject)object).getValue();
+        }
+        Object javaObject;
+        switch (object.getMetaClass().index) {
+        case ClassIndex.NIL:
+            javaObject = null;
+            break;
+        case ClassIndex.FIXNUM:
+            javaObject = new Long(((RubyFixnum) object).getLongValue());
+            break;
+        case ClassIndex.BIGNUM:
+            javaObject = ((RubyBignum) object).getValue();
+            break;
+        case ClassIndex.FLOAT:
+            javaObject = new Double(((RubyFloat) object).getValue());
+            break;
+        case ClassIndex.STRING:
+            try {
+                ByteList bytes = ((RubyString) object).getByteList();
+                javaObject = new String(bytes.unsafeBytes(), bytes.begin(), bytes.length(), "UTF8");
+            } catch (UnsupportedEncodingException uee) {
+                javaObject = object.toString();
+            }
+            break;
+        case ClassIndex.TRUE:
+            javaObject = Boolean.TRUE;
+            break;
+        case ClassIndex.FALSE:
+            javaObject = Boolean.FALSE;
+            break;
+        case ClassIndex.TIME:
+            javaObject = ((RubyTime) object).getJavaDate();
+            break;
+        default:
+            if (object.respondsTo("to_java_object")) {
+                javaObject = object.callMethod(context, "to_java_object");
+                if (javaObject instanceof JavaObject) {
+                    runtime.getJavaSupport().getObjectProxyCache().put(((JavaObject) javaObject).getValue(), object);
+                    javaObject = ((JavaObject)javaObject).getValue();
+                }
+                return javaObject;
+            }
+            // it's either as converted as we can make it via above logic or it's
+            // not one of the types we convert, so just pass it out as-is without wrapping
+            return object;
+        }
+        
+        return javaObject;
     }
 
     private static class StaticMethodInvoker extends MethodInvoker {
@@ -468,9 +548,9 @@ public class JavaClass extends JavaObject {
 
             // TODO: ok to convert args in place, rather than new array?
             int len = args.length;
-            IRubyObject[] convertedArgs = new IRubyObject[len];
+            Object[] convertedArgs = new Object[len];
             for (int i = len; --i >= 0; ) {
-                convertedArgs[i] = Java.ruby_to_java(self,args[i],Block.NULL_BLOCK);
+                convertedArgs[i] = convertArgument(context, args[i]);
             }
             JavaMethod method = findMethod(self, name, convertedArgs, len);
             return Java.java_to_ruby(self, method.invoke_static(convertedArgs), Block.NULL_BLOCK);
@@ -479,16 +559,16 @@ public class JavaClass extends JavaObject {
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
             createJavaMethods(self.getRuntime());
 
-            JavaMethod method = findMethod(self, name, IRubyObject.NULL_ARRAY, 0);
-            return Java.java_to_ruby(self, method.invoke_static(IRubyObject.NULL_ARRAY), Block.NULL_BLOCK);
+            JavaMethod method = findMethod(self, name, EMPTY_OBJECT_ARRAY, 0);
+            return Java.java_to_ruby(self, method.invoke_static(EMPTY_OBJECT_ARRAY), Block.NULL_BLOCK);
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
             createJavaMethods(self.getRuntime());
 
             // TODO: ok to convert args in place, rather than new array?
-            IRubyObject[] convertedArgs = new IRubyObject[1];
-            convertedArgs[0] = Java.ruby_to_java(self,arg0,Block.NULL_BLOCK);
+            Object[] convertedArgs = new Object[1];
+            convertedArgs[0] = convertArgument(context, arg0);
             JavaMethod method = findMethod(self, name, convertedArgs, 1);
             return Java.java_to_ruby(self, method.invoke_static(convertedArgs), Block.NULL_BLOCK);
         }
@@ -497,9 +577,9 @@ public class JavaClass extends JavaObject {
             createJavaMethods(self.getRuntime());
 
             // TODO: ok to convert args in place, rather than new array?
-            IRubyObject[] convertedArgs = new IRubyObject[2];
-            convertedArgs[0] = Java.ruby_to_java(self,arg0,Block.NULL_BLOCK);
-            convertedArgs[1] = Java.ruby_to_java(self,arg1,Block.NULL_BLOCK);
+            Object[] convertedArgs = new Object[2];
+            convertedArgs[0] = convertArgument(context, arg0);
+            convertedArgs[1] = convertArgument(context, arg1);
             JavaMethod method = findMethod(self, name, convertedArgs, 2);
             return Java.java_to_ruby(self, method.invoke_static(convertedArgs), Block.NULL_BLOCK);
         }
@@ -508,10 +588,10 @@ public class JavaClass extends JavaObject {
             createJavaMethods(self.getRuntime());
 
             // TODO: ok to convert args in place, rather than new array?
-            IRubyObject[] convertedArgs = new IRubyObject[3];
-            convertedArgs[0] = Java.ruby_to_java(self,arg0,Block.NULL_BLOCK);
-            convertedArgs[1] = Java.ruby_to_java(self,arg1,Block.NULL_BLOCK);
-            convertedArgs[2] = Java.ruby_to_java(self,arg2,Block.NULL_BLOCK);
+            Object[] convertedArgs = new Object[3];
+            convertedArgs[0] = convertArgument(context, arg0);
+            convertedArgs[1] = convertArgument(context, arg1);
+            convertedArgs[2] = convertArgument(context, arg2);
             JavaMethod method = findMethod(self, name, convertedArgs, 3);
             return Java.java_to_ruby(self, method.invoke_static(convertedArgs), Block.NULL_BLOCK);
         }
@@ -547,9 +627,9 @@ public class JavaClass extends JavaObject {
 
             // TODO: ok to convert args in place, rather than new array?
             int len = args.length;
-            IRubyObject[] convertedArgs = new IRubyObject[len];
+            Object[] convertedArgs = new Object[len];
             for (int i = 0; i < len; i++) {
-                convertedArgs[i] = Java.ruby_to_java(self,args[i],Block.NULL_BLOCK);
+                convertedArgs[i] = convertArgument(context, args[i]);
             }
             JavaMethod method = findMethod(self, name, convertedArgs, len);
             return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
@@ -559,8 +639,8 @@ public class JavaClass extends JavaObject {
             createJavaMethods(self.getRuntime());
 
             // TODO: ok to convert args in place, rather than new array?
-            JavaMethod method = findMethod(self, name, IRubyObject.NULL_ARRAY, 0);
-            return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), IRubyObject.NULL_ARRAY), Block.NULL_BLOCK);
+            JavaMethod method = findMethod(self, name, EMPTY_OBJECT_ARRAY, 0);
+            return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), EMPTY_OBJECT_ARRAY), Block.NULL_BLOCK);
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
@@ -568,8 +648,8 @@ public class JavaClass extends JavaObject {
 
             // TODO: ok to convert args in place, rather than new array?
             int len = 1;
-            IRubyObject[] convertedArgs = new IRubyObject[len];
-            convertedArgs[0] = Java.ruby_to_java(self,arg0,Block.NULL_BLOCK);
+            Object[] convertedArgs = new Object[len];
+            convertedArgs[0] = convertArgument(context, arg0);
             JavaMethod method = findMethod(self, name, convertedArgs, len);
             return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
         }
@@ -578,9 +658,9 @@ public class JavaClass extends JavaObject {
             createJavaMethods(self.getRuntime());
 
             int len = 2;
-            IRubyObject[] convertedArgs = new IRubyObject[len];
-            convertedArgs[0] = Java.ruby_to_java(self,arg0,Block.NULL_BLOCK);
-            convertedArgs[1] = Java.ruby_to_java(self,arg1,Block.NULL_BLOCK);
+            Object[] convertedArgs = new Object[len];
+            convertedArgs[0] = convertArgument(context, arg0);
+            convertedArgs[1] = convertArgument(context, arg1);
             JavaMethod method = findMethod(self, name, convertedArgs, len);
             return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
         }
@@ -589,10 +669,10 @@ public class JavaClass extends JavaObject {
             createJavaMethods(self.getRuntime());
 
             int len = 3;
-            IRubyObject[] convertedArgs = new IRubyObject[len];
-            convertedArgs[0] = Java.ruby_to_java(self,arg0,Block.NULL_BLOCK);
-            convertedArgs[1] = Java.ruby_to_java(self,arg1,Block.NULL_BLOCK);
-            convertedArgs[2] = Java.ruby_to_java(self,arg2,Block.NULL_BLOCK);
+            Object[] convertedArgs = new Object[len];
+            convertedArgs[0] = convertArgument(context, arg0);
+            convertedArgs[1] = convertArgument(context, arg1);
+            convertedArgs[2] = convertArgument(context, arg2);
             JavaMethod method = findMethod(self, name, convertedArgs, len);
             return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
         }
@@ -601,64 +681,43 @@ public class JavaClass extends JavaObject {
             createJavaMethods(self.getRuntime());
 
             // TODO: ok to convert args in place, rather than new array?
-            int len = args.length;
-            boolean blockGiven = block.isGiven();
-            IRubyObject convertedProc = null;
-            if (blockGiven) { // convert block to argument
-                convertedProc = Java.ruby_to_java(self, RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA), Block.NULL_BLOCK);
-                IRubyObject[] convertedArgs = new IRubyObject[len+1];
-                convertedArgs[len] = convertedProc;
+            if (block.isGiven()) { // convert block to argument
+                int len = args.length;
+                Object[] convertedArgs = new Object[len+1];
                 for (int i = 0; i < len; i++) {
-                    convertedArgs[i] = Java.ruby_to_java(self,args[i],Block.NULL_BLOCK);
+                    convertedArgs[i] = convertArgument(context, args[i]);
                 }
+                convertedArgs[len] = convertArgument(context, RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA));
                 JavaMethod method = findMethod(self, name, convertedArgs, len + 1);
                 return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
             } else {
-                IRubyObject[] convertedArgs = new IRubyObject[len];
-                for (int i = 0; i < len; i++) {
-                    convertedArgs[i] = Java.ruby_to_java(self,args[i],Block.NULL_BLOCK);
-                }
-                JavaMethod method = findMethod(self, name, convertedArgs, len);
-                return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
+                return call(context, self, clazz, name, args);
             }
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
             createJavaMethods(self.getRuntime());
 
-            // TODO: ok to convert args in place, rather than new array?
-            boolean blockGiven = block.isGiven();
-            IRubyObject convertedProc = null;
-            if (blockGiven) { // convert block to argument
-                convertedProc = Java.ruby_to_java(self, RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA), Block.NULL_BLOCK);
-                IRubyObject[] convertedArgs = new IRubyObject[] {convertedProc};
+            if (block.isGiven()) { // convert block to argument
+                Object[] convertedArgs = new Object[] {convertArgument(context, RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA))};
                 JavaMethod method = findMethod(self, name, convertedArgs, 1);
                 return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
             } else {
-                JavaMethod method = findMethod(self, name, IRubyObject.NULL_ARRAY, 0);
-                return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), IRubyObject.NULL_ARRAY), Block.NULL_BLOCK);
+                return call(context, self, clazz, name);
             }
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
             createJavaMethods(self.getRuntime());
 
-            // TODO: ok to convert args in place, rather than new array?
-            int len = 1;
-            boolean blockGiven = block.isGiven();
-            IRubyObject convertedProc = null;
-            if (blockGiven) { // convert block to argument
-                convertedProc = Java.ruby_to_java(self, RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA), Block.NULL_BLOCK);
-                IRubyObject[] convertedArgs = new IRubyObject[len+1];
-                convertedArgs[len] = convertedProc;
-                convertedArgs[0] = Java.ruby_to_java(self,arg0,Block.NULL_BLOCK);
-                JavaMethod method = findMethod(self, name, convertedArgs, len + 1);
+            if (block.isGiven()) { // convert block to argument
+                Object[] convertedArgs = new Object[2];
+                convertedArgs[0] = convertArgument(context, arg0);
+                convertedArgs[1] = convertArgument(context, RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA));
+                JavaMethod method = findMethod(self, name, convertedArgs, 2);
                 return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
             } else {
-                IRubyObject[] convertedArgs = new IRubyObject[len];
-                convertedArgs[0] = Java.ruby_to_java(self,arg0,Block.NULL_BLOCK);
-                JavaMethod method = findMethod(self, name, convertedArgs, len);
-                return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
+                return call(context, self, clazz, name, arg0);
             }
         }
 
@@ -666,49 +725,31 @@ public class JavaClass extends JavaObject {
             createJavaMethods(self.getRuntime());
 
             // TODO: ok to convert args in place, rather than new array?
-            int len = 2;
-            boolean blockGiven = block.isGiven();
-            IRubyObject convertedProc = null;
-            if (blockGiven) { // convert block to argument
-                convertedProc = Java.ruby_to_java(self, RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA), Block.NULL_BLOCK);
-                IRubyObject[] convertedArgs = new IRubyObject[len+1];
-                convertedArgs[len] = convertedProc;
-                convertedArgs[0] = Java.ruby_to_java(self,arg0,Block.NULL_BLOCK);
-                convertedArgs[1] = Java.ruby_to_java(self,arg1,Block.NULL_BLOCK);
-                JavaMethod method = findMethod(self, name, convertedArgs, len + 1);
+            if (block.isGiven()) { // convert block to argument
+                Object[] convertedArgs = new IRubyObject[3];
+                convertedArgs[0] = convertArgument(context, arg0);
+                convertedArgs[1] = convertArgument(context, arg1);
+                convertedArgs[2] = convertArgument(context, RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA));
+                JavaMethod method = findMethod(self, name, convertedArgs, 3);
                 return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
             } else {
-                IRubyObject[] convertedArgs = new IRubyObject[len];
-                convertedArgs[0] = Java.ruby_to_java(self,arg0,Block.NULL_BLOCK);
-                convertedArgs[1] = Java.ruby_to_java(self,arg1,Block.NULL_BLOCK);
-                JavaMethod method = findMethod(self, name, convertedArgs, len);
-                return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
+                return call(context, self, clazz, name, arg0, arg1);
             }
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
             createJavaMethods(self.getRuntime());
 
-            // TODO: ok to convert args in place, rather than new array?
-            int len = 3;
-            boolean blockGiven = block.isGiven();
-            IRubyObject convertedProc = null;
-            if (blockGiven) { // convert block to argument
-                convertedProc = Java.ruby_to_java(self, RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA), Block.NULL_BLOCK);
-                IRubyObject[] convertedArgs = new IRubyObject[len+1];
-                convertedArgs[len] = convertedProc;
-                convertedArgs[0] = Java.ruby_to_java(self,arg0,Block.NULL_BLOCK);
-                convertedArgs[1] = Java.ruby_to_java(self,arg1,Block.NULL_BLOCK);
-                convertedArgs[2] = Java.ruby_to_java(self,arg2,Block.NULL_BLOCK);
-                JavaMethod method = findMethod(self, name, convertedArgs, len + 1);
+            if (block.isGiven()) { // convert block to argument
+                Object[] convertedArgs = new Object[4];
+                convertedArgs[0] = convertArgument(context, arg0);
+                convertedArgs[1] = convertArgument(context, arg1);
+                convertedArgs[2] = convertArgument(context, arg2);
+                convertedArgs[3] = convertArgument(context, RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA));
+                JavaMethod method = findMethod(self, name, convertedArgs, 4);
                 return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
             } else {
-                IRubyObject[] convertedArgs = new IRubyObject[len];
-                convertedArgs[0] = Java.ruby_to_java(self,arg0,Block.NULL_BLOCK);
-                convertedArgs[1] = Java.ruby_to_java(self,arg1,Block.NULL_BLOCK);
-                convertedArgs[2] = Java.ruby_to_java(self,arg2,Block.NULL_BLOCK);
-                JavaMethod method = findMethod(self, name, convertedArgs, len);
-                return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
+                return call(context, self, clazz, name, arg0, arg1, arg2);
             }
         }
     }

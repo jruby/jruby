@@ -219,7 +219,7 @@ public class JavaMethod extends JavaCallable {
         return invokeWithExceptionHandling(method, javaInvokee, arguments);
     }
 
-    public IRubyObject invoke(IRubyObject self, IRubyObject[] args) {
+    public IRubyObject invoke(IRubyObject self, Object[] args) {
         if (args.length != getArity()) {
             throw getRuntime().newArgumentError(args.length, getArity());
         }
@@ -228,8 +228,7 @@ public class JavaMethod extends JavaCallable {
             throw getRuntime().newTypeError("invokee not a java object");
         }
         Object javaInvokee = ((JavaObject) self).getValue();
-        Object[] arguments = new Object[args.length];
-        convertArguments(getRuntime(), arguments, args, 0);
+        convertArguments(getRuntime(), args, args, 0);
 
         if (! method.getDeclaringClass().isInstance(javaInvokee)) {
             throw getRuntime().newTypeError("invokee not instance of method's class (" +
@@ -249,10 +248,10 @@ public class JavaMethod extends JavaCallable {
             JavaProxyMethod jpm;
             if ((jpm = jpc.getMethod(method.getName(), parameterTypes)) != null &&
                     jpm.hasSuperImplementation()) {
-                return invokeWithExceptionHandling(jpm.getSuperMethod(), javaInvokee, arguments);
+                return invokeWithExceptionHandling(jpm.getSuperMethod(), javaInvokee, args);
             }
         }
-        return invokeWithExceptionHandling(method, javaInvokee, arguments);
+        return invokeWithExceptionHandling(method, javaInvokee, args);
     }
 
     @JRubyMethod(rest = true)
@@ -264,6 +263,14 @@ public class JavaMethod extends JavaCallable {
         System.arraycopy(args, 0, arguments, 0, arguments.length);
         convertArguments(getRuntime(), arguments, args, 0);
         return invokeWithExceptionHandling(method, null, arguments);
+    }
+
+    public IRubyObject invoke_static(Object[] args) {
+        if (args.length != getArity()) {
+            throw getRuntime().newArgumentError(args.length, getArity());
+        }
+        convertArguments(getRuntime(), args, args, 0);
+        return invokeWithExceptionHandling(method, null, args);
     }
 
     @JRubyMethod
