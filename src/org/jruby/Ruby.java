@@ -437,14 +437,14 @@ public final class Ruby {
         YARVCompiledRunner runner = null;
         boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
         boolean forceCompile = getInstanceConfig().getCompileMode().shouldPrecompileAll();
-        if (compile) {
+        if (yarvCompile) {
+            runner = tryCompileYarv(scriptNode);
+        } else if (compile) {
             script = tryCompile(scriptNode);
             if (forceCompile && script == null) {
                 System.err.println("Error, could not compile; pass -J-Djruby.jit.logging.verbose=true for more details");
                 return getNil();
             }
-        } else if (yarvCompile) {
-            runner = tryCompileYarv(scriptNode);
         }
         
         if (script != null) {

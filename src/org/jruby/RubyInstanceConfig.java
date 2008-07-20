@@ -903,11 +903,11 @@ public class RubyInstanceConfig {
                         compileMode = CompileMode.OFF;
                     } else if (extendedOption.equals("+C")) {
                         compileMode = CompileMode.FORCE;
-                    } else if (extendedOption.equals("y")) {
+                    } else if (extendedOption.equals("-y")) {
                         yarv = true;
-                    } else if (extendedOption.equals("Y")) {
+                    } else if (extendedOption.equals("-Y")) {
                         yarvCompile = true;
-                    } else if (extendedOption.equals("R")) {
+                    } else if (extendedOption.equals("-R")) {
                         rubinius = true;
                     } else {
                         MainExitException mee =
