@@ -164,6 +164,19 @@ public class JavaClass extends JavaObject {
             super(name,type);
             this.field = field;
         }
+        
+        protected Object safeConvert(IRubyObject value) {
+            Object newValue = JavaUtil.convertRubyToJava(value);
+            if (newValue == null) {
+                if (field.getType().isPrimitive()) {
+                    throw value.getRuntime().newTypeError("wrong type for " + field.getType().getName() + ": null");
+                }
+            } else if (!field.getType().isInstance(newValue)) {
+                throw value.getRuntime().newTypeError("wrong type for " + field.getType().getName() + ": " +
+                        newValue.getClass().getName());
+            }
+            return newValue;
+        }
     }
 
     private class StaticFieldGetter extends FieldCallback {
@@ -201,15 +214,7 @@ public class JavaClass extends JavaObject {
         }
         public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
             try {
-                Object newValue = JavaUtil.convertRubyToJava(args[0]);
-                if (newValue == null) {
-                    if (field.getType().isPrimitive()) {
-                        throw self.getRuntime().newTypeError("wrong type for " + field.getType().getName() + ": null");
-                    }
-                } else if (!field.getType().isInstance(newValue)) {
-                    throw self.getRuntime().newTypeError("wrong type for " + field.getType().getName() + ": " +
-                            newValue.getClass().getName());
-                }
+                Object newValue = safeConvert(args[0]);
                 field.set(null, newValue);
             } catch (IllegalAccessException iae) {
                 throw getRuntime().newTypeError(
@@ -257,15 +262,7 @@ public class JavaClass extends JavaObject {
         }
         public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
             try {
-                Object newValue = JavaUtil.convertRubyToJava(args[0]);
-                if (newValue == null) {
-                    if (field.getType().isPrimitive()) {
-                        throw self.getRuntime().newTypeError("wrong type for " + field.getType().getName() + ": null");
-                    }
-                } else if (!field.getType().isInstance(newValue)) {
-                    throw self.getRuntime().newTypeError("wrong type for " + field.getType().getName() + ": " +
-                            newValue.getClass().getName());
-                }
+                Object newValue = safeConvert(args[0]);
                 field.set(((JavaObject)self.dataGetStruct()).getValue(), newValue);
             } catch (IllegalAccessException iae) {
                 throw getRuntime().newTypeError(
