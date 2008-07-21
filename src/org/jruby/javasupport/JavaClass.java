@@ -500,11 +500,11 @@ public class JavaClass extends JavaObject {
         case ClassIndex.NIL:
             return null;
         case ClassIndex.FIXNUM:
-            return new Long(((RubyFixnum) object).getLongValue());
+            return Long.valueOf(((RubyFixnum) object).getLongValue());
         case ClassIndex.BIGNUM:
             return ((RubyBignum) object).getValue();
         case ClassIndex.FLOAT:
-            return new Double(((RubyFloat) object).getValue());
+            return Double.valueOf(((RubyFloat) object).getValue());
         case ClassIndex.STRING:
             try {
                 ByteList bytes = ((RubyString) object).getByteList();
@@ -541,7 +541,6 @@ public class JavaClass extends JavaObject {
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
             createJavaMethods(self.getRuntime());
 
-            // TODO: ok to convert args in place, rather than new array?
             int len = args.length;
             Object[] convertedArgs = new Object[len];
             for (int i = len; --i >= 0; ) {
@@ -561,7 +560,6 @@ public class JavaClass extends JavaObject {
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
             createJavaMethods(self.getRuntime());
 
-            // TODO: ok to convert args in place, rather than new array?
             Object[] convertedArgs = new Object[1];
             convertedArgs[0] = convertArgument(context, arg0);
             JavaMethod method = findMethod(self, name, convertedArgs, 1);
@@ -571,7 +569,6 @@ public class JavaClass extends JavaObject {
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
             createJavaMethods(self.getRuntime());
 
-            // TODO: ok to convert args in place, rather than new array?
             Object[] convertedArgs = new Object[2];
             convertedArgs[0] = convertArgument(context, arg0);
             convertedArgs[1] = convertArgument(context, arg1);
@@ -582,7 +579,6 @@ public class JavaClass extends JavaObject {
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
             createJavaMethods(self.getRuntime());
 
-            // TODO: ok to convert args in place, rather than new array?
             Object[] convertedArgs = new Object[3];
             convertedArgs[0] = convertArgument(context, arg0);
             convertedArgs[1] = convertArgument(context, arg1);
@@ -620,7 +616,6 @@ public class JavaClass extends JavaObject {
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
             createJavaMethods(self.getRuntime());
 
-            // TODO: ok to convert args in place, rather than new array?
             int len = args.length;
             Object[] convertedArgs = new Object[len];
             for (int i = 0; i < len; i++) {
@@ -633,15 +628,13 @@ public class JavaClass extends JavaObject {
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
             createJavaMethods(self.getRuntime());
 
-            // TODO: ok to convert args in place, rather than new array?
             JavaMethod method = findMethod(self, name, EMPTY_OBJECT_ARRAY, 0);
             return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), EMPTY_OBJECT_ARRAY), Block.NULL_BLOCK);
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
             createJavaMethods(self.getRuntime());
-
-            // TODO: ok to convert args in place, rather than new array?
+            
             int len = 1;
             Object[] convertedArgs = new Object[len];
             convertedArgs[0] = convertArgument(context, arg0);
@@ -675,7 +668,6 @@ public class JavaClass extends JavaObject {
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
             createJavaMethods(self.getRuntime());
 
-            // TODO: ok to convert args in place, rather than new array?
             if (block.isGiven()) { // convert block to argument
                 int len = args.length;
                 Object[] convertedArgs = new Object[len+1];
@@ -719,7 +711,6 @@ public class JavaClass extends JavaObject {
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
             createJavaMethods(self.getRuntime());
 
-            // TODO: ok to convert args in place, rather than new array?
             if (block.isGiven()) { // convert block to argument
                 Object[] convertedArgs = new IRubyObject[3];
                 convertedArgs[0] = convertArgument(context, arg0);
