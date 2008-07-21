@@ -989,26 +989,18 @@ public class Java implements Library {
         return a.getClass();
     }
 
-    public static IRubyObject matching_method_internal(IRubyObject recv, JavaMethod[] methods, Object[] args, int len) {
-        Map matchCache = recv.getRuntime().getJavaSupport().getMatchCache();
+    public static IRubyObject matching_method_internal(IRubyObject recv, Map cache, JavaMethod[] methods, Object[] args, int len) {
         int signatureCode = argsHashCode(args);
-
-        Map ms = (Map) matchCache.get(methods);
-        if (ms == null) {
-            ms = new HashMap();
-            matchCache.put(methods, ms);
-        } else {
-            IRubyObject method = (IRubyObject) ms.get(signatureCode);
-            if (method != null) {
-                return method;
-            }
+        JavaMethod method = (JavaMethod)cache.get(signatureCode);
+        if (method != null) {
+            return method;
         }
 
         int mlen = methods.length;
 
         mfor:
         for (int k = 0; k < mlen; k++) {
-            IRubyObject method = methods[k];
+            method = methods[k];
             Class<?>[] types = ((ParameterTypes) method).getParameterTypes();
             // Compatible (by inheritance)
             if (len == types.length) {
@@ -1021,7 +1013,7 @@ public class Java implements Library {
                     }
                 }
                 if (same) {
-                    ms.put(signatureCode, method);
+                    cache.put(signatureCode, method);
                     return method;
                 }
 
@@ -1031,14 +1023,14 @@ public class Java implements Library {
                         continue mfor;
                     }
                 }
-                ms.put(signatureCode, method);
+                cache.put(signatureCode, method);
                 return method;
             }
         }
 
         mfor:
         for (int k = 0; k < mlen; k++) {
-            IRubyObject method = methods[k];
+            method = methods[k];
             Class<?>[] types = ((ParameterTypes) method).getParameterTypes();
             // Compatible (by inheritance)
             if (len == types.length) {
@@ -1047,7 +1039,7 @@ public class Java implements Library {
                         continue mfor;
                     }
                 }
-                ms.put(signatureCode, method);
+                cache.put(signatureCode, method);
                 return method;
             }
         }

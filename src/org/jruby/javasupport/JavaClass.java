@@ -49,6 +49,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -413,6 +414,7 @@ public class JavaClass extends JavaObject {
         private Method[] methods;
         protected JavaMethod javaMethod;
         protected JavaMethod[][] javaMethods;
+        protected Map cache;
         protected volatile boolean initialized;
         MethodInvoker(RubyClass host, List<Method> methods) {
             super(host, Visibility.PUBLIC);
@@ -449,6 +451,9 @@ public class JavaClass extends JavaObject {
                         }
                     }
                     methods = null;
+                    
+                    // initialize cache of parameter types to method
+                    cache = new ConcurrentHashMap();
                 }
                 initialized = true; // write-volatile
             }
@@ -471,7 +476,7 @@ public class JavaClass extends JavaObject {
                 if (arity > javaMethods.length || (methodsForArity = javaMethods[arity]) == null) {
                     raiseNoMatchingMethodError(name, self, args, 0);
                 }
-                method = (JavaMethod)Java.matching_method_internal(self, methodsForArity, args, arity);
+                method = (JavaMethod)Java.matching_method_internal(self, cache, methodsForArity, args, arity);
             }
             return method;
         }
@@ -493,34 +498,26 @@ public class JavaClass extends JavaObject {
         Object javaObject;
         switch (object.getMetaClass().index) {
         case ClassIndex.NIL:
-            javaObject = null;
-            break;
+            return null;
         case ClassIndex.FIXNUM:
-            javaObject = new Long(((RubyFixnum) object).getLongValue());
-            break;
+            return new Long(((RubyFixnum) object).getLongValue());
         case ClassIndex.BIGNUM:
-            javaObject = ((RubyBignum) object).getValue();
-            break;
+            return ((RubyBignum) object).getValue();
         case ClassIndex.FLOAT:
-            javaObject = new Double(((RubyFloat) object).getValue());
-            break;
+            return new Double(((RubyFloat) object).getValue());
         case ClassIndex.STRING:
             try {
                 ByteList bytes = ((RubyString) object).getByteList();
-                javaObject = new String(bytes.unsafeBytes(), bytes.begin(), bytes.length(), "UTF8");
+                return new String(bytes.unsafeBytes(), bytes.begin(), bytes.length(), "UTF8");
             } catch (UnsupportedEncodingException uee) {
-                javaObject = object.toString();
+                return object.toString();
             }
-            break;
         case ClassIndex.TRUE:
-            javaObject = Boolean.TRUE;
-            break;
+            return Boolean.TRUE;
         case ClassIndex.FALSE:
-            javaObject = Boolean.FALSE;
-            break;
+            return Boolean.FALSE;
         case ClassIndex.TIME:
-            javaObject = ((RubyTime) object).getJavaDate();
-            break;
+            return ((RubyTime) object).getJavaDate();
         default:
             if (object.respondsTo("to_java_object")) {
                 javaObject = object.callMethod(context, "to_java_object");
@@ -534,8 +531,6 @@ public class JavaClass extends JavaObject {
             // not one of the types we convert, so just pass it out as-is without wrapping
             return object;
         }
-        
-        return javaObject;
     }
 
     private static class StaticMethodInvoker extends MethodInvoker {
