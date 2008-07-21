@@ -1,3 +1,4 @@
+# This file is generated - do not edit
 JFFI::PlatformTypes = {
   "__int8_t" => "char",
   "__uint8_t" => "uchar",
