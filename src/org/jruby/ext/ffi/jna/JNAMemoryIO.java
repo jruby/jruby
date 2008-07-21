@@ -43,7 +43,12 @@ public abstract class JNAMemoryIO implements MemoryIO {
      * The native memory pointer
      */
     final Object memory;
-    
+
+    /**
+     * NULL Pointer MemoryIO
+     */
+    static final JNAMemoryIO NULL = new PointerIO(Pointer.NULL, 0);
+
     /**
      * Allocates a new block of java heap memory and wraps it in a {@link MemoryIO}
      * accessor.
@@ -93,7 +98,7 @@ public abstract class JNAMemoryIO implements MemoryIO {
      * @return A new <tt>MemoryIO</tt> instance that can access the memory.
      */
     static JNAMemoryIO wrap(Pointer ptr) {
-        return new PointerIO(ptr);
+        return new PointerIO(ptr, 0);
     }
     public abstract Pointer getAddress();
     public abstract Pointer getPointer(long offset);
@@ -123,7 +128,12 @@ public abstract class JNAMemoryIO implements MemoryIO {
          * The native pointer.
          */
         final Pointer ptr;
-        
+
+        /**
+         * The size of the memory area.
+         */
+        final int size;
+
         /**
          * Allocates a new block of native memory and wraps it in a {@link MemoryIO}
          * accessor.
@@ -133,14 +143,15 @@ public abstract class JNAMemoryIO implements MemoryIO {
          * @return A new <tt>MemoryIO</tt> instance that can access the memory.
          */
         static JNAMemoryIO allocate(int size) {
-            return new PointerIO(new Memory(size));
+            return new PointerIO(new Memory(size), size);
         }
         private PointerIO() {
-            this(Pointer.NULL);
+            this(Pointer.NULL, 0);
         }
-        private PointerIO(Pointer ptr) {
+        private PointerIO(Pointer ptr, int size) {
             super(ptr);
             this.ptr = ptr;
+            this.size = size;
         }
         public Pointer getAddress() {
             return ptr;
@@ -264,6 +275,9 @@ public abstract class JNAMemoryIO implements MemoryIO {
 
         public int indexOf(long offset, byte value, int maxlen) {
             return (int) ptr.indexOf(offset, value);
+        }
+        public void clear() {
+            ptr.setMemory(0, size, (byte) 0);
         }
     }
     private static class BufferIO extends JNAMemoryIO {
@@ -419,6 +433,10 @@ public abstract class JNAMemoryIO implements MemoryIO {
             }
             return -1;
         }
-        
+        public void clear() {
+            for (int i = 0; i < buffer.capacity(); ++i) {
+                buffer.put(i, (byte) 0);
+            }
+        }
     }
 }

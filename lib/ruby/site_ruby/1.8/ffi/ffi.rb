@@ -409,7 +409,7 @@ class JFFI::MemoryPointer
       size = type.size
     end
     total = count ? size * count : size
-    ptr = self.allocateDirect(total)
+    ptr = self.allocateDirect(total, clear)
     ptr.type_size = size
     if block_given?
       yield ptr

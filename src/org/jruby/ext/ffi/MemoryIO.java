@@ -320,4 +320,9 @@ public interface MemoryIO {
      * @return The index of the value, relative to offset.
      */
     public int indexOf(long offset, byte value, int maxlen);
+
+    /**
+     * Clears the contents of the memory area
+     */
+    public void clear();
 }

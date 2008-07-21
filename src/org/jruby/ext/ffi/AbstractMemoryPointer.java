@@ -148,6 +148,14 @@ public abstract class AbstractMemoryPointer extends RubyObject {
     }
 
     /**
+     * Clears (zeros out) the memory contents.
+     */
+    @JRubyMethod(name = "clear")
+    public IRubyObject clear(ThreadContext context) {
+        getMemoryIO().clear();
+        return context.getRuntime().getNil();
+    }
+    /**
      * Gets the total size (in bytes) of the MemoryPointer.
      *
      * @return The total size in bytes.

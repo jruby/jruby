@@ -78,15 +78,15 @@ public class JNAMemoryPointer extends AbstractMemoryPointer {
         this.io = io;
     }
     
-    @JRubyMethod(name = { "allocate", "allocate_direct", "allocateDirect" }, required = 1, meta = true)
-    public static JNAMemoryPointer allocateDirect(ThreadContext context, IRubyObject recv, IRubyObject sizeArg) {
-        long size = Util.int64Value(sizeArg);
-        return size > 0 
-                ? new JNAMemoryPointer(context.getRuntime(), JNAMemoryIO.allocateDirect((int) size), 0, size)
-                : new JNAMemoryPointer(context.getRuntime(), JNAMemoryIO.wrap(Pointer.NULL), 0, 0);
+    @JRubyMethod(name = { "allocate", "allocate_direct", "allocateDirect" }, required = 1, optional = 1, meta = true)
+    public static JNAMemoryPointer allocateDirect(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        long size = Util.int64Value(args[0]);
+        JNAMemoryIO io = size > 0 ? JNAMemoryIO.allocateDirect((int) size) : JNAMemoryIO.NULL;
+        if (args.length > 1 && args[1].isTrue()) {
+            io.clear();
+        }
+        return new JNAMemoryPointer(context.getRuntime(), io, 0, size);
     }
-    
-   
     @JRubyMethod(name = "to_s", optional = 1)
     public IRubyObject to_s(ThreadContext context, IRubyObject[] args) {
         String hex = getMemoryIO().getAddress().toString();
@@ -104,7 +104,6 @@ public class JNAMemoryPointer extends AbstractMemoryPointer {
     public final JNAMemoryIO getMemoryIO() {
         return io;
     }
-    
     @JRubyMethod(name = "address")
     public IRubyObject address(ThreadContext context) {
         return context.getRuntime().newFixnum(ptr2long(getAddress()));
