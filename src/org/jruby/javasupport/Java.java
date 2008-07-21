@@ -989,7 +989,7 @@ public class Java implements Library {
         return a.getClass();
     }
 
-    public static IRubyObject matching_method_internal(IRubyObject recv, IRubyObject methods, Object[] args, int len) {
+    public static IRubyObject matching_method_internal(IRubyObject recv, JavaMethod[] methods, Object[] args, int len) {
         Map matchCache = recv.getRuntime().getJavaSupport().getMatchCache();
         int signatureCode = argsHashCode(args);
 
@@ -1004,12 +1004,11 @@ public class Java implements Library {
             }
         }
 
-        int mlen = ((RubyArray) methods).getLength();
-        IRubyObject[] margs = ((RubyArray) methods).toJavaArrayMaybeUnsafe();
+        int mlen = methods.length;
 
         mfor:
         for (int k = 0; k < mlen; k++) {
-            IRubyObject method = margs[k];
+            IRubyObject method = methods[k];
             Class<?>[] types = ((ParameterTypes) method).getParameterTypes();
             // Compatible (by inheritance)
             if (len == types.length) {
@@ -1039,7 +1038,7 @@ public class Java implements Library {
 
         mfor:
         for (int k = 0; k < mlen; k++) {
-            IRubyObject method = margs[k];
+            IRubyObject method = methods[k];
             Class<?>[] types = ((ParameterTypes) method).getParameterTypes();
             // Compatible (by inheritance)
             if (len == types.length) {
@@ -1054,7 +1053,7 @@ public class Java implements Library {
         }
 
         // We've fallen and can't get up...prepare for error message
-        Object o1 = margs[0];
+        Object o1 = methods[0];
         ArrayList argTypes = new ArrayList(args.length);
         for (Object o : args) argTypes.add(argClass(o));
 

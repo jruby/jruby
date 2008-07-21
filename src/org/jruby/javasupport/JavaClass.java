@@ -412,7 +412,7 @@ public class JavaClass extends JavaObject {
     private static abstract class MethodInvoker extends org.jruby.internal.runtime.methods.JavaMethod {
         private Method[] methods;
         protected JavaMethod javaMethod;
-        protected IntHashMap javaMethods;
+        protected JavaMethod[][] javaMethods;
         protected volatile boolean initialized;
         MethodInvoker(RubyClass host, List<Method> methods) {
             super(host, Visibility.PUBLIC);
@@ -420,25 +420,32 @@ public class JavaClass extends JavaObject {
         }
 
         // TODO: varargs?
-        // TODO: rework Java.matching_methods_internal and
-        // ProxyData.method_cache, since we really don't need to be passing
-        // around RubyArray objects anymore.
         synchronized void createJavaMethods(Ruby runtime) {
             if (!initialized) { // read-volatile
                 if (methods != null) {
                     if (methods.length == 1) {
                         javaMethod = JavaMethod.create(runtime, methods[0]);
                     } else {
-                        javaMethods = new IntHashMap();
+                        Map methodsMap = new HashMap();
+                        int maxArity = 0;
                         for (Method method: methods) {
                             // TODO: deal with varargs
                             int arity = method.getParameterTypes().length;
-                            RubyArray methodsForArity = (RubyArray)javaMethods.get(arity);
+                            maxArity = Math.max(arity, maxArity);
+                            List<JavaMethod> methodsForArity = (ArrayList<JavaMethod>)methodsMap.get(arity);
                             if (methodsForArity == null) {
-                                methodsForArity = RubyArray.newArrayLight(runtime);
-                                javaMethods.put(arity,methodsForArity);
+                                methodsForArity = new ArrayList<JavaMethod>();
+                                methodsMap.put(arity,methodsForArity);
                             }
-                            methodsForArity.append(JavaMethod.create(runtime,method));
+                            methodsForArity.add(JavaMethod.create(runtime,method));
+                        }
+                        javaMethods = new JavaMethod[maxArity + 1][];
+                        for (Iterator<Map.Entry> iter = methodsMap.entrySet().iterator(); iter.hasNext();) {
+                            Map.Entry entry = iter.next();
+                            List<JavaMethod> methodsForArity = (List<JavaMethod>)entry.getValue();
+                            
+                            JavaMethod[] methodsArray = methodsForArity.toArray(new JavaMethod[methodsForArity.size()]);
+                            javaMethods[((Integer)entry.getKey()).intValue()] = methodsArray;
                         }
                     }
                     methods = null;
@@ -456,28 +463,15 @@ public class JavaClass extends JavaObject {
             throw proxy.getRuntime().newNameError("no " + name + " with arguments matching " + argTypes + " on object " + proxy.callMethod(proxy.getRuntime().getCurrentContext(),"inspect"), null);
         }
         
-        protected JavaMethod findMethod(IRubyObject self, String name, IRubyObject[] args, int arity) {
-            JavaMethod method;
-            if ((method = javaMethod) == null) {
-                // TODO: varargs?
-                RubyArray methods = (RubyArray)javaMethods.get(arity);
-                if (methods == null) {
-                    raiseNoMatchingMethodError(name, self, args, 0);
-                }
-                method = (JavaMethod)Java.matching_method_internal(self, methods, args, 0, arity);
-            }
-            return method;
-        }
-        
         protected JavaMethod findMethod(IRubyObject self, String name, Object[] args, int arity) {
             JavaMethod method;
             if ((method = javaMethod) == null) {
                 // TODO: varargs?
-                RubyArray methods = (RubyArray)javaMethods.get(arity);
-                if (methods == null) {
+                JavaMethod[] methodsForArity = null;
+                if (arity > javaMethods.length || (methodsForArity = javaMethods[arity]) == null) {
                     raiseNoMatchingMethodError(name, self, args, 0);
                 }
-                method = (JavaMethod)Java.matching_method_internal(self, methods, args, arity);
+                method = (JavaMethod)Java.matching_method_internal(self, methodsForArity, args, arity);
             }
             return method;
         }
