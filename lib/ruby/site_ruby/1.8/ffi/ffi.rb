@@ -54,12 +54,12 @@
 include Java
 
 require 'rbconfig'
+require 'ffi/platform'
 
 module JFFI
   
   import org.jruby.ext.ffi.NativeType
   FFIProvider = Java::org.jruby.ext.ffi.FFIProvider.instance
-  Platform = Java::org.jruby.ext.ffi.Platform.getPlatform
   FFIProvider.setup(self)
   #  Specialised error classes
   class TypeError < RuntimeError; end
@@ -226,8 +226,8 @@ module JFFI
     NativeType::UINT64 => 8,
     NativeType::FLOAT32 => 4,
     NativeType::FLOAT64 => 8,
-    NativeType::LONG => JFFI::Platform.longSize / 8,
-    NativeType::ULONG => JFFI::Platform.longSize / 8,
+    NativeType::LONG => JFFI::Platform::LONG_SIZE / 8,
+    NativeType::ULONG => JFFI::Platform::LONG_SIZE / 8,
   }
   
   def self.size_to_type(size)
