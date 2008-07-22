@@ -44,6 +44,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -64,6 +65,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
+import org.jruby.RubyNil;
 import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
@@ -548,39 +550,6 @@ public class JavaClass extends JavaObject {
             return method;
         }
     }
-        
-    protected static Object convertArgument(ThreadContext context, IRubyObject object) {
-        if (object.dataGetStruct() instanceof JavaObject) {
-            return ((JavaObject)object.dataGetStruct()).getValue();
-        }
-
-        return primitive_to_java(context, object);
-    }
-
-    public static Class<?> primitiveToWrapper(Class<?> type) {
-        if (type.isPrimitive()) {
-            if (type == Integer.TYPE) {
-                return Integer.class;
-            } else if (type == Double.TYPE) {
-                return Double.class;
-            } else if (type == Boolean.TYPE) {
-                return Boolean.class;
-            } else if (type == Byte.TYPE) {
-                return Byte.class;
-            } else if (type == Character.TYPE) {
-                return Character.class;
-            } else if (type == Float.TYPE) {
-                return Float.class;
-            } else if (type == Long.TYPE) {
-                return Long.class;
-            } else if (type == Void.TYPE) {
-                return Void.class;
-            } else if (type == Short.TYPE) {
-                return Short.class;
-            }
-        }
-        return type;
-    }
     
     public static boolean isDuckTypeConvertable(Class providedArgumentType, Class parameterType) {
         return parameterType.isInterface() && !parameterType.isAssignableFrom(providedArgumentType) 
@@ -588,59 +557,49 @@ public class JavaClass extends JavaObject {
     }
 
     private static Object convertArgumentToType(ThreadContext context, IRubyObject arg, Class target) {
-        Ruby runtime = context.getRuntime();
-        Object intermediate;
-        if (arg.dataGetStruct() instanceof JavaObject) {
-            intermediate = ((JavaObject)arg.dataGetStruct()).getValue();
+        Object javaObject;
+        if (arg instanceof JavaObject) {
+            return coerceJavaObjectToType(context, ((JavaObject)arg).getValue(), target);
+        } else if (arg.dataGetStruct() instanceof JavaObject) {
+            javaObject = ((JavaObject)arg.dataGetStruct()).getValue();
+            
+            return coerceJavaObjectToType(context, javaObject, target);
         } else {
-            intermediate = primitive_to_java(context, arg);
-        }
-        
-        if (intermediate == null) {
-          if(target.isPrimitive()) {
-            throw runtime.newTypeError("primitives do not accept null");
-          } else {
-            return null;
-          }
-        }
-        
-        if (intermediate instanceof JavaObject) {
-            intermediate = ((JavaObject) intermediate).getValue();
-            if (intermediate == null) {
-                return null;
+            switch (arg.getMetaClass().index) {
+            case ClassIndex.NIL:
+                return coerceNilToType((RubyNil)arg, target);
+            case ClassIndex.FIXNUM:
+                return coerceFixnumToType((RubyFixnum)arg, target);
+            case ClassIndex.BIGNUM:
+                return coerceBignumToType((RubyBignum)arg, target);
+            case ClassIndex.FLOAT:
+                return coerceFloatToType((RubyFloat)arg, target);
+            case ClassIndex.STRING:
+                return coerceStringToType((RubyString)arg, target);
+            case ClassIndex.TRUE:
+                return Boolean.TRUE;
+            case ClassIndex.FALSE:
+                return Boolean.FALSE;
+            case ClassIndex.TIME:
+                return ((RubyTime) arg).getJavaDate();
+            default:
+                return coerceOtherToType(context, arg, target);
             }
         }
-        Class<?> type = primitiveToWrapper(target);
-        if (type == Void.class) {
-            return null;
-        }
-        if (intermediate instanceof Number) {
-            final Number number = (Number) intermediate;
-            if (type == Long.class) {
-                return new Long(number.longValue());
-            } else if (type == Integer.class) {
-                return new Integer(number.intValue());
-            } else if (type == Byte.class) {
-                return new Byte(number.byteValue());
-            } else if (type == Character.class) {
-                return new Character((char) number.intValue());
-            } else if (type == Double.class) {
-                return new Double(number.doubleValue());
-            } else if (type == Float.class) {
-                return new Float(number.floatValue());
-            } else if (type == Short.class) {
-                return new Short(number.shortValue());
-            }
-        }
-        if (isDuckTypeConvertable(intermediate.getClass(), target)) {
-            RubyObject rubyObject = (RubyObject) intermediate;
+    }
+    
+    public static Object coerceJavaObjectToType(ThreadContext context, Object javaObject, Class target) {
+        Ruby runtime = context.getRuntime();
+        
+        if (isDuckTypeConvertable(javaObject.getClass(), target)) {
+            RubyObject rubyObject = (RubyObject) javaObject;
             if (!rubyObject.respondsTo("java_object")) {
                 IRubyObject javaUtilities = runtime.getJavaSupport().getJavaUtilitiesModule();
                 IRubyObject javaInterfaceModule = Java.get_interface_module(javaUtilities, JavaClass.get(runtime, target));
                 if (!((RubyModule)javaInterfaceModule).isInstance(rubyObject)) {
                     rubyObject.extend(new IRubyObject[] {javaInterfaceModule});
                 }
-                
+
                 if (rubyObject instanceof RubyProc) {
                     // Proc implementing an interface, pull in the catch-all code that lets the proc get invoked
                     // no matter what method is called on the interface
@@ -649,8 +608,126 @@ public class JavaClass extends JavaObject {
                 JavaObject jo = (JavaObject) rubyObject.instance_eval(context, runtime.newString("send :__jcreate_meta!"), Block.NULL_BLOCK);
                 return jo.getValue();
             }
+
+            // can't be converted any more, return it
+            return javaObject;
+        } else {
+            return javaObject;
         }
-        return intermediate;
+    }
+    
+    public static Object coerceNilToType(RubyNil nil, Class target) {
+        if(target.isPrimitive()) {
+            throw nil.getRuntime().newTypeError("primitives do not accept null");
+        } else {
+            return null;
+        }
+    }
+    
+    public static Object coerceFixnumToType(RubyFixnum fixnum, Class target) {
+        if (target.isPrimitive()) {
+            if (target == Integer.TYPE) {
+                return Integer.valueOf((int)fixnum.getLongValue());
+            } else if (target == Double.TYPE) {
+                return Double.valueOf(fixnum.getLongValue());
+            } else if (target == Byte.TYPE) {
+                return Byte.valueOf((byte)fixnum.getLongValue());
+            } else if (target == Character.TYPE) {
+                return Character.valueOf((char)fixnum.getLongValue());
+            } else if (target == Float.TYPE) {
+                return Float.valueOf((float)fixnum.getLongValue());
+            } else if (target == Long.TYPE) {
+                return Long.valueOf(fixnum.getLongValue());
+            } else if (target == Short.TYPE) {
+                return Short.valueOf((short)fixnum.getLongValue());
+            }
+        }
+        return fixnum;
+    }
+        
+    public static Object coerceBignumToType(RubyBignum bignum, Class target) {
+        if (target.isPrimitive()) {
+            if (target == Integer.TYPE) {
+                return Integer.valueOf((int)bignum.getLongValue());
+            } else if (target == Double.TYPE) {
+                return Double.valueOf(bignum.getLongValue());
+            } else if (target == Byte.TYPE) {
+                return Byte.valueOf((byte)bignum.getLongValue());
+            } else if (target == Character.TYPE) {
+                return Character.valueOf((char)bignum.getLongValue());
+            } else if (target == Float.TYPE) {
+                return Float.valueOf((float)bignum.getLongValue());
+            } else if (target == Long.TYPE) {
+                return Long.valueOf(bignum.getLongValue());
+            } else if (target == Short.TYPE) {
+                return Short.valueOf((short)bignum.getLongValue());
+            }
+        }
+        return bignum.getValue();
+    }
+    
+    public static Object coerceFloatToType(RubyFloat flote, Class target) {
+        if (target.isPrimitive()) {
+            if (target == Integer.TYPE) {
+                return Integer.valueOf((int)flote.getLongValue());
+            } else if (target == Double.TYPE) {
+                return Double.valueOf(flote.getLongValue());
+            } else if (target == Byte.TYPE) {
+                return Byte.valueOf((byte)flote.getLongValue());
+            } else if (target == Character.TYPE) {
+                return Character.valueOf((char)flote.getLongValue());
+            } else if (target == Float.TYPE) {
+                return Float.valueOf((float)flote.getLongValue());
+            } else if (target == Long.TYPE) {
+                return Long.valueOf(flote.getLongValue());
+            } else if (target == Short.TYPE) {
+                return Short.valueOf((short)flote.getLongValue());
+            }
+        }
+        return Double.valueOf(flote.getDoubleValue());
+    }
+    
+    public static Object coerceStringToType(RubyString string, Class target) {
+        try {
+            ByteList bytes = string.getByteList();
+            return new String(bytes.unsafeBytes(), bytes.begin(), bytes.length(), "UTF8");
+        } catch (UnsupportedEncodingException uee) {
+            return string.toString();
+        }
+    }
+    
+    public static Object coerceOtherToType(ThreadContext context, IRubyObject arg, Class target) {
+        Ruby runtime = context.getRuntime();
+        
+        if (isDuckTypeConvertable(arg.getClass(), target)) {
+            RubyObject rubyObject = (RubyObject) arg;
+            if (!rubyObject.respondsTo("java_object")) {
+                IRubyObject javaUtilities = runtime.getJavaSupport().getJavaUtilitiesModule();
+                IRubyObject javaInterfaceModule = Java.get_interface_module(javaUtilities, JavaClass.get(runtime, target));
+                if (!((RubyModule)javaInterfaceModule).isInstance(rubyObject)) {
+                    rubyObject.extend(new IRubyObject[] {javaInterfaceModule});
+                }
+
+                if (rubyObject instanceof RubyProc) {
+                    // Proc implementing an interface, pull in the catch-all code that lets the proc get invoked
+                    // no matter what method is called on the interface
+                    rubyObject.instance_eval(context, runtime.newString("extend Proc::CatchAll"), Block.NULL_BLOCK);
+                }
+                JavaObject jo = (JavaObject) rubyObject.instance_eval(context, runtime.newString("send :__jcreate_meta!"), Block.NULL_BLOCK);
+                return jo.getValue();
+            }
+        } else if (arg.respondsTo("to_java_object")) {
+            Object javaObject = arg.callMethod(context, "to_java_object");
+            if (javaObject instanceof JavaObject) {
+                runtime.getJavaSupport().getObjectProxyCache().put(((JavaObject) javaObject).getValue(), arg);
+                javaObject = ((JavaObject)javaObject).getValue();
+            }
+            return javaObject;
+        }
+
+        // it's either as converted as we can make it via above logic or it's
+        // not one of the types we convert, so just pass it out as-is without wrapping
+        return arg;
     }
 
     public static Object primitive_to_java(ThreadContext context, IRubyObject object) {
@@ -722,6 +799,7 @@ public class JavaClass extends JavaObject {
             createJavaMethods(self.getRuntime());
 
             JavaMethod method = findMethodArityZero(self, name);
+            
             return Java.java_to_ruby(self, method.invoke_static(EMPTY_OBJECT_ARRAY), Block.NULL_BLOCK);
         }
 
@@ -731,6 +809,7 @@ public class JavaClass extends JavaObject {
             Object[] convertedArgs = new Object[1];
             JavaMethod method = findMethodArityOne(self, name, arg0);
             convertedArgs[0] = convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
+            
             return Java.java_to_ruby(self, method.invoke_static(convertedArgs), Block.NULL_BLOCK);
         }
 
@@ -741,6 +820,7 @@ public class JavaClass extends JavaObject {
             JavaMethod method = findMethodArityTwo(self, name, arg0, arg1);
             convertedArgs[0] = convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
             convertedArgs[1] = convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
+            
             return Java.java_to_ruby(self, method.invoke_static(convertedArgs), Block.NULL_BLOCK);
         }
 
@@ -752,6 +832,7 @@ public class JavaClass extends JavaObject {
             convertedArgs[0] = convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
             convertedArgs[1] = convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
             convertedArgs[2] = convertArgumentToType(context, arg2, method.getParameterTypes()[2]);
+            
             return Java.java_to_ruby(self, method.invoke_static(convertedArgs), Block.NULL_BLOCK);
         }
 
@@ -790,6 +871,7 @@ public class JavaClass extends JavaObject {
             for (int i = 0; i < len; i++) {
                 convertedArgs[i] = convertArgumentToType(context, args[i], method.getParameterTypes()[i]);
             }
+            
             return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
         }
 
@@ -797,6 +879,7 @@ public class JavaClass extends JavaObject {
             createJavaMethods(self.getRuntime());
 
             JavaMethod method = findMethodArityZero(self, name);
+            
             return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), EMPTY_OBJECT_ARRAY), Block.NULL_BLOCK);
         }
 
@@ -806,6 +889,7 @@ public class JavaClass extends JavaObject {
             Object[] convertedArgs = new Object[1];
             JavaMethod method = findMethodArityOne(self, name, arg0);
             convertedArgs[0] = convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
+            
             return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
         }
 
@@ -817,6 +901,7 @@ public class JavaClass extends JavaObject {
             JavaMethod method = findMethodArityTwo(self, name, arg0, arg1);
             convertedArgs[0] = convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
             convertedArgs[1] = convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
+            
             return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
         }
 
@@ -829,6 +914,7 @@ public class JavaClass extends JavaObject {
             convertedArgs[0] = convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
             convertedArgs[1] = convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
             convertedArgs[2] = convertArgumentToType(context, arg2, method.getParameterTypes()[2]);
+            
             return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
         }
 
@@ -845,6 +931,7 @@ public class JavaClass extends JavaObject {
                 for (int i = 0; i < len + 1; i++) {
                     convertedArgs[i] = convertArgumentToType(context, intermediate[i], method.getParameterTypes()[i]);
                 }
+                
                 return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
             } else {
                 return call(context, self, clazz, name, args);
@@ -859,6 +946,7 @@ public class JavaClass extends JavaObject {
                 RubyProc proc = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
                 JavaMethod method = findMethodArityOne(self, name, proc);
                 convertedArgs[0] = convertArgumentToType(context, proc, method.getParameterTypes()[0]);
+                
                 return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
             } else {
                 return call(context, self, clazz, name);
@@ -874,6 +962,7 @@ public class JavaClass extends JavaObject {
                 JavaMethod method = findMethodArityTwo(self, name, arg0, proc);
                 convertedArgs[0] = convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
                 convertedArgs[1] = convertArgumentToType(context, proc, method.getParameterTypes()[1]);
+                
                 return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
             } else {
                 return call(context, self, clazz, name, arg0);
@@ -890,6 +979,7 @@ public class JavaClass extends JavaObject {
                 convertedArgs[0] = convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
                 convertedArgs[1] = convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
                 convertedArgs[2] = convertArgumentToType(context, proc, method.getParameterTypes()[2]);
+                
                 return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
             } else {
                 return call(context, self, clazz, name, arg0, arg1);
@@ -907,6 +997,7 @@ public class JavaClass extends JavaObject {
                 convertedArgs[1] = convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
                 convertedArgs[2] = convertArgumentToType(context, arg2, method.getParameterTypes()[2]);
                 convertedArgs[3] = convertArgumentToType(context, proc, method.getParameterTypes()[3]);
+                
                 return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
             } else {
                 return call(context, self, clazz, name, arg0, arg1, arg2);
