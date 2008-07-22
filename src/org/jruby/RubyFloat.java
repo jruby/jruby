@@ -105,7 +105,7 @@ public class RubyFloat extends RubyNumeric {
     }
 
     public Class<?> getJavaClass() {
-        return Double.TYPE;
+        return double.class;
     }
 
     /** Getter for property value.

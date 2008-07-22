@@ -134,7 +134,7 @@ public class RubyFixnum extends RubyInteger {
 
     @Override
     public Class<?> getJavaClass() {
-        return Long.TYPE;
+        return long.class;
     }
 
     @Override

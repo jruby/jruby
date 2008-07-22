@@ -78,6 +78,10 @@ public class RubyBignum extends RubyInteger {
     public int getNativeTypeIndex() {
         return ClassIndex.BIGNUM;
     }
+    
+    public Class<?> getJavaClass() {
+        return BigInteger.class;
+    }
 
     public static RubyBignum newBignum(Ruby runtime, long value) {
         return newBignum(runtime, BigInteger.valueOf(value));

@@ -86,6 +86,11 @@ public class RubyNil extends RubyObject {
         return metaClass;
     }
     
+    @Override
+    public Class<?> getJavaClass() {
+        return void.class;
+    }
+    
     // Methods of the Nil Class (nil_*):
     
     /** nil_to_i

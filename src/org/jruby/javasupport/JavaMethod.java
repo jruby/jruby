@@ -228,7 +228,7 @@ public class JavaMethod extends JavaCallable {
             throw getRuntime().newTypeError("invokee not a java object");
         }
         Object javaInvokee = ((JavaObject) self).getValue();
-        convertArguments(getRuntime(), args, args, 0);
+//        convertArguments(getRuntime(), args, args, 0);
 
         if (! method.getDeclaringClass().isInstance(javaInvokee)) {
             throw getRuntime().newTypeError("invokee not instance of method's class (" +
@@ -269,7 +269,7 @@ public class JavaMethod extends JavaCallable {
         if (args.length != getArity()) {
             throw getRuntime().newArgumentError(args.length, getArity());
         }
-        convertArguments(getRuntime(), args, args, 0);
+//        convertArguments(getRuntime(), args, args, 0);
         return invokeWithExceptionHandling(method, null, args);
     }
 

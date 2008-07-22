@@ -225,6 +225,11 @@ public class RubyTime extends RubyObject {
         t.setUSec(usec);
         return t;
     }
+    
+    @Override
+    public Class<?> getJavaClass() {
+        return Date.class;
+    }
 
     @JRubyMethod(name = "initialize_copy", required = 1)
     public IRubyObject initialize_copy(IRubyObject original) {

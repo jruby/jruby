@@ -887,89 +887,6 @@ public class Java implements Library {
             throw recv.getRuntime().newNameError("no " + ((JavaMethod) o1).name() + " with arguments matching " + arg_types + " on object " + recv.callMethod(recv.getRuntime().getCurrentContext(), "inspect"), null);
         }
     }
-
-    public static IRubyObject matching_method_internal(IRubyObject recv, IRubyObject methods, IRubyObject[] args, int start, int len) {
-        Map matchCache = recv.getRuntime().getJavaSupport().getMatchCache();
-
-        List<Class<?>> arg_types = new ArrayList<Class<?>>();
-        int aend = start + len;
-
-        for (int i = start; i < aend; i++) {
-            if (args[i] instanceof JavaObject) {
-                arg_types.add(((JavaClass) ((JavaObject) args[i]).java_class()).javaClass());
-            } else {
-                arg_types.add(args[i].getClass());
-            }
-        }
-
-        Map ms = (Map) matchCache.get(methods);
-        if (ms == null) {
-            ms = new HashMap();
-            matchCache.put(methods, ms);
-        } else {
-            IRubyObject method = (IRubyObject) ms.get(arg_types);
-            if (method != null) {
-                return method;
-            }
-        }
-
-        int mlen = ((RubyArray) methods).getLength();
-        IRubyObject[] margs = ((RubyArray) methods).toJavaArrayMaybeUnsafe();
-
-        mfor:
-        for (int k = 0; k < mlen; k++) {
-            IRubyObject method = margs[k];
-            Class<?>[] types = ((ParameterTypes) method).getParameterTypes();
-            // Compatible (by inheritance)
-            if (len == types.length) {
-                // Exact match
-                boolean same = true;
-                for (int x = 0, y = len; x < y; x++) {
-                    if (!types[x].equals(arg_types.get(x))) {
-                        same = false;
-                        break;
-                    }
-                }
-                if (same) {
-                    ms.put(arg_types, method);
-                    return method;
-                }
-
-                for (int j = 0, m = len; j < m; j++) {
-                    if (!(JavaClass.assignable(types[j], arg_types.get(j)) &&
-                            primitive_match(types[j], arg_types.get(j)))) {
-                        continue mfor;
-                    }
-                }
-                ms.put(arg_types, method);
-                return method;
-            }
-        }
-
-        mfor:
-        for (int k = 0; k < mlen; k++) {
-            IRubyObject method = margs[k];
-            Class<?>[] types = ((ParameterTypes) method).getParameterTypes();
-            // Compatible (by inheritance)
-            if (len == types.length) {
-                for (int j = 0, m = len; j < m; j++) {
-                    if (!JavaClass.assignable(types[j], arg_types.get(j)) && !JavaUtil.isDuckTypeConvertable(arg_types.get(j), types[j])) {
-                        continue mfor;
-                    }
-                }
-                ms.put(arg_types, method);
-                return method;
-            }
-        }
-
-        Object o1 = margs[0];
-
-        if (o1 instanceof JavaConstructor || o1 instanceof JavaProxyConstructor) {
-            throw recv.getRuntime().newNameError("no constructor with arguments matching " + arg_types + " on object " + recv.callMethod(recv.getRuntime().getCurrentContext(), "inspect"), null);
-        } else {
-            throw recv.getRuntime().newNameError("no " + ((JavaMethod) o1).name() + " with arguments matching " + arg_types + " on object " + recv.callMethod(recv.getRuntime().getCurrentContext(), "inspect"), null);
-        }
-    }
     
     public static int argsHashCode(Object[] a) {
         if (a == null)
@@ -983,10 +900,32 @@ public class Java implements Library {
         return result;
     }
     
+    private static int classHashCode(IRubyObject o) {
+        return o == null ? 0 : o.getJavaClass().hashCode();
+    }
+    
+    public static int argsHashCode(IRubyObject[] a) {
+        if (a == null)
+            return 0;
+ 
+        int result = 1;
+ 
+        for (IRubyObject element : a)
+            result = 31 * result + classHashCode(element);
+ 
+        return result;
+    }
+    
     public static Class argClass(Object a) {
-        if (a == null) return Void.TYPE;
+        if (a == null) return void.class;
         
         return a.getClass();
+    }
+    
+    public static Class argClass(IRubyObject a) {
+        if (a == null) return void.class;
+        
+        return a.getJavaClass();
     }
 
     public static IRubyObject matching_method_internal(IRubyObject recv, Map cache, JavaMethod[] methods, Object[] args, int len) {
@@ -1048,6 +987,134 @@ public class Java implements Library {
         Object o1 = methods[0];
         ArrayList argTypes = new ArrayList(args.length);
         for (Object o : args) argTypes.add(argClass(o));
+
+        if (o1 instanceof JavaConstructor || o1 instanceof JavaProxyConstructor) {
+            throw recv.getRuntime().newNameError("no constructor with arguments matching " + argTypes + " on object " + recv.callMethod(recv.getRuntime().getCurrentContext(), "inspect"), null);
+        } else {
+            throw recv.getRuntime().newNameError("no " + ((JavaMethod) o1).name() + " with arguments matching " + argTypes + " on object " + recv.callMethod(recv.getRuntime().getCurrentContext(), "inspect"), null);
+        }
+    }
+
+    public static IRubyObject matching_method_internal(IRubyObject recv, Map cache, JavaMethod[] methods, IRubyObject[] args, int len) {
+        int signatureCode = argsHashCode(args);
+        JavaMethod method = (JavaMethod)cache.get(signatureCode);
+        if (method != null) {
+            return method;
+        }
+
+        int mlen = methods.length;
+
+        mfor:
+        for (int k = 0; k < mlen; k++) {
+            method = methods[k];
+            Class<?>[] types = ((ParameterTypes) method).getParameterTypes();
+            // Compatible (by inheritance)
+            if (len == types.length) {
+                // Exact match
+                boolean same = true;
+                for (int x = 0, y = len; x < y; x++) {
+                    if (!types[x].equals(argClass(args[x]))) {
+                        same = false;
+                        break;
+                    }
+                }
+                if (same) {
+                    cache.put(signatureCode, method);
+                    return method;
+                }
+
+                for (int j = 0, m = len; j < m; j++) {
+                    if (!(JavaClass.assignable(types[j], argClass(args[j])) &&
+                            primitive_match(types[j], argClass(args[j])))) {
+                        continue mfor;
+                    }
+                }
+                cache.put(signatureCode, method);
+                return method;
+            }
+        }
+
+        mfor:
+        for (int k = 0; k < mlen; k++) {
+            method = methods[k];
+            Class<?>[] types = ((ParameterTypes) method).getParameterTypes();
+            // Compatible (by inheritance)
+            if (len == types.length) {
+                for (int j = 0, m = len; j < m; j++) {
+                    if (!JavaClass.assignable(types[j], argClass(args[j])) && !JavaUtil.isDuckTypeConvertable(argClass(args[j]), types[j])) {
+                        continue mfor;
+                    }
+                }
+                cache.put(signatureCode, method);
+                return method;
+            }
+        }
+
+        // We've fallen and can't get up...prepare for error message
+        Object o1 = methods[0];
+        ArrayList argTypes = new ArrayList(args.length);
+        for (Object o : args) argTypes.add(argClass(o));
+
+        if (o1 instanceof JavaConstructor || o1 instanceof JavaProxyConstructor) {
+            throw recv.getRuntime().newNameError("no constructor with arguments matching " + argTypes + " on object " + recv.callMethod(recv.getRuntime().getCurrentContext(), "inspect"), null);
+        } else {
+            throw recv.getRuntime().newNameError("no " + ((JavaMethod) o1).name() + " with arguments matching " + argTypes + " on object " + recv.callMethod(recv.getRuntime().getCurrentContext(), "inspect"), null);
+        }
+    }
+    public static IRubyObject matchingMethodArityOne(IRubyObject recv, Map cache, JavaMethod[] methods, IRubyObject arg0) {
+        int signatureCode = classHashCode(arg0);
+        JavaMethod method = (JavaMethod)cache.get(signatureCode);
+        if (method != null) {
+            return method;
+        }
+
+        int mlen = methods.length;
+
+        mfor:
+        for (int k = 0; k < mlen; k++) {
+            method = methods[k];
+            Class<?>[] types = ((ParameterTypes) method).getParameterTypes();
+            // Compatible (by inheritance)
+            if (types.length == 1) {
+                // Exact match
+                boolean same = true;
+                if (!types[0].equals(argClass(arg0))) {
+                    same = false;
+                    break;
+                }
+                if (same) {
+                    cache.put(signatureCode, method);
+                    return method;
+                }
+
+                if (!(JavaClass.assignable(types[0], argClass(arg0)) &&
+                        primitive_match(types[0], argClass(arg0)))) {
+                    continue mfor;
+                }
+
+                cache.put(signatureCode, method);
+                return method;
+            }
+        }
+
+        mfor:
+        for (int k = 0; k < mlen; k++) {
+            method = methods[k];
+            Class<?>[] types = ((ParameterTypes) method).getParameterTypes();
+            // Compatible (by inheritance)
+            if (types.length == 1) {
+                if (!JavaClass.assignable(types[0], argClass(arg0)) && !JavaUtil.isDuckTypeConvertable(argClass(arg0), types[0])) {
+                    continue mfor;
+                }
+                cache.put(signatureCode, method);
+                return method;
+            }
+        }
+
+        // We've fallen and can't get up...prepare for error message
+        Object o1 = methods[0];
+        ArrayList argTypes = new ArrayList(1);
+        argTypes.add(argClass(arg0));
 
         if (o1 instanceof JavaConstructor || o1 instanceof JavaProxyConstructor) {
             throw recv.getRuntime().newNameError("no constructor with arguments matching " + argTypes + " on object " + recv.callMethod(recv.getRuntime().getCurrentContext(), "inspect"), null);

@@ -64,6 +64,7 @@ import java.util.List;
 import java.util.Map;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
@@ -412,7 +413,10 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * translations.
      */
     public Class getJavaClass() {
-        return IRubyObject.class;
+        if (dataGetStruct() instanceof JavaObject) {
+            return ((JavaObject)dataGetStruct()).getValue().getClass();
+        }
+        return getClass();
     }
     
     /**

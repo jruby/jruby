@@ -71,7 +71,7 @@ public class RubyBoolean extends RubyObject {
 
     @Override
     public Class<?> getJavaClass() {
-        return Boolean.TYPE;
+        return boolean.class;
     }
 
     public static RubyClass createFalseClass(Ruby runtime) {
