@@ -139,34 +139,47 @@ public
 
           # setup new, etc unless this is a ConcreteJavaProxy subclass
           unless method_defined?(:__jcreate!)
+            
+            # First we make modifications to the class, to adapt it to being
+            # both a Ruby class and a proy for a Java type
+            
             class << self
+              attr_reader :java_interfaces # list of interfaces we implement
+              
+              # We capture the original "new" and make it private
               alias_method :__jredef_new, :new
               private :__jredef_new
 
+              # The replacement "new" allocates and inits the Ruby object as before, but
+              # also instantiates our proxified Java object by calling __jcreate!
               def new(*args, &block)
                 proxy = allocate
                 proxy.__send__(:__jcreate!,*args,&block)
                 proxy.__send__(:initialize,*args,&block)
                 proxy
               end
-
-              def java_interfaces
-                @java_interfaces
-              end
-              private :java_interfaces
-
             end #self
 
+            # Next, we define a few private methods that we'll use to manipulate
+            # the Java object contained within this Ruby object
+            
+            # jcreate instantiates the proxy object which implements all interfaces
+            # and which is wrapped and implemented by this object
             def __jcreate!(*ignored_args)
               interfaces = self.class.send(:java_interfaces)
               __jcreate_proxy!(interfaces, *ignored_args)
             end
 
+            # Used by our duck-typification of Proc into interface types, to allow
+            # coercing a simple proc into an interface parameter.
             def __jcreate_meta!(*ignored_args)
               interfaces = (class << self; self; end).send(:java_interfaces)
               __jcreate_proxy!(interfaces, *ignored_args)
             end
 
+            # jcreate_proxy causes the list of interfaces to be frozen and the actual
+            # proxy object to be created and bound to the Ruby object. At this point
+            # no more interfaces can be added
             def __jcreate_proxy!(interfaces, *ignored_args)
               interfaces.freeze unless interfaces.frozen?
               JavaUtilities.set_java_object(self, Java.new_proxy_instance(*interfaces) do |proxy2, method, *args|
@@ -178,12 +191,14 @@ public
 
             include ::JavaProxyMethods
 
+            # If we hold a Java object, we need a java_class accessor
             def java_class
               java_object.java_class
             end
 
+            # Because we implement Java interfaces now, we need a new === that's
+            # aware of those additional "virtual" supertypes
             alias_method :old_eqq, :===
-
             def ===(other)
               # TODO: WRONG - get interfaces from class
               if other.respond_to?(:java_object)
@@ -194,20 +209,31 @@ public
             end
           end
 
-            # setup implement
+          # Now we add an "implement" and "implement_all" methods to the class
           unless method_defined?(:implement)
             class << self
               private
+              # implement is called to force this class to create stubs for all
+              # methods in the given interface, so they'll show up in the list
+              # of methods and be invocable without passing through method_missing
               def implement(ifc)
+                # call implement on the interface if we intend to implement it
                 ifc.send(:implement,self) if @java_interfaces && @java_interfaces.include?(ifc.java_class)
               end
+              
+              # implement all forces implementation of all interfaces we intend
+              # for this class to implement
               def implement_all
+                # iterate over interfaces, invoking implement on each
                 @java_interfaces.each do |ifc| JavaUtilities.get_interface_module(ifc).send(:implement,self); end
               end
             end #self
           end
           
         else
+          # we've already done the above priming logic, just add another interface
+          # to the list of intentions unless we're past the point of no return or
+          # already intend to implement the given interface
           @java_interfaces << java_class unless @java_interfaces.frozen? || @java_interfaces.include?(java_class)
         end
       end    
@@ -219,6 +245,10 @@ public
         # not allowed for existing Java interface modules
         raise ArgumentError.new("can't add Java interface to existing Java interface!") if @java_class
       
+        # To turn a module into an "interface collection" we add a class instance
+        # variable to hold the list of interfaces, and modify append_features
+        # for this module to call append_features on each of those interfaces as
+        # well
         unless @java_interface_mods
           @java_interface_mods = [ifc_mod]
           class << self
@@ -228,6 +258,7 @@ public
             end
           end #self
         else
+          # already set up append_features, just add the interface if we haven't already
           @java_interface_mods << ifc_mod unless @java_interface_mods.include?(ifc_mod)
         end
       end  
@@ -237,13 +268,16 @@ public
     super
   end #append_features
   
+  # Old interface extension behavior; basicaly just performs the include logic
+  # above. TODO: This should probably also force the jcreate_proxy call, since
+  # we're making a commitment to implement only one interface.
   def extended(obj)
      metaclass = class << obj; self; end
      interface_class = self
      metaclass.instance_eval { include interface_class }
    end
 
-  # array creation/identity
+  # array-of-interface-type creation/identity
   def [](*args)
     unless args.empty?
       # array creation should use this variant
