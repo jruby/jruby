@@ -234,6 +234,8 @@ public class JavaUtil {
     }
 
     public static IRubyObject[] convertJavaArrayToRuby(Ruby runtime, Object[] objects) {
+        if (objects == null) return IRubyObject.NULL_ARRAY;
+        
         IRubyObject[] rubyObjects = new IRubyObject[objects.length];
         for (int i = 0; i < objects.length; i++) {
             rubyObjects[i] = convertJavaToRuby(runtime, objects[i]);
@@ -391,6 +393,8 @@ public class JavaUtil {
     public static IRubyObject convertJavaToRuby(Ruby runtime, Object object) {
         if (object == null) {
             return runtime.getNil();
+        } else if (object instanceof IRubyObject) {
+            return (IRubyObject)object;
         }
         return convertJavaToRuby(runtime, object, object.getClass());
     }

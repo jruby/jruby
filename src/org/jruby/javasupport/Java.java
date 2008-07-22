@@ -1394,4 +1394,49 @@ public class Java implements Library {
             }
         }));
     }
+
+    @JRubyMethod(required = 2, frame = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject new_proxy_instance2(IRubyObject recv, final IRubyObject wrapper, IRubyObject ifcs, Block block) {
+        IRubyObject[] javaClasses = ((RubyArray)ifcs).toJavaArray();
+        final Ruby runtime = recv.getRuntime();
+
+        // Create list of interfaces to proxy (and make sure they really are interfaces)
+        Class[] interfaces = new Class[javaClasses.length];
+        for (int i = 0; i < javaClasses.length; i++) {
+            if (!(javaClasses[i] instanceof JavaClass) || !((JavaClass) javaClasses[i]).interface_p().isTrue()) {
+                throw recv.getRuntime().newArgumentError("Java interface expected. got: " + javaClasses[i]);
+            }
+            interfaces[i] = ((JavaClass) javaClasses[i]).javaClass();
+        }
+
+        return JavaObject.wrap(recv.getRuntime(), Proxy.newProxyInstance(recv.getRuntime().getJRubyClassLoader(), interfaces, new InvocationHandler() {
+            private Map parameterTypeCache = new ConcurrentHashMap();
+
+            public Object invoke(Object proxy, Method method, Object[] nargs) throws Throwable {
+                String methodName = method.getName();
+                int length = nargs == null ? 0 : nargs.length;
+
+                // FIXME: wtf is this? Why would these use the class?
+                if (methodName == "toString" && length == 0) {
+                    return proxy.getClass().getName();
+                } else if (methodName == "hashCode" && length == 0) {
+                    return new Integer(proxy.getClass().hashCode());
+                } else if (methodName == "equals" && length == 1) {
+                    Class[] parameterTypes = (Class[]) parameterTypeCache.get(method);
+                    if (parameterTypes == null) {
+                        parameterTypes = method.getParameterTypes();
+                        parameterTypeCache.put(method, parameterTypes);
+                    }
+                    if (parameterTypes[0].equals(Object.class)) {
+                        return Boolean.valueOf(proxy == nargs[0]);
+                    }
+                }
+                
+                IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, nargs);
+                try {
+                    return JavaUtil.convertRubyToJava(RuntimeHelpers.invoke(runtime.getCurrentContext(), wrapper, methodName, rubyArgs), method.getReturnType());
+                } catch (RuntimeException e) { e.printStackTrace(); throw e; }
+            }
+        }));
+    }
 }

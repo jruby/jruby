@@ -141,7 +141,7 @@ public
           unless method_defined?(:__jcreate!)
             
             # First we make modifications to the class, to adapt it to being
-            # both a Ruby class and a proy for a Java type
+            # both a Ruby class and a proxy for a Java type
             
             class << self
               attr_reader :java_interfaces # list of interfaces we implement
@@ -182,10 +182,7 @@ public
             # no more interfaces can be added
             def __jcreate_proxy!(interfaces, *ignored_args)
               interfaces.freeze unless interfaces.frozen?
-              JavaUtilities.set_java_object(self, Java.new_proxy_instance(*interfaces) do |proxy2, method, *args|
-                args.collect! { |arg| Java.java_to_ruby(arg) }
-                Java.ruby_to_java(self.__send__(method.name, *args))
-              end)
+              JavaUtilities.set_java_object(self, Java.new_proxy_instance2(self, interfaces))
             end
             private :__jcreate!, :__jcreate_meta!, :__jcreate_proxy!
 
