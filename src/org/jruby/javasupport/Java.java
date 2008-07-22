@@ -35,6 +35,7 @@ package org.jruby.javasupport;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -43,6 +44,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
@@ -78,6 +80,9 @@ import org.jruby.util.ClassProvider;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.java.MiniJava;
+import org.jruby.runtime.CallSite;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.callback.Callback;
 
 @JRubyModule(name = "Java")
@@ -1400,7 +1405,7 @@ public class Java implements Library {
         IRubyObject[] javaClasses = ((RubyArray)ifcs).toJavaArray();
         final Ruby runtime = recv.getRuntime();
 
-        // Create list of interfaces to proxy (and make sure they really are interfaces)
+        // Create list of interface names to proxy (and make sure they really are interfaces)
         Class[] interfaces = new Class[javaClasses.length];
         for (int i = 0; i < javaClasses.length; i++) {
             if (!(javaClasses[i] instanceof JavaClass) || !((JavaClass) javaClasses[i]).interface_p().isTrue()) {
@@ -1408,35 +1413,27 @@ public class Java implements Library {
             }
             interfaces[i] = ((JavaClass) javaClasses[i]).javaClass();
         }
-
-        return JavaObject.wrap(recv.getRuntime(), Proxy.newProxyInstance(recv.getRuntime().getJRubyClassLoader(), interfaces, new InvocationHandler() {
-            private Map parameterTypeCache = new ConcurrentHashMap();
-
-            public Object invoke(Object proxy, Method method, Object[] nargs) throws Throwable {
-                String methodName = method.getName();
-                int length = nargs == null ? 0 : nargs.length;
-
-                // FIXME: wtf is this? Why would these use the class?
-                if (methodName == "toString" && length == 0) {
-                    return proxy.getClass().getName();
-                } else if (methodName == "hashCode" && length == 0) {
-                    return new Integer(proxy.getClass().hashCode());
-                } else if (methodName == "equals" && length == 1) {
-                    Class[] parameterTypes = (Class[]) parameterTypeCache.get(method);
-                    if (parameterTypes == null) {
-                        parameterTypes = method.getParameterTypes();
-                        parameterTypeCache.put(method, parameterTypes);
-                    }
-                    if (parameterTypes[0].equals(Object.class)) {
-                        return Boolean.valueOf(proxy == nargs[0]);
-                    }
-                }
-                
-                IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, nargs);
-                try {
-                    return JavaUtil.convertRubyToJava(RuntimeHelpers.invoke(runtime.getCurrentContext(), wrapper, methodName, rubyArgs), method.getReturnType());
-                } catch (RuntimeException e) { e.printStackTrace(); throw e; }
-            }
-        }));
+        
+        // TODO: cache this class!
+        String implClassName = "InterfaceImpl" + wrapper.getMetaClass().hashCode();
+        Class proxyImplClass;
+        try {
+            proxyImplClass = Class.forName(implClassName, true, runtime.getJRubyClassLoader());
+        } catch (ClassNotFoundException cnfe) {
+            proxyImplClass = MiniJava.createOldStyleImplClass(interfaces, wrapper.getMetaClass(), runtime, implClassName);
+        }
+        
+        try {
+            Constructor proxyConstructor = proxyImplClass.getConstructor(IRubyObject.class);
+            return JavaObject.wrap(recv.getRuntime(), proxyConstructor.newInstance(wrapper));
+        } catch (NoSuchMethodException nsme) {
+            throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + nsme);
+        } catch (InvocationTargetException ite) {
+            throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + ite);
+        } catch (InstantiationException ie) {
+            throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + ie);
+        } catch (IllegalAccessException iae) {
+            throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + iae);
+        }
     }
 }

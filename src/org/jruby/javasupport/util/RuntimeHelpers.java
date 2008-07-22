@@ -246,11 +246,40 @@ public class RuntimeHelpers {
             return RubyKernel.method_missing(context, self, args, block);
         }
 
-        IRubyObject[] newArgs = new IRubyObject[args.length + 1];
-        System.arraycopy(args, 0, newArgs, 1, args.length);
-        newArgs[0] = context.getRuntime().newSymbol(name);
+        IRubyObject[] newArgs = prepareMethodMissingArgs(args, context, name);
 
         return receiver.callMethod(context, "method_missing", newArgs, block);
+    }
+
+    public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, 
+                                                IRubyObject[] args, IRubyObject self) {
+        // store call information so method_missing impl can use it            
+        context.setLastCallStatus(CallType.FUNCTIONAL);            
+        context.setLastVisibility(Visibility.PUBLIC);
+
+        if (name.equals("method_missing")) {
+            return RubyKernel.method_missing(context, self, args, Block.NULL_BLOCK);
+        }
+
+        IRubyObject[] newArgs = prepareMethodMissingArgs(args, context, name);
+
+        return receiver.callMethod(context, "method_missing", newArgs, Block.NULL_BLOCK);
+    }
+    
+    public static IRubyObject invokeMethodMissing(IRubyObject receiver, String name, IRubyObject[] args) {
+        ThreadContext context = receiver.getRuntime().getCurrentContext();
+        
+        // store call information so method_missing impl can use it            
+        context.setLastCallStatus(CallType.FUNCTIONAL);            
+        context.setLastVisibility(Visibility.PUBLIC);
+
+        if (name.equals(MethodIndex.METHOD_MISSING)) {
+            return RubyKernel.method_missing(context, context.getFrameSelf(), args, Block.NULL_BLOCK);
+        }
+        
+        IRubyObject[] newArgs = prepareMethodMissingArgs(args, context, name);
+
+        return receiver.callMethod(context, "method_missing", newArgs, Block.NULL_BLOCK);
     }
 
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name) {

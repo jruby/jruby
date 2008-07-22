@@ -28,6 +28,9 @@ import org.jruby.compiler.util.HandleFactory.Handle;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
+import org.jruby.internal.runtime.methods.UndefinedMethod;
+import org.jruby.javasupport.JavaUtil;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -37,6 +40,7 @@ import static org.jruby.util.CodegenUtils.*;
 import org.jruby.util.IdUtil;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
+import org.objectweb.asm.Type;
 import static org.objectweb.asm.Opcodes.*;
 
 /**
@@ -169,6 +173,25 @@ public class MiniJava implements Library {
         RubyClass rubyCls = populateImplClass(ruby, newClass, simpleToAll);
         
         return rubyCls;
+    }
+
+    public static Class createOldStyleImplClass(Class[] superTypes, RubyClass rubyClass, Ruby ruby, String name) {
+        String[] superTypeNames = new String[superTypes.length];
+        Map<String, List<Method>> simpleToAll = new HashMap<String, List<Method>>();
+        for (int i = 0; i < superTypes.length; i++) {
+            superTypeNames[i] = p(superTypes[i]);
+            
+            for (Method method : superTypes[i].getDeclaredMethods()) {
+                List<Method> methods = simpleToAll.get(method.getName());
+                if (methods == null) simpleToAll.put(method.getName(), methods = new ArrayList<Method>());
+                methods.add(method);
+            }
+        }
+        
+        Class newClass = defineOldStyleImplClass(ruby, name, superTypeNames, simpleToAll);
+        populateOldStyleImplClass(ruby, rubyClass, newClass, simpleToAll);
+        
+        return newClass;
     }
     
     public static Class defineImplClass(Ruby ruby, String name, String[] superTypeNames, Map<String, List<Method>> simpleToAll) {
@@ -315,6 +338,247 @@ public class MiniJava implements Library {
         
         return newClass;
     }
+    
+    /**
+     * This variation on defineImplClass uses all the classic type coercion logic
+     * for passing args and returning results.
+     * 
+     * @param ruby
+     * @param name
+     * @param superTypeNames
+     * @param simpleToAll
+     * @return
+     */
+    public static Class defineOldStyleImplClass(Ruby ruby, String name, String[] superTypeNames, Map<String, List<Method>> simpleToAll) {
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        
+        // construct the class, implementing all supertypes
+        cw.visit(V1_5, ACC_PUBLIC | ACC_SUPER, name, null, p(Object.class), superTypeNames);
+        
+        // fields needed for dispatch and such
+        cw.visitField(ACC_STATIC | ACC_PRIVATE, "ruby", ci(Ruby.class), null, null).visitEnd();
+        cw.visitField(ACC_STATIC | ACC_PRIVATE, "rubyClass", ci(RubyClass.class), null, null).visitEnd();
+        cw.visitField(ACC_PRIVATE | ACC_FINAL, "self", ci(IRubyObject.class), null, null).visitEnd();
+        
+        // create constructor
+        SkinnyMethodAdapter initMethod = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", sig(void.class, IRubyObject.class), null, null));
+        initMethod.aload(0);
+        initMethod.invokespecial(p(Object.class), "<init>", sig(void.class));
+        
+        // store the wrapper
+        initMethod.aload(0);
+        initMethod.aload(1);
+        initMethod.putfield(name, "self", ci(IRubyObject.class));
+        
+        // end constructor
+        initMethod.voidreturn();
+        initMethod.end();
+        
+        // start setup method
+        SkinnyMethodAdapter setupMethod = new SkinnyMethodAdapter(cw.visitMethod(ACC_STATIC | ACC_PUBLIC | ACC_SYNTHETIC, "__setup__", sig(void.class, RubyClass.class), null, null));
+        setupMethod.start();
+        
+        // set RubyClass
+        setupMethod.aload(0);
+        setupMethod.dup();
+        setupMethod.putstatic(name, "rubyClass", ci(RubyClass.class));
+        
+        // set Ruby
+        setupMethod.invokevirtual(p(RubyClass.class), "getClassRuntime", sig(Ruby.class));
+        setupMethod.putstatic(name, "ruby", ci(Ruby.class));
+        
+        // for each simple method name, implement the complex methods, calling the simple version
+        for (Map.Entry<String, List<Method>> entry : simpleToAll.entrySet()) {
+            String simpleName = entry.getKey();
+            
+            // all methods dispatch to the simple version by default, which is method_missing normally
+            cw.visitField(ACC_STATIC | ACC_PUBLIC | ACC_VOLATILE, simpleName, ci(DynamicMethod.class), null, null).visitEnd();
+            
+            for (Method method : entry.getValue()) {
+                Class[] paramTypes = method.getParameterTypes();
+                Class returnType = method.getReturnType();
+                
+                SkinnyMethodAdapter mv = new SkinnyMethodAdapter(
+                        cw.visitMethod(ACC_PUBLIC, simpleName, sig(returnType, paramTypes), null, null));
+                mv.start();
+                
+                Label dispatch = new Label();
+                Label end = new Label();
+
+                // Try to look up field for simple name
+
+                // lock self
+                mv.aload(0);
+                mv.monitorenter();
+                
+                // get field
+                mv.getstatic(name, simpleName, ci(DynamicMethod.class));
+                mv.dup();
+                mv.ifnonnull(dispatch);
+                
+                // not retrieved yet, retrieve it now
+                mv.pop();
+                mv.getstatic(name, "rubyClass", ci(RubyClass.class));
+                mv.ldc(simpleName);
+                mv.invokevirtual(p(RubyClass.class), "searchMethod", sig(DynamicMethod.class, String.class));
+                mv.dup();
+                
+                // check if it's UndefinedMethod
+                mv.getstatic(p(UndefinedMethod.class), "INSTANCE", ci(UndefinedMethod.class));
+                mv.if_acmpne(dispatch);
+                
+                // undefined, call method_missing
+                mv.pop();
+                // exit monitor before making call
+                mv.aload(0);
+                mv.monitorexit();
+                mv.aload(0);
+                mv.getfield(name, "self", ci(IRubyObject.class));
+                mv.ldc(simpleName);
+                coerceArgumentsToRuby(mv, paramTypes, name);
+                mv.invokestatic(p(RuntimeHelpers.class), "invokeMethodMissing", sig(IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class));
+                mv.go_to(end);
+                
+                // re-save the method, release monitor, and dispatch
+                mv.label(dispatch);
+                mv.dup();
+                mv.putstatic(name, simpleName, ci(DynamicMethod.class));
+                
+                mv.aload(0);
+                mv.monitorexit();
+                
+                // get current context
+                mv.getstatic(name, "ruby", ci(Ruby.class));
+                mv.invokevirtual(p(Ruby.class), "getCurrentContext", sig(ThreadContext.class));
+                
+                // load self, class, and name
+                mv.aload(0);
+                mv.getfield(name, "self", ci(IRubyObject.class));
+                mv.getstatic(name, "rubyClass", ci(RubyClass.class));
+                mv.ldc(simpleName);
+                
+                // coerce arguments
+                coerceArgumentsToRuby(mv, paramTypes, name);
+                
+                // load null block
+                mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
+                
+                // invoke method
+                mv.invokevirtual(p(DynamicMethod.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class));
+                
+                mv.label(end);
+                coerceResultAndReturn(method, mv, returnType);
+                
+                mv.end();
+            }
+        }
+        
+        // end setup method
+        setupMethod.voidreturn();
+        setupMethod.end();
+        
+        // end class
+        cw.visitEnd();
+        
+        // create the class
+        byte[] bytes = cw.toByteArray();
+        Class newClass = ruby.getJRubyClassLoader().defineClass(name, cw.toByteArray());
+        
+        if (DEBUG) {
+            FileOutputStream fos = null;
+            try {
+                fos = new FileOutputStream(name + ".class");
+                fos.write(bytes);
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
+            } finally {
+                try {fos.close();} catch (Exception e) {}
+            }
+        }
+        
+        return newClass;
+    }
+
+    private static void coerceArgumentsToRuby(SkinnyMethodAdapter mv, Class[] paramTypes, String name) {
+        // load arguments into IRubyObject[] for dispatch
+        if (paramTypes.length != 0) {
+            mv.pushInt(paramTypes.length);
+            mv.anewarray(p(IRubyObject.class));
+
+            // TODO: make this do specific-arity calling
+            for (int i = 0; i < paramTypes.length; i++) {
+                mv.dup();
+                mv.pushInt(i);
+                // convert to IRubyObject
+                mv.getstatic(name, "ruby", ci(Ruby.class));
+                if (paramTypes[i].isPrimitive()) {
+                    if (paramTypes[i] == byte.class || paramTypes[i] == short.class || paramTypes[i] == char.class || paramTypes[i] == int.class) {
+                        mv.iload(i + 1);
+                        mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, int.class));
+                    } else if (paramTypes[i] == long.class) {
+                        mv.lload(i + 1);
+                        mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, long.class));
+                    } else if (paramTypes[i] == float.class) {
+                        mv.fload(i + 1);
+                        mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, float.class));
+                    } else if (paramTypes[i] == double.class) {
+                        mv.dload(i + 1);
+                        mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, double.class));
+                    } else if (paramTypes[i] == boolean.class) {
+                        mv.iload(i + 1);
+                        mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, boolean.class));
+                    }
+                } else {
+                    mv.aload(i + 1);
+                    mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, Object.class));
+                }
+                mv.aastore();
+            }
+        } else {
+            mv.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
+        }
+    }
+
+    private static void coerceResultAndReturn(Method method, SkinnyMethodAdapter mv, Class returnType) {
+        // if we expect a return value, unwrap it
+        if (method.getReturnType() != void.class) {
+            if (method.getReturnType().isPrimitive()) {
+                if (method.getReturnType() == byte.class) {
+                    mv.invokestatic(p(JavaUtil.class), "convertRubyToJavaByte", sig(byte.class, IRubyObject.class));
+                    mv.ireturn();
+                } else if (method.getReturnType() == short.class) {
+                    mv.invokestatic(p(JavaUtil.class), "convertRubyToJavaShort", sig(short.class, IRubyObject.class));
+                    mv.ireturn();
+                } else if (method.getReturnType() == char.class) {
+                    mv.invokestatic(p(JavaUtil.class), "convertRubyToJavaChar", sig(char.class, IRubyObject.class));
+                    mv.ireturn();
+                } else if (method.getReturnType() == int.class) {
+                    mv.invokestatic(p(JavaUtil.class), "convertRubyToJavaInt", sig(int.class, IRubyObject.class));
+                    mv.ireturn();
+                } else if (method.getReturnType() == long.class) {
+                    mv.invokestatic(p(JavaUtil.class), "convertRubyToJavaLong", sig(long.class, IRubyObject.class));
+                    mv.lreturn();
+                } else if (method.getReturnType() == float.class) {
+                    mv.invokestatic(p(JavaUtil.class), "convertRubyToJavaFloat", sig(float.class, IRubyObject.class));
+                    mv.freturn();
+                } else if (method.getReturnType() == double.class) {
+                    mv.invokestatic(p(JavaUtil.class), "convertRubyToJavaDouble", sig(double.class, IRubyObject.class));
+                    mv.dreturn();
+                } else if (method.getReturnType() == boolean.class) {
+                    mv.invokestatic(p(JavaUtil.class), "convertRubyToJavaBoolean", sig(boolean.class, IRubyObject.class));
+                    mv.ireturn();
+                }
+            } else {
+                mv.ldc(Type.getType(method.getReturnType()));
+                mv.invokestatic(p(JavaUtil.class), "convertRubyToJava", sig(Object.class, IRubyObject.class, Class.class));
+                mv.checkcast(p(returnType));
+
+                mv.areturn();
+            }
+        } else {
+            mv.voidreturn();
+        }
+    }
 
     public static RubyClass populateImplClass(Ruby ruby, Class newClass, Map<String, List<Method>> simpleToAll) {
         RubyClass rubyCls = (RubyClass)getMirrorForClass(ruby, newClass);
@@ -379,6 +643,63 @@ public class MiniJava implements Library {
         rubyCls.getSingletonClass().addMethod("method_added", method_added);
         
         return rubyCls;
+    }
+
+    public static void populateOldStyleImplClass(Ruby ruby, RubyClass rubyCls, final Class newClass, Map<String, List<Method>> simpleToAll) {
+        // setup the class
+        try {
+            newClass.getMethod("__setup__", new Class[]{RubyClass.class}).invoke(null, rubyCls);
+        } catch (IllegalAccessException ex) {
+            throw error(ruby, ex, "Could not setup class: " + newClass);
+        } catch (IllegalArgumentException ex) {
+            throw error(ruby, ex, "Could not setup class: " + newClass);
+        } catch (InvocationTargetException ex) {
+            throw error(ruby, ex, "Could not setup class: " + newClass);
+        } catch (NoSuchMethodException ex) {
+            throw error(ruby, ex, "Could not setup class: " + newClass);
+        }
+
+        // now, create a method_added that can replace the DynamicMethod fields as they're redefined
+        final Map<String, Field> allFields = new HashMap<String, Field>();
+        try {
+            for (Map.Entry<String, List<Method>> entry : simpleToAll.entrySet()) {
+                String simpleName = entry.getKey();
+
+                Field simpleField = newClass.getField(simpleName);
+                allFields.put(simpleName, simpleField);
+            }
+        } catch (IllegalArgumentException ex) {
+            throw error(ruby, ex, "Could not prepare method fields: " + newClass);
+        } catch (NoSuchFieldException ex) {
+            throw error(ruby, ex, "Could not prepare method fields: " + newClass);
+        }
+
+        DynamicMethod method_added = new JavaMethod(rubyCls.getSingletonClass(), Visibility.PUBLIC) {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                RubyClass selfClass = (RubyClass)self;
+                Ruby ruby = selfClass.getClassRuntime();
+                String methodName = args[0].asJavaString();
+                Field field = allFields.get(methodName);
+
+                if (field == null) {
+                    // do nothing, it's a non-impl method
+                } else {
+                    try {
+                        synchronized (newClass) {
+                            field.set(null, selfClass.searchMethod(methodName));
+                        }
+                    } catch (IllegalAccessException iae) {
+                        throw error(ruby, iae, "Could not set new method into field: " + selfClass + "." + methodName);
+                    } catch (IllegalArgumentException iae) {
+                        throw error(ruby, iae, "Could not set new method into field: " + selfClass + "." + methodName);
+                    }
+                }
+
+                return context.getRuntime().getNil();
+            }
+        };
+        rubyCls.getSingletonClass().addMethod("method_added", method_added);
     }
     
     protected static String mangleMethodFieldName(String baseName, Class[] paramTypes) {

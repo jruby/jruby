@@ -77,7 +77,9 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.javasupport.util.JavaRubyConverter;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -341,19 +343,7 @@ public class JavaClass extends JavaObject {
         if (isDuckTypeConvertable(javaObject.getClass(), target)) {
             RubyObject rubyObject = (RubyObject) javaObject;
             if (!rubyObject.respondsTo("java_object")) {
-                IRubyObject javaUtilities = runtime.getJavaSupport().getJavaUtilitiesModule();
-                IRubyObject javaInterfaceModule = Java.get_interface_module(javaUtilities, JavaClass.get(runtime, target));
-                if (!((RubyModule)javaInterfaceModule).isInstance(rubyObject)) {
-                    rubyObject.extend(new IRubyObject[] {javaInterfaceModule});
-                }
-
-                if (rubyObject instanceof RubyProc) {
-                    // Proc implementing an interface, pull in the catch-all code that lets the proc get invoked
-                    // no matter what method is called on the interface
-                    rubyObject.instance_eval(context, runtime.newString("extend Proc::CatchAll"), Block.NULL_BLOCK);
-                }
-                JavaObject jo = (JavaObject) rubyObject.instance_eval(context, runtime.newString("send :__jcreate_meta!"), Block.NULL_BLOCK);
-                return jo.getValue();
+                return JavaRubyConverter.convertProcToInterface(context, rubyObject, target);
             }
 
             // can't be converted any more, return it
@@ -449,19 +439,7 @@ public class JavaClass extends JavaObject {
         if (isDuckTypeConvertable(arg.getClass(), target)) {
             RubyObject rubyObject = (RubyObject) arg;
             if (!rubyObject.respondsTo("java_object")) {
-                IRubyObject javaUtilities = runtime.getJavaSupport().getJavaUtilitiesModule();
-                IRubyObject javaInterfaceModule = Java.get_interface_module(javaUtilities, JavaClass.get(runtime, target));
-                if (!((RubyModule)javaInterfaceModule).isInstance(rubyObject)) {
-                    rubyObject.extend(new IRubyObject[] {javaInterfaceModule});
-                }
-
-                if (rubyObject instanceof RubyProc) {
-                    // Proc implementing an interface, pull in the catch-all code that lets the proc get invoked
-                    // no matter what method is called on the interface
-                    rubyObject.instance_eval(context, runtime.newString("extend Proc::CatchAll"), Block.NULL_BLOCK);
-                }
-                JavaObject jo = (JavaObject) rubyObject.instance_eval(context, runtime.newString("send :__jcreate_meta!"), Block.NULL_BLOCK);
-                return jo.getValue();
+                return JavaRubyConverter.convertProcToInterface(context, rubyObject, target);
             }
         } else if (arg.respondsTo("to_java_object")) {
             Object javaObject = arg.callMethod(context, "to_java_object");

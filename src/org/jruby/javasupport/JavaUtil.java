@@ -49,6 +49,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
+import org.jruby.javasupport.util.JavaRubyConverter;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
@@ -154,9 +155,41 @@ public class JavaUtil {
         RUBY_CONVERTERS.put(Double.class, RUBY_DOUBLE_CONVERTER);
         RUBY_CONVERTERS.put(Double.TYPE, RUBY_DOUBLE_CONVERTER);
     }
+    
+    public static byte convertRubyToJavaByte(IRubyObject rubyObject) {
+        return ((Byte)convertRubyToJava(rubyObject, byte.class)).byteValue();
+    }
+    
+    public static short convertRubyToJavaShort(IRubyObject rubyObject) {
+        return ((Short)convertRubyToJava(rubyObject, short.class)).shortValue();
+    }
+    
+    public static char convertRubyToJavaChar(IRubyObject rubyObject) {
+        return ((Character)convertRubyToJava(rubyObject, char.class)).charValue();
+    }
+    
+    public static int convertRubyToJavaInt(IRubyObject rubyObject) {
+        return ((Integer)convertRubyToJava(rubyObject, int.class)).intValue();
+    }
+    
+    public static long convertRubyToJavaLong(IRubyObject rubyObject) {
+        return ((Long)convertRubyToJava(rubyObject, long.class)).longValue();
+    }
+    
+    public static float convertRubyToJavaFloat(IRubyObject rubyObject) {
+        return ((Float)convertRubyToJava(rubyObject, float.class)).floatValue();
+    }
+    
+    public static double convertRubyToJavaDouble(IRubyObject rubyObject) {
+        return ((Double)convertRubyToJava(rubyObject, double.class)).doubleValue();
+    }
+    
+    public static boolean convertRubyToJavaBoolean(IRubyObject rubyObject) {
+        return ((Boolean)convertRubyToJava(rubyObject, boolean.class)).booleanValue();
+    }
 
     public static Object convertRubyToJava(IRubyObject rubyObject, Class javaClass) {
-        if (rubyObject == null || rubyObject.isNil()) {
+        if (javaClass == void.class || rubyObject == null || rubyObject.isNil()) {
             return null;
         }
         
@@ -398,6 +431,26 @@ public class JavaUtil {
         }
         return convertJavaToRuby(runtime, object, object.getClass());
     }
+    
+    public static IRubyObject convertJavaToRuby(Ruby runtime, int i) {
+        return runtime.newFixnum(i);
+    }
+    
+    public static IRubyObject convertJavaToRuby(Ruby runtime, long l) {
+        return runtime.newFixnum(l);
+    }
+    
+    public static IRubyObject convertJavaToRuby(Ruby runtime, float f) {
+        return runtime.newFloat(f);
+    }
+    
+    public static IRubyObject convertJavaToRuby(Ruby runtime, double d) {
+        return runtime.newFloat(d);
+    }
+    
+    public static IRubyObject convertJavaToRuby(Ruby runtime, boolean b) {
+        return runtime.newBoolean(b);
+    }
 
     public static IRubyObject convertJavaToRuby(Ruby runtime, Object object, Class javaClass) {
         return getJavaConverter(javaClass).convert(runtime, object);
@@ -491,19 +544,7 @@ public class JavaUtil {
         if (isDuckTypeConvertable(argument.getClass(), parameterType)) {
             RubyObject rubyObject = (RubyObject) argument;
             if (!rubyObject.respondsTo("java_object")) {
-                IRubyObject javaUtilities = runtime.getJavaSupport().getJavaUtilitiesModule();
-                IRubyObject javaInterfaceModule = Java.get_interface_module(javaUtilities, JavaClass.get(runtime, parameterType));
-                if (!((RubyModule)javaInterfaceModule).isInstance(rubyObject)) {
-                    rubyObject.extend(new IRubyObject[] {javaInterfaceModule});
-                }
-                ThreadContext context = runtime.getCurrentContext();
-                if (rubyObject instanceof RubyProc) {
-                    // Proc implementing an interface, pull in the catch-all code that lets the proc get invoked
-                    // no matter what method is called on the interface
-                    rubyObject.instance_eval(context, runtime.newString("extend Proc::CatchAll"), Block.NULL_BLOCK);
-                }
-                JavaObject jo = (JavaObject) rubyObject.instance_eval(context, runtime.newString("send :__jcreate_meta!"), Block.NULL_BLOCK);
-                return jo.getValue();
+                return JavaRubyConverter.convertProcToInterface(runtime.getCurrentContext(), rubyObject, parameterType);
             }
         }
         return argument;

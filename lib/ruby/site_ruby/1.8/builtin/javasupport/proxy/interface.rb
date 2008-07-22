@@ -177,14 +177,14 @@ public
               __jcreate_proxy!(interfaces, *ignored_args)
             end
 
-            # jcreate_proxy causes the list of interfaces to be frozen and the actual
-            # proxy object to be created and bound to the Ruby object. At this point
-            # no more interfaces can be added
+            # jcreate_proxy2 is the optimized version using a generated proxy
+            # impl that implements the interface directly and dispatches to the
+            # methods directly
             def __jcreate_proxy!(interfaces, *ignored_args)
               interfaces.freeze unless interfaces.frozen?
               JavaUtilities.set_java_object(self, Java.new_proxy_instance2(self, interfaces))
             end
-            private :__jcreate!, :__jcreate_meta!, :__jcreate_proxy!
+            private :__jcreate!, :__jcreate_meta!, :__jcreate_proxy!, :__jcreate_proxy!
 
             include ::JavaProxyMethods
 

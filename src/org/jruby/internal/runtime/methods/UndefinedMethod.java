@@ -41,7 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * can't be invoked.
  */
 public class UndefinedMethod extends DynamicMethod {
-    private static final UndefinedMethod instance = new UndefinedMethod();
+    public static final UndefinedMethod INSTANCE = new UndefinedMethod();
 
     /**
      * Constructor for the one UndefinedMethod instance.
@@ -65,7 +65,7 @@ public class UndefinedMethod extends DynamicMethod {
      * @return The singleton instance
      */
     public DynamicMethod dup() {
-        return instance;
+        return INSTANCE;
     }
 
     /**
@@ -74,7 +74,7 @@ public class UndefinedMethod extends DynamicMethod {
      * @return The singleton instance
      */
     public static UndefinedMethod getInstance() {
-        return instance;
+        return INSTANCE;
     }
 
     /**
