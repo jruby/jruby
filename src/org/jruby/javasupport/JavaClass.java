@@ -45,6 +45,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -460,26 +461,13 @@ public class JavaClass extends JavaObject {
             }
         }
 
-        void raiseNoMatchingMethodError(String name, IRubyObject proxy, Object[] args, int start) {
+        void raiseNoMatchingMethodError(String name, IRubyObject proxy, Object... args) {
             int len = args.length;
-            List<Object> argTypes = new ArrayList<Object>(len - start);
-            for (int i = start ; i < len; i++) {
-                argTypes.add(args[i].getClass());
+            Class[] argTypes = new Class[args.length];
+            for (int i = 0; i < len; i++) {
+                argTypes[i] = args[i].getClass();
             }
-            throw proxy.getRuntime().newNameError("no " + name + " with arguments matching " + argTypes + " on object " + proxy.callMethod(proxy.getRuntime().getCurrentContext(),"inspect"), null);
-        }
-        
-        protected JavaMethod findMethod(IRubyObject self, String name, Object[] args, int arity) {
-            JavaMethod method;
-            if ((method = javaMethod) == null) {
-                // TODO: varargs?
-                JavaMethod[] methodsForArity = null;
-                if (arity > javaMethods.length || (methodsForArity = javaMethods[arity]) == null) {
-                    raiseNoMatchingMethodError(name, self, args, 0);
-                }
-                method = (JavaMethod)Java.matching_method_internal(self, cache, methodsForArity, args, arity);
-            }
-            return method;
+            throw proxy.getRuntime().newNameError("no " + name + " with arguments matching " + Arrays.toString(argTypes) + " on object " + proxy.callMethod(proxy.getRuntime().getCurrentContext(),"inspect"), null);
         }
         
         protected JavaMethod findMethod(IRubyObject self, String name, IRubyObject[] args, int arity) {
@@ -490,20 +478,72 @@ public class JavaClass extends JavaObject {
                 if (arity > javaMethods.length || (methodsForArity = javaMethods[arity]) == null) {
                     raiseNoMatchingMethodError(name, self, args, 0);
                 }
-                method = (JavaMethod)Java.matching_method_internal(self, cache, methodsForArity, args, arity);
+                method = (JavaMethod)Java.matchingMethodArityN(self, cache, methodsForArity, args, arity);
             }
             return method;
         }
         
-        protected JavaMethod findMethod(IRubyObject self, String name, IRubyObject arg0) {
+        protected JavaMethod findMethodArityZero(IRubyObject self, String name) {
+            JavaMethod method;
+            if ((method = javaMethod) == null) {
+                // TODO: varargs?
+                JavaMethod[] methodsForArity = null;
+                if (javaMethods.length == 0 || (methodsForArity = javaMethods[0]) == null) {
+                    raiseNoMatchingMethodError(name, self, IRubyObject.NULL_ARRAY, 0);
+                }
+                method = methodsForArity[0];
+            }
+            return method;
+        }
+        
+        protected JavaMethod findMethodArityOne(IRubyObject self, String name, IRubyObject arg0) {
             JavaMethod method;
             if ((method = javaMethod) == null) {
                 // TODO: varargs?
                 JavaMethod[] methodsForArity = null;
                 if (javaMethods.length < 1 || (methodsForArity = javaMethods[1]) == null) {
-                    raiseNoMatchingMethodError(name, self, new IRubyObject[] {arg0}, 0);
+                    raiseNoMatchingMethodError(name, self, arg0);
                 }
                 method = (JavaMethod)Java.matchingMethodArityOne(self, cache, methodsForArity, arg0);
+            }
+            return method;
+        }
+        
+        protected JavaMethod findMethodArityTwo(IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1) {
+            JavaMethod method;
+            if ((method = javaMethod) == null) {
+                // TODO: varargs?
+                JavaMethod[] methodsForArity = null;
+                if (javaMethods.length <= 2 || (methodsForArity = javaMethods[2]) == null) {
+                    raiseNoMatchingMethodError(name, self, arg0, arg1);
+                }
+                method = (JavaMethod)Java.matchingMethodArityTwo(self, cache, methodsForArity, arg0, arg1);
+            }
+            return method;
+        }
+        
+        protected JavaMethod findMethodArityThree(IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+            JavaMethod method;
+            if ((method = javaMethod) == null) {
+                // TODO: varargs?
+                JavaMethod[] methodsForArity = null;
+                if (javaMethods.length <= 3 || (methodsForArity = javaMethods[3]) == null) {
+                    raiseNoMatchingMethodError(name, self, arg0, arg1, arg2);
+                }
+                method = (JavaMethod)Java.matchingMethodArityThree(self, cache, methodsForArity, arg0, arg1, arg2);
+            }
+            return method;
+        }
+        
+        protected JavaMethod findMethodArityFour(IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+            JavaMethod method;
+            if ((method = javaMethod) == null) {
+                // TODO: varargs?
+                JavaMethod[] methodsForArity = null;
+                if (javaMethods.length <= 4 || (methodsForArity = javaMethods[4]) == null) {
+                    raiseNoMatchingMethodError(name, self, arg0, arg1, arg2, arg3);
+                }
+                method = (JavaMethod)Java.matchingMethodArityFour(self, cache, methodsForArity, arg0, arg1, arg2, arg3);
             }
             return method;
         }
@@ -681,7 +721,7 @@ public class JavaClass extends JavaObject {
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
             createJavaMethods(self.getRuntime());
 
-            JavaMethod method = findMethod(self, name, IRubyObject.NULL_ARRAY, 0);
+            JavaMethod method = findMethodArityZero(self, name);
             return Java.java_to_ruby(self, method.invoke_static(EMPTY_OBJECT_ARRAY), Block.NULL_BLOCK);
         }
 
@@ -689,7 +729,7 @@ public class JavaClass extends JavaObject {
             createJavaMethods(self.getRuntime());
 
             Object[] convertedArgs = new Object[1];
-            JavaMethod method = findMethod(self, name, arg0);
+            JavaMethod method = findMethodArityOne(self, name, arg0);
             convertedArgs[0] = convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
             return Java.java_to_ruby(self, method.invoke_static(convertedArgs), Block.NULL_BLOCK);
         }
@@ -698,7 +738,7 @@ public class JavaClass extends JavaObject {
             createJavaMethods(self.getRuntime());
 
             Object[] convertedArgs = new Object[2];
-            JavaMethod method = findMethod(self, name, new IRubyObject[] {arg0, arg1}, 2);
+            JavaMethod method = findMethodArityTwo(self, name, arg0, arg1);
             convertedArgs[0] = convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
             convertedArgs[1] = convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
             return Java.java_to_ruby(self, method.invoke_static(convertedArgs), Block.NULL_BLOCK);
@@ -708,7 +748,7 @@ public class JavaClass extends JavaObject {
             createJavaMethods(self.getRuntime());
 
             Object[] convertedArgs = new Object[3];
-            JavaMethod method = findMethod(self, name, new IRubyObject[] {arg0, arg1, arg2}, 3);
+            JavaMethod method = findMethodArityThree(self, name, arg0, arg1, arg2);
             convertedArgs[0] = convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
             convertedArgs[1] = convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
             convertedArgs[2] = convertArgumentToType(context, arg2, method.getParameterTypes()[2]);
@@ -756,7 +796,7 @@ public class JavaClass extends JavaObject {
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
             createJavaMethods(self.getRuntime());
 
-            JavaMethod method = findMethod(self, name, EMPTY_OBJECT_ARRAY, 0);
+            JavaMethod method = findMethodArityZero(self, name);
             return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), EMPTY_OBJECT_ARRAY), Block.NULL_BLOCK);
         }
 
@@ -764,7 +804,7 @@ public class JavaClass extends JavaObject {
             createJavaMethods(self.getRuntime());
             
             Object[] convertedArgs = new Object[1];
-            JavaMethod method = findMethod(self, name, arg0);
+            JavaMethod method = findMethodArityOne(self, name, arg0);
             convertedArgs[0] = convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
             return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
         }
@@ -774,7 +814,7 @@ public class JavaClass extends JavaObject {
 
             int len = 2;
             Object[] convertedArgs = new Object[len];
-            JavaMethod method = findMethod(self, name, new IRubyObject[] {arg0, arg1}, 2);
+            JavaMethod method = findMethodArityTwo(self, name, arg0, arg1);
             convertedArgs[0] = convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
             convertedArgs[1] = convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
             return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
@@ -785,7 +825,7 @@ public class JavaClass extends JavaObject {
 
             int len = 3;
             Object[] convertedArgs = new Object[len];
-            JavaMethod method = findMethod(self, name, new IRubyObject[] {arg0, arg1, arg2}, 3);
+            JavaMethod method = findMethodArityThree(self, name, arg0, arg1, arg2);
             convertedArgs[0] = convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
             convertedArgs[1] = convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
             convertedArgs[2] = convertArgumentToType(context, arg2, method.getParameterTypes()[2]);
@@ -817,7 +857,7 @@ public class JavaClass extends JavaObject {
             if (block.isGiven()) { // convert block to argument
                 Object[] convertedArgs = new Object[1];
                 RubyProc proc = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
-                JavaMethod method = findMethod(self, name, new IRubyObject[] {proc}, 1);
+                JavaMethod method = findMethodArityOne(self, name, proc);
                 convertedArgs[0] = convertArgumentToType(context, proc, method.getParameterTypes()[0]);
                 return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
             } else {
@@ -831,7 +871,7 @@ public class JavaClass extends JavaObject {
             if (block.isGiven()) { // convert block to argument
                 Object[] convertedArgs = new Object[2];
                 RubyProc proc = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
-                JavaMethod method = findMethod(self, name, new IRubyObject[] {arg0, proc}, 2);
+                JavaMethod method = findMethodArityTwo(self, name, arg0, proc);
                 convertedArgs[0] = convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
                 convertedArgs[1] = convertArgumentToType(context, proc, method.getParameterTypes()[1]);
                 return Java.java_to_ruby(self, method.invoke((JavaObject)self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
@@ -846,7 +886,7 @@ public class JavaClass extends JavaObject {
             if (block.isGiven()) { // convert block to argument
                 Object[] convertedArgs = new IRubyObject[3];
                 RubyProc proc = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
-                JavaMethod method = findMethod(self, name, new IRubyObject[] {arg0, arg1, proc}, 3);
+                JavaMethod method = findMethodArityThree(self, name, arg0, arg1, proc);
                 convertedArgs[0] = convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
                 convertedArgs[1] = convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
                 convertedArgs[2] = convertArgumentToType(context, proc, method.getParameterTypes()[2]);
@@ -862,7 +902,7 @@ public class JavaClass extends JavaObject {
             if (block.isGiven()) { // convert block to argument
                 Object[] convertedArgs = new Object[4];
                 RubyProc proc = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
-                JavaMethod method = findMethod(self, name, new IRubyObject[] {arg0, arg1, proc}, 4);
+                JavaMethod method = findMethodArityFour(self, name, arg0, arg1, arg2, proc);
                 convertedArgs[0] = convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
                 convertedArgs[1] = convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
                 convertedArgs[2] = convertArgumentToType(context, arg2, method.getParameterTypes()[2]);

@@ -293,7 +293,7 @@ public class JavaMethod extends JavaCallable {
             Object result = method.invoke(javaInvokee, arguments);
             return returnConverter.convert(getRuntime(), result);
         } catch (IllegalArgumentException iae) {
-            throw getRuntime().newTypeError("expected " + argument_types().inspect() + "; got: "
+            throw getRuntime().newTypeError("for method " + method.getName() + " expected " + argument_types().inspect() + "; got: "
                         + dumpArgTypes(arguments)
                         + "; error: " + iae.getMessage());
         } catch (IllegalAccessException iae) {
