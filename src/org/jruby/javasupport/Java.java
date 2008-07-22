@@ -1261,48 +1261,7 @@ public class Java implements Library {
 
     @JRubyMethod(frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject primitive_to_java(IRubyObject recv, IRubyObject object, Block unusedBlock) {
-        if (object instanceof JavaObject) {
-            return object;
-        }
-        Ruby runtime = recv.getRuntime();
-        Object javaObject;
-        switch (object.getMetaClass().index) {
-        case ClassIndex.NIL:
-            javaObject = null;
-            break;
-        case ClassIndex.FIXNUM:
-            javaObject = new Long(((RubyFixnum) object).getLongValue());
-            break;
-        case ClassIndex.BIGNUM:
-            javaObject = ((RubyBignum) object).getValue();
-            break;
-        case ClassIndex.FLOAT:
-            javaObject = new Double(((RubyFloat) object).getValue());
-            break;
-        case ClassIndex.STRING:
-            try {
-                ByteList bytes = ((RubyString) object).getByteList();
-                javaObject = new String(bytes.unsafeBytes(), bytes.begin(), bytes.length(), "UTF8");
-            } catch (UnsupportedEncodingException uee) {
-                javaObject = object.toString();
-            }
-            break;
-        case ClassIndex.TRUE:
-            javaObject = Boolean.TRUE;
-            break;
-        case ClassIndex.FALSE:
-            javaObject = Boolean.FALSE;
-            break;
-        case ClassIndex.TIME:
-            javaObject = ((RubyTime) object).getJavaDate();
-            break;
-        default:
-            // it's not one of the types we convert, so just pass it out as-is without wrapping
-            return object;
-        }
-
-        // we've found a Java type to which we've coerced the Ruby value, wrap it
-        return JavaObject.wrap(runtime, javaObject);
+        return JavaUtil.primitive_to_java(recv, object, unusedBlock);
     }
 
     /**
@@ -1310,10 +1269,7 @@ public class Java implements Library {
      */
     @JRubyMethod(frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject java_to_ruby(IRubyObject recv, IRubyObject object, Block unusedBlock) {
-        if (object instanceof JavaObject) {
-            return JavaUtil.convertJavaToUsableRubyObject(recv.getRuntime(), ((JavaObject) object).getValue());
-        }
-        return object;
+        return JavaUtil.java_to_ruby(recv, object, unusedBlock);
     }
 
     // TODO: Formalize conversion mechanisms between Java and Ruby
@@ -1322,30 +1278,16 @@ public class Java implements Library {
      */
     @JRubyMethod(frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject ruby_to_java(final IRubyObject recv, IRubyObject object, Block unusedBlock) {
-        if (object.respondsTo("to_java_object")) {
-            IRubyObject result = (JavaObject)object.dataGetStruct();
-            if (result == null) {
-                result = object.callMethod(recv.getRuntime().getCurrentContext(), "to_java_object");
-            }
-            if (result instanceof JavaObject) {
-                recv.getRuntime().getJavaSupport().getObjectProxyCache().put(((JavaObject) result).getValue(), object);
-            }
-            return result;
-        }
-
-        return primitive_to_java(recv, object, unusedBlock);
+        return JavaUtil.ruby_to_java(recv, object, unusedBlock);
     }
 
     @JRubyMethod(frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject java_to_primitive(IRubyObject recv, IRubyObject object, Block unusedBlock) {
-        if (object instanceof JavaObject) {
-            return JavaUtil.convertJavaToRuby(recv.getRuntime(), ((JavaObject) object).getValue());
-        }
-
-        return object;
+        return JavaUtil.java_to_primitive(recv, object, unusedBlock);
     }
 
     @JRubyMethod(required = 1, rest = true, frame = true, module = true, visibility = Visibility.PRIVATE)
+    @Deprecated
     public static IRubyObject new_proxy_instance(final IRubyObject recv, IRubyObject[] args, Block block) {
         int size = Arity.checkArgumentCount(recv.getRuntime(), args, 1, -1) - 1;
         final RubyProc proc;
