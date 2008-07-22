@@ -1,11 +1,14 @@
 package org.jruby.javasupport.methods;
 
-import org.jruby.javasupport.*;
 import java.lang.reflect.Method;
 import java.util.List;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
+import org.jruby.javasupport.Java;
+import org.jruby.javasupport.JavaMethod;
+import org.jruby.javasupport.JavaObject;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -23,7 +26,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
         Object[] convertedArgs = new Object[len];
         JavaMethod method = findMethod(self, name, args, len);
         for (int i = 0; i < len; i++) {
-            convertedArgs[i] = JavaClass.convertArgumentToType(context, args[i], method.getParameterTypes()[i]);
+            convertedArgs[i] = JavaUtil.convertArgumentToType(context, args[i], method.getParameterTypes()[i]);
         }
         return Java.java_to_ruby(self, method.invoke((JavaObject) self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
     }
@@ -38,7 +41,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
         createJavaMethods(self.getRuntime());
         Object[] convertedArgs = new Object[1];
         JavaMethod method = findMethodArityOne(self, name, arg0);
-        convertedArgs[0] = JavaClass.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
+        convertedArgs[0] = JavaUtil.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
         return Java.java_to_ruby(self, method.invoke((JavaObject) self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
     }
 
@@ -48,8 +51,8 @@ public class InstanceMethodInvoker extends MethodInvoker {
         int len = 2;
         Object[] convertedArgs = new Object[len];
         JavaMethod method = findMethodArityTwo(self, name, arg0, arg1);
-        convertedArgs[0] = JavaClass.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
-        convertedArgs[1] = JavaClass.convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
+        convertedArgs[0] = JavaUtil.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
+        convertedArgs[1] = JavaUtil.convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
         return Java.java_to_ruby(self, method.invoke((JavaObject) self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
     }
 
@@ -59,9 +62,9 @@ public class InstanceMethodInvoker extends MethodInvoker {
         int len = 3;
         Object[] convertedArgs = new Object[len];
         JavaMethod method = findMethodArityThree(self, name, arg0, arg1, arg2);
-        convertedArgs[0] = JavaClass.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
-        convertedArgs[1] = JavaClass.convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
-        convertedArgs[2] = JavaClass.convertArgumentToType(context, arg2, method.getParameterTypes()[2]);
+        convertedArgs[0] = JavaUtil.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
+        convertedArgs[1] = JavaUtil.convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
+        convertedArgs[2] = JavaUtil.convertArgumentToType(context, arg2, method.getParameterTypes()[2]);
         return Java.java_to_ruby(self, method.invoke((JavaObject) self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
     }
 
@@ -75,7 +78,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
             intermediate[len] = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
             JavaMethod method = findMethod(self, name, intermediate, len);
             for (int i = 0; i < len + 1; i++) {
-                convertedArgs[i] = JavaClass.convertArgumentToType(context, intermediate[i], method.getParameterTypes()[i]);
+                convertedArgs[i] = JavaUtil.convertArgumentToType(context, intermediate[i], method.getParameterTypes()[i]);
             }
             return Java.java_to_ruby(self, method.invoke((JavaObject) self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
         } else {
@@ -89,7 +92,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
             Object[] convertedArgs = new Object[1];
             RubyProc proc = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
             JavaMethod method = findMethodArityOne(self, name, proc);
-            convertedArgs[0] = JavaClass.convertArgumentToType(context, proc, method.getParameterTypes()[0]);
+            convertedArgs[0] = JavaUtil.convertArgumentToType(context, proc, method.getParameterTypes()[0]);
             return Java.java_to_ruby(self, method.invoke((JavaObject) self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
         } else {
             return call(context, self, clazz, name);
@@ -102,8 +105,8 @@ public class InstanceMethodInvoker extends MethodInvoker {
             Object[] convertedArgs = new Object[2];
             RubyProc proc = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
             JavaMethod method = findMethodArityTwo(self, name, arg0, proc);
-            convertedArgs[0] = JavaClass.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
-            convertedArgs[1] = JavaClass.convertArgumentToType(context, proc, method.getParameterTypes()[1]);
+            convertedArgs[0] = JavaUtil.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
+            convertedArgs[1] = JavaUtil.convertArgumentToType(context, proc, method.getParameterTypes()[1]);
             return Java.java_to_ruby(self, method.invoke((JavaObject) self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
         } else {
             return call(context, self, clazz, name, arg0);
@@ -116,9 +119,9 @@ public class InstanceMethodInvoker extends MethodInvoker {
             Object[] convertedArgs = new IRubyObject[3];
             RubyProc proc = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
             JavaMethod method = findMethodArityThree(self, name, arg0, arg1, proc);
-            convertedArgs[0] = JavaClass.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
-            convertedArgs[1] = JavaClass.convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
-            convertedArgs[2] = JavaClass.convertArgumentToType(context, proc, method.getParameterTypes()[2]);
+            convertedArgs[0] = JavaUtil.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
+            convertedArgs[1] = JavaUtil.convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
+            convertedArgs[2] = JavaUtil.convertArgumentToType(context, proc, method.getParameterTypes()[2]);
             return Java.java_to_ruby(self, method.invoke((JavaObject) self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
         } else {
             return call(context, self, clazz, name, arg0, arg1);
@@ -131,10 +134,10 @@ public class InstanceMethodInvoker extends MethodInvoker {
             Object[] convertedArgs = new Object[4];
             RubyProc proc = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
             JavaMethod method = findMethodArityFour(self, name, arg0, arg1, arg2, proc);
-            convertedArgs[0] = JavaClass.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
-            convertedArgs[1] = JavaClass.convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
-            convertedArgs[2] = JavaClass.convertArgumentToType(context, arg2, method.getParameterTypes()[2]);
-            convertedArgs[3] = JavaClass.convertArgumentToType(context, proc, method.getParameterTypes()[3]);
+            convertedArgs[0] = JavaUtil.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
+            convertedArgs[1] = JavaUtil.convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
+            convertedArgs[2] = JavaUtil.convertArgumentToType(context, arg2, method.getParameterTypes()[2]);
+            convertedArgs[3] = JavaUtil.convertArgumentToType(context, proc, method.getParameterTypes()[3]);
             return Java.java_to_ruby(self, method.invoke((JavaObject) self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
         } else {
             return call(context, self, clazz, name, arg0, arg1, arg2);

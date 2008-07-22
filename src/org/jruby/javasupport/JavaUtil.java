@@ -42,17 +42,23 @@ import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
+import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
+import org.jruby.RubyNil;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
-import org.jruby.javasupport.util.JavaRubyConverter;
+import org.jruby.RubyTime;
+import org.jruby.internal.runtime.methods.CallConfiguration;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.util.ByteList;
@@ -544,7 +550,7 @@ public class JavaUtil {
         if (isDuckTypeConvertable(argument.getClass(), parameterType)) {
             RubyObject rubyObject = (RubyObject) argument;
             if (!rubyObject.respondsTo("java_object")) {
-                return JavaRubyConverter.convertProcToInterface(runtime.getCurrentContext(), rubyObject, parameterType);
+                return convertProcToInterface(runtime.getCurrentContext(), rubyObject, parameterType);
             }
         }
         return argument;
@@ -553,5 +559,193 @@ public class JavaUtil {
     public static boolean isDuckTypeConvertable(Class providedArgumentType, Class parameterType) {
         return parameterType.isInterface() && !parameterType.isAssignableFrom(providedArgumentType) 
             && RubyObject.class.isAssignableFrom(providedArgumentType);
+    }
+    
+    public static Object convertProcToInterface(ThreadContext context, RubyObject rubyObject, Class target) {
+        Ruby runtime = context.getRuntime();
+        IRubyObject javaUtilities = runtime.getJavaSupport().getJavaUtilitiesModule();
+        IRubyObject javaInterfaceModule = Java.get_interface_module(javaUtilities, JavaClass.get(runtime, target));
+        if (!((RubyModule) javaInterfaceModule).isInstance(rubyObject)) {
+            rubyObject.extend(new IRubyObject[]{javaInterfaceModule});
+        }
+
+        if (rubyObject instanceof RubyProc) {
+            // Proc implementing an interface, pull in the catch-all code that lets the proc get invoked
+            // no matter what method is called on the interface
+            RubyClass singletonClass = rubyObject.getSingletonClass();
+            final RubyProc proc = (RubyProc) rubyObject;
+
+            singletonClass.addMethod("method_missing", new DynamicMethod(singletonClass, Visibility.PUBLIC, CallConfiguration.NO_FRAME_NO_SCOPE) {
+
+                @Override
+                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                    IRubyObject[] newArgs;
+                    if (args.length == 1) {
+                        newArgs = IRubyObject.NULL_ARRAY;
+                    } else {
+                        newArgs = new IRubyObject[args.length - 1];
+                        System.arraycopy(args, 1, newArgs, 0, args.length - 1);
+                    }
+                    return proc.call(context, newArgs);
+                }
+
+                @Override
+                public DynamicMethod dup() {
+                    return this;
+                }
+            });
+        }
+        JavaObject jo = (JavaObject) rubyObject.instance_eval(context, runtime.newString("send :__jcreate_meta!"), Block.NULL_BLOCK);
+        return jo.getValue();
+    }
+
+    public static Object convertArgumentToType(ThreadContext context, IRubyObject arg, Class target) {
+        Object javaObject;
+        if (arg instanceof JavaObject) {
+            return coerceJavaObjectToType(context, ((JavaObject)arg).getValue(), target);
+        } else if (arg.dataGetStruct() instanceof JavaObject) {
+            javaObject = ((JavaObject)arg.dataGetStruct()).getValue();
+            
+            return coerceJavaObjectToType(context, javaObject, target);
+        } else {
+            switch (arg.getMetaClass().index) {
+            case ClassIndex.NIL:
+                return coerceNilToType((RubyNil)arg, target);
+            case ClassIndex.FIXNUM:
+                return coerceFixnumToType((RubyFixnum)arg, target);
+            case ClassIndex.BIGNUM:
+                return coerceBignumToType((RubyBignum)arg, target);
+            case ClassIndex.FLOAT:
+                return coerceFloatToType((RubyFloat)arg, target);
+            case ClassIndex.STRING:
+                return coerceStringToType((RubyString)arg, target);
+            case ClassIndex.TRUE:
+                return Boolean.TRUE;
+            case ClassIndex.FALSE:
+                return Boolean.FALSE;
+            case ClassIndex.TIME:
+                return ((RubyTime) arg).getJavaDate();
+            default:
+                return coerceOtherToType(context, arg, target);
+            }
+        }
+    }
+    
+    public static Object coerceJavaObjectToType(ThreadContext context, Object javaObject, Class target) {
+        Ruby runtime = context.getRuntime();
+        
+        if (isDuckTypeConvertable(javaObject.getClass(), target)) {
+            RubyObject rubyObject = (RubyObject) javaObject;
+            if (!rubyObject.respondsTo("java_object")) {
+                return convertProcToInterface(context, rubyObject, target);
+            }
+
+            // can't be converted any more, return it
+            return javaObject;
+        } else {
+            return javaObject;
+        }
+    }
+    
+    public static Object coerceNilToType(RubyNil nil, Class target) {
+        if(target.isPrimitive()) {
+            throw nil.getRuntime().newTypeError("primitives do not accept null");
+        } else {
+            return null;
+        }
+    }
+    
+    public static Object coerceFixnumToType(RubyFixnum fixnum, Class target) {
+        if (target.isPrimitive()) {
+            if (target == Integer.TYPE) {
+                return Integer.valueOf((int)fixnum.getLongValue());
+            } else if (target == Double.TYPE) {
+                return Double.valueOf(fixnum.getLongValue());
+            } else if (target == Byte.TYPE) {
+                return Byte.valueOf((byte)fixnum.getLongValue());
+            } else if (target == Character.TYPE) {
+                return Character.valueOf((char)fixnum.getLongValue());
+            } else if (target == Float.TYPE) {
+                return Float.valueOf((float)fixnum.getLongValue());
+            } else if (target == Long.TYPE) {
+                return Long.valueOf(fixnum.getLongValue());
+            } else if (target == Short.TYPE) {
+                return Short.valueOf((short)fixnum.getLongValue());
+            }
+        }
+        return fixnum;
+    }
+        
+    public static Object coerceBignumToType(RubyBignum bignum, Class target) {
+        if (target.isPrimitive()) {
+            if (target == Integer.TYPE) {
+                return Integer.valueOf((int)bignum.getLongValue());
+            } else if (target == Double.TYPE) {
+                return Double.valueOf(bignum.getLongValue());
+            } else if (target == Byte.TYPE) {
+                return Byte.valueOf((byte)bignum.getLongValue());
+            } else if (target == Character.TYPE) {
+                return Character.valueOf((char)bignum.getLongValue());
+            } else if (target == Float.TYPE) {
+                return Float.valueOf((float)bignum.getLongValue());
+            } else if (target == Long.TYPE) {
+                return Long.valueOf(bignum.getLongValue());
+            } else if (target == Short.TYPE) {
+                return Short.valueOf((short)bignum.getLongValue());
+            }
+        }
+        return bignum.getValue();
+    }
+    
+    public static Object coerceFloatToType(RubyFloat flote, Class target) {
+        if (target.isPrimitive()) {
+            if (target == Integer.TYPE) {
+                return Integer.valueOf((int)flote.getLongValue());
+            } else if (target == Double.TYPE) {
+                return Double.valueOf(flote.getLongValue());
+            } else if (target == Byte.TYPE) {
+                return Byte.valueOf((byte)flote.getLongValue());
+            } else if (target == Character.TYPE) {
+                return Character.valueOf((char)flote.getLongValue());
+            } else if (target == Float.TYPE) {
+                return Float.valueOf((float)flote.getLongValue());
+            } else if (target == Long.TYPE) {
+                return Long.valueOf(flote.getLongValue());
+            } else if (target == Short.TYPE) {
+                return Short.valueOf((short)flote.getLongValue());
+            }
+        }
+        return Double.valueOf(flote.getDoubleValue());
+    }
+    
+    public static Object coerceStringToType(RubyString string, Class target) {
+        try {
+            ByteList bytes = string.getByteList();
+            return new String(bytes.unsafeBytes(), bytes.begin(), bytes.length(), "UTF8");
+        } catch (UnsupportedEncodingException uee) {
+            return string.toString();
+        }
+    }
+    
+    public static Object coerceOtherToType(ThreadContext context, IRubyObject arg, Class target) {
+        Ruby runtime = context.getRuntime();
+        
+        if (isDuckTypeConvertable(arg.getClass(), target)) {
+            RubyObject rubyObject = (RubyObject) arg;
+            if (!rubyObject.respondsTo("java_object")) {
+                return convertProcToInterface(context, rubyObject, target);
+            }
+        } else if (arg.respondsTo("to_java_object")) {
+            Object javaObject = arg.callMethod(context, "to_java_object");
+            if (javaObject instanceof JavaObject) {
+                runtime.getJavaSupport().getObjectProxyCache().put(((JavaObject) javaObject).getValue(), arg);
+                javaObject = ((JavaObject)javaObject).getValue();
+            }
+            return javaObject;
+        }
+
+        // it's either as converted as we can make it via above logic or it's
+        // not one of the types we convert, so just pass it out as-is without wrapping
+        return arg;
     }
 }

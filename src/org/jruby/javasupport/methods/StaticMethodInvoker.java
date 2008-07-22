@@ -1,10 +1,12 @@
 package org.jruby.javasupport.methods;
 
-import org.jruby.javasupport.*;
 import java.lang.reflect.Method;
 import java.util.List;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.javasupport.Java;
+import org.jruby.javasupport.JavaMethod;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -23,7 +25,7 @@ public class StaticMethodInvoker extends MethodInvoker {
         JavaMethod method = findMethod(self, name, args, len);
         Class[] targetTypes = method.getParameterTypes();
         for (int i = len; --i >= 0;) {
-            convertedArgs[i] = JavaClass.convertArgumentToType(context, args[i], targetTypes[i]);
+            convertedArgs[i] = JavaUtil.convertArgumentToType(context, args[i], targetTypes[i]);
         }
         return Java.java_to_ruby(self, method.invoke_static(convertedArgs), Block.NULL_BLOCK);
     }
@@ -39,7 +41,7 @@ public class StaticMethodInvoker extends MethodInvoker {
         createJavaMethods(self.getRuntime());
         Object[] convertedArgs = new Object[1];
         JavaMethod method = findMethodArityOne(self, name, arg0);
-        convertedArgs[0] = JavaClass.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
+        convertedArgs[0] = JavaUtil.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
 
         return Java.java_to_ruby(self, method.invoke_static(convertedArgs), Block.NULL_BLOCK);
     }
@@ -48,8 +50,8 @@ public class StaticMethodInvoker extends MethodInvoker {
         createJavaMethods(self.getRuntime());
         Object[] convertedArgs = new Object[2];
         JavaMethod method = findMethodArityTwo(self, name, arg0, arg1);
-        convertedArgs[0] = JavaClass.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
-        convertedArgs[1] = JavaClass.convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
+        convertedArgs[0] = JavaUtil.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
+        convertedArgs[1] = JavaUtil.convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
 
         return Java.java_to_ruby(self, method.invoke_static(convertedArgs), Block.NULL_BLOCK);
     }
@@ -58,9 +60,9 @@ public class StaticMethodInvoker extends MethodInvoker {
         createJavaMethods(self.getRuntime());
         Object[] convertedArgs = new Object[3];
         JavaMethod method = findMethodArityThree(self, name, arg0, arg1, arg2);
-        convertedArgs[0] = JavaClass.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
-        convertedArgs[1] = JavaClass.convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
-        convertedArgs[2] = JavaClass.convertArgumentToType(context, arg2, method.getParameterTypes()[2]);
+        convertedArgs[0] = JavaUtil.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
+        convertedArgs[1] = JavaUtil.convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
+        convertedArgs[2] = JavaUtil.convertArgumentToType(context, arg2, method.getParameterTypes()[2]);
 
         return Java.java_to_ruby(self, method.invoke_static(convertedArgs), Block.NULL_BLOCK);
     }
