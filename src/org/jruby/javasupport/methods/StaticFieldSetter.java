@@ -1,5 +1,6 @@
 package org.jruby.javasupport.methods;
 
+import org.jruby.javasupport.*;
 import java.lang.reflect.Field;
 import org.jruby.RubyModule;
 import org.jruby.runtime.ThreadContext;
@@ -14,7 +15,7 @@ public class StaticFieldSetter extends FieldMethodOne {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
         try {
-            Object newValue = safeConvert(arg);
+            Object newValue = JavaUtil.convertArgumentToType(context, arg, field.getType());
             field.set(null, newValue);
         } catch (IllegalAccessException iae) {
             throw context.getRuntime().newTypeError("illegal access setting variable: " + iae.getMessage());

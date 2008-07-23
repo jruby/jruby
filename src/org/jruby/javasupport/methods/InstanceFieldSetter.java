@@ -15,7 +15,7 @@ public class InstanceFieldSetter extends FieldMethodOne {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
         try {
-            Object newValue = safeConvert(arg);
+            Object newValue = JavaUtil.convertArgumentToType(context, arg, field.getType());
             field.set(((JavaObject) self.dataGetStruct()).getValue(), newValue);
         } catch (IllegalAccessException iae) {
             throw context.getRuntime().newTypeError("illegal access setting variable: " + iae.getMessage());
