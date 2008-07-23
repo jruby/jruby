@@ -5,6 +5,7 @@ require 'ffi'
 require 'ffi/tools/struct_generator'
 require 'ffi/tools/const_generator'
 require 'ffi/tools/types_generator'
+require 'ffi/tools/generator'
 require 'fileutils'
 
 PLATFORM_CONF = File.join(JFFI::Platform::CONF_DIR, "platform.conf")
@@ -15,7 +16,7 @@ load 'ffi/tools/platform.rake'
 
 task :default => :build
 
-task :build => [ :types_gen, PLATFORM_CONF ]
+task :build => [ PLATFORM_CONF, :generator ]
 
 
 task :types_gen => TYPES_CONF
@@ -25,4 +26,12 @@ task TYPES_CONF do |task|
   File.open(task.name, "w") do |f|
     f.puts FFI::TypesGenerator.generate
   end
+end
+
+task :generator do |task|
+  [ "etc", "syslog", "fcntl" ].each { |name|
+    ffi_name = "lib/ruby/site_ruby/1.8/ffi/platform/#{name}.rb.ffi"
+    rb_name = "#{File.join(JFFI::Platform::CONF_DIR, name)}.rb"
+    FFI::Generator.new ffi_name, rb_name
+  }
 end
