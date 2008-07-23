@@ -1,0 +1,28 @@
+$VERBOSE = true
+$verbose = Rake.application.options.trace
+
+require 'ffi'
+require 'ffi/tools/struct_generator'
+require 'ffi/tools/const_generator'
+require 'ffi/tools/types_generator'
+require 'fileutils'
+
+PLATFORM_CONF = File.join(JFFI::Platform::CONF_DIR, "platform.conf")
+TYPES_CONF = File.join(JFFI::Platform::CONF_DIR, "types.conf")
+load 'ffi/tools/platform.rake'
+
+#deps = %w[Rakefile] + Dir['*.rb']
+
+task :default => :build
+
+task :build => [ :types_gen, PLATFORM_CONF ]
+
+
+task :types_gen => TYPES_CONF
+
+task TYPES_CONF do |task|
+  FileUtils.mkdir_p(File.dirname(task.name), { :mode => 0755 })
+  File.open(task.name, "w") do |f|
+    f.puts FFI::TypesGenerator.generate
+  end
+end

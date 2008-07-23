@@ -41,5 +41,13 @@ module JFFI
     IS_SOLARIS = OS_NAME_LC.index(SOLARIS) == 0
     IS_BSD = IS_MAC || IS_FREEBSD
     ARCH = java.lang.System.getProperty("os.arch")
+    NAME = if IS_WINDOWS
+      "#{ARCH}-windows"
+    elsif IS_MAC
+      "darwin"
+    elsif IS_FREEBSD
+      "#{ARCH}-freebsd"
+    end
+    CONF_DIR = File.join(File.dirname(__FILE__), "platform", NAME)
   end
 end

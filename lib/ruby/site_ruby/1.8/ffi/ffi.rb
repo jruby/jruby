@@ -204,10 +204,44 @@ module JFFI
 
   # Use for a C struct with a char [] embedded inside.
   add_typedef(NativeType::CHAR_ARRAY, :char_array)
-  
+
+  # Load all the platform dependent types/consts/struct members
+  class Config
+    CONFIG = Hash.new
+    begin
+      File.open(File.join(Platform::CONF_DIR, 'platform.conf'), "r") do |f|
+        typedef = "rbx.platform.typedef."
+        f.each_line { |line|
+          if line.index(typedef) == 0
+            new_type, orig_type = line.chomp.slice(typedef.length..-1).split(/\s*=\s*/)
+            JFFI.add_typedef(orig_type.to_sym, new_type.to_sym)
+          else
+            key, value = line.chomp.split(/\s*=\s*/)
+            puts "key=#{key} value=#{value}"
+            CONFIG[key] = value
+          end
+        }
+      end
+    rescue Errno::ENOENT
+    end
+    def self.[](name)
+
+    end
+  end
   # Load all the platform dependent types
-  require "ffi/platform/#{Config::CONFIG['host_os']}"
-  PlatformTypes.each_pair { |k, v| add_typedef(v.to_sym, k.to_sym) }
+  begin
+    File.open(File.join(Platform::CONF_DIR, 'types.conf'), "r") do |f|
+      prefix = "rbx.platform.typedef."
+      f.each_line { |line|
+        if line.index(prefix) == 0
+          new_type, orig_type = line.chomp.slice(prefix.length..-1).split(/\s*=\s*/)
+#          puts "new type=#{new_type} orig_type=#{orig_type}"
+          add_typedef(orig_type.to_sym, new_type.to_sym)
+        end
+      }
+    end
+  rescue Errno::ENOENT
+  end
   
   TypeSizes = {
     1 => :char,
@@ -583,7 +617,7 @@ class FFI::Struct < JFFI::BaseStruct
   end
 
   def self.config(base, *fields)
-    config = Config::CONFIG
+    config = JFFI::Config::CONFIG
     @size = config["#{base}.sizeof"]
     
     builder = JFFI::StructLayoutBuilder.new
