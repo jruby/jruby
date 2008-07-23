@@ -89,7 +89,6 @@ public class JavaClass extends JavaObject {
     private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[] {};
     private static final Method[] EMPTY_METHOD_ARRAY = new Method[] {};
     private static final Field[] EMPTY_FIELD_ARRAY = new Field[] {};
-    private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
 
     private static class AssignedName {
         // to override an assigned name, the type must be less than

@@ -600,13 +600,16 @@ public class JavaUtil {
     }
 
     public static Object convertArgumentToType(ThreadContext context, IRubyObject arg, Class target) {
-        Object javaObject;
         if (arg instanceof JavaObject) {
             return coerceJavaObjectToType(context, ((JavaObject)arg).getValue(), target);
         } else if (arg.dataGetStruct() instanceof JavaObject) {
-            javaObject = ((JavaObject)arg.dataGetStruct()).getValue();
+            JavaObject innerWrapper = (JavaObject)arg.dataGetStruct();
             
-            return coerceJavaObjectToType(context, javaObject, target);
+            // ensure the object is associated with the wrapper we found it in,
+            // so that if it comes back we don't re-wrap it
+            context.getRuntime().getJavaSupport().getObjectProxyCache().put(innerWrapper.getValue(), arg);
+            
+            return innerWrapper.getValue();
         } else {
             switch (arg.getMetaClass().index) {
             case ClassIndex.NIL:
@@ -632,8 +635,6 @@ public class JavaUtil {
     }
     
     public static Object coerceJavaObjectToType(ThreadContext context, Object javaObject, Class target) {
-        Ruby runtime = context.getRuntime();
-        
         if (isDuckTypeConvertable(javaObject.getClass(), target)) {
             RubyObject rubyObject = (RubyObject) javaObject;
             if (!rubyObject.respondsTo("java_object")) {
