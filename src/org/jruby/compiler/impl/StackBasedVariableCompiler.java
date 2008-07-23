@@ -115,12 +115,7 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
         if (depth == 0) {
             assignLocalVariable(index);
         } else {
-            method.aload(methodCompiler.getDynamicScopeIndex());
-            method.swap();
-            method.pushInt(index);
-            method.swap();
-            method.pushInt(depth);
-            method.invokevirtual(p(DynamicScope.class), "setValue", sig(IRubyObject.class, params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
+            assignHeapLocal(depth, index);
         }
     }
 
@@ -128,11 +123,7 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
         if (depth == 0) {
             assignLocalVariable(index, value);
         } else {
-            method.aload(methodCompiler.getDynamicScopeIndex());
-            method.pushInt(index);
-            value.call(methodCompiler);
-            method.pushInt(depth);
-            method.invokevirtual(p(DynamicScope.class), "setValue", sig(IRubyObject.class, params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
+            assignHeapLocal(value, depth, index);
         }
     }
 
@@ -144,11 +135,7 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
         if (depth == 0) {
             retrieveLocalVariable(index);
         } else {
-            method.aload(methodCompiler.getDynamicScopeIndex());
-            method.pushInt(index);
-            method.pushInt(depth);
-            methodCompiler.loadNil();
-            method.invokevirtual(p(DynamicScope.class), "getValueOrNil", sig(IRubyObject.class, params(Integer.TYPE, Integer.TYPE, IRubyObject.class)));
+            retrieveHeapLocal(depth, index);
         }
     }
 }

@@ -36,6 +36,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.util.CodegenUtils.*;
@@ -305,5 +306,108 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
 
     public void releaseTempLocal() {
         tempVariableIndex--;
+    }
+
+    protected void assignHeapLocal(CompilerCallback value, int depth, int index) {
+        switch (index) {
+        case 0:
+            unwrapParentScopes(depth);
+            value.call(methodCompiler);
+            method.invokevirtual(p(DynamicScope.class), "setValueZeroDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
+            break;
+        case 1:
+            unwrapParentScopes(depth);
+            value.call(methodCompiler);
+            method.invokevirtual(p(DynamicScope.class), "setValueOneDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
+            break;
+        case 2:
+            unwrapParentScopes(depth);
+            value.call(methodCompiler);
+            method.invokevirtual(p(DynamicScope.class), "setValueTwoDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
+            break;
+        case 3:
+            unwrapParentScopes(depth);
+            value.call(methodCompiler);
+            method.invokevirtual(p(DynamicScope.class), "setValueThreeDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
+            break;
+        default:
+            method.aload(methodCompiler.getDynamicScopeIndex());
+            value.call(methodCompiler);
+            method.pushInt(index);
+            method.pushInt(depth);
+            method.invokevirtual(p(DynamicScope.class), "setValue", sig(IRubyObject.class, params(IRubyObject.class, Integer.TYPE, Integer.TYPE)));
+        }
+    }
+
+    protected void assignHeapLocal(int depth, int index) {
+        
+        switch (index) {
+        case 0:
+            unwrapParentScopes(depth);
+            method.swap();
+            method.invokevirtual(p(DynamicScope.class), "setValueZeroDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
+            break;
+        case 1:
+            unwrapParentScopes(depth);
+            method.swap();
+            method.invokevirtual(p(DynamicScope.class), "setValueOneDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
+            break;
+        case 2:
+            unwrapParentScopes(depth);
+            method.swap();
+            method.invokevirtual(p(DynamicScope.class), "setValueTwoDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
+            break;
+        case 3:
+            unwrapParentScopes(depth);
+            method.swap();
+            method.invokevirtual(p(DynamicScope.class), "setValueThreeDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
+            break;
+        default:
+            method.aload(methodCompiler.getDynamicScopeIndex());
+            method.swap();
+            method.pushInt(index);
+            method.pushInt(depth);
+            method.invokevirtual(p(DynamicScope.class), "setValue", sig(IRubyObject.class, params(IRubyObject.class, Integer.TYPE, Integer.TYPE)));
+        }
+    }
+
+    protected void retrieveHeapLocal(int depth, int index) {
+        switch (index) {
+        case 0:
+            unwrapParentScopes(depth);
+            methodCompiler.loadNil();
+            method.invokevirtual(p(DynamicScope.class), "getValueZeroDepthZeroOrNil", sig(IRubyObject.class, IRubyObject.class));
+            break;
+        case 1:
+            unwrapParentScopes(depth);
+            methodCompiler.loadNil();
+            method.invokevirtual(p(DynamicScope.class), "getValueOneDepthZeroOrNil", sig(IRubyObject.class, IRubyObject.class));
+            break;
+        case 2:
+            unwrapParentScopes(depth);
+            methodCompiler.loadNil();
+            method.invokevirtual(p(DynamicScope.class), "getValueTwoDepthZeroOrNil", sig(IRubyObject.class, IRubyObject.class));
+            break;
+        case 3:
+            unwrapParentScopes(depth);
+            methodCompiler.loadNil();
+            method.invokevirtual(p(DynamicScope.class), "getValueThreeDepthZeroOrNil", sig(IRubyObject.class, IRubyObject.class));
+            break;
+        default:
+            method.aload(methodCompiler.getDynamicScopeIndex());
+            method.pushInt(index);
+            method.pushInt(depth);
+            methodCompiler.loadNil();
+            method.invokevirtual(p(DynamicScope.class), "getValueOrNil", sig(IRubyObject.class, params(Integer.TYPE, Integer.TYPE, IRubyObject.class)));
+        }
+    }
+
+    protected void unwrapParentScopes(int depth) {
+        // unwrap scopes to appropriate depth
+        method.aload(methodCompiler.getDynamicScopeIndex());
+        while (depth > 0) {
+            method.invokevirtual(p(DynamicScope.class), "getNextCapturedScope", sig(DynamicScope.class));
+            depth--;
+        }
     }
 }

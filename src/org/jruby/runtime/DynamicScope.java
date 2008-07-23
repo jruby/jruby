@@ -214,6 +214,17 @@ public abstract class DynamicScope {
     public abstract IRubyObject setValue(int offset, IRubyObject value, int depth);
 
     /**
+     * Set value in current dynamic scope or one of its captured scopes.
+     * 
+     * @param offset zero-indexed value that represents where variable lives
+     * @param value to set
+     * @param depth how many captured scopes down this variable should be set
+     */
+    public IRubyObject setValue(IRubyObject value, int offset, int depth) {
+        return setValue(offset, value, depth);
+    }
+
+    /**
      * setValue for depth zero
      * 
      * @param offset zero-indexed value that represents where variable lives
