@@ -55,11 +55,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class JavaObject extends RubyObject {
 
     private static Object NULL_LOCK = new Object();
-    private final Object value;
 
     protected JavaObject(Ruby runtime, RubyClass rubyClass, Object value) {
         super(runtime, rubyClass);
-        this.value = value;
+        this.dataStruct = value;
     }
 
     protected JavaObject(Ruby runtime, Object value) {
@@ -78,11 +77,11 @@ public class JavaObject extends RubyObject {
     }
 
     public Class<?> getJavaClass() {
-        return value != null ? value.getClass() : Void.TYPE;
+        return dataStruct != null ? dataStruct.getClass() : Void.TYPE;
     }
 
     public Object getValue() {
-        return value;
+        return dataStruct;
     }
 
     public static RubyClass createJavaObjectClass(Ruby runtime, RubyModule javaModule) {
@@ -106,12 +105,12 @@ public class JavaObject extends RubyObject {
 
     public boolean equals(Object other) {
         return other instanceof JavaObject &&
-                this.value == ((JavaObject) other).value;
+                this.dataStruct == ((JavaObject) other).dataStruct;
     }
 
     public int hashCode() {
-        if (value != null) {
-            return value.hashCode();
+        if (dataStruct != null) {
+            return dataStruct.hashCode();
         }
         return 0;
     }
@@ -123,10 +122,10 @@ public class JavaObject extends RubyObject {
 
     @JRubyMethod
     public IRubyObject to_s() {
-        if (value != null) {
-            String stringValue = value.toString();
+        if (dataStruct != null) {
+            String stringValue = dataStruct.toString();
             if (stringValue != null) {
-                return RubyString.newUnicodeString(getRuntime(), value.toString());
+                return RubyString.newUnicodeString(getRuntime(), dataStruct.toString());
             }
 
             return getRuntime().getNil();

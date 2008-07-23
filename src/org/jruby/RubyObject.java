@@ -146,7 +146,8 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     // want to go to the trouble of creating a subclass of
     // RubyObject. The OpenSSL implementation uses this heavily to
     // save holder objects containing Java cryptography objects.
-    private transient Object dataStruct;
+    // Java integration uses this to store the Java object ref.
+    protected transient Object dataStruct;
 
     protected int flags; // zeroed by jvm
     public static final int ALL_F = -1;
