@@ -530,7 +530,7 @@ public class MiniJava implements Library {
                     }
                 } else {
                     mv.aload(i + 1);
-                    mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, Object.class));
+                    mv.invokestatic(p(JavaUtil.class), "convertJavaToUsableRubyObject", sig(IRubyObject.class, Ruby.class, Object.class));
                 }
                 mv.aastore();
             }

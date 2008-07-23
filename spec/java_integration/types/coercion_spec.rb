@@ -2,6 +2,8 @@ require File.dirname(__FILE__) + "/../spec_helper"
 
 import "java_integration.fixtures.CoreTypeMethods"
 import "java_integration.fixtures.JavaFields"
+import "java_integration.fixtures.ValueReceivingInterface"
+import "java_integration.fixtures.ValueReceivingInterfaceHandler"
 
 describe "Java String and primitive-typed methods" do
   it "should coerce to Ruby types when returned" do 
@@ -185,5 +187,141 @@ describe "Java primitive-box-typed fields" do
     jf.trueObjField.should == true
     jf.falseObjField.should be_kind_of(FalseClass)
     jf.falseObjField.should == false
+  end
+end
+
+describe "Java String, primitive, and object-typed interface methods" do
+  it "should coerce or wrap to usable Ruby types for the implementer" do
+    impl = Class.new {
+      attr_accessor :result
+      include ValueReceivingInterface
+      
+      def receiveObject(obj)
+        self.result = obj
+        obj
+      end
+      
+      %w[String Byte Short Char Int Long Float Double Null True False].each do |type|
+        alias_method "receive#{type}".intern, :receiveObject
+      end
+    }
+    
+    vri = impl.new
+    vri_handler = ValueReceivingInterfaceHandler.new(vri);
+    
+    obj = java.lang.Object.new
+    vri_handler.receiveObject(obj).should == obj
+    vri.result.should == obj
+    vri.result.class.should == java.lang.Object
+    
+    obj = "foo"
+    vri_handler.receiveString(obj).should == obj
+    vri.result.should == obj
+    vri.result.class.should == String
+    
+    obj = 1
+    
+    vri_handler.receiveByte(obj).should == obj
+    vri.result.should == obj
+    vri.result.class.should == Fixnum
+    
+    vri_handler.receiveShort(obj).should == obj
+    vri.result.should == obj
+    vri.result.class.should == Fixnum
+    
+    pending "char appears to be getting signed/unsigned-garbled" do
+      vri_handler.receiveChar(obj).should == obj
+      vri.result.should == obj
+      vri.result.class.should == Fixnum
+    end
+    
+    vri_handler.receiveInt(obj).should == obj
+    vri.result.should == obj
+    vri.result.class.should == Fixnum
+    
+    vri_handler.receiveLong(obj).should == obj
+    vri.result.should == obj
+    vri.result.class.should == Fixnum
+    
+    vri_handler.receiveFloat(obj).should == obj
+    vri.result.should == obj
+    vri.result.class.should == Float
+    
+    vri_handler.receiveDouble(obj).should == obj
+    vri.result.should == obj
+    vri.result.class.should == Float
+    
+    vri_handler.receiveNull(nil).should == nil
+    vri.result.should == nil
+    vri.result.class.should == NilClass
+    
+    vri_handler.receiveTrue(true).should == true
+    vri.result.should == true
+    vri.result.class.should == TrueClass
+    
+    vri_handler.receiveFalse(false).should == false
+    vri.result.should == false
+    vri.result.class.should == FalseClass
+  end
+end
+
+describe "Java primitive-box-typed interface methods" do
+  it "should coerce to Ruby types for the implementer" do
+    pending "We do not coerce numerics to boxed Java numerics (yet?)" do
+      impl = Class.new {
+        attr_accessor :result
+        include ValueReceivingInterface
+
+        def receiveByte(obj)
+          self.result = obj
+          obj
+        end
+
+        %w[Short Char Int Long Float Double True False].each do |type|
+          alias_method "receive#{type}".intern, :receiveByte
+        end
+      }
+
+      vri = impl.new
+      vri_handler = ValueReceivingInterfaceHandler.new(vri);
+
+      obj = 1
+
+      vri_handler.receiveByteObj(obj).should == obj
+      vri.result.should == obj
+      vri.result.class.should == Fixnum
+
+      vri_handler.receiveShortObj(obj).should == obj
+      vri.result.should == obj
+      vri.result.class.should == Fixnum
+
+      vri_handler.receiveCharObj(obj).should == obj
+      vri.result.should == obj
+      vri.result.class.should == Fixnum
+
+      vri_handler.receiveIntObj(obj).should == obj
+      vri.result.should == obj
+      vri.result.class.should == Fixnum
+
+      vri_handler.receiveLongObj(obj).should == obj
+      vri.result.should == obj
+      vri.result.class.should == Fixnum
+
+      vri_handler.receiveFloatObj(obj).should == obj
+      vri.result.should == obj
+      vri.result.class.should == Float
+
+      vri_handler.receiveDoubleObj(obj).should == obj
+      vri.result.should == obj
+      vri.result.class.should == Float
+
+      vri_handler.receiveTrueObj(true).should == true
+      vri.result.should == true
+      vri.result.class.should == TrueClass
+
+      vri_handler.receiveFalseObj(false).should == false
+      vri.result.should == false
+      vri.result.class.should == FalseClass
+    end
   end
 end
