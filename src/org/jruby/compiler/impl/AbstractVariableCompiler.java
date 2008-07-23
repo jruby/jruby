@@ -332,10 +332,10 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
             break;
         default:
             method.aload(methodCompiler.getDynamicScopeIndex());
-            value.call(methodCompiler);
             method.pushInt(index);
+            value.call(methodCompiler);
             method.pushInt(depth);
-            method.invokevirtual(p(DynamicScope.class), "setValue", sig(IRubyObject.class, params(IRubyObject.class, Integer.TYPE, Integer.TYPE)));
+            method.invokevirtual(p(DynamicScope.class), "setValue", sig(IRubyObject.class, params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
         }
     }
 
