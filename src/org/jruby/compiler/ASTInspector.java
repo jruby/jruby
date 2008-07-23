@@ -227,10 +227,6 @@ public class ASTInspector {
             }
             if (argsNode.getRestArg() == -2 || argsNode.getRestArg() >= 0) hasRestArg = true;
             break;
-        case ASSIGNABLENODE:
-            AssignableNode assignableNode = (AssignableNode)node;
-            inspect(assignableNode.getValueNode());
-            break;
         case ATTRASSIGNNODE:
             AttrAssignNode attrAssignNode = (AttrAssignNode)node;
             inspect(attrAssignNode.getArgsNode());
@@ -287,27 +283,17 @@ public class ASTInspector {
         case CLASSVARNODE:
             hasScopeAwareMethods = true;
             break;
-        case GLOBALASGNNODE:
-            GlobalAsgnNode globalAsgnNode = (GlobalAsgnNode)node;
-            if (globalAsgnNode.getName().equals("$_") || globalAsgnNode.getName().equals("$~")) {
-                hasScopeAwareMethods = true;
-            }
-            break;
-        case LOCALASGNNODE:
-            LocalAsgnNode localAsgnNode = (LocalAsgnNode)node;
-            if (PRAGMAS.contains(localAsgnNode.getName())) {
-                if (localAsgnNode.getName().equals("__NOFRAME__")) {
-                    noFrame = localAsgnNode.getValueNode() instanceof TrueNode;
-                }
-                break;
-            }
         case CONSTDECLNODE:
-        case CLASSVARASGNNODE:
-        case CLASSVARDECLNODE:
-            hasScopeAwareMethods = true;
-        case DASGNNODE:
-        case INSTASGNNODE:
             inspect(((AssignableNode)node).getValueNode());
+            hasScopeAwareMethods = true;
+            break;
+        case CLASSVARASGNNODE:
+            inspect(((AssignableNode)node).getValueNode());
+            hasScopeAwareMethods = true;
+            break;
+        case CLASSVARDECLNODE:
+            inspect(((AssignableNode)node).getValueNode());
+            hasScopeAwareMethods = true;
             break;
         case COLON2NODE:
             inspect(((Colon2Node)node).getLeftNode());
@@ -329,6 +315,9 @@ public class ASTInspector {
             DotNode dotNode = (DotNode)node;
             inspect(dotNode.getBeginNode());
             inspect(dotNode.getEndNode());
+            break;
+        case DASGNNODE:
+            inspect(((AssignableNode)node).getValueNode());
             break;
         case DVARNODE:
             break;
@@ -356,10 +345,16 @@ public class ASTInspector {
             inspect(((ForNode)node).getBodyNode());
             inspect(((ForNode)node).getVarNode());
             break;
+        case GLOBALASGNNODE:
+            GlobalAsgnNode globalAsgnNode = (GlobalAsgnNode)node;
+            if (globalAsgnNode.getName().equals("$_") || globalAsgnNode.getName().equals("$~")) {
+                hasScopeAwareMethods = true;
+            }
+            break;
         case GLOBALVARNODE:
-            if (((GlobalVarNode)node).getName() == "$_") {
+            if (((GlobalVarNode)node).getName().equals("$_")) {
                 hasFrameAwareMethods = true;
-            } else if (((GlobalVarNode)node).getName() == "$~") {
+            } else if (((GlobalVarNode)node).getName().equals("$~")) {
                 hasFrameAwareMethods = true;
             }
             break;
@@ -373,6 +368,9 @@ public class ASTInspector {
             inspect(ifNode.getThenBody());
             inspect(ifNode.getElseBody());
             break;
+        case INSTASGNNODE:
+            inspect(((AssignableNode)node).getValueNode());
+            break;
         case INSTVARNODE:
             break;
         case ISCOPINGNODE:
@@ -382,6 +380,16 @@ public class ASTInspector {
         case ITERNODE:
             hasClosure = true;
             hasFrameAwareMethods = true;
+            break;
+        case LOCALASGNNODE:
+            LocalAsgnNode localAsgnNode = (LocalAsgnNode)node;
+            if (PRAGMAS.contains(localAsgnNode.getName())) {
+                if (localAsgnNode.getName().equals("__NOFRAME__")) {
+                    noFrame = localAsgnNode.getValueNode() instanceof TrueNode;
+                }
+                break;
+            }
+            inspect(localAsgnNode.getValueNode());
             break;
         case LOCALVARNODE:
             break;
