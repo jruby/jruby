@@ -217,7 +217,6 @@ module JFFI
             JFFI.add_typedef(orig_type.to_sym, new_type.to_sym)
           else
             key, value = line.chomp.split(/\s*=\s*/)
-            puts "key=#{key} value=#{value}"
             CONFIG[key] = value
           end
         }
@@ -235,7 +234,6 @@ module JFFI
       f.each_line { |line|
         if line.index(prefix) == 0
           new_type, orig_type = line.chomp.slice(prefix.length..-1).split(/\s*=\s*/)
-#          puts "new type=#{new_type} orig_type=#{orig_type}"
           add_typedef(orig_type.to_sym, new_type.to_sym)
         end
       }

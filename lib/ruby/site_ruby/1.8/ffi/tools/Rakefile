@@ -29,7 +29,7 @@ task TYPES_CONF do |task|
 end
 
 task :generator do |task|
-  [ "etc", "syslog", "fcntl" ].each { |name|
+  [ "etc", "syslog", "fcntl", "zlib" ].each { |name|
     ffi_name = "lib/ruby/site_ruby/1.8/ffi/platform/#{name}.rb.ffi"
     rb_name = "#{File.join(JFFI::Platform::CONF_DIR, name)}.rb"
     FFI::Generator.new ffi_name, rb_name
