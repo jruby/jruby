@@ -98,7 +98,7 @@ public abstract class JNAMemoryIO implements MemoryIO {
      * @return A new <tt>MemoryIO</tt> instance that can access the memory.
      */
     static JNAMemoryIO wrap(Pointer ptr) {
-        return new PointerIO(ptr, 0);
+        return ptr != null ? new PointerIO(ptr, 0) : NULL;
     }
     public abstract Pointer getAddress();
     public abstract Pointer getPointer(long offset);
@@ -157,7 +157,7 @@ public abstract class JNAMemoryIO implements MemoryIO {
             return ptr;
         }
         public boolean isNull() {
-            return Pointer.NULL.equals(ptr);
+            return ptr == null;
         }
         public byte getByte(long offset) {
             return ptr.getByte(offset);
