@@ -7,4 +7,8 @@ public class UsesSingleMethodInterface {
     public static Object castAndCallIt(Object obj) {
         return callIt((SingleMethodInterface) obj);
     }
+    
+    public Object callIt2(SingleMethodInterface obj) {
+        return obj.callIt();
+    }
 }
