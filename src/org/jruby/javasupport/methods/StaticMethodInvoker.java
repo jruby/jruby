@@ -4,6 +4,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.RubyProc;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaMethod;
 import org.jruby.javasupport.JavaUtil;
@@ -68,22 +69,83 @@ public class StaticMethodInvoker extends MethodInvoker {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        return call(context, self, clazz, name, args);
+        createJavaMethods(self.getRuntime());
+        if (block.isGiven()) {
+            int len = args.length;
+            Object[] convertedArgs = new Object[len + 1];
+            IRubyObject[] intermediate = new IRubyObject[len + 1];
+            System.arraycopy(args, 0, intermediate, 0, len);
+            intermediate[len] = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
+            JavaMethod method = findMethod(self, name, intermediate, len);
+            for (int i = 0; i < len + 1; i++) {
+                convertedArgs[i] = JavaUtil.convertArgumentToType(context, intermediate[i], method.getParameterTypes()[i]);
+            }
+
+            return Java.java_to_ruby(self, method.invoke_static(convertedArgs), Block.NULL_BLOCK);
+        } else {
+            return call(context, self, clazz, name, args);
+        }
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        return call(context, self, clazz, name);
+        createJavaMethods(self.getRuntime());
+        if (block.isGiven()) {
+            Object[] convertedArgs = new Object[1];
+            RubyProc proc = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
+            JavaMethod method = findMethodArityOne(self, name, proc);
+            convertedArgs[0] = JavaUtil.convertArgumentToType(context, proc, method.getParameterTypes()[0]);
+
+            return Java.java_to_ruby(self, method.invoke_static(convertedArgs), Block.NULL_BLOCK);
+        } else {
+            return call(context, self, clazz, name);
+        }
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
-        return call(context, self, clazz, name, arg0);
+        createJavaMethods(self.getRuntime());
+        if (block.isGiven()) {
+            Object[] convertedArgs = new Object[2];
+            RubyProc proc = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
+            JavaMethod method = findMethodArityTwo(self, name, arg0, proc);
+            convertedArgs[0] = JavaUtil.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
+            convertedArgs[1] = JavaUtil.convertArgumentToType(context, proc, method.getParameterTypes()[1]);
+
+            return Java.java_to_ruby(self, method.invoke_static(convertedArgs), Block.NULL_BLOCK);
+        } else {
+            return call(context, self, clazz, name, arg0);
+        }
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return call(context, self, clazz, name, arg0, arg1);
+        createJavaMethods(self.getRuntime());
+        if (block.isGiven()) {
+            Object[] convertedArgs = new IRubyObject[3];
+            RubyProc proc = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
+            JavaMethod method = findMethodArityThree(self, name, arg0, arg1, proc);
+            convertedArgs[0] = JavaUtil.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
+            convertedArgs[1] = JavaUtil.convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
+            convertedArgs[2] = JavaUtil.convertArgumentToType(context, proc, method.getParameterTypes()[2]);
+
+            return Java.java_to_ruby(self, method.invoke_static(convertedArgs), Block.NULL_BLOCK);
+        } else {
+            return call(context, self, clazz, name, arg0, arg1);
+        }
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return call(context, self, clazz, name, arg0, arg1, arg2);
+        createJavaMethods(self.getRuntime());
+        if (block.isGiven()) {
+            Object[] convertedArgs = new Object[4];
+            RubyProc proc = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
+            JavaMethod method = findMethodArityFour(self, name, arg0, arg1, arg2, proc);
+            convertedArgs[0] = JavaUtil.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
+            convertedArgs[1] = JavaUtil.convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
+            convertedArgs[2] = JavaUtil.convertArgumentToType(context, arg2, method.getParameterTypes()[2]);
+            convertedArgs[3] = JavaUtil.convertArgumentToType(context, proc, method.getParameterTypes()[3]);
+
+            return Java.java_to_ruby(self, method.invoke_static(convertedArgs), Block.NULL_BLOCK);
+        } else {
+            return call(context, self, clazz, name, arg0, arg1, arg2);
+        }
     }
 }

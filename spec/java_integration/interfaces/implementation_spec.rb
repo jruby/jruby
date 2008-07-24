@@ -32,9 +32,7 @@ end
 
 describe "Single-method Java interfaces" do
   it "can be coerced from a block passed to a static method" do
-    pending "Coercion of Proc to interface is not enabled for static methods" do
-      UsesSingleMethodInterface.callIt { 1 }.should == 1
-    end
+    UsesSingleMethodInterface.callIt { 1 }.should == 1
   end
   
   it "can be coerced from a block passed to a instance method" do
