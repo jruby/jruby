@@ -74,10 +74,11 @@ public final class Util {
     }
     public static final int int32Value(IRubyObject parameter) {
         final long value = longValue(parameter);
-        if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
+        if (value < Integer.MIN_VALUE || value > 0xffffffffL) {
             throw parameter.getRuntime().newRangeError("Value "
                     + value + " outside integer range");
         }
+        // This also handles unsigned int -> negative signed int conversion
         return (int) value;
     }
     public static final long uint32Value(IRubyObject parameter) {
