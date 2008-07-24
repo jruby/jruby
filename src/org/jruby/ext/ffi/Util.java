@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2008 JRuby project
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -43,48 +43,48 @@ public final class Util {
     public static final byte int8Value(IRubyObject parameter) {
         final long value = longValue(parameter);
         if (value < Byte.MIN_VALUE || value > Byte.MAX_VALUE) {
-            throw parameter.getRuntime().newRangeError("Value " 
-                    + parameter.asJavaString() + " outside char range");
+            throw parameter.getRuntime().newRangeError("Value "
+                    + value + " outside char range");
         }
         return (byte) value;
     }
     public static final short uint8Value(IRubyObject parameter) {
         final long value = longValue(parameter);
         if (value < 0 || value > 0xffL) {
-            throw parameter.getRuntime().newRangeError("Value " 
-                    + parameter.asJavaString() + " outside unsigned char range");
+            throw parameter.getRuntime().newRangeError("Value "
+                    + value + " outside unsigned char range");
         }
         return (short) value;
     }
     public static final short int16Value(IRubyObject parameter) {
         final long value = longValue(parameter);
         if (value < Short.MIN_VALUE || value > Short.MAX_VALUE) {
-            throw parameter.getRuntime().newRangeError("Value " 
-                    + parameter.asJavaString() + " outside short range");
+            throw parameter.getRuntime().newRangeError("Value "
+                    + value + " outside short range");
         }
         return (short) value;
     }
     public static final int uint16Value(IRubyObject parameter) {
         final long value = longValue(parameter);
         if (value < 0 || value > 0xffffL) {
-            throw parameter.getRuntime().newRangeError("Value " 
-                    + parameter.asJavaString() + " outside unsigned short range");
+            throw parameter.getRuntime().newRangeError("Value "
+                    + value + " outside unsigned short range");
         }
         return (int) value;
     }
     public static final int int32Value(IRubyObject parameter) {
         final long value = longValue(parameter);
         if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
-            throw parameter.getRuntime().newRangeError("Value " 
-                    + parameter.asJavaString() + " outside integer range");
+            throw parameter.getRuntime().newRangeError("Value "
+                    + value + " outside integer range");
         }
         return (int) value;
     }
     public static final long uint32Value(IRubyObject parameter) {
         final long value = longValue(parameter);
         if (value < 0 || value > 0xffffffffL) {
-            throw parameter.getRuntime().newRangeError("Value " 
-                    + parameter.asJavaString() + " outside integer range");
+            throw parameter.getRuntime().newRangeError("Value "
+                    + value + " outside unsigned integer range");
         }
         return value;
     }
@@ -94,26 +94,26 @@ public final class Util {
     public static final long uint64Value(IRubyObject parameter) {
         final long value = longValue(parameter);
         if (value < 0) {
-            throw parameter.getRuntime().newRangeError("Value " 
-                    + parameter.asJavaString() + " outside unsigned long long range");
+            throw parameter.getRuntime().newRangeError("Value "
+                    + value + " outside unsigned long long range");
         }
         return value;
     }
     public static final float floatValue(IRubyObject parameter) {
         final double value = RubyNumeric.num2dbl(parameter);
         if (value < Float.MIN_VALUE || value > Float.MAX_VALUE) {
-            throw parameter.getRuntime().newRangeError("Value " 
-                    + parameter.asJavaString() + " outside float range");
+            throw parameter.getRuntime().newRangeError("Value "
+                    + value + " outside float range");
         }
         return (float) value;
     }
     public static final double doubleValue(IRubyObject parameter) {
         return RubyNumeric.num2dbl(parameter);
     }
-    
+
     /**
      * Converts characters like 'a' or 't' to an integer value
-     * 
+     *
      * @param parameter
      * @return
      */
@@ -125,7 +125,7 @@ public final class Util {
         } else if (parameter instanceof RubyString) {
             return longValue((RubyString) parameter);
         }
-        throw parameter.getRuntime().newRangeError("Value " 
+        throw parameter.getRuntime().newRangeError("Value "
                     + parameter + " is not an integer");
     }
     private static final long longValue(RubyString parameter) {
@@ -133,12 +133,12 @@ public final class Util {
         if (cs.length() == 1) {
             return cs.charAt(0);
         }
-        throw parameter.getRuntime().newRangeError("Value " 
+        throw parameter.getRuntime().newRangeError("Value "
                     + parameter + " is not an integer");
     }
     public static final <T> T convertParameter(IRubyObject parameter, Class<T> paramClass) {
         return paramClass.cast(parameter instanceof JavaObject
-            ? ((JavaObject) parameter).getValue() 
+            ? ((JavaObject) parameter).getValue()
             : JavaUtil.convertRubyToJava(parameter, paramClass));
     }
     public static final ByteBuffer slice(ByteBuffer buf, int offset) {
