@@ -156,9 +156,9 @@ describe "Java primitive-box-typed fields" do
     JavaFields.longObjStaticField.should == 8
     
     JavaFields.floatObjStaticField.should be_kind_of(Float)
-    JavaFields.floatObjStaticField.should == 4
+    JavaFields.floatObjStaticField.should == 4.5
     JavaFields.doubleObjStaticField.should be_kind_of(Float)
-    JavaFields.doubleObjStaticField.should == 8
+    JavaFields.doubleObjStaticField.should == 8.5
     
     JavaFields.trueObjStaticField.should be_kind_of(TrueClass)
     JavaFields.trueObjStaticField.should == true
@@ -179,9 +179,9 @@ describe "Java primitive-box-typed fields" do
     jf.longObjField.should == 8
     
     jf.floatObjField.should be_kind_of(Float)
-    jf.floatObjField.should == 4
+    jf.floatObjField.should == 4.5
     jf.doubleObjField.should be_kind_of(Float)
-    jf.doubleObjField.should == 8
+    jf.doubleObjField.should == 8.5
     
     jf.trueObjField.should be_kind_of(TrueClass)
     jf.trueObjField.should == true
