@@ -20,10 +20,13 @@ if JFFI::Platform::IS_MAC
     platform_dir = File.join(JFFI::Platform::FFI_DIR, "platform", "#{arch}-darwin")
     arch_options[arch] = { :platform_dir => platform_dir, :cppflags => "-arch #{arch}"}
   end
-  
+
 else
   arches = [ JFFI::Platform::ARCH ]
-  arch_options[JFFI::Platform::ARCH] = [ :platform_dir => JFFI::Platform::CONF_DIR ]
+  arch_options[JFFI::Platform::ARCH] = {
+    :platform_dir => JFFI::Platform::CONF_DIR,
+    :cppflags => ""
+    }
 end
 arches.each { |arch|
   options = arch_options[arch]
