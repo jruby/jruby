@@ -7,8 +7,8 @@ public class JavaFields {
     public static char charStaticField = (char)2;
     public static int intStaticField = 4;
     public static long longStaticField = 8;
-    public static float floatStaticField = 4.0f;
-    public static double doubleStaticField = 8.0;
+    public static float floatStaticField = 4.5f;
+    public static double doubleStaticField = 8.5;
     public static boolean trueStaticField = true;
     public static boolean falseStaticField = false;
     public static Object nullStaticField = null;
@@ -29,8 +29,8 @@ public class JavaFields {
     public char charField = (char)2;
     public int intField = 4;
     public long longField = 8;
-    public float floatField = 4.0f;
-    public double doubleField = 8.0;
+    public float floatField = 4.5f;
+    public double doubleField = 8.5;
     public boolean trueField = true;
     public boolean falseField = false;
     public Object nullField = null;

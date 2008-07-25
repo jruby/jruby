@@ -98,9 +98,9 @@ describe "Java String and primitive-typed fields" do
     JavaFields.longStaticField.should == 8
     
     JavaFields.floatStaticField.should be_kind_of(Float)
-    JavaFields.floatStaticField.should == 4
+    JavaFields.floatStaticField.should == 4.5
     JavaFields.doubleStaticField.should be_kind_of(Float)
-    JavaFields.doubleStaticField.should == 8
+    JavaFields.doubleStaticField.should == 8.5
     
     JavaFields.trueStaticField.should be_kind_of(TrueClass)
     JavaFields.trueStaticField.should == true
@@ -127,9 +127,9 @@ describe "Java String and primitive-typed fields" do
     jf.longField.should == 8
     
     jf.floatField.should be_kind_of(Float)
-    jf.floatField.should == 4
+    jf.floatField.should == 4.5
     jf.doubleField.should be_kind_of(Float)
-    jf.doubleField.should == 8
+    jf.doubleField.should == 8.5
     
     jf.trueField.should be_kind_of(TrueClass)
     jf.trueField.should == true
