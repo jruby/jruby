@@ -34,7 +34,6 @@
 ###### END LICENSE BLOCK ######
 
 require 'builtin/javasupport/java'
-require 'builtin/javasupport/proxy/base'
 require 'builtin/javasupport/proxy/array'
 require 'builtin/javasupport/proxy/concrete'
 require 'builtin/javasupport/proxy/interface'

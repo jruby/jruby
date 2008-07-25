@@ -86,6 +86,7 @@ public class Java implements Library {
     }
 
     public static RubyModule createJavaModule(Ruby runtime) {
+        ThreadContext context = runtime.getCurrentContext();
         RubyModule javaModule = runtime.defineModule("Java");
         
         javaModule.defineAnnotatedMethods(Java.class);
@@ -98,7 +99,10 @@ public class Java implements Library {
         JavaField.createJavaFieldClass(runtime, javaModule);
         
         // set of utility methods for Java-based proxy objects
-        JavaProxyMethods.createJavaProxyMethods(runtime.getCurrentContext());
+        JavaProxyMethods.createJavaProxyMethods(context);
+        
+        // base of the proxy (wrapper) type hierarchy
+        JavaProxy.createJavaProxy(context);
 
         // also create the JavaProxy* classes
         JavaProxyClass.createJavaProxyModule(runtime);
@@ -218,18 +222,6 @@ public class Java implements Library {
         }
     }
 
-    @JRubyClass(name = "JavaProxy")
-    public static class JavaProxy {
-        @JRubyMethod(meta = true)
-        public static IRubyObject new_instance_for(IRubyObject recv, IRubyObject arg0) {
-            return Java.new_instance_for(recv, arg0);
-        }
-        
-        @JRubyMethod(meta = true)
-        public static IRubyObject to_java_object(IRubyObject recv) {
-            return Java.to_java_object(recv);
-        }
-    }
     private static final ClassProvider JAVA_PACKAGE_CLASS_PROVIDER = new ClassProvider() {
 
         public RubyClass defineClassUnder(RubyModule pkg, String name, RubyClass superClazz) {
