@@ -23,7 +23,7 @@ public class StaticMethodInvoker extends MethodInvoker {
 
         int len = args.length;
         Object[] convertedArgs = new Object[len];
-        JavaMethod method = findMethod(self, name, args, len);
+        JavaMethod method = (JavaMethod)findCallable(self, name, args, len);
         Class[] targetTypes = method.getParameterTypes();
         for (int i = len; --i >= 0;) {
             convertedArgs[i] = JavaUtil.convertArgumentToType(context, args[i], targetTypes[i]);
@@ -33,7 +33,7 @@ public class StaticMethodInvoker extends MethodInvoker {
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
         createJavaMethods(self.getRuntime());
-        JavaMethod method = findMethodArityZero(self, name);
+        JavaMethod method = (JavaMethod)findCallableArityZero(self, name);
 
         return Java.java_to_ruby(self, method.invoke_static(EMPTY_OBJECT_ARRAY), Block.NULL_BLOCK);
     }
@@ -41,7 +41,7 @@ public class StaticMethodInvoker extends MethodInvoker {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
         createJavaMethods(self.getRuntime());
         Object[] convertedArgs = new Object[1];
-        JavaMethod method = findMethodArityOne(self, name, arg0);
+        JavaMethod method = (JavaMethod)findCallableArityOne(self, name, arg0);
         convertedArgs[0] = JavaUtil.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
 
         return Java.java_to_ruby(self, method.invoke_static(convertedArgs), Block.NULL_BLOCK);
@@ -50,7 +50,7 @@ public class StaticMethodInvoker extends MethodInvoker {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
         createJavaMethods(self.getRuntime());
         Object[] convertedArgs = new Object[2];
-        JavaMethod method = findMethodArityTwo(self, name, arg0, arg1);
+        JavaMethod method = (JavaMethod)findCallableArityTwo(self, name, arg0, arg1);
         convertedArgs[0] = JavaUtil.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
         convertedArgs[1] = JavaUtil.convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
 
@@ -60,7 +60,7 @@ public class StaticMethodInvoker extends MethodInvoker {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         createJavaMethods(self.getRuntime());
         Object[] convertedArgs = new Object[3];
-        JavaMethod method = findMethodArityThree(self, name, arg0, arg1, arg2);
+        JavaMethod method = (JavaMethod)findCallableArityThree(self, name, arg0, arg1, arg2);
         convertedArgs[0] = JavaUtil.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
         convertedArgs[1] = JavaUtil.convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
         convertedArgs[2] = JavaUtil.convertArgumentToType(context, arg2, method.getParameterTypes()[2]);
@@ -76,7 +76,7 @@ public class StaticMethodInvoker extends MethodInvoker {
             IRubyObject[] intermediate = new IRubyObject[len + 1];
             System.arraycopy(args, 0, intermediate, 0, len);
             intermediate[len] = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
-            JavaMethod method = findMethod(self, name, intermediate, len);
+            JavaMethod method = (JavaMethod)findCallable(self, name, intermediate, len);
             for (int i = 0; i < len + 1; i++) {
                 convertedArgs[i] = JavaUtil.convertArgumentToType(context, intermediate[i], method.getParameterTypes()[i]);
             }
@@ -92,7 +92,7 @@ public class StaticMethodInvoker extends MethodInvoker {
         if (block.isGiven()) {
             Object[] convertedArgs = new Object[1];
             RubyProc proc = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
-            JavaMethod method = findMethodArityOne(self, name, proc);
+            JavaMethod method = (JavaMethod)findCallableArityOne(self, name, proc);
             convertedArgs[0] = JavaUtil.convertArgumentToType(context, proc, method.getParameterTypes()[0]);
 
             return Java.java_to_ruby(self, method.invoke_static(convertedArgs), Block.NULL_BLOCK);
@@ -106,7 +106,7 @@ public class StaticMethodInvoker extends MethodInvoker {
         if (block.isGiven()) {
             Object[] convertedArgs = new Object[2];
             RubyProc proc = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
-            JavaMethod method = findMethodArityTwo(self, name, arg0, proc);
+            JavaMethod method = (JavaMethod)findCallableArityTwo(self, name, arg0, proc);
             convertedArgs[0] = JavaUtil.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
             convertedArgs[1] = JavaUtil.convertArgumentToType(context, proc, method.getParameterTypes()[1]);
 
@@ -121,7 +121,7 @@ public class StaticMethodInvoker extends MethodInvoker {
         if (block.isGiven()) {
             Object[] convertedArgs = new IRubyObject[3];
             RubyProc proc = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
-            JavaMethod method = findMethodArityThree(self, name, arg0, arg1, proc);
+            JavaMethod method = (JavaMethod)findCallableArityThree(self, name, arg0, arg1, proc);
             convertedArgs[0] = JavaUtil.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
             convertedArgs[1] = JavaUtil.convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
             convertedArgs[2] = JavaUtil.convertArgumentToType(context, proc, method.getParameterTypes()[2]);
@@ -137,7 +137,7 @@ public class StaticMethodInvoker extends MethodInvoker {
         if (block.isGiven()) {
             Object[] convertedArgs = new Object[4];
             RubyProc proc = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
-            JavaMethod method = findMethodArityFour(self, name, arg0, arg1, arg2, proc);
+            JavaMethod method = (JavaMethod)findCallableArityFour(self, name, arg0, arg1, arg2, proc);
             convertedArgs[0] = JavaUtil.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);
             convertedArgs[1] = JavaUtil.convertArgumentToType(context, arg1, method.getParameterTypes()[1]);
             convertedArgs[2] = JavaUtil.convertArgumentToType(context, arg2, method.getParameterTypes()[2]);

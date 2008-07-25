@@ -339,18 +339,23 @@ private
 public
   
   def ruby_to_java(*args,&block)
+    # empty Object array if no values
     return JObject.proxy[].new(0) if args.length == 0
+    
+    # pull Ruby array out of args list
     ruby_array = args[0]
     unless ruby_array.kind_of?(::Array) || ruby_array.nil?
       raise ArgumentError,"invalid arg[0] passed to to_java (#{args[0]})"    
     end
+    
     dims = nil
     fill_value = nil
     index = 1
+    
+    # figure out array type from args or default to Object
     if index < args.length
       arg = args[index]
-      # the (optional) first arg is class/name. if omitted,
-      # defaults to java.lang.Object
+      # the (optional) first arg is class/name. if omitted, defaults to java.lang.Object
       if arg.kind_of?(Class) && arg.respond_to?(:java_class)
         cls = arg
         cls_name = arg.java_class.name
@@ -370,12 +375,15 @@ public
       cls = JObject.proxy
       cls_name = SObject
     end
+    
+    # if provided a block, use it to convert each argument
     if block
       converter = block
     elsif converter = @converters[cls_name]
     else
       converter = @default_converter
     end
+    
     # the (optional) next arg(s) is dimensions. may be
     # specified as dim1,dim2,...,dimn, or [dim1,dim2,...,dimn]
     # the array version is required if you want to pass a
@@ -401,6 +409,8 @@ public
     else
       dims = dimensions(ruby_array) if ruby_array
     end
+    
+    # construct and populate the new array
     dims = [0] unless dims
     java_array = new_array(cls.java_class,*dims)
     if ruby_array

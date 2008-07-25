@@ -52,6 +52,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class JavaConstructor extends JavaCallable {
     private final Constructor<?> constructor;
     private final Class<?>[] parameterTypes;
+    private final JavaUtil.JavaConverter objectConverter;
 
     public static RubyClass createJavaConstructorClass(Ruby runtime, RubyModule javaModule) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here, since we don't intend for people to monkey with
@@ -71,6 +72,8 @@ public class JavaConstructor extends JavaCallable {
         super(runtime, runtime.getJavaSupport().getJavaConstructorClass());
         this.constructor = constructor;
         this.parameterTypes = constructor.getParameterTypes();
+        
+        this.objectConverter = JavaUtil.getJavaConverter(constructor.getDeclaringClass());
     }
 
     public static JavaConstructor create(Ruby runtime, Constructor<?> constructor) {
@@ -198,6 +201,29 @@ public class JavaConstructor extends JavaCallable {
         } catch (IllegalArgumentException iae) {
             throw getRuntime().newTypeError("expected " + argument_types().inspect() +
                                               ", got [" + constructorArguments[0].getClass().getName() + ", ...]");
+        } catch (IllegalAccessException iae) {
+            throw getRuntime().newTypeError("illegal access");
+        } catch (InvocationTargetException ite) {
+            getRuntime().getJavaSupport().handleNativeException(ite.getTargetException());
+            // not reached
+            assert false;
+            return null;
+        } catch (InstantiationException ie) {
+            throw getRuntime().newTypeError("can't make instance of " + constructor.getDeclaringClass().getName());
+        }
+    }
+
+    public IRubyObject new_instance(Object[] arguments) {
+        if (arguments.length != getArity()) {
+            throw getRuntime().newArgumentError(arguments.length, getArity());
+        }
+
+        try {
+            Object result = constructor.newInstance(arguments);
+            return JavaObject.wrap(getRuntime(), result);
+        } catch (IllegalArgumentException iae) {
+            throw getRuntime().newTypeError("expected " + argument_types().inspect() +
+                                              ", got [" + arguments[0].getClass().getName() + ", ...]");
         } catch (IllegalAccessException iae) {
             throw getRuntime().newTypeError("illegal access");
         } catch (InvocationTargetException ite) {

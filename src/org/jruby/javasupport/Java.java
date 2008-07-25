@@ -949,9 +949,9 @@ public class Java implements Library {
         return a.getJavaClass();
     }
 
-    public static IRubyObject matching_method_internal(IRubyObject recv, Map cache, JavaMethod[] methods, Object[] args, int len) {
+    public static JavaCallable matching_method_internal(IRubyObject recv, Map cache, JavaCallable[] methods, Object[] args, int len) {
         int signatureCode = argsHashCode(args);
-        JavaMethod method = (JavaMethod)cache.get(signatureCode);
+        JavaCallable method = (JavaCallable)cache.get(signatureCode);
         if (method != null) {
             return method;
         }
@@ -1017,9 +1017,9 @@ public class Java implements Library {
         }
     }
     
-    public static IRubyObject matchingMethodArityN(IRubyObject recv, Map cache, JavaMethod[] methods, IRubyObject[] args, int argsLength) {
+    public static JavaCallable matchingCallableArityN(IRubyObject recv, Map cache, JavaCallable[] methods, IRubyObject[] args, int argsLength) {
         int signatureCode = argsHashCode(args);
-        JavaMethod method = (JavaMethod)cache.get(signatureCode);
+        JavaCallable method = (JavaCallable)cache.get(signatureCode);
         if (method != null) {
             return method;
         }
@@ -1040,9 +1040,9 @@ public class Java implements Library {
         throw argTypesDoNotMatch(recv.getRuntime(), recv, methods, args);
     }
     
-    public static IRubyObject matchingMethodArityOne(IRubyObject recv, Map cache, JavaMethod[] methods, IRubyObject arg0) {
+    public static JavaCallable matchingCallableArityOne(IRubyObject recv, Map cache, JavaCallable[] methods, IRubyObject arg0) {
         int signatureCode = argsHashCode(arg0);
-        JavaMethod method = (JavaMethod)cache.get(signatureCode);
+        JavaCallable method = (JavaCallable)cache.get(signatureCode);
         if (method != null) {
             return method;
         }
@@ -1063,9 +1063,9 @@ public class Java implements Library {
         throw argTypesDoNotMatch(recv.getRuntime(), recv, methods, arg0);
     }
     
-    public static IRubyObject matchingMethodArityTwo(IRubyObject recv, Map cache, JavaMethod[] methods, IRubyObject arg0, IRubyObject arg1) {
+    public static JavaCallable matchingCallableArityTwo(IRubyObject recv, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1) {
         int signatureCode = argsHashCode(arg0, arg1);
-        JavaMethod method = (JavaMethod)cache.get(signatureCode);
+        JavaCallable method = (JavaCallable)cache.get(signatureCode);
         if (method != null) {
             return method;
         }
@@ -1087,9 +1087,9 @@ public class Java implements Library {
         throw argTypesDoNotMatch(recv.getRuntime(), recv, methods, arg0, arg1);
     }
     
-    public static IRubyObject matchingMethodArityThree(IRubyObject recv, Map cache, JavaMethod[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+    public static JavaCallable matchingCallableArityThree(IRubyObject recv, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         int signatureCode = argsHashCode(arg0, arg1, arg2);
-        JavaMethod method = (JavaMethod)cache.get(signatureCode);
+        JavaCallable method = (JavaCallable)cache.get(signatureCode);
         if (method != null) {
             return method;
         }
@@ -1112,9 +1112,9 @@ public class Java implements Library {
         throw argTypesDoNotMatch(recv.getRuntime(), recv, methods, arg0, arg1, arg2);
     }
     
-    public static IRubyObject matchingMethodArityFour(IRubyObject recv, Map cache, JavaMethod[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+    public static JavaCallable matchingCallableArityFour(IRubyObject recv, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         int signatureCode = argsHashCode(arg0, arg1, arg2, arg3);
-        JavaMethod method = (JavaMethod)cache.get(signatureCode);
+        JavaCallable method = (JavaCallable)cache.get(signatureCode);
         if (method != null) {
             return method;
         }
@@ -1184,7 +1184,7 @@ public class Java implements Library {
         return JavaUtil.isDuckTypeConvertable(argClass(arg), type);
     }
     
-    private static RaiseException argTypesDoNotMatch(Ruby runtime, IRubyObject receiver, JavaMethod[] methods, IRubyObject... args) {
+    private static RaiseException argTypesDoNotMatch(Ruby runtime, IRubyObject receiver, JavaCallable[] methods, IRubyObject... args) {
         Object o1 = methods[0];
         ArrayList argTypes = new ArrayList(args.length);
         for (Object o : args) argTypes.add(argClass(o));

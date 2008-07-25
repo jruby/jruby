@@ -71,6 +71,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.javasupport.methods.ConstructorInvoker;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -88,6 +89,7 @@ public class JavaClass extends JavaObject {
     // some null objects to simplify later code
     private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[] {};
     private static final Method[] EMPTY_METHOD_ARRAY = new Method[] {};
+    private static final Constructor[] EMPTY_CONSTRUCTOR_ARRAY = new Constructor[] {};
     private static final Field[] EMPTY_FIELD_ARRAY = new Field[] {};
 
     private static class AssignedName {
@@ -139,6 +141,7 @@ public class JavaClass extends JavaObject {
         static final int STATIC_METHOD = 2;
         static final int INSTANCE_FIELD = 3;
         static final int INSTANCE_METHOD = 4;
+        static final int CONSTRUCTOR = 5;
         String name;
         int type;
         Visibility visibility = Visibility.PUBLIC;
@@ -254,6 +257,34 @@ public class JavaClass extends JavaObject {
         }
     }
 
+    private static class ConstructorInvokerInstaller extends MethodInstaller {
+        private boolean haveLocalConstructor;
+        protected List<Constructor> constructors;
+        
+        ConstructorInvokerInstaller(String name) {
+            super(name,STATIC_METHOD);
+        }
+
+        // called only by initializing thread; no synchronization required
+        void addConstructor(Constructor ctor, Class<?> javaClass) {
+            if (constructors == null) {
+                constructors = new ArrayList<Constructor>();
+            }
+            if (!Ruby.isSecurityRestricted()) {
+                ctor.setAccessible(true);
+            }
+            constructors.add(ctor);
+            haveLocalConstructor |= javaClass == ctor.getDeclaringClass();
+        }
+        
+        void install(RubyClass proxy) {
+            if (haveLocalConstructor) {
+                DynamicMethod method = new ConstructorInvoker(proxy, constructors);
+                proxy.addMethod(name, method);
+            }
+        }
+    }
+
     private static class StaticMethodInvokerInstaller extends MethodInstaller {
         StaticMethodInvokerInstaller(String name) {
             super(name,STATIC_METHOD);
@@ -321,6 +352,7 @@ public class JavaClass extends JavaObject {
     private Map<String, AssignedName> instanceAssignedNames;
     private Map<String, NamedInstaller> staticInstallers;
     private Map<String, NamedInstaller> instanceInstallers;
+    private ConstructorInvokerInstaller constructorInstaller;
     private List<ConstantField> constantFields;
     // caching constructors, as they're accessed for each new instance
     private volatile RubyArray constructors;
@@ -535,6 +567,24 @@ public class JavaClass extends JavaObject {
                 invoker.addMethod(method,javaClass);
             }
         }
+        // TODO: protected methods.  this is going to require a rework 
+        // of some of the mechanism.  
+        Constructor[] constructors = EMPTY_CONSTRUCTOR_ARRAY;
+        try {
+            constructors = javaClass.getConstructors();
+        } catch (SecurityException e) {
+        }
+        for (int i = constructors.length; --i >= 0; ) {
+            // we need to collect all methods, though we'll only
+            // install the ones that are named in this class
+            Constructor ctor = constructors[i];
+            
+            if (constructorInstaller == null) {
+                constructorInstaller = new ConstructorInvokerInstaller("__jcreate!");
+            }
+            constructorInstaller.addConstructor(ctor,javaClass);
+        }
+        
         this.staticAssignedNames = staticNames;
         this.instanceAssignedNames = instanceNames;
         this.staticInstallers = staticCallbacks;
@@ -576,6 +626,11 @@ public class JavaClass extends JavaObject {
             }
             installer.install(proxy);
         }
+        
+        if (constructorInstaller != null) {
+            constructorInstaller.install(proxy);
+        }
+        
         // setup constants for public inner classes
         Class<?>[] classes = EMPTY_CLASS_ARRAY;
         try {
