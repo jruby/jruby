@@ -47,8 +47,11 @@ module JFFI
       "#{ARCH}-darwin"
     elsif IS_FREEBSD
       "#{ARCH}-freebsd"
+    elsif IS_LINUX
+      "#{ARCH}-linux"
     end
     FFI_DIR = File.dirname(__FILE__)
     CONF_DIR = File.join(File.dirname(__FILE__), "platform", NAME)
   end
 end
+
