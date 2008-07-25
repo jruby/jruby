@@ -7,7 +7,7 @@ module FFI
   # ConstGenerator turns C constants into ruby values.
 
   class ConstGenerator
-
+    @options = {}
     attr_reader :constants
 
     ##
@@ -26,13 +26,19 @@ module FFI
       @prefix = prefix
 
       @required = options[:required]
+      @options = options
 
       if block_given? then
         yield self
-        calculate
+        calculate self.class.options.merge(options)
       end
     end
-
+    def self.options=(options)
+      @options = options
+    end
+    def self.options
+      @options
+    end
     def [](name)
       @constants[name].value
     end
@@ -60,7 +66,7 @@ module FFI
       return const
     end
 
-    def calculate
+    def calculate(options = {})
       binary = File.join Dir.tmpdir, "rb_const_gen_bin_#{Process.pid}"
 
       Tempfile.open("#{@prefix}.const_generator") do |f|
@@ -84,7 +90,7 @@ module FFI
         f.puts "\n\treturn 0;\n}"
         f.flush
 
-        output = `gcc -D_DARWIN_USE_64_BIT_INODE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -x c -Wall -Werror #{f.path} -o #{binary} 2>&1`
+        output = `gcc #{options[:cppflags]} -D_DARWIN_USE_64_BIT_INODE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -x c -Wall -Werror #{f.path} -o #{binary} 2>&1`
 
         unless $?.success? then
           output = output.split("\n").map { |l| "\t#{l}" }.join "\n"

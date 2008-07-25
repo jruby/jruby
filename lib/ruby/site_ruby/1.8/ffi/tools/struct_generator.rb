@@ -32,11 +32,11 @@ module FFI
   # for best results.
 
   class StructGenerator
-
+    @options = {}
     attr_accessor :size
     attr_reader   :fields
 
-    def initialize(name)
+    def initialize(name, options = {})
       @name = name
       @struct_name = nil
       @includes = []
@@ -46,11 +46,16 @@ module FFI
 
       if block_given? then
         yield self
-        calculate
+        calculate self.class.options.merge(options)
       end
     end
-
-    def calculate
+    def self.options=(options)
+      @options = options
+    end
+    def self.options
+      @options
+    end
+    def calculate(options = {})
       binary = "rb_struct_gen_bin_#{Process.pid}"
 
       raise "struct name not set" if @struct_name.nil?
@@ -77,7 +82,7 @@ module FFI
         f.puts "\n  return 0;\n}"
         f.flush
 
-        output = `gcc -D_DARWIN_USE_64_BIT_INODE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -x c -Wall -Werror #{f.path} -o #{binary} 2>&1`
+        output = `gcc #{options[:cppflags]} #{options[:cflags]} -D_DARWIN_USE_64_BIT_INODE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -x c -Wall -Werror #{f.path} -o #{binary} 2>&1`
 
         unless $?.success? then
           @found = false

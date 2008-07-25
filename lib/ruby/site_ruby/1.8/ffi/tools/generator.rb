@@ -1,10 +1,10 @@
 module FFI
   class Generator
 
-    def initialize(ffi_name, rb_name)
+    def initialize(ffi_name, rb_name, options = {})
       @ffi_name = ffi_name
       @rb_name = rb_name
-
+      @options = options
       @name = File.basename rb_name, '.rb'
 
       file = File.read @ffi_name
@@ -39,11 +39,11 @@ module FFI
     end
 
     def constants(options = {}, &block)
-      @constants << FFI::ConstGenerator.new(@name, options, &block)
+      @constants << FFI::ConstGenerator.new(@name, @options.merge(options), &block)
     end
 
-    def struct(&block)
-      @structs << FFI::StructGenerator.new(@name, &block)
+    def struct(options = {}, &block)
+      @structs << FFI::StructGenerator.new(@name, @options.merge(options), &block)
     end
 
     ##

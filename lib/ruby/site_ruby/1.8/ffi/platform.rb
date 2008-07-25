@@ -44,10 +44,11 @@ module JFFI
     NAME = if IS_WINDOWS
       "#{ARCH}-windows"
     elsif IS_MAC
-      "darwin"
+      "#{ARCH}-darwin"
     elsif IS_FREEBSD
       "#{ARCH}-freebsd"
     end
+    FFI_DIR = File.dirname(__FILE__)
     CONF_DIR = File.join(File.dirname(__FILE__), "platform", NAME)
   end
 end

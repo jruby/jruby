@@ -4,7 +4,12 @@ require 'ffi/tools/types_generator'
 
 deps = %w[Rakefile] + Dir['lib/ffi/*rb']
 
-file PLATFORM_CONF => deps do |task|
+#file PLATFORM_CONF => deps do |task|
+#  gen_platform_conf task
+#end
+def gen_platform_conf(task, options = {})
+  FFI::StructGenerator.options = options
+  FFI::ConstGenerator.options = options
   addrinfo = FFI::StructGenerator.new 'addrinfo' do |s|
     s.include 'sys/socket.h'
     s.include 'netdb.h'
@@ -540,7 +545,7 @@ file PLATFORM_CONF => deps do |task|
     signal_cg.dump_constants f
     zlib_cg.dump_constants f
 
-    f.puts FFI::TypesGenerator.generate
+    f.puts FFI::TypesGenerator.generate options
   end
 
 end

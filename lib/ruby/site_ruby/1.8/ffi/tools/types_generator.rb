@@ -41,7 +41,7 @@ module FFI
       "void *" => :pointer,
     }
 
-    def self.generate
+    def self.generate(options = {})
       typedefs = nil
       Tempfile.open 'ffi_types_generator' do |io|
         io.puts <<-C
@@ -51,10 +51,9 @@ module FFI
         C
 
         io.close
-
-        typedefs = `cpp -D_DARWIN_USE_64_BIT_INODE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 #{io.path}`
+        typedefs = `gcc -E -x c #{options[:cppflags]} -D_DARWIN_USE_64_BIT_INODE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -c #{io.path}`
       end
-
+      
       code = ""
 
       typedefs.each do |type|
