@@ -70,7 +70,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.ClassProvider;
-import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.java.MiniJava;
@@ -101,8 +100,9 @@ public class Java implements Library {
         // set of utility methods for Java-based proxy objects
         JavaProxyMethods.createJavaProxyMethods(context);
         
-        // base of the proxy (wrapper) type hierarchy
+        // the proxy (wrapper) type hierarchy
         JavaProxy.createJavaProxy(context);
+        ConcreteJavaProxy.createConcreteJavaProxy(context);
 
         // also create the JavaProxy* classes
         JavaProxyClass.createJavaProxyModule(runtime);

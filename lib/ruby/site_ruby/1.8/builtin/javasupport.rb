@@ -35,7 +35,6 @@
 
 require 'builtin/javasupport/java'
 require 'builtin/javasupport/proxy/array'
-require 'builtin/javasupport/proxy/concrete'
 require 'builtin/javasupport/proxy/interface'
 require 'builtin/javasupport/utilities/base'
 require 'builtin/javasupport/utilities/array'
