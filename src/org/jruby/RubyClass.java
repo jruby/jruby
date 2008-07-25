@@ -39,6 +39,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -73,6 +74,8 @@ public class RubyClass extends RubyModule {
         classClass.undefineMethod("extend_object");
         
         classClass.defineAnnotatedMethods(RubyClass.class);
+        
+        classClass.addMethod("new", new SpecificArityNew(classClass, Visibility.PUBLIC));
         
         // This is a non-standard method; have we decided to start extending Ruby?
         //classClass.defineFastMethod("subclasses", callbackFactory.getFastOptMethod("subclasses"));
@@ -224,35 +227,107 @@ public class RubyClass extends RubyModule {
         }
     }
     
+    @Deprecated
     public IRubyObject invoke(ThreadContext context, IRubyObject self, int methodIndex, String name, IRubyObject[] args, CallType callType, Block block) {
-        if (context.getRuntime().hasEventHooks()) return invoke(context, self, name, args, callType, block);
-        
-        return dispatcher.callMethod(context, self, this, methodIndex, name, args, callType, block);
+        return invoke(context, self, name, args, callType, block);
+    }
+    
+    public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
+            CallType callType, Block block) {
+        DynamicMethod method = searchMethod(name);
+        if (method.isUndefined() || (!name.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
+            return RuntimeHelpers.callMethodMissing(context, self, method, name, IRubyObject.NULL_ARRAY, context.getFrameSelf(), callType, block);
+        }
+        return method.call(context, self, this, name, block);
     }
     
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
             IRubyObject[] args, CallType callType, Block block) {
         assert args != null;
         DynamicMethod method = searchMethod(name);
-        
-
         if (method.isUndefined() || (!name.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
             return RuntimeHelpers.callMethodMissing(context, self, method, name, args, context.getFrameSelf(), callType, block);
         }
-
         return method.call(context, self, this, name, args, block);
     }
     
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
             IRubyObject arg, CallType callType, Block block) {
         DynamicMethod method = searchMethod(name);
-
         if (method.isUndefined() || (!name.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
             return RuntimeHelpers.callMethodMissing(context, self, method, name, 
                     new IRubyObject[] {arg}, context.getFrameSelf(), callType, block);
         }
-
         return method.call(context, self, this, name, arg, block);
+    }
+    
+    public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
+            IRubyObject arg0, IRubyObject arg1, CallType callType, Block block) {
+        DynamicMethod method = searchMethod(name);
+        if (method.isUndefined() || (!name.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
+            return RuntimeHelpers.callMethodMissing(context, self, method, name, 
+                    new IRubyObject[] {arg0, arg1}, context.getFrameSelf(), callType, block);
+        }
+        return method.call(context, self, this, name, arg0, arg1, block);
+    }
+    
+    public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
+            IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, CallType callType, Block block) {
+        DynamicMethod method = searchMethod(name);
+        if (method.isUndefined() || (!name.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
+            return RuntimeHelpers.callMethodMissing(context, self, method, name, 
+                    new IRubyObject[] {arg0, arg1, arg2}, context.getFrameSelf(), callType, block);
+        }
+        return method.call(context, self, this, name, arg0, arg1, arg2, block);
+    }
+    
+    public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
+            CallType callType) {
+        DynamicMethod method = searchMethod(name);
+        if (method.isUndefined() || (!name.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
+            return RuntimeHelpers.callMethodMissing(context, self, method, name, IRubyObject.NULL_ARRAY, context.getFrameSelf(), callType, Block.NULL_BLOCK);
+        }
+        return method.call(context, self, this, name);
+    }
+    
+    public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
+            IRubyObject[] args, CallType callType) {
+        assert args != null;
+        DynamicMethod method = searchMethod(name);
+        if (method.isUndefined() || (!name.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
+            return RuntimeHelpers.callMethodMissing(context, self, method, name, args, context.getFrameSelf(), callType, Block.NULL_BLOCK);
+        }
+        return method.call(context, self, this, name, args);
+    }
+    
+    public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
+            IRubyObject arg, CallType callType) {
+        DynamicMethod method = searchMethod(name);
+        if (method.isUndefined() || (!name.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
+            return RuntimeHelpers.callMethodMissing(context, self, method, name, 
+                    new IRubyObject[] {arg}, context.getFrameSelf(), callType, Block.NULL_BLOCK);
+        }
+        return method.call(context, self, this, name, arg);
+    }
+    
+    public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
+            IRubyObject arg0, IRubyObject arg1, CallType callType) {
+        DynamicMethod method = searchMethod(name);
+        if (method.isUndefined() || (!name.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
+            return RuntimeHelpers.callMethodMissing(context, self, method, name, 
+                    new IRubyObject[] {arg0, arg1}, context.getFrameSelf(), callType, Block.NULL_BLOCK);
+        }
+        return method.call(context, self, this, name, arg0, arg1);
+    }
+    
+    public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
+            IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, CallType callType) {
+        DynamicMethod method = searchMethod(name);
+        if (method.isUndefined() || (!name.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType))) {
+            return RuntimeHelpers.callMethodMissing(context, self, method, name, 
+                    new IRubyObject[] {arg0, arg1, arg2}, context.getFrameSelf(), callType, Block.NULL_BLOCK);
+        }
+        return method.call(context, self, this, name, arg0, arg1, arg2);
     }
     
     public IRubyObject invokeInherited(ThreadContext context, IRubyObject self, IRubyObject subclass) {
@@ -269,11 +344,42 @@ public class RubyClass extends RubyModule {
     /** rb_class_new_instance
     *
     */
-    @JRubyMethod(name = "new", rest = true, frame = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject[] args, Block block) {
         IRubyObject obj = allocate();
-        obj.callMethod(context, "initialize", args, block);
+        RuntimeHelpers.invoke(context, obj, "initialize", args, block);
         return obj;
+    }
+    
+    // TODO: replace this with a smarter generated invoker that can handle 0-N args
+    public static class SpecificArityNew extends JavaMethod {
+        public SpecificArityNew(RubyModule implClass, Visibility visibility) {
+            super(implClass, visibility);
+        }
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            IRubyObject obj = ((RubyClass)self).allocate();
+            RuntimeHelpers.invoke(context, obj, "initialize", args, block);
+            return obj;
+        }
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+            IRubyObject obj = ((RubyClass)self).allocate();
+            RuntimeHelpers.invoke(context, obj, "initialize", block);
+            return obj;
+        }
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+            IRubyObject obj = ((RubyClass)self).allocate();
+            RuntimeHelpers.invoke(context, obj, "initialize", arg0, block);
+            return obj;
+        }
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+            IRubyObject obj = ((RubyClass)self).allocate();
+            RuntimeHelpers.invoke(context, obj, "initialize", arg0, arg1, block);
+            return obj;
+        }
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+            IRubyObject obj = ((RubyClass)self).allocate();
+            RuntimeHelpers.invoke(context, obj, "initialize", arg0, arg1, arg2, block);
+            return obj;
+        }
     }
 
     /** rb_class_initialize

@@ -97,8 +97,8 @@ public class RubyGlobal {
             }
             
             //return super.aset(getRuntime().newString("sadfasdF"), getRuntime().newString("sadfasdF"));
-            return super.op_aset(context, RuntimeHelpers.invoke(context, key, MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY),
-                    value.isNil() ? getRuntime().getNil() : RuntimeHelpers.invoke(context, value, MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY));
+            return super.op_aset(context, RuntimeHelpers.invoke(context, key, "to_str", IRubyObject.NULL_ARRAY),
+                    value.isNil() ? getRuntime().getNil() : RuntimeHelpers.invoke(context, value, "to_str", IRubyObject.NULL_ARRAY));
         }
         
         @JRubyMethod

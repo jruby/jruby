@@ -162,6 +162,7 @@ public class RuntimeHelpers {
         }
     }
 
+    @Deprecated
     public static IRubyObject doAttrAssign(IRubyObject receiver, IRubyObject[] args, 
             ThreadContext context, String name, IRubyObject caller, CallType callType, Block block) {
         if (receiver == caller) callType = CallType.VARIABLE;
@@ -169,6 +170,7 @@ public class RuntimeHelpers {
         return compilerCallMethod(context, receiver, name, args, caller, callType, block);
     }
     
+    @Deprecated
     public static IRubyObject doAttrAssignIndexed(IRubyObject receiver, IRubyObject[] args, 
             ThreadContext context, byte methodIndex, String name, IRubyObject caller, 
             CallType callType, Block block) {
@@ -178,11 +180,12 @@ public class RuntimeHelpers {
                 callType, block);
     }
     
+    @Deprecated
     public static IRubyObject doInvokeDynamic(IRubyObject receiver, IRubyObject[] args, 
             ThreadContext context, String name, IRubyObject caller, CallType callType, Block block) {
         return compilerCallMethod(context, receiver, name, args, caller, callType, block);
     }
-    
+    @Deprecated
     public static IRubyObject doInvokeDynamicIndexed(IRubyObject receiver, IRubyObject[] args, 
             ThreadContext context, byte methodIndex, String name, IRubyObject caller, 
             CallType callType, Block block) {
@@ -194,6 +197,7 @@ public class RuntimeHelpers {
      * Used by the compiler to ease calling indexed methods, also to handle visibility.
      * NOTE: THIS IS NOT THE SAME AS THE SWITCHVALUE VERSIONS.
      */
+    @Deprecated
     public static IRubyObject compilerCallMethodWithIndex(ThreadContext context, IRubyObject receiver, int methodIndex, String name, IRubyObject[] args, IRubyObject caller, CallType callType, Block block) {
         RubyClass clazz = receiver.getMetaClass();
         
@@ -207,6 +211,7 @@ public class RuntimeHelpers {
     /**
      * Used by the compiler to handle visibility
      */
+    @Deprecated
     public static IRubyObject compilerCallMethod(ThreadContext context, IRubyObject receiver, String name,
             IRubyObject[] args, IRubyObject caller, CallType callType, Block block) {
         assert args != null;
@@ -220,6 +225,7 @@ public class RuntimeHelpers {
 
         return method.call(context, receiver, rubyclass, name, args, block);
     }
+
     
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, int methodIndex,
                                                 IRubyObject[] args, IRubyObject self, CallType callType, Block block) {
@@ -281,18 +287,37 @@ public class RuntimeHelpers {
 
         return receiver.callMethod(context, "method_missing", newArgs, Block.NULL_BLOCK);
     }
-
-    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name) {
-        return RuntimeHelpers.invoke(context, self, name, IRubyObject.NULL_ARRAY, null, Block.NULL_BLOCK);
+    
+    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, Block block) {
+        return self.getMetaClass().invoke(context, self, name, CallType.FUNCTIONAL, block);
     }
-    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject arg) {
-        return RuntimeHelpers.invoke(context, self, name, arg, CallType.FUNCTIONAL, Block.NULL_BLOCK);
+    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject arg0, Block block) {
+        return self.getMetaClass().invoke(context, self, name, arg0, CallType.FUNCTIONAL, block);
     }
-    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject[] args) {
-        return RuntimeHelpers.invoke(context, self, name, args, CallType.FUNCTIONAL, Block.NULL_BLOCK);
+    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return self.getMetaClass().invoke(context, self, name, arg0, arg1, CallType.FUNCTIONAL, block);
+    }
+    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return self.getMetaClass().invoke(context, self, name, arg0, arg1, arg2, CallType.FUNCTIONAL, block);
     }
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject[] args, Block block) {
-        return RuntimeHelpers.invoke(context, self, name, args, CallType.FUNCTIONAL, block);
+        return self.getMetaClass().invoke(context, self, name, args, CallType.FUNCTIONAL, block);
+    }
+    
+    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name) {
+        return self.getMetaClass().invoke(context, self, name, CallType.FUNCTIONAL);
+    }
+    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject arg0) {
+        return self.getMetaClass().invoke(context, self, name, arg0, CallType.FUNCTIONAL);
+    }
+    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1) {
+        return self.getMetaClass().invoke(context, self, name, arg0, arg1, CallType.FUNCTIONAL);
+    }
+    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return self.getMetaClass().invoke(context, self, name, arg0, arg1, arg2, CallType.FUNCTIONAL);
+    }
+    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject[] args) {
+        return self.getMetaClass().invoke(context, self, name, args, CallType.FUNCTIONAL);
     }
     
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, CallType callType) {
@@ -310,10 +335,11 @@ public class RuntimeHelpers {
         return asClass.invoke(context, self, name, args, callType, block);
     }
     
-    // Indexed versions are for STI, which has become more and more irrelevant
+    @Deprecated
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, int methodIndex, String name, IRubyObject[] args) {
         return RuntimeHelpers.invoke(context, self, methodIndex,name,args,CallType.FUNCTIONAL, Block.NULL_BLOCK);
     }
+    @Deprecated
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, int methodIndex, String name, IRubyObject[] args, CallType callType, Block block) {
         return self.getMetaClass().invoke(context, self, methodIndex, name, args, callType, block);
     }

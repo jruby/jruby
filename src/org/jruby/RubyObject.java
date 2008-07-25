@@ -445,7 +445,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      */
     @Override
     public String toString() {
-        return RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, MethodIndex.TO_S, "to_s", IRubyObject.NULL_ARRAY).toString();
+        return RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, "to_s").toString();
     }
 
     /** 
@@ -721,7 +721,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * block.
      */
     public final IRubyObject callMethod(ThreadContext context, int methodIndex, String name) {
-        return RuntimeHelpers.invoke(context, this, methodIndex, name, IRubyObject.NULL_ARRAY, null, Block.NULL_BLOCK);
+        return RuntimeHelpers.invoke(context, this, name);
     }
 
     /**
@@ -729,7 +729,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * block with a functional invocation.
      */
     public final IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject arg) {
-        return RuntimeHelpers.invoke(context, this, methodIndex,name,new IRubyObject[]{arg},CallType.FUNCTIONAL, Block.NULL_BLOCK);
+        return RuntimeHelpers.invoke(context, this, name, arg, Block.NULL_BLOCK);
     }
 
     /**
@@ -818,7 +818,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * instead.
      */
     public RubyString asString() {
-        IRubyObject str = RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, MethodIndex.TO_S, "to_s", IRubyObject.NULL_ARRAY);
+        IRubyObject str = RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, "to_s");
         
         if (!(str instanceof RubyString)) return (RubyString)anyToString();
         if (isTaint()) str.setTaint(true);
@@ -1559,7 +1559,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         }
 
         if (isNil()) return RubyNil.inspect(this);
-        return RuntimeHelpers.invoke(runtime.getCurrentContext(), this, MethodIndex.TO_S, "to_s", IRubyObject.NULL_ARRAY);
+        return RuntimeHelpers.invoke(runtime.getCurrentContext(), this, "to_s");
     }
 
     /** rb_obj_is_instance_of

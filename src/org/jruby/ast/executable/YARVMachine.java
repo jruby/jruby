@@ -528,7 +528,7 @@ public class YARVMachine {
                 //YARV will never emit this, for some reason.
                 IRubyObject value = pop();
                 other = pop();
-                push(RuntimeHelpers.invoke(context, pop(), MethodIndex.ASET, "[]=",new IRubyObject[]{other,value}));
+                push(RuntimeHelpers.invoke(context, pop(), "[]=",new IRubyObject[]{other,value}));
                 break;
             }
             case YARVInstructions.OPT_LENGTH: 
