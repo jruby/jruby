@@ -31,12 +31,31 @@ describe "Single-method Java interfaces implemented in Ruby" do
 end
 
 describe "Single-method Java interfaces" do
+  it "can be coerced from a block passed to a constructor" do
+    UsesSingleMethodInterface.new { 1 }.result.should == 1
+    UsesSingleMethodInterface.new(nil) { 1 }.result.should == 1
+    UsesSingleMethodInterface.new(nil, nil) { 1 }.result.should == 1
+    UsesSingleMethodInterface.new(nil, nil, nil) { 1 }.result.should == 1
+    # 3 normal args is our cutoff for specific-arity optz, so test four
+    UsesSingleMethodInterface.new(nil, nil, nil, nil) { 1 }.result.should == 1
+  end
+  
   it "can be coerced from a block passed to a static method" do
     UsesSingleMethodInterface.callIt { 1 }.should == 1
+    UsesSingleMethodInterface.callIt(nil) { 1 }.should == 1
+    UsesSingleMethodInterface.callIt(nil, nil) { 1 }.should == 1
+    UsesSingleMethodInterface.callIt(nil, nil, nil) { 1 }.should == 1
+    # 3 normal args is our cutoff for specific-arity optz, so test four
+    UsesSingleMethodInterface.callIt(nil, nil, nil, nil) { 1 }.should == 1
   end
   
   it "can be coerced from a block passed to a instance method" do
-    UsesSingleMethodInterface.new.callIt2 { 1 }.should == 1
+    UsesSingleMethodInterface.new.callIt2 do 1 end.should == 1
+    UsesSingleMethodInterface.new.callIt2(nil) do 1 end.should == 1
+    UsesSingleMethodInterface.new.callIt2(nil, nil) do 1 end.should == 1
+    UsesSingleMethodInterface.new.callIt2(nil, nil, nil) do 1 end.should == 1
+    # 3 normal args is our cutoff for specific-arity optz, so test four
+    UsesSingleMethodInterface.new.callIt2(nil, nil, nil, nil) do 1 end.should == 1
   end
   
   it "should be implementable with .impl" do

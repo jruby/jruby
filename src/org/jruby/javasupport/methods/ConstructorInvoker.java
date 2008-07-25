@@ -4,6 +4,7 @@ import java.lang.reflect.Constructor;
 import org.jruby.javasupport.*;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -136,7 +137,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
             IRubyObject[] intermediate = new IRubyObject[len + 1];
             System.arraycopy(args, 0, intermediate, 0, len);
             intermediate[len] = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
-            JavaConstructor callable = (JavaConstructor)findCallable(self, name, intermediate, len);
+            JavaConstructor callable = (JavaConstructor)findCallable(self, name, intermediate, len + 1);
             for (int i = 0; i < len + 1; i++) {
                 convertedArgs[i] = JavaUtil.convertArgumentToType(context, intermediate[i], callable.getParameterTypes()[i]);
             }
@@ -185,7 +186,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
         createJavaCallables(self.getRuntime());
         if (block.isGiven()) {
-            Object[] convertedArgs = new IRubyObject[3];
+            Object[] convertedArgs = new Object[3];
             RubyProc proc = RubyProc.newProc(self.getRuntime(), block, Block
                     .Type.LAMBDA);
             JavaConstructor callable = (JavaConstructor)findCallableArityThree(self, name, arg0, arg1, proc);

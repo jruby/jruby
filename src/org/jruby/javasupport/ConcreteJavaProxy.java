@@ -39,7 +39,7 @@ public class ConcreteJavaProxy extends JavaProxy {
                     // already initialized
                 } else {
                     // not initialized yet, call __jcreate!
-                    RuntimeHelpers.invoke(context, proxy, "__jcreate!", args);
+                    RuntimeHelpers.invoke(context, proxy, "__jcreate!", args, block);
                 }
                 
                 return proxy;
@@ -49,7 +49,7 @@ public class ConcreteJavaProxy extends JavaProxy {
         concreteJavaProxy.addMethod("initialize", new org.jruby.internal.runtime.methods.JavaMethod(concreteJavaProxy, Visibility.PUBLIC) {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                return RuntimeHelpers.invoke(context, self, "__jcreate!", args);
+                return RuntimeHelpers.invoke(context, self, "__jcreate!", args, block);
             }
         });
         

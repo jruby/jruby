@@ -76,7 +76,7 @@ public class StaticMethodInvoker extends MethodInvoker {
             IRubyObject[] intermediate = new IRubyObject[len + 1];
             System.arraycopy(args, 0, intermediate, 0, len);
             intermediate[len] = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
-            JavaMethod method = (JavaMethod)findCallable(self, name, intermediate, len);
+            JavaMethod method = (JavaMethod)findCallable(self, name, intermediate, len + 1);
             for (int i = 0; i < len + 1; i++) {
                 convertedArgs[i] = JavaUtil.convertArgumentToType(context, intermediate[i], method.getParameterTypes()[i]);
             }
@@ -119,7 +119,7 @@ public class StaticMethodInvoker extends MethodInvoker {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
         createJavaMethods(self.getRuntime());
         if (block.isGiven()) {
-            Object[] convertedArgs = new IRubyObject[3];
+            Object[] convertedArgs = new Object[3];
             RubyProc proc = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
             JavaMethod method = (JavaMethod)findCallableArityThree(self, name, arg0, arg1, proc);
             convertedArgs[0] = JavaUtil.convertArgumentToType(context, arg0, method.getParameterTypes()[0]);

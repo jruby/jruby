@@ -24,7 +24,7 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
         for (int i = 0; i < len; i++) {
             argTypes[i] = args[i].getClass();
         }
-        throw proxy.getRuntime().newNameError("no " + name + " with arguments matching " + Arrays.toString(argTypes) + " on object " + proxy.callMethod(proxy.getRuntime().getCurrentContext(),"inspect"), null);
+        throw proxy.getRuntime().newNameError("no " + name + " with arguments matching " + Arrays.toString(argTypes) + " on object " + proxy.getMetaClass(), null);
     }
 
     protected JavaCallable findCallable(IRubyObject self, String name, IRubyObject[] args, int arity) {
