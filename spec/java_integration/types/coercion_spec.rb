@@ -22,9 +22,9 @@ describe "Java String and primitive-typed methods" do
     CoreTypeMethods.getLong.should == 8
     
     CoreTypeMethods.getFloat.should be_kind_of(Float)
-    CoreTypeMethods.getFloat.should == 4
+    CoreTypeMethods.getFloat.should == 4.5
     CoreTypeMethods.getDouble.should be_kind_of(Float)
-    CoreTypeMethods.getDouble.should == 8
+    CoreTypeMethods.getDouble.should == 8.5
     
     CoreTypeMethods.getBooleanTrue.should be_kind_of(TrueClass)
     CoreTypeMethods.getBooleanTrue.should == true
@@ -46,8 +46,8 @@ describe "Java String and primitive-typed methods" do
     CoreTypeMethods.setInt(1).should == "1"
     CoreTypeMethods.setLong(1).should == "1"
     
-    CoreTypeMethods.setFloat(1.0).should == "1.0"
-    CoreTypeMethods.setDouble(1.0).should == "1.0"
+    CoreTypeMethods.setFloat(1.5).should == "1.5"
+    CoreTypeMethods.setDouble(1.5).should == "1.5"
     
     CoreTypeMethods.setBooleanTrue(true).should == "true"
     CoreTypeMethods.setBooleanFalse(false).should == "false"

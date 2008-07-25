@@ -26,11 +26,11 @@ public class CoreTypeMethods {
     }
     
     public static float getFloat() {
-        return (float)4.0;
+        return (float)4.5;
     }
     
     public static double getDouble() {
-        return 8.0;
+        return 8.5;
     }
     
     public static boolean getBooleanTrue() {

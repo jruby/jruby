@@ -703,13 +703,13 @@ public class JavaUtil {
             if (target == Integer.TYPE) {
                 return Integer.valueOf((int)flote.getLongValue());
             } else if (target == Double.TYPE) {
-                return Double.valueOf(flote.getLongValue());
+                return Double.valueOf(flote.getDoubleValue());
             } else if (target == Byte.TYPE) {
                 return Byte.valueOf((byte)flote.getLongValue());
             } else if (target == Character.TYPE) {
                 return Character.valueOf((char)flote.getLongValue());
             } else if (target == Float.TYPE) {
-                return Float.valueOf((float)flote.getLongValue());
+                return Float.valueOf((float)flote.getDoubleValue());
             } else if (target == Long.TYPE) {
                 return Long.valueOf(flote.getLongValue());
             } else if (target == Short.TYPE) {
