@@ -100,6 +100,7 @@ import org.jruby.parser.ParserConfiguration;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CacheMap;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.EventHook;
@@ -653,6 +654,20 @@ public final class Ruby {
         return defineClassUnder(name, superClass, allocator, objectClass);
     }
 
+    /** 
+     * A variation of defineClass that allows passing in an array of subplementary
+     * call sites for improving dynamic invocation performance.
+     *
+     * @param name The name for the new class
+     * @param superClass The super class for the new class
+     * @param allocator An ObjectAllocator instance that can construct
+     * instances of the new class.
+     * @return The new class
+     */
+    public RubyClass defineClass(String name, RubyClass superClass, ObjectAllocator allocator, CallSite[] callSites) {
+        return defineClassUnder(name, superClass, allocator, objectClass, callSites);
+    }
+
     /**
      * Define a new class with the given name under the given module or class
      * namespace. Roughly equivalent to rb_define_class_under in MRI.
@@ -669,6 +684,22 @@ public final class Ruby {
      * @return The new class
      */
     public RubyClass defineClassUnder(String name, RubyClass superClass, ObjectAllocator allocator, RubyModule parent) {
+        return defineClassUnder(name, superClass, allocator, parent, null);
+    }
+
+    /**
+     * A variation of defineClassUnder that allows passing in an array of
+     * supplementary call sites to improve dynamic invocation.
+     *
+     * @param name The name for the new class
+     * @param superClass The super class for the new class
+     * @param allocator An ObjectAllocator instance that can construct
+     * instances of the new class.
+     * @param parent The namespace under which to define the new class
+     * @param callSites The array of call sites to add
+     * @return The new class
+     */
+    public RubyClass defineClassUnder(String name, RubyClass superClass, ObjectAllocator allocator, RubyModule parent, CallSite[] callSites) {
         IRubyObject classObj = parent.getConstantAt(name);
 
         if (classObj != null) {
@@ -694,7 +725,7 @@ public final class Ruby {
             superClass = objectClass;
         }
 
-        return RubyClass.newClass(this, superClass, name, allocator, parent, !parentIsObject);
+        return RubyClass.newClass(this, superClass, name, allocator, parent, !parentIsObject, callSites);
     }
 
     /** 

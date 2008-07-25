@@ -42,6 +42,8 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
+import org.jruby.runtime.CallSite.InlineCachingCallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -59,7 +61,19 @@ import org.jruby.util.collections.WeakHashSet;
  */
 @JRubyClass(name="Class", parent="Module")
 public class RubyClass extends RubyModule {
-	
+    public static final int CS_IDX_INITIALIZE = 0;
+    public static final String[] CS_NAMES = {
+        "initialize"
+    };
+    private final CallSite[] baseCallSites = new CallSite[CS_NAMES.length];
+    {
+        for(int i = 0; i < CS_NAMES.length; i++) {
+            baseCallSites[i] = new InlineCachingCallSite(CS_NAMES[i], CallType.FUNCTIONAL);
+        }
+    }
+    
+    private CallSite[] extraCallSites;
+    
     public static void createClassClass(Ruby runtime, RubyClass classClass) {
         classClass.index = ClassIndex.CLASS;
         classClass.kindOf = new RubyModule.KindOf() {
@@ -106,7 +120,11 @@ public class RubyClass extends RubyModule {
         IRubyObject obj = allocator.allocate(runtime, this);
         if (obj.getMetaClass().getRealClass() != getRealClass()) throw runtime.newTypeError("wrong instance allocation");
         return obj;
-    }    
+    }
+    
+    public CallSite[] getExtraCallSites() {
+        return extraCallSites;
+    }
 
     @Override
     public int getNativeTypeIndex() {
@@ -184,9 +202,25 @@ public class RubyClass extends RubyModule {
         
         infectBy(superClass);        
     }
+    
+    /** 
+     * A constructor which allows passing in an array of supplementary call sites.
+     */
+    protected RubyClass(Ruby runtime, RubyClass superClazz, CallSite[] extraCallSites) {
+        this(runtime);
+        this.superClass = superClazz;
+        this.marshal = superClazz.marshal; // use parent's marshal
+        superClazz.addSubclass(this);
+        
+        this.extraCallSites = extraCallSites;
+        
+        infectBy(superClass);        
+    }
 
-    /** rb_class_new
-     * 
+    /** 
+     * Construct a new class with the given name scoped under Object (global)
+     * and with Object as its immediate superclass.
+     * Corresponds to rb_class_new in MRI.
      */
     public static RubyClass newClass(Ruby runtime, RubyClass superClass) {
         if (superClass == runtime.getClassClass()) throw runtime.newTypeError("can't make subclass of Class");
@@ -194,11 +228,41 @@ public class RubyClass extends RubyModule {
         return new RubyClass(runtime, superClass);        
     }
 
-    /** rb_class_new/rb_define_class_id/rb_name_class/rb_set_class_path
-     * 
+    /** 
+     * A variation on newClass that allow passing in an array of supplementary
+     * call sites to improve dynamic invocation.
+     */
+    public static RubyClass newClass(Ruby runtime, RubyClass superClass, CallSite[] extraCallSites) {
+        if (superClass == runtime.getClassClass()) throw runtime.newTypeError("can't make subclass of Class");
+        if (superClass.isSingleton()) throw runtime.newTypeError("can't make subclass of virtual class");
+        return new RubyClass(runtime, superClass, extraCallSites);        
+    }
+
+    /** 
+     * Construct a new class with the given name, allocator, parent class,
+     * and containing class. If setParent is true, the class's parent will be
+     * explicitly set to the provided parent (rather than the new class just
+     * being assigned to a constant in that parent).
+     * Corresponds to rb_class_new/rb_define_class_id/rb_name_class/rb_set_class_path
+     * in MRI.
      */
     public static RubyClass newClass(Ruby runtime, RubyClass superClass, String name, ObjectAllocator allocator, RubyModule parent, boolean setParent) {
         RubyClass clazz = newClass(runtime, superClass);
+        clazz.setBaseName(name);
+        clazz.setAllocator(allocator);
+        clazz.makeMetaClass(superClass.getMetaClass());
+        if (setParent) clazz.setParent(parent);
+        parent.setConstant(name, clazz);
+        clazz.inherit(superClass);
+        return clazz;
+    }
+
+    /** 
+     * A variation on newClass that allows passing in an array of supplementary
+     * call sites to improve dynamic invocation performance.
+     */
+    public static RubyClass newClass(Ruby runtime, RubyClass superClass, String name, ObjectAllocator allocator, RubyModule parent, boolean setParent, CallSite[] extraCallSites) {
+        RubyClass clazz = newClass(runtime, superClass, extraCallSites);
         clazz.setBaseName(name);
         clazz.setAllocator(allocator);
         clazz.makeMetaClass(superClass.getMetaClass());
@@ -346,7 +410,7 @@ public class RubyClass extends RubyModule {
     */
     public IRubyObject newInstance(ThreadContext context, IRubyObject[] args, Block block) {
         IRubyObject obj = allocate();
-        RuntimeHelpers.invoke(context, obj, "initialize", args, block);
+        baseCallSites[CS_IDX_INITIALIZE].call(context, obj, args, block);
         return obj;
     }
     
@@ -356,28 +420,33 @@ public class RubyClass extends RubyModule {
             super(implClass, visibility);
         }
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            IRubyObject obj = ((RubyClass)self).allocate();
-            RuntimeHelpers.invoke(context, obj, "initialize", args, block);
+            RubyClass cls = (RubyClass)self;
+            IRubyObject obj = cls.allocate();
+            cls.baseCallSites[CS_IDX_INITIALIZE].call(context, obj, args, block);
             return obj;
         }
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-            IRubyObject obj = ((RubyClass)self).allocate();
-            RuntimeHelpers.invoke(context, obj, "initialize", block);
+            RubyClass cls = (RubyClass)self;
+            IRubyObject obj = cls.allocate();
+            cls.baseCallSites[CS_IDX_INITIALIZE].call(context, obj, block);
             return obj;
         }
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
-            IRubyObject obj = ((RubyClass)self).allocate();
-            RuntimeHelpers.invoke(context, obj, "initialize", arg0, block);
+            RubyClass cls = (RubyClass)self;
+            IRubyObject obj = cls.allocate();
+            cls.baseCallSites[CS_IDX_INITIALIZE].call(context, obj, arg0, block);
             return obj;
         }
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-            IRubyObject obj = ((RubyClass)self).allocate();
-            RuntimeHelpers.invoke(context, obj, "initialize", arg0, arg1, block);
+            RubyClass cls = (RubyClass)self;
+            IRubyObject obj = cls.allocate();
+            cls.baseCallSites[CS_IDX_INITIALIZE].call(context, obj, arg0, arg1, block);
             return obj;
         }
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-            IRubyObject obj = ((RubyClass)self).allocate();
-            RuntimeHelpers.invoke(context, obj, "initialize", arg0, arg1, arg2, block);
+            RubyClass cls = (RubyClass)self;
+            IRubyObject obj = cls.allocate();
+            cls.baseCallSites[CS_IDX_INITIALIZE].call(context, obj, arg0, arg1, arg2, block);
             return obj;
         }
     }
