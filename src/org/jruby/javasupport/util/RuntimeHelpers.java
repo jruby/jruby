@@ -295,6 +295,9 @@ public class RuntimeHelpers {
         return RuntimeHelpers.invoke(context, self, name, args, CallType.FUNCTIONAL, block);
     }
     
+    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, CallType callType) {
+        return RuntimeHelpers.invoke(context, self, name, IRubyObject.NULL_ARRAY, callType, Block.NULL_BLOCK);
+    }
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject[] args, CallType callType, Block block) {
         return self.getMetaClass().invoke(context, self, name, args, callType, block);
     }

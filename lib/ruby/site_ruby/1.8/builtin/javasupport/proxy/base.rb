@@ -1,39 +1,3 @@
-module JavaProxyMethods
-  attr :java_object, true
-
-  def java_class
-    self.class.java_class
-  end
-
-  def ==(rhs)
-    java_object == rhs
-  end
-  
-  def to_s
-    java_object.to_s
-  end
-
-  def eql?(rhs)
-    self == rhs
-  end
-  
-  def equal?(rhs)
-    java_object.equal?(rhs)
-  end
-  
-  def hash()
-    java_object.hash()
-  end
-  
-  def to_java_object
-    java_object
-  end
-
-  def synchronized
-    java_object.synchronized { yield }
-  end
-end
-
 # JavaProxy is a base class for all Java Proxies.  A Java proxy is a high-level abstraction
 # that wraps a low-level JavaObject with ruby methods capable of dispatching to the JavaObjects
 # native java methods.  

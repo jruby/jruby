@@ -34,7 +34,6 @@
 package org.jruby.javasupport;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,16 +52,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
 import org.jruby.RubyClassPathVariable;
 import org.jruby.RubyException;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
-import org.jruby.RubyTime;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.proxy.JavaProxyClass;
@@ -70,19 +65,15 @@ import org.jruby.javasupport.proxy.JavaProxyConstructor;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
-import org.jruby.util.ByteList;
 import org.jruby.util.ClassProvider;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.java.MiniJava;
-import org.jruby.runtime.CallSite;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.callback.Callback;
 
 @JRubyModule(name = "Java")
@@ -105,6 +96,9 @@ public class Java implements Library {
         JavaMethod.createJavaMethodClass(runtime, javaModule);
         JavaConstructor.createJavaConstructorClass(runtime, javaModule);
         JavaField.createJavaFieldClass(runtime, javaModule);
+        
+        // set of utility methods for Java-based proxy objects
+        JavaProxyMethods.createJavaProxyMethods(runtime.getCurrentContext());
 
         // also create the JavaProxy* classes
         JavaProxyClass.createJavaProxyModule(runtime);

@@ -1572,6 +1572,18 @@ public class RubyModule extends RubyObject {
 
         return getRuntime().getNil();
     }
+    
+    public void addReadWriteAttribute(ThreadContext context, String name) {
+        addAccessor(context, name.intern(), true, true);
+    }
+    
+    public void addReadAttribute(ThreadContext context, String name) {
+        addAccessor(context, name.intern(), true, false);
+    }
+    
+    public void addWriteAttribute(ThreadContext context, String name) {
+        addAccessor(context, name.intern(), false, true);
+    }
 
     /** rb_mod_attr
      *
