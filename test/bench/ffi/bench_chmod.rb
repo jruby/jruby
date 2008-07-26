@@ -4,18 +4,26 @@
  
 require 'benchmark'
 require 'ffi'
-require 'posix'
+module POSIX
+  attach_foreign :int, :chmod, [ :jstring, :int ], { :from => "c", :as => :_chmod }
+  def self.chmod(mode, path)
+    if _chmod(path, mode) != 0
 
-puts "Benchmark POSIX.chmod performance, 10000x changing mode"
-POSIX = Platform::POSIX
+    end
+  end
+
+end
+
+iter = 10000
+puts "Benchmark FFI chmod performance, #{iter}x changing mode"
 10.times {
   puts Benchmark.measure {
-    10000.times { POSIX.chmod("README", 0622) }
+    iter.times { POSIX.chmod(0622, "README") }
   }
 }
-puts "Benchmark JRuby File.chmod performance, 10000x changing mode"
+puts "Benchmark JRuby File.chmod performance, #{iter}x changing mode"
 10.times {
   puts Benchmark.measure {
-    10000.times { File.chmod(0622, "README") }
+    iter.times { File.chmod(0622, "README") }
   }
 }
