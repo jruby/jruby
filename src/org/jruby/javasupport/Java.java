@@ -127,6 +127,9 @@ public class Java implements Library {
 
         RubyClass javaProxy = runtime.defineClass("JavaProxy", runtime.getObject(), runtime.getObject().getAllocator());
         javaProxy.defineAnnotatedMethods(JavaProxy.class);
+        
+        // Now attach Java-related extras to core classes
+        runtime.getArray().defineAnnotatedMethods(ArrayJavaAddons.class);
 
         return javaModule;
     }

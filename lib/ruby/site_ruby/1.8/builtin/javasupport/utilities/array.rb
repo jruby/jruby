@@ -414,15 +414,15 @@ public
     dims = [0] unless dims
     java_array = new_array(cls.java_class,*dims)
     if ruby_array
-      copy_ruby_to_java(dims,ruby_array,java_array,converter,fill_value)          
+      copy_ruby_to_java(dims,ruby_array,java_array,fill_value)          
     elsif fill_value
-      copy_ruby_to_java(dims,nil,java_array,converter,fill_value)
+      copy_ruby_to_java(dims,nil,java_array,fill_value)
     end
     java_array
   end
 
 private
-  def copy_ruby_to_java(dims,ruby_array,java_array,converter,fill_value)
+  def copy_ruby_to_java(dims,ruby_array,java_array,fill_value)
     if dims.length > 1
       shift_dims = dims[1...dims.length]
       for i in 0...dims[0]
@@ -431,37 +431,14 @@ private
         else
           ruby_param = ruby_array # fill with value when no array        
         end
-        copy_ruby_to_java(shift_dims,ruby_param,java_array[i],converter,fill_value)
+        copy_ruby_to_java(shift_dims,ruby_param,java_array[i],fill_value)
       end
     else
-      copy_data(ruby_array,java_array,converter,fill_value)
+      ruby_array.copy_data(java_array, fill_value)
     end
     java_array 
   end
   
-private
-  def copy_data(ruby_array,java_array,converter,fill_value)
-    if ruby_array.kind_of?(::Array)
-      rlen = ruby_array.length
-    else
-      rlen = 0
-      # in irregularly-formed Ruby arrays, values that appear where
-      # a subarray is expected get propagated. not sure if this is
-      # the best behavior, will see what users say
-      fill_value = converter.call(ruby_array) if ruby_array    
-    end
-    java_object = java_array.java_object
-    jlen = java_array.length
-    i = 0
-    while i < rlen && i < jlen
-      java_object[i] = converter.call(ruby_array[i])
-      i += 1
-    end
-    if i < jlen && fill_value
-      java_object.fill(i,jlen,fill_value)
-    end
-    java_array
-  end
 public
 
   def java_to_ruby(java_array)

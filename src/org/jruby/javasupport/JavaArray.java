@@ -54,6 +54,10 @@ public class JavaArray extends JavaObject {
         // eventually want JavaArray to be marshallable. JRUBY-414
         return javaModule.defineClassUnder("JavaArray", javaModule.fastGetClass("JavaObject"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
     }
+    
+    public Class getComponentType() {
+        return getValue().getClass().getComponentType();
+    }
 
     public RubyFixnum length() {
         return getRuntime().newFixnum(getLength());
@@ -94,6 +98,11 @@ public class JavaArray extends JavaObject {
             throw getRuntime().newTypeError("not a java object:" + value);
         }
         Object javaObject = ((JavaObject) value).getValue();
+        setWithExceptionHandling(intIndex, javaObject);
+        return value;
+    }
+    
+    public void setWithExceptionHandling(int intIndex, Object javaObject) {
         try {
             Array.set(getValue(), intIndex, javaObject);
         } catch (IndexOutOfBoundsException e) {
@@ -105,7 +114,6 @@ public class JavaArray extends JavaObject {
                                     "wrong element type " + javaObject.getClass() + "(array is " +
                                     getValue().getClass() + ")");
         }
-        return value;
     }
 
     public IRubyObject afill(IRubyObject beginIndex, IRubyObject endIndex, IRubyObject value) {
@@ -121,10 +129,14 @@ public class JavaArray extends JavaObject {
             throw getRuntime().newTypeError("not a java object:" + value);
         }
         Object javaObject = ((JavaObject) value).getValue();
-        Object self = getValue();
+        fillWithExceptionHandling(intIndex, intEndIndex, javaObject);
+        return value;
+    }
+    
+    public void fillWithExceptionHandling(int intIndex, int intEndIndex, Object javaObject) {
         try {
           for ( ; intIndex < intEndIndex; intIndex++) {
-            Array.set(self, intIndex, javaObject);
+            Array.set(getValue(), intIndex, javaObject);
           }
         } catch (IndexOutOfBoundsException e) {
             throw getRuntime().newArgumentError(
@@ -135,6 +147,5 @@ public class JavaArray extends JavaObject {
                                     "wrong element type " + javaObject.getClass() + "(array is " +
                                     getValue().getClass() + ")");
         }
-        return value;
     }
 }
