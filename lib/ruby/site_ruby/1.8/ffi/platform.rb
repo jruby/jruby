@@ -49,7 +49,7 @@ module JFFI
       "#{ARCH}-darwin"
     elsif IS_FREEBSD
       "#{ARCH}-freebsd"
-    elsif IS_FREEBSD
+    elsif IS_OPENBSD
       "#{ARCH}-openbsd"
     elsif IS_LINUX
       "#{ARCH}-linux"
