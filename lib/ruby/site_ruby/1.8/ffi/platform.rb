@@ -28,6 +28,7 @@ module JFFI
     MAC_OS = "mac os"
     DARWIN = "darwin"
     FREEBSD = "freebsd"
+    OPENBSD = "openbsd"
     LINUX = "linux"
     SOLARIS = "sunos"
     IS_WINDOWS = OS_NAME_LC.include?(WINDOWS)
