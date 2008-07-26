@@ -322,6 +322,15 @@ public interface MemoryIO {
     public int indexOf(long offset, byte value, int maxlen);
 
     /**
+     * Sets the contents of the memory area to the value.
+     * 
+     * @param offset The offset within the memory area to start writing.
+     * @param size The number of bytes to set to the value.
+     * @param value The value to set each byte to.
+     */
+    public void setMemory(long offset, long size, byte value);
+
+    /**
      * Clears the contents of the memory area
      */
     public void clear();

@@ -276,8 +276,11 @@ public abstract class JNAMemoryIO implements MemoryIO {
         public int indexOf(long offset, byte value, int maxlen) {
             return (int) ptr.indexOf(offset, value);
         }
+        public void setMemory(long offset, long size, byte value) {
+            ptr.setMemory(offset, size, value);
+        }
         public void clear() {
-            ptr.setMemory(0, size, (byte) 0);
+            setMemory(0, size, (byte) 0);
         }
     }
     private static class BufferIO extends JNAMemoryIO {
@@ -433,10 +436,13 @@ public abstract class JNAMemoryIO implements MemoryIO {
             }
             return -1;
         }
-        public void clear() {
-            for (int i = 0; i < buffer.capacity(); ++i) {
-                buffer.put(i, (byte) 0);
+        public void setMemory(long offset, long size, byte value) {
+            for (int i = 0; i < size; ++i) {
+                buffer.put(i, value);
             }
+        }
+        public void clear() {
+            setMemory(0, buffer.capacity(), (byte) 0);
         }
     }
 }

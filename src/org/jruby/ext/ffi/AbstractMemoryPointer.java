@@ -152,7 +152,7 @@ public abstract class AbstractMemoryPointer extends RubyObject {
      */
     @JRubyMethod(name = "clear")
     public IRubyObject clear(ThreadContext context) {
-        getMemoryIO().clear();
+        getMemoryIO().setMemory(offset, size, (byte) 0);
         return context.getRuntime().getNil();
     }
     /**
