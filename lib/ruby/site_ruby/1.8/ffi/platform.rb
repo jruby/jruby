@@ -37,9 +37,10 @@ module JFFI
     IS_WINDOWS_VISTA = IS_WINDOWS && OS_NAME_LC.include?(WINDOWS_VISTA)
     IS_MAC = OS_NAME_LC.index(MAC_OS) == 0 || OS_NAME_LC.index(DARWIN) == 0
     IS_FREEBSD = OS_NAME_LC.index(FREEBSD) == 0
+    IS_OPENBSD = OS_NAME_LC.index(OPENBSD) == 0
     IS_LINUX = OS_NAME_LC.index(LINUX) == 0
     IS_SOLARIS = OS_NAME_LC.index(SOLARIS) == 0
-    IS_BSD = IS_MAC || IS_FREEBSD
+    IS_BSD = IS_MAC || IS_FREEBSD || IS_OPENBSD
     ARCH = java.lang.System.getProperty("os.arch")
     NAME = if IS_WINDOWS
       "#{ARCH}-windows"
@@ -47,8 +48,12 @@ module JFFI
       "#{ARCH}-darwin"
     elsif IS_FREEBSD
       "#{ARCH}-freebsd"
+    elsif IS_FREEBSD
+      "#{ARCH}-openbsd"
     elsif IS_LINUX
       "#{ARCH}-linux"
+    else
+      "#{ARCH}-unknown"
     end
     FFI_DIR = File.dirname(__FILE__)
     CONF_DIR = File.join(File.dirname(__FILE__), "platform", NAME)
