@@ -44,7 +44,7 @@ arches.each { |arch|
     end
   end
   task "gen_ffi_files_#{arch}" do |task|
-    [ "etc", "syslog", "fcntl", "zlib" ].each { |name|
+    [ "etc", "errno", "syslog", "fcntl", "zlib" ].each { |name|
       ffi_name = File.join(JFFI::Platform::FFI_DIR, "platform", "#{name}.rb.ffi")
       rb_name = "#{File.join(options[:platform_dir], name)}.rb"
       FFI::Generator.new ffi_name, rb_name, { :cppflags => options[:cppflags] }
