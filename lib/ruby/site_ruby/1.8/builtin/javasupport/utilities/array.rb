@@ -311,20 +311,6 @@ module JavaArrayUtilities
     end
     dims
   end
-  
-  def enable_extended_array_support
-    return if [].respond_to?(:to_java)
-    Array.module_eval {
-      def to_java(*args,&block)
-        JavaArrayUtilities.ruby_to_java(*(args.unshift(self)),&block)
-      end
-    }
-  end
-
-  def disable_extended_array_support
-    return unless [].respond_to?(:to_java)
-    Array.send(:remove_method,:to_java)
-  end
  
   def fill_array(array,dimensions,fill_value)
     dims = dimensions.kind_of?(Array) ? dimensions : [dimensions]
@@ -337,35 +323,53 @@ private
     ref ? ref.proxy : JavaUtilities.get_proxy_class(class_name.to_s)
   end
 public
-  
-  def ruby_to_java(*args,&block)
-    # empty Object array if no values
-    return JObject.proxy[].new(0) if args.length == 0
+  def array_to_java_simple(ruby_array)
+    cls = JObject.proxy
     
-    # pull Ruby array out of args list
-    ruby_array = args[0]
-    unless ruby_array.kind_of?(::Array) || ruby_array.nil?
-      raise ArgumentError,"invalid arg[0] passed to to_java (#{args[0]})"    
+    java_array = new_array(cls.java_class,ruby_array.length)
+    ruby_array.copy_data_simple(java_array)
+  end
+
+  def array_to_java_typed(ruby_array, type)
+    # figure out array type from args or default to Object
+    if type
+      # the (optional) first arg is class/name. if omitted, defaults to java.lang.Object
+      if type.kind_of?(Class) && type.respond_to?(:java_class)
+        cls = type
+      elsif type.kind_of?(String) || type.kind_of?(Symbol)
+        cls = get_class(type)
+        unless cls
+          raise ArgumentError,"invalid class name (#{type}) specified for to_java"      
+        end
+      else
+        cls = JObject.proxy
+      end
+    else
+      array_to_java_simple(ruby_array)
     end
     
+    java_array = new_array(cls.java_class,ruby_array.length)
+    ruby_array.copy_data_simple(java_array)
+  end
+
+  def ruby_to_java(ruby_array, type = nil, *dims, &block)
     dims = nil
     fill_value = nil
-    index = 1
+    index = 
     
     # figure out array type from args or default to Object
-    if index < args.length
-      arg = args[index]
+    if type
       # the (optional) first arg is class/name. if omitted, defaults to java.lang.Object
-      if arg.kind_of?(Class) && arg.respond_to?(:java_class)
-        cls = arg
-        cls_name = arg.java_class.name
+      if type.kind_of?(Class) && type.respond_to?(:java_class)
+        cls = type
+        cls_name = type.java_class.name
         index += 1
-      elsif arg.kind_of?(String) || arg.kind_of?(Symbol)
-        cls = get_class(arg)
+      elsif type.kind_of?(String) || type.kind_of?(Symbol)
+        cls = get_class(type)
         unless cls
-          raise ArgumentError,"invalid class name (#{arg}) specified for to_java"      
+          raise ArgumentError,"invalid class name (#{type}) specified for to_java"      
         end
-        cls_name = arg
+        cls_name = type
         index += 1
       else
         cls = JObject.proxy
@@ -388,10 +392,9 @@ public
     # specified as dim1,dim2,...,dimn, or [dim1,dim2,...,dimn]
     # the array version is required if you want to pass a
     # fill value after it
-    if index < args.length
-      arg = args[index]
-      if arg.kind_of?(Fixnum)
-        dims = [arg]
+    if dims
+      if dims.kind_of?(Fixnum)
+        dims = [dims]
         index += 1
         while index < args.length && args[index].kind_of?(Fixnum)
           dims << args[index]

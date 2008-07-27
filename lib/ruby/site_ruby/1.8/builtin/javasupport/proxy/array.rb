@@ -4,12 +4,12 @@ class ArrayJavaProxyCreator
     @java_class = java_class
     @dimensions = []
     extract_dimensions(args)
-      end
+  end
   
   def [](*args)
     extract_dimensions(args)
     self
-    end
+  end
   
   private
   def extract_dimensions(args)
@@ -22,7 +22,7 @@ class ArrayJavaProxyCreator
       end
       @dimensions << arg
     end  
-    end
+  end
   public
   
   def new(fill_value=nil)

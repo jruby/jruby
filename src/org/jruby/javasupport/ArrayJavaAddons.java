@@ -41,4 +41,24 @@ public class ArrayJavaAddons {
         
         return javaArray;
     }
+    @JRubyMethod
+    public static IRubyObject copy_data_simple(
+            ThreadContext context, IRubyObject rubyArray, IRubyObject javaArray) {
+        JavaArray javaArrayJavaObj = (JavaArray)javaArray.dataGetStruct();
+        int javaLength = (int)javaArrayJavaObj.length().getLongValue();
+        Class targetType = javaArrayJavaObj.getComponentType();
+        JavaUtil.RubyConverter converter = JavaUtil.getArrayConverter(targetType);
+        
+        RubyArray array = null;
+        int rubyLength;
+        array = (RubyArray)rubyArray;
+        rubyLength = ((RubyArray)rubyArray).getLength();
+        
+        int i = 0;
+        for (; i < rubyLength && i < javaLength; i++) {
+            javaArrayJavaObj.setWithExceptionHandling(i, converter.convert(context, array.entry(i)));
+        }
+        
+        return javaArray;
+    }
 }
