@@ -597,23 +597,20 @@ describe "A Java primitive Array of type" do
       arr.java_class.to_s.should == "[[Ljava.util.HashMap;"
     end
 
-    it "should be possible to create primitive array from Ruby array" do 
-      pending("this example is currently CRASHING") do 
-#         h1 = java.util.HashMap.new
-#         h1["foo"] = "max"
+    it "should be possible to create primitive array from Ruby array" do
+      h1 = java.util.HashMap.new
+      h1["foo"] = "max"
 
-#         h2 = java.util.HashMap.new
-#         h2["max"] = "foo"
+      h2 = java.util.HashMap.new
+      h2["max"] = "foo"
 
-#         arr = [h1, h2].to_java java.util.HashMap
-#         arr.java_class.to_s.should == "[Ljava.util.HashMap;"
+      arr = [h1, h2].to_java java.util.HashMap
+      arr.java_class.to_s.should == "[Ljava.util.HashMap;"
 
-#         arr.length.should == 2
+      arr.length.should == 2
 
-#         arr[0].should == h1
-#         arr[1].should == h2
-        assert false
-      end
+      arr[0].should == h1
+      arr[1].should == h2
     end
     
     it "should be possible to set values in primitive array" do 
@@ -638,41 +635,35 @@ describe "A Java primitive Array of type" do
       arr[4].should be_nil
     end
 
-    it "should be possible to get values from primitive array" do 
-      pending("this example is currently CRASHING") do 
-#         h1 = java.util.HashMap.new
-#         h1["foo"] = "max"
+    it "should be possible to get values from primitive array" do
+      h1 = java.util.HashMap.new
+      h1["foo"] = "max"
 
-#         h2 = java.util.HashMap.new
-#         h2["max"] = "foo"
+      h2 = java.util.HashMap.new
+      h2["max"] = "foo"
 
-#         h3 = java.util.HashMap.new
-#         h3["flix"] = "mux"
+      h3 = java.util.HashMap.new
+      h3["flix"] = "mux"
 
-#         arr = [h1, h2, h3].to_java java.util.HashMap
-#         arr[0].should == "flurg"
-#         arr[1].should == "glax"
-#         arr[2].should == "morg"
-        assert false
-      end
+      arr = [h1, h2, h3].to_java java.util.HashMap
+      arr[0].should == h1
+      arr[1].should == h2
+      arr[2].should == h3
     end
 
-    it "should be possible to call methods that take primitive array" do 
-      pending("this example is currently CRASHING") do 
-#         h1 = java.util.HashMap.new
-#         h1["foo"] = "max"
+    it "should be possible to call methods that take primitive array" do
+      h1 = java.util.HashMap.new
+      h1["foo"] = "max"
 
-#         h2 = java.util.HashMap.new
-#         h2["max"] = "foo"
+      h2 = java.util.HashMap.new
+      h2["max"] = "foo"
 
-#         h3 = java.util.HashMap.new
-#         h3["flix"] = "mux"
+      h3 = java.util.HashMap.new
+      h3["flix"] = "mux"
 
-#         arr = [h1, h2, h3].to_java java.util.HashMap
-#         ret = ArrayReceiver::call_with_object(arr)
-#         ret.to_a.should == [h1, h2, h3]
-        assert false
-      end
+      arr = [h1, h2, h3].to_java java.util.HashMap
+      ret = ArrayReceiver::call_with_object(arr)
+      ret.to_a.should == [h1, h2, h3]
     end
   end
 end

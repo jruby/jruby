@@ -41,6 +41,7 @@ public class ArrayJavaAddons {
         
         return javaArray;
     }
+    
     @JRubyMethod
     public static IRubyObject copy_data_simple(
             ThreadContext context, IRubyObject rubyArray, IRubyObject javaArray) {

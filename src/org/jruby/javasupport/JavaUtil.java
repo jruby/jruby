@@ -308,6 +308,8 @@ public class JavaUtil {
                 }
             } else if (rubyObject instanceof RubyFloat) {
                 return Double.valueOf(((RubyFloat)rubyObject).getDoubleValue());
+            } else if (rubyObject instanceof JavaProxy) {
+                return ((JavaProxy)rubyObject).unwrap();
             } else {
                 return java_to_ruby(rubyObject, rubyObject, Block.NULL_BLOCK);
             }

@@ -82,4 +82,8 @@ public class JavaProxy extends RubyObject {
     public static IRubyObject to_java_object(IRubyObject recv) {
         return Java.to_java_object(recv);
     }
+    
+    public Object unwrap() {
+        return ((JavaObject)dataGetStruct()).getValue();
+    }
 }
