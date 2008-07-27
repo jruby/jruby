@@ -105,6 +105,9 @@ public class RubyFloat extends RubyNumeric {
     }
 
     public Class<?> getJavaClass() {
+        if (value >= Float.MIN_VALUE && value <= Float.MAX_VALUE) {
+            return float.class;
+        }
         return double.class;
     }
 

@@ -1035,7 +1035,21 @@ public class Java implements Library {
         if (method != null) {
             return method;
         }
+        
+        // first look for an exact match
+        for (int k = 0; k < methods.length; k++) {
+            method = methods[k];
+            Class<?>[] types = ((ParameterTypes) method).getParameterTypes();
+            
+            assert types.length == 1;
+            
+            if (exactMatch(types[0], arg0)) {
+                cache.put(signatureCode, method);
+                return method;
+            }
+        }
 
+        // then a broader search
         for (int k = 0; k < methods.length; k++) {
             method = methods[k];
             Class<?>[] types = ((ParameterTypes) method).getParameterTypes();

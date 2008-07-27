@@ -66,17 +66,18 @@ describe "Java String and primitive-typed methods" do
   end
   
   it "should select the most narrow and precise overloaded method" do
-    pending("Fixnum always selects long method") do
-      CoreTypeMethods.getType(1).should == "byte"
-      CoreTypeMethods.getType(1 << 8).should == "short"
-      CoreTypeMethods.getType(1 << 16).should == "int"
-    end
+    CoreTypeMethods.getType(1).should == "byte"
+    CoreTypeMethods.getType(1 << 8).should == "short"
+    CoreTypeMethods.getType(1 << 16).should == "int"
     CoreTypeMethods.getType(1 << 32).should == "long"
     
-    CoreTypeMethods.getType(1.0).should == "double"
+    CoreTypeMethods.getType(1.0).should == "float"
+    CoreTypeMethods.getType(2.0 ** 128).should == "double"
     
     CoreTypeMethods.getType("foo").should == "String"
-    CoreTypeMethods.getType(nil).should == "CharSequence"
+    pending "passing null to overloaded methods randomly selects from them" do
+      CoreTypeMethods.getType(nil).should == "CharSequence"
+    end
   end
 end
 

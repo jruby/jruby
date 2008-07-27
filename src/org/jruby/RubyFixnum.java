@@ -134,6 +134,15 @@ public class RubyFixnum extends RubyInteger {
 
     @Override
     public Class<?> getJavaClass() {
+        if (value >= Byte.MIN_VALUE && value <= Byte.MAX_VALUE) {
+            return byte.class;
+        } else if (value >= Short.MIN_VALUE && value <= Short.MAX_VALUE) {
+            return short.class;
+        } else if (value >= Character.MIN_VALUE && value <= Character.MAX_VALUE) {
+            return char.class;
+        } else if (value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
+            return int.class;
+        }
         return long.class;
     }
 
