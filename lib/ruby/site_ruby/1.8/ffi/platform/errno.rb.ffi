@@ -1,4 +1,5 @@
-module Errno
+module Platform; end
+module Platform::Errno
   @@@
   constants do |c|
     c.include 'errno.h'
@@ -67,3 +68,4 @@ module Errno
   end
   @@@
 end
+
