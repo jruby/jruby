@@ -78,12 +78,18 @@ public class JNAMemoryPointer extends AbstractMemoryPointer {
         this.io = io;
     }
     
-    @JRubyMethod(name = { "allocate", "allocate_direct", "allocateDirect" }, required = 1, optional = 1, meta = true)
-    public static JNAMemoryPointer allocateDirect(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        long size = Util.int64Value(args[0]);
-        JNAMemoryIO io = size > 0 ? JNAMemoryIO.allocateDirect((int) size) : JNAMemoryIO.NULL;
-        if (args.length > 1 && args[1].isTrue()) {
-            io.clear();
+    @JRubyMethod(name = { "allocate", "allocate_direct", "allocateDirect" }, meta = true)
+    public static JNAMemoryPointer allocateDirect(ThreadContext context, IRubyObject recv, IRubyObject sizeArg) {
+        int size = Util.int32Value(sizeArg);
+        JNAMemoryIO io = size > 0 ? JNAMemoryIO.allocateDirect(size) : JNAMemoryIO.NULL;
+        return new JNAMemoryPointer(context.getRuntime(), io, 0, size);
+    }
+    @JRubyMethod(name = { "allocate", "allocate_direct", "allocateDirect" }, meta = true)
+    public static JNAMemoryPointer allocateDirect(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject clearArg) {
+        int size = Util.int32Value(sizeArg);
+        JNAMemoryIO io = size > 0 ? JNAMemoryIO.allocateDirect(size) : JNAMemoryIO.NULL;
+        if (clearArg.isTrue()) {
+            io.setMemory(0, size, (byte) 0);
         }
         return new JNAMemoryPointer(context.getRuntime(), io, 0, size);
     }
