@@ -1006,178 +1006,146 @@ public class Java implements Library {
         }
     }
     
+    private static JavaCallable findMatchingCallableForArgs(IRubyObject recv, Map cache, int signatureCode, JavaCallable[] methods, IRubyObject... args) {
+        JavaCallable method = findCallable(methods, Exact, args);
+        if (method == null) method = findCallable(methods, AssignableAndPrimitivable, args);
+        if (method == null) method = findCallable(methods, AssignableOrDuckable, args);
+        if (method == null) {
+            throw argTypesDoNotMatch(recv.getRuntime(), recv, methods, args);
+        } else {
+            cache.put(signatureCode, method);
+            return method;
+        }
+    }
+    
+    // NOTE: The five match methods are arity-split to avoid the cost of boxing arguments
+    // when there's already a cached match. Do not condense them into a single
+    // method.
     public static JavaCallable matchingCallableArityN(IRubyObject recv, Map cache, JavaCallable[] methods, IRubyObject[] args, int argsLength) {
         int signatureCode = argsHashCode(args);
         JavaCallable method = (JavaCallable)cache.get(signatureCode);
-        if (method != null) {
-            return method;
-        }
-
-        for (int k = 0; k < methods.length; k++) {
-            method = methods[k];
-            Class<?>[] types = ((ParameterTypes) method).getParameterTypes();
-            
-            assert(types.length == argsLength);
-            
-            if (argTypesWillWork(types, args, argsLength)) {
-                cache.put(signatureCode, method);
-                return method;
-            }
-        }
-
-        // We've fallen and can't get up...prepare for error message
-        throw argTypesDoNotMatch(recv.getRuntime(), recv, methods, args);
+        if (method == null) method = findMatchingCallableForArgs(recv, cache, signatureCode, methods, args);
+        return method;
     }
     
     public static JavaCallable matchingCallableArityOne(IRubyObject recv, Map cache, JavaCallable[] methods, IRubyObject arg0) {
         int signatureCode = argsHashCode(arg0);
         JavaCallable method = (JavaCallable)cache.get(signatureCode);
-        if (method != null) {
-            return method;
-        }
-        
-        // first look for an exact match
-        for (int k = 0; k < methods.length; k++) {
-            method = methods[k];
-            Class<?>[] types = ((ParameterTypes) method).getParameterTypes();
-            
-            assert types.length == 1;
-            
-            if (exactMatch(types[0], arg0)) {
-                cache.put(signatureCode, method);
-                return method;
-            }
-        }
-
-        // then a broader search
-        for (int k = 0; k < methods.length; k++) {
-            method = methods[k];
-            Class<?>[] types = ((ParameterTypes) method).getParameterTypes();
-            
-            assert types.length == 1;
-            
-            if (anyMatch(types[0], arg0)) {
-                cache.put(signatureCode, method);
-                return method;
-            }
-        }
-
-        // We've fallen and can't get up...prepare for error message
-        throw argTypesDoNotMatch(recv.getRuntime(), recv, methods, arg0);
+        if (method == null) method = findMatchingCallableForArgs(recv, cache, signatureCode, methods, arg0);
+        return method;
     }
     
     public static JavaCallable matchingCallableArityTwo(IRubyObject recv, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1) {
         int signatureCode = argsHashCode(arg0, arg1);
         JavaCallable method = (JavaCallable)cache.get(signatureCode);
-        if (method != null) {
-            return method;
-        }
-
-        for (int k = 0; k < methods.length; k++) {
-            method = methods[k];
-            Class<?>[] types = ((ParameterTypes) method).getParameterTypes();
-            
-            assert types.length == 2;
-            
-            if (anyMatch(types[0], arg0) &&
-                    anyMatch(types[1], arg1)) {
-                cache.put(signatureCode, method);
-                return method;
-            }
-        }
-
-        // We've fallen and can't get up...prepare for error message
-        throw argTypesDoNotMatch(recv.getRuntime(), recv, methods, arg0, arg1);
+        if (method == null) method = findMatchingCallableForArgs(recv, cache, signatureCode, methods, arg0, arg1);
+        return method;
     }
     
     public static JavaCallable matchingCallableArityThree(IRubyObject recv, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         int signatureCode = argsHashCode(arg0, arg1, arg2);
         JavaCallable method = (JavaCallable)cache.get(signatureCode);
-        if (method != null) {
-            return method;
-        }
-
-        for (int k = 0; k < methods.length; k++) {
-            method = methods[k];
-            Class<?>[] types = ((ParameterTypes) method).getParameterTypes();
-            
-            assert types.length == 3;
-            
-            if (anyMatch(types[0], arg0) &&
-                    anyMatch(types[1], arg1) &&
-                    anyMatch(types[2], arg2)) {
-                cache.put(signatureCode, method);
-                return method;
-            }
-        }
-
-        // We've fallen and can't get up...prepare for error message
-        throw argTypesDoNotMatch(recv.getRuntime(), recv, methods, arg0, arg1, arg2);
+        if (method == null) method = findMatchingCallableForArgs(recv, cache, signatureCode, methods, arg0, arg1, arg2);
+        return method;
     }
     
     public static JavaCallable matchingCallableArityFour(IRubyObject recv, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         int signatureCode = argsHashCode(arg0, arg1, arg2, arg3);
         JavaCallable method = (JavaCallable)cache.get(signatureCode);
-        if (method != null) {
-            return method;
-        }
-
-        for (int k = 0; k < methods.length; k++) {
-            method = methods[k];
-            Class<?>[] types = ((ParameterTypes) method).getParameterTypes();
-            
-            assert types.length == 4;
-            
-            if (anyMatch(types[0], arg0) &&
-                    anyMatch(types[1], arg1) &&
-                    anyMatch(types[2], arg2) &&
-                    anyMatch(types[3], arg3)) {
-                cache.put(signatureCode, method);
-                return method;
-            }
-        }
-
-        // We've fallen and can't get up...prepare for error message
-        throw argTypesDoNotMatch(recv.getRuntime(), recv, methods, arg0, arg1, arg2, arg3);
+        if (method == null) method = findMatchingCallableForArgs(recv, cache, signatureCode, methods, arg0, arg1, arg2, arg3);
+        return method;
     }
     
-    private static boolean argTypesWillWork(Class[] types, IRubyObject[] args, int argsLength) {
-        for (int x = 0, y = argsLength; x < y; x++) {
-            if (!anyMatch(types[x], args[x])) {
-                return false;
-            }
+    private static interface CallableAcceptor {
+        public boolean accept(Class<?>[] types, IRubyObject[] args);
+    }
+    
+    private static final CallableAcceptor Exact = new CallableAcceptor() {
+        public boolean accept(Class<?>[] types, IRubyObject[] args) {
+            return exactMatch(types, args);
+        }
+    };
+    
+    private static final CallableAcceptor AssignableAndPrimitivable = new CallableAcceptor() {
+        public boolean accept(Class<?>[] types, IRubyObject[] args) {
+            return assignableAndPrimitivable(types, args);
+        }
+    };
+    
+    private static final CallableAcceptor AssignableOrDuckable = new CallableAcceptor() {
+        public boolean accept(Class<?>[] types, IRubyObject[] args) {
+            return assignableOrDuckable(types, args);
+        }
+    };
+    
+    private static JavaCallable findCallable(JavaCallable[] callables, CallableAcceptor acceptor, IRubyObject... args) {
+        for (int k = 0; k < callables.length; k++) {
+            JavaCallable callable = callables[k];
+            Class<?>[] types = ((ParameterTypes) callable).getParameterTypes();
+            
+            if (acceptor.accept(types, args)) return callable;
+        }
+        return null;
+    }
+    
+    private static boolean exactMatch(Class[] types, IRubyObject... args) {
+        for (int i = 0; i < types.length; i++) {
+            if (!types[i].equals(argClass(args[i]))) return false;
         }
         return true;
     }
     
-    private static boolean anyMatch(Class type, IRubyObject arg) {
-        return exactMatch(type, arg) ||
-                assignable(type, arg) ||
-                primativable(type, arg) ||
-                duckable(type, arg);
-    }   
+    private static boolean assignableAndPrimitivable(Class[] types, IRubyObject... args) {
+        for (int i = 0; i < types.length; i++) {
+            if (!(assignable(types[i], args[i]) && primitivable(types[i], args[i]))) return false;
+        }
+        return true;
+    }
     
-    private static boolean exactMatch(Class type, IRubyObject arg) {
-        return type.equals(argClass(arg));
+    private static boolean assignableOrDuckable(Class[] types, IRubyObject... args) {
+        for (int i = 0; i < types.length; i++) {
+            if (!(assignable(types[i], args[i]) || duckable(types[i], args[i]))) return false;
+        }
+        return true;
     }
     
     private static boolean assignable(Class type, IRubyObject arg) {
         return JavaClass.assignable(type, argClass(arg));
     }
     
-    private static boolean primativable(Class type, IRubyObject arg) {
+    /**
+     * This method checks whether an argument can be *directly* converted into
+     * the target primitive, i.e. without changing from integral to floating-point.
+     * 
+     * @param type The target type
+     * @param arg The argument to convert
+     * @return Whether the argument can be directly converted to the target primitive type
+     */
+    private static boolean primitivable(Class type, IRubyObject arg) {
         Class argClass = argClass(arg);
         if (type.isPrimitive()) {
+            // TODO: This is where we would want to do precision checks to see
+            // if it's non-destructive to coerce a given type into the target
+            // integral primitive
             if (type == Integer.TYPE || type == Long.TYPE || type == Short.TYPE || type == Character.TYPE) {
-                return argClass == Integer.class ||
+                return argClass == long.class || // long first because it's what Fixnum claims to be
+                        argClass == byte.class ||
+                        argClass == short.class ||
+                        argClass == char.class ||
+                        argClass == int.class ||
                         argClass == Long.class ||
+                        argClass == Byte.class ||
                         argClass == Short.class ||
-                        argClass == Character.class;
+                        argClass == Character.class ||
+                        argClass == Integer.class;
             } else if (type == Float.TYPE || type == Double.TYPE) {
-                return argClass == Float.class ||
+                return argClass == double.class || // double first because it's what float claims to be
+                        argClass == float.class ||
+                        argClass == Float.class ||
                         argClass == Double.class;
             } else if (type == Boolean.TYPE) {
-                return argClass == Boolean.class;
+                return argClass == boolean.class ||
+                        argClass == Boolean.class;
             }
         }
         return false;
@@ -1189,7 +1157,7 @@ public class Java implements Library {
     
     private static RaiseException argTypesDoNotMatch(Ruby runtime, IRubyObject receiver, JavaCallable[] methods, IRubyObject... args) {
         Object o1 = methods[0];
-        ArrayList argTypes = new ArrayList(args.length);
+        ArrayList<Class> argTypes = new ArrayList<Class>(args.length);
         for (Object o : args) argTypes.add(argClass(o));
 
         if (o1 instanceof JavaConstructor || o1 instanceof JavaProxyConstructor) {
