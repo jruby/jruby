@@ -1,4 +1,5 @@
-module Etc
+module Platform; end
+module Platform::Etc
   class Passwd < FFI::Struct
     @@@
     struct do |s|
