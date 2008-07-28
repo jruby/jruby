@@ -1,28 +1,26 @@
-# 
-# To change this template, choose Tools | Templates
-# and open the template in the editor.
- 
 require 'benchmark'
 require 'ffi'
 require 'etc'
 
-module Foo
-  attach_foreign(:string, :getlogin, [])
+iter = 10000
+module Posix
+  attach_foreign(:string, :getlogin, [], :from => 'c')
 end
-if Foo.getlogin != Etc.getlogin
-  raise ArgumentError, "FFI getlogin returned wrong value"
+if Posix.getlogin != Etc.getlogin
+  raise ArgumentError, "FFI getlogin returned incorrect value"
 end
-puts "FFI getlogin returns '#{Foo.getlogin}'"
-puts "Benchmark Etc.getlogin performance, 10000x"
+
+puts "Benchmark FFI getlogin(2) performance, #{iter}x"
+
 10.times {
   puts Benchmark.measure {
-    10000.times { Etc.getlogin }
+    iter.times { Posix.getlogin }
   }
 }
-puts "Benchmark FFI getlogin(2) performance, 10000x"
 
-20.times {
+puts "Benchmark Etc.getlogin performance, #{iter}x"
+10.times {
   puts Benchmark.measure {
-    10000.times { Foo.getlogin }
+    iter.times { Etc.getlogin }
   }
 }

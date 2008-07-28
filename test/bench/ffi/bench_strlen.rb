@@ -1,19 +1,28 @@
-# 
-# This benchmark is not very real world, but does benchmark string argument passing
-#
- 
 require 'benchmark'
 require 'ffi'
+iter = 100000
+str = "test"
 
-module FFITest
-  attach_foreign(:int, :strlen, [ :string ])
+module LibC
+  attach_foreign(:int, :strlen, [ :string ], :as => :rbxstrlen)
+  jffi_attach(:int, :strlen, [ :string ], :as => :jstrlen)
 end
-if FFITest.strlen("test") != 4
-  raise ArgumentError, "FFI.strlen returned incorrect value"
+if LibC.rbxstrlen("test") != 4
+  raise ArgumentError, "FFI.rbxstrlen returned incorrect value"
 end
-puts "Benchmark FFI strlen(3) performance, 10000x"
+if LibC.jstrlen("test") != 4
+  raise ArgumentError, "FFI.jstrlen returned incorrect value"
+end
+puts "Benchmark rubinius FFI api strlen(3) performance, #{iter}x"
 10.times {
   puts Benchmark.measure {
-    10000.times { FFITest.strlen("test") }
+    iter.times { LibC.rbxstrlen(str) }
+  }
+}
+
+puts "Benchmark jruby FFI api strlen(3) performance, #{iter}x"
+10.times {
+  puts Benchmark.measure {
+    iter.times { LibC.jstrlen(str) }
   }
 }

@@ -1,23 +1,18 @@
-# 
-# To change this template, choose Tools | Templates
-# and open the template in the editor.
- 
 require 'benchmark'
 require 'ffi'
 require 'java'
-
-module FFITest
-  # memchr() doesn't make sense - the returned pointer is totally disconnected
-  # to the input string, unless a direct ByteBuffer is used.
-  # It is useful for testing pinned buffers though
-  attach_foreign(:pointer, :memchr, [ :buffer_pinned, :char, :int ])
+iter = 10000
+module LibC
+  # This is one of the few places where a pinned buffer can be used, since memchr
+  # will not block on some outside resource
+  jffi_attach(:pointer, :memchr, [ :buffer_pinned, :char, :int ])
 end
-if FFITest.memchr("test", 't', 4).nil?
+if LibC.memchr("test", 't', 4).nil?
   raise ArgumentError, "FFI.memchr returned incorrect value"
 end
-puts "Benchmark FFI strlen(3) performance, 10000x"
+puts "Benchmark FFI memchr(3) performance, #{iter}x"
 10.times {
   puts Benchmark.measure {
-    10000.times { FFITest.memchr("test", 't', 4) }
+    iter.times { LibC.memchr("test", 't', 4) }
   }
 }

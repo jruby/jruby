@@ -1,11 +1,12 @@
-# 
-# To change this template, choose Tools | Templates
-# and open the template in the editor.
- 
 require 'benchmark'
 require 'ffi'
 
-module Foo
+iter = 10000
+module Posix
+  attach_foreign :int, 'umask', [ :int ]
+end
+module NativeFile
+  # Attaching the function to this module is about 10% faster than calling Posix.umask
   attach_function('umask', :_umask, [ :int ], :int)
   def self.umask(mask = nil)
     if mask
@@ -17,17 +18,24 @@ module Foo
     end
   end
 end
-puts "FFI umask=#{Foo.umask} File.umask=#{File.umask}"
-puts "Benchmark File.umask performance, 10000x"
+puts "FFI umask=#{NativeFile.umask} File.umask=#{File.umask}"
+puts "Benchmark File.umask performance, #{iter}x"
 10.times {
   puts Benchmark.measure {
-    10000.times { File.umask(0777) }
+    iter.times { File.umask(0777) }
   }
 }
-puts "Benchmark FFI umask(2) performance, 10000x"
+puts "Benchmark FFI File.umask performance, #{iter}x"
 
-20.times {
+10.times {
   puts Benchmark.measure {
-    10000.times { Foo.umask(0777) }
+    iter.times { NativeFile.umask(0777) }
+  }
+}
+puts "Benchmark FFI Posix umask performance, #{iter}x"
+
+10.times {
+  puts Benchmark.measure {
+    iter.times { Posix.umask(0777) }
   }
 }

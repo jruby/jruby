@@ -6,18 +6,20 @@
 require 'benchmark'
 require 'ffi'
 
-module Foo
-  attach_function('getpid', [ ], :int)
+iter = 100000
+
+module Posix
+  attach_foreign(:int, :getpid, [ ], :from => 'c')
 end
 
-iter = 100000
+
 puts "pid=#{Process.pid} Foo.getpid=#{Foo.getpid}"
 puts "Benchmark FFI getpid performance, #{iter}x calls"
-max_threads = 1
+
 
 10.times {
   puts Benchmark.measure {
-    iter.times { Foo.getpid }
+    iter.times { Posix.getpid }
   }
 }
 puts "Benchmark Process.pid performance, #{iter}x calls"
