@@ -134,15 +134,18 @@ public class RubyFixnum extends RubyInteger {
 
     @Override
     public Class<?> getJavaClass() {
-        if (value >= Byte.MIN_VALUE && value <= Byte.MAX_VALUE) {
-            return byte.class;
-        } else if (value >= Short.MIN_VALUE && value <= Short.MAX_VALUE) {
-            return short.class;
-        } else if (value >= Character.MIN_VALUE && value <= Character.MAX_VALUE) {
-            return char.class;
-        } else if (value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
-            return int.class;
-        }
+        // this precision-guessing needs to be thought out more, since in the
+        // case of coercing to Object we generally want to get the same type
+        // always
+//        if (value >= Byte.MIN_VALUE && value <= Byte.MAX_VALUE) {
+//            return byte.class;
+//        } else if (value >= Short.MIN_VALUE && value <= Short.MAX_VALUE) {
+//            return short.class;
+//        } else if (value >= Character.MIN_VALUE && value <= Character.MAX_VALUE) {
+//            return char.class;
+//        } else if (value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
+//            return int.class;
+//        }
         return long.class;
     }
 

@@ -105,9 +105,12 @@ public class RubyFloat extends RubyNumeric {
     }
 
     public Class<?> getJavaClass() {
-        if (value >= Float.MIN_VALUE && value <= Float.MAX_VALUE) {
-            return float.class;
-        }
+        // this needs to be thought out more along with the changes in RubyFixnum
+        // since "to Object" coercion will generally want to produce the same
+        // type every time
+//        if (value >= Float.MIN_VALUE && value <= Float.MAX_VALUE) {
+//            return float.class;
+//        }
         return double.class;
     }
 

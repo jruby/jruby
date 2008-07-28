@@ -66,12 +66,14 @@ describe "Java String and primitive-typed methods" do
   end
   
   it "should select the most narrow and precise overloaded method" do
-    CoreTypeMethods.getType(1).should == "byte"
-    CoreTypeMethods.getType(1 << 8).should == "short"
-    CoreTypeMethods.getType(1 << 16).should == "int"
+    pending "selection based on precision is not supported yet" do
+      CoreTypeMethods.getType(1).should == "byte"
+      CoreTypeMethods.getType(1 << 8).should == "short"
+      CoreTypeMethods.getType(1 << 16).should == "int"
+      CoreTypeMethods.getType(1.0).should == "float"
+    end
     CoreTypeMethods.getType(1 << 32).should == "long"
     
-    CoreTypeMethods.getType(1.0).should == "float"
     CoreTypeMethods.getType(2.0 ** 128).should == "double"
     
     CoreTypeMethods.getType("foo").should == "String"
