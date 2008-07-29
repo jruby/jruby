@@ -84,11 +84,11 @@ public class RubyTCPServer extends RubyTCPSocket {
     private ServerSocketChannel ssc;
     private InetSocketAddress socket_address;
 
-    @JRubyMethod(name = "initialize", required = 1, optional = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize", required = 1, optional = 1, visibility = Visibility.PRIVATE, backtrace = true)
     public IRubyObject initialize(IRubyObject[] args) {
         IRubyObject hostname = args[0];
         IRubyObject port = args.length > 1 ? args[1] : getRuntime().getNil();
-        
+
         if(hostname.isNil()) {
             hostname = getRuntime().newString("0.0.0.0");
         } else if (hostname instanceof RubyFixnum) {
@@ -96,12 +96,12 @@ public class RubyTCPServer extends RubyTCPSocket {
             port = hostname;
             hostname = getRuntime().newString("0.0.0.0");
         }
-        
+
         String shost = hostname.convertToString().toString();
         try {
             InetAddress addr = InetAddress.getByName(shost);
             ssc = ServerSocketChannel.open();
-            
+
             int portInt;
             if (port instanceof RubyInteger) {
                 portInt = RubyNumeric.fix2int(port);
@@ -114,7 +114,7 @@ public class RubyTCPServer extends RubyTCPSocket {
                     portInt = RubyNumeric.fix2int(RubySocket.getservbyname(getRuntime().getObject(), new IRubyObject[] {portString}));
                 }
             }
-            
+
             socket_address = new InetSocketAddress(addr, portInt);
             ssc.socket().bind(socket_address);
             initSocket(new ChannelDescriptor(ssc, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
@@ -127,6 +127,8 @@ public class RubyTCPServer extends RubyTCPSocket {
             throw getRuntime().newErrnoEADDRINUSEError();
         } catch(IOException e) {
             throw sockerr(this, "initialize: name or service not known");
+        } catch (IllegalArgumentException iae) {
+            throw sockerr(this, iae.getMessage());
         }
 
         return this;

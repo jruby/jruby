@@ -82,16 +82,16 @@ public class RubyTCPSocket extends RubyIPSocket {
         return RubyNumeric.fix2int(arg instanceof RubyString ? 
                 RubyNumeric.str2inum(getRuntime(), (RubyString) arg, 0, true) : arg);
     }
-    
-    @JRubyMethod(required = 2, optional = 2, visibility = Visibility.PRIVATE)
+
+    @JRubyMethod(required = 2, optional = 2, visibility = Visibility.PRIVATE, backtrace = true)
     public IRubyObject initialize(IRubyObject[] args) {
         Arity.checkArgumentCount(getRuntime(), args, 2, 4);
-        
+
         String remoteHost = args[0].isNil()? "localhost" : args[0].convertToString().toString();
         int remotePort = getPortFrom(args[1]);
         String localHost = args.length >= 3 ? args[2].convertToString().toString() : null;
         int localPort = args.length == 4 ? getPortFrom(args[3]) : 0;
-        
+
         try {
             SocketChannel channel = null;
             if(localHost == null) {
@@ -113,6 +113,8 @@ public class RubyTCPSocket extends RubyIPSocket {
             throw sockerr(this, "initialize: name or service not known");
         } catch(IOException e) {
             throw sockerr(this, "initialize: name or service not known");
+        } catch (IllegalArgumentException iae) {
+            throw sockerr(this, iae.getMessage());
         }
         return this;
     }

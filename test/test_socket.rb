@@ -48,6 +48,15 @@ class SocketTest < Test::Unit::TestCase
     socket.close_read
     assert(socket.closed?)
   end
+
+  # JRUBY-2874
+  def test_raises_socket_error_on_out_of_range_port
+    [-2**16, -2**8, -2, -1, 2**16, 2**16 + 1, 2**17, 2**30 -1].each do |port|
+      assert_raises(SocketError) do
+        TCPSocket.new('localhost', port)
+      end
+    end
+  end
 end
 
 class UNIXSocketTests < Test::Unit::TestCase
@@ -313,6 +322,7 @@ class UNIXSocketTests < Test::Unit::TestCase
         sock1.recv(1)
       end
     end
+
   end
 end
 
@@ -334,5 +344,13 @@ class ServerTest < Test::Unit::TestCase
     # propagate the thread's termination error, checking it for IOError
     assert_raise(IOError) {thread.value}
   end
+  
+    # JRUBY-2874
+    def test_raises_socket_error_on_out_of_range_port
+      [-2**16, -2**8, -2, -1, 2**16, 2**16 + 1, 2**17, 2**30 -1].each do |port|
+        assert_raises(SocketError) do
+          TCPServer.new('localhost', port)
+        end
+      end
+    end
 end
-
