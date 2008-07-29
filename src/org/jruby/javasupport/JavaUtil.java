@@ -311,7 +311,7 @@ public class JavaUtil {
             } else if (rubyObject instanceof JavaProxy) {
                 return ((JavaProxy)rubyObject).unwrap();
             } else {
-                return java_to_ruby(rubyObject, rubyObject, Block.NULL_BLOCK);
+                return java_to_ruby(context.getRuntime(), rubyObject, Block.NULL_BLOCK);
             }
         }
     };
@@ -1008,9 +1008,9 @@ public class JavaUtil {
     /**
      * High-level object conversion utility function 'java_to_primitive' is the low-level version 
      */
-    public static IRubyObject java_to_ruby(IRubyObject recv, IRubyObject object, Block unusedBlock) {
+    public static IRubyObject java_to_ruby(Ruby runtime, IRubyObject object, Block unusedBlock) {
         if (object instanceof JavaObject) {
-            return JavaUtil.convertJavaToUsableRubyObject(recv.getRuntime(), ((JavaObject) object).getValue());
+            return JavaUtil.convertJavaToUsableRubyObject(runtime, ((JavaObject) object).getValue());
         }
         return object;
     }

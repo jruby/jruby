@@ -203,6 +203,7 @@
         <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
         <zipfileset src="${build.lib.dir}/jna.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
+        <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
         <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>
@@ -299,6 +300,7 @@
         <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
         <zipfileset src="${build.lib.dir}/jna.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
+        <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
         <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>

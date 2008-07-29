@@ -72,6 +72,7 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.methods.ConstructorInvoker;
+import org.jruby.javasupport.methods.DynalangInstanceInvoker;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -82,6 +83,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
+import org.jruby.util.SafePropertyAccessor;
 
 @JRubyClass(name="Java::JavaClass", parent="Java::JavaObject")
 public class JavaClass extends JavaObject {
@@ -309,7 +311,12 @@ public class JavaClass extends JavaObject {
         }
         void install(RubyClass proxy) {
             if (hasLocalMethod()) {
-                DynamicMethod method = new InstanceMethodInvoker(proxy, methods);
+                DynamicMethod method;
+                if (SafePropertyAccessor.getBoolean("jruby.dynalang.enabled", false)) {
+                    method = new DynalangInstanceInvoker(proxy, methods);
+                } else {
+                    method = new InstanceMethodInvoker(proxy, methods);
+                }
                 proxy.addMethod(name, method);
                 if (aliases != null && isPublic()) {
                     proxy.defineAliases(aliases, this.name);

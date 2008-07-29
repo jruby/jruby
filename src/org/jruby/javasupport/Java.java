@@ -1240,7 +1240,7 @@ public class Java implements Library {
      */
     @JRubyMethod(frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject java_to_ruby(IRubyObject recv, IRubyObject object, Block unusedBlock) {
-        return JavaUtil.java_to_ruby(recv, object, unusedBlock);
+        return JavaUtil.java_to_ruby(recv.getRuntime(), object, unusedBlock);
     }
 
     // TODO: Formalize conversion mechanisms between Java and Ruby
