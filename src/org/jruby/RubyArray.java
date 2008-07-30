@@ -565,7 +565,14 @@ public class RubyArray extends RubyObject implements List {
         int begin = this.begin;
         for (int i = begin; i < begin + realLength; i++) {
             h = (h << 1) | (h < 0 ? 1 : 0);
-            h ^= RubyNumeric.num2long(values[i].callMethod(context, MethodIndex.HASH, "hash"));
+            final IRubyObject value;
+            try {
+                value = values[i];
+            } catch (ArrayIndexOutOfBoundsException e) {
+                concurrentModification();
+                continue;
+            }
+            h ^= RubyNumeric.num2long(value.callMethod(context, MethodIndex.HASH, "hash"));
         }
 
         return runtime.newFixnum(h);
@@ -1453,12 +1460,21 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public RubyString join(ThreadContext context, IRubyObject sep) {
+        final Ruby runtime = getRuntime();
+
         if (realLength == 0) return RubyString.newEmptyString(getRuntime());
 
         boolean taint = isTaint() || sep.isTaint();
 
         long len = 1;
         for (int i = begin; i < begin + realLength; i++) {            
+            IRubyObject value;
+            try {
+                value = values[i];
+            } catch (ArrayIndexOutOfBoundsException e) {
+                concurrentModification();
+                return runtime.newString("");
+            }
             IRubyObject tmp = values[i].checkStringType();
             len += tmp.isNil() ? 10 : ((RubyString) tmp).getByteList().length();
         }
@@ -1470,9 +1486,14 @@ public class RubyArray extends RubyObject implements List {
         }
 
         ByteList buf = new ByteList((int)len);
-        Ruby runtime = getRuntime();
         for (int i = begin; i < begin + realLength; i++) {
-            IRubyObject tmp = values[i];
+            IRubyObject tmp;
+            try {
+                tmp = values[i];
+            } catch (ArrayIndexOutOfBoundsException e) {
+                concurrentModification();
+                return runtime.newString("");
+            }
             if (tmp instanceof RubyString) {
                 // do nothing
             } else if (tmp instanceof RubyArray) {
