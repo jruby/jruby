@@ -592,25 +592,11 @@ public class RubyArray extends RubyObject implements List {
         return elt((long)offset);
     }
     
-    /** rb_ary_elt - faster
-     *
-     */
-    private final IRubyObject elt_f(long offset) {
-        return elt(offset);
-    }
-
-    /** rb_ary_elt - faster
-     *
-     */
-    private final IRubyObject elt_f(int offset) {
-        return elt(offset);
-    }
-    
     /** rb_ary_entry
      *
      */
     public final IRubyObject entry(long offset) {
-        return (offset < 0 ) ? elt(offset + realLength) : elt_f(offset);
+        return (offset < 0 ) ? elt(offset + realLength) : elt(offset);
     }
 
 
@@ -618,7 +604,7 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public final IRubyObject entry(int offset) {
-        return (offset < 0 ) ? elt(offset + realLength) : elt_f(offset);
+        return (offset < 0 ) ? elt(offset + realLength) : elt(offset);
     }
 
     public final IRubyObject eltInternal(int offset) {
