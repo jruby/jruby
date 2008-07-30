@@ -240,6 +240,10 @@ class Rational < Numeric
     end
   end
 
+  def div(other)
+    (self / other).floor
+  end
+
   #
   # Returns the remainder when this value is divided by +other+.
   #
@@ -251,7 +255,7 @@ class Rational < Numeric
   #   r % 0.26             # -> 0.19
   #
   def % (other)
-    value = (self / other).to_i
+    value = (self / other).floor
     return self - other * value
   end
 
@@ -267,20 +271,12 @@ class Rational < Numeric
     return value, self - other * value
   end
 
-  def floor()
-      @numerator.div(@denominator)
-  end
-
-  def ceil()
-      -((-@numerator).div(@denominator))
-  end
-
   #
   # Returns the absolute value.
   #
   def abs
     if @numerator > 0
-      Rational.new!(@numerator, @denominator)
+      self
     else
       Rational.new!(-@numerator, @denominator)
     end
@@ -351,6 +347,20 @@ class Rational < Numeric
   #   Rational(-7,4).to_i             # -> -1
   #   (-1.75).to_i                    # -> -1
   #
+  # In other words:
+  #   Rational(-7,4) == -1.75                 # -> true
+  #   Rational(-7,4).to_i == (-1.75).to_i     # -> true
+  #
+
+
+  def floor()
+    @numerator.div(@denominator)
+  end
+
+  def ceil()
+    -((-@numerator).div(@denominator))
+  end
+
   def truncate()
     if @numerator < 0
       return -((-@numerator).div(@denominator))
@@ -359,6 +369,19 @@ class Rational < Numeric
   end
 
   alias_method :to_i, :truncate
+
+  def round()
+    if @numerator < 0
+      num = -@numerator
+      num = num * 2 + @denominator
+      den = @denominator * 2
+      -(num.div(den))
+    else
+      num = @numerator * 2 + @denominator
+      den = @denominator * 2
+      num.div(den)
+    end
+  end
 
   #
   # Converts the rational to a Float.
@@ -490,37 +513,11 @@ class Integer
 end
 
 class Fixnum
-  undef quo
-  # If Rational is defined, returns a Rational number instead of a Fixnum.
+  remove_method :quo
+
+  # If Rational is defined, returns a Rational number instead of a Float.
   def quo(other)
-    Rational.new!(self,1) / other
-  end
-  alias rdiv quo
-
-  # Returns a Rational number if the result is in fact rational (i.e. +other+ < 0).
-  def rpower (other)
-    if other >= 0
-      self.power!(other)
-    else
-      Rational.new!(self,1)**other
-    end
-  end
-
-  unless defined? 1.power!
-    alias power! **
-    alias ** rpower
-  end
-end
-
-class Bignum
-  unless defined? Complex
-    alias power! **
-  end
-
-  undef quo
-  # If Rational is defined, returns a Rational number instead of a Bignum.
-  def quo(other)
-    Rational.new!(self,1) / other
+    Rational.new!(self, 1) / other
   end
   alias rdiv quo
 
@@ -533,7 +530,35 @@ class Bignum
     end
   end
 
-  unless defined? Complex
+end
+
+class Bignum
+  remove_method :quo
+
+  # If Rational is defined, returns a Rational number instead of a Float.
+  def quo(other)
+    Rational.new!(self, 1) / other
+  end
+  alias rdiv quo
+
+  # Returns a Rational number if the result is in fact rational (i.e. +other+ < 0).
+  def rpower (other)
+    if other >= 0
+      self.power!(other)
+    else
+      Rational.new!(self, 1)**other
+    end
+  end
+
+end
+
+unless defined? 1.power!
+  class Fixnum
+    alias power! **
+    alias ** rpower
+  end
+  class Bignum
+    alias power! **
     alias ** rpower
   end
 end
