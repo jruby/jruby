@@ -585,13 +585,6 @@ public class RubyArray extends RubyObject implements List {
         }
     }
 
-    /** rb_ary_elt
-     *
-     */
-    private final IRubyObject elt(int offset) {
-        return elt((long)offset);
-    }
-    
     /** rb_ary_entry
      *
      */
