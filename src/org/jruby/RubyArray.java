@@ -572,14 +572,16 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     private final IRubyObject elt(long offset) {
-        if (offset < 0 || offset >= realLength) {
-            return getRuntime().getNil();
-        }
+        final IRubyObject value;
         try {
-            final IRubyObject value = values[begin + (int)offset];
-            return ( value == null ? getRuntime().getNil() : value );
+            value = values[begin + (int)offset];
         } catch (ArrayIndexOutOfBoundsException e) {
             return getRuntime().getNil();
+        }
+        if (value == null || offset < 0 || offset >= realLength) {
+            return getRuntime().getNil();
+        } else {
+            return value;
         }
     }
 
