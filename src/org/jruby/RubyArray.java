@@ -568,50 +568,42 @@ public class RubyArray extends RubyObject implements List {
         return value;
     }
 
-    /** rb_ary_elt - faster
+    /** rb_ary_elt
      *
      */
     private final IRubyObject elt(long offset) {
-        if (emptyOrOutsideRange(offset)) return getRuntime().getNil();
-
-        return values[begin + (int) offset];
+        return elt((int)offset);
     }
 
-    /** rb_ary_elt - faster
+    /** rb_ary_elt
      *
      */
     private final IRubyObject elt(int offset) {
-        if (emptyOrOutsideRange(offset)) return getRuntime().getNil();
-
-        return values[begin + offset];
+        if (offset < 0 || offset >= realLength) {
+            return getRuntime().getNil();
+        }
+        try {
+            final IRubyObject value = values[begin + offset];
+            return ( value == null ? getRuntime().getNil() : value );
+        } catch (ArrayIndexOutOfBoundsException e) {
+            return getRuntime().getNil();
+        }
     }
     
-    private boolean emptyOrOutsideRange(long offset) {
-        return realLength == 0 || offset < 0 || offset >= realLength;
-    }
-
     /** rb_ary_elt - faster
      *
      */
     private final IRubyObject elt_f(long offset) {
-        if (emptyOrTooHigh(offset)) return getRuntime().getNil();
-
-        return values[begin + (int) offset];
+        return elt((int)offset);
     }
 
     /** rb_ary_elt - faster
      *
      */
     private final IRubyObject elt_f(int offset) {
-        if (emptyOrTooHigh(offset)) return getRuntime().getNil();
-
-        return values[begin + offset];
+        return elt(offset);
     }
     
-    private boolean emptyOrTooHigh(long offset) {
-        return realLength == 0 || offset >= realLength;
-    }
-
     /** rb_ary_entry
      *
      */
