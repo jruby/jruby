@@ -83,6 +83,16 @@ describe "Java String and primitive-typed methods" do
   end
 end
 
+describe "Java Object-typed methods" do
+  it "coerce primitive Ruby types to their default boxed Java type" do
+    CoreTypeMethods.getObjectType("foo").should == "class java.lang.String"
+    CoreTypeMethods.getObjectType(1).should == "class java.lang.Long"
+    CoreTypeMethods.getObjectType(1.0).should == "class java.lang.Double"
+    CoreTypeMethods.getObjectType(true).should == "class java.lang.Boolean"
+    CoreTypeMethods.getObjectType(1 << 128).should == "class java.math.BigInteger"
+  end
+end
+
 describe "Java String and primitive-typed fields" do
   it "coerce to Ruby types when retrieved" do
     # static

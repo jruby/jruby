@@ -884,7 +884,7 @@ public class JavaUtil {
                 return Short.valueOf((short)fixnum.getLongValue());
             }
         }
-        return fixnum;
+        return Long.valueOf(fixnum.getLongValue());
     }
         
     public static Object coerceBignumToType(RubyBignum bignum, Class target) {

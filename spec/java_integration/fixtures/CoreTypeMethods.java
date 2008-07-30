@@ -132,4 +132,8 @@ public class CoreTypeMethods {
     public static String getType(boolean b) {
         return "boolean";
     }
+    
+    public static String getObjectType(Object obj) {
+        return obj.getClass().toString();
+    }
 }
