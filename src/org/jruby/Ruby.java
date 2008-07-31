@@ -1127,6 +1127,7 @@ public final class Ruby {
         regexpError = defineClassIfAllowed("RegexpError", standardError);
         eofError = defineClassIfAllowed("EOFError", ioError);
         threadError = defineClassIfAllowed("ThreadError", standardError);
+        concurrencyError = defineClassIfAllowed("ConcurrencyError", threadError);
         systemStackError = defineClassIfAllowed("SystemStackError", standardError);
         zeroDivisionError = defineClassIfAllowed("ZeroDivisionError", standardError);
         floatDomainError  = defineClassIfAllowed("FloatDomainError", rangeError);
@@ -1768,6 +1769,10 @@ public final class Ruby {
 
     public RubyClass getThreadError() {
         return threadError;
+    }
+
+    public RubyClass getConcurrencyError() {
+        return concurrencyError;
     }
 
     public RubyClass getSystemStackError() {
@@ -2564,6 +2569,10 @@ public final class Ruby {
         return newRaiseException(getThreadError(), message);
     }
 
+    public RaiseException newConcurrencyError(String message) {
+        return newRaiseException(getConcurrencyError(), message);
+    }
+
     public RaiseException newSyntaxError(String message) {
         return newRaiseException(getSyntaxError(), message);
     }
@@ -2897,7 +2906,7 @@ public final class Ruby {
             rangeError, dummyClass, systemExit, localJumpError, nativeException,
             systemCallError, fatal, interrupt, typeError, argumentError, indexError,
             syntaxError, standardError, loadError, notImplementedError, securityError, noMemoryError,
-            regexpError, eofError, threadError, systemStackError, zeroDivisionError, floatDomainError;
+            regexpError, eofError, threadError, concurrencyError, systemStackError, zeroDivisionError, floatDomainError;
     
     /**
      * All the core modules we keep direct references to, for quick access and

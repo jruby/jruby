@@ -101,7 +101,7 @@ public class RubyArray extends RubyObject implements List {
     }
 
     private final void concurrentModification() {
-        // noop for the moment
+        throw getRuntime().newConcurrencyError("Detected invalid array contents due to unsynchronized modifications with concurrent users");
     }
 
     /** rb_ary_s_create
