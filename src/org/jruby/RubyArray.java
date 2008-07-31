@@ -1763,6 +1763,14 @@ public class RubyArray extends RubyObject implements List {
                     concurrentModification();
                 }
             }
+        } else {
+            if (len > 0) {
+                try {
+                    Arrays.fill(values, beg, beg + len, item);
+                } catch (ArrayIndexOutOfBoundsException e) {
+                    concurrentModification();
+                }
+            }
         }
 
         return this;
