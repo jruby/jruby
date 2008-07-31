@@ -138,37 +138,37 @@ public class TestRubyArray extends TestRubyBase {
 
     public void testSetsValuesToNullOnClearWhenNotShared() throws Exception {
         final RubyArray arr = (RubyArray)runtime.evalScriptlet("$h = ['foo','bar']");
-        assertNotNull("first element null", arr.eltInternal(0));
-        assertNotNull("second element null", arr.eltInternal(1));
+        assertNotSame("first element nil", runtime.getNil(), arr.eltInternal(0));
+        assertNotSame("second element nil", runtime.getNil(), arr.eltInternal(1));
         arr.rb_clear();
-        assertNull("first element not null", arr.eltInternal(0));
-        assertNull("second element not null", arr.eltInternal(1));
+        assertSame("first element not nil", runtime.getNil(), arr.eltInternal(0));
+        assertSame("second element not nil", runtime.getNil(), arr.eltInternal(1));
     }
 
     public void testSetsLeftoverValuesToNullWhenRejectingElements() throws Exception {
         final RubyArray arr = (RubyArray)runtime.evalScriptlet("$h = ['foo','bar']");
-        assertNotNull("first element null", arr.eltInternal(0));
-        assertNotNull("second element null", arr.eltInternal(1));
+        assertNotSame("first element nil", runtime.getNil(), arr.eltInternal(0));
+        assertNotSame("second element nil", runtime.getNil(), arr.eltInternal(1));
         runtime.evalScriptlet("$h.reject! { |e| e == 'bar' }");
-        assertNotNull("first element null", arr.eltInternal(0));
-        assertNull("second element not null", arr.eltInternal(1));
+        assertNotSame("first element nil", runtime.getNil(), arr.eltInternal(0));
+        assertSame("second element not nil", runtime.getNil(), arr.eltInternal(1));
     }
 
     public void testSetsLeftoverValuesToNullInDeleteAt() throws Exception {
         final RubyArray arr = (RubyArray)runtime.evalScriptlet("$h = ['foo','bar']");
-        assertNotNull("first element null", arr.eltInternal(0));
-        assertNotNull("second element null", arr.eltInternal(1));
+        assertNotSame("first element nil", runtime.getNil(), arr.eltInternal(0));
+        assertNotSame("second element nil", runtime.getNil(), arr.eltInternal(1));
         runtime.evalScriptlet("$h.delete_at(1)");
-        assertNotNull("first element null", arr.eltInternal(0));
-        assertNull("second element not null", arr.eltInternal(1));
+        assertNotSame("first element nil", runtime.getNil(), arr.eltInternal(0));
+        assertSame("second element not nil", runtime.getNil(), arr.eltInternal(1));
     }
 
     public void testSetsLeftoverValuesToNullInDelete() throws Exception {
         final RubyArray arr = (RubyArray)runtime.evalScriptlet("$h = ['foo','bar']");
-        assertNotNull("first element null", arr.eltInternal(0));
-        assertNotNull("second element null", arr.eltInternal(1));
+        assertNotSame("first element nil", runtime.getNil(), arr.eltInternal(0));
+        assertNotSame("second element nil", runtime.getNil(), arr.eltInternal(1));
         runtime.evalScriptlet("$h.delete('foo')");
-        assertNotNull("first element null", arr.eltInternal(0));
-        assertNull("second element not null", arr.eltInternal(1));
+        assertNotSame("first element nil", runtime.getNil(), arr.eltInternal(0));
+        assertSame("second element not nil", runtime.getNil(), arr.eltInternal(1));
     }
 }
