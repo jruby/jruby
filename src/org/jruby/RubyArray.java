@@ -1475,7 +1475,7 @@ public class RubyArray extends RubyObject implements List {
                 concurrentModification();
                 return runtime.newString("");
             }
-            IRubyObject tmp = values[i].checkStringType();
+            IRubyObject tmp = value.checkStringType();
             len += tmp.isNil() ? 10 : ((RubyString) tmp).getByteList().length();
         }
 
