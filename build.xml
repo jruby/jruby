@@ -182,22 +182,43 @@
     
     <delete file="src_gen/annotated_classes.txt"/>
   </target>
+  
+  <property name="jarjar.deps.jar" value="src_gen/__jarjared-deps.jar"/>
 
   <target name="jar-jruby" unless="jar-up-to-date">    
       <antcall target="generate-method-classes" inheritall="true"/>
 
       <!-- TODO: Unfortunate dependency on ruby executable, and ruby might
            not be present on user's side, so we ignore errors caused by that. -->
-      <exec executable="ruby" dir="${basedir}" failifexecutionfails="false">
+      <exec executable="ruby" dir="${basedir}" failifexecutionfails="false" >
         <arg value="tool/snapshot.rb"/>
         <arg value="${jruby.classes.dir}/org/jruby/jruby.properties"/>
       </exec>
 
+      <condition property="jarjar.uptodate">
+          <and>
+              <available file="src_gen/__jarjared-deps.jar"/>
+              <uptodate property="jarjar.needed" targetfile="${jarjar.deps.jar}">
+                  <srcfiles dir="${build.lib.dir}" includes="*.jar"/>
+              </uptodate>
+          </and>
+      </condition>
+      <antcall target="_jarjar_internal_"/>
+      
       <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0rc7.jar"/>
-      <jarjar destfile="${lib.dir}/jruby.jar">
-        <fileset dir="${jruby.classes.dir}">
-          <exclude name="org/jruby/util/ant/**/*.class"/>
-        </fileset>
+      <jarjar destfile="${lib.dir}/jruby.jar" compress="false">
+        <fileset dir="${jruby.classes.dir}"/>
+        <zipfileset src="${jarjar.deps.jar}"/>
+        <manifest>
+          <attribute name="Built-By" value="${user.name}"/>
+          <attribute name="Main-Class" value="org.jruby.Main"/>
+        </manifest>
+        <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
+      </jarjar>
+  </target>
+  
+  <target name="_jarjar_internal_" unless="jarjar.uptodate">
+    <jar destfile="${jarjar.deps.jar}">
         <zipfileset src="${build.lib.dir}/asm-3.0.jar"/>
         <zipfileset src="${build.lib.dir}/asm-commons-3.0.jar"/>
         <zipfileset src="${build.lib.dir}/asm-util-3.0.jar"/>
@@ -211,12 +232,7 @@
         <zipfileset src="${build.lib.dir}/jna.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
-        <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
-        <manifest>
-          <attribute name="Built-By" value="${user.name}"/>
-          <attribute name="Main-Class" value="org.jruby.Main"/>
-        </manifest>
-      </jarjar>
+      </jar>
   </target>
 
   <path id="lib.classpath">
@@ -288,31 +304,29 @@
         <arg value="--no-rdoc"/>
         <arg value="--env-shebang"/>
       </java>
+
+      <condition property="jarjar.needed">
+          <and>
+              <available file="src_gen/__jarjared-deps.jar"/>
+              <uptodate property="jarjar.needed" targetfile="${jarjar.deps.jar}">
+                  <srcfiles dir="${build.lib.dir}" includes="*.jar"/>
+              </uptodate>
+          </and>
+      </condition>
+      <antcall target="_jarjar_internal_"/>
+      
+      <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0rc7.jar"/>
       <jarjar destfile="${lib.dir}/${filename}">
-        <fileset dir="${jruby.classes.dir}">
-          <exclude name="org/jruby/util/ant/**/*.class"/>
-        </fileset>
+        <fileset dir="${jruby.classes.dir}"/>
         <fileset dir="${build.dir}/jar-complete">
           <exclude name="META-INF/jruby.home/lib/ruby/1.8/**"/>
         </fileset>
-        <zipfileset src="${build.lib.dir}/asm-3.0.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-commons-3.0.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-util-3.0.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-analysis-3.0.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-tree-3.0.jar"/>
-        <zipfileset src="${build.lib.dir}/bytelist-0.1.jar"/>
-        <zipfileset src="${build.lib.dir}/jvyamlb-0.2.jar"/>
-        <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
-        <zipfileset src="${build.lib.dir}/joni.jar"/>
-        <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
-        <zipfileset src="${build.lib.dir}/jna.jar"/>
-        <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
-        <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
-        <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
+        <zipfileset src="${jarjar.deps.jar}"/>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>
           <attribute name="Main-Class" value="${mainclass}"/>
         </manifest>
+        <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
       </jarjar>
     </target>
 
