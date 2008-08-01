@@ -1,1 +1,0 @@
-fails(JRUBY-2837):Single assignment If rhs has multiple arguments, lhs becomes an Array of them

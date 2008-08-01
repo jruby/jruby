@@ -1,1 +1,0 @@
-fails(JRUBY-2836):Hash literal treats empty expressions as nils
