@@ -157,25 +157,29 @@ public class RubyException extends RubyObject {
     
     public IRubyObject getBacktrace() {
         if (backtrace == null) {
-            switch (TRACE_TYPE) {
-            case RAW:
-                backtrace = ThreadContext.createRawBacktrace(getRuntime(), false);
-                break;
-            case RAW_FILTERED:
-                backtrace = ThreadContext.createRawBacktrace(getRuntime(), true);
-                break;
-            case RUBY_FRAMED:
-                backtrace = backtraceFrames == null ? getRuntime().getNil() : ThreadContext.createBacktraceFromFrames(getRuntime(), backtraceFrames);
-                break;
-            case RUBY_COMPILED:
-                backtrace = ThreadContext.createRubyCompiledBacktrace(getRuntime());
-                break;
-            case RUBY_HYBRID:
-                backtrace = ThreadContext.createRubyHybridBacktrace(getRuntime(), backtraceFrames, getRuntime().getDebug().isTrue());
-                break;
-            }
+            initBacktrace();
         }
         return backtrace;
+    }
+    
+    public void initBacktrace() {
+        switch (TRACE_TYPE) {
+        case RAW:
+            backtrace = ThreadContext.createRawBacktrace(getRuntime(), false);
+            break;
+        case RAW_FILTERED:
+            backtrace = ThreadContext.createRawBacktrace(getRuntime(), true);
+            break;
+        case RUBY_FRAMED:
+            backtrace = backtraceFrames == null ? getRuntime().getNil() : ThreadContext.createBacktraceFromFrames(getRuntime(), backtraceFrames);
+            break;
+        case RUBY_COMPILED:
+            backtrace = ThreadContext.createRubyCompiledBacktrace(getRuntime());
+            break;
+        case RUBY_HYBRID:
+            backtrace = ThreadContext.createRubyHybridBacktrace(getRuntime(), backtraceFrames, getRuntime().getDebug().isTrue());
+            break;
+        }
     }
 
     @JRubyMethod(optional = 2, frame = true, visibility = Visibility.PRIVATE)

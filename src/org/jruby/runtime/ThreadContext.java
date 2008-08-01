@@ -228,8 +228,10 @@ public final class ThreadContext {
     }
     
     public void pushScope(DynamicScope scope) {
-        scopeStack[++scopeIndex] = scope;
-        if (scopeIndex + 1 == scopeStack.length) {
+        int index = ++scopeIndex;
+        DynamicScope[] stack = scopeStack;
+        stack[index] = scope;
+        if (index + 1 == stack.length) {
             expandScopesIfNecessary();
         }
     }
@@ -284,8 +286,10 @@ public final class ThreadContext {
     }
     
     public void pushCatch(CatchTarget catchTarget) {
-        catchStack[++catchIndex] = catchTarget;
-        if (catchIndex + 1 == catchStack.length) {
+        int index = ++catchIndex;
+        CatchTarget[] stack = catchStack;
+        stack[index] = catchTarget;
+        if (index + 1 == stack.length) {
             expandCatchIfNecessary();
         }
     }
@@ -295,10 +299,11 @@ public final class ThreadContext {
     }
     
     public CatchTarget[] getActiveCatches() {
-        if (catchIndex < 0) return new CatchTarget[0];
+        int index = catchIndex;
+        if (index < 0) return new CatchTarget[0];
         
-        CatchTarget[] activeCatches = new CatchTarget[catchIndex + 1];
-        System.arraycopy(catchStack, 0, activeCatches, 0, catchIndex + 1);
+        CatchTarget[] activeCatches = new CatchTarget[index + 1];
+        System.arraycopy(catchStack, 0, activeCatches, 0, index + 1);
         return activeCatches;
     }
     
@@ -311,16 +316,6 @@ public final class ThreadContext {
         if (index + 1 == stack.length) {
             expandFramesIfNecessary();
         }
-    }
-    
-    private Frame pushFrameCopy(Frame frame) {
-        int index = ++this.frameIndex;
-        Frame[] stack = frameStack;
-        stack[index].updateFrame(frame);
-        if (index + 1 == stack.length) {
-            expandFramesIfNecessary();
-        }
-        return frameStack[frameIndex];
     }
     
     private Frame pushFrame(Frame frame) {
@@ -375,8 +370,7 @@ public final class ThreadContext {
     }
     
     private void popFrame() {
-        Frame frame = frameStack[frameIndex];
-        frameIndex--;
+        Frame frame = frameStack[frameIndex--];
         setFile(frame.getFile());
         setLine(frame.getLine());
         
@@ -384,9 +378,10 @@ public final class ThreadContext {
     }
         
     private void popFrameReal(Frame oldFrame) {
-        Frame frame = frameStack[frameIndex];
-        frameStack[frameIndex] = oldFrame;
-        frameIndex--;
+        int index = frameIndex;
+        Frame frame = frameStack[index];
+        frameStack[index] = oldFrame;
+        frameIndex = index - 1;
         setFile(frame.getFile());
         setLine(frame.getLine());
     }
@@ -408,14 +403,17 @@ public final class ThreadContext {
     }
     
     public Frame getNextFrame() {
-        if (frameIndex + 1 == frameStack.length) {
+        int index = frameIndex;
+        Frame[] stack = frameStack;
+        if (index + 1 == stack.length) {
             expandFramesIfNecessary();
         }
-        return frameStack[frameIndex + 1];
+        return stack[index + 1];
     }
     
     public Frame getPreviousFrame() {
-        return frameIndex < 1 ? null : frameStack[frameIndex - 1];
+        int index = frameIndex;
+        return index < 1 ? null : frameStack[index - 1];
     }
     
     public int getFrameCount() {
@@ -498,15 +496,20 @@ public final class ThreadContext {
         // to run without it...
         //assert currentModule != null : "Can't push null RubyClass";
         
-        parentStack[++parentIndex] = currentModule;
-        if (parentIndex + 1 == parentStack.length) {
+        int index = ++parentIndex;
+        RubyModule[] stack = parentStack;
+        stack[index] = currentModule;
+        if (index + 1 == stack.length) {
             expandParentsIfNecessary();
         }
     }
     
     public RubyModule popRubyClass() {
-        RubyModule ret = parentStack[parentIndex];
-        parentStack[parentIndex--] = null;
+        int index = parentIndex;
+        RubyModule[] stack = parentStack;
+        RubyModule ret = stack[index];
+        stack[index] = null;
+        parentIndex = index - 1;
         return ret;
     }
     
@@ -519,11 +522,12 @@ public final class ThreadContext {
     }
     
     public RubyModule getBindingRubyClass() {
+        int index = parentIndex;
         RubyModule parentModule = null;
-        if(parentIndex == 0) {
-            parentModule = parentStack[parentIndex];
+        if(index == 0) {
+            parentModule = parentStack[index];
         } else {
-            parentModule = parentStack[parentIndex-1];
+            parentModule = parentStack[index-1];
             
         }
         return parentModule.getNonIncludedClass();
@@ -940,7 +944,6 @@ public final class ThreadContext {
     public void preMethodFrameOnly(RubyModule clazz, String name, IRubyObject self, Block block) {
         pushRubyClass(clazz);
         pushCallFrame(clazz, name, self, block);
-        getCurrentFrame().setVisibility(getPreviousFrame().getVisibility());
     }
     
     public void postMethodFrameOnly() {

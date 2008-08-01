@@ -53,7 +53,6 @@ public class RubyRunnable implements Runnable {
         ThreadContext tc = runtime.getCurrentContext();
         
         proc = runtime.newProc(Block.Type.THREAD, currentBlock);
-        currentFrame = tc.getCurrentFrame();
         this.arguments = args;
     }
     
@@ -68,7 +67,6 @@ public class RubyRunnable implements Runnable {
     public void run() {
         javaThread = Thread.currentThread();
         ThreadContext context = runtime.getThreadService().registerNewThread(rubyThread);
-        context.preRunThread(currentFrame);
         
         // Call the thread's code
         try {

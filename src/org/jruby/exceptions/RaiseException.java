@@ -136,7 +136,7 @@ public class RaiseException extends JumpException {
         runtime.setStackTraces(runtime.getStackTraces() + 1);
 
         newException.setBacktraceFrames(context.createBacktrace(0, nativeException));
-        newException.getBacktrace();
+        newException.initBacktrace();
 
         runtime.setStackTraces(runtime.getStackTraces() - 1);
     }
