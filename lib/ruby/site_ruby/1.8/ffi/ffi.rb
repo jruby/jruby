@@ -360,6 +360,15 @@ module FFI::Library
   end
 end
 
+#
+# Added for backwards compat until all rubinius code is converted to use 'extend FFI::Library'
+#
+class Module
+  include FFI::Library
+  def set_ffi_lib(lib)
+    ffi_lib lib
+  end
+end
 class JFFI::MemoryPointer
   # call-seq:
   #   MemoryPointer.new(num) => MemoryPointer instance of <i>num</i> bytes
