@@ -476,7 +476,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         
         if (DEBUG) out.println("Binding multiple: " + desc1.declaringClassName + "." + javaMethodName);
         
-        String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, desc1.declaringClassName, desc1.isStatic, desc1.actualRequired, desc1.optional, true);
+        String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, desc1.declaringClassName, desc1.isStatic, desc1.actualRequired, desc1.optional, true, desc1.anno.frame());
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             // in debug mode we append _DBG to class name to force it to regenerate (or use pre-generated debug version)
             generatedClassName += "_DBG";
@@ -621,7 +621,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc) {
         String javaMethodName = desc.name;
         
-        String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, desc.declaringClassName, desc.isStatic, desc.actualRequired, desc.optional, false);
+        String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, desc.declaringClassName, desc.isStatic, desc.actualRequired, desc.optional, false, desc.anno.frame());
         String generatedClassPath = generatedClassName.replace('.', '/');
         
         synchronized (classLoader) {
@@ -651,7 +651,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     public Class getAnnotatedMethodClass(JavaMethodDescriptor desc) throws Exception {
         String javaMethodName = desc.name;
         
-        String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, desc.declaringClassName, desc.isStatic, desc.actualRequired, desc.optional, false);
+        String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, desc.declaringClassName, desc.isStatic, desc.actualRequired, desc.optional, false, desc.anno.frame());
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             // in debug mode we append _DBG to class name to force it to regenerate (or use pre-generated debug version)
             generatedClassName += "_DBG";
@@ -948,6 +948,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     private ClassWriter createCompiledCtor(String namePath, String sup) throws Exception {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, sup, null);
+        cw.visitSource(namePath.replace('.', '/') + ".gen", null);
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);
@@ -963,6 +964,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     private ClassWriter createJavaMethodCtor(String namePath, String sup) throws Exception {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, sup, null);
+        cw.visitSource(namePath.replace('.', '/') + ".gen", null);
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", JAVA_SUPER_SIG, null, null);
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);
@@ -980,6 +982,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     private ClassWriter createIndexedJavaMethodCtor(String namePath, String sup) throws Exception {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, sup, null);
+        cw.visitSource(namePath.replace('.', '/') + ".gen", null);
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", JAVA_INDEXED_SUPER_SIG, null, null);
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);

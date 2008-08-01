@@ -54,6 +54,7 @@ import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.SafePropertyAccessor;
 
 /**
  *
@@ -135,9 +136,44 @@ public class RubyException extends RubyObject {
         this.backtraceFrames = backtraceFrames;
     }
     
+    public static final int RAW = 0;
+    public static final int RAW_FILTERED = 1;
+    public static final int RUBY_FRAMED = 2;
+    public static final int RUBY_COMPILED = 3;
+    public static final int RUBY_HYBRID = 4;
+    
+    public static final int TRACE_TYPE;
+    
+    static {
+        String style = SafePropertyAccessor.getProperty("jruby.backtrace.style", "ruby_framed").toLowerCase();
+        
+        if (style.equals("raw")) TRACE_TYPE = RAW;
+        else if (style.equals("raw_filtered")) TRACE_TYPE = RAW_FILTERED;
+        else if (style.equals("ruby_framed")) TRACE_TYPE = RUBY_FRAMED;
+        else if (style.equals("ruby_compiled")) TRACE_TYPE = RUBY_COMPILED;
+        else if (style.equals("ruby_hybrid")) TRACE_TYPE = RUBY_HYBRID;
+        else TRACE_TYPE = RUBY_FRAMED;
+    }
+    
     public IRubyObject getBacktrace() {
         if (backtrace == null) {
-            backtrace = backtraceFrames == null ? getRuntime().getNil() : ThreadContext.createBacktraceFromFrames(getRuntime(), backtraceFrames);
+            switch (TRACE_TYPE) {
+            case RAW:
+                backtrace = ThreadContext.createRawBacktrace(getRuntime(), false);
+                break;
+            case RAW_FILTERED:
+                backtrace = ThreadContext.createRawBacktrace(getRuntime(), true);
+                break;
+            case RUBY_FRAMED:
+                backtrace = backtraceFrames == null ? getRuntime().getNil() : ThreadContext.createBacktraceFromFrames(getRuntime(), backtraceFrames);
+                break;
+            case RUBY_COMPILED:
+                backtrace = ThreadContext.createRubyCompiledBacktrace(getRuntime());
+                break;
+            case RUBY_HYBRID:
+                backtrace = ThreadContext.createRubyHybridBacktrace(getRuntime(), backtraceFrames, getRuntime().getDebug().isTrue());
+                break;
+            }
         }
         return backtrace;
     }
@@ -216,8 +252,9 @@ public class RubyException extends RubyObject {
 
     public void printBacktrace(PrintStream errorStream) {
         IRubyObject backtrace = callMethod(getRuntime().getCurrentContext(), "backtrace");
+        boolean debug = getRuntime().getDebug().isTrue();
         if (!backtrace.isNil() && backtrace instanceof RubyArray) {
-            IRubyObject[] elements = ((RubyArray)backtrace.convertToArray()).toJavaArray();
+            IRubyObject[] elements = backtrace.convertToArray().toJavaArray();
 
             for (int i = 1; i < elements.length; i++) {
                 IRubyObject stackTraceLine = elements[i];
@@ -225,13 +262,13 @@ public class RubyException extends RubyObject {
                     printStackTraceLine(errorStream, stackTraceLine);
                 }
 
-                if (i == RubyException.TRACE_HEAD && elements.length > RubyException.TRACE_MAX) {
+                if (!debug && i == RubyException.TRACE_HEAD && elements.length > RubyException.TRACE_MAX) {
                     int hiddenLevels = elements.length - RubyException.TRACE_HEAD - RubyException.TRACE_TAIL;
                             errorStream.print("\t ... " + hiddenLevels + " levels...\n");
                     i = elements.length - RubyException.TRACE_TAIL;
                 }
             }
-            }
+        }
     }
 
     private void printStackTraceLine(PrintStream errorStream, IRubyObject stackTraceLine) {

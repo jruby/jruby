@@ -257,7 +257,8 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                             isStatic,
                             actualRequired,
                             anno.optional(),
-                            false);
+                            false,
+                            anno.frame());
                     String implClass = anno.meta() ? "metaClass" : "cls";
 
                     out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility() + ");");
@@ -292,7 +293,8 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                             isStatic,
                             actualRequired,
                             anno.optional(),
-                            true);
+                            true,
+                            anno.frame());
                     String implClass = anno.meta() ? "metaClass" : "cls";
 
                     out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility() + ");");
