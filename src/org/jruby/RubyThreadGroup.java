@@ -94,17 +94,17 @@ public class RubyThreadGroup extends RubyObject {
             IRubyObject oldGroup = rubyThread.group();
             if (oldGroup != getRuntime().getNil()) {
                 RubyThreadGroup threadGroup = (RubyThreadGroup) oldGroup;
-                threadGroup.rubyThreadList.remove(new Integer(System.identityHashCode(rubyThread)));
+                threadGroup.rubyThreadList.remove(System.identityHashCode(rubyThread));
             }
 
             rubyThread.setThreadGroup(this);
-            rubyThreadList.put(new Integer(System.identityHashCode(rubyThread)), rubyThread);
+            rubyThreadList.put(System.identityHashCode(rubyThread), rubyThread);
         }
     }
     
     public synchronized void remove(RubyThread rubyThread) {
         rubyThread.setThreadGroup(null);
-        rubyThreadList.remove(new Integer(System.identityHashCode(rubyThread)));
+        rubyThreadList.remove(System.identityHashCode(rubyThread));
     }
     
     @JRubyMethod(name = "enclose", frame = true)

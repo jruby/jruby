@@ -605,11 +605,11 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
     }
     
     protected final void preFrameAndScope(ThreadContext context, IRubyObject self, String name, Block block) {
-        context.preMethodFrameAndScope(implementationClass, name, self, block, staticScope, this);
+        context.preMethodFrameAndScope(implementationClass, name, self, block, staticScope);
     }
     
     protected final void preFrameOnly(ThreadContext context, IRubyObject self, String name, Block block) {
-        context.preMethodFrameOnly(implementationClass, name, self, block, this);
+        context.preMethodFrameOnly(implementationClass, name, self, block);
     }
     
     protected final void preScopeOnly(ThreadContext context) {

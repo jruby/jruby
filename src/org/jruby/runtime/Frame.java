@@ -77,7 +77,7 @@ public final class Frame implements JumpTarget {
      * and also for block_given?.  Both of those methods needs access to the block of the 
      * previous frame to work.
      */ 
-    private Block block;
+    private Block block = Block.NULL_BLOCK;
     
     /** Delimit a frame where an eval with binding occurred.  Used for stack traces. */
     private boolean isBindingFrame = false;
@@ -108,7 +108,7 @@ public final class Frame implements JumpTarget {
      * when needed.
      */
     public Frame() {
-        jumpTarget = new JumpTarget() {};
+        jumpTarget = this;
     }
     
     /**
@@ -142,7 +142,7 @@ public final class Frame implements JumpTarget {
      * @param line The line number in the calling method where the call is made
      */
     public void updateFrame(String fileName, int line) {
-        updateFrame(null, null, null, Block.NULL_BLOCK, fileName, line, null); 
+        updateFrame(null, null, null, Block.NULL_BLOCK, fileName, line); 
     }
 
     /**
@@ -195,7 +195,7 @@ public final class Frame implements JumpTarget {
      * @param jumpTarget The target for non-local jumps (return in block)
      */
     public void updateFrame(RubyModule klazz, IRubyObject self, String name,
-                 Block block, String fileName, int line, JumpTarget jumpTarget) {
+                 Block block, String fileName, int line) {
         assert block != null : "Block uses null object pattern.  It should NEVER be null";
 
         this.self = self;
@@ -210,13 +210,34 @@ public final class Frame implements JumpTarget {
     }
 
     /**
+     * Update the frame based on the given values.
+     * 
+     * @param klazz The class against which the method is being called
+     * @param self The 'self' for the method
+     * @param name The name under which the method is being invoked
+     * @param block The block passed to the method
+     * @param fileName The filename of the calling method
+     * @param line The line number where the call is being made
+     * @param jumpTarget The target for non-local jumps (return in block)
+     */
+    public void updateFrameForEval(IRubyObject self, String fileName, int line) {
+        this.self = self;
+        this.name = null;
+        this.fileName = fileName;
+        this.line = line;
+        this.visibility = Visibility.PRIVATE;
+        this.isBindingFrame = false;
+        this.backrefAndLastline = null;
+    }
+
+    /**
      * Clear the frame, as when the call completes. Clearing prevents cached
      * frames from holding references after the call is done.
      */
     public void clear() {
         this.self = null;
         this.klazz = null;
-        this.block = null;
+        this.block = Block.NULL_BLOCK;
         this.backrefAndLastline = null;
     }
     

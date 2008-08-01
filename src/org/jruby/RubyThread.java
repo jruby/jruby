@@ -77,7 +77,7 @@ import org.jruby.runtime.Visibility;
 public class RubyThread extends RubyObject {
     private ThreadLike threadImpl;
     private RubyFixnum priority;
-    private final Map<IRubyObject, IRubyObject> threadLocalVariables = new HashMap<IRubyObject, IRubyObject>();
+    private transient Map<IRubyObject, IRubyObject> threadLocalVariables;
     private boolean abortOnException;
     private IRubyObject finalResult;
     private RaiseException exitingException;
@@ -307,11 +307,18 @@ public class RubyThread extends RubyObject {
             throw getRuntime().newTypeError(originalKey + " is not a symbol");
         }
     }
+    
+    private synchronized Map<IRubyObject, IRubyObject> getThreadLocals() {
+        if (threadLocalVariables == null) {
+            threadLocalVariables = new HashMap<IRubyObject, IRubyObject>();
+        }
+        return threadLocalVariables;
+    }
 
     @JRubyMethod(name = "[]", required = 1)
     public IRubyObject op_aref(IRubyObject key) {
         IRubyObject value;
-        if ((value = threadLocalVariables.get(getSymbolKey(key))) != null) {
+        if ((value = getThreadLocals().get(getSymbolKey(key))) != null) {
             return value;
         }
         return getRuntime().getNil();
@@ -321,7 +328,7 @@ public class RubyThread extends RubyObject {
     public IRubyObject op_aset(IRubyObject key, IRubyObject value) {
         key = getSymbolKey(key);
         
-        threadLocalVariables.put(key, value);
+        getThreadLocals().put(key, value);
         return value;
     }
 
@@ -437,6 +444,7 @@ public class RubyThread extends RubyObject {
     }
     
     @JRubyMethod(name = "inspect")
+    @Override
     public IRubyObject inspect() {
         // FIXME: There's some code duplication here with RubyObject#inspect
         StringBuilder part = new StringBuilder();
@@ -464,14 +472,14 @@ public class RubyThread extends RubyObject {
     public RubyBoolean key_p(IRubyObject key) {
         key = getSymbolKey(key);
         
-        return getRuntime().newBoolean(threadLocalVariables.containsKey(key));
+        return getRuntime().newBoolean(getThreadLocals().containsKey(key));
     }
 
     @JRubyMethod(name = "keys")
     public RubyArray keys() {
-        IRubyObject[] keys = new IRubyObject[threadLocalVariables.size()];
+        IRubyObject[] keys = new IRubyObject[getThreadLocals().size()];
         
-        return RubyArray.newArrayNoCopy(getRuntime(), (IRubyObject[])threadLocalVariables.keySet().toArray(keys));
+        return RubyArray.newArrayNoCopy(getRuntime(), getThreadLocals().keySet().toArray(keys));
     }
     
     @JRubyMethod(name = "critical=", required = 1, meta = true)

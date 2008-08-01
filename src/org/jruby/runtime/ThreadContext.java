@@ -68,7 +68,7 @@ public final class ThreadContext {
         return context;
     }
     
-    private final static int INITIAL_SIZE = 50;
+    private final static int INITIAL_SIZE = 10;
     
     private final Ruby runtime;
     
@@ -304,33 +304,50 @@ public final class ThreadContext {
     
     //////////////////// FRAME MANAGEMENT ////////////////////////
     private void pushFrameCopy() {
-        Frame currentFrame = getCurrentFrame();
-        frameStack[++frameIndex].updateFrame(currentFrame);
-        if (frameIndex + 1 == frameStack.length) {
+        int index = ++this.frameIndex;
+        Frame[] stack = frameStack;
+        Frame currentFrame = stack[index - 1];
+        stack[index].updateFrame(currentFrame);
+        if (index + 1 == stack.length) {
             expandFramesIfNecessary();
         }
     }
     
     private Frame pushFrameCopy(Frame frame) {
-        frameStack[++frameIndex].updateFrame(frame);
-        if (frameIndex + 1 == frameStack.length) {
+        int index = ++this.frameIndex;
+        Frame[] stack = frameStack;
+        stack[index].updateFrame(frame);
+        if (index + 1 == stack.length) {
             expandFramesIfNecessary();
         }
         return frameStack[frameIndex];
     }
     
     private Frame pushFrame(Frame frame) {
-        frameStack[++frameIndex] = frame;
-        if (frameIndex + 1 == frameStack.length) {
+        int index = ++this.frameIndex;
+        Frame[] stack = frameStack;
+        stack[index] = frame;
+        if (index + 1 == stack.length) {
             expandFramesIfNecessary();
         }
         return frame;
     }
     
     private void pushCallFrame(RubyModule clazz, String name, 
-                               IRubyObject self, Block block, JumpTarget jumpTarget) {
-        frameStack[++frameIndex].updateFrame(clazz, self, name, block, file, line, jumpTarget);
-        if (frameIndex + 1 == frameStack.length) {
+                               IRubyObject self, Block block) {
+        int index = ++this.frameIndex;
+        Frame[] stack = frameStack;
+        stack[index].updateFrame(clazz, self, name, block, file, line);
+        if (index + 1 == stack.length) {
+            expandFramesIfNecessary();
+        }
+    }
+    
+    private void pushEvalFrame(IRubyObject self) {
+        int index = ++this.frameIndex;
+        Frame[] stack = frameStack;
+        stack[index].updateFrameForEval(self, file, line);
+        if (index + 1 == stack.length) {
             expandFramesIfNecessary();
         }
     }
@@ -340,15 +357,19 @@ public final class ThreadContext {
     }
     
     private void pushFrame(String name) {
-        frameStack[++frameIndex].updateFrame(name, file, line);
-        if (frameIndex + 1 == frameStack.length) {
+        int index = ++this.frameIndex;
+        Frame[] stack = frameStack;
+        stack[index].updateFrame(name, file, line);
+        if (index + 1 == stack.length) {
             expandFramesIfNecessary();
         }
     }
     
     private void pushFrame() {
-        frameStack[++frameIndex].updateFrame(file, line);
-        if (frameIndex + 1 == frameStack.length) {
+        int index = ++this.frameIndex;
+        Frame[] stack = frameStack;
+        stack[index].updateFrame(file, line);
+        if (index + 1 == stack.length) {
             expandFramesIfNecessary();
         }
     }
@@ -899,13 +920,13 @@ public final class ThreadContext {
     }
     
     public void preMethodFrameAndScope(RubyModule clazz, String name, IRubyObject self, Block block, 
-            StaticScope staticScope, JumpTarget jumpTarget) {
+            StaticScope staticScope) {
         RubyModule implementationClass = staticScope.getModule();
         // FIXME: This is currently only here because of some problems with IOOutputStream writing to a "bare" runtime without a proper scope
         if (implementationClass == null) {
             implementationClass = clazz;
         }
-        pushCallFrame(clazz, name, self, block, jumpTarget);
+        pushCallFrame(clazz, name, self, block);
         pushScope(DynamicScope.newDynamicScope(staticScope));
         pushRubyClass(implementationClass);
     }
@@ -916,10 +937,9 @@ public final class ThreadContext {
         popFrame();
     }
     
-    public void preMethodFrameOnly(RubyModule clazz, String name, IRubyObject self, Block block,
-            JumpTarget jumpTarget) {
+    public void preMethodFrameOnly(RubyModule clazz, String name, IRubyObject self, Block block) {
         pushRubyClass(clazz);
-        pushCallFrame(clazz, name, self, block, jumpTarget);
+        pushCallFrame(clazz, name, self, block);
         getCurrentFrame().setVisibility(getPreviousFrame().getVisibility());
     }
     
@@ -975,16 +995,12 @@ public final class ThreadContext {
     
     public void preNodeEval(RubyModule rubyClass, IRubyObject self, String name) {
         pushRubyClass(rubyClass);
-        pushCallFrame(null, null, self, Block.NULL_BLOCK, null);
-        // set visibility to private, since toplevel of scripts always started out private
-        setCurrentVisibility(Visibility.PRIVATE);
+        pushEvalFrame(self);
     }
 
     public void preNodeEval(RubyModule rubyClass, IRubyObject self) {
         pushRubyClass(rubyClass);
-        pushCallFrame(null, null, self, Block.NULL_BLOCK, null);
-        // set visibility to private, since toplevel of scripts always started out private
-        setCurrentVisibility(Visibility.PRIVATE);
+        pushEvalFrame(self);
     }
     
     public void postNodeEval() {
@@ -1001,7 +1017,7 @@ public final class ThreadContext {
         StaticScope sScope = new BlockStaticScope(scope.getStaticScope());
         sScope.setModule(executeUnderClass);
         pushScope(DynamicScope.newDynamicScope(sScope, scope));
-        pushCallFrame(frame.getKlazz(), frame.getName(), frame.getSelf(), block, frame.getJumpTarget());
+        pushCallFrame(frame.getKlazz(), frame.getName(), frame.getSelf(), block);
         getCurrentFrame().setVisibility(getPreviousFrame().getVisibility());
     }
     

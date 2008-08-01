@@ -24,7 +24,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public abstract class CallConfiguration {
     public static final CallConfiguration FRAME_AND_SCOPE = new CallConfiguration() {
         public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
-            context.preMethodFrameAndScope(implementer, name, self, block, scope, jumpTarget);
+            context.preMethodFrameAndScope(implementer, name, self, block, scope);
         }
         
         public void post(ThreadContext context) {
@@ -37,7 +37,7 @@ public abstract class CallConfiguration {
     };
     public static final CallConfiguration FRAME_ONLY = new CallConfiguration() {
         public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
-            context.preMethodFrameOnly(implementer, name, self, block, jumpTarget);
+            context.preMethodFrameOnly(implementer, name, self, block);
         }
         
         public void post(ThreadContext context) {

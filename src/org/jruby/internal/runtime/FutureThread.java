@@ -42,10 +42,8 @@ public class FutureThread implements ThreadLike {
     private volatile Future future;
     private RubyRunnable runnable;
     public RubyThread rubyThread;
-    private final Object startingLock;
     
     public FutureThread(RubyThread rubyThread, RubyRunnable runnable) {
-        this.startingLock = new Object();
         this.rubyThread = rubyThread;
         this.runnable = runnable;
     }
@@ -55,9 +53,7 @@ public class FutureThread implements ThreadLike {
      * a job to the pool.
      */
     public void start() {
-        synchronized (startingLock) {
-            future = rubyThread.getRuntime().getExecutor().submit(runnable);
-        }
+        future = rubyThread.getRuntime().getExecutor().submit(runnable);
     }
     
     /**
@@ -79,9 +75,7 @@ public class FutureThread implements ThreadLike {
      * 
      */
     public boolean isAlive() {
-        synchronized (startingLock) {
-            return future != null && !future.isDone();
-        }
+        return future != null && !future.isDone();
     }
     
     public void join() throws InterruptedException, ExecutionException {
@@ -140,8 +134,6 @@ public class FutureThread implements ThreadLike {
     }
     
     public boolean isInterrupted() {
-        synchronized (startingLock) {
-            return future.isCancelled();
-        }
+        return future.isCancelled();
     }
 }
