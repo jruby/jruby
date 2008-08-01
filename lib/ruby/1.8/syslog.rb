@@ -15,7 +15,7 @@
 # platform.
 
 require 'ffi'
-require "#{File.join(JFFI::Platform::CONF_DIR, 'syslog.rb')}"
+require "#{File.join(JRuby::FFI::Platform::CONF_DIR, 'syslog.rb')}"
 
 module Syslog
   include Constants
