@@ -2589,14 +2589,15 @@ public class RubyIO extends RubyObject {
        
         return runtime.getNil();
     }
-   
-    private static RubyIO registerSelect(ThreadContext context, Selector selector, IRubyObject obj, int ops) throws IOException {
-       RubyIO ioObj = (RubyIO) TypeConverter.convertToType(obj, context.getRuntime().getIO(),
-               MethodIndex.TO_IO, "to_io");
 
+    private static RubyIO convertToIO(ThreadContext context, IRubyObject obj) {
+        return (RubyIO)TypeConverter.convertToType(obj, context.getRuntime().getIO(), MethodIndex.TO_IO, "to_io");
+    }
+   
+    private static boolean registerSelect(ThreadContext context, Selector selector, IRubyObject obj, RubyIO ioObj, int ops) throws IOException {
        Channel channel = ioObj.getChannel();
        if (channel == null || !(channel instanceof SelectableChannel)) {
-           return null;
+           return false;
        }
        
        ((SelectableChannel) channel).configureBlocking(false);
@@ -2609,8 +2610,8 @@ public class RubyIO extends RubyObject {
            key.interestOps(key.interestOps()|real_ops);
        }
        
-       return ioObj;
-   }
+       return true;
+    }
    
     @JRubyMethod(name = "select", required = 1, optional = 3, meta = true)
     public static IRubyObject select(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
@@ -2626,37 +2627,43 @@ public class RubyIO extends RubyObject {
 
     public static IRubyObject select_static(ThreadContext context, Ruby runtime, IRubyObject[] args) {
        try {
-           // FIXME: This needs to be ported
-           boolean atLeastOneDescriptor = false;
-           
            Set pending = new HashSet();
+           Set unselectable_reads = new HashSet();
+           Set unselectable_writes = new HashSet();
            Selector selector = Selector.open();
            if (!args[0].isNil()) {
-               atLeastOneDescriptor = true;
-               
                // read
                checkArrayType(runtime, args[0]);
                for (Iterator i = ((RubyArray) args[0]).getList().iterator(); i.hasNext(); ) {
                    IRubyObject obj = (IRubyObject) i.next();
-                   RubyIO ioObj = registerSelect(context, selector, obj, 
-                           SelectionKey.OP_READ | SelectionKey.OP_ACCEPT);
-                   
-                   if (ioObj!=null && ioObj.writeDataBuffered()) pending.add(obj);
+                   RubyIO ioObj = convertToIO(context, obj);
+                   if (registerSelect(context, selector, obj, ioObj, SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) {
+                       if (ioObj.writeDataBuffered()) {
+                           pending.add(obj);
+                       }
+                   } else {
+                       if (( ioObj.openFile.getMode() & OpenFile.READABLE ) != 0) {
+                           unselectable_reads.add(obj);
+                       }
+                   }
                }
            }
 
            if (args.length > 1 && !args[1].isNil()) {
-               atLeastOneDescriptor = true;
                // write
                checkArrayType(runtime, args[1]);
                for (Iterator i = ((RubyArray) args[1]).getList().iterator(); i.hasNext(); ) {
                    IRubyObject obj = (IRubyObject) i.next();
-                   registerSelect(context, selector, obj, SelectionKey.OP_WRITE);
+                   RubyIO ioObj = convertToIO(context, obj);
+                   if (!registerSelect(context, selector, obj, ioObj, SelectionKey.OP_WRITE)) {
+                       if (( ioObj.openFile.getMode() & OpenFile.WRITABLE ) != 0) {
+                           unselectable_writes.add(obj);
+                       }
+                   }
                }
            }
 
            if (args.length > 2 && !args[2].isNil()) {
-               atLeastOneDescriptor = true;
                checkArrayType(runtime, args[2]);
                // Java's select doesn't do anything about this, so we leave it be.
            }
@@ -2679,11 +2686,7 @@ public class RubyIO extends RubyObject {
                }
            }
            
-           if (!atLeastOneDescriptor && !has_timeout) {
-               return runtime.getNil();
-           }
-           
-           if (pending.isEmpty()) {
+           if (pending.isEmpty() && unselectable_reads.isEmpty() && unselectable_writes.isEmpty()) {
                if (has_timeout) {
                    if (timeout==0) {
                        selector.selectNow();
@@ -2712,6 +2715,8 @@ public class RubyIO extends RubyObject {
                }
            }
            r.addAll(pending);
+           r.addAll(unselectable_reads);
+           w.addAll(unselectable_writes);
            
            // make all sockets blocking as configured again
            for (Iterator i = selector.keys().iterator(); i.hasNext(); ) {
