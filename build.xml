@@ -159,6 +159,11 @@
   </target>
 
   <target name="generate-method-classes" depends="compile">
+    <available file="src_gen/annotated_classes.txt" property="annotations.changed"/>
+    <antcall target="_gmc_internal_"/>
+  </target>
+  
+  <target name="_gmc_internal_" if="annotations.changed">
     <echo message="Generating invokers..."/>
     <java classname="org.jruby.anno.InvokerGenerator" fork="true" failonerror="true">
       <classpath refid="build.classpath"/>
@@ -174,6 +179,8 @@
        <src path="src_gen"/>
        <patternset refid="java.src.pattern"/>
     </javac>
+    
+    <delete file="src_gen/annotated_classes.txt"/>
   </target>
 
   <target name="jar-jruby" unless="jar-up-to-date">    
