@@ -1,10 +1,22 @@
 require 'benchmark'
-require 'kernel/platform/posix'
+require 'ffi'
 
-puts "Benchmark FFI time(3) performance, 10000x"
-POSIX = Platform::POSIX
-20.times {
+module Posix
+  extend FFI::Library
+  attach_function :time, [ :pointer ], :time_t
+end
+
+iter = 1000_000
+puts "Benchmark FFI time(3) performance, #{iter}x"
+
+10.times {
   puts Benchmark.measure {
-    10000.times { POSIX.time(nil) }
+    iter.times { Posix.time(nil) }
+  }
+}
+puts "Benchmark Time.now performance, #{iter}x"
+10.times {
+  puts Benchmark.measure {
+    iter.times { Time.now }
   }
 }

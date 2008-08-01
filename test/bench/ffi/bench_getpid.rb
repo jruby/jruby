@@ -1,15 +1,11 @@
-# 
-# To change this template, choose Tools | Templates
-# and open the template in the editor.
- 
- 
 require 'benchmark'
 require 'ffi'
 
 iter = 100000
 
 module Posix
-  attach_foreign(:int, :getpid, [ ], :from => 'c')
+  extend FFI::Library
+  attach_function :getpid, [], :pid_t
 end
 
 

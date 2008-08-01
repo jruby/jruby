@@ -2,7 +2,9 @@ require 'benchmark'
 require 'ffi'
 
 module FFITest
-  attach_foreign(:double, :cos, [ :double ], :from => 'm')
+  extend FFI::Library
+  ffi_lib 'm'
+  attach_function :cos, [ :double ], :double
 end
 if FFITest.cos(0) != 1
   raise ArgumentError, "FFI.cos returned incorrect value"

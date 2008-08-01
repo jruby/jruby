@@ -4,8 +4,11 @@ require 'ffi'
 include Java
 import java.nio.ByteBuffer
 
-module Foo
-  jffi_attach :int, :stat, [ :string, :buffer_out ]
+iter = 10_000
+
+module Posix
+  extend JFFI::Library
+  attach_function :stat, [ :string, :buffer_out ], :int
 end
 class Stat < JFFI::Struct
   layout \
@@ -34,24 +37,24 @@ class Stat < JFFI::Struct
 end
 puts "Stat.size=#{Stat.size}"
 st = Stat.new
-Foo.stat("/tmp", st.pointer)
+Posix.stat("/tmp", st.pointer)
 puts "mtime=#{st[:st_mtime]} File.stat.mtime=#{File.stat('/tmp').mtime.to_i}"
 puts "size=#{st[:st_size]} File.stat.size=#{File.stat('/tmp').size.to_i}"
-puts "10k FFI stat(file)"
+puts "FFI stat(file) #{iter}x"
 20.times {
   puts Benchmark.measure {
 
-    10_000.times do
+    iter.times do
       buf = Stat.allocate # Allocate on the heap
-      Foo.stat("/tmp", buf.pointer)
+      Posix.stat("/tmp", buf.pointer)
     end
   }
 }
-puts "10k File.stat(file)"
+puts "File.stat(file) #{iter}x"
 20.times {
   puts Benchmark.measure {
 
-    10_000.times do
+    iter.times do
       File.stat("/tmp")
     end
   }

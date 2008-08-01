@@ -3,8 +3,10 @@ require 'ffi'
 require 'etc'
 
 iter = 10000
+
 module Posix
-  attach_foreign(:string, :getlogin, [], :from => 'c')
+  extend FFI::Library
+  attach_function :getlogin, [], :string
 end
 if Posix.getlogin != Etc.getlogin
   raise ArgumentError, "FFI getlogin returned incorrect value"

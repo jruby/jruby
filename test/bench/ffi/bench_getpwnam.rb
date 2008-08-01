@@ -7,18 +7,18 @@ Passwd = Platform::Etc::Passwd
 
 iter = 100000
 
-class Posix
-  # jffi_attach passes the :string param in as a NUL terminated constant string
-  jffi_attach :pointer, 'getpwnam', [ :string ], { :from => 'c', :as => 'jgetpwnam' }
-
-  # attach_foreign passes the :string param in as a mutable NUL terminated string for
-  # rubinius backward compatibility, but the copyback introduces some overhead
-  attach_foreign :pointer, 'getpwnam', [ :string ], :from => 'c'
+module JPosix
+  extend JFFI::Library
+  attach_function :getpwnam, [ :string ], :pointer
+end
+module RbxPosix
+  extend FFI::Library
+  attach_function :getpwnam, [ :string ], :pointer
 end
 
 login = Etc.getlogin
 
-ffiname = Passwd.new(Posix.getpwnam(login))[:pw_name]
+ffiname = Passwd.new(JPosix.getpwnam(login))[:pw_name]
 etcname = Etc.getpwnam(login).name
 puts "pw_name does not match Etc.getpwnam.name" if ffiname != etcname
 
@@ -26,7 +26,7 @@ pwd = Etc.getpwnam(login)
 puts "members=#{pwd.members.inspect}"
 puts "values=#{pwd.values.inspect}"
 
-pwd = Passwd.new(Posix.getpwnam(login))
+pwd = Passwd.new(JPosix.getpwnam(login))
 puts "members=#{pwd.members.inspect}"
 puts "values=#{pwd.values.inspect}"
 
@@ -36,7 +36,7 @@ puts "Benchmark FFI getpwnam (rubinius api) performance, #{iter}x"
 10.times {
   puts Benchmark.measure {
     iter.times {
-      pwd = Passwd.new Posix.getpwnam(login)
+      pwd = Passwd.new RbxPosix.getpwnam(login)
       pwd[:pw_name]
       pwd[:pw_uid]
       pwd[:pw_gid]
@@ -48,7 +48,7 @@ puts "Benchmark FFI getpwnam (jruby api) performance, #{iter}x"
 10.times {
   puts Benchmark.measure {
     iter.times {
-      pwd = Passwd.new Posix.jgetpwnam(login)
+      pwd = Passwd.new JPosix.getpwnam(login)
       pwd[:pw_name]
       pwd[:pw_uid]
       pwd[:pw_gid]

@@ -315,11 +315,27 @@ module FFI
   end
   
 end
-
-class Module
-
+module JFFI::Library
   # TODO: Rubinius does *names here and saves the array. Multiple libs?
-  def set_ffi_lib(name)
+  def ffi_lib(name)
+    @ffi_lib = name
+  end
+  def jffi_attach(ret_type, name, arg_types, opts = {})
+    lib = opts[:from]
+    invoker = JFFI.create_invoker lib, name.to_s, arg_types, ret_type
+    raise ArgumentError, "Unable to find function '#{name}' to bind to #{self.name}.#{(opts[:as] || name)}" unless invoker
+    invoker.attach(self, (opts[:as] || name).to_s)
+    # Return a callable version of the invoker
+    return proc { |*args| invoker.invoke(args) }
+  end
+  def attach_function(name, a3, a4, a5=nil)
+    mname, args, ret = a5 ? [ a3, a4, a5 ] : [ name.to_sym, a3, a4 ]
+    jffi_attach(ret, name, args, { :as => mname, :from => @ffi_lib })
+  end
+end
+module FFI::Library
+  # TODO: Rubinius does *names here and saves the array. Multiple libs?
+  def ffi_lib(name)
     @ffi_lib = name
   end
   ##
@@ -333,77 +349,12 @@ class Module
   # The C function return type is provided last.
 
   def attach_function(name, a3, a4, a5=nil)
-    if a5
-      mname = a3
-      args = a4
-      ret = a5
-    else
-      mname = name.to_sym
-      args = a3
-      ret = a4
-    end
-    attach_foreign(ret, name, args, { :as => mname, :from => @ffi_lib })
-  end
-  # Create a wrapper to a function in a C-linked library that
-  # exists somewhere in the system. If a specific library is
-  # not given, the function is assumed to exist in the running
-  # process, the Rubinius executable. The process contains many
-  # linked libraries in addition to Rubinius' codebase, libc of
-  # course the most prominent on the system side. The wrapper
-  # method is added to the Module as a singleton method or a
-  # "class method."
-  #
-  # The function is specified like a declaration: the first
-  # argument is the type symbol for the return type (see FFI
-  # documentation for types), the second argument is the name
-  # of the function and the third argument is an Array of the
-  # types of the function's arguments. Currently at most 6
-  # arguments can be given.
-  #
-  #   # If you want to wrap this function:
-  #   int foobar(double arg_one, const char* some_string);
-  #
-  #   # The arguments to #attach_foreign look like this:
-  #   :int, 'foobar', [:double, :string]
-  #
-  # If the function is from an external library such as, say,
-  # libpcre, libcurl etc. you can give the name or path of
-  # the library. The fourth argument is an option hash and
-  # the library name should be given in the +:from+ key of
-  # the hash. The name may (and for portable code, should)
-  # omit the file extension. If the extension is present,
-  # it must be the correct one for the runtime platform.
-  # The library is searched for in the system library paths
-  # but if necessary, the full absolute or relative path can
-  # be given.
-  #
-  # By default, the new method's name is the same as the
-  # function it wraps but in some cases it is desirable to
-  # change this. You can specify the method name in the +:as+
-  # key of the option hash.
-  def attach_foreign(ret_type, name, arg_types, opts = {})
-    lib = opts[:from]
-
-#    if lib and !lib.chomp! ".#{Rubinius::LIBSUFFIX}"
-#      lib.chomp! ".#{Rubinius::ALT_LIBSUFFIX}" rescue nil     # .defined? is broken anyway
-#    end
+    mname, arg_types, ret_type = a5 ? [ a3, a4, a5 ] : [ name.to_sym, a3, a4 ]
+    lib = @ffi_lib
 
     invoker = FFI.create_invoker lib, name.to_s, arg_types, ret_type
-    raise ArgumentError, "Unable to find function '#{name}' to bind to #{self.name}.#{(opts[:as] || name)}" unless invoker
-    invoker.attach(self, (opts[:as] || name).to_s)
-    # Return a callable version of the invoker
-    return proc { |*args| invoker.invoke(args) }
-  end
-  def jffi_attach(ret_type, name, arg_types, opts = {})
-    lib = opts[:from]
-
-#    if lib and !lib.chomp! ".#{Rubinius::LIBSUFFIX}"
-#      lib.chomp! ".#{Rubinius::ALT_LIBSUFFIX}" rescue nil     # .defined? is broken anyway
-#    end
-
-    invoker = JFFI.create_invoker lib, name.to_s, arg_types, ret_type
-    raise ArgumentError, "Unable to find function '#{name}' to bind to #{self.name}.#{(opts[:as] || name)}" unless invoker
-    invoker.attach(self, (opts[:as] || name).to_s)
+    raise ArgumentError, "Unable to find function '#{name}' to bind to #{self.name}.#{mname}" unless invoker
+    invoker.attach(self, mname.to_s)
     # Return a callable version of the invoker
     return proc { |*args| invoker.invoke(args) }
   end

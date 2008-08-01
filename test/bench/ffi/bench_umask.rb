@@ -3,11 +3,13 @@ require 'ffi'
 
 iter = 10000
 module Posix
-  attach_foreign :int, 'umask', [ :int ]
+  extend FFI::Library
+  attach_function 'umask', [ :int ], :int
 end
 module NativeFile
+  extend FFI::Library
   # Attaching the function to this module is about 10% faster than calling Posix.umask
-  attach_function('umask', :_umask, [ :int ], :int)
+  attach_function 'umask', :_umask, [ :int ], :int
   def self.umask(mask = nil)
     if mask
       _umask(mask)
