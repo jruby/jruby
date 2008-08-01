@@ -13,9 +13,12 @@
 # if you're writing a server in Ruby.  For the details of the syslog(8)
 # architecture and constants, see the syslog(3) manual page of your
 # platform.
-
-require 'ffi'
-require "#{File.join(JRuby::FFI::Platform::CONF_DIR, 'syslog.rb')}"
+begin
+  require 'ffi'
+  require "#{File.join(JRuby::FFI::Platform::CONF_DIR, 'syslog.rb')}"
+rescue LoadError => ex
+  raise LoadError, "Syslog not supported on this platform"
+end
 
 module Syslog
   include Constants
