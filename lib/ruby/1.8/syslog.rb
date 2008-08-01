@@ -134,35 +134,35 @@ module Syslog
 
     ##
     # handy little shortcut for LOG_EMERG as the priority
-    def emerg(*args);  Foreign.write(LOG_EMERG,   *args); end
+    def emerg(*args);  write(Syslog::LOG_EMERG,   *args); end
 
     ##
     # handy little shortcut for LOG_ALERT as the priority
-    def alert(*args);  Foreign.write(LOG_ALERT,   *args); end
+    def alert(*args);  write(Syslog::LOG_ALERT,   *args); end
 
     ##
     # handy little shortcut for LOG_ERR as the priority
-    def err(*args);    Foreign.write(LOG_ERR,     *args); end
+    def err(*args);    write(Syslog::LOG_ERR,     *args); end
 
     ##
     # handy little shortcut for LOG_CRIT as the priority
-    def crit(*args);   Foreign.write(LOG_CRIT,    *args); end
+    def crit(*args);   write(Syslog::LOG_CRIT,    *args); end
 
     ##
     # handy little shortcut for LOG_WARNING as the priority
-    def warning(*args);Foreign.write(LOG_WARNING, *args); end
+    def warning(*args);write(Syslog::LOG_WARNING, *args); end
 
     ##
     # handy little shortcut for LOG_NOTICE as the priority
-    def notice(*args); Foreign.write(LOG_NOTICE,  *args); end
+    def notice(*args); write(Syslog::LOG_NOTICE,  *args); end
 
     ##
     # handy little shortcut for LOG_INFO as the priority
-    def info(*args);   Foreign.write(LOG_INFO,    *args); end
+    def info(*args);   write(Syslog::LOG_INFO,    *args); end
 
     ##
     # handy little shortcut for LOG_DEBUG as the priority
-    def debug(*args);  Foreign.write(LOG_DEBUG,   *args); end
+    def debug(*args);  write(Syslog::LOG_DEBUG,   *args); end
 
     ##
     #   LOG_MASK(pri)
