@@ -15,6 +15,9 @@ set _RUBY_OPTS=
 set _DFLT_VM_OPTS=%JAVA_OPTS%
 set _JAVA_VM=-client
 
+set SAFE_JAVA_HOME=%JAVA_HOME:(=^^(%
+set SAFE_JAVA_HOME=%SAFE_JAVA_HOME:)=^^)%
+
 rem
 rem Can you believe I'm rewriting batch arg processing in batch files because batch
 rem file arg processing sucks so bad? Can you believe this is even possible?
@@ -62,7 +65,7 @@ if ["%_CMP%"] == ["--client"] (
 )
 
 if ["%_CMP%"] == ["--jdb"] (
-  set _STARTJAVA=%JAVA_HOME%\bin\jdb
+  set _STARTJAVA=%SAFE_JAVA_HOME%\bin\jdb
   goto :vmoptsNext
 )
 
