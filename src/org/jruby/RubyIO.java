@@ -2661,8 +2661,9 @@ public class RubyIO extends RubyObject {
                // Java's select doesn't do anything about this, so we leave it be.
            }
 
+           final boolean has_timeout = ( args.length > 3 && !args[3].isNil() );
            long timeout = 0;
-           if(args.length > 3 && !args[3].isNil()) {
+           if(has_timeout) {
                IRubyObject timeArg = args[3];
                if (timeArg instanceof RubyFloat) {
                    timeout = Math.round(((RubyFloat) timeArg).getDoubleValue() * 1000);
@@ -2678,12 +2679,12 @@ public class RubyIO extends RubyObject {
                }
            }
            
-           if (!atLeastOneDescriptor) {
+           if (!atLeastOneDescriptor && !has_timeout) {
                return runtime.getNil();
            }
            
            if (pending.isEmpty()) {
-               if (args.length > 3) {
+               if (has_timeout) {
                    if (timeout==0) {
                        selector.selectNow();
                    } else {
