@@ -853,7 +853,7 @@ public class RubyKernel {
             throw context.getRuntime().newArgumentError("negative level(" + level + ')');
         }
 
-        return ThreadContext.createBacktraceFromFrames(context.getRuntime(), context.createBacktrace(level, false), false);
+        return context.createCallerBacktrace(context.getRuntime(), level);
     }
 
     @JRubyMethod(name = "catch", required = 1, frame = true, module = true, visibility = PRIVATE)

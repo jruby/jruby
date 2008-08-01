@@ -570,23 +570,28 @@ public final class ThreadContext {
         return result;
     }
     
+    @Deprecated
     private static void addBackTraceElement(RubyArray backtrace, Frame frame, Frame previousFrame) {
+        addBackTraceElement(backtrace.getRuntime(), backtrace, frame, previousFrame);
+    }
+    
+    private static void addBackTraceElement(Ruby runtime, RubyArray backtrace, Frame frame, Frame previousFrame) {
         if (frame != previousFrame && // happens with native exceptions, should not filter those out
+                frame.getLine() == previousFrame.getLine() &&
                 frame.getName() != null && 
                 frame.getName().equals(previousFrame.getName()) &&
-                frame.getFile().equals(previousFrame.getFile()) &&
-                frame.getLine() == previousFrame.getLine()) {
+                frame.getFile().equals(previousFrame.getFile())) {
             return;
         }
         
-        StringBuilder buf = new StringBuilder(60);
-        buf.append(frame.getFile()).append(':').append(frame.getLine() + 1);
-        
+        RubyString traceLine;
         if (previousFrame.getName() != null) {
-            buf.append(":in `").append(previousFrame.getName()).append('\'');
+            traceLine = RubyString.newString(runtime, frame.getFile() + ':' + (frame.getLine() + 1) + ":in `" + previousFrame.getName() + '\'');
+        } else {
+            traceLine = RubyString.newString(runtime, frame.getFile() + ':' + (frame.getLine() + 1));
         }
         
-        backtrace.append(backtrace.getRuntime().newString(buf.toString()));
+        backtrace.append(traceLine);
     }
     
     private static void addBackTraceElement(RubyArray backtrace, Frame frame, Frame previousFrame, FrameType frameType) {
@@ -641,6 +646,24 @@ public final class ThreadContext {
      */
     public static IRubyObject createBacktraceFromFrames(Ruby runtime, Frame[] backtraceFrames) {
         return createBacktraceFromFrames(runtime, backtraceFrames, true);
+    }
+    
+    /**
+     * Create an Array with backtrace information.
+     * @param runtime
+     * @param level
+     * @param nativeException
+     * @return an Array with the backtrace
+     */
+    public IRubyObject createCallerBacktrace(Ruby runtime, int level) {
+        int traceSize = frameIndex - level + 1;
+        RubyArray backtrace = runtime.newArray(traceSize);
+
+        for (int i = traceSize - 1; i > 0; i--) {
+            addBackTraceElement(runtime, backtrace, frameStack[i], frameStack[i - 1]);
+        }
+        
+        return backtrace;
     }
     
     /**
