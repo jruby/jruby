@@ -4,7 +4,7 @@ iter = 100000
 str = "test"
 
 module JLibC
-  extend JFFI::Library
+  extend JRuby::FFI::Library
   attach_function :strlen, [ :string ], :int
 end
 module RbxLibC

@@ -66,7 +66,7 @@ public abstract class AbstractMemoryPointer extends RubyObject {
     protected final long size;
     
     public static RubyClass createMemoryPointerClass(Ruby runtime) {
-        RubyModule module = runtime.getModule(FFIProvider.MODULE_NAME);
+        RubyModule module = FFIProvider.getModule(runtime);
         RubyClass result = module.defineClassUnder(className, runtime.getObject(),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         

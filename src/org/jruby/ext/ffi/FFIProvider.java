@@ -29,6 +29,7 @@
 package org.jruby.ext.ffi;
 
 import java.nio.channels.ByteChannel;
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ext.ffi.io.FileDescriptorIO;
 
@@ -40,7 +41,7 @@ public abstract class FFIProvider {
     /**
      * The name of the module to place all the classes/methods under.
      */
-    public static final String MODULE_NAME = "JFFI";
+    public static final String MODULE_NAME = "JRuby::FFI";
 
     private static final class SingletonHolder {
         private static final FFIProvider INSTANCE = getInstance();
@@ -75,6 +76,9 @@ public abstract class FFIProvider {
         return SingletonHolder.INSTANCE;
     }
 
+    public static RubyModule getModule(Ruby runtime) {
+        return (RubyModule) runtime.fastGetModule("JRuby").fastGetConstantAt("FFI");
+    }
     /**
      * Registers FFI ruby classes/modules
      * 

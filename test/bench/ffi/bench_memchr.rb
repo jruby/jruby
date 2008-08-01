@@ -4,7 +4,7 @@ require 'java'
 iter = 10000
 str = "test" * 1000
 module JLibC
-  extend JFFI::Library
+  extend JRuby::FFI::Library
   attach_function :memchr, [ :buffer_pinned, :char, :int ], :pointer
 end
 
@@ -14,7 +14,7 @@ module RbxLibC
 end
 
 if JLibC.memchr("test", 't', 4).nil?
-  raise ArgumentError, "JFFI.memchr returned incorrect value"
+  raise ArgumentError, "JRuby::FFI.memchr returned incorrect value"
 end
 if RbxLibC.memchr("test", 't', 4).nil?
   raise ArgumentError, "FFI.memchr returned incorrect value"

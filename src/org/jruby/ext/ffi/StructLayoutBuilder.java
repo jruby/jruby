@@ -74,7 +74,7 @@ public final class StructLayoutBuilder extends RubyObject {
         private static final ObjectAllocator INSTANCE = new Allocator();
     }
     public static RubyClass createStructLayoutBuilderClass(Ruby runtime) {
-        RubyModule parent = runtime.getModule(FFIProvider.MODULE_NAME);
+        RubyModule parent = FFIProvider.getModule(runtime);
         RubyClass result = runtime.defineClassUnder(CLASS_NAME, runtime.getObject(),
                 Allocator.INSTANCE, parent);
         result.defineAnnotatedMethods(StructLayoutBuilder.class);
@@ -83,7 +83,7 @@ public final class StructLayoutBuilder extends RubyObject {
         return result;
     }
     StructLayoutBuilder(Ruby runtime) {
-        this(runtime, runtime.fastGetModule(FFIProvider.MODULE_NAME).fastGetClass(CLASS_NAME));
+        this(runtime, FFIProvider.getModule(runtime).fastGetClass(CLASS_NAME));
     }
     StructLayoutBuilder(Ruby runtime, RubyClass klass) {
         super(runtime, klass);

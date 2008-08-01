@@ -56,7 +56,10 @@ include Java
 require 'rbconfig'
 require 'ffi/platform'
 
-module JFFI
+module JRuby
+end
+
+module JRuby::FFI
   
   import org.jruby.ext.ffi.NativeType
   FFIProvider = Java::org.jruby.ext.ffi.FFIProvider.instance
@@ -79,15 +82,15 @@ module JFFI
       if current.kind_of? NativeType
         code = current
       else
-        code = JFFI::TypeDefs[current]
+        code = JRuby::FFI::TypeDefs[current]
         raise TypeError, "Unable to resolve type '#{current}'" unless code
       end
 
-      JFFI::TypeDefs[add] = code
+      JRuby::FFI::TypeDefs[add] = code
     end
 
     def find_type(name)
-      code = JFFI::TypeDefs[name]
+      code = JRuby::FFI::TypeDefs[name]
       raise TypeError, "Unable to resolve type '#{name}'" unless code
       return code
     end
@@ -97,8 +100,8 @@ module JFFI
       lib = 'c' unless lib
       # jna & jffi need just the last part of the library name
       lib = lib[3..-1] if lib =~ /^lib/
-      # Current artificial limitation based on JFFI limit
-      raise JFFI::SignatureError, 'FFI functions may take max 32 arguments!' if args.size > 32
+      # Current artificial limitation based on JRuby::FFI limit
+      raise JRuby::FFI::SignatureError, 'FFI functions may take max 32 arguments!' if args.size > 32
 
       cargs = args.map { |e| find_type(e) }
       invoker = FFIProvider.createInvoker(lib, name, find_type(ret), 
@@ -214,7 +217,7 @@ module JFFI
         f.each_line { |line|
           if line.index(typedef) == 0
             new_type, orig_type = line.chomp.slice(typedef.length..-1).split(/\s*=\s*/)
-            JFFI.add_typedef(orig_type.to_sym, new_type.to_sym)
+            JRuby::FFI.add_typedef(orig_type.to_sym, new_type.to_sym)
           else
             key, value = line.chomp.split(/\s*=\s*/)
             CONFIG[key] = value
@@ -258,8 +261,8 @@ module JFFI
     NativeType::UINT64 => 8,
     NativeType::FLOAT32 => 4,
     NativeType::FLOAT64 => 8,
-    NativeType::LONG => JFFI::Platform::LONG_SIZE / 8,
-    NativeType::ULONG => JFFI::Platform::LONG_SIZE / 8,
+    NativeType::LONG => JRuby::FFI::Platform::LONG_SIZE / 8,
+    NativeType::ULONG => JRuby::FFI::Platform::LONG_SIZE / 8,
   }
   
   def self.size_to_type(size)
@@ -284,19 +287,19 @@ module JFFI
   end
 end
 # Define MemoryPointer globally for rubinius FFI backward compatibility
-MemoryPointer = JFFI::MemoryPointer
+MemoryPointer = JRuby::FFI::MemoryPointer
 
 module FFI
   TypeDefs = {
-    :string => JFFI::NativeType::RBXSTRING,
-    :jstring => JFFI::NativeType::STRING
+    :string => JRuby::FFI::NativeType::RBXSTRING,
+    :jstring => JRuby::FFI::NativeType::STRING
   }
   
   def self.find_type(type)
-    FFI::TypeDefs[type] || JFFI.find_type(type)
+    FFI::TypeDefs[type] || JRuby::FFI.find_type(type)
   end
   def self.add_typedef(current, add)
-    JFFI.add_typedef(current, add)
+    JRuby::FFI.add_typedef(current, add)
   end
   def self.create_invoker(lib, name, args, ret)
     # Ugly hack to simulate the effect of dlopen(NULL, x) - not quite correct
@@ -304,25 +307,25 @@ module FFI
     # jffi needs just the last part of the library name
     lib = lib[3..-1] if lib =~ /^lib/
     
-    # Current artificial limitation based on JFFI limit
-    raise JFFI::SignatureError, 'FFI functions may take max 32 arguments!' if args.size > 32
+    # Current artificial limitation based on JRuby::FFI limit
+    raise JRuby::FFI::SignatureError, 'FFI functions may take max 32 arguments!' if args.size > 32
 
     cargs = args.map { |e| find_type(e) }
-    invoker = JFFI::FFIProvider.createInvoker(lib, name, find_type(ret),
-      cargs.to_java(JFFI::NativeType))
+    invoker = JRuby::FFI::FFIProvider.createInvoker(lib, name, find_type(ret),
+      cargs.to_java(JRuby::FFI::NativeType))
     raise NotFoundError.new(name, lib) unless invoker
     return invoker
   end
   
 end
-module JFFI::Library
+module JRuby::FFI::Library
   # TODO: Rubinius does *names here and saves the array. Multiple libs?
   def ffi_lib(name)
     @ffi_lib = name
   end
   def jffi_attach(ret_type, name, arg_types, opts = {})
     lib = opts[:from]
-    invoker = JFFI.create_invoker lib, name.to_s, arg_types, ret_type
+    invoker = JRuby::FFI.create_invoker lib, name.to_s, arg_types, ret_type
     raise ArgumentError, "Unable to find function '#{name}' to bind to #{self.name}.#{(opts[:as] || name)}" unless invoker
     invoker.attach(self, (opts[:as] || name).to_s)
     # Return a callable version of the invoker
@@ -369,7 +372,7 @@ class Module
     ffi_lib lib
   end
 end
-class JFFI::MemoryPointer
+class JRuby::FFI::MemoryPointer
   # call-seq:
   #   MemoryPointer.new(num) => MemoryPointer instance of <i>num</i> bytes
   #   MemoryPointer.new(sym) => MemoryPointer instance with number
@@ -396,7 +399,7 @@ class JFFI::MemoryPointer
     if type.kind_of? Fixnum
       size = type
     elsif type.kind_of? Symbol
-      size = JFFI.type_size(type)
+      size = JRuby::FFI.type_size(type)
     else
       size = type.size
     end
@@ -498,23 +501,24 @@ class JFFI::MemoryPointer
     put_array_of_long(0, ary)
   end
 end
-class JFFI::BaseStruct
+class JRuby::FFI::BaseStruct
+  MemoryPointer = JRuby::FFI::MemoryPointer
   attr_reader :pointer
   
   def initialize(pointer = nil, *spec)
     if pointer then
       @pointer = pointer
     else
-      @pointer = JFFI::MemoryPointer.allocateDirect size
+      @pointer = MemoryPointer.allocateDirect size
     end
 
     @cspec = self.class.layout(*spec)
   end
   def self.allocate(*spec)
-    self.new(JFFI::MemoryPointer.allocate(@size), *spec)
+    self.new(MemoryPointer.allocate(@size), *spec)
   end
   def self.allocate_direct(*spec)
-    self.new(JFFI::MemoryPointer.allocateDirect(@size), *spec)
+    self.new(MemoryPointer.allocateDirect(@size), *spec)
   end
   def self.size
     @size
@@ -538,28 +542,28 @@ class JFFI::BaseStruct
     @cspec.members.map { |m| self[m] }
   end
 end
-class JFFI::Struct < JFFI::BaseStruct
+class JRuby::FFI::Struct < JRuby::FFI::BaseStruct
   
   def self.layout(*spec)
     
     return @layout if spec.size == 0
     spec = spec[0]
-    builder = JFFI::StructLayoutBuilder.new
+    builder = JRuby::FFI::StructLayoutBuilder.new
     spec.each do |name,type|
-      builder.add_field(name, JFFI.find_type(type))
+      builder.add_field(name, JRuby::FFI.find_type(type))
     end
     cspec = builder.build
-    @layout = cspec unless self == JFFI::Struct
+    @layout = cspec unless self == JRuby::FFI::Struct
     @size = cspec.size
     return cspec
   end
 end
 
-class FFI::Struct < JFFI::BaseStruct
+class FFI::Struct < JRuby::FFI::BaseStruct
   def self.layout(*spec)
     return @layout if spec.size == 0
 
-    builder = JFFI::StructLayoutBuilder.new
+    builder = JRuby::FFI::StructLayoutBuilder.new
     i = 0
     while i < spec.size
       name, type, offset = spec[i, 3]
@@ -575,16 +579,16 @@ class FFI::Struct < JFFI::BaseStruct
   end
 
   def self.config(base, *fields)
-    config = JFFI::Config::CONFIG
+    config = JRuby::FFI::Config::CONFIG
     @size = config["#{base}.sizeof"]
     
-    builder = JFFI::StructLayoutBuilder.new
+    builder = JRuby::FFI::StructLayoutBuilder.new
     
     fields.each do |field|
       offset = config["#{base}.#{field}.offset"]
       size   = config["#{base}.#{field}.size"]
       type   = config["#{base}.#{field}.type"]
-      type   = type ? type.to_sym : JFFI.size_to_type(size)
+      type   = type ? type.to_sym : JRuby::FFI.size_to_type(size)
 
       code = FFI.find_type type
       if (code == NativeType::CHAR_ARRAY)

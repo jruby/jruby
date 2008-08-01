@@ -17,7 +17,7 @@ module RbxPosix
   attach_function :chmod, :_chmod, [ :string, :int ], :int
 end
 module JPosix
-  extend JFFI::Library
+  extend JRuby::FFI::Library
   extend BasePosix
   attach_function :chmod, :_chmod, [ :string, :int ], :int  
 end

@@ -9,7 +9,7 @@ module Posix
 end
 
 
-puts "pid=#{Process.pid} Foo.getpid=#{Foo.getpid}"
+puts "pid=#{Process.pid} Foo.getpid=#{Posix.getpid}"
 puts "Benchmark FFI getpid performance, #{iter}x calls"
 
 

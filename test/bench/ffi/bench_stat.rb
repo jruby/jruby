@@ -7,10 +7,10 @@ import java.nio.ByteBuffer
 iter = 10_000
 
 module Posix
-  extend JFFI::Library
+  extend JRuby::FFI::Library
   attach_function :stat, [ :string, :buffer_out ], :int
 end
-class Stat < JFFI::Struct
+class Stat < JRuby::FFI::Struct
   layout \
     :st_dev => :int,        # device inode resides on (dev_t)
     :st_ino => :int,        # inode's number (ino_t)

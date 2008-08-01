@@ -1,5 +1,6 @@
 include Java
-module JFFI
+module JRuby;end
+module JRuby::FFI
   module Platform
     LONG_SIZE = Java::org.jruby.ext.ffi.Platform.getPlatform.long_size
     ADDRESS_SIZE = Java::org.jruby.ext.ffi.Platform.getPlatform.address_size

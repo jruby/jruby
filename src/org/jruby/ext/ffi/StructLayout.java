@@ -71,7 +71,7 @@ public final class StructLayout extends RubyObject {
      * @return The new class
      */
     public static RubyClass createStructLayoutClass(Ruby runtime) {
-        RubyModule parent = runtime.getModule(FFIProvider.MODULE_NAME);
+        RubyModule parent = FFIProvider.getModule(runtime);
         RubyClass result = runtime.defineClassUnder(CLASS_NAME, runtime.getObject(),
                 Allocator.INSTANCE, parent);
         result.defineAnnotatedMethods(StructLayout.class);
@@ -86,7 +86,7 @@ public final class StructLayout extends RubyObject {
      * @param runtime The runtime for the <tt>StructLayout</tt>
      */
     StructLayout(Ruby runtime) {
-        this(runtime, runtime.fastGetModule(FFIProvider.MODULE_NAME).fastGetClass(CLASS_NAME));
+        this(runtime, FFIProvider.getModule(runtime).fastGetClass(CLASS_NAME));
     }
     
     /**
@@ -109,7 +109,7 @@ public final class StructLayout extends RubyObject {
      * @param size the total size of the struct.
      */
     StructLayout(Ruby runtime, Map<IRubyObject, Member> fields, int size) {
-        super(runtime, runtime.fastGetModule(FFIProvider.MODULE_NAME).fastGetClass(CLASS_NAME));
+        super(runtime, FFIProvider.getModule(runtime).fastGetClass(CLASS_NAME));
         //
         // fields should really be an immutable map as it is never modified after construction
         //

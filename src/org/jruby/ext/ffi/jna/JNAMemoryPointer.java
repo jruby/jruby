@@ -51,7 +51,7 @@ public class JNAMemoryPointer extends AbstractMemoryPointer {
     private final JNAMemoryIO io;
     
     public static RubyClass createMemoryPointerClass(Ruby runtime) {
-        RubyModule module = runtime.getModule(FFIProvider.MODULE_NAME);
+        RubyModule module = FFIProvider.getModule(runtime);
         RubyClass result = module.defineClassUnder(MEMORY_POINTER_NAME, 
                 module.getClass(AbstractMemoryPointer.className), 
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
@@ -73,7 +73,7 @@ public class JNAMemoryPointer extends AbstractMemoryPointer {
                 ptr.size == Long.MAX_VALUE ? Long.MAX_VALUE : ptr.size - offset);
     }
     private JNAMemoryPointer(Ruby runtime, JNAMemoryIO io, long offset, long size) {
-        super(runtime, runtime.fastGetModule(FFIProvider.MODULE_NAME).fastGetClass(MEMORY_POINTER_NAME),
+        super(runtime, FFIProvider.getModule(runtime).fastGetClass(MEMORY_POINTER_NAME),
                 offset, size);
         this.io = io;
     }
