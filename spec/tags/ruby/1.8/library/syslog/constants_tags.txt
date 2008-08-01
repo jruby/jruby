@@ -1,1 +1,0 @@
-fails(JRUBY-2204):Syslog::Constants should be included
