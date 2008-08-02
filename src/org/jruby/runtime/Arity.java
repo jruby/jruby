@@ -192,6 +192,18 @@ public final class Arity implements Serializable {
         }
     }
 
+    public void checkArity(Ruby runtime, int length) {
+        if (isFixed()) {
+            if (length != required()) {
+                throw runtime.newArgumentError("wrong number of arguments(" + length + " for " + required() + ")");
+            }
+        } else {
+            if (length < required()) {
+                throw runtime.newArgumentError("wrong number of arguments(" + length + " for " + required() + ")");
+            }
+        }
+    }
+
     public boolean isFixed() {
         return value >= 0;
     }

@@ -150,23 +150,9 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
 
     public IRubyObject interpretedCall(ThreadContext context, Ruby runtime, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         try {
-            RubyModule implementer = getImplementationClass();
+            preInterpret(context, name,self, block, runtime, args.length);
 
-            context.preMethodFrameAndScope(implementer, name, self, block, staticScope);
-            if (argsNode.getBlockArgNode() != null) {
-                context.getCurrentScope().setValue(
-                        argsNode.getBlockArgNode().getCount(),
-                        RuntimeHelpers.processBlockArgument(runtime, block),
-                        0);
-            }
-
-            getArity().checkArity(runtime, args);
-
-            prepareArguments(context, runtime, args);
-
-            if (runtime.hasEventHooks()) {
-                traceCall(context, runtime, name);
-            }
+            prepareArguments(context, runtime, self, args);
 
             return body.interpret(runtime, context, self, block);
         } catch (JumpException.ReturnJump rj) {
@@ -176,10 +162,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         } catch (StackOverflowError sfe) {
             throw runtime.newSystemStackError("stack level too deep");
         } finally {
-            if (runtime.hasEventHooks()) {
-                traceReturn(context, runtime, name);
-            }
-            context.postMethodFrameAndScope();
+            postInterpret(runtime, context, name);
         }
     }
 
@@ -372,6 +355,24 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         }
     }
 
+    private int assignOptArgs(IRubyObject[] args, Ruby runtime, ThreadContext context, IRubyObject self, int givenArgsCount) {
+        ListNode optArgs = argsNode.getOptArgs();
+
+        // assign given optional arguments to their variables
+        int j = 0;
+        for (int i = requiredArgsCount; i < args.length && j < optArgs.size(); i++, j++) {
+            // in-frame EvalState should already have receiver set as self, continue to use it
+            optArgs.get(j).assign(runtime, context, self, args[i], Block.NULL_BLOCK, true);
+            givenArgsCount++;
+        }
+
+        // assign the default values, adding to the end of allArgs
+        for (int i = 0; j < optArgs.size(); i++, j++) {
+            optArgs.get(j).interpret(runtime, context, self, Block.NULL_BLOCK);
+        }
+        return givenArgsCount;
+    }
+
     private void jitPre(ThreadContext context, IRubyObject self, String name, Block block) {
         RubyModule implementer = getImplementationClass();
         // FIXME: For some reason this wants (and works with) clazz instead of implementer,
@@ -386,11 +387,29 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         jitCallConfig.post(context);
     }
 
-    private void prepareArguments(ThreadContext context, Ruby runtime, IRubyObject[] args) {
-        if (requiredArgsCount > args.length) {
-            throw runtime.newArgumentError("Wrong # of arguments(" + args.length + " for " + requiredArgsCount + ")");
+    private void postInterpret(Ruby runtime, ThreadContext context, String name) {
+        if (runtime.hasEventHooks()) {
+            traceReturn(context, runtime, name);
+        }
+        context.postMethodFrameAndScope();
+    }
+
+    private void preInterpret(ThreadContext context, String name, IRubyObject self, Block block, Ruby runtime, int argsLength) {
+        RubyModule implementer = getImplementationClass();
+
+        context.preMethodFrameAndScope(implementer, name, self, block, staticScope);
+        if (argsNode.getBlockArgNode() != null) {
+            context.getCurrentScope().setValue(argsNode.getBlockArgNode().getCount(), RuntimeHelpers.processBlockArgument(runtime, block), 0);
         }
 
+        getArity().checkArity(runtime, argsLength);
+
+        if (runtime.hasEventHooks()) {
+            traceCall(context, runtime, name);
+        }
+    }
+
+    private void prepareArguments(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject[] args) {
         // Bind 'normal' parameter values to the local scope for this method.
         if (requiredArgsCount > 0) {
             context.getCurrentScope().setArgValues(args, requiredArgsCount);
@@ -398,61 +417,21 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
 
         // optArgs and restArgs require more work, so isolate them and ArrayList creation here
         if (hasOptArgs || restArg != -1) {
-            prepareOptOrRestArgs(context, runtime, args);
+            prepareOptOrRestArgs(context, runtime, self, args);
         }
     }
 
-    private void prepareOptOrRestArgs(ThreadContext context, Ruby runtime, IRubyObject[] args) {
+    private void prepareOptOrRestArgs(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject[] args) {
         // we know we've at least got the required count at this point, so start with that
         int givenArgsCount = requiredArgsCount;
         
-        // determine the maximum number of arguments
-        int maximumArgs = requiredArgsCount;
-        if (argsNode.getOptArgs() != null) {
-            maximumArgs += argsNode.getOptArgs().size();
-            
-            if (restArg == -1 && maximumArgs < args.length) {
-                throw runtime.newArgumentError("wrong # of arguments(" + args.length + " for " + maximumArgs + ")");
-            }
-        }
-        
         if (hasOptArgs) {
-            ListNode optArgs = argsNode.getOptArgs();
-   
-            // assign given optional arguments to their variables
-            int j = 0;
-            for (int i = requiredArgsCount; i < args.length && j < optArgs.size(); i++, j++) {
-                // in-frame EvalState should already have receiver set as self, continue to use it
-                optArgs.get(j).assign(runtime, context, context.getFrameSelf(), args[i], Block.NULL_BLOCK, true);
-                givenArgsCount++;
-            }
-   
-            // assign the default values, adding to the end of allArgs
-            for (int i = 0; j < optArgs.size(); i++, j++) {
-                optArgs.get(j).interpret(runtime, context, context.getFrameSelf(), Block.NULL_BLOCK);
-            }
+            givenArgsCount = assignOptArgs(args, runtime, context, self, givenArgsCount);
         }
         
-        // build an array from *rest type args, also adding to allArgs
-        
-        // ENEBO: Does this next comment still need to be done since I killed hasLocalVars:
-        // move this out of the scope.hasLocalVariables() condition to deal
-        // with anonymous restargs (* versus *rest)
-        
-        
-        // none present ==> -1
-        // named restarg ==> >=0
-        // anonymous restarg ==> -2
-        if (restArg != -1) {
-            // only set in scope if named
-            if (restArg >= 0) {
-                RubyArray array = runtime.newArray(args.length - givenArgsCount);
-                for (int i = givenArgsCount; i < args.length; i++) {
-                    array.append(args[i]);
-                }
-
-                context.getCurrentScope().setValue(restArg, array, 0);
-            }
+        if (restArg >= 0) {
+            RubyArray array = RubyArray.newArrayNoCopy(runtime, args, givenArgsCount);
+            context.getCurrentScope().setValue(restArg, array, 0);
         }
     }
     
