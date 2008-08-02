@@ -45,6 +45,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import org.jruby.Ruby;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
@@ -107,11 +108,18 @@ public class JavaProxyClassFactory {
         return counter++;
     }
     
+    @Deprecated
+    static JavaProxyClass newProxyClass(ClassLoader loader,
+            String targetClassName, Class superClass, Class[] interfaces, Set names)
+            throws InvocationTargetException {
+        return newProxyClass(JavaProxyClass.runtimeTLS.get(), loader, targetClassName, superClass, interfaces, names);
+    }
+    
     // TODO: we should be able to optimize this quite a bit post-1.0.  JavaClass already
     // has all the methods organized by method name; the next version (supporting protected
     // methods/fields) will have them organized even further. So collectMethods here can
     // just lookup the overridden methods in the JavaClass map, should be much faster.
-    static JavaProxyClass newProxyClass(ClassLoader loader,
+    static JavaProxyClass newProxyClass(Ruby runtime, ClassLoader loader,
             String targetClassName, Class superClass, Class[] interfaces, Set names)
             throws InvocationTargetException {
         if (loader == null) {
@@ -156,7 +164,7 @@ public class JavaProxyClassFactory {
                 targetClassName = pkg + "." + cName + "$Proxy" + nextId();
             }
 
-            validateArgs(targetClassName, superClass);
+            validateArgs(runtime, targetClassName, superClass);
 
             Map methods = new HashMap();
             collectMethods(superClass, interfaces, methods, names);
@@ -762,25 +770,23 @@ public class JavaProxyClassFactory {
         }
     }
 
-    private static void validateArgs(String targetClassName, Class superClass) {
+    private static void validateArgs(Ruby runtime, String targetClassName, Class superClass) {
 
         if (Modifier.isFinal(superClass.getModifiers())) {
-            throw new IllegalArgumentException("cannot extend final class");
+            throw runtime.newTypeError("cannot extend final class " + superClass.getName());
         }
 
         String targetPackage = packageName(targetClassName);
 
         String pkg = targetPackage.replace('.', '/');
         if (pkg.startsWith("java")) {
-            throw new IllegalArgumentException("cannor add classes to package "
-                    + pkg);
+            throw runtime.newTypeError("cannot add classes to package " + pkg);
         }
 
         Package p = Package.getPackage(pkg);
         if (p != null) {
             if (p.isSealed()) {
-                throw new IllegalArgumentException("package " + p
-                        + " is sealed");
+                throw runtime.newTypeError("package " + p + " is sealed");
             }
         }
     }

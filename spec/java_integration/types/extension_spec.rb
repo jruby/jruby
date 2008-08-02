@@ -14,3 +14,12 @@ describe "A Ruby subclass of a Java concrete class" do
     class_name.index('Proxy').should_not == -1
   end
 end
+
+describe "A final Java class" do
+  it "should not be allowed as a superclass" do
+    lambda do
+      substring = Class.new(java.lang.String)
+      substring.new
+    end.should raise_error(TypeError)
+  end
+end
