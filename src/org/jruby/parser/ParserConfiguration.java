@@ -32,6 +32,7 @@ package org.jruby.parser;
 
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
+import org.jruby.util.SafePropertyAccessor;
 
 public class ParserConfiguration {
     private DynamicScope existingScope = null;
@@ -45,7 +46,7 @@ public class ParserConfiguration {
     // Should positions added extra IDE-friendly information and leave in all newline nodes
     private boolean extraPositionInformation = false;
     // Will parser parse Duby grammar Extensions
-    private boolean isDubyExtensionsEnabled = false;
+    private boolean isDubyExtensionsEnabled = SafePropertyAccessor.getBoolean("jruby.duby.enabled", false);
     
     public ParserConfiguration(int lineNumber, boolean inlineSource) {
         this(lineNumber, false, inlineSource);
