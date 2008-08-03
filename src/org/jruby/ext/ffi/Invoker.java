@@ -46,7 +46,7 @@ public abstract class Invoker {
     /**
      * The arity of this function.
      */
-    private final Arity arity;
+    protected final Arity arity;
     
     /**
      * Creates a new <tt>Invoker</tt> instance.

@@ -36,7 +36,6 @@ import com.sun.jna.NativeLibrary;
 import com.sun.jna.Pointer;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
-import java.util.ArrayList;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
