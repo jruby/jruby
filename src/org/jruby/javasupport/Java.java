@@ -130,6 +130,7 @@ public class Java implements Library {
         
         // Now attach Java-related extras to core classes
         runtime.getArray().defineAnnotatedMethods(ArrayJavaAddons.class);
+        runtime.getKernel().defineAnnotatedMethods(KernelJavaAddons.class);
 
         return javaModule;
     }

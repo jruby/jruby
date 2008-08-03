@@ -43,6 +43,7 @@ import java.io.PrintStream;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.SimpleSampler;
@@ -79,9 +80,17 @@ public class Main {
     public static void main(String[] args) {
         Main main = new Main();
         
-        int status = main.run(args);
-        if (status != 0) {
-            System.exit(status);
+        try {
+            int status = main.run(args);
+            if (status != 0) {
+                System.exit(status);
+            }
+        } catch (RuntimeException re) {
+            throw re;
+        } catch (Throwable t) {
+            // print out as a nice Ruby backtrace
+            System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(t));
+            System.exit(1);
         }
     }
 

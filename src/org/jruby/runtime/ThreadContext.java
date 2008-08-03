@@ -742,6 +742,32 @@ public final class ThreadContext {
         return traceFrames;
     }
     
+    private static String createRubyBacktraceString(StackTraceElement element) {
+        return element.getClassName() + ":" + element.getLineNumber() + ":in `" + element.getMethodName() + "'";
+    }
+    
+    public static String createRawBacktraceStringFromThrowable(Throwable t) {
+        StackTraceElement[] stackTrace = t.getStackTrace();
+        
+        StringBuffer buffer = new StringBuffer();
+        if (stackTrace != null && stackTrace.length > 0) {
+            buffer
+                    .append(createRubyBacktraceString(stackTrace[0]))
+                    .append(": ")
+                    .append(t.toString())
+                    .append("\n");
+            for (int i = 1; i < stackTrace.length; i++) {
+                StackTraceElement element = stackTrace[i];
+                buffer
+                        .append("\tfrom ")
+                        .append(createRubyBacktraceString(element));
+                if (i + 1 < stackTrace.length) buffer.append("\n");
+            }
+        }
+        
+        return buffer.toString();
+    }
+    
     public static IRubyObject createRawBacktrace(Ruby runtime, boolean filter) {
         StackTraceElement[] stackTrace = new Exception().getStackTrace();
         
@@ -749,7 +775,7 @@ public final class ThreadContext {
         for (int i = 17; i < stackTrace.length; i++) {
             StackTraceElement element = stackTrace[i];
             if (filter && element.getClassName().startsWith("org.jruby")) continue;
-            RubyString str = RubyString.newString(runtime, element.getClassName().replace('.', '/') + ".java" + ":" + element.getLineNumber() + ":in `" + element.getMethodName() + "'");
+            RubyString str = RubyString.newString(runtime, createRubyBacktraceString(element));
             traceArray.append(str);
         }
         
@@ -858,7 +884,7 @@ public final class ThreadContext {
             } else {
                 // Frame is extraneous runtime information, skip it unless debug
                 if (debug) {
-                    RubyString str = RubyString.newString(runtime, element.getClassName().replace('.', '/') + ".java" + ":" + element.getLineNumber() + ":in `" + element.getMethodName() + "'");
+                    RubyString str = RubyString.newString(runtime, createRubyBacktraceString(element));
                     traceArray.append(str);
                 }
                 continue;
