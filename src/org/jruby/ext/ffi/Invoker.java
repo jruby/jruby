@@ -80,6 +80,12 @@ public abstract class Invoker {
             public Arity getArity() {
                 return Invoker.this.getArity();
             }
+
+            @Override
+            public boolean isNative() {
+                return true;
+            }
+
         };
         module.getSingletonClass().addMethod(methodName, m);
     }
