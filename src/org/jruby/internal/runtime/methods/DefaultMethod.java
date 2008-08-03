@@ -64,6 +64,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
     private int callCount = 0;
     private Script jitCompiledScript;
     private int requiredArgsCount;
+    private int maxArgsCount;
     private int restArg;
     private boolean hasOptArgs;
     private CallConfiguration jitCallConfig;
@@ -76,6 +77,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         this.staticScope = staticScope;
         this.argsNode = argsNode;
         this.requiredArgsCount = argsNode.getRequiredArgsCount();
+        this.maxArgsCount = argsNode.getRestArg() >= 0 ? -1 : argsNode.getRequiredArgsCount() + argsNode.getOptionalArgsCount();
         this.restArg = argsNode.getRestArg();
         this.hasOptArgs = argsNode.getOptArgs() != null;
         this.position = position;
@@ -133,7 +135,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
             try {
                 jitPre(context, self, name, block);
 
-                getArity().checkArity(runtime, args);
+                getArity().checkArity(runtime, args.length);
 
                 return jitCompiledScript.__file__(context, self, args, block);
             } catch (JumpException.ReturnJump rj) {
@@ -402,7 +404,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
             context.getCurrentScope().setValue(argsNode.getBlockArgNode().getCount(), RuntimeHelpers.processBlockArgument(runtime, block), 0);
         }
 
-        getArity().checkArity(runtime, argsLength);
+        Arity.checkArgumentCount(runtime, argsLength, requiredArgsCount, maxArgsCount);
 
         if (runtime.hasEventHooks()) {
             traceCall(context, runtime, name);
