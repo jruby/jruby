@@ -71,12 +71,17 @@ final class JNAInvoker extends Invoker {
     @Override
     public void attach(RubyModule module, String methodName) {
         if (Arity.NO_ARGUMENTS.equals(arity)) {
-            System.out.println("Using zero arg invoker");
             module.getSingletonClass().addMethod(methodName, 
                     new DynamicMethodZeroArg(module, function, functionInvoker));
         } else if (Arity.ONE_ARGUMENT.equals(arity)) {
             module.getSingletonClass().addMethod(methodName, 
                     new DynamicMethodOneArg(module, function, functionInvoker, marshallers));
+        } else if (Arity.TWO_ARGUMENTS.equals(arity)) {
+            module.getSingletonClass().addMethod(methodName, 
+                    new DynamicMethodTwoArg(module, function, functionInvoker, marshallers));
+        } else if (Arity.THREE_ARGUMENTS.equals(arity)) {
+            module.getSingletonClass().addMethod(methodName, 
+                    new DynamicMethodThreeArg(module, function, functionInvoker, marshallers));
         } else {
             super.attach(module, methodName);
         }

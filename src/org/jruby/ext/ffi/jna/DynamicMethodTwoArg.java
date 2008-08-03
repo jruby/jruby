@@ -28,6 +28,7 @@
 
 package org.jruby.ext.ffi.jna;
 
+
 import com.sun.jna.Function;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
@@ -35,25 +36,26 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-class DynamicMethodOneArg extends JNADynamicMethod {
-    final Marshaller marshaller;
-    public DynamicMethodOneArg(RubyModule implementationClass, Function function, 
+class DynamicMethodTwoArg extends JNADynamicMethod {
+    final Marshaller[] marshallers;
+    public DynamicMethodTwoArg(RubyModule implementationClass, Function function, 
             FunctionInvoker functionInvoker, Marshaller[] marshallers) {
-        super(implementationClass, Arity.ONE_ARGUMENT, function, functionInvoker);
-        this.marshaller = marshallers[0];
+        super(implementationClass, Arity.TWO_ARGUMENTS, function, functionInvoker);
+        this.marshallers = marshallers;
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         arity.checkArity(context.getRuntime(), args);
-        return call(context, self, clazz, name, args[0], block);
+        return call(context, self, clazz, name, args[0], args[1], block);
     }
     
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2) {
         Invocation invocation = new Invocation();
-        Object[] nativeArgs = new Object[1];
-        nativeArgs[0] = marshaller.marshal(invocation, arg);
+        Object[] nativeArgs = new Object[2];
+        nativeArgs[0] = marshallers[0].marshal(invocation, arg1);
+        nativeArgs[1] = marshallers[1].marshal(invocation, arg2);
         IRubyObject retVal = functionInvoker.invoke(context.getRuntime(), function, nativeArgs);
         invocation.finish();
         return retVal;

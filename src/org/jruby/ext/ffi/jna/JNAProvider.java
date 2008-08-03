@@ -441,7 +441,7 @@ public final class JNAProvider extends FFIProvider {
             memory.setByte(bl.length(), (byte) 0);
             
             //
-            // Arrange for the bytes to be copied back after the function is call
+            // Arrange for the bytes to be copied back after the function is called
             //
             invocation.addPostInvoke(new Runnable() {
                 public void run() {

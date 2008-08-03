@@ -35,25 +35,28 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-class DynamicMethodOneArg extends JNADynamicMethod {
-    final Marshaller marshaller;
-    public DynamicMethodOneArg(RubyModule implementationClass, Function function, 
+class DynamicMethodThreeArg extends JNADynamicMethod {
+    final Marshaller[] marshallers;
+    public DynamicMethodThreeArg(RubyModule implementationClass, Function function, 
             FunctionInvoker functionInvoker, Marshaller[] marshallers) {
-        super(implementationClass, Arity.ONE_ARGUMENT, function, functionInvoker);
-        this.marshaller = marshallers[0];
+        super(implementationClass, Arity.THREE_ARGUMENTS, function, functionInvoker);
+        this.marshallers = marshallers;
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         arity.checkArity(context.getRuntime(), args);
-        return call(context, self, clazz, name, args[0], block);
+        return call(context, self, clazz, name, args[0], args[1], args[2], block);
     }
     
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, 
+            IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         Invocation invocation = new Invocation();
-        Object[] nativeArgs = new Object[1];
-        nativeArgs[0] = marshaller.marshal(invocation, arg);
+        Object[] nativeArgs = new Object[3];
+        nativeArgs[0] = marshallers[0].marshal(invocation, arg1);
+        nativeArgs[1] = marshallers[1].marshal(invocation, arg2);
+        nativeArgs[2] = marshallers[2].marshal(invocation, arg3);
         IRubyObject retVal = functionInvoker.invoke(context.getRuntime(), function, nativeArgs);
         invocation.finish();
         return retVal;
