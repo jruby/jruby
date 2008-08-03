@@ -73,9 +73,28 @@ public class FutureThread implements ThreadLike {
     /**
      * If the future has not yet run and or is running and not yet complete.
      * 
+     * We defined "alive" for a FutureThread to be the following:
+     * 
+     * <li>The Runnable has not yet been submitted to the Executor. This is equivalent
+     * to a Ruby thread that has not yet been scheduled to run. Because Ruby
+     * considered a thread alive immediately, a FutureThread with no Future yet
+     * is still considered alive, because it will eventually be submitted.</li>
+     * 
+     * <li>The Runnable has been submitted to the Executor but no Future has
+     * been returned yet. There's a bit of a race here if we expect future to
+     * not be null, since the runnable could be submitted to the Executor and
+     * complete execution before the future is ever assigned. This manifested
+     * as Thread.current.status from within a thread coming up as false...
+     * because isAlive returned false if the future was still null.</li>
+     * 
+     * <li>The Runnable has been submitted to the Executor, the Future has
+     * been assigned, but the Future is not "done" yet. The thread is running,
+     * and we report it is alive.</li>
+     * 
+     * All other cases are considered "not alive" and we return fals here.
      */
     public boolean isAlive() {
-        return future != null && !future.isDone();
+        return future == null || !future.isDone();
     }
     
     public void join() throws InterruptedException, ExecutionException {
