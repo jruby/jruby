@@ -82,9 +82,9 @@ public class JavaSupport {
             
             return proxy;
         }
-
     };
-
+    
+    private boolean active;
     
     // There's not a compelling reason to keep JavaClass instances in a weak map
     // (any proxies created are [were] kept in a non-weak map, so in most cases they will
@@ -131,6 +131,14 @@ public class JavaSupport {
     
     final Map getMatchCache() {
         return matchCache;
+    }
+    
+    public boolean isActive() {
+        return active;
+    }
+    
+    public void setActive(boolean active) {
+        this.active = active;
     }
     
     private Class loadJavaClass(String className) throws ClassNotFoundException {

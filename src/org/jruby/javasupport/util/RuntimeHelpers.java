@@ -25,6 +25,8 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
+import org.jruby.javasupport.JavaClass;
+import org.jruby.javasupport.JavaProxy;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
@@ -635,6 +637,23 @@ public class RuntimeHelpers {
             if (result.isTrue()) return result;
         }
         return runtime.getFalse();
+    }
+    
+    public static boolean isJavaExceptionHandled(Exception currentException, IRubyObject[] exceptions, Ruby runtime, ThreadContext context, IRubyObject self) {
+        for (int i = 0; i < exceptions.length; i++) {
+            if (exceptions[i] instanceof RubyClass) {
+                RubyClass rubyClass = (RubyClass)exceptions[i];
+                JavaClass javaClass = (JavaClass)rubyClass.fastGetInstanceVariable("@java_class");
+                if (javaClass != null) {
+                    Class cls = javaClass.javaClass();
+                    if (cls.isInstance(currentException)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        return false;
     }
     
     public static void checkSuperDisabledOrOutOfMethod(ThreadContext context) {

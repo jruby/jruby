@@ -33,7 +33,7 @@ public class DynalangInstanceInvoker extends MethodInvoker {
         }
         IRubyObject rubyResult = getReturnConverter(result.getClass()).convert(context.getRuntime(), result);
         
-        return JavaUtil.java_to_ruby(context.getRuntime(), rubyResult, Block.NULL_BLOCK);
+        return JavaUtil.java_to_ruby(context.getRuntime(), rubyResult);
     }
     
     public static CallProtocol RUBY_ARG_COERCION = new CallProtocol() {

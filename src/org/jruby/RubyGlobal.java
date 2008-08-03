@@ -44,6 +44,9 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.environment.OSEnvironmentReaderExcepton;
 import org.jruby.environment.OSEnvironment;
 import org.jruby.internal.runtime.ValueAccessor;
+import org.jruby.javasupport.JavaObject;
+import org.jruby.javasupport.JavaProxy;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.GlobalVariable;
@@ -395,7 +398,9 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject set(IRubyObject value) {
-            if (!value.isNil() && ! runtime.getException().isInstance(value)) {
+            if (!value.isNil() &&
+                    !runtime.getException().isInstance(value) &&
+                    !(JavaUtil.isJavaObject(value) && JavaUtil.unwrapJavaObject(value) instanceof Exception)) {
                 throw runtime.newTypeError("assigning non-exception to $!");
             }
             

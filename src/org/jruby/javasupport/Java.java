@@ -131,6 +131,9 @@ public class Java implements Library {
         // Now attach Java-related extras to core classes
         runtime.getArray().defineAnnotatedMethods(ArrayJavaAddons.class);
         runtime.getKernel().defineAnnotatedMethods(KernelJavaAddons.class);
+        
+        // finally, set JavaSupport.isEnabled to true
+        runtime.getJavaSupport().setActive(true);
 
         return javaModule;
     }
@@ -1241,7 +1244,7 @@ public class Java implements Library {
      */
     @JRubyMethod(frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject java_to_ruby(IRubyObject recv, IRubyObject object, Block unusedBlock) {
-        return JavaUtil.java_to_ruby(recv.getRuntime(), object, unusedBlock);
+        return JavaUtil.java_to_ruby(recv.getRuntime(), object);
     }
 
     // TODO: Formalize conversion mechanisms between Java and Ruby
