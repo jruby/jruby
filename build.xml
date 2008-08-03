@@ -183,11 +183,24 @@
     <delete file="src_gen/annotated_classes.txt"/>
   </target>
   
+  <target name="generate-unsafe" depends="compile">
+      <available file="${jruby.classes.dir}/org/jruby/util/unsafe/GeneratedUnsafe.class" property="unsafe.not.needed"/>
+      <antcall target="_gu_internal_"/>
+  </target>
+  
+  <target name="_gu_internal_" unless="unsafe.not.needed">
+    <echo message="Generating Unsafe impl..."/>
+    <java classname="org.jruby.util.unsafe.UnsafeGenerator" fork="true" failonerror="true">
+        <classpath refid="build.classpath"/>
+        <classpath path="${jruby.classes.dir}"/>
+        <arg value="org.jruby.util.unsafe"/>
+        <arg value="${jruby.classes.dir}/org/jruby/util/unsafe"/>
+    </java>
+  </target>
+  
   <property name="jarjar.deps.jar" value="src_gen/__jarjared-deps.jar"/>
-
-  <target name="jar-jruby" unless="jar-up-to-date">    
-      <antcall target="generate-method-classes" inheritall="true"/>
-
+  
+  <target name="jar-jruby" depends="generate-method-classes, generate-unsafe" unless="jar-up-to-date">  
       <!-- TODO: Unfortunate dependency on ruby executable, and ruby might
            not be present on user's side, so we ignore errors caused by that. -->
       <exec executable="ruby" dir="${basedir}" failifexecutionfails="false" >
@@ -273,7 +286,7 @@
     <delete file="${lib.dir}/jruby-complete1.5.jar"/>
   </target>
 
-    <target name="jar-complete" depends="generate-method-classes" description="Create the 'complete' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
+    <target name="jar-complete" depends="generate-method-classes, generate-unsafe" description="Create the 'complete' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
       <property name="mainclass" value="org.jruby.Main"/>
       <property name="filename" value="jruby-complete.jar"/>
       <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0rc7.jar"/>

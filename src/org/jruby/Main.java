@@ -85,7 +85,7 @@ public class Main {
             if (status != 0) {
                 System.exit(status);
             }
-        } catch (RuntimeException re) {
+        } catch (RaiseException re) {
             throw re;
         } catch (Throwable t) {
             // print out as a nice Ruby backtrace
