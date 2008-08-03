@@ -190,7 +190,9 @@ public class RubyThread extends RubyObject {
         if (RubyInstanceConfig.POOLING_ENABLED) {
             threadImpl = new FutureThread(this, runnable);
         } else {
-            threadImpl = new NativeThread(this, new Thread(runnable));
+            Thread thread = new Thread(runnable);
+            thread.setDaemon(true);
+            threadImpl = new NativeThread(this, thread);
         }
         
         // set to default thread group
