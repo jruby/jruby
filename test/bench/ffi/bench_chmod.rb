@@ -1,7 +1,7 @@
 require 'benchmark'
 require 'ffi'
 
-iter = 10000
+iter = 100_000
 file = "README"
 
 module BasePosix
