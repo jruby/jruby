@@ -186,10 +186,11 @@ public class RubyThread extends RubyObject {
         Ruby runtime = getRuntime();
         if (!block.isGiven()) throw runtime.newThreadError("must be called with a block");
 
+        RubyRunnable runnable = new RubyRunnable(this, args, block);
         if (RubyInstanceConfig.POOLING_ENABLED) {
-            threadImpl = new FutureThread(this, new RubyRunnable(this, args, block));
+            threadImpl = new FutureThread(this, runnable);
         } else {
-            threadImpl = new NativeThread(this, new RubyNativeThread(this, args, block));
+            threadImpl = new NativeThread(this, new Thread(runnable));
         }
         
         // set to default thread group

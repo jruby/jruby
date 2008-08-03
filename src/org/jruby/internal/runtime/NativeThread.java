@@ -39,9 +39,7 @@ public class NativeThread implements ThreadLike {
     public RubyThread rubyThread;
     
     public NativeThread(RubyThread rubyThread, IRubyObject[] args, Block block) {
-        this.rubyThread = rubyThread;
-        
-        nativeThread = new RubyNativeThread(rubyThread, args, block);
+        throw new RuntimeException();
     }
     
     public NativeThread(RubyThread rubyThread, Thread nativeThread) {

@@ -41,23 +41,17 @@ import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+@Deprecated
 public class RubyNativeThread extends Thread {
     private Ruby runtime;
     private Frame currentFrame;
     private RubyProc proc;
     private IRubyObject[] arguments;
     private RubyThread rubyThread;
+    private boolean setContextCC;
     
-    public RubyNativeThread(RubyThread rubyThread, IRubyObject[] args, Block currentBlock) {
-        super(rubyThread.getRuntime().getThreadService().getRubyThreadGroup(), "Ruby Thread" + rubyThread.hash());
-        setDaemon(true);
-        this.rubyThread = rubyThread;
-        this.runtime = rubyThread.getRuntime();
-        ThreadContext tc = runtime.getCurrentContext();
-        
-        proc = runtime.newProc(Block.Type.THREAD, currentBlock);
-        currentFrame = tc.getCurrentFrame();
-        this.arguments = args;
+    public RubyNativeThread(RubyThread rubyThread, IRubyObject[] args, Block currentBlock, boolean setContextCC) {
+        throw new RuntimeException("RubyNativeThread is deprecated; do not use it");
     }
     
     public RubyThread getRubyThread() {

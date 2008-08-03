@@ -32,6 +32,7 @@ import org.jruby.RubyProc;
 import org.jruby.RubyThread;
 import org.jruby.RubyThreadGroup;
 import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.runtime.Block;
@@ -41,11 +42,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubyRunnable implements Runnable {
     private Ruby runtime;
-    private Frame currentFrame;
     private RubyProc proc;
     private IRubyObject[] arguments;
     private RubyThread rubyThread;
+    private Frame currentFrame;
     private Thread javaThread;
+    private static boolean warnedAboutTC = false;
     
     public RubyRunnable(RubyThread rubyThread, IRubyObject[] args, Block currentBlock) {
         this.rubyThread = rubyThread;
@@ -53,6 +55,7 @@ public class RubyRunnable implements Runnable {
         ThreadContext tc = runtime.getCurrentContext();
         
         proc = runtime.newProc(Block.Type.THREAD, currentBlock);
+        currentFrame = tc.getCurrentFrame();
         this.arguments = args;
     }
     
@@ -68,6 +71,20 @@ public class RubyRunnable implements Runnable {
         javaThread = Thread.currentThread();
         ThreadContext context = runtime.getThreadService().registerNewThread(rubyThread);
         
+        // set thread context JRuby classloader here, for Ruby-owned thread
+        ClassLoader oldContextClassLoader = null;
+        try {
+            oldContextClassLoader = javaThread.getContextClassLoader();
+            javaThread.setContextClassLoader(runtime.getJRubyClassLoader());
+        } catch (SecurityException se) {
+            // can't set TC classloader
+            if (!warnedAboutTC && runtime.getInstanceConfig().isVerbose()) {
+                System.err.println("WARNING: Security restrictions disallowed setting context classloader for Ruby threads.");
+            }
+        }
+        
+        context.preRunThread(currentFrame);
+
         // Call the thread's code
         try {
             IRubyObject result = proc.call(context, arguments);
@@ -81,6 +98,9 @@ public class RubyRunnable implements Runnable {
             rubyThread.exceptionRaised(runtime.newThreadError("return can't jump across threads"));
         } catch (RaiseException e) {
             rubyThread.exceptionRaised(e);
+        } catch (MainExitException mee) {
+            // Someone called exit!, so we need to kill the main thread
+            runtime.getThreadService().getMainThread().kill();
         } finally {
             runtime.getThreadService().setCritical(false);
             runtime.getThreadService().unregisterThread(rubyThread);
@@ -88,6 +108,16 @@ public class RubyRunnable implements Runnable {
             // synchronize on the RubyThread object for threadgroup updates
             synchronized (rubyThread) {
                 ((RubyThreadGroup)rubyThread.group()).remove(rubyThread);
+            }
+            
+            // restore context classloader, in case we're using a thread pool
+            try {
+                javaThread.setContextClassLoader(oldContextClassLoader);
+            } catch (SecurityException se) {
+                // can't set TC classloader
+                if (!warnedAboutTC && runtime.getInstanceConfig().isVerbose()) {
+                    System.err.println("WARNING: Security restrictions disallowed setting context classloader for Ruby threads.");
+                }
             }
         }
     }
