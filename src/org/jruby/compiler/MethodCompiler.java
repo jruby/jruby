@@ -476,6 +476,7 @@ public interface MethodCompiler {
      */
     public void protect(BranchCallback regularCode, BranchCallback protectedCode, Class ret);
     public void rescue(BranchCallback regularCode, Class exception, BranchCallback protectedCode, Class ret);
+    public void performRescue(BranchCallback regularCode, BranchCallback rubyCatchCode, BranchCallback javaCatchCode);
     public void inDefined();
     public void outDefined();
     public void stringOrNil();
@@ -526,6 +527,7 @@ public interface MethodCompiler {
     public void callZSuper(CompilerCallback closure);
     public void appendToObjectArray();
     public void checkIsExceptionHandled();
+    public void checkIsJavaExceptionHandled();
     public void rethrowException();
     public void loadClass(String name);
     public void unwrapRaiseException();
@@ -538,4 +540,5 @@ public interface MethodCompiler {
     public void rethrowIfSystemExit();
 
     public MethodCompiler chainToMethod(String name, ASTInspector inspector);
+    public void wrapJavaException();
 }

@@ -639,7 +639,7 @@ public class RuntimeHelpers {
         return runtime.getFalse();
     }
     
-    public static boolean isJavaExceptionHandled(Exception currentException, IRubyObject[] exceptions, Ruby runtime, ThreadContext context, IRubyObject self) {
+    public static IRubyObject isJavaExceptionHandled(Exception currentException, IRubyObject[] exceptions, Ruby runtime, ThreadContext context, IRubyObject self) {
         for (int i = 0; i < exceptions.length; i++) {
             if (exceptions[i] instanceof RubyClass) {
                 RubyClass rubyClass = (RubyClass)exceptions[i];
@@ -647,13 +647,13 @@ public class RuntimeHelpers {
                 if (javaClass != null) {
                     Class cls = javaClass.javaClass();
                     if (cls.isInstance(currentException)) {
-                        return true;
+                        return runtime.getTrue();
                     }
                 }
             }
         }
         
-        return false;
+        return runtime.getFalse();
     }
     
     public static void checkSuperDisabledOrOutOfMethod(ThreadContext context) {

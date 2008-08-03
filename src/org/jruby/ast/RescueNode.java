@@ -200,7 +200,7 @@ public class RescueNode extends Node {
         while (cRescueNode != null) {
             IRubyObject[] exceptions = getExceptions(cRescueNode, runtime, context, self, aBlock);
 
-            if (RuntimeHelpers.isJavaExceptionHandled(exception, exceptions, runtime, context, self)) {
+            if (RuntimeHelpers.isJavaExceptionHandled(exception, exceptions, runtime, context, self).isTrue()) {
                 runtime.getGlobalVariables().set("$!", JavaUtil.convertJavaToUsableRubyObject(runtime, exception));
                 return cRescueNode.interpret(runtime, context, self, aBlock);
             }

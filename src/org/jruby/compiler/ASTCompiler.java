@@ -2799,7 +2799,7 @@ public class ASTCompiler {
                     }
                 };
 
-        BranchCallback handler = new BranchCallback() {
+        BranchCallback rubyHandler = new BranchCallback() {
 
                     public void branch(MethodCompiler context) {
                         context.loadException();
@@ -2810,7 +2810,14 @@ public class ASTCompiler {
                     }
                 };
 
-        context.rescue(body, RaiseException.class, handler, IRubyObject.class);
+        BranchCallback javaHandler = new BranchCallback() {
+
+                    public void branch(MethodCompiler context) {
+                        compileJavaRescueBody(rescueNode.getRescueNode(), context);
+                    }
+                };
+
+        context.performRescue(body, rubyHandler, javaHandler);
     }
 
     public void compileRescueBody(Node node, MethodCompiler context) {
@@ -2858,6 +2865,60 @@ public class ASTCompiler {
                 };
 
         context.performBooleanBranch(trueBranch, falseBranch);
+    }
+
+    public void compileJavaRescueBody(Node node, MethodCompiler context) {
+        final RescueBodyNode rescueBodyNode = (RescueBodyNode) node;
+
+        Node exceptionList = rescueBodyNode.getExceptionNodes();
+        if (exceptionList == null) {
+            if (rescueBodyNode.getOptRescueNode() != null) {
+                compileJavaRescueBody(rescueBodyNode.getOptRescueNode(), context);
+            } else {
+                context.rethrowException();
+            }
+        } else {
+            context.loadException();
+            compileArguments(exceptionList, context);
+            context.checkIsJavaExceptionHandled();
+
+            BranchCallback trueBranch = new BranchCallback() {
+
+                        public void branch(MethodCompiler context) {
+                            if (rescueBodyNode.getBodyNode() != null) {
+                                // we now wrap the Java exception and stuff it into $!
+                                context.wrapJavaException();
+                                context.assignGlobalVariable("$!");
+                                context.consumeCurrentValue();
+
+                                // proceed with normal exception-handling logic
+                                compile(rescueBodyNode.getBodyNode(), context);
+                                
+                                // FIXME: this should reset to what it was before
+                                context.loadNil();  
+                                context.assignGlobalVariable("$!");
+                                context.consumeCurrentValue();
+                            } else {
+                                context.loadNil();
+                                // FIXME: this should reset to what it was before
+                                context.assignGlobalVariable("$!");
+                            }
+                        }
+                    };
+
+            BranchCallback falseBranch = new BranchCallback() {
+
+                        public void branch(MethodCompiler context) {
+                            if (rescueBodyNode.getOptRescueNode() != null) {
+                                compileJavaRescueBody(rescueBodyNode.getOptRescueNode(), context);
+                            } else {
+                                context.rethrowException();
+                            }
+                        }
+                    };
+
+            context.performBooleanBranch(trueBranch, falseBranch);
+        }
     }
 
     public void compileRetry(Node node, MethodCompiler context) {
