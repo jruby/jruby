@@ -783,12 +783,16 @@
       <antcall target="run-specs-compiled"/>
       <antcall target="run-specs-interpreted"/>
   </target>
+
   <target name="run-specs-all" depends="jar"><antcall target="run-specs-all-precompiled"/></target>
+
   <target name="run-specs-compiled"><_run_specs_internal compile.mode="JIT" jit.threshold="0"/></target>
   <target name="run-specs-precompiled"><_run_specs_internal compile.mode="FORCE" jit.threshold="0"/></target>
+  <target name="run-specs-interpreted"><_run_specs_internal/></target>
+
   <target name="run-specs-all-interpreted"><_run_specs_all_internal compile.mode="OFF"/></target>
   <target name="run-specs-all-precompiled"><_run_specs_all_internal compile.mode="FORCE" jit.threshold="0"/></target>
-  <target name="run-specs-interpreted"><_run_specs_internal/></target>
+
   
   <target name="update-excludes">
     <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false" dir="${spec.dir}">
@@ -838,9 +842,9 @@
       <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${base.dir}">
 	<classpath refid="build.classpath"/>
 	<classpath path="${jruby.classes.dir}"/>
-      
+
 	<jvmarg value="-ea"/>
-      
+
 	<sysproperty key="jruby.home" value="${basedir}"/>
 	<sysproperty key="jruby.launch.inproc" value="false"/>
       
@@ -854,9 +858,15 @@
 
 	<arg line="${mspec.dir}/bin/mspec ci"/>
 	<arg line="-T -J-ea"/>
-	<arg value="-f"/><arg value="m"/>
+	<arg line="-T -J-Djruby.launch.inproc=false"/>
+	<arg line="-T -J-Djruby.compile.mode=@{compile.mode}"/>
+	<arg line="-T -J-Djruby.jit.threshold=@{jit.threshold}"/>
+	<arg line="-T -J-Djruby.jit.max=@{jit.max}"/>
+	<arg line="-T -J-Djruby.objectspace.enabled=@{objectspace.enabled}"/>
+	<arg line="-T -J-Djruby.thread.pool.enabled=@{thread.pooling}"/>
+	<arg line="-T -J-Djruby.reflection=@{reflection}"/>
+	<arg line="-f m"/>
 	<extra-args/>
-
 	<arg line="-B ${spec.dir}/default.mspec"/>
       </java>
     </sequential>
@@ -868,11 +878,7 @@
 
     <sequential>
       <echo message="Excludes: ${spec.tags.dir}"/>
-      <run-specs compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}">
-	<extra-args>
-	    <arg line="-B ${spec.dir}/default.mspec"/>
-	</extra-args>
-      </run-specs>
+      <run-specs compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}"/>
     </sequential>
   </macrodef>
 
