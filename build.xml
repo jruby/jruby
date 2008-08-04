@@ -470,13 +470,8 @@
       run-junit-interpreted-1.9,
       run-junit-compiled-1.9,
       run-junit-precompiled-1.9,
-      run-junit-reflected-interpreted,
-      run-junit-reflected-compiled,
       run-junit-reflected-precompiled,
-      run-junit-compiled-threadpool,
-      run-junit-precompiled-threadpool,
       run-junit-interpreted-threadpool,
-      run-junit-object-persistence,
       compile-stdlib,
       coverage-report"
 	  description="Runs unit tests in all modes."/>
@@ -515,13 +510,8 @@
       run-junit-interpreted-1.9,
       run-junit-compiled-1.9,
       run-junit-precompiled-1.9,
-      run-junit-reflected-interpreted,
-      run-junit-reflected-compiled,
       run-junit-reflected-precompiled,
-      run-junit-compiled-threadpool,
       run-junit-precompiled-threadpool,
-      run-junit-interpreted-threadpool,
-      run-junit-object-persistence,
       compile-stdlib,
       coverage-report"
 	  description="Runs unit tests in all modes with weaved jruby classes."/>
@@ -565,7 +555,6 @@
     <attribute name="objectspace.enabled" default="true"/>
     <attribute name="thread.pooling" default="false"/>
     <attribute name="reflection" default="false"/>
-    <attribute name="threadlocal" default="false"/>
     <element name="junit-tests"/>
     <sequential>
       <echo message="compile=@{compile.mode}, jit.threshold=@{jit.threshold}, jit.max=@{jit.max}, objectspace=@{objectspace.enabled} threadpool=@{thread.pooling} reflection=@{reflection} version=@{jruby.version}"/>
@@ -582,7 +571,6 @@
 	<sysproperty key="jruby.jit.max" value="@{jit.max}"/>
 	<sysproperty key="jruby.compat.version" value="@{jruby.version}"/>
 	<sysproperty key="jruby.objectspace.enabled" value="@{objectspace.enabled}"/>
-	<sysproperty key="jruby.runtime.threadlocal" value="@{threadlocal}"/>
 	<sysproperty key="jruby.thread.pool.enabled" value="@{thread.pooling}"/>
 	<sysproperty key="jruby.reflection" value="@{reflection}"/>
 	<sysproperty key="jruby.jit.logging.verbose" value="true"/>
@@ -650,16 +638,6 @@
       </run-junit>
     </sequential>
   </macrodef>
-  
-  <!-- Runs junit tests for object persistence support -->
-  <target name="run-junit-object-persistence">
-    <run-junit objectspace.enabled="false" threadlocal="true">
-      <junit-tests>
-	<test name="${test}" if="test"/>
-	<test name="org.jruby.test.ObjectPersistenceTestSuite" todir="${test.results.dir}" unless="test"/>
-      </junit-tests>
-    </run-junit>
-  </target>
 
   <target name="test-security-manager">
     <java classname="org.jruby.Main" fork="true" failonerror="true">
