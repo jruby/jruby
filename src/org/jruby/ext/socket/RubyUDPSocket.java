@@ -124,6 +124,14 @@ public class RubyUDPSocket extends RubyIPSocket {
             throw sockerr(this, "bind: name or service not known");
         } catch (SocketException e) {
             throw sockerr(this, "bind: name or service not known");
+        } catch (Error e) {
+            // Workaround for a bug in Sun's JDK 1.5.x, see
+            // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6303753
+            if (e.getCause() instanceof SocketException) {
+                throw sockerr(this, "bind: name or service not known");
+            } else {
+                throw e;
+            }
         }
     }
 
