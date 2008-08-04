@@ -37,38 +37,36 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
+import java.util.WeakHashMap;
 import org.jruby.Ruby;
 import org.jruby.RubyThread;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.util.collections.WeakHashSet;
 
 public class ThreadService {
     private Ruby runtime;
     private ThreadContext mainContext;
-    private ThreadLocal<SoftReference> localContext;
+    private ThreadLocal<SoftReference<ThreadContext>> localContext;
     private ThreadGroup rubyThreadGroup;
-    private Set rubyThreadList;
-    private Thread mainThread;
+    private Map<Thread, RubyThread> rubyThreadMap;
     
     private ReentrantLock criticalLock = new ReentrantLock();
 
     public ThreadService(Ruby runtime) {
         this.runtime = runtime;
         this.mainContext = ThreadContext.newContext(runtime);
-        this.localContext = new ThreadLocal();
+        this.localContext = new ThreadLocal<SoftReference<ThreadContext>>();
         this.rubyThreadGroup = new ThreadGroup("Ruby Threads#" + runtime.hashCode());
-        this.rubyThreadList = Collections.synchronizedSet(new WeakHashSet());
+        this.rubyThreadMap = Collections.synchronizedMap(new WeakHashMap<Thread, RubyThread>());
         
         // Must be called from main thread (it is currently, but this bothers me)
-        mainThread = Thread.currentThread();
-        localContext.set(new SoftReference(mainContext));
-        rubyThreadList.add(mainThread);
+        localContext.set(new SoftReference<ThreadContext>(mainContext));
     }
 
     public void disposeCurrentThread() {
         localContext.set(null);
+        rubyThreadMap.remove(Thread.currentThread());
     }
 
     /**
@@ -135,11 +133,11 @@ public class ThreadService {
     public synchronized RubyThread[] getActiveRubyThreads() {
     	// all threads in ruby thread group plus main thread
 
-        synchronized(rubyThreadList) {
-            List rtList = new ArrayList(rubyThreadList.size());
+        synchronized(rubyThreadMap) {
+            List rtList = new ArrayList(rubyThreadMap.size());
         
-            for (Iterator iter = rubyThreadList.iterator(); iter.hasNext();) {
-                Thread t = (Thread)iter.next();
+            for (Iterator iter = rubyThreadMap.entrySet().iterator(); iter.hasNext();) {
+                Thread t = (Thread)((Map.Entry)iter.next()).getKey();
             
                 if (!t.isAlive()) continue;
             
@@ -163,25 +161,19 @@ public class ThreadService {
         localContext.set(new SoftReference(context));
         getCurrentContext().setThread(thread);
         // This requires register to be called from within the registree thread
-        rubyThreadList.add(Thread.currentThread());
+        rubyThreadMap.put(Thread.currentThread(), thread);
         return context;
     }
     
     public synchronized void unregisterThread(RubyThread thread) {
-        rubyThreadList.remove(Thread.currentThread());
+        rubyThreadMap.remove(Thread.currentThread());
         getCurrentContext().setThread(null);
         localContext.set(null);
     }
     
     private RubyThread getRubyThreadFromThread(Thread activeThread) {
-        RubyThread rubyThread;
-        if (activeThread instanceof RubyNativeThread) {
-            RubyNativeThread rubyNativeThread = (RubyNativeThread)activeThread;
-            rubyThread = rubyNativeThread.getRubyThread();
-        } else {
-            // main thread
-            rubyThread = mainContext.getThread();
-        }
+        RubyThread rubyThread = rubyThreadMap.get(activeThread);
+        
         return rubyThread;
     }
     
