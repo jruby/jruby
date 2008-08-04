@@ -1977,7 +1977,15 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 
                 // Next handle Flow exceptions, just propagating them
                 mv.label(flowCatchBlock);
-                mv.athrow();
+                {
+                    // restore the original exception
+                    loadRuntime();
+                    mv.aload(getPreviousExceptionIndex());
+                    invokeUtilityMethod("setErrorInfo", sig(void.class, Ruby.class, IRubyObject.class));
+
+                    // rethrow
+                    mv.athrow();
+                }
                 
                 // now handle Java exceptions
                 mv.label(javaCatchBlock);
