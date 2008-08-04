@@ -37,6 +37,7 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 
+import java.nio.channels.SelectionKey;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -47,6 +48,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -139,11 +141,17 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
     }
 
-    @JRubyMethod(required = 1, rest = true)
     public IRubyObject recvfrom(IRubyObject[] args) {
+        return recvfrom(getRuntime().getCurrentContext(), args);
+    }
+
+    @JRubyMethod(required = 1, rest = true)
+    public IRubyObject recvfrom(ThreadContext context, IRubyObject[] args) {
         try {
             int length = RubyNumeric.fix2int(args[0]);
             ByteBuffer buf = ByteBuffer.allocate(length);
+            ((DatagramChannel) this.getChannel()).configureBlocking(false);
+            context.getThread().select(this, SelectionKey.OP_READ);
             InetSocketAddress sender = (InetSocketAddress) ((DatagramChannel) this.getChannel()).receive(buf);
             IRubyObject addressArray = getRuntime().newArray(new IRubyObject[]{
                 getRuntime().newString("AF_INET"),

@@ -46,7 +46,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.internal.runtime.FutureThread;
 import org.jruby.internal.runtime.NativeThread;
-import org.jruby.internal.runtime.RubyNativeThread;
 import org.jruby.internal.runtime.RubyRunnable;
 import org.jruby.internal.runtime.ThreadLike;
 import org.jruby.internal.runtime.ThreadService;
@@ -794,44 +793,64 @@ public class RubyThread extends RubyObject {
     
     private Selector currentSelector;
     
+    @Deprecated
     public boolean selectForAccept(RubyIO io) {
+        return select(io, SelectionKey.OP_ACCEPT);
+    }
+    
+    public boolean select(RubyIO io, int ops) {
         Channel channel = io.getChannel();
         
         if (channel instanceof SelectableChannel) {
             SelectableChannel selectable = (SelectableChannel)channel;
             
-            try {
-                io.addBlockingThread(this);
-                currentSelector = selectable.provider().openSelector();
-            
-                SelectionKey key = selectable.register(currentSelector, SelectionKey.OP_ACCEPT);
+            synchronized (selectable.blockingLock()) {
+                boolean oldBlocking = selectable.isBlocking();
 
-                int result = currentSelector.select();
-                
-                // check for thread events, in case we've been woken up to die
-                pollThreadEvents();
+                try {
+                    selectable.configureBlocking(false);
+                    
+                    io.addBlockingThread(this);
+                    currentSelector = selectable.provider().openSelector();
 
-                if (result == 1) {
-                    Set<SelectionKey> keySet = currentSelector.selectedKeys();
+                    SelectionKey key = selectable.register(currentSelector, ops);
 
-                    if (keySet.iterator().next() == key) {
-                        return true;
+                    int result = currentSelector.select();
+
+                    // check for thread events, in case we've been woken up to die
+                    pollThreadEvents();
+
+                    if (result == 1) {
+                        Set<SelectionKey> keySet = currentSelector.selectedKeys();
+
+                        if (keySet.iterator().next() == key) {
+                            return true;
+                        }
                     }
-                }
 
-                return false;
-            } catch (IOException ioe) {
-                throw io.getRuntime().newRuntimeError("Error with selector: " + ioe);
-            } finally {
-                if (currentSelector != null) {
+                    return false;
+                } catch (IOException ioe) {
+                    throw io.getRuntime().newRuntimeError("Error with selector: " + ioe);
+                } finally {
+                    if (currentSelector != null) {
+                        try {
+                            currentSelector.close();
+                        } catch (IOException ioe) {
+                            throw io.getRuntime().newRuntimeError("Could not close selector");
+                        }
+                    }
+                    currentSelector = null;
+                    io.removeBlockingThread(this);
                     try {
-                        currentSelector.close();
+                        selectable.configureBlocking(oldBlocking);
                     } catch (IOException ioe) {
-                        throw io.getRuntime().newRuntimeError("Could not close selector");
+                        // ignore; I don't like doing it, but it seems like we
+                        // really just need to make all channels non-blocking by
+                        // default and use select when implementing blocking ops,
+                        // so if this remains set non-blocking, perhaps it's not
+                        // such a big deal...
                     }
                 }
-                currentSelector = null;
-                io.removeBlockingThread(this);
             }
         } else {
             // can't select, just have to do a blocking call
