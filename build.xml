@@ -777,18 +777,29 @@
       <delete file="${build.dir}/mspec.tgz"/>
       <delete file="${spec.dir}/rubyspecs.current.revision"/>
   </target>
-  
-  <target name="run-specs" depends="jar">
-      <antcall target="run-specs-precompiled"/>
-      <antcall target="run-specs-compiled"/>
-      <antcall target="run-specs-interpreted"/>
+
+  <target name="run-specs" depends="run-specs-precompiled, run-specs-compiled, run-specs-interpreted, jar">
+    <condition property="spec.status.combined.OK">
+      <and>
+        <equals arg1="${spec.status.PRECOMPILED}" arg2="0"/>
+        <equals arg1="${spec.status.COMPILED}"    arg2="0"/>
+        <equals arg1="${spec.status.INTERPRETED}" arg2="0"/>
+      </and>
+    </condition>
+    <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
   </target>
 
   <target name="run-specs-all" depends="jar"><antcall target="run-specs-all-precompiled"/></target>
 
-  <target name="run-specs-compiled"><_run_specs_internal compile.mode="JIT" jit.threshold="0"/></target>
-  <target name="run-specs-precompiled"><_run_specs_internal compile.mode="FORCE" jit.threshold="0"/></target>
-  <target name="run-specs-interpreted"><_run_specs_internal/></target>
+  <target name="run-specs-compiled" depends="jar">
+    <_run_specs_internal mode.name="COMPILED" compile.mode="JIT" jit.threshold="0"/>
+  </target>
+  <target name="run-specs-precompiled" depends="jar">
+    <_run_specs_internal mode.name="PRECOMPILED" compile.mode="FORCE" jit.threshold="0"/>
+  </target>
+  <target name="run-specs-interpreted" depends="jar">
+    <_run_specs_internal mode.name="INTERPRETED" compile.mode="OFF"/>
+  </target>
 
   <target name="run-specs-all-interpreted"><_run_specs_all_internal compile.mode="OFF"/></target>
   <target name="run-specs-all-precompiled"><_run_specs_all_internal compile.mode="FORCE" jit.threshold="0"/></target>
@@ -834,12 +845,13 @@
     <attribute name="objectspace.enabled" default="true"/>
     <attribute name="thread.pooling" default="false"/>
     <attribute name="reflection" default="false"/>
+    <attribute name="mode.name"/>
     <element name="extra-args" optional="true"/>
 
     <sequential>
       <echo message="compile=@{compile.mode}, threshold=@{jit.threshold}, objectspace=@{objectspace.enabled} threadpool=@{thread.pooling} reflection=@{reflection}"/>
     
-      <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${base.dir}">
+      <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false" resultproperty="spec.status.@{mode.name}" dir="${base.dir}">
 	<classpath refid="build.classpath"/>
 	<classpath path="${jruby.classes.dir}"/>
 
@@ -875,10 +887,12 @@
   <macrodef name="_run_specs_internal">
     <attribute name="compile.mode" default="OFF"/>
     <attribute name="jit.threshold" default="20"/>
+    <attribute name="mode.name"/>
 
     <sequential>
       <echo message="Excludes: ${spec.tags.dir}"/>
-      <run-specs compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}"/>
+      <run-specs mode.name="@{mode.name}"
+        compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}"/>
     </sequential>
   </macrodef>
 

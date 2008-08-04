@@ -215,11 +215,15 @@ if [ "$VERIFY_JRUBY" != "" ]; then
     "-Djruby.shell=$JRUBY_SHELL" \
     org.jruby.Main $JRUBY_OPTS "$@"
 
+  # Record the exit status immediately, or it will be overridden.
+  JRUBY_STATUS=$?
+
   if [ "$PROFILE_ARGS" != "" ]; then
       echo "Profiling results:"
-
       cat profile.txt
   fi
+
+  exit $JRUBY_STATUS
 else
   exec "$JAVA_CMD" $JAVA_OPTS "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMETER$CLASSPATH" \
     "-Djruby.home=$JRUBY_HOME" \
@@ -227,3 +231,6 @@ else
     "-Djruby.shell=$JRUBY_SHELL" \
     org.jruby.Main $JRUBY_OPTS "$@"
 fi
+
+# Be careful adding code down here, you might override the exit
+# status of the jruby invocation.
