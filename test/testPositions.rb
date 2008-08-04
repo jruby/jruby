@@ -789,7 +789,7 @@ nil, #['NewlineNode',0,3,0,22],
     ['EvStrNode',1,1,10,17],
       nil, #['NewlineNode',1,1,12,18],
         ['VCallNode',1,1,12,16],
-    ['StrNode',1,2,17,21]
+    ['StrNode',1,2,17,18]
 ]
 
 test_tree(list, <<'END', "heredoc with nested expression")
@@ -1723,4 +1723,26 @@ nil,
 ]
 test_tree(list, <<END, "bare yield")
 yield x
+END
+
+def heh; end
+
+list = [
+['RootNode',0,3,0,32],
+  ['NewlineNode',0,3,0,32],
+    ['LocalAsgnNode',0,3,0,32],
+      ['SValueNode',0,3,1,32],
+        ['ArrayNode',0,2,4,31],
+          ['StrNode',0,2,4,21],
+            ['StrNode',2,2,23,31],
+            ['EvStrNode',1,1,23,31],
+              ['NewlineNode',1,1,25,29],
+                ['VCallNode',1,1,25,28],
+            ['StrNode',1,2,29,34],
+          ['StrNode',2,2,29,37]
+]
+test_tree(list, <<END, "heredoc positions")
+a = <<-STR, __FILE__
+  #{heh} boo
+STR
 END

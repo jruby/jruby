@@ -80,12 +80,14 @@ public class HeredocTerm extends StrTerm {
         }
 
         ByteList str = new ByteList();
-
+        ISourcePosition position;
+        
         if ((flags & RubyYaccLexer.STR_FUNC_EXPAND) == 0) {
             do {
                 str.append(src.readLineBytes());
                 str.append('\n');
                 if (src.peek(RubyYaccLexer.EOF)) syntaxError(src);
+                position = lexer.getPosition();
             } while (!src.matchMarker(marker, indent, true));
         } else {
             int c = src.read();
@@ -119,12 +121,13 @@ public class HeredocTerm extends StrTerm {
                 str.append(src.read());
                 
                 if (src.peek(RubyYaccLexer.EOF)) syntaxError(src);
+                position = lexer.getPosition();
             } while (!src.matchMarker(marker, indent, true));
         }
 
         src.unreadMany(lastLine);
         lexer.setStrTerm(new StringTerm(-1, '\0', '\0'));
-        lexer.yaccValue = new StrNode(lexer.getPosition(), str);
+        lexer.yaccValue = new StrNode(position, str);
         return Tokens.tSTRING_CONTENT;
     }
     
