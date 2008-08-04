@@ -1,6 +1,8 @@
 package org.jruby.javasupport;
 
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyFixnum;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -61,5 +63,64 @@ public class ArrayJavaAddons {
         }
         
         return javaArray;
+    }
+    
+    @JRubyMethod
+    public static IRubyObject dimensions(ThreadContext context, IRubyObject maybeArray) {
+        Ruby runtime = context.getRuntime();
+        if (!(maybeArray instanceof RubyArray)) {
+            return runtime.newEmptyArray();
+        }
+        RubyArray rubyArray = (RubyArray)maybeArray;
+        RubyArray dims = runtime.newEmptyArray();
+        
+        return dimsRecurse(context, rubyArray, dims, 0);
+    }
+    
+    @JRubyMethod
+    public static IRubyObject dimensions(ThreadContext context, IRubyObject maybeArray, IRubyObject dims) {
+        Ruby runtime = context.getRuntime();
+        if (!(maybeArray instanceof RubyArray)) {
+            return runtime.newEmptyArray();
+        }
+        assert dims instanceof RubyArray;
+        
+        RubyArray rubyArray = (RubyArray)maybeArray;
+        
+        return dimsRecurse(context, rubyArray, (RubyArray)dims, 0);
+    }
+    
+    @JRubyMethod
+    public static IRubyObject dimensions(ThreadContext context, IRubyObject maybeArray, IRubyObject dims, IRubyObject index) {
+        Ruby runtime = context.getRuntime();
+        if (!(maybeArray instanceof RubyArray)) {
+            return runtime.newEmptyArray();
+        }
+        assert dims instanceof RubyArray;
+        assert index instanceof RubyFixnum;
+        
+        RubyArray rubyArray = (RubyArray)maybeArray;
+        
+        return dimsRecurse(context, rubyArray, (RubyArray)dims, (int)((RubyFixnum)index).getLongValue());
+    }
+    
+    private static RubyArray dimsRecurse(ThreadContext context, RubyArray rubyArray, RubyArray dims, int index) {
+        Ruby runtime = context.getRuntime();
+
+        while (dims.size() <= index) {
+            dims.append(RubyFixnum.zero(runtime));
+        }
+        
+        if (rubyArray.size() > ((RubyFixnum)dims.eltInternal(index)).getLongValue()) {
+            dims.eltInternalSet(index, RubyFixnum.newFixnum(runtime, rubyArray.size()));
+        }
+        
+        for (int i = 0; i < rubyArray.size(); i++) {
+            if (rubyArray.eltInternal(i) instanceof RubyArray) {
+                dimsRecurse(context, (RubyArray)rubyArray.eltInternal(i), dims, 1);
+            }
+        }
+        
+        return dims;
     }
 }

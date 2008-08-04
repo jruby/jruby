@@ -297,20 +297,6 @@ module JavaArrayUtilities
   def convert_to_type(component_type,value)
     get_converter(component_type).call(value)
   end
-
-  # this can be expensive, as it must examine every element
-  # of every 'dimension' of the Ruby array.  thinking about
-  # moving this to Java.
-  def dimensions(ruby_array,dims = [],index = 0)
-    return [] unless ruby_array.kind_of?(::Array)
-    dims << 0 while dims.length <= index 
-    dims[index] = ruby_array.length if ruby_array.length > dims[index]
-    ruby_array.each do |sub_array|
-      next unless sub_array.kind_of?(::Array)
-      dims = dimensions(sub_array,dims,index+1)
-    end
-    dims
-  end
  
   def fill_array(array,dimensions,fill_value)
     dims = dimensions.kind_of?(Array) ? dimensions : [dimensions]
@@ -405,12 +391,12 @@ public
         index += 1
         fill_value = converter.call(args[index]) if index < args.length
       elsif arg.nil?
-        dims = dimensions(ruby_array) if ruby_array
+        dims = ruby_array.dimensions if ruby_array
         index += 1
         fill_value = converter.call(args[index]) if index < args.length
       end
     else
-      dims = dimensions(ruby_array) if ruby_array
+      dims = ruby_array.dimensions if ruby_array
     end
     
     # construct and populate the new array
