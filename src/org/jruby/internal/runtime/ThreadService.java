@@ -126,23 +126,23 @@ public class ThreadService {
         return mainContext.getThread();
     }
 
-    public void setMainThread(RubyThread thread) {
-        mainContext.setThread(thread);
+    public void setMainThread(Thread thread, RubyThread rubyThread) {
+        mainContext.setThread(rubyThread);
+        rubyThreadMap.put(thread, rubyThread);
     }
     
     public synchronized RubyThread[] getActiveRubyThreads() {
     	// all threads in ruby thread group plus main thread
 
         synchronized(rubyThreadMap) {
-            List rtList = new ArrayList(rubyThreadMap.size());
+            List<RubyThread> rtList = new ArrayList<RubyThread>(rubyThreadMap.size());
         
-            for (Iterator iter = rubyThreadMap.entrySet().iterator(); iter.hasNext();) {
-                Thread t = (Thread)((Map.Entry)iter.next()).getKey();
+            for (Map.Entry<Thread, RubyThread> entry : rubyThreadMap.entrySet()) {
+                Thread t = entry.getKey();
             
                 if (!t.isAlive()) continue;
             
-                RubyThread rt = getRubyThreadFromThread(t);
-                rtList.add(rt);
+                rtList.add(entry.getValue());
             }
         
             RubyThread[] rubyThreads = new RubyThread[rtList.size()];

@@ -120,7 +120,7 @@ public class RubyThread extends RubyObject {
         RubyThread rubyThread = new RubyThread(runtime, threadClass);
         // TODO: need to isolate the "current" thread from class creation
         rubyThread.threadImpl = new NativeThread(rubyThread, Thread.currentThread());
-        runtime.getThreadService().setMainThread(rubyThread);
+        runtime.getThreadService().setMainThread(Thread.currentThread(), rubyThread);
         
         // set to default thread group
         runtime.getDefaultThreadGroup().addDirectly(rubyThread);
