@@ -49,6 +49,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.Convert;
+import org.jruby.util.Numeric;
 import org.jruby.util.TypeCoercer;
 
 /** 
@@ -517,8 +518,7 @@ public class RubyFixnum extends RubyInteger {
     /** fix_quo
      * 
      */
-    @JRubyMethod
-    @Override
+    @JRubyMethod(name = "quo", compat = CompatVersion.RUBY1_8)
     public IRubyObject quo(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
             return RubyFloat.newFloat(context.getRuntime(), (double) value / (double) ((RubyFixnum) other).value);
@@ -533,6 +533,7 @@ public class RubyFixnum extends RubyInteger {
     public IRubyObject op_pow(ThreadContext context, IRubyObject other) {
         if(other instanceof RubyFixnum) {
             long b = ((RubyFixnum) other).value;
+
             if (b == 0) {
                 return RubyFixnum.one(context.getRuntime());
             }
@@ -549,6 +550,48 @@ public class RubyFixnum extends RubyInteger {
         }
         return coerceBin(context, "**", other);
     }
+    
+    /** fix_pow 
+     * 
+     */
+    @JRubyMethod(name = "**", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_pow_19(ThreadContext context, IRubyObject other) {
+        Ruby runtime = context.getRuntime();
+        long a = value;
+        if (other instanceof RubyFixnum) {
+            long b = ((RubyFixnum) other).value;
+
+            if (b < 0) {
+                return RubyRational.newRationalRaw(context.getRuntime(), this).callMethod(context, "**", other);
+            }
+
+            if (b == 0) return RubyFixnum.one(runtime);
+            if (b == 1) return this;
+             
+            if (a == 0) {
+                return b > 0 ? RubyFixnum.zero(runtime) : RubyNumeric.dbl2num(runtime, 1.0 / 0.0);
+            }
+            if (a == 1) return RubyFixnum.one(runtime);
+            if (a == -1) {
+                return b % 2 == 0 ? RubyFixnum.one(runtime) : RubyFixnum.minus_one(runtime);
+            }
+            return Numeric.int_pow(context, a, b);
+        } else if (other instanceof RubyBignum) {
+            if (other.callMethod(context, "<", RubyFixnum.zero(runtime)).isTrue()) {
+                return RubyRational.newRationalRaw(runtime, this).callMethod(context, "**", other);
+            }
+            if (a == 0) return RubyFixnum.zero(runtime);
+            if (a == 1) return RubyFixnum.one(runtime);
+            if (a == -1) {
+                return RubyInteger.even_p(context, other).isTrue() ? RubyFixnum.one(runtime) : RubyFixnum.minus_one(runtime);
+            }
+            RubyBignum.newBignum(runtime, RubyBignum.fix2big(this)).op_pow(context, other);
+        } else if (other instanceof RubyFloat) {
+            return RubyFloat.newFloat(context.getRuntime(), Math.pow(a, ((RubyFloat) other).getDoubleValue()));
+        }
+        return coerceBin(context, "**", other);
+    }
+    
             
     /** fix_abs
      * 

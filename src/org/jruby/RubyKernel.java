@@ -230,6 +230,16 @@ public class RubyKernel {
         return value;
     }
 
+    @JRubyMethod(name = "Complex", required = 0, optional = 2, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject new_complex(ThreadContext context, IRubyObject recv, IRubyObject[]args) {
+        return context.getRuntime().getComplex().callMethod(context, "convert", args);
+    }
+    
+    @JRubyMethod(name = "Rational", required = 0, optional = 2, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject new_rational(ThreadContext context, IRubyObject recv, IRubyObject[]args) {
+        return context.getRuntime().getRational().callMethod(context, "convert", args);
+    }
+
     @JRubyMethod(name = "Float", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject new_float(IRubyObject recv, IRubyObject object) {
         if(object instanceof RubyFixnum){

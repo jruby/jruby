@@ -231,6 +231,15 @@ public abstract class RubyInteger extends RubyNumeric {
     public RubyInteger to_i() {
         return this;
     }
+    
+    /** integer_to_r
+     * 
+     */
+    @JRubyMethod(name = "to_r", compat = CompatVersion.RUBY1_9)
+    public IRubyObject to_r(ThreadContext context) {
+        return RubyRational.newRationalCanonicalize(context, this);
+    }
+    
 
     @JRubyMethod(name = {"odd?"})
     public static RubyBoolean odd_p(ThreadContext context, IRubyObject recv) {
@@ -266,7 +275,7 @@ public abstract class RubyInteger extends RubyNumeric {
     public static IRubyObject induced_from(ThreadContext context, IRubyObject recv, IRubyObject other) {
         if (other instanceof RubyFixnum || other instanceof RubyBignum) {
             return other;
-        } else if (other instanceof RubyFloat) {
+        } else if (other instanceof RubyFloat || other instanceof RubyRational) {
             return other.callMethod(context, MethodIndex.TO_I, "to_i");
         } else {
             throw recv.getRuntime().newTypeError(

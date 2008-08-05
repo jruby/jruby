@@ -34,9 +34,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import static org.jruby.util.Numeric.f_abs;
+import static org.jruby.util.Numeric.f_arg;
+import static org.jruby.util.Numeric.f_negative_p;
+
 import java.math.BigInteger;
-import org.jruby.anno.JRubyMethod;
+
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
@@ -547,6 +552,14 @@ public class RubyNumeric extends RubyObject {
     public IRubyObject quo(ThreadContext context, IRubyObject other) {
         return callMethod(context, "/", other);
     }
+    
+    /** num_quo
+    *
+    */
+    @JRubyMethod(name = "quo", compat = CompatVersion.RUBY1_9)
+    public IRubyObject quo_19(ThreadContext context, IRubyObject other) {
+        return RubyRational.newRationalRaw(context.getRuntime(), this).callMethod(context, "/", other);
+    }
 
     /** num_div
      * 
@@ -609,6 +622,14 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(name = "to_int")
     public IRubyObject to_int(ThreadContext context) {
         return RuntimeHelpers.invoke(context, this, "to_i", IRubyObject.NULL_ARRAY);
+    }
+
+    /** num_scalar_p
+    *
+    */
+    @JRubyMethod(name = "scalar?", compat = CompatVersion.RUBY1_9)
+    public IRubyObject scalar_p() {
+        return getRuntime().getTrue();
     }
 
     /** num_int_p
@@ -756,6 +777,87 @@ public class RubyNumeric extends RubyObject {
         if (this == other)  return getRuntime().getTrue();
 
         return other.callMethod(context, MethodIndex.EQUALEQUAL, "==", this);
+    }
+
+    /** num_numerator
+     * 
+     */
+    @JRubyMethod(name = "numerator", compat = CompatVersion.RUBY1_9)
+    public IRubyObject numerator(ThreadContext context) {
+        return RubyRational.newRationalConvert(context, this).callMethod(context, "numerator");
+    }
+    
+    /** num_denominator
+     * 
+     */
+    @JRubyMethod(name = "denominator", compat = CompatVersion.RUBY1_9)
+    public IRubyObject denominator(ThreadContext context) {
+        return RubyRational.newRationalConvert(context, this).callMethod(context, "denominator");
+    }
+
+    /** numeric_to_c
+     * 
+     */
+    @JRubyMethod(name = "to_c", compat = CompatVersion.RUBY1_9)
+    public IRubyObject to_c(ThreadContext context) {
+        return RubyComplex.newComplexCanonicalize(context, this);
+    }
+
+    /** numeric_re
+     * 
+     */
+    @JRubyMethod(name = "re", compat = CompatVersion.RUBY1_9)
+    public IRubyObject re(ThreadContext context) {
+        return RubyComplex.newComplexConvert(context, this);
+    }
+
+    /** numeric_im
+     * 
+     */
+    @JRubyMethod(name = "im", compat = CompatVersion.RUBY1_9)
+    public IRubyObject im(ThreadContext context) {
+        return RubyComplex.newComplexConvert(context, RubyFixnum.zero(context.getRuntime()), this);
+    }
+
+    /** numeric_real
+     * 
+     */
+    @JRubyMethod(name = "real", compat = CompatVersion.RUBY1_9)
+    public IRubyObject real(ThreadContext context) {
+        return this;
+    }
+
+    /** numeric_image
+     * 
+     */
+    @JRubyMethod(name = {"image", "imag"}, compat = CompatVersion.RUBY1_9)
+    public IRubyObject image(ThreadContext context) {
+        return RubyFixnum.zero(context.getRuntime());
+    }
+
+    /** numeric_arg
+     * 
+     */
+    @JRubyMethod(name = "arg", compat = CompatVersion.RUBY1_9)
+    public IRubyObject arg(ThreadContext context) {
+        if (!f_negative_p(context, this)) return RubyFixnum.zero(context.getRuntime());
+        return context.getRuntime().getMath().fastFetchConstant("PI");
+    }    
+
+    /** numeric_polar
+     * 
+     */
+    @JRubyMethod(name = "polar", compat = CompatVersion.RUBY1_9)
+    public IRubyObject polar(ThreadContext context) {
+        return context.getRuntime().newArray(f_abs(context, this), f_arg(context, this));
+    }    
+
+    /** numeric_real
+     * 
+     */
+    @JRubyMethod(name = "conjugate", compat = CompatVersion.RUBY1_9)
+    public IRubyObject conjugate(ThreadContext context) {
+        return this;
     }
 
     public static class InvalidIntegerException extends NumberFormatException {

@@ -997,6 +997,16 @@ public final class Ruby {
         if (profile.allowClass("Fixnum")) {
             RubyFixnum.createFixnumClass(this);
         }
+
+        if (config.getCompatVersion() == CompatVersion.RUBY1_9) {
+            if (profile.allowClass("Complex")) {
+                RubyComplex.createComplexClass(this);
+            }
+            if (profile.allowClass("Rational")) {
+                RubyRational.createRationalClass(this);
+            }
+        }
+
         if (profile.allowClass("Hash")) {
             RubyHash.createHashClass(this);
         }
@@ -1357,7 +1367,21 @@ public final class Ruby {
     }
     void setFixnum(RubyClass fixnumClass) {
         this.fixnumClass = fixnumClass;
-    }    
+    }
+
+    public RubyClass getComplex() {
+        return complexClass;
+    }
+    void setComplex(RubyClass complexClass) {
+        this.complexClass = complexClass;
+    }
+
+    public RubyClass getRational() {
+        return rationalClass;
+    }
+    void setRational(RubyClass rationalClass) {
+        this.rationalClass = rationalClass;
+    }
 
     public RubyModule getEnumerable() {
         return enumerableModule;
@@ -2896,6 +2920,7 @@ public final class Ruby {
     private RubyClass
             objectClass, moduleClass, classClass, nilClass, trueClass,
             falseClass, numericClass, floatClass, integerClass, fixnumClass,
+            complexClass, rationalClass,
             arrayClass, hashClass, rangeClass, stringClass, symbolClass,
             procClass, bindingClass, methodClass, unboundMethodClass,
             matchDataClass, regexpClass, timeClass, bignumClass, dirClass,
@@ -2907,7 +2932,7 @@ public final class Ruby {
             systemCallError, fatal, interrupt, typeError, argumentError, indexError,
             syntaxError, standardError, loadError, notImplementedError, securityError, noMemoryError,
             regexpError, eofError, threadError, concurrencyError, systemStackError, zeroDivisionError, floatDomainError;
-    
+
     /**
      * All the core modules we keep direct references to, for quick access and
      * to ensure they remain available.

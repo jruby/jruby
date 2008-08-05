@@ -179,6 +179,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
         return regexp;
     }
 
+    // internal usage
+    static RubyRegexp newRegexp(Ruby runtime, Regex regex) {
+        RubyRegexp regexp = new RubyRegexp(runtime);
+        regexp.pattern = regex;
+        regexp.str = ByteList.EMPTY_BYTELIST;
+        return regexp;
+    }
+    
     public void warn(String message) {
         getRuntime().getWarnings().warn(ID.MISCELLANEOUS, message);
     }

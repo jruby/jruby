@@ -38,8 +38,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jruby.exceptions.RaiseException;
-import org.jruby.util.string.JavaCrypt;
+import static org.jruby.anno.FrameField.BACKREF;
+import static org.jruby.anno.FrameField.LASTLINE;
+
 import java.io.UnsupportedEncodingException;
 import java.util.Locale;
 
@@ -49,9 +50,9 @@ import org.joni.Regex;
 import org.joni.Region;
 import org.joni.encoding.Encoding;
 import org.joni.encoding.specific.ASCIIEncoding;
-import static org.jruby.anno.FrameField.*;
-import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.java.MiniJava;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -64,8 +65,10 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
+import org.jruby.util.Numeric;
 import org.jruby.util.Pack;
 import org.jruby.util.Sprintf;
+import org.jruby.util.string.JavaCrypt;
 
 /**
  * Implementation of Ruby String class
@@ -3366,6 +3369,52 @@ public class RubyString extends RubyObject {
         }
         return getRuntime().newFixnum(bitSize == 0 ? result : result % (long) Math.pow(2, bitSize));
     }
+    
+    /** string_to_c
+     * 
+     */
+    @JRubyMethod(name = "to_c", reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
+    public IRubyObject to_c(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        Frame frame = context.getCurrentFrame();
+        IRubyObject backref = frame.getBackRef();
+        if (backref != null && backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
+
+        IRubyObject s = callMethod(context, "gsub", new IRubyObject[]{RubyRegexp.newRegexp(runtime, Numeric.ComplexPatterns.underscores_pat), runtime.newString(new ByteList(new byte[]{'_'}))});
+
+        RubyArray a = RubyComplex.str_to_c_internal(context, s);
+
+        frame.setBackRef(backref);
+
+        if (!a.eltInternal(0).isNil()) {
+            return a.eltInternal(0);
+        } else {
+            return RubyComplex.newComplexCanonicalize(context, RubyFixnum.zero(runtime));
+        }
+    }
+
+    /** string_to_r
+     * 
+     */
+    @JRubyMethod(name = "to_r", reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
+    public IRubyObject to_r(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        Frame frame = context.getCurrentFrame();
+        IRubyObject backref = frame.getBackRef();
+        if (backref != null && backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
+
+        IRubyObject s = callMethod(context, "gsub", new IRubyObject[]{RubyRegexp.newRegexp(runtime, Numeric.ComplexPatterns.underscores_pat), runtime.newString(new ByteList(new byte[]{'_'}))});
+
+        RubyArray a = RubyRational.str_to_r_internal(context, s);
+
+        frame.setBackRef(backref);
+
+        if (!a.eltInternal(0).isNil()) {
+            return a.eltInternal(0);
+        } else {
+            return RubyRational.newRationalCanonicalize(context, RubyFixnum.zero(runtime));
+        }
+    }    
 
     public static RubyString unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         RubyString result = newString(input.getRuntime(), input.unmarshalString());

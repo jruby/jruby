@@ -36,12 +36,18 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import static org.jruby.util.Numeric.f_expt;
+import static org.jruby.util.Numeric.f_mul;
+import static org.jruby.util.Numeric.f_to_i;
+import static org.jruby.util.Numeric.frexp;
+import static org.jruby.util.Numeric.ldexp;
+
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
-import org.jruby.anno.JRubyMethod;
-import org.jruby.anno.JRubyClass;
 
+import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -152,10 +158,9 @@ public class RubyFloat extends RubyNumeric {
      */
     @JRubyMethod(required = 1, meta = true)
     public static IRubyObject induced_from(ThreadContext context, IRubyObject recv, IRubyObject number) {
-        if (number instanceof RubyFixnum || number instanceof RubyBignum) {
+        if (number instanceof RubyFixnum || number instanceof RubyBignum || number instanceof RubyRational) {
             return number.callMethod(context, MethodIndex.TO_F, "to_f");
-        }
-        if (number instanceof RubyFloat) {
+        } else if (number instanceof RubyFloat) {
             return number;
         }
         throw recv.getRuntime().newTypeError(
@@ -487,7 +492,7 @@ public class RubyFloat extends RubyNumeric {
      */
     @JRubyMethod(name = "abs")
     public IRubyObject abs() {
-        if (value < 0) {
+        if (Double.doubleToLongBits(value) < 0) {
             return RubyFloat.newFloat(getRuntime(), Math.abs(value));
         }
         return this;
@@ -512,7 +517,26 @@ public class RubyFloat extends RubyNumeric {
 
         return dbl2num(getRuntime(), f);
     }
-        
+
+    /** float_to_r, float_decode
+     * 
+     */
+    static final int DBL_MANT_DIG = 53;
+    static final int FLT_RADIX = 2;
+    @JRubyMethod(name = "to_r", compat = CompatVersion.RUBY1_9)
+    public IRubyObject to_r(ThreadContext context) {
+        long[]exp = new long[1]; 
+        double f = frexp(value, exp);
+        f = ldexp(f, DBL_MANT_DIG);
+        long n = exp[0] - DBL_MANT_DIG;
+        Ruby runtime = context.getRuntime();
+        IRubyObject x = f_mul(context, f_to_i(context, runtime.newFloat(f)),
+                                       f_expt(context, 
+                                              RubyFixnum.newFixnum(context.getRuntime(), FLT_RADIX),
+                                              RubyFixnum.newFixnum(runtime, n)));
+        return x;
+    }
+
     /** floor
      * 
      */

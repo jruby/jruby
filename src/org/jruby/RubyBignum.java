@@ -464,10 +464,49 @@ public class RubyBignum extends RubyInteger {
         } else {
             return coerceBin(context, "**", other);
 
-    }
+        }
         return RubyFloat.newFloat(getRuntime(), Math.pow(big2dbl(this), d));
     }
 
+    /** rb_big_pow
+     * 
+     */
+    @JRubyMethod(name = {"**", "power"}, required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_pow_19(ThreadContext context, IRubyObject other) {
+        Ruby runtime = context.getRuntime();
+        if (other == RubyFixnum.zero(runtime)) return RubyFixnum.one(runtime);
+        double d;
+        if (other instanceof RubyFixnum) {
+            RubyFixnum fix = (RubyFixnum) other;
+            long fixValue = fix.getLongValue();
+            
+            if (fixValue < 0) {
+                return RubyRational.newRationalRaw(runtime, this).callMethod(context, "**", other);
+            }
+            // MRI issuses warning here on (RBIGNUM(x)->len * SIZEOF_BDIGITS * yy > 1024*1024)
+            if (((value.bitLength() + 7) / 8) * 4 * Math.abs(fixValue) > 1024 * 1024) {
+                getRuntime().getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big", fixValue);
+            }
+            if (fixValue >= 0) {
+                return bignorm(runtime, value.pow((int) fixValue)); // num2int is also implemented
+            } else {
+                return RubyFloat.newFloat(runtime, Math.pow(big2dbl(this), (double)fixValue));
+            }
+        } else if (other instanceof RubyBignum) {
+            if (other.callMethod(context, "<", RubyFixnum.zero(runtime)).isTrue()) {
+                return RubyRational.newRationalRaw(runtime, this).callMethod(context, "**", other);
+            }
+            d = ((RubyBignum) other).getDoubleValue();
+            getRuntime().getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big", d);
+        } else if (other instanceof RubyFloat) {
+            d = ((RubyFloat) other).getDoubleValue();
+        } else {
+            return coerceBin(context, "**", other);
+
+        }
+        return RubyNumeric.dbl2num(runtime, Math.pow(big2dbl(this), d));
+    }    
+    
     /** rb_big_and
      * 
      */
@@ -508,8 +547,7 @@ public class RubyBignum extends RubyInteger {
 		}
         if (other instanceof RubyFixnum) {
             return bignorm(getRuntime(), value.xor(BigInteger.valueOf(((RubyFixnum) other).getLongValue())));
-    }
-
+        }
         return coerceBin(context, "^", other);
     }
 
@@ -519,7 +557,7 @@ public class RubyBignum extends RubyInteger {
     @JRubyMethod(name = "~")
     public IRubyObject op_neg() {
         return RubyBignum.newBignum(getRuntime(), value.not());
-    	}
+    }
 
     /** rb_big_lshift     
      * 
