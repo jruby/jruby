@@ -377,21 +377,21 @@ public class RubyFixnum extends RubyInteger {
      */
     @JRubyMethod(name = "*")
     public IRubyObject op_mul(ThreadContext context, IRubyObject other) {
+        Ruby runtime = context.getRuntime();
         if (other instanceof RubyFixnum) {
             long otherValue = ((RubyFixnum) other).value;
             if (value == 0) {
-                return RubyFixnum.zero(context.getRuntime());
+                return RubyFixnum.zero(runtime);
             }
             long result = value * otherValue;
-            IRubyObject r = newFixnum(context.getRuntime(),result);
-            if(RubyNumeric.fix2long(r) != result || result/value != otherValue) {
-                return (RubyNumeric) RubyBignum.newBignum(context.getRuntime(), value).op_mul(context, other);
+            if (result / value != otherValue) {
+                return RubyBignum.newBignum(runtime, value).op_mul(context, other);
             }
-            return r;
+            return newFixnum(runtime, result);
         } else if (other instanceof RubyBignum) {
             return ((RubyBignum) other).op_mul(context, this);
         } else if (other instanceof RubyFloat) {
-            return context.getRuntime().newFloat((double) value * ((RubyFloat) other).getDoubleValue());
+            return runtime.newFloat((double) value * ((RubyFloat) other).getDoubleValue());
         }
         return coerceBin(context, "*", other);
     }
