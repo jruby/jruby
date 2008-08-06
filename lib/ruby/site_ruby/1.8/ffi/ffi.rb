@@ -51,19 +51,13 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-include Java
-
+require 'java'
 require 'rbconfig'
 require 'ffi/platform'
 
 module JRuby
 end
-
-module JRuby::FFI
-  
-  import org.jruby.ext.ffi.NativeType
-  FFIProvider = Java::org.jruby.ext.ffi.FFIProvider.instance
-  FFIProvider.setup(self)
+module FFI
   #  Specialised error classes
   class TypeError < RuntimeError; end
   
@@ -74,48 +68,54 @@ module JRuby::FFI
       super("Function '#{function}' not found! (Looking in '#{library} or this process)")
     end
   end
+end
+
+module JRuby::FFI
+  
+  import org.jruby.ext.ffi.NativeType
+  FFIProvider = Java::org.jruby.ext.ffi.FFIProvider.instance
+  FFIProvider.setup(self)
+  
   TypeDefs = Hash.new
   
-  class << self
+  
 
-    def add_typedef(current, add)
+    def self.add_typedef(current, add)
       if current.kind_of? NativeType
         code = current
       else
         code = JRuby::FFI::TypeDefs[current]
-        raise TypeError, "Unable to resolve type '#{current}'" unless code
+        raise FFI::TypeError, "Unable to resolve type '#{current}'" unless code
       end
 
       JRuby::FFI::TypeDefs[add] = code
     end
 
-    def find_type(name)
+    def self.find_type(name)
       code = JRuby::FFI::TypeDefs[name]
-      raise TypeError, "Unable to resolve type '#{name}'" unless code
+      raise FFI::TypeError, "Unable to resolve type '#{name}'" unless code
       return code
     end
 
-    def create_invoker(lib, name, args, ret)
+    def self.create_invoker(lib, name, args, ret)
       # Ugly hack to simulate the effect of dlopen(NULL, x) - not quite correct
       lib = 'c' unless lib
       # jna & jffi need just the last part of the library name
       lib = lib[3..-1] if lib =~ /^lib/
-      # Current artificial limitation based on JRuby::FFI limit
-      raise JRuby::FFI::SignatureError, 'FFI functions may take max 32 arguments!' if args.size > 32
+      # Current artificial limitation based on JFFI limit
+      raise FFI::SignatureError, 'FFI functions may take max 32 arguments!' if args.size > 32
 
       cargs = args.map { |e| find_type(e) }
       invoker = FFIProvider.createInvoker(lib, name, find_type(ret), 
         cargs.to_java(NativeType))
-      raise NotFoundError.new(name, lib) unless invoker
+      raise FFI::NotFoundError.new(name, lib) unless invoker
       return invoker
     end
     
-    def create_function(lib, name, args, ret)
+    def self.create_function(lib, name, args, ret)
       invoker = create_invoker(lib, name, args, ret)
       proc { |*args| invoker.invoke(args) }
     end
-
-  end
 
   # Converts a Rubinius Object
 #  add_typedef TYPE_OBJECT,  :object

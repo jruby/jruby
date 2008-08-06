@@ -1,4 +1,5 @@
-include Java
+require 'java'
+
 module JRuby;end
 module JRuby::FFI
   module Platform
