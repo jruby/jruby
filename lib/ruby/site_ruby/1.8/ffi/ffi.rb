@@ -229,20 +229,8 @@ module JRuby::FFI
   add_typedef(NativeType::STRING, :string)
   add_typedef(NativeType::STRING, :cstring)
   
-  # Converts byte-arrays
+  # Converts FFI::Buffer objects
   add_typedef(NativeType::BUFFER, :buffer)
-  
-  # Data gets copied out of native memory to ruby buffer
-  add_typedef(NativeType::BUFFER_OUT, :buffer_out)
-  
-  # Data gets copied in to native memory from ruby buffer
-  add_typedef(NativeType::BUFFER_IN, :buffer_in)
-  
-  # Pointer to ruby array is passed to native memory.
-  # NOTE: This can only be used for functions which cannot block
-  # e.g. memchr() is ok, fread() is not
-  #
-  add_typedef(NativeType::BUFFER_PINNED, :buffer_pinned)
   
   # Load all the platform dependent types/consts/struct members
   class Config

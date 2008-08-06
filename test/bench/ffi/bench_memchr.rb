@@ -5,7 +5,7 @@ iter = 10000
 str = "test" * 1000
 module JLibC
   extend JRuby::FFI::Library
-  attach_function :memchr, [ :buffer_pinned, :char, :int ], :pointer
+  attach_function :memchr, [ :string, :char, :int ], :pointer
 end
 
 module RbxLibC
