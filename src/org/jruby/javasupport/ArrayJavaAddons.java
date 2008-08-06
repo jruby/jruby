@@ -55,7 +55,7 @@ public class ArrayJavaAddons {
         return to;
     }
     
-    public static IRubyObject copyDataToJavaArray(
+    public static void copyDataToJavaArray(
             ThreadContext context, RubyArray rubyArray, JavaArray javaArray) {
         int javaLength = (int)javaArray.length().getLongValue();
         Class targetType = javaArray.getComponentType();
@@ -67,8 +67,6 @@ public class ArrayJavaAddons {
         for (; i < rubyLength && i < javaLength; i++) {
             javaArray.setWithExceptionHandling(i, converter.convert(context, rubyArray.entry(i)));
         }
-        
-        return javaArray;
     }
     
     @JRubyMethod
