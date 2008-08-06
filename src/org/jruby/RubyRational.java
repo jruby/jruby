@@ -820,7 +820,7 @@ public class RubyRational extends RubyNumeric {
 
         long e = ne - de;
         
-        if (e > Double.MAX_EXPONENT || e < Double.MIN_EXPONENT) {
+        if (e > 1023 || e < 1022) {
             runtime.getWarnings().warn(IRubyWarnings.ID.FLOAT_OUT_OF_RANGE, "out of Float range", getMetaClass());
             return runtime.newFloat(e > 0 ? Double.MAX_VALUE : 0);
         }
