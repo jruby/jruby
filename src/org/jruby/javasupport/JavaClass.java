@@ -78,6 +78,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
@@ -1403,6 +1404,23 @@ public class JavaClass extends JavaObject {
                     "invalid length or dimensions specifier for java array" +
             " - must be Integer or Array of Integer");
         }
+    }
+   
+    @JRubyMethod(required = 1)
+    public IRubyObject new_array_from_simple_array(ThreadContext context, IRubyObject fromArray) {
+        Ruby runtime = context.getRuntime();
+        if (!(fromArray instanceof RubyArray)) {
+            throw runtime.newTypeError(fromArray, runtime.getArray());
+        }
+        RubyArray rubyArray = (RubyArray)fromArray;
+        JavaArray javaArray = new JavaArray(getRuntime(), Array.newInstance(javaClass(), rubyArray.size()));
+        ArrayJavaAddons.copyDataToJavaArray(context, rubyArray, javaArray);
+        RubyClass proxyClass = (RubyClass)Java.get_proxy_class(javaArray, array_class());
+        
+        // TODO: Get ArrayProxyBlahBlah into Java so we don't have to do this
+        IRubyObject proxyArray = RuntimeHelpers.invoke(context, proxyClass, "new", javaArray);
+        
+        return proxyArray;
     }
 
     @JRubyMethod

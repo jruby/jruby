@@ -46,20 +46,26 @@ public class ArrayJavaAddons {
     
     @JRubyMethod
     public static IRubyObject copy_data_simple(
-            ThreadContext context, IRubyObject rubyArray, IRubyObject javaArray) {
-        JavaArray javaArrayJavaObj = (JavaArray)javaArray.dataGetStruct();
-        int javaLength = (int)javaArrayJavaObj.length().getLongValue();
-        Class targetType = javaArrayJavaObj.getComponentType();
+            ThreadContext context, IRubyObject from, IRubyObject to) {
+        JavaArray javaArray = (JavaArray)to.dataGetStruct();
+        RubyArray rubyArray = (RubyArray)from;
+        
+        copyDataToJavaArray(context, rubyArray, javaArray);
+        
+        return to;
+    }
+    
+    public static IRubyObject copyDataToJavaArray(
+            ThreadContext context, RubyArray rubyArray, JavaArray javaArray) {
+        int javaLength = (int)javaArray.length().getLongValue();
+        Class targetType = javaArray.getComponentType();
         JavaUtil.RubyConverter converter = JavaUtil.getArrayConverter(targetType);
         
-        RubyArray array = null;
-        int rubyLength;
-        array = (RubyArray)rubyArray;
-        rubyLength = ((RubyArray)rubyArray).getLength();
+        int rubyLength = rubyArray.getLength();
         
         int i = 0;
         for (; i < rubyLength && i < javaLength; i++) {
-            javaArrayJavaObj.setWithExceptionHandling(i, converter.convert(context, array.entry(i)));
+            javaArray.setWithExceptionHandling(i, converter.convert(context, rubyArray.entry(i)));
         }
         
         return javaArray;

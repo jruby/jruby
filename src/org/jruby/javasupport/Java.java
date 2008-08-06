@@ -459,11 +459,11 @@ public class Java implements Library {
     public static RubyModule getProxyClass(Ruby runtime, JavaClass javaClass) {
         RubyClass proxyClass;
         Class<?> c;
-        if ((c = javaClass.javaClass()).isInterface()) {
-            return getInterfaceModule(runtime, javaClass);
-        }
         if ((proxyClass = javaClass.getProxyClass()) != null) {
             return proxyClass;
+        }
+        if ((c = javaClass.javaClass()).isInterface()) {
+            return getInterfaceModule(runtime, javaClass);
         }
         javaClass.lockProxy();
         try {
