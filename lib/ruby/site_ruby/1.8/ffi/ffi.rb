@@ -78,8 +78,6 @@ module JRuby::FFI
   
   TypeDefs = Hash.new
   
-  
-
     def self.add_typedef(current, add)
       if current.kind_of? NativeType
         code = current
@@ -97,7 +95,7 @@ module JRuby::FFI
       return code
     end
 
-    def self.create_invoker(lib, name, args, ret)
+    def self.create_invoker(lib, name, args, ret, convention = :default)
       # Ugly hack to simulate the effect of dlopen(NULL, x) - not quite correct
       lib = 'c' unless lib
       # jna & jffi need just the last part of the library name
@@ -107,18 +105,15 @@ module JRuby::FFI
 
       cargs = args.map { |e| find_type(e) }
       invoker = FFIProvider.createInvoker(lib, name, find_type(ret), 
-        cargs.to_java(NativeType))
+        cargs.to_java(NativeType), convention.to_s)
       raise FFI::NotFoundError.new(name, lib) unless invoker
       return invoker
     end
     
-    def self.create_function(lib, name, args, ret)
-      invoker = create_invoker(lib, name, args, ret)
+    def self.create_function(lib, name, args, ret, convention = :default)
+      invoker = create_invoker(lib, name, args, ret, convention)
       proc { |*args| invoker.invoke(args) }
     end
-
-  # Converts a Rubinius Object
-#  add_typedef TYPE_OBJECT,  :object
 
   # Converts a char
   add_typedef(NativeType::INT8, :char)
@@ -301,7 +296,7 @@ module FFI
   def self.add_typedef(current, add)
     JRuby::FFI.add_typedef(current, add)
   end
-  def self.create_invoker(lib, name, args, ret)
+  def self.create_invoker(lib, name, args, ret, convention = :default)
     # Ugly hack to simulate the effect of dlopen(NULL, x) - not quite correct
     lib = 'c' unless lib
     # jffi needs just the last part of the library name
@@ -312,7 +307,7 @@ module FFI
 
     cargs = args.map { |e| find_type(e) }
     invoker = JRuby::FFI::FFIProvider.createInvoker(lib, name, find_type(ret),
-      cargs.to_java(JRuby::FFI::NativeType))
+      cargs.to_java(JRuby::FFI::NativeType), convention.to_s)
     raise NotFoundError.new(name, lib) unless invoker
     return invoker
   end
@@ -323,9 +318,13 @@ module JRuby::FFI::Library
   def ffi_lib(name)
     @ffi_lib = name
   end
+  def ffi_convention(convention)
+    @ffi_convention = convention
+  end
   def jffi_attach(ret_type, name, arg_types, opts = {})
     lib = opts[:from]
-    invoker = JRuby::FFI.create_invoker lib, name.to_s, arg_types, ret_type
+    convention = opts[:convention] ? opts[:convention] : :default
+    invoker = JRuby::FFI.create_invoker(lib, name.to_s, arg_types, ret_type, convention)
     raise ArgumentError, "Unable to find function '#{name}' to bind to #{self.name}.#{(opts[:as] || name)}" unless invoker
     invoker.attach(self, (opts[:as] || name).to_s)
     # Return a callable version of the invoker
@@ -333,13 +332,16 @@ module JRuby::FFI::Library
   end
   def attach_function(name, a3, a4, a5=nil)
     mname, args, ret = a5 ? [ a3, a4, a5 ] : [ name.to_sym, a3, a4 ]
-    jffi_attach(ret, name, args, { :as => mname, :from => @ffi_lib })
+    jffi_attach(ret, name, args, { :as => mname, :from => @ffi_lib, :convention => @ffi_convention })
   end
 end
 module FFI::Library
   # TODO: Rubinius does *names here and saves the array. Multiple libs?
   def ffi_lib(name)
     @ffi_lib = name
+  end
+  def ffi_convention(convention)
+    @ffi_convention = convention
   end
   ##
   # Attach C function +name+ to this module.
@@ -354,8 +356,8 @@ module FFI::Library
   def attach_function(name, a3, a4, a5=nil)
     mname, arg_types, ret_type = a5 ? [ a3, a4, a5 ] : [ name.to_sym, a3, a4 ]
     lib = @ffi_lib
-
-    invoker = FFI.create_invoker lib, name.to_s, arg_types, ret_type
+    convention = @ffi_convention ? @ffi_convention : :default
+    invoker = FFI.create_invoker lib, name.to_s, arg_types, ret_type, convention
     raise ArgumentError, "Unable to find function '#{name}' to bind to #{self.name}.#{mname}" unless invoker
     invoker.attach(self, mname.to_s)
     # Return a callable version of the invoker

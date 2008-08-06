@@ -111,7 +111,7 @@ public abstract class FFIProvider {
      * @return a new <tt>Invoker</tt> instance.
      */
     public abstract Invoker createInvoker(String libraryName, String functionName, NativeType returnType,
-            NativeType[] parameterTypes);
+            NativeType[] parameterTypes, String convention);
     
     /**
      * Gets the last native error code.

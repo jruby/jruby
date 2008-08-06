@@ -59,8 +59,10 @@ public final class JNAProvider extends FFIProvider {
 
     @Override
     public final Invoker createInvoker(String libraryName, String functionName, 
-            NativeType returnType, NativeType[] parameterTypes) {
-        Function function = NativeLibrary.getInstance(libraryName).getFunction(functionName);
+            NativeType returnType, NativeType[] parameterTypes, String convention) {
+
+        Function function = NativeLibrary.getInstance(libraryName).getFunction(functionName,
+                "stdcall".equals(convention) ? Function.ALT_CONVENTION : Function.C_CONVENTION);
         FunctionInvoker functionInvoker = getFunctionInvoker(returnType);
         Marshaller[] marshallers = new Marshaller[parameterTypes.length];
         for (int i = 0; i < marshallers.length; ++i) {
