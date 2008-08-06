@@ -86,8 +86,14 @@ public abstract class FFIProvider {
      */
     public void setup(RubyModule module) {
         synchronized (module) {
+            if (module.fastGetClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS) == null) {
+                AbstractMemoryPointer.createAbstractMemoryClass(module.getRuntime());
+            }
             if (module.fastGetClass(AbstractMemoryPointer.className) == null) {
                 AbstractMemoryPointer.createMemoryPointerClass(module.getRuntime());
+            }
+            if (module.fastGetClass(AbstractBuffer.ABSTRACT_BUFFER_RUBY_CLASS) == null) {
+                AbstractBuffer.createBufferClass(module.getRuntime());
             }
             if (module.fastGetClass(StructLayout.CLASS_NAME) == null) {
                 StructLayout.createStructLayoutClass(module.getRuntime());
@@ -98,6 +104,7 @@ public abstract class FFIProvider {
             if (module.fastGetClass(FileDescriptorIO.CLASS_NAME) == null) {
                 FileDescriptorIO.createFileDescriptorIOClass(module.getRuntime());
             }
+            
         }
     }
 
