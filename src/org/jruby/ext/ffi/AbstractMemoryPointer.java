@@ -94,7 +94,7 @@ public abstract class AbstractMemoryPointer extends AbstractMemory {
     public IRubyObject read_pointer(ThreadContext context) {
         return getMemoryPointer(context.getRuntime(), 0);
     }
-    
+        
     @JRubyMethod(name = "get_string", required = 1, optional = 1)
     public IRubyObject get_string(ThreadContext context, IRubyObject[] args) {
         long off = getOffset(args[0]);
@@ -140,12 +140,6 @@ public abstract class AbstractMemoryPointer extends AbstractMemory {
         getMemoryIO().put(getOffset(off), bl.unsafeBytes(), bl.begin(), len);
         return context.getRuntime().newFixnum(len);
     }
-    
-    @JRubyMethod(name = "get_pointer", required = 1)
-    public IRubyObject get_pointer(ThreadContext context, IRubyObject offset) {
-        return getMemoryPointer(context.getRuntime(), Util.int64Value(offset));
-    }
-    
     @JRubyMethod(name = "free")
     public IRubyObject free(ThreadContext context) {
         // Just let the GC collect and free the pointer
@@ -161,5 +155,4 @@ public abstract class AbstractMemoryPointer extends AbstractMemory {
         }
         return context.getRuntime().getNil();
     }
-    abstract protected AbstractMemoryPointer getMemoryPointer(Ruby runtime, long offset);
 }

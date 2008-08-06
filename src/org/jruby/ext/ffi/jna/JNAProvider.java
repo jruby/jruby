@@ -92,6 +92,9 @@ public final class JNAProvider extends FFIProvider {
             if (module.fastGetClass(JNAMemoryPointer.MEMORY_POINTER_NAME) == null) {
                 JNAMemoryPointer.createMemoryPointerClass(module.getRuntime());
             }
+            if (module.fastGetClass(JNABuffer.BUFFER_RUBY_CLASS) == null) {
+                JNABuffer.createBufferClass(module.getRuntime());
+            }
         }
     }
     
@@ -396,8 +399,10 @@ public final class JNAProvider extends FFIProvider {
      */
     private static final class PointerMarshaller implements Marshaller {
         public final Object marshal(Invocation invocation, IRubyObject parameter) {
-            if (parameter instanceof JNAMemoryPointer) {
+            if (parameter instanceof AbstractMemory) {
                 return (((JNAMemoryPointer) parameter).getMemory());
+            } else if (parameter instanceof JNABuffer) {
+                return (((JNABuffer) parameter).getMemory());
             } else if (parameter.isNil()) {
                 return Pointer.NULL;
             }

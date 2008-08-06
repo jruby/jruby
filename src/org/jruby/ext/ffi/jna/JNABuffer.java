@@ -30,12 +30,9 @@ package org.jruby.ext.ffi.jna;
 
 import org.jruby.ext.ffi.*;
 import com.sun.jna.Pointer;
-import com.sun.jna.ptr.PointerByReference;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
-import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
@@ -45,88 +42,58 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *
  */
-@JRubyClass(name = FFIProvider.MODULE_NAME + "::" + JNAMemoryPointer.MEMORY_POINTER_NAME, parent = FFIProvider.MODULE_NAME + "::" + AbstractMemoryPointer.className)
-public class JNAMemoryPointer extends AbstractMemoryPointer {
-    public static final String MEMORY_POINTER_NAME = "MemoryPointer";
+@JRubyClass(name = FFIProvider.MODULE_NAME + "::" + JNABuffer.BUFFER_RUBY_CLASS, parent = FFIProvider.MODULE_NAME + "::" + AbstractMemoryPointer.className)
+public class JNABuffer extends AbstractBuffer {
+    public static final String BUFFER_RUBY_CLASS = "Buffer";
     private final JNAMemoryIO io;
     
-    public static RubyClass createMemoryPointerClass(Ruby runtime) {
+    public static RubyClass createBufferClass(Ruby runtime) {
         RubyModule module = FFIProvider.getModule(runtime);
-        RubyClass result = module.defineClassUnder(MEMORY_POINTER_NAME, 
-                module.getClass(AbstractMemoryPointer.className), 
+        RubyClass result = module.defineClassUnder(BUFFER_RUBY_CLASS,
+                module.getClass(AbstractBuffer.ABSTRACT_BUFFER_RUBY_CLASS),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        result.defineAnnotatedMethods(JNAMemoryPointer.class);
-        result.defineAnnotatedConstants(JNAMemoryPointer.class);
+        result.defineAnnotatedMethods(JNABuffer.class);
+        result.defineAnnotatedConstants(JNABuffer.class);
 
         return result;
     }
     
-    public JNAMemoryPointer(Ruby runtime, RubyClass klass) {
+    public JNABuffer(Ruby runtime, RubyClass klass) {
         super(runtime, klass, 0, 0);
         this.io = JNAMemoryIO.wrap(Pointer.NULL);
     }
-    JNAMemoryPointer(Ruby runtime, Pointer value) {
-        this(runtime, JNAMemoryIO.wrap(value), 0, Long.MAX_VALUE);
-    }
-    private JNAMemoryPointer(Ruby runtime, JNAMemoryPointer ptr, long offset) {
+    
+    private JNABuffer(Ruby runtime, JNABuffer ptr, long offset) {
         this(runtime, ptr.io, ptr.offset + offset, 
                 ptr.size == Long.MAX_VALUE ? Long.MAX_VALUE : ptr.size - offset);
     }
-    JNAMemoryPointer(Ruby runtime, JNAMemoryIO io, long offset, long size) {
-        super(runtime, FFIProvider.getModule(runtime).fastGetClass(MEMORY_POINTER_NAME),
+    private JNABuffer(Ruby runtime, JNAMemoryIO io, long offset, long size) {
+        super(runtime, FFIProvider.getModule(runtime).fastGetClass(BUFFER_RUBY_CLASS),
                 offset, size);
         this.io = io;
     }
     
     @JRubyMethod(name = { "allocate", "allocate_direct", "allocateDirect" }, meta = true)
-    public static JNAMemoryPointer allocateDirect(ThreadContext context, IRubyObject recv, IRubyObject sizeArg) {
+    public static JNABuffer allocateDirect(ThreadContext context, IRubyObject recv, IRubyObject sizeArg) {
         int size = Util.int32Value(sizeArg);
         JNAMemoryIO io = size > 0 ? JNAMemoryIO.allocateDirect(size) : JNAMemoryIO.NULL;
-        return new JNAMemoryPointer(context.getRuntime(), io, 0, size);
+        return new JNABuffer(context.getRuntime(), io, 0, size);
     }
     @JRubyMethod(name = { "allocate", "allocate_direct", "allocateDirect" }, meta = true)
-    public static JNAMemoryPointer allocateDirect(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject clearArg) {
+    public static JNABuffer allocateDirect(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject clearArg) {
         int size = Util.int32Value(sizeArg);
         JNAMemoryIO io = size > 0 ? JNAMemoryIO.allocateDirect(size) : JNAMemoryIO.NULL;
         if (clearArg.isTrue()) {
             io.setMemory(0, size, (byte) 0);
         }
-        return new JNAMemoryPointer(context.getRuntime(), io, 0, size);
-    }
-    @JRubyMethod(name = "to_s", optional = 1)
-    public IRubyObject to_s(ThreadContext context, IRubyObject[] args) {
-        String hex = getMemoryIO().getAddress().toString();
-        return RubyString.newString(context.getRuntime(), MEMORY_POINTER_NAME + "[address=" + hex + "]");
-    }
-    Pointer getAddress() {
-        return getMemoryIO().getAddress();
-    }
-    protected Object getMemory() {
-        return getMemoryIO().getMemory();
-    }
-    private static final long ptr2long(Pointer ptr) {
-        return new PointerByReference(ptr).getPointer().getInt(0);
+        return new JNABuffer(context.getRuntime(), io, 0, size);
     }
     public final JNAMemoryIO getMemoryIO() {
         return io;
     }
-    @JRubyMethod(name = "address")
-    public IRubyObject address(ThreadContext context) {
-        return context.getRuntime().newFixnum(ptr2long(getAddress()));
+    Object getMemory() {
+        return getMemoryIO().getMemory();
     }
-    
-    @JRubyMethod(name = "inspect")
-    public IRubyObject inspect(ThreadContext context) {
-        String hex = Long.toHexString(ptr2long(getAddress()) + offset);
-        return RubyString.newString(context.getRuntime(), 
-                String.format("#<MemoryPointer address=0x%s>", hex));
-    }
-    @JRubyMethod(name = "+", required = 1)
-    public IRubyObject op_plus(ThreadContext context, IRubyObject value) {
-        return new JNAMemoryPointer(context.getRuntime(), this, 
-                RubyNumeric.fix2long(value));
-    }
-    
     @JRubyMethod(name = "put_pointer", required = 2)
     public IRubyObject put_pointer(ThreadContext context, IRubyObject offset, IRubyObject value) {
         Pointer ptr;

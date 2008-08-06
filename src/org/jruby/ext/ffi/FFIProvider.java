@@ -87,7 +87,7 @@ public abstract class FFIProvider {
     public void setup(RubyModule module) {
         synchronized (module) {
             if (module.fastGetClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS) == null) {
-                AbstractMemoryPointer.createAbstractMemoryClass(module.getRuntime());
+                AbstractMemory.createAbstractMemoryClass(module.getRuntime());
             }
             if (module.fastGetClass(AbstractMemoryPointer.className) == null) {
                 AbstractMemoryPointer.createMemoryPointerClass(module.getRuntime());

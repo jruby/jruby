@@ -551,4 +551,12 @@ abstract public class AbstractMemory extends RubyObject {
         getMemoryIO().put(Util.int64Value(offset), array, 0, array.length);
         return runtime.getNil();
     }
+    @JRubyMethod(name = "get_pointer", required = 1)
+    public IRubyObject get_pointer(ThreadContext context, IRubyObject offset) {
+        return getMemoryPointer(context.getRuntime(), Util.int64Value(offset));
+    }
+    
+    abstract protected AbstractMemoryPointer getMemoryPointer(Ruby runtime, long offset);
+    
+    
 }

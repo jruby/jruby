@@ -225,7 +225,7 @@ public final class StructLayout extends RubyObject {
          * @return A memory I/O accessor that can be used to read/write this member.
          */
         static final MemoryIO getMemoryIO(IRubyObject ptr) {
-            return ((AbstractMemoryPointer) ptr).getMemoryIO();
+            return ((AbstractMemory) ptr).getMemoryIO();
         }
         
         /**

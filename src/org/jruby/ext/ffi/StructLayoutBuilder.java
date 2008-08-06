@@ -336,7 +336,7 @@ public final class StructLayoutBuilder extends RubyObject {
         }
 
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
-            return ((AbstractMemoryPointer) ptr).getMemoryPointer(runtime, offset);
+            return ((AbstractMemory) ptr).getMemoryPointer(runtime, offset);
         }
         static StructLayout.Member create(long offset) { return new PointerMember(offset); }
     }
