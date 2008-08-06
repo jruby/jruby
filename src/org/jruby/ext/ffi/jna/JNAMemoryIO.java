@@ -34,6 +34,7 @@ import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import org.jruby.util.ByteList;
 
 /**
  * JNA implementation of memory I/O operations.
@@ -99,6 +100,16 @@ public abstract class JNAMemoryIO implements MemoryIO {
      */
     static JNAMemoryIO wrap(Pointer ptr) {
         return ptr != null ? new PointerIO(ptr, 0) : NULL;
+    }
+    
+    /**
+     * Wraps a <tt>MemoryIO</tt> accessor around an existing <tt>ByteList</tt>
+     * 
+     * @param buf The <tt>ByteList</tt> to wrap.
+     * @return A new <tt>MemoryIO</tt> instance that can access the memory.
+     */
+    static JNAMemoryIO wrap(ByteList buf) {
+        return new BufferIO(ByteBuffer.wrap(buf.unsafeBytes(), buf.begin(), buf.length()));
     }
     public abstract Pointer getAddress();
     public abstract Pointer getPointer(long offset);

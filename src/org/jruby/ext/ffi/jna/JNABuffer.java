@@ -33,17 +33,20 @@ import com.sun.jna.Pointer;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
+import org.jruby.util.ByteList;
 
 /**
  *
  */
 @JRubyClass(name = FFIProvider.MODULE_NAME + "::" + JNABuffer.BUFFER_RUBY_CLASS, parent = FFIProvider.MODULE_NAME + "::" + AbstractMemoryPointer.className)
-public class JNABuffer extends AbstractBuffer {
+public class JNABuffer extends AbstractBuffer implements JNAMemory {
     public static final String BUFFER_RUBY_CLASS = "Buffer";
     private final JNAMemoryIO io;
     
@@ -72,26 +75,52 @@ public class JNABuffer extends AbstractBuffer {
                 offset, size);
         this.io = io;
     }
-    
-    @JRubyMethod(name = { "allocate", "allocate_direct", "allocateDirect" }, meta = true)
-    public static JNABuffer allocateDirect(ThreadContext context, IRubyObject recv, IRubyObject sizeArg) {
+    private static JNABuffer allocate(ThreadContext context, IRubyObject sizeArg, boolean clear) {
         int size = Util.int32Value(sizeArg);
         JNAMemoryIO io = size > 0 ? JNAMemoryIO.allocateDirect(size) : JNAMemoryIO.NULL;
-        return new JNABuffer(context.getRuntime(), io, 0, size);
-    }
-    @JRubyMethod(name = { "allocate", "allocate_direct", "allocateDirect" }, meta = true)
-    public static JNABuffer allocateDirect(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject clearArg) {
-        int size = Util.int32Value(sizeArg);
-        JNAMemoryIO io = size > 0 ? JNAMemoryIO.allocateDirect(size) : JNAMemoryIO.NULL;
-        if (clearArg.isTrue()) {
+        if (clear && size > 0) {
             io.setMemory(0, size, (byte) 0);
         }
         return new JNABuffer(context.getRuntime(), io, 0, size);
     }
+    @JRubyMethod(name = { "allocate", "allocate_direct", "allocateDirect" }, meta = true)
+    public static JNABuffer allocateDirect(ThreadContext context, IRubyObject recv, IRubyObject sizeArg) {
+        return allocate(context, sizeArg, false);
+    }
+    @JRubyMethod(name = { "allocate", "allocate_direct", "allocateDirect" }, meta = true)
+    public static JNABuffer allocateDirect(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject clearArg) {
+        return allocate(context, sizeArg, clearArg.isTrue());
+    }
+    @JRubyMethod(name = { "input", "allocate_in" }, meta = true)
+    public static JNABuffer allocateInput(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        if (arg instanceof RubyString) {
+            final RubyString s = (RubyString) arg;
+            final int size = Util.int32Value(s.length());
+            final ByteList bl = s.getByteList();
+            final JNAMemoryIO io = JNAMemoryIO.allocateDirect(size);
+            io.put(0, bl.unsafeBytes(), bl.begin(), bl.length());
+            io.putByte(bl.length(), (byte) 0);
+            return new JNABuffer(context.getRuntime(), io, 0, size);
+        } else {
+            return allocate(context, arg, false);
+        }
+    }
+    @JRubyMethod(name = { "input", "allocate_in" }, meta = true)
+    public static JNABuffer allocateInput(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject clearArg) {
+        return allocate(context, sizeArg, clearArg.isTrue());
+    }
+    @JRubyMethod(name = { "output", "allocate_out" }, meta = true)
+    public static JNABuffer allocateOutput(ThreadContext context, IRubyObject recv, IRubyObject sizeArg) {
+        return allocate(context, sizeArg, false);
+    }
+    @JRubyMethod(name = { "output", "allocate_out" }, meta = true)
+    public static JNABuffer allocateOutput(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject clearArg) {
+        return allocate(context, sizeArg, clearArg.isTrue());
+    }
     public final JNAMemoryIO getMemoryIO() {
         return io;
     }
-    Object getMemory() {
+    public Object getNativeMemory() {
         return getMemoryIO().getMemory();
     }
     @JRubyMethod(name = "put_pointer", required = 2)

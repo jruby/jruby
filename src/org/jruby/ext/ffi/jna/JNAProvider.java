@@ -399,10 +399,8 @@ public final class JNAProvider extends FFIProvider {
      */
     private static final class PointerMarshaller implements Marshaller {
         public final Object marshal(Invocation invocation, IRubyObject parameter) {
-            if (parameter instanceof AbstractMemory) {
-                return (((JNAMemoryPointer) parameter).getMemory());
-            } else if (parameter instanceof JNABuffer) {
-                return (((JNABuffer) parameter).getMemory());
+            if (parameter instanceof JNAMemory) {
+                return (((JNAMemory) parameter).getNativeMemory());
             } else if (parameter.isNil()) {
                 return Pointer.NULL;
             }
@@ -465,8 +463,8 @@ public final class JNAProvider extends FFIProvider {
      */
     private static final class BufferMarshaller implements Marshaller {
         public final Object marshal(Invocation invocation, IRubyObject parameter) {
-            if (parameter instanceof JNAMemoryPointer) {
-                return (((JNAMemoryPointer) parameter).getMemory());
+            if (parameter instanceof JNAMemory) {
+                return (((JNAMemory) parameter).getNativeMemory());
             } else if (parameter.isNil()) {
                 return Pointer.NULL;
             } else if (parameter instanceof RubyString) {

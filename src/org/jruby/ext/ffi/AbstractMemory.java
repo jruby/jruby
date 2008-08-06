@@ -41,6 +41,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * A abstract memory object that defines operations common to both pointers and
@@ -550,6 +551,40 @@ abstract public class AbstractMemory extends RubyObject {
         }
         getMemoryIO().put(Util.int64Value(offset), array, 0, array.length);
         return runtime.getNil();
+    }
+    @JRubyMethod(name = "get_string", required = 1, optional = 1)
+    public IRubyObject get_string(ThreadContext context, IRubyObject offArg) {
+        long off = getOffset(offArg);
+        int len = (int) getMemoryIO().indexOf(off, (byte) 0);
+        ByteList bl = new ByteList(len);
+        getMemoryIO().get(off, bl.unsafeBytes(), bl.begin(), len);
+        bl.length(len);
+        return context.getRuntime().newString(bl);
+    }
+    @JRubyMethod(name = "get_string")
+    public IRubyObject get_string(ThreadContext context, IRubyObject offArg, IRubyObject lenArg) {
+        long off = getOffset(offArg);
+        int maxlen = Util.int32Value(lenArg);
+        int len = (int) getMemoryIO().indexOf(off, (byte) 0, maxlen);
+        if (len < 0 || len > maxlen) {
+            len = maxlen;
+        }
+        ByteList bl = new ByteList(len);
+        getMemoryIO().get(off, bl.unsafeBytes(), bl.begin(), len);
+        bl.length(len);
+        return context.getRuntime().newString(bl);
+    }
+    @JRubyMethod(name = "put_string", required = 2, optional = 1)
+    public IRubyObject put_string(ThreadContext context, IRubyObject[] args) {
+        long off = getOffset(args[0]);
+        ByteList bl = args[1].convertToString().getByteList();
+        int len = bl.length();
+        if (args.length > 2) {
+            len = Math.min(Util.int32Value(args[2]) - 1, len);
+        }
+        getMemoryIO().put(off, bl.unsafeBytes(), bl.begin(), len);
+        getMemoryIO().putByte(off + bl.length(), (byte) 0);
+        return context.getRuntime().newFixnum(len);
     }
     @JRubyMethod(name = "get_pointer", required = 1)
     public IRubyObject get_pointer(ThreadContext context, IRubyObject offset) {

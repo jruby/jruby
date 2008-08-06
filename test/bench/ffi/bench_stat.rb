@@ -8,7 +8,7 @@ iter = 10_000
 
 module Posix
   extend JRuby::FFI::Library
-  attach_function :stat, [ :string, :buffer_out ], :int
+  attach_function :stat, [ :string, :pointer ], :int
 end
 class Stat < JRuby::FFI::Struct
   layout \
@@ -45,7 +45,7 @@ puts "FFI stat(file) #{iter}x"
   puts Benchmark.measure {
 
     iter.times do
-      buf = Stat.allocate # Allocate on the heap
+      buf = Stat.allocate_out # Allocate on the heap
       Posix.stat("/tmp", buf.pointer)
     end
   }

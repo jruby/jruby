@@ -514,6 +514,7 @@ class JRuby::FFI::MemoryPointer
 end
 class JRuby::FFI::BaseStruct
   MemoryPointer = JRuby::FFI::MemoryPointer
+  Buffer = JRuby::FFI::Buffer
   attr_reader :pointer
   
   def initialize(pointer = nil, *spec)
@@ -526,10 +527,16 @@ class JRuby::FFI::BaseStruct
     @cspec = self.class.layout(*spec)
   end
   def self.allocate(*spec)
-    self.new(MemoryPointer.allocate(@size), *spec)
+    self.new(Buffer.allocate(@size), *spec)
   end
   def self.allocate_direct(*spec)
     self.new(MemoryPointer.allocateDirect(@size), *spec)
+  end
+  def self.allocate_in(*spec)
+    self.new(Buffer.allocate_in(@size), *spec)
+  end
+  def self.allocate_out(*spec)
+    self.new(Buffer.allocate_out(@size), *spec)
   end
   def self.size
     @size

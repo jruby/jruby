@@ -95,36 +95,7 @@ public abstract class AbstractMemoryPointer extends AbstractMemory {
         return getMemoryPointer(context.getRuntime(), 0);
     }
         
-    @JRubyMethod(name = "get_string", required = 1, optional = 1)
-    public IRubyObject get_string(ThreadContext context, IRubyObject[] args) {
-        long off = getOffset(args[0]);
-        int len = 0;
-        if (args.length > 1) {
-            int maxlen = Util.int32Value(args[1]);
-            len = (int) getMemoryIO().indexOf(off, (byte) 0, maxlen);
-            if (len < 0 || len > maxlen) {
-                len = maxlen;
-            }
-        } else {
-            len = (int) getMemoryIO().indexOf(off, (byte) 0);
-        }
-        ByteList bl = new ByteList(len);
-        getMemoryIO().get(off, bl.unsafeBytes(), bl.begin(), len);
-        bl.length(len);
-        return context.getRuntime().newString(bl);
-    }
-    @JRubyMethod(name = "put_string", required = 2, optional = 1)
-    public IRubyObject put_string(ThreadContext context, IRubyObject[] args) {
-        long off = getOffset(args[0]);
-        ByteList bl = args[1].convertToString().getByteList();
-        int len = bl.length();
-        if (args.length > 2) {
-            len = Math.min(Util.int32Value(args[2]) - 1, len);
-        }
-        getMemoryIO().put(off, bl.unsafeBytes(), bl.begin(), len);
-        getMemoryIO().putByte(off + bl.length(), (byte) 0);
-        return context.getRuntime().newFixnum(len);
-    }
+    
     @JRubyMethod(name = "get_buffer", required = 2)
     public IRubyObject get_buffer(ThreadContext context, IRubyObject off, IRubyObject len_) {
         int len = Util.int32Value(len_);

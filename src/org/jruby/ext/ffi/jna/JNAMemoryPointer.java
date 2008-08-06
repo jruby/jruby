@@ -101,7 +101,7 @@ public class JNAMemoryPointer extends AbstractMemoryPointer {
     Pointer getAddress() {
         return getMemoryIO().getAddress();
     }
-    protected Object getMemory() {
+    public Object getNativeMemory() {
         return getMemoryIO().getMemory();
     }
     private static final long ptr2long(Pointer ptr) {
