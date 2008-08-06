@@ -2965,7 +2965,7 @@ public final class Ruby {
     private BeanManager beanManager;
     
     // Compilation
-    private JITCompiler jitCompiler;
+    private final JITCompiler jitCompiler;
 
     // Note: this field and the following static initializer
     // must be located be in this order!

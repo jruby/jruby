@@ -66,72 +66,87 @@ public class JITCompiler implements JITCompilerMBean {
         ruby.getBeanManager().register(this);
     }
     
+    public void tryJIT(final DefaultMethod method, final ThreadContext context, final String name) {
+        if (context.getRuntime().getInstanceConfig().getCompileMode().shouldJIT()) {
+            jitIsEnabled(method, context, name);
+        }
+    }
+    
+    @Deprecated
     public void runJIT(final DefaultMethod method, final ThreadContext context, final String name) {
-        Set<Script> jittedMethods = ruby.getJittedMethods();
-        final RubyInstanceConfig instanceConfig = ruby.getInstanceConfig();
-        ClassCache classCache = instanceConfig.getClassCache();
-        
         // This method has JITed already or has been abandoned. Bail out.
-        if (method.getCallCount() < 0) return;
+        if (method.getCallCount() < 0) {
+            return;
+        } else {
+            jitIsEnabled(method, context, name);
+        }
+    }
+    
+    private void jitIsEnabled(final DefaultMethod method, final ThreadContext context, final String name) {
+        RubyInstanceConfig instanceConfig = ruby.getInstanceConfig();
+        int callCount = method.incrementCallCount();
         
+        if (callCount >= instanceConfig.getJitThreshold()) {
+            jitThresholdReached(method, instanceConfig, context, name);
+        }
+    }
+    
+    private void jitThresholdReached(final DefaultMethod method, RubyInstanceConfig instanceConfig, final ThreadContext context, final String name) {
         try {
-            method.setCallCount(method.getCallCount() + 1);
-
-            if (method.getCallCount() >= instanceConfig.getJitThreshold()) {
-        
-                // The cache is full. Abandon JIT for this method and bail out.
-                if (classCache.isFull()) {
-                    abandonCount.incrementAndGet();
-                    method.setCallCount(-1);
-                    return;
-                }
-                
-                // Check if the method has been explicitly excluded
-                String moduleName = method.getImplementationClass().getName();
-                if (instanceConfig.getExcludedMethods().size() > 0 &&
-                        (instanceConfig.getExcludedMethods().contains(moduleName) ||
-                        instanceConfig.getExcludedMethods().contains(moduleName+"#"+name) ||
-                        instanceConfig.getExcludedMethods().contains(name))) {
-                    method.setCallCount(-1);
-                    return;
-                }
-                
-                JITClassGenerator generator = new JITClassGenerator(name, method, context);
-
-                String key = SexpMaker.create(name, method.getArgsNode(), method.getBodyNode());
-
-                Class<Script> sourceClass = (Class<Script>)instanceConfig.getClassCache().cacheClassByKey(key, generator);
-                
-                if (sourceClass == null) {
-                    // class could not be found nor generated; give up on JIT and bail out
-                    failCount.incrementAndGet();
-                    method.setCallCount(-1);
-                    return;
-                }
-                
-                // successfully got back a jitted method
-                successCount.incrementAndGet();
-
-                // finally, grab the script
-                Script jitCompiledScript = sourceClass.newInstance();
-
-                // add to the jitted methods set
-                jittedMethods.add(jitCompiledScript);
-
-                // logEvery n methods based on configuration
-                if (instanceConfig.getJitLogEvery() > 0) {
-                    int methodCount = jittedMethods.size();
-                    if (methodCount % instanceConfig.getJitLogEvery() == 0) {
-                        log(method, name, "live compiled methods: " + methodCount);
-                    }
-                }
-
-                if (instanceConfig.isJitLogging()) log(method, name, "done jitting");
-
-                method.setJITCallConfig(generator.callConfig());
-                method.setJITCompiledScript(jitCompiledScript);
+            // The cache is full. Abandon JIT for this method and bail out.
+            ClassCache classCache = instanceConfig.getClassCache();
+            if (classCache.isFull()) {
+                abandonCount.incrementAndGet();
                 method.setCallCount(-1);
+                return;
             }
+
+            // Check if the method has been explicitly excluded
+            String moduleName = method.getImplementationClass().getName();
+            if (instanceConfig.getExcludedMethods().size() > 0 &&
+                    (instanceConfig.getExcludedMethods().contains(moduleName) ||
+                    instanceConfig.getExcludedMethods().contains(moduleName+"#"+name) ||
+                    instanceConfig.getExcludedMethods().contains(name))) {
+                method.setCallCount(-1);
+                return;
+            }
+
+            JITClassGenerator generator = new JITClassGenerator(name, method, context);
+
+            String key = SexpMaker.create(name, method.getArgsNode(), method.getBodyNode());
+
+            Class<Script> sourceClass = (Class<Script>)instanceConfig.getClassCache().cacheClassByKey(key, generator);
+
+            if (sourceClass == null) {
+                // class could not be found nor generated; give up on JIT and bail out
+                failCount.incrementAndGet();
+                method.setCallCount(-1);
+                return;
+            }
+
+            // successfully got back a jitted method
+            successCount.incrementAndGet();
+
+            // finally, grab the script
+            Script jitCompiledScript = sourceClass.newInstance();
+
+            // add to the jitted methods set
+            Set<Script> jittedMethods = ruby.getJittedMethods();
+            jittedMethods.add(jitCompiledScript);
+
+            // logEvery n methods based on configuration
+            if (instanceConfig.getJitLogEvery() > 0) {
+                int methodCount = jittedMethods.size();
+                if (methodCount % instanceConfig.getJitLogEvery() == 0) {
+                    log(method, name, "live compiled methods: " + methodCount);
+                }
+            }
+
+            if (instanceConfig.isJitLogging()) log(method, name, "done jitting");
+
+            method.setJITCallConfig(generator.callConfig());
+            method.setJITCompiledScript(jitCompiledScript);
+            method.setCallCount(-1);
         } catch (Throwable t) {
             if (instanceConfig.isJitLoggingVerbose()) log(method, name, "could not compile", t.getMessage());
 

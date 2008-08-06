@@ -40,7 +40,6 @@ import org.jruby.ast.ListNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
 import org.jruby.exceptions.JumpException;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -48,7 +47,6 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.EventHook;
-import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -89,6 +87,10 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         return callCount;
     }
     
+    public int incrementCallCount() {
+        return ++callCount;
+    }
+    
     public void setCallCount(int callCount) {
         this.callCount = callCount;
     }
@@ -127,42 +129,40 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         
         Ruby runtime = context.getRuntime();
 
-        if (runtime.getInstanceConfig().getCompileMode().shouldJIT()) {
-            runtime.getJITCompiler().runJIT(this, context, name);
+        if (callCount >= 0) {
+            runtime.getJITCompiler().tryJIT(this, context, name);
         }
         
         if (jitCompiledScript != null && !runtime.hasEventHooks()) {
-            try {
-                jitPre(context, self, name, block);
-
-                getArity().checkArity(runtime, args.length);
-
-                return jitCompiledScript.__file__(context, self, args, block);
-            } catch (JumpException.ReturnJump rj) {
-                return handleReturn(context, rj);
-            } catch (JumpException.RedoJump rj) {
-                return handleRedo(runtime);
-            } finally {
-                jitPost(runtime, context, name);
-            }
+            return retryJITCall(context, runtime, self, name, args, block);
         } else {
             return interpretedCall(context, runtime, self, clazz, name, args, block);
+        }
+    }
+    
+    private IRubyObject retryJITCall(ThreadContext context, Ruby runtime, IRubyObject self, String name, IRubyObject[] args, Block block) {
+        try {
+            jitPre(context, self, name, block, args.length);
+
+            return jitCompiledScript.__file__(context, self, args, block);
+        } catch (JumpException.ReturnJump rj) {
+            return handleReturn(context, rj);
+        } catch (JumpException.RedoJump rj) {
+            return handleRedo(runtime);
+        } finally {
+            jitPost(runtime, context, name);
         }
     }
 
     public IRubyObject interpretedCall(ThreadContext context, Ruby runtime, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         try {
-            preInterpret(context, name,self, block, runtime, args.length);
-
-            prepareArguments(context, runtime, self, args);
+            preInterpret(context, name, self, block, runtime, args);
 
             return body.interpret(runtime, context, self, block);
         } catch (JumpException.ReturnJump rj) {
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
-        } catch (StackOverflowError sfe) {
-            throw runtime.newSystemStackError("stack level too deep");
         } finally {
             postInterpret(runtime, context, name);
         }
@@ -174,7 +174,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         
         if (jitCompiledScript != null && !runtime.hasEventHooks()) {
             try {
-                jitPre(context, self, name, Block.NULL_BLOCK);
+                jitPre(context, self, name, Block.NULL_BLOCK, args.length);
                 
                 return jitCompiledScript.__file__(context, self, args, Block.NULL_BLOCK);
             } catch (JumpException.ReturnJump rj) {
@@ -195,7 +195,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         
         if (jitCompiledScript != null && !runtime.hasEventHooks()) {
             try {
-                jitPre(context, self, name, Block.NULL_BLOCK);
+                jitPre(context, self, name, Block.NULL_BLOCK, 0);
 
                 return jitCompiledScript.__file__(context, self, Block.NULL_BLOCK);
             } catch (JumpException.ReturnJump rj) {
@@ -216,7 +216,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         
         if (jitCompiledScript != null && !runtime.hasEventHooks()) {
             try {
-                jitPre(context, self, name, block);
+                jitPre(context, self, name, block, 0);
 
                 return jitCompiledScript.__file__(context, self, block);
             } catch (JumpException.ReturnJump rj) {
@@ -237,7 +237,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         
         if (jitCompiledScript != null && !runtime.hasEventHooks()) {
             try {
-                jitPre(context, self, name, Block.NULL_BLOCK);
+                jitPre(context, self, name, Block.NULL_BLOCK, 1);
 
                 return jitCompiledScript.__file__(context, self, arg0, Block.NULL_BLOCK);
             } catch (JumpException.ReturnJump rj) {
@@ -258,7 +258,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         
         if (jitCompiledScript != null && !runtime.hasEventHooks()) {
             try {
-                jitPre(context, self, name, block);
+                jitPre(context, self, name, block, 1);
 
                 return jitCompiledScript.__file__(context, self, arg0, block);
             } catch (JumpException.ReturnJump rj) {
@@ -279,7 +279,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         
         if (jitCompiledScript != null && !runtime.hasEventHooks()) {
             try {
-                jitPre(context, self, name, Block.NULL_BLOCK);
+                jitPre(context, self, name, Block.NULL_BLOCK, 2);
 
                 return jitCompiledScript.__file__(context, self, arg0, arg1, Block.NULL_BLOCK);
             } catch (JumpException.ReturnJump rj) {
@@ -300,7 +300,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         
         if (jitCompiledScript != null && !runtime.hasEventHooks()) {
             try {
-                jitPre(context, self, name, block);
+                jitPre(context, self, name, block, 2);
 
                 return jitCompiledScript.__file__(context, self, arg0, arg1, block);
             } catch (JumpException.ReturnJump rj) {
@@ -321,7 +321,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         
         if (jitCompiledScript != null && !runtime.hasEventHooks()) {
             try {
-                jitPre(context, self, name, Block.NULL_BLOCK);
+                jitPre(context, self, name, Block.NULL_BLOCK, 3);
 
                 return jitCompiledScript.__file__(context, self, arg0, arg1, arg2, Block.NULL_BLOCK);
             } catch (JumpException.ReturnJump rj) {
@@ -342,7 +342,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         
         if (jitCompiledScript != null && !runtime.hasEventHooks()) {
             try {
-                jitPre(context, self, name, block);
+                jitPre(context, self, name, block, 3);
 
                 return jitCompiledScript.__file__(context, self, arg0, arg1, arg2, block);
             } catch (JumpException.ReturnJump rj) {
@@ -375,11 +375,21 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         return givenArgsCount;
     }
 
-    private void jitPre(ThreadContext context, IRubyObject self, String name, Block block) {
-        RubyModule implementer = getImplementationClass();
-        // FIXME: For some reason this wants (and works with) clazz instead of implementer,
-        // and needed it for compiled module method_function's called from outside the module. Why?
-        jitCallConfig.pre(context, self, implementer, name, block, staticScope, this);
+    private void interpretArgs(Ruby runtime, IRubyObject[] args, ThreadContext context, IRubyObject self, Block block) {
+
+        checkArgCount(runtime, args.length);
+
+        prepareArguments(context, runtime, self, args);
+
+        if (argsNode.getBlockArgNode() != null) {
+            processBlockArg(context, block);
+        }
+    }
+
+    private void jitPre(ThreadContext context, IRubyObject self, String name, Block block, int argsLength) {
+        jitCallConfig.pre(context, self, getImplementationClass(), name, block, staticScope, this);
+
+        getArity().checkArity(context.getRuntime(), argsLength);
     }
 
     private void jitPost(Ruby runtime, ThreadContext context, String name) {
@@ -396,19 +406,24 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
         context.postMethodFrameAndScope();
     }
 
-    private void preInterpret(ThreadContext context, String name, IRubyObject self, Block block, Ruby runtime, int argsLength) {
-        RubyModule implementer = getImplementationClass();
-
-        context.preMethodFrameAndScope(implementer, name, self, block, staticScope);
-        if (argsNode.getBlockArgNode() != null) {
-            context.getCurrentScope().setValue(argsNode.getBlockArgNode().getCount(), RuntimeHelpers.processBlockArgument(runtime, block), 0);
-        }
-
-        Arity.checkArgumentCount(runtime, argsLength, requiredArgsCount, maxArgsCount);
+    private void preInterpret(ThreadContext context, String name, IRubyObject self, Block block, Ruby runtime, IRubyObject[] args) {
+        context.preMethodFrameAndScope(getImplementationClass(), name, self, block, staticScope);
 
         if (runtime.hasEventHooks()) {
             traceCall(context, runtime, name);
         }
+        
+        interpretArgs(runtime, args, context, self, block);
+    }
+    
+    private void processBlockArg(ThreadContext context, Block block) {
+        context.getCurrentScope().setValue(
+                argsNode.getBlockArgNode().getCount(),
+                RuntimeHelpers.processBlockArgument(context.getRuntime(), block), 0);
+    }
+    
+    private void checkArgCount(Ruby runtime, int argsLength) {
+        Arity.checkArgumentCount(runtime, argsLength, requiredArgsCount, maxArgsCount);
     }
 
     private void prepareArguments(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject[] args) {
@@ -422,15 +437,19 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
             prepareOptOrRestArgs(context, runtime, self, args);
         }
     }
-
+    
     private void prepareOptOrRestArgs(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject[] args) {
-        // we know we've at least got the required count at this point, so start with that
-        int givenArgsCount = requiredArgsCount;
-        
+        int givenArgsCount = interpretOptArgs(context, runtime, self, args);
+        interpretRestArg(context, runtime, args, givenArgsCount);
+    }
+    private int interpretOptArgs(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject[] args) {
         if (hasOptArgs) {
-            givenArgsCount = assignOptArgs(args, runtime, context, self, givenArgsCount);
+            return assignOptArgs(args, runtime, context, self, requiredArgsCount);
+        } else {
+            return requiredArgsCount;
         }
-        
+    }
+    private void interpretRestArg(ThreadContext context, Ruby runtime, IRubyObject[] args, int givenArgsCount) {
         if (restArg >= 0) {
             RubyArray array = RubyArray.newArrayNoCopy(runtime, args, givenArgsCount);
             context.getCurrentScope().setValue(restArg, array, 0);

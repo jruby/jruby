@@ -500,15 +500,17 @@ public class RuntimeHelpers {
             return runtime.getNil();
         }
         
-        RubyProc blockArg;
-        
-        if (block.getProcObject() != null) {
-            blockArg = block.getProcObject();
-        } else {
+        return processGivenBlock(block, runtime);
+    }
+
+    private static IRubyObject processGivenBlock(Block block, Ruby runtime) {
+        RubyProc blockArg = block.getProcObject();
+
+        if (blockArg == null) {
             blockArg = runtime.newBlockPassProc(Block.Type.PROC, block);
             blockArg.getBlock().type = Block.Type.PROC;
         }
-        
+
         return blockArg;
     }
     
