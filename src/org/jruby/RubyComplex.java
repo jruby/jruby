@@ -106,7 +106,7 @@ public class RubyComplex extends RubyNumeric {
 
     private static ObjectAllocator COMPLEX_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyComplex(runtime, klass);
+            return new RubyComplex(runtime, klass, RubyFixnum.zero(runtime), RubyFixnum.zero(runtime));
         }
     };
 
@@ -119,14 +119,6 @@ public class RubyComplex extends RubyNumeric {
         this.image = image;
     }
 
-    private RubyComplex(Ruby runtime, IRubyObject clazz, IRubyObject real) {
-        this(runtime, real, clazz, RubyFixnum.zero(runtime));
-    }
-
-    private RubyComplex(Ruby runtime, IRubyObject clazz) {
-        this(runtime, RubyFixnum.zero(runtime), RubyFixnum.zero(runtime));
-    }
-    
     /** rb_complex_raw
      * 
      */
