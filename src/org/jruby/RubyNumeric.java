@@ -576,6 +576,12 @@ public class RubyNumeric extends RubyObject {
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
         return RubyArray.newArray(getRuntime(), div(context, other), modulo(context, other));
     }
+    
+    /** num_fdiv (1.9) */
+    @JRubyMethod(name = "fdiv", compat = CompatVersion.RUBY1_9)
+    public IRubyObject fdiv(ThreadContext context, IRubyObject other) {
+        return RuntimeHelpers.invoke(context, this.convertToFloat(), "/", other);
+    }
 
     /** num_modulo
      *

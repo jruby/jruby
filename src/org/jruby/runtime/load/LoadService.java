@@ -47,6 +47,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import java.util.zip.ZipException;
+import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyFile;
@@ -168,6 +169,15 @@ public class LoadService {
               char sep = '/';
               String rubyDir = jrubyHome + sep + "lib" + sep + "ruby" + sep;
 
+              // If we're running in 1.9 compat mode, add Ruby 1.9 libs to path before 1.8 libs
+              if (runtime.getInstanceConfig().getCompatVersion() == CompatVersion.RUBY1_9) {
+                  addPath(rubyDir + "site_ruby" + sep + Constants.RUBY1_9_MAJOR_VERSION);
+                  addPath(rubyDir + "site_ruby");
+                  addPath(rubyDir + Constants.RUBY1_9_MAJOR_VERSION);
+                  addPath(rubyDir + Constants.RUBY1_9_MAJOR_VERSION + sep + "java");
+              }
+              
+              // Add 1.8 libs
               addPath(rubyDir + "site_ruby" + sep + Constants.RUBY_MAJOR_VERSION);
               addPath(rubyDir + "site_ruby");
               addPath(rubyDir + Constants.RUBY_MAJOR_VERSION);
