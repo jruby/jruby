@@ -49,7 +49,7 @@ public final class JNAProvider extends FFIProvider {
     private final JNAPlatform platform = new JNAPlatform();
     @Override
     public <T> T loadLibrary(String libraryName, Class<T> libraryClass) {
-        return (T) Native.loadLibrary(libraryName, libraryClass);
+        return libraryClass.cast(Native.loadLibrary(libraryName, libraryClass));
     }
 
     @Override
