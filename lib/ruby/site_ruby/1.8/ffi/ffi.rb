@@ -518,19 +518,19 @@ class JRuby::FFI::BaseStruct
   attr_reader :pointer
   
   def initialize(pointer = nil, *spec)
+    @cspec = self.class.layout(*spec)
+
     if pointer then
       @pointer = pointer
     else
-      @pointer = MemoryPointer.allocateDirect size
+      @pointer = MemoryPointer.new size
     end
-
-    @cspec = self.class.layout(*spec)
   end
   def self.allocate(*spec)
     self.new(Buffer.allocate(@size), *spec)
   end
   def self.allocate_direct(*spec)
-    self.new(MemoryPointer.allocateDirect(@size), *spec)
+    self.new(MemoryPointer.allocate_direct(@size), *spec)
   end
   def self.allocate_in(*spec)
     self.new(Buffer.allocate_in(@size), *spec)
@@ -558,6 +558,9 @@ class JRuby::FFI::BaseStruct
   end
   def values
     @cspec.members.map { |m| self[m] }
+  end
+  def clear
+    @pointer.clear
   end
 end
 class JRuby::FFI::Struct < JRuby::FFI::BaseStruct
