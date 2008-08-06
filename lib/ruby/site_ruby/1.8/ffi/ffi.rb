@@ -56,8 +56,15 @@ require 'rbconfig'
 require 'ffi/platform'
 
 module JRuby
+  module FFI
+    import org.jruby.ext.ffi.NativeType
+    Provider = Java::org.jruby.ext.ffi.FFIProvider.instance
+    Provider.setup(self)
+  end
 end
 module FFI
+  NativeType = JRuby::FFI::NativeType
+
   #  Specialised error classes
   class TypeError < RuntimeError; end
   
@@ -68,53 +75,24 @@ module FFI
       super("Function '#{function}' not found! (Looking in '#{library} or this process)")
     end
   end
-end
-
-module JRuby::FFI
-  
-  import org.jruby.ext.ffi.NativeType
-  FFIProvider = Java::org.jruby.ext.ffi.FFIProvider.instance
-  FFIProvider.setup(self)
   
   TypeDefs = Hash.new
+  def self.add_typedef(current, add)
+    if current.kind_of? NativeType
+      code = current
+    else
+      code = TypeDefs[current]
+      raise TypeError, "Unable to resolve type '#{current}'" unless code
+    end
+
+    TypeDefs[add] = code
+  end
+  def self.find_type(name)
+    code = TypeDefs[name]
+    raise TypeError, "Unable to resolve type '#{name}'" unless code
+    return code
+  end
   
-    def self.add_typedef(current, add)
-      if current.kind_of? NativeType
-        code = current
-      else
-        code = JRuby::FFI::TypeDefs[current]
-        raise FFI::TypeError, "Unable to resolve type '#{current}'" unless code
-      end
-
-      JRuby::FFI::TypeDefs[add] = code
-    end
-
-    def self.find_type(name)
-      code = JRuby::FFI::TypeDefs[name]
-      raise FFI::TypeError, "Unable to resolve type '#{name}'" unless code
-      return code
-    end
-
-    def self.create_invoker(lib, name, args, ret, convention = :default)
-      # Ugly hack to simulate the effect of dlopen(NULL, x) - not quite correct
-      lib = 'c' unless lib
-      # jna & jffi need just the last part of the library name
-      lib = lib[3..-1] if lib =~ /^lib/
-      # Current artificial limitation based on JFFI limit
-      raise FFI::SignatureError, 'FFI functions may take max 32 arguments!' if args.size > 32
-
-      cargs = args.map { |e| find_type(e) }
-      invoker = FFIProvider.createInvoker(lib, name, find_type(ret), 
-        cargs.to_java(NativeType), convention.to_s)
-      raise FFI::NotFoundError.new(name, lib) unless invoker
-      return invoker
-    end
-    
-    def self.create_function(lib, name, args, ret, convention = :default)
-      invoker = create_invoker(lib, name, args, ret, convention)
-      proc { |*args| invoker.invoke(args) }
-    end
-
   # Converts a char
   add_typedef(NativeType::INT8, :char)
 
@@ -182,8 +160,74 @@ module JRuby::FFI
   add_typedef(NativeType::VOID, :void)
 
   # Converts NUL-terminated C strings
+  add_typedef(NativeType::RBXSTRING, :string)
+  
+  # Use for a C struct with a char [] embedded inside.
+  add_typedef(NativeType::CHAR_ARRAY, :char_array)
+  
+  # Load all the platform dependent types
+  begin
+    File.open(File.join(JRuby::FFI::Platform::CONF_DIR, 'types.conf'), "r") do |f|
+      prefix = "rbx.platform.typedef."
+      f.each_line { |line|
+        if line.index(prefix) == 0
+          new_type, orig_type = line.chomp.slice(prefix.length..-1).split(/\s*=\s*/)
+          add_typedef(orig_type.to_sym, new_type.to_sym)
+        end
+      }
+    end
+  rescue Errno::ENOENT
+  end
+  TypeSizes = {
+    1 => :char,
+    2 => :short,
+    4 => :int,
+    8 => :long_long,
+  }
+end
+
+module JRuby::FFI
+  TypeDefs = Hash.new
+  
+  def self.add_typedef(current, add)
+    if current.kind_of? NativeType
+      code = current
+    else
+      code = TypeDefs[current] || FFI::TypeDefs[current]
+      raise FFI::TypeError, "Unable to resolve type '#{current}'" unless code
+    end
+
+    TypeDefs[add] = code
+  end
+
+  def self.find_type(name)
+    code = TypeDefs[name] || FFI::TypeDefs[name]
+    raise FFI::TypeError, "Unable to resolve type '#{name}'" unless code
+    return code
+  end
+
+  def self.create_invoker(lib, name, args, ret, convention = :default)
+    # Ugly hack to simulate the effect of dlopen(NULL, x) - not quite correct
+    lib = 'c' unless lib
+    # jna & jffi need just the last part of the library name
+    lib = lib[3..-1] if lib =~ /^lib/
+    # Current artificial limitation based on JFFI limit
+    raise FFI::SignatureError, 'FFI functions may take max 32 arguments!' if args.size > 32
+
+    cargs = args.map { |e| find_type(e) }
+    invoker = Provider.createInvoker(lib, name, find_type(ret),
+      cargs.to_java(NativeType), convention.to_s)
+    raise FFI::NotFoundError.new(name, lib) unless invoker
+    return invoker
+  end
+
+  def self.create_function(lib, name, args, ret, convention = :default)
+    invoker = create_invoker(lib, name, args, ret, convention)
+    proc { |*args| invoker.invoke(args) }
+  end
+  # NUL terminated immutable string
   add_typedef(NativeType::STRING, :string)
-  add_typedef(NativeType::STRING, :jstring)
+  add_typedef(NativeType::STRING, :cstring)
   
   # Converts byte-arrays
   add_typedef(NativeType::BUFFER, :buffer)
@@ -199,10 +243,7 @@ module JRuby::FFI
   # e.g. memchr() is ok, fread() is not
   #
   add_typedef(NativeType::BUFFER_PINNED, :buffer_pinned)
-
-  # Use for a C struct with a char [] embedded inside.
-  add_typedef(NativeType::CHAR_ARRAY, :char_array)
-
+  
   # Load all the platform dependent types/consts/struct members
   class Config
     CONFIG = Hash.new
@@ -212,7 +253,7 @@ module JRuby::FFI
         f.each_line { |line|
           if line.index(typedef) == 0
             new_type, orig_type = line.chomp.slice(typedef.length..-1).split(/\s*=\s*/)
-            JRuby::FFI.add_typedef(orig_type.to_sym, new_type.to_sym)
+            FFI.add_typedef(orig_type.to_sym, new_type.to_sym)
           else
             key, value = line.chomp.split(/\s*=\s*/)
             CONFIG[key] = value
@@ -221,30 +262,9 @@ module JRuby::FFI
       end
     rescue Errno::ENOENT
     end
-    def self.[](name)
-
-    end
-  end
-  # Load all the platform dependent types
-  begin
-    File.open(File.join(Platform::CONF_DIR, 'types.conf'), "r") do |f|
-      prefix = "rbx.platform.typedef."
-      f.each_line { |line|
-        if line.index(prefix) == 0
-          new_type, orig_type = line.chomp.slice(prefix.length..-1).split(/\s*=\s*/)
-          add_typedef(orig_type.to_sym, new_type.to_sym)
-        end
-      }
-    end
-  rescue Errno::ENOENT
   end
   
-  TypeSizes = {
-    1 => :char,
-    2 => :short,
-    4 => :int,
-    8 => :long_long,
-  }
+  
   SizeTypes = {
     NativeType::INT8 => 1,
     NativeType::UINT8 => 1,
@@ -275,27 +295,16 @@ module JRuby::FFI
     raise ArgumentError, "Unknown native type"
   end
   def self.errno
-    FFIProvider.getLastError
+    Provider.getLastError
   end
   def self.set_errno(error)
-    FFIProvider.setLastError(error)
+    Provider.setLastError(error)
   end
 end
 # Define MemoryPointer globally for rubinius FFI backward compatibility
 MemoryPointer = JRuby::FFI::MemoryPointer
 
 module FFI
-  TypeDefs = {
-    :string => JRuby::FFI::NativeType::RBXSTRING,
-    :jstring => JRuby::FFI::NativeType::STRING
-  }
-  
-  def self.find_type(type)
-    FFI::TypeDefs[type] || JRuby::FFI.find_type(type)
-  end
-  def self.add_typedef(current, add)
-    JRuby::FFI.add_typedef(current, add)
-  end
   def self.create_invoker(lib, name, args, ret, convention = :default)
     # Ugly hack to simulate the effect of dlopen(NULL, x) - not quite correct
     lib = 'c' unless lib
@@ -303,10 +312,10 @@ module FFI
     lib = lib[3..-1] if lib =~ /^lib/
     
     # Current artificial limitation based on JRuby::FFI limit
-    raise JRuby::FFI::SignatureError, 'FFI functions may take max 32 arguments!' if args.size > 32
+    raise SignatureError, 'FFI functions may take max 32 arguments!' if args.size > 32
 
     cargs = args.map { |e| find_type(e) }
-    invoker = JRuby::FFI::FFIProvider.createInvoker(lib, name, find_type(ret),
+    invoker = JRuby::FFI::Provider.createInvoker(lib, name, find_type(ret),
       cargs.to_java(JRuby::FFI::NativeType), convention.to_s)
     raise NotFoundError.new(name, lib) unless invoker
     return invoker
