@@ -181,7 +181,7 @@ public class JavaUtil {
             if (rubyObject instanceof RubyNumeric) {
                 return Byte.valueOf((byte)((RubyNumeric)rubyObject).getLongValue());
             } else if (rubyObject instanceof RubyString) {
-                return Boolean.valueOf(rubyObject.asJavaString());
+                return Byte.valueOf(rubyObject.asJavaString());
             } else if (rubyObject instanceof JavaProxy) {
                 return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
             } else if (rubyObject.respondsTo("to_i")) {
@@ -198,7 +198,7 @@ public class JavaUtil {
             if (rubyObject instanceof RubyNumeric) {
                 return Short.valueOf((short)((RubyNumeric)rubyObject).getLongValue());
             } else if (rubyObject instanceof RubyString) {
-                return Boolean.valueOf(rubyObject.asJavaString());
+                return Short.valueOf(rubyObject.asJavaString());
             } else if (rubyObject instanceof JavaProxy) {
                 return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
             } else if (rubyObject.respondsTo("to_i")) {
@@ -215,7 +215,7 @@ public class JavaUtil {
             if (rubyObject instanceof RubyNumeric) {
                 return Character.valueOf((char)((RubyNumeric)rubyObject).getLongValue());
             } else if (rubyObject instanceof RubyString) {
-                return Boolean.valueOf(rubyObject.asJavaString());
+                return Character.valueOf(rubyObject.asJavaString().charAt(0));
             } else if (rubyObject instanceof JavaProxy) {
                 return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
             } else if (rubyObject.respondsTo("to_i")) {
@@ -232,7 +232,7 @@ public class JavaUtil {
             if (rubyObject instanceof RubyNumeric) {
                 return Integer.valueOf((int)((RubyNumeric)rubyObject).getLongValue());
             } else if (rubyObject instanceof RubyString) {
-                return Boolean.valueOf(rubyObject.asJavaString());
+                return Integer.valueOf(rubyObject.asJavaString());
             } else if (rubyObject instanceof JavaProxy) {
                 return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
             } else if (rubyObject.respondsTo("to_i")) {
@@ -249,7 +249,7 @@ public class JavaUtil {
             if (rubyObject instanceof RubyNumeric) {
                 return Long.valueOf(((RubyNumeric)rubyObject).getLongValue());
             } else if (rubyObject instanceof RubyString) {
-                return Boolean.valueOf(rubyObject.asJavaString());
+                return Long.valueOf(rubyObject.asJavaString());
             } else if (rubyObject instanceof JavaProxy) {
                 return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
             } else if (rubyObject.respondsTo("to_i")) {
@@ -266,7 +266,7 @@ public class JavaUtil {
             if (rubyObject instanceof RubyNumeric) {
                 return Float.valueOf((float)((RubyNumeric)rubyObject).getDoubleValue());
             } else if (rubyObject instanceof RubyString) {
-                return Boolean.valueOf(rubyObject.asJavaString());
+                return Float.valueOf(rubyObject.asJavaString());
             } else if (rubyObject instanceof JavaProxy) {
                 return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
             } else if (rubyObject.respondsTo("to_i")) {
@@ -283,7 +283,7 @@ public class JavaUtil {
             if (rubyObject instanceof RubyNumeric) {
                 return Double.valueOf(((RubyNumeric)rubyObject).getDoubleValue());
             } else if (rubyObject instanceof RubyString) {
-                return Boolean.valueOf(rubyObject.asJavaString());
+                return Double.valueOf(rubyObject.asJavaString());
             } else if (rubyObject instanceof JavaProxy) {
                 return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
             } else if (rubyObject.respondsTo("to_i")) {

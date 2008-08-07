@@ -43,10 +43,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name="Java::JavaArray", parent="Java::JavaObject")
 public class JavaArray extends JavaObject {
-
+    private JavaUtil.RubyConverter rubyConverter;
+    
     public JavaArray(Ruby runtime, Object array) {
         super(runtime, runtime.getJavaSupport().getJavaArrayClass(), array);
         assert array.getClass().isArray();
+        rubyConverter = JavaUtil.getArrayConverter(array.getClass().getComponentType());
     }
 
     public static RubyClass createJavaArrayClass(Ruby runtime, RubyModule javaModule) {
@@ -57,6 +59,10 @@ public class JavaArray extends JavaObject {
     
     public Class getComponentType() {
         return getValue().getClass().getComponentType();
+    }
+    
+    public JavaUtil.RubyConverter getRubyConverter() {
+        return rubyConverter;
     }
 
     public RubyFixnum length() {
@@ -83,6 +89,14 @@ public class JavaArray extends JavaObject {
                                     " for length " + getLength() + ")");
         }
         Object result = Array.get(getValue(), intIndex);
+        if (result == null) {
+            return getRuntime().getNil();
+        }
+        return JavaObject.wrap(getRuntime(), result);
+    }
+    
+    public IRubyObject at(int index) {
+        Object result = Array.get(getValue(), index);
         if (result == null) {
             return getRuntime().getNil();
         }
