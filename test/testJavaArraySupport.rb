@@ -38,6 +38,8 @@ test_check "Extended Java Array Support"
     :Double => "[Ljava.lang.Double;",
     :string => "[Ljava.lang.String;",
     :String => "[Ljava.lang.String;",
+    :object => "[Ljava.lang.Object;",
+    :Object => "[Ljava.lang.Object;",
     :big_int => "[Ljava.math.BigInteger;",
     :big_integer => "[Ljava.math.BigInteger;",
     :BigInteger => "[Ljava.math.BigInteger;",
@@ -49,8 +51,8 @@ test_check "Extended Java Array Support"
     test_no_exception { java_array = ruby_array.to_java(type_name) }
     test_equal(java_type,java_array.java_class.name)
     test_equal(ruby_array.length,java_array.length)
-    # compare converted values, except booleans
-    unless type_name == :boolean || type_name == :Boolean
+    # compare converted values, except booleans and bigdecimal
+    unless type_name == :boolean || type_name == :Boolean || type_name == :big_decimal || type_name == :BigDecimal
       if type_name == :string || type_name == :String
         0.upto(ruby_array.length - 1) do |i|
           test_equal(ruby_array[i], java_array[i].to_i)

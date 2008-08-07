@@ -326,6 +326,43 @@ public class JavaUtil {
         }
     };
     
+    public static final RubyConverter ARRAY_BIGINTEGER_CONVERTER = new RubyConverter() {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
+            if (rubyObject instanceof RubyNumeric) {
+                return BigInteger.valueOf(((RubyNumeric)rubyObject).getLongValue());
+            } else if (rubyObject instanceof RubyString) {
+                return new BigDecimal(rubyObject.asJavaString());
+            } else if (rubyObject instanceof JavaProxy) {
+                return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
+            } else if (rubyObject.respondsTo("to_i")) {
+                RubyInteger integer = (RubyInteger)RuntimeHelpers.invoke(context, rubyObject, "to_i");
+                return BigInteger.valueOf(integer.getLongValue());
+            } else {
+                return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
+            }
+        }
+    };
+    
+    public static final RubyConverter ARRAY_BIGDECIMAL_CONVERTER = new RubyConverter() {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
+            if (rubyObject instanceof RubyNumeric) {
+                return BigDecimal.valueOf(((RubyNumeric)rubyObject).getDoubleValue());
+            } else if (rubyObject instanceof RubyString) {
+                return new BigDecimal(rubyObject.asJavaString());
+            } else if (rubyObject instanceof JavaProxy) {
+                return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
+            } else if (rubyObject.respondsTo("to_f")) {
+                RubyInteger integer = (RubyInteger)RuntimeHelpers.invoke(context, rubyObject, "to_f");
+                return BigDecimal.valueOf(integer.getDoubleValue());
+            } else if (rubyObject.respondsTo("to_i")) {
+                RubyInteger integer = (RubyInteger)RuntimeHelpers.invoke(context, rubyObject, "to_i");
+                return BigDecimal.valueOf(integer.getLongValue());
+            } else {
+                return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
+            }
+        }
+    };
+    
     public static final Map<Class, RubyConverter> RUBY_CONVERTERS = new HashMap<Class, RubyConverter>();
     public static final Map<Class, RubyConverter> ARRAY_CONVERTERS = new HashMap<Class, RubyConverter>();
     
@@ -362,6 +399,8 @@ public class JavaUtil {
         ARRAY_CONVERTERS.put(Double.class, ARRAY_DOUBLE_CONVERTER);
         ARRAY_CONVERTERS.put(Double.TYPE, ARRAY_DOUBLE_CONVERTER);
         ARRAY_CONVERTERS.put(String.class, ARRAY_STRING_CONVERTER);
+        ARRAY_CONVERTERS.put(BigInteger.class, ARRAY_BIGINTEGER_CONVERTER);
+        ARRAY_CONVERTERS.put(BigDecimal.class, ARRAY_BIGDECIMAL_CONVERTER);
     }
     
     public static RubyConverter getArrayConverter(Class type) {

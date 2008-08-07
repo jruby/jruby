@@ -8,6 +8,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -58,12 +59,27 @@ public class ArrayJavaAddons {
         
         return to;
     }
-   
-    @JRubyMethod
-    public static IRubyObject to_java_typed(ThreadContext context, IRubyObject fromArray, IRubyObject type) {
+    
+    @JRubyMethod(frame = true)
+    public static IRubyObject to_java(ThreadContext context, IRubyObject fromArray) {
+        return context.getRuntime().getJavaSupport().getObjectJavaClass().new_array_from_simple_array(context, fromArray);
+    }
+    @JRubyMethod(frame = true)
+    public static IRubyObject to_java(ThreadContext context, IRubyObject fromArray, IRubyObject type) {
+        if (type.isNil()) {
+            return to_java(context, fromArray);
+        }
+        
         Ruby runtime = context.getRuntime();
         
+        JavaClass targetType = getTargetType(context, runtime, type);
+        
+        return targetType.new_array_from_simple_array(context, fromArray);
+    }
+    
+    private static JavaClass getTargetType(ThreadContext context, Ruby runtime, IRubyObject type) {
         JavaClass targetType;
+
         if (type instanceof RubyString || type instanceof RubySymbol) {
             targetType = runtime.getJavaSupport().getNameClassMap().get(type.asJavaString());
             if (targetType == null) targetType = JavaClass.forNameVerbose(runtime, type.asJavaString());
@@ -73,7 +89,7 @@ public class ArrayJavaAddons {
             throw runtime.newTypeError("unable to convert array to type: " + type);
         }
         
-        return targetType.new_array_from_simple_array(context, fromArray);
+        return targetType;
     }
     
     public static void copyDataToJavaArray(

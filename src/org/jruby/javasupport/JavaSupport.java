@@ -102,7 +102,9 @@ public class JavaSupport {
 
     private RubyModule javaModule;
     private RubyModule javaUtilitiesModule;
+    private RubyModule javaArrayUtilitiesModule;
     private RubyClass javaObjectClass;
+    private JavaClass objectJavaClass;
     private RubyClass javaClassClass;
     private RubyClass javaArrayClass;
     private RubyClass javaProxyClass;
@@ -242,10 +244,24 @@ public class JavaSupport {
         return javaUtilitiesModule = runtime.fastGetModule("JavaUtilities");
     }
     
+    public RubyModule getJavaArrayUtilitiesModule() {
+        RubyModule module;
+        if ((module = javaArrayUtilitiesModule) != null) return module;
+        return javaArrayUtilitiesModule = runtime.fastGetModule("JavaArrayUtilities");
+    }
+    
     public RubyClass getJavaObjectClass() {
         RubyClass clazz;
         if ((clazz = javaObjectClass) != null) return clazz;
         return javaObjectClass = getJavaModule().fastGetClass("JavaObject");
+    }
+    
+    public JavaClass getObjectJavaClass() {
+        return objectJavaClass;
+    }
+    
+    public void setObjectJavaClass(JavaClass objectJavaClass) {
+        this.objectJavaClass = objectJavaClass;
     }
 
     public RubyClass getJavaArrayClass() {
