@@ -56,34 +56,42 @@ public class NormalizedFile extends File {
         super(parent, child);
     }
 
+    @Override
     public String getAbsolutePath() {
         return new File(super.getPath()).getAbsolutePath().replace(File.separatorChar, '/');
     }
 
+    @Override
     public String getCanonicalPath() throws IOException {
         return super.getCanonicalPath().replace(File.separatorChar, '/');
     }
 
+    @Override
     public String getPath() {
         return super.getPath().replace(File.separatorChar, '/');
     }
 
+    @Override
     public String toString() {
         return super.toString().replace(File.separatorChar, '/');
     }
 
+    @Override
     public File getAbsoluteFile() {
         return new NormalizedFile(getAbsolutePath());
     }
 
+    @Override
     public File getCanonicalFile() throws IOException {
         return new NormalizedFile(getCanonicalPath());
     }
 
+    @Override
     public String getParent() {
         return super.getParent().replace(File.separatorChar, '/');
     }
 
+    @Override
     public File getParentFile() {
         return new NormalizedFile(getParent());
     }
@@ -108,10 +116,12 @@ public class NormalizedFile extends File {
         return new NormalizedFile(file.getPath());
     }
 
+    @Override
     public String[] list() {
         return super.list();
     }
 
+    @Override
     public String[] list(FilenameFilter filter) {
         String[] files = super.list(filter);
         
@@ -126,6 +136,7 @@ public class NormalizedFile extends File {
         }
     }
 
+    @Override
     public File[] listFiles() {
         File[] files = super.listFiles();
         
@@ -140,6 +151,7 @@ public class NormalizedFile extends File {
         }
     }
 
+    @Override
     public File[] listFiles(FileFilter filter) {
         File[] files = super.listFiles(filter);
         
@@ -154,6 +166,7 @@ public class NormalizedFile extends File {
         }
     }
 
+    @Override
     public File[] listFiles(FilenameFilter filter) {
         File[] files = super.listFiles(filter);
         

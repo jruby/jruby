@@ -77,10 +77,12 @@ public class JRubyFile extends File {
         super(filename);
     }
 
+    @Override
     public String getAbsolutePath() {
         return new File(super.getPath()).getAbsolutePath().replace(File.separatorChar, '/'); 
     }
 
+    @Override
     public String getCanonicalPath() throws IOException {
         String canonicalPath = super.getCanonicalPath().replace(File.separatorChar, '/');
         
@@ -92,22 +94,27 @@ public class JRubyFile extends File {
         return canonicalPath;
     }
 
+    @Override
     public String getPath() {
         return super.getPath().replace(File.separatorChar, '/');
     }
 
+    @Override
     public String toString() {
         return super.toString().replace(File.separatorChar, '/');
     }
 
+    @Override
     public File getAbsoluteFile() {
         return new JRubyFile(getAbsolutePath());
     }
 
+    @Override
     public File getCanonicalFile() throws IOException {
         return new JRubyFile(getCanonicalPath());
     }
 
+    @Override
     public String getParent() {
         String par = super.getParent();
         if (par != null) {
@@ -116,6 +123,7 @@ public class JRubyFile extends File {
         return par;
     }
 
+    @Override
     public File getParentFile() {
         String par = getParent();
         if (par == null) {
@@ -142,6 +150,7 @@ public class JRubyFile extends File {
         return new JRubyFile(File.createTempFile(prefix, suffix));
     }
 
+    @Override
     public String[] list(FilenameFilter filter) {
         String[] files = super.list(filter);
         if (files == null) {
@@ -155,6 +164,7 @@ public class JRubyFile extends File {
         return smartFiles;
     }
 
+    @Override
     public File[] listFiles() {
         File[] files = super.listFiles();
         if (files == null) {
@@ -168,6 +178,7 @@ public class JRubyFile extends File {
         return smartFiles;
     }
 
+    @Override
     public File[] listFiles(final FileFilter filter) {
         final File[] files = super.listFiles(filter);
         if (files == null) {
@@ -181,6 +192,7 @@ public class JRubyFile extends File {
         return smartFiles;
     }
 
+    @Override
     public File[] listFiles(final FilenameFilter filter) {
         final File[] files = super.listFiles(filter);
         if (files == null) {

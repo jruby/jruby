@@ -32,13 +32,16 @@ import java.io.OutputStream;
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
+@Deprecated /* unused */
 public class SwallowingOutputStream extends OutputStream {
     public void write(int b) {
     }
 
+    @Override
     public void write(byte[] b) {
     }
 
+    @Override
     public void write(byte[] b, int a, int o) {
     }
 }// SwallowingOutputStream

@@ -38,10 +38,10 @@ import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ZlibInflate {
-    private Inflater flater;
+    private final Ruby runtime;
+    private Inflater flater;    
     private ByteList collected;
-    private Ruby runtime;
-
+    
     public static final int BASE_SIZE = 100;
 
     public ZlibInflate(IRubyObject caller) {

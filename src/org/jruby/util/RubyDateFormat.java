@@ -43,11 +43,11 @@ import java.util.Locale;
 import org.joda.time.DateTime;
 
 public class RubyDateFormat extends DateFormat {
-	private static final long serialVersionUID = -250429218019023997L;
+    private static final long serialVersionUID = -250429218019023997L;
 
-	private List<Token> compiledPattern;
+    private List<Token> compiledPattern;
 
-    private DateFormatSymbols formatSymbols;
+    private final DateFormatSymbols formatSymbols;
 
     private static final int FORMAT_STRING = 0;
     private static final int FORMAT_WEEK_LONG = 1;

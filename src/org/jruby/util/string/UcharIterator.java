@@ -9,7 +9,7 @@ package org.jruby.util.string;
  *
  * @see org.jruby.util.string.Ustr
  */
-
+@Deprecated
 public class UcharIterator implements java.util.Iterator, java.io.Serializable {
     private static final long serialVersionUID = -2821982911687539515L;
     private Ustr u;

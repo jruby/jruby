@@ -48,10 +48,17 @@ import sun.misc.SignalHandler;
  */
 public class SunSignalFacade implements SignalFacade {
     private final static class JRubySignalHandler implements SignalHandler {
-        public Ruby runtime;
-        public IRubyObject block;
-        public IRubyObject signal_object;
-        public String signal;
+        private final Ruby runtime;
+        private final IRubyObject block;
+        private final IRubyObject signal_object;
+        private final String signal;
+
+        public JRubySignalHandler(Ruby runtime, IRubyObject block, IRubyObject signal_object, String signal) {
+            this.runtime = runtime;
+            this.block = block;
+            this.signal_object = signal_object;
+            this.signal = signal;
+        }
 
         public void handle(Signal signal) {
             try {
@@ -70,11 +77,8 @@ public class SunSignalFacade implements SignalFacade {
     }
 
     public IRubyObject trap(final IRubyObject recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        final JRubySignalHandler handler = new JRubySignalHandler();
-        handler.runtime = recv.getRuntime();
-        handler.block = arg1;
-        handler.signal_object = arg2;
-        handler.signal = arg3.toString();
+        final JRubySignalHandler handler = new JRubySignalHandler(recv.getRuntime(), arg1, arg2, arg3.toString());
+        
         final SignalHandler oldHandler;
         try {
             oldHandler = Signal.handle(new Signal(handler.signal), handler);

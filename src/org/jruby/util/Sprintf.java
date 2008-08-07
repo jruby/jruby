@@ -87,13 +87,13 @@ public class Sprintf {
     
     
     private static class Args {
-        Ruby runtime;
-        Locale locale;
-        IRubyObject rubyObject;
-        List rubyArray;
-        int length;
-        int unnumbered; // last index (+1) accessed by next()
-        int numbered;   // last index (+1) accessed by get()
+        private final Ruby runtime;
+        private final Locale locale;
+        private final IRubyObject rubyObject;
+        private final List rubyArray;
+        private final int length;
+        private int unnumbered; // last index (+1) accessed by next()
+        private int numbered;   // last index (+1) accessed by get()
         
         Args(Locale locale, IRubyObject rubyObject) {
             if (rubyObject == null) {
@@ -106,6 +106,7 @@ public class Sprintf {
                 this.length = rubyArray.size();
             } else {
                 this.length = 1;
+                this.rubyArray = null;
             }
             this.runtime = rubyObject.getRuntime();
         }
@@ -275,6 +276,7 @@ public class Sprintf {
             return new ByteList(buf,0,size);
         }
         
+        @Override
         public final String toString() {
             return new String(buf,0,size);
         }

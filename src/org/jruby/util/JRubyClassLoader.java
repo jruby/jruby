@@ -13,6 +13,7 @@ public class JRubyClassLoader extends URLClassLoader {
     }
 
     // Change visibility so others can see it
+    @Override
     public void addURL(URL url) {
         super.addURL(url);
     }

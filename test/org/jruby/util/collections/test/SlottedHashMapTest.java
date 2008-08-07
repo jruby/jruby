@@ -3,17 +3,17 @@ package org.jruby.util.collections.test;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.jruby.util.collections.SlottedHashMap;
 
 import junit.framework.TestCase;
 
+@SuppressWarnings("deprecation")
 public class SlottedHashMapTest extends TestCase {
     public SlottedHashMapTest(String arg0) {
         super(arg0);
     }
-
+    
     public void test1() {
-        SlottedHashMap top = new SlottedHashMap("top");
+        org.jruby.util.collections.SlottedHashMap top = new org.jruby.util.collections.SlottedHashMap("top");
         
         top.put("one", "top one");
         top.put("two", "top two");
@@ -21,8 +21,8 @@ public class SlottedHashMapTest extends TestCase {
         
         display(top, "top");
         
-        SlottedHashMap a = new SlottedHashMap("a", top);
-        SlottedHashMap b = new SlottedHashMap("b", top);
+        org.jruby.util.collections.SlottedHashMap a = new org.jruby.util.collections.SlottedHashMap("a", top);
+        org.jruby.util.collections.SlottedHashMap b = new org.jruby.util.collections.SlottedHashMap("b", top);
         
         a.put("three", "a three");
         a.put("four", "a four");
@@ -35,7 +35,7 @@ public class SlottedHashMapTest extends TestCase {
         display(a, "a");
         display(b, "b");
         
-        SlottedHashMap aa = new SlottedHashMap("aa", a);
+        org.jruby.util.collections.SlottedHashMap aa = new org.jruby.util.collections.SlottedHashMap("aa", a);
         
         aa.put("one", "aa one");
         aa.put("four", "aa four");
@@ -68,8 +68,8 @@ public class SlottedHashMapTest extends TestCase {
         assertEquals("new top one", a.remove("one"));
         assertEquals("new top one", a.remove("one"));
     }
-    
-    public void display(SlottedHashMap shm, String id) {
+    @SuppressWarnings("deprecation")
+    public void display(Map shm, String id) {
         System.out.println("SHM '" + id + "' contains:");
         for (Iterator iter = shm.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry)iter.next();

@@ -43,11 +43,11 @@ import org.jruby.runtime.ThreadContext;
  */
 public class SimpleSampler {
     private final static Map<ThreadContext, Object> CURRENT = new WeakHashMap<ThreadContext, Object>();
-    private static boolean reported = false;
-
     private final static Map<String, Integer> SAMPLES = new HashMap<String, Integer>();
     private final static List<List<String>> TRACES = new ArrayList<List<String>>();
     
+    private static boolean reported = false;
+
     public static void registerThreadContext(ThreadContext tc) {
         synchronized(CURRENT) {
             CURRENT.put(tc, null);

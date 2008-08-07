@@ -43,7 +43,7 @@ import java.util.Set;
  * @author Kresten Krab Thorup (krab@trifork.com)
  */
 
-abstract class GenericMap implements Map {
+public abstract class GenericMap implements Map {
 	protected int size;
 
 	public int size() {

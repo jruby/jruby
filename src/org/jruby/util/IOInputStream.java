@@ -47,10 +47,10 @@ import org.jruby.runtime.MethodIndex;
  * that it responds to read() like IO.
  */
 public class IOInputStream extends InputStream {
-    private IRubyObject io;
-    private InputStream in;
+    private final IRubyObject io;
+    private final InputStream in;
     private final IRubyObject numOne;
-    private CallSite readAdapter = MethodIndex.getFunctionalCallSite("read");
+    private final CallSite readAdapter = MethodIndex.getFunctionalCallSite("read");
 
     /**
      * Creates a new InputStream with the object provided.
@@ -62,10 +62,7 @@ public class IOInputStream extends InputStream {
             throw new IllegalArgumentException("Object: " + io + " is not a legal argument to this wrapper, cause it doesn't respond to \"read\".");
         }
         this.io = io;
-        if (io instanceof RubyIO) {
-            in = ((RubyIO)io).getInStream();
-            
-        }
+        this.in = io instanceof RubyIO ? ((RubyIO)io).getInStream() : null;
         this.numOne = RubyFixnum.one(this.io.getRuntime());
     }
 

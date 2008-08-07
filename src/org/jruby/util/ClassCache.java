@@ -14,8 +14,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * multiple runtimes (or whole JVM).
  */
 public class ClassCache<T> {
-    private AtomicInteger classLoadCount = new AtomicInteger(0);
-    private AtomicInteger classReuseCount = new AtomicInteger(0);
+    private final AtomicInteger classLoadCount = new AtomicInteger(0);
+    private final AtomicInteger classReuseCount = new AtomicInteger(0);
+    private final ReferenceQueue referenceQueue = new ReferenceQueue();
+    private final Map<Object, KeyedClassReference> cache =
+        new ConcurrentHashMap<Object, KeyedClassReference>();
+    private final ClassLoader classLoader;
+    private final int max;
     
     /**
      * The ClassLoader this class cache will use for any classes generated through it.  It is 
@@ -38,7 +43,7 @@ public class ClassCache<T> {
     }
     
     private static class KeyedClassReference<T> extends WeakReference<Class<T>> {
-        private Object key;
+        private final Object key;
         
         public KeyedClassReference(Object key, Class<T> referent, ReferenceQueue<Class<T>> referenceQueue) {
             super(referent, referenceQueue);
@@ -60,6 +65,7 @@ public class ClassCache<T> {
         }
         
         // Change visibility so others can see it
+        @Override
         public void addURL(URL url) {
             super.addURL(url);
         }
@@ -73,11 +79,6 @@ public class ClassCache<T> {
         }
     }
     
-    private ReferenceQueue referenceQueue = new ReferenceQueue();
-    private Map<Object, KeyedClassReference> cache = 
-        new ConcurrentHashMap<Object, KeyedClassReference>();
-    private ClassLoader classLoader;
-    private int max;
     
     public ClassLoader getClassLoader() {
         return classLoader;

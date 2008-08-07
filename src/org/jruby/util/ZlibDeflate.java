@@ -39,9 +39,9 @@ import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ZlibDeflate {
-    private Deflater flater;
+    private final Deflater flater;
+    private final Ruby runtime;
     private ByteList collected;
-    private Ruby runtime;
 
     public static final int BASE_SIZE = 100;
 

@@ -37,8 +37,9 @@ import java.io.OutputStream;
  * To change the template for this generated type comment go to
  * Window - Preferences - Java - Code Generation - Code and Comments
  */
+@Deprecated
 public class DataOutputBridgeStream extends OutputStream {
-    DataOutput output;
+    private final DataOutput output;
     
     public DataOutputBridgeStream(DataOutput output) {
         this.output = output;

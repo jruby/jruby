@@ -40,8 +40,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  * @version $Revision$
  */
+@Deprecated
 public class IOReader extends Reader {
-    private IRubyObject io;
+    private final IRubyObject io;
 
     public IOReader(final IRubyObject io) {
         if(!io.respondsTo("read")) {

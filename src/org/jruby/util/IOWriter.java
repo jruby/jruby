@@ -39,8 +39,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  * @version $Revision: 1.2 $
  */
+@Deprecated
 public class IOWriter extends Writer {
-    private IRubyObject io;
+    private final IRubyObject io;
 
     public IOWriter(IRubyObject io) {
         super();

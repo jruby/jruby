@@ -49,7 +49,7 @@ public class WeakIdentityHashMap extends GenericMap implements Map {
 
     private static final Object NULL_KEY = new Object();
 
-    private ReferenceQueue queue = new ReferenceQueue();
+    private final ReferenceQueue queue = new ReferenceQueue();
 
     private static Object unmaskKey(Object key) {
         if (key == NULL_KEY) {
@@ -68,16 +68,16 @@ public class WeakIdentityHashMap extends GenericMap implements Map {
     }
 
     class Entry extends WeakReference implements Map.Entry {
-        Entry next;
+        private final int key_hash;
+        private Entry next;
+        private Object value;
 
-        int key_hash;
-
-        Object value;
-
+        @Override
         public int hashCode() {
             return key_hash ^ valueHash(getValue());
         }
 
+        @Override
         public boolean equals(Object other) {
             if (other instanceof Map.Entry) {
                 Map.Entry ent = (Map.Entry) other;
@@ -177,6 +177,7 @@ public class WeakIdentityHashMap extends GenericMap implements Map {
     }
 
     /** return the element with the given key */
+    @Override
     public boolean containsKey(Object key) {
         Object masked_key = maskKey(key);
         int hash = keyHash(masked_key);
@@ -316,9 +317,8 @@ public class WeakIdentityHashMap extends GenericMap implements Map {
     }
 
     final class EntryIterator implements Iterator {
-        int idx;
-
-        Entry entry;
+        private int idx;
+        private Entry entry;
 
         EntryIterator() {
             idx = 0;
@@ -372,19 +372,23 @@ public class WeakIdentityHashMap extends GenericMap implements Map {
         return new EntryIterator();
     }
 
+    @Override
     protected final int keyHash(Object key) {
         return System.identityHashCode(key);
     }
 
+    @Override
     protected final boolean keyEquals(Object key1, Object key2) {
         return key1 == key2;
     }
 
+    @Override
     public int size() {
         expunge();
         return super.size();
     }
     
+    @Override
     public boolean isEmpty() {
         return size() == 0;
     }

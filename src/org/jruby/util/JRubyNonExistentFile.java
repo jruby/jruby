@@ -38,47 +38,57 @@ import java.io.IOException;
  * @author nicksieger
  */
 public class JRubyNonExistentFile extends JRubyFile {
-    static JRubyNonExistentFile NOT_EXIST = new JRubyNonExistentFile();
+    static final JRubyNonExistentFile NOT_EXIST = new JRubyNonExistentFile();
     private JRubyNonExistentFile() {
         super("");
     }
 
+    @Override
     public String getAbsolutePath() {
         return "";
     }
     
+    @Override
     public boolean isDirectory() {
         return false;
     }
     
+    @Override
     public boolean exists() {
         return false;
     }
 
+    @Override
     public String getCanonicalPath() throws IOException {
         throw new FileNotFoundException("File does not exist");
     }
 
+    @Override
     public String getPath() {
         return "";
     }
 
+    @Override
     public String toString() {
         return "";
     }
 
+    @Override
     public File getAbsoluteFile() {
         return this;
     }
 
+    @Override
     public File getCanonicalFile() throws IOException {
         throw new FileNotFoundException("File does not exist");
     }
 
+    @Override
     public String getParent() {
         return "";
     }
 
+    @Override
     public File getParentFile() {
         return this;
     }
@@ -95,18 +105,22 @@ public class JRubyNonExistentFile extends JRubyFile {
         throw new FileNotFoundException("File does not exist");
     }
 
+    @Override
     public String[] list(FilenameFilter filter) {
         return new String[0];
     }
 
+    @Override
     public File[] listFiles() {
         return new File[0];
     }
 
+    @Override
     public File[] listFiles(final FileFilter filter) {
         return new File[0];
     }
 
+    @Override
     public File[] listFiles(final FilenameFilter filter) {
         return new File[0];
     }

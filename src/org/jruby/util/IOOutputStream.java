@@ -46,9 +46,9 @@ import org.jruby.runtime.MethodIndex;
  * @author <a href="mailto:Ola.Bini@ki.se">Ola Bini</a>
  */
 public class IOOutputStream extends OutputStream {
-    private IRubyObject io;
-    private CallSite writeAdapter;
-    private CallSite closeAdapter = MethodIndex.getFunctionalCallSite("close");
+    private final IRubyObject io;
+    private final CallSite writeAdapter;
+    private final CallSite closeAdapter = MethodIndex.getFunctionalCallSite("close");
 
     /**
      * Creates a new OutputStream with the object provided.
@@ -70,14 +70,17 @@ public class IOOutputStream extends OutputStream {
         writeAdapter.call(io.getRuntime().getCurrentContext(), io, RubyString.newStringLight(io.getRuntime(), new ByteList(new byte[]{(byte)bite},false)));
     }
 
+    @Override
     public void write(final byte[] b) throws IOException {
         write(b,0,b.length);
     }
 
+    @Override
     public void write(final byte[] b,final int off, final int len) throws IOException {
         writeAdapter.call(io.getRuntime().getCurrentContext(), io, RubyString.newStringLight(io.getRuntime(), new ByteList(b, off, len, false)));
     }
     
+    @Override
     public void close() throws IOException {
         if (io.respondsTo("close")) closeAdapter.call(io.getRuntime().getCurrentContext(), io);
     }

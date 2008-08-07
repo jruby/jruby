@@ -6,7 +6,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
- 
+
+@Deprecated
 public class IntHashMap {
     private transient Entry table[];
 
@@ -18,11 +19,11 @@ public class IntHashMap {
 
     private int threshold;
  
-    private float loadFactor;
+    private final float loadFactor;
  
     private static class Entry {
-        int hash;
-        int key;
+        final int hash;
+        final int key;
         Object value;
         Entry next;
  

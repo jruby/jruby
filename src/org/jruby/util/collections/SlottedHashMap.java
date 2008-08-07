@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@Deprecated /* FIXME unused */
 public class SlottedHashMap implements Map {
     private SlottedHashMap parent;
     private Map map;

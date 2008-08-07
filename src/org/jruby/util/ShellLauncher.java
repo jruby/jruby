@@ -28,7 +28,6 @@
 
 package org.jruby.util;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -65,17 +64,18 @@ import org.jruby.util.io.ModeFlags;
 public class ShellLauncher {
     private static final boolean DEBUG = false;
     private static class ScriptThreadProcess extends Process implements Runnable {
-        private String[] argArray;
-        private int result;
-        private RubyInstanceConfig config;
-        private Thread processThread;
-        private PipedInputStream processOutput;
-        private PipedInputStream processError;
-        private PipedOutputStream processInput;
+        private final String[] argArray;
         private final String[] env;
         private final File pwd;
         private final boolean pipedStreams;
-
+        private final PipedInputStream processOutput;
+        private final PipedInputStream processError;
+        private final PipedOutputStream processInput;
+        
+        private RubyInstanceConfig config;
+        private Thread processThread;
+        private int result;
+        
         public ScriptThreadProcess(final String[] argArray, final String[] env, final File dir) {
             this(argArray, env, dir, true);
         }
@@ -89,6 +89,9 @@ public class ShellLauncher {
                 processOutput = new PipedInputStream();
                 processError = new PipedInputStream();
                 processInput = new PipedOutputStream();
+            } else {
+                processOutput = processError = null;
+                processInput = null;
             }
         }
         public void run() {
@@ -304,16 +307,16 @@ public class ShellLauncher {
     }
     
     public static class POpenProcess extends Process {
-        private Process child;
-        private Ruby runtime;
-        private ModeFlags modes;
+        private final Process child;
+        private final Ruby runtime;
+        private final ModeFlags modes;
         
-        private InputStream in;
-        private OutputStream out;
-        private FileChannel outChannel;
-        private FileChannel inChannel;
-        private Pumper readPumper;
-        private Pumper writePumper;
+        private final InputStream in;
+        private final OutputStream out;
+        private final FileChannel outChannel;
+        private final FileChannel inChannel;
+        private final Pumper readPumper;
+        private final Pumper writePumper;
         
         public POpenProcess(Process child, Ruby runtime, ModeFlags modes) {
             this.child = child;
@@ -325,7 +328,10 @@ public class ShellLauncher {
                 out = unwrapBufferedStream(child.getOutputStream());
                 if (out instanceof FileOutputStream) {
                     outChannel = ((FileOutputStream)out).getChannel();
+                } else {
+                    outChannel = null;
                 }
+                writePumper = null;
             } else {
                 // no write requested, hook up write to parent runtime's input
                 OutputStream childOut = unwrapBufferedStream(child.getOutputStream());
@@ -344,6 +350,8 @@ public class ShellLauncher {
                     writePumper = new StreamPumper(parentIn, childOut, false, Pumper.Slave.OUT);
                 }
                 writePumper.start();
+                out = null;
+                outChannel = null;
             }
             
             if (modes.isReadable()) {
@@ -351,7 +359,10 @@ public class ShellLauncher {
                 in = unwrapBufferedStream(child.getInputStream());
                 if (in instanceof FileInputStream) {
                     inChannel = ((FileInputStream)in).getChannel();
+                } else {
+                    inChannel = null;
                 }
+                readPumper = null;
             } else {
                 // no read requested, hook up read to parents output
                 InputStream childIn = unwrapBufferedStream(child.getInputStream());
@@ -370,6 +381,8 @@ public class ShellLauncher {
                     readPumper = new StreamPumper(childIn, parentOut, false, Pumper.Slave.IN);
                 }
                 readPumper.start();
+                in = null;
+                inChannel = null;
             }
         }
 
@@ -472,12 +485,13 @@ public class ShellLauncher {
     }
 
     private static class StreamPumper extends Thread implements Pumper {
-        private InputStream in;
-        private OutputStream out;
-        private boolean onlyIfAvailable;
-        private volatile boolean quit;
+        private final InputStream in;
+        private final OutputStream out;
+        private final boolean onlyIfAvailable;
         private final Object waitLock = new Object();
         private final Slave slave;
+        private volatile boolean quit;
+        
         StreamPumper(InputStream in, OutputStream out, boolean avail, Slave slave) {
             this.in = in;
             this.out = out;
@@ -542,10 +556,11 @@ public class ShellLauncher {
     }
 
     private static class ChannelPumper extends Thread implements Pumper {
-        private FileChannel inChannel;
-        private FileChannel outChannel;
-        private volatile boolean quit;
+        private final FileChannel inChannel;
+        private final FileChannel outChannel;
         private final Slave slave;
+        private volatile boolean quit;
+        
         ChannelPumper(FileChannel inChannel, FileChannel outChannel, Slave slave) {
             if (DEBUG) out.println("using channel pumper");
             this.inChannel = inChannel;

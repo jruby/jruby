@@ -308,12 +308,13 @@ public class Dir {
     }
     
     private static class GlobPattern {
-        byte[] bytes;
-        int index;
-        int begin;
-        int end;
-        int flags;
+        final byte[] bytes;        
+        final int begin;
+        final int end;
         
+        int flags;
+        int index;
+
         public GlobPattern(ByteList bytelist, int flags) {
             this(bytelist.bytes, bytelist.begin,  bytelist.begin + bytelist.realSize, flags);
         }
