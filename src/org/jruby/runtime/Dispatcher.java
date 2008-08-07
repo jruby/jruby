@@ -5,9 +5,12 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class Dispatcher {
+    protected Dispatcher(byte[] switchTable) {
+        this.switchTable = switchTable;
+    }
     private static class DefaultDispatcher extends Dispatcher {
         public DefaultDispatcher() {
-            switchTable = new byte[0];
+            super(new byte[0]);
         }
         
         public IRubyObject callMethod(ThreadContext context, IRubyObject self, RubyClass rubyclass, int methodIndex, String name,
@@ -22,7 +25,7 @@ public abstract class Dispatcher {
     
     public static final Dispatcher DEFAULT_DISPATCHER = new DefaultDispatcher();
     
-    protected byte[] switchTable;
+    protected final byte[] switchTable;
     
     public abstract IRubyObject callMethod(ThreadContext context, IRubyObject self, RubyClass rubyclass, int methodIndex, String name,
             IRubyObject[] args, CallType callType, Block block);

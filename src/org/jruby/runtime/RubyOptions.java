@@ -27,41 +27,45 @@
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
-
+@Deprecated /* FIXME unused */
 public class RubyOptions {
-    private JavaSupport javaSupport = new JavaSupport();
-    
+    private final JavaSupport javaSupport = new JavaSupport();
+
     public JavaSupport getJavaSupport() {
         return javaSupport;
     }
-    
-    public static class JavaSupport {
-		private boolean rubyNames = true;
-		private boolean javaNames = true;
-		private boolean rubyModules = true;
-		
-		public boolean isRubyNames() {
-		    return rubyNames;
-		}
-		
-		public boolean isJavaNames() {
-		    return javaNames;
-		}
-		
-		public boolean isRubyModules() {
-		    return rubyModules;
-		}
-		
-		public void setRubyNames(boolean rubyNames) {
-		    this.rubyNames = rubyNames;
-		}
-		
-		public void setJavaNames(boolean javaNames) {
-		    this.javaNames = javaNames;
-		}
-		
-		public void setRubyModules(boolean rubyModules) {
-		    this.rubyModules = rubyModules;
-		}
+
+    public static final class JavaSupport {
+
+        private boolean rubyNames = true;
+        private boolean javaNames = true;
+        private boolean rubyModules = true;
+
+        private JavaSupport() {
+        }
+
+        public boolean isRubyNames() {
+            return rubyNames;
+        }
+        
+        public boolean isJavaNames() {
+            return javaNames;
+        }
+
+        public boolean isRubyModules() {
+            return rubyModules;
+        }
+
+        public void setRubyNames(boolean rubyNames) {
+            this.rubyNames = rubyNames;
+        }
+
+        public void setJavaNames(boolean javaNames) {
+            this.javaNames = javaNames;
+        }
+
+        public void setRubyModules(boolean rubyModules) {
+            this.rubyModules = rubyModules;
+        }
     }
 }

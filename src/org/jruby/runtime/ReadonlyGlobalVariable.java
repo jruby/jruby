@@ -38,6 +38,7 @@ public class ReadonlyGlobalVariable extends GlobalVariable {
         super(runtime, name, value);
     }
 
+    @Override
     public IRubyObject set(IRubyObject value) {
         throw runtime.newNameError(name() + " is a read-only variable", name());
     }

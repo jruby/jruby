@@ -14,6 +14,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *
  * @author headius
+ * FIXME convert to an enum?
  */
 public interface EventHook {
     public static final int RUBY_EVENT_LINE = 0;

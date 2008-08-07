@@ -36,6 +36,7 @@ public class DumpingInvocationCallbackFactory extends InvocationCallbackFactory 
         super(runtime, type, classLoader);
     }
 
+    @Override
     protected Class endCall(ClassWriter cw, MethodVisitor mv, String name) {
         mv.visitEnd();
         cw.visitEnd();

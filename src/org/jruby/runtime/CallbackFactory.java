@@ -236,21 +236,25 @@ public abstract class CallbackFactory {
      * @deprecated No longer used.
      */
     public abstract Dispatcher createDispatcher(RubyClass metaClass);
-    private static boolean reflection = false;
-    private static boolean dumping = false;
+    private static final boolean reflection;
+    private static final boolean dumping;
     
 
     static {
+        boolean reflection_ = false;
+        boolean dumping_ = false;
         if (Ruby.isSecurityRestricted()) {
-            reflection = true;
+            reflection_ = true;
         } else {
             if (SafePropertyAccessor.getProperty("jruby.reflection") != null && SafePropertyAccessor.getBoolean("jruby.reflection")) {
-                reflection = true;
+                reflection_ = true;
             }
             if (SafePropertyAccessor.getProperty("jruby.dump_invocations") != null) {
-                dumping = true;
+                dumping_ = true;
             }
         }
+        reflection = reflection_;
+        dumping = dumping_;
     }
 
     public static CallbackFactory createFactory(Ruby runtime, Class type) {

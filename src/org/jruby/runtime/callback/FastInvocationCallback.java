@@ -39,6 +39,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public abstract class FastInvocationCallback extends InvocationCallback {
+    @Override
     public IRubyObject execute(IRubyObject recv, IRubyObject[] oargs, Block block) {
         if (arityValue >= 0) {
             if (oargs.length != arityValue) {

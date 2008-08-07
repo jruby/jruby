@@ -35,7 +35,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;

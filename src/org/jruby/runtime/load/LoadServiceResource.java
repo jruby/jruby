@@ -34,8 +34,8 @@ import java.net.URL;
  * logic which does unexpected things when presenting the resource as a string. 
  */
 public class LoadServiceResource {
-    private URL resource;
-    private String name;
+    private final URL resource;
+    private final String name;
 
     public LoadServiceResource(URL resource, String name) {
         this.resource = resource;

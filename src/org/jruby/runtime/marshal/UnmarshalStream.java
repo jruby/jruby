@@ -65,8 +65,8 @@ import org.jruby.util.ByteList;
  */
 public class UnmarshalStream extends BufferedInputStream {
     protected final Ruby runtime;
-    private UnmarshalCache cache;
-    private IRubyObject proc;
+    private final UnmarshalCache cache;
+    private final IRubyObject proc;
 
     public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc) throws IOException {
         super(in);

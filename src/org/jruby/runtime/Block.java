@@ -61,23 +61,28 @@ public class Block {
      * All Block variables should either refer to a real block or this NULL_BLOCK.
      */
     public static final Block NULL_BLOCK = new Block() {
+        @Override
         public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
                 RubyModule klass, boolean aValue) {
             throw context.getRuntime().newLocalJumpError("noreason", (IRubyObject)value, "yield called out of block");
         }
 
+        @Override
         public IRubyObject call(ThreadContext context, IRubyObject[] args) {
             throw context.getRuntime().newLocalJumpError("noreason", context.getRuntime().newArrayNoCopy(args), "yield called out of block");
         }
 
+        @Override
         public IRubyObject yield(ThreadContext context, IRubyObject value) {
             throw context.getRuntime().newLocalJumpError("noreason", (IRubyObject)value, "yield called out of block");
         }
         
+        @Override
         public Block cloneBlock() {
             return this;
         }
         
+        @Override
         public BlockBody getBody() {
             return BlockBody.NULL_BODY;
         }

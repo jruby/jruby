@@ -39,8 +39,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class UnmarshalCache {
     private final Ruby runtime;
-    private List links = new ArrayList();
-    private List symbols = new ArrayList();
+    private final List<IRubyObject> links = new ArrayList<IRubyObject>();
+    private final List<RubySymbol> symbols = new ArrayList<RubySymbol>();
 
     public UnmarshalCache(Ruby runtime) {
         this.runtime = runtime;
@@ -70,7 +70,7 @@ public class UnmarshalCache {
 
     private IRubyObject linkedByIndex(int index) {
         try {
-            return (IRubyObject) links.get(index);
+            return links.get(index);
         } catch (IndexOutOfBoundsException e) {
             throw runtime.newArgumentError("dump format error (unlinked, index: " + index + ")");
         }
@@ -78,7 +78,7 @@ public class UnmarshalCache {
 
     private RubySymbol symbolByIndex(int index) {
         try {
-            return (RubySymbol) symbols.get(index);
+            return symbols.get(index);
         } catch (IndexOutOfBoundsException e) {
             throw runtime.newTypeError("bad symbol");
         }

@@ -55,12 +55,13 @@ import org.jruby.management.MethodCache;
  * call this is responsible for synchronization.
  */
 public class CacheMap {
-    private AtomicInteger addCount = new AtomicInteger(0);
-    private AtomicInteger removeCount = new AtomicInteger(0);
-    private AtomicInteger moduleIncludeCount = new AtomicInteger(0);
-    private AtomicInteger moduleTriggeredRemoveCount = new AtomicInteger(0);
-    private AtomicInteger flushTriggeredRemoveCount = new AtomicInteger(0);
-    private AtomicInteger flushCount = new AtomicInteger(0);
+    private final AtomicInteger addCount = new AtomicInteger(0);
+    private final AtomicInteger removeCount = new AtomicInteger(0);
+    private final AtomicInteger moduleIncludeCount = new AtomicInteger(0);
+    private final AtomicInteger moduleTriggeredRemoveCount = new AtomicInteger(0);
+    private final AtomicInteger flushTriggeredRemoveCount = new AtomicInteger(0);
+    private final AtomicInteger flushCount = new AtomicInteger(0);
+    private final Map<DynamicMethod, Set<CacheSite>> mappings = new WeakHashMap<DynamicMethod, Set<CacheSite>>();
     
     public CacheMap(Ruby ruby) {
         ruby.getBeanManager().register(new MethodCache(this));
@@ -69,7 +70,6 @@ public class CacheMap {
     public interface CacheSite {
         public void removeCachedMethod();
     }
-    private final Map<DynamicMethod, Set<CacheSite>> mappings = new WeakHashMap<DynamicMethod, Set<CacheSite>>();
     
     public int getAddCount() {
         return addCount.get();

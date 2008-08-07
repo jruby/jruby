@@ -36,10 +36,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  * lightweight block logic within Java code.
  */
 public class CallBlock extends BlockBody {
-    private Arity arity;
-    private BlockCallback callback;
-    private RubyModule imClass;
-    private ThreadContext context;
+    private final Arity arity;
+    private final BlockCallback callback;
+    private final RubyModule imClass;
+    private final ThreadContext context;
     
     public static Block newCallClosure(IRubyObject self, RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext context) {
         Binding binding = new Binding(self,
@@ -60,6 +60,7 @@ public class CallBlock extends BlockBody {
         this.context = context;
     }
 
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
         return callback.call(context, args, Block.NULL_BLOCK);
     }

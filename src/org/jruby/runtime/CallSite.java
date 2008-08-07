@@ -540,6 +540,7 @@ public abstract class CallSite {
             super("+", CallType.NORMAL);
         }
         
+        @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg) {
             if (self instanceof RubyFixnum) {
                 return ((RubyFixnum)self).op_plus(context, arg);
@@ -554,6 +555,7 @@ public abstract class CallSite {
             super("-", CallType.NORMAL);
         }
         
+        @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg) {
             if (self instanceof RubyFixnum) {
                 return ((RubyFixnum)self).op_minus(context, arg);
@@ -568,6 +570,7 @@ public abstract class CallSite {
             super("*", CallType.NORMAL);
         }
         
+        @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg) {
             if (self instanceof RubyFixnum) {
                 return ((RubyFixnum)self).op_mul(context, arg);
@@ -582,6 +585,7 @@ public abstract class CallSite {
             super("/", CallType.NORMAL);
         }
         
+        @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg) {
             if (self instanceof RubyFixnum) {
                 return ((RubyFixnum)self).op_div(context, arg);
@@ -596,6 +600,7 @@ public abstract class CallSite {
             super("<", CallType.NORMAL);
         }
         
+        @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg) {
             if (self instanceof RubyFixnum) {
                 return ((RubyFixnum)self).op_lt(context, arg);
@@ -610,6 +615,7 @@ public abstract class CallSite {
             super("<=", CallType.NORMAL);
         }
         
+        @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg) {
             if (self instanceof RubyFixnum) {
                 return ((RubyFixnum)self).op_le(context, arg);
@@ -624,6 +630,7 @@ public abstract class CallSite {
             super(">", CallType.NORMAL);
         }
         
+        @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg) {
             if (self instanceof RubyFixnum) {
                 return ((RubyFixnum)self).op_gt(context, arg);
@@ -638,6 +645,7 @@ public abstract class CallSite {
             super(">=", CallType.NORMAL);
         }
         
+        @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg) {
             if (self instanceof RubyFixnum) {
                 return ((RubyFixnum)self).op_ge(context, arg);

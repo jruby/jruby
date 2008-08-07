@@ -12,8 +12,9 @@ package org.jruby.runtime;
 /**
  *
  * @author headius
+ * FIXME convert to enum ?
  */
-public class ClassIndex {
+public final class ClassIndex {
     public static final int NO_INDEX = 0;
     public static final int FIXNUM = 1;
     public static final int BIGNUM = 2;
@@ -39,7 +40,6 @@ public class ClassIndex {
     public static final int MAX_CLASSES = 22;
     
     /** Creates a new instance of ClassIndex */
-    public ClassIndex() {
+    private ClassIndex() {
     }
-    
 }

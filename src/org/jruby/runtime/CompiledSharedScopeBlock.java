@@ -52,10 +52,12 @@ public class CompiledSharedScopeBlock extends CompiledBlockLight {
         super(arity, containingScope.getStaticScope(), callback, hasMultipleArgsHead, argumentType);
     }
     
+    @Override
     protected Frame pre(ThreadContext context, RubyModule klass, Binding binding) {
         return context.preForBlock(binding, klass);
     }
     
+    @Override
     public Block cloneBlock(Binding binding) {
         return new Block(this, binding);
     }

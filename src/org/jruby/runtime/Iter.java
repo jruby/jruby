@@ -32,6 +32,7 @@ package org.jruby.runtime;
 /**
  *
  * @author  jpetersen
+ * FIXME convert to enum ?
  */
 public final class Iter {
     /** No block given */
@@ -41,7 +42,7 @@ public final class Iter {
     /** Is currently a block*/
     public static final Iter ITER_CUR = new Iter("CUR");
 
-    private String debug;
+    private final String debug;
 
     private Iter(final String debug) {
         this.debug = debug;
@@ -63,6 +64,7 @@ public final class Iter {
         return !isNot();
     }
 
+    @Override
     public String toString() {
         return debug;
     }

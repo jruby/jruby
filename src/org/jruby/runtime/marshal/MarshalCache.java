@@ -38,8 +38,8 @@ import org.jruby.RubySymbol;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class MarshalCache {
-    private Map linkCache = new IdentityHashMap();
-    private Map symbolCache = new IdentityHashMap();
+    private final Map linkCache = new IdentityHashMap();
+    private final Map symbolCache = new IdentityHashMap();
 
     public boolean isRegistered(IRubyObject value) {
         return selectCache(value).containsKey(value);

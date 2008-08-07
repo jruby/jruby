@@ -39,17 +39,18 @@ import org.jruby.runtime.builtin.IRubyObject;
  *  Internal live representation of a block ({...} or do ... end).
  */
 public class Binding {
-    /**
-     * 'self' at point when the block is defined
-     */
-    private IRubyObject self;
     
     /**
      * frame of method which defined this block
      */
     private final Frame frame;
+    private final RubyModule klass;
+
     private Visibility visibility;
-    private RubyModule klass;
+    /**
+     * 'self' at point when the block is defined
+     */
+    private IRubyObject self;
     
     /**
      * A reference to all variable values (and names) that are in-scope for this block.

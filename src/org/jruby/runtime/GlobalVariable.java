@@ -43,10 +43,12 @@ public class GlobalVariable {
             this.other = other;
         }
 
+        @Override
         public IRubyObject get() {
             return other.get();
         }
 
+        @Override
         public IRubyObject set(IRubyObject value) {
             return other.set(value);
         }

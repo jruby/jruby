@@ -69,9 +69,10 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
  */
 public class MarshalStream extends FilterOutputStream {
     private final Ruby runtime;
+    private final MarshalCache cache;
     private final int depthLimit;
+    
     private int depth = 0;
-    private MarshalCache cache;
 
     private final static char TYPE_IVAR = 'I';
     private final static char TYPE_USRMARSHAL = 'U';

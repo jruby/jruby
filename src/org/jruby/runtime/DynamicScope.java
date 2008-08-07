@@ -12,10 +12,10 @@ import org.jruby.runtime.scope.TwoVarDynamicScope;
 
 public abstract class DynamicScope {
     // Static scoping information for this scope
-    protected StaticScope staticScope;
+    protected final StaticScope staticScope;
     
     // Captured dyanmic scopes
-    protected DynamicScope parent;
+    protected final DynamicScope parent;
     
     // A place to store that special hiding space that bindings need to implement things like:
     // eval("a = 1", binding); eval("p a").  All binding instances must get access to this
@@ -24,12 +24,12 @@ public abstract class DynamicScope {
     protected DynamicScope evalScope;
 
     protected DynamicScope(StaticScope staticScope, DynamicScope parent) {
-        this(staticScope);
+        this.staticScope = staticScope;
         this.parent = parent;
     }
 
     protected DynamicScope(StaticScope staticScope) {
-        this.staticScope = staticScope;
+        this(staticScope, null);
     }
     
     public static DynamicScope newDynamicScope(StaticScope staticScope, DynamicScope parent) {
@@ -149,6 +149,7 @@ public abstract class DynamicScope {
         return staticScope.getAllNamesInScope();
     }
     
+    @Override
     public String toString() {
         return toString(new StringBuffer(), "");
     }

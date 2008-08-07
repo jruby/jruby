@@ -39,7 +39,7 @@ import org.jruby.Ruby;
  * you can load a class with, and do the right thing.
  */
 public class ClassExtensionLibrary implements Library {
-    private Class theClass;
+    private final Class theClass;
     public ClassExtensionLibrary(Class extension) {
         theClass = extension;
     }

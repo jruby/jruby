@@ -167,28 +167,33 @@ public abstract class MethodFactory {
     /**
      * Use the reflection-based factory.
      */
-    private static boolean reflection = false;
+    private static final boolean reflection;
     /**
      * User the dumping-based factory, which generates .class files as it runs.
      */
-    private static boolean dumping = false;
+    private static final boolean dumping;
     /**
      * The target path for the dumping factory to save the .class files.
      */
-    private static String dumpingPath = null;
+    private static final String dumpingPath;
     
     static {
+        boolean reflection_ = false, dumping_ = false;
+        String dumpingPath_ = null;
         // initialize the static settings to determine which factory to use
         if (Ruby.isSecurityRestricted()) {
-            reflection = true;
+            reflection_ = true;
         } else {
             if (SafePropertyAccessor.getProperty("jruby.reflection") != null && SafePropertyAccessor.getBoolean("jruby.reflection")) {
-                reflection = true;
+                reflection_ = true;
             }
             if (SafePropertyAccessor.getProperty("jruby.dump_invocations") != null) {
-                dumping = true;
-                dumpingPath = SafePropertyAccessor.getProperty("jruby.dump_invocations");
+                dumping_ = true;
+                dumpingPath_ = SafePropertyAccessor.getProperty("jruby.dump_invocations");
             }
         }
+        reflection = reflection_;
+        dumping = dumping_;
+        dumpingPath = dumpingPath_;
     }
 }

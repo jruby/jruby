@@ -215,14 +215,17 @@ public final class Arity implements Serializable {
         return value;
     }
 
+    @Override
     public boolean equals(Object other) {
         return this == other;
     }
 
+    @Override
     public int hashCode() {
         return value;
     }
 
+    @Override
     public String toString() {
         if(isFixed()) {
             return "Fixed" + required();

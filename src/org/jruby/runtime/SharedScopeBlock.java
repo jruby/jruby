@@ -54,6 +54,7 @@ public class SharedScopeBlock extends InterpretedBlock {
         return new Block(body, binding);
     }
     
+    @Override
     protected Frame pre(ThreadContext context, RubyModule klass, Binding binding) {
         return context.preForBlock(binding, klass);
     }
