@@ -63,7 +63,11 @@ public abstract class Invoker {
      */
     public void attach(RubyModule module, String methodName) {
 
-        DynamicMethod m = new DynamicMethod(module, Visibility.PUBLIC, CallConfiguration.NO_FRAME_NO_SCOPE) {
+        DynamicMethod m = createDynamicMethod(module);
+        module.addMethod(methodName, m);
+    }
+    protected DynamicMethod createDynamicMethod(RubyModule module) {
+        return new DynamicMethod(module, Visibility.PUBLIC, CallConfiguration.NO_FRAME_NO_SCOPE) {
 
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -85,11 +89,8 @@ public abstract class Invoker {
             public boolean isNative() {
                 return true;
             }
-
-        };
-        module.getSingletonClass().addMethod(methodName, m);
+        }; 
     }
-    
     /**
      * Invokes the native function with the supplied ruby arguments.
      * @param rubyArgs The ruby arguments to pass to the native function.

@@ -32,6 +32,7 @@ import com.sun.jna.Function;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ext.ffi.Invoker;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -69,21 +70,17 @@ final class JNAInvoker extends Invoker {
      * @param methodName The ruby name to attach the function as.
      */
     @Override
-    public void attach(RubyModule module, String methodName) {
+    public DynamicMethod createDynamicMethod(RubyModule module) {
         if (Arity.NO_ARGUMENTS.equals(arity)) {
-            module.getSingletonClass().addMethod(methodName, 
-                    new DynamicMethodZeroArg(module, function, functionInvoker));
+            return new DynamicMethodZeroArg(module, function, functionInvoker);
         } else if (Arity.ONE_ARGUMENT.equals(arity)) {
-            module.getSingletonClass().addMethod(methodName, 
-                    new DynamicMethodOneArg(module, function, functionInvoker, marshallers));
+            return new DynamicMethodOneArg(module, function, functionInvoker, marshallers);
         } else if (Arity.TWO_ARGUMENTS.equals(arity)) {
-            module.getSingletonClass().addMethod(methodName, 
-                    new DynamicMethodTwoArg(module, function, functionInvoker, marshallers));
+            return new DynamicMethodTwoArg(module, function, functionInvoker, marshallers);
         } else if (Arity.THREE_ARGUMENTS.equals(arity)) {
-            module.getSingletonClass().addMethod(methodName, 
-                    new DynamicMethodThreeArg(module, function, functionInvoker, marshallers));
+            return new DynamicMethodThreeArg(module, function, functionInvoker, marshallers);
         } else {
-            super.attach(module, methodName);
+            return super.createDynamicMethod(module);
         }
     }
 }

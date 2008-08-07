@@ -111,7 +111,7 @@ public final class StructLayoutBuilder extends RubyObject {
         final Ruby runtime = context.getRuntime();
         IRubyObject name = args[0];
         NativeType type = (NativeType) Util.convertParameter(args[1], NativeType.class);
-        long offset = args.length > 2 ? Util.int64Value(args[2]) : -1;
+        int offset = args.length > 2 ? Util.int32Value(args[2]) : -1;
         int align = 8, sizeBits = 8;
         switch (type) {
             case INT8:
@@ -163,7 +163,7 @@ public final class StructLayoutBuilder extends RubyObject {
         }
         
         fields.put(createKey(runtime, name), field);
-        this.size += (sizeBits / 8);
+        this.size = offset + (sizeBits / 8);
         return runtime.getNil();
     }
     

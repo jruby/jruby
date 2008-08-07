@@ -225,6 +225,26 @@ module JRuby::FFI
     invoker = create_invoker(lib, name, args, ret, convention)
     proc { |*args| invoker.invoke(args) }
   end
+  
+  def self.load_library(libname, convention = :default, &block)
+    library = NativeLibrary.new libname, convention
+    library.instance_eval(&block)
+    return library
+  end
+  class NativeLibrary < Module
+    def initialize(libname, convention)
+      @ffi_lib = libname
+      @ffi_convention = convention
+    end
+    def method_missing(meth, *args)
+      a0, a1, a2 = args
+      fname, arg_types, ret_type = args.length > 2 ? [ a0, a1, a2 ] : [ meth.to_sym, a0, a1 ]
+      invoker = FFI.create_invoker @ffi_lib, fname.to_s, arg_types, ret_type, @ffi_convention
+      raise ArgumentError, "Unable to find function '#{fname}' to bind to #{self.name}.#{meth}" unless invoker
+      invoker.attach(self, meth.to_s)
+    end
+  end
+  
   # NUL terminated immutable string
   add_typedef(NativeType::STRING, :string)
   add_typedef(NativeType::STRING, :cstring)
@@ -323,7 +343,7 @@ module JRuby::FFI::Library
     convention = opts[:convention] ? opts[:convention] : :default
     invoker = JRuby::FFI.create_invoker(lib, name.to_s, arg_types, ret_type, convention)
     raise ArgumentError, "Unable to find function '#{name}' to bind to #{self.name}.#{(opts[:as] || name)}" unless invoker
-    invoker.attach(self, (opts[:as] || name).to_s)
+    invoker.attach(self.class, (opts[:as] || name).to_s)
     # Return a callable version of the invoker
     return proc { |*args| invoker.invoke(args) }
   end
@@ -356,7 +376,7 @@ module FFI::Library
     convention = @ffi_convention ? @ffi_convention : :default
     invoker = FFI.create_invoker lib, name.to_s, arg_types, ret_type, convention
     raise ArgumentError, "Unable to find function '#{name}' to bind to #{self.name}.#{mname}" unless invoker
-    invoker.attach(self, mname.to_s)
+    invoker.attach(self.class, mname.to_s)
     # Return a callable version of the invoker
     return proc { |*args| invoker.invoke(args) }
   end
