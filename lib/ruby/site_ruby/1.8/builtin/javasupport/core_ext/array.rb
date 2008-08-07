@@ -5,7 +5,7 @@ class Array
     if simple || !type
       ObjectJavaClass.new_array_from_simple_array(self)
     elsif nodims
-      JavaArrayUtilities.array_to_java_typed(self, type)
+      self.to_java_typed(type)
     else
       JavaArrayUtilities.ruby_to_java(self, type, dimensions, fill, &block)
     end

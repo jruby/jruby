@@ -38,6 +38,11 @@ test_check "Extended Java Array Support"
     :Double => "[Ljava.lang.Double;",
     :string => "[Ljava.lang.String;",
     :String => "[Ljava.lang.String;",
+    :big_int => "[Ljava.math.BigInteger;",
+    :big_integer => "[Ljava.math.BigInteger;",
+    :BigInteger => "[Ljava.math.BigInteger;",
+    :big_decimal => "[Ljava.math.BigDecimal;",
+    :BigDecimal => "[Ljava.math.BigDecimal;",
     
   }
   type_map.each do |type_name, java_type|

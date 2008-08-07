@@ -47,6 +47,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jruby.MetaClass;
@@ -132,10 +134,93 @@ public class Java implements Library {
         runtime.getArray().defineAnnotatedMethods(ArrayJavaAddons.class);
         runtime.getKernel().defineAnnotatedMethods(KernelJavaAddons.class);
         
+        // add all name-to-class mappings
+        addNameClassMappings(runtime, runtime.getJavaSupport().getNameClassMap());
+        
         // finally, set JavaSupport.isEnabled to true
         runtime.getJavaSupport().setActive(true);
 
         return javaModule;
+    }
+    
+    /**
+     * This populates the master map from short-cut names to JavaClass instances for
+     * a number of core Java types.
+     * 
+     * @param runtime
+     * @param nameClassMap
+     */
+    private static void addNameClassMappings(Ruby runtime, Map<String, JavaClass> nameClassMap) {
+        JavaClass booleanPrimClass = JavaClass.get(runtime, Boolean.TYPE);
+        JavaClass booleanClass = JavaClass.get(runtime, Boolean.class);
+        nameClassMap.put("boolean", booleanPrimClass);
+        nameClassMap.put("Boolean", booleanClass);
+        nameClassMap.put("java.lang.Boolean", booleanClass);
+        
+        JavaClass bytePrimClass = JavaClass.get(runtime, Byte.TYPE);
+        JavaClass byteClass = JavaClass.get(runtime, Byte.class);
+        nameClassMap.put("byte", bytePrimClass);
+        nameClassMap.put("Byte", byteClass);
+        nameClassMap.put("java.lang.Byte", byteClass);
+        
+        JavaClass shortPrimClass = JavaClass.get(runtime, Short.TYPE);
+        JavaClass shortClass = JavaClass.get(runtime, Short.class);
+        nameClassMap.put("short", shortPrimClass);
+        nameClassMap.put("Short", shortClass);
+        nameClassMap.put("java.lang.Short", shortClass);
+        
+        JavaClass charPrimClass = JavaClass.get(runtime, Character.TYPE);
+        JavaClass charClass = JavaClass.get(runtime, Character.class);
+        nameClassMap.put("char", charPrimClass);
+        nameClassMap.put("Character", charClass);
+        nameClassMap.put("Char", charClass);
+        nameClassMap.put("java.lang.Character", charClass);
+        
+        JavaClass intPrimClass = JavaClass.get(runtime, Integer.TYPE);
+        JavaClass intClass = JavaClass.get(runtime, Integer.class);
+        nameClassMap.put("int", intPrimClass);
+        nameClassMap.put("Integer", intClass);
+        nameClassMap.put("Int", intClass);
+        nameClassMap.put("java.lang.Integer", intClass);
+        
+        JavaClass longPrimClass = JavaClass.get(runtime, Long.TYPE);
+        JavaClass longClass = JavaClass.get(runtime, Long.class);
+        nameClassMap.put("long", longPrimClass);
+        nameClassMap.put("Long", longClass);
+        nameClassMap.put("java.lang.Long", longClass);
+        
+        JavaClass floatPrimClass = JavaClass.get(runtime, Float.TYPE);
+        JavaClass floatClass = JavaClass.get(runtime, Float.class);
+        nameClassMap.put("float", floatPrimClass);
+        nameClassMap.put("Float", floatClass);
+        nameClassMap.put("java.lang.Float", floatClass);
+        
+        JavaClass doublePrimClass = JavaClass.get(runtime, Double.TYPE);
+        JavaClass doubleClass = JavaClass.get(runtime, Double.class);
+        nameClassMap.put("double", doublePrimClass);
+        nameClassMap.put("Double", doubleClass);
+        nameClassMap.put("java.lang.Double", doubleClass);
+        
+        JavaClass bigintClass = JavaClass.get(runtime, BigInteger.class);
+        nameClassMap.put("big_int", bigintClass);
+        nameClassMap.put("big_integer", bigintClass);
+        nameClassMap.put("BigInteger", bigintClass);
+        nameClassMap.put("java.math.BigInteger", bigintClass);
+        
+        JavaClass bigdecimalClass = JavaClass.get(runtime, BigDecimal.class);
+        nameClassMap.put("big_decimal", bigdecimalClass);
+        nameClassMap.put("BigDecimal", bigdecimalClass);
+        nameClassMap.put("java.math.BigDecimal", bigdecimalClass);
+        
+        JavaClass objectClass = JavaClass.get(runtime, Object.class);
+        nameClassMap.put("object", objectClass);
+        nameClassMap.put("Object", objectClass);
+        nameClassMap.put("java.lang.Object", objectClass);
+        
+        JavaClass stringClass = JavaClass.get(runtime, String.class);
+        nameClassMap.put("string", stringClass);
+        nameClassMap.put("String", stringClass);
+        nameClassMap.put("java.lang.String", stringClass);
     }
 
     @JRubyModule(name = "JavaUtilities")

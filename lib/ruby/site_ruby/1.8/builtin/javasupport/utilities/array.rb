@@ -309,22 +309,6 @@ private
     ref ? ref.proxy : JavaUtilities.get_proxy_class(class_name.to_s)
   end
 public
-  def array_to_java_typed(ruby_array, type)
-    # the (optional) first arg is class/name. if omitted, defaults to java.lang.Object
-    if type.kind_of?(Class) && type.respond_to?(:java_class)
-      cls = type
-    elsif type.kind_of?(String) || type.kind_of?(Symbol)
-      cls = get_class(type)
-      unless cls
-        raise ArgumentError,"invalid class name (#{type}) specified for to_java"      
-      end
-    else
-      cls = JObject.proxy
-    end
-    
-    cls.java_class.new_array_from_simple_array(ruby_array)
-  end
-
   def ruby_to_java(ruby_array, type = nil, *dims, &block)
     dims = nil
     fill_value = nil

@@ -114,6 +114,7 @@ public class JavaSupport {
     private RubyClass arrayProxyClass;
     private RubyClass concreteProxyClass;
     
+    private final Map<String, JavaClass> nameClassMap = new HashMap<String, JavaClass>();
     
     public JavaSupport(Ruby ruby) {
         this.runtime = ruby;
@@ -224,6 +225,10 @@ public class JavaSupport {
     // (also note that there's no chance of getting a partially initialized
     // class/module, as happens-before is guaranteed by volatile write/read
     // of constants table.)
+    
+    public Map<String, JavaClass> getNameClassMap() {
+        return nameClassMap;
+    }
     
     public RubyModule getJavaModule() {
         RubyModule module;

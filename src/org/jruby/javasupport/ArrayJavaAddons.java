@@ -3,7 +3,11 @@ package org.jruby.javasupport;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyModule;
+import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -53,6 +57,23 @@ public class ArrayJavaAddons {
         copyDataToJavaArray(context, rubyArray, javaArray);
         
         return to;
+    }
+   
+    @JRubyMethod
+    public static IRubyObject to_java_typed(ThreadContext context, IRubyObject fromArray, IRubyObject type) {
+        Ruby runtime = context.getRuntime();
+        
+        JavaClass targetType;
+        if (type instanceof RubyString || type instanceof RubySymbol) {
+            targetType = runtime.getJavaSupport().getNameClassMap().get(type.asJavaString());
+            if (targetType == null) targetType = JavaClass.forNameVerbose(runtime, type.asJavaString());
+        } else if (type instanceof RubyModule && type.respondsTo("java_class")) {
+            targetType = (JavaClass)RuntimeHelpers.invoke(context, type, "java_class");
+        } else {
+            throw runtime.newTypeError("unable to convert array to type: " + type);
+        }
+        
+        return targetType.new_array_from_simple_array(context, fromArray);
     }
     
     public static void copyDataToJavaArray(
