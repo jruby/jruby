@@ -26,35 +26,6 @@ module JavaArrayUtilities
       ruby_array
     end
   
-    def get_range(java_array,*args)
-      unless java_array.kind_of?(ArrayJavaProxy)
-        raise ArgumentError,"not a Java array: #{java_array}"
-      end
-      length = java_array.length
-      component_type = java_array.java_class.component_type
-      if args.length == 1 && args[0].kind_of?(Range) &&
-          args[0].first.kind_of?(Integer) && args[0].last.kind_of?(Integer)
-        first = args[0].first >= 0 ? args[0].first : length + args[0].first
-        last = args[0].last >= 0 ? args[0].last : length + args[0].last
-        len = last - first
-        len += 1 unless args[0].exclude_end?
-        return new_array(component_type,0) if len <= 0
-      elsif args.length == 2 && args[0].kind_of?(Integer) && args[1].kind_of?(Integer)
-        return nil if args[1] < 0
-        first = args[0] >= 0 ? args[0] : length + args[0]
-        len = args[1];
-        return nil if len < 0
-      else
-        raise ArgumentError,"[index] not Integer, two Integers, or Range: #{args}"
-      end
-      return nil if first > length
-      return new_array(component_type,0) if first == length
-      len = length - first if first + len > length
-      subarray = new_array(component_type,len)
-      System.arraycopy(java_array,first,subarray,0,len)
-      subarray
-    end
-  
     def concatenate(java_array,arr2) 
       unless java_array.kind_of?(ArrayJavaProxy)
         raise ArgumentError,"not a Java array: #{java_array}"

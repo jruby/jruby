@@ -5,6 +5,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
+import org.jruby.RubyRange;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -56,11 +57,7 @@ public class ArrayJavaProxy extends JavaProxy {
         if (args.length == 1 && args[0] instanceof RubyInteger) {
             return JavaUtil.java_to_ruby(context.getRuntime(), getJavaArray().aref(args[0]));
         } else {
-            RubyModule javaArrayUtilities = context.getRuntime().getJavaSupport().getJavaArrayUtilitiesModule();
-            IRubyObject[] newArgs = new IRubyObject[args.length + 1];
-            System.arraycopy(args, 0, newArgs, 1, args.length);
-            newArgs[0] = this;
-            return RuntimeHelpers.invoke(context, javaArrayUtilities, "get_range", newArgs);
+            return getRange(context, args);
         }
     }
     
@@ -111,6 +108,67 @@ public class ArrayJavaProxy extends JavaProxy {
     public IRubyObject to_a(ThreadContext context) {
         RubyModule javaArrayUtilities = context.getRuntime().getJavaSupport().getJavaArrayUtilitiesModule();
         return RuntimeHelpers.invoke(context, javaArrayUtilities, "java_to_ruby", this);
+    }
+    
+    public IRubyObject getRange(ThreadContext context, IRubyObject[] args) {
+        if (args.length == 1) {
+            return getRange(context, args[0]);
+        } else if (args.length == 2) {
+            return getRange(context, args[0], args[1]);
+        } else {
+            throw context.getRuntime().newArgumentError(args.length, 1);
+        }
+    }
+    
+    public IRubyObject getRange(ThreadContext context, IRubyObject arg0) {
+        int length = (int)getJavaArray().length().getLongValue();
+        JavaClass arrayClass = JavaClass.get(context.getRuntime(), getJavaArray().getComponentType());
+        
+        if (arg0 instanceof RubyRange) {
+            RubyRange range = (RubyRange)arg0;
+            if (range.first() instanceof RubyFixnum && range.last() instanceof RubyFixnum) {
+                int first = (int)((RubyFixnum)range.first()).getLongValue();
+                int last = (int)((RubyFixnum)range.last()).getLongValue();
+                
+                first = first >= 0 ? first : length + first;
+                last = last >= 0 ? last : length + last;
+                int newLength = last - first;
+                if (range.exclude_end_p().isFalse()) newLength += 1;
+                
+                if (newLength <= 0) {
+                    return arrayClass.emptyJavaArray(context);
+                }
+        
+                return arrayClass.javaArraySubarray(context, getJavaArray(), first, newLength);
+            } else {
+                throw context.getRuntime().newTypeError("only Fixnum ranges supported");
+            }
+        } else {
+            throw context.getRuntime().newTypeError(arg0, context.getRuntime().getRange());
+        }
+    }
+    
+    public IRubyObject getRange(ThreadContext context, IRubyObject firstObj, IRubyObject lengthObj) {
+        JavaClass arrayClass = JavaClass.get(context.getRuntime(), getJavaArray().getComponentType());
+        
+        if (firstObj instanceof RubyFixnum && lengthObj instanceof RubyFixnum) {
+            int first = (int)((RubyFixnum)firstObj).getLongValue();
+            int length = (int)((RubyFixnum)lengthObj).getLongValue();
+
+            if (length > getJavaArray().length().getLongValue()) {
+                throw context.getRuntime().newIndexError("length specifed is longer than array");
+            }
+
+            first = first >= 0 ? first : (int)getJavaArray().length().getLongValue() + first;
+
+            if (length <= 0) {
+                return arrayClass.emptyJavaArray(context);
+            }
+
+            return arrayClass.javaArraySubarray(context, getJavaArray(), first, length);
+        } else {
+            throw context.getRuntime().newTypeError("only Fixnum ranges supported");
+        }
     }
     
     public static class ArrayNewMethod extends org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOne {

@@ -62,7 +62,7 @@ public class ArrayJavaAddons {
     
     @JRubyMethod(frame = true)
     public static IRubyObject to_java(ThreadContext context, IRubyObject fromArray) {
-        return context.getRuntime().getJavaSupport().getObjectJavaClass().new_array_from_simple_array(context, fromArray);
+        return context.getRuntime().getJavaSupport().getObjectJavaClass().javaArrayFromRubyArray(context, fromArray);
     }
     @JRubyMethod(frame = true)
     public static IRubyObject to_java(ThreadContext context, IRubyObject fromArray, IRubyObject type) {
@@ -74,7 +74,7 @@ public class ArrayJavaAddons {
         
         JavaClass targetType = getTargetType(context, runtime, type);
         
-        return targetType.new_array_from_simple_array(context, fromArray);
+        return targetType.javaArrayFromRubyArray(context, fromArray);
     }
     
     private static JavaClass getTargetType(ThreadContext context, Ruby runtime, IRubyObject type) {
@@ -103,6 +103,19 @@ public class ArrayJavaAddons {
         int i = 0;
         for (; i < rubyLength && i < javaLength; i++) {
             javaArray.setWithExceptionHandling(i, converter.convert(context, rubyArray.entry(i)));
+        }
+    }
+    
+    public static void copyDataToJavaArray(
+            ThreadContext context, RubyArray rubyArray, int src, JavaArray javaArray, int dest, int length) {
+        Class targetType = javaArray.getComponentType();
+        JavaUtil.RubyConverter converter = JavaUtil.getArrayConverter(targetType);
+        
+        int destLength = (int)javaArray.length().getLongValue();
+        int srcLength = rubyArray.getLength();
+        
+        for (int i = 0; src + i < srcLength && dest + i < destLength && i < length; i++) {
+            javaArray.setWithExceptionHandling(dest + i, converter.convert(context, rubyArray.entry(src + i)));
         }
     }
     
