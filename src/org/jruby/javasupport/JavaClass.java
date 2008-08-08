@@ -72,6 +72,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.javasupport.methods.ConstructorInvoker;
 import org.jruby.javasupport.methods.DynalangInstanceInvoker;
 import org.jruby.javasupport.util.RuntimeHelpers;

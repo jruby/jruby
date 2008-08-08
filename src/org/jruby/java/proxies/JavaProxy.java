@@ -3,12 +3,14 @@
  * and open the template in the editor.
  */
 
-package org.jruby.javasupport;
+package org.jruby.java.proxies;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.javasupport.Java;
+import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;

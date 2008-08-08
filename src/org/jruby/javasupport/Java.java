@@ -75,6 +75,9 @@ import org.jruby.util.ClassProvider;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.java.MiniJava;
+import org.jruby.java.proxies.ArrayJavaProxy;
+import org.jruby.java.proxies.ConcreteJavaProxy;
+import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.callback.Callback;
 
 @JRubyModule(name = "Java")

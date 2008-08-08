@@ -1,9 +1,10 @@
-package org.jruby.javasupport;
+package org.jruby.java.proxies;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;

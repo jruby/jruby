@@ -1,8 +1,6 @@
-package org.jruby.javasupport;
+package org.jruby.java.proxies;
 
-import java.lang.reflect.Array;
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
@@ -10,6 +8,9 @@ import org.jruby.RubyModule;
 import org.jruby.RubyRange;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.javasupport.JavaArray;
+import org.jruby.javasupport.JavaClass;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
