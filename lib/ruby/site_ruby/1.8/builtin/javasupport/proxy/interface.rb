@@ -13,8 +13,6 @@ end
 
 class InterfaceJavaProxy < JavaProxy
   class << self  
-#    alias_method :new_proxy, :new
-#
     def new(*outer_args, &block)
       proxy = allocate
       JavaUtilities.set_java_object(proxy, Java.new_proxy_instance(proxy.class.java_class) { |proxy2, method, *args|
@@ -24,16 +22,6 @@ class InterfaceJavaProxy < JavaProxy
       proxy.send(:initialize,*outer_args,&block)
       proxy
     end
-
-#    alias_method :old_eqq, :===
-#    
-#    def ===(other)
-#      if other.respond_to?(:java_object)
-#        other.java_object.java_class.interfaces.include?(self.java_class)
-#      else
-#        old_eqq(other)
-#      end
-#    end
   end
     
   def self.impl(*meths, &block)
@@ -249,6 +237,5 @@ public
   def deprecated
     JavaUtilities.get_deprecated_interface_proxy(@java_class)  
   end
-
  end #self
 end #JavaInterface

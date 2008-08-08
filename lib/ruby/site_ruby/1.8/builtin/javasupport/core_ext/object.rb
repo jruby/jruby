@@ -1,6 +1,3 @@
-class ConstantAlreadyExistsError < RuntimeError
-end
-
 class Object
   # Prevent methods added to Object from being added to the 
   # blank-slate JavaPackageModuleTemplate
