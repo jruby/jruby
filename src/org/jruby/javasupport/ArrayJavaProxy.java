@@ -1,6 +1,8 @@
 package org.jruby.javasupport;
 
+import java.lang.reflect.Array;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
@@ -43,7 +45,7 @@ public class ArrayJavaProxy extends JavaProxy {
         return arrayJavaProxy;
     }
     
-    private JavaArray getJavaArray() {
+    public JavaArray getJavaArray() {
         return (JavaArray)dataGetStruct();
     }
     
@@ -91,8 +93,15 @@ public class ArrayJavaProxy extends JavaProxy {
     
     @JRubyMethod(name = "+", backtrace = true)
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
-        RubyModule javaArrayUtilities = context.getRuntime().getJavaSupport().getJavaArrayUtilitiesModule();
-        return RuntimeHelpers.invoke(context, javaArrayUtilities, "concatenate", this, other);
+        JavaClass arrayClass = JavaClass.get(context.getRuntime(), getJavaArray().getComponentType());
+        if (other instanceof ArrayJavaProxy) {
+            JavaArray otherArray = ((ArrayJavaProxy)other).getJavaArray();
+            
+            if (getJavaArray().getComponentType().isAssignableFrom(otherArray.getComponentType())) {
+                return arrayClass.concatArrays(context, getJavaArray(), otherArray);
+            }
+        }
+        return arrayClass.concatArrays(context, getJavaArray(), other);
     }
     
     @JRubyMethod(backtrace = true)

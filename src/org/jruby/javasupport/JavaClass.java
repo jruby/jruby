@@ -1438,6 +1438,58 @@ public class JavaClass extends JavaObject {
         }
     }
    
+    /**
+     * Contatenate two Java arrays into a new one. The component type of the
+     * additional array must be assignable to the component type of the
+     * original array.
+     * 
+     * @param context
+     * @param original
+     * @param additional
+     * @return
+     */
+    public IRubyObject concatArrays(ThreadContext context, JavaArray original, JavaArray additional) {
+        int oldLength = (int)original.length().getLongValue();
+        int addLength = (int)additional.length().getLongValue();
+        Object newArray = Array.newInstance(javaClass(), oldLength + addLength);
+        JavaArray javaArray = new JavaArray(getRuntime(), newArray);
+        System.arraycopy(original.getValue(), 0, newArray, 0, oldLength);
+        System.arraycopy(additional.getValue(), 0, newArray, oldLength, addLength);
+        RubyClass proxyClass = (RubyClass)Java.get_proxy_class(javaArray, array_class());
+
+        ArrayJavaProxy proxy = new ArrayJavaProxy(context.getRuntime(), proxyClass);
+        proxy.dataWrapStruct(javaArray);
+
+        return proxy;
+    }
+   
+    /**
+     * The slow version for when concatenating a Java array of a different type.
+     * 
+     * @param context
+     * @param original
+     * @param additional
+     * @return
+     */
+    public IRubyObject concatArrays(ThreadContext context, JavaArray original, IRubyObject additional) {
+        int oldLength = (int)original.length().getLongValue();
+        int addLength = (int)((RubyFixnum)RuntimeHelpers.invoke(context, additional, "length")).getLongValue();
+        Object newArray = Array.newInstance(javaClass(), oldLength + addLength);
+        JavaArray javaArray = new JavaArray(getRuntime(), newArray);
+        System.arraycopy(original.getValue(), 0, newArray, 0, oldLength);
+        RubyClass proxyClass = (RubyClass)Java.get_proxy_class(javaArray, array_class());
+        ArrayJavaProxy proxy = new ArrayJavaProxy(context.getRuntime(), proxyClass);
+        proxy.dataWrapStruct(javaArray);
+        
+        Ruby runtime = context.getRuntime();
+        for (int i = 0; i < addLength; i++) {
+            RuntimeHelpers.invoke(context, proxy, "[]=", runtime.newFixnum(oldLength + i), 
+                    RuntimeHelpers.invoke(context, additional, "[]", runtime.newFixnum(i)));
+        }
+
+        return proxy;
+    }
+
     public IRubyObject javaArrayFromRubyArray(ThreadContext context, IRubyObject fromArray) {
         Ruby runtime = context.getRuntime();
         if (!(fromArray instanceof RubyArray)) {
