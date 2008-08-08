@@ -14,8 +14,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -390,9 +392,12 @@ public class MiniJava implements Library {
         // for each simple method name, implement the complex methods, calling the simple version
         for (Map.Entry<String, List<Method>> entry : simpleToAll.entrySet()) {
             String simpleName = entry.getKey();
-            String rubyName = JavaUtil.getRubyCasedName(simpleName);
-            boolean rubyNameIsDifferent = !rubyName.equals(simpleName);
             
+            Set<String> nameSet = new HashSet<String>();
+            nameSet.add(simpleName);
+
+            getRubyNamesForJavaName(simpleName, nameSet, entry.getValue());
+                
             // all methods dispatch to the simple version by default, or method_missing if it's not present
             cw.visitField(ACC_STATIC | ACC_PUBLIC | ACC_VOLATILE, simpleName, ci(DynamicMethod.class), null, null).visitEnd();
             
@@ -421,26 +426,15 @@ public class MiniJava implements Library {
                 // not retrieved yet, retrieve it now
                 mv.pop();
                 mv.getstatic(name, "rubyClass", ci(RubyClass.class));
-                mv.ldc(simpleName);
-                mv.invokevirtual(p(RubyClass.class), "searchMethod", sig(DynamicMethod.class, String.class));
+                for (String eachName : nameSet) {
+                    mv.ldc(eachName);
+                }
+                mv.invokestatic(p(MiniJava.class), "searchMethod", sig(DynamicMethod.class, params(RubyClass.class, String.class, nameSet.size())));
                 mv.dup();
                 
                 // check if it's UndefinedMethod
                 mv.getstatic(p(UndefinedMethod.class), "INSTANCE", ci(UndefinedMethod.class));
                 mv.if_acmpne(dispatch);
-                
-                // try the Ruby-cased version if it's different
-                if (rubyNameIsDifferent) {
-                    mv.pop();
-                    mv.getstatic(name, "rubyClass", ci(RubyClass.class));
-                    mv.ldc(rubyName);
-                    mv.invokevirtual(p(RubyClass.class), "searchMethod", sig(DynamicMethod.class, String.class));
-                    mv.dup();
-
-                    // check if it's UndefinedMethod
-                    mv.getstatic(p(UndefinedMethod.class), "INSTANCE", ci(UndefinedMethod.class));
-                    mv.if_acmpne(dispatch);
-                }
                 
                 // undefined, call method_missing
                 mv.pop();
@@ -684,6 +678,12 @@ public class MiniJava implements Library {
                 Field simpleField = newClass.getField(simpleName);
                 allFields.put(simpleName, simpleField);
                 allFields.put(rubyName, simpleField);
+                
+                Set<String> nameSet = new HashSet<String>();
+                getRubyNamesForJavaName(simpleName, nameSet, entry.getValue());
+                for (String name : nameSet) {
+                    allFields.put(name, simpleField);
+                }
             }
         } catch (IllegalArgumentException ex) {
             throw error(ruby, ex, "Could not prepare method fields: " + newClass);
@@ -697,7 +697,6 @@ public class MiniJava implements Library {
                 RubyClass selfClass = (RubyClass)self;
                 Ruby ruby = selfClass.getClassRuntime();
                 String methodName = args[0].asJavaString();
-                String rubyName = JavaUtil.getRubyCasedName(methodName);
                 Field field = allFields.get(methodName);
 
                 if (field == null) {
@@ -708,13 +707,6 @@ public class MiniJava implements Library {
                             DynamicMethod method = selfClass.searchMethod(methodName);
                             if (method != UndefinedMethod.INSTANCE) {
                                 field.set(null, method);
-                            }
-                            if (!rubyName.equals(methodName)) {
-                                // try ruby-cased name
-                                method = selfClass.searchMethod(rubyName);
-                                if (method != UndefinedMethod.INSTANCE) {
-                                    field.set(null, method);
-                                }
                             }
                         }
                     } catch (IllegalAccessException iae) {
@@ -735,6 +727,65 @@ public class MiniJava implements Library {
         fieldName = fieldName.replace('.', '\\');
         
         return fieldName;
+    }
+    
+    /**
+     * Given a simple Java method name and the Java Method objects that represent
+     * all its overloads, add to the given nameSet all possible Ruby names that would
+     * be valid.
+     * 
+     * @param simpleName
+     * @param nameSet
+     * @param methods
+     */
+    protected static void getRubyNamesForJavaName(String simpleName, Set<String> nameSet, List<Method> methods) {
+            String javaPropertyName = JavaUtil.getJavaPropertyName(simpleName);
+            String rubyName = JavaUtil.getRubyCasedName(simpleName);
+            nameSet.add(rubyName);
+            String rubyPropertyName = null;
+            for (Method method: methods) {
+                Class<?>[] argTypes = method.getParameterTypes();
+                Class<?> resultType = method.getReturnType();
+                int argCount = argTypes.length;
+
+                // Add property name aliases
+                if (javaPropertyName != null) {
+                    if (rubyName.startsWith("get_")) {
+                        rubyPropertyName = rubyName.substring(4);
+                        if (argCount == 0 ||                                // getFoo      => foo
+                            argCount == 1 && argTypes[0] == int.class) {    // getFoo(int) => foo(int)
+
+                            nameSet.add(javaPropertyName);
+                            nameSet.add(rubyPropertyName);
+                            if (resultType == boolean.class) {              // getFooBar() => fooBar?, foo_bar?(*)
+                                nameSet.add(javaPropertyName + '?');
+                                nameSet.add(rubyPropertyName + '?');
+                            }
+                        }
+                    } else if (rubyName.startsWith("set_")) {
+                        rubyPropertyName = rubyName.substring(4);
+                        if (argCount == 1 && resultType == void.class) {    // setFoo(Foo) => foo=(Foo)
+                            nameSet.add(javaPropertyName + '=');
+                            nameSet.add(rubyPropertyName + '=');
+                        }
+                    } else if (rubyName.startsWith("is_")) {
+                        rubyPropertyName = rubyName.substring(3);
+                        if (resultType == boolean.class) {                  // isFoo() => foo, isFoo(*) => foo(*)
+                            nameSet.add(javaPropertyName);
+                            nameSet.add(javaPropertyName + '?');
+                            nameSet.add(rubyPropertyName);
+                            nameSet.add(rubyPropertyName + '?');
+                        }
+                    }
+                }
+
+                // Additionally add ?-postfixed aliases to any boolean methods and properties.
+                if (resultType == boolean.class) {
+                    // is_something?, contains_thing?
+                    nameSet.add(simpleName + '?');
+                    nameSet.add(rubyName + '?');
+                }
+            }
     }
     
     protected static Class findClass(ClassLoader classLoader, String className) throws ClassNotFoundException {
@@ -1382,5 +1433,65 @@ public class MiniJava implements Library {
         } else {
             return (Class) rubyToJava(obj.callMethod(obj.getRuntime().getCurrentContext(), "java_class"));
         }
+    }
+    
+    public static DynamicMethod searchMethod(RubyClass clazz, String name1) {
+        return clazz.searchMethod(name1);
+    }
+    
+    public static DynamicMethod searchMethod(RubyClass clazz, String name1, String name2) {
+        DynamicMethod method = clazz.searchMethod(name1);
+        if (method == UndefinedMethod.INSTANCE) {
+            return searchMethod(clazz, name2);
+        }
+        return method;
+    }
+    
+    public static DynamicMethod searchMethod(RubyClass clazz, String name1, String name2, String name3) {
+        DynamicMethod method = clazz.searchMethod(name1);
+        if (method == UndefinedMethod.INSTANCE) {
+            return searchMethod(clazz, name2, name3);
+        }
+        return method;
+    }
+    
+    public static DynamicMethod searchMethod(RubyClass clazz, String name1, String name2, String name3, String name4) {
+        DynamicMethod method = clazz.searchMethod(name1);
+        if (method == UndefinedMethod.INSTANCE) {
+            return searchMethod(clazz, name2, name3, name4);
+        }
+        return method;
+    }
+    
+    public static DynamicMethod searchMethod(RubyClass clazz, String name1, String name2, String name3, String name4, String name5) {
+        DynamicMethod method = clazz.searchMethod(name1);
+        if (method == UndefinedMethod.INSTANCE) {
+            return searchMethod(clazz, name2, name3, name4, name5);
+        }
+        return method;
+    }
+    
+    public static DynamicMethod searchMethod(RubyClass clazz, String name1, String name2, String name3, String name4, String name5, String name6) {
+        DynamicMethod method = clazz.searchMethod(name1);
+        if (method == UndefinedMethod.INSTANCE) {
+            return searchMethod(clazz, name2, name3, name4, name5, name6);
+        }
+        return method;
+    }
+    
+    public static DynamicMethod searchMethod(RubyClass clazz, String name1, String name2, String name3, String name4, String name5, String name6, String name7) {
+        DynamicMethod method = clazz.searchMethod(name1);
+        if (method == UndefinedMethod.INSTANCE) {
+            return searchMethod(clazz, name2, name3, name4, name5, name6, name7);
+        }
+        return method;
+    }
+    
+    public static DynamicMethod searchMethod(RubyClass clazz, String name1, String name2, String name3, String name4, String name5, String name6, String name7, String name8) {
+        DynamicMethod method = clazz.searchMethod(name1);
+        if (method == UndefinedMethod.INSTANCE) {
+            return searchMethod(clazz, name2, name3, name4, name5, name6, name8);
+        }
+        return method;
     }
 }

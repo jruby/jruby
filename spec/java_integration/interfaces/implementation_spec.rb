@@ -4,6 +4,8 @@ import "java_integration.fixtures.SingleMethodInterface"
 import "java_integration.fixtures.UsesSingleMethodInterface"
 import "java_integration.fixtures.DescendantOfSingleMethodInterface"
 import "java_integration.fixtures.UsesDescendantOfSingleMethodInterface"
+import "java_integration.fixtures.BeanLikeInterface"
+import "java_integration.fixtures.BeanLikeInterfaceHandler"
 
 describe "Single-method Java interfaces implemented in Ruby" do
   before :all do
@@ -120,6 +122,103 @@ describe "Single-method Java interfaces" do
     SingleMethodInterface.should === impl
     
     UsesSingleMethodInterface.callIt(impl).should == :callIt
+  end
+end
+
+describe "A bean-like Java interface" do
+  it "allows implementation with attr* methods" do
+    myimpl1 = Class.new do
+      include BeanLikeInterface
+      attr_accessor :value, :my_value, :foo, :my_foo
+    end
+    myimpl2 = Class.new do
+      include BeanLikeInterface
+      attr_accessor :value, :myValue, :foo, :myFoo
+    end
+    [myimpl1, myimpl2].each do |impl|
+      bli = impl.new
+      blih = BeanLikeInterfaceHandler.new(bli)
+      lambda do
+        blih.setValue(1)
+        blih.setMyValue(2)
+        blih.setFoo(true)
+        blih.setMyFoo(true)
+        blih.getValue().should == 1
+        blih.getMyValue().should == 2
+        blih.isFoo().should == true
+        blih.isMyFoo().should == true
+      end.should_not raise_error
+    end
+  end
+  
+  it "allows implementing boolean methods with ? names" do
+    myimpl1 = Class.new do
+      include BeanLikeInterface
+      def foo?
+        true
+      end
+      def my_foo?
+        true
+      end
+      def friendly?
+        true
+      end
+      def supah_friendly?
+        true
+      end
+    end
+    myimpl2 = Class.new do
+      include BeanLikeInterface
+      def foo?
+        true
+      end
+      def myFoo?
+        true
+      end
+      def friendly?
+        true
+      end
+      def supahFriendly?
+        true
+      end
+    end
+    [myimpl1, myimpl2].each do |impl|
+      bli = impl.new
+      blih = BeanLikeInterfaceHandler.new(bli)
+      lambda do
+        blih.isFoo().should == true
+        blih.isMyFoo().should == true
+        blih.friendly().should == true
+        blih.supahFriendly().should == true
+      end.should_not raise_error
+    end
+  end
+  
+  it "does not honor beanified implementations of methods that don't match javabean spec" do
+    myimpl1 = Class.new do
+      include BeanLikeInterface
+      def something_foo(x)
+        x
+      end
+      def something_foo=(x,y)
+        y
+      end
+    end
+    myimpl2 = Class.new do
+      include BeanLikeInterface
+      def somethingFoo(x)
+        x
+      end
+      def somethingFoo=(x,y)
+        y
+      end
+    end
+    [myimpl1, myimpl2].each do |impl|
+      bli = impl.new
+      blih = BeanLikeInterfaceHandler.new(bli)
+      lambda { blih.getSomethingFoo(1) }.should raise_error(NameError)
+      lambda { blih.setSomethingFoo(1,2) }.should raise_error(NameError)
+    end
   end
 end
 
