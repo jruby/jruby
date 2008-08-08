@@ -35,14 +35,54 @@ describe "Single-method Java interfaces implemented in Ruby" do
 
   it "should be implemented with 'include InterfaceClass'" do
     UsesSingleMethodInterface.callIt(@value_holder1.new(1)).should == 1
+    UsesSingleMethodInterface.callIt(@value_holder2.new(1)).should == 1
   end
 
   it "should be cast-able to the interface on the Java side" do
     UsesSingleMethodInterface.castAndCallIt(@value_holder1.new(2)).should == 2
+    UsesSingleMethodInterface.castAndCallIt(@value_holder2.new(2)).should == 2
   end
   
   it "should allow implementation using the underscored version" do
     UsesSingleMethodInterface.callIt(@value_holder2.new(3)).should == 3
+  end
+  
+  it "should allow reopening implementations" do
+    @value_holder3 = Class.new do
+      include SingleMethodInterface
+      def initialize(val)
+        @value = val
+      end
+      def callIt
+        @value
+      end
+    end
+    obj = @value_holder3.new(4);
+    UsesSingleMethodInterface.callIt(obj).should == 4
+    @value_holder3.class_eval do
+      def callIt
+        @value + @value
+      end
+    end
+    UsesSingleMethodInterface.callIt(obj).should == 8
+    
+    @value_holder3 = Class.new do
+      include SingleMethodInterface
+      def initialize(val)
+        @value = val
+      end
+      def call_it
+        @value
+      end
+    end
+    obj = @value_holder3.new(4);
+    UsesSingleMethodInterface.callIt(obj).should == 4
+    @value_holder3.class_eval do
+      def call_it
+        @value + @value
+      end
+    end
+    UsesSingleMethodInterface.callIt(obj).should == 8
   end
 end
 

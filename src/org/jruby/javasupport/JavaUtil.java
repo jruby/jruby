@@ -1102,4 +1102,23 @@ public class JavaUtil {
         Matcher m = CAMEL_CASE_SPLITTER.matcher(javaCasedName);
         return m.replaceAll("$1_$2").toLowerCase();
     }
+
+    private static final Pattern RUBY_CASE_SPLITTER = Pattern.compile("([a-z][0-9]*)_([a-z][0-9])");    
+    public static String getJavaCasedName(String javaCasedName) {
+        Matcher m = RUBY_CASE_SPLITTER.matcher(javaCasedName);
+        StringBuffer newName = new StringBuffer();
+        if (!m.matches()) {
+            return null;
+        }
+
+        while (m.find()) {
+            if (m.group(2).length() == 1) {
+                m.appendReplacement(newName, m.group(1) + Character.toUpperCase(m.group(2).charAt(0)));
+            } else {
+                m.appendReplacement(newName, m.group(1) + Character.toUpperCase(m.group(2).charAt(0)) + m.group(2).substring(1));
+            }
+        }
+
+        return newName.toString();
+    }
 }

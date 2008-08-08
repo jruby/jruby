@@ -679,9 +679,11 @@ public class MiniJava implements Library {
         try {
             for (Map.Entry<String, List<Method>> entry : simpleToAll.entrySet()) {
                 String simpleName = entry.getKey();
+                String rubyName = JavaUtil.getRubyCasedName(simpleName);
 
                 Field simpleField = newClass.getField(simpleName);
                 allFields.put(simpleName, simpleField);
+                allFields.put(rubyName, simpleField);
             }
         } catch (IllegalArgumentException ex) {
             throw error(ruby, ex, "Could not prepare method fields: " + newClass);
@@ -704,13 +706,13 @@ public class MiniJava implements Library {
                     try {
                         synchronized (self) {
                             DynamicMethod method = selfClass.searchMethod(methodName);
-                            if (method != null) {
+                            if (method != UndefinedMethod.INSTANCE) {
                                 field.set(null, method);
                             }
                             if (!rubyName.equals(methodName)) {
                                 // try ruby-cased name
                                 method = selfClass.searchMethod(rubyName);
-                                if (method != null) {
+                                if (method != UndefinedMethod.INSTANCE) {
                                     field.set(null, method);
                                 }
                             }
