@@ -35,12 +35,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
-import org.jruby.javasupport.methods.StaticFieldGetter;
-import org.jruby.javasupport.methods.StaticMethodInvoker;
-import org.jruby.javasupport.methods.InstanceFieldGetter;
-import org.jruby.javasupport.methods.InstanceFieldSetter;
-import org.jruby.javasupport.methods.InstanceMethodInvoker;
-import org.jruby.javasupport.methods.StaticFieldSetter;
+import org.jruby.java.invokers.StaticFieldGetter;
+import org.jruby.java.invokers.StaticMethodInvoker;
+import org.jruby.java.invokers.InstanceFieldGetter;
+import org.jruby.java.invokers.InstanceFieldSetter;
+import org.jruby.java.invokers.InstanceMethodInvoker;
+import org.jruby.java.invokers.StaticFieldSetter;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
@@ -73,8 +73,8 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.proxies.ArrayJavaProxy;
-import org.jruby.javasupport.methods.ConstructorInvoker;
-import org.jruby.javasupport.methods.DynalangInstanceInvoker;
+import org.jruby.java.invokers.ConstructorInvoker;
+import org.jruby.java.invokers.DynalangInstanceInvoker;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;

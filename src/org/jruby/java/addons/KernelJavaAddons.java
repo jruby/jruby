@@ -1,5 +1,6 @@
-package org.jruby.javasupport;
+package org.jruby.java.addons;
 
+import org.jruby.javasupport.*;
 import org.jruby.RubyKernel;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;

@@ -1,4 +1,4 @@
-package org.jruby.javasupport.methods;
+package org.jruby.java.invokers;
 
 import org.jruby.javasupport.*;
 import java.lang.reflect.Method;

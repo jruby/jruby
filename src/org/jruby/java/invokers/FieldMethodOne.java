@@ -1,4 +1,4 @@
-package org.jruby.javasupport.methods;
+package org.jruby.java.invokers;
 
 import java.lang.reflect.Field;
 import org.jruby.Ruby;
