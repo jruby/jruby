@@ -158,52 +158,69 @@ describe "A bean-like Java interface" do
       def isMyFoo; true; end
       def is_my_foo; false; end
     end
+    BeanLikeInterfaceHandler.new(myimpl1.new).isMyFoo().should == true
     # Ruby name before beaned Java name
     myimpl2 = Class.new do
       include BeanLikeInterface
       def is_my_foo; true; end
       def myFoo; false; end
     end
+    BeanLikeInterfaceHandler.new(myimpl2.new).isMyFoo().should == true
     # Beaned Java name before beaned Ruby name
     myimpl3 = Class.new do
       include BeanLikeInterface
       def myFoo; true; end
       def my_foo; false; end
     end
+    BeanLikeInterfaceHandler.new(myimpl3.new).isMyFoo().should == true
     # Beaned Ruby name before q-marked beaned Java name
     myimpl4 = Class.new do
       include BeanLikeInterface
       def my_foo; true; end
       def myFoo?; false; end
     end
+    BeanLikeInterfaceHandler.new(myimpl4.new).isMyFoo().should == true
     # Q-marked beaned Java name before Q-marked beaned Ruby name
     myimpl5 = Class.new do
       include BeanLikeInterface
       def myFoo?; true; end
       def my_foo?; false; end
     end
-    # Q-marked beaned Ruby name before q-marked unbeaned Java name
+    BeanLikeInterfaceHandler.new(myimpl5.new).isMyFoo().should == true
+    # Confirm q-marked beaned Ruby name works
     myimpl6 = Class.new do
       include BeanLikeInterface
       def my_foo?; true; end
-      def isMyFoo?; false; end
     end
-    # Q-marked unbeaned Java name before Q-marked Ruby name
-    myimpl7 = Class.new do
-      include BeanLikeInterface
-      def isMyFoo?; true; end
-      def is_my_foo?; false; end
-    end
-    # Confirm q-marked unbeaned Ruby name works
-    myimpl8 = Class.new do
-      include BeanLikeInterface
-      def is_my_foo?; true; end
-    end
+    BeanLikeInterfaceHandler.new(myimpl6.new).isMyFoo().should == true
 
-    [myimpl1, myimpl2, myimpl3, myimpl4, myimpl5, myimpl6, myimpl7, myimpl8].each do |impl|
-      blih = BeanLikeInterfaceHandler.new(impl.new)
-      blih.isMyFoo().should == true
+    # Java name before Ruby name
+    myimpl1 = Class.new do
+      include BeanLikeInterface
+      def supahFriendly; true; end
+      def supah_friendly; false; end
     end
+    BeanLikeInterfaceHandler.new(myimpl1.new).supahFriendly().should == true
+    # Ruby name before q-marked Java name
+    myimpl2 = Class.new do
+      include BeanLikeInterface
+      def supah_friendly; true; end
+      def supahFriendly?; false; end
+    end
+    BeanLikeInterfaceHandler.new(myimpl2.new).supahFriendly().should == true
+    # Q-marked Java name before Q-marked Ruby name
+    myimpl3 = Class.new do
+      include BeanLikeInterface
+      def supahFriendly?; true; end
+      def supah_friendly?; false; end
+    end
+    BeanLikeInterfaceHandler.new(myimpl3.new).supahFriendly().should == true
+    # confirm Q-marked Ruby name works
+    myimpl4 = Class.new do
+      include BeanLikeInterface
+      def supah_friendly?; true; end
+    end
+    BeanLikeInterfaceHandler.new(myimpl4.new).supahFriendly().should == true
   end
   
   it "searches for implementation names in a predictable order" do

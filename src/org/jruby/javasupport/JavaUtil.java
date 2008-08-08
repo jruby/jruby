@@ -34,11 +34,15 @@
 package org.jruby.javasupport;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jruby.Ruby;
@@ -1120,5 +1124,68 @@ public class JavaUtil {
         }
 
         return newName.toString();
+    }
+    
+    /**
+     * Given a simple Java method name and the Java Method objects that represent
+     * all its overloads, add to the given nameSet all possible Ruby names that would
+     * be valid.
+     * 
+     * @param simpleName
+     * @param nameSet
+     * @param methods
+     */
+    public static Set<String> getRubyNamesForJavaName(String javaName, List<Method> methods) {
+        String javaPropertyName = JavaUtil.getJavaPropertyName(javaName);
+        String rubyName = JavaUtil.getRubyCasedName(javaName);
+        Set<String> nameSet = new LinkedHashSet<String>();
+        nameSet.add(javaName);
+        nameSet.add(rubyName);
+        String rubyPropertyName = null;
+        for (Method method: methods) {
+            Class<?>[] argTypes = method.getParameterTypes();
+            Class<?> resultType = method.getReturnType();
+            int argCount = argTypes.length;
+
+            // Add property name aliases
+            if (javaPropertyName != null) {
+                if (rubyName.startsWith("get_")) {
+                    rubyPropertyName = rubyName.substring(4);
+                    if (argCount == 0 ||                                // getFoo      => foo
+                        argCount == 1 && argTypes[0] == int.class) {    // getFoo(int) => foo(int)
+
+                        nameSet.add(javaPropertyName);
+                        nameSet.add(rubyPropertyName);
+                        if (resultType == boolean.class) {              // getFooBar() => fooBar?, foo_bar?(*)
+                            nameSet.add(javaPropertyName + '?');
+                            nameSet.add(rubyPropertyName + '?');
+                        }
+                    }
+                } else if (rubyName.startsWith("set_")) {
+                    rubyPropertyName = rubyName.substring(4);
+                    if (argCount == 1 && resultType == void.class) {    // setFoo(Foo) => foo=(Foo)
+                        nameSet.add(javaPropertyName + '=');
+                        nameSet.add(rubyPropertyName + '=');
+                    }
+                } else if (rubyName.startsWith("is_")) {
+                    rubyPropertyName = rubyName.substring(3);
+                    if (resultType == boolean.class) {                  // isFoo() => foo, isFoo(*) => foo(*)
+                        nameSet.add(javaPropertyName);
+                        nameSet.add(rubyPropertyName);
+                        nameSet.add(javaPropertyName + '?');
+                        nameSet.add(rubyPropertyName + '?');
+                    }
+                }
+            } else {
+                // If not a property, but is boolean add ?-postfixed aliases.
+                if (resultType == boolean.class) {
+                    // is_something?, contains_thing?
+                    nameSet.add(javaName + '?');
+                    nameSet.add(rubyName + '?');
+                }
+            }
+        }
+        
+        return nameSet;
     }
 }
