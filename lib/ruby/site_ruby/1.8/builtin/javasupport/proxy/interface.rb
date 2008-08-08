@@ -13,8 +13,8 @@ end
 
 class InterfaceJavaProxy < JavaProxy
   class << self  
-    alias_method :new_proxy, :new
-
+#    alias_method :new_proxy, :new
+#
     def new(*outer_args, &block)
       proxy = allocate
       JavaUtilities.set_java_object(proxy, Java.new_proxy_instance(proxy.class.java_class) { |proxy2, method, *args|
@@ -25,19 +25,15 @@ class InterfaceJavaProxy < JavaProxy
       proxy
     end
 
-    def +(other)
-      MultipleInterfaceJavaProxy.new(lambda{|*args| new_proxy(*args)}, self, other)
-    end
-    
-    alias_method :old_eqq, :===
-    
-    def ===(other)
-      if other.respond_to?(:java_object)
-        other.java_object.java_class.interfaces.include?(self.java_class)
-      else
-        old_eqq(other)
-      end
-    end
+#    alias_method :old_eqq, :===
+#    
+#    def ===(other)
+#      if other.respond_to?(:java_object)
+#        other.java_object.java_class.interfaces.include?(self.java_class)
+#      else
+#        old_eqq(other)
+#      end
+#    end
   end
     
   def self.impl(*meths, &block)
@@ -49,50 +45,6 @@ class InterfaceJavaProxy < JavaProxy
         super
       end
     end.new
-  end
-end
-
-# TODO: I think we can drop this now
-class MultipleInterfaceJavaProxy
-  attr_reader :interfaces
-    
-  def initialize(creator, *args)
-    @creator = creator
-    @interfaces = args.map{ |v| into_arr(v) }.flatten
-  end
-
-  def <<(other)
-    @interfaces += into_arr(other)
-  end
-
-  def +(other)
-    MultipleInterfaceJavaProxy.new @creator, *(@interfaces + into_arr(other))
-  end
-    
-  def new(*outer_args, &block)
-    @interfaces.freeze unless @interfaces.frozen?
-    proxy = @creator.call(*outer_args)
-    JavaUtilities.set_java_object(proxy, Java.new_proxy_instance(*@interfaces) { |proxy2, method, *args|
-      args.collect! { |arg| Java.java_to_ruby(arg) }
-      Java.ruby_to_java(proxy.__jsend!(method.name, *args))
-    })
-    proxy
-  end
-
-  def ===(other)
-    if other.respond_to?(:java_object)
-      (@interfaces - other.java_object.java_class.interfaces) == []
-    else
-      super
-    end
-  end
-
-  private
-  def into_arr(other)
-    case other
-      when MultipleInterfaceJavaProxy: other.interfaces
-      else [other.java_class]
-    end
   end
 end
 
