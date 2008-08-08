@@ -14,7 +14,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -393,7 +393,7 @@ public class MiniJava implements Library {
         for (Map.Entry<String, List<Method>> entry : simpleToAll.entrySet()) {
             String simpleName = entry.getKey();
             
-            Set<String> nameSet = new HashSet<String>();
+            Set<String> nameSet = new LinkedHashSet<String>();
             nameSet.add(simpleName);
 
             getRubyNamesForJavaName(simpleName, nameSet, entry.getValue());
@@ -439,6 +439,7 @@ public class MiniJava implements Library {
                 // undefined, call method_missing
                 mv.pop();
                 // exit monitor before making call
+                // FIXME: this not being in a finally is a little worrisome
                 mv.getstatic(name, "rubyClass", ci(RubyClass.class));
                 mv.monitorexit();
                 mv.aload(0);
@@ -677,9 +678,8 @@ public class MiniJava implements Library {
 
                 Field simpleField = newClass.getField(simpleName);
                 allFields.put(simpleName, simpleField);
-                allFields.put(rubyName, simpleField);
                 
-                Set<String> nameSet = new HashSet<String>();
+                Set<String> nameSet = new LinkedHashSet<String>();
                 getRubyNamesForJavaName(simpleName, nameSet, entry.getValue());
                 for (String name : nameSet) {
                     allFields.put(name, simpleField);
@@ -739,53 +739,53 @@ public class MiniJava implements Library {
      * @param methods
      */
     protected static void getRubyNamesForJavaName(String simpleName, Set<String> nameSet, List<Method> methods) {
-            String javaPropertyName = JavaUtil.getJavaPropertyName(simpleName);
-            String rubyName = JavaUtil.getRubyCasedName(simpleName);
-            nameSet.add(rubyName);
-            String rubyPropertyName = null;
-            for (Method method: methods) {
-                Class<?>[] argTypes = method.getParameterTypes();
-                Class<?> resultType = method.getReturnType();
-                int argCount = argTypes.length;
+        String javaPropertyName = JavaUtil.getJavaPropertyName(simpleName);
+        String rubyName = JavaUtil.getRubyCasedName(simpleName);
+        nameSet.add(rubyName);
+        String rubyPropertyName = null;
+        for (Method method: methods) {
+            Class<?>[] argTypes = method.getParameterTypes();
+            Class<?> resultType = method.getReturnType();
+            int argCount = argTypes.length;
 
-                // Add property name aliases
-                if (javaPropertyName != null) {
-                    if (rubyName.startsWith("get_")) {
-                        rubyPropertyName = rubyName.substring(4);
-                        if (argCount == 0 ||                                // getFoo      => foo
-                            argCount == 1 && argTypes[0] == int.class) {    // getFoo(int) => foo(int)
+            // Add property name aliases
+            if (javaPropertyName != null) {
+                if (rubyName.startsWith("get_")) {
+                    rubyPropertyName = rubyName.substring(4);
+                    if (argCount == 0 ||                                // getFoo      => foo
+                        argCount == 1 && argTypes[0] == int.class) {    // getFoo(int) => foo(int)
 
-                            nameSet.add(javaPropertyName);
-                            nameSet.add(rubyPropertyName);
-                            if (resultType == boolean.class) {              // getFooBar() => fooBar?, foo_bar?(*)
-                                nameSet.add(javaPropertyName + '?');
-                                nameSet.add(rubyPropertyName + '?');
-                            }
-                        }
-                    } else if (rubyName.startsWith("set_")) {
-                        rubyPropertyName = rubyName.substring(4);
-                        if (argCount == 1 && resultType == void.class) {    // setFoo(Foo) => foo=(Foo)
-                            nameSet.add(javaPropertyName + '=');
-                            nameSet.add(rubyPropertyName + '=');
-                        }
-                    } else if (rubyName.startsWith("is_")) {
-                        rubyPropertyName = rubyName.substring(3);
-                        if (resultType == boolean.class) {                  // isFoo() => foo, isFoo(*) => foo(*)
-                            nameSet.add(javaPropertyName);
+                        nameSet.add(javaPropertyName);
+                        nameSet.add(rubyPropertyName);
+                        if (resultType == boolean.class) {              // getFooBar() => fooBar?, foo_bar?(*)
                             nameSet.add(javaPropertyName + '?');
-                            nameSet.add(rubyPropertyName);
                             nameSet.add(rubyPropertyName + '?');
                         }
                     }
-                }
-
-                // Additionally add ?-postfixed aliases to any boolean methods and properties.
-                if (resultType == boolean.class) {
-                    // is_something?, contains_thing?
-                    nameSet.add(simpleName + '?');
-                    nameSet.add(rubyName + '?');
+                } else if (rubyName.startsWith("set_")) {
+                    rubyPropertyName = rubyName.substring(4);
+                    if (argCount == 1 && resultType == void.class) {    // setFoo(Foo) => foo=(Foo)
+                        nameSet.add(javaPropertyName + '=');
+                        nameSet.add(rubyPropertyName + '=');
+                    }
+                } else if (rubyName.startsWith("is_")) {
+                    rubyPropertyName = rubyName.substring(3);
+                    if (resultType == boolean.class) {                  // isFoo() => foo, isFoo(*) => foo(*)
+                        nameSet.add(javaPropertyName);
+                        nameSet.add(rubyPropertyName);
+                        nameSet.add(javaPropertyName + '?');
+                        nameSet.add(rubyPropertyName + '?');
+                    }
                 }
             }
+
+            // Additionally add ?-postfixed aliases to any boolean methods and properties.
+            if (resultType == boolean.class) {
+                // is_something?, contains_thing?
+                nameSet.add(simpleName + '?');
+                nameSet.add(rubyName + '?');
+            }
+        }
     }
     
     protected static Class findClass(ClassLoader classLoader, String className) throws ClassNotFoundException {
@@ -1490,7 +1490,7 @@ public class MiniJava implements Library {
     public static DynamicMethod searchMethod(RubyClass clazz, String name1, String name2, String name3, String name4, String name5, String name6, String name7, String name8) {
         DynamicMethod method = clazz.searchMethod(name1);
         if (method == UndefinedMethod.INSTANCE) {
-            return searchMethod(clazz, name2, name3, name4, name5, name6, name8);
+            return searchMethod(clazz, name2, name3, name4, name5, name6, name7, name8);
         }
         return method;
     }

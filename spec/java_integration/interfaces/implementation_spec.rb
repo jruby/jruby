@@ -152,6 +152,61 @@ describe "A bean-like Java interface" do
   end
   
   it "allows implementing boolean methods with ? names" do
+    # Java name before Ruby name (un-beaned)
+    myimpl1 = Class.new do
+      include BeanLikeInterface
+      def isMyFoo; true; end
+      def is_my_foo; false; end
+    end
+    # Ruby name before beaned Java name
+    myimpl2 = Class.new do
+      include BeanLikeInterface
+      def is_my_foo; true; end
+      def myFoo; false; end
+    end
+    # Beaned Java name before beaned Ruby name
+    myimpl3 = Class.new do
+      include BeanLikeInterface
+      def myFoo; true; end
+      def my_foo; false; end
+    end
+    # Beaned Ruby name before q-marked beaned Java name
+    myimpl4 = Class.new do
+      include BeanLikeInterface
+      def my_foo; true; end
+      def myFoo?; false; end
+    end
+    # Q-marked beaned Java name before Q-marked beaned Ruby name
+    myimpl5 = Class.new do
+      include BeanLikeInterface
+      def myFoo?; true; end
+      def my_foo?; false; end
+    end
+    # Q-marked beaned Ruby name before q-marked unbeaned Java name
+    myimpl6 = Class.new do
+      include BeanLikeInterface
+      def my_foo?; true; end
+      def isMyFoo?; false; end
+    end
+    # Q-marked unbeaned Java name before Q-marked Ruby name
+    myimpl7 = Class.new do
+      include BeanLikeInterface
+      def isMyFoo?; true; end
+      def is_my_foo?; false; end
+    end
+    # Confirm q-marked unbeaned Ruby name works
+    myimpl8 = Class.new do
+      include BeanLikeInterface
+      def is_my_foo?; true; end
+    end
+
+    [myimpl1, myimpl2, myimpl3, myimpl4, myimpl5, myimpl6, myimpl7, myimpl8].each do |impl|
+      blih = BeanLikeInterfaceHandler.new(impl.new)
+      blih.isMyFoo().should == true
+    end
+  end
+  
+  it "searches for implementation names in a predictable order" do
     myimpl1 = Class.new do
       include BeanLikeInterface
       def foo?
