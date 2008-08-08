@@ -6,27 +6,43 @@ import "java_integration.fixtures.DescendantOfSingleMethodInterface"
 import "java_integration.fixtures.UsesDescendantOfSingleMethodInterface"
 
 describe "Single-method Java interfaces implemented in Ruby" do
-  class ValueHolder
-    include SingleMethodInterface
-    def initialize(val)
-      @value = val
+  before :all do
+    @value_holder1 = Class.new do
+      include SingleMethodInterface
+      def initialize(val)
+        @value = val
+      end
+      def callIt
+        @value
+      end
     end
-    def callIt
-      @value
+
+    @value_holder2 = Class.new do
+      include SingleMethodInterface
+      def initialize(val)
+        @value = val
+      end
+      def call_it
+        @value
+      end
     end
   end
   
   it "should be kind_of? the interface" do
-    ValueHolder.new(1).should be_kind_of(SingleMethodInterface)
-    SingleMethodInterface.should === ValueHolder.new(1)
+    @value_holder1.new(1).should be_kind_of(SingleMethodInterface)
+    SingleMethodInterface.should === @value_holder1.new(1)
   end
 
   it "should be implemented with 'include InterfaceClass'" do
-    UsesSingleMethodInterface.callIt(ValueHolder.new(1)).should == 1
+    UsesSingleMethodInterface.callIt(@value_holder1.new(1)).should == 1
   end
 
   it "should be cast-able to the interface on the Java side" do
-    UsesSingleMethodInterface.castAndCallIt(ValueHolder.new(2)).should == 2
+    UsesSingleMethodInterface.castAndCallIt(@value_holder1.new(2)).should == 2
+  end
+  
+  it "should allow implementation using the underscored version" do
+    UsesSingleMethodInterface.callIt(@value_holder2.new(3)).should == 3
   end
 end
 

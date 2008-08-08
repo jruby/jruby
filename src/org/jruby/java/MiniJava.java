@@ -390,8 +390,10 @@ public class MiniJava implements Library {
         // for each simple method name, implement the complex methods, calling the simple version
         for (Map.Entry<String, List<Method>> entry : simpleToAll.entrySet()) {
             String simpleName = entry.getKey();
+            String rubyName = JavaUtil.getRubyCasedName(simpleName);
+            boolean rubyNameIsDifferent = !rubyName.equals(simpleName);
             
-            // all methods dispatch to the simple version by default, which is method_missing normally
+            // all methods dispatch to the simple version by default, or method_missing if it's not present
             cw.visitField(ACC_STATIC | ACC_PUBLIC | ACC_VOLATILE, simpleName, ci(DynamicMethod.class), null, null).visitEnd();
             
             for (Method method : entry.getValue()) {
@@ -408,7 +410,7 @@ public class MiniJava implements Library {
                 // Try to look up field for simple name
 
                 // lock self
-                mv.aload(0);
+                mv.getstatic(name, "rubyClass", ci(RubyClass.class));
                 mv.monitorenter();
                 
                 // get field
@@ -427,10 +429,23 @@ public class MiniJava implements Library {
                 mv.getstatic(p(UndefinedMethod.class), "INSTANCE", ci(UndefinedMethod.class));
                 mv.if_acmpne(dispatch);
                 
+                // try the Ruby-cased version if it's different
+                if (rubyNameIsDifferent) {
+                    mv.pop();
+                    mv.getstatic(name, "rubyClass", ci(RubyClass.class));
+                    mv.ldc(rubyName);
+                    mv.invokevirtual(p(RubyClass.class), "searchMethod", sig(DynamicMethod.class, String.class));
+                    mv.dup();
+
+                    // check if it's UndefinedMethod
+                    mv.getstatic(p(UndefinedMethod.class), "INSTANCE", ci(UndefinedMethod.class));
+                    mv.if_acmpne(dispatch);
+                }
+                
                 // undefined, call method_missing
                 mv.pop();
                 // exit monitor before making call
-                mv.aload(0);
+                mv.getstatic(name, "rubyClass", ci(RubyClass.class));
                 mv.monitorexit();
                 mv.aload(0);
                 mv.getfield(name, "self", ci(IRubyObject.class));
@@ -444,7 +459,7 @@ public class MiniJava implements Library {
                 mv.dup();
                 mv.putstatic(name, simpleName, ci(DynamicMethod.class));
                 
-                mv.aload(0);
+                mv.getstatic(name, "rubyClass", ci(RubyClass.class));
                 mv.monitorexit();
                 
                 // get current context
@@ -680,14 +695,25 @@ public class MiniJava implements Library {
                 RubyClass selfClass = (RubyClass)self;
                 Ruby ruby = selfClass.getClassRuntime();
                 String methodName = args[0].asJavaString();
+                String rubyName = JavaUtil.getRubyCasedName(methodName);
                 Field field = allFields.get(methodName);
 
                 if (field == null) {
                     // do nothing, it's a non-impl method
                 } else {
                     try {
-                        synchronized (newClass) {
-                            field.set(null, selfClass.searchMethod(methodName));
+                        synchronized (self) {
+                            DynamicMethod method = selfClass.searchMethod(methodName);
+                            if (method != null) {
+                                field.set(null, method);
+                            }
+                            if (!rubyName.equals(methodName)) {
+                                // try ruby-cased name
+                                method = selfClass.searchMethod(rubyName);
+                                if (method != null) {
+                                    field.set(null, method);
+                                }
+                            }
                         }
                     } catch (IllegalAccessException iae) {
                         throw error(ruby, iae, "Could not set new method into field: " + selfClass + "." + methodName);

@@ -39,6 +39,8 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
@@ -66,10 +68,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.util.ByteList;
 
-/**
- *
- * @author Jan Arne Petersen, Alan Moore
- */
 public class JavaUtil {
 
     public static Object convertRubyToJava(IRubyObject rubyObject) {
@@ -1088,5 +1086,20 @@ public class JavaUtil {
     
     public static Object unwrapJavaObject(IRubyObject object) {
         return ((JavaObject)object.dataGetStruct()).getValue();
+    }
+
+    private static final Pattern JAVA_PROPERTY_CHOPPER = Pattern.compile("(get|set|is)([A-Z0-9])(.*)");
+    public static String getJavaPropertyName(String beanMethodName) {
+        Matcher m = JAVA_PROPERTY_CHOPPER.matcher(beanMethodName);
+
+        if (!m.find()) return null;
+        String javaPropertyName = m.group(2).toLowerCase() + m.group(3);
+        return javaPropertyName;
+    }
+
+    private static final Pattern CAMEL_CASE_SPLITTER = Pattern.compile("([a-z][0-9]*)([A-Z])");    
+    public static String getRubyCasedName(String javaCasedName) {
+        Matcher m = CAMEL_CASE_SPLITTER.matcher(javaCasedName);
+        return m.replaceAll("$1_$2").toLowerCase();
     }
 }

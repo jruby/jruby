@@ -675,10 +675,10 @@ public class JavaClass extends JavaObject {
 
     private static void assignAliases(MethodInstaller installer, Map<String, AssignedName> assignedNames) {
         String name = installer.name;
-        String rubyCasedName = getRubyCasedName(name);
+        String rubyCasedName = JavaUtil.getRubyCasedName(name);
         addUnassignedAlias(rubyCasedName,assignedNames,installer);
 
-        String javaPropertyName = getJavaPropertyName(name);
+        String javaPropertyName = JavaUtil.getJavaPropertyName(name);
         String rubyPropertyName = null;
 
         for (Method method: installer.methods) {
@@ -740,22 +740,6 @@ public class JavaClass extends JavaObject {
             }
         }
     }
-
-    private static final Pattern JAVA_PROPERTY_CHOPPER = Pattern.compile("(get|set|is)([A-Z0-9])(.*)");
-    public static String getJavaPropertyName(String beanMethodName) {
-        Matcher m = JAVA_PROPERTY_CHOPPER.matcher(beanMethodName);
-
-        if (!m.find()) return null;
-        String javaPropertyName = m.group(2).toLowerCase() + m.group(3);
-        return javaPropertyName;
-    }
-
-    private static final Pattern CAMEL_CASE_SPLITTER = Pattern.compile("([a-z][0-9]*)([A-Z])");    
-    public static String getRubyCasedName(String javaCasedName) {
-        Matcher m = CAMEL_CASE_SPLITTER.matcher(javaCasedName);
-        return m.replaceAll("$1_$2").toLowerCase();
-    }
-    
     
     // old (quasi-deprecated) interface class
     private void setupInterfaceProxy(final RubyClass proxy) {
