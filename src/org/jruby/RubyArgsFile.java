@@ -40,7 +40,7 @@ import org.jruby.util.ByteList;
 
 public class RubyArgsFile {
     private static final class ArgsFileData {
-        private Ruby runtime;
+        private final Ruby runtime;
         public ArgsFileData(Ruby runtime) {
             this.runtime = runtime;
         }

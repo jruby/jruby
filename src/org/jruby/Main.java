@@ -59,7 +59,7 @@ import org.jruby.util.SimpleSampler;
  */
 public class Main {
     private boolean hasPrintedUsage = false;
-    private RubyInstanceConfig config;
+    private final RubyInstanceConfig config;
 
     public Main(RubyInstanceConfig config) {
         this.config = config;

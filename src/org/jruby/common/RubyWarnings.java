@@ -36,7 +36,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  */
 public class RubyWarnings implements IRubyWarnings {
-    private Ruby runtime;
+    private final Ruby runtime;
 
     public RubyWarnings(Ruby runtime) {
         this.runtime = runtime;

@@ -37,7 +37,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author jpetersen
  */
 public final class ValueConverter {
-    private Ruby runtime;
+    private final Ruby runtime;
 
     public ValueConverter(Ruby runtime) {
         this.runtime = runtime;
