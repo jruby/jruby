@@ -45,7 +45,8 @@ puts "FFI stat(file) #{iter}x"
   puts Benchmark.measure {
 
     iter.times do
-      buf = Stat.allocate_out # Allocate on the heap
+      # Allocate on the java/ruby heap, data only copied out of native memory, not in to it
+      buf = Stat.alloc_out
       Posix.stat("/tmp", buf.pointer)
     end
   }

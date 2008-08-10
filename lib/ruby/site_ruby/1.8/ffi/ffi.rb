@@ -534,17 +534,17 @@ class JRuby::FFI::BaseStruct
       @pointer = MemoryPointer.new size
     end
   end
-  def self.allocate(*spec)
-    self.new(Buffer.allocate(@size), *spec)
+  def self.alloc
+    self.new(Buffer.alloc(@size))
   end
-  def self.allocate_direct(*spec)
-    self.new(MemoryPointer.allocate_direct(@size), *spec)
+  def self.alloc_direct
+    self.new(Buffer.alloc_direct(@size))
   end
-  def self.allocate_in(*spec)
-    self.new(Buffer.allocate_in(@size), *spec)
+  def self.alloc_in
+    self.new(Buffer.alloc_in(@size))
   end
-  def self.allocate_out(*spec)
-    self.new(Buffer.allocate_out(@size), *spec)
+  def self.alloc_out
+    self.new(Buffer.alloc_out(@size))
   end
   def self.size
     @size
@@ -569,6 +569,7 @@ class JRuby::FFI::BaseStruct
   end
   def clear
     @pointer.clear
+    self
   end
 end
 class JRuby::FFI::Struct < JRuby::FFI::BaseStruct

@@ -82,15 +82,15 @@ public class JNABuffer extends AbstractBuffer implements JNAMemory {
         }
         return new JNABuffer(context.getRuntime(), io, 0, size);
     }
-    @JRubyMethod(name = { "allocate", "allocate_direct", "allocateDirect" }, meta = true)
+    @JRubyMethod(name = { "alloc", "alloc_direct", "alloc_heap" }, meta = true)
     public static JNABuffer allocateDirect(ThreadContext context, IRubyObject recv, IRubyObject sizeArg) {
         return allocate(context, sizeArg, false);
     }
-    @JRubyMethod(name = { "allocate", "allocate_direct", "allocateDirect" }, meta = true)
+    @JRubyMethod(name = { "alloc", "alloc_direct", "alloc_heap" }, meta = true)
     public static JNABuffer allocateDirect(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject clearArg) {
         return allocate(context, sizeArg, clearArg.isTrue());
     }
-    @JRubyMethod(name = { "input", "allocate_in" }, meta = true)
+    @JRubyMethod(name = { "alloc_in" }, meta = true)
     public static JNABuffer allocateInput(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         if (arg instanceof RubyString) {
             final RubyString s = (RubyString) arg;
@@ -104,15 +104,15 @@ public class JNABuffer extends AbstractBuffer implements JNAMemory {
             return allocate(context, arg, false);
         }
     }
-    @JRubyMethod(name = { "input", "allocate_in" }, meta = true)
+    @JRubyMethod(name = { "alloc_in" }, meta = true)
     public static JNABuffer allocateInput(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject clearArg) {
         return allocate(context, sizeArg, clearArg.isTrue());
     }
-    @JRubyMethod(name = { "output", "allocate_out" }, meta = true)
+    @JRubyMethod(name = { "alloc_out" }, meta = true)
     public static JNABuffer allocateOutput(ThreadContext context, IRubyObject recv, IRubyObject sizeArg) {
         return allocate(context, sizeArg, false);
     }
-    @JRubyMethod(name = { "output", "allocate_out" }, meta = true)
+    @JRubyMethod(name = { "alloc_out" }, meta = true)
     public static JNABuffer allocateOutput(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject clearArg) {
         return allocate(context, sizeArg, clearArg.isTrue());
     }
