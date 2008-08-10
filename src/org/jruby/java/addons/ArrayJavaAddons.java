@@ -1,4 +1,4 @@
-package org.jruby.javasupport;
+package org.jruby.java.addons;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -7,6 +7,9 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.javasupport.JavaArray;
+import org.jruby.javasupport.JavaClass;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
