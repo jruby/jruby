@@ -30,11 +30,16 @@ package org.jruby.ext.ffi;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.RubyObject;
+import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -42,29 +47,47 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * A native function invoker
  */
-public abstract class Invoker {
+@JRubyClass(name = FFIProvider.MODULE_NAME + "::" + Invoker.INVOKER_RUBY_NAME, parent = "Object")
+public abstract class Invoker extends RubyObject {
+    static final String INVOKER_RUBY_NAME = "Invoker";
+    
     /**
      * The arity of this function.
      */
     protected final Arity arity;
     
+    public static RubyClass createInvokerClass(Ruby runtime) {
+        RubyModule module = FFIProvider.getModule(runtime);
+        RubyClass result = module.defineClassUnder(INVOKER_RUBY_NAME, 
+                module.getClass(AbstractMemoryPointer.className), 
+                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        result.defineAnnotatedMethods(Invoker.class);
+        result.defineAnnotatedConstants(Invoker.class);
+
+        return result;
+    }
+
     /**
      * Creates a new <tt>Invoker</tt> instance.
      * @param arity
      */
-    protected Invoker(int arity) {
+    protected Invoker(Ruby runtime, int arity) {
+        super(runtime, FFIProvider.getModule(runtime).fastGetClass(INVOKER_RUBY_NAME));
         this.arity = Arity.fixed(arity);
     }
+
     /**
      * Attaches this function to a ruby module or class.
      * 
      * @param module The module or class to attach the function to.
      * @param methodName The ruby name to attach the function as.
      */
-    public void attach(RubyModule module, String methodName) {
+    @JRubyMethod(name="attach")
+    public IRubyObject attach(ThreadContext context, IRubyObject module, IRubyObject methodName) {
 
-        DynamicMethod m = createDynamicMethod(module);
-        module.addMethod(methodName, m);
+        DynamicMethod m = createDynamicMethod((RubyModule) module);
+        ((RubyModule) module).addMethod(methodName.asJavaString(), m);
+        return context.getRuntime().getNil();
     }
     protected DynamicMethod createDynamicMethod(RubyModule module) {
         return new DynamicMethod(module, Visibility.PUBLIC, CallConfiguration.NO_FRAME_NO_SCOPE) {

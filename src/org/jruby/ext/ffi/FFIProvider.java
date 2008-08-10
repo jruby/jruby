@@ -28,10 +28,13 @@
 
 package org.jruby.ext.ffi;
 
+import java.io.IOException;
 import java.nio.channels.ByteChannel;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ext.ffi.io.FileDescriptorIO;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.load.Library;
 
 /**
  * Base class for all FFI providers
@@ -42,6 +45,7 @@ public abstract class FFIProvider {
      * The name of the module to place all the classes/methods under.
      */
     public static final String MODULE_NAME = "JRuby::FFI";
+    public static final String PROVIDER_RUBY_NAME = "Provider";
 
     private static final class SingletonHolder {
         private static final FFIProvider INSTANCE = getInstance();
@@ -67,6 +71,13 @@ public abstract class FFIProvider {
     }
     protected FFIProvider() {}
 
+    public static class Service implements Library {
+        public void load(final Ruby runtime, boolean wrap) throws IOException {
+            RubyModule ffi = runtime.defineModuleUnder("FFI", runtime.defineModule("JRuby"));
+            FFIProvider provider = FFIProvider.getInstance();
+            provider.setup(runtime, ffi);
+        }
+    }
     /**
      * Gets an instance of <tt>FFIProvider</tt>
      * 
@@ -84,25 +95,25 @@ public abstract class FFIProvider {
      * 
      * @param module the module to register the classes under
      */
-    public void setup(RubyModule module) {
+    public void setup(Ruby runtime, RubyModule module) {
         synchronized (module) {
             if (module.fastGetClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS) == null) {
-                AbstractMemory.createAbstractMemoryClass(module.getRuntime());
+                AbstractMemory.createAbstractMemoryClass(runtime);
             }
             if (module.fastGetClass(AbstractMemoryPointer.className) == null) {
-                AbstractMemoryPointer.createMemoryPointerClass(module.getRuntime());
+                AbstractMemoryPointer.createMemoryPointerClass(runtime);
             }
             if (module.fastGetClass(AbstractBuffer.ABSTRACT_BUFFER_RUBY_CLASS) == null) {
-                AbstractBuffer.createBufferClass(module.getRuntime());
+                AbstractBuffer.createBufferClass(runtime);
             }
             if (module.fastGetClass(StructLayout.CLASS_NAME) == null) {
-                StructLayout.createStructLayoutClass(module.getRuntime());
+                StructLayout.createStructLayoutClass(runtime);
             }
             if (module.fastGetClass(StructLayoutBuilder.CLASS_NAME) == null) {
-                StructLayoutBuilder.createStructLayoutBuilderClass(module.getRuntime());
+                StructLayoutBuilder.createStructLayoutBuilderClass(runtime);
             }
             if (module.fastGetClass(FileDescriptorIO.CLASS_NAME) == null) {
-                FileDescriptorIO.createFileDescriptorIOClass(module.getRuntime());
+                FileDescriptorIO.createFileDescriptorIOClass(runtime);
             }
             
         }
@@ -117,7 +128,7 @@ public abstract class FFIProvider {
      * @param parameterTypes The parameter types the function takes.
      * @return a new <tt>Invoker</tt> instance.
      */
-    public abstract Invoker createInvoker(String libraryName, String functionName, NativeType returnType,
+    public abstract Invoker createInvoker(IRubyObject recv, String libraryName, String functionName, NativeType returnType,
             NativeType[] parameterTypes, String convention);
     
     /**

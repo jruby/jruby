@@ -45,8 +45,8 @@ final class JNAInvoker extends Invoker {
     private final FunctionInvoker functionInvoker;
     private final Marshaller[] marshallers;
 
-    public JNAInvoker(Function function, FunctionInvoker functionInvoker, Marshaller[] marshallers) {
-        super(marshallers.length);
+    public JNAInvoker(Ruby runtime, Function function, FunctionInvoker functionInvoker, Marshaller[] marshallers) {
+        super(runtime, marshallers.length);
         this.function = function;
         this.functionInvoker = functionInvoker;
         this.marshallers = marshallers;

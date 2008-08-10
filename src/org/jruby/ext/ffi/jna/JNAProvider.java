@@ -58,7 +58,7 @@ public final class JNAProvider extends FFIProvider {
     }
 
     @Override
-    public final Invoker createInvoker(String libraryName, String functionName, 
+    public final Invoker createInvoker(IRubyObject recv, String libraryName, String functionName,
             NativeType returnType, NativeType[] parameterTypes, String convention) {
 
         Function function = NativeLibrary.getInstance(libraryName).getFunction(functionName,
@@ -68,7 +68,7 @@ public final class JNAProvider extends FFIProvider {
         for (int i = 0; i < marshallers.length; ++i) {
             marshallers[i] = getMarshaller(parameterTypes[i]);
         }
-        return new JNAInvoker(function, functionInvoker, marshallers);
+        return new JNAInvoker(recv.getRuntime(), function, functionInvoker, marshallers);
     }
     
     public int getLastError() {
@@ -83,17 +83,17 @@ public final class JNAProvider extends FFIProvider {
     }
 
     @Override
-    public void setup(RubyModule module) {
-        super.setup(module);
+    public void setup(Ruby runtime, RubyModule module) {
+        super.setup(runtime, module);
         //
         // Hook up the MemoryPointer class if its not already there
         //
         synchronized (module) {
             if (module.fastGetClass(JNAMemoryPointer.MEMORY_POINTER_NAME) == null) {
-                JNAMemoryPointer.createMemoryPointerClass(module.getRuntime());
+                JNAMemoryPointer.createMemoryPointerClass(runtime);
             }
             if (module.fastGetClass(JNABuffer.BUFFER_RUBY_CLASS) == null) {
-                JNABuffer.createBufferClass(module.getRuntime());
+                JNABuffer.createBufferClass(runtime);
             }
         }
     }

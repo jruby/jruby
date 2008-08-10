@@ -54,12 +54,12 @@
 require 'java'
 require 'rbconfig'
 require 'ffi/platform'
+require 'ffi.so' # Load the JRuby implementation class
 
 module JRuby
   module FFI
     import org.jruby.ext.ffi.NativeType
     Provider = Java::org.jruby.ext.ffi.FFIProvider.instance
-    Provider.setup(self)
   end
 end
 module FFI
@@ -215,7 +215,7 @@ module JRuby::FFI
     raise FFI::SignatureError, 'FFI functions may take max 32 arguments!' if args.size > 32
 
     cargs = args.map { |e| find_type(e) }
-    invoker = Provider.createInvoker(lib, name, find_type(ret),
+    invoker = Provider.createInvoker(self, lib, name, find_type(ret),
       cargs.to_java(NativeType), convention.to_s)
     raise FFI::NotFoundError.new(name, lib) unless invoker
     return invoker
@@ -323,7 +323,7 @@ module FFI
     raise SignatureError, 'FFI functions may take max 32 arguments!' if args.size > 32
 
     cargs = args.map { |e| find_type(e) }
-    invoker = JRuby::FFI::Provider.createInvoker(lib, name, find_type(ret),
+    invoker = JRuby::FFI::Provider.createInvoker(self, lib, name, find_type(ret),
       cargs.to_java(JRuby::FFI::NativeType), convention.to_s)
     raise NotFoundError.new(name, lib) unless invoker
     return invoker
