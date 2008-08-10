@@ -56,5 +56,15 @@ public enum NativeType {
      */
     STRING,
     /** A Rubinus :string arg - copies data both ways, and nul terminates */
-    RBXSTRING; 
+    RBXSTRING;
+    public int intValue() {
+        return ordinal();
+    }
+    public static final NativeType valueOf(int type) {
+        NativeType[] values = NativeType.values();
+        if (type < 0 || type >= values.length) {
+            return NativeType.VOID;
+        }
+        return NativeType.values()[type];
+    }
 }

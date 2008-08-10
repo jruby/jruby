@@ -110,7 +110,7 @@ public final class StructLayoutBuilder extends RubyObject {
     public IRubyObject add(ThreadContext context, IRubyObject[] args) {
         final Ruby runtime = context.getRuntime();
         IRubyObject name = args[0];
-        NativeType type = (NativeType) Util.convertParameter(args[1], NativeType.class);
+        NativeType type = NativeType.valueOf(Util.int32Value(args[1]));
         int offset = args.length > 2 ? Util.int32Value(args[2]) : -1;
         int align = 8, sizeBits = 8;
         switch (type) {

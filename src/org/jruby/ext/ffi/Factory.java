@@ -101,8 +101,10 @@ public abstract class Factory {
             for (NativeType type : NativeType.values()) {
                 nativeType.defineConstant(type.name(), runtime.newFixnum(type.ordinal()));
             }
+            Platform.getPlatform().init(runtime, module);
         }
     }
+    
     protected abstract FFIProvider newProvider(Ruby runtime);
     
     /**

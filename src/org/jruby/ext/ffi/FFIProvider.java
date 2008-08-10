@@ -72,16 +72,7 @@ public abstract class FFIProvider extends RubyObject {
     public static RubyModule getModule(Ruby runtime) {
         return (RubyModule) runtime.fastGetModule("JRuby").fastGetConstantAt("FFI");
     }
-    private static final int intValue(NativeType type) {
-        return type.ordinal();
-    }
-    private static final NativeType nativeType(int type) {
-        NativeType[] values = NativeType.values();
-        if (type < 0 || type >= values.length) {
-            return NativeType.VOID;
-        }
-        return NativeType.values()[type];
-    }
+    
     @JRubyMethod(name = { "create_invoker", "createInvoker" }, required = 5)
     public IRubyObject createInvoker(ThreadContext context, IRubyObject[] args)
     {
@@ -89,11 +80,11 @@ public abstract class FFIProvider extends RubyObject {
         NativeType[] nativeParamTypes = new NativeType[paramTypes.size()];
         for (int i = 0; i < paramTypes.size(); ++i) {
             
-            nativeParamTypes[i] = nativeType(Util.int32Value((IRubyObject) paramTypes.get(i)));
+            nativeParamTypes[i] = NativeType.valueOf(Util.int32Value((IRubyObject) paramTypes.entry(i)));
         }
         
         return createInvoker(context.getRuntime(), args[0].toString(), args[1].toString(),
-                nativeType(Util.int32Value(args[2])), nativeParamTypes, args[4].toString());
+                NativeType.valueOf(Util.int32Value(args[2])), nativeParamTypes, args[4].toString());
     }
     
     @JRubyMethod(name = { "error", "last_error" })

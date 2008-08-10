@@ -52,8 +52,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'rbconfig'
-require 'ffi/platform'
 require 'ffi.so' # Load the JRuby implementation class
+require 'ffi/platform'
+
 
 module FFI
   NativeType = JRuby::FFI::NativeType
