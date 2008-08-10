@@ -264,7 +264,7 @@ module JRuby::FFI
             FFI.add_typedef(orig_type.to_sym, new_type.to_sym)
           else
             key, value = line.chomp.split(/\s*=\s*/)
-            CONFIG[key] = value
+            CONFIG[String.new << key] = String.new << value unless key.nil? or value.nil?
           end
         }
       end
