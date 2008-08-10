@@ -106,8 +106,6 @@ public class RubyProc extends RubyObject implements JumpTarget {
      */
     @JRubyMethod(name = "new", rest = true, frame = true, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = recv.getRuntime();
-        
         // No passed in block, lets check next outer frame for one ('Proc.new')
         if (!block.isGiven()) {
             block = context.getPreviousFrame().getBlock();

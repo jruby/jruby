@@ -115,7 +115,7 @@ public final class Colon2Node extends Colon3Node implements INameNode {
             throw runtime.newTypeError(result + " is not a class/module");
         }
 
-        return result.callMethod(context, name, IRubyObject.NULL_ARRAY, aBlock);
+        return RuntimeHelpers.invoke(context, result, name, aBlock);
     }
     
     @Override

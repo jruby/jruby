@@ -49,6 +49,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.posix.util.Platform;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -439,7 +440,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     @JRubyMethod(meta = true)
     public static IRubyObject open(IRubyObject recv, IRubyObject path) {
-        return recv.callMethod(recv.getRuntime().getCurrentContext(), "new", new IRubyObject[]{path}, Block.NULL_BLOCK);
+        return RuntimeHelpers.invoke(recv.getRuntime().getCurrentContext(), recv, "new", path);
     }
 
     private static int getSocketType(IRubyObject tp) {
@@ -461,7 +462,8 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     @JRubyMethod(name = {"socketpair", "pair"}, optional = 2, meta = true)
     public static IRubyObject socketpair(IRubyObject recv, IRubyObject[] args) throws Exception {
         int domain = RubySocket.PF_UNIX;
-        Arity.checkArgumentCount(recv.getRuntime(), args, 0, 2);
+        Ruby runtime = recv.getRuntime();
+        Arity.checkArgumentCount(runtime, args, 0, 2);
         
         int type;
 
@@ -485,13 +487,13 @@ public class RubyUNIXSocket extends RubyBasicSocket {
             ret = INSTANCE.socketpair(domain, type, protocol, sp);
         } catch (UnsatisfiedLinkError ule) { }
         if (ret < 0) {
-            rb_sys_fail(recv.getRuntime(), "socketpair(2)");
+            rb_sys_fail(runtime, "socketpair(2)");
         }
 
-        RubyUNIXSocket sock = (RubyUNIXSocket)(recv.getRuntime().fastGetClass("UNIXSocket").callMethod(recv.getRuntime().getCurrentContext(), "allocate", new IRubyObject[0]));
+        RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(runtime.getCurrentContext(), runtime.fastGetClass("UNIXSocket"), "allocate"));
         sock.fd = sp[0];
         sock.init_sock();
-        RubyUNIXSocket sock2 = (RubyUNIXSocket)(recv.getRuntime().fastGetClass("UNIXSocket").callMethod(recv.getRuntime().getCurrentContext(), "allocate", new IRubyObject[0]));
+        RubyUNIXSocket sock2 = (RubyUNIXSocket)(RuntimeHelpers.invoke(runtime.getCurrentContext(), runtime.fastGetClass("UNIXSocket"), "allocate"));
         sock2.fd = sp[1];
         sock2.init_sock();
 

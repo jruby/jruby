@@ -29,6 +29,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.ObjectAllocator;
@@ -73,6 +74,8 @@ public class RubyEnumerator extends RubyObject {
 
         enmr.defineAnnotatedMethod(RubyEnumerator.class, "initialize");
         enmr.defineAnnotatedMethod(RubyEnumerator.class, "each");
+
+        runtime.setEnumerator(enmr);
     }
 
     @JRubyMethod(name = {"to_enum", "enum_for"}, optional = 1, rest = true, frame = true)
@@ -81,7 +84,7 @@ public class RubyEnumerator extends RubyObject {
         newArgs[0] = self;
         System.arraycopy(args, 0, newArgs, 1, args.length);
 
-        return self.getRuntime().getEnumerable().fastGetConstant("Enumerator").callMethod(context, "new", newArgs);
+        return self.getRuntime().getEnumerator().callMethod(context, "new", newArgs);
     }
 
     private RubyEnumerator(Ruby runtime, RubyClass type) {
@@ -114,8 +117,8 @@ public class RubyEnumerator extends RubyObject {
 
     @JRubyMethod(name = "enum_with_index")
     public static IRubyObject each_with_index(ThreadContext context, IRubyObject self) {
-        return self.getRuntime().getEnumerable().fastGetConstant("Enumerator").callMethod(context, "new", 
-                               new IRubyObject[] { self, self.getRuntime().fastNewSymbol("each_with_index") });
+        IRubyObject enumerator = self.getRuntime().getEnumerator();
+        return RuntimeHelpers.invoke(context, enumerator, "new", self, self.getRuntime().fastNewSymbol("each_with_index"));
     }
 
     @JRubyMethod(name = "each_slice", required = 1, frame = true)
@@ -165,13 +168,13 @@ public class RubyEnumerator extends RubyObject {
 
     @JRubyMethod(name = "enum_slice", required = 1)
     public static IRubyObject enum_slice(ThreadContext context, IRubyObject self, IRubyObject arg) {
-        return self.getRuntime().getEnumerable().fastGetConstant("Enumerator").callMethod(context, "new", 
-                                     new IRubyObject[] { self, self.getRuntime().fastNewSymbol("each_slice"), arg });
+        IRubyObject enumerator = self.getRuntime().getEnumerator();
+        return RuntimeHelpers.invoke(context, enumerator, "new", self, self.getRuntime().fastNewSymbol("each_slice"), arg);
     }
 
     @JRubyMethod(name = "enum_cons", required = 1)
     public static IRubyObject enum_cons(ThreadContext context, IRubyObject self, IRubyObject arg) {
-        return self.getRuntime().getEnumerable().fastGetConstant("Enumerator").callMethod(context, "new", 
-                               new IRubyObject[] { self, self.getRuntime().fastNewSymbol("each_cons"), arg });
+        IRubyObject enumerator = self.getRuntime().getEnumerator();
+        return RuntimeHelpers.invoke(context, enumerator, "new", self, self.getRuntime().fastNewSymbol("each_cons"), arg);
     }
 }

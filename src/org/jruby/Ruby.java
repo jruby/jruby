@@ -1388,7 +1388,14 @@ public final class Ruby {
     }
     void setEnumerable(RubyModule enumerableModule) {
         this.enumerableModule = enumerableModule;
-    }      
+    }
+
+    public RubyModule getEnumerator() {
+        return enumeratorClass;
+    }
+    void setEnumerator(RubyClass enumeratorClass) {
+        this.enumeratorClass = enumeratorClass;
+    }  
 
     public RubyClass getString() {
         return stringClass;
@@ -2920,7 +2927,7 @@ public final class Ruby {
     private RubyClass
             objectClass, moduleClass, classClass, nilClass, trueClass,
             falseClass, numericClass, floatClass, integerClass, fixnumClass,
-            complexClass, rationalClass,
+            complexClass, rationalClass, enumeratorClass,
             arrayClass, hashClass, rangeClass, stringClass, symbolClass,
             procClass, bindingClass, methodClass, unboundMethodClass,
             matchDataClass, regexpClass, timeClass, bignumClass, dirClass,

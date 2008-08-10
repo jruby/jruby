@@ -54,6 +54,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.java.MiniJava;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -3380,7 +3381,10 @@ public class RubyString extends RubyObject {
         IRubyObject backref = frame.getBackRef();
         if (backref != null && backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
 
-        IRubyObject s = callMethod(context, "gsub", new IRubyObject[]{RubyRegexp.newRegexp(runtime, Numeric.ComplexPatterns.underscores_pat), runtime.newString(new ByteList(new byte[]{'_'}))});
+        IRubyObject s = RuntimeHelpers.invoke(
+                context, this, "gsub",
+                RubyRegexp.newRegexp(runtime, Numeric.ComplexPatterns.underscores_pat),
+                runtime.newString(new ByteList(new byte[]{'_'})));
 
         RubyArray a = RubyComplex.str_to_c_internal(context, s);
 
@@ -3403,7 +3407,10 @@ public class RubyString extends RubyObject {
         IRubyObject backref = frame.getBackRef();
         if (backref != null && backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
 
-        IRubyObject s = callMethod(context, "gsub", new IRubyObject[]{RubyRegexp.newRegexp(runtime, Numeric.ComplexPatterns.underscores_pat), runtime.newString(new ByteList(new byte[]{'_'}))});
+        IRubyObject s = RuntimeHelpers.invoke(
+                context, this, "gsub",
+                RubyRegexp.newRegexp(runtime, Numeric.ComplexPatterns.underscores_pat),
+                runtime.newString(new ByteList(new byte[]{'_'})));
 
         RubyArray a = RubyRational.str_to_r_internal(context, s);
 

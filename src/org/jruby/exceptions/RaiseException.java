@@ -40,6 +40,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 import org.jruby.*;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.EventHook;
 import org.jruby.runtime.MethodIndex;
@@ -64,7 +65,7 @@ public class RaiseException extends JumpException {
         if (DEBUG) {
             Thread.dumpStack();
         }
-        setException((RubyException) excptnClass.callMethod(runtime.getCurrentContext(), "new", new IRubyObject[] {excptnClass.getRuntime().newString(msg)}, Block.NULL_BLOCK), nativeException);
+        setException((RubyException)RuntimeHelpers.invoke(runtime.getCurrentContext(), excptnClass, "new", excptnClass.getRuntime().newString(msg)), nativeException);
     }
 
     public RaiseException(RubyException exception, boolean isNativeException) {

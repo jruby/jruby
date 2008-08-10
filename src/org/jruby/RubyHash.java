@@ -50,6 +50,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -559,11 +560,25 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_default
      *
      */
-    @JRubyMethod(name = "default", optional = 1, frame = true)
+    @Deprecated
     public IRubyObject default_value_get(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 0: return default_value_get(context);
+            case 1: return default_value_get(context, args[0]);
+            default: throw context.getRuntime().newArgumentError(args.length, 1);
+        }
+    }
+    @JRubyMethod(name = "default", frame = true)
+    public IRubyObject default_value_get(ThreadContext context) {
         if ((flags & PROCDEFAULT_HASH_F) != 0) {
-            if (args.length == 0) return getRuntime().getNil();
-            return ifNone.callMethod(context, "call", new IRubyObject[]{this, args[0]});
+            return getRuntime().getNil();
+        }
+        return ifNone;
+    }
+    @JRubyMethod(name = "default", frame = true)
+    public IRubyObject default_value_get(ThreadContext context, IRubyObject arg) {
+        if ((flags & PROCDEFAULT_HASH_F) != 0) {
+            return RuntimeHelpers.invoke(context, ifNone, "call", this, arg);
         }
         return ifNone;
     }
@@ -1041,7 +1056,7 @@ public class RubyHash extends RubyObject implements Map {
         }
 
         if ((flags & PROCDEFAULT_HASH_F) != 0) {
-            return ifNone.callMethod(context, "call", new IRubyObject[]{this, getRuntime().getNil()});
+            return RuntimeHelpers.invoke(context, ifNone, "call", this, getRuntime().getNil());
         } else {
             return ifNone;
         }

@@ -34,6 +34,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyNumeric;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -75,7 +76,8 @@ public class RubyUNIXServer extends RubyUNIXSocket {
             rb_sys_fail(null);
         }
 
-        RubyUNIXSocket sock = (RubyUNIXSocket)(getRuntime().fastGetClass("UNIXSocket").callMethod(getRuntime().getCurrentContext(), "allocate", new IRubyObject[0]));
+        Ruby runtime = getRuntime();
+        RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(runtime.getCurrentContext(), runtime.fastGetClass("UNIXSocket"), "allocate"));
         
         sock.fd = fd2;
         sock.fpath = new String(from.sun_path);
@@ -98,7 +100,8 @@ public class RubyUNIXServer extends RubyUNIXSocket {
             rb_sys_fail(null);
         }
 
-        RubyUNIXSocket sock = (RubyUNIXSocket)(getRuntime().fastGetClass("UNIXSocket").callMethod(getRuntime().getCurrentContext(), "allocate", new IRubyObject[0]));
+        Ruby runtime = getRuntime();
+        RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(runtime.getCurrentContext(), runtime.fastGetClass("UNIXSocket"), "allocate"));
         
         sock.fd = fd2;
         sock.fpath = new String(from.sun_path);

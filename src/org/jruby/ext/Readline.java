@@ -49,6 +49,7 @@ import jline.CandidateListCompletionHandler;
 import jline.History;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.Visibility;
 
@@ -269,7 +270,9 @@ public class Readline {
             }
             ThreadContext context = procCompletor.getRuntime().getCurrentContext();
 
-            IRubyObject comps = procCompletor.callMethod(context, "call", new IRubyObject[]{procCompletor.getRuntime().newString(buffer)                    }).callMethod(context, MethodIndex.TO_A, "to_a");
+            IRubyObject comps = RuntimeHelpers
+                    .invoke(context, procCompletor, "call", procCompletor.getRuntime().newString(buffer))
+                    .callMethod(context, MethodIndex.TO_A, "to_a");
             if (comps instanceof List) {
                 for (Iterator i = ((List) comps).iterator(); i.hasNext();) {
                     Object obj = i.next();

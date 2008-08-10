@@ -54,6 +54,7 @@ import org.joni.encoding.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Frame;
@@ -861,8 +862,7 @@ public class RubyRational extends RubyNumeric {
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
         if (f_one_p(context, den)) return f_to_s(context, num);
-        IRubyObject[]formatArgs = new IRubyObject[]{context.getRuntime().newString("%d/%d"), num, den};
-        return context.getRuntime().getKernel().callMethod(context, "format", formatArgs);
+        return RuntimeHelpers.invoke(context, context.getRuntime().getKernel(), "format", context.getRuntime().newString("%d/%d"), num, den);
     }
 
     /** nurat_inspect
@@ -870,8 +870,7 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
-        IRubyObject[]formatArgs = new IRubyObject[]{context.getRuntime().newString("Rational(%d, %d)"), num, den};
-        return context.getRuntime().getKernel().callMethod(context, "format", formatArgs);
+        return RuntimeHelpers.invoke(context, context.getRuntime().getKernel(), "format", context.getRuntime().newString("Rational(%d, %d)"), num, den);
     }
 
     /** nurat_marshal_dump

@@ -41,6 +41,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyModule;
 
 import org.jruby.exceptions.RaiseException;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 
 import org.jruby.runtime.Block;
@@ -739,7 +740,7 @@ public class RubyZlib {
         @JRubyMethod(name = "open", required = 1, frame = true, meta = true)
         public static IRubyObject open(final ThreadContext context, IRubyObject recv, IRubyObject filename, Block block) throws IOException {
             Ruby runtime = recv.getRuntime();
-            IRubyObject io = runtime.getFile().callMethod(context, "open", new IRubyObject[]{filename, runtime.newString("rb")});
+            IRubyObject io = RuntimeHelpers.invoke(context, runtime.getFile(), "open", filename, runtime.newString("rb"));
             RubyGzipFile instance = newInstance(recv, new IRubyObject[]{io}, Block.NULL_BLOCK);
 
             return RubyGzipFile.wrap(context, instance, io, block);
@@ -991,7 +992,7 @@ public class RubyZlib {
                 if (args.length > 2) strategy = args[2];
             }
 
-            IRubyObject io = runtime.getFile().callMethod(context, "open", new IRubyObject[]{args[0],runtime.newString("wb")});
+            IRubyObject io = RuntimeHelpers.invoke(context, runtime.getFile(), "open", args[0], runtime.newString("wb"));
             RubyGzipFile instance = newGzipWriter(recv, new IRubyObject[]{io, level, strategy}, Block.NULL_BLOCK);
             
             return RubyGzipFile.wrap(context, instance, io, block);

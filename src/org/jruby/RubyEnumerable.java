@@ -34,6 +34,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 
 import org.jruby.exceptions.JumpException;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallBlock;
@@ -61,7 +62,7 @@ public class RubyEnumerable {
 
     public static IRubyObject callEach(Ruby runtime, ThreadContext context, IRubyObject self,
             BlockCallback callback) {
-        return self.callMethod(context, "each", IRubyObject.NULL_ARRAY, CallBlock.newCallClosure(self, runtime.getEnumerable(), 
+        return RuntimeHelpers.invoke(context, self, "each", CallBlock.newCallClosure(self, runtime.getEnumerable(), 
                 Arity.noArguments(), callback, context));
     }
 
@@ -389,7 +390,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "each_with_index", frame = true)
     public static IRubyObject each_with_index(ThreadContext context, IRubyObject self, Block block) {
-        self.callMethod(context, "each", IRubyObject.NULL_ARRAY, CallBlock.newCallClosure(self, self.getRuntime().getEnumerable(), 
+        RuntimeHelpers.invoke(context, self, "each", CallBlock.newCallClosure(self, self.getRuntime().getEnumerable(), 
                 Arity.noArguments(), new EachWithIndex(context, block), context));
         
         return self;

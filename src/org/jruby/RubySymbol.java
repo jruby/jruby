@@ -41,6 +41,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -223,15 +224,15 @@ public class RubySymbol extends RubyObject {
                     currentArgs = ((RubyArray)currentArgs[0]).toJavaArrayMaybeUnsafe();
                     IRubyObject[] args2 = new IRubyObject[currentArgs.length-1];
                     System.arraycopy(currentArgs, 1, args2, 0, args2.length);
-                    return currentArgs[0].callMethod(ctx, symbol.symbol, args2, Block.NULL_BLOCK);
+                    return RuntimeHelpers.invoke(ctx, currentArgs[0], symbol.symbol, args2);
                 } else {
-                    return currentArgs[0].callMethod(ctx, symbol.symbol, new IRubyObject[0], Block.NULL_BLOCK);
+                    return RuntimeHelpers.invoke(ctx, currentArgs[0], symbol.symbol);
                 }
             }
             default: {
                 IRubyObject[] args2 = new IRubyObject[currentArgs.length-1];
                 System.arraycopy(currentArgs, 1, args2, 0, args2.length);
-                return currentArgs[0].callMethod(ctx, symbol.symbol, args2, Block.NULL_BLOCK);
+                return RuntimeHelpers.invoke(ctx, currentArgs[0], symbol.symbol, args2);
             }
             }
         }

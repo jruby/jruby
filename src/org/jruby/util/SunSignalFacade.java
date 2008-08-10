@@ -61,12 +61,13 @@ public class SunSignalFacade implements SignalFacade {
         }
 
         public void handle(Signal signal) {
+            ThreadContext context = runtime.getCurrentContext();
             try {
-                block.callMethod(runtime.getCurrentContext(), "call", new IRubyObject[0]);
+                block.callMethod(context, "call");
             } catch(RaiseException e) {
                 try {
-                    runtime.getThread().callMethod(runtime.getCurrentContext(), "main", new IRubyObject[0])
-                        .callMethod(runtime.getCurrentContext(), "raise", new IRubyObject[]{e.getException()});
+                    runtime.getThread().callMethod(context, "main")
+                        .callMethod(context, "raise", e.getException());
                 } catch(Exception ignored) {}
             } catch (MainExitException mee) {
                 runtime.getThreadService().getMainThread().kill();

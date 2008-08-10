@@ -643,8 +643,8 @@ public class Java implements Library {
         RuntimeHelpers.invokeAs(tc, javaProxyClass, recv, "inherited", new IRubyObject[]{subclass},
                 org.jruby.runtime.CallType.SUPER, Block.NULL_BLOCK);
         // TODO: move to Java
-        return javaSupport.getJavaUtilitiesModule().callMethod(tc, "setup_java_subclass",
-                new IRubyObject[]{subclass, recv.callMethod(tc, "java_class")});
+        return RuntimeHelpers.invoke(tc, javaSupport.getJavaUtilitiesModule(), "setup_java_subclass",
+                subclass, recv.callMethod(tc, "java_class"));
     }
 
     // package scheme 2: separate module for each full package name, constructed 

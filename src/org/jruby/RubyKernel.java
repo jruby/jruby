@@ -230,17 +230,33 @@ public class RubyKernel {
         return value;
     }
 
-    @JRubyMethod(name = "Complex", required = 0, optional = 2, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
-    public static IRubyObject new_complex(ThreadContext context, IRubyObject recv, IRubyObject[]args) {
-        return context.getRuntime().getComplex().callMethod(context, "convert", args);
+    @JRubyMethod(name = "Complex", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject new_complex(ThreadContext context, IRubyObject recv) {
+        return RuntimeHelpers.invoke(context, context.getRuntime().getComplex(), "convert");
+    }
+    @JRubyMethod(name = "Complex", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject new_complex(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return RuntimeHelpers.invoke(context, context.getRuntime().getComplex(), "convert", arg);
+    }
+    @JRubyMethod(name = "Complex", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject new_complex(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
+        return RuntimeHelpers.invoke(context, context.getRuntime().getComplex(), "convert", arg0, arg1);
     }
     
-    @JRubyMethod(name = "Rational", required = 0, optional = 2, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
-    public static IRubyObject new_rational(ThreadContext context, IRubyObject recv, IRubyObject[]args) {
-        return context.getRuntime().getRational().callMethod(context, "convert", args);
+    @JRubyMethod(name = "Rational", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject new_rational(ThreadContext context, IRubyObject recv) {
+        return RuntimeHelpers.invoke(context, context.getRuntime().getRational(), "convert");
+    }
+    @JRubyMethod(name = "Rational", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject new_rational(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return RuntimeHelpers.invoke(context, context.getRuntime().getRational(), "convert", arg);
+    }
+    @JRubyMethod(name = "Rational", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject new_rational(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
+        return RuntimeHelpers.invoke(context, context.getRuntime().getRational(), "convert", arg0, arg1);
     }
 
-    @JRubyMethod(name = "Float", required = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "Float", module = true, visibility = PRIVATE)
     public static IRubyObject new_float(IRubyObject recv, IRubyObject object) {
         if(object instanceof RubyFixnum){
             return RubyFloat.newFloat(object.getRuntime(), ((RubyFixnum)object).getDoubleValue());
@@ -925,7 +941,7 @@ public class RubyKernel {
         
         if (!runtime.getVerbose().isNil()) {
             IRubyObject out = runtime.getGlobalVariables().get("$stderr");
-            out.callMethod(context, "puts", new IRubyObject[] { message });
+            RuntimeHelpers.invoke(context, out, "puts", message);
         }
         return runtime.getNil();
     }

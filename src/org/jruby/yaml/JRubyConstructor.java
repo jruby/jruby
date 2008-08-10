@@ -164,7 +164,10 @@ public class JRubyConstructor extends ConstructorImpl {
         } else {
             val = constructRubyScalar(node);
         }
-        return runtime.fastGetModule("YAML").fastGetConstant("PrivateType").callMethod(runtime.getCurrentContext(),"new",new IRubyObject[]{runtime.newString(node.getTag()),(IRubyObject)val});
+        return RuntimeHelpers.invoke(
+                runtime.getCurrentContext(),
+                runtime.fastGetModule("YAML").fastGetConstant("PrivateType"),
+                "new", runtime.newString(node.getTag()),(IRubyObject)val);
     }
 
     public Object constructRubySequence(final Node node) {
@@ -262,7 +265,7 @@ public class JRubyConstructor extends ConstructorImpl {
     public static Object constructYamlTimestampYMD(final Constructor ctor, final Node node) {
         DateTime dt = (DateTime)(((Object[])SafeConstructorImpl.constructYamlTimestamp(ctor,node))[0]);
         Ruby runtime = ((JRubyConstructor)ctor).runtime;
-        return runtime.fastGetClass("Date").callMethod(runtime.getCurrentContext(),"new",new IRubyObject[]{runtime.newFixnum(dt.getYear()),runtime.newFixnum(dt.getMonthOfYear()),runtime.newFixnum(dt.getDayOfMonth())});
+        return RuntimeHelpers.invoke(runtime.getCurrentContext(), runtime.fastGetClass("Date"), "new", runtime.newFixnum(dt.getYear()),runtime.newFixnum(dt.getMonthOfYear()),runtime.newFixnum(dt.getDayOfMonth()));
     }
 
     public static Object constructYamlInt(final Constructor ctor, final Node node) {
@@ -297,7 +300,7 @@ public class JRubyConstructor extends ConstructorImpl {
                 // No constant available, so we'll fall back on YAML::Object
                 objClass = (RubyClass)runtime.fastGetModule("YAML").fastGetConstant("Object");
                 final RubyHash vars = (RubyHash)(((JRubyConstructor)ctor).constructRubyMapping(node));
-                return objClass.callMethod(runtime.getCurrentContext(), "new", new IRubyObject[]{runtime.newString(tag), vars});
+                return RuntimeHelpers.invoke(runtime.getCurrentContext(), objClass, "new", runtime.newString(tag), vars);
             }
         }
         final RubyClass theCls = (RubyClass)objClass;
@@ -370,14 +373,12 @@ public class JRubyConstructor extends ConstructorImpl {
         final Ruby runtime = ((JRubyConstructor)ctor).runtime;
         if(theCls.respondsTo("yaml_new")) {
             final RubyHash vars = (RubyHash)(((JRubyConstructor)ctor).constructRubyMapping(node));
-            IRubyObject[] args = new IRubyObject[]{theCls, runtime.newString(node.getTag()), vars};
-            return theCls.callMethod(runtime.getCurrentContext(), "yaml_new", args);
+            return RuntimeHelpers.invoke(runtime.getCurrentContext(), theCls, "yaml_new", theCls, runtime.newString(node.getTag()), vars);
         } else {
             final RubyObject oo = (RubyObject)theCls.getAllocator().allocate(runtime, theCls);
             if (oo.respondsTo("yaml_initialize")) {
                 RubyHash vars = (RubyHash)(((JRubyConstructor)ctor).constructRubyMapping(node));
-                IRubyObject[] args = new IRubyObject[] {runtime.newString(node.getTag()), vars};
-                RuntimeHelpers.invoke(runtime.getCurrentContext(), oo, "yaml_initialize", args);
+                RuntimeHelpers.invoke(runtime.getCurrentContext(), oo, "yaml_initialize", runtime.newString(node.getTag()), vars);
             } else {
                 final Map vars = (Map)(ctor.constructMapping(node));
                 ctor.doRecursionFix(node, oo);
@@ -413,7 +414,7 @@ public class JRubyConstructor extends ConstructorImpl {
                 // No constant available, so we'll fall back on YAML::Object
                 objClass = (RubyClass)runtime.fastGetModule("YAML").fastGetConstant("Object");
                 final RubyHash vars = (RubyHash)(((JRubyConstructor)ctor).constructRubyMapping(node));
-                return objClass.callMethod(runtime.getCurrentContext(), "new", new IRubyObject[]{runtime.newString(tag), vars});
+                return RuntimeHelpers.invoke(runtime.getCurrentContext(), objClass, "new", runtime.newString(tag), vars);
             }
         }
         final RubyClass theCls = (RubyClass)objClass;

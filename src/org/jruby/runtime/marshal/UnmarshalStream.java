@@ -53,6 +53,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
@@ -195,7 +196,7 @@ public class UnmarshalStream extends BufferedInputStream {
         
         if (proc != null && type != ':') {
             // call the proc, but not for symbols
-            proc.callMethod(getRuntime().getCurrentContext(), "call", new IRubyObject[] {rubyObj});
+            RuntimeHelpers.invoke(getRuntime().getCurrentContext(), proc, "call", rubyObj);
         }
         return rubyObj;
     }
