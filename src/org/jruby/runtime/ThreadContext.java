@@ -179,6 +179,11 @@ public final class ThreadContext {
         return lastVisibility;
     }
     
+    public void setLastCallStatusAndVisibility(CallType callType, Visibility visibility) {
+        lastCallType = callType;
+        lastVisibility = visibility;
+    }
+    
     public IRubyObject getLastExitStatus() {
         return lastExitStatus;
     }

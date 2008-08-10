@@ -233,59 +233,72 @@ public class RuntimeHelpers {
                                                 IRubyObject[] args, IRubyObject self, CallType callType, Block block) {
         return callMethodMissing(context, receiver, method, name, args, self, callType, block);
     }
-    
-    private static IRubyObject callMethodMissingInternal(ThreadContext context, IRubyObject receiver, String name, 
-                                                IRubyObject[] args, IRubyObject self, Block block) {
-        if (name.equals("method_missing")) {
-            return RubyKernel.method_missing(context, self, args, block);
-        }
-
-        IRubyObject[] newArgs = prepareMethodMissingArgs(args, context, name);
-
-        return invoke(context, receiver, "method_missing", newArgs, block);
-    }
 
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, 
                                                 IRubyObject[] args, IRubyObject self, CallType callType, Block block) {
-        // store call information so method_missing impl can use it            
-        context.setLastCallStatus(callType);            
-        context.setLastVisibility(method.getVisibility());
+        context.setLastCallStatusAndVisibility(callType, method.getVisibility());
         return callMethodMissingInternal(context, receiver, name, args, self, block);
     }
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, 
                                                 IRubyObject arg, IRubyObject self, CallType callType, Block block) {
-        // store call information so method_missing impl can use it            
-        context.setLastCallStatus(callType);            
-        context.setLastVisibility(method.getVisibility());
-        return callMethodMissingInternal(context, receiver, name, new IRubyObject[] {arg}, self, block);
+        context.setLastCallStatusAndVisibility(callType, method.getVisibility());
+        return callMethodMissingInternal(context, receiver, name, arg, self, block);
     }
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, 
                                                 IRubyObject arg0, IRubyObject arg1, IRubyObject self, CallType callType, Block block) {
-        // store call information so method_missing impl can use it            
-        context.setLastCallStatus(callType);            
-        context.setLastVisibility(method.getVisibility());
-        return callMethodMissingInternal(context, receiver, name, new IRubyObject[] {arg0,arg1}, self, block);
+        context.setLastCallStatusAndVisibility(callType, method.getVisibility());
+        return callMethodMissingInternal(context, receiver, name, arg0, arg1, self, block);
     }
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, 
                                                 IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject self, CallType callType, Block block) {
-        // store call information so method_missing impl can use it            
-        context.setLastCallStatus(callType);            
-        context.setLastVisibility(method.getVisibility());
-        return callMethodMissingInternal(context, receiver, name, new IRubyObject[] {arg0,arg1,arg2}, self, block);
+        context.setLastCallStatusAndVisibility(callType, method.getVisibility());
+        return callMethodMissingInternal(context, receiver, name, arg0, arg1, arg2, self, block);
     }
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, 
                                                 IRubyObject self, CallType callType, Block block) {
-        // store call information so method_missing impl can use it            
-        context.setLastCallStatus(callType);            
-        context.setLastVisibility(method.getVisibility());
-        return callMethodMissingInternal(context, receiver, name, IRubyObject.NULL_ARRAY, self, block);
+        context.setLastCallStatusAndVisibility(callType, method.getVisibility());
+        return callMethodMissingInternal(context, receiver, name, self, block);
+    }
+    
+    private static IRubyObject callMethodMissingInternal(ThreadContext context, IRubyObject receiver, String name, 
+                                                IRubyObject[] args, IRubyObject self, Block block) {
+        if (name.equals("method_missing")) return RubyKernel.method_missing(context, self, args, block);
+        IRubyObject[] newArgs = prepareMethodMissingArgs(args, context, name);
+        return invoke(context, receiver, "method_missing", newArgs, block);
+    }
+    private static IRubyObject callMethodMissingInternal(ThreadContext context, IRubyObject receiver, String name, 
+                                                IRubyObject self, Block block) {
+        if (name.equals("method_missing")) return RubyKernel.method_missing(context, self, IRubyObject.NULL_ARRAY, block);
+        return invoke(context, receiver, "method_missing", context.getRuntime().newSymbol(name), block);
+    }
+    private static IRubyObject callMethodMissingInternal(ThreadContext context, IRubyObject receiver, String name, 
+                                                IRubyObject arg0, IRubyObject self, Block block) {
+        if (name.equals("method_missing")) return RubyKernel.method_missing(context, self, constructObjectArray(arg0), block);
+        return invoke(context, receiver, "method_missing", context.getRuntime().newSymbol(name), arg0, block);
+    }
+    private static IRubyObject callMethodMissingInternal(ThreadContext context, IRubyObject receiver, String name, 
+                                                IRubyObject arg0, IRubyObject arg1, IRubyObject self, Block block) {
+        if (name.equals("method_missing")) return RubyKernel.method_missing(context, self, constructObjectArray(arg0,arg1), block);
+        return invoke(context, receiver, "method_missing", context.getRuntime().newSymbol(name), arg0, arg1, block);
+    }
+    private static IRubyObject callMethodMissingInternal(ThreadContext context, IRubyObject receiver, String name, 
+                                                IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject self, Block block) {
+        if (name.equals("method_missing")) return RubyKernel.method_missing(context, self, constructObjectArray(arg0,arg1,arg2), block);
+        return invoke(context, receiver, "method_missing", constructObjectArray(context.getRuntime().newSymbol(name), arg0, arg1, arg2), block);
     }
 
+    private static IRubyObject[] prepareMethodMissingArgs(IRubyObject[] args, ThreadContext context, String name) {
+        IRubyObject[] newArgs = new IRubyObject[args.length + 1];
+        System.arraycopy(args, 0, newArgs, 1, args.length);
+        newArgs[0] = context.getRuntime().newSymbol(name);
+
+        return newArgs;
+    }
+
+    @Deprecated
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, 
                                                 IRubyObject[] args, IRubyObject self) {
-        // store call information so method_missing impl can use it            
-        context.setLastCallStatus(CallType.FUNCTIONAL);            
-        context.setLastVisibility(Visibility.PUBLIC);
+        context.setLastCallStatusAndVisibility(CallType.FUNCTIONAL, Visibility.PUBLIC);
         return callMethodMissingInternal(context, receiver, name, args, self, Block.NULL_BLOCK);
     }
     
@@ -1147,14 +1160,6 @@ public class RuntimeHelpers {
         }
         
         return rubyClass;
-    }
-
-    private static IRubyObject[] prepareMethodMissingArgs(IRubyObject[] args, ThreadContext context, String name) {
-        IRubyObject[] newArgs = new IRubyObject[args.length + 1];
-        System.arraycopy(args, 0, newArgs, 1, args.length);
-        newArgs[0] = context.getRuntime().newSymbol(name);
-
-        return newArgs;
     }
     
     public static IRubyObject arrayEntryOrNil(RubyArray array, IRubyObject nil, int index) {
