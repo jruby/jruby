@@ -1,6 +1,7 @@
 package org.jruby.management;
 
 import org.jruby.runtime.CacheMap;
+import org.jruby.runtime.CallSite;
 
 public class MethodCache implements MethodCacheMBean {
     private final CacheMap cacheMap;
@@ -27,6 +28,14 @@ public class MethodCache implements MethodCacheMBean {
     
     public int getFlushCount() {
         return cacheMap.getFlushCount();
+    }
+    
+    public int getCallSiteCount() {
+        return CallSite.InlineCachingCallSite.totalCallSites;
+    }
+    
+    public int getFailedCallSiteCount() {
+        return CallSite.InlineCachingCallSite.failedCallSites;
     }
     
     public void flush() {
