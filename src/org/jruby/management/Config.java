@@ -6,7 +6,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 
 public class Config implements ConfigMBean {
-    private Ruby ruby;
+    private final Ruby ruby;
     
     public Config(Ruby ruby) {
         this.ruby = ruby;

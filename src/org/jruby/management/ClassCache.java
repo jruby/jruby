@@ -3,7 +3,7 @@ package org.jruby.management;
 import org.jruby.Ruby;
 
 public class ClassCache implements ClassCacheMBean {
-    private Ruby ruby;
+    private final Ruby ruby;
     
     public ClassCache(Ruby ruby) {
         this.ruby = ruby;

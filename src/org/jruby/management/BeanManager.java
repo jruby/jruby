@@ -15,8 +15,8 @@ import org.jruby.compiler.JITCompilerMBean;
 public class BeanManager {
     public final String base;
     
-    private Ruby ruby;
-    private boolean managementEnabled;
+    private final Ruby ruby;
+    private final boolean managementEnabled;
     
     public BeanManager(Ruby ruby, boolean managementEnabled) {
         this.ruby = ruby;

@@ -31,6 +31,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyIO;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.io.ChannelDescriptor;
@@ -50,40 +51,40 @@ public class IOWaitLibrary implements Library {
      * returns non-nil if input available without blocking, false if EOF or not open/readable, otherwise nil.
      */
     @JRubyMethod(name = "ready?")
-    public static IRubyObject ready(IRubyObject obj) {
+    public static IRubyObject ready(ThreadContext context, IRubyObject obj) {
         RubyIO io = (RubyIO)obj;
         try {
             OpenFile openFile = io.getOpenFile();
             ChannelDescriptor descriptor = openFile.getMainStream().getDescriptor();
             if (!descriptor.isOpen() || !openFile.getMainStream().getModes().isReadable() || openFile.getMainStream().feof()) {
-                return obj.getRuntime().getFalse();
+                return context.getRuntime().getFalse();
             }
 
             int avail = openFile.getMainStream().ready();
             if (avail > 0) {
-                return obj.getRuntime().newFixnum(avail);
+                return context.getRuntime().newFixnum(avail);
             }
         } catch (Exception anyEx) {
-            return obj.getRuntime().getFalse();
+            return context.getRuntime().getFalse();
         }
-        return obj.getRuntime().getNil();
+        return context.getRuntime().getNil();
     }
 
     /**
      * waits until input available or timed out and returns self, or nil when EOF reached.
      */
     @JRubyMethod
-    public static IRubyObject io_wait(IRubyObject obj) {
+    public static IRubyObject io_wait(ThreadContext context, IRubyObject obj) {
         RubyIO io = (RubyIO)obj;
         try {
             OpenFile openFile = io.getOpenFile();
             ChannelDescriptor descriptor = openFile.getMainStream().getDescriptor();
             if (openFile.getMainStream().feof()) {
-                return obj.getRuntime().getNil();
+                return context.getRuntime().getNil();
             }
             openFile.getMainStream().waitUntilReady();
         } catch (Exception anyEx) {
-            return obj.getRuntime().getNil();
+            return context.getRuntime().getNil();
         }
         return obj;
     }

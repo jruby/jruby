@@ -3,7 +3,7 @@ package org.jruby.management;
 import org.jruby.runtime.CacheMap;
 
 public class MethodCache implements MethodCacheMBean {
-    private CacheMap cacheMap;
+    private final CacheMap cacheMap;
     
     public MethodCache(CacheMap cacheMap) {
         this.cacheMap = cacheMap;

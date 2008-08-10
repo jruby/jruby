@@ -34,8 +34,8 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.load.Library;
 
 public class LateLoadingLibrary implements Library {
-    private String libraryName;
-    private String className;
+    private final String libraryName;
+    private final String className;
     private ClassLoader classLoader;
     
     public LateLoadingLibrary(String libraryName, String className, ClassLoader classLoader) {

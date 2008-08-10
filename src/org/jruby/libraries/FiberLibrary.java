@@ -52,24 +52,25 @@ public class FiberLibrary implements Library {
 
     @JRubyClass(name="Fiber")
     public static class Fiber extends RubyObject {
+        private final Object yieldLock = new Object();
         private Block block;
-        private Object yieldLock = new Object();
         private IRubyObject result;
         private Thread thread;
         private boolean alive = false;
         
         @JRubyMethod(name = "new", rest = true, meta = true, frame = true, compat = CompatVersion.RUBY1_9)
-        public static Fiber newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
-            Fiber result = new Fiber(recv.getRuntime(), (RubyClass)recv);
-            result.initialize(args, block);
+        public static Fiber newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+            Fiber result = new Fiber(context.getRuntime(), (RubyClass)recv);
+            result.initialize(context, args, block);
             return result;
         }
         
-        public IRubyObject initialize(final IRubyObject[] args, Block block) {
+        public IRubyObject initialize(ThreadContext context, final IRubyObject[] args, Block block) {
             this.block = block;
-            final Ruby runtime = getRuntime();
+            final Ruby runtime = context.getRuntime();
             this.result = runtime.getNil();
             this.thread = new Thread() {
+                @Override
                 public void run() {
                     synchronized (yieldLock) {
                         alive = true;
@@ -101,9 +102,9 @@ public class FiberLibrary implements Library {
         }
 
         @JRubyMethod(rest = true, compat = CompatVersion.RUBY1_9)
-        public IRubyObject resume(IRubyObject[] args) throws InterruptedException {
+        public IRubyObject resume(ThreadContext context, IRubyObject[] args) throws InterruptedException {
             synchronized (yieldLock) {
-                result = getRuntime().newArrayNoCopyLight(args);
+                result = context.getRuntime().newArrayNoCopyLight(args);
                 if (!alive) {
                     thread.start();
                     yieldLock.wait();
@@ -125,24 +126,24 @@ public class FiberLibrary implements Library {
         }
 
         @JRubyMethod(name = "alive?", compat = CompatVersion.RUBY1_9)
-        public IRubyObject alive_p() {
-            return getRuntime().newBoolean(alive);
+        public IRubyObject alive_p(ThreadContext context) {
+            return context.getRuntime().newBoolean(alive);
         }
 
         @JRubyMethod(compat = CompatVersion.RUBY1_9, meta = true)
-        public static IRubyObject yield(IRubyObject recv, IRubyObject value) throws InterruptedException {
-            Fiber fiber = recv.getRuntime().getCurrentContext().getFiber();
+        public static IRubyObject yield(ThreadContext context, IRubyObject recv, IRubyObject value) throws InterruptedException {
+            Fiber fiber = context.getFiber();
             fiber.result = value;
             synchronized (fiber.yieldLock) {
                 fiber.yieldLock.notify();
                 fiber.yieldLock.wait();
             }
-            return recv.getRuntime().getNil();
+            return context.getRuntime().getNil();
         }
 
         @JRubyMethod(compat = CompatVersion.RUBY1_9, meta = true)
-        public static IRubyObject current(IRubyObject recv) {
-            return recv.getRuntime().getCurrentContext().getFiber();
+        public static IRubyObject current(ThreadContext context, IRubyObject recv) {
+            return context.getRuntime().getCurrentContext().getFiber();
         }
     }
 }

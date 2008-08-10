@@ -45,6 +45,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.load.Library;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -81,8 +82,8 @@ public class ThreadLibrary implements Library {
         private RubyThread owner = null;
 
         @JRubyMethod(name = "new", rest = true, meta = true)
-        public static Mutex newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
-            Mutex result = new Mutex(recv.getRuntime(), (RubyClass)recv);
+        public static Mutex newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+            Mutex result = new Mutex(context.getRuntime(), (RubyClass)recv);
             result.callInit(args, block);
             return result;
         }
@@ -101,26 +102,26 @@ public class ThreadLibrary implements Library {
         }
 
         @JRubyMethod(name = "locked?")
-        public synchronized RubyBoolean locked_p() {
-            return ( owner != null ? getRuntime().getTrue() : getRuntime().getFalse() );
+        public synchronized RubyBoolean locked_p(ThreadContext context) {
+            return context.getRuntime().newBoolean(owner != null);
         }
 
         @JRubyMethod
-        public RubyBoolean try_lock() throws InterruptedException {
+        public RubyBoolean try_lock(ThreadContext context) throws InterruptedException {
             //if (Thread.interrupted()) {
             //    throw new InterruptedException();
             //}
             synchronized (this) {
                 if ( owner != null ) {
-                    return getRuntime().getFalse();
+                    return context.getRuntime().getFalse();
                 }
-                lock();
+                lock(context);
             }
-            return getRuntime().getTrue();
+            return context.getRuntime().getTrue();
         }
 
         @JRubyMethod
-        public IRubyObject lock() throws InterruptedException {
+        public IRubyObject lock(ThreadContext context) throws InterruptedException {
             //if (Thread.interrupted()) {
             //    throw new InterruptedException();
             //}
@@ -129,7 +130,7 @@ public class ThreadLibrary implements Library {
                     while ( owner != null ) {
                         wait();
                     }
-                    owner = getRuntime().getCurrentContext().getThread();
+                    owner = context.getThread();
                 } catch (InterruptedException ex) {
                     if ( owner == null ) {
                         notify();
@@ -141,23 +142,23 @@ public class ThreadLibrary implements Library {
         }
 
         @JRubyMethod
-        public synchronized RubyBoolean unlock() {
+        public synchronized RubyBoolean unlock(ThreadContext context) {
             if ( owner != null ) {
                 owner = null;
                 notify();
-                return getRuntime().getTrue();
+                return context.getRuntime().getTrue();
             } else {
-                return getRuntime().getFalse();
+                return context.getRuntime().getFalse();
             }
         }
 
         @JRubyMethod
-        public IRubyObject synchronize(Block block) throws InterruptedException {
+        public IRubyObject synchronize(ThreadContext context, Block block) throws InterruptedException {
             try {
-                lock();
-                return block.yield(getRuntime().getCurrentContext(), null);
+                lock(context);
+                return block.yield(context, null);
             } finally {
-                unlock();
+                unlock(context);
             }
         }
     }
@@ -165,8 +166,8 @@ public class ThreadLibrary implements Library {
     @JRubyClass(name="ConditionVariable")
     public static class ConditionVariable extends RubyObject {
         @JRubyMethod(name = "new", rest = true, frame = true, meta = true)
-        public static ConditionVariable newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
-            ConditionVariable result = new ConditionVariable(recv.getRuntime(), (RubyClass)recv);
+        public static ConditionVariable newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+            ConditionVariable result = new ConditionVariable(context.getRuntime(), (RubyClass)recv);
             result.callInit(args, block);
             return result;
         }
@@ -186,16 +187,16 @@ public class ThreadLibrary implements Library {
         }
 
         @JRubyMethod(name = "wait", required = 1, optional = 1)
-        public IRubyObject wait_ruby(IRubyObject args[]) throws InterruptedException {
+        public IRubyObject wait_ruby(ThreadContext context, IRubyObject args[]) throws InterruptedException {
             if ( args.length < 1 ) {
-                throw getRuntime().newArgumentError(args.length, 1);
+                throw context.getRuntime().newArgumentError(args.length, 1);
             }
             if ( args.length > 2 ) {
-                throw getRuntime().newArgumentError(args.length, 2);
+                throw context.getRuntime().newArgumentError(args.length, 2);
             }
 
             if (!( args[0] instanceof Mutex )) {
-                throw getRuntime().newTypeError(args[0], getRuntime().fastGetClass("Mutex"));
+                throw context.getRuntime().newTypeError(args[0], context.getRuntime().fastGetClass("Mutex"));
             }
             Mutex mutex = (Mutex)args[0];
 
@@ -210,7 +211,7 @@ public class ThreadLibrary implements Library {
             boolean success = false;
             try {
                 synchronized (this) {
-                    mutex.unlock();
+                    mutex.unlock(context);
                     try {
                         success = ThreadLibrary.wait_timeout(this, timeout);
                     } finally {
@@ -223,26 +224,26 @@ public class ThreadLibrary implements Library {
                     }
                 }
             } finally {
-                mutex.lock();
+                mutex.lock(context);
             }
             if (timeout != null) {
-                return getRuntime().newBoolean(success);
+                return context.getRuntime().newBoolean(success);
             } else {
                 // backwards-compatibility
-                return getRuntime().getNil();
+                return context.getRuntime().getNil();
             }
         }
 
         @JRubyMethod
-        public synchronized IRubyObject broadcast() {
+        public synchronized IRubyObject broadcast(ThreadContext context) {
             notifyAll();
-            return getRuntime().getNil();
+            return context.getRuntime().getNil();
         }
 
         @JRubyMethod
-        public synchronized IRubyObject signal() {
+        public synchronized IRubyObject signal(ThreadContext context) {
             notify();
-            return getRuntime().getNil();
+            return context.getRuntime().getNil();
         }
     }
 
@@ -252,8 +253,8 @@ public class ThreadLibrary implements Library {
         protected volatile int numWaiting=0;
 
         @JRubyMethod(name = "new", rest = true, frame = true, meta = true)
-        public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
-            Queue result = new Queue(recv.getRuntime(), (RubyClass)recv);
+        public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+            Queue result = new Queue(context.getRuntime(), (RubyClass)recv);
             result.callInit(args, block);
             return result;
         }
@@ -274,19 +275,19 @@ public class ThreadLibrary implements Library {
         }
 
         @JRubyMethod
-        public synchronized IRubyObject clear() {
+        public synchronized IRubyObject clear(ThreadContext context) {
             entries.clear();
-            return getRuntime().getNil();
+            return context.getRuntime().getNil();
         }
 
         @JRubyMethod(name = "empty?")
-        public synchronized RubyBoolean empty_p() {
-            return ( entries.size() == 0 ? getRuntime().getTrue() : getRuntime().getFalse() );
+        public synchronized RubyBoolean empty_p(ThreadContext context) {
+            return context.getRuntime().newBoolean(entries.size() == 0);
         }
 
         @JRubyMethod(name = {"length", "size"})
-        public synchronized RubyNumeric length() {
-            return RubyNumeric.int2fix(getRuntime(), entries.size());
+        public synchronized RubyNumeric length(ThreadContext context) {
+            return RubyNumeric.int2fix(context.getRuntime(), entries.size());
         }
 
         protected synchronized long java_length() {
@@ -294,16 +295,16 @@ public class ThreadLibrary implements Library {
         }
 
         @JRubyMethod
-        public RubyNumeric num_waiting() { return getRuntime().newFixnum(numWaiting); }
+        public RubyNumeric num_waiting(ThreadContext context) { return context.getRuntime().newFixnum(numWaiting); }
 
         @JRubyMethod(name = {"pop", "deq", "shift"}, optional = 1)
-        public synchronized IRubyObject pop(IRubyObject[] args) {
+        public synchronized IRubyObject pop(ThreadContext context, IRubyObject[] args) {
             boolean should_block = true;
-            if ( Arity.checkArgumentCount(getRuntime(), args, 0, 1) == 1 ) {
+            if ( Arity.checkArgumentCount(context.getRuntime(), args, 0, 1) == 1 ) {
                 should_block = !args[0].isTrue();
             }
             if ( !should_block && entries.size() == 0 ) {
-                throw new RaiseException(getRuntime(), getRuntime().getThreadError(), "queue empty", false);
+                throw new RaiseException(context.getRuntime(), context.getRuntime().getThreadError(), "queue empty", false);
             }
             numWaiting++;
             while ( entries.size() == 0 ) {
@@ -317,10 +318,10 @@ public class ThreadLibrary implements Library {
         }
 
         @JRubyMethod(name = {"push", "<<", "enq"})
-        public synchronized IRubyObject push(IRubyObject value) {
+        public synchronized IRubyObject push(ThreadContext context, IRubyObject value) {
             entries.addLast(value);
             notify();
-            return getRuntime().getNil();
+            return context.getRuntime().getNil();
         }
     }
 
@@ -330,8 +331,8 @@ public class ThreadLibrary implements Library {
         private int capacity;
 
         @JRubyMethod(name = "new", rest = true, frame = true, meta = true)
-        public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
-            SizedQueue result = new SizedQueue(recv.getRuntime(), (RubyClass)recv);
+        public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+            SizedQueue result = new SizedQueue(context.getRuntime(), (RubyClass)recv);
             result.callInit(args, block);
             return result;
         }
@@ -352,22 +353,23 @@ public class ThreadLibrary implements Library {
         }
 
         @JRubyMethod
-        public synchronized IRubyObject clear() {
-            super.clear();
+        @Override
+        public synchronized IRubyObject clear(ThreadContext context) {
+            super.clear(context);
             notifyAll();
-            return getRuntime().getNil();
+            return context.getRuntime().getNil();
         }
 
         @JRubyMethod
-        public synchronized RubyNumeric max() {
-            return RubyNumeric.int2fix(getRuntime(), capacity);
+        public synchronized RubyNumeric max(ThreadContext context) {
+            return RubyNumeric.int2fix(context.getRuntime(), capacity);
         }
 
         @JRubyMethod(name = {"max=", "initialize"})
-        public synchronized IRubyObject max_set(IRubyObject arg) {
+        public synchronized IRubyObject max_set(ThreadContext context, IRubyObject arg) {
             int new_capacity = RubyNumeric.fix2int(arg);
             if ( new_capacity <= 0 ) {
-                getRuntime().newArgumentError("queue size must be positive");
+                context.getRuntime().newArgumentError("queue size must be positive");
             }
             int difference;
             if ( new_capacity > capacity ) {
@@ -379,18 +381,20 @@ public class ThreadLibrary implements Library {
             if ( difference > 0 ) {
                 notifyAll();
             }
-            return getRuntime().getNil();
+            return context.getRuntime().getNil();
         }
 
         @JRubyMethod(name = {"pop", "deq", "shift"}, optional = 1)
-        public synchronized IRubyObject pop(IRubyObject args[]) {
-            IRubyObject result = super.pop(args);
+        @Override
+        public synchronized IRubyObject pop(ThreadContext context, IRubyObject args[]) {
+            IRubyObject result = super.pop(context, args);
             notifyAll();
             return result;
         }
 
         @JRubyMethod(name = {"push", "<<"})
-        public synchronized IRubyObject push(IRubyObject value) {
+        @Override
+        public synchronized IRubyObject push(ThreadContext context, IRubyObject value) {
             if ( java_length() >= capacity ) {
                 numWaiting++;
                 while ( java_length() >= capacity ) {
@@ -401,9 +405,9 @@ public class ThreadLibrary implements Library {
                 }
                 numWaiting--;
             }
-            super.push(value);
+            super.push(context, value);
             notifyAll();
-            return getRuntime().getNil();
+            return context.getRuntime().getNil();
         }
     }
 }

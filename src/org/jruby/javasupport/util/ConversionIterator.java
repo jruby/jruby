@@ -33,7 +33,7 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ConversionIterator implements Iterator {
-	private Iterator iterator;
+	private final Iterator iterator;
 
 	public ConversionIterator(Iterator iterator) {
 		this.iterator = iterator;

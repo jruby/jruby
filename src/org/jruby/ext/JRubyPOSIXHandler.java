@@ -14,17 +14,18 @@ import org.jruby.ext.posix.POSIXHandler;
 import org.jruby.ext.posix.POSIX.ERRORS;
 
 public class JRubyPOSIXHandler implements POSIXHandler {
-    Ruby runtime;
-    private boolean isVerbose;
+    private final Ruby runtime;
+    private final boolean isVerbose;
     
     public JRubyPOSIXHandler(Ruby runtime) {
         this.runtime = runtime;
 
-        isVerbose = false;
+        boolean verbose = false;
         try {
-            isVerbose = Boolean.getBoolean("jruby.native.verbose");
+            verbose = Boolean.getBoolean("jruby.native.verbose");
         } catch (SecurityException e) {
         }
+        this.isVerbose = verbose;
     }
 
     public void error(ERRORS error, String extraData) {
