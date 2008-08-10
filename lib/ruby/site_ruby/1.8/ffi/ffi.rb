@@ -51,17 +51,10 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'java'
 require 'rbconfig'
 require 'ffi/platform'
 require 'ffi.so' # Load the JRuby implementation class
 
-module JRuby
-  module FFI
-    import org.jruby.ext.ffi.NativeType
-    Provider = Java::org.jruby.ext.ffi.FFIProvider.instance
-  end
-end
 module FFI
   NativeType = JRuby::FFI::NativeType
 
@@ -78,7 +71,7 @@ module FFI
   
   TypeDefs = Hash.new
   def self.add_typedef(current, add)
-    if current.kind_of? NativeType
+    if current.kind_of? Integer
       code = current
     else
       code = TypeDefs[current]
@@ -190,7 +183,7 @@ module JRuby::FFI
   TypeDefs = Hash.new
   
   def self.add_typedef(current, add)
-    if current.kind_of? NativeType
+    if current.kind_of? Integer
       code = current
     else
       code = TypeDefs[current] || FFI::TypeDefs[current]
@@ -214,9 +207,8 @@ module JRuby::FFI
     # Current artificial limitation based on JFFI limit
     raise FFI::SignatureError, 'FFI functions may take max 32 arguments!' if args.size > 32
 
-    cargs = args.map { |e| find_type(e) }
-    invoker = Provider.createInvoker(self, lib, name, find_type(ret),
-      cargs.to_java(NativeType), convention.to_s)
+    invoker = InvokerFactory.createInvoker(lib, name, find_type(ret),
+      args.map { |e| find_type(e) }, convention.to_s)
     raise FFI::NotFoundError.new(name, lib) unless invoker
     return invoker
   end
@@ -303,10 +295,10 @@ module JRuby::FFI
     raise ArgumentError, "Unknown native type"
   end
   def self.errno
-    Provider.getLastError
+    LastError.error
   end
   def self.set_errno(error)
-    Provider.setLastError(error)
+    LastError.error = error
   end
 end
 # Define MemoryPointer globally for rubinius FFI backward compatibility
@@ -322,9 +314,8 @@ module FFI
     # Current artificial limitation based on JRuby::FFI limit
     raise SignatureError, 'FFI functions may take max 32 arguments!' if args.size > 32
 
-    cargs = args.map { |e| find_type(e) }
-    invoker = JRuby::FFI::Provider.createInvoker(self, lib, name, find_type(ret),
-      cargs.to_java(JRuby::FFI::NativeType), convention.to_s)
+    invoker = JRuby::FFI::InvokerFactory.createInvoker(lib, name, find_type(ret),
+      args.map { |e| find_type(e) }, convention.to_s)
     raise NotFoundError.new(name, lib) unless invoker
     return invoker
   end

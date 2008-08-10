@@ -36,6 +36,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.FFIProvider;
+import org.jruby.ext.ffi.Factory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -68,7 +69,7 @@ public class FileDescriptorIO extends RubyIO {
             throw new RuntimeException(ex);
         }
         openFile.setMainStream(new ChannelStream(getRuntime(),
-                new ChannelDescriptor(FFIProvider.getInstance().newByteChannel(RubyNumeric.fix2int(fd)),
+                new ChannelDescriptor(Factory.getInstance().newByteChannel(RubyNumeric.fix2int(fd)),
                 getNewFileno(), modes, new java.io.FileDescriptor())));
         openFile.setPipeStream(openFile.getMainStream());
         openFile.setMode(modes.getOpenFileFlags());

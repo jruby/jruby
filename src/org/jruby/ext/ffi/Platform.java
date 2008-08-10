@@ -33,7 +33,7 @@ package org.jruby.ext.ffi;
  */
 public abstract class Platform {
     public static final Platform getPlatform() {
-        return FFIProvider.getInstance().getPlatform();
+        return Factory.getInstance().getPlatform();
     }
     
     protected Platform() { }

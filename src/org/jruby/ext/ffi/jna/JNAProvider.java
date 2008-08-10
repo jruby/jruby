@@ -35,9 +35,7 @@ import com.sun.jna.Native;
 import com.sun.jna.NativeLibrary;
 import com.sun.jna.Pointer;
 import java.nio.ByteBuffer;
-import java.nio.channels.ByteChannel;
 import org.jruby.Ruby;
-import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -46,21 +44,15 @@ import org.jruby.util.ByteList;
  * A FFIProvider that uses JNA to load and execute native functions.
  */
 public final class JNAProvider extends FFIProvider {
-    private final JNAPlatform platform = new JNAPlatform();
-    @Override
-    public <T> T loadLibrary(String libraryName, Class<T> libraryClass) {
-        return libraryClass.cast(Native.loadLibrary(libraryName, libraryClass));
-    }
 
-    @Override
-    public Platform getPlatform() {
-        return platform;
+    JNAProvider(Ruby runtime) {
+        super(runtime);
     }
-
+    
     @Override
-    public final Invoker createInvoker(IRubyObject recv, String libraryName, String functionName,
+    public final Invoker createInvoker(Ruby runtime, String libraryName, String functionName,
             NativeType returnType, NativeType[] parameterTypes, String convention) {
-
+        
         Function function = NativeLibrary.getInstance(libraryName).getFunction(functionName,
                 "stdcall".equals(convention) ? Function.ALT_CONVENTION : Function.C_CONVENTION);
         FunctionInvoker functionInvoker = getFunctionInvoker(returnType);
@@ -68,7 +60,8 @@ public final class JNAProvider extends FFIProvider {
         for (int i = 0; i < marshallers.length; ++i) {
             marshallers[i] = getMarshaller(parameterTypes[i]);
         }
-        return new JNAInvoker(recv.getRuntime(), function, functionInvoker, marshallers);
+
+        return new JNAInvoker(runtime, function, functionInvoker, marshallers);
     }
     
     public int getLastError() {
@@ -78,25 +71,6 @@ public final class JNAProvider extends FFIProvider {
         Native.setLastError(error);
     }
 
-    public ByteChannel newByteChannel(int fd) {
-        return new FileDescriptorByteChannel(fd);
-    }
-
-    @Override
-    public void setup(Ruby runtime, RubyModule module) {
-        super.setup(runtime, module);
-        //
-        // Hook up the MemoryPointer class if its not already there
-        //
-        synchronized (module) {
-            if (module.fastGetClass(JNAMemoryPointer.MEMORY_POINTER_NAME) == null) {
-                JNAMemoryPointer.createMemoryPointerClass(runtime);
-            }
-            if (module.fastGetClass(JNABuffer.BUFFER_RUBY_CLASS) == null) {
-                JNABuffer.createBufferClass(runtime);
-            }
-        }
-    }
     
     /**
      * Gets a {@link FunctionInvoker} for a native return type.
@@ -184,9 +158,6 @@ public final class JNAProvider extends FFIProvider {
             case POINTER:
                 return PointerMarshaller.INSTANCE;
             case BUFFER:
-            case BUFFER_IN:
-            case BUFFER_OUT:
-            case BUFFER_PINNED:
                 return BufferMarshaller.INSTANCE;
             default:
                 throw new IllegalArgumentException("Invalid parameter type: " + type);

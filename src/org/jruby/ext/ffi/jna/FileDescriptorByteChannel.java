@@ -31,14 +31,14 @@ package org.jruby.ext.ffi.jna;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
-import org.jruby.ext.ffi.FFIProvider;
+import org.jruby.ext.ffi.Factory;
 
 /**
  * An implementation of ByteChannel that reads from and writes to a native unix
  * file descriptor.
  */
 public class FileDescriptorByteChannel implements ByteChannel {
-    private final static LibC libc = FFIProvider.getInstance().loadLibrary("c", LibC.class);
+    private final static LibC libc = Factory.getInstance().loadLibrary("c", LibC.class);
     private final int fd;
     private volatile boolean isOpen = true;
 

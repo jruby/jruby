@@ -28,97 +28,86 @@
 
 package org.jruby.ext.ffi;
 
-import java.io.IOException;
-import java.nio.channels.ByteChannel;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.ext.ffi.io.FileDescriptorIO;
+import org.jruby.RubyObject;
+import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.load.Library;
 
 /**
  * Base class for all FFI providers
  */
-public abstract class FFIProvider {
+@JRubyClass(name = FFIProvider.MODULE_NAME + "::" + FFIProvider.CLASS_NAME, parent = "Object")
+public abstract class FFIProvider extends RubyObject {
     
     /**
      * The name of the module to place all the classes/methods under.
      */
     public static final String MODULE_NAME = "JRuby::FFI";
-    public static final String PROVIDER_RUBY_NAME = "Provider";
+    public static final String CLASS_NAME = "Provider";
+    
+    public static RubyClass createProviderClass(Ruby runtime) {
+        RubyModule module = FFIProvider.getModule(runtime);
+        RubyClass result = module.defineClassUnder(CLASS_NAME,
+                runtime.getObject(), 
+                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        result.defineAnnotatedMethods(FFIProvider.class);
+        result.defineAnnotatedConstants(FFIProvider.class);
 
-    private static final class SingletonHolder {
-        private static final FFIProvider INSTANCE = getInstance();
-        private static final FFIProvider getInstance() {
-            final boolean useJNA = Boolean.getBoolean("ffi.usejna");
-            String prefix = FFIProvider.class.getPackage().getName();
-            FFIProvider provider = null;
-            if (!useJNA) {
-                try {
-                    provider = (FFIProvider) Class.forName(prefix + ".jffi.JFFIProvider").newInstance();
-                } catch (Throwable ex) {
-                }
-            }
-            if (provider == null) {
-                try {
-                    provider = (FFIProvider) Class.forName(prefix + ".jna.JNAProvider").newInstance();
-                } catch (Throwable ex) {
-                    throw new RuntimeException("Could not load FFI provider", ex);
-                }
-            }
-            return provider;
-        }
+        return result;
     }
-    protected FFIProvider() {}
-
-    public static class Service implements Library {
-        public void load(final Ruby runtime, boolean wrap) throws IOException {
-            RubyModule ffi = runtime.defineModuleUnder("FFI", runtime.defineModule("JRuby"));
-            FFIProvider provider = FFIProvider.getInstance();
-            provider.setup(runtime, ffi);
-        }
+    protected FFIProvider(Ruby runtime, RubyClass klass) {
+        super(runtime, klass);
     }
-    /**
-     * Gets an instance of <tt>FFIProvider</tt>
-     * 
-     * @return an instance of <tt>FFIProvider</tt>
-     */
-    public static final FFIProvider getInstance() {
-        return SingletonHolder.INSTANCE;
+    
+    protected FFIProvider(Ruby runtime) {
+        super(runtime, getModule(runtime).fastGetClass(CLASS_NAME));
     }
-
+    
     public static RubyModule getModule(Ruby runtime) {
         return (RubyModule) runtime.fastGetModule("JRuby").fastGetConstantAt("FFI");
     }
-    /**
-     * Registers FFI ruby classes/modules
-     * 
-     * @param module the module to register the classes under
-     */
-    public void setup(Ruby runtime, RubyModule module) {
-        synchronized (module) {
-            if (module.fastGetClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS) == null) {
-                AbstractMemory.createAbstractMemoryClass(runtime);
-            }
-            if (module.fastGetClass(AbstractMemoryPointer.className) == null) {
-                AbstractMemoryPointer.createMemoryPointerClass(runtime);
-            }
-            if (module.fastGetClass(AbstractBuffer.ABSTRACT_BUFFER_RUBY_CLASS) == null) {
-                AbstractBuffer.createBufferClass(runtime);
-            }
-            if (module.fastGetClass(StructLayout.CLASS_NAME) == null) {
-                StructLayout.createStructLayoutClass(runtime);
-            }
-            if (module.fastGetClass(StructLayoutBuilder.CLASS_NAME) == null) {
-                StructLayoutBuilder.createStructLayoutBuilderClass(runtime);
-            }
-            if (module.fastGetClass(FileDescriptorIO.CLASS_NAME) == null) {
-                FileDescriptorIO.createFileDescriptorIOClass(runtime);
-            }
-            
+    private static final int intValue(NativeType type) {
+        return type.ordinal();
+    }
+    private static final NativeType nativeType(int type) {
+        NativeType[] values = NativeType.values();
+        if (type < 0 || type >= values.length) {
+            return NativeType.VOID;
         }
+        return NativeType.values()[type];
+    }
+    @JRubyMethod(name = { "create_invoker", "createInvoker" }, required = 5)
+    public IRubyObject createInvoker(ThreadContext context, IRubyObject[] args)
+    {
+        RubyArray paramTypes = (RubyArray) args[3];
+        NativeType[] nativeParamTypes = new NativeType[paramTypes.size()];
+        for (int i = 0; i < paramTypes.size(); ++i) {
+            
+            nativeParamTypes[i] = nativeType(Util.int32Value((IRubyObject) paramTypes.get(i)));
+        }
+        
+        return createInvoker(context.getRuntime(), args[0].toString(), args[1].toString(),
+                nativeType(Util.int32Value(args[2])), nativeParamTypes, args[4].toString());
+    }
+    
+    @JRubyMethod(name = { "error", "last_error" })
+    public IRubyObject getLastError(ThreadContext context)
+    {
+        return context.getRuntime().newFixnum(getLastError());
     }
 
+    @JRubyMethod(name = { "error=", "last_error=" })
+    public IRubyObject getLastError(ThreadContext context, IRubyObject error)
+    {
+        setLastError(Util.int32Value(error));
+        return context.getRuntime().getNil();
+    }
     /**
      * Creates a new invoker for a native function.
      * 
@@ -128,7 +117,7 @@ public abstract class FFIProvider {
      * @param parameterTypes The parameter types the function takes.
      * @return a new <tt>Invoker</tt> instance.
      */
-    public abstract Invoker createInvoker(IRubyObject recv, String libraryName, String functionName, NativeType returnType,
+    public abstract Invoker createInvoker(Ruby runtime, String libraryName, String functionName, NativeType returnType,
             NativeType[] parameterTypes, String convention);
     
     /**
@@ -148,25 +137,5 @@ public abstract class FFIProvider {
      */
     public abstract void setLastError(int error);
 
-    /**
-     * Loads a native library.
-     *
-     * @param <T>
-     * @param libraryName The name of the library to load.
-     * @param libraryClass The interface class to map to the library functions.
-     * @return A new instance of <tt>libraryClass</tt> that an access the library.
-     */
-    public abstract <T> T loadLibrary(String libraryName, Class<T> libraryClass);
-
-    /**
-     * Gets the platform info for this <tt>FFIProvider</tt>.
-     *
-     * @return A platform information instance.
-     */
-    public abstract Platform getPlatform();
-
-    /**
-     * Wraps a {@link java.nio.ByteChannel} around a native file descriptor
-     */
-    public abstract ByteChannel newByteChannel(int fd);
+    
 }

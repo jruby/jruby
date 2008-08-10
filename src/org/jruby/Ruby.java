@@ -1224,7 +1224,7 @@ public final class Ruby {
         addLazyBuiltin("socket.so", "socket", "org.jruby.ext.socket.RubySocket$Service");
         addLazyBuiltin("rbconfig.rb", "rbconfig", "org.jruby.libraries.RbConfigLibrary");
         addLazyBuiltin("jruby/serialization.rb", "serialization", "org.jruby.libraries.JRubySerializationLibrary");
-        addLazyBuiltin("ffi.so", "ffi", "org.jruby.ext.ffi.FFIProvider$Service");
+        addLazyBuiltin("ffi.so", "ffi", "org.jruby.ext.ffi.Factory$Service");
         if(RubyInstanceConfig.NATIVE_NET_PROTOCOL) {
             addLazyBuiltin("net/protocol.rb", "net/protocol", "org.jruby.libraries.NetProtocolBufferedIOLibrary");
         }
