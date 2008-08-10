@@ -151,7 +151,7 @@ public class RubyMarshal {
             if (in != null && in.respondsTo("read")) {
                 rawInput = inputStream(in);
             } else if (in != null && in.respondsTo("to_str")) {
-                RubyString inString = (RubyString) RuntimeHelpers.invoke(context, in, "to_str", IRubyObject.NULL_ARRAY);
+                RubyString inString = (RubyString) RuntimeHelpers.invoke(context, in, "to_str");
                 ByteList bytes = inString.getByteList();
                 rawInput = new ByteArrayInputStream(bytes.unsafeBytes(), bytes.begin(), bytes.length());
             } else {

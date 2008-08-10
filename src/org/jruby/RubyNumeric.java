@@ -627,7 +627,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "to_int")
     public IRubyObject to_int(ThreadContext context) {
-        return RuntimeHelpers.invoke(context, this, "to_i", IRubyObject.NULL_ARRAY);
+        return RuntimeHelpers.invoke(context, this, "to_i");
     }
 
     /** num_scalar_p

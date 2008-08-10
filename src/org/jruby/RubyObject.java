@@ -689,7 +689,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * Will invoke a named method with no arguments and no block.
      */
     public final IRubyObject callMethod(ThreadContext context, String name) {
-        return RuntimeHelpers.invoke(context, this, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+        return RuntimeHelpers.invoke(context, this, name);
     }
 
     /**
@@ -697,7 +697,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * functional invocation.
      */
      public final IRubyObject callMethod(ThreadContext context, String name, IRubyObject arg) {
-        return RuntimeHelpers.invoke(context, this, name, arg, Block.NULL_BLOCK);
+        return RuntimeHelpers.invoke(context, this, name, arg);
     }
 
     /**
@@ -705,7 +705,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * block with functional invocation.
      */
     public final IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args) {
-        return RuntimeHelpers.invoke(context, this, name, args, Block.NULL_BLOCK);
+        return RuntimeHelpers.invoke(context, this, name, args);
     }
 
     /**
