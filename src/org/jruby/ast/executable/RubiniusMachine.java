@@ -272,7 +272,7 @@ public class RubiniusMachine {
                     argu[i] = stack[stackTop--];
                 }
                 if((call_flags & 0x01) == 0x01) { //Functional
-                    stack[++stackTop] = RuntimeHelpers.invoke(context, recv, name, argu, CallType.FUNCTIONAL, Block.NULL_BLOCK); 
+                    stack[++stackTop] = RuntimeHelpers.invoke(context, recv, name, argu, Block.NULL_BLOCK); 
                 } else {
                     stack[++stackTop] = RuntimeHelpers.invoke(context, recv, name, argu, CallType.NORMAL, Block.NULL_BLOCK); 
                 }

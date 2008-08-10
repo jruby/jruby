@@ -26,7 +26,7 @@ public class JavaProxyMethods {
     public static IRubyObject java_class(ThreadContext context, IRubyObject recv) {
         RubyClass metaClass = recv.getMetaClass();
         // TODO: can't we dig this out without a method call?
-        return RuntimeHelpers.invoke(context, metaClass, "java_class", CallType.FUNCTIONAL);
+        return RuntimeHelpers.invoke(context, metaClass, "java_class");
     }
     
     @JRubyMethod(name = "==")

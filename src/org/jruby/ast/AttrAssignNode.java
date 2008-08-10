@@ -206,14 +206,36 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
         IRubyObject receiver = receiverNode.interpret(runtime, context, self, block);
         
         // If reciever is self then we do the call the same way as vcall
-        CallType callType = (receiver == self ? CallType.VARIABLE : CallType.NORMAL);
-
+        if (receiver == self) {
+            return selfAssign(runtime, context, self, value, block, checkArity);
+        } else {
+            return otherAssign(runtime, context, self, value, block, checkArity);
+        }
+    }
+    
+    private IRubyObject selfAssign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {        
+        IRubyObject receiver = receiverNode.interpret(runtime, context, self, block);
+        
         if (argsNode == null) { // attribute set.
-            RuntimeHelpers.invoke(context, receiver, name, value, callType, Block.NULL_BLOCK);
+            RuntimeHelpers.invoke(context, receiver, name, value, Block.NULL_BLOCK);
         } else { // element set
             RubyArray args = (RubyArray) argsNode.interpret(runtime, context, self, block);
             args.append(value);
-            RuntimeHelpers.invoke(context, receiver, name, args.toJavaArray(), callType, Block.NULL_BLOCK);
+            RuntimeHelpers.invoke(context, receiver, name, args.toJavaArray(), Block.NULL_BLOCK);
+        } 
+        
+        return runtime.getNil();
+    }
+    
+    private IRubyObject otherAssign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {        
+        IRubyObject receiver = receiverNode.interpret(runtime, context, self, block);
+
+        if (argsNode == null) { // attribute set.
+            RuntimeHelpers.invoke(context, receiver, name, value, CallType.NORMAL, Block.NULL_BLOCK);
+        } else { // element set
+            RubyArray args = (RubyArray) argsNode.interpret(runtime, context, self, block);
+            args.append(value);
+            RuntimeHelpers.invoke(context, receiver, name, args.toJavaArray(), CallType.NORMAL, Block.NULL_BLOCK);
         } 
         
         return runtime.getNil();

@@ -228,19 +228,21 @@ public class RuntimeHelpers {
     }
 
     
+    @Deprecated
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, int methodIndex,
                                                 IRubyObject[] args, IRubyObject self, CallType callType, Block block) {
-        // store call information so method_missing impl can use it            
-        context.setLastCallStatus(callType);            
-        context.setLastVisibility(method.getVisibility());
-
-        if (methodIndex == MethodIndex.METHOD_MISSING) {
+        return callMethodMissing(context, receiver, method, name, args, self, callType, block);
+    }
+    
+    private static IRubyObject callMethodMissingInternal(ThreadContext context, IRubyObject receiver, String name, 
+                                                IRubyObject[] args, IRubyObject self, Block block) {
+        if (name.equals("method_missing")) {
             return RubyKernel.method_missing(context, self, args, block);
         }
-        
+
         IRubyObject[] newArgs = prepareMethodMissingArgs(args, context, name);
 
-        return receiver.callMethod(context, "method_missing", newArgs, block);
+        return invoke(context, receiver, "method_missing", newArgs, block);
     }
 
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, 
@@ -248,14 +250,35 @@ public class RuntimeHelpers {
         // store call information so method_missing impl can use it            
         context.setLastCallStatus(callType);            
         context.setLastVisibility(method.getVisibility());
-
-        if (name.equals("method_missing")) {
-            return RubyKernel.method_missing(context, self, args, block);
-        }
-
-        IRubyObject[] newArgs = prepareMethodMissingArgs(args, context, name);
-
-        return receiver.callMethod(context, "method_missing", newArgs, block);
+        return callMethodMissingInternal(context, receiver, name, args, self, block);
+    }
+    public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, 
+                                                IRubyObject arg, IRubyObject self, CallType callType, Block block) {
+        // store call information so method_missing impl can use it            
+        context.setLastCallStatus(callType);            
+        context.setLastVisibility(method.getVisibility());
+        return callMethodMissingInternal(context, receiver, name, new IRubyObject[] {arg}, self, block);
+    }
+    public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, 
+                                                IRubyObject arg0, IRubyObject arg1, IRubyObject self, CallType callType, Block block) {
+        // store call information so method_missing impl can use it            
+        context.setLastCallStatus(callType);            
+        context.setLastVisibility(method.getVisibility());
+        return callMethodMissingInternal(context, receiver, name, new IRubyObject[] {arg0,arg1}, self, block);
+    }
+    public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, 
+                                                IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject self, CallType callType, Block block) {
+        // store call information so method_missing impl can use it            
+        context.setLastCallStatus(callType);            
+        context.setLastVisibility(method.getVisibility());
+        return callMethodMissingInternal(context, receiver, name, new IRubyObject[] {arg0,arg1,arg2}, self, block);
+    }
+    public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, 
+                                                IRubyObject self, CallType callType, Block block) {
+        // store call information so method_missing impl can use it            
+        context.setLastCallStatus(callType);            
+        context.setLastVisibility(method.getVisibility());
+        return callMethodMissingInternal(context, receiver, name, IRubyObject.NULL_ARRAY, self, block);
     }
 
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, 
@@ -263,14 +286,7 @@ public class RuntimeHelpers {
         // store call information so method_missing impl can use it            
         context.setLastCallStatus(CallType.FUNCTIONAL);            
         context.setLastVisibility(Visibility.PUBLIC);
-
-        if (name.equals("method_missing")) {
-            return RubyKernel.method_missing(context, self, args, Block.NULL_BLOCK);
-        }
-
-        IRubyObject[] newArgs = prepareMethodMissingArgs(args, context, name);
-
-        return receiver.callMethod(context, "method_missing", newArgs, Block.NULL_BLOCK);
+        return callMethodMissingInternal(context, receiver, name, args, self, Block.NULL_BLOCK);
     }
     
     public static IRubyObject invokeMethodMissing(IRubyObject receiver, String name, IRubyObject[] args) {
@@ -286,39 +302,39 @@ public class RuntimeHelpers {
         
         IRubyObject[] newArgs = prepareMethodMissingArgs(args, context, name);
 
-        return receiver.callMethod(context, "method_missing", newArgs, Block.NULL_BLOCK);
+        return invoke(context, receiver, "method_missing", newArgs, Block.NULL_BLOCK);
     }
     
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, Block block) {
-        return self.getMetaClass().invoke(context, self, name, CallType.FUNCTIONAL, block);
+        return self.getMetaClass().finvoke(context, self, name, block);
     }
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject arg0, Block block) {
-        return self.getMetaClass().invoke(context, self, name, arg0, CallType.FUNCTIONAL, block);
+        return self.getMetaClass().finvoke(context, self, name, arg0, block);
     }
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return self.getMetaClass().invoke(context, self, name, arg0, arg1, CallType.FUNCTIONAL, block);
+        return self.getMetaClass().finvoke(context, self, name, arg0, arg1, block);
     }
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return self.getMetaClass().invoke(context, self, name, arg0, arg1, arg2, CallType.FUNCTIONAL, block);
+        return self.getMetaClass().finvoke(context, self, name, arg0, arg1, arg2, block);
     }
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject[] args, Block block) {
-        return self.getMetaClass().invoke(context, self, name, args, CallType.FUNCTIONAL, block);
+        return self.getMetaClass().finvoke(context, self, name, args, block);
     }
     
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name) {
-        return self.getMetaClass().invoke(context, self, name, CallType.FUNCTIONAL);
+        return self.getMetaClass().finvoke(context, self, name);
     }
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject arg0) {
-        return self.getMetaClass().invoke(context, self, name, arg0, CallType.FUNCTIONAL);
+        return self.getMetaClass().finvoke(context, self, name, arg0);
     }
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1) {
-        return self.getMetaClass().invoke(context, self, name, arg0, arg1, CallType.FUNCTIONAL);
+        return self.getMetaClass().finvoke(context, self, name, arg0, arg1);
     }
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return self.getMetaClass().invoke(context, self, name, arg0, arg1, arg2, CallType.FUNCTIONAL);
+        return self.getMetaClass().finvoke(context, self, name, arg0, arg1, arg2);
     }
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject[] args) {
-        return self.getMetaClass().invoke(context, self, name, args, CallType.FUNCTIONAL);
+        return self.getMetaClass().finvoke(context, self, name, args);
     }
     
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, CallType callType) {

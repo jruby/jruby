@@ -63,7 +63,7 @@ public class JavaProxy extends RubyObject {
     
     @JRubyMethod(name = "[]", meta = true, rest = true)
     public static IRubyObject op_aref(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        IRubyObject javaClass = RuntimeHelpers.invoke(context, recv, "java_class", CallType.VARIABLE);
+        IRubyObject javaClass = RuntimeHelpers.invoke(context, recv, "java_class");
         if (args.length > 0) {
             // construct new array proxy (ArrayJavaProxy)
             IRubyObject[] newArgs = new IRubyObject[args.length + 1];
