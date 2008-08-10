@@ -212,15 +212,15 @@ public abstract class CallSite {
         }
 
         private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method) {
-            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, IRubyObject.NULL_ARRAY, context.getFrameSelf(), callType, Block.NULL_BLOCK);
+            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, context.getFrameSelf(), callType, Block.NULL_BLOCK);
         }
 
         private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, Block block) {
-            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, IRubyObject.NULL_ARRAY, context.getFrameSelf(), callType, block);
+            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, context.getFrameSelf(), callType, block);
         }
 
         private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg) {
-            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[]{arg}, context.getFrameSelf(), callType, Block.NULL_BLOCK);
+            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, arg, context.getFrameSelf(), callType, Block.NULL_BLOCK);
         }
 
         private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject[] args, Block block) {
@@ -228,23 +228,23 @@ public abstract class CallSite {
         }
 
         private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg, Block block) {
-            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[]{arg}, context.getFrameSelf(), callType, block);
+            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, arg, context.getFrameSelf(), callType, block);
         }
 
         private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg1, IRubyObject arg2) {
-            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[]{arg1, arg2}, context.getFrameSelf(), callType, Block.NULL_BLOCK);
+            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, arg1, arg2, context.getFrameSelf(), callType, Block.NULL_BLOCK);
         }
 
         private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg1, IRubyObject arg2, Block block) {
-            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[]{arg1, arg2}, context.getFrameSelf(), callType, block);
+            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, arg1, arg2, context.getFrameSelf(), callType, block);
         }
 
         private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[]{arg1, arg2, arg3}, context.getFrameSelf(), callType, Block.NULL_BLOCK);
+            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, arg1, arg2, arg3, context.getFrameSelf(), callType, Block.NULL_BLOCK);
         }
 
         private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
-            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, new IRubyObject[]{arg1, arg2, arg3}, context.getFrameSelf(), callType, block);
+            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, arg1, arg2, arg3, context.getFrameSelf(), callType, block);
         }
 
         private boolean methodMissing(DynamicMethod method, ThreadContext context) {
