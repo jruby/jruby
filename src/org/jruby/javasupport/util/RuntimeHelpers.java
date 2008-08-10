@@ -302,6 +302,7 @@ public class RuntimeHelpers {
         return callMethodMissingInternal(context, receiver, name, args, self, Block.NULL_BLOCK);
     }
     
+    @Deprecated
     public static IRubyObject invokeMethodMissing(IRubyObject receiver, String name, IRubyObject[] args) {
         ThreadContext context = receiver.getRuntime().getCurrentContext();
         

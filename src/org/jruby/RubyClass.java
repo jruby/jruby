@@ -121,6 +121,10 @@ public class RubyClass extends RubyModule {
         if (obj.getMetaClass().getRealClass() != getRealClass()) throw runtime.newTypeError("wrong instance allocation");
         return obj;
     }
+
+    public CallSite[] getBaseCallSites() {
+        return baseCallSites;
+    }
     
     public CallSite[] getExtraCallSites() {
         return extraCallSites;
