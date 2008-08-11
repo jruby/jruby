@@ -10,7 +10,7 @@ class F < E; end; class G < F; end; class H < G; end; class I < H; end; class J 
 def bench_send(bm)
   bm.report("1m foo calls") { f = Foo.new; 10_000_000.times { f.foo } }
   bm.report("1m foo sends") { f = Foo.new; 10_000_000.times { f.send :foo } }
-  bm.report("1m subclass foo sends") { f = J.new; 10_000_000.times { f.send :foo } }
+  bm.report("1m 10th subclass foo sends") { f = J.new; 10_000_000.times { f.send :foo } }
 end
 
 if $0 == __FILE__
