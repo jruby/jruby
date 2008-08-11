@@ -101,13 +101,24 @@ public class RubyMethod extends RubyObject {
     /** Call the method.
      * 
      */
-    @JRubyMethod(name = {"call", "[]"}, rest = true, frame = true)
+    @JRubyMethod(name = {"call", "[]"})
+    public IRubyObject call(ThreadContext context, Block block) {
+        return method.call(context, receiver, implementationModule, methodName, block);
+    }
+    @JRubyMethod(name = {"call", "[]"})
+    public IRubyObject call(ThreadContext context, IRubyObject arg, Block block) {
+        return method.call(context, receiver, implementationModule, methodName, arg, block);
+    }
+    @JRubyMethod(name = {"call", "[]"})
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return method.call(context, receiver, implementationModule, methodName, arg0, arg1, block);
+    }
+    @JRubyMethod(name = {"call", "[]"})
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return method.call(context, receiver, implementationModule, methodName, arg0, arg1, arg2, block);
+    }
+    @JRubyMethod(name = {"call", "[]"}, rest = true)
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-    	assert args != null;
-
-    	method.getArity().checkArity(context.getRuntime(), args);
-        
-        // FIXME: should lastClass be implementation module for a Method?
         return method.call(context, receiver, implementationModule, methodName, args, block);
     }
 

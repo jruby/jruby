@@ -10,6 +10,7 @@ import java.lang.reflect.Modifier;
 import org.jruby.util.CodegenUtils;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -19,6 +20,7 @@ public class JavaMethodDescriptor {
     public final boolean isStatic;
     public final boolean hasContext;
     public final boolean hasBlock;
+    public final boolean hasVarArgs;
     public final int actualRequired;
     public final int arity;
     public final int required;
@@ -49,6 +51,22 @@ public class JavaMethodDescriptor {
         } else {
             hasContext = false;
             hasBlock = false;
+        }
+        
+        if (hasContext) {
+            if (hasBlock) {
+                // args should be before block
+                hasVarArgs = parameters[parameters.length - 2] == IRubyObject[].class;
+            } else {
+                // args should be at end
+                hasVarArgs = parameters[parameters.length - 1] == IRubyObject[].class;
+            }
+        } else {
+            if (hasBlock) {
+                hasVarArgs = parameters.length > 1 && parameters[parameters.length - 2] == IRubyObject[].class;
+            } else {
+                hasVarArgs = parameters.length > 0 && parameters[parameters.length - 1] == IRubyObject[].class;
+            }
         }
         
         optional = anno.optional();

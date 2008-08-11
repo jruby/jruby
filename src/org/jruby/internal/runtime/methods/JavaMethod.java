@@ -112,6 +112,44 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         }
     }
     
+    public static abstract class JavaMethodZeroOrOneOrN extends JavaMethod {
+        public JavaMethodZeroOrOneOrN(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
+        }
+        public JavaMethodZeroOrOneOrN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
+            super(implementationClass, visibility, callConfig, staticScope, arity);
+        }
+        public JavaMethodZeroOrOneOrN(RubyModule implementationClass, Visibility visibility, int methodIndex) {
+            super(implementationClass, visibility, methodIndex);
+        }
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name);
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg);
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args);
+        
+        // anything over 1 arg dispatches via [] version
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+            return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1});
+        }
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+            return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2});
+        }
+        
+        // default call dispatches to specific or [] versions
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            switch (args.length) {
+            case 0:
+                return call(context, self, clazz, name);
+            case 1:
+                return call(context, self, clazz, name, args[0]);
+            default:
+                return call(context, self, clazz, name, args);
+            }
+        }
+    }
+    
     public static abstract class JavaMethodZeroOrOneBlock extends JavaMethod {
         public JavaMethodZeroOrOneBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
@@ -137,6 +175,32 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
                 Arity.raiseArgumentError(context.getRuntime(), args.length, 0, 1);
                 return null; // never reached
             }
+        }
+    }
+    
+    public static abstract class JavaMethodZeroOrOneOrNBlock extends JavaMethod {
+        public JavaMethodZeroOrOneOrNBlock(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
+        }
+        public JavaMethodZeroOrOneOrNBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
+            super(implementationClass, visibility, callConfig, staticScope, arity);
+        }
+        public JavaMethodZeroOrOneOrNBlock(RubyModule implementationClass, Visibility visibility, int methodIndex) {
+            super(implementationClass, visibility, methodIndex);
+        }
+
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block);
+
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg, Block block);
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block);
+        
+        // anything over 1 arg dispatches via [] version
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+            return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1}, block);
+        }
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+            return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2}, block);
         }
     }
 
@@ -171,6 +235,43 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             }
         }
     }
+
+    public static abstract class JavaMethodZeroOrOneOrTwoOrN extends JavaMethod {
+        public JavaMethodZeroOrOneOrTwoOrN(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
+        }
+        public JavaMethodZeroOrOneOrTwoOrN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
+            super(implementationClass, visibility, callConfig, staticScope, arity);
+        }
+        public JavaMethodZeroOrOneOrTwoOrN(RubyModule implementationClass, Visibility visibility, int methodIndex) {
+            super(implementationClass, visibility, methodIndex);
+        }
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name);
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg);
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1);
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args);
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+            return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2});
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            switch (args.length) {
+            case 0:
+                return call(context, self, clazz, name);
+            case 1:
+                return call(context, self, clazz, name, args[0]);
+            case 2:
+                return call(context, self, clazz, name, args[0], args[1]);
+            default:
+                return call(context, self, clazz, name, args);
+            }
+        }
+    }
     
     public static abstract class JavaMethodZeroOrOneOrTwoBlock extends JavaMethod {
         public JavaMethodZeroOrOneOrTwoBlock(RubyModule implementationClass, Visibility visibility) {
@@ -201,6 +302,30 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
                 Arity.raiseArgumentError(context.getRuntime(), args.length, 0, 2);
                 return null; // never reached
             }
+        }
+    }
+    
+    public static abstract class JavaMethodZeroOrOneOrTwoOrNBlock extends JavaMethod {
+        public JavaMethodZeroOrOneOrTwoOrNBlock(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
+        }
+        public JavaMethodZeroOrOneOrTwoOrNBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
+            super(implementationClass, visibility, callConfig, staticScope, arity);
+        }
+        public JavaMethodZeroOrOneOrTwoOrNBlock(RubyModule implementationClass, Visibility visibility, int methodIndex) {
+            super(implementationClass, visibility, methodIndex);
+        }
+
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block);
+
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg, Block block);
+
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block);
+
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block);
+
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+            return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2}, block);
         }
     }
 
@@ -239,6 +364,43 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             }
         }
     }
+
+    public static abstract class JavaMethodZeroOrOneOrTwoOrThreeOrN extends JavaMethod {
+        public JavaMethodZeroOrOneOrTwoOrThreeOrN(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
+        }
+        public JavaMethodZeroOrOneOrTwoOrThreeOrN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
+            super(implementationClass, visibility, callConfig, staticScope, arity);
+        }
+        public JavaMethodZeroOrOneOrTwoOrThreeOrN(RubyModule implementationClass, Visibility visibility, int methodIndex) {
+            super(implementationClass, visibility, methodIndex);
+        }
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name);
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg);
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1);
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2);
+        
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args);
+
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            switch (args.length) {
+            case 0:
+                return call(context, self, clazz, name);
+            case 1:
+                return call(context, self, clazz, name, args[0]);
+            case 2:
+                return call(context, self, clazz, name, args[0], args[1]);
+            case 3:
+                return call(context, self, clazz, name, args[0], args[1], args[2]);
+            default:
+                return call(context, self, clazz, name, args);
+            }
+        }
+    }
     
     public static abstract class JavaMethodZeroOrOneOrTwoOrThreeBlock extends JavaMethod {
         public JavaMethodZeroOrOneOrTwoOrThreeBlock(RubyModule implementationClass, Visibility visibility) {
@@ -274,6 +436,28 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
                 return null; // never reached
             }
         }
+    }
+    
+    public static abstract class JavaMethodZeroOrOneOrTwoOrThreeOrNBlock extends JavaMethod {
+        public JavaMethodZeroOrOneOrTwoOrThreeOrNBlock(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
+        }
+        public JavaMethodZeroOrOneOrTwoOrThreeOrNBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
+            super(implementationClass, visibility, callConfig, staticScope, arity);
+        }
+        public JavaMethodZeroOrOneOrTwoOrThreeOrNBlock(RubyModule implementationClass, Visibility visibility, int methodIndex) {
+            super(implementationClass, visibility, methodIndex);
+        }
+
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block);
+
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg, Block block);
+
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block);
+
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block);
+
+        public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block);
     }
 
     public static abstract class JavaMethodZeroBlock extends JavaMethod {

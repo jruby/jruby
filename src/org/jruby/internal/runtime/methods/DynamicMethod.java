@@ -77,8 +77,9 @@ public abstract class DynamicMethod {
      * CompiledMethod handles. instanceof assertions make sure this is so.
      */
     protected DynamicMethod() {
-        assert (this instanceof UndefinedMethod ||
-                this instanceof CompiledMethod);
+//        assert (this instanceof UndefinedMethod ||
+//                this instanceof CompiledMethod ||
+//                this instanceof );
     }
     
     protected void init(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {

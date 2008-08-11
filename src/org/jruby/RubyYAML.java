@@ -346,7 +346,7 @@ public class RubyYAML {
         return block.yield(self.getRuntime().getCurrentContext(), args[0]);
     }
 
-    @JRubyMethod(name = "quick_emit_node", rest = true, module = true, visibility = Visibility.PRIVATE)
+//    @JRubyMethod(name = "quick_emit_node", rest = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject quick_emit(IRubyObject self, IRubyObject[] args) {
         return self.getRuntime().getNil();
     }

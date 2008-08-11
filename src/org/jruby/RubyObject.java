@@ -2031,7 +2031,29 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *
      * @return the result of invoking the method identified by aSymbol.
      */
-    @JRubyMethod(name = {"send", "__send__"}, required = 1, rest = true)
+    @JRubyMethod(name = {"send", "__send__"})
+    public IRubyObject send(ThreadContext context, Block block) {
+        throw context.getRuntime().newArgumentError(0, 1);
+    }
+    @JRubyMethod(name = {"send", "__send__"})
+    public IRubyObject send(ThreadContext context, IRubyObject arg0, Block block) {
+        String name = arg0.asJavaString();
+
+        return getMetaClass().finvoke(context, this, name, block);
+    }
+    @JRubyMethod(name = {"send", "__send__"})
+    public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        String name = arg0.asJavaString();
+
+        return getMetaClass().finvoke(context, this, name, arg1, block);
+    }
+    @JRubyMethod(name = {"send", "__send__"})
+    public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        String name = arg0.asJavaString();
+
+        return getMetaClass().finvoke(context, this, name, arg1, arg2, block);
+    }
+    @JRubyMethod(name = {"send", "__send__"}, rest = true)
     public IRubyObject send(ThreadContext context, IRubyObject[] args, Block block) {
         String name = args[0].asJavaString();
         int newArgsLength = args.length - 1;
@@ -2044,15 +2066,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
             System.arraycopy(args, 1, newArgs, 0, newArgs.length);
         }
 
-        RubyModule rubyClass = getMetaClass();
-        DynamicMethod method = rubyClass.searchMethod(name);
-
-        // send doesn't check visibility
-        if (method.isUndefined()) {
-            return RuntimeHelpers.callMethodMissing(context, this, method, name, newArgs, context.getFrameSelf(), CallType.FUNCTIONAL, block);
-        }
-
-        return method.call(context, this, rubyClass, name, newArgs, block);
+        return getMetaClass().finvoke(context, this, name, newArgs, block);
     }
 
     /** rb_false

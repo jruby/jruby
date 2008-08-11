@@ -488,34 +488,40 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
             int min = Integer.MAX_VALUE;
             int max = 0;
+            boolean rest = false;
             boolean block = false;
 
             for (JavaMethodDescriptor desc: descs) {
                 int specificArity = -1;
-                if (desc.optional == 0 && !desc.rest) {
-                    if (desc.required == 0) {
-                        if (desc.actualRequired <= 3) {
-                            specificArity = desc.actualRequired;
-                        } else {
-                            specificArity = -1;
+                
+                if (desc.hasVarArgs) {
+                    rest = true;
+                } else {
+                    if (desc.optional == 0 && !desc.rest) {
+                        if (desc.required == 0) {
+                            if (desc.actualRequired <= 3) {
+                                specificArity = desc.actualRequired;
+                            } else {
+                                specificArity = -1;
+                            }
+                        } else if (desc.required >= 0 && desc.required <= 3) {
+                            specificArity = desc.required;
                         }
-                    } else if (desc.required >= 0 && desc.required <= 3) {
-                        specificArity = desc.required;
                     }
-                }
 
-                if (specificArity < min) {
-                    min = specificArity;
-                }
+                    if (specificArity < min) {
+                        min = specificArity;
+                    }
 
-                if (specificArity > max) {
-                    max = specificArity;
+                    if (specificArity > max) {
+                        max = specificArity;
+                    }
                 }
 
                 block |= desc.hasBlock;
             }
 
-            if (DEBUG) out.println(" min: " + min + ", max: " + max + ", hasBlock: " + block);
+            if (DEBUG) out.println(" min: " + min + ", max: " + max + ", hasBlock: " + block + ", rest: " + rest);
 
             if (c == null) {
                 String superClass = null;
@@ -523,24 +529,48 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 case 0:
                     switch (max) {
                     case 1:
-                        if (block) {
-                            superClass = p(JavaMethod.JavaMethodZeroOrOneBlock.class);
+                        if (rest) {
+                            if (block) {
+                                superClass = p(JavaMethod.JavaMethodZeroOrOneOrNBlock.class);
+                            } else {
+                                superClass = p(JavaMethod.JavaMethodZeroOrOneOrN.class);
+                            }
                         } else {
-                            superClass = p(JavaMethod.JavaMethodZeroOrOne.class);
+                            if (block) {
+                                superClass = p(JavaMethod.JavaMethodZeroOrOneBlock.class);
+                            } else {
+                                superClass = p(JavaMethod.JavaMethodZeroOrOne.class);
+                            }
                         }
                         break;
                     case 2:
-                        if (block) {
-                            superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwoBlock.class);
+                        if (rest) {
+                            if (block) {
+                                superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwoOrNBlock.class);
+                            } else {
+                                superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwoOrN.class);
+                            }
                         } else {
-                            superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwo.class);
+                            if (block) {
+                                superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwoBlock.class);
+                            } else {
+                                superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwo.class);
+                            }
                         }
                         break;
                     case 3:
-                        if (block) {
-                            superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwoOrThreeBlock.class);
+                        if (rest) {
+                            if (block) {
+                                superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwoOrThreeOrNBlock.class);
+                            } else {
+                                superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwoOrThreeOrN.class);
+                            }
                         } else {
-                            superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwoOrThree.class);
+                            if (block) {
+                                superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwoOrThreeBlock.class);
+                            } else {
+                                superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwoOrThree.class);
+                            }
                         }
                         break;
                     }
