@@ -30,16 +30,13 @@ package org.jruby.runtime.callback;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import org.jruby.RubyClass;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CompiledBlockCallback;
-import org.jruby.runtime.Dispatcher;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ReflectionCallbackFactory extends CallbackFactory {
-
     private final Class type;
 
     public ReflectionCallbackFactory(Class type) {
@@ -208,10 +205,5 @@ public class ReflectionCallbackFactory extends CallbackFactory {
     @Deprecated
     public Callback getFastOptMethod(String rubyName, String method) {
         return new ReflectionCallback(type, method, new Class[] { IRubyObject[].class }, true, false, Arity.optional(), true);
-    }
-    
-    @Deprecated
-    public Dispatcher createDispatcher(RubyClass metaClass) {
-        return Dispatcher.DEFAULT_DISPATCHER;
     }
 }

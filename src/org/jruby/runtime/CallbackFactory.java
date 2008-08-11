@@ -228,14 +228,6 @@ public abstract class CallbackFactory {
      **/
     public abstract Callback getFastOptMethod(String method);
 
-    /**
-     * Create a fast STI-based (selector table indexing) dispatcher.
-     * 
-     * @param metaClass
-     * @return
-     * @deprecated No longer used.
-     */
-    public abstract Dispatcher createDispatcher(RubyClass metaClass);
     private static final boolean reflection;
     private static final boolean dumping;
     

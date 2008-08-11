@@ -30,11 +30,7 @@ package org.jruby.runtime.callback;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import org.jruby.Ruby;
@@ -47,9 +43,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.AbstractCompiledBlockCallback;
 import org.jruby.runtime.Arity;
@@ -57,10 +51,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CompiledBlockCallback;
-import org.jruby.runtime.Dispatcher;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.util.CodegenUtils.* ;
 import org.jruby.util.JRubyClassLoader;
@@ -133,49 +125,6 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         mv.visitMethodInsn(INVOKESPECIAL, SUPER_CLASS, "<init>", "()V");
         Label line = new Label();
         mv.visitLineNumber(0, line);
-        mv.visitInsn(RETURN);
-        mv.visitMaxs(1, 1);
-        mv.visitEnd();
-        return cw;
-    }
-
-    @Deprecated
-    private ClassWriter createCtorDispatcher(String namePath, Map switchMap) throws Exception {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, p(Dispatcher.class), null);
-        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", sig(Void.TYPE, params(Ruby.class)), null, null));
-        mv.visitCode();
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESPECIAL, p(Dispatcher.class), "<init>", "()V");
-        Label line = new Label();
-        mv.visitLineNumber(0, line);
-        
-        // create our array
-        mv.aload(0);
-        mv.ldc(new Integer(MethodIndex.NAMES.size()));
-        mv.newarray(T_BYTE);
-        mv.putfield(p(Dispatcher.class), "switchTable", ci(byte[].class));
-        
-        // for each switch value, set it into the table
-        mv.aload(0);
-        mv.getfield(p(Dispatcher.class), "switchTable", ci(byte[].class));
-        
-        for (Iterator switchIter = switchMap.keySet().iterator(); switchIter.hasNext();) {
-            Integer switchValue = (Integer)switchIter.next();
-            mv.dup();
-            
-            // method index
-            mv.ldc(new Integer(MethodIndex.getIndex((String)switchMap.get(switchValue))));
-            // switch value is one-based, add one
-            mv.ldc(switchValue);
-            
-            // store
-            mv.barraystore();
-        }
-        
-        // clear the extra table on stack
-        mv.pop();
-        
         mv.visitInsn(RETURN);
         mv.visitMaxs(1, 1);
         mv.visitEnd();
@@ -1013,205 +962,6 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
             } catch (IllegalArgumentException e) {
                 throw e;
             } catch (Exception e) {
-                throw new IllegalArgumentException(e.getMessage());
-            }
-        }
-    }
-    
-    @Deprecated
-    public Dispatcher createDispatcher(RubyClass metaClass) {
-        String className = type.getName() + "Dispatcher$" + metaClass.getBaseName();
-        String classPath = typePath + "Dispatcher$" + metaClass.getBaseName();
-        
-        synchronized (runtime.getJRubyClassLoader()) {
-            Class c = tryClass(className);
-            try {
-                if (c == null) {
-                    // build a map of all methods from the module and all its parents
-                    Map allMethods = new HashMap();
-                    RubyModule current = metaClass;
-                    
-                    while (current != null) {
-                        for (Iterator methodIter = current.getMethods().entrySet().iterator(); methodIter.hasNext();) {
-                            Map.Entry entry = (Map.Entry)methodIter.next();
-                            
-                            if (allMethods.containsKey(entry.getKey())) continue;
-                            
-                            DynamicMethod dynamicMethod = (DynamicMethod)entry.getValue();
-                            if (!(dynamicMethod instanceof JavaMethod)) {
-                                // method is not a simple/fast method, don't add to our big switch
-                                // FIXME: eventually, we'll probably want to add it to the switch for fast non-hash dispatching
-                                continue;
-                            } else {
-                                // TODO: skip singleton methods for now; we'll figure out fast dispatching for them in a future patch
-                                JavaMethod javaMethod = (JavaMethod)dynamicMethod;
-                                        
-                                // singleton methods require doing a static invocation, etc...disabling again for now
-                                if (javaMethod.isSingleton() || javaMethod.getCallConfig() != CallConfiguration.NO_FRAME_NO_SCOPE) continue;
-                                
-                                // skipping non-public methods for now, to avoid visibility checks in STI
-                                if (dynamicMethod.getVisibility() != Visibility.PUBLIC) continue;
-                            }
-                            
-                            allMethods.put(entry.getKey(), entry.getValue());
-                        }
-                        current = current.getSuperClass();
-                        while (current != null && current.isIncluded()) current = current.getSuperClass();
-                    }
-                    
-                    // switches are 1-based, so add one
-                    Label[] labels = new Label[allMethods.size()];
-                    Label defaultLabel = new Label();
-
-                    int switchValue = 0;
-                    Map switchMap = new HashMap();
-                    
-                    // NOTE: We sort the list of keys here to ensure they're encountered in the same order from run to run
-                    // This will aid AOT compilation, since a given revision of JRuby should always generate the same
-                    // sequence of method indices, and code compiled for that revision should continue to work.
-                    // FIXME: This will not aid compiling once and running across JRuby versions, since method indices
-                    // could be generated in a different order on a different revision (adds, removes, etc over time)
-                    List methodKeys = new ArrayList(allMethods.keySet());
-                    Collections.sort(methodKeys);
-                    for (Iterator methodIter = methodKeys.iterator(); methodIter.hasNext();) {
-                        String indexKey = (String)methodIter.next();
-                        switchValue++;
-                        
-                        switchMap.put(new Integer(switchValue), indexKey);
-                        // switches are one-based, so subtract one
-                        labels[switchValue - 1] = new Label();
-                    }
-
-                    ClassWriter cw = createCtorDispatcher(classPath, switchMap);
-                    SkinnyMethodAdapter mv = new SkinnyMethodAdapter(startDispatcher(cw));
-                    
-                    // store runtime
-                    mv.aload(DISPATCHER_THREADCONTEXT_INDEX);
-                    mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-                    mv.astore(DISPATCHER_RUNTIME_INDEX);
-                    
-                    Label tryBegin = new Label();
-                    Label tryEnd = new Label();
-                    Label tryCatch = new Label();
-                    mv.trycatch(tryBegin, tryEnd, tryCatch, p(StackOverflowError.class));
-                    mv.label(tryBegin);
-                    
-                    // invoke directly
-
-                    // receiver is already loaded by startDispatcher
-                    
-                    // check if tracing is on
-                    mv.aload(DISPATCHER_RUNTIME_INDEX);
-                    mv.invokevirtual(p(Ruby.class), "hasEventHooks", sig(boolean.class));
-                    mv.ifne(defaultLabel);
-                    
-                    // if no switch values, go straight to default
-                    if (switchValue == 0) {
-                        mv.go_to(defaultLabel);
-                    } else {
-                        // load switch value
-                        mv.aload(0);
-                        mv.getfield(p(Dispatcher.class), "switchTable", ci(byte[].class));
-                        
-                        // ensure size isn't too large
-                        mv.dup();
-                        mv.arraylength();
-                        mv.iload(DISPATCHER_METHOD_INDEX);
-                        Label ok = new Label();
-                        mv.if_icmpgt(ok);
-                        
-                        // size is too large, remove extra table and go to default
-                        mv.pop();
-                        mv.go_to(defaultLabel);
-                        
-                        // size is ok, retrieve from table and switch on the result
-                        mv.label(ok);
-                        mv.iload(DISPATCHER_METHOD_INDEX);
-                        mv.barrayload();
-                        
-                        // perform switch
-                        mv.tableswitch(1, switchValue, defaultLabel, labels);
-                        
-                        for (int i = 0; i < labels.length; i++) {
-                            String rubyName = (String)switchMap.get(new Integer(i + 1));
-                            DynamicMethod dynamicMethod = (DynamicMethod)allMethods.get(rubyName);
-                            
-                            mv.label(labels[i]);
-    
-                            // based on the check above, it's a fast method, we can fast dispatch
-                            JavaMethod javaMethod = (JavaMethod)dynamicMethod;
-                            String method = javaMethod.getJavaName();
-                            Arity arity = javaMethod.getArity();
-                            Class[] descriptor = javaMethod.getArgumentTypes();
-                            
-                            // arity check
-                            checkArity(mv, arity);
-                            
-                            // if singleton load self/recv
-                            if (javaMethod.isSingleton()) {
-                                mv.aload(DISPATCHER_SELF_INDEX);
-                            }
-                            
-                            boolean contextProvided = descriptor.length > 0 && descriptor[0] == ThreadContext.class;
-
-                            if (contextProvided) {
-                                mv.aload(DISPATCHER_THREADCONTEXT_INDEX);
-                            }
-
-                            int argCount = arity.getValue();
-                            switch (argCount) {
-                            case 3: case 2: case 1:
-                                loadArguments(mv, DISPATCHER_ARGS_INDEX, argCount, descriptor, contextProvided);
-                                break;
-                            case 0:
-                                break;
-                            default: // this should catch all opt/rest cases
-                                mv.aload(DISPATCHER_ARGS_INDEX);
-                                checkCast(mv, IRubyObject[].class);
-                                break;
-                            }
-                            
-                            Class ret = getReturnClass(method, descriptor);
-                            String callSig = sig(ret, descriptor);
-//                            if (method.equals("op_equal")) System.out.println("NAME: " + type.getName() + "METHOD: " + sig(ret,descriptor) + ", ARITY: " + arity.getValue());
-                            // if block, pass it
-                            if (descriptor.length > 0 && descriptor[descriptor.length - 1] == Block.class) {
-                                mv.aload(DISPATCHER_BLOCK_INDEX);
-                            }
-                            
-                            mv.invokevirtual(typePath, method, callSig);
-                            mv.areturn();
-                        }
-                    }
-                    
-                    // done with cases, handle default case by getting method object and invoking it
-                    mv.label(defaultLabel);
-                    Label afterCall = new Label();
-                    
-                    dispatchWithoutSTI(mv, afterCall);
-
-                    mv.label(tryEnd);
-                    mv.go_to(afterCall);
-
-                    mv.label(tryCatch);
-                    mv.aload(DISPATCHER_RUNTIME_INDEX);
-                    mv.ldc("stack level too deep");
-                    mv.invokevirtual(p(Ruby.class), "newSystemStackError", sig(RaiseException.class, params(String.class)));
-                    mv.athrow();
-
-                    // calls done, return
-                    mv.label(afterCall);
-                    
-                    mv.areturn();
-                    mv.visitMaxs(1, 1);
-                    c = endCall(cw, mv, className);
-                }
-                Dispatcher dispatcher = (Dispatcher)c.getConstructor(new Class[] {Ruby.class}).newInstance(new Object[] {runtime});
-                return dispatcher;
-            } catch (IllegalArgumentException e) {
-                throw e;
-            } catch (Exception e) {
-                e.printStackTrace();
                 throw new IllegalArgumentException(e.getMessage());
             }
         }

@@ -70,7 +70,6 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CacheMap;
-import org.jruby.runtime.Dispatcher;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -155,8 +154,6 @@ public class RubyModule extends RubyObject {
     protected RubyClass superClass;
 
     public int index;
-    
-    public Dispatcher dispatcher = Dispatcher.DEFAULT_DISPATCHER;
 
     public static class KindOf {
         public static final KindOf DEFAULT_KIND_OF = new KindOf();
@@ -298,10 +295,6 @@ public class RubyModule extends RubyObject {
         return null;
     }
 
-    public Dispatcher getDispatcher() {
-        return dispatcher;
-    }
-
     /** Getter for property superClass.
      * @return Value of property superClass.
      */
@@ -329,8 +322,6 @@ public class RubyModule extends RubyObject {
     // note that addMethod now does its own put, so any change made to
     // functionality here should be made there as well 
     private void putMethod(String name, DynamicMethod method) {
-        // FIXME: kinda hacky...flush STI here
-        dispatcher.clearIndex(MethodIndex.getIndex(name));
         getMethods().put(name, method);
     }
 
@@ -861,9 +852,6 @@ public class RubyModule extends RubyObject {
             if (existingMethod != null) {
                 runtime.getCacheMap().remove(existingMethod);
             }
-            // note: duplicating functionality from putMethod, since we
-            // remove/put atomically here
-            dispatcher.clearIndex(MethodIndex.getIndex(name));
         }
     }
 
