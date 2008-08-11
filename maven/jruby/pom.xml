@@ -129,6 +129,11 @@
                   <version>3.0</version>
                 </artifactItem>
                 <artifactItem>
+                  <groupId>biz.aQute</groupId>
+                  <artifactId>bnd</artifactId>
+                  <version>0.0.249</version>
+                </artifactItem>
+                <artifactItem>
                   <groupId>jline</groupId>
                   <artifactId>jline</artifactId>
                   <version>0.9.93</version>
