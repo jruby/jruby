@@ -198,30 +198,60 @@
     </java>
   </target>
   
-  <property name="jarjar.deps.jar" value="src_gen/__jarjared-deps.jar"/>
-  
   <target name="jar-jruby" depends="generate-method-classes, generate-unsafe" unless="jar-up-to-date">  
+      <!-- TODO: Unfortunate dependency on ruby executable, and ruby might
+           not be present on user's side, so we ignore errors caused by that. -->
+      <exec executable="ruby" dir="${basedir}" failifexecutionfails="false" resultproperty="snapshot.result" errorproperty="snapshot.error">
+        <arg value="tool/snapshot.rb"/>
+        <arg value="${jruby.classes.dir}/org/jruby/jruby.properties"/>
+      </exec>
+            
+      <jar destfile="${lib.dir}/jruby.jar" compress="false">
+        <fileset dir="${jruby.classes.dir}"/>
+        <zipfileset src="${build.lib.dir}/asm-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-commons-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-util-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-analysis-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-tree-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/bytelist-0.1.jar"/>
+        <zipfileset src="${build.lib.dir}/jvyamlb-0.2.jar"/>
+        <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
+        <zipfileset src="${build.lib.dir}/joni.jar"/>
+        <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
+        <zipfileset src="${build.lib.dir}/jna.jar"/>
+        <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
+        <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
+        <manifest>
+          <attribute name="Built-By" value="${user.name}"/>
+          <attribute name="Main-Class" value="org.jruby.Main"/>
+        </manifest>
+      </jar>
+  </target>
+  
+  <target name="jar-jruby-dist" depends="generate-method-classes, generate-unsafe" unless="jar-up-to-date">  
       <!-- TODO: Unfortunate dependency on ruby executable, and ruby might
            not be present on user's side, so we ignore errors caused by that. -->
       <exec executable="ruby" dir="${basedir}" failifexecutionfails="false" >
         <arg value="tool/snapshot.rb"/>
         <arg value="${jruby.classes.dir}/org/jruby/jruby.properties"/>
       </exec>
-
-      <condition property="jarjar.uptodate">
-          <and>
-              <available file="src_gen/__jarjared-deps.jar"/>
-              <uptodate property="jarjar.needed" targetfile="${jarjar.deps.jar}">
-                  <srcfiles dir="${build.lib.dir}" includes="*.jar"/>
-              </uptodate>
-          </and>
-      </condition>
-      <antcall target="_jarjar_internal_"/>
             
       <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0rc7.jar"/>
-      <jarjar destfile="${lib.dir}/jruby.jar" compress="false">
+      <jarjar destfile="${lib.dir}/jruby.jar" compress="true">
         <fileset dir="${jruby.classes.dir}"/>
-        <zipfileset src="${jarjar.deps.jar}"/>
+        <zipfileset src="${build.lib.dir}/asm-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-commons-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-util-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-analysis-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-tree-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/bytelist-0.1.jar"/>
+        <zipfileset src="${build.lib.dir}/jvyamlb-0.2.jar"/>
+        <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
+        <zipfileset src="${build.lib.dir}/joni.jar"/>
+        <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
+        <zipfileset src="${build.lib.dir}/jna.jar"/>
+        <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
+        <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>
           <attribute name="Main-Class" value="org.jruby.Main"/>
@@ -243,24 +273,6 @@
     <move file="${lib.dir}/jruby.jar$" tofile="${lib.dir}/jruby.jar" 
       overwrite="true" />
   </target>
-  
-  <target name="_jarjar_internal_" unless="jarjar.uptodate">
-    <jar destfile="${jarjar.deps.jar}">
-        <zipfileset src="${build.lib.dir}/asm-3.0.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-commons-3.0.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-util-3.0.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-analysis-3.0.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-tree-3.0.jar"/>
-        <zipfileset src="${build.lib.dir}/bytelist-0.1.jar"/>
-        <zipfileset src="${build.lib.dir}/jvyamlb-0.2.jar"/>
-        <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
-        <zipfileset src="${build.lib.dir}/joni.jar"/>
-        <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
-        <zipfileset src="${build.lib.dir}/jna.jar"/>
-        <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
-        <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
-      </jar>
-  </target>
 
   <path id="lib.classpath">
     <pathelement location="${build.lib.dir}/retroweaver-rt-2.0.5.jar"/>
@@ -277,6 +289,7 @@
         <pathelement location="${lib.dir}/jruby-weaved.jar" />
       </classpath>
     </retro>
+    
       <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0rc7.jar"/>
       <jarjar destfile="${lib.dir}/jruby.jar">
         <zipfileset src="${lib.dir}/jruby-weaved.jar"/>
@@ -331,16 +344,6 @@
         <arg value="--no-rdoc"/>
         <arg value="--env-shebang"/>
       </java>
-
-      <condition property="jarjar.needed">
-          <and>
-              <available file="src_gen/__jarjared-deps.jar"/>
-              <uptodate property="jarjar.needed" targetfile="${jarjar.deps.jar}">
-                  <srcfiles dir="${build.lib.dir}" includes="*.jar"/>
-              </uptodate>
-          </and>
-      </condition>
-      <antcall target="_jarjar_internal_"/>
       
       <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0rc7.jar"/>
       <jarjar destfile="${lib.dir}/${filename}">
@@ -348,7 +351,19 @@
         <fileset dir="${build.dir}/jar-complete">
           <exclude name="META-INF/jruby.home/lib/ruby/1.8/**"/>
         </fileset>
-        <zipfileset src="${jarjar.deps.jar}"/>
+        <zipfileset src="${build.lib.dir}/asm-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-commons-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-util-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-analysis-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-tree-3.0.jar"/>
+        <zipfileset src="${build.lib.dir}/bytelist-0.1.jar"/>
+        <zipfileset src="${build.lib.dir}/jvyamlb-0.2.jar"/>
+        <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
+        <zipfileset src="${build.lib.dir}/joni.jar"/>
+        <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
+        <zipfileset src="${build.lib.dir}/jna.jar"/>
+        <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
+        <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>
           <attribute name="Main-Class" value="${mainclass}"/>
@@ -366,6 +381,9 @@
 
   <target name="jar" depends="init" description="Create the jruby.jar file">
     <antcall target="jar-jruby" inheritall="true"/>
+  </target>
+  <target name="jar-dist" depends="init" description="Create the jruby.jar file for distribution. This version uses JarJar Links to rewrite some packages.">
+    <antcall target="jar-jruby-dist" inheritall="true"/>
   </target>
 
   <target name="compile-test" depends="jar" description="Compile the unit tests">
@@ -995,7 +1013,7 @@
     <exclude name="lib/jruby.jar"/>
   </patternset>
 
-  <target name="dist-bin" depends="jar">
+  <target name="dist-bin" depends="jar-dist">
     <mkdir dir="dist"/>
     <copy todir="dist">
       <fileset dir="${basedir}">
