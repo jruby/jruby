@@ -40,7 +40,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author wayne
  */
 class DynamicMethodZeroArg extends JNADynamicMethod {
-    private static final Object[] NATIVE_ARGUMENTS = {};
 
     public DynamicMethodZeroArg(RubyModule implementationClass, Function function,
             FunctionInvoker functionInvoker) {
@@ -50,11 +49,11 @@ class DynamicMethodZeroArg extends JNADynamicMethod {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         arity.checkArity(context.getRuntime(), args);
-        return functionInvoker.invoke(context.getRuntime(), function, NATIVE_ARGUMENTS);
+        return functionInvoker.invoke(context.getRuntime(), function, null);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
-        return functionInvoker.invoke(context.getRuntime(), function, NATIVE_ARGUMENTS);
+        return functionInvoker.invoke(context.getRuntime(), function, null);
     }
 }
