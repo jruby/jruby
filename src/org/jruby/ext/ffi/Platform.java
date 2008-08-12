@@ -74,7 +74,8 @@ public abstract class Platform {
     public static final boolean IS_LINUX = OS.equals(LINUX);
     public static final boolean IS_SOLARIS = OS.equals(SOLARIS);
     public static final boolean IS_BSD = IS_MAC || IS_FREEBSD || IS_OPENBSD;
-
+    public static final String LIBC = IS_WINDOWS ? "msvcrt" : "c";
+    public static final String NAME = String.format("%s-%s", ARCH, OS);
     protected Platform() {
     }
 
@@ -84,6 +85,7 @@ public abstract class Platform {
         platform.defineConstant("LONG_SIZE", runtime.newFixnum(longSize()));
         platform.defineConstant("OS", runtime.newString(OS));
         platform.defineConstant("ARCH", runtime.newString(ARCH));
+        platform.defineConstant("NAME", runtime.newString(NAME));
         platform.defineConstant("IS_WINDOWS", runtime.newBoolean(IS_WINDOWS));
         platform.defineConstant("IS_BSD", runtime.newBoolean(IS_BSD));
         platform.defineConstant("IS_FREEBSD", runtime.newBoolean(IS_FREEBSD));
@@ -91,6 +93,7 @@ public abstract class Platform {
         platform.defineConstant("IS_SOLARIS", runtime.newBoolean(IS_SOLARIS));
         platform.defineConstant("IS_LINUX", runtime.newBoolean(IS_LINUX));
         platform.defineConstant("IS_MAC", runtime.newBoolean(IS_MAC));
+        platform.defineConstant("LIBC", runtime.newString(LIBC));
     }
     
     /**
