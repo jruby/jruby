@@ -1,5 +1,6 @@
 require 'benchmark'
 require 'ffi'
+require 'ffi/platform'
 
 iter = 100_000
 file = "README"
@@ -11,15 +12,22 @@ module BasePosix
   end
 
 end
+module Chmod
+  if JRuby::FFI::Platform::IS_WINDOWS
+    attach_function :_chmod, :_chmod, [ :string, :int ], :int
+  else
+    attach_function :chmod, :_chmod, [ :string, :int ], :int
+  end
+end
 module RbxPosix
   extend FFI::Library
   extend BasePosix
-  attach_function :chmod, :_chmod, [ :string, :int ], :int
+  extend Chmod
 end
 module JPosix
   extend JRuby::FFI::Library
   extend BasePosix
-  attach_function :chmod, :_chmod, [ :string, :int ], :int  
+  extend Chmod
 end
 
 puts "Benchmark FFI chmod (rubinius api) performance, #{iter}x changing mode"

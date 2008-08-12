@@ -9,7 +9,11 @@ end
 module NativeFile
   extend FFI::Library
   # Attaching the function to this module is about 10% faster than calling Posix.umask
-  attach_function 'umask', :_umask, [ :int ], :int
+  if JRuby::FFI::Platform::IS_WINDOWS
+    attach_function '_umask', :_umask, [ :int ], :int
+  else
+    attach_function 'umask', :_umask, [ :int ], :int
+  end
   def self.umask(mask = nil)
     if mask
       _umask(mask)
