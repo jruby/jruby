@@ -202,7 +202,7 @@ module JRuby::FFI
 
   def self.create_invoker(lib, name, args, ret, convention = :default)
     # Ugly hack to simulate the effect of dlopen(NULL, x) - not quite correct
-    lib = 'c' unless lib
+    lib = JRuby::FFI::Platform::LIBC unless lib
     # jna & jffi need just the last part of the library name
     lib = lib[3..-1] if lib =~ /^lib/
     # Current artificial limitation based on JFFI limit
@@ -308,7 +308,7 @@ MemoryPointer = JRuby::FFI::MemoryPointer
 module FFI
   def self.create_invoker(lib, name, args, ret, convention = :default)
     # Ugly hack to simulate the effect of dlopen(NULL, x) - not quite correct
-    lib = 'c' unless lib
+    lib = JRuby::FFI::Platform::LIBC unless lib
     # jffi needs just the last part of the library name
     lib = lib[3..-1] if lib =~ /^lib/
     
