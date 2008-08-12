@@ -79,12 +79,15 @@ public abstract class FFIProvider extends RubyObject {
         RubyArray paramTypes = (RubyArray) args[3];
         NativeType[] nativeParamTypes = new NativeType[paramTypes.size()];
         for (int i = 0; i < paramTypes.size(); ++i) {
-            
             nativeParamTypes[i] = NativeType.valueOf(Util.int32Value((IRubyObject) paramTypes.entry(i)));
         }
-        
-        return createInvoker(context.getRuntime(), args[0].toString(), args[1].toString(),
-                NativeType.valueOf(Util.int32Value(args[2])), nativeParamTypes, args[4].toString());
+        try {
+            return createInvoker(context.getRuntime(), args[0].toString(), 
+                    args[1].toString(), NativeType.valueOf(Util.int32Value(args[2])), 
+                    nativeParamTypes, args[4].toString());
+        } catch (UnsatisfiedLinkError ex) {
+            return context.getRuntime().getNil();
+        }
     }
     
     @JRubyMethod(name = { "error", "last_error" })

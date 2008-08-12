@@ -66,7 +66,7 @@ module FFI
   
   class NotFoundError < RuntimeError
     def initialize(function, library)
-      super("Function '#{function}' not found! (Looking in '#{library} or this process)")
+      super("Function '#{function}' not found! (Looking in '#{library}' or this process)")
     end
   end
   
