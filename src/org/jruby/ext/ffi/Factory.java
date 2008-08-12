@@ -50,13 +50,13 @@ public abstract class Factory {
             Factory factory = null;
             if (!useJNA) {
                 try {
-                    factory = (Factory) Class.forName(prefix + ".jffi.JFFIFactory").newInstance();
+                    factory = (Factory) Class.forName(prefix + ".jffi.JFFIFactory", true, Ruby.getClassLoader()).newInstance();
                 } catch (Throwable ex) {
                 }
             }
             if (factory == null) {
                 try {
-                    factory = (Factory) Class.forName(prefix + ".jna.JNAFactory").newInstance();
+                    factory = (Factory) Class.forName(prefix + ".jna.JNAFactory", true, Ruby.getClassLoader()).newInstance();
                 } catch (Throwable ex) {
                     throw new RuntimeException("Could not load FFI provider", ex);
                 }
