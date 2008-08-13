@@ -3,11 +3,12 @@ require 'benchmark'
 def bench_literal_string(bm)
   bm.report("1m x100 \"abcdijkl\"") do
     1_000_000.times do
-      "abcdijkl"; "abcdijkl"
-      "abcdijkl"; "abcdijkl"
-      "abcdijkl"; "abcdijkl"
-      "abcdijkl"; "abcdijkl"
-      "abcdijkl"; "abcdijkl"
+      a = "abcdijkl"; a = "abcdijkl"
+      a = "abcdijkl"; a = "abcdijkl"
+      a = "abcdijkl"; a = "abcdijkl"
+      a = "abcdijkl"; a = "abcdijkl"
+      a = "abcdijkl"; a = "abcdijkl"
+      a
     end
   end
 end
