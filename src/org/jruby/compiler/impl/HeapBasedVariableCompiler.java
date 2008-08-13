@@ -32,6 +32,7 @@ import org.jruby.compiler.CompilerCallback;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.objectweb.asm.Label;
 import static org.jruby.util.CodegenUtils.*;
 
 /**
@@ -70,6 +71,11 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
         }
         
         // default for starting tempVariableIndex is ok
+    }
+    
+    public void declareLocals(StaticScope scope, Label start, Label end) {
+        // declare locals for Java debugging purposes
+        method.visitLocalVariable("locals", ci(DynamicScope.class), null, start, end, methodCompiler.getDynamicScopeIndex());
     }
 
     public void beginClass(CompilerCallback bodyPrep, StaticScope scope) {

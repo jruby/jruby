@@ -427,8 +427,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         protected int argParamCount;
         
         protected Label[] currentLoopLabels;
-        protected Label scopeStart;
-        protected Label scopeEnd;
+        protected Label scopeStart = new Label();
+        protected Label scopeEnd = new Label();
         protected Label redoJump;
         protected boolean withinProtection = false;
         private int lastLine = -1;
@@ -2845,8 +2845,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             variableCompiler.beginClosure(args, scope);
 
             // start of scoping for closure's vars
-            scopeStart = new Label();
-            scopeEnd = new Label();
             redoJump = new Label();
             method.label(scopeStart);
         }
@@ -2857,7 +2855,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void endMethod() {
             // end of scoping for closure's vars
-            scopeEnd = new Label();
             method.areturn();
             method.label(scopeEnd);
             
@@ -2866,6 +2863,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.go_to(scopeStart);
             
             method.trycatch(scopeStart, scopeEnd, scopeEnd, p(JumpException.RedoJump.class));
+            
+            // method is done, declare all variables
+            variableCompiler.declareLocals(scope, scopeStart, scopeEnd);
+            
             method.end();
         }
 
@@ -2986,6 +2987,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.astore(getDynamicScopeIndex());
             method.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
             method.astore(getVarsArrayIndex());
+
+            // visit a label to start scoping for local vars in this method
+            method.label(scopeStart);
         }
 
         public void beginMethod(CompilerCallback args, StaticScope scope) {
@@ -3005,10 +3009,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             variableCompiler.beginMethod(args, scope);
 
             // visit a label to start scoping for local vars in this method
-            Label start = new Label();
-            method.label(start);
-
-            scopeStart = start;
+            method.label(scopeStart);
         }
 
         public void beginClass(CompilerCallback bodyPrep, StaticScope scope) {
@@ -3027,10 +3028,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             variableCompiler.beginClass(bodyPrep, scope);
 
             // visit a label to start scoping for local vars in this method
-            Label start = new Label();
-            method.label(start);
-
-            scopeStart = start;
+            method.label(scopeStart);
         }
 
         public void endMethod() {
@@ -3038,8 +3036,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.areturn();
 
             // end of variable scope
-            Label end = new Label();
-            method.label(end);
+            method.label(scopeEnd);
+            
+            // method is done, declare all variables
+            variableCompiler.declareLocals(scope, scopeStart, scopeEnd);
 
             method.end();
             

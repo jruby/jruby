@@ -31,6 +31,7 @@ package org.jruby.compiler;
 import org.jruby.parser.StaticScope;
 
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.objectweb.asm.Label;
 
 /**
  *
@@ -68,4 +69,5 @@ public interface VariableCompiler {
     public void setTempLocal(int index);
     public void getTempLocal(int index);
     public void releaseTempLocal();
+    public void declareLocals(StaticScope scope, Label start, Label end);
 }

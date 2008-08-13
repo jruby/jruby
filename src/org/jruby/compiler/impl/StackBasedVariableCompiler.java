@@ -33,6 +33,7 @@ import org.jruby.compiler.NotCompilableException;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.objectweb.asm.Label;
 import static org.jruby.util.CodegenUtils.*;
 
 /**
@@ -68,6 +69,14 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
 
         if (argsCallback != null) {
             argsCallback.call(methodCompiler);
+        }
+    }
+    
+    public void declareLocals(StaticScope scope, Label start, Label end) {
+        // declare locals for Java debugging purposes
+        String[] variables = scope.getVariables();
+        for (int i = 0; i < variables.length; i++) {
+            method.visitLocalVariable(variables[i], ci(IRubyObject.class), null, start, end, baseVariableIndex + i);
         }
     }
 
