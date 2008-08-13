@@ -13,10 +13,11 @@ class F3 < E3; end; class G3 < F3; end; class H3 < G3; end; class I3 < H3; end; 
 
 def bench_send(bm)
   bm.report("1m foo calls") { f = Foo.new; 10_000_000.times { f.foo } }
-  bm.report("1m foo sends") { f = Foo.new; 10_000_000.times { f.send :foo } }
-  bm.report("1m 10th subclass foo sends") { f = J.new; 10_000_000.times { f.send :foo } }
-  bm.report("1m 20th subclass foo sends") { f = J2.new; 10_000_000.times { f.send :foo } }
-  bm.report("1m 30th subclass foo sends") { f = J3.new; 10_000_000.times { f.send :foo } }
+  bm.report("1m foo sends :foo") { f = Foo.new; 10_000_000.times { f.send :foo } }
+  bm.report("1m foo sends 'foo'") { f = Foo.new; 10_000_000.times { f.send 'foo' } }
+  bm.report("1m 10th sub send :foo") { f = J.new; 10_000_000.times { f.send :foo } }
+  bm.report("1m 20th sub send :foo") { f = J2.new; 10_000_000.times { f.send :foo } }
+  bm.report("1m 30th sub send :foo") { f = J3.new; 10_000_000.times { f.send :foo } }
 end
 
 if $0 == __FILE__
