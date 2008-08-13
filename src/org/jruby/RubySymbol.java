@@ -49,6 +49,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.ByteList;
 
 /**
  * Represents a Ruby symbol (e.g. :bar)
@@ -57,6 +58,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 public class RubySymbol extends RubyObject {
     private final String symbol;
     private final int id;
+    private final ByteList symbolBytes;
     
     /**
      * 
@@ -71,6 +73,7 @@ public class RubySymbol extends RubyObject {
         assert internedSymbol == internedSymbol.intern() : internedSymbol + " is not interned";
 
         this.symbol = internedSymbol;
+        this.symbolBytes = ByteList.create(symbol);
 
         this.id = runtime.allocSymbolId();
     }
@@ -154,13 +157,13 @@ public class RubySymbol extends RubyObject {
     public IRubyObject inspect() {
         Ruby runtime = getRuntime();
         return runtime.newString(":" + 
-            (isSymbolName(symbol) ? symbol : runtime.newString(symbol).dump().toString())); 
+            (isSymbolName(symbol) ? symbol : RubyString.newStringShared(runtime, symbolBytes).dump().toString())); 
     }
 
     @JRubyMethod(name = "to_s")
     @Override
     public IRubyObject to_s() {
-        return getRuntime().newString(symbol);
+        return RubyString.newStringShared(getRuntime(), symbolBytes);
     }
 
     @JRubyMethod(name = "id2name")
