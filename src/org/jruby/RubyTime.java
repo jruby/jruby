@@ -363,7 +363,7 @@ public class RubyTime extends RubyObject {
 
         time -= other.getTimeInMillis() * 1000 + other.getUSec();
         
-        return RubyFloat.newFloat(getRuntime(), time / 1000000); // float number of seconds
+        return RubyFloat.newFloat(getRuntime(), time / 1000000.0); // float number of seconds
     }
 
     @JRubyMethod(name = "-", required = 1)
