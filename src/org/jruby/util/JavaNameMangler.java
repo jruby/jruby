@@ -21,7 +21,7 @@ public class JavaNameMangler {
             return "ruby/__dash_e__";
         }
         
-        return mangleFilenameForClasspath(filename, null, "ruby");
+        return mangleFilenameForClasspath(filename, null, "", false);
     }
     
     public static String mangleFilenameForClasspath(String filename) {
@@ -29,14 +29,26 @@ public class JavaNameMangler {
     }
     
     public static String mangleFilenameForClasspath(String filename, String parent, String prefix) {
+        return mangleFilenameForClasspath(filename, parent, prefix, true);
+    }
+    
+    public static String mangleFilenameForClasspath(String filename, String parent, String prefix, boolean canonicalize) {
         try {
             String classPath = "";
             if(filename.indexOf("!") != -1) {
                 String before = filename.substring(6, filename.indexOf("!"));
-                classPath = new JRubyFile(before + filename.substring(filename.indexOf("!")+1)).getCanonicalPath().toString();
+                if (canonicalize) {
+                    classPath = new JRubyFile(before + filename.substring(filename.indexOf("!")+1)).getCanonicalPath().toString();
+                } else {
+                    classPath = new JRubyFile(before + filename.substring(filename.indexOf("!")+1)).toString();
+                }
             } else {
                 try {
-                    classPath = new JRubyFile(filename).getCanonicalPath().toString();
+                    if (canonicalize) {
+                        classPath = new JRubyFile(filename).getCanonicalPath().toString();
+                    } else {
+                        classPath = new JRubyFile(filename).toString();
+                    }
                 } catch (IOException ioe) {
                     // could not get canonical path, just use given path
                     classPath = filename;
@@ -46,7 +58,11 @@ public class JavaNameMangler {
             if (parent != null && parent.length() > 0) {
                 String parentPath;
                 try {
-                    parentPath = new JRubyFile(parent).getCanonicalPath().toString();
+                    if (canonicalize) {
+                        parentPath = new JRubyFile(parent).getCanonicalPath().toString();
+                    } else {
+                        parentPath = new JRubyFile(parent).toString();
+                    }
                 } catch (IOException ioe) {
                     // could not get canonical path, just use given path
                     parentPath = parent;

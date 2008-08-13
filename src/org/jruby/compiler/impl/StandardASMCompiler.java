@@ -225,7 +225,15 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         beginClassInit();
         
         cacheCompiler = new InheritedCacheCompiler(this);
+        
+        smap.append("SMAP\n")
+                .append(sourcename).append("\n")
+                .append("Java\n")
+                .append("*S Java\n")
+                .append("*E\n");
     }
+    
+    private StringBuffer smap = new StringBuffer();
 
     public void endScript(boolean generateLoad, boolean generateMain) {
         // add Script#run impl, used for running this script with a specified threadcontext and self
@@ -317,6 +325,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         
         endInit();
         endClassInit();
+        
+        classWriter.visitSource(sourcename, smap.toString());
     }
 
     public static void buildStaticScopeNames(SkinnyMethodAdapter method, StaticScope scope) {
