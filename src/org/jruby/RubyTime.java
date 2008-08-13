@@ -232,6 +232,7 @@ public class RubyTime extends RubyObject {
     }
 
     @JRubyMethod(name = "initialize_copy", required = 1)
+    @Override
     public IRubyObject initialize_copy(IRubyObject original) {
         if (!(original instanceof RubyTime)) {
             throw getRuntime().newTypeError("Expecting an instance of class Time");
@@ -356,16 +357,20 @@ public class RubyTime extends RubyObject {
 
         return newTime;
     }
+    
+    private IRubyObject opMinus(RubyTime other) {
+        long time = getTimeInMillis() * 1000 + getUSec();
+
+        time -= other.getTimeInMillis() * 1000 + other.getUSec();
+        
+        return RubyFloat.newFloat(getRuntime(), time / 1000000); // float number of seconds
+    }
 
     @JRubyMethod(name = "-", required = 1)
     public IRubyObject op_minus(IRubyObject other) {
+        if (other instanceof RubyTime) return opMinus((RubyTime) other);
+        
         long time = getTimeInMillis();
-
-        if (other instanceof RubyTime) {
-            time -= ((RubyTime) other).getTimeInMillis();
-            return RubyFloat.newFloat(getRuntime(), time * 10e-4);
-        }
-
         long adjustment = (long) (RubyNumeric.num2dbl(other) * 1000000);
         int micro = (int) (adjustment % 1000);
         adjustment = adjustment / 1000;
@@ -380,6 +385,7 @@ public class RubyTime extends RubyObject {
     }
 
     @JRubyMethod(name = "===", required = 1)
+    @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
         return (RubyNumeric.fix2int(callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", other)) == 0) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
@@ -398,6 +404,7 @@ public class RubyTime extends RubyObject {
     }
     
     @JRubyMethod(name = "eql?", required = 1)
+    @Override
     public IRubyObject eql_p(IRubyObject other) {
         if (other instanceof RubyTime) {
             RubyTime otherTime = (RubyTime)other; 
@@ -420,6 +427,7 @@ public class RubyTime extends RubyObject {
     }
 
     @JRubyMethod(name = {"to_s", "inspect"})
+    @Override
     public IRubyObject to_s() {
         DateTimeFormatter simpleDateFormat;
         if (dt.getZone() == DateTimeZone.UTC) {
@@ -434,6 +442,7 @@ public class RubyTime extends RubyObject {
     }
 
     @JRubyMethod(name = "to_a")
+    @Override
     public RubyArray to_a() {
         return getRuntime().newArrayNoCopy(new IRubyObject[] { sec(), min(), hour(), mday(), month(), 
                 year(), wday(), yday(), isdst(), zone() });
@@ -542,6 +551,7 @@ public class RubyTime extends RubyObject {
     }
 
     @JRubyMethod(name = "hash")
+    @Override
     public RubyFixnum hash() {
     	// modified to match how hash is calculated in 1.8.2
         return getRuntime().newFixnum((int)(((dt.getMillis() / 1000) ^ microseconds()) << 1) >> 1);
@@ -556,18 +566,18 @@ public class RubyTime extends RubyObject {
 
     public RubyObject mdump(final IRubyObject[] args) {
         RubyTime obj = (RubyTime)args[0];
-        DateTime dt = obj.dt.withZone(DateTimeZone.UTC);
+        DateTime dateTime = obj.dt.withZone(DateTimeZone.UTC);
         byte dumpValue[] = new byte[8];
         int pe = 
             0x1                                 << 31 |
-            (dt.getYear()-1900)                 << 14 |
-            (dt.getMonthOfYear()-1)             << 10 |
-            dt.getDayOfMonth()                  << 5  |
-            dt.getHourOfDay();
+            (dateTime.getYear()-1900)           << 14 |
+            (dateTime.getMonthOfYear()-1)       << 10 |
+            dateTime.getDayOfMonth()            << 5  |
+            dateTime.getHourOfDay();
         int se =
-            dt.getMinuteOfHour()                << 26 |
-            dt.getSecondOfMinute()              << 20 |
-            (dt.getMillisOfSecond() * 1000 + (int)usec); // dump usec, not msec
+            dateTime.getMinuteOfHour()          << 26 |
+            dateTime.getSecondOfMinute()        << 20 |
+            (dateTime.getMillisOfSecond() * 1000 + (int)usec); // dump usec, not msec
 
         for(int i = 0; i < 4; i++) {
             dumpValue[i] = (byte)(pe & 0xFF);
