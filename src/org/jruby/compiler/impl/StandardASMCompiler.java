@@ -217,7 +217,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         // Create the class with the appropriate class name and source file
         classWriter.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, classname, null, p(AbstractScript.class), null);
-        classWriter.visitSource(sourcename, null);
         
         topLevelScope = scope;
 
@@ -225,15 +224,30 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         beginClassInit();
         
         cacheCompiler = new InheritedCacheCompiler(this);
+
+        String sourceNoPath;
+        if (sourcename.indexOf("/") >= 0) {
+            String[] pathElements = sourcename.split("/");
+            sourceNoPath = pathElements[pathElements.length - 1];
+        } else if (sourcename.indexOf("\\") >= 0) {
+            String[] pathElements = sourcename.split("\\\\");
+            sourceNoPath = pathElements[pathElements.length - 1];
+        } else {
+            sourceNoPath = sourcename;
+        }
         
+        StringBuffer smap = new StringBuffer();
         smap.append("SMAP\n")
-                .append(sourcename).append("\n")
+                .append(sourceNoPath).append("\n")
                 .append("Java\n")
                 .append("*S Java\n")
+                .append("*F\n")
+                .append("+ 1 ").append(sourceNoPath).append("\n")
+                .append(sourcename).append("\n")
                 .append("*E\n");
+        
+        classWriter.visitSource(sourceNoPath, smap.toString());
     }
-    
-    private StringBuffer smap = new StringBuffer();
 
     public void endScript(boolean generateLoad, boolean generateMain) {
         // add Script#run impl, used for running this script with a specified threadcontext and self
@@ -325,8 +339,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         
         endInit();
         endClassInit();
-        
-        classWriter.visitSource(sourcename, smap.toString());
     }
 
     public static void buildStaticScopeNames(SkinnyMethodAdapter method, StaticScope scope) {
