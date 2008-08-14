@@ -14,10 +14,10 @@ module YAML
   }
 
   class Error < StandardError; end
-  
-  # This is not really correct. Fix pending
+
   def self.parse(obj)
-    Proxy.new(YAML::load(obj))
+#    Proxy.new(YAML::load(obj))
+        YAML::JvYAML::Node::from_internal(YAML::_parse_internal(obj)) || false
   end
 
   def YAML.parse_file( filepath )
@@ -35,8 +35,6 @@ module YAML
   end
   
   class Proxy
-    attr_reader :value
-    
     def initialize(v)
       @value = v
     end
@@ -132,12 +130,27 @@ module YAML
       attr_accessor :style
       attr_accessor :type_id
 
+      def transform
+        org.jruby.yaml.JRubyConstructor.new(self, nil).construct_document(to_internal)
+      end
+      
       def to_str
         YAML.dump(self)
       end
 
       def to_s
         YAML.dump(self)
+      end
+      
+      def self.from_internal(internal) 
+        case internal
+        when org.jvyamlb.nodes.ScalarNode
+          Scalar.new(internal.tag, internal.value, internal.style.chr)
+        when org.jvyamlb.nodes.MappingNode
+          Map.new(internal.tag, internal.value.inject({}) {|h, obj| h[from_internal(obj[0])] = from_internal(obj[1]); h}, internal.flow_style)
+        when org.jvyamlb.nodes.SequenceNode
+          Seq.new(internal.tag, internal.value.map {|obj| from_internal(obj)}, internal.flow_style)
+        end
       end
     end
 
@@ -147,6 +160,10 @@ module YAML
         self.type_id = type_id
         self.value = val
         self.style = style
+      end
+      
+      def to_internal
+        org.jvyamlb.nodes.ScalarNode.new(self.type_id, org.jruby.util.ByteList.new(self.value.to_java_bytes, false), self.style[0])
       end
       
       def to_yaml_node(repr)
@@ -165,6 +182,10 @@ module YAML
         @value << v
       end
       
+      def to_internal
+        org.jvyamlb.nodes.SequenceNode.new(self.type_id, self.value.map {|v| v.to_internal }, self.style)
+      end
+      
       def to_yaml_node(repr)
         repr.seq(self.type_id,self.value,self.style)
       end
@@ -181,6 +202,10 @@ module YAML
         @value[k] = v
       end
 
+      def to_internal
+        org.jvyamlb.nodes.MappingNode.new(self.type_id, self.value.inject({}) {|h, v| h[v[0].to_internal] = v[1].to_internal ;h }, self.style)
+      end
+      
       def to_yaml_node(repr)
         repr.map(self.type_id,self.value,self.style)
       end
@@ -455,3 +480,4 @@ module YAML
     end
 end
   
+require 'yaml/syck'

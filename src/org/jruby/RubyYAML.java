@@ -61,6 +61,7 @@ import org.jvyamlb.ParserImpl;
 import org.jvyamlb.PositioningParserImpl;
 import org.jvyamlb.Scanner;
 import org.jvyamlb.ScannerImpl;
+import org.jvyamlb.Composer;
 import org.jvyamlb.ComposerImpl;
 import org.jvyamlb.PositioningScannerImpl;
 import org.jvyamlb.PositioningComposerImpl;
@@ -191,6 +192,36 @@ public class RubyYAML {
             return io2.callMethod(context, "read");
         } else {
             return io;
+        }
+    }
+
+    @JRubyMethod(name = "_parse_internal", required = 1, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject parse_internal(IRubyObject self, IRubyObject arg) {
+        boolean debug = self.getRuntime().getDebug().isTrue();
+        IRubyObject io = check_yaml_port(arg);
+        Scanner scn = null;
+        try {
+            if(io instanceof RubyString) {
+                scn = debug ? new PositioningScannerImpl(((RubyString)io).getByteList()) : new ScannerImpl(((RubyString)io).getByteList());
+            } else {
+                scn = debug ? new PositioningScannerImpl(new IOInputStream(io)) : new ScannerImpl(new IOInputStream(io));
+            }
+            Composer ctor = 
+                debug ?
+                new PositioningComposerImpl(new PositioningParserImpl((PositioningScanner)scn,YAML.config().version("1.0")),new ResolverImpl()) :
+                new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl())
+                ;
+            if(ctor.checkNode()) {
+                return JavaEmbedUtils.javaToRuby(self.getRuntime(),ctor.getNode());
+            }
+            return self.getRuntime().getNil();
+        } catch(YAMLException e) {
+            if(self.getRuntime().getDebug().isTrue()) {
+                Position.Range range = ((Positionable)e).getRange();
+                throw self.getRuntime().newArgumentError("syntax error on " + range.start + ":" + range.end + ": " + e.getMessage());
+            } else {
+                throw self.getRuntime().newArgumentError("syntax error:" + e.getMessage());
+            }
         }
     }
 

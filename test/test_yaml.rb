@@ -1044,7 +1044,10 @@ EOY
 
 	def test_spec_builtin_binary
 		arrow_gif = "GIF89a\f\000\f\000\204\000\000\377\377\367\365\365\356\351\351\345fff\000\000\000\347\347\347^^^\363\363\355\216\216\216\340\340\340\237\237\237\223\223\223\247\247\247\236\236\236iiiccc\243\243\243\204\204\204\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371!\376\016Made with GIMP\000,\000\000\000\000\f\000\f\000\000\005,  \216\2010\236\343@\024\350i\020\304\321\212\010\034\317\200M$z\357\3770\205p\270\2601f\r\e\316\001\303\001\036\020' \202\n\001\000;"
-		assert_parse_only(
+#       puts({ 'canonical' => arrow_gif, 'base64' => arrow_gif, 
+# 			  'description' => "The binary value above is a tiny arrow encoded as a gif image.\n" }.to_yaml)
+      
+      assert_parse_only(
 			{ 'canonical' => arrow_gif, 'base64' => arrow_gif, 
 			  'description' => "The binary value above is a tiny arrow encoded as a gif image.\n" }, <<EOY
 canonical: !binary "\\
