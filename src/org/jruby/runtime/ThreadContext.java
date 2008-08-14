@@ -600,7 +600,7 @@ public final class ThreadContext {
     }
     
     @Deprecated
-    private static void addBackTraceElement(RubyArray backtrace, Frame frame, Frame previousFrame) {
+    private static void addBackTraceElement(RubyArray backtrace, StackTraceElement frame, StackTraceElement previousFrame) {
         addBackTraceElement(backtrace.getRuntime(), backtrace, frame, previousFrame);
     }
     
@@ -623,38 +623,57 @@ public final class ThreadContext {
         backtrace.append(traceLine);
     }
     
-    private static void addBackTraceElement(RubyArray backtrace, Frame frame, Frame previousFrame, FrameType frameType) {
+    private static void addBackTraceElement(Ruby runtime, RubyArray backtrace, StackTraceElement frame, StackTraceElement previousFrame) {
         if (frame != previousFrame && // happens with native exceptions, should not filter those out
-                frame.getName() != null && 
-                frame.getName().equals(previousFrame.getName()) &&
-                frame.getFile().equals(previousFrame.getFile()) &&
-                frame.getLine() == previousFrame.getLine()) {
+                frame.getLineNumber() == previousFrame.getLineNumber() &&
+                frame.getMethodName() != null &&
+                frame.getMethodName().equals(previousFrame.getMethodName()) &&
+                frame.getFileName().equals(previousFrame.getFileName())) {
+            return;
+        }
+        
+        RubyString traceLine;
+        if (previousFrame.getMethodName() != null) {
+            traceLine = RubyString.newString(runtime, frame.getFileName() + ':' + (frame.getLineNumber() + 1) + ":in `" + previousFrame.getMethodName() + '\'');
+        } else {
+            traceLine = RubyString.newString(runtime, frame.getFileName() + ':' + (frame.getLineNumber() + 1));
+        }
+        
+        backtrace.append(traceLine);
+    }
+    
+    private static void addBackTraceElement(RubyArray backtrace, StackTraceElement frame, StackTraceElement previousFrame, FrameType frameType) {
+        if (frame != previousFrame && // happens with native exceptions, should not filter those out
+                frame.getMethodName() != null && 
+                frame.getMethodName().equals(previousFrame.getMethodName()) &&
+                frame.getFileName().equals(previousFrame.getFileName()) &&
+                frame.getLineNumber() == previousFrame.getLineNumber()) {
             return;
         }
         
         StringBuilder buf = new StringBuilder(60);
-        buf.append(frame.getFile()).append(':').append(frame.getLine() + 1);
+        buf.append(frame.getFileName()).append(':').append(frame.getLineNumber() + 1);
         
-        if (previousFrame.getName() != null) {
+        if (previousFrame.getMethodName() != null) {
             switch (frameType) {
             case METHOD:
                 buf.append(":in `");
-                buf.append(previousFrame.getName());
+                buf.append(previousFrame.getMethodName());
                 buf.append('\'');
                 break;
             case BLOCK:
                 buf.append(":in `");
-                buf.append("block in " + previousFrame.getName());
+                buf.append("block in " + previousFrame.getMethodName());
                 buf.append('\'');
                 break;
             case EVAL:
                 buf.append(":in `");
-                buf.append("eval in " + previousFrame.getName());
+                buf.append("eval in " + previousFrame.getMethodName());
                 buf.append('\'');
                 break;
             case CLASS:
                 buf.append(":in `");
-                buf.append("class in " + previousFrame.getName());
+                buf.append("class in " + previousFrame.getMethodName());
                 buf.append('\'');
                 break;
             case ROOT:
@@ -673,7 +692,7 @@ public final class ThreadContext {
      * @param nativeException
      * @return an Array with the backtrace
      */
-    public static IRubyObject createBacktraceFromFrames(Ruby runtime, Frame[] backtraceFrames) {
+    public static IRubyObject createBacktraceFromFrames(Ruby runtime, StackTraceElement[] backtraceFrames) {
         return createBacktraceFromFrames(runtime, backtraceFrames, true);
     }
     
@@ -702,7 +721,7 @@ public final class ThreadContext {
      * @param nativeException
      * @return an Array with the backtrace
      */
-    public static IRubyObject createBacktraceFromFrames(Ruby runtime, Frame[] backtraceFrames, boolean cropAtEval) {
+    public static IRubyObject createBacktraceFromFrames(Ruby runtime, StackTraceElement[] backtraceFrames, boolean cropAtEval) {
         RubyArray backtrace = runtime.newArray();
         
         if (backtraceFrames == null || backtraceFrames.length <= 0) return backtrace;
@@ -710,11 +729,11 @@ public final class ThreadContext {
         int traceSize = backtraceFrames.length;
 
         for (int i = traceSize - 1; i > 0; i--) {
-            Frame frame = backtraceFrames[i];
+            StackTraceElement frame = backtraceFrames[i];
             // We are in eval with binding break out early
-            if (cropAtEval && frame.isBindingFrame()) break;
+            if (cropAtEval && frame.getFileName().equals("(eval)")) break;
 
-            addBackTraceElement(backtrace, frame, backtraceFrames[i - 1]);
+            addBackTraceElement(runtime, backtrace, frame, backtraceFrames[i - 1]);
         }
         
         return backtrace;
@@ -744,6 +763,61 @@ public final class ThreadContext {
         System.arraycopy(frameStack, 0, traceFrames, 0, traceSize);
         
         return traceFrames;
+    }
+    
+    /**
+     * Create an Array with backtrace information.
+     * @param runtime
+     * @param level
+     * @param nativeException
+     * @return an Array with the backtrace
+     */
+    public StackTraceElement[] createBacktrace2(int level, boolean nativeException) {
+        int traceSize = frameIndex - level + 1;
+        StackTraceElement[] newTrace;
+        
+        if (traceSize <= 0) return null;
+
+        int totalSize = traceSize;
+        if (nativeException) {
+            // assert level == 0;
+            totalSize = traceSize + 1;
+        }
+        newTrace = new StackTraceElement[totalSize];
+
+        return buildTrace(newTrace);
+    }
+
+    private StackTraceElement[] buildTrace(StackTraceElement[] newTrace) {
+        for (int i = 0; i < newTrace.length; i++) {
+            Frame current = frameStack[i];
+            String klazzName = getClassNameFromFrame(current);
+            String methodName = getMethodNameFromFrame(current);
+            newTrace[i] = new StackTraceElement(klazzName, methodName, current.getFile(), current.getLine());
+        }
+        
+        return newTrace;
+    }
+
+    private String getClassNameFromFrame(Frame current) {
+        String klazzName;
+        if (current.getKlazz() == null) {
+            klazzName = "(unknown)";
+        } else {
+            klazzName = current.getKlazz().getBaseName();
+            if (klazzName == null) {
+                klazzName = "(anonymous)";
+            }
+        }
+        return klazzName;
+    }
+    
+    private String getMethodNameFromFrame(Frame current) {
+        String methodName = current.getName();
+        if (current.getName() == null) {
+            methodName = "(unknown)";
+        }
+        return methodName;
     }
     
     private static String createRubyBacktraceString(StackTraceElement element) {
@@ -820,7 +894,7 @@ public final class ThreadContext {
     
     private static final boolean DEBUG = true;
     
-    public static IRubyObject createRubyHybridBacktrace(Ruby runtime, Frame[] backtraceFrames, boolean debug) {
+    public static IRubyObject createRubyHybridBacktrace(Ruby runtime, StackTraceElement[] backtraceFrames, boolean debug) {
         StackTraceElement[] stackTrace = new Exception().getStackTrace();
         
         RubyArray traceArray = RubyArray.newArray(runtime);

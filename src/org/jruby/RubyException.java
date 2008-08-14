@@ -62,8 +62,7 @@ import org.jruby.util.SafePropertyAccessor;
  */
 @JRubyClass(name="Exception")
 public class RubyException extends RubyObject {
-
-    private Frame[] backtraceFrames;
+    private StackTraceElement[] backtraceFrames;
     private IRubyObject backtrace;
     public IRubyObject message;
     public static final int TRACE_HEAD = 8;
@@ -132,7 +131,7 @@ public class RubyException extends RubyObject {
         return new RubyException(runtime, excptnClass, msg);
     }
     
-    public void setBacktraceFrames(Frame[] backtraceFrames) {
+    public void setBacktraceFrames(StackTraceElement[] backtraceFrames) {
         this.backtraceFrames = backtraceFrames;
     }
     
