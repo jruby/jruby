@@ -20,6 +20,12 @@ module YAML
     Proxy.new(YAML::load(obj))
   end
 
+  def YAML.parse_file( filepath )
+    File.open( filepath ) do |f|
+      parse( f )
+    end
+  end
+
   def self.add_domain_type(*args)
       warn "YAML::add_domain_type isn't supported on JRuby"
   end
@@ -29,6 +35,8 @@ module YAML
   end
   
   class Proxy
+    attr_reader :value
+    
     def initialize(v)
       @value = v
     end
