@@ -804,10 +804,7 @@ public final class ThreadContext {
         if (current.getKlazz() == null) {
             klazzName = "(unknown)";
         } else {
-            klazzName = current.getKlazz().getBaseName();
-            if (klazzName == null) {
-                klazzName = "(anonymous)";
-            }
+            klazzName = current.getKlazz().getName();
         }
         return klazzName;
     }

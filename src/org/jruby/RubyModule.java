@@ -345,6 +345,7 @@ public class RubyModule extends RubyObject {
     }
     
     private volatile String bareName;
+    private volatile String fullName;
 
     /**
      * Generate a fully-qualified class name or a #-style name for anonymous and singleton classes.
@@ -354,6 +355,13 @@ public class RubyModule extends RubyObject {
      * @return The generated class name
      */
     public String getName() {
+        if (fullName == null) {
+            fullName = calculateFullName();
+        }
+        return fullName;
+    }
+
+    private String calculateFullName() {
         if (getBaseName() == null) {
             if (bareName == null) {
                 if (isClass()) {
@@ -369,7 +377,6 @@ public class RubyModule extends RubyObject {
         String result = getBaseName();
         RubyClass objectClass = getRuntime().getObject();
 
-        // TODO: maybe, we should cache the whole calculation:
         for (RubyModule p = this.getParent(); p != null && p != objectClass; p = p.getParent()) {
             String pName = p.getBaseName();
             // This is needed when the enclosing class or module is a singleton.
