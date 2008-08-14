@@ -75,7 +75,7 @@ import org.jruby.util.ByteList;
 public class JavaUtil {
 
     public static Object convertRubyToJava(IRubyObject rubyObject) {
-        return convertRubyToJava(rubyObject, null);
+        return convertRubyToJava(rubyObject, Object.class);
     }
     
     public interface RubyConverter {
