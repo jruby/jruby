@@ -239,12 +239,15 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         StringBuffer smap = new StringBuffer();
         smap.append("SMAP\n")
                 .append(sourceNoPath).append("\n")
-                .append("Java\n")
-                .append("*S Java\n")
+                .append("Ruby\n")
+                .append("*S Ruby\n")
                 .append("*F\n")
                 .append("+ 1 ").append(sourceNoPath).append("\n")
                 .append(sourcename).append("\n")
+                .append("*L\n")
+                .append("1#1,999999:1,1\n")
                 .append("*E\n");
+
         
         classWriter.visitSource(sourceNoPath, smap.toString());
     }
