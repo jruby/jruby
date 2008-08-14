@@ -992,12 +992,14 @@
     <exclude name="lib/junit.jar"/>
     <exclude name="lib/jarjar-1.0rc7.jar"/>
     <exclude name="docs/rdocs.tar.gz"/>
+    <exclude name="bench/**"/>
     <include name="share/**"/>
   </patternset>
 
   <patternset id="dist.src.files">
     <patternset refid="dist.files"/>
     <exclude name="share/**"/>
+    <include name="bench/**"/>
     <include name="src/**"/>
     <include name="test/**"/>
     <include name="spec/**"/>
