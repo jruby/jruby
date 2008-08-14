@@ -227,7 +227,22 @@ module YAML
     ensure
         $VERBOSE = verbose
     end
-  
+
+    #
+    # Convert a type_id to a taguri
+    #
+    def YAML.tagurize( val )
+      if /^tag:.*?:.*$/ =~ val.to_s
+        val
+      elsif /^(.*?)\/(.*)$/ =~ val.to_s
+        "tag:#$1.yaml.org,2002:#$2"
+      elsif val.kind_of?(Integer)
+        val
+      else
+        "tag:yaml.org,2002:#{val}"
+      end
+    end
+      
 # From yaml/tag.rb
     # A dictionary of taguris which map to
     # Ruby classes.
