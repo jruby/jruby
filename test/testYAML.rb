@@ -34,7 +34,7 @@ test_equal("--- str\n", "str".to_yaml)
 test_equal("--- \na: b\n", {'a'=>'b'}.to_yaml)
 test_equal("--- \n- a\n- b\n- c\n", %w(a b c).to_yaml)
 
-test_equal("--- !str 1.0\n", "1.0".to_yaml)
+test_equal("--- \"1.0\"\n", "1.0".to_yaml)
 
 class TestBean
   attr_accessor :value, :key
@@ -48,28 +48,28 @@ class TestBean
   end
 end
 
-test_ok(["--- !ruby/object:TestBean\nvalue: 13\nkey: 42\n",
-         "--- !ruby/object:TestBean\nkey: 42\nvalue: 13\n"].include?(TestBean.new(13,42).to_yaml))
+test_ok(["--- !ruby/object:TestBean \nvalue: 13\nkey: 42\n",
+         "--- !ruby/object:TestBean \nkey: 42\nvalue: 13\n"].include?(TestBean.new(13,42).to_yaml))
 test_equal(TestBean.new(13,42),YAML.load("--- !ruby/object:TestBean \nvalue: 13\nkey: 42\n"))
 
 TestStruct = Struct.new(:foo,:bar)
-test_ok(["--- !ruby/struct:TestStruct\nfoo: 13\nbar: 42\n","--- !ruby/struct:TestStruct\nbar: 42\nfoo: 13\n"].include?(TestStruct.new(13,42).to_yaml))
-test_equal("--- !ruby/exception:StandardError\nmessage: foobar\n", StandardError.new("foobar").to_yaml)
+test_ok(["--- !ruby/struct:TestStruct \nfoo: 13\nbar: 42\n","--- !ruby/struct:TestStruct\nbar: 42\nfoo: 13\n"].include?(TestStruct.new(13,42).to_yaml))
+test_equal("--- !ruby/exception:StandardError \nmessage: foobar\n", StandardError.new("foobar").to_yaml)
 
 test_equal("--- :foo\n", :foo.to_yaml)
 
-test_ok(["--- !ruby/range\nbegin: 1\nend: 3\nexcl: false\n",
-         "--- !ruby/range\nbegin: 1\nexcl: false\nend: 3\n",
-         "--- !ruby/range\nend: 3\nbegin: 1\nexcl: false\n",
-         "--- !ruby/range\nend: 3\nexcl: false\nbegin: 1\n",
-         "--- !ruby/range\nexcl: false\nbegin: 1\nend: 3\n",
-         "--- !ruby/range\nexcl: false\nend: 3\nbegin: 1\n"].include?((1..3).to_yaml))
-test_ok(["--- !ruby/range\nbegin: 1\nend: 3\nexcl: true\n",
-         "--- !ruby/range\nbegin: 1\nexcl: true\nend: 3\n",
-         "--- !ruby/range\nend: 3\nbegin: 1\nexcl: true\n",
-         "--- !ruby/range\nend: 3\ntrue: false\nbegin: 1\n",
-         "--- !ruby/range\nexcl: true\nbegin: 1\nend: 3\n",
-         "--- !ruby/range\nexcl: true\nend: 3\nbegin: 1\n"].include?((1...3).to_yaml))
+test_ok(["--- !ruby/range \nbegin: 1\nend: 3\nexcl: false\n",
+         "--- !ruby/range \nbegin: 1\nexcl: false\nend: 3\n",
+         "--- !ruby/range \nend: 3\nbegin: 1\nexcl: false\n",
+         "--- !ruby/range \nend: 3\nexcl: false\nbegin: 1\n",
+         "--- !ruby/range \nexcl: false\nbegin: 1\nend: 3\n",
+         "--- !ruby/range \nexcl: false\nend: 3\nbegin: 1\n"].include?((1..3).to_yaml))
+test_ok(["--- !ruby/range \nbegin: 1\nend: 3\nexcl: true\n",
+         "--- !ruby/range \nbegin: 1\nexcl: true\nend: 3\n",
+         "--- !ruby/range \nend: 3\nbegin: 1\nexcl: true\n",
+         "--- !ruby/range \nend: 3\ntrue: false\nbegin: 1\n",
+         "--- !ruby/range \nexcl: true\nbegin: 1\nend: 3\n",
+         "--- !ruby/range \nexcl: true\nend: 3\nbegin: 1\n"].include?((1...3).to_yaml))
 
 test_equal("--- !ruby/regexp /^abc/\n", /^abc/.to_yaml)
 
@@ -105,7 +105,7 @@ test_equal("--- cde\n", shared.to_yaml)
 # JRUBY-1026
 a = "one0.1"
 b = a[3..-1]
-test_equal("--- !str 0.1\n", YAML.dump(b))
+test_equal("--- \"0.1\"\n", YAML.dump(b))
 
 # JRUBY-1169
 class HashWithIndifferentAccess < Hash
@@ -333,18 +333,22 @@ YAML_OUT
 
   test_equal(<<YAML_OUT, YAML::JvYAML::Seq.new("tag:yaml.org,2002:seq",[YAML::JvYAML::Scalar.new("tag:yaml.org,2002:str","foobar",'')],'').to_str)
 --- [foobar]
+
 YAML_OUT
 
   test_equal(<<YAML_OUT, YAML::JvYAML::Seq.new("tag:yaml.org,2002:seq",[YAML::JvYAML::Scalar.new("tag:yaml.org,2002:str","foobar",'')],'').to_s)
 --- [foobar]
+
 YAML_OUT
 
   test_equal(<<YAML_OUT, YAML::JvYAML::Map.new("tag:yaml.org,2002:map",{YAML::JvYAML::Scalar.new("tag:yaml.org,2002:str","a",'') => YAML::JvYAML::Scalar.new("tag:yaml.org,2002:str","b",'')},'').to_str)
 --- {a: b}
+
 YAML_OUT
 
   test_equal(<<YAML_OUT, YAML::JvYAML::Map.new("tag:yaml.org,2002:map",{YAML::JvYAML::Scalar.new("tag:yaml.org,2002:str","a",'') => YAML::JvYAML::Scalar.new("tag:yaml.org,2002:str","b",'')},'').to_s)
 --- {a: b}
+
 YAML_OUT
 end
 
@@ -412,7 +416,7 @@ test_equal('--- !str:YAMLTestString', YAMLTestString.new.to_yaml.strip)
 test_equal(YAMLTestString.new, YAML::load('--- !str:YAMLTestString'))
 
 test_equal(<<EXCEPTION_OUT, YAMLTestException.new.to_yaml) 
---- !ruby/exception:YAMLTestException
+--- !ruby/exception:YAMLTestException 
 message: YAMLTestException
 EXCEPTION_OUT
 
@@ -426,7 +430,7 @@ test_equal("&.rb", YAML::load("---\n&.rb"))
 a_str = "foo"
 a_str.instance_variable_set :@bar, "baz"
 
-test_equal("--- !str\nstr: foo\n'@bar': baz\n", a_str.to_yaml)
+test_equal("--- !str \nstr: foo\n'@bar': baz\n", a_str.to_yaml)
 test_equal "baz", YAML.load(a_str.to_yaml).instance_variable_get(:@bar)
 
 test_equal :"abc\"flo", YAML.load("---\n:\"abc\\\"flo\"")
@@ -482,3 +486,34 @@ ensure
   $DEBUG = old_debug
 end
 
+
+# JRUBY-2754
+obj = Object.new
+objects1 = [obj, obj]
+test_ok objects1[0].object_id == objects1[1].object_id
+
+objects2 = YAML::load objects1.to_yaml
+test_ok objects2[0].object_id == objects2[1].object_id
+
+# JRUBY-2192
+
+class FooYSmith < Array; end
+
+obj = YAML.load(<<YAMLSTR)
+--- !ruby/array:FooYSmith
+- val
+- val2
+YAMLSTR
+
+test_equal FooYSmith, obj.class
+
+
+class FooXSmith < Hash; end
+
+obj = YAML.load(<<YAMLSTR)
+--- !ruby/hash:FooXSmith
+key: value
+otherkey: othervalue
+YAMLSTR
+
+test_equal FooXSmith, obj.class

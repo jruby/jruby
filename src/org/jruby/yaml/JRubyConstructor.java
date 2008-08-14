@@ -636,6 +636,11 @@ public class JRubyConstructor extends ConstructorImpl {
                     return constructRubyMap(self,pref,node);
                 }
             });
+        addMultiConstructor("tag:ruby.yaml.org,2002:hash:",new YamlMultiConstructor() {
+                public Object call(final Constructor self, final String pref, final Node node) {
+                    return constructRubyMap(self,pref,node);
+                }
+            });
         addMultiConstructor("tag:yaml.org,2002:int:",new YamlMultiConstructor() {
                 public Object call(final Constructor self, final String pref, final Node node) {
                     return constructRubyInt(self,pref,node);
@@ -646,7 +651,17 @@ public class JRubyConstructor extends ConstructorImpl {
                     return constructRubySequence(self,pref,node);
                 }
             });
+        addMultiConstructor("tag:ruby.yaml.org,2002:array:",new YamlMultiConstructor() {
+                public Object call(final Constructor self, final String pref, final Node node) {
+                    return constructRubySequence(self,pref,node);
+                }
+            });
         addMultiConstructor("tag:yaml.org,2002:str:",new YamlMultiConstructor() {
+                public Object call(final Constructor self, final String pref, final Node node) {
+                    return constructRubyString(self,pref,node);
+                }
+            });
+        addMultiConstructor("tag:ruby.yaml.org,2002:string:",new YamlMultiConstructor() {
                 public Object call(final Constructor self, final String pref, final Node node) {
                     return constructRubyString(self,pref,node);
                 }
