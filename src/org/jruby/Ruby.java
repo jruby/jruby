@@ -2341,6 +2341,11 @@ public final class Ruby {
 
         getThreadService().disposeCurrentThread();
 
+        getBeanManager().unregisterCompiler();
+        getBeanManager().unregisterConfig();
+        getBeanManager().unregisterClassCache();
+        getBeanManager().unregisterMethodCache();
+
         if (status != 0) {
             throw newSystemExit(status);
         }

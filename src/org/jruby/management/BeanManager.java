@@ -4,6 +4,7 @@ import java.lang.management.ManagementFactory;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.management.InstanceAlreadyExistsException;
+import javax.management.InstanceNotFoundException;
 import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
@@ -39,7 +40,20 @@ public class BeanManager {
     public void register(ClassCacheMBean classCache) {
         if (managementEnabled) register(base + "service=ClassCache", classCache);
     }
-    
+
+    public void unregisterCompiler() {
+        if (managementEnabled) unregister(base + "service=JITCompiler");
+    }
+    public void unregisterConfig() {
+        if (managementEnabled) unregister(base + "service=Config");
+    }
+    public void unregisterClassCache() {
+        if (managementEnabled) unregister(base + "service=ClassCache");
+    }
+    public void unregisterMethodCache() {
+        if (managementEnabled) unregister(base + "service=MethodCache");
+    }
+
     private void register(String name, Object bean) {
         try {
             MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
@@ -51,6 +65,22 @@ public class BeanManager {
         } catch (MBeanRegistrationException ex) {
             Logger.getLogger(BeanManager.class.getName()).log(Level.SEVERE, null, ex);
         } catch (NotCompliantMBeanException ex) {
+            Logger.getLogger(BeanManager.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (MalformedObjectNameException ex) {
+            Logger.getLogger(BeanManager.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (NullPointerException ex) {
+            Logger.getLogger(BeanManager.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    private void unregister(String name) {
+        try {
+            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+            
+            ObjectName beanName = new ObjectName(name);
+            mbs.unregisterMBean(beanName);
+        } catch (InstanceNotFoundException ex) {
+        } catch (MBeanRegistrationException ex) {
             Logger.getLogger(BeanManager.class.getName()).log(Level.SEVERE, null, ex);
         } catch (MalformedObjectNameException ex) {
             Logger.getLogger(BeanManager.class.getName()).log(Level.SEVERE, null, ex);

@@ -1,163 +1,165 @@
 package org.jruby.management;
 
+import java.lang.ref.SoftReference;
+
 import java.util.Arrays;
 
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 
 public class Config implements ConfigMBean {
-    private final Ruby ruby;
+    private final SoftReference<Ruby> ruby;
     
     public Config(Ruby ruby) {
-        this.ruby = ruby;
+        this.ruby = new SoftReference<Ruby>(ruby);
     }
     
     public String getVersionString() {
-        return ruby.getInstanceConfig().getVersionString();
+        return ruby.get().getInstanceConfig().getVersionString();
     }
 
     public String getCopyrightString() {
-        return ruby.getInstanceConfig().getCopyrightString();
+        return ruby.get().getInstanceConfig().getCopyrightString();
     }
 
     public String getCompileMode() {
-        return ruby.getInstanceConfig().getCompileMode().name();
+        return ruby.get().getInstanceConfig().getCompileMode().name();
     }
 
     public boolean isJitLogging() {
-        return ruby.getInstanceConfig().isJitLogging();
+        return ruby.get().getInstanceConfig().isJitLogging();
     }
 
     public boolean isJitLoggingVerbose() {
-        return ruby.getInstanceConfig().isJitLoggingVerbose();
+        return ruby.get().getInstanceConfig().isJitLoggingVerbose();
     }
 
     public int getJitLogEvery() {
-        return ruby.getInstanceConfig().getJitLogEvery();
+        return ruby.get().getInstanceConfig().getJitLogEvery();
     }
 
     public boolean isSamplingEnabled() {
-        return ruby.getInstanceConfig().isSamplingEnabled();
+        return ruby.get().getInstanceConfig().isSamplingEnabled();
     }
 
     public int getJitThreshold() {
-        return ruby.getInstanceConfig().getJitThreshold();
+        return ruby.get().getInstanceConfig().getJitThreshold();
     }
 
     public int getJitMax() {
-        return ruby.getInstanceConfig().getJitMax();
+        return ruby.get().getInstanceConfig().getJitMax();
     }
 
     public int getJitMaxSize() {
-        return ruby.getInstanceConfig().getJitMaxSize();
+        return ruby.get().getInstanceConfig().getJitMaxSize();
     }
 
     public boolean isRunRubyInProcess() {
-        return ruby.getInstanceConfig().isRunRubyInProcess();
+        return ruby.get().getInstanceConfig().isRunRubyInProcess();
     }
 
     public String getCompatVersion() {
-        return ruby.getInstanceConfig().getCompatVersion().name();
+        return ruby.get().getInstanceConfig().getCompatVersion().name();
     }
 
     public String getCurrentDirectory() {
-        return ruby.getInstanceConfig().getCurrentDirectory();
+        return ruby.get().getInstanceConfig().getCurrentDirectory();
     }
 
     public boolean isObjectSpaceEnabled() {
-        return ruby.getInstanceConfig().isObjectSpaceEnabled();
+        return ruby.get().getInstanceConfig().isObjectSpaceEnabled();
     }
 
     public String getEnvironment() {
-        return ruby.getInstanceConfig().getEnvironment().toString();
+        return ruby.get().getInstanceConfig().getEnvironment().toString();
     }
 
     public String getArgv() {
-        return Arrays.deepToString(ruby.getInstanceConfig().getArgv());
+        return Arrays.deepToString(ruby.get().getInstanceConfig().getArgv());
     }
 
     public String getJRubyHome() {
-        return ruby.getInstanceConfig().getJRubyHome();
+        return ruby.get().getInstanceConfig().getJRubyHome();
     }
 
     public String getRequiredLibraries() {
-        return ruby.getInstanceConfig().requiredLibraries().toString();
+        return ruby.get().getInstanceConfig().requiredLibraries().toString();
     }
 
     public String getLoadPaths() {
-        return ruby.getInstanceConfig().loadPaths().toString();
+        return ruby.get().getInstanceConfig().loadPaths().toString();
     }
 
     public String getDisplayedFileName() {
-        return ruby.getInstanceConfig().displayedFileName();
+        return ruby.get().getInstanceConfig().displayedFileName();
     }
 
     public String getScriptFileName() {
-        return ruby.getInstanceConfig().getScriptFileName();
+        return ruby.get().getInstanceConfig().getScriptFileName();
     }
 
     public boolean isBenchmarking() {
-        return ruby.getInstanceConfig().isBenchmarking();
+        return ruby.get().getInstanceConfig().isBenchmarking();
     }
 
     public boolean isAssumeLoop() {
-        return ruby.getInstanceConfig().isAssumeLoop();
+        return ruby.get().getInstanceConfig().isAssumeLoop();
     }
 
     public boolean isAssumePrinting() {
-        return ruby.getInstanceConfig().isAssumePrinting();
+        return ruby.get().getInstanceConfig().isAssumePrinting();
     }
 
     public boolean isProcessLineEnds() {
-        return ruby.getInstanceConfig().isProcessLineEnds();
+        return ruby.get().getInstanceConfig().isProcessLineEnds();
     }
 
     public boolean isSplit() {
-        return ruby.getInstanceConfig().isSplit();
+        return ruby.get().getInstanceConfig().isSplit();
     }
 
     public boolean isVerbose() {
-        return ruby.getInstanceConfig().isVerbose();
+        return ruby.get().getInstanceConfig().isVerbose();
     }
 
     public boolean isDebug() {
-        return ruby.getInstanceConfig().isDebug();
+        return ruby.get().getInstanceConfig().isDebug();
     }
 
     public boolean isYARVEnabled() {
-        return ruby.getInstanceConfig().isYARVEnabled();
+        return ruby.get().getInstanceConfig().isYARVEnabled();
     }
 
     public String getInputFieldSeparator() {
-        return ruby.getInstanceConfig().getInputFieldSeparator();
+        return ruby.get().getInstanceConfig().getInputFieldSeparator();
     }
 
     public boolean isRubiniusEnabled() {
-        return ruby.getInstanceConfig().isRubiniusEnabled();
+        return ruby.get().getInstanceConfig().isRubiniusEnabled();
     }
 
     public boolean isYARVCompileEnabled() {
-        return ruby.getInstanceConfig().isYARVCompileEnabled();
+        return ruby.get().getInstanceConfig().isYARVCompileEnabled();
     }
 
     public String getKCode() {
-        return ruby.getInstanceConfig().getKCode().name();
+        return ruby.get().getInstanceConfig().getKCode().name();
     }
 
     public String getRecordSeparator() {
-        return ruby.getInstanceConfig().getRecordSeparator();
+        return ruby.get().getInstanceConfig().getRecordSeparator();
     }
 
     public int getSafeLevel() {
-        return ruby.getInstanceConfig().getSafeLevel();
+        return ruby.get().getInstanceConfig().getSafeLevel();
     }
 
     public String getOptionGlobals() {
-        return ruby.getInstanceConfig().getOptionGlobals().toString();
+        return ruby.get().getInstanceConfig().getOptionGlobals().toString();
     }
     
     public boolean isManagementEnabled() {
-        return ruby.getInstanceConfig().isManagementEnabled();
+        return ruby.get().getInstanceConfig().isManagementEnabled();
     }
     
     public boolean isFullTraceEnabled() {
@@ -169,10 +171,10 @@ public class Config implements ConfigMBean {
     }
     
     public boolean isShowBytecode() {
-        return ruby.getInstanceConfig().isShowBytecode();
+        return ruby.get().getInstanceConfig().isShowBytecode();
     }
     
     public String getExcludedMethods() {
-        return ruby.getInstanceConfig().getExcludedMethods().toString();
+        return ruby.get().getInstanceConfig().getExcludedMethods().toString();
     }
 }
