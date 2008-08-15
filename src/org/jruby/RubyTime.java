@@ -391,16 +391,12 @@ public class RubyTime extends RubyObject {
     }
 
     @JRubyMethod(name = "<=>", required = 1)
-    public IRubyObject op_cmp(IRubyObject other) {
-        if (other.isNil()) {
-        	return other;
-        }
-        
+    public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return getRuntime().newFixnum(cmp((RubyTime) other));
+            return context.getRuntime().newFixnum(cmp((RubyTime) other));
         }
 
-        return getRuntime().getNil();
+        return context.getRuntime().getNil();
     }
     
     @JRubyMethod(name = "eql?", required = 1)
