@@ -68,6 +68,7 @@ public final class ThreadContext {
     }
     
     private final static int INITIAL_SIZE = 10;
+    private final static String UNKNOWN_NAME = "(unknown)";
     
     private final Ruby runtime;
     
@@ -633,10 +634,10 @@ public final class ThreadContext {
         }
         
         RubyString traceLine;
-        if (previousFrame.getMethodName() != null) {
-            traceLine = RubyString.newString(runtime, frame.getFileName() + ':' + (frame.getLineNumber()) + ":in `" + previousFrame.getMethodName() + '\'');
-        } else {
+        if (previousFrame.getMethodName() == UNKNOWN_NAME) {
             traceLine = RubyString.newString(runtime, frame.getFileName() + ':' + (frame.getLineNumber()));
+        } else {
+            traceLine = RubyString.newString(runtime, frame.getFileName() + ':' + (frame.getLineNumber()) + ":in `" + previousFrame.getMethodName() + '\'');
         }
         
         backtrace.append(traceLine);
@@ -802,7 +803,7 @@ public final class ThreadContext {
     private String getClassNameFromFrame(Frame current) {
         String klazzName;
         if (current.getKlazz() == null) {
-            klazzName = "(unknown)";
+            klazzName = UNKNOWN_NAME;
         } else {
             klazzName = current.getKlazz().getName();
         }
@@ -812,7 +813,7 @@ public final class ThreadContext {
     private String getMethodNameFromFrame(Frame current) {
         String methodName = current.getName();
         if (current.getName() == null) {
-            methodName = "(unknown)";
+            methodName = UNKNOWN_NAME;
         }
         return methodName;
     }
