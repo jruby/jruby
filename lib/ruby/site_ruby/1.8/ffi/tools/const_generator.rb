@@ -99,8 +99,7 @@ module FFI
       end
 
       output = `#{binary}`
-      File.unlink binary
-
+      File.unlink(binary + (JRuby::FFI::Platform::IS_WINDOWS ? ".exe" : ""))
       output.each_line do |line|
         line =~ /^(\S+)\s(.*)$/
         const = @constants[$1]

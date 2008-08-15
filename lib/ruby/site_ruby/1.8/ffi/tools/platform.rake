@@ -1,3 +1,4 @@
+require 'ffi/platform'
 require 'ffi/tools/struct_generator'
 require 'ffi/tools/const_generator'
 require 'ffi/tools/types_generator'
@@ -10,7 +11,9 @@ deps = %w[Rakefile] + Dir['lib/ffi/*rb']
 def gen_platform_conf(task, options = {})
   FFI::StructGenerator.options = options
   FFI::ConstGenerator.options = options
+  
   addrinfo = FFI::StructGenerator.new 'addrinfo' do |s|
+    s.include 'sys/types.h'
     s.include 'sys/socket.h'
     s.include 'netdb.h'
     s.name 'struct addrinfo'
@@ -22,14 +25,14 @@ def gen_platform_conf(task, options = {})
     s.field :ai_addr, :pointer
     s.field :ai_canonname, :string
     s.field :ai_next, :pointer
-  end
+  end unless JRuby::FFI::Platform::IS_WINDOWS
 
   dirent = FFI::StructGenerator.new 'dirent' do |s|
     s.include "sys/types.h"
     s.include "dirent.h"
     s.name 'struct dirent'
     s.field :d_ino, :ino_t
-    s.field :d_reclen, :ushort
+    s.field :d_reclen, :ushort unless JRuby::FFI::Platform::IS_WINDOWS
     s.field :d_name, :char_array
   end
 
@@ -421,7 +424,7 @@ def gen_platform_conf(task, options = {})
       TCP_NODELAY
     ]
 
-    socket_constants.each { |c| cg.const c }
+    socket_constants.each { |c| cg.const c, "%ld", '(long)' }
   end
 
   process_cg = FFI::ConstGenerator.new 'rbx.platform.process' do |cg|
@@ -528,7 +531,7 @@ def gen_platform_conf(task, options = {})
   puts "Generating #{task.name}..." if $verbose
 
   File.open task.name, "w" do |f|
-    addrinfo.dump_config f
+    addrinfo.dump_config f unless JRuby::FFI::Platform::IS_WINDOWS
     dirent.dump_config f
     timeval.dump_config f
     sockaddr_in.dump_config f

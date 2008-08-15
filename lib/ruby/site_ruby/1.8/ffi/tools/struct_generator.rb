@@ -56,7 +56,7 @@ module FFI
       @options
     end
     def calculate(options = {})
-      binary = "rb_struct_gen_bin_#{Process.pid}"
+      binary = File.join Dir.tmpdir, "rb_struct_gen_bin_#{Process.pid}"
 
       raise "struct name not set" if @struct_name.nil?
 
@@ -90,10 +90,9 @@ module FFI
           raise "Compilation error generating struct #{@name} (#{@struct_name}):\n#{output}"
         end
       end
-
-      output = `./#{binary}`.split "\n"
-      File.unlink(binary)
-
+      
+      output = `#{binary}`.split "\n"
+      File.unlink(binary + (JRuby::FFI::Platform::IS_WINDOWS ? ".exe" : ""))
       sizeof = output.shift
       unless @size
         m = /\s*sizeof\([^)]+\) (\d+)/.match sizeof

@@ -50,6 +50,9 @@ public abstract class Platform {
     public static final Map<String, String> OS_NAMES = new HashMap<String, String>() {{
         put("Mac OS X", DARWIN);
     }};
+    public static final Map<String, String> ARCH_NAMES = new HashMap<String, String>() {{
+        put("x86", "i386");
+    }};
     private static final String getOperatingSystem() {
         String osname = System.getProperty("os.name").toLowerCase();
         for (String s : OS_NAMES.keySet()) {
@@ -62,7 +65,16 @@ public abstract class Platform {
         }
         return osname;
     }
-    public static final String ARCH = System.getProperty("os.arch");
+    private static final String getArchitecture() {
+        String arch = System.getProperty("os.arch").toLowerCase();
+        for (String s : ARCH_NAMES.keySet()) {
+            if (s.equalsIgnoreCase(arch)) {
+                return ARCH_NAMES.get(s);
+            }
+        }       
+        return arch;
+    }
+    public static final String ARCH = getArchitecture();
     public static final String OS = getOperatingSystem();
 
    
