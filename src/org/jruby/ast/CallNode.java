@@ -63,6 +63,7 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
     private Node iterNode;
     public CallSite callAdapter;
 
+    @Deprecated
     public CallNode(ISourcePosition position, Node receiverNode, String name, Node argsNode) {
         this(position, receiverNode, name, argsNode, null);
     }
@@ -151,21 +152,9 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
-        IRubyObject[] args = ASTInterpreter.setupArgs(runtime, context, argsNode, self, aBlock);
-        
-        assert receiver.getMetaClass() != null : receiver.getClass().getName();
+        assert false: "No longer called";
 
-        Block block = ASTInterpreter.getBlock(runtime, context, self, aBlock, iterNode);
-
-        // No block provided lets look at fast path for STI dispatch.
-        if (!block.isGiven()) {
-            return callAdapter.call(context, receiver, args);
-        }
-        
-        return iterNode instanceof IterNode ?
-            callAdapter.callIter(context, receiver, args, block) :
-            callAdapter.call(context, receiver, args, block);
+        return null;
     }
     
     public Block getBlock(ThreadContext context, IRubyObject self) {

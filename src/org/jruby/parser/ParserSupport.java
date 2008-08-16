@@ -51,6 +51,9 @@ import org.jruby.ast.BignumNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.BreakNode;
+import org.jruby.ast.CallManyArgsBlockNode;
+import org.jruby.ast.CallManyArgsBlockPassNode;
+import org.jruby.ast.CallManyArgsNode;
 import org.jruby.ast.CallNoArgBlockNode;
 import org.jruby.ast.CallNoArgBlockPassNode;
 import org.jruby.ast.CallNoArgNode;
@@ -58,6 +61,9 @@ import org.jruby.ast.CallNode;
 import org.jruby.ast.CallOneArgNode;
 import org.jruby.ast.CallOneArgBlockNode;
 import org.jruby.ast.CallOneArgBlockPassNode;
+import org.jruby.ast.CallSpecialArgNode;
+import org.jruby.ast.CallSpecialArgBlockNode;
+import org.jruby.ast.CallSpecialArgBlockPassNode;
 import org.jruby.ast.CallThreeArgBlockNode;
 import org.jruby.ast.CallThreeArgBlockPassNode;
 import org.jruby.ast.CallThreeArgNode;
@@ -80,7 +86,6 @@ import org.jruby.ast.FCallManyArgsNode;
 import org.jruby.ast.FCallNoArgBlockNode;
 import org.jruby.ast.FCallNoArgBlockPassNode;
 import org.jruby.ast.FCallNoArgNode;
-import org.jruby.ast.FCallNode;
 import org.jruby.ast.FCallOneArgBlockNode;
 import org.jruby.ast.FCallOneArgBlockPassNode;
 import org.jruby.ast.FCallOneArgNode;
@@ -837,8 +842,10 @@ public class ParserSupport {
 
             return new_call_blockpass(receiver, name, (BlockPassNode) args);
         }
-            
-        return new CallNode(union(receiver, args), receiver,(String) name.getValue(), args, iter);        
+
+        if (iter != null) return new CallSpecialArgBlockNode(union(receiver, args), receiver,(String) name.getValue(), args, (IterNode) iter);
+
+        return new CallSpecialArgNode(union(receiver, args), receiver, (String) name.getValue(), args);
     }
     
     private Node new_call_blockpass(Node receiver, Token operation, BlockPassNode blockPass) {
@@ -847,7 +854,7 @@ public class ParserSupport {
         Node args = blockPass.getArgsNode();
         
         if (args == null) return new CallNoArgBlockPassNode(position, receiver, name, args, blockPass);
-        if (!(args instanceof ArrayNode)) return new CallNode(position, receiver, name, args, blockPass);
+        if (!(args instanceof ArrayNode)) return new CallSpecialArgBlockPassNode(position, receiver, name, args, blockPass);
         
         switch (((ArrayNode) args).size()) {
             case 0:  // foo()
@@ -859,7 +866,7 @@ public class ParserSupport {
             case 3:
                 return new CallThreeArgBlockPassNode(position, receiver, name, (ArrayNode) args, blockPass);
             default:
-                return new CallNode(position, receiver, name, args, blockPass);
+                return new CallManyArgsBlockPassNode(position, receiver, name, args, blockPass);
         } 
     }
 
@@ -887,7 +894,9 @@ public class ParserSupport {
                 
                 return new CallThreeArgNode(union(receiver, args), receiver, (String) name.getValue(), args);
             default:
-                return new CallNode(union(receiver, args), receiver, (String) name.getValue(), args, iter);
+                if (iter != null) return new CallManyArgsBlockNode(union(receiver, args), receiver, (String) name.getValue(), args, (IterNode) iter);
+
+                return new CallManyArgsNode(union(receiver, args), receiver, (String) name.getValue(), args);
         }
     }
     
