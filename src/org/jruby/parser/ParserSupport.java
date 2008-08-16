@@ -74,6 +74,9 @@ import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.DStrNode;
 import org.jruby.ast.DotNode;
 import org.jruby.ast.EvStrNode;
+import org.jruby.ast.FCallManyArgsBlockNode;
+import org.jruby.ast.FCallManyArgsBlockPassNode;
+import org.jruby.ast.FCallManyArgsNode;
 import org.jruby.ast.FCallNoArgBlockNode;
 import org.jruby.ast.FCallNoArgBlockPassNode;
 import org.jruby.ast.FCallNoArgNode;
@@ -81,6 +84,9 @@ import org.jruby.ast.FCallNode;
 import org.jruby.ast.FCallOneArgBlockNode;
 import org.jruby.ast.FCallOneArgBlockPassNode;
 import org.jruby.ast.FCallOneArgNode;
+import org.jruby.ast.FCallSpecialArgBlockNode;
+import org.jruby.ast.FCallSpecialArgBlockPassNode;
+import org.jruby.ast.FCallSpecialArgNode;
 import org.jruby.ast.FCallThreeArgBlockNode;
 import org.jruby.ast.FCallThreeArgBlockPassNode;
 import org.jruby.ast.FCallThreeArgNode;
@@ -911,7 +917,9 @@ public class ParserSupport {
                 
                 return new FCallThreeArgNode(union(operation, args), name, args);
             default:
-                return new FCallNode(union(operation, args), name, args, iter);
+                if (iter != null) return new FCallManyArgsBlockNode(union(operation, args), name, args, (IterNode) iter);
+
+                return new FCallManyArgsNode(union(operation, args), name, args);
         }
     }
     
@@ -921,7 +929,7 @@ public class ParserSupport {
         Node args = blockPass.getArgsNode();
         
         if (args == null) return new FCallNoArgBlockPassNode(position, name, args, blockPass);
-        if (!(args instanceof ArrayNode)) return new FCallNode(position, name, args, blockPass);
+        if (!(args instanceof ArrayNode)) return new FCallSpecialArgBlockPassNode(position, name, args, blockPass);
         
         switch (((ArrayNode) args).size()) {
             case 0:  // foo()
@@ -933,26 +941,21 @@ public class ParserSupport {
             case 3:
                 return new FCallThreeArgBlockPassNode(position, name, (ArrayNode) args, blockPass);
             default:
-                return new FCallNode(position, name, args, blockPass);
+                return new FCallManyArgsBlockPassNode(position, name, args, blockPass);
         }        
     }
     
     public Node new_fcall(Token operation, Node args, Node iter) {
         if (args == null) return new_fcall_noargs(operation, (IterNode) iter);
         if (args instanceof ArrayNode) return new_fcall_simpleargs(operation, (ArrayNode) args, iter);
-
-        String name = (String) operation.getValue();
-
         if (args instanceof BlockPassNode) {
-            if (iter != null) {
-                throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, iter.getPosition(), "Both block arg and actual block given.");
-            }
+            if (iter == null) return new_fcall_blockpass(operation, (BlockPassNode) args);
 
-            return new_fcall_blockpass(operation, (BlockPassNode) args);
+            throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, iter.getPosition(), "Both block arg and actual block given.");
         }
-        
 
-        return new FCallNode(union(operation, args), name, args, iter);
+        if (iter != null) new FCallSpecialArgBlockNode(union(operation, args), (String) operation.getValue(), args, (IterNode) iter);
+        return new FCallSpecialArgNode(union(operation, args), (String) operation.getValue(), args);
     }
 
     public Node new_super(Node args, Token operation) {

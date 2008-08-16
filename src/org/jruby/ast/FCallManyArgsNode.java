@@ -12,10 +12,11 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2001-2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2001-2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Copyright (C) 2001-2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -31,66 +32,31 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-
 import org.jruby.Ruby;
-import org.jruby.ast.types.ILiteralNode;
-import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
+import org.jruby.ast.types.INameNode;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- * Represents an array. This could be an array literal, quoted words or some args stuff.
+/** 
+ * Represents a method call with self as an implicit receiver.
  */
-public class ArrayNode extends ListNode implements ILiteralNode {
-    // This field is used during argument processing to avoid putting RubyArray
-    // instances that are purely for utility purposes into ObjectSpace.
-    private boolean lightweight = false;
-    
-    public ArrayNode(ISourcePosition position, Node firstNode) {
-        super(position, NodeType.ARRAYNODE, firstNode);
-        
-        assert firstNode != null : "ArrayNode.first == null";
-    }
+public class FCallManyArgsNode extends FCallNode implements INameNode, IArgumentNode, BlockAcceptingNode {
 
-    public ArrayNode(ISourcePosition position) {
-        super(position, NodeType.ARRAYNODE);
+    public FCallManyArgsNode(ISourcePosition position, String name, Node argsNode) {
+        super(position, name, argsNode, null);
     }
-
-    /**
-     * Accept for the visitor pattern.
-     * @param iVisitor the visitor
-     **/
+ 
     @Override
-    public Instruction accept(NodeVisitor iVisitor) {
-        return iVisitor.visitArrayNode(this);
-    }
-    
-    public void setLightweight(boolean lightweight) {
-        this.lightweight = lightweight;
-    }
-    
-    public boolean isLightweight() {
-        return lightweight;
-    }
+    public Node setIterNode(Node iterNode) {
+        return new FCallManyArgsBlockNode(getPosition(), getName(), getArgsNode(), (IterNode) iterNode);
+    }      
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject[] array = interpretPrimitive(runtime, context, self, aBlock);
-        
-        return lightweight ? runtime.newArrayNoCopyLight(array) : runtime.newArrayNoCopy(array);        
-    }
-    
-    public IRubyObject[] interpretPrimitive(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        int size = size();
-        IRubyObject[] array = new IRubyObject[size];
-        
-        for (int i = 0; i < size; i++) {
-            array[i] = get(i).interpret(runtime, context, self, aBlock);
-        }
+        IRubyObject[] args = ((ArrayNode) getArgsNode()).interpretPrimitive(runtime, context, self, aBlock);
 
-        return array;
-    }
+        return callAdapter.call(context, self, args);
+    }  
 }

@@ -38,7 +38,6 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.evaluator.Instruction;
-import org.jruby.exceptions.JumpException;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
@@ -56,11 +55,12 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
     private Node iterNode;
     public CallSite callAdapter;
 
+    @Deprecated
     public FCallNode(ISourcePosition position, String name, Node argsNode) {
         this(position, name, argsNode, null);
     }
     
-    public FCallNode(ISourcePosition position, String name, Node argsNode, Node iterNode) {
+    protected FCallNode(ISourcePosition position, String name, Node argsNode, Node iterNode) {
         super(position, NodeType.FCALLNODE);
         setArgsNode(argsNode);
         this.iterNode = iterNode;
@@ -131,17 +131,9 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject[] args = ASTInterpreter.setupArgs(runtime, context, argsNode, self, aBlock);
-        Block block = ASTInterpreter.getBlock(runtime, context, self, aBlock, iterNode);
+        assert false : "Should not happen anymore";
 
-        // No block provided lets look at fast path for STI dispatch.
-        if (!block.isGiven()) {
-            return callAdapter.call(context, self, args);
-        }
-
-        return iterNode instanceof IterNode ?
-            callAdapter.callIter(context, self, args, block) :
-            callAdapter.call(context, self, args, block);
+        return null;
     }
     
     public Block getBlock(ThreadContext context, IRubyObject self) {
