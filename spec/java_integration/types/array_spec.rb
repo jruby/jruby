@@ -666,4 +666,72 @@ describe "A Java primitive Array of type" do
       ret.to_a.should == [h1, h2, h3]
     end
   end
+
+  describe "Class ref" do 
+    it "should be possible to create empty array" do 
+      arr = java.lang.Class[0].new
+      arr.java_class.to_s.should == "[Ljava.lang.Class;"
+    end
+    
+    it "should be possible to create uninitialized single dimensional array" do 
+      arr = java.lang.Class[10].new
+      arr.java_class.to_s.should == "[Ljava.lang.Class;"
+    end
+    
+    it "should be possible to create uninitialized multi dimensional array" do 
+      arr = java.lang.Class[10,10].new
+      arr.java_class.to_s.should == "[[Ljava.lang.Class;"
+    end
+
+    it "should be possible to create primitive array from Ruby array" do
+#         h1 = java.lang.String.java_class
+#         h2 = java.util.HashMap.java_class
+
+#         arr = [h1, h2].to_java java.lang.Class
+#         arr.java_class.to_s.should == "[Ljava.lang.Class;"
+
+#         arr.length.should == 2
+
+#         arr[0].should == h1
+#         arr[1].should == h2
+    end
+    
+    it "should be possible to set values in primitive array" do 
+#         h1 = java.util.Set.java_class
+#         h2 = java.util.HashMap.java_class
+#         h3 = java.lang.ref.SoftReference.java_class
+
+#         arr = java.lang.Class[5].new
+#         arr[0] = h1
+#         arr[1] = h2
+#         arr[2] = h3
+        
+#         arr[0].should == h1
+#         arr[1].should == h2
+#         arr[2].should == h3
+#         arr[3].should be_nil
+#         arr[4].should be_nil
+    end
+
+    it "should be possible to get values from primitive array" do
+#         h1 = java.util.Set.java_class
+#         h2 = java.util.HashMap.java_class
+#         h3 = java.lang.ref.SoftReference.java_class
+
+#         arr = [h1, h2, h3].to_java java.lang.Class
+#         arr[0].should == h1
+#         arr[1].should == h2
+#         arr[2].should == h3
+    end
+
+    it "should be possible to call methods that take primitive array" do
+#         h1 = java.util.Set.java_class
+#         h2 = java.util.HashMap.java_class
+#         h3 = java.lang.ref.SoftReference.java_class
+
+#         arr = [h1, h2, h3].to_java java.lang.Class
+#         ret = ArrayReceiver::call_with_object(arr)
+#         ret.to_a.should == [h1, h2, h3]
+    end
+  end
 end
