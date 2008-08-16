@@ -413,6 +413,14 @@ public class MiniJava implements Library {
                     mv.aload(1);
                     mv.invokespecial(p(Object.class), "equals", sig(Boolean.TYPE, params(Object.class)));
                     mv.ireturn();
+                } else if(simpleName.equals("hashCode") && paramTypes.length == 0 && returnType == Integer.TYPE) {
+                    mv.aload(0);
+                    mv.invokespecial(p(Object.class), "hashCode", sig(Integer.TYPE));
+                    mv.ireturn();
+                } else if(simpleName.equals("toString") && paramTypes.length == 0 && returnType == String.class) {
+                    mv.aload(0);
+                    mv.invokespecial(p(Object.class), "toString", sig(String.class));
+                    mv.areturn();
                 } else {
                     Label dispatch = new Label();
                     Label end = new Label();

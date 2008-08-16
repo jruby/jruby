@@ -61,4 +61,12 @@ public class UsesSingleMethodInterface {
     public Object callIt2(Object a, Object b, Object c, Object d, SingleMethodInterface obj) {
         return obj.callIt();
     }
+
+    public static int hashCode(Object obj) {
+        return obj.hashCode();
+    }
+
+    public static String toString(Object obj) {
+        return obj.toString();
+    }
 }

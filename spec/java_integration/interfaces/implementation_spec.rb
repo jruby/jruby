@@ -95,6 +95,18 @@ describe "Single-method Java interfaces implemented in Ruby" do
     arr.add(v)
     arr.contains(v).should be_true
   end
+
+  it "should use Object#hashCode if there is no Ruby hashCode defined" do 
+    c = Class.new
+    c.send :include, java.util.Map
+    UsesSingleMethodInterface.hashCode(c.new)
+  end
+
+  it "should use Object#toString if there is no Ruby toString defined" do 
+    c = Class.new
+    c.send :include, java.util.Map
+    UsesSingleMethodInterface.toString(c.new)
+  end
 end
 
 describe "Single-method Java interfaces" do
