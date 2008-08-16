@@ -125,30 +125,26 @@ public class OpElementAsgnNode extends Node {
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
-   
         IRubyObject[] args = ASTInterpreter.setupArgs(runtime, context, argsNode, self, aBlock);
-   
-        IRubyObject firstValue = elementAdapter.call(context, receiver, args);
+        IRubyObject value = elementAdapter.call(context, receiver, args);
         
         if (getOperatorName() == "||") {
-            if (firstValue.isTrue()) {
-                return firstValue;
-            }
-            firstValue = valueNode.interpret(runtime, context, self, aBlock);
+            if (value.isTrue()) return value;
+
+            value = valueNode.interpret(runtime, context, self, aBlock);
         } else if (getOperatorName() == "&&") {
-            if (!firstValue.isTrue()) {
-                return firstValue;
-            }
-            firstValue = valueNode.interpret(runtime,context, self, aBlock);
+            if (!value.isTrue()) return value;
+
+            value = valueNode.interpret(runtime,context, self, aBlock);
         } else {
-            firstValue = callAdapter.call(context, firstValue, valueNode.interpret(runtime,context, self, aBlock));
+            value = callAdapter.call(context, value, valueNode.interpret(runtime,context, self, aBlock));
         }
    
         IRubyObject[] expandedArgs = new IRubyObject[args.length + 1];
         System.arraycopy(args, 0, expandedArgs, 0, args.length);
-        expandedArgs[expandedArgs.length - 1] = firstValue;
+        expandedArgs[expandedArgs.length - 1] = value;
         elementAsgnAdapter.call(context, receiver, expandedArgs);
         
-        return firstValue;
+        return value;
     }
 }

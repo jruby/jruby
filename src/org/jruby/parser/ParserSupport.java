@@ -120,6 +120,10 @@ import org.jruby.ast.NilImplicitNode;
 import org.jruby.ast.NilNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NthRefNode;
+import org.jruby.ast.OpElementAsgnNode;
+import org.jruby.ast.OpElementOneArgAndAsgnNode;
+import org.jruby.ast.OpElementOneArgAsgnNode;
+import org.jruby.ast.OpElementOneArgOrAsgnNode;
 import org.jruby.ast.OrNode;
 import org.jruby.ast.RegexpNode;
 import org.jruby.ast.RootNode;
@@ -804,6 +808,23 @@ public class ParserSupport {
             throw new SyntaxException(PID.BLOCK_ARG_UNEXPECTED, node.getPosition(), "Block argument should not be given.");
         }
         return node;
+    }
+    
+    public Node new_opElementAsgnNode(ISourcePosition position, Node receiverNode, String operatorName, Node argsNode, Node valueNode) {
+        if (argsNode instanceof ArrayNode) {
+            ArrayNode array = (ArrayNode) argsNode;
+            
+            if (array.size() == 1) {
+                if (operatorName.equals("||")) {
+                    return new OpElementOneArgOrAsgnNode(position, receiverNode, operatorName, array, valueNode);
+                } else if (operatorName.equals("&&")) {
+                    return new OpElementOneArgAndAsgnNode(position, receiverNode, operatorName, array, valueNode);                    
+                } else {
+                    return new OpElementOneArgAsgnNode(position, receiverNode, operatorName, array, valueNode);
+                }
+            }
+        }
+        return new OpElementAsgnNode(position, receiverNode, operatorName, argsNode, valueNode);
     }
     
     public Node new_attrassign(ISourcePosition position, Node receiver, String name, Node args) {

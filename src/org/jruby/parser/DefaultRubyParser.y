@@ -88,7 +88,6 @@ import org.jruby.ast.NotNode;
 import org.jruby.ast.OpAsgnAndNode;
 import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OpAsgnOrNode;
-import org.jruby.ast.OpElementAsgnNode;
 import org.jruby.ast.PostExeNode;
 import org.jruby.ast.PreExeNode;
 import org.jruby.ast.RedoNode;
@@ -398,7 +397,7 @@ stmt          : kALIAS fitem {
 		  }
 	      }
               | primary_value '[' aref_args tRBRACK tOP_ASGN command_call {
-                  $$ = new OpElementAsgnNode(getPosition($1), $1, (String) $5.getValue(), $3, $6);
+                  $$ = support.new_opElementAsgnNode(getPosition($1), $1, (String) $5.getValue(), $3, $6);
 
               }
               | primary_value tDOT tIDENTIFIER tOP_ASGN command_call {
@@ -709,7 +708,7 @@ arg           : lhs '=' arg {
 		  }
               }
               | primary_value '[' aref_args tRBRACK tOP_ASGN arg {
-                  $$ = new OpElementAsgnNode(getPosition($1), $1, (String) $5.getValue(), $3, $6);
+                  $$ = support.new_opElementAsgnNode(getPosition($1), $1, (String) $5.getValue(), $3, $6);
               }
               | primary_value tDOT tIDENTIFIER tOP_ASGN arg {
                   $$ = new OpAsgnNode(getPosition($1), $1, $5, (String) $3.getValue(), (String) $4.getValue());
