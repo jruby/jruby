@@ -102,7 +102,7 @@ public class JNAMemoryPointer extends AbstractMemoryPointer {
         return getMemoryIO().getAddress();
     }
     public Object getNativeMemory() {
-        return getMemoryIO().getMemory();
+        return getMemoryIO().slice(offset).getMemory();
     }
     private static final long ptr2long(Pointer ptr) {
         return new PointerByReference(ptr).getPointer().getInt(0);

@@ -114,7 +114,8 @@ public abstract class JNAMemoryIO implements MemoryIO {
     public abstract Pointer getAddress();
     public abstract Pointer getPointer(long offset);
     public abstract void putPointer(long offset, Pointer value);
-    
+    public abstract JNAMemoryIO slice(long offset);
+
     @Override
     public boolean equals(Object obj) {
         return (obj instanceof JNAMemoryIO) && ((JNAMemoryIO) obj).memory.equals(memory);
@@ -143,7 +144,7 @@ public abstract class JNAMemoryIO implements MemoryIO {
         /**
          * The size of the memory area.
          */
-        final int size;
+        final long size;
 
         /**
          * Allocates a new block of native memory and wraps it in a {@link MemoryIO}
@@ -153,13 +154,13 @@ public abstract class JNAMemoryIO implements MemoryIO {
          * 
          * @return A new <tt>MemoryIO</tt> instance that can access the memory.
          */
-        static JNAMemoryIO allocate(int size) {
+        static JNAMemoryIO allocate(long size) {
             return new PointerIO(new Memory(size), size);
         }
         private PointerIO() {
             this(Pointer.NULL, 0);
         }
-        private PointerIO(Pointer ptr, int size) {
+        private PointerIO(Pointer ptr, long size) {
             super(ptr);
             this.ptr = ptr;
             this.size = size;
@@ -292,6 +293,9 @@ public abstract class JNAMemoryIO implements MemoryIO {
         }
         public void clear() {
             setMemory(0, size, (byte) 0);
+        }
+        public JNAMemoryIO slice(long offset) {
+            return offset == 0 ? this : new PointerIO(ptr.share(offset), size - offset);
         }
     }
     private static class BufferIO extends JNAMemoryIO {
@@ -454,6 +458,13 @@ public abstract class JNAMemoryIO implements MemoryIO {
         }
         public void clear() {
             setMemory(0, buffer.capacity(), (byte) 0);
+        }
+
+        @Override
+        public JNAMemoryIO slice(long offset) {
+            return offset == 0
+                    ? this 
+                    : new BufferIO(slice(buffer, (int) offset, buffer.capacity() - (int) offset));
         }
     }
 }

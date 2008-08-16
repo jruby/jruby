@@ -36,7 +36,7 @@ class Stat < JRuby::FFI::Struct
   
 end
 puts "Stat.size=#{Stat.size}"
-st = Stat.new
+st = Stat.alloc_out
 Posix.stat("/tmp", st.pointer)
 puts "mtime=#{st[:st_mtime]} File.stat.mtime=#{File.stat('/tmp').mtime.to_i}"
 puts "size=#{st[:st_size]} File.stat.size=#{File.stat('/tmp').size.to_i}"
@@ -46,7 +46,7 @@ puts "FFI stat(file) #{iter}x"
 
     iter.times do
       # Allocate on the java/ruby heap, data only copied out of native memory, not in to it
-      buf = Stat.alloc_out
+      buf = Stat.alloc_out false # don't clear the memory
       Posix.stat("/tmp", buf.pointer)
     end
   }
