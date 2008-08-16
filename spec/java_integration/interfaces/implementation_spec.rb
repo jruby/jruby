@@ -333,12 +333,10 @@ describe "Single object implementing methods of interface" do
   end
   
   it "should be possible to call methods on specific object that implements a method" do 
-    pending "Currently doesn't work - a regression" do 
-      obj = @impl.new
-      def obj.callIt
-        "foo"
-      end
-      SingleMethodInterface::Caller.call(obj).should == "foo"
+    obj = @impl.new
+    def obj.callIt
+      "foo"
     end
+    SingleMethodInterface::Caller.call(obj).should == "foo"
   end
 end

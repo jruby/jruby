@@ -190,15 +190,6 @@ public class MiniJava implements Library {
             }
         }
         
-//         if(!simpleToAll.containsKey("equals")) {
-//             try {
-//                 simpleToAll.put("equals", java.util.Arrays.asList(Object.class.getDeclaredMethod("equals", Object.class)));
-//                 simpleToAll.put("hashCode", java.util.Arrays.asList(Object.class.getDeclaredMethod("hashCode")));
-//                 simpleToAll.put("toString", java.util.Arrays.asList(Object.class.getDeclaredMethod("toString")));
-//             } catch(Exception e) {
-//             }
-//         }
-
         Class newClass = defineOldStyleImplClass(ruby, name, superTypeNames, simpleToAll);
         populateOldStyleImplClass(ruby, rubyClass, newClass, simpleToAll);
         
@@ -439,11 +430,13 @@ public class MiniJava implements Library {
                 
                     // not retrieved yet, retrieve it now
                     mv.pop();
-                    mv.getstatic(name, "rubyClass", ci(RubyClass.class));
+
+                    mv.aload(0);
+                    mv.getfield(name, "self", ci(IRubyObject.class));
                     for (String eachName : nameSet) {
                         mv.ldc(eachName);
                     }
-                    mv.invokestatic(p(MiniJava.class), "searchMethod", sig(DynamicMethod.class, params(RubyClass.class, String.class, nameSet.size())));
+                    mv.invokestatic(p(MiniJava.class), "searchMethod", sig(DynamicMethod.class, params(IRubyObject.class, String.class, nameSet.size())));
                     mv.dup();
                 
                     // check if it's UndefinedMethod
@@ -1444,5 +1437,37 @@ public class MiniJava implements Library {
             return searchMethod(clazz, name2, name3, name4, name5, name6, name7, name8);
         }
         return method;
+    }
+
+    public static DynamicMethod searchMethod(IRubyObject obj, String name1) {
+        return searchMethod(obj.getMetaClass(), name1);
+    }
+    
+    public static DynamicMethod searchMethod(IRubyObject obj, String name1, String name2) {
+        return searchMethod(obj.getMetaClass(), name1, name2);
+    }
+    
+    public static DynamicMethod searchMethod(IRubyObject obj, String name1, String name2, String name3) {
+        return searchMethod(obj.getMetaClass(), name1, name2, name3);
+    }
+    
+    public static DynamicMethod searchMethod(IRubyObject obj, String name1, String name2, String name3, String name4) {
+        return searchMethod(obj.getMetaClass(), name1, name2, name3, name4);
+    }
+    
+    public static DynamicMethod searchMethod(IRubyObject obj, String name1, String name2, String name3, String name4, String name5) {
+        return searchMethod(obj.getMetaClass(), name1, name2, name3, name4, name5);
+    }
+    
+    public static DynamicMethod searchMethod(IRubyObject obj, String name1, String name2, String name3, String name4, String name5, String name6) {
+        return searchMethod(obj.getMetaClass(), name1, name2, name3, name4, name5, name6);
+    }
+    
+    public static DynamicMethod searchMethod(IRubyObject obj, String name1, String name2, String name3, String name4, String name5, String name6, String name7) {
+        return searchMethod(obj.getMetaClass(), name1, name2, name3, name4, name5, name6, name7);
+    }
+    
+    public static DynamicMethod searchMethod(IRubyObject obj, String name1, String name2, String name3, String name4, String name5, String name6, String name7, String name8) {
+        return searchMethod(obj.getMetaClass(), name1, name2, name3, name4, name5, name6, name7, name8);
     }
 }
