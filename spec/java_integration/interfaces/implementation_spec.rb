@@ -318,3 +318,27 @@ describe "A Ruby class including a descendant interface" do
     UsesDescendantOfSingleMethodInterface.callThat(dosmi).should == "bar"
   end
 end
+
+describe "Single object implementing methods of interface" do 
+  before(:each) do 
+    @impl = Class.new do 
+      include SingleMethodInterface
+    end
+  end
+  
+  it "should not be possible to call methods on instances of class from Java" do 
+    proc do 
+      SingleMethodInterface::Caller.call(@impl.new)
+    end.should raise_error(NoMethodError)
+  end
+  
+  it "should be possible to call methods on specific object that implements a method" do 
+    pending "Currently doesn't work - a regression" do 
+      obj = @impl.new
+      def obj.callIt
+        "foo"
+      end
+      SingleMethodInterface::Caller.call(obj).should == "foo"
+    end
+  end
+end
