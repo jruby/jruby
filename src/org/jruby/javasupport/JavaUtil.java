@@ -319,6 +319,16 @@ public class JavaUtil {
         }
     };
     
+    public static final RubyConverter ARRAY_CLASS_CONVERTER = new RubyConverter() {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
+            if (rubyObject instanceof JavaClass) {
+                return ((JavaClass)rubyObject).javaClass();
+            } else {
+                return java_to_ruby(context.getRuntime(), rubyObject);
+            }
+        }
+    };
+
     public static final RubyConverter ARRAY_STRING_CONVERTER = new RubyConverter() {
         public Object convert(ThreadContext context, IRubyObject rubyObject) {
             if (rubyObject instanceof RubyString) {
@@ -402,6 +412,7 @@ public class JavaUtil {
         ARRAY_CONVERTERS.put(Double.class, ARRAY_DOUBLE_CONVERTER);
         ARRAY_CONVERTERS.put(Double.TYPE, ARRAY_DOUBLE_CONVERTER);
         ARRAY_CONVERTERS.put(String.class, ARRAY_STRING_CONVERTER);
+        ARRAY_CONVERTERS.put(Class.class, ARRAY_CLASS_CONVERTER);
         ARRAY_CONVERTERS.put(BigInteger.class, ARRAY_BIGINTEGER_CONVERTER);
         ARRAY_CONVERTERS.put(BigDecimal.class, ARRAY_BIGDECIMAL_CONVERTER);
     }
