@@ -190,6 +190,15 @@ public class MiniJava implements Library {
             }
         }
         
+//         if(!simpleToAll.containsKey("equals")) {
+//             try {
+//                 simpleToAll.put("equals", java.util.Arrays.asList(Object.class.getDeclaredMethod("equals", Object.class)));
+//                 simpleToAll.put("hashCode", java.util.Arrays.asList(Object.class.getDeclaredMethod("hashCode")));
+//                 simpleToAll.put("toString", java.util.Arrays.asList(Object.class.getDeclaredMethod("toString")));
+//             } catch(Exception e) {
+//             }
+//         }
+
         Class newClass = defineOldStyleImplClass(ruby, name, superTypeNames, simpleToAll);
         populateOldStyleImplClass(ruby, rubyClass, newClass, simpleToAll);
         
@@ -250,6 +259,7 @@ public class MiniJava implements Library {
                 SkinnyMethodAdapter mv = new SkinnyMethodAdapter(
                         cw.visitMethod(ACC_PUBLIC, simpleName, sig(returnType, paramTypes), null, null));
                 mv.start();
+
                 String fieldName = mangleMethodFieldName(simpleName, paramTypes);
                 
                 // try specific name first, falling back on simple name
@@ -311,6 +321,7 @@ public class MiniJava implements Library {
                 } else {
                     mv.voidreturn();
                 }
+
                 mv.end();
             }
         }
@@ -405,76 +416,83 @@ public class MiniJava implements Library {
                         cw.visitMethod(ACC_PUBLIC, simpleName, sig(returnType, paramTypes), null, null));
                 mv.start();
                 
-                Label dispatch = new Label();
-                Label end = new Label();
+                // TODO: this code should really check if a Ruby equals method is implemented or not.
+                if(simpleName.equals("equals") && paramTypes.length == 1 && paramTypes[0] == Object.class && returnType == Boolean.TYPE) {
+                    mv.aload(0);
+                    mv.aload(1);
+                    mv.invokespecial(p(Object.class), "equals", sig(Boolean.TYPE, params(Object.class)));
+                    mv.ireturn();
+                } else {
+                    Label dispatch = new Label();
+                    Label end = new Label();
 
-                // Try to look up field for simple name
+                    // Try to look up field for simple name
 
-                // lock self
-                mv.getstatic(name, "rubyClass", ci(RubyClass.class));
-                mv.monitorenter();
+                    // lock self
+                    mv.getstatic(name, "rubyClass", ci(RubyClass.class));
+                    mv.monitorenter();
                 
-                // get field
-                mv.getstatic(name, simpleName, ci(DynamicMethod.class));
-                mv.dup();
-                mv.ifnonnull(dispatch);
+                    // get field
+                    mv.getstatic(name, simpleName, ci(DynamicMethod.class));
+                    mv.dup();
+                    mv.ifnonnull(dispatch);
                 
-                // not retrieved yet, retrieve it now
-                mv.pop();
-                mv.getstatic(name, "rubyClass", ci(RubyClass.class));
-                for (String eachName : nameSet) {
-                    mv.ldc(eachName);
-                }
-                mv.invokestatic(p(MiniJava.class), "searchMethod", sig(DynamicMethod.class, params(RubyClass.class, String.class, nameSet.size())));
-                mv.dup();
+                    // not retrieved yet, retrieve it now
+                    mv.pop();
+                    mv.getstatic(name, "rubyClass", ci(RubyClass.class));
+                    for (String eachName : nameSet) {
+                        mv.ldc(eachName);
+                    }
+                    mv.invokestatic(p(MiniJava.class), "searchMethod", sig(DynamicMethod.class, params(RubyClass.class, String.class, nameSet.size())));
+                    mv.dup();
                 
-                // check if it's UndefinedMethod
-                mv.getstatic(p(UndefinedMethod.class), "INSTANCE", ci(UndefinedMethod.class));
-                mv.if_acmpne(dispatch);
+                    // check if it's UndefinedMethod
+                    mv.getstatic(p(UndefinedMethod.class), "INSTANCE", ci(UndefinedMethod.class));
+                    mv.if_acmpne(dispatch);
                 
-                // undefined, call method_missing
-                mv.pop();
-                // exit monitor before making call
-                // FIXME: this not being in a finally is a little worrisome
-                mv.getstatic(name, "rubyClass", ci(RubyClass.class));
-                mv.monitorexit();
-                mv.aload(0);
-                mv.getfield(name, "self", ci(IRubyObject.class));
-                mv.ldc(simpleName);
-                coerceArgumentsToRuby(mv, paramTypes, name);
-                mv.invokestatic(p(RuntimeHelpers.class), "invokeMethodMissing", sig(IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class));
-                mv.go_to(end);
+                    // undefined, call method_missing
+                    mv.pop();
+                    // exit monitor before making call
+                    // FIXME: this not being in a finally is a little worrisome
+                    mv.getstatic(name, "rubyClass", ci(RubyClass.class));
+                    mv.monitorexit();
+                    mv.aload(0);
+                    mv.getfield(name, "self", ci(IRubyObject.class));
+                    mv.ldc(simpleName);
+                    coerceArgumentsToRuby(mv, paramTypes, name);
+                    mv.invokestatic(p(RuntimeHelpers.class), "invokeMethodMissing", sig(IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class));
+                    mv.go_to(end);
                 
-                // re-save the method, release monitor, and dispatch
-                mv.label(dispatch);
-                mv.dup();
-                mv.putstatic(name, simpleName, ci(DynamicMethod.class));
+                    // re-save the method, release monitor, and dispatch
+                    mv.label(dispatch);
+                    mv.dup();
+                    mv.putstatic(name, simpleName, ci(DynamicMethod.class));
                 
-                mv.getstatic(name, "rubyClass", ci(RubyClass.class));
-                mv.monitorexit();
+                    mv.getstatic(name, "rubyClass", ci(RubyClass.class));
+                    mv.monitorexit();
                 
-                // get current context
-                mv.getstatic(name, "ruby", ci(Ruby.class));
-                mv.invokevirtual(p(Ruby.class), "getCurrentContext", sig(ThreadContext.class));
+                    // get current context
+                    mv.getstatic(name, "ruby", ci(Ruby.class));
+                    mv.invokevirtual(p(Ruby.class), "getCurrentContext", sig(ThreadContext.class));
                 
-                // load self, class, and name
-                mv.aload(0);
-                mv.getfield(name, "self", ci(IRubyObject.class));
-                mv.getstatic(name, "rubyClass", ci(RubyClass.class));
-                mv.ldc(simpleName);
+                    // load self, class, and name
+                    mv.aload(0);
+                    mv.getfield(name, "self", ci(IRubyObject.class));
+                    mv.getstatic(name, "rubyClass", ci(RubyClass.class));
+                    mv.ldc(simpleName);
                 
-                // coerce arguments
-                coerceArgumentsToRuby(mv, paramTypes, name);
+                    // coerce arguments
+                    coerceArgumentsToRuby(mv, paramTypes, name);
                 
-                // load null block
-                mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
+                    // load null block
+                    mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
                 
-                // invoke method
-                mv.invokevirtual(p(DynamicMethod.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class));
+                    // invoke method
+                    mv.invokevirtual(p(DynamicMethod.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class));
                 
-                mv.label(end);
-                coerceResultAndReturn(method, mv, returnType);
-                
+                    mv.label(end);
+                    coerceResultAndReturn(method, mv, returnType);
+                }                
                 mv.end();
             }
         }

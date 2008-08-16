@@ -149,3 +149,75 @@ describe "Java instance method names" do
     lambda {obj.__send__}.should raise_error(ArgumentError)
   end
 end
+
+describe "Needed implementation methods for concrete classes" do 
+  it "should have __id__ method" do 
+    ArrayReceiver.new.methods.should include("__id__")
+  end
+  it "should have __send__ method" do 
+    ArrayReceiver.new.methods.should include("__send__")
+  end
+  it "should have == method" do 
+    ArrayReceiver.new.methods.should include("==")
+  end
+  it "should have inspect method" do 
+    ArrayReceiver.new.methods.should include("inspect")
+  end
+  it "should have respond_to? method" do 
+    ArrayReceiver.new.methods.should include("respond_to?")
+  end
+  it "should have class method" do 
+    ArrayReceiver.new.methods.should include("class")
+  end
+  it "should have methods method" do 
+    ArrayReceiver.new.methods.should include("methods")
+  end
+  it "should have send method" do 
+    ArrayReceiver.new.methods.should include("send")
+  end
+  it "should have equal? method" do 
+    ArrayReceiver.new.methods.should include("equal?")
+  end
+  it "should have eql? method" do 
+    ArrayReceiver.new.methods.should include("eql?")
+  end
+  it "should have to_s method" do 
+    ArrayReceiver.new.methods.should include("to_s")
+  end
+end
+
+describe "Needed implementation methods for interfaces" do 
+  it "should have __id__ method" do 
+    BeanLikeInterface.new.methods.should include("__id__")
+  end
+  it "should have __send__ method" do 
+    BeanLikeInterface.new.methods.should include("__send__")
+  end
+  it "should have == method" do 
+    BeanLikeInterface.new.methods.should include("==")
+  end
+  it "should have inspect method" do 
+    BeanLikeInterface.new.methods.should include("inspect")
+  end
+  it "should have respond_to? method" do 
+    BeanLikeInterface.new.methods.should include("respond_to?")
+  end
+  it "should have class method" do 
+    BeanLikeInterface.new.methods.should include("class")
+  end
+  it "should have methods method" do 
+    BeanLikeInterface.new.methods.should include("methods")
+  end
+  it "should have send method" do 
+    BeanLikeInterface.new.methods.should include("send")
+  end
+  it "should have equal? method" do 
+    BeanLikeInterface.new.methods.should include("equal?")
+  end
+  it "should have eql? method" do 
+    BeanLikeInterface.new.methods.should include("eql?")
+  end
+  it "should have to_s method" do 
+    BeanLikeInterface.new.methods.should include("to_s")
+  end
+end

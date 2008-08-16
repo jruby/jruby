@@ -29,7 +29,7 @@ describe "Single-method Java interfaces implemented in Ruby" do
       end
     end
   end
-  
+ 
   it "should be kind_of? the interface" do
     @value_holder1.new(1).should be_kind_of(SingleMethodInterface)
     SingleMethodInterface.should === @value_holder1.new(1)
@@ -85,6 +85,15 @@ describe "Single-method Java interfaces implemented in Ruby" do
       end
     end
     UsesSingleMethodInterface.callIt(obj).should == 8
+  end
+  
+  it "should use Object#equals if there is no Ruby equals defined" do 
+    c = Class.new
+    c.send :include, java.util.Map
+    arr = java.util.ArrayList.new
+    v = c.new
+    arr.add(v)
+    arr.contains(v).should be_true
   end
 end
 

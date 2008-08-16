@@ -28,8 +28,8 @@ public class JavaProxyMethods {
         // TODO: can't we dig this out without a method call?
         return RuntimeHelpers.invoke(context, metaClass, "java_class");
     }
-    
-    @JRubyMethod(name = "==")
+
+    @JRubyMethod(name = {"=="})
     public static IRubyObject op_equal(IRubyObject recv, IRubyObject rhs) {
         return ((JavaObject)recv.dataGetStruct()).op_equal(rhs);
     }
