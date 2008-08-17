@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+
+cmd = "bash #{File.dirname __FILE__}/jruby.bash"
+
+cmd << " -I #{$:.join(':')}"
+
+last_was_dash_e = false
+ARGV.each do |arg|
+  if last_was_dash_e
+    if arg =~ /"/
+      arg = "'#{arg}'"
+    else
+      arg = "\"#{arg}\""
+    end
+    last_was_dash_e = false
+  elsif arg == "-e"
+    last_was_dash_e = true
+  end
+
+  cmd << " #{arg}"
+end
+
+exec cmd

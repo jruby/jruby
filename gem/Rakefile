@@ -1,0 +1,22 @@
+# -*- ruby -*-
+
+require 'rubygems'
+require 'hoe'
+require 'fileutils'
+require './lib/jruby.rb'
+
+FileUtils.cp('../lib/jruby.jar', 'lib/jruby.jar')
+jruby_bin = File.read('../bin/jruby')
+File.open('bin/jruby.bash', 'w') {|file| file.write(jruby_bin)}
+FileUtils.cp('../bin/jirb', 'bin/jirb')
+FileUtils.cp('../bin/gem', 'bin/gem')
+
+FileUtils.mkdir_p 'lib/ruby/site_ruby'
+FileUtils.cp_r '../lib/ruby/site_ruby/1.8', 'lib/ruby/site_ruby'
+
+Hoe.new('jruby', JRubyGem::VERSION) do |p|
+  p.rubyforge_name = 'jruby-extras' # if different than lowercase project name
+  p.developer('Charles Oliver Nutter', 'charles.nutter@sun.com')
+end
+
+# vim: syntax=Ruby
