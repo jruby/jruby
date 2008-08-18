@@ -182,7 +182,7 @@ abstract public class AbstractMemory extends RubyObject {
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = "put_int8", required = 2)
+    @JRubyMethod(name = { "put_int8", "put_char" } , required = 2)
     public IRubyObject put_int8(ThreadContext context, IRubyObject offset, IRubyObject value) {
         checkBounds(context, offset, 1);
         getMemoryIO().putByte(getOffset(offset), Util.int8Value(value));
@@ -195,7 +195,7 @@ abstract public class AbstractMemory extends RubyObject {
      * @param offset The offset from the base pointer address to read the value.
      * @return The value read from the address.
      */
-    @JRubyMethod(name = "get_int8", required = 1)
+    @JRubyMethod(name = { "get_int8", "get_char" }, required = 1)
     public IRubyObject get_int8(ThreadContext context, IRubyObject offset) {
         checkBounds(context, offset, 1);
         return RubyFixnum.newFixnum(context.getRuntime(), getMemoryIO().getByte(getOffset(offset)));
@@ -208,7 +208,7 @@ abstract public class AbstractMemory extends RubyObject {
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = "put_uint8", required = 2)
+    @JRubyMethod(name = { "put_uint8", "put_uchar" }, required = 2)
     public IRubyObject put_uint8(ThreadContext context, IRubyObject offset, IRubyObject value) {
         checkBounds(context, offset, 1);
         getMemoryIO().putByte(getOffset(offset), (byte) Util.uint8Value(value));
@@ -221,7 +221,7 @@ abstract public class AbstractMemory extends RubyObject {
      * @param offset The offset from the base pointer address to read the value.
      * @return The value read from the address.
      */
-    @JRubyMethod(name = "get_uint8", required = 1)
+    @JRubyMethod(name = { "get_uint8", "get_uchar" }, required = 1)
     public IRubyObject get_uint8(ThreadContext context, IRubyObject offset) {
         checkBounds(context, offset, 1);
         int value = getMemoryIO().getByte(getOffset(offset));
@@ -236,7 +236,7 @@ abstract public class AbstractMemory extends RubyObject {
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = "put_int16", required = 2)
+    @JRubyMethod(name = { "put_int16", "put_short" }, required = 2)
     public IRubyObject put_int16(ThreadContext context, IRubyObject offset, IRubyObject value) {
         checkBounds(context, offset, 2);
         getMemoryIO().putShort(getOffset(offset), Util.int16Value(value));
@@ -249,7 +249,7 @@ abstract public class AbstractMemory extends RubyObject {
      * @param offset The offset from the base pointer address to read the value.
      * @return The value read from the address.
      */
-    @JRubyMethod(name = "get_int16", required = 1)
+    @JRubyMethod(name = { "get_int16", "get_short" }, required = 1)
     public IRubyObject get_int16(ThreadContext context, IRubyObject offset) {
         checkBounds(context, offset, 2);
         return RubyFixnum.newFixnum(context.getRuntime(), getMemoryIO().getShort(getOffset(offset)));
@@ -262,7 +262,7 @@ abstract public class AbstractMemory extends RubyObject {
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = "put_uint16", required = 2)
+    @JRubyMethod(name = { "put_uint16", "put_ushort" }, required = 2)
     public IRubyObject put_uint16(ThreadContext context, IRubyObject offset, IRubyObject value) {
         checkBounds(context, offset, 2);
         getMemoryIO().putShort(getOffset(offset), (short) Util.uint16Value(value));
@@ -275,7 +275,7 @@ abstract public class AbstractMemory extends RubyObject {
      * @param offset The offset from the base pointer address to read the value.
      * @return The value read from the address.
      */
-    @JRubyMethod(name = "get_uint16", required = 1)
+    @JRubyMethod(name = { "get_uint16", "get_ushort" }, required = 1)
     public IRubyObject get_uint16(ThreadContext context, IRubyObject offset) {
         checkBounds(context, offset, 2);
         int value = getMemoryIO().getShort(getOffset(offset));
@@ -289,7 +289,7 @@ abstract public class AbstractMemory extends RubyObject {
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = "put_int32", required = 2)
+    @JRubyMethod(name = { "put_int32", "put_int" }, required = 2)
     public IRubyObject put_int32(ThreadContext context, IRubyObject offset, IRubyObject value) {
         checkBounds(context, offset, 4);
         getMemoryIO().putInt(getOffset(offset), Util.int32Value(value));
@@ -302,7 +302,7 @@ abstract public class AbstractMemory extends RubyObject {
      * @param offset The offset from the base pointer address to read the value.
      * @return The value read from the address.
      */
-    @JRubyMethod(name = "get_int32", required = 1)
+    @JRubyMethod(name = { "get_int32", "get_int" }, required = 1)
     public IRubyObject get_int32(ThreadContext context, IRubyObject offset) {
         checkBounds(context, offset, 4);
         return RubyFixnum.newFixnum(context.getRuntime(), getMemoryIO().getInt(getOffset(offset)));
@@ -315,7 +315,7 @@ abstract public class AbstractMemory extends RubyObject {
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = "put_uint32", required = 2)
+    @JRubyMethod(name = { "put_uint32", "get_uint" }, required = 2)
     public IRubyObject put_uint32(ThreadContext context, IRubyObject offset, IRubyObject value) {
         checkBounds(context, offset, 4);
         getMemoryIO().putInt(getOffset(offset), (int) Util.uint32Value(value));
@@ -328,7 +328,7 @@ abstract public class AbstractMemory extends RubyObject {
      * @param offset The offset from the base pointer address to read the value.
      * @return The value read from the address.
      */
-    @JRubyMethod(name = "get_uint32", required = 1)
+    @JRubyMethod(name = { "get_uint32", "get_uint" }, required = 1)
     public IRubyObject get_uint32(ThreadContext context, IRubyObject offset) {
         checkBounds(context, offset, 4);
         long value = getMemoryIO().getInt(getOffset(offset));
@@ -342,7 +342,7 @@ abstract public class AbstractMemory extends RubyObject {
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = { "put_int64", "put_uint64" }, required = 2)
+    @JRubyMethod(name = { "put_int64", "put_uint64", "put_long_long",  "put_ulong_long" }, required = 2)
     public IRubyObject put_int64(ThreadContext context, IRubyObject offset, IRubyObject value) {
         checkBounds(context, offset, 8);
         getMemoryIO().putLong(getOffset(offset), Util.int64Value(value));
@@ -355,7 +355,7 @@ abstract public class AbstractMemory extends RubyObject {
      * @param offset The offset from the base pointer address to read the value.
      * @return The value read from the address.
      */
-    @JRubyMethod(name = {"get_int64", "get_uint64" }, required = 1)
+    @JRubyMethod(name = { "get_int64", "get_uint64", "get_long_long", "get_ulong_long" }, required = 1)
     public IRubyObject get_int64(ThreadContext context, IRubyObject offset) {
         checkBounds(context, offset, 8);
         return RubyFixnum.newFixnum(context.getRuntime(), getMemoryIO().getLong(getOffset(offset)));
@@ -421,7 +421,7 @@ abstract public class AbstractMemory extends RubyObject {
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = "put_float32", required = 2)
+    @JRubyMethod(name = { "put_float32", "put_float" }, required = 2)
     public IRubyObject put_float32(ThreadContext context, IRubyObject offset, IRubyObject value) {
         checkBounds(context, offset, 4);
         getMemoryIO().putFloat(getOffset(offset), Util.floatValue(value));
@@ -434,7 +434,7 @@ abstract public class AbstractMemory extends RubyObject {
      * @param offset The offset from the base pointer address to read the value.
      * @return The value read from the address.
      */
-    @JRubyMethod(name = "get_float32", required = 1)
+    @JRubyMethod(name = { "get_float32", "get_float" }, required = 1)
     public IRubyObject get_float32(ThreadContext context, IRubyObject offset) {
         checkBounds(context, offset, 4);
         return RubyFloat.newFloat(context.getRuntime(), getMemoryIO().getFloat(getOffset(offset)));
@@ -447,7 +447,7 @@ abstract public class AbstractMemory extends RubyObject {
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = "put_float64", required = 2)
+    @JRubyMethod(name = { "put_float64", "put_double" }, required = 2)
     public IRubyObject put_float64(ThreadContext context, IRubyObject offset, IRubyObject value) {
         checkBounds(context, offset, 8);
         getMemoryIO().putDouble(getOffset(offset), Util.doubleValue(value));
@@ -460,12 +460,12 @@ abstract public class AbstractMemory extends RubyObject {
      * @param offset The offset from the base pointer address to read the value.
      * @return The value read from the address.
      */
-    @JRubyMethod(name = "get_float64", required = 1)
+    @JRubyMethod(name = { "get_float64", "get_double" }, required = 1)
     public IRubyObject get_float64(ThreadContext context, IRubyObject offset) {
         checkBounds(context, offset, 8);
         return RubyFloat.newFloat(context.getRuntime(), getMemoryIO().getDouble(getOffset(offset)));
     }
-    @JRubyMethod(name = "get_array_of_int8", required = 2)
+    @JRubyMethod(name = { "get_array_of_int8", "get_array_of_char" }, required = 2)
     public IRubyObject get_array_of_int8(ThreadContext context, IRubyObject offset, IRubyObject length) {
         int count = Util.int32Value(length);
         checkBounds(context, offset, count * 2);
@@ -478,7 +478,7 @@ abstract public class AbstractMemory extends RubyObject {
         }
         return arr;
     }
-    @JRubyMethod(name = "put_array_of_int8", required = 2)
+    @JRubyMethod(name = { "put_array_of_int8", "put_array_of_char" }, required = 2)
     public IRubyObject put_array_of_int8(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
         RubyArray arr = (RubyArray) arrParam;
         int count = arr.getLength();
@@ -490,7 +490,7 @@ abstract public class AbstractMemory extends RubyObject {
         getMemoryIO().put(getOffset(offset), array, 0, array.length);
         return this;
     }
-    @JRubyMethod(name = "get_array_of_int16", required = 2)
+    @JRubyMethod(name = { "get_array_of_int16", "get_array_of_short" }, required = 2)
     public IRubyObject get_array_of_int16(ThreadContext context, IRubyObject offset, IRubyObject length) {
         int count = Util.int32Value(length);
         checkBounds(context, offset, count * 2);
@@ -503,7 +503,7 @@ abstract public class AbstractMemory extends RubyObject {
         }
         return arr;
     }
-    @JRubyMethod(name = "put_array_of_int16", required = 2)
+    @JRubyMethod(name = { "put_array_of_int16", "put_array_of_short" }, required = 2)
     public IRubyObject put_array_of_int16(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
         RubyArray arr = (RubyArray) arrParam;
         int count = arr.getLength();
@@ -515,7 +515,7 @@ abstract public class AbstractMemory extends RubyObject {
         getMemoryIO().put(getOffset(offset), array, 0, array.length);
         return this;
     }
-    @JRubyMethod(name = "get_array_of_int32", required = 2)
+    @JRubyMethod(name = { "get_array_of_int32", "get_array_of_int" }, required = 2)
     public IRubyObject get_array_of_int32(ThreadContext context, IRubyObject offset, IRubyObject length) {
         int count = Util.int32Value(length);
         checkBounds(context, offset, count * 4);
@@ -528,7 +528,7 @@ abstract public class AbstractMemory extends RubyObject {
         }
         return arr;
     }
-    @JRubyMethod(name = "put_array_of_int32", required = 2)
+    @JRubyMethod(name = { "put_array_of_int32", "get_array_of_int" }, required = 2)
     public IRubyObject put_array_of_int32(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
         RubyArray arr = (RubyArray) arrParam;
         int count = arr.getLength();
@@ -577,7 +577,7 @@ abstract public class AbstractMemory extends RubyObject {
         getMemoryIO().put(getOffset(offset), array, 0, array.length);
         return this;
     }
-    @JRubyMethod(name = "get_array_of_float32", required = 2)
+    @JRubyMethod(name = { "get_array_of_float32", "get_array_of_float" }, required = 2)
     public IRubyObject get_array_of_float(ThreadContext context, IRubyObject offset, IRubyObject length) {
         int count = Util.int32Value(length);
         checkBounds(context, offset, count * 4);
@@ -590,7 +590,7 @@ abstract public class AbstractMemory extends RubyObject {
         }
         return arr;
     }
-    @JRubyMethod(name = "put_array_of_float32", required = 2)
+    @JRubyMethod(name = { "put_array_of_float32", "put_array_of_float" }, required = 2)
     public IRubyObject put_array_of_float(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
         RubyArray arr = (RubyArray) arrParam;
         int count = arr.getLength();
@@ -602,7 +602,7 @@ abstract public class AbstractMemory extends RubyObject {
         getMemoryIO().put(getOffset(offset), array, 0, array.length);
         return this;
     }
-    @JRubyMethod(name = "get_array_of_float64", required = 2)
+    @JRubyMethod(name = { "get_array_of_float64", "get_array_of_double" }, required = 2)
     public IRubyObject get_array_of_float64(ThreadContext context, IRubyObject offset, IRubyObject length) {
         int count = Util.int32Value(length);
         checkBounds(context, offset, count * 8);
@@ -615,7 +615,7 @@ abstract public class AbstractMemory extends RubyObject {
         }
         return arr;
     }
-    @JRubyMethod(name = "put_array_of_float64", required = 2)
+    @JRubyMethod(name = { "put_array_of_float64", "put_array_of_double" }, required = 2)
     public IRubyObject put_array_of_float64(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
         RubyArray arr = (RubyArray) arrParam;
         int count = arr.getLength();
