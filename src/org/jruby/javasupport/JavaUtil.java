@@ -1118,21 +1118,20 @@ public class JavaUtil {
         return m.replaceAll("$1_$2").toLowerCase();
     }
 
-    private static final Pattern RUBY_CASE_SPLITTER = Pattern.compile("([a-z][0-9]*)_([a-z][0-9])");    
+    private static final Pattern RUBY_CASE_SPLITTER = Pattern.compile("([a-z][0-9]*)_([a-z])");    
     public static String getJavaCasedName(String javaCasedName) {
         Matcher m = RUBY_CASE_SPLITTER.matcher(javaCasedName);
         StringBuffer newName = new StringBuffer();
-        if (!m.matches()) {
+        if (!m.find()) {
             return null;
         }
+        m.reset();
 
         while (m.find()) {
-            if (m.group(2).length() == 1) {
-                m.appendReplacement(newName, m.group(1) + Character.toUpperCase(m.group(2).charAt(0)));
-            } else {
-                m.appendReplacement(newName, m.group(1) + Character.toUpperCase(m.group(2).charAt(0)) + m.group(2).substring(1));
-            }
+            m.appendReplacement(newName, m.group(1) + Character.toUpperCase(m.group(2).charAt(0)));
         }
+
+        m.appendTail(newName);
 
         return newName.toString();
     }
@@ -1198,5 +1197,17 @@ public class JavaUtil {
         }
         
         return nameSet;
+    }
+
+    public static JavaObject unwrapJavaObject(Ruby runtime, IRubyObject convertee, String errorMessage) {
+        IRubyObject obj = convertee;
+        if(!(obj instanceof JavaObject)) {
+            if (obj.dataGetStruct() != null && (obj.dataGetStruct() instanceof JavaObject)) {
+                obj = (JavaObject)obj.dataGetStruct();
+            } else {
+                throw runtime.newTypeError(errorMessage);
+            }
+        }
+        return (JavaObject)obj;
     }
 }

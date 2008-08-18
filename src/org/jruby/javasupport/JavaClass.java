@@ -1513,21 +1513,37 @@ public class JavaClass extends JavaObject {
     @JRubyMethod(required = 1)
     public JavaField field(IRubyObject name) {
         String stringName = name.asJavaString();
+        Field field = null;
         try {
-            Field field = javaClass().getField(stringName);
+            field = javaClass().getField(stringName);
             return new JavaField(getRuntime(), field);
         } catch (NoSuchFieldException nsfe) {
+            String newName = JavaUtil.getJavaCasedName(stringName);
+            if(newName != null) {
+                try {
+                    field = javaClass().getField(newName);
+                    return new JavaField(getRuntime(), field);
+                } catch (NoSuchFieldException nsfe2) {}
+            }
             throw undefinedFieldError(stringName);
-        }
+         }
     }
 
     @JRubyMethod(required = 1)
     public JavaField declared_field(IRubyObject name) {
         String stringName = name.asJavaString();
+        Field field = null;
         try {
-            Field field = javaClass().getDeclaredField(stringName);
+            field = javaClass().getDeclaredField(stringName);
             return new JavaField(getRuntime(), field);
         } catch (NoSuchFieldException nsfe) {
+            String newName = JavaUtil.getJavaCasedName(stringName);
+            if(newName != null) {
+                try {
+                    field = javaClass().getDeclaredField(newName);
+                    return new JavaField(getRuntime(), field);
+                } catch (NoSuchFieldException nsfe2) {}
+            }
             throw undefinedFieldError(stringName);
         }
     }

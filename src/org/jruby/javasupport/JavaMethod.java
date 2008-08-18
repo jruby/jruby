@@ -195,15 +195,7 @@ public class JavaMethod extends JavaCallable {
             return invokeWithExceptionHandling(method, null, arguments);
         }
 
-        if(!(invokee instanceof JavaObject)) {
-            if (invokee.dataGetStruct() != null && (invokee.dataGetStruct() instanceof JavaObject)) {
-                invokee = (JavaObject)invokee.dataGetStruct();
-            } else {
-                throw getRuntime().newTypeError("invokee not a java object");
-            }
-        }
-
-        Object javaInvokee = ((JavaObject) invokee).getValue();
+        Object javaInvokee = JavaUtil.unwrapJavaObject(getRuntime(), invokee, "invokee not a java object").getValue();
 
         if (! method.getDeclaringClass().isInstance(javaInvokee)) {
             throw getRuntime().newTypeError("invokee not instance of method's class (" +

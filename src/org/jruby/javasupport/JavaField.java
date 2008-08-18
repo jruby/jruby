@@ -131,15 +131,11 @@ public class JavaField extends JavaAccessibleObject {
 
     @JRubyMethod
     public JavaObject set_value(IRubyObject object, IRubyObject value) {
-        if (! (object instanceof JavaObject)) {
-            throw getRuntime().newTypeError("not a java object: " + object);
-        }
-        if (! (value instanceof JavaObject)) {
-            throw getRuntime().newTypeError("not a java object:" + value);
-        }
-        Object javaObject = ((JavaObject) object).getValue();
+        JavaObject obj = JavaUtil.unwrapJavaObject(getRuntime(), object, "not a java object: " + object);
+        JavaObject val = JavaUtil.unwrapJavaObject(getRuntime(), value, "not a java object: " + value);
+        Object javaObject = obj.getValue();
         try {
-            Object convertedValue = JavaUtil.convertArgument(value.getRuntime(), ((JavaObject) value).getValue(),
+            Object convertedValue = JavaUtil.convertArgument(val.getRuntime(), val.getValue(),
                                                              field.getType());
 
             field.set(javaObject, convertedValue);
@@ -151,7 +147,7 @@ public class JavaField extends JavaAccessibleObject {
                                 "wrong type for " + field.getType().getName() + ": " +
                                 ((JavaObject) value).getValue().getClass().getName());
         }
-        return (JavaObject) value;
+        return val;
     }
 
     @JRubyMethod(name = "final?")

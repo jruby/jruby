@@ -15,12 +15,10 @@ describe "A JavaClass" do
   end
 
   it "should provide a look up for a fields using a Ruby formatted name" do
-    pending "JavaClass does not provide underscore access to fields" do
-      PrivateField.java_class.declared_field(:str_field).should_not == nil
-      ProtectedField.java_class.declared_field(:str_field).should_not == nil
-      PublicField.java_class.declared_field(:str_field).should_not == nil
-      PackageField.java_class.declared_field(:str_field).should_not == nil
-    end
+    PrivateField.java_class.declared_field(:str_field).should_not == nil
+    ProtectedField.java_class.declared_field(:str_field).should_not == nil
+    PublicField.java_class.declared_field(:str_field).should_not == nil
+    PackageField.java_class.declared_field(:str_field).should_not == nil
   end
 end
 
@@ -130,10 +128,8 @@ describe "A JavaField" do
       end
 
       it "should set Java values" do
-        pending "JavaField can not accept a Ruby-wrapped Java object" do
-          lambda { @field.set_value @obj, Java.ruby_to_java("42") }.should_not raise_error
-          lambda { @field.set_value @obj, Java.ruby_to_java(nil) }.should_not raise_error
-        end
+        lambda { @field.set_value @obj, Java.ruby_to_java("42") }.should_not raise_error
+        lambda { @field.set_value @obj, Java.ruby_to_java(nil) }.should_not raise_error
       end
 
       it "should get Ruby values"
@@ -154,10 +150,8 @@ describe "A JavaField" do
       end
 
       it "should set Java values" do
-        pending "JavaField can not accept a Ruby-wrapped Java object" do
-          lambda { @field.set_value @obj, Java.ruby_to_java("42") }.should_not raise_error
-          lambda { @field.set_value @obj, Java.ruby_to_java(nil) }.should_not raise_error
-        end
+        lambda { @field.set_value @obj, Java.ruby_to_java("42") }.should_not raise_error
+        lambda { @field.set_value @obj, Java.ruby_to_java(nil) }.should_not raise_error
       end
 
       it "should get Ruby values"
@@ -177,10 +171,8 @@ describe "A JavaField" do
       end
 
       it "should set Java values" do
-        pending "JavaField can not accept a Ruby-wrapped Java object" do
-          lambda { @field.set_value @obj, Java.ruby_to_java("42") }.should_not raise_error
-          lambda { @field.set_value @obj, Java.ruby_to_java(nil) }.should_not raise_error
-        end
+        lambda { @field.set_value @obj, Java.ruby_to_java("42") }.should_not raise_error
+        lambda { @field.set_value @obj, Java.ruby_to_java(nil) }.should_not raise_error
       end
 
       it "should get Ruby values"
@@ -201,10 +193,8 @@ describe "A JavaField" do
       end
 
       it "should set Java values" do
-        pending "JavaField can not accept a Ruby-wrapped Java object" do
-          lambda { @field.set_value @obj, Java.ruby_to_java("42") }.should_not raise_error
-          lambda { @field.set_value @obj, Java.ruby_to_java(nil) }.should_not raise_error
-        end
+        lambda { @field.set_value @obj, Java.ruby_to_java("42") }.should_not raise_error
+        lambda { @field.set_value @obj, Java.ruby_to_java(nil) }.should_not raise_error
       end
 
       it "should get Ruby values"
