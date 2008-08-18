@@ -70,6 +70,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.joda.time.DateTimeZone;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.RubiniusRunner;
 import org.jruby.ast.executable.Script;
@@ -2881,6 +2882,10 @@ public final class Ruby {
         return executor;
     }
 
+    public Map<String, DateTimeZone> getLocalTimezoneCache() {
+        return localTimeZoneCache;
+    }
+
     private final CacheMap cacheMap;
     private final ThreadService threadService;
     private Hashtable<Object, Object> runtimeInformation;
@@ -3020,6 +3025,7 @@ public final class Ruby {
     private Object respondToMethod;
     private Object objectToYamlMethod;
 
+    private Map<String, DateTimeZone> localTimeZoneCache = new HashMap<String,DateTimeZone>();
     /**
      * A list of "external" finalizers (the ones, registered via ObjectSpace),
      * weakly referenced, to be executed on tearDown.

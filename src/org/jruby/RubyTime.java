@@ -85,8 +85,6 @@ public class RubyTime extends RubyObject {
             = Pattern.compile("(\\D+?)([\\+-]?)(\\d+)(:\\d+)?(:\\d+)?");
     
     private static final ByteList TZ_STRING = ByteList.create("TZ");
-    private static SoftReference<Map<String, DateTimeZone>> LOCAL_ZONES_CACHE
-            = new SoftReference<Map<String,DateTimeZone>>(new HashMap<String,DateTimeZone>());
      
     public static DateTimeZone getLocalTimeZone(Ruby runtime) {
         RubyString tzVar = runtime.newString(TZ_STRING);
@@ -96,16 +94,10 @@ public class RubyTime extends RubyObject {
             return DateTimeZone.getDefault();
         } else {
             String zone = tz.toString();
-            Map<String, DateTimeZone> zonesCache = LOCAL_ZONES_CACHE.get();
-            if (zonesCache != null) {
-                DateTimeZone cachedZone = zonesCache.get(zone);
-                if (cachedZone != null) {
-                    return cachedZone;
-                }
-            } else {
-                zonesCache = new HashMap<String, DateTimeZone>();
-                LOCAL_ZONES_CACHE = new SoftReference<Map<String,DateTimeZone>>(zonesCache);
-            }
+            DateTimeZone cachedZone = runtime.getLocalTimezoneCache().get(zone);
+
+            if (cachedZone != null) return cachedZone;
+
             String originalZone = zone;
 
             // Value of "TZ" property is of a bit different format,
@@ -150,7 +142,7 @@ public class RubyTime extends RubyObject {
             }
 
             DateTimeZone dtz = DateTimeZone.forTimeZone(TimeZone.getTimeZone(zone));
-            zonesCache.put(originalZone, dtz);
+            runtime.getLocalTimezoneCache().put(originalZone, dtz);
             return dtz;
         }
     }
