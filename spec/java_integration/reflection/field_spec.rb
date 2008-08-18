@@ -32,10 +32,8 @@ describe "A JavaField" do
       end
 
       it "should set Ruby values" do
-        pending "JavaField does not automatically coerce" do
-          lambda { @field.set_value @obj.java_object, "42" }.should_not raise_error
-          lambda { @field.set_value @obj.java_object, nil }.should_not raise_error
-        end
+        lambda { @field.set_value @obj.java_object, "42" }.should_not raise_error
+        lambda { @field.set_value @obj.java_object, nil }.should_not raise_error
       end
 
       it "should set Java values" do
@@ -43,7 +41,13 @@ describe "A JavaField" do
         lambda { @field.set_value @obj.java_object, Java.ruby_to_java(nil) }.should_not raise_error
       end
 
-      it "should get Ruby values"
+      it "should get Ruby values" do 
+        @field.set_value @obj.java_object, "42"
+        @field.value(@obj.java_object).should == "42"
+
+        @field.set_value @obj.java_object, nil
+        @field.value(@obj.java_object).should be_nil
+      end
     end
     
     describe "with a protected field" do
@@ -54,10 +58,8 @@ describe "A JavaField" do
       end
 
       it "should set Ruby values" do
-        pending "JavaField does not automatically coerce" do
-          lambda { @field.set_value @obj.java_object, "42" }.should_not raise_error
-          lambda { @field.set_value @obj.java_object, nil }.should_not raise_error
-        end
+        lambda { @field.set_value @obj.java_object, "42" }.should_not raise_error
+        lambda { @field.set_value @obj.java_object, nil }.should_not raise_error
       end
 
       it "should set Java values" do
@@ -65,7 +67,13 @@ describe "A JavaField" do
         lambda { @field.set_value @obj.java_object, Java.ruby_to_java(nil) }.should_not raise_error
       end
 
-      it "should get Ruby values"
+      it "should get Ruby values" do 
+        @field.set_value @obj.java_object, "42"
+        @field.value(@obj.java_object).should == "42"
+
+        @field.set_value @obj.java_object, nil
+        @field.value(@obj.java_object).should be_nil
+      end
     end
     
     describe "with a public field" do
@@ -75,10 +83,8 @@ describe "A JavaField" do
       end
 
       it "should set Ruby values" do
-        pending "JavaField does not automatically coerce" do
-          lambda { @field.set_value @obj.java_object, "42" }.should_not raise_error
-          lambda { @field.set_value @obj.java_object, nil }.should_not raise_error
-        end
+        lambda { @field.set_value @obj.java_object, "42" }.should_not raise_error
+        lambda { @field.set_value @obj.java_object, nil }.should_not raise_error
       end
 
       it "should set Java values" do
@@ -86,7 +92,14 @@ describe "A JavaField" do
         lambda { @field.set_value @obj.java_object, Java.ruby_to_java(nil) }.should_not raise_error
       end
 
-      it "should get Ruby values"
+
+      it "should get Ruby values" do 
+        @field.set_value @obj.java_object, "42"
+        @field.value(@obj.java_object).should == "42"
+
+        @field.set_value @obj.java_object, nil
+        @field.value(@obj.java_object).should be_nil
+      end
     end
     
     describe "with a package field" do
@@ -97,10 +110,8 @@ describe "A JavaField" do
       end
 
       it "should set Ruby values" do
-        pending "JavaField does not automatically coerce" do
-          lambda { @field.set_value @obj.java_object, "42" }.should_not raise_error
-          lambda { @field.set_value @obj.java_object, nil }.should_not raise_error
-        end
+        lambda { @field.set_value @obj.java_object, "42" }.should_not raise_error
+        lambda { @field.set_value @obj.java_object, nil }.should_not raise_error
       end
 
       it "should set Java values" do
@@ -108,7 +119,13 @@ describe "A JavaField" do
         lambda { @field.set_value @obj.java_object, Java.ruby_to_java(nil) }.should_not raise_error
       end
 
-      it "should get Ruby values"
+      it "should get Ruby values" do 
+        @field.set_value @obj.java_object, "42"
+        @field.value(@obj.java_object).should == "42"
+
+        @field.set_value @obj.java_object, nil
+        @field.value(@obj.java_object).should be_nil
+      end
     end
   end
   
@@ -121,10 +138,8 @@ describe "A JavaField" do
       end
 
       it "should set Ruby values" do
-        pending "JavaField does not automatically coerce" do
-          lambda { @field.set_value @obj, "42" }.should_not raise_error
-          lambda { @field.set_value @obj, nil }.should_not raise_error
-        end
+        lambda { @field.set_value @obj, "42" }.should_not raise_error
+        lambda { @field.set_value @obj, nil }.should_not raise_error
       end
 
       it "should set Java values" do
@@ -132,7 +147,13 @@ describe "A JavaField" do
         lambda { @field.set_value @obj, Java.ruby_to_java(nil) }.should_not raise_error
       end
 
-      it "should get Ruby values"
+      it "should get Ruby values" do 
+        @field.set_value @obj, "42"
+        @field.value(@obj).should == "42"
+
+        @field.set_value @obj, nil
+        @field.value(@obj).should be_nil
+      end
     end
     
     describe "with a protected field" do
@@ -143,10 +164,8 @@ describe "A JavaField" do
       end
 
       it "should set Ruby values" do
-        pending "JavaField does not automatically coerce" do
-          lambda { @field.set_value @obj, "42" }.should_not raise_error
-          lambda { @field.set_value @obj, nil }.should_not raise_error
-        end
+        lambda { @field.set_value @obj, "42" }.should_not raise_error
+        lambda { @field.set_value @obj, nil }.should_not raise_error
       end
 
       it "should set Java values" do
@@ -154,7 +173,13 @@ describe "A JavaField" do
         lambda { @field.set_value @obj, Java.ruby_to_java(nil) }.should_not raise_error
       end
 
-      it "should get Ruby values"
+      it "should get Ruby values" do 
+        @field.set_value @obj, "42"
+        @field.value(@obj).should == "42"
+
+        @field.set_value @obj, nil
+        @field.value(@obj).should be_nil
+      end
     end
     
     describe "with a public field" do
@@ -164,10 +189,8 @@ describe "A JavaField" do
       end
 
       it "should set Ruby values" do
-        pending "JavaField does not automatically coerce" do
-          lambda { @field.set_value @obj, "42" }.should_not raise_error
-          lambda { @field.set_value @obj, nil }.should_not raise_error
-        end
+        lambda { @field.set_value @obj, "42" }.should_not raise_error
+        lambda { @field.set_value @obj, nil }.should_not raise_error
       end
 
       it "should set Java values" do
@@ -175,7 +198,13 @@ describe "A JavaField" do
         lambda { @field.set_value @obj, Java.ruby_to_java(nil) }.should_not raise_error
       end
 
-      it "should get Ruby values"
+      it "should get Ruby values" do 
+        @field.set_value @obj, "42"
+        @field.value(@obj).should == "42"
+
+        @field.set_value @obj, nil
+        @field.value(@obj).should be_nil
+      end
     end
     
     describe "with a package field" do
@@ -186,10 +215,8 @@ describe "A JavaField" do
       end
 
       it "should set Ruby values" do
-        pending "JavaField does not automatically coerce" do
-          lambda { @field.set_value @obj, "42" }.should_not raise_error
-          lambda { @field.set_value @obj, nil }.should_not raise_error
-        end
+        lambda { @field.set_value @obj, "42" }.should_not raise_error
+        lambda { @field.set_value @obj, nil }.should_not raise_error
       end
 
       it "should set Java values" do
@@ -197,7 +224,13 @@ describe "A JavaField" do
         lambda { @field.set_value @obj, Java.ruby_to_java(nil) }.should_not raise_error
       end
 
-      it "should get Ruby values"
+      it "should get Ruby values" do 
+        @field.set_value @obj, "42"
+        @field.value(@obj).should == "42"
+
+        @field.set_value @obj, nil
+        @field.value(@obj).should be_nil
+      end
     end
   end
 end

@@ -117,26 +117,26 @@ public class JavaField extends JavaAccessibleObject {
     }
 
     @JRubyMethod
-    public JavaObject value(IRubyObject object) {
-        if (! (object instanceof JavaObject)) {
-            throw getRuntime().newTypeError("not a java object");
-        }
-        Object javaObject = ((JavaObject) object).getValue();
+    public IRubyObject value(IRubyObject object) {
+        JavaObject obj = JavaUtil.unwrapJavaObject(getRuntime(), object, "not a java object");
+        Object javaObject = obj.getValue();
         try {
-            return JavaObject.wrap(getRuntime(), field.get(javaObject));
+            return JavaUtil.convertJavaToRuby(getRuntime(), field.get(javaObject), field.getType());
         } catch (IllegalAccessException iae) {
             throw getRuntime().newTypeError("illegal access");
         }
     }
 
     @JRubyMethod
-    public JavaObject set_value(IRubyObject object, IRubyObject value) {
+    public IRubyObject set_value(IRubyObject object, IRubyObject value) {
         JavaObject obj = JavaUtil.unwrapJavaObject(getRuntime(), object, "not a java object: " + object);
-        JavaObject val = JavaUtil.unwrapJavaObject(getRuntime(), value, "not a java object: " + value);
+        IRubyObject val = value;
+        if(val.dataGetStruct() instanceof JavaObject) {
+            val = (IRubyObject)val.dataGetStruct();
+        }
         Object javaObject = obj.getValue();
         try {
-            Object convertedValue = JavaUtil.convertArgument(val.getRuntime(), val.getValue(),
-                                                             field.getType());
+            Object convertedValue = JavaUtil.convertArgumentToType(val.getRuntime().getCurrentContext(), val, field.getType());
 
             field.set(javaObject, convertedValue);
         } catch (IllegalAccessException iae) {
@@ -145,7 +145,7 @@ public class JavaField extends JavaAccessibleObject {
         } catch (IllegalArgumentException iae) {
             throw getRuntime().newTypeError(
                                 "wrong type for " + field.getType().getName() + ": " +
-                                ((JavaObject) value).getValue().getClass().getName());
+                                val.getClass().getName());
         }
         return val;
     }
