@@ -66,30 +66,24 @@ describe "A JavaMethod" do
   end    
 
   it "should provide the ability to invoke private Java instance methods on a Ruby object" do
-    pending "invoke fails immediately if not provided a JavaObject" do
-      o = PrivateInstanceMethod.new
-      method = PrivateInstanceMethod.java_class.declared_method_smart :thePrivateMethod
-      method.accessible = true
-      lambda { method.invoke(o) }.should_not raise_error
-    end
+    o = PrivateInstanceMethod.new
+    method = PrivateInstanceMethod.java_class.declared_method_smart :thePrivateMethod
+    method.accessible = true
+    lambda { method.invoke(o) }.should_not raise_error
   end
   
   it "should provide the ability to invoke protected Java instance methods on a Ruby object" do
-    pending "invoke fails immediately if not provided a JavaObject" do
-      o = ProtectedInstanceMethod.new
-      method = ProtectedInstanceMethod.java_class.declared_method_smart :theProtectedMethod
-      method.accessible = true
-      lambda { method.invoke(o) }.should_not raise_error
-    end
+    o = ProtectedInstanceMethod.new
+    method = ProtectedInstanceMethod.java_class.declared_method_smart :theProtectedMethod
+    method.accessible = true
+    lambda { method.invoke(o) }.should_not raise_error
   end
   
   it "should provide the ability to invoke package scope Java instance methods on a Ruby object" do
-    pending "invoke fails immediately if not provided a JavaObject" do
-      o = PackageInstanceMethod.new
-      method = PackageInstanceMethod.java_class.declared_method_smart :thePackageScopeMethod
-      method.accessible = true
-      lambda { method.invoke(o) }.should_not raise_error
-    end
+    o = PackageInstanceMethod.new
+    method = PackageInstanceMethod.java_class.declared_method_smart :thePackageScopeMethod
+    method.accessible = true
+    lambda { method.invoke(o) }.should_not raise_error
   end
   
   it "should provide the ability to invoke private Java instance methods on a JavaObject" do
