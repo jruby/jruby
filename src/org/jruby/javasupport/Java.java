@@ -1029,6 +1029,7 @@ public class Java implements Library {
     public static Class argClass(Object a) {
         if (a == null) return void.class;
         
+        
         return a.getClass();
     }
     

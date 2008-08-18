@@ -3,6 +3,7 @@ package org.jruby.javasupport;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
@@ -36,7 +37,11 @@ public class JavaProxyMethods {
     
     @JRubyMethod
     public static IRubyObject to_s(IRubyObject recv) {
-        return ((JavaObject)recv.dataGetStruct()).to_s();
+        if(recv.dataGetStruct() != null) {
+            return ((JavaObject)recv.dataGetStruct()).to_s();
+        } else {
+            return ((RubyObject)recv).to_s();
+        }
     }
     
     @JRubyMethod(name = "eql?")
