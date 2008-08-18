@@ -19,9 +19,7 @@ describe "A JavaMethod" do
     end
 
     it "should allow invocation with a Ruby nil method" do
-      pending "invoke currently requires a JavaObject" do
-        lambda { @method.invoke nil }.should_not raise_error
-      end
+      lambda { @method.invoke nil }.should_not raise_error
     end
   
     it "should allow invocation with a Java null method" do
@@ -40,9 +38,7 @@ describe "A JavaMethod" do
     end
 
     it "should allow invocation with a Ruby nil method" do
-      pending "invoke currently requires a JavaObject" do
-        lambda { @method.invoke nil }.should_not raise_error
-      end
+      lambda { @method.invoke nil }.should_not raise_error
     end
 
     it "should allow invocation with a Java null method" do
@@ -61,9 +57,7 @@ describe "A JavaMethod" do
     end
     
     it "should allow invocation with a Ruby nil method" do
-      pending "invoke currently requires a JavaObject" do
-        lambda { @method.invoke nil }.should_not raise_error
-      end
+      lambda { @method.invoke nil }.should_not raise_error
     end
 
     it "should allow invocation with a Java null method" do
