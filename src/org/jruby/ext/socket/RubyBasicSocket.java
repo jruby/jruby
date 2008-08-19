@@ -127,22 +127,24 @@ public class RubyBasicSocket extends RubyIO {
         if (runtime.getSafeLevel() >= 4 && isTaint()) {
             throw getRuntime().newSecurityError("Insecure: can't close");
         }
-        
+
         if (!openFile.isWritable()) {
             close();
         } else {
-            Channel socketChannel = openFile.getMainStream().getDescriptor().getChannel();
-            if (socketChannel instanceof SocketChannel
+            if(openFile.getPipeStream() != null) {
+                Channel socketChannel = openFile.getMainStream().getDescriptor().getChannel();
+                if (socketChannel instanceof SocketChannel
                     || socketChannel instanceof DatagramChannel) {
-                try {
-                    asSocket().shutdownInput();
-                } catch (IOException e) {
-                    throw runtime.newIOError(e.getMessage());
+                    try {
+                        asSocket().shutdownInput();
+                    } catch (IOException e) {
+                        throw runtime.newIOError(e.getMessage());
+                    }
                 }
+                openFile.setMainStream(openFile.getPipeStream());
+                openFile.setPipeStream(null);
+                openFile.setMode(openFile.getMode() & ~OpenFile.READABLE);
             }
-            openFile.setMainStream(openFile.getPipeStream());
-            openFile.setPipeStream(null);
-            openFile.setMode(openFile.getMode() & ~OpenFile.READABLE);
         }
         return runtime.getNil();
     }

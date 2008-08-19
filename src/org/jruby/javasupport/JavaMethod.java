@@ -270,7 +270,7 @@ public class JavaMethod extends JavaCallable {
         if (args.length != getArity()) {
             throw getRuntime().newArgumentError(args.length, getArity());
         }
-        
+
         return invokeWithExceptionHandling(method, null, args);
     }
 
