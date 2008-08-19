@@ -51,6 +51,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class JavaField extends JavaAccessibleObject {
     private Field field;
 
+    public Object getValue() {
+        return field;
+    }
+
     public static RubyClass createJavaFieldClass(Ruby runtime, RubyModule javaModule) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here, since we don't intend for people to monkey with
         // this type and it can't be marshalled. Confirm. JRUBY-415
@@ -118,8 +122,7 @@ public class JavaField extends JavaAccessibleObject {
 
     @JRubyMethod
     public IRubyObject value(IRubyObject object) {
-        JavaObject obj = JavaUtil.unwrapJavaObject(getRuntime(), object, "not a java object");
-        Object javaObject = obj.getValue();
+        Object javaObject = JavaUtil.unwrapJavaValue(getRuntime(), object, "not a java object");
         try {
             return JavaUtil.convertJavaToRuby(getRuntime(), field.get(javaObject), field.getType());
         } catch (IllegalAccessException iae) {
@@ -129,12 +132,11 @@ public class JavaField extends JavaAccessibleObject {
 
     @JRubyMethod
     public IRubyObject set_value(IRubyObject object, IRubyObject value) {
-        JavaObject obj = JavaUtil.unwrapJavaObject(getRuntime(), object, "not a java object: " + object);
+        Object javaObject  = JavaUtil.unwrapJavaValue(getRuntime(), object, "not a java object: " + object);
         IRubyObject val = value;
         if(val.dataGetStruct() instanceof JavaObject) {
             val = (IRubyObject)val.dataGetStruct();
         }
-        Object javaObject = obj.getValue();
         try {
             Object convertedValue = JavaUtil.convertArgumentToType(val.getRuntime().getCurrentContext(), val, field.getType());
 

@@ -1210,4 +1210,20 @@ public class JavaUtil {
         }
         return (JavaObject)obj;
     }
+
+    public static Object unwrapJavaValue(Ruby runtime, IRubyObject obj, String errorMessage) {
+        if(obj instanceof JavaMethod) {
+            return ((JavaMethod)obj).getValue();
+        } else if(obj instanceof JavaConstructor) {
+            return ((JavaConstructor)obj).getValue();
+        } else if(obj instanceof JavaField) {
+            return ((JavaField)obj).getValue();
+        } else if(obj instanceof JavaObject) {
+            return ((JavaObject)obj).getValue();
+        } else if(obj.dataGetStruct() != null && (obj.dataGetStruct() instanceof IRubyObject)) {
+            return unwrapJavaValue(runtime, ((IRubyObject)obj.dataGetStruct()), errorMessage);
+        } else {
+            throw runtime.newTypeError(errorMessage);
+        }
+    }
 }

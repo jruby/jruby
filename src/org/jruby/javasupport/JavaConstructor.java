@@ -54,6 +54,10 @@ public class JavaConstructor extends JavaCallable {
     private final Class<?>[] parameterTypes;
     private final JavaUtil.JavaConverter objectConverter;
 
+    public Object getValue() {
+        return constructor;
+    }
+
     public static RubyClass createJavaConstructorClass(Ruby runtime, RubyModule javaModule) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here, since we don't intend for people to monkey with
         // this type and it can't be marshalled. Confirm. JRUBY-415

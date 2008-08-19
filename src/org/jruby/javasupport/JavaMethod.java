@@ -62,6 +62,10 @@ public class JavaMethod extends JavaCallable {
     private final Class<?>[] parameterTypes;
     private final JavaUtil.JavaConverter returnConverter;
 
+    public Object getValue() {
+        return method;
+    }
+
     public static RubyClass createJavaMethodClass(Ruby runtime, RubyModule javaModule) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here, since we don't intend for people to monkey with
         // this type and it can't be marshalled. Confirm. JRUBY-415
