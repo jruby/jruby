@@ -453,8 +453,8 @@ public class LoadService {
             String entry = ((IRubyObject)pathIter.next()).toString();
             if (entry.startsWith("jar:") || entry.endsWith(".jar") || (entry.startsWith("file:") && entry.indexOf("!/") != -1)) {
                 JarFile current = jarFiles.get(entry);
-                String after = entry.startsWith("file:") ? entry.substring(entry.indexOf("!/") + 2) + "/" : "";
-                String before = entry.startsWith("file:") ? entry.substring(0, entry.indexOf("!/")) : entry;
+                String after = (entry.startsWith("file:") && entry.indexOf("!/") != -1) ? entry.substring(entry.indexOf("!/") + 2) + "/" : "";
+                String before = (entry.startsWith("file:") && entry.indexOf("!/") != -1) ? entry.substring(0, entry.indexOf("!/")) : entry;
 
                 if(null == current) {
                     try {
@@ -483,7 +483,7 @@ public class LoadService {
                                                              .getCanonicalPath().length()+1).replaceAll("\\\\","/");
                     } catch(Exception e) {}
                 }
-                if (current.getJarEntry(canonicalEntry) != null) {
+                if (current != null && current.getJarEntry(canonicalEntry) != null) {
                     try {
                         if (entry.endsWith(".jar")) {
                             return new LoadServiceResource(new URL("jar:file:" + entry + "!/" + canonicalEntry), "/" + name);

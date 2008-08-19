@@ -45,6 +45,72 @@ class TestLoad < Test::Unit::TestCase
     require 'hello_from_jar'
     assert "hi", $hello
   end
+
+  def test_require_with_non_existent_jar_1
+    $:.unshift "file:/someHopefullyUnexistentJarFile.jar/"
+
+    filename = File.join(File.dirname(__FILE__), "blargus1.rb")
+    require_name = File.join(File.dirname(__FILE__), "blargus1")
+    
+    assert !defined?($_blargus_has_been_loaded_oh_yeah_baby_1)
+    
+    File.open(filename, "w") do |f|
+      f.write <<OUT
+$_blargus_has_been_loaded_oh_yeah_baby_1 = true
+OUT
+    end
+
+    require require_name
+    
+    assert $_blargus_has_been_loaded_oh_yeah_baby_1
+  ensure
+    File.unlink(filename) rescue nil
+    $:.shift
+  end
+
+  def test_require_with_non_existent_jar_2
+    $:.unshift "file:/someHopefullyUnexistentJarFile.jar"
+
+    filename = File.join(File.dirname(__FILE__), "blargus2.rb")
+    require_name = File.join(File.dirname(__FILE__), "blargus2")
+    
+    assert !defined?($_blargus_has_been_loaded_oh_yeah_baby_2)
+    
+    File.open(filename, "w") do |f|
+      f.write <<OUT
+$_blargus_has_been_loaded_oh_yeah_baby_2 = true
+OUT
+    end
+
+    require require_name
+    
+    assert $_blargus_has_been_loaded_oh_yeah_baby_2
+  ensure
+    File.unlink(filename) rescue nil
+    $:.shift
+  end
+
+  def test_require_with_non_existent_jar_3
+    $:.unshift "file:/someHopefullyUnexistentJarFile.jar!/dir/inside/that/doesnt/work"
+
+    filename = File.join(File.dirname(__FILE__), "blargus3.rb")
+    require_name = File.join(File.dirname(__FILE__), "blargus3")
+    
+    assert !defined?($_blargus_has_been_loaded_oh_yeah_baby_3)
+    
+    File.open(filename, "w") do |f|
+      f.write <<OUT
+$_blargus_has_been_loaded_oh_yeah_baby_3 = true
+OUT
+    end
+
+    require require_name
+    
+    assert $_blargus_has_been_loaded_oh_yeah_baby_3
+  ensure
+    File.unlink(filename) rescue nil
+    $:.shift
+  end
   
   def test_overriding_require_shouldnt_cause_problems
     eval(<<DEPS, binding, "deps")
