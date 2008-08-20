@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.ffi;
 
+import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.Ruby;
@@ -88,6 +89,9 @@ public abstract class Platform {
     public static final boolean IS_BSD = IS_MAC || IS_FREEBSD || IS_OPENBSD;
     public static final String LIBC = IS_WINDOWS ? "msvcrt" : "c";
     public static final String NAME = String.format("%s-%s", ARCH, OS);
+    public static final int BIG_ENDIAN = 4321;
+    public static final int LITTLE_ENDIAN = 1234;
+    public static final int BYTE_ORDER = ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN) ? BIG_ENDIAN : LITTLE_ENDIAN;
     protected Platform() {
     }
 
@@ -106,6 +110,9 @@ public abstract class Platform {
         platform.defineConstant("IS_LINUX", runtime.newBoolean(IS_LINUX));
         platform.defineConstant("IS_MAC", runtime.newBoolean(IS_MAC));
         platform.defineConstant("LIBC", runtime.newString(LIBC));
+        platform.defineConstant("BYTE_ORDER", runtime.newFixnum(BYTE_ORDER));
+        platform.defineConstant("BIG_ENDIAN", runtime.newFixnum(BIG_ENDIAN));
+        platform.defineConstant("LITTLE_ENDIAN", runtime.newFixnum(LITTLE_ENDIAN));
     }
     
     /**

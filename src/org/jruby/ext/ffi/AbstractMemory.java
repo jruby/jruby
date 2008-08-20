@@ -315,7 +315,7 @@ abstract public class AbstractMemory extends RubyObject {
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = { "put_uint32", "get_uint" }, required = 2)
+    @JRubyMethod(name = { "put_uint32", "put_uint" }, required = 2)
     public IRubyObject put_uint32(ThreadContext context, IRubyObject offset, IRubyObject value) {
         checkBounds(context, offset, 4);
         getMemoryIO().putInt(getOffset(offset), (int) Util.uint32Value(value));

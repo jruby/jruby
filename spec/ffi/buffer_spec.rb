@@ -1,0 +1,124 @@
+require 'ffi'
+Buffer = JRuby::FFI::Buffer
+Platform = JRuby::FFI::Platform
+LongSize = JRuby::FFI::Platform::LONG_SIZE / 8
+
+describe "Buffer#total" do
+  [1,2,3].each do |i|
+    { :char => 1, :uchar => 1, :short => 2, :ushort => 2, :int => 4, :uint => 4, \
+        :long => LongSize, :ulong => LongSize, :long_long => 8, :ulong_long => 8, \
+        :float => 4, :double => 8
+    }.each_pair do |t, s|
+      it "Buffer.alloc_in(#{t}, #{i}).total == #{i * s}" do
+        Buffer.alloc_in(t, i).total.should == i * s
+      end
+      it "Buffer.alloc_out(#{t}, #{i}).total == #{i * s}" do
+        Buffer.alloc_out(t, i).total.should == i * s
+      end
+      it "Buffer.alloc_inout(#{t}, #{i}).total == #{i * s}" do
+        Buffer.alloc_inout(t, i).total.should == i * s
+      end
+    end
+  end
+end
+
+describe "Buffer#put_char" do
+  bufsize = 4
+  (0..127).each do |i|
+    (0..bufsize-1).each do |offset|
+      it "put_char(#{offset}, #{i}).get_char(#{offset}) == #{i}" do
+        Buffer.alloc_in(bufsize).put_char(offset, i).get_char(offset).should == i
+      end
+    end
+  end
+end
+describe "Buffer#put_uchar" do
+  bufsize = 4
+  (0..255).each do |i|
+    (0..bufsize-1).each do |offset|
+      it "Buffer.put_uchar(#{offset}, #{i}).get_uchar(#{offset}) == #{i}" do
+        Buffer.alloc_in(bufsize).put_uchar(offset, i).get_uchar(offset).should == i
+      end
+    end
+  end 
+end
+describe "Buffer#put_short" do
+  bufsize = 4
+  [0, 1, 128, 32767].each do |i|
+    (0..bufsize-2).each do |offset|
+      it "put_short(#{offset}, #{i}).get_short(#{offset}) == #{i}" do
+        Buffer.alloc_in(bufsize).put_short(offset, i).get_short(offset).should == i
+      end
+    end
+  end
+end
+describe "Buffer#put_ushort" do
+  bufsize = 4
+  [ 0, 1, 128, 32767, 65535, 0xfee1, 0xdead, 0xbeef, 0xcafe ].each do |i|
+    (0..bufsize-2).each do |offset|
+      it "put_ushort(#{offset}, #{i}).get_ushort(#{offset}) == #{i}" do
+        Buffer.alloc_in(bufsize).put_ushort(offset, i).get_ushort(offset).should == i
+      end
+    end
+  end
+end
+describe "Buffer#put_int" do
+  bufsize = 8
+  [0, 1, 128, 32767, 0x7ffffff ].each do |i|
+    (0..bufsize-4).each do |offset|
+      it "put_int(#{offset}, #{i}).get_int(#{offset}) == #{i}" do
+        Buffer.alloc_in(bufsize).put_int(offset, i).get_int(offset).should == i
+      end
+    end
+  end
+end
+describe "Buffer#put_uint" do
+  bufsize = 8
+  [ 0, 1, 128, 32767, 65535, 0xfee1dead, 0xcafebabe, 0xffffffff ].each do |i|
+    (0..bufsize-4).each do |offset|
+      it "put_uint(#{offset}, #{i}).get_uint(#{offset}) == #{i}" do
+        Buffer.alloc_in(bufsize).put_uint(offset, i).get_uint(offset).should == i
+      end
+    end
+  end
+end
+describe "Buffer#put_long" do
+  bufsize = 16
+  [0, 1, 128, 32767, 0x7ffffff ].each do |i|
+    (0..bufsize-LongSize).each do |offset|
+      it "put_long(#{offset}, #{i}).get_long(#{offset}) == #{i}" do
+        Buffer.alloc_in(bufsize).put_long(offset, i).get_long(offset).should == i
+      end
+    end
+  end
+end
+describe "Buffer#put_ulong" do
+  bufsize = 16
+  [ 0, 1, 128, 32767, 65535, 0xfee1dead, 0xcafebabe, 0xffffffff ].each do |i|
+    (0..bufsize-LongSize).each do |offset|
+      it "put_ulong(#{offset}, #{i}).get_ulong(#{offset}) == #{i}" do
+        Buffer.alloc_in(bufsize).put_ulong(offset, i).get_ulong(offset).should == i
+      end
+    end
+  end
+end
+describe "Buffer#put_long_long" do
+  bufsize = 16
+  [0, 1, 128, 32767, 0x7ffffffffffffff ].each do |i|
+    (0..bufsize-8).each do |offset|
+      it "put_long_long(#{offset}, #{i}).get_long_long(#{offset}) == #{i}" do
+        Buffer.alloc_in(bufsize).put_long_long(offset, i).get_long_long(offset).should == i
+      end
+    end
+  end
+end
+describe "Buffer#put_ulong_long" do
+  bufsize = 16
+  [ 0, 1, 128, 32767, 65535, 0xdeadcafebabe, 0x7fffffffffffffff ].each do |i|
+    (0..bufsize-8).each do |offset|
+      it "put_ulong_long(#{offset}, #{i}).get_ulong_long(#{offset}) == #{i}" do
+        Buffer.alloc_in(bufsize).put_ulong_long(offset, i).get_ulong_long(offset).should == i
+      end
+    end
+  end
+end
