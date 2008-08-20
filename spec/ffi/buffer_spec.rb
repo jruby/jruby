@@ -122,3 +122,14 @@ describe "Buffer#put_ulong_long" do
     end
   end
 end
+describe "Buffer#put_pointer" do
+  it "put_pointer(0, p).get_pointer(0) == p" do
+    p = MemoryPointer.new :ulong_long
+    p.put_uint(0, 0xdeadbeef)
+    buf = Buffer.alloc_inout 8
+    p2 = buf.put_pointer(0, p).get_pointer(0)
+    p2.should_not be_nil
+    p2.should == p
+    p2.get_uint(0).should == 0xdeadbeef
+  end
+end

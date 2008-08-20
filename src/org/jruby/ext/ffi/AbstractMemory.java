@@ -133,6 +133,15 @@ abstract public class AbstractMemory extends RubyObject {
         return other.getMemoryIO().equals(getMemoryIO()) && other.offset == offset;
     }
     
+    @JRubyMethod(name = "==", required = 1)
+    @Override
+    public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
+        return context.getRuntime().newBoolean(this.equals(obj));
+    }
+    @Override
+    public final boolean eql(IRubyObject other) {
+        return this.equals(other);
+    }
     /**
      * Calculates the hash code for this <tt>MemoryPointer</tt>
      *

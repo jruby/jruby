@@ -32,6 +32,9 @@ import org.jruby.ext.ffi.*;
 import com.sun.jna.Memory;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
+import com.sun.jna.ptr.IntByReference;
+import com.sun.jna.ptr.LongByReference;
+import com.sun.jna.ptr.PointerByReference;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import org.jruby.util.ByteList;
@@ -58,8 +61,8 @@ public abstract class JNAMemoryIO implements MemoryIO {
      * 
      * @return A new <tt>MemoryIO</tt> instance that can access the memory.
      */
-    static JNAMemoryIO allocate(int size) {
-        return BufferIO.allocate(size);
+    static final JNAMemoryIO allocate(int size) {
+        return new BufferIO(size);
     }
     
     /**
@@ -70,8 +73,8 @@ public abstract class JNAMemoryIO implements MemoryIO {
      * 
      * @return A new <tt>MemoryIO</tt> instance that can access the memory.
      */
-    static JNAMemoryIO allocateDirect(int size) {
-        return PointerIO.allocate(size);
+    static final JNAMemoryIO allocateDirect(int size) {
+        return new PointerIO(size);
     }
     
     /**
@@ -98,7 +101,7 @@ public abstract class JNAMemoryIO implements MemoryIO {
      * @param ptr The native pointer to wrap.
      * @return A new <tt>MemoryIO</tt> instance that can access the memory.
      */
-    static JNAMemoryIO wrap(Pointer ptr) {
+    static final JNAMemoryIO wrap(Pointer ptr) {
         return ptr != null ? new PointerIO(ptr, 0) : NULL;
     }
     
@@ -146,19 +149,19 @@ public abstract class JNAMemoryIO implements MemoryIO {
          */
         final long size;
 
+        
+        private PointerIO() {
+            this(Pointer.NULL, 0);
+        }
         /**
          * Allocates a new block of native memory and wraps it in a {@link MemoryIO}
          * accessor.
          * 
          * @param size The size in bytes of memory to allocate.
          * 
-         * @return A new <tt>MemoryIO</tt> instance that can access the memory.
          */
-        static JNAMemoryIO allocate(long size) {
-            return new PointerIO(new Memory(size), size);
-        }
-        private PointerIO() {
-            this(Pointer.NULL, 0);
+        private PointerIO(long size) {
+            this(new Memory(size), size);
         }
         private PointerIO(Pointer ptr, long size) {
             super(ptr);
@@ -297,16 +300,37 @@ public abstract class JNAMemoryIO implements MemoryIO {
         public JNAMemoryIO slice(long offset) {
             return offset == 0 ? this : new PointerIO(ptr.share(offset), size - offset);
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final PointerIO other = (PointerIO) obj;
+            if (this.ptr != other.ptr && (this.ptr == null || !this.ptr.equals(other.ptr))) {
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return ptr == null ? 0 : ptr.hashCode();
+        }
+
     }
     private static class BufferIO extends JNAMemoryIO {
         final ByteBuffer buffer;
-        static JNAMemoryIO allocate(int size) {
-            ByteBuffer buf = ByteBuffer.allocate(size).order(ByteOrder.nativeOrder());
-            return new BufferIO(buf);
+        BufferIO(int size) {
+            this(ByteBuffer.allocate(size).order(ByteOrder.nativeOrder()));
         }
         BufferIO(ByteBuffer buffer) {
             super(buffer);
             this.buffer = buffer;
+            throw new RuntimeException("Not implemented");
         }
         public Pointer getAddress() {
             return Pointer.NULL;
@@ -321,12 +345,23 @@ public abstract class JNAMemoryIO implements MemoryIO {
         }
         @Override
         public Pointer getPointer(long offset) {
-            throw new UnsupportedOperationException("Not supported yet.");
+            if (Platform.getPlatform().longSize() == 32) {
+                IntByReference ref = new IntByReference(getInt(offset));
+                return ref.getPointer().getPointer(0);
+            } else {
+                LongByReference ref = new LongByReference(getLong(offset));
+                return ref.getPointer().getPointer(0);
+            }
         }
 
         @Override
         public void putPointer(long offset, Pointer value) {
-            throw new UnsupportedOperationException("Not supported yet.");
+            PointerByReference ref = new PointerByReference(value);
+            if (Platform.getPlatform().longSize() == 32) {
+                putInt(offset, ref.getPointer().getInt(0));
+            } else {
+                putLong(offset, ref.getPointer().getLong(0));
+            }
         }
 
         public byte getByte(long offset) {
