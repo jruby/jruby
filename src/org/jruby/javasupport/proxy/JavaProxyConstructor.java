@@ -201,6 +201,42 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
             throw ex;
         }
     }
+    
+    public JavaObject newInstance(final IRubyObject self, Object[] args) {
+        final Ruby runtime = self.getRuntime();
+        final RubyModule javaUtilities = runtime.getJavaSupport().getJavaUtilitiesModule();
+
+        JavaProxyInvocationHandler handler = new JavaProxyInvocationHandler() {
+            public Object invoke(Object proxy, JavaProxyMethod m, Object[] nargs) throws Throwable {
+                String name = m.getName();
+                DynamicMethod method = self.getMetaClass().searchMethod(name);
+                int v = method.getArity().getValue();
+                IRubyObject[] newArgs = new IRubyObject[nargs.length];
+                for (int i = nargs.length; --i >= 0; ) {
+                    newArgs[i] = Java.java_to_ruby(
+                            javaUtilities,
+                            JavaObject.wrap(runtime, nargs[i]),
+                            Block.NULL_BLOCK);
+                }
+                
+                if (v < 0 || v == (newArgs.length)) {
+                    return JavaUtil.convertRubyToJava(RuntimeHelpers.invoke(runtime.getCurrentContext(), self, name, newArgs), m.getReturnType());
+                } else {
+                    RubyClass superClass = self.getMetaClass().getSuperClass();
+                    return JavaUtil.convertRubyToJava(RuntimeHelpers.invokeAs(runtime.getCurrentContext(), superClass, self, name, newArgs, CallType.SUPER, Block.NULL_BLOCK), m.getReturnType());
+                }
+            }
+        };
+
+        try {
+            return JavaObject.wrap(getRuntime(), newInstance(args, handler));
+        } catch (Exception e) {
+            RaiseException ex = getRuntime().newArgumentError(
+                    "Constructor invocation failed: " + e.getMessage());
+            ex.initCause(e);
+            throw ex;
+        }
+    }
 
     @JRubyMethod(required = 1, optional = 1, frame = true)
     public RubyObject new_instance(IRubyObject[] args, Block block) {

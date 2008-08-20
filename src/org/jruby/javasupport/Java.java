@@ -75,6 +75,9 @@ import org.jruby.runtime.load.Library;
 import org.jruby.util.ClassProvider;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNoBlock;
+import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
+import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZeroOrOneOrTwoOrThreeOrN;
 import org.jruby.java.MiniJava;
 import org.jruby.java.addons.ArrayJavaAddons;
 import org.jruby.java.addons.StringJavaAddons;
@@ -643,9 +646,65 @@ public class Java implements Library {
         RubyClass javaProxyClass = javaSupport.getJavaProxyClass().getMetaClass();
         RuntimeHelpers.invokeAs(tc, javaProxyClass, recv, "inherited", new IRubyObject[]{subclass},
                 org.jruby.runtime.CallType.SUPER, Block.NULL_BLOCK);
-        // TODO: move to Java
-        return RuntimeHelpers.invoke(tc, javaSupport.getJavaUtilitiesModule(), "setup_java_subclass",
-                subclass, recv.callMethod(tc, "java_class"));
+        return setupJavaSubclass(tc, subclass, recv.callMethod(tc, "java_class"));
+    }
+
+    private static IRubyObject setupJavaSubclass(ThreadContext context, IRubyObject subclass, IRubyObject java_class) {
+        Ruby runtime = context.getRuntime();
+
+        if (!(subclass instanceof RubyClass)) {
+            throw runtime.newTypeError(subclass, runtime.getClassClass());
+        }
+        RubyClass rubySubclass = (RubyClass)subclass;
+        rubySubclass.getInstanceVariables().fastSetInstanceVariable("@java_proxy_class", runtime.getNil());
+
+        RubyClass subclassSingleton = rubySubclass.getSingletonClass();
+        subclassSingleton.addReadWriteAttribute(context, "java_proxy_class");
+        subclassSingleton.addMethod("java_interfaces", new JavaMethodZero(subclassSingleton, Visibility.PUBLIC) {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+                IRubyObject javaInterfaces = self.getInstanceVariables().fastGetInstanceVariable("@java_interfaces");
+                if (javaInterfaces != null) return javaInterfaces.dup();
+                return context.getRuntime().getNil();
+            }
+        });
+
+        rubySubclass.addMethod("__jcreate!", new JavaMethodNoBlock(subclassSingleton, Visibility.PUBLIC) {
+            private final Map<Integer, ParameterTypes> methodCache = new HashMap<Integer, ParameterTypes>();
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+                IRubyObject proxyClass = self.getMetaClass().getInstanceVariables().fastGetInstanceVariable("@java_proxy_class");
+                if (proxyClass == null || proxyClass.isNil()) {
+                    proxyClass = JavaProxyClass.get_with_class(self, self.getMetaClass());
+                    self.getMetaClass().getInstanceVariables().fastSetInstanceVariable("@java_proxy_class", proxyClass);
+                }
+                JavaProxyClass realProxyClass = (JavaProxyClass)proxyClass;
+                RubyArray constructors = realProxyClass.constructors();
+                ArrayList<JavaProxyConstructor> forArity = new ArrayList<JavaProxyConstructor>();
+                for (int i = 0; i < constructors.size(); i++) {
+                    JavaProxyConstructor constructor = (JavaProxyConstructor)constructors.eltInternal(i);
+                    if (constructor.getParameterTypes().length == args.length) {
+                        forArity.add(constructor);
+                    }
+                }
+                if (forArity.size() == 0) {
+                    throw context.getRuntime().newArgumentError("wrong # of arguments for constructor");
+                }
+                JavaProxyConstructor matching = (JavaProxyConstructor)matchingCallableArityN(
+                        self,
+                        methodCache,
+                        forArity.toArray(new JavaProxyConstructor[forArity.size()]), args, args.length);
+                Object[] newArgs = new Object[args.length];
+                Class[] parameterTypes = matching.getParameterTypes();
+                for (int i = 0; i < args.length; i++) {
+                    newArgs[i] = JavaUtil.convertArgumentToType(context, args[i], parameterTypes[i]);
+                }
+                JavaObject newObject = matching.newInstance(self, newArgs);
+                return JavaUtilities.set_java_object(self, self, newObject);
+            }
+        });
+
+        return runtime.getNil();
     }
 
     // package scheme 2: separate module for each full package name, constructed 
@@ -1116,6 +1175,46 @@ public class Java implements Library {
         } else {
             cache.put(signatureCode, method);
             return method;
+        }
+    }
+
+    // A version that just requires ParameterTypes; they will all move toward
+    // something similar soon
+    public static ParameterTypes matchingCallableArityN(IRubyObject recv, Map cache, ParameterTypes[] methods, IRubyObject[] args, int argsLength) {
+        int signatureCode = argsHashCode(args);
+        ParameterTypes method = (ParameterTypes)cache.get(signatureCode);
+        if (method == null) method = findMatchingCallableForArgs(recv, cache, signatureCode, methods, args);
+        return method;
+    }
+    private static ParameterTypes findMatchingCallableForArgs(IRubyObject recv, Map cache, int signatureCode, ParameterTypes[] methods, IRubyObject... args) {
+        ParameterTypes method = findCallable(methods, Exact, args);
+        if (method == null) method = findCallable(methods, AssignableAndPrimitivable, args);
+        if (method == null) method = findCallable(methods, AssignableOrDuckable, args);
+        if (method == null) {
+            throw argTypesDoNotMatch(recv.getRuntime(), recv, methods, args);
+        } else {
+            cache.put(signatureCode, method);
+            return method;
+        }
+    }
+    private static ParameterTypes findCallable(ParameterTypes[] callables, CallableAcceptor acceptor, IRubyObject... args) {
+        for (int k = 0; k < callables.length; k++) {
+            ParameterTypes callable = callables[k];
+            Class<?>[] types = callable.getParameterTypes();
+            
+            if (acceptor.accept(types, args)) return callable;
+        }
+        return null;
+    }
+    private static RaiseException argTypesDoNotMatch(Ruby runtime, IRubyObject receiver, ParameterTypes[] methods, IRubyObject... args) {
+        Object o1 = methods[0];
+        ArrayList<Class> argTypes = new ArrayList<Class>(args.length);
+        for (Object o : args) argTypes.add(argClass(o));
+
+        if (o1 instanceof JavaConstructor || o1 instanceof JavaProxyConstructor) {
+            throw runtime.newNameError("no constructor with arguments matching " + argTypes + " on object " + receiver.callMethod(runtime.getCurrentContext(), "inspect"), null);
+        } else {
+            throw runtime.newNameError("no " + ((JavaMethod) o1).name() + " with arguments matching " + argTypes + " on object " + receiver.callMethod(runtime.getCurrentContext(), "inspect"), null);
         }
     }
     

@@ -18,5 +18,8 @@ def bench_symbol_to_proc(bm)
 end
 
 if $0 == __FILE__
-  Benchmark.bmbm(40) {|bm| bench_symbol_to_proc(bm)}
+  TIMES = (ARGV[0] || 5).to_i
+  Benchmark.bm(40) {|bm|
+    TIMES.times { bench_symbol_to_proc(bm) }
+  }
 end
