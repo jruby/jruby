@@ -53,7 +53,7 @@ test_ok(["--- !ruby/object:TestBean \nvalue: 13\nkey: 42\n",
 test_equal(TestBean.new(13,42),YAML.load("--- !ruby/object:TestBean \nvalue: 13\nkey: 42\n"))
 
 TestStruct = Struct.new(:foo,:bar)
-test_ok(["--- !ruby/struct:TestStruct \nfoo: 13\nbar: 42\n","--- !ruby/struct:TestStruct\nbar: 42\nfoo: 13\n"].include?(TestStruct.new(13,42).to_yaml))
+test_ok(["--- !ruby/struct:TestStruct \nfoo: 13\nbar: 42\n","--- !ruby/struct:TestStruct \nbar: 42\nfoo: 13\n"].include?(TestStruct.new(13,42).to_yaml))
 test_equal("--- !ruby/exception:StandardError \nmessage: foobar\n", StandardError.new("foobar").to_yaml)
 
 test_equal("--- :foo\n", :foo.to_yaml)
