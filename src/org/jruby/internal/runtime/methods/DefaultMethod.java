@@ -54,7 +54,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *
  */
-public final class DefaultMethod extends DynamicMethod implements JumpTarget {
+public final class DefaultMethod extends DynamicMethod implements JumpTarget, MethodArgs {
     
     private StaticScope staticScope;
     private Node body;
@@ -156,6 +156,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget {
 
     public IRubyObject interpretedCall(ThreadContext context, Ruby runtime, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         try {
+//            if ((count++ % 1000) == 0) System.out.println("DEFAULT: " + count);
             preInterpret(context, name, self, block, runtime, args);
 
             return body.interpret(runtime, context, self, block);

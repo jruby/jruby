@@ -51,8 +51,7 @@ import org.jruby.ast.Node;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.ASTCompiler;
 import org.jruby.compiler.impl.StandardASMCompiler;
-import org.jruby.internal.runtime.methods.DefaultMethod;
-import org.jruby.parser.StaticScope;
+import org.jruby.internal.runtime.methods.MethodArgs;
 import org.jruby.runtime.InterpretedBlock;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.TypeConverter;
@@ -289,11 +288,9 @@ public class RubyJRuby {
             
             DynamicMethod method = rubyMethod.method;
             
-            if (method instanceof DefaultMethod) {
-                DefaultMethod interpMethod = (DefaultMethod)method;
+            if (method instanceof MethodArgs) {
+                MethodArgs interpMethod = (MethodArgs)method;
                 ArgsNode args = interpMethod.getArgsNode();
-                StaticScope scope = interpMethod.getStaticScope();
-                
                 RubyArray argsArray = RubyArray.newArray(ruby);
                 
                 RubyArray reqArray = RubyArray.newArray(ruby);
