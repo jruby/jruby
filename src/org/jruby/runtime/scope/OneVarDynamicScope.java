@@ -21,16 +21,19 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
         super(staticScope);
     }
     
+    @Override
     public void growIfNeeded() {
         if (staticScope.getNumberOfVariables() != 1) {
             throw new RuntimeException("OneVarDynamicScope cannot be grown; use ManyVarsDynamicScope");
         }
     }
     
+    @Override
     public DynamicScope cloneScope() {
         return new OneVarDynamicScope(staticScope, parent);
     }
 
+    @Override
     public IRubyObject[] getValues() {
         return new IRubyObject[] {variableValueZero};
     }
@@ -45,6 +48,7 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
      * @param depth how many captured scopes down this variable should be set
      * @return the value here
      */
+    @Override
     public IRubyObject getValue(int offset, int depth) {
         if (depth > 0) {
             return parent.getValue(offset, depth - 1);
@@ -56,6 +60,7 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
     /**
      * Variation of getValue that checks for nulls, returning and setting the given value (presumably nil)
      */
+    @Override
     public IRubyObject getValueOrNil(int offset, int depth, IRubyObject nil) {
         if (depth > 0) {
             return parent.getValueOrNil(offset, depth - 1, nil);
@@ -64,11 +69,13 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
         }
     }
     
+    @Override
     public IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil) {
         assert offset == 0 : "SingleVarDynamicScope only supports scopes with one variable";
         if (variableValueZero == null) return variableValueZero = nil;
         return variableValueZero;
     }
+    @Override
     public IRubyObject getValueZeroDepthZeroOrNil(IRubyObject nil) {
         if (variableValueZero == null) return variableValueZero = nil;
         return variableValueZero;
@@ -81,6 +88,7 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
      * @param value to set
      * @param depth how many captured scopes down this variable should be set
      */
+    @Override
     public IRubyObject setValue(int offset, IRubyObject value, int depth) {
         if (depth > 0) {
             assert parent != null : "If depth > 0, then parent should not ever be null";
@@ -92,10 +100,12 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
         }
     }
 
+    @Override
     public IRubyObject setValueDepthZero(IRubyObject value, int offset) {
         assert offset == 0 : "SingleVarDynamicScope only supports one variable";
         return variableValueZero = value;
     }
+    @Override
     public IRubyObject setValueZeroDepthZero(IRubyObject value) {
         return variableValueZero = value;
     }
@@ -111,12 +121,28 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
      * @param values up to size specified to be mapped as ordinary parm values
      * @param size is the number of values to assign as ordinary parm values
      */
+    @Override
     public void setArgValues(IRubyObject[] values, int size) {
         assert values.length == 1 : "SingleVarDynamicScope only supports one variable";
         if (size == 1) {
             variableValueZero = values[0];
         }
     }
+    
+    @Override
+    public void setArgValues(IRubyObject arg0) {
+        variableValueZero = arg0;
+    }
+    
+    @Override
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1) {
+        assert false : "SingleVarDynamicScope only supports one variable not two";
+    }
+    
+    @Override
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        assert false : "SingleVarDynamicScope only supports one variable not three";
+    }    
 
     @Override
     public IRubyObject[] getArgValues() {

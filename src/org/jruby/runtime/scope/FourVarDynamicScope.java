@@ -188,6 +188,24 @@ public class FourVarDynamicScope extends ThreeVarDynamicScope {
     }
 
     @Override
+    public void setArgValues(IRubyObject arg0) {
+        variableValueZero = arg0;
+    }
+    
+    @Override
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1) {
+        variableValueZero = arg0;
+        variableValueOne = arg1;
+    }
+    
+    @Override
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        variableValueZero = arg0;
+        variableValueOne = arg1;
+        variableValueTwo = arg2;
+    }
+    
+    @Override
     public IRubyObject[] getArgValues() {
         // if we're not the "argument scope" for zsuper, try our parent
         if (!staticScope.isArgumentScope()) {

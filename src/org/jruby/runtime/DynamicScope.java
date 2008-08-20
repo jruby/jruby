@@ -148,7 +148,7 @@ public abstract class DynamicScope {
     public final String[] getAllNamesInScope() {
         return staticScope.getAllNamesInScope();
     }
-    
+
     @Override
     public String toString() {
         return toString(new StringBuffer(), "");
@@ -266,7 +266,10 @@ public abstract class DynamicScope {
      * @param size is the number of values to assign as ordinary parm values
      */
     public abstract void setArgValues(IRubyObject[] values, int size);
-
+    public abstract void setArgValues(IRubyObject arg0);
+    public abstract void setArgValues(IRubyObject arg0, IRubyObject arg1);
+    public abstract void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2);
+    
     /**
      * Copy variable values back for ZSuper call.
      */

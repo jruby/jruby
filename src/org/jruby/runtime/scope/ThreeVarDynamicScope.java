@@ -175,6 +175,24 @@ public class ThreeVarDynamicScope extends TwoVarDynamicScope {
             variableValueZero = values[0];
         }
     }
+    
+    @Override
+    public void setArgValues(IRubyObject arg0) {
+        variableValueZero = arg0;
+    }
+    
+    @Override
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1) {
+        variableValueZero = arg0;
+        variableValueOne = arg1;
+    }
+    
+    @Override
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        variableValueZero = arg0;
+        variableValueOne = arg1;
+        variableValueTwo = arg2;
+    }      
 
     @Override
     public IRubyObject[] getArgValues() {

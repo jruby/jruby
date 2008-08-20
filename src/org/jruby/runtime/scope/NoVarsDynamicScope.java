@@ -107,6 +107,18 @@ public class NoVarsDynamicScope extends DynamicScope {
     public void setArgValues(IRubyObject[] values, int size) {
         assert size == 0 : "NoVarsDynamicScope only supports scopes with no variables";
     }
+    
+    public void setArgValues(IRubyObject arg0) {
+        assert false : "NoVarsDynamicScope does not support any variables";
+    }
+    
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1) {
+        assert false : "NoVarsDynamicScope does not support any variables";
+    }
+    
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        assert false : "NoVarsDynamicScope does not support any variables";
+    }        
 
     @Override
     public IRubyObject[] getArgValues() {

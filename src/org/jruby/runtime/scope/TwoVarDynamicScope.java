@@ -21,16 +21,19 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
         super(staticScope);
     }
     
+    @Override
     public void growIfNeeded() {
         if (staticScope.getNumberOfVariables() != 2) {
             throw new RuntimeException("TwoVarDynamicScope cannot be grown; use ManyVarsDynamicScope");
         }
     }
     
+    @Override
     public DynamicScope cloneScope() {
         return new TwoVarDynamicScope(staticScope, parent);
     }
 
+    @Override
     public IRubyObject[] getValues() {
         return new IRubyObject[] {variableValueZero, variableValueOne};
     }
@@ -45,6 +48,7 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
      * @param depth how many captured scopes down this variable should be set
      * @return the value here
      */
+    @Override
     public IRubyObject getValue(int offset, int depth) {
         if (depth > 0) {
             return parent.getValue(offset, depth - 1);
@@ -60,6 +64,7 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
         }
     }
     
+    @Override
     public IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil) {
         assert offset < 2 : "TwoVarDynamicScope only supports scopes with two variables";
         switch (offset) {
@@ -73,6 +78,7 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
             throw new RuntimeException("TwoVarDynamicScope only supports scopes with two variables");
         }
     }
+    @Override
     public IRubyObject getValueOneDepthZeroOrNil(IRubyObject nil) {
         if (variableValueOne == null) return variableValueOne = nil;
         return variableValueOne;
@@ -85,6 +91,7 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
      * @param value to set
      * @param depth how many captured scopes down this variable should be set
      */
+    @Override
     public IRubyObject setValue(int offset, IRubyObject value, int depth) {
         if (depth > 0) {
             assert parent != null : "If depth > 0, then parent should not ever be null";
@@ -103,6 +110,7 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
         }
     }
 
+    @Override
     public IRubyObject setValueDepthZero(IRubyObject value, int offset) {
         assert offset < 2 : "TwoVarDynamicScope only supports scopes with two variables";
         switch (offset) {
@@ -114,6 +122,7 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
             throw new RuntimeException("TwoVarDynamicScope only supports scopes with two variables");
         }
     }
+    @Override
     public IRubyObject setValueOneDepthZero(IRubyObject value) {
         return variableValueOne = value;
     }
@@ -129,6 +138,7 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
      * @param values up to size specified to be mapped as ordinary parm values
      * @param size is the number of values to assign as ordinary parm values
      */
+    @Override
     public void setArgValues(IRubyObject[] values, int size) {
         assert size <= 2 : "TwoVarDynamicScope only supports scopes with two variables, not " + size;
         switch (size) {
@@ -138,6 +148,22 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
             variableValueZero = values[0];
         }
     }
+    
+    @Override
+    public void setArgValues(IRubyObject arg0) {
+        variableValueZero = arg0;
+    }
+    
+    @Override
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1) {
+        variableValueZero = arg0;
+        variableValueOne = arg1;
+    }
+    
+    @Override
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        assert false : "TwoVarDynamicScope only supports two variables not three";
+    }     
 
     @Override
     public IRubyObject[] getArgValues() {

@@ -205,6 +205,21 @@ public class ManyVarsDynamicScope extends DynamicScope {
         System.arraycopy(values, 0, variableValues, 0, size);
     }
 
+    public void setArgValues(IRubyObject arg0) {
+        variableValues[0] = arg0;
+    }
+    
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1) {
+        variableValues[0] = arg0;
+        variableValues[1] = arg1;
+    }
+    
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        variableValues[0] = arg0;
+        variableValues[1] = arg1;
+        variableValues[2] = arg2;
+    }
+    
     /**
      * Copy variable values back for ZSuper call.
      */
