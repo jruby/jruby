@@ -48,7 +48,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 @JRubyClass(name = FFIProvider.MODULE_NAME + "::" + JNAMemoryPointer.MEMORY_POINTER_NAME, parent = FFIProvider.MODULE_NAME + "::" + AbstractMemoryPointer.className)
 public class JNAMemoryPointer extends AbstractMemoryPointer {
     public static final String MEMORY_POINTER_NAME = "MemoryPointer";
-    private final JNAMemoryIO io;
     
     public static RubyClass createMemoryPointerClass(Ruby runtime) {
         RubyModule module = FFIProvider.getModule(runtime);
@@ -62,8 +61,7 @@ public class JNAMemoryPointer extends AbstractMemoryPointer {
     }
     
     public JNAMemoryPointer(Ruby runtime, RubyClass klass) {
-        super(runtime, klass, 0, 0);
-        this.io = JNAMemoryIO.wrap(Pointer.NULL);
+        super(runtime, klass, JNAMemoryIO.wrap(Pointer.NULL), 0, 0);
     }
     JNAMemoryPointer(Ruby runtime, Pointer value) {
         this(runtime, JNAMemoryIO.wrap(value), 0, Long.MAX_VALUE);
@@ -72,10 +70,9 @@ public class JNAMemoryPointer extends AbstractMemoryPointer {
         this(runtime, ptr.io, ptr.offset + offset, 
                 ptr.size == Long.MAX_VALUE ? Long.MAX_VALUE : ptr.size - offset);
     }
-    JNAMemoryPointer(Ruby runtime, JNAMemoryIO io, long offset, long size) {
+    JNAMemoryPointer(Ruby runtime, MemoryIO io, long offset, long size) {
         super(runtime, FFIProvider.getModule(runtime).fastGetClass(MEMORY_POINTER_NAME),
-                offset, size);
-        this.io = io;
+                io, offset, size);
     }
     
     @JRubyMethod(name = { "allocate", "allocate_direct", "allocateDirect" }, meta = true)
@@ -95,21 +92,19 @@ public class JNAMemoryPointer extends AbstractMemoryPointer {
     }
     @JRubyMethod(name = "to_s", optional = 1)
     public IRubyObject to_s(ThreadContext context, IRubyObject[] args) {
-        String hex = getMemoryIO().getAddress().toString();
+        String hex = ((JNAMemoryIO) getMemoryIO()).getAddress().toString();
         return RubyString.newString(context.getRuntime(), MEMORY_POINTER_NAME + "[address=" + hex + "]");
     }
     Pointer getAddress() {
-        return getMemoryIO().getAddress();
+        return ((JNAMemoryIO) getMemoryIO()).getAddress();
     }
     public Object getNativeMemory() {
-        return getMemoryIO().slice(offset).getMemory();
+        return ((JNAMemoryIO) getMemoryIO()).slice(offset).getMemory();
     }
     private static final long ptr2long(Pointer ptr) {
         return new PointerByReference(ptr).getPointer().getInt(0);
     }
-    public final JNAMemoryIO getMemoryIO() {
-        return io;
-    }
+    
     @JRubyMethod(name = "address")
     public IRubyObject address(ThreadContext context) {
         return context.getRuntime().newFixnum(ptr2long(getAddress()));
@@ -137,7 +132,7 @@ public class JNAMemoryPointer extends AbstractMemoryPointer {
         } else {
             throw context.getRuntime().newArgumentError("Cannot convert argument to pointer");
         }
-        getMemoryIO().putPointer(getOffset(offset), ptr);
+        ((JNAMemoryIO) getMemoryIO()).putPointer(getOffset(offset), ptr);
         return this;
     }
     

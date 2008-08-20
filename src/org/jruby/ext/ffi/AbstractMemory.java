@@ -55,6 +55,8 @@ abstract public class AbstractMemory extends RubyObject {
     protected final long offset;
     /** The total size of the memory area */
     protected final long size;
+    /** The Memory I/O object */
+    protected final MemoryIO io;
     
     public static RubyClass createAbstractMemoryClass(Ruby runtime) {
         RubyModule module = FFIProvider.getModule(runtime);
@@ -67,11 +69,10 @@ abstract public class AbstractMemory extends RubyObject {
 
         return result;
     }
-    protected AbstractMemory(Ruby runtime, RubyClass klass) {
-        this(runtime, klass, 0, Long.MAX_VALUE);
-    }
-    protected AbstractMemory(Ruby runtime, RubyClass klass, long offset, long size) {
+    
+    protected AbstractMemory(Ruby runtime, RubyClass klass, MemoryIO io, long offset, long size) {
         super(runtime, klass);
+        this.io = io;
         this.offset = offset;
         this.size = size;
     }
@@ -80,7 +81,9 @@ abstract public class AbstractMemory extends RubyObject {
      *
      * @return A memory accessor.
      */
-    protected abstract MemoryIO getMemoryIO();
+    protected final MemoryIO getMemoryIO() {
+        return io;
+    }
 
     /**
      * Calculates the absoluate offset within the base memory pointer for a given offset.

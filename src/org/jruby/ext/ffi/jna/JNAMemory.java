@@ -32,6 +32,5 @@ package org.jruby.ext.ffi.jna;
  * JNA memory object operations
  */
 public interface JNAMemory {
-    JNAMemoryIO getMemoryIO();
     Object getNativeMemory();
 }

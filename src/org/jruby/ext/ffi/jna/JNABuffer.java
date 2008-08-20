@@ -49,7 +49,6 @@ import org.jruby.util.ByteList;
 public class JNABuffer extends AbstractBuffer implements JNAMemory {
     public static final String BUFFER_RUBY_CLASS = "Buffer";
     private static final boolean CLEAR_DEFAULT = true;
-    private final JNAMemoryIO io;
     
     public static RubyClass createBufferClass(Ruby runtime) {
         RubyModule module = FFIProvider.getModule(runtime);
@@ -63,18 +62,16 @@ public class JNABuffer extends AbstractBuffer implements JNAMemory {
     }
     
     public JNABuffer(Ruby runtime, RubyClass klass) {
-        super(runtime, klass, 0, 0);
-        this.io = JNAMemoryIO.wrap(Pointer.NULL);
+        super(runtime, klass, JNAMemoryIO.wrap(Pointer.NULL), 0, 0);
     }
     
     private JNABuffer(Ruby runtime, JNABuffer ptr, long offset) {
         this(runtime, ptr.io, ptr.offset + offset, 
                 ptr.size == Long.MAX_VALUE ? Long.MAX_VALUE : ptr.size - offset);
     }
-    private JNABuffer(Ruby runtime, JNAMemoryIO io, long offset, long size) {
+    private JNABuffer(Ruby runtime, MemoryIO io, long offset, long size) {
         super(runtime, FFIProvider.getModule(runtime).fastGetClass(BUFFER_RUBY_CLASS),
-                offset, size);
-        this.io = io;
+                io, offset, size);
     }
     private static JNABuffer allocate(ThreadContext context, IRubyObject sizeArg, boolean clear) {
         int size = Util.int32Value(sizeArg);
@@ -118,11 +115,8 @@ public class JNABuffer extends AbstractBuffer implements JNAMemory {
     public static JNABuffer allocateOutput(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject clearArg) {
         return allocate(context, sizeArg, clearArg.isTrue());
     }
-    public final JNAMemoryIO getMemoryIO() {
-        return io;
-    }
     public Object getNativeMemory() {
-        return getMemoryIO().slice(offset).getMemory();
+        return ((JNAMemoryIO) getMemoryIO()).slice(offset).getMemory();
     }
     @JRubyMethod(name = "+", required = 1)
     public IRubyObject op_plus(ThreadContext context, IRubyObject value) {
@@ -139,7 +133,7 @@ public class JNABuffer extends AbstractBuffer implements JNAMemory {
         } else {
             throw context.getRuntime().newArgumentError("Cannot convert argument to pointer");
         }
-        getMemoryIO().putPointer(getOffset(offset), ptr);
+        ((JNAMemoryIO) getMemoryIO()).putPointer(getOffset(offset), ptr);
         return this;
     }
     

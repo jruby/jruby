@@ -52,7 +52,7 @@ abstract public class AbstractBuffer extends AbstractMemory {
 
         return result;
     }
-    protected AbstractBuffer(Ruby runtime, RubyClass klass, long offset, long size) {
-        super(runtime, klass, offset, size);
+    protected AbstractBuffer(Ruby runtime, RubyClass klass, MemoryIO io, long offset, long size) {
+        super(runtime, klass, io, offset, size);
     }
 }
