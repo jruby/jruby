@@ -14,21 +14,22 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *
  * @author headius
- * FIXME convert to an enum?
+ * @author hooligan495
+ * Changed event hook to an enum that manages a collection of event handlers.
+ * There are now global event delgators for each event type.  If a component
+ * is interested in being notified of an event they should register a handler 
+ * with that event.
+ * one of the motivations of implementing the EventHook in this way is that we 
+ * needed to handle modifying line numbers to be one based (and the RETURN type 
+ * ine number for ruby needs to be offset by 2).  If these rules ever change we 
+ * can change them here.
+ *
  */
-public interface EventHook {
-    public static final int RUBY_EVENT_LINE = 0;
-    public static final int RUBY_EVENT_CLASS = 1;
-    public static final int RUBY_EVENT_END = 2;
-    public static final int RUBY_EVENT_CALL = 3;
-    public static final int RUBY_EVENT_RETURN = 4;
-    public static final int RUBY_EVENT_C_CALL = 5;
-    public static final int RUBY_EVENT_C_RETURN = 6;
-    public static final int RUBY_EVENT_RAISE = 7;
+public abstract class EventHook {    
+    public void event(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type){
+        eventHandler(context, event.getName(), file, line + event.getLineNumberOffset(), name, type);
+    }
     
-    public static final String[] EVENT_NAMES = {"line", "class", "end", "call", "return", "c-call", "c-return", "raise"};
-    
-    public void event(ThreadContext context, int event, String file, int line, String name, IRubyObject type);
-    
-    public boolean isInterestedInEvent(int event);
+    public abstract void eventHandler(ThreadContext context, String eventName, String file, int line, String name, IRubyObject type);
+    public abstract boolean isInterestedInEvent(RubyEvent event);
 }

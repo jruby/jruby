@@ -40,7 +40,7 @@ import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.EventHook;
+import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -94,7 +94,7 @@ public class NewlineNode extends Node {
         context.setLine(position.getStartLine());
 
         if (runtime.hasEventHooks()) {
-            ASTInterpreter.callTraceFunction(runtime, context, EventHook.RUBY_EVENT_LINE);
+            ASTInterpreter.callTraceFunction(runtime, context, RubyEvent.LINE);
         }
 
         // TODO: do above but not below for additional newline nodes

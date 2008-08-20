@@ -492,7 +492,7 @@ public final class ThreadContext {
         if ((calls++ & 0xFF) == 0) pollThreadEvents();
     }
     
-    public void trace(int event, String name, RubyModule implClass) {
+    public void trace(RubyEvent event, String name, RubyModule implClass) {
         runtime.callEventHooks(this, event, file, line, name, implClass);
     }
     

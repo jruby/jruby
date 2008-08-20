@@ -43,6 +43,7 @@ import org.jruby.*;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.EventHook;
+import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -121,7 +122,7 @@ public class RaiseException extends JumpException {
         if (runtime.hasEventHooks()) {
             runtime.callEventHooks(
                     context,
-                    EventHook.RUBY_EVENT_RAISE,
+                    RubyEvent.RAISE,
                     context.getFile(),
                     context.getLine(),
                     context.getFrameName(),

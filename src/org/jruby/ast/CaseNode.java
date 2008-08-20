@@ -41,7 +41,7 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.EventHook;
+import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -132,7 +132,7 @@ public class CaseNode extends Node {
                     context.setLine(tag.getPosition().getStartLine());
                     
                     if (runtime.hasEventHooks()) {
-                        ASTInterpreter.callTraceFunction(runtime, context, EventHook.RUBY_EVENT_LINE);
+                        ASTInterpreter.callTraceFunction(runtime, context, RubyEvent.LINE);
                     }
 
                     // Ruby grammar has nested whens in a case body because of

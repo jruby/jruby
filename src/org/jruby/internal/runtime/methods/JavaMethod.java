@@ -30,7 +30,7 @@ import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.EventHook;
+import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -829,11 +829,11 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
     }
     
     protected final void callTrace(ThreadContext context, String name) {
-        context.trace(EventHook.RUBY_EVENT_C_CALL, name, getImplementationClass());
+        context.trace(RubyEvent.C_CALL, name, getImplementationClass());
     }
     
     protected final void returnTrace(ThreadContext context, String name) {
-        context.trace(EventHook.RUBY_EVENT_C_CALL, name, getImplementationClass());
+        context.trace(RubyEvent.C_CALL, name, getImplementationClass());
     }
     
     public void setArity(Arity arity) {

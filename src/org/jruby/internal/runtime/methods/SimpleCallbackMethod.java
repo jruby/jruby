@@ -35,7 +35,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.EventHook;
+import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -56,11 +56,11 @@ public class SimpleCallbackMethod extends DynamicMethod {
         Ruby runtime = context.getRuntime();
         
         if (runtime.hasEventHooks()) {
-            runtime.callEventHooks(context, EventHook.RUBY_EVENT_C_CALL, context.getFile(), context.getLine(), name, getImplementationClass());
+            runtime.callEventHooks(context, RubyEvent.C_CALL, context.getFile(), context.getLine(), name, getImplementationClass());
             try {
                 return callback.execute(self, args, block);
             } finally {
-                runtime.callEventHooks(context, EventHook.RUBY_EVENT_C_RETURN, context.getFile(), context.getLine(), name, getImplementationClass());
+                runtime.callEventHooks(context, RubyEvent.C_RETURN, context.getFile(), context.getLine(), name, getImplementationClass());
             }
         }
         

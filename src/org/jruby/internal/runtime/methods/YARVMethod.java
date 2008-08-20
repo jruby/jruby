@@ -42,7 +42,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.ast.executable.YARVMachine;
 import org.jruby.internal.runtime.JumpTarget;
-import org.jruby.runtime.EventHook;
+import org.jruby.runtime.RubyEvent;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -164,7 +164,7 @@ public class YARVMethod extends DynamicMethod implements JumpTarget {
 
         Frame frame = context.getPreviousFrame();
 
-        runtime.callEventHooks(context, EventHook.RUBY_EVENT_RETURN, frame.getFile(), frame.getLine(), name, getImplementationClass());
+        runtime.callEventHooks(context, RubyEvent.RETURN, frame.getFile(), frame.getLine(), name, getImplementationClass());
     }
     
     private void traceCall(ThreadContext context, Ruby runtime, String name) {
@@ -172,7 +172,7 @@ public class YARVMethod extends DynamicMethod implements JumpTarget {
             return;
         }
         
-        runtime.callEventHooks(context, EventHook.RUBY_EVENT_CALL, context.getFile(), context.getLine(), name, getImplementationClass());
+        runtime.callEventHooks(context, RubyEvent.CALL, context.getFile(), context.getLine(), name, getImplementationClass());
     }
     
     public Arity getArity() {

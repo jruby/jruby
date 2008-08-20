@@ -50,6 +50,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.EventHook;
+import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -187,7 +188,7 @@ public class ASTInterpreter {
     }
 
 
-    public static void callTraceFunction(Ruby runtime, ThreadContext context, int event) {
+    public static void callTraceFunction(Ruby runtime, ThreadContext context, RubyEvent event) {
         String name = context.getFrameName();
         RubyModule type = context.getFrameKlazz();
         runtime.callEventHooks(context, event, context.getFile(), context.getLine(), name, type);
@@ -217,14 +218,14 @@ public class ASTInterpreter {
 
         try {
             if (runtime.hasEventHooks()) {
-                callTraceFunction(runtime, context, EventHook.RUBY_EVENT_CLASS);
+                callTraceFunction(runtime, context, RubyEvent.CLASS);
             }
 
             if (bodyNode == null) return runtime.getNil();
             return bodyNode.interpret(runtime, context, type, block);
         } finally {
             if (runtime.hasEventHooks()) {
-                callTraceFunction(runtime, context, EventHook.RUBY_EVENT_END);
+                callTraceFunction(runtime, context, RubyEvent.END);
             }
             
             context.postClassEval();

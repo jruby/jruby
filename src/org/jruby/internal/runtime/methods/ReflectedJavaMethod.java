@@ -39,6 +39,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.EventHook;
+import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -102,12 +103,12 @@ public class ReflectedJavaMethod extends JavaMethod {
                 boolean isTrace = runtime.hasEventHooks();
                 try {
                     if (isTrace) {
-                        runtime.callEventHooks(context, EventHook.RUBY_EVENT_C_CALL, context.getFile(), context.getLine(), name, getImplementationClass());
+                        runtime.callEventHooks(context, RubyEvent.C_CALL, context.getFile(), context.getLine(), name, getImplementationClass());
                     }  
                     return (IRubyObject)method.invoke(self, (Object[])args);
                 } finally {
                     if (isTrace) {
-                        runtime.callEventHooks(context, EventHook.RUBY_EVENT_C_RETURN, context.getFile(), context.getLine(), name, getImplementationClass());
+                        runtime.callEventHooks(context, RubyEvent.C_RETURN, context.getFile(), context.getLine(), name, getImplementationClass());
                     }
                 }                    
             } else {
@@ -135,7 +136,7 @@ public class ReflectedJavaMethod extends JavaMethod {
                 boolean isTrace = runtime.hasEventHooks();
                 try {
                     if (isTrace) {
-                        runtime.callEventHooks(context, EventHook.RUBY_EVENT_C_CALL, context.getFile(), context.getLine(), name, getImplementationClass());
+                        runtime.callEventHooks(context, RubyEvent.C_CALL, context.getFile(), context.getLine(), name, getImplementationClass());
                     }  
                     if (isStatic) {
                         return (IRubyObject)method.invoke(null, params);
@@ -144,7 +145,7 @@ public class ReflectedJavaMethod extends JavaMethod {
                     }
                 } finally {
                     if (isTrace) {
-                        runtime.callEventHooks(context, EventHook.RUBY_EVENT_C_RETURN, context.getFile(), context.getLine(), name, getImplementationClass());
+                        runtime.callEventHooks(context, RubyEvent.C_RETURN, context.getFile(), context.getLine(), name, getImplementationClass());
                     }
                 }
             }

@@ -109,6 +109,7 @@ import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectSpace;
+import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
@@ -2161,14 +2162,14 @@ public final class Ruby {
         }
     }
 
-    public class CallTraceFuncHook implements EventHook {
+    public class CallTraceFuncHook extends EventHook {
         private RubyProc traceFunc;
         
         public void setTraceFunc(RubyProc traceFunc) {
             this.traceFunc = traceFunc;
         }
         
-        public void event(ThreadContext context, int event, String file, int line, String name, IRubyObject type) {
+        public void eventHandler(ThreadContext context, String eventName, String file, int line, String name, IRubyObject type) {
             if (!context.isWithinTrace()) {
                 if (file == null) file = "(ruby)";
                 if (type == null) type = getFalse();
@@ -2178,9 +2179,9 @@ public final class Ruby {
                 context.preTrace();
                 try {
                     traceFunc.call(context, new IRubyObject[] {
-                        newString(EVENT_NAMES[event]), // event name
+                        newString(eventName), // event name
                         newString(file), // filename
-                        newFixnum(line + (event == RUBY_EVENT_RETURN ? 2 : 1)), // line numbers should be 1-based
+                        newFixnum(line), // line numbers should be 1-based
                         name != null ? newSymbol(name) : getNil(),
                         binding,
                         type
@@ -2191,7 +2192,7 @@ public final class Ruby {
             }
         }
 
-        public boolean isInterestedInEvent(int event) {
+        public boolean isInterestedInEvent(RubyEvent event) {
             return true;
         }
     };
@@ -2219,7 +2220,7 @@ public final class Ruby {
         addEventHook(callTraceFuncHook);
     }
     
-    public void callEventHooks(ThreadContext context, int event, String file, int line, String name, IRubyObject type) {
+    public void callEventHooks(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type) {
         for (EventHook eventHook : eventHooks) {
             if (eventHook.isInterestedInEvent(event)) {
                 eventHook.event(context, event, file, line, name, type);
