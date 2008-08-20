@@ -7,7 +7,10 @@ client_read = nil
 server_thread = Thread.new do
   serv = TCPServer.new('localhost',2202)
   sock = serv.accept
-  
+
+  # Hack until we resolve JRUBY-2940
+  sleep 0.2
+
   server_read = sock.read(5)
   sock.write "world!"
   sock.close
