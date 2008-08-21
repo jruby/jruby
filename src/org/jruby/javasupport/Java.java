@@ -119,6 +119,9 @@ public class Java implements Library {
         // also create the JavaProxy* classes
         JavaProxyClass.createJavaProxyModule(runtime);
 
+        // The template for interface modules
+        JavaInterfaceTemplate.createJavaInterfaceTemplateModule(context);
+
         RubyModule javaUtils = runtime.defineModule("JavaUtilities");
         
         javaUtils.defineAnnotatedMethods(JavaUtilities.class);
