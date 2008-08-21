@@ -1,8 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package org.jruby.java.proxies;
 
 import org.jruby.Ruby;
@@ -13,15 +8,10 @@ import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- * @author headius
- */
 public class JavaProxy extends RubyObject {
     public JavaProxy(Ruby runtime, RubyClass klazz) {
         super(runtime, klazz);

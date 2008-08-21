@@ -33,6 +33,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
+import org.jruby.java.proxies.JavaInterfaceTemplate;
 import org.jruby.java.addons.KernelJavaAddons;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -77,12 +78,12 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNoBlock;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
-import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZeroOrOneOrTwoOrThreeOrN;
 import org.jruby.java.MiniJava;
 import org.jruby.java.addons.ArrayJavaAddons;
 import org.jruby.java.addons.StringJavaAddons;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.ConcreteJavaProxy;
+import org.jruby.java.proxies.InterfaceJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.callback.Callback;
 
@@ -114,6 +115,7 @@ public class Java implements Library {
         // the proxy (wrapper) type hierarchy
         JavaProxy.createJavaProxy(context);
         ConcreteJavaProxy.createConcreteJavaProxy(context);
+        //InterfaceJavaProxy.createInterfaceJavaProxy(context);
         ArrayJavaProxy.createArrayJavaProxy(context);
 
         // also create the JavaProxy* classes
