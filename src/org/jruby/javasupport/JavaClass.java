@@ -75,7 +75,6 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.addons.ArrayJavaAddons;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.invokers.ConstructorInvoker;
-import org.jruby.java.invokers.DynalangInstanceInvoker;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -315,12 +314,7 @@ public class JavaClass extends JavaObject {
         }
         void install(RubyClass proxy) {
             if (hasLocalMethod()) {
-                DynamicMethod method;
-                if (SafePropertyAccessor.getBoolean("jruby.dynalang.enabled", false)) {
-                    method = new DynalangInstanceInvoker(proxy, methods);
-                } else {
-                    method = new InstanceMethodInvoker(proxy, methods);
-                }
+                DynamicMethod method = new InstanceMethodInvoker(proxy, methods);
                 proxy.addMethod(name, method);
                 if (aliases != null && isPublic()) {
                     proxy.defineAliases(aliases, this.name);

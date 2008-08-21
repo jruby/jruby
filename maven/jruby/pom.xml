@@ -130,7 +130,7 @@
                 </artifactItem>
                 <artifactItem>
                   <groupId>biz.aQute</groupId>
-                  <artifactId>bnd</artifactId>
+                  <artifactId>bndlib</artifactId>
                   <version>0.0.249</version>
                 </artifactItem>
                 <artifactItem>
@@ -242,45 +242,7 @@
             <phase>test</phase>
             <configuration>
               <tasks>
-                <property file="${project.basedir}/../../build.properties"/>
-                <property file="${project.basedir}/../../default.build.properties"/>
-                <mkdir dir="${project.build.directory}/surefire-reports"/>
-                <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask"
-                  classpathref="maven.plugin.classpath"/>
-                <junit fork="yes" forkMode="once" haltonfailure="true"
-                  dir="${project.build.testOutputDirectory}" maxmemory="${jruby.test.memory}">
-                  <classpath>
-                    <path refid="maven.test.classpath"/>
-                    <path refid="maven.plugin.classpath"/>
-                    <pathelement location="${project.basedir}/../../test/requireTest.jar"/>
-                    <pathelement location="${project.build.testOutputDirectory}/test" />
-                  </classpath>
-                  <jvmarg value="-ea"/>
-                  <formatter type="plain"/>
-                  <formatter type="xml"/>
-                  <formatter type="brief" usefile="false"/>
-                  <sysproperty key="java.awt.headless" value="true"/>
-                  <sysproperty key="basedir" value="${basedir}"/>
-                  <sysproperty key="jruby.home" value="${basedir}/../.."/>
-                  <sysproperty key="jruby.lib" value="${basedir}/../../lib"/>
-                  <sysproperty key="jruby.objectspace.enabled" value="true"/>
-
-                  <env key="CLASSPATH" value="${project.build.outputDirectory}"/>
-                  <test name="org.jruby.test.MainTestSuite" unless="maven.test.skip"
-                      todir="${project.build.directory}/surefire-reports"/>
-                  <test name="org.jruby.test.ScriptTestSuite" unless="maven.test.skip"
-                      todir="${project.build.directory}/surefire-reports"/>
-                  <test name="org.jruby.test.BFTSTestSuite" unless="maven.test.skip"
-                      todir="${project.build.directory}/surefire-reports" />
-                  <test name="org.jruby.test.JRubyTestSuite" unless="maven.test.skip"
-                      todir="${project.build.directory}/surefire-reports" />
-                  <test name="org.jruby.test.MRITestSuite" unless="maven.test.skip"
-                      todir="${project.build.directory}/surefire-reports" />
-                  <test name="org.jruby.test.RubiconTestSuite" unless="maven.test.skip"
-                      todir="${project.build.directory}/surefire-reports" />
-                  <test name="org.jruby.test.RubyTestTestSuite" unless="maven.test.skip"
-                      todir="${project.build.directory}/surefire-reports" />
-                </junit>
+		<echo message="No need to test"/>
               </tasks>
             </configuration>
             <goals>
@@ -288,18 +250,6 @@
             </goals>
           </execution>
         </executions>
-        <dependencies>
-          <dependency>
-            <groupId>ant</groupId>
-            <artifactId>ant-junit</artifactId>
-            <version>1.6.5</version>
-          </dependency>
-          <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>3.8.1</version>
-          </dependency>
-        </dependencies>
       </plugin>
     </plugins>
   </build>
