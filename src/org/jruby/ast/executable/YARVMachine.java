@@ -12,7 +12,6 @@ import org.jruby.parser.StaticScope;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -122,6 +121,7 @@ public class YARVMachine {
             this.i_op3 = op3;
         }
 
+        @Override
         public String toString() {
             return "[:" + YARVInstructions.name(bytecode) + ", " + 
                 (s_op0 != null ? s_op0 : (o_op0 != null ? o_op0.toString() : ("" + l_op0))) + "]";
