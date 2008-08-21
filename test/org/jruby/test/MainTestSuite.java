@@ -39,6 +39,7 @@ import junit.framework.TestSuite;
 import org.jruby.ast.executable.YARVMachineTest;
 import org.jruby.ast.visitor.rewriter.VisitorTestSuite;
 import org.jruby.ext.posix.JavaFileStatTest;
+import org.jruby.javasupport.TestJava;
 import org.jruby.javasupport.TestJavaClass;
 import org.jruby.javasupport.test.JavaSupportTestSuite;
 import org.jruby.runtime.callback.TestReflectionCallback;
@@ -62,6 +63,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(TestRuby.class);
         suite.addTestSuite(TestRequire.class);
         suite.addTestSuite(TestJavaUtil.class);
+        suite.addTestSuite(TestJava.class);
         suite.addTestSuite(TestJavaClass.class);
         suite.addTestSuite(TestKernel.class);
         suite.addTestSuite(TestRubyCollect.class);

@@ -630,10 +630,15 @@ public class Java implements Library {
 
     private static RubyClass createProxyClass(Ruby runtime, RubyClass baseType,
             JavaClass javaClass, boolean invokeInherited) {
+	// JRUBY-2938 the proxy class might already exist
+	RubyClass proxyClass = javaClass.getProxyClass();
+	if (proxyClass != null)
+	    return proxyClass;
+
         // this needs to be split, since conditional calling #inherited doesn't fit standard ruby semantics
         RubyClass.checkInheritable(baseType);
         RubyClass superClass = (RubyClass) baseType;
-        RubyClass proxyClass = RubyClass.newClass(runtime, superClass);
+        proxyClass = RubyClass.newClass(runtime, superClass);
         proxyClass.makeMetaClass(superClass.getMetaClass());
         proxyClass.setAllocator(superClass.getAllocator());
         if (invokeInherited) {
