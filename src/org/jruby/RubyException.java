@@ -63,6 +63,7 @@ import org.jruby.util.SafePropertyAccessor;
 @JRubyClass(name="Exception")
 public class RubyException extends RubyObject {
     private StackTraceElement[] backtraceFrames;
+    private StackTraceElement[] javaStackTrace;
     private IRubyObject backtrace;
     public IRubyObject message;
     public static final int TRACE_HEAD = 8;
@@ -133,6 +134,12 @@ public class RubyException extends RubyObject {
     
     public void setBacktraceFrames(StackTraceElement[] backtraceFrames) {
         this.backtraceFrames = backtraceFrames;
+        if (TRACE_TYPE == RAW ||
+                TRACE_TYPE == RAW_FILTERED ||
+                TRACE_TYPE == RUBY_COMPILED ||
+                TRACE_TYPE == RUBY_HYBRID) {
+            javaStackTrace = Thread.currentThread().getStackTrace();
+        }
     }
     
     public static final int RAW = 0;
@@ -164,19 +171,19 @@ public class RubyException extends RubyObject {
     public void initBacktrace() {
         switch (TRACE_TYPE) {
         case RAW:
-            backtrace = ThreadContext.createRawBacktrace(getRuntime(), false);
+            backtrace = ThreadContext.createRawBacktrace(getRuntime(), javaStackTrace, false);
             break;
         case RAW_FILTERED:
-            backtrace = ThreadContext.createRawBacktrace(getRuntime(), true);
+            backtrace = ThreadContext.createRawBacktrace(getRuntime(), javaStackTrace, true);
             break;
         case RUBY_FRAMED:
             backtrace = backtraceFrames == null ? getRuntime().getNil() : ThreadContext.createBacktraceFromFrames(getRuntime(), backtraceFrames);
             break;
         case RUBY_COMPILED:
-            backtrace = ThreadContext.createRubyCompiledBacktrace(getRuntime());
+            backtrace = ThreadContext.createRubyCompiledBacktrace(getRuntime(), javaStackTrace);
             break;
         case RUBY_HYBRID:
-            backtrace = ThreadContext.createRubyHybridBacktrace(getRuntime(), backtraceFrames, getRuntime().getDebug().isTrue());
+            backtrace = ThreadContext.createRubyHybridBacktrace(getRuntime(), backtraceFrames, javaStackTrace, getRuntime().getDebug().isTrue());
             break;
         }
     }

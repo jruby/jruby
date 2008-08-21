@@ -844,9 +844,7 @@ public final class ThreadContext {
         return buffer.toString();
     }
     
-    public static IRubyObject createRawBacktrace(Ruby runtime, boolean filter) {
-        StackTraceElement[] stackTrace = new Exception().getStackTrace();
-        
+    public static IRubyObject createRawBacktrace(Ruby runtime, StackTraceElement[] stackTrace, boolean filter) {
         RubyArray traceArray = RubyArray.newArray(runtime);
         for (int i = 17; i < stackTrace.length; i++) {
             StackTraceElement element = stackTrace[i];
@@ -858,9 +856,7 @@ public final class ThreadContext {
         return traceArray;
     }
     
-    public static IRubyObject createRubyCompiledBacktrace(Ruby runtime) {
-        StackTraceElement[] stackTrace = new Exception().getStackTrace();
-        
+    public static IRubyObject createRubyCompiledBacktrace(Ruby runtime, StackTraceElement[] stackTrace) {
         RubyArray traceArray = RubyArray.newArray(runtime);
         for (int i = 17; i < stackTrace.length; i++) {
             StackTraceElement element = stackTrace[i];
@@ -890,9 +886,7 @@ public final class ThreadContext {
         INTERPRETED_FRAMES.put(Ruby.class.getName() + ".runInterpreter", FrameType.ROOT);
     }
     
-    public static IRubyObject createRubyHybridBacktrace(Ruby runtime, StackTraceElement[] backtraceFrames, boolean debug) {
-        StackTraceElement[] stackTrace = new Exception().getStackTrace();
-        
+    public static IRubyObject createRubyHybridBacktrace(Ruby runtime, StackTraceElement[] backtraceFrames, StackTraceElement[] stackTrace, boolean debug) {
         RubyArray traceArray = RubyArray.newArray(runtime);
         ThreadContext context = runtime.getCurrentContext();
         
