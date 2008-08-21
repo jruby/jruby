@@ -717,7 +717,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "binding", frame = true, module = true, visibility = PRIVATE)
     public static RubyBinding binding(ThreadContext context, IRubyObject recv, Block block) {
-        return RubyBinding.newBindingForEval(context);
+        return RubyBinding.newBinding(context.getRuntime());
     }
 
     @JRubyMethod(name = {"block_given?", "iterator?"}, frame = true, module = true, visibility = PRIVATE)
