@@ -175,6 +175,39 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.1</version>
+        <executions>
+          <execution>
+            <phase>process-classes</phase>
+            <goals><goal>exec</goal></goals>
+          </execution>
+        </executions>
+        <configuration>
+          <executable>ant</executable>
+          <workingDirectory>${project.basedir}/../..</workingDirectory>
+          <arguments><argument>jar-complete</argument></arguments>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy-jar</id>
+            <phase>process-classes</phase>
+            <goals><goal>run</goal></goals>
+            <configuration>
+              <tasks>
+<echo message="whoo"/>
+		<copy file="${project.basedir}/../../lib/jruby-complete.jar"  tofile="${project.build.directory}/${project.build.finalName}.jar"/>
+              </tasks>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <includes>
@@ -186,115 +219,6 @@
             <exclude>**/*.java</exclude>
           </excludes>
         </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>unjar-deps</id>
-            <phase>process-resources</phase>
-            <configuration>
-              <tasks>
-                <mkdir dir="${project.build.outputDirectory}/META-INF/jruby.home"/>
-                <copy todir="${project.build.outputDirectory}/META-INF/jruby.home">
-                  <fileset dir="${project.basedir}/../..">
-                    <include name="bin/*"/>
-                    <include name="lib/ruby/gems/1.8/cache/sources*.gem"/>
-                    <include name="lib/ruby/gems/1.8/gems/sources*/**/*"/>
-                    <include name="lib/ruby/gems/1.8/specifications/sources*.gemspec"/>
-                    <include name="lib/ruby/site_ruby/**/*"/>
-                    <!-- this is only temporary; will be deleted from final jar -->
-                    <include name="lib/ruby/1.8/**"/>
-                  </fileset>
-                </copy>
-                <copy todir="${project.build.outputDirectory}">
-                  <fileset dir="${project.basedir}/../../lib/ruby/1.8">
-                    <include name="**/*.rb"/>
-                  </fileset>
-                </copy>
-              </tasks>
-            </configuration>
-            <goals>
-              <goal>run</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>generate-method-classes</id>
-            <phase>process-classes</phase>
-            <goals><goal>run</goal></goals>
-            <configuration>
-              <tasks>
-                <touch file="${project.build.directory}/__empty.rb"/>
-                <java classname="org.jruby.Main" fork="true">
-                  <classpath refid="maven.compile.classpath"/>
-                  <sysproperty key="jruby.dump_invocations" value="${project.build.outputDirectory}"/>
-                  <arg value="-rjava"/>
-                  <arg value="${project.build.directory}/__empty.rb"/>
-                </java>
-                <delete file="${project.build.directory}/__empty.rb" quiet="true"/>
-              </tasks>
-            </configuration>
-          </execution>
-          <execution>
-            <id>jarjar</id>
-            <phase>package</phase>
-            <configuration>
-              <tasks>
-                <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask"
-                  classpath="${project.basedir}/../../build_lib/jarjar-1.0rc7.jar"/>
-                <java jar="${project.build.directory}/${project.build.finalName}.jar" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
-                  <sysproperty key="jruby.home" value="${project.build.outputDirectory}/META-INF/jruby.home"/>
-                  <arg value="--command"/>
-                  <arg value="gem"/>
-                  <arg value="install"/>
-                  <arg value="rspec"/>
-                  <arg value="rake"/>
-                  <arg value="--no-ri"/>
-                  <arg value="--no-rdoc"/>
-                  <arg value="--env-shebang"/>
-                </java>
-                <delete>
-                  <fileset dir="${project.build.outputDirectory}">
-                    <include name="META-INF/jruby.home/lib/ruby/gems/1.8/source_cache"/>
-                    <!-- delete after gems installed, as mentioned above; -->
-                    <!-- main ruby libs go in root of jarfile -->
-                    <include name="META-INF/jruby.home/lib/ruby/1.8/**"/>
-                    <include name="META-INF/maven/**"/>
-                  </fileset>
-                  <fileset dir="${project.build.directory}"
-                    includes="${project.build.finalName}.jar"/>
-                </delete>
-                <jarjar destfile="${project.build.directory}/${project.build.finalName}.jar">
-                  <fileset dir="${project.build.outputDirectory}">
-                    <include name="META-INF/jruby.home/**/*"/>
-                    <include name="**/*"/>
-                    <exclude name="org/jruby/util/ant/**/*.class"/>
-                  </fileset>
-                  <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
-                  <manifest>
-                    <attribute name="Built-By" value="${user.name}"/>
-                    <attribute name="Main-Class" value="${jruby.main.class}"/>
-                  </manifest>
-                </jarjar>
-              </tasks>
-            </configuration>
-            <goals>
-              <goal>run</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>tests</id>
-            <phase>test</phase>
-            <configuration>
-              <tasks>
-		<echo message="no need to test"/>
-              </tasks>
-            </configuration>
-            <goals>
-              <goal>run</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
   </build>

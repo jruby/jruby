@@ -105,7 +105,7 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>ant</groupId>
+      <groupId>org.apache.ant</groupId>
       <artifactId>ant</artifactId>
       <version>1.7.0</version>
       <scope>provided</scope>
