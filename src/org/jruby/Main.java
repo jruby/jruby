@@ -144,6 +144,17 @@ public class Main {
                 System.err.println("Specify -w for full StackOverflowError stack trace");
             }
             return 1;
+        } catch (UnsupportedClassVersionError ucve) {
+            System.err.println("Error: Some library (perhaps JRuby) was built with a later JVM version.");
+            System.err.println("Please use libraries built with the version you intend to use or an earlier one.");
+            
+            if (config.getVerbose()) {
+                System.err.println("Exception trace follows:");
+                ucve.printStackTrace();
+            } else {
+                System.err.println("Specify -w for full UnsupportedClassVersionError stack trace");
+            }
+            return 1;
         } catch (ThreadKill kill) {
             return 0;
         }
