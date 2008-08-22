@@ -162,6 +162,7 @@ public abstract class MethodFactory {
      * @param callback A callback provided by the caller which handles binding
      * each method.
      */
+    @Deprecated
     public abstract void defineIndexedAnnotatedMethods(RubyModule implementationClass, Class containingClass, MethodDefiningCallback callback);
 
     /**

@@ -525,11 +525,7 @@ public class RubyModule extends RubyObject {
     }
 
     public void defineAnnotatedMethods(Class clazz) {
-        if (RubyInstanceConfig.INDEXED_METHODS) {
-            defineAnnotatedMethodsIndexed(clazz);
-        } else {
-            defineAnnotatedMethodsIndividually(clazz);
-        }
+        defineAnnotatedMethodsIndividually(clazz);
     }
     
     public static class MethodClumper {
@@ -629,7 +625,8 @@ public class RubyModule extends RubyObject {
         
         populator.populate(this, clazz);
     }
-    
+
+    @Deprecated
     private void defineAnnotatedMethodsIndexed(Class clazz) {
         MethodFactory methodFactory = MethodFactory.createFactory(getRuntime().getJRubyClassLoader());
         methodFactory.defineIndexedAnnotatedMethods(this, clazz, methodDefiningCallback);

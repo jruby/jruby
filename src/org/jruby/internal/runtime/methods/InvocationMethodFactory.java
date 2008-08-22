@@ -749,6 +749,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      * 
      * @see org.jruby.internal.runtime.methods.MethodFactory#defineIndexedAnnotatedMethods
      */
+    @Deprecated
     public void defineIndexedAnnotatedMethods(RubyModule implementationClass, Class type, MethodDefiningCallback callback) {
         String typePath = p(type);
         String superClass = p(JavaMethod.class);
@@ -1009,6 +1010,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         return cw;
     }
 
+    @Deprecated
     private ClassWriter createIndexedJavaMethodCtor(String namePath, String sup) throws Exception {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, sup, null);
@@ -1330,6 +1332,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
+    @Deprecated
     private String getAnnotatedMethodForIndex(ClassWriter cw, Method method, int index, String superClass) {
         String methodName = "call" + index + "_" + method.getName();
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, methodName, COMPILED_CALL_SIG_BLOCK, null, null));

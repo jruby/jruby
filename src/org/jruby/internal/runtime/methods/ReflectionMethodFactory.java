@@ -132,7 +132,7 @@ public class ReflectionMethodFactory extends MethodFactory {
      * 
      * @see org.jruby.internal.runtime.methods.MethodFactory#defineIndexedAnnotatedMethods
      */
-    @Override
+    @Override @Deprecated
     public void defineIndexedAnnotatedMethods(RubyModule implementationClass, Class type, MethodDefiningCallback callback) {
         Method[] methods = type.getDeclaredMethods();
         for (Method method : methods) {
