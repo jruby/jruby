@@ -1,6 +1,8 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
 import "java_integration.fixtures.ArrayReceiver"
+import "java_integration.fixtures.ArrayReturningInterface"
+import "java_integration.fixtures.ArrayReturningInterfaceConsumer"
 
 describe "A Java primitive Array of type" do
   describe "boolean" do 
@@ -735,3 +737,23 @@ describe "A Java primitive Array of type" do
     end
   end
 end
+
+# From JRUBY-2944; probably could be reduced a bit more.
+describe "A Ruby class implementing an interface returning a Java Object[]" do
+  it "should return an Object[]" do
+    class MyHash < Hash; end
+
+    class Bar
+      include ArrayReturningInterface
+      def blah()
+        a = []
+        a << MyHash.new
+        return a.to_java
+      end
+    end
+    ArrayReturningInterfaceConsumer.new.eat(Bar.new).should_not == nil
+    ArrayReturningInterfaceConsumer.new.eat(Bar.new).java_object.class.name.should == 'Java::JavaArray'
+    ArrayReturningInterfaceConsumer.new.eat(Bar.new).java_object.class.should == Java::JavaArray
+  end
+end
+

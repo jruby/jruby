@@ -464,12 +464,12 @@ public class JavaUtil {
         
         ThreadContext context = rubyObject.getRuntime().getCurrentContext();
         
-        if (rubyObject.respondsTo("java_object")) {
-        	rubyObject = rubyObject.callMethod(context, "java_object");
-        }
-
-        if (rubyObject.respondsTo("to_java_object")) {
-        	rubyObject = rubyObject.callMethod(context, "to_java_object");
+        if (rubyObject.dataGetStruct() instanceof JavaObject) {
+            rubyObject = (JavaObject) rubyObject.dataGetStruct();
+        } else if (rubyObject.respondsTo("java_object")) {
+            rubyObject = rubyObject.callMethod(context, "java_object");
+        } else if (rubyObject.respondsTo("to_java_object")) {
+            rubyObject = rubyObject.callMethod(context, "to_java_object");
         }
 
         if (rubyObject instanceof JavaObject) {
