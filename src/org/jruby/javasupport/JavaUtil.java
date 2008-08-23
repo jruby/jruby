@@ -836,12 +836,15 @@ public class JavaUtil {
             // Proc implementing an interface, pull in the catch-all code that lets the proc get invoked
             // no matter what method is called on the interface
             RubyClass singletonClass = rubyObject.getSingletonClass();
-            final RubyProc proc = (RubyProc) rubyObject;
 
             singletonClass.addMethod("method_missing", new DynamicMethod(singletonClass, Visibility.PUBLIC, CallConfiguration.NO_FRAME_NO_SCOPE) {
 
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                    if (!(self instanceof RubyProc)) {
+                        throw context.getRuntime().newTypeError("interface impl method_missing for block used with non-Proc object");
+                    }
+                    RubyProc proc = (RubyProc)self;
                     IRubyObject[] newArgs;
                     if (args.length == 1) {
                         newArgs = IRubyObject.NULL_ARRAY;
