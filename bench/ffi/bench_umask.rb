@@ -1,7 +1,7 @@
 require 'benchmark'
 require 'ffi'
 
-iter = 10000
+iter = 100000
 module Posix
   extend FFI::Library
   attach_function 'umask', [ :int ], :int

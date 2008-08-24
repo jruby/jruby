@@ -41,7 +41,7 @@ Posix.stat("/tmp", st.pointer)
 puts "mtime=#{st[:st_mtime]} File.stat.mtime=#{File.stat('/tmp').mtime.to_i}"
 puts "size=#{st[:st_size]} File.stat.size=#{File.stat('/tmp').size.to_i}"
 puts "FFI stat(file) #{iter}x"
-20.times {
+10.times {
   puts Benchmark.measure {
 
     iter.times do
@@ -51,8 +51,22 @@ puts "FFI stat(file) #{iter}x"
     end
   }
 }
+puts "FFI stat(file) with Ruby Struct wrapping #{iter}x"
+StatStruct = Struct.new(:st_ino, :st_mtime, :st_ctime, :st_atime, :st_blocks)
+10.times {
+  puts Benchmark.measure {
+
+    iter.times do
+      buf = Stat.alloc_out false # don't clear the memory
+      Posix.stat("/tmp", buf.pointer)
+      StatStruct.new(buf[:st_ino], buf[:st_mtime], 
+	buf[:st_ctime], buf[:st_atime],
+        buf[:st_blocks])
+    end
+  }
+}
 puts "File.stat(file) #{iter}x"
-20.times {
+10.times {
   puts Benchmark.measure {
 
     iter.times do
