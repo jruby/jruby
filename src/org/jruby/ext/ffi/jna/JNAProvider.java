@@ -376,6 +376,8 @@ public final class JNAProvider extends FFIProvider {
                 return (((JNAMemory) parameter).getNativeMemory());
             } else if (parameter.isNil()) {
                 return Pointer.NULL;
+            } else if (parameter instanceof RubyString) {
+                return ((RubyString) parameter).asJavaString();
             }
             return Util.convertParameter(parameter, Pointer.class);
         }

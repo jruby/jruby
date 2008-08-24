@@ -114,13 +114,15 @@ public abstract class Invoker extends RubyObject {
             }
         }; 
     }
+    
     /**
      * Invokes the native function with the supplied ruby arguments.
      * @param rubyArgs The ruby arguments to pass to the native function.
      * @return The return value from the native function, as a ruby object.
      */
-    public Object invoke(RubyArray rubyArgs) {
-        return invoke(rubyArgs.getRuntime(), rubyArgs.toJavaArrayMaybeUnsafe());
+    @JRubyMethod(name= { "invoke", "call" }, rest = true)
+    public IRubyObject invoke(ThreadContext context, IRubyObject[] rubyArgs) {
+        return invoke(context.getRuntime(), ((RubyArray) rubyArgs[0]).toJavaArrayMaybeUnsafe());
     }
     
     public abstract IRubyObject invoke(Ruby runtime, IRubyObject[] args);
