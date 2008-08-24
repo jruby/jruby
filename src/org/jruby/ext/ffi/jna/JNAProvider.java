@@ -157,7 +157,9 @@ public final class JNAProvider extends FFIProvider {
                 return RbxStringMarshaller.INSTANCE;
             case POINTER:
                 return PointerMarshaller.INSTANCE;
-            case BUFFER:
+            case BUFFER_IN:
+            case BUFFER_OUT:
+            case BUFFER_INOUT:
                 return BufferMarshaller.INSTANCE;
             default:
                 throw new IllegalArgumentException("Invalid parameter type: " + type);

@@ -243,7 +243,10 @@ module JRuby::FFI
   add_typedef(NativeType::STRING, :cstring)
   
   # Converts FFI::Buffer objects
-  add_typedef(NativeType::BUFFER, :buffer)
+  add_typedef(NativeType::BUFFER_IN, :buffer_in)
+  add_typedef(NativeType::BUFFER_OUT, :buffer_out)
+  add_typedef(NativeType::BUFFER_INOUT, :buffer_inout)
+  
   
   # Load all the platform dependent types/consts/struct members
   class Config
@@ -527,6 +530,9 @@ class JRuby::FFI::Buffer
       raise ArgumentError, "Invalid size type"
     end
     size * (count ? count : 1)
+  end
+  def self.new(size, count=nil, clear=true)
+    self.__alloc_inout(self.__calc_size(size, count), clear)
   end
   def self.alloc_in(size, count=nil, clear=true)
     self.__alloc_in(self.__calc_size(size, count), clear)

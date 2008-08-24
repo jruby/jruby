@@ -48,7 +48,9 @@ public enum NativeType {
     FLOAT32,
     FLOAT64,
     POINTER,
-    BUFFER,
+    BUFFER_IN,
+    BUFFER_OUT,
+    BUFFER_INOUT,
     CHAR_ARRAY,
     
     /** 
