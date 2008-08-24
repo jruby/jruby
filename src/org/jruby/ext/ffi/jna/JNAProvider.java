@@ -377,7 +377,21 @@ public final class JNAProvider extends FFIProvider {
             } else if (parameter.isNil()) {
                 return Pointer.NULL;
             } else if (parameter instanceof RubyString) {
-                return ((RubyString) parameter).asJavaString();
+                // Handle a string being used as a inout buffer
+                final ByteList bl = ((RubyString) parameter).getByteList();
+                final int len = bl.length();
+                final Memory memory = new Memory(len);
+                memory.write(0, bl.unsafeBytes(), bl.begin(), len);
+
+                //
+                // Arrange for the bytes to be copied back after the function is called
+                //
+                invocation.addPostInvoke(new Runnable() {
+                    public void run() {
+                        memory.read(0, bl.unsafeBytes(), bl.begin(), len);
+                    }
+                });
+                return memory;
             }
             return Util.convertParameter(parameter, Pointer.class);
         }
