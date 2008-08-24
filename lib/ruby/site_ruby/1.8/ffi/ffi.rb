@@ -216,7 +216,10 @@ module JRuby::FFI
 
   def self.create_function(lib, name, args, ret, convention = :default)
     invoker = create_invoker(lib, name, args, ret, convention)
-    proc { |*args| invoker.invoke(args) }
+    Module.new do
+      invoker.attach(self, "call")
+      extend self
+    end
   end
   
   def self.load_library(libname, convention = :default, &block)
@@ -340,7 +343,10 @@ module JRuby::FFI::Library
     raise ArgumentError, "Unable to find function '#{name}' to bind to #{self.name}.#{(opts[:as] || name)}" unless invoker
     invoker.attach(self.class, (opts[:as] || name).to_s)
     # Return a callable version of the invoker
-    return proc { |*args| invoker.invoke(args) }
+    Module.new do
+      invoker.attach(self, "call")
+      extend self
+    end
   end
   def attach_function(name, a3, a4, a5=nil)
     mname, args, ret = a5 ? [ a3, a4, a5 ] : [ name.to_sym, a3, a4 ]
@@ -373,7 +379,10 @@ module FFI::Library
     raise ArgumentError, "Unable to find function '#{name}' to bind to #{self.name}.#{mname}" unless invoker
     invoker.attach(self.class, mname.to_s)
     # Return a callable version of the invoker
-    return proc { |*args| invoker.invoke(args) }
+    Module.new do
+      invoker.attach(self, "call")
+      extend self
+    end
   end
 end
 
