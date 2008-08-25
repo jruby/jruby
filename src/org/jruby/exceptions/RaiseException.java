@@ -66,7 +66,12 @@ public class RaiseException extends JumpException {
         if (DEBUG) {
             Thread.dumpStack();
         }
-        setException((RubyException)RuntimeHelpers.invoke(runtime.getCurrentContext(), excptnClass, "new", excptnClass.getRuntime().newString(msg)), nativeException);
+        setException((RubyException)RuntimeHelpers.invoke(
+                runtime.getCurrentContext(),
+                excptnClass,
+                "new",
+                RubyString.newUnicodeString(excptnClass.getRuntime(), msg)),
+                nativeException);
     }
 
     public RaiseException(RubyException exception, boolean isNativeException) {
