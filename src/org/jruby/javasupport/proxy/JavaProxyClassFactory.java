@@ -154,7 +154,7 @@ public class JavaProxyClassFactory {
                 // because java and javax packages are protected and signed
                 // jars prevent us generating new classes with those package
                 // names. See JRUBY-2439.
-                String pkg = "org.jruby.proxy." + packageName(superClass);
+                String pkg = proxyPackageName(superClass);
                 String fullName = superClass.getName();
                 int ix = fullName.lastIndexOf('.');
                 String cName = fullName;
@@ -802,6 +802,16 @@ public class JavaProxyClassFactory {
             return "";
         } else {
             return clazzName.substring(0, idx);
+        }
+    }
+
+    private static String proxyPackageName(Class clazz) {
+        String clazzName = clazz.getName();
+        int idx = clazzName.lastIndexOf('.');
+        if (idx == -1) {
+            return "org.jruby.proxy";
+        } else {
+            return "org.jruby.proxy." + clazzName.substring(0, idx);
         }
     }
 

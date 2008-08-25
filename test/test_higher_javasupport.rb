@@ -774,4 +774,10 @@ CLASSDEF
     assert_nothing_raised { x = java.util.ArrayList.new([java.lang.Integer.new(1)]) }
     assert_equal("[1]", x.to_string)
   end
+
+  # JRUBY-2865
+  def test_extend_default_package_class
+    cls = Class.new(Java::DefaultPackageClass);
+    assert_nothing_raised { cls.new }
+  end
 end
