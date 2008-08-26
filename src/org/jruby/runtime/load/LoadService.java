@@ -209,9 +209,7 @@ public class LoadService {
             throw runtime.newLoadError("No such file to load -- " + file);
         }
 
-        Library library = null;
-        
-        library = findLibrary(file, false);
+        Library library = findLibrary(file, false);
 
         if (library == null) {
             library = findLibraryWithClassloaders(file);
