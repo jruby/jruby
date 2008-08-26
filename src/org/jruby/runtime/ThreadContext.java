@@ -732,7 +732,8 @@ public final class ThreadContext {
         for (int i = 0; i < traceSize - 1; i++) {
             StackTraceElement frame = backtraceFrames[i];
             // We are in eval with binding break out early
-            if (cropAtEval && frame.getFileName().equals("(eval)")) break;
+            // FIXME: This is broken with the new backtrace stuff
+            //if (cropAtEval && frame.getFileName().equals("")) break;
 
             addBackTraceElement(runtime, backtrace, frame, backtraceFrames[i + 1]);
         }
