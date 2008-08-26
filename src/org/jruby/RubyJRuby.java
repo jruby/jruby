@@ -52,6 +52,7 @@ import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.ASTCompiler;
 import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.internal.runtime.methods.MethodArgs;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.InterpretedBlock;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.TypeConverter;
@@ -222,6 +223,21 @@ public class RubyJRuby {
     public static IRubyObject reference(IRubyObject recv, IRubyObject obj) {
         return Java.wrap(recv.getRuntime().getJavaSupport().getJavaUtilitiesModule(),
                 JavaObject.wrap(recv.getRuntime(), obj));
+    }
+
+    @JRubyMethod(name = "dereference", required = 1, module = true)
+    public static IRubyObject dereference(ThreadContext context, IRubyObject recv, IRubyObject obj) {
+        if (!(obj.dataGetStruct() instanceof JavaObject)) {
+            throw context.getRuntime().newTypeError("got " + obj + ", expected wrapped Java object");
+        }
+        
+        Object unwrapped = JavaUtil.unwrapJavaObject(obj);
+
+        if (!(unwrapped instanceof IRubyObject)) {
+            throw context.getRuntime().newTypeError("got " + obj + ", expected Java-wrapped Ruby object");
+        }
+
+        return (IRubyObject)unwrapped;
     }
 
     @JRubyClass(name="JRuby::CompiledScript")
