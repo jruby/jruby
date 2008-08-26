@@ -42,6 +42,7 @@ require 'builtin/javasupport/core_ext'
 # interface extenders need to load before concrete implementors
 require 'builtin/java/collections'
 require 'builtin/java/interfaces'
+require 'builtin/java/io'
 require 'builtin/java/exceptions'
 require 'builtin/java/regex'
 # AST code pulls in concrete java.util.ArrayList
