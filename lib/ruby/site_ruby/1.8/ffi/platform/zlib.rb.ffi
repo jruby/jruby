@@ -508,7 +508,7 @@ module Zlib
   set_ffi_lib 'libz'
 
   # deflateInit2 is a macro pointing to deflateInit2_
-  attach_function 'deflateInit2_', :deflateInit2_, [
+  attach_function :deflateInit2_, [
                     :pointer, # z_streamp strm
                     :int,     # int level
                     :int,     # int method
@@ -524,35 +524,35 @@ module Zlib
                   ZLIB_VERSION, ZStream.size
   end
 
-  attach_function 'deflate',        :deflate,         [:pointer, :int], :int
-  attach_function 'deflateEnd',     :deflateEnd,      [:pointer],       :int
-  attach_function 'deflateParams',  :deflateParams,   [:pointer, :int, :int],
+  attach_function :deflate,         [:pointer, :int], :int
+  attach_function :deflateEnd,      [:pointer],       :int
+  attach_function :deflateParams,   [:pointer, :int, :int],
                   :int
-  attach_function 'deflateReset',   :deflateReset,    [:pointer],       :int
-  attach_function 'deflateSetDictionary', :deflateSetDictionary,
+  attach_function :deflateReset,    [:pointer],       :int
+  attach_function :deflateSetDictionary,
                   [:pointer, :string, :uint], :int
 
   # inflateInit2 is a macro pointing to inflateInit2_
-  attach_function 'inflateInit2_', :inflateInit2_,
+  attach_function :inflateInit2_,
                   [:pointer, :int, :string, :int], :int
 
   def self.inflateInit2(stream, window_bits)
     inflateInit2_ stream, window_bits, ZLIB_VERSION, ZStream.size
   end
 
-  attach_function 'inflate',        :inflate,         [:pointer, :int], :int
-  attach_function 'inflateEnd',     :inflateEnd,      [:pointer],       :int
-  attach_function 'inflateReset',   :inflateReset,    [:pointer],       :int
-  attach_function 'inflateSetDictionary', :inflateSetDictionary,
+  attach_function :inflate,         [:pointer, :int], :int
+  attach_function :inflateEnd,      [:pointer],       :int
+  attach_function :inflateReset,    [:pointer],       :int
+  attach_function :inflateSetDictionary,
                   [:pointer, :string, :uint], :int
 
-  attach_function 'adler32',        :adler32_c,       [:ulong, :string, :uint],
+  attach_function :adler32_c,       :adler32,         [:ulong, :string, :uint],
                   :ulong
-  attach_function 'crc32',          :crc32_c,         [:ulong, :string, :uint],
+  attach_function :crc32_c,         :crc32,           [:ulong, :string, :uint],
                   :ulong
-  attach_function 'get_crc_table',  :get_crc_table_c, [], :pointer
+  attach_function :get_crc_table_c, :get_crc_table,   [], :pointer
 
-  attach_function 'zError', :zError, [:int], :string
+  attach_function :zError, [:int], :string
 
   # Chunk size for inflation and deflation
 
