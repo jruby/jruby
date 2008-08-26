@@ -144,7 +144,13 @@ public class RaiseException extends JumpException {
 
         StackTraceElement[] stackTrace = context.createBacktrace2(0, nativeException);
         newException.setBacktraceFrames(stackTrace);
-        setStackTrace(stackTrace);
+
+        // JRUBY-2673: if wrapping a NativeException, use the actual Java exception's trace as our Java trace
+        if (newException instanceof NativeException) {
+            setStackTrace(((NativeException)newException).getCause().getStackTrace());
+        } else {
+            setStackTrace(stackTrace);
+        }
 
         runtime.setStackTraces(runtime.getStackTraces() - 1);
     }
