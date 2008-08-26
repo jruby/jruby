@@ -843,6 +843,11 @@ public class RubyArray extends RubyObject implements List {
         }
     }
 
+    @JRubyMethod
+    public IRubyObject insert() {
+        throw getRuntime().newArgumentError(0, 1);
+    }
+
     /** rb_ary_insert
      * 
      */
