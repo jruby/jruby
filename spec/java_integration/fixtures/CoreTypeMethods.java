@@ -136,4 +136,20 @@ public class CoreTypeMethods {
     public static String getObjectType(Object obj) {
         return obj.getClass().toString();
     }
+
+    public static String getType(double i, Object o) {
+        return "double,object";
+    }
+
+    public static String getType(long i, Object o) {
+        return "long,object";
+    }
+
+    public static String getType(double i, String o) {
+        return "double,string";
+    }
+
+    public static String getType(long i, String o) {
+        return "long,string";
+    }
 }
