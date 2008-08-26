@@ -33,26 +33,11 @@ import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
-import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class Numeric {
-    
-    /** f_generic_p
-     * 
-     */
-    public static boolean isGeneric(IRubyObject recv) {
-        switch (recv.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
-        case ClassIndex.FLOAT:
-        case ClassIndex.RATIONAL:
-            return true;
-        }
-        return false;
-    }
-    
+
     /** f_add
      * 
      */
@@ -504,15 +489,17 @@ public class Numeric {
     }
 
     public static final class ComplexPatterns {
-        public static final Regex comp_pat1, comp_pat2, underscores_pat;
+        public static final Regex comp_pat0, comp_pat1, comp_pat2, underscores_pat;
         static {
             String DIGITS = "(?:\\d(?:_\\d|\\d)*)";
             String NUMERATOR = "(?:" + DIGITS + "?\\.)?" + DIGITS + "(?:[eE][-+]?" + DIGITS + ")?";
-            String DENOMINATOR = "[-+]?" + DIGITS;
+            String DENOMINATOR = DIGITS;
             String NUMBER = "[-+]?" + NUMERATOR + "(?:\\/" + DENOMINATOR + ")?";
             String NUMBERNOS = NUMERATOR + "(?:\\/" + DENOMINATOR + ")?";
-            String PATTERN1 = "\\A((" + NUMBER + ")|\\((" + NUMBER + ")\\))?[iIjJ]";
-            String PATTERN2 = "\\A(" + NUMBER + ")(([-+])(?:(" + NUMBERNOS + ")|\\((" + NUMBER + ")\\))?[iIjJ])?";
+            String PATTERN0 = "\\A(" + NUMBER + ")@(" + NUMBER + ")";
+            String PATTERN1 = "\\A([-+])?(" + NUMBER + ")?[iIjJ]";
+            String PATTERN2 = "\\A(" + NUMBER + ")(([-+])(" + NUMBERNOS + ")?[iIjJ])?";
+            comp_pat0 = new Regex(PATTERN0.getBytes(), 0, PATTERN0.length(), 0, ASCIIEncoding.INSTANCE);
             comp_pat1 = new Regex(PATTERN1.getBytes(), 0, PATTERN1.length(), 0, ASCIIEncoding.INSTANCE);
             comp_pat2 = new Regex(PATTERN2.getBytes(), 0, PATTERN2.length(), 0, ASCIIEncoding.INSTANCE);
             underscores_pat = new Regex("_+".getBytes(), 0, 2, 0, ASCIIEncoding.INSTANCE);
@@ -524,12 +511,11 @@ public class Numeric {
         static {
             String DIGITS = "(?:\\d(?:_\\d|\\d)*)";
             String NUMERATOR = "(?:" + DIGITS + "?\\.)?" + DIGITS + "(?:[eE][-+]?" + DIGITS + ")?";
-            String DENOMINATOR = "[-+]?" + DIGITS;
+            String DENOMINATOR = DIGITS;
             String PATTERN = "\\A([-+])?(" + NUMERATOR + ")(?:\\/(" + DENOMINATOR + "))?";
             rat_pat = new Regex(PATTERN.getBytes(), 0, PATTERN.length(), 0, ASCIIEncoding.INSTANCE);
             an_e_pat = new Regex("[Ee]".getBytes(), 0, 4, 0, ASCIIEncoding.INSTANCE);
             a_dot_pat = new Regex("\\.".getBytes(), 0, 2, 0, ASCIIEncoding.INSTANCE);            
         }
     }
-
 }

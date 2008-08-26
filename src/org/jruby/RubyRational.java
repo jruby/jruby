@@ -66,7 +66,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
 /**
- *  1.9 rational.c as of revision: 18222
+ *  1.9 rational.c as of revision: 18876
  */
 
 @JRubyClass(name = "Rational", parent = "Numeric", include = "Precision")
@@ -821,7 +821,7 @@ public class RubyRational extends RubyNumeric {
 
         long e = ne - de;
         
-        if (e > 1023 || e < 1022) {
+        if (e > 1023 || e < -1022) {
             runtime.getWarnings().warn(IRubyWarnings.ID.FLOAT_OUT_OF_RANGE, "out of Float range", getMetaClass());
             return runtime.newFloat(e > 0 ? Double.MAX_VALUE : 0);
         }
@@ -861,7 +861,6 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
-        if (f_one_p(context, den)) return f_to_s(context, num);
         return RuntimeHelpers.invoke(context, context.getRuntime().getKernel(), "format", context.getRuntime().newString("%d/%d"), num, den);
     }
 
@@ -870,7 +869,7 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
-        return RuntimeHelpers.invoke(context, context.getRuntime().getKernel(), "format", context.getRuntime().newString("Rational(%d, %d)"), num, den);
+        return RuntimeHelpers.invoke(context, context.getRuntime().getKernel(), "format", context.getRuntime().newString("(%d/%d)"), num, den);
     }
 
     /** nurat_marshal_dump
