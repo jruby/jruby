@@ -901,7 +901,7 @@ public class JavaUtil {
     }
     
     public static Object coerceJavaObjectToType(ThreadContext context, Object javaObject, Class target) {
-        if (isDuckTypeConvertable(javaObject.getClass(), target)) {
+        if (javaObject != null && isDuckTypeConvertable(javaObject.getClass(), target)) {
             RubyObject rubyObject = (RubyObject) javaObject;
             if (!rubyObject.respondsTo("java_object")) {
                 return convertProcToInterface(context, rubyObject, target);
