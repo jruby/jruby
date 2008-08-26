@@ -156,7 +156,7 @@ public class JavaClass extends JavaObject {
             this.name = name;
             this.type = type;
         }
-        abstract void install(RubyClass proxy);
+        abstract void install(RubyModule proxy);
         // small hack to save a cast later on
         boolean hasLocalMethod() {
             return true;
@@ -183,7 +183,7 @@ public class JavaClass extends JavaObject {
         StaticFieldGetterInstaller(String name, Field field) {
             super(name,STATIC_FIELD,field);
         }
-        void install(RubyClass proxy) {
+        void install(RubyModule proxy) {
             if (Modifier.isPublic(field.getModifiers())) {
                 proxy.getSingletonClass().addMethod(name, new StaticFieldGetter(name, proxy, field));
             }
@@ -195,7 +195,7 @@ public class JavaClass extends JavaObject {
         StaticFieldSetterInstaller(String name, Field field) {
             super(name,STATIC_FIELD,field);
         }
-        void install(RubyClass proxy) {
+        void install(RubyModule proxy) {
             if (Modifier.isPublic(field.getModifiers())) {
                 proxy.getSingletonClass().addMethod(name, new StaticFieldSetter(name, proxy, field));
             }
@@ -207,7 +207,7 @@ public class JavaClass extends JavaObject {
         InstanceFieldGetterInstaller(String name, Field field) {
             super(name,INSTANCE_FIELD,field);
         }
-        void install(RubyClass proxy) {
+        void install(RubyModule proxy) {
             if (Modifier.isPublic(field.getModifiers())) {
                 proxy.addMethod(name, new InstanceFieldGetter(name, proxy, field));
             }
@@ -219,7 +219,7 @@ public class JavaClass extends JavaObject {
         InstanceFieldSetterInstaller(String name, Field field) {
             super(name,INSTANCE_FIELD,field);
         }
-        void install(RubyClass proxy) {
+        void install(RubyModule proxy) {
             if (Modifier.isPublic(field.getModifiers())) {
                 proxy.addMethod(name, new InstanceFieldSetter(name, proxy, field));
             }
@@ -282,7 +282,7 @@ public class JavaClass extends JavaObject {
             haveLocalConstructor |= javaClass == ctor.getDeclaringClass();
         }
         
-        void install(RubyClass proxy) {
+        void install(RubyModule proxy) {
             if (haveLocalConstructor) {
                 DynamicMethod method = new ConstructorInvoker(proxy, constructors);
                 proxy.addMethod(name, method);
@@ -295,7 +295,7 @@ public class JavaClass extends JavaObject {
             super(name,STATIC_METHOD);
         }
 
-        void install(RubyClass proxy) {
+        void install(RubyModule proxy) {
             if (hasLocalMethod()) {
                 RubyClass singleton = proxy.getSingletonClass();
                 DynamicMethod method = new StaticMethodInvoker(singleton, methods);
@@ -312,7 +312,7 @@ public class JavaClass extends JavaObject {
         InstanceMethodInvokerInstaller(String name) {
             super(name,INSTANCE_METHOD);
         }
-        void install(RubyClass proxy) {
+        void install(RubyModule proxy) {
             if (hasLocalMethod()) {
                 DynamicMethod method = new InstanceMethodInvoker(proxy, methods);
                 proxy.addMethod(name, method);
@@ -443,6 +443,7 @@ public class JavaClass extends JavaObject {
     private void initializeInterface(Class<?> javaClass) {
         Map<String, AssignedName> staticNames  = new HashMap<String, AssignedName>(STATIC_RESERVED_NAMES);
         List<ConstantField> constantFields = new ArrayList<ConstantField>(); 
+        Map<String, NamedInstaller> staticCallbacks = new HashMap<String, NamedInstaller>();
         Field[] fields = EMPTY_FIELD_ARRAY;
         try {
             fields = javaClass.getDeclaredFields();
@@ -458,8 +459,22 @@ public class JavaClass extends JavaObject {
             if (ConstantField.isConstant(field)) {
                 constantFields.add(new ConstantField(field));
             }
+            
+            String name = field.getName();
+            int modifiers = field.getModifiers();
+            if (Modifier.isStatic(modifiers)) {
+                AssignedName assignedName = staticNames.get(name);
+                if (assignedName != null && assignedName.type < AssignedName.FIELD) continue;
+                staticNames.put(name,new AssignedName(name,AssignedName.FIELD));
+                staticCallbacks.put(name,new StaticFieldGetterInstaller(name,field));
+                if (!Modifier.isFinal(modifiers)) {
+                    String setName = name + '=';
+                    staticCallbacks.put(setName,new StaticFieldSetterInstaller(setName,field));
+                }
+            }            
         }
         this.staticAssignedNames = staticNames;
+        this.staticInstallers = staticCallbacks;        
         this.constantFields = constantFields;
     }
 
@@ -755,6 +770,13 @@ public class JavaClass extends JavaObject {
         for (ConstantField field: constantFields) {
             field.install(module);
         }
+        for (Iterator<NamedInstaller> iter = staticInstallers.values().iterator(); iter.hasNext(); ) {
+            NamedInstaller installer = iter.next();
+            if (installer.type == NamedInstaller.STATIC_METHOD && installer.hasLocalMethod()) {
+                assignAliases((MethodInstaller)installer,staticAssignedNames);
+            }
+            installer.install(module);
+        }        
         // setup constants for public inner classes
         Class<?>[] classes = EMPTY_CLASS_ARRAY;
         try {

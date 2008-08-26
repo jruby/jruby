@@ -4,14 +4,12 @@ import java.lang.reflect.Constructor;
 import org.jruby.javasupport.*;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jruby.Ruby;
-import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.runtime.Block;
@@ -21,7 +19,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class ConstructorInvoker extends RubyToJavaInvoker {
     private Constructor[] ctors;
     
-    public ConstructorInvoker(RubyClass host, List<Constructor> methods) {
+    public ConstructorInvoker(RubyModule host, List<Constructor> methods) {
         super(host);
         this.ctors = methods.toArray(new Constructor[methods.size()]);
         

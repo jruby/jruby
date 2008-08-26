@@ -2,7 +2,6 @@ package org.jruby.java.invokers;
 
 import java.lang.reflect.Method;
 import java.util.List;
-import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.javasupport.Java;
@@ -15,7 +14,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class InstanceMethodInvoker extends MethodInvoker {
 
-    public InstanceMethodInvoker(RubyClass host, List<Method> methods) {
+    public InstanceMethodInvoker(RubyModule host, List<Method> methods) {
         super(host, methods);
     }
 

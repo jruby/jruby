@@ -9,12 +9,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jruby.Ruby;
-import org.jruby.RubyClass;
+import org.jruby.RubyModule;
 
 public abstract class MethodInvoker extends RubyToJavaInvoker {
     private Method[] methods;
     
-    MethodInvoker(RubyClass host, List<Method> methods) {
+    MethodInvoker(RubyModule host, List<Method> methods) {
         super(host);
         this.methods = methods.toArray(new Method[methods.size()]);
         

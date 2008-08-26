@@ -3,7 +3,7 @@ package org.jruby.java.invokers;
 import org.jruby.javasupport.*;
 import java.util.Arrays;
 import java.util.Map;
-import org.jruby.RubyClass;
+import org.jruby.RubyModule;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -14,7 +14,7 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
     protected Map cache;
     protected volatile boolean initialized;
     
-    RubyToJavaInvoker(RubyClass host) {
+    RubyToJavaInvoker(RubyModule host) {
         super(host, Visibility.PUBLIC);
     }
 
