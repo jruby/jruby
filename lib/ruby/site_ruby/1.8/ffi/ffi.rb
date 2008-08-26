@@ -156,7 +156,7 @@ module FFI
   add_typedef(NativeType::VOID, :void)
 
   # Converts NUL-terminated C strings
-  add_typedef(NativeType::RBXSTRING, :string)
+  add_typedef(NativeType::STRING, :string)
   
   # Use for a C struct with a char [] embedded inside.
   add_typedef(NativeType::CHAR_ARRAY, :char_array)
@@ -350,9 +350,9 @@ module JRuby::FFI::Library
       extend self
     end
   end
-  def attach_function(name, a3, a4, a5=nil)
-    mname, args, ret = a5 ? [ a3, a4, a5 ] : [ name.to_sym, a3, a4 ]
-    jffi_attach(ret, name, args, { :as => mname, :from => @ffi_lib, :convention => @ffi_convention })
+  def attach_function(mname, a3, a4, a5=nil)
+    cname, args, ret = a5 ? [ a3, a4, a5 ] : [ mname.to_sym, a3, a4 ]
+    jffi_attach(ret, cname, args, { :as => mname, :from => @ffi_lib, :convention => @ffi_convention })
   end
 end
 module FFI::Library
@@ -373,12 +373,12 @@ module FFI::Library
   #
   # The C function return type is provided last.
 
-  def attach_function(name, a3, a4, a5=nil)
-    mname, arg_types, ret_type = a5 ? [ a3, a4, a5 ] : [ name.to_sym, a3, a4 ]
+  def attach_function(mname, a3, a4, a5=nil)
+    cname, arg_types, ret_type = a5 ? [ a3, a4, a5 ] : [ mname.to_s, a3, a4 ]
     lib = @ffi_lib
     convention = @ffi_convention ? @ffi_convention : :default
-    invoker = FFI.create_invoker lib, name.to_s, arg_types, ret_type, convention
-    raise ArgumentError, "Unable to find function '#{name}' to bind to #{self.name}.#{mname}" unless invoker
+    invoker = FFI.create_invoker lib, cname.to_s, arg_types, ret_type, convention
+    raise ArgumentError, "Unable to find function '#{cname}' to bind to #{self.name}.#{mname}" unless invoker
     invoker.attach(self.class, mname.to_s)
     # Return a callable version of the invoker
     Module.new do

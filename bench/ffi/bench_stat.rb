@@ -7,7 +7,7 @@ import java.nio.ByteBuffer
 iter = 10_000
 
 module Posix
-  extend JRuby::FFI::Library
+  extend FFI::Library
   attach_function :stat, [ :string, :pointer ], :int
 end
 class Stat < JRuby::FFI::Struct

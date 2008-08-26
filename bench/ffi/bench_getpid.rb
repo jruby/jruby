@@ -6,7 +6,7 @@ iter = 1000000
 module Posix
   extend FFI::Library
   if JRuby::FFI::Platform::IS_WINDOWS
-    attach_function :_getpid, :getpid, [], :pid_t
+    attach_function :getpid, :_getpid, [], :pid_t
   else
     attach_function :getpid, [], :pid_t
   end

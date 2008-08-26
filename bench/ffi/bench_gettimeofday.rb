@@ -2,7 +2,7 @@ require 'benchmark'
 require 'ffi'
 
 module Posix
-  extend JRuby::FFI::Library
+  extend FFI::Library
   attach_function :gettimeofday, [ :pointer, :pointer ], :int
 end
 class Timeval < JRuby::FFI::Struct

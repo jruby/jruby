@@ -1,7 +1,6 @@
 require 'ffi'
 
-module Win32
-  
+module Win32  
   class API < Module
     CONVENTION = JRuby::FFI::Platform::IS_WINDOWS ? :stdcall : :default
     SUFFIXES = $KCODE == 'UTF8' ? [ '', 'W', 'A' ] : [ '', 'A', 'W' ]
@@ -31,13 +30,13 @@ module Win32
       #
       # Attach the method as 'call', so it gets all the froody arity-splitting optimizations
       # 
-      extend JRuby::FFI::Library
+      extend FFI::Library
       ffi_lib lib
       ffi_convention CONVENTION      
       attached = false
       SUFFIXES.each { |suffix|
         begin
-          attach_function(func.to_s + suffix, "call", API.map_types(params), API.map_types(ret)[0])
+          attach_function(:call, func.to_s + suffix, API.map_types(params), API.map_types(ret)[0])
           attached = true
           break
         rescue FFI::NotFoundError => ex
@@ -47,7 +46,11 @@ module Win32
     end
   end
 end
-
+if !JRuby::FFI::Platform::IS_WINDOWS
+  cputs = Win32::API.new("puts", "S", 'L', 'c')
+  cputs.call("Hello, World")
+  exit 0
+end
 beep = Win32::API.new("MessageBeep", 'L', 'L', 'user32')
 2.times { beep.call(0) }
 

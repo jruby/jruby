@@ -8,10 +8,6 @@ Passwd = Platform::Etc::Passwd
 iter = 100000
 
 module JPosix
-  extend JRuby::FFI::Library
-  attach_function :getpwnam, [ :string ], :pointer
-end
-module RbxPosix
   extend FFI::Library
   attach_function :getpwnam, [ :string ], :pointer
 end
@@ -31,19 +27,7 @@ puts "members=#{pwd.members.inspect}"
 puts "values=#{pwd.values.inspect}"
 
 
-puts "Benchmark FFI getpwnam (rubinius api) performance, #{iter}x"
-
-10.times {
-  puts Benchmark.measure {
-    iter.times {
-      pwd = Passwd.new RbxPosix.getpwnam(login)
-      pwd[:pw_name]
-      pwd[:pw_uid]
-      pwd[:pw_gid]
-    }
-  }
-}
-puts "Benchmark FFI getpwnam (jruby api) performance, #{iter}x"
+puts "Benchmark FFI getpwnam performance, #{iter}x"
 
 10.times {
   puts Benchmark.measure {
