@@ -80,6 +80,7 @@ import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNoBlock;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.java.MiniJava;
 import org.jruby.java.addons.ArrayJavaAddons;
+import org.jruby.java.addons.IOJavaAddons;
 import org.jruby.java.addons.StringJavaAddons;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.ConcreteJavaProxy;
@@ -149,6 +150,7 @@ public class Java implements Library {
         runtime.getArray().defineAnnotatedMethods(ArrayJavaAddons.class);
         runtime.getKernel().defineAnnotatedMethods(KernelJavaAddons.class);
         runtime.getString().defineAnnotatedMethods(StringJavaAddons.class);
+        runtime.getIO().defineAnnotatedMethods(IOJavaAddons.class);
         
         // add all name-to-class mappings
         addNameClassMappings(runtime, runtime.getJavaSupport().getNameClassMap());
