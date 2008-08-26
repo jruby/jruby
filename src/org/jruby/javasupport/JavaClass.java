@@ -1499,9 +1499,20 @@ public class JavaClass extends JavaObject {
         }
         RubyArray rubyArray = (RubyArray)fromArray;
         JavaArray javaArray = new JavaArray(getRuntime(), Array.newInstance(javaClass(), rubyArray.size()));
-        ArrayJavaAddons.copyDataToJavaArray(context, rubyArray, javaArray);
-        RubyClass proxyClass = (RubyClass)Java.get_proxy_class(javaArray, array_class());
         
+        if (javaClass().isArray()) {
+            // if it's an array of arrays, recurse with the component type
+            for (int i = 0; i < rubyArray.size(); i++) {
+                JavaClass componentType = component_type();
+                IRubyObject wrappedComponentArray = componentType.javaArrayFromRubyArray(context, rubyArray.eltInternal(i));
+                javaArray.setWithExceptionHandling(i, JavaUtil.unwrapJavaObject(wrappedComponentArray));
+            }
+        } else {
+            ArrayJavaAddons.copyDataToJavaArray(context, rubyArray, javaArray);
+        }
+        
+        RubyClass proxyClass = (RubyClass)Java.get_proxy_class(javaArray, array_class());
+
         ArrayJavaProxy proxy = new ArrayJavaProxy(runtime, proxyClass);
         proxy.dataWrapStruct(javaArray);
         

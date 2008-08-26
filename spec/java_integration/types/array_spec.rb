@@ -738,6 +738,25 @@ describe "A Java primitive Array of type" do
   end
 end
 
+describe "A multi-dimensional Ruby array" do
+  it "can be coerced to a multi-dimensional Java array" do
+    ary = [[1,2],[3,4],[5,6],[7,8],[9,0]]
+    java_ary = ary.to_java(Java::long[])
+    java_ary.class.should == Java::long[][]
+    java_ary[0].class.should == Java::long[]
+
+    java_ary = ary.to_java(Java::double[])
+    java_ary.class.should == Java::double[][]
+    java_ary[0].class.should == Java::double[]
+
+    ary = [[[1]]]
+    java_ary = ary.to_java(Java::long[][])
+    java_ary.class.should == Java::long[][][]
+    java_ary[0].class.should == Java::long[][]
+    java_ary[0][0].class.should == Java::long[]
+  end
+end
+
 # From JRUBY-2944; probably could be reduced a bit more.
 describe "A Ruby class implementing an interface returning a Java Object[]" do
   it "should return an Object[]" do
