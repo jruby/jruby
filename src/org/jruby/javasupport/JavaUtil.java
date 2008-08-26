@@ -71,6 +71,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.util.ByteList;
+import org.jruby.util.TypeConverter;
 
 public class JavaUtil {
 
@@ -496,12 +497,11 @@ public class JavaUtil {
                 return converter.convert(context, rubyObject);
             }
 
-            // XXX this probably isn't good enough -AM
-            String s = ((RubyString) rubyObject.callMethod(context, MethodIndex.TO_S, "to_s")).toString();
+            String s = ((RubyString)TypeConverter.convertToType(rubyObject, rubyObject.getRuntime().getString(), "to_s", true)).getUnicodeValue();
             if (s.length() > 0) {
                 return new Character(s.charAt(0));
             }
-			return new Character('\0');
+	    return new Character('\0');
         } else if (javaClass == String.class) {
             RubyString rubyString = (RubyString) rubyObject.callMethod(context, MethodIndex.TO_S, "to_s");
             ByteList bytes = rubyString.getByteList();
