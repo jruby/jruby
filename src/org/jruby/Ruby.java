@@ -2114,15 +2114,10 @@ public final class Ruby {
     }
     
     public void compileAndLoadFile(String filename, InputStream in, boolean wrap) {
-        IRubyObject self = null;
-        if (wrap) {
-            self = TopSelfFactory.createTopSelf(this);
-        } else {
-            self = getTopSelf();
-        }
+        IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this) : getTopSelf();
         ThreadContext context = getCurrentContext();
-
         String file = context.getFile();
+        
         try {
             secure(4); /* should alter global state */
 
