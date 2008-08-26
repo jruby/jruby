@@ -14,11 +14,15 @@ describe "Overloaded static Java methods" do
   obj = java.lang.Integer.new(1)
 
   it "call more long instead of double" do
-    CoreTypeMethods.getType(1, obj).should == "long,object"
+    pending do
+      CoreTypeMethods.getType(1, obj).should == "long,object"
+    end
   end
 
   it "call more double instead of long" do
-    CoreTypeMethods.getType(1.0, obj).should == "double,object"
+    pending do
+      CoreTypeMethods.getType(1.0, obj).should == "double,object"
+    end
   end
 
   obj = "heh"
