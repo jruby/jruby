@@ -36,6 +36,10 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
                 raiseNoMatchingCallableError(name, self, args, 0);
             }
             callable = Java.matchingCallableArityN(self, cache, callablesForArity, args, arity);
+        } else {
+            if (callable.getParameterTypes().length != args.length) {
+                throw self.getRuntime().newArgumentError(args.length, callable.getParameterTypes().length);
+            }
         }
         return callable;
     }
@@ -49,6 +53,10 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
                 raiseNoMatchingCallableError(name, self, IRubyObject.NULL_ARRAY, 0);
             }
             callable = callablesForArity[0];
+        } else {
+            if (callable.getParameterTypes().length != 0) {
+                throw self.getRuntime().newArgumentError(0, callable.getParameterTypes().length);
+            }
         }
         return callable;
     }
@@ -62,6 +70,10 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
                 raiseNoMatchingCallableError(name, self, arg0);
             }
             callable = Java.matchingCallableArityOne(self, cache, callablesForArity, arg0);
+        } else {
+            if (callable.getParameterTypes().length != 1) {
+                throw self.getRuntime().newArgumentError(1, callable.getParameterTypes().length);
+            }
         }
         return callable;
     }
@@ -75,6 +87,10 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
                 raiseNoMatchingCallableError(name, self, arg0, arg1);
             }
             callable = Java.matchingCallableArityTwo(self, cache, callablesForArity, arg0, arg1);
+        } else {
+            if (callable.getParameterTypes().length != 2) {
+                throw self.getRuntime().newArgumentError(2, callable.getParameterTypes().length);
+            }
         }
         return callable;
     }
@@ -88,6 +104,10 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
                 raiseNoMatchingCallableError(name, self, arg0, arg1, arg2);
             }
             callable = Java.matchingCallableArityThree(self, cache, callablesForArity, arg0, arg1, arg2);
+        } else {
+            if (callable.getParameterTypes().length != 3) {
+                throw self.getRuntime().newArgumentError(3, callable.getParameterTypes().length);
+            }
         }
         return callable;
     }
@@ -101,6 +121,10 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
                 raiseNoMatchingCallableError(name, self, arg0, arg1, arg2, arg3);
             }
             callable = Java.matchingCallableArityFour(self, cache, callablesForArity, arg0, arg1, arg2, arg3);
+        } else {
+            if (callable.getParameterTypes().length != 4) {
+                throw self.getRuntime().newArgumentError(4, callable.getParameterTypes().length);
+            }
         }
         return callable;
     }
