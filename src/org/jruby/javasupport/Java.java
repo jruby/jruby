@@ -1222,13 +1222,29 @@ public class Java implements Library {
         }
     }
     private static ParameterTypes findCallable(ParameterTypes[] callables, CallableAcceptor acceptor, IRubyObject... args) {
+        ParameterTypes bestCallable = null;
+        int bestScore = -1;
         for (int k = 0; k < callables.length; k++) {
             ParameterTypes callable = callables[k];
             Class<?>[] types = callable.getParameterTypes();
             
-            if (acceptor.accept(types, args)) return callable;
+            if (acceptor.accept(types, args)) {
+                int currentScore = getExactnessScore(types, args);
+                if (currentScore > bestScore) {
+                    bestCallable = callable;
+                    bestScore = currentScore;
+                }
+            }
         }
-        return null;
+        return bestCallable;
+    }
+    
+    private static int getExactnessScore(Class<?>[] types, IRubyObject[] args) {
+        int count = 0;
+        for (int i = 0; i < args.length; i++) {
+            if (!types[i].equals(argClass(args[i]))) count++;
+        }
+        return count;
     }
     private static RaiseException argTypesDoNotMatch(Ruby runtime, IRubyObject receiver, ParameterTypes[] methods, IRubyObject... args) {
         Object o1 = methods[0];
