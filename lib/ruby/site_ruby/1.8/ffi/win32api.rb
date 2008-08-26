@@ -2,7 +2,7 @@ require 'ffi'
 
 module Win32
   
-  class API
+  class API < Module
     CONVENTION = JRuby::FFI::Platform::IS_WINDOWS ? :stdcall : :default
     SUFFIXES = $KCODE == 'UTF8' ? [ '', 'W', 'A' ] : [ '', 'A', 'W' ]
     TypeDefs = {
@@ -27,23 +27,23 @@ module Win32
       end
       types
     end
-    def self.create_invoker(lib, func, params, ret, convention)
+    def initialize(func, params, ret='L', lib='kernel32')
+      #
+      # Attach the method as 'call', so it gets all the froody arity-splitting optimizations
+      # 
+      extend JRuby::FFI::Library
+      ffi_lib lib
+      ffi_convention CONVENTION      
+      attached = false
       SUFFIXES.each { |suffix|
         begin
-          return JRuby::FFI.create_invoker(lib, func.to_s + suffix, params, ret, convention)
+          attach_function(func.to_s + suffix, "call", API.map_types(params), API.map_types(ret)[0])
+          attached = true
+          break
         rescue FFI::NotFoundError => ex
         end
       }
-      raise FFI::NotFoundError, "Could not locate #{func}"
-    end
-    def initialize(func, params, ret='L', lib='kernel32')
-      @invoker = invoker = API.create_invoker(lib, func.to_s, API.map_types(params),
-        API.map_types(ret)[0], CONVENTION)
-      #
-      # Attach the method as 'call', so it gets all the froody arity-splitting optimizations
-      #
-      mod = Module.new do invoker.attach(self, "call") end
-      extend mod
+      raise FFI::NotFoundError, "Could not locate #{func}" if !attached
     end
   end
 end
