@@ -61,14 +61,14 @@ public final class CallSpecialArgNode extends CallNode {
             RubyArray nodes = (RubyArray) arg;
             
             switch (nodes.size()) {
-/*                case 0:
+                case 0:
                     return callAdapter.call(context, receiver);
                 case 1:
                     return callAdapter.call(context, receiver, nodes.eltInternal(0));
                 case 2:
                     return callAdapter.call(context, receiver, nodes.eltInternal(0), nodes.eltInternal(1));
                 case 3:
-                    return callAdapter.call(context, receiver, nodes.eltInternal(0), nodes.eltInternal(1), nodes.eltInternal(2));*/
+                    return callAdapter.call(context, receiver, nodes.eltInternal(0), nodes.eltInternal(1), nodes.eltInternal(2));
                 default:
                     return callAdapter.call(context, receiver, nodes.toJavaArrayMaybeUnsafe());
             }
