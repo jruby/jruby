@@ -1012,6 +1012,7 @@
     <include name=".project"/>
     <include name=".classpath"/>
     <include name="default.build.properties"/>
+    <include name="jruby.bnd.template"/>
     <exclude name="lib/jruby.jar"/>
   </patternset>
 
