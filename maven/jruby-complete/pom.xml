@@ -90,90 +90,7 @@
   </dependencies>
 
   <build>
-    <sourceDirectory>${project.basedir}/../../src</sourceDirectory>
-    <testSourceDirectory>${project.basedir}/../../test</testSourceDirectory>
     <plugins>
-      <plugin>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>generate-resources</phase>
-            <goals>
-              <goal>unpack</goal>
-            </goals>
-            <configuration>
-              <artifactItems>
-                <artifactItem>
-                  <groupId>asm</groupId>
-                  <artifactId>asm</artifactId>
-                  <version>3.0</version>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>asm</groupId>
-                  <artifactId>asm-commons</artifactId>
-                  <version>3.0</version>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>asm</groupId>
-                  <artifactId>asm-util</artifactId>
-                  <version>3.0</version>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>asm</groupId>
-                  <artifactId>asm-analysis</artifactId>
-                  <version>3.0</version>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>asm</groupId>
-                  <artifactId>asm-tree</artifactId>
-                  <version>3.0</version>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>biz.aQute</groupId>
-                  <artifactId>bndlib</artifactId>
-                  <version>0.0.249</version>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>jline</groupId>
-                  <artifactId>jline</artifactId>
-                  <version>0.9.93</version>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>org.jruby.joni</groupId>
-                  <artifactId>joni</artifactId>
-                  <version>1.0.3</version>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>joda-time</groupId>
-                  <artifactId>joda-time</artifactId>
-                  <version>1.5.1</version>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>org.jruby.extras</groupId>
-                  <artifactId>jna</artifactId>
-                  <version>3.0.2</version>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>org.jruby.ext.posix</groupId>
-                  <artifactId>jna-posix</artifactId>
-                  <version>0.7</version>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>org.jruby.extras</groupId>
-                  <artifactId>jvyamlb</artifactId>
-                  <version>0.2.3</version>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>org.jruby.extras</groupId>
-                  <artifactId>bytelist</artifactId>
-                  <version>0.1</version>
-                </artifactItem>
-              </artifactItems>
-              <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
@@ -196,29 +113,16 @@
         <executions>
           <execution>
             <id>copy-jar</id>
-            <phase>process-classes</phase>
+            <phase>package</phase>
             <goals><goal>run</goal></goals>
             <configuration>
               <tasks>
-<echo message="whoo"/>
-		<copy file="${project.basedir}/../../lib/jruby-complete.jar"  tofile="${project.build.directory}/${project.build.finalName}.jar"/>
+                <echo>copy ${project.basedir}/../../lib/jruby-complete.jar to ${project.build.directory}/${project.build.finalName}.jar</echo>
+                <copy overwrite="true" file="${project.basedir}/../../lib/jruby-complete.jar" tofile="${project.build.directory}/${project.build.finalName}.jar"/>
               </tasks>
             </configuration>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <includes>
-            <!-- <include>org/jruby/test/MainTestSuite.java</include> -->
-            <!-- <include>org/jruby/test/ScriptTestSuite.java</include>  -->
-            <!-- <include>org/jruby/test/TestUnitTestSuite.java</include> -->
-          </includes>
-          <excludes>
-            <exclude>**/*.java</exclude>
-          </excludes>
-        </configuration>
       </plugin>
     </plugins>
   </build>
