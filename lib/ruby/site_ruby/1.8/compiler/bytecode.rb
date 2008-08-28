@@ -25,11 +25,11 @@ module Compiler
       
       case const_name
       when "ALOAD", "ASTORE",
-          "BISTORE", "BILOAD",
           "ISTORE", "ILOAD",
           "LSTORE", "LLOAD",
           "FSTORE", "FLOAD",
-          "DSTORE", "DLOAD"
+          "DSTORE", "DLOAD",
+          "RET"
         # variable instructions
         eval "
             def #{const_down}(var)
@@ -74,16 +74,20 @@ module Compiler
       when "DUP", "SWAP", "POP", "POP2", "DUP_X1", "DUP_X2", "DUP2", "DUP2_X1", "DUP2_X2",
           "NOP",
           "ARRAYLENGTH",
-          "ARETURN", "ATHROW", "ACONST_NULL", "AALOAD",
+          "ARETURN", "ATHROW", "ACONST_NULL", "AALOAD", "AASTORE",
           "BALOAD", "BASTORE",
+          "CALOAD", "CASTORE",
+          "SALOAD", "SASTORE",
           "ICONST_M1", "ICONST_0", "ICONST_1", "ICONST_2", "ICONST_3", "ICONST_4", "ICONST_5", "IRETURN", "IALOAD",
-          "IADD", "IINC", "ISUB", "IDIV", "IMUL", "INEG", "IAND", "IOR", "IXOR",
-          "LCONST_0", "LCONST_1", "LRETURN", "LALOAD",
-          "LADD", "LINC", "LSUB", "LDIV", "LMUL", "LNEG", "LAND", "LOR", "LXOR",
-          "FCONST_0", "FCONST_1", "FCONST_2", "FRETURN", "FALOAD",
-          "FADD", "FINC", "FSUB", "FDIV", "FMUL", "FNEG",
-          "DCONST_0", "DCONST_1", "DRETURN", "DALOAD",
-          "DADD", "DINC", "DSUB", "DDIV", "DMUL", "DNEG"
+          "IADD", "IINC", "ISUB", "IDIV", "IMUL", "INEG", "IAND", "IOR", "IXOR", "IASTORE",
+          "IUSHR", "ISHL", "ISHR", "I2L", "I2S", "I2F", "I2D", "I2B", "IREM", "I2C",
+          "LCONST_0", "LCONST_1", "LRETURN", "LALOAD", "LASTORE", "LCMP", "LSHL", "LSHR", "LREM", "LUSHR",
+          "LADD", "LINC", "LSUB", "LDIV", "LMUL", "LNEG", "LAND", "LOR", "LXOR", "L2I", "L2F", "L2D",
+          "FCONST_0", "FCONST_1", "FCONST_2", "FRETURN", "FALOAD", "F2D", "F2I", "FASTORE",
+          "FADD", "FSUB", "FDIV", "FMUL", "FNEG", "FREM", "FCMPG", "F2L", "FCMPL",
+          "DCONST_0", "DCONST_1", "DRETURN", "DALOAD", "DASTORE", "D2I", "D2F", "D2L",
+          "DADD", "DINC", "DSUB", "DDIV", "DMUL", "DNEG", "DCMPL", "DCMPG", "DREM",
+          "MONITORENTER", "MONITOREXIT"
         # bare instructions
         eval "
             def #{const_down}
@@ -108,11 +112,20 @@ module Compiler
           ", b, __FILE__, __LINE__
           
       when "GOTO", "IFEQ", "IFNE", "IF_ACMPEQ", "IF_ACMPNE", "IF_ICMPEQ", "IF_ICMPNE", "IF_ICMPLT",
-          "IF_ICMPGT", "IF_ICMPLE", "IF_ICMPGE", "IFNULL", "IFNONNULL"
+          "IF_ICMPGT", "IF_ICMPLE", "IF_ICMPGE", "IFNULL", "IFNONNULL", "JSR",
+          "IFLE", "IFGE", "IFLT", "IFGT"
         # jump instructions
         eval "
             def #{const_down}(target)
               method_visitor.visit_jump_insn(Opcodes::#{const_name}, target.label)
+            end
+          ", b, __FILE__, __LINE__
+          
+      when "MULTIANEWARRAY"
+        # multi-dim array
+        eval "
+            def #{const_down}(type, dims)
+              method_visitor.visit_multi_anew_array_insn(ci(type), dims)
             end
           ", b, __FILE__, __LINE__
           
@@ -125,6 +138,20 @@ module Compiler
         def tableswitch(min, max, default, cases)
           method_visitor.visit_table_switch_insn(min, max, default, cases)
         end
+
+      when "F_FULL", "ACC_ENUM", "ACC_SYNTHETIC", "ACC_INTERFACE", "ACC_PUBLIC",
+          "ACC_PRIVATE", "ACC_PROTECTED", "ACC_DEPRECATED", "ACC_BRIDGE",
+          "ACC_VARARGS", "ACC_SUPER", "F_CHOP", "F_APPEND", "FLOAT", "F_SAME",
+          "T_LONG", "INTEGER", "T_BYTE", "ACC_STATIC", "ACC_SYNCHRONIZED",
+          "T_BOOLEAN", "ACC_ANNOTATION", "ACC_ABSTRACT", "LONG", "ACC_TRANSIENT",
+          "T_DOUBLE", "DOUBLE", "ACC_STRICT", "NULL", "T_FLOAT", "ACC_FINAL",
+          "F_SAME1", "ACC_NATIVE", "F_NEW", "T_CHAR", "T_INT", "ACC_VOLATILE",
+          "V1_6", "V1_5", "V1_4", "V1_3", "V1_2", "V1_1", "UNINITIALIZED_THIS",
+          "TOP", "T_SHORT"
+        # non-instructions
+
+      else
+        raise "Unknown opcode: " + const_name
         
       end
     end
