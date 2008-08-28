@@ -5,9 +5,14 @@ module Compiler
   # JVM assembly code. Included classes must just provide a method_visitor accessor
   module Bytecode
     include Signature
-    
-    import "jruby.objectweb.asm.Opcodes"
-    import "jruby.objectweb.asm.Label"
+
+    begin
+      import "jruby.objectweb.asm.Opcodes"
+      import "jruby.objectweb.asm.Label"
+    rescue Exception
+      import "org.objectweb.asm.Opcodes"
+      import "org.objectweb.asm.Label"
+    end
   
     import java.lang.Object
     import java.lang.System
@@ -44,6 +49,13 @@ module Compiler
               method_visitor.visit_ldc_insn(value)
             end
           ", b, __FILE__, __LINE__
+
+      when "BIPUSH", "SIPUSH"
+        eval "
+            def #{const_down}(value)
+              method_visitor.visit_int_insn(Opcodes::#{const_name}, value)
+            end
+        "
           
       when "INVOKESTATIC", "INVOKEVIRTUAL", "INVOKEINTERFACE", "INVOKESPECIAL"
         # method instructions
@@ -64,7 +76,7 @@ module Compiler
           "ARRAYLENGTH",
           "ARETURN", "ATHROW", "ACONST_NULL", "AALOAD",
           "BALOAD", "BASTORE",
-          "ICONST_0", "ICONST_1", "ICONST_2", "ICONST_3", "IRETURN", "IALOAD",
+          "ICONST_M1", "ICONST_0", "ICONST_1", "ICONST_2", "ICONST_3", "ICONST_4", "ICONST_5", "IRETURN", "IALOAD",
           "IADD", "IINC", "ISUB", "IDIV", "IMUL", "INEG", "IAND", "IOR", "IXOR",
           "LCONST_0", "LCONST_1", "LRETURN", "LALOAD",
           "LADD", "LINC", "LSUB", "LDIV", "LMUL", "LNEG", "LAND", "LOR", "LXOR",
@@ -161,6 +173,33 @@ module Compiler
     
     def line(num)
       method_visitor.visit_line_number num, Label.new
+    end
+
+    def push_int(num)
+      if (num <= Java::java.lang.Byte::MAX_VALUE && num >= Java::java.lang.Byte::MIN_VALUE)
+        case num
+        when -1
+          iconst_m1
+        when 0
+          iconst_0
+        when 1
+          iconst_1
+        when 2
+          iconst_2
+        when 3
+          iconst_3
+        when 4
+          iconst_4
+        when 5
+          iconst_5
+        else
+          bipush(num)
+        end
+      elsif (num <= Java::java.lang.Short::MAX_VALUE && num >= Java::java.lang.Short::MIN_VALUE)
+        sipush(num)
+      else
+        ldc(num)
+      end
     end
   end
 end

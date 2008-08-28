@@ -5,12 +5,12 @@ module Duby
   module Compiler
     class C
       class MathCompiler
-        def call(compiler, name, recv, args)
-          recv.compile(compiler)
+        def call(compiler, call)
+          call.target.compile(compiler)
 
-          compiler.src << " #{name} "
+          compiler.src << " #{call.name} "
 
-          args.each {|arg| arg.compile(compiler)}
+          call.parameters.each {|param| param.compile(compiler)}
         end
       end
       
@@ -28,58 +28,70 @@ module Duby
       def compile(ast)
         ast.compile(self)
       end
+
+      def define_main(body)
+        old_src, @src = @src, "int main(int argc, char **argv)\n{\n"
+
+        body.compile(self)
+
+        @src << "}\n\n"
+
+        @src = old_src + @src
+      end
       
       def define_method(name, signature, args, body)
-        @src << "#{type_mapper[signature[:return]]} #{name}("
+        old_src, @src =  @src, "#{type_mapper[signature[:return]]} #{name}("
         
         args.compile(self)
         
-        @src << ") {"
+        @src << ")\n{\n"
         
         body.compile(self)
         
-        @src << "}\n\n"
+        @src << "\n}\n\n"
+
+        @src = old_src + @src
       end
       
       def declare_argument(name, type)
         @src << "#{type_mapper[type]} #{name}"
       end
       
-      def branch(condition, body, els)
+      def branch(iff)
         @src << "if ("
         
-        condition.compile(self)
+        iff.condition.compile(self)
         
         @src << ") {"
         
-        body.compile(self)
+        iff.body.compile(self)
         
-        if els
+        if iff.else
           @src << "} else {"
           
-          els.compile(self)
+          iff.else.compile(self)
         end
         
         @src << "}"
       end
       
-      def call(name, recv, args)
-        call_compilers[recv.inferred_type].call(self, name, recv, args)
+      def call(call)
+        call_compilers[call.target.inferred_type].call(self, call)
       end
       
       def call_compilers
         @call_compilers ||= {}
       end
       
-      def self_call(name, args)
-        @src << "#{name}("
+      def self_call(fcall)
+        @src << "#{fcall.name}("
         
-        args.each {|arg| arg.compile(self)}
+        fcall.parameters.each {|param| param.compile(self)}
         
         @src << ")"
       end
       
-      def local(name)
+      def local(name, type)
         @src << name
       end
       

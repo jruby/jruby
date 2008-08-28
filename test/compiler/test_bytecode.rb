@@ -3,8 +3,13 @@ require 'compiler/bytecode'
 
 class TestBytecode < Test::Unit::TestCase
   include Compiler::Bytecode
+
+  begin
+    import "jruby.objectweb.asm.Opcodes"
+  rescue
+    import "org.objectweb.asm.Opcodes"
+  end
   
-  import "jruby.objectweb.asm.Opcodes"
   import java.lang.System
   import java.lang.Integer
   import java.lang.Void
@@ -43,6 +48,26 @@ class TestBytecode < Test::Unit::TestCase
     assert_equal([:visit_ldc_insn, "a"], (ldc :a))
     assert_equal([:visit_ldc_insn, "a"], (ldc "a"))
     assert_equal([:visit_ldc_insn, java.lang.Integer.new(1)], (ldc_int 1))
+  end
+
+  def test_int_insns
+    assert_equal([:visit_int_insn, Opcodes::BIPUSH, 1], (bipush 1))
+    assert_equal([:visit_int_insn, Opcodes::SIPUSH, 1], (sipush 1))
+
+    assert_equal([:visit_int_insn, Opcodes::BIPUSH, -2], (push_int(-2)))
+    assert_equal([:visit_insn, Opcodes::ICONST_M1], (push_int(-1)))
+    assert_equal([:visit_insn, Opcodes::ICONST_0], (push_int(0)))
+    assert_equal([:visit_insn, Opcodes::ICONST_1], (push_int(1)))
+    assert_equal([:visit_insn, Opcodes::ICONST_2], (push_int(2)))
+    assert_equal([:visit_insn, Opcodes::ICONST_3], (push_int(3)))
+    assert_equal([:visit_insn, Opcodes::ICONST_4], (push_int(4)))
+    assert_equal([:visit_insn, Opcodes::ICONST_5], (push_int(5)))
+    assert_equal([:visit_int_insn, Opcodes::BIPUSH, 6], (push_int(6)))
+
+    assert_equal([:visit_int_insn, Opcodes::SIPUSH, -129], (push_int(-129)))
+    assert_equal([:visit_int_insn, Opcodes::SIPUSH, 128], (push_int(128)))
+    assert_equal([:visit_ldc_insn, -65537], (push_int(-65537)))
+    assert_equal([:visit_ldc_insn, 65536], (push_int(65536)))
   end
   
   def test_method_insns
