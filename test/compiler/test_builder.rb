@@ -1,5 +1,5 @@
 require 'test/unit'
-require 'compiler/builder'
+require 'compiler/builder2'
 require 'compiler/signature'
 
 class TestBuilder < Test::Unit::TestCase
@@ -66,6 +66,6 @@ class TestBuilder < Test::Unit::TestCase
       end
     end
     
-    File.open("MyClass.class", "w") {|file| file.write(class_bytes)}
+    assert class_bytes
   end
 end

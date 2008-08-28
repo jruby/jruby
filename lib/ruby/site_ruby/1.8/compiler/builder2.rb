@@ -3,9 +3,14 @@ require 'compiler/signature'
 
 module Compiler
   class ClassBuilder
-    import "jruby.objectweb.asm.Opcodes"
-    import "jruby.objectweb.asm.ClassWriter"
-    include Opcodes
+    begin
+      import "jruby.objectweb.asm.Opcodes"
+      import "jruby.objectweb.asm.ClassWriter"
+    rescue
+      import "org.objectweb.asm.Opcodes"
+      import "org.objectweb.asm.ClassWriter"
+    end
+    
     import java.lang.Object
     import java.lang.Void
     include Signature
@@ -18,7 +23,7 @@ module Compiler
       
       interface_paths = []
       interfaces.each {|interface| interface_paths << path(interface)}
-      @class_writer.visit(V1_4, ACC_PUBLIC | ACC_SUPER, class_name, nil, path(superclass), interface_paths.to_java(:string))
+      @class_writer.visit(Opcodes::V1_4, Opcodes::ACC_PUBLIC | Opcodes::ACC_SUPER, class_name, nil, path(superclass), interface_paths.to_java(:string))
       @class_writer.visit_source(file_name, nil)
     end
     
@@ -33,21 +38,21 @@ module Compiler
     end
     
     def field(name, type)
-      @class_writer.visitField(ACC_PUBLIC, name.to_s, ci(type), nil, nil)
+      @class_writer.visitField(Opcodes::ACC_PUBLIC, name.to_s, ci(type), nil, nil)
     end
     
     def constructor(*signature, &block)
       signature.unshift Void::TYPE
       
-      MethodBuilder.build(self, ACC_PUBLIC, "<init>", signature, &block)
+      MethodBuilder.build(self, Opcodes::ACC_PUBLIC, "<init>", signature, &block)
     end
     
     def method(name, *signature, &block)
-      MethodBuilder.build(self, ACC_PUBLIC, name.to_s, signature, &block)
+      MethodBuilder.build(self, Opcodes::ACC_PUBLIC, name.to_s, signature, &block)
     end
     
     def static_method(name, *signature, &block)
-      MethodBuilder.build(self, ACC_PUBLIC | ACC_STATIC, name.to_s, signature, &block)
+      MethodBuilder.build(self, Opcodes::ACC_PUBLIC | Opcodes::ACC_STATIC, name.to_s, signature, &block)
     end
     
     # name for signature generation using the class being generated

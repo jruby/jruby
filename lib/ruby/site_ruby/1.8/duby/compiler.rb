@@ -34,13 +34,13 @@ module Duby
     
     class Local
       def compile(compiler)
-        compiler.local(name)
+        compiler.local(name, inferred_type)
       end
     end
     
     class LocalAssignment
       def compile(compiler)
-        compiler.local_assign(name) {
+        compiler.local_assign(name, inferred_type) {
           value.compile(compiler)
         }
       end
@@ -48,7 +48,7 @@ module Duby
     
     class Script
       def compile(compiler)
-        body.compile(compiler)
+        compiler.define_main(body)
       end
     end
     
@@ -72,7 +72,7 @@ module Duby
     
     class If
       def compile(compiler)
-        compiler.branch(condition, body, self.else)
+        compiler.branch(self)
       end
     end
     
@@ -84,13 +84,13 @@ module Duby
     
     class FunctionalCall
       def compile(compiler)
-        compiler.self_call(name, parameters)
+        compiler.self_call(self)
       end
     end
     
     class Call
       def compile(compiler)
-        compiler.call(name, target, parameters)
+        compiler.call(self)
       end
     end
   end

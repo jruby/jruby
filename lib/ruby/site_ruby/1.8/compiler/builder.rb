@@ -110,10 +110,15 @@ module Compiler
   class ClassBuilder
     include Util
     include TypeNamespace
+
+    begin
+      import "jruby.objectweb.asm.Opcodes"
+      import "jruby.objectweb.asm.ClassWriter"
+    rescue
+      import "org.objectweb.asm.Opcodes"
+      import "org.objectweb.asm.ClassWriter"
+    end
     
-    import "jruby.objectweb.asm.Opcodes"
-    import "jruby.objectweb.asm.ClassWriter"
-    include Opcodes
     import java.lang.Object
     import java.lang.Void
     include Signature
@@ -135,7 +140,7 @@ module Compiler
       
       interface_paths = []
       interfaces.each {|interface| interface_paths << path(interface)}
-      @class_writer.visit(V1_4, ACC_PUBLIC | ACC_SUPER, class_name, nil, path(superclass), interface_paths.to_java(:string))
+      @class_writer.visit(Opcodes::V1_4, Opcodes::ACC_PUBLIC | Opcodes::ACC_SUPER, class_name, nil, path(superclass), interface_paths.to_java(:string))
       @class_writer.visit_source(file_name, nil)
       
       @constructor = nil
@@ -158,7 +163,7 @@ module Compiler
       if @constructor
         @constructor.generate_constructor(@superclass)
       else
-        method = MethodBuilder.new(self, ACC_PUBLIC, "<init>", [])
+        method = MethodBuilder.new(self, Opcodes::ACC_PUBLIC, "<init>", [])
         method.start
         method.aload 0
         method.invokespecial @superclass, "<init>", Void::TYPE
@@ -176,7 +181,7 @@ module Compiler
       
       # generate fields
       @fields.each do |name, field|
-        @class_writer.visit_field(ACC_PROTECTED, field.name, class_id(field.type), nil, nil)
+        @class_writer.visit_field(Opcodes::ACC_PROTECTED, field.name, class_id(field.type), nil, nil)
       end
       
       String.from_java_bytes(@class_writer.to_byte_array)
@@ -218,20 +223,30 @@ module Compiler
         raise "Overloading not yet supported"
       end
 
-      mb = MethodBuilder.new(self, ACC_PUBLIC, name, signature)
+      mb = MethodBuilder.new(self, Opcodes::ACC_PUBLIC, name, signature)
       deferred_builder = DeferredMethodBuilder.new(name, mb, signature, block)
       if name == "<init>"
         @constructor = deferred_builder
       else
         @instance_methods[name] = deferred_builder
       end
+
+      mb
     end
     
     # New version does not instance_eval, to allow for easier embedding
     def static_method(name, *signature, &block)
-      mb = MethodBuilder.new(self, ACC_PUBLIC | ACC_STATIC, name, signature)
-      deferred_builder = DeferredMethodBuilder.new(name, mb, signature, block)
-      @static_methods[name] = deferred_builder
+      mb = MethodBuilder.new(self, Opcodes::ACC_PUBLIC | Opcodes::ACC_STATIC, name, signature)
+#      deferred_builder = DeferredMethodBuilder.new(name, mb, signature, block)
+#      @static_methods[name] = deferred_builder
+
+      if block
+        mb.start
+        block.yield(mb)
+        mb.stop
+      else
+        mb
+      end
     end
     
     # name for signature generation using the class being generated
@@ -318,8 +333,12 @@ module Compiler
   end
   
   class MethodBuilder
-    import "jruby.objectweb.asm.Opcodes"
-    include Opcodes
+    begin
+      import "jruby.objectweb.asm.Opcodes"
+    rescue
+      import "org.objectweb.asm.Opcodes"
+    end
+    
     include Compiler::Bytecode
     
     attr_reader :method_visitor
@@ -335,7 +354,7 @@ module Compiler
       
       @locals = {}
       
-      @static = (modifiers & ACC_STATIC) != 0
+      @static = (modifiers & Opcodes::ACC_STATIC) != 0
       
       @locals['this'] = TypedVariable.new("this", @class_builder, 0) unless @static
     end

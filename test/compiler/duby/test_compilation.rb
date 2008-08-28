@@ -63,7 +63,7 @@ class TestAst < Test::Unit::TestCase
     
     new_ast.compile(@compiler)
     
-    assert_equal([[:local_assign, nil, "a"], [:fixnum, 1], [:local, nil, "a"]], @compiler.calls)
+    assert_equal([[:local_assign, "a", nil], [:fixnum, 1], [:local, "a", nil]], @compiler.calls)
   end
   
   def test_local_typed
@@ -72,7 +72,7 @@ class TestAst < Test::Unit::TestCase
     new_ast.infer(typer)
     new_ast.compile(@compiler)
     
-    assert_equal([[:local_assign, AST.type(:fixnum), "a"], [:fixnum, 1], [:local, AST.type(:fixnum), "a"]], @compiler.calls)
+    assert_equal([[:local_assign, "a", AST.type(:fixnum)], [:fixnum, 1], [:local, "a", AST.type(:fixnum)]], @compiler.calls)
   end
 =begin
   def test_args
