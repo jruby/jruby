@@ -30,6 +30,18 @@ describe "JRuby-wrapped Java Objects" do
     end
   end
   
+  it "should expose public-visible fields" do
+    lambda {
+      PublicField.new.strField.should == "1767"
+    }.should_not raise_error
+
+    year = java.util.Date.new.year
+
+    lambda {
+      PublicField.new.dateField.year.should == year
+    }.should_not raise_error
+  end
+
   it "should expose package-visible fields" do
     lambda {
       PackageField.new.strField.should == "1766"
@@ -40,5 +52,5 @@ describe "JRuby-wrapped Java Objects" do
         PackageField.new.strField = "foo"
       }.should_not raise_error
     end
-  end    
+  end
 end

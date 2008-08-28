@@ -1,15 +1,16 @@
 require 'duby'
+require 'duby/compiler'
 
 module Duby
   module Compiler
     class C
       class MathCompiler
         def call(compiler, name, recv, args)
-          recv.call
+          recv.compile(compiler)
 
           compiler.src << " #{name} "
 
-          args.call
+          args.each {|arg| arg.compile(compiler)}
         end
       end
       
@@ -25,17 +26,17 @@ module Duby
       end
 
       def compile(ast)
-        ast.compile(this)
+        ast.compile(self)
       end
       
       def define_method(name, signature, args, body)
         @src << "#{type_mapper[signature[:return]]} #{name}("
         
-        args.call
+        args.compile(self)
         
         @src << ") {"
         
-        body.call
+        body.compile(self)
         
         @src << "}\n\n"
       end
@@ -44,26 +45,26 @@ module Duby
         @src << "#{type_mapper[type]} #{name}"
       end
       
-      def branch(condition, body_proc, else_proc)
+      def branch(condition, body, els)
         @src << "if ("
         
-        condition.call
+        condition.compile(self)
         
         @src << ") {"
         
-        body_proc.call
+        body.compile(self)
         
-        if else_proc
+        if els
           @src << "} else {"
           
-          else_proc.call
+          els.compile(self)
         end
         
         @src << "}"
       end
       
-      def call(name, recv_type, recv, args)
-        call_compilers[recv_type].call(self, name, recv, args)
+      def call(name, recv, args)
+        call_compilers[recv.inferred_type].call(self, name, recv, args)
       end
       
       def call_compilers
@@ -73,7 +74,7 @@ module Duby
       def self_call(name, args)
         @src << "#{name}("
         
-        args.call
+        args.each {|arg| arg.compile(self)}
         
         @src << ")"
       end
@@ -102,90 +103,6 @@ module Duby
       
       def type_mapper
         @type_mapper ||= {}
-      end
-    end
-  end
-  
-  module AST
-    class Script
-      def compile(compiler)
-        # preparations for the .c file would go here
-        body.compile(compiler)
-      end
-    end
-    
-    class Body
-      def compile(compiler)
-        last = children[-1]
-        children.each do |child|
-          child.compile(compiler)
-          compiler.newline
-        end
-      end
-    end
-    
-    class MethodDefinition
-      def compile(compiler)
-        args_callback = proc {arguments.compile(compiler)}
-        body_callback = proc {body.compile(compiler)}
-        compiler.define_method(name, signature, args_callback, body_callback)
-      end
-    end
-    
-    class Arguments
-      def compile(compiler)
-        args.each {|arg| compiler.declare_argument(arg.name, arg.inferred_type)} if args
-      end
-    end
-    
-    class Noop
-      def compile(compiler)
-        # nothing
-      end
-    end
-    
-    class Fixnum
-      def compile(compiler)
-        compiler.fixnum(literal)
-      end
-    end
-    
-    class If
-      def compile(compiler)
-        cond_callback = proc { condition.compile(compiler) }
-        body_callback = proc { body.compile(compiler) }
-        else_callback = proc { self.else.compile(compiler)}
-        
-        compiler.branch(cond_callback, body_callback, else_callback)
-      end
-    end
-    
-    class Condition
-      def compile(compiler)
-        predicate.compile(compiler)
-      end
-    end
-    
-    class FunctionalCall
-      def compile(compiler)
-        args_callback = proc { parameters.each {|param| param.compile(compiler)}}
-        
-        compiler.self_call(name, args_callback)
-      end
-    end
-    
-    class Call
-      def compile(compiler)
-        recv_callback = proc { target.compile(compiler) }
-        args_callback = proc { parameters.each {|param| param.compile(compiler)}}
-        
-        compiler.call(name, target.inferred_type, recv_callback, args_callback)
-      end
-    end
-    
-    class Local
-      def compile(compiler)
-        compiler.local(name)
       end
     end
   end

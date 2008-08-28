@@ -124,7 +124,7 @@ public class JavaField extends JavaAccessibleObject {
     public IRubyObject value(IRubyObject object) {
         Object javaObject = JavaUtil.unwrapJavaValue(getRuntime(), object, "not a java object");
         try {
-            return JavaUtil.convertJavaToRuby(getRuntime(), field.get(javaObject), field.getType());
+            return JavaUtil.convertJavaToUsableRubyObject(getRuntime(), field.get(javaObject));
         } catch (IllegalAccessException iae) {
             throw getRuntime().newTypeError("illegal access");
         }
