@@ -29,6 +29,7 @@
 package org.jruby.ext.ffi.jna;
 
 import com.sun.jna.CallbackProxy;
+import com.sun.jna.Function;
 import com.sun.jna.Pointer;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
@@ -51,9 +52,11 @@ final class CallbackMarshaller implements Marshaller {
     private final Callback callback;
     private final Class[] paramTypes;
     private final Class returnType;
-
-    public CallbackMarshaller(Callback cb) {
+    private final int convention;
+    
+    public CallbackMarshaller(Callback cb, int convention) {
         this.callback = cb;
+        this.convention = convention;
         NativeType[] nativeParams = cb.getParameterTypes();
         paramTypes = new Class[nativeParams.length];
         for (int i = 0; i < nativeParams.length; ++i) {
@@ -108,30 +111,28 @@ final class CallbackMarshaller implements Marshaller {
                 return null;
         }
     }
-
-    public final Object marshal(Invocation invocation, final IRubyObject parameter) {
-        com.sun.jna.Callback cb = callbackMap.get(parameter);
+    private final Object getCallback(Ruby runtime, Object obj) {
+        com.sun.jna.Callback cb = callbackMap.get(obj);
         if (cb != null) {
             return cb;
         }
-        cb = new ProcCallback(parameter.getRuntime(), parameter);
-        callbackMap.put(parameter, cb);
+        cb = (convention == Function.ALT_CONVENTION)
+                ? new StdcallCallback(runtime, obj)
+                : new DefaultCallback(runtime, obj);
+        callbackMap.put(obj, cb);
         return cb;
+    }
+    public final Object marshal(Invocation invocation, final IRubyObject parameter) {
+        return getCallback(parameter.getRuntime(), parameter);
     }
     public final Object marshal(Ruby runtime, final Block block) {
-        com.sun.jna.Callback cb = callbackMap.get(block);
-        if (cb != null) {
-            return cb;
-        }
-        cb = new ProcCallback(runtime, block);
-        callbackMap.put(block, cb);
-        return cb;
+        return getCallback(runtime, block);
     }
-    private class ProcCallback implements CallbackProxy {
-        final WeakReference<Object> proc;
-        final Ruby runtime;
+    private class RubyCallback implements CallbackProxy {
+        private final WeakReference<Object> proc;
+        private final Ruby runtime;
 
-        ProcCallback(Ruby runtime, Object proc) {
+        RubyCallback(Ruby runtime, Object proc) {
             this.proc = new WeakReference<Object>(proc);
             this.runtime = runtime;
         }
@@ -165,6 +166,24 @@ final class CallbackMarshaller implements Marshaller {
 
         public Class getReturnType() {
             return returnType;
+        }
+    }
+    
+    /**
+     * The default callback type
+     */
+    private final class DefaultCallback extends RubyCallback {
+        DefaultCallback(Ruby runtime, Object recv) {
+            super(runtime, recv);
+        }
+    }
+
+    /**
+     * A callback for Win32 stdcall libraries
+     */
+    private final class StdcallCallback extends RubyCallback implements com.sun.jna.AltCallingConvention {
+        StdcallCallback(Ruby runtime, Object recv) {
+            super(runtime, recv);
         }
     }
     private static final Object toNative(Ruby runtime, NativeType type, IRubyObject value) {

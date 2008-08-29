@@ -55,13 +55,12 @@ public final class JNAProvider extends FFIProvider {
     @Override
     public final Invoker createInvoker(Ruby runtime, String libraryName, String functionName,
             NativeType returnType, NativeParam[] parameterTypes, String convention) {
-        
-        Function function = NativeLibrary.getInstance(libraryName).getFunction(functionName,
-                "stdcall".equals(convention) ? Function.ALT_CONVENTION : Function.C_CONVENTION);
+        int conv = "stdcall".equals(convention) ? Function.ALT_CONVENTION : Function.C_CONVENTION;
+        Function function = NativeLibrary.getInstance(libraryName).getFunction(functionName, conv);
         FunctionInvoker functionInvoker = getFunctionInvoker(returnType);
         Marshaller[] marshallers = new Marshaller[parameterTypes.length];
         for (int i = 0; i < marshallers.length; ++i) {
-            marshallers[i] = getMarshaller(parameterTypes[i]);
+            marshallers[i] = getMarshaller(parameterTypes[i], conv);
         }
 
         return new JNAInvoker(runtime, function, functionInvoker, marshallers);
@@ -129,11 +128,11 @@ public final class JNAProvider extends FFIProvider {
      * @param type The native type to convert to.
      * @return A new <tt>Marshaller</tt>
      */
-    private static final Marshaller getMarshaller(NativeParam type) {
+    private static final Marshaller getMarshaller(NativeParam type, int convention) {
         if (type instanceof NativeType) {
             return getMarshaller((NativeType) type);
         } else if (type instanceof org.jruby.ext.ffi.Callback) {
-            return new CallbackMarshaller((org.jruby.ext.ffi.Callback) type);
+            return new CallbackMarshaller((org.jruby.ext.ffi.Callback) type, convention);
         } else {
             return null;
         }        
