@@ -31,6 +31,7 @@ package org.jruby.ext.ffi;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyClass;
@@ -77,14 +78,37 @@ public abstract class FFIProvider extends RubyObject {
     public IRubyObject createInvoker(ThreadContext context, IRubyObject[] args)
     {
         RubyArray paramTypes = (RubyArray) args[3];
-        NativeType[] nativeParamTypes = new NativeType[paramTypes.size()];
+        NativeParam[] nativeParamTypes = new NativeParam[paramTypes.size()];
         for (int i = 0; i < paramTypes.size(); ++i) {
-            nativeParamTypes[i] = NativeType.valueOf(Util.int32Value((IRubyObject) paramTypes.entry(i)));
+            IRubyObject obj = (IRubyObject) paramTypes.entry(i);
+            if (obj instanceof NativeParam) {
+                nativeParamTypes[i] = (NativeParam) obj;
+            } else if (obj instanceof RubyInteger) {
+                nativeParamTypes[i] = NativeType.valueOf(Util.int32Value(obj));
+            } else {
+                context.getRuntime().newArgumentError("Invalid parameter type");
+            }
         }
         try {
             return createInvoker(context.getRuntime(), args[0].toString(), 
                     args[1].toString(), NativeType.valueOf(Util.int32Value(args[2])), 
                     nativeParamTypes, args[4].toString());
+        } catch (UnsatisfiedLinkError ex) {
+            return context.getRuntime().getNil();
+        }
+    }
+    
+    @JRubyMethod(name = { "create_callback", "createCallback" })
+    public IRubyObject createCallback(ThreadContext context, IRubyObject returnType, IRubyObject _paramTypes)
+    {
+        RubyArray paramTypes = (RubyArray) _paramTypes;
+        NativeType[] nativeParamTypes = new NativeType[paramTypes.size()];
+        for (int i = 0; i < paramTypes.size(); ++i) {
+            nativeParamTypes[i] = NativeType.valueOf(Util.int32Value((IRubyObject) paramTypes.entry(i)));
+        }
+        try {
+            return createCallback(context.getRuntime(), 
+                    NativeType.valueOf(Util.int32Value(returnType)), nativeParamTypes);
         } catch (UnsatisfiedLinkError ex) {
             return context.getRuntime().getNil();
         }
@@ -102,6 +126,7 @@ public abstract class FFIProvider extends RubyObject {
         setLastError(Util.int32Value(error));
         return context.getRuntime().getNil();
     }
+    
     /**
      * Creates a new invoker for a native function.
      * 
@@ -112,7 +137,18 @@ public abstract class FFIProvider extends RubyObject {
      * @return a new <tt>Invoker</tt> instance.
      */
     public abstract Invoker createInvoker(Ruby runtime, String libraryName, String functionName, NativeType returnType,
-            NativeType[] parameterTypes, String convention);
+            NativeParam[] parameterTypes, String convention);
+    
+    /**
+     * Creates a new Callback.
+     * 
+     * @param returnType The return type of the function.
+     * @param parameterTypes The parameter types the function takes.
+     * @return a new <tt>Invoker</tt> instance.
+     */
+    public abstract Callback createCallback(Ruby runtime, NativeType returnType,
+            NativeType[] parameterTypes);
+    
     
     /**
      * Gets the last native error code.

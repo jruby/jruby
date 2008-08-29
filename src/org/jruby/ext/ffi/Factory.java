@@ -108,6 +108,9 @@ public abstract class Factory {
             if (module.fastGetClass(AbstractBuffer.ABSTRACT_BUFFER_RUBY_CLASS) == null) {
                 AbstractBuffer.createBufferClass(runtime);
             }
+            if (module.fastGetClass(Callback.CLASS_NAME) == null) {
+                Callback.createCallbackClass(runtime);
+            }
             if (module.fastGetClass(StructLayout.CLASS_NAME) == null) {
                 StructLayout.createStructLayoutClass(runtime);
             }
@@ -119,6 +122,7 @@ public abstract class Factory {
             }
             FFIProvider provider = newProvider(runtime);
             module.defineConstant("InvokerFactory", provider);
+            module.defineConstant("CallbackFactory", provider);
             module.defineConstant("LastError", provider);
             RubyModule nativeType = module.defineModuleUnder("NativeType");
             for (NativeType type : NativeType.values()) {

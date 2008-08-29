@@ -28,6 +28,7 @@
 
 package org.jruby.ext.ffi.jna;
 
+import com.sun.jna.CallbackProxy;
 import org.jruby.ext.ffi.*;
 import com.sun.jna.Function;
 import com.sun.jna.Memory;
@@ -36,7 +37,9 @@ import com.sun.jna.NativeLibrary;
 import com.sun.jna.Pointer;
 import java.nio.ByteBuffer;
 import org.jruby.Ruby;
+import org.jruby.RubyProc;
 import org.jruby.RubyString;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
@@ -51,7 +54,7 @@ public final class JNAProvider extends FFIProvider {
     
     @Override
     public final Invoker createInvoker(Ruby runtime, String libraryName, String functionName,
-            NativeType returnType, NativeType[] parameterTypes, String convention) {
+            NativeType returnType, NativeParam[] parameterTypes, String convention) {
         
         Function function = NativeLibrary.getInstance(libraryName).getFunction(functionName,
                 "stdcall".equals(convention) ? Function.ALT_CONVENTION : Function.C_CONVENTION);
@@ -62,6 +65,12 @@ public final class JNAProvider extends FFIProvider {
         }
 
         return new JNAInvoker(runtime, function, functionInvoker, marshallers);
+    }
+
+    @Override
+    public Callback createCallback(Ruby runtime, NativeType returnType,
+            NativeType[] parameterTypes) {
+        return new Callback(runtime, returnType, parameterTypes);
     }
     
     public int getLastError() {
@@ -114,7 +123,21 @@ public final class JNAProvider extends FFIProvider {
                 throw new IllegalArgumentException("Invalid return type: " + returnType);
         }
     }
-    
+    /**
+     * Gets a marshaller to convert from a ruby type to a native type.
+     * 
+     * @param type The native type to convert to.
+     * @return A new <tt>Marshaller</tt>
+     */
+    private static final Marshaller getMarshaller(NativeParam type) {
+        if (type instanceof NativeType) {
+            return getMarshaller((NativeType) type);
+        } else if (type instanceof org.jruby.ext.ffi.Callback) {
+            return new CallbackMarshaller((org.jruby.ext.ffi.Callback) type);
+        } else {
+            return null;
+        }        
+    }
     /**
      * Gets a marshaller to convert from a ruby type to a native type.
      * 
@@ -193,9 +216,8 @@ public final class JNAProvider extends FFIProvider {
      * Returns a Fixnum to ruby.
      */
     private static final class Unsigned32Invoker implements FunctionInvoker {
-        public final IRubyObject invoke(Ruby runtime, Function function, Object[] args) {   
-            long value = function.invokeInt(args);
-            return runtime.newFixnum(value < 0 ? (long)((value & 0x7FFFFFFFL) + 0x80000000L) : value);
+        public final IRubyObject invoke(Ruby runtime, Function function, Object[] args) {
+            return Util.newUnsigned32(runtime, function.invokeInt(args));
         }
         public static final FunctionInvoker INSTANCE = new Unsigned32Invoker();
     }

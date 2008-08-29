@@ -29,44 +29,9 @@
 package org.jruby.ext.ffi;
 
 /**
- * Native types
+ * This is just a marker interface to allow both NativeType and Callback to be
+ * used as parameter types.
  */
-public enum NativeType implements NativeParam {
-    VOID,
-    INT8,
-    UINT8,
-    INT16,
-    UINT16,
-    INT32,
-    UINT32,
-    INT64,
-    UINT64,
-    /** A C long type */
-    LONG,
-    /** A C unsigned long */
-    ULONG,
-    FLOAT32,
-    FLOAT64,
-    POINTER,
-    BUFFER_IN,
-    BUFFER_OUT,
-    BUFFER_INOUT,
-    CHAR_ARRAY,
-    
-    /** 
-     * An immutable string.  Nul terminated, but only copies in to the native function 
-     */
-    STRING,
-    /** A Rubinus :string arg - copies data both ways, and nul terminates */
-    RBXSTRING;
-    public int intValue() {
-        return ordinal();
-    }
-    public static final NativeType valueOf(int type) {
-        NativeType[] values = NativeType.values();
-        if (type < 0 || type >= values.length) {
-            return NativeType.VOID;
-        }
-        return NativeType.values()[type];
-    }
+public interface NativeParam {
+
 }

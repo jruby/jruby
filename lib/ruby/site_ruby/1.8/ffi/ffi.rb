@@ -85,6 +85,7 @@ module FFI
   end
   def self.find_type(name)
     code = TypeDefs[name]
+    code = name if !code && name.kind_of?(JRuby::FFI::Callback)
     raise TypeError, "Unable to resolve type '#{name}'" unless code
     return code
   end
@@ -198,6 +199,7 @@ module JRuby::FFI
 
   def self.find_type(name)
     code = TypeDefs[name] || FFI::TypeDefs[name]
+    code = name if !code && name.kind_of?(JRuby::FFI::Callback)
     raise FFI::TypeError, "Unable to resolve type '#{name}'" unless code
     return code
   end
@@ -341,6 +343,20 @@ module JRuby::FFI::Library
   def jffi_attach(ret_type, name, arg_types, opts = {})
     lib = opts[:from]
     convention = opts[:convention] ? opts[:convention] : :default
+    
+    # Convert :foo to the native type
+    arg_types.map! { |e| 
+      begin
+        find_type(e)
+      rescue Exception
+        if @callbacks && @callbacks.has_key?(e)
+          @callbacks[e]
+        else
+          e
+        end
+      end
+    }
+    
     invoker = JRuby::FFI.create_invoker(lib, name.to_s, arg_types, ret_type, convention)
     raise ArgumentError, "Unable to find function '#{name}' to bind to #{self.name}.#{(opts[:as] || name)}" unless invoker
     invoker.attach(self.class, (opts[:as] || name).to_s)
@@ -353,6 +369,10 @@ module JRuby::FFI::Library
   def attach_function(mname, a3, a4, a5=nil)
     cname, args, ret = a5 ? [ a3, a4, a5 ] : [ mname.to_sym, a3, a4 ]
     jffi_attach(ret, cname, args, { :as => mname, :from => @ffi_lib, :convention => @ffi_convention })
+  end
+  def callback(name, args, ret)
+    @callbacks = Hash.new unless @callbacks
+    @callbacks[name] = JRuby::FFI::CallbackFactory.createCallback(FFI.find_type(ret), args.map { |e| FFI.find_type(e) })
   end
 end
 module FFI::Library
@@ -377,6 +397,19 @@ module FFI::Library
     cname, arg_types, ret_type = a5 ? [ a3, a4, a5 ] : [ mname.to_s, a3, a4 ]
     lib = @ffi_lib
     convention = @ffi_convention ? @ffi_convention : :default
+    
+    # Convert :foo to the native type
+    arg_types.map! { |e| 
+      begin
+        find_type(e)
+      rescue Exception
+        if @callbacks && @callbacks.has_key?(e)
+          @callbacks[e]
+        else
+          e
+        end
+      end
+    }
     invoker = FFI.create_invoker lib, cname.to_s, arg_types, ret_type, convention
     raise ArgumentError, "Unable to find function '#{cname}' to bind to #{self.name}.#{mname}" unless invoker
     invoker.attach(self.class, mname.to_s)
@@ -385,6 +418,11 @@ module FFI::Library
       invoker.attach(self, "call")
       extend self
     end
+  end
+  
+  def callback(name, args, ret)
+    @callbacks = Hash.new unless @callbacks
+    @callbacks[name] = JRuby::FFI::CallbackFactory.createCallback(FFI.find_type(ret), args.map { |e| FFI.find_type(e) })
   end
 end
 

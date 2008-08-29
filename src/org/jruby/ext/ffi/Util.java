@@ -29,6 +29,7 @@
 package org.jruby.ext.ffi;
 
 import java.nio.ByteBuffer;
+import org.jruby.Ruby;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.javasupport.JavaObject;
@@ -136,6 +137,18 @@ public final class Util {
         }
         throw parameter.getRuntime().newRangeError("Value "
                     + parameter + " is not an integer");
+    }
+    public static final IRubyObject newUnsigned8(Ruby runtime, int value) {
+        return newUnsigned32(runtime, value);
+    }
+    public static final IRubyObject newUnsigned16(Ruby runtime, int value) {
+        return newUnsigned32(runtime, value);
+    }
+    public static final IRubyObject newUnsigned32(Ruby runtime, int value) {
+        return runtime.newFixnum(value < 0 ? (long)((value & 0x7FFFFFFFL) + 0x80000000L) : value);
+    }
+    public static final IRubyObject newUnsigned64(Ruby runtime, long value) {
+        return runtime.newFixnum(value);
     }
     public static final <T> T convertParameter(IRubyObject parameter, Class<T> paramClass) {
         return paramClass.cast(parameter instanceof JavaObject
