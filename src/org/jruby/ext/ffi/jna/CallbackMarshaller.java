@@ -147,10 +147,14 @@ final class CallbackMarshaller implements Marshaller {
                 params[i] = fromNative(runtime, nativeParams[i], args[i]);
             }
             IRubyObject retVal;
-            if (recv instanceof RubyProc) {
-                retVal = ((RubyProc) recv).call(runtime.getCurrentContext(), params);
-            } else {
-                retVal = ((Block) recv).call(runtime.getCurrentContext(), params);
+            try {
+                if (recv instanceof RubyProc) {
+                    retVal = ((RubyProc) recv).call(runtime.getCurrentContext(), params);
+                } else {
+                    retVal = ((Block) recv).call(runtime.getCurrentContext(), params);
+                }
+            } catch (Throwable t) {
+                return Long.valueOf(0);
             }
             return toNative(runtime, callback.getReturnType(), retVal);
         }

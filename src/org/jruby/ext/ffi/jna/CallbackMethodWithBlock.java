@@ -30,33 +30,36 @@ package org.jruby.ext.ffi.jna;
 
 import com.sun.jna.Function;
 import org.jruby.RubyModule;
+import org.jruby.internal.runtime.methods.CallConfiguration;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * A DynamicMethod that has a callback argument as the last parameter.  It will
  * treat any block as the last argument.
  */
-class CallbackMethodWithBlock extends JNADynamicMethod {
+class CallbackMethodWithBlock extends DynamicMethod {
     final Marshaller[] marshallers;
+    final Function function;
+    final FunctionInvoker functionInvoker;
     public CallbackMethodWithBlock(RubyModule implementationClass, Function function, 
             FunctionInvoker functionInvoker, Marshaller[] marshallers) {
-        super(implementationClass, Arity.createArity(marshallers.length),
-                function, functionInvoker);
+        super(implementationClass, Visibility.PUBLIC, CallConfiguration.FRAME_AND_SCOPE);
+        this.function = function;
+        this.functionInvoker = functionInvoker;
         this.marshallers = marshallers;
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self,
             RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        if (block.isGiven()) {
-            Arity.checkArgumentCount(context.getRuntime(), args,
-                    marshallers.length - 1, marshallers.length);
-        } else {
-            arity.checkArity(context.getRuntime(), args);
-        }
+        Arity.checkArgumentCount(context.getRuntime(), args,
+                marshallers.length - (block.isGiven() ? 1 : 0), marshallers.length);
+        
         Invocation invocation = new Invocation();
         Object[] nativeArgs = new Object[marshallers.length];
         for (int i = 0; i < args.length; ++i) {
@@ -69,5 +72,16 @@ class CallbackMethodWithBlock extends JNADynamicMethod {
         invocation.finish();
         return retVal;
     }
-    
+    @Override
+    public DynamicMethod dup() {
+        return this;
+    }
+    @Override
+    public Arity getArity() {
+        return Arity.fixed(marshallers.length);
+    }
+    @Override
+    public boolean isNative() {
+        return true;
+    }
 }
