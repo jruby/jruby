@@ -65,3 +65,14 @@ describe "MemoryPointer#autorelease" do
     ref.get.should be_nil
   end
 end
+describe "MemoryPointer passed as an arg" do
+  module Ptr
+    extend FFI::Library
+    attach_function :memset, [ :pointer, :int, :int ], :pointer
+  end
+  it "Pointer passed as argument" do
+    p = MemoryPointer.new :int, 1
+    ret = Ptr.memset(p, 0, p.total)
+    ret.should == p
+  end
+end

@@ -46,7 +46,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  */
 @JRubyClass(name = FFIProvider.MODULE_NAME + "::" + JNAMemoryPointer.MEMORY_POINTER_NAME, parent = FFIProvider.MODULE_NAME + "::" + AbstractMemoryPointer.className)
-public class JNAMemoryPointer extends AbstractMemoryPointer {
+public class JNAMemoryPointer extends AbstractMemoryPointer implements JNAMemory {
     public static final String MEMORY_POINTER_NAME = "MemoryPointer";
     
     public static RubyClass createMemoryPointerClass(Ruby runtime) {
@@ -92,7 +92,8 @@ public class JNAMemoryPointer extends AbstractMemoryPointer {
     }
     @JRubyMethod(name = "to_s", optional = 1)
     public IRubyObject to_s(ThreadContext context, IRubyObject[] args) {
-        String hex = ((JNAMemoryIO) getMemoryIO()).getAddress().toString();
+        Pointer address = getAddress();
+        String hex = address != null ? address.toString() : "native@0x0";
         return RubyString.newString(context.getRuntime(), MEMORY_POINTER_NAME + "[address=" + hex + "]");
     }
     Pointer getAddress() {
