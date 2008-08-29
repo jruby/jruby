@@ -1,5 +1,7 @@
 package java_integration.fixtures;
 
+import java.util.concurrent.Callable;
+
 public class UsesSingleMethodInterface {
     public Object result;
     public UsesSingleMethodInterface() {
@@ -62,6 +64,9 @@ public class UsesSingleMethodInterface {
         return obj.callIt();
     }
 
+    public SingleMethodInterface callIt3(Callable callable) throws Exception {
+        return (SingleMethodInterface) callable.call();
+    }
     public static int hashCode(Object obj) {
         return obj.hashCode();
     }

@@ -144,6 +144,21 @@ describe "Single-method Java interfaces" do
     
     UsesSingleMethodInterface.callIt(impl).should == :callIt
   end
+
+  it "should allow assignable equivalents to be passed to a method" do
+    impl = DescendantOfSingleMethodInterface.impl {|name| name}
+    impl.should be_kind_of(SingleMethodInterface)
+    DescendantOfSingleMethodInterface.should === impl
+    UsesSingleMethodInterface.callIt(impl).should == :callIt
+    UsesSingleMethodInterface.new.callIt2(impl).should == :callIt
+  end
+
+  it "should maintain Ruby object equality when passed through Java and back" do
+    result = SingleMethodInterface.impl {|name| name}
+    callable = mock "callable"
+    callable.should_receive(:call).and_return result
+    UsesSingleMethodInterface.new.callIt3(callable).should == result
+  end
 end
 
 describe "A bean-like Java interface" do
