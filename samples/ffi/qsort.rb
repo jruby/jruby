@@ -7,7 +7,9 @@ module LibC
 end
 
 p = MemoryPointer.new(:int, 2)
-cmp = proc do |p1, p2|
+p.put_array_of_int32(0, [ 2, 1 ])
+puts "Before qsort #{p.get_array_of_int32(0, 2).join(', ')}"
+LibC.qsort(p, 2, 4) do |p1, p2|
   i1 = p1.get_int32(0)
   i2 = p2.get_int32(0)
   puts "In proc: Comparing #{i1} and #{i2}"
@@ -19,7 +21,4 @@ cmp = proc do |p1, p2|
     0
   end
 end
-p.put_array_of_int32(0, [ 2, 1 ])
-puts "Before qsort #{p.get_array_of_int32(0, 2).join(', ')}"
-LibC.qsort(p, 2, 4, cmp)
 puts "After qsort #{p.get_array_of_int32(0, 2).join(', ')}"

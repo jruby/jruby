@@ -71,6 +71,9 @@ final class JNAInvoker extends Invoker {
      */
     @Override
     public DynamicMethod createDynamicMethod(RubyModule module) {
+        if (marshallers.length > 0 && (marshallers[marshallers.length - 1] instanceof CallbackMarshaller)) {
+            return new CallbackMethodWithBlock(module, function, functionInvoker, marshallers);
+        }
         if (Arity.NO_ARGUMENTS.equals(arity)) {
             return new DynamicMethodZeroArg(module, function, functionInvoker);
         } else if (Arity.ONE_ARGUMENT.equals(arity)) {
