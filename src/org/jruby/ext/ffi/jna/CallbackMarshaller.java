@@ -79,6 +79,7 @@ final class CallbackMarshaller implements Marshaller {
             case FLOAT32:
             case FLOAT64:
             case POINTER:
+            case VOID:
                 this.returnType = classFor(cb.getReturnType());
                 break;
             default:
@@ -89,6 +90,8 @@ final class CallbackMarshaller implements Marshaller {
 
     private static final Class classFor(NativeType type) {
         switch (type) {
+            case VOID:
+                return void.class;
             case INT8:
             case UINT8:
                 return byte.class;
@@ -188,6 +191,8 @@ final class CallbackMarshaller implements Marshaller {
     }
     private static final Object toNative(Ruby runtime, NativeType type, IRubyObject value) {
         switch (type) {
+            case VOID:
+                return Long.valueOf(0);
             case INT8:
                 return (byte) Util.int8Value(value);
             case UINT8:
@@ -216,6 +221,8 @@ final class CallbackMarshaller implements Marshaller {
     private static final IRubyObject fromNative(Ruby runtime, NativeType type,
             Object value) {
         switch (type) {
+            case VOID:
+                return runtime.getNil();
             case INT8:
                 return runtime.newFixnum((Byte) value);
             case UINT8:
