@@ -597,18 +597,26 @@ public class RubyFixnum extends RubyInteger {
      * 
      */
     @JRubyMethod
-    public IRubyObject abs() {
+    public IRubyObject abs(ThreadContext context) {
         if (value < 0) {
             // A gotcha for Long.MIN_VALUE: value = -value
             if (value == Long.MIN_VALUE) {
                 return RubyBignum.newBignum(
-                        getRuntime(), BigInteger.valueOf(value).negate());
+                        context.getRuntime(), BigInteger.valueOf(value).negate());
             }
-            return RubyFixnum.newFixnum(getRuntime(), -value);
+            return RubyFixnum.newFixnum(context.getRuntime(), -value);
         }
         return this;
     }
-            
+
+    /** fix_abs/1.9
+     * 
+     */
+    @JRubyMethod(name = "magnitude", compat = CompatVersion.RUBY1_9)
+    public IRubyObject magnitude(ThreadContext context) {
+        return abs(context);
+    }
+
     /** fix_equal
      * 
      */

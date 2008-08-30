@@ -621,7 +621,15 @@ public class RubyNumeric extends RubyObject {
         }
         return this;
     }
-    
+
+    /** num_abs/1.9
+     * 
+     */
+    @JRubyMethod(name = "magnitude", compat = CompatVersion.RUBY1_9)
+    public IRubyObject magnitude(ThreadContext context) {
+        return abs(context);
+    }
+
     /** num_to_int
      * 
      */
@@ -844,10 +852,18 @@ public class RubyNumeric extends RubyObject {
     /** numeric_arg
      * 
      */
-    @JRubyMethod(name = "arg", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"arg", "angle", "phase"}, compat = CompatVersion.RUBY1_9)
     public IRubyObject arg(ThreadContext context) {
         if (!f_negative_p(context, this)) return RubyFixnum.zero(context.getRuntime());
         return context.getRuntime().getMath().fastFetchConstant("PI");
+    }    
+
+    /** numeric_rect
+     * 
+     */
+    @JRubyMethod(name = {"rectangular", "rect"}, compat = CompatVersion.RUBY1_9)
+    public IRubyObject rect(ThreadContext context) {
+        return context.getRuntime().newArray(this, RubyFixnum.zero(context.getRuntime()));
     }    
 
     /** numeric_polar
@@ -861,7 +877,7 @@ public class RubyNumeric extends RubyObject {
     /** numeric_real
      * 
      */
-    @JRubyMethod(name = "conjugate", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"conjugate", "conj"}, compat = CompatVersion.RUBY1_9)
     public IRubyObject conjugate(ThreadContext context) {
         return this;
     }

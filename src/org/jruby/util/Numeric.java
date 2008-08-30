@@ -349,29 +349,13 @@ public class Numeric {
         if (x == 0) return y;
         if (y == 0) return x;
 
-        long b = 0;
-
-        while ((x & 1) == 0 && (y & 1) == 0) {
-            b += 1;
-            x >>= 1;
-            y >>= 1;
+        while (x > 0) {
+            long t = x;
+            x = y % x;
+            y = t;
         }
 
-        while ((x & 1) == 0) x >>= 1;
-        while ((y & 1) == 0) y >>= 1;
-
-        while (x != y) {
-            if (y > x) {
-                long t;
-                t = x;
-                x = y;
-                y = t;
-            }
-            x -= y;
-            while ((x & 1) == 0) x >>= 1; // inifinite loop possible here, use >>>= instead ? MRI uses signed longs here too... 
-        }
-
-        return x << b;
+        return y;
     }
     
     /** f_gcd
@@ -491,14 +475,15 @@ public class Numeric {
     public static final class ComplexPatterns {
         public static final Regex comp_pat0, comp_pat1, comp_pat2, underscores_pat;
         static {
+            String WS = "\\s*";
             String DIGITS = "(?:\\d(?:_\\d|\\d)*)";
             String NUMERATOR = "(?:" + DIGITS + "?\\.)?" + DIGITS + "(?:[eE][-+]?" + DIGITS + ")?";
             String DENOMINATOR = DIGITS;
             String NUMBER = "[-+]?" + NUMERATOR + "(?:\\/" + DENOMINATOR + ")?";
             String NUMBERNOS = NUMERATOR + "(?:\\/" + DENOMINATOR + ")?";
-            String PATTERN0 = "\\A(" + NUMBER + ")@(" + NUMBER + ")";
-            String PATTERN1 = "\\A([-+])?(" + NUMBER + ")?[iIjJ]";
-            String PATTERN2 = "\\A(" + NUMBER + ")(([-+])(" + NUMBERNOS + ")?[iIjJ])?";
+            String PATTERN0 = "\\A" + WS + "(" + NUMBER + ")@(" + NUMBER + ")" + WS;
+            String PATTERN1 = "\\A" + WS + "([-+])?(" + NUMBER + ")?[iIjJ]" + WS;
+            String PATTERN2 = "\\A" + WS + "(" + NUMBER + ")(([-+])(" + NUMBERNOS + ")?[iIjJ])?" + WS;
             comp_pat0 = new Regex(PATTERN0.getBytes(), 0, PATTERN0.length(), 0, ASCIIEncoding.INSTANCE);
             comp_pat1 = new Regex(PATTERN1.getBytes(), 0, PATTERN1.length(), 0, ASCIIEncoding.INSTANCE);
             comp_pat2 = new Regex(PATTERN2.getBytes(), 0, PATTERN2.length(), 0, ASCIIEncoding.INSTANCE);
@@ -509,10 +494,11 @@ public class Numeric {
     public static final class RationalPatterns {
         public static final Regex rat_pat, an_e_pat, a_dot_pat;
         static {
+            String WS = "\\s*";
             String DIGITS = "(?:\\d(?:_\\d|\\d)*)";
             String NUMERATOR = "(?:" + DIGITS + "?\\.)?" + DIGITS + "(?:[eE][-+]?" + DIGITS + ")?";
             String DENOMINATOR = DIGITS;
-            String PATTERN = "\\A([-+])?(" + NUMERATOR + ")(?:\\/(" + DENOMINATOR + "))?";
+            String PATTERN = "\\A" + WS + "([-+])?(" + NUMERATOR + ")(?:\\/(" + DENOMINATOR + "))?" + WS;
             rat_pat = new Regex(PATTERN.getBytes(), 0, PATTERN.length(), 0, ASCIIEncoding.INSTANCE);
             an_e_pat = new Regex("[Ee]".getBytes(), 0, 4, 0, ASCIIEncoding.INSTANCE);
             a_dot_pat = new Regex("\\.".getBytes(), 0, 2, 0, ASCIIEncoding.INSTANCE);            

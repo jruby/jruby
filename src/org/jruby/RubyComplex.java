@@ -68,7 +68,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
 /**
- *  1.9 complex.c as of revision: 18876
+ *  1.9 complex.c as of revision: 18948
  */
 
 @JRubyClass(name = "Complex", parent = "Numeric")
@@ -656,9 +656,17 @@ public class RubyComplex extends RubyNumeric {
     /** nucomp_arg 
      * 
      */
-    @JRubyMethod(name = {"arg", "angle"})
+    @JRubyMethod(name = {"arg", "angle", "phase"})
     public IRubyObject arg(ThreadContext context) {
         return RubyMath.atan2(this, image, real);
+    }
+
+    /** nucomp_rect
+     * 
+     */
+    @JRubyMethod(name = {"rectangular", "rect"})
+    public IRubyObject rect(ThreadContext context) {
+        return context.getRuntime().newArray(real, image);
     }
 
     /** nucomp_polar 
@@ -848,7 +856,7 @@ public class RubyComplex extends RubyNumeric {
     }
     
     static RubyArray str_to_c_internal(ThreadContext context, IRubyObject recv) {
-        RubyString s = recv.callMethod(context, "strip").convertToString();
+        RubyString s = recv.convertToString();
         ByteList bytes = s.getByteList();
 
         Ruby runtime = context.getRuntime();

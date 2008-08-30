@@ -486,18 +486,26 @@ public class RubyFloat extends RubyNumeric {
     public IRubyObject to_f() {
         return this;
     }
-        
+
     /** flo_abs
      * 
      */
     @JRubyMethod(name = "abs")
-    public IRubyObject abs() {
+    public IRubyObject abs(ThreadContext context) {
         if (Double.doubleToLongBits(value) < 0) {
-            return RubyFloat.newFloat(getRuntime(), Math.abs(value));
+            return RubyFloat.newFloat(context.getRuntime(), Math.abs(value));
         }
         return this;
     }
-    
+
+    /** flo_abs/1.9
+     * 
+     */
+    @JRubyMethod(name = "magnitude", compat = CompatVersion.RUBY1_9)
+    public IRubyObject magnitude(ThreadContext context) {
+        return abs(context);
+    }
+
     /** flo_zero_p
      * 
      */

@@ -66,7 +66,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
 /**
- *  1.9 rational.c as of revision: 18876
+ *  1.9 rational.c as of revision: 18948
  */
 
 @JRubyClass(name = "Rational", parent = "Numeric", include = "Precision")
@@ -922,7 +922,7 @@ public class RubyRational extends RubyNumeric {
     
     
     static RubyArray str_to_r_internal(ThreadContext context, IRubyObject recv) {
-        RubyString s = recv.callMethod(context, "strip").convertToString();
+        RubyString s = recv.convertToString();
         ByteList bytes = s.getByteList();
 
         Ruby runtime = context.getRuntime();
