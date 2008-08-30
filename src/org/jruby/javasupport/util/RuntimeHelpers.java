@@ -53,6 +53,27 @@ import org.jruby.util.TypeConverter;
  *
  */
 public class RuntimeHelpers {
+    public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, ThreadContext context, CallSite callSite) {
+        callSite.call(context, receiver, value);
+        return value;
+    }
+    public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, IRubyObject arg0, ThreadContext context, CallSite callSite) {
+        callSite.call(context, receiver, arg0, value);
+        return value;
+    }
+    public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, IRubyObject arg0, IRubyObject arg1, ThreadContext context, CallSite callSite) {
+        callSite.call(context, receiver, arg0, arg1, value);
+        return value;
+    }
+    public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, ThreadContext context, CallSite callSite) {
+        callSite.call(context, receiver, arg0, arg1, arg2, value);
+        return value;
+    }
+    public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, IRubyObject[] args, ThreadContext context, CallSite callSite) {
+        callSite.call(context, receiver, appendToObjectArray(args, value));
+        return value;
+    }
+    
     public static CompiledBlockCallback createBlockCallback(Ruby runtime, Object scriptObject, String closureMethod) {
         Class scriptClass = scriptObject.getClass();
         ClassLoader scriptClassLoader = scriptClass.getClassLoader();

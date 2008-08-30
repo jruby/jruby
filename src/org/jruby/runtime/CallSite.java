@@ -54,7 +54,7 @@ public abstract class CallSite {
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1);
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2);
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3);
-    public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args);
+    public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject... args);
     // with block pass
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, Block block);
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, Block block);
@@ -67,6 +67,25 @@ public abstract class CallSite {
     public abstract IRubyObject callIter(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block);
     public abstract IRubyObject callIter(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block);
     public abstract IRubyObject callIter(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
+    
+    // no block
+    public abstract IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self);
+    public abstract IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1);
+    public abstract IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2);
+    public abstract IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3);
+    public abstract IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args);
+    // with block pass
+    public abstract IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, Block block);
+    public abstract IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, Block block);
+    public abstract IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block);
+    public abstract IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block);
+    public abstract IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block);
+    // with block literal (iter)
+    public abstract IRubyObject callIterFrom(ThreadContext context, IRubyObject caller, IRubyObject self, Block block);
+    public abstract IRubyObject callIterFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, Block block);
+    public abstract IRubyObject callIterFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block);
+    public abstract IRubyObject callIterFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block);
+    public abstract IRubyObject callIterFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block);
 
     public static class InlineCachingCallSite extends CallSite implements CacheMap.CacheSite {
         private static class CacheEntry {
@@ -96,123 +115,633 @@ public abstract class CallSite {
             totalCallSites++;
         }
         
+        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            CacheEntry myCache = cache;
+            if (myCache.isOk(selfType)) {
+                return myCache.cachedMethod.call(context, self, selfType, methodName, args);
+            }
+            return cacheAndCall(selfType, args, context, self);
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            try {
+                CacheEntry myCache = cache;
+                if (myCache.isOk(selfType)) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, args, block);
+                }
+                return cacheAndCall(selfType, block, args, context, self);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(context, bj);
+            } catch (JumpException.RetryJump rj) {
+                throw retryJumpError(context);
+            } catch (StackOverflowError soe) {
+                throw systemStackError(context);
+            }
+        }
+        
+        public IRubyObject callIter(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            try {
+                CacheEntry myCache = cache;
+                if (myCache.isOk(selfType)) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, args, block);
+                }
+                return cacheAndCall(selfType, block, args, context, self);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(context, bj);
+            } catch (JumpException.RetryJump rj) {
+                throw retryJumpError(context);
+            } catch (StackOverflowError soe) {
+                throw systemStackError(context);
+            } finally {
+                block.escape();
+            }
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            CacheEntry myCache = cache;
+            if (myCache.isOk(selfType)) {
+                return myCache.cachedMethod.call(context, self, selfType, methodName);
+            }
+            return cacheAndCall(selfType, context, self);
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, Block block) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            try {
+                CacheEntry myCache = cache;
+                if (myCache.isOk(selfType)) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, block);
+                }
+                return cacheAndCall(selfType, block, context, self);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(context, bj);
+            } catch (JumpException.RetryJump rj) {
+                throw retryJumpError(context);
+            } catch (StackOverflowError soe) {
+                throw systemStackError(context);
+            }
+        }
+        
+        public IRubyObject callIter(ThreadContext context, IRubyObject self, Block block) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            try {
+                CacheEntry myCache = cache;
+                if (myCache.isOk(selfType)) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, block);
+                }
+                return cacheAndCall(selfType, block, context, self);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(context, bj);
+            } catch (JumpException.RetryJump rj) {
+                throw retryJumpError(context);
+            } catch (StackOverflowError soe) {
+                throw systemStackError(context);
+            } finally {
+                block.escape();
+            }
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            CacheEntry myCache = cache;
+            if (myCache.isOk(selfType)) {
+                return myCache.cachedMethod.call(context, self, selfType, methodName, arg1);
+            }
+            return cacheAndCall(selfType, context, self, arg1);
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, Block block) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            try {
+                CacheEntry myCache = cache;
+                if (myCache.isOk(selfType)) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, block);
+                }
+                return cacheAndCall(selfType, block, context, self, arg1);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(context, bj);
+            } catch (JumpException.RetryJump rj) {
+                throw retryJumpError(context);
+            } catch (StackOverflowError soe) {
+                throw systemStackError(context);
+            }
+        }
+        
+        public IRubyObject callIter(ThreadContext context, IRubyObject self, IRubyObject arg1, Block block) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            try {
+                CacheEntry myCache = cache;
+                if (myCache.isOk(selfType)) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, block);
+                }
+                return cacheAndCall(selfType, block, context, self, arg1);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(context, bj);
+            } catch (JumpException.RetryJump rj) {
+                throw retryJumpError(context);
+            } catch (StackOverflowError soe) {
+                throw systemStackError(context);
+            } finally {
+                block.escape();
+            }
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            CacheEntry myCache = cache;
+            if (myCache.isOk(selfType)) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2);
+            }
+            return cacheAndCall(selfType, context, self, arg1, arg2);
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            try {
+                CacheEntry myCache = cache;
+                if (myCache.isOk(selfType)) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, block);
+                }
+                return cacheAndCall(selfType, block, context, self, arg1, arg2);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(context, bj);
+            } catch (JumpException.RetryJump rj) {
+                throw retryJumpError(context);
+            } catch (StackOverflowError soe) {
+                throw systemStackError(context);
+            }
+        }
+        
+        public IRubyObject callIter(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            try {
+                CacheEntry myCache = cache;
+                if (myCache.isOk(selfType)) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, block);
+                }
+                return cacheAndCall(selfType, block, context, self, arg1, arg2);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(context, bj);
+            } catch (JumpException.RetryJump rj) {
+                throw retryJumpError(context);
+            } catch (StackOverflowError soe) {
+                throw systemStackError(context);
+            } finally {
+                block.escape();
+            }
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            CacheEntry myCache = cache;
+            if (myCache.isOk(selfType)) {
+                return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, arg3);
+            }
+            return cacheAndCall(selfType, context, self, arg1, arg2, arg3);
+        }
+        
+        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            try {
+                CacheEntry myCache = cache;
+                if (myCache.isOk(selfType)) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
+                }
+                return cacheAndCall(selfType, block, context, self, arg1, arg2, arg3);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(context, bj);
+            } catch (JumpException.RetryJump rj) {
+                throw retryJumpError(context);
+            } catch (StackOverflowError soe) {
+                throw systemStackError(context);
+            }
+        }
+        
+        public IRubyObject callIter(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            try {
+                CacheEntry myCache = cache;
+                if (myCache.isOk(selfType)) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
+                }
+                return cacheAndCall(selfType, block, context, self, arg1, arg2, arg3);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(context, bj);
+            } catch (JumpException.RetryJump rj) {
+                throw retryJumpError(context);
+            } catch (StackOverflowError soe) {
+                throw systemStackError(context);
+            } finally {
+                block.escape();
+            }
+        }
+        
+        public IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            CacheEntry myCache = cache;
+            if (myCache.isOk(selfType)) {
+                return myCache.cachedMethod.call(context, self, selfType, methodName, args);
+            }
+            return cacheAndCall(caller, selfType, args, context, self);
+        }
+        
+        public IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            try {
+                CacheEntry myCache = cache;
+                if (myCache.isOk(selfType)) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, args, block);
+                }
+                return cacheAndCall(caller, selfType, block, args, context, self);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(context, bj);
+            } catch (JumpException.RetryJump rj) {
+                throw retryJumpError(context);
+            } catch (StackOverflowError soe) {
+                throw systemStackError(context);
+            }
+        }
+        
+        public IRubyObject callIterFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            try {
+                CacheEntry myCache = cache;
+                if (myCache.isOk(selfType)) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, args, block);
+                }
+                return cacheAndCall(caller, selfType, block, args, context, self);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(context, bj);
+            } catch (JumpException.RetryJump rj) {
+                throw retryJumpError(context);
+            } catch (StackOverflowError soe) {
+                throw systemStackError(context);
+            } finally {
+                block.escape();
+            }
+        }
+        
+        public IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            CacheEntry myCache = cache;
+            if (myCache.isOk(selfType)) {
+                return myCache.cachedMethod.call(context, self, selfType, methodName);
+            }
+            return cacheAndCall(caller, selfType, context, self);
+        }
+        
+        public IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, Block block) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            try {
+                CacheEntry myCache = cache;
+                if (myCache.isOk(selfType)) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, block);
+                }
+                return cacheAndCall(caller, selfType, block, context, self);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(context, bj);
+            } catch (JumpException.RetryJump rj) {
+                throw retryJumpError(context);
+            } catch (StackOverflowError soe) {
+                throw systemStackError(context);
+            }
+        }
+        
+        public IRubyObject callIterFrom(ThreadContext context, IRubyObject caller, IRubyObject self, Block block) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            try {
+                CacheEntry myCache = cache;
+                if (myCache.isOk(selfType)) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, block);
+                }
+                return cacheAndCall(caller, selfType, block, context, self);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(context, bj);
+            } catch (JumpException.RetryJump rj) {
+                throw retryJumpError(context);
+            } catch (StackOverflowError soe) {
+                throw systemStackError(context);
+            } finally {
+                block.escape();
+            }
+        }
+        
+        public IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            CacheEntry myCache = cache;
+            if (myCache.isOk(selfType)) {
+                return myCache.cachedMethod.call(context, self, selfType, methodName, arg1);
+            }
+            return cacheAndCall(caller, selfType, context, self, arg1);
+        }
+        
+        public IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, Block block) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            try {
+                CacheEntry myCache = cache;
+                if (myCache.isOk(selfType)) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, block);
+                }
+                return cacheAndCall(caller, selfType, block, context, self, arg1);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(context, bj);
+            } catch (JumpException.RetryJump rj) {
+                throw retryJumpError(context);
+            } catch (StackOverflowError soe) {
+                throw systemStackError(context);
+            }
+        }
+        
+        public IRubyObject callIterFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, Block block) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            try {
+                CacheEntry myCache = cache;
+                if (myCache.isOk(selfType)) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, block);
+                }
+                return cacheAndCall(caller, selfType, block, context, self, arg1);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(context, bj);
+            } catch (JumpException.RetryJump rj) {
+                throw retryJumpError(context);
+            } catch (StackOverflowError soe) {
+                throw systemStackError(context);
+            } finally {
+                block.escape();
+            }
+        }
+        
+        public IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            CacheEntry myCache = cache;
+            if (myCache.isOk(selfType)) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2);
+            }
+            return cacheAndCall(caller, selfType, context, self, arg1, arg2);
+        }
+        
+        public IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            try {
+                CacheEntry myCache = cache;
+                if (myCache.isOk(selfType)) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, block);
+                }
+                return cacheAndCall(caller, selfType, block, context, self, arg1, arg2);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(context, bj);
+            } catch (JumpException.RetryJump rj) {
+                throw retryJumpError(context);
+            } catch (StackOverflowError soe) {
+                throw systemStackError(context);
+            }
+        }
+        
+        public IRubyObject callIterFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            try {
+                CacheEntry myCache = cache;
+                if (myCache.isOk(selfType)) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, block);
+                }
+                return cacheAndCall(caller, selfType, block, context, self, arg1, arg2);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(context, bj);
+            } catch (JumpException.RetryJump rj) {
+                throw retryJumpError(context);
+            } catch (StackOverflowError soe) {
+                throw systemStackError(context);
+            } finally {
+                block.escape();
+            }
+        }
+        
+        public IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            CacheEntry myCache = cache;
+            if (myCache.isOk(selfType)) {
+                return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, arg3);
+            }
+            return cacheAndCall(caller, selfType, context, self, arg1, arg2, arg3);
+        }
+        
+        public IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            try {
+                CacheEntry myCache = cache;
+                if (myCache.isOk(selfType)) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
+                }
+                return cacheAndCall(caller, selfType, block, context, self, arg1, arg2, arg3);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(context, bj);
+            } catch (JumpException.RetryJump rj) {
+                throw retryJumpError(context);
+            } catch (StackOverflowError soe) {
+                throw systemStackError(context);
+            }
+        }
+        
+        public IRubyObject callIterFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+            RubyClass selfType = pollAndGetClass(context, self);
+            try {
+                CacheEntry myCache = cache;
+                if (myCache.isOk(selfType)) {
+                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
+                }
+                return cacheAndCall(caller, selfType, block, context, self, arg1, arg2, arg3);
+            } catch (JumpException.BreakJump bj) {
+                return handleBreakJump(context, bj);
+            } catch (JumpException.RetryJump rj) {
+                throw retryJumpError(context);
+            } catch (StackOverflowError soe) {
+                throw systemStackError(context);
+            } finally {
+                block.escape();
+            }
+        }
+        
         protected IRubyObject cacheAndCall(RubyClass selfType, Block block, IRubyObject[] args, ThreadContext context, IRubyObject self) {
             DynamicMethod method = selfType.searchMethod(methodName);
-
-            if (methodMissing(method, context)) {
+            if (methodMissing(method, context.getFrameSelf())) {
                 return callMethodMissing(context, self, method, args, block);
             }
-            
             updateCacheEntry(method, selfType);
-
             return method.call(context, self, selfType, methodName, args, block);
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, IRubyObject[] args, ThreadContext context, IRubyObject self) {
             DynamicMethod method = selfType.searchMethod(methodName);
-
-            if (methodMissing(method, context)) {
+            if (methodMissing(method, context.getFrameSelf())) {
                 return callMethodMising(context, self, method, args);
             }
-            
             updateCacheEntry(method, selfType);
-
             return method.call(context, self, selfType, methodName, args);
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, ThreadContext context, IRubyObject self) {
             DynamicMethod method = selfType.searchMethod(methodName);
-
-            if (methodMissing(method, context)) {
+            if (methodMissing(method, context.getFrameSelf())) {
                 return callMethodMissing(context, self, method);
             }
-            
             updateCacheEntry(method, selfType);
-
             return method.call(context, self, selfType, methodName);
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, Block block, ThreadContext context, IRubyObject self) {
             DynamicMethod method = selfType.searchMethod(methodName);
-
-            if (methodMissing(method, context)) {
+            if (methodMissing(method, context.getFrameSelf())) {
                 return callMethodMissing(context, self, method, block);
             }
-            
             updateCacheEntry(method, selfType);
-
             return method.call(context, self, selfType, methodName, block);
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg) {
             DynamicMethod method = selfType.searchMethod(methodName);
-
-            if (methodMissing(method, context)) {
+            if (methodMissing(method, context.getFrameSelf())) {
                 return callMethodMissing(context, self, method, arg);
             }
-            
             updateCacheEntry(method, selfType);
-
             return method.call(context, self, selfType, methodName, arg);
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, Block block, ThreadContext context, IRubyObject self, IRubyObject arg) {
             DynamicMethod method = selfType.searchMethod(methodName);
-
-            if (methodMissing(method, context)) {
+            if (methodMissing(method, context.getFrameSelf())) {
                 return callMethodMissing(context, self, method, arg, block);
             }
-            
             updateCacheEntry(method, selfType);
-
             return method.call(context, self, selfType, methodName, arg, block);
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
             DynamicMethod method = selfType.searchMethod(methodName);
-
-            if (methodMissing(method, context)) {
+            if (methodMissing(method, context.getFrameSelf())) {
                 return callMethodMissing(context, self, method, arg1, arg2);
             }
-            
             updateCacheEntry(method, selfType);
-
             return method.call(context, self, selfType, methodName, arg1, arg2);
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, Block block, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
             DynamicMethod method = selfType.searchMethod(methodName);
-
-            if (methodMissing(method, context)) {
+            if (methodMissing(method, context.getFrameSelf())) {
                 return callMethodMissing(context, self, method, arg1, arg2, block);
             }
-            
             updateCacheEntry(method, selfType);
-
             return method.call(context, self, selfType, methodName, arg1, arg2, block);
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
             DynamicMethod method = selfType.searchMethod(methodName);
-
-            if (methodMissing(method, context)) {
+            if (methodMissing(method, context.getFrameSelf())) {
                 return callMethodMissing(context, self, method, arg1, arg2,arg3);
             }
-            
             updateCacheEntry(method, selfType);
-
             return method.call(context, self, selfType, methodName, arg1, arg2, arg3);
         }
 
         protected IRubyObject cacheAndCall(RubyClass selfType, Block block, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
             DynamicMethod method = selfType.searchMethod(methodName);
-
-            if (methodMissing(method, context)) {
+            if (methodMissing(method, context.getFrameSelf())) {
                 return callMethodMissing(context, self, method, arg1, arg2, arg3, block);
             }
-            
             updateCacheEntry(method, selfType);
+            return method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
+        }
+        
+        protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block, IRubyObject[] args, ThreadContext context, IRubyObject self) {
+            DynamicMethod method = selfType.searchMethod(methodName);
+            if (methodMissing(method, caller)) {
+                return callMethodMissing(context, self, method, args, block);
+            }
+            updateCacheEntry(method, selfType);
+            return method.call(context, self, selfType, methodName, args, block);
+        }
 
+        protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, IRubyObject[] args, ThreadContext context, IRubyObject self) {
+            DynamicMethod method = selfType.searchMethod(methodName);
+            if (methodMissing(method, caller)) {
+                return callMethodMising(context, self, method, args);
+            }
+            updateCacheEntry(method, selfType);
+            return method.call(context, self, selfType, methodName, args);
+        }
+
+        protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self) {
+            DynamicMethod method = selfType.searchMethod(methodName);
+            if (methodMissing(method, caller)) {
+                return callMethodMissing(context, self, method);
+            }
+            updateCacheEntry(method, selfType);
+            return method.call(context, self, selfType, methodName);
+        }
+
+        protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block, ThreadContext context, IRubyObject self) {
+            DynamicMethod method = selfType.searchMethod(methodName);
+            if (methodMissing(method, caller)) {
+                return callMethodMissing(context, self, method, block);
+            }
+            updateCacheEntry(method, selfType);
+            return method.call(context, self, selfType, methodName, block);
+        }
+
+        protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg) {
+            DynamicMethod method = selfType.searchMethod(methodName);
+            if (methodMissing(method, caller)) {
+                return callMethodMissing(context, self, method, arg);
+            }
+            updateCacheEntry(method, selfType);
+            return method.call(context, self, selfType, methodName, arg);
+        }
+
+        protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block, ThreadContext context, IRubyObject self, IRubyObject arg) {
+            DynamicMethod method = selfType.searchMethod(methodName);
+            if (methodMissing(method, caller)) {
+                return callMethodMissing(context, self, method, arg, block);
+            }
+            updateCacheEntry(method, selfType);
+            return method.call(context, self, selfType, methodName, arg, block);
+        }
+
+        protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
+            DynamicMethod method = selfType.searchMethod(methodName);
+            if (methodMissing(method, caller)) {
+                return callMethodMissing(context, self, method, arg1, arg2);
+            }
+            updateCacheEntry(method, selfType);
+            return method.call(context, self, selfType, methodName, arg1, arg2);
+        }
+
+        protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
+            DynamicMethod method = selfType.searchMethod(methodName);
+            if (methodMissing(method, caller)) {
+                return callMethodMissing(context, self, method, arg1, arg2, block);
+            }
+            updateCacheEntry(method, selfType);
+            return method.call(context, self, selfType, methodName, arg1, arg2, block);
+        }
+
+        protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+            DynamicMethod method = selfType.searchMethod(methodName);
+            if (methodMissing(method, caller)) {
+                return callMethodMissing(context, self, method, arg1, arg2,arg3);
+            }
+            updateCacheEntry(method, selfType);
+            return method.call(context, self, selfType, methodName, arg1, arg2, arg3);
+        }
+
+        protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+            DynamicMethod method = selfType.searchMethod(methodName);
+            if (methodMissing(method, caller)) {
+                return callMethodMissing(context, self, method, arg1, arg2, arg3, block);
+            }
+            updateCacheEntry(method, selfType);
             return method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
         }
 
@@ -256,8 +785,8 @@ public abstract class CallSite {
             return RuntimeHelpers.callMethodMissing(context, self, method, methodName, arg1, arg2, arg3, context.getFrameSelf(), callType, block);
         }
 
-        private boolean methodMissing(DynamicMethod method, ThreadContext context) {
-            return method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(context.getFrameSelf(), callType));
+        private boolean methodMissing(DynamicMethod method, IRubyObject caller) {
+            return method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(caller, callType));
         }
 
         private RubyClass pollAndGetClass(ThreadContext context, IRubyObject self) {
@@ -279,261 +808,6 @@ public abstract class CallSite {
         
         public void removeCachedMethod() {
             cache = NULL_CACHE;
-        }
-        
-        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-            RubyClass selfType = pollAndGetClass(context, self);
-            
-            CacheEntry myCache = cache;
-            if (myCache.isOk(selfType)) {
-                return myCache.cachedMethod.call(context, self, selfType, methodName, args);
-            }
-
-            return cacheAndCall(selfType, args, context, self);
-        }
-        
-        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-            RubyClass selfType = pollAndGetClass(context, self);
-
-            try {
-                CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
-                    return myCache.cachedMethod.call(context, self, selfType, methodName, args, block);
-                }
-
-                return cacheAndCall(selfType, block, args, context, self);
-            } catch (JumpException.BreakJump bj) {
-                return handleBreakJump(context, bj);
-            } catch (JumpException.RetryJump rj) {
-                throw retryJumpError(context);
-            } catch (StackOverflowError soe) {
-                throw systemStackError(context);
-            }
-        }
-        
-        public IRubyObject callIter(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-            RubyClass selfType = pollAndGetClass(context, self);
-
-            try {
-                CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
-                    return myCache.cachedMethod.call(context, self, selfType, methodName, args, block);
-                }
-
-                return cacheAndCall(selfType, block, args, context, self);
-            } catch (JumpException.BreakJump bj) {
-                return handleBreakJump(context, bj);
-            } catch (JumpException.RetryJump rj) {
-                throw retryJumpError(context);
-            } catch (StackOverflowError soe) {
-                throw systemStackError(context);
-            } finally {
-                block.escape();
-            }
-        }
-        
-        public IRubyObject call(ThreadContext context, IRubyObject self) {
-            RubyClass selfType = pollAndGetClass(context, self);
-
-            CacheEntry myCache = cache;
-            if (myCache.isOk(selfType)) {
-                return myCache.cachedMethod.call(context, self, selfType, methodName);
-            }
-
-            return cacheAndCall(selfType, context, self);
-        }
-        
-        public IRubyObject call(ThreadContext context, IRubyObject self, Block block) {
-            RubyClass selfType = pollAndGetClass(context, self);
-
-            try {
-                CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
-                    return myCache.cachedMethod.call(context, self, selfType, methodName, block);
-                }
-
-                return cacheAndCall(selfType, block, context, self);
-            } catch (JumpException.BreakJump bj) {
-                return handleBreakJump(context, bj);
-            } catch (JumpException.RetryJump rj) {
-                throw retryJumpError(context);
-            } catch (StackOverflowError soe) {
-                throw systemStackError(context);
-            }
-        }
-        
-        public IRubyObject callIter(ThreadContext context, IRubyObject self, Block block) {
-            RubyClass selfType = pollAndGetClass(context, self);
-
-            try {
-                CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
-                    return myCache.cachedMethod.call(context, self, selfType, methodName, block);
-                }
-
-                return cacheAndCall(selfType, block, context, self);
-            } catch (JumpException.BreakJump bj) {
-                return handleBreakJump(context, bj);
-            } catch (JumpException.RetryJump rj) {
-                throw retryJumpError(context);
-            } catch (StackOverflowError soe) {
-                throw systemStackError(context);
-            } finally {
-                block.escape();
-            }
-        }
-        
-        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1) {
-            RubyClass selfType = pollAndGetClass(context, self);
-
-            CacheEntry myCache = cache;
-            if (myCache.isOk(selfType)) {
-                return myCache.cachedMethod.call(context, self, selfType, methodName, arg1);
-            }
-
-            return cacheAndCall(selfType, context, self, arg1);
-        }
-        
-        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, Block block) {
-            RubyClass selfType = pollAndGetClass(context, self);
-
-            try {
-                CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
-                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, block);
-                }
-
-                return cacheAndCall(selfType, block, context, self, arg1);
-            } catch (JumpException.BreakJump bj) {
-                return handleBreakJump(context, bj);
-            } catch (JumpException.RetryJump rj) {
-                throw retryJumpError(context);
-            } catch (StackOverflowError soe) {
-                throw systemStackError(context);
-            }
-        }
-        
-        public IRubyObject callIter(ThreadContext context, IRubyObject self, IRubyObject arg1, Block block) {
-            RubyClass selfType = pollAndGetClass(context, self);
-
-            try {
-                CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
-                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, block);
-                }
-
-                return cacheAndCall(selfType, block, context, self, arg1);
-            } catch (JumpException.BreakJump bj) {
-                return handleBreakJump(context, bj);
-            } catch (JumpException.RetryJump rj) {
-                throw retryJumpError(context);
-            } catch (StackOverflowError soe) {
-                throw systemStackError(context);
-            } finally {
-                block.escape();
-            }
-        }
-        
-        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
-            RubyClass selfType = pollAndGetClass(context, self);
-
-            CacheEntry myCache = cache;
-            if (myCache.isOk(selfType)) {
-                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2);
-            }
-
-            return cacheAndCall(selfType, context, self, arg1, arg2);
-        }
-        
-        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
-            RubyClass selfType = pollAndGetClass(context, self);
-
-            try {
-                CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
-                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, block);
-                }
-
-                return cacheAndCall(selfType, block, context, self, arg1, arg2);
-            } catch (JumpException.BreakJump bj) {
-                return handleBreakJump(context, bj);
-            } catch (JumpException.RetryJump rj) {
-                throw retryJumpError(context);
-            } catch (StackOverflowError soe) {
-                throw systemStackError(context);
-            }
-        }
-        
-        public IRubyObject callIter(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
-            RubyClass selfType = pollAndGetClass(context, self);
-
-            try {
-                CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
-                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, block);
-                }
-
-                return cacheAndCall(selfType, block, context, self, arg1, arg2);
-            } catch (JumpException.BreakJump bj) {
-                return handleBreakJump(context, bj);
-            } catch (JumpException.RetryJump rj) {
-                throw retryJumpError(context);
-            } catch (StackOverflowError soe) {
-                throw systemStackError(context);
-            } finally {
-                block.escape();
-            }
-        }
-        
-        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-            RubyClass selfType = pollAndGetClass(context, self);
-
-            CacheEntry myCache = cache;
-            if (myCache.isOk(selfType)) {
-                return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, arg3);
-            }
-
-            return cacheAndCall(selfType, context, self, arg1, arg2, arg3);
-        }
-        
-        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
-            RubyClass selfType = pollAndGetClass(context, self);
-
-            try {
-                CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
-                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
-                }
-
-                return cacheAndCall(selfType, block, context, self, arg1, arg2, arg3);
-            } catch (JumpException.BreakJump bj) {
-                return handleBreakJump(context, bj);
-            } catch (JumpException.RetryJump rj) {
-                throw retryJumpError(context);
-            } catch (StackOverflowError soe) {
-                throw systemStackError(context);
-            }
-        }
-        
-        public IRubyObject callIter(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
-            RubyClass selfType = pollAndGetClass(context, self);
-
-            try {
-                CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
-                    return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
-                }
-
-                return cacheAndCall(selfType, block, context, self, arg1, arg2, arg3);
-            } catch (JumpException.BreakJump bj) {
-                return handleBreakJump(context, bj);
-            } catch (JumpException.RetryJump rj) {
-                throw retryJumpError(context);
-            } catch (StackOverflowError soe) {
-                throw systemStackError(context);
-            } finally {
-                block.escape();
-            }
         }
 
         private IRubyObject handleBreakJump(ThreadContext context, BreakJump bj) throws BreakJump {

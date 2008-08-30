@@ -85,19 +85,48 @@ public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
     
     @Override
     public void cacheFixnum(StandardASMCompiler.AbstractMethodCompiler method, long value) {
-        String methodName = inheritedFixnums.get(value);
-        if (methodName == null && inheritedFixnumCount < MAX_INHERITED_FIXNUMS) {
-            methodName = "getFixnum" + inheritedFixnumCount++;
-            inheritedFixnums.put(value, methodName);
-        }
-        
-        if (methodName == null) {
-            super.cacheFixnum(method, value);
-        } else {
-            method.loadThis();
+        if (value <= 5 && value >= -1) {
             method.loadRuntime();
-            method.method.ldc(value);
-            method.method.invokevirtual(scriptCompiler.getClassname(), methodName, sig(RubyFixnum.class, Ruby.class, long.class));
+            switch ((int)value) {
+            case -1:
+                method.method.invokestatic(p(RubyFixnum.class), "minus_one", sig(RubyFixnum.class, Ruby.class));
+                break;
+            case 0:
+                method.method.invokestatic(p(RubyFixnum.class), "zero", sig(RubyFixnum.class, Ruby.class));
+                break;
+            case 1:
+                method.method.invokestatic(p(RubyFixnum.class), "one", sig(RubyFixnum.class, Ruby.class));
+                break;
+            case 2:
+                method.method.invokestatic(p(RubyFixnum.class), "two", sig(RubyFixnum.class, Ruby.class));
+                break;
+            case 3:
+                method.method.invokestatic(p(RubyFixnum.class), "three", sig(RubyFixnum.class, Ruby.class));
+                break;
+            case 4:
+                method.method.invokestatic(p(RubyFixnum.class), "four", sig(RubyFixnum.class, Ruby.class));
+                break;
+            case 5:
+                method.method.invokestatic(p(RubyFixnum.class), "five", sig(RubyFixnum.class, Ruby.class));
+                break;
+            default:
+                throw new RuntimeException("wtf?");
+            }
+        } else {
+            String methodName = inheritedFixnums.get(value);
+            if (methodName == null && inheritedFixnumCount < MAX_INHERITED_FIXNUMS) {
+                methodName = "getFixnum" + inheritedFixnumCount++;
+                inheritedFixnums.put(value, methodName);
+            }
+
+            if (methodName == null) {
+                super.cacheFixnum(method, value);
+            } else {
+                method.loadThis();
+                method.loadRuntime();
+                method.method.ldc(value);
+                method.method.invokevirtual(scriptCompiler.getClassname(), methodName, sig(RubyFixnum.class, Ruby.class, long.class));
+            }
         }
     }
 }

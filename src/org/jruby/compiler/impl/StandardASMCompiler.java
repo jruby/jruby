@@ -757,39 +757,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         public void createNewFixnum(long value) {
             cacheCompiler.cacheFixnum(this, value);
-//            
-//            if (value <= Integer.MAX_VALUE && value >= Integer.MIN_VALUE) {
-//                switch ((int)value) {
-//                case -1:
-//                    method.invokestatic(p(RubyFixnum.class), "minus_one", sig(RubyFixnum.class, Ruby.class));
-//                    break;
-//                case 0:
-//                    method.invokestatic(p(RubyFixnum.class), "zero", sig(RubyFixnum.class, Ruby.class));
-//                    break;
-//                case 1:
-//                    method.invokestatic(p(RubyFixnum.class), "one", sig(RubyFixnum.class, Ruby.class));
-//                    break;
-//                case 2:
-//                    method.invokestatic(p(RubyFixnum.class), "two", sig(RubyFixnum.class, Ruby.class));
-//                    break;
-//                case 3:
-//                    method.invokestatic(p(RubyFixnum.class), "three", sig(RubyFixnum.class, Ruby.class));
-//                    break;
-//                case 4:
-//                    method.invokestatic(p(RubyFixnum.class), "four", sig(RubyFixnum.class, Ruby.class));
-//                    break;
-//                case 5:
-//                    method.invokestatic(p(RubyFixnum.class), "five", sig(RubyFixnum.class, Ruby.class));
-//                    break;
-//                default:
-//                    method.pushInt((int)value);
-//                    invokeIRuby("newFixnum", sig(RubyFixnum.class, params(int.class)));
-//                }
-//            } else {
-//                method.ldc(new Long(value));
-//
-//                invokeIRuby("newFixnum", sig(RubyFixnum.class, params(long.class)));
-//            }
         }
 
         public void createNewBignum(BigInteger value) {

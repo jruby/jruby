@@ -55,7 +55,15 @@ public interface InvocationCompiler {
     /**
      * Attr assign calls have slightly different semantics that normal calls, so this method handles those additional semantics.
      */
-    public void invokeAttrAssign(String name);
+    /**
+     * The masgn version has the value to be assigned already on the stack,
+     * and so uses a different path to perform the assignment.
+     * 
+     * @param name
+     * @param receiverCallback
+     * @param argsCallback
+     */
+    public void invokeAttrAssignMasgn(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback);
     public void invokeAttrAssign(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback);
     
     public void opElementAsgn(CompilerCallback valueCallback, String operator);

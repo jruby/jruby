@@ -65,22 +65,72 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         this.method = sma;
     }
 
-    public void invokeAttrAssign(String name) {
-        // start with [recv, args]
-        // get args[length - 1] and stuff it under the receiver
-        // dup args * 2
-        method.dup(); // [recv, args, args]
-        method.dup(); // [recv, args, args, args]
-        method.arraylength(); // [recv, args, args, len]
-        method.iconst_1(); // [recv, args, args, len, 1]
-        method.isub(); // [recv, args, args, len-1]
-        // load from array
-        method.arrayload(); // [recv, args, val]
-        method.dup_x2(); // [val, recv, args, val]
-        method.pop(); // [val, recv, args]
-        invokeDynamic(name, true, true, CallType.NORMAL, null, true); // [val, result]
-        // pop result, use args[length - 1] captured above
-        method.pop(); // [val]
+    public void invokeAttrAssignMasgn(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
+        // value is already on stack, evaluate receiver and args and call helper
+        receiverCallback.call(methodCompiler);
+
+        String signature;
+        if (argsCallback == null) {
+            signature = sig(IRubyObject.class,
+                    IRubyObject.class /*value*/,
+                    IRubyObject.class /*receiver*/,
+                    ThreadContext.class,
+                    CallSite.class);
+        } else {
+            switch (argsCallback.getArity()) {
+                case 0:
+                    signature = sig(IRubyObject.class,
+                            IRubyObject.class /*value*/,
+                            IRubyObject.class /*receiver*/,
+                            ThreadContext.class,
+                            CallSite.class);
+                    break;
+                case 1:
+                    argsCallback.call(methodCompiler);
+                    signature = sig(IRubyObject.class,
+                            IRubyObject.class /*value*/,
+                            IRubyObject.class /*receiver*/,
+                            IRubyObject.class /*arg0*/,
+                            ThreadContext.class,
+                            CallSite.class);
+                    break;
+                case 2:
+                    argsCallback.call(methodCompiler);
+                    signature = sig(IRubyObject.class,
+                            IRubyObject.class /*value*/,
+                            IRubyObject.class /*receiver*/,
+                            IRubyObject.class /*arg0*/,
+                            IRubyObject.class /*arg1*/,
+                            ThreadContext.class,
+                            CallSite.class);
+                    break;
+                case 3:
+                    argsCallback.call(methodCompiler);
+                    signature = sig(IRubyObject.class,
+                            IRubyObject.class /*value*/,
+                            IRubyObject.class /*receiver*/,
+                            IRubyObject.class /*arg0*/,
+                            IRubyObject.class /*arg1*/,
+                            IRubyObject.class /*arg2*/,
+                            ThreadContext.class,
+                            CallSite.class);
+                    break;
+                default:
+                    argsCallback.call(methodCompiler);
+                    signature = sig(IRubyObject.class,
+                            IRubyObject.class /*value*/,
+                            IRubyObject.class /*receiver*/,
+                            IRubyObject[].class /*args*/,
+                            ThreadContext.class,
+                            CallSite.class);
+                    break;
+            }
+        }
+        
+        methodCompiler.loadThreadContext();
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, CallType.NORMAL);
+
+        methodCompiler.invokeUtilityMethod("doAttrAsgn", signature);
     }
 
     public void invokeAttrAssign(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {

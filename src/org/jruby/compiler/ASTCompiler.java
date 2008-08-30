@@ -626,21 +626,16 @@ public class ASTCompiler {
     }
 
     public void compileAttrAssignAssignment(Node node, MethodCompiler context) {
-        AttrAssignNode attrAssignNode = (AttrAssignNode) node;
+        final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
 
-        compile(attrAssignNode.getReceiverNode(), context);
-        context.swapValues();
-        if (attrAssignNode.getArgsNode() != null) {
-            compileArguments(attrAssignNode.getArgsNode(), context);
-            context.swapValues();
-            context.appendToObjectArray();
-        } else {
-            context.createObjectArray(1);
-        }
+        CompilerCallback receiverCallback = new CompilerCallback() {
+            public void call(MethodCompiler context) {
+                compile(attrAssignNode.getReceiverNode(), context);
+            }
+        };
+        ArgumentsCallback argsCallback = getArgsCallback(attrAssignNode.getArgsNode());
 
-        // FIXME: This is still using the grossly inefficient version of attr assignment
-        // but it's used only for masgn/block args so it's fairly rare
-        context.getInvocationCompiler().invokeAttrAssign(attrAssignNode.getName());
+        context.getInvocationCompiler().invokeAttrAssignMasgn(attrAssignNode.getName(), receiverCallback, argsCallback);
     }
 
     public void compileBackref(Node node, MethodCompiler context) {
