@@ -151,61 +151,44 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, CallType.VARIABLE);
         method.label(readyForCall);
         
-        // call site under receiver
-        method.swap();
-        
-        // load thread context under receiver
-        methodCompiler.loadThreadContext();
-        method.swap();
-        
         String signature = null;
         switch (argsCallback.getArity()) {
         case 1:
-            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
+            signature = sig(IRubyObject.class,
+                    IRubyObject.class, /*receiver*/
+                    CallSite.class,
+                    IRubyObject.class, /*value*/
+                    ThreadContext.class);
             break;
         case 2:
-            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+            signature = sig(IRubyObject.class,
+                    IRubyObject.class, /*receiver*/
+                    CallSite.class,
+                    IRubyObject.class, /*arg0*/
+                    IRubyObject.class, /*value*/
+                    ThreadContext.class);
             break;
         case 3:
-            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+            signature = sig(IRubyObject.class,
+                    IRubyObject.class, /*receiver*/
+                    CallSite.class,
+                    IRubyObject.class, /*arg0*/
+                    IRubyObject.class, /*arg1*/
+                    IRubyObject.class, /*value*/
+                    ThreadContext.class);
             break;
         default:
-            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject[].class));
+            signature = sig(IRubyObject.class,
+                    IRubyObject.class, /*receiver*/
+                    CallSite.class,
+                    IRubyObject[].class, /*args*/
+                    ThreadContext.class);
         }
         
         argsCallback.call(methodCompiler);
+        methodCompiler.loadThreadContext();
         
-        // store in temp variable
-        int tempLocal = methodCompiler.variableCompiler.grabTempLocal();
-        switch (argsCallback.getArity()) {
-        case 1:
-        case 2:
-        case 3:
-            // specific-arity args, just save off top value on stack
-            method.dup();
-            break;
-        default:
-            // variable-arity args, peel off and save the last argument in the array
-            method.dup(); // [args, args]
-            method.dup(); // [args, args, args]
-            method.arraylength(); // [args, args, len]
-            method.iconst_1(); // [args, args, len, 1]
-            method.isub(); // [args, args, len-1]
-            // load from array
-            method.arrayload(); // [args, val]
-        }
-        // save result-to-be-assigned in a temporary local
-        methodCompiler.variableCompiler.setTempLocal(tempLocal);
-        
-        // invoke call site
-        method.invokevirtual(p(CallSite.class), "call", signature);
-        
-        // pop the return value and restore the dup'ed arg on the stack
-        method.pop();
-        
-        // retrieve the result-to-be-assigned to be the expression result
-        methodCompiler.variableCompiler.getTempLocal(tempLocal);
-        methodCompiler.variableCompiler.releaseTempLocal();
+        methodCompiler.invokeUtilityMethod("doAttrAsgn", signature);
     }
     
     public void opElementAsgn(CompilerCallback valueCallback, String operator) {

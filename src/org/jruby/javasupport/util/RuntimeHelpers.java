@@ -73,6 +73,22 @@ public class RuntimeHelpers {
         callSite.call(context, receiver, appendToObjectArray(args, value));
         return value;
     }
+    public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject value, ThreadContext context) {
+        callSite.call(context, receiver, value);
+        return value;
+    }
+    public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject arg0, IRubyObject value, ThreadContext context) {
+        callSite.call(context, receiver, arg0, value);
+        return value;
+    }
+    public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject arg0, IRubyObject arg1, IRubyObject value, ThreadContext context) {
+        callSite.call(context, receiver, arg0, arg1, value);
+        return value;
+    }
+    public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject[] args, ThreadContext context) {
+        callSite.call(context, receiver, args);
+        return args[args.length - 1];
+    }
     
     public static CompiledBlockCallback createBlockCallback(Ruby runtime, Object scriptObject, String closureMethod) {
         Class scriptClass = scriptObject.getClass();
