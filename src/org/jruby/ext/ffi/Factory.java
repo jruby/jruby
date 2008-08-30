@@ -31,6 +31,7 @@ package org.jruby.ext.ffi;
 import java.io.IOException;
 import java.nio.channels.ByteChannel;
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.ext.ffi.io.FileDescriptorIO;
 import org.jruby.runtime.load.Library;
@@ -45,7 +46,7 @@ public abstract class Factory {
         private static final Factory INSTANCE = getInstance();
 
         private static final Factory getInstance() {
-            final boolean useJNA = Boolean.getBoolean("ffi.usejna");
+            final boolean useJNA = Boolean.getBoolean("jruby.ffi.usejna");
             String prefix = FFIProvider.class.getPackage().getName();
             Factory factory = null;
             if (!useJNA) {
@@ -71,6 +72,9 @@ public abstract class Factory {
     public static class Service implements Library {
 
         public void load(final Ruby runtime, boolean wrap) throws IOException {
+            if (!RubyInstanceConfig.nativeEnabled) {
+                throw runtime.newLoadError("Native API access is disabled");
+            }
             RubyModule ffi = runtime.defineModuleUnder("FFI", runtime.defineModule("JRuby"));
             Factory factory = Factory.getInstance();
             factory.init(runtime, ffi);
