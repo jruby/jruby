@@ -97,7 +97,7 @@ module YAML
       else
         emitter.reset( opts )
       end
-    out.emit( oid, &e )
+    out.emit( oid, &e ).to_s
   end
   
   module JvYAML
