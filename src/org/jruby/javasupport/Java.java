@@ -1189,18 +1189,6 @@ public class Java implements Library {
             throw recv.getRuntime().newNameError("no " + ((JavaMethod) o1).name() + " with arguments matching " + argTypes + " on object " + recv.callMethod(recv.getRuntime().getCurrentContext(), "inspect"), null);
         }
     }
-    
-    private static JavaCallable findMatchingCallableForArgs(IRubyObject recv, Map cache, int signatureCode, JavaCallable[] methods, IRubyObject... args) {
-        JavaCallable method = findCallable(methods, Exact, args);
-        if (method == null) method = findCallable(methods, AssignableAndPrimitivable, args);
-        if (method == null) method = findCallable(methods, AssignableOrDuckable, args);
-        if (method == null) {
-            throw argTypesDoNotMatch(recv.getRuntime(), recv, methods, args);
-        } else {
-            cache.put(signatureCode, method);
-            return method;
-        }
-    }
 
     // A version that just requires ParameterTypes; they will all move toward
     // something similar soon
@@ -1227,7 +1215,7 @@ public class Java implements Library {
         for (int k = 0; k < callables.length; k++) {
             ParameterTypes callable = callables[k];
             Class<?>[] types = callable.getParameterTypes();
-            
+
             if (acceptor.accept(types, args)) {
                 int currentScore = getExactnessScore(types, args);
                 if (currentScore > bestScore) {
@@ -1242,7 +1230,7 @@ public class Java implements Library {
     private static int getExactnessScore(Class<?>[] types, IRubyObject[] args) {
         int count = 0;
         for (int i = 0; i < args.length; i++) {
-            if (!types[i].equals(argClass(args[i]))) count++;
+            if (types[i].equals(argClass(args[i]))) count++;
         }
         return count;
     }
@@ -1264,35 +1252,35 @@ public class Java implements Library {
     public static JavaCallable matchingCallableArityN(IRubyObject recv, Map cache, JavaCallable[] methods, IRubyObject[] args, int argsLength) {
         int signatureCode = argsHashCode(args);
         JavaCallable method = (JavaCallable)cache.get(signatureCode);
-        if (method == null) method = findMatchingCallableForArgs(recv, cache, signatureCode, methods, args);
+        if (method == null) method = (JavaCallable)findMatchingCallableForArgs(recv, cache, signatureCode, methods, args);
         return method;
     }
     
     public static JavaCallable matchingCallableArityOne(IRubyObject recv, Map cache, JavaCallable[] methods, IRubyObject arg0) {
         int signatureCode = argsHashCode(arg0);
         JavaCallable method = (JavaCallable)cache.get(signatureCode);
-        if (method == null) method = findMatchingCallableForArgs(recv, cache, signatureCode, methods, arg0);
+        if (method == null) method = (JavaCallable)findMatchingCallableForArgs(recv, cache, signatureCode, methods, arg0);
         return method;
     }
     
     public static JavaCallable matchingCallableArityTwo(IRubyObject recv, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1) {
         int signatureCode = argsHashCode(arg0, arg1);
         JavaCallable method = (JavaCallable)cache.get(signatureCode);
-        if (method == null) method = findMatchingCallableForArgs(recv, cache, signatureCode, methods, arg0, arg1);
+        if (method == null) method = (JavaCallable)findMatchingCallableForArgs(recv, cache, signatureCode, methods, arg0, arg1);
         return method;
     }
     
     public static JavaCallable matchingCallableArityThree(IRubyObject recv, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         int signatureCode = argsHashCode(arg0, arg1, arg2);
         JavaCallable method = (JavaCallable)cache.get(signatureCode);
-        if (method == null) method = findMatchingCallableForArgs(recv, cache, signatureCode, methods, arg0, arg1, arg2);
+        if (method == null) method = (JavaCallable)findMatchingCallableForArgs(recv, cache, signatureCode, methods, arg0, arg1, arg2);
         return method;
     }
     
     public static JavaCallable matchingCallableArityFour(IRubyObject recv, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         int signatureCode = argsHashCode(arg0, arg1, arg2, arg3);
         JavaCallable method = (JavaCallable)cache.get(signatureCode);
-        if (method == null) method = findMatchingCallableForArgs(recv, cache, signatureCode, methods, arg0, arg1, arg2, arg3);
+        if (method == null) method = (JavaCallable)findMatchingCallableForArgs(recv, cache, signatureCode, methods, arg0, arg1, arg2, arg3);
         return method;
     }
     
@@ -1317,16 +1305,6 @@ public class Java implements Library {
             return assignableOrDuckable(types, args);
         }
     };
-    
-    private static JavaCallable findCallable(JavaCallable[] callables, CallableAcceptor acceptor, IRubyObject... args) {
-        for (int k = 0; k < callables.length; k++) {
-            JavaCallable callable = callables[k];
-            Class<?>[] types = ((ParameterTypes) callable).getParameterTypes();
-            
-            if (acceptor.accept(types, args)) return callable;
-        }
-        return null;
-    }
     
     private static boolean exactMatch(Class[] types, IRubyObject... args) {
         for (int i = 0; i < types.length; i++) {

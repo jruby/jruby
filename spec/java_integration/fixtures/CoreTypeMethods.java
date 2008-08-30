@@ -133,6 +133,46 @@ public class CoreTypeMethods {
         return "boolean";
     }
     
+    public String getTypeInstance(byte b) {
+        return "byte";
+    }
+    
+    public String getTypeInstance(short s) {
+        return "short";
+    }
+    
+    public String getTypeInstance(char c) {
+        return "char";
+    }
+    
+    public String getTypeInstance(int i) {
+        return "int";
+    }
+    
+    public String getTypeInstance(long l) {
+        return "long";
+    }
+    
+    public String getTypeInstance(float f) {
+        return "float";
+    }
+    
+    public String getTypeInstance(double d) {
+        return "double";
+    }
+    
+    public String getTypeInstance(CharSequence cs) {
+        return "CharSequence";
+    }
+    
+    public String getTypeInstance(String s) {
+        return "String";
+    }
+
+    public String getTypeInstance(boolean b) {
+        return "boolean";
+    }
+    
     public static String getObjectType(Object obj) {
         return obj.getClass().toString();
     }
@@ -145,11 +185,91 @@ public class CoreTypeMethods {
         return "long,object";
     }
 
+    public static String getType(double i, Object o, Object o2) {
+        return "double,object,object";
+    }
+
+    public static String getType(long i, Object o, Object o2) {
+        return "long,object,object";
+    }
+
+    public static String getType(double i, Object o, Object o2, Object o3) {
+        return "double,object,object,object";
+    }
+
+    public static String getType(long i, Object o, Object o2, Object o3) {
+        return "long,object,object,object";
+    }
+
     public static String getType(double i, String o) {
         return "double,string";
     }
 
     public static String getType(long i, String o) {
         return "long,string";
+    }
+
+    public static String getType(double i, String o, String o2) {
+        return "double,string,string";
+    }
+
+    public static String getType(long i, String o, String o2) {
+        return "long,string,string";
+    }
+
+    public static String getType(double i, String o, String o2, String o3) {
+        return "double,string,string,string";
+    }
+
+    public static String getType(long i, String o, String o2, String o3) {
+        return "long,string,string,string";
+    }
+
+    public String getTypeInstance(double i, Object o) {
+        return "double,object";
+    }
+
+    public String getTypeInstance(long i, Object o) {
+        return "long,object";
+    }
+
+    public String getTypeInstance(double i, Object o, Object o2) {
+        return "double,object,object";
+    }
+
+    public String getTypeInstance(long i, Object o, Object o2) {
+        return "long,object,object";
+    }
+
+    public String getTypeInstance(double i, Object o, Object o2, Object o3) {
+        return "double,object,object,object";
+    }
+
+    public String getTypeInstance(long i, Object o, Object o2, Object o3) {
+        return "long,object,object,object";
+    }
+
+    public String getTypeInstance(double i, String o) {
+        return "double,string";
+    }
+
+    public String getTypeInstance(long i, String o) {
+        return "long,string";
+    }
+
+    public String getTypeInstance(double i, String o, String o2) {
+        return "double,string,string";
+    }
+
+    public String getTypeInstance(long i, String o, String o2) {
+        return "long,string,string";
+    }
+
+    public String getTypeInstance(double i, String o, String o2, String o3) {
+        return "double,string,string,string";
+    }
+
+    public String getTypeInstance(long i, String o, String o2, String o3) {
+        return "long,string,string,string";
     }
 }
