@@ -40,9 +40,9 @@ import org.jruby.runtime.Visibility;
  * @author wayne
  */
 abstract class JNADynamicMethod extends DynamicMethod {
-    final Arity arity;
-    final Function function;
-    final FunctionInvoker functionInvoker;
+    protected final Arity arity;
+    protected final Function function;
+    protected final FunctionInvoker functionInvoker;
 
     public JNADynamicMethod(RubyModule implementationClass, Arity arity, Function function, FunctionInvoker functionInvoker) {
         super(implementationClass, Visibility.PUBLIC, CallConfiguration.NO_FRAME_NO_SCOPE);
@@ -51,15 +51,15 @@ abstract class JNADynamicMethod extends DynamicMethod {
         this.functionInvoker = functionInvoker;
     }
     @Override
-    public DynamicMethod dup() {
+    public final DynamicMethod dup() {
         return this;
     }
     @Override
-    public Arity getArity() {
+    public final Arity getArity() {
         return arity;
     }
     @Override
-    public boolean isNative() {
+    public final boolean isNative() {
         return true;
     }
 }

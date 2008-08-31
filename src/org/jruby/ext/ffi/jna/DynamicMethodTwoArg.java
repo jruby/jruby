@@ -36,12 +36,14 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-class DynamicMethodTwoArg extends JNADynamicMethod {
-    final Marshaller[] marshallers;
+final class DynamicMethodTwoArg extends JNADynamicMethod {
+    private final Marshaller marshaller1;
+    private final Marshaller marshaller2;
     public DynamicMethodTwoArg(RubyModule implementationClass, Function function, 
             FunctionInvoker functionInvoker, Marshaller[] marshallers) {
         super(implementationClass, Arity.TWO_ARGUMENTS, function, functionInvoker);
-        this.marshallers = marshallers;
+        marshaller1 = marshallers[0];
+        marshaller2 = marshallers[1];
     }
 
     @Override
@@ -51,11 +53,13 @@ class DynamicMethodTwoArg extends JNADynamicMethod {
     }
     
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2) {
-        Invocation invocation = new Invocation();
-        Object[] nativeArgs = new Object[2];
-        nativeArgs[0] = marshallers[0].marshal(invocation, arg1);
-        nativeArgs[1] = marshallers[1].marshal(invocation, arg2);
+    public IRubyObject call(ThreadContext context, IRubyObject self,
+            RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2) {
+        final Invocation invocation = new Invocation();
+        final Object[] nativeArgs = new Object[]{
+            marshaller1.marshal(invocation, arg1),
+            marshaller2.marshal(invocation, arg2),
+        };
         IRubyObject retVal = functionInvoker.invoke(context.getRuntime(), function, nativeArgs);
         invocation.finish();
         return retVal;
