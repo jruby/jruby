@@ -4,7 +4,7 @@ def bench_class_definition(bm)
   bm.report("10000 def/undef method") {
     class << self
       10000.times {
-        eval "def my_bogus_method; end; undef my_bogus_method"
+        def my_bogus_method; end; undef my_bogus_method
       }
     end
   }
