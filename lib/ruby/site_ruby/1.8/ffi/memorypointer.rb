@@ -40,6 +40,11 @@ module JRuby
           ptr
         end
       end
+      def self.from_string(s)
+        ptr = self.new(s.length + 1, 1, false)
+        ptr.put_string(0, s)
+        ptr
+      end
       # Indicates how many bytes the type that the pointer is cast as uses.
       attr_accessor :type_size
 

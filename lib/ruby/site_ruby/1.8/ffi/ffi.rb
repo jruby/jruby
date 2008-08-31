@@ -181,6 +181,9 @@ module FFI
     4 => :int,
     8 => :long_long,
   }
+  def self.type_size(t)
+    JRuby::FFI.type_size(t)
+  end
 end
 
 module JRuby::FFI
@@ -289,6 +292,7 @@ module JRuby::FFI
     NativeType::FLOAT64 => 8,
     NativeType::LONG => JRuby::FFI::Platform::LONG_SIZE / 8,
     NativeType::ULONG => JRuby::FFI::Platform::LONG_SIZE / 8,
+    NativeType::POINTER => JRuby::FFI::Platform::ADDRESS_SIZE / 8,
   }
   
   def self.size_to_type(size)
