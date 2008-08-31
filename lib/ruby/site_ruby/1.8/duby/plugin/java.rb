@@ -20,8 +20,13 @@ module Duby
       end
       
       def method_type(typer, target_type, name, parameter_types)
-        java_type = Java::JavaClass.for_name(mapped_type(target_type).name)
-        arg_types = parameter_types.map {|type| Java::JavaClass.for_name(mapped_type(type).name)}
+        begin
+          java_type = Java::JavaClass.for_name(mapped_type(target_type).name)
+          arg_types = parameter_types.map {|type| Java::JavaClass.for_name(mapped_type(type).name)}
+        rescue NameError
+          log "Failed to infer Java types for method \"#{name}\" #{parameter_types} on #{target_type}"
+          return nil
+        end
         method = java_type.java_method(name, *arg_types)
 
         result = AST::type(method.return_type.name)
