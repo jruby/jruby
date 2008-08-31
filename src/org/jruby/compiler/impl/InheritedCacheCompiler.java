@@ -77,26 +77,26 @@ public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
             }
             initMethod.putfield(scriptCompiler.getClassname(), "callSites", ci(CallSite[].class));
         }
+
+        // generate symbols initialization code
+        size = inheritedSymbolCount;
+        if (size != 0) {
+            initMethod.aload(0);
+            initMethod.pushInt(size);
+            initMethod.anewarray(p(RubySymbol.class));
+            initMethod.putfield(scriptCompiler.getClassname(), "symbols", ci(RubySymbol[].class));
+        }
     }
-    
-    Map<String, String> inheritedSymbols = new HashMap<String, String>();
     
     @Override
     public void cacheSymbol(StandardASMCompiler.AbstractMethodCompiler method, String symbol) {
-        String methodName = inheritedSymbols.get(symbol);
-        if (methodName == null && inheritedSymbolCount < MAX_INHERITED_SYMBOLS) {
-            methodName = "getSymbol" + inheritedSymbolCount++;
-            inheritedSymbols.put(symbol, methodName);
-        }
-        
-        if (methodName == null) {
-            super.cacheSymbol(method, symbol);
-        } else {
-            method.loadThis();
-            method.loadRuntime();
-            method.method.ldc(symbol);
-            method.method.invokevirtual(scriptCompiler.getClassname(), methodName, sig(RubySymbol.class, Ruby.class, String.class));
-        }
+        method.loadThis();
+        method.loadRuntime();
+        method.method.pushInt(inheritedSymbolCount);
+        method.method.ldc(symbol);
+        method.method.invokevirtual(scriptCompiler.getClassname(), "getSymbol", sig(RubySymbol.class, Ruby.class, int.class, String.class));
+
+        inheritedSymbolCount++;
     }
     
     Map<Long, String> inheritedFixnums = new HashMap<Long, String>();
