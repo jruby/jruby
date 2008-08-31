@@ -114,7 +114,7 @@ public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
             initMethod.pushInt(size);
             initMethod.anewarray(p(CallSite.class));
             
-            for (int i = 0; i < size; i++) {
+            for (int i = size - 1; i >= 0; i--) {
                 String name = callSiteList.get(i);
                 CallType callType = callTypeList.get(i);
 

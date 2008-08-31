@@ -72,24 +72,6 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
         method.method.getfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
     }
     
-    @Deprecated
-    public void cachePosition(StandardASMCompiler.AbstractMethodCompiler method, String file, int line) {
-        String cleanName = JavaNameMangler.mangleStringForCleanJavaIdentifier(file + "$" + line);
-        String fieldName = sourcePositions.get(cleanName);
-        if (fieldName == null) {
-            SkinnyMethodAdapter clinitMethod = scriptCompiler.getClassInitMethod();
-            fieldName = scriptCompiler.getNewStaticConstant(ci(ISourcePosition.class), cleanName);
-            sourcePositions.put(JavaNameMangler.mangleStringForCleanJavaIdentifier(file + "$" + line), fieldName);
-
-            clinitMethod.ldc(file);
-            clinitMethod.ldc(line);
-            clinitMethod.invokestatic(p(RuntimeHelpers.class), "constructPosition", sig(ISourcePosition.class, String.class, int.class));
-            clinitMethod.putstatic(scriptCompiler.getClassname(), fieldName, ci(ISourcePosition.class));
-        }
-        
-        method.method.getstatic(scriptCompiler.getClassname(), fieldName, ci(ISourcePosition.class));
-    }
-    
     public void cacheByteList(StandardASMCompiler.AbstractMethodCompiler method, String contents) {
         String fieldName = byteLists.get(contents);
         if (fieldName == null) {
