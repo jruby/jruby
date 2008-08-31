@@ -31,6 +31,24 @@ module Duby
         children.each {|child| child.compile(compiler)}
       end
     end
+
+    class Import
+      def compile(compiler)
+        compiler.import(short, long)
+      end
+    end
+
+    class Constant
+      def compile(compiler)
+        compiler.constant(self)
+      end
+    end
+
+    class PrintLine
+      def compile(compiler)
+        compiler.println(self)
+      end
+    end
     
     class Local
       def compile(compiler)

@@ -3,6 +3,10 @@ require 'duby/transform'
 
 module Duby
   module Typer
+    class << self
+      attr_accessor :verbose
+    end
+    
     class InferenceError < Exception
       attr_accessor :node
       def initialize(msg, node = nil)
@@ -15,7 +19,7 @@ module Duby
       include Duby
       
       def log(message)
-        puts "* [#{name}] #{message}" if $DEBUG
+        puts "* [#{name}] #{message}" if Typer.verbose
       end
     end
     
@@ -196,6 +200,8 @@ module Duby
 end
 
 if __FILE__ == $0
+  AST.verbose = true
+  Typer.verbose = true
   ast = Duby::AST.parse(File.read(ARGV[0]))
   typer = Duby::Typer::Simple.new(:script)
   ast.infer(typer)

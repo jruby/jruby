@@ -200,11 +200,23 @@ module Duby
 
       class FCallNode
         def transform(parent)
-          FunctionalCall.new(parent, name) do |call|
-            [
-              args_node ? args_node.child_nodes.map {|arg| arg.transform(call)} : [],
-              iter_node ? iter_node.transform(call) : nil
-            ]
+          # TODO This should probably be pluggable
+          case name
+          when "import"
+            short = args_node.child_nodes[0].value
+            long = args_node.child_nodes[1].value
+            Import.new(parent, short, long)
+          when "puts"
+            PrintLine.new(parent) do |println|
+              args_node ? args_node.child_nodes.map {|arg| arg.transform(println)} : []
+            end
+          else
+            FunctionalCall.new(parent, name) do |call|
+              [
+                args_node ? args_node.child_nodes.map {|arg| arg.transform(call)} : [],
+                iter_node ? iter_node.transform(call) : nil
+              ]
+            end
           end
         end
       end
@@ -339,6 +351,10 @@ module Duby
       class StrNode
         def transform(parent)
           String.new(parent, value)
+        end
+        
+        def type_reference(parent)
+          TypeReference.new(value)
         end
       end
 

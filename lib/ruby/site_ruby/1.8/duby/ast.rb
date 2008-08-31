@@ -2,6 +2,10 @@ require 'duby/transform'
 
 module Duby
   module AST
+    class << self
+      attr_accessor :verbose
+    end
+    
     # The top of the AST class hierarchy, this represents an abstract AST node.
     # It provides accessors for _children_, an array of all child nodes,
     # _parent_, a reference to this node's parent (nil if none), and _newline_,
@@ -21,7 +25,7 @@ module Duby
       end
 
       def log(message)
-        puts "* [AST] [#{simple_name}] " + message if $DEBUG
+        puts "* [AST] [#{simple_name}] " + message if AST.verbose
       end
 
       def inspect(indent = 0)
@@ -107,6 +111,12 @@ module Duby
         @name = name
         super(parent, [])
       end
+
+      def infer(typer)
+        @inferred_type ||= begin
+          typer.known_types[name] || AST::type(name, false, true)
+        end
+      end
     end
 
     class Self < Node; end
@@ -116,16 +126,19 @@ module Duby
     class TypeReference < Node
       include Named
       attr_accessor :array
-      def initialize(name, array = false)
+      alias array? array
+      attr_accessor :meta
+      alias meta? meta
+      
+      def initialize(name, array = false, meta = false)
         @name = name
         @array = array
+        @meta = meta
         super(nil)
       end
 
-      def array?; @array; end
-
       def to_s
-        "Type(#{name}#{array? ? ' array' : ''})"
+        "Type(#{name}#{array? ? ' array' : ''}#{meta? ? ' meta' : ''})"
       end
 
       def ==(other)
@@ -169,8 +182,8 @@ module Duby
     end
     
     # Shortcut method to construct type references
-    def self.type(typesym, array = false)
-      TypeReference.new(typesym, array)
+    def self.type(typesym, array = false, meta = false)
+      TypeReference.new(typesym, array, meta)
     end
   end
 end
@@ -182,3 +195,5 @@ require 'duby/ast/literal'
 require 'duby/ast/method'
 require 'duby/ast/class'
 require 'duby/ast/structure'
+require 'duby/ast/type'
+require 'duby/ast/intrinsics'
