@@ -65,7 +65,6 @@ module Duby
       end
       
       def define_type(name, superclass)
-        name = name.intern unless Symbol === name
         raise InferenceError.new("Duplicate type definition: #{name} < #{superclass}") if known_types[name]
         
         known_types[name] = AST::TypeDefinition.new(name, AST::TypeReference.new(superclass))
@@ -78,16 +77,12 @@ module Duby
       end
       
       def learn_local_type(scope, name, type)
-        name = name.intern unless Symbol === name
-
         log "Learned local type under #{scope} : #{name} = #{type}"
 
         get_local_type_hash(scope)[name] = type
       end
       
       def local_type(scope, name)
-        name = name.intern unless Symbol === name
-
         log "Retrieved local type in #{scope} : #{name} = #{get_local_type_hash(scope)[name]}"
 
         get_local_type_hash(scope)[name]
@@ -102,16 +97,12 @@ module Duby
       end
       
       def learn_method_type(target_type, name, parameter_types, type)
-        name = name.intern unless Symbol === name
-
         log "Learned method #{name} (#{parameter_types}) on #{target_type} = #{type}"
 
         get_method_type_hash(target_type, name, parameter_types)[:type] = type
       end
       
       def method_type(target_type, name, parameter_types)
-        name = name.intern unless Symbol === name
-
         simple_type = get_method_type_hash(target_type, name, parameter_types)[:type]
         
         if !simple_type
@@ -200,8 +191,8 @@ module Duby
 end
 
 if __FILE__ == $0
-  AST.verbose = true
-  Typer.verbose = true
+  Duby::AST.verbose = true
+  Duby::Typer.verbose = true
   ast = Duby::AST.parse(File.read(ARGV[0]))
   typer = Duby::Typer::Simple.new(:script)
   ast.infer(typer)

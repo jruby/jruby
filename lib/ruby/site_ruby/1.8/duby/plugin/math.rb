@@ -13,35 +13,35 @@ module Duby
         result = case target_type
         when typer.fixnum_type
           case name
-          when :-
+          when '-'
             case parameter_types[0]
             when typer.fixnum_type
               typer.fixnum_type
             else
               nil
             end
-          when :+
+          when '+'
             case parameter_types[0]
             when typer.fixnum_type
               typer.fixnum_type
             else
               nil
             end
-          when :*
+          when '*'
             case parameter_types[0]
             when typer.fixnum_type
               typer.fixnum_type
             else
               nil
             end
-          when :/
+          when '/'
             case parameter_types[0]
             when typer.fixnum_type
               typer.fixnum_type
             else
               nil
             end
-          when :<
+          when '<'
             case parameter_types[0]
             when typer.fixnum_type
               typer.boolean_type

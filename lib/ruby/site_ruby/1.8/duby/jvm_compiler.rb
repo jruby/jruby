@@ -26,6 +26,18 @@ module Duby
                 call.name,
                 [compiler.mapped_type(call.inferred_type), *call.parameters.map {|param| compiler.mapped_type(param.inferred_type)}])
             end
+          when AST.type(:long)
+            case call.name
+            when '-'
+              compiler.method.lsub
+            when '+'
+              compiler.method.ladd
+            else
+              compiler.method.invokevirtual(
+                compiler.mapped_type(call.target.inferred_type),
+                call.name,
+                [compiler.mapped_type(call.inferred_type), *call.parameters.map {|param| compiler.mapped_type(param.inferred_type)}])
+            end
           else
             compiler.method.invokevirtual(
               compiler.mapped_type(call.target.inferred_type),
@@ -40,10 +52,14 @@ module Duby
           static = call.target.inferred_type.meta?
           call.target.compile(compiler) unless static
           call.parameters.each {|param| param.compile(compiler)}
+          
+          target_class = compiler.mapped_type(call.target.inferred_type)
+
+          raise "Invoke attempted on primitive type: #{call.target.inferred_type}" if (target_class.primitive?)
 
           if static
               compiler.method.invokestatic(
-                compiler.mapped_type(call.target.inferred_type),
+                target_class,
                 call.name,
                 [compiler.mapped_type(call.inferred_type), *call.parameters.map {|param| compiler.mapped_type(param.inferred_type)}])
           else
@@ -61,11 +77,13 @@ module Duby
         @filename = filename
         @src = ""
 
-        self.type_mapper[AST.type(:fixnum)] = Java::int
-        self.type_mapper[AST.type(:string)] = Java::java.lang.String
-        self.type_mapper[AST.type(:string, true)] = Java::java.lang.String[]
+        self.type_mapper[AST.type(:fixnum)] = Java::int.java_class
+        self.type_mapper[AST.type(:long)] = Java::long.java_class
+        self.type_mapper[AST.type(:string)] = Java::java.lang.String.java_class
+        self.type_mapper[AST.type(:string, true)] = Java::java.lang.String[].java_class
         
-        self.call_compilers[AST.type(:fixnum)] = MathCompiler.new
+        self.call_compilers[AST.type(:fixnum)] =
+          self.call_compilers[AST.type(:long)] = MathCompiler.new
         self.call_compilers.default = InvokeCompiler.new
 
         @file = ::Compiler::FileBuilder.new(filename)
@@ -178,6 +196,8 @@ module Duby
         case type
         when AST.type(:fixnum)
           @method.iload(@method.local(name))
+        when AST.type(:long)
+          @method.lload(@method.local(name))
         else
           @method.aload(@method.local(name))
         end
@@ -188,6 +208,8 @@ module Duby
         case type
         when AST.type(:fixnum)
           @method.istore(@method.local(name))
+        when AST.type(:long)
+          @method.lstore(@method.local(name))
         else
           @method.astore(@method.local(name))
         end
@@ -206,7 +228,11 @@ module Duby
       end
       
       def generate
-        @file.generate{|filename, builder| File.open(filename, 'w') {|f| f.write(builder.generate)}}
+        if block_given?
+          @file.generate {|filename, builder| yield filename, builder}
+        else
+          @file.generate {|filename, builder| File.open(filename, 'w') {|f| f.write(builder.generate)}}
+        end
       end
       
       def type_mapper
