@@ -29,4 +29,6 @@ public interface CacheCompiler {
     public void cacheClosure(StandardASMCompiler.AbstractMethodCompiler method, String closureMethod, int arity, StaticScope scope, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector);
     
     public void cacheClosureOld(StandardASMCompiler.AbstractMethodCompiler method, String closureMethod);
+
+    public void finish();
 }

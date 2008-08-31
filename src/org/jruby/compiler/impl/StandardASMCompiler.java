@@ -210,8 +210,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         return classWriter;
     }
     
-    static boolean USE_INHERITED_CACHE_FIELDS = true;
-
     public void startScript(StaticScope scope) {
         classWriter = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
 
@@ -339,6 +337,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         method.invokevirtual(p(ThreadContext.class), "setFileAndLine", sig(void.class, String.class, int.class));
         method.voidreturn();
         method.end();
+
+        cacheCompiler.finish();
         
         endInit();
         endClassInit();
@@ -379,11 +379,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         initMethod = new SkinnyMethodAdapter(cv.visitMethod(ACC_PUBLIC, "<init>", sig(Void.TYPE), null, null));
         initMethod.start();
         initMethod.aload(THIS);
-        if (USE_INHERITED_CACHE_FIELDS) {
-            initMethod.invokespecial(p(AbstractScript.class), "<init>", sig(Void.TYPE));
-        } else {
-            initMethod.invokespecial(p(Object.class), "<init>", sig(Void.TYPE));
-        }
+        initMethod.invokespecial(p(AbstractScript.class), "<init>", sig(Void.TYPE));
         
         cv.visitField(ACC_PRIVATE | ACC_FINAL, "$class", ci(Class.class), null, null);
         

@@ -23,7 +23,6 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
 import org.objectweb.asm.ClassVisitor;
@@ -46,6 +45,10 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
     
     public FieldBasedCacheCompiler(StandardASMCompiler scriptCompiler) {
         this.scriptCompiler = scriptCompiler;
+    }
+
+    public void finish() {
+        // no finish for field-based
     }
     
     public void cacheCallSite(StandardASMCompiler.AbstractMethodCompiler method, String name, CallType callType) {

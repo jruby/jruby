@@ -5,7 +5,9 @@
 
 package org.jruby.compiler.impl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
@@ -25,6 +27,8 @@ public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
     public static final int MAX_INHERITED_FIXNUMS = 50;
     
     int callSiteCount = 0;
+    List<String> callSiteList = new ArrayList<String>();
+    List<CallType> callTypeList = new ArrayList<CallType>();
     int inheritedSymbolCount = 0;
     int inheritedFixnumCount = 0;
     
@@ -34,31 +38,45 @@ public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
     
     @Override
     public void cacheCallSite(StandardASMCompiler.AbstractMethodCompiler method, String name, CallType callType) {
-        String fieldName = "site" + callSiteCount;
+        // retrieve call site from sites array
+        method.loadThis();
+        method.method.pushInt(callSiteCount);
+        method.method.invokevirtual(scriptCompiler.getClassname(), "getCallSite", sig(CallSite.class, int.class));
+
+        // add name to call site list
+        callSiteList.add(name);
+        callTypeList.add(callType);
         
-        // retrieve call adapter
+        callSiteCount++;
+    }
+
+    public void finish() {
         SkinnyMethodAdapter initMethod = scriptCompiler.getInitMethod();
         initMethod.aload(StandardASMCompiler.THIS);
-        method.loadThis();
-        initMethod.ldc(name);
-        
-        if (callType.equals(CallType.NORMAL)) {
-            initMethod.invokestatic(p(MethodIndex.class), "getCallSite", sig(CallSite.class, params(String.class)));
-        } else if (callType.equals(CallType.FUNCTIONAL)) {
-            initMethod.invokestatic(p(MethodIndex.class), "getFunctionalCallSite", sig(CallSite.class, params(String.class)));
-        } else if (callType.equals(CallType.VARIABLE)) {
-            initMethod.invokestatic(p(MethodIndex.class), "getVariableCallSite", sig(CallSite.class, params(String.class)));
-        }
 
-        if (callSiteCount >= MAX_INHERITED_CALL_SITES) {
-            scriptCompiler.getNewField(ci(CallSite.class), fieldName, null);
-            initMethod.putfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
-            method.method.getfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
-        } else {
-            initMethod.putfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
-            method.method.getfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
+        // generate call site initialization code
+        int size = callSiteList.size();
+        if (size != 0) {
+            initMethod.aload(0);
+            initMethod.pushInt(size);
+            initMethod.anewarray(p(CallSite.class));
+            
+            for (int i = 0; i < size; i++) {
+                String name = callSiteList.get(i);
+                CallType callType = callTypeList.get(i);
+
+                initMethod.pushInt(i);
+                initMethod.ldc(name);
+                if (callType.equals(CallType.NORMAL)) {
+                    initMethod.invokestatic(scriptCompiler.getClassname(), "setCallSite", sig(CallSite[].class, params(CallSite[].class, int.class, String.class)));
+                } else if (callType.equals(CallType.FUNCTIONAL)) {
+                    initMethod.invokestatic(scriptCompiler.getClassname(), "setFunctionalCallSite", sig(CallSite[].class, params(CallSite[].class, int.class, String.class)));
+                } else if (callType.equals(CallType.VARIABLE)) {
+                    initMethod.invokestatic(scriptCompiler.getClassname(), "setVariableCallSite", sig(CallSite[].class, params(CallSite[].class, int.class, String.class)));
+                }
+            }
+            initMethod.putfield(scriptCompiler.getClassname(), "callSites", ci(CallSite[].class));
         }
-        callSiteCount++;
     }
     
     Map<String, String> inheritedSymbols = new HashMap<String, String>();
