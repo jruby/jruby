@@ -191,75 +191,6 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         methodCompiler.invokeUtilityMethod("doAttrAsgn", signature);
     }
     
-    public void opElementAsgn(CompilerCallback valueCallback, String operator) {
-        // FIXME: op element asgn is not yet using CallAdapter. Boo hoo.
-        
-        // receiver and args are already on the stack
-        methodCompiler.method.dup2();
-        
-        // invoke the [] operator and dup the result
-        invokeDynamic("[]", true, true, CallType.FUNCTIONAL, null, false);
-        methodCompiler.method.dup();
-        
-        // stack is now: .. receiver, args, result, result
-        Label end = new Label();
-        if (operator == "||") {
-            Label falseResult = new Label();
-            methodCompiler.invokeIRubyObject("isTrue", sig(boolean.class)); // receiver, args, result, istrue
-            methodCompiler.method.ifeq(falseResult); // receiver, args, result
-            
-            // it's true, clear everything but the result
-            methodCompiler.method.dup_x2(); // result, receiver, args, result
-            methodCompiler.method.pop(); // result, receiver, args
-            methodCompiler.method.pop2(); // result
-            methodCompiler.method.go_to(end);
-            
-            // it's false, stuff the element in
-            methodCompiler.method.label(falseResult);
-            // START: .. receiver, args, result
-            methodCompiler.method.pop(); // receiver, args
-            valueCallback.call(methodCompiler); // receiver, args, value
-            // save the value rather than using the result of the []= call
-            methodCompiler.method.dup_x2(); // value, receiver, args, value
-            methodCompiler.appendToObjectArray(); // value, receiver, combinedArgs
-            invokeDynamic("[]=", true, true, CallType.FUNCTIONAL, null, false); // value, assignmentResult
-            // pop result
-            methodCompiler.method.pop();
-            
-            methodCompiler.method.label(end);
-        } else if (operator == "&&") {
-            // TODO: This is the reverse of the above logic, and could probably be abstracted better
-            Label falseResult = new Label();
-            methodCompiler.invokeIRubyObject("isTrue", sig(boolean.class));
-            methodCompiler.method.ifeq(falseResult);
-            
-            // it's true, stuff the element in
-            // START: .. receiver, args, result
-            methodCompiler.method.pop(); // receiver, args
-            valueCallback.call(methodCompiler); // receiver, args, value
-            methodCompiler.appendToObjectArray(); // receiver, combinedArgs
-            invokeDynamic("[]=", true, true, CallType.FUNCTIONAL, null, false); // assignmentResult
-            methodCompiler.method.go_to(end);
-            
-            // it's false, clear everything but the result
-            methodCompiler.method.label(falseResult);
-            methodCompiler.method.dup_x2();
-            methodCompiler.method.pop();
-            methodCompiler.method.pop2();
-            
-            methodCompiler.method.label(end);
-        } else {
-            // remove extra result, operate on it, and reassign with original args
-            methodCompiler.method.pop();
-            // START: .. receiver, args, result
-            valueCallback.call(methodCompiler); // receiver, args, result, value
-            methodCompiler.createObjectArray(1);
-            invokeDynamic(operator, true, true, CallType.FUNCTIONAL, null, false); // receiver, args, newresult
-            methodCompiler.appendToObjectArray(); // receiver, newargs
-            invokeDynamic("[]=", true, true, CallType.FUNCTIONAL, null, false); // assignmentResult
-        }
-    }
-    
     public void opElementAsgnWithOr(CompilerCallback receiver, ArgumentsCallback args, CompilerCallback valueCallback) {
         // get call site and thread context
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, "[]", CallType.FUNCTIONAL);
@@ -296,7 +227,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         methodCompiler.getVariableCompiler().getTempLocal(receiverLocal);
         methodCompiler.getVariableCompiler().getTempLocal(argsLocal);
         
-        // eval value and save it
+        // eval value for assignment
         valueCallback.call(methodCompiler);
         
         // call site

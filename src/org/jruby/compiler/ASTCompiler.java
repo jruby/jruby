@@ -2591,6 +2591,44 @@ public class ASTCompiler {
             compileOpElementAsgnWithMethod(node, context);
         }
     }
+    
+    private class OpElementAsgnArgumentsCallback implements ArgumentsCallback  {
+        private Node node;
+
+        public OpElementAsgnArgumentsCallback(Node node) {
+            this.node = node;
+        }
+        
+        public int getArity() {
+            switch (node.nodeId) {
+            case ARGSCATNODE:
+            case ARGSPUSHNODE:
+            case SPLATNODE:
+                return -1;
+            case ARRAYNODE:
+                ArrayNode arrayNode = (ArrayNode)node;
+                if (arrayNode.size() == 0) {
+                    return 0;
+                } else if (arrayNode.size() > 3) {
+                    return -1;
+                } else {
+                    return ((ArrayNode)node).size();
+                }
+            default:
+                return 1;
+            }
+        }
+
+        public void call(MethodCompiler context) {
+            if (getArity() == 1) {
+                // if arity 1, just compile the one element to save us the array cost
+                compile(((ArrayNode)node).get(0), context);
+            } else {
+                // compile into array
+                compileArguments(node, context);
+            }
+        }
+    };
 
     public void compileOpElementAsgnWithOr(Node node, MethodCompiler context) {
         final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
@@ -2601,38 +2639,7 @@ public class ASTCompiler {
             }
         };
 
-        ArgumentsCallback argsCallback = new ArgumentsCallback() {
-            public int getArity() {
-                Node node = opElementAsgnNode.getArgsNode();
-                switch (node.nodeId) {
-                case ARGSCATNODE:
-                case ARGSPUSHNODE:
-                case SPLATNODE:
-                    return -1;
-                case ARRAYNODE:
-                    ArrayNode arrayNode = (ArrayNode)node;
-                    if (arrayNode.size() == 0) {
-                        return 0;
-                    } else if (arrayNode.size() > 3) {
-                        return -1;
-                    } else {
-                        return ((ArrayNode)node).size();
-                    }
-                default:
-                    return 1;
-                }
-            }
-
-            public void call(MethodCompiler context) {
-                if (getArity() == 1) {
-                    // if arity 1, just compile the one element to save us the array cost
-                    compile(((ArrayNode)opElementAsgnNode.getArgsNode()).get(0), context);
-                } else {
-                    // compile into array
-                    compileArguments(opElementAsgnNode.getArgsNode(), context);
-                }
-            }
-        };
+        ArgumentsCallback argsCallback = new OpElementAsgnArgumentsCallback(opElementAsgnNode.getArgsNode());
 
         CompilerCallback valueCallback = new CompilerCallback() {
             public void call(MethodCompiler context) {
@@ -2652,38 +2659,7 @@ public class ASTCompiler {
             }
         };
 
-        ArgumentsCallback argsCallback = new ArgumentsCallback() {
-            public int getArity() {
-                Node node = opElementAsgnNode.getArgsNode();
-                switch (node.nodeId) {
-                case ARGSCATNODE:
-                case ARGSPUSHNODE:
-                case SPLATNODE:
-                    return -1;
-                case ARRAYNODE:
-                    ArrayNode arrayNode = (ArrayNode)node;
-                    if (arrayNode.size() == 0) {
-                        return 0;
-                    } else if (arrayNode.size() > 3) {
-                        return -1;
-                    } else {
-                        return ((ArrayNode)node).size();
-                    }
-                default:
-                    return 1;
-                }
-            }
-
-            public void call(MethodCompiler context) {
-                if (getArity() == 1) {
-                    // if arity 1, just compile the one element to save us the array cost
-                    compile(((ArrayNode)opElementAsgnNode.getArgsNode()).get(0), context);
-                } else {
-                    // compile into array
-                    compileArguments(opElementAsgnNode.getArgsNode(), context);
-                }
-            }
-        };
+        ArgumentsCallback argsCallback = new OpElementAsgnArgumentsCallback(opElementAsgnNode.getArgsNode()); 
 
         CompilerCallback valueCallback = new CompilerCallback() {
             public void call(MethodCompiler context) {
