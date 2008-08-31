@@ -54,22 +54,34 @@ import org.jruby.util.ByteList;
  */
 public class Parser {
     private final Ruby runtime;
+    private volatile long totalTime;
+    private volatile int totalBytes;
 
     public Parser(Ruby runtime) {
         this.runtime = runtime;
     }
+
+    public long getTotalTime() {
+        return totalTime;
+    }
+
+    public int getTotalBytes() {
+        return totalBytes;
+    }
     
     public Node parseRewriter(String file, InputStream content, 
             ParserConfiguration configuration) throws SyntaxException {
-
+        long startTime = System.nanoTime();
         DefaultRubyParser parser = RubyParserPool.getInstance().borrowParser();
+        parser.setWarnings(new NullWarnings());
+        LexerSource lexerSource = LexerSource.getSource(file, content, null, configuration);
+        
         try {
-            parser.setWarnings(new NullWarnings());
-            LexerSource lexerSource = LexerSource.getSource(file, content, null, configuration);
-            
             return parser.parse(configuration, lexerSource).getAST();
         } finally {
             RubyParserPool.getInstance().returnParser(parser);
+            totalTime += System.nanoTime() - startTime;
+            totalBytes += lexerSource.getOffset();
         }
     }
     
@@ -82,6 +94,7 @@ public class Parser {
     @SuppressWarnings("unchecked")
     public Node parse(String file, InputStream content, DynamicScope blockScope,
             ParserConfiguration configuration) {
+        long startTime = System.nanoTime();
         IRubyObject scriptLines = runtime.getObject().fastGetConstantAt("SCRIPT_LINES__");
         RubyArray list = null;
         
@@ -106,10 +119,10 @@ public class Parser {
         
         DefaultRubyParser parser = null;
         RubyParserResult result = null;
+        parser = RubyParserPool.getInstance().borrowParser();
+        parser.setWarnings(runtime.getWarnings());
+        LexerSource lexerSource = LexerSource.getSource(file, content, list, configuration);
         try {
-            parser = RubyParserPool.getInstance().borrowParser();
-            parser.setWarnings(runtime.getWarnings());
-            LexerSource lexerSource = LexerSource.getSource(file, content, list, configuration);
             result = parser.parse(configuration, lexerSource);
             if (result.getEndOffset() >= 0) {
                 IRubyObject verbose = runtime.getVerbose();
@@ -137,6 +150,11 @@ public class Parser {
             result.getScope().growIfNeeded();
         }
 
-        return result.getAST();
+        Node ast = result.getAST();
+        
+        totalTime += System.nanoTime() - startTime;
+        totalBytes += lexerSource.getOffset();
+
+        return ast;
     }
 }

@@ -96,6 +96,7 @@ import org.jruby.javasupport.JavaSupport;
 import org.jruby.management.BeanManager;
 import org.jruby.management.ClassCache;
 import org.jruby.management.Config;
+import org.jruby.management.ParserStats;
 import org.jruby.parser.Parser;
 import org.jruby.parser.ParserConfiguration;
 import org.jruby.runtime.Binding;
@@ -205,8 +206,10 @@ public final class Ruby {
         this.kcode              = config.getKCode();
         this.beanManager        = new BeanManager(this, config.isManagementEnabled());
         this.jitCompiler        = new JITCompiler(this);
+        this.parserStats        = new ParserStats(this);
         
         this.beanManager.register(new Config(this));
+        this.beanManager.register(parserStats);
         this.beanManager.register(new ClassCache(this));
         
         this.cacheMap = new CacheMap(this);
@@ -565,6 +568,10 @@ public final class Ruby {
         } catch (JumpException.ReturnJump rj) {
             return (IRubyObject) rj.getValue();
         }
+    }
+
+    public Parser getParser() {
+        return parser;
     }
     
     public BeanManager getBeanManager() {
@@ -1899,10 +1906,12 @@ public final class Ruby {
     }
     
     public Node parseFile(InputStream in, String file, DynamicScope scope) {
+        if (parserStats != null) parserStats.addLoadParse();
         return parser.parse(file, in, scope, new ParserConfiguration(0, false, false, true));
     }
 
     public Node parseInline(InputStream in, String file, DynamicScope scope) {
+        if (parserStats != null) parserStats.addEvalParse();
         return parser.parse(file, in, scope, new ParserConfiguration(0, false, true));
     }
 
@@ -1915,10 +1924,12 @@ public final class Ruby {
             bytes = content.getBytes();
         }
         
+        if (parserStats != null) parserStats.addEvalParse();
         return parser.parse(file, new ByteArrayInputStream(bytes), scope, 
                 new ParserConfiguration(lineNumber, false));
     }
 
+    @Deprecated
     public Node parse(String content, String file, DynamicScope scope, int lineNumber, 
             boolean extraPositionInformation) {
         byte[] bytes;
@@ -1934,11 +1945,13 @@ public final class Ruby {
     }
     
     public Node parseEval(ByteList content, String file, DynamicScope scope, int lineNumber) {
+        if (parserStats != null) parserStats.addEvalParse();
         return parser.parse(file, content, scope, new ParserConfiguration(lineNumber, false));
     }
 
     public Node parse(ByteList content, String file, DynamicScope scope, int lineNumber, 
             boolean extraPositionInformation) {
+        if (parserStats != null) parserStats.addJRubyModuleParse();
         return parser.parse(file, content, scope, 
                 new ParserConfiguration(lineNumber, extraPositionInformation, false));
     }
@@ -2340,6 +2353,7 @@ public final class Ruby {
 
         getBeanManager().unregisterCompiler();
         getBeanManager().unregisterConfig();
+        getBeanManager().unregisterParserStats();
         getBeanManager().unregisterClassCache();
         getBeanManager().unregisterMethodCache();
 
@@ -2976,6 +2990,9 @@ public final class Ruby {
     
     // Management/monitoring
     private BeanManager beanManager;
+
+    // Parser stats
+    private ParserStats parserStats;
     
     // Compilation
     private final JITCompiler jitCompiler;

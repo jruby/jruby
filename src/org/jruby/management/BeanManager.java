@@ -33,6 +33,10 @@ public class BeanManager {
         if (managementEnabled) register(base + "service=Config", config);
     }
     
+    public void register(ParserStatsMBean parserStats) {
+        if (managementEnabled) register(base + "service=ParserStats", parserStats);
+    }
+    
     public void register(MethodCacheMBean methodCache) {
         if (managementEnabled) register(base + "service=MethodCache", methodCache);
     }
@@ -46,6 +50,9 @@ public class BeanManager {
     }
     public void unregisterConfig() {
         if (managementEnabled) unregister(base + "service=Config");
+    }
+    public void unregisterParserStats() {
+        if (managementEnabled) unregister(base + "service=ParserStats");
     }
     public void unregisterClassCache() {
         if (managementEnabled) unregister(base + "service=ClassCache");
