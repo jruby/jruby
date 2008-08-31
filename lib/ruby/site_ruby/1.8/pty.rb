@@ -2,11 +2,16 @@ require 'ffi'
 
 module PTY
   private
+  module LibUtil
+    extend JRuby::FFI::Library
+    # forkpty(3) is in libutil on linux, libc on MacOS/BSD
+    if JRuby::FFI::Platform::IS_LINUX
+      ffi_lib 'libutil'
+    end
+    attach_function :forkpty, [ :buffer_out, :buffer_out, :buffer_in, :buffer_in ], :pid_t
+  end
   module LibC
     extend JRuby::FFI::Library
-    attach_function :forkpty, [ :buffer_out, :buffer_out, :buffer_in, :buffer_in ], :pid_t
-    attach_function :openpty, [ :buffer_out, :buffer_out, :buffer_out, :buffer_in, :buffer_in ], :int
-    attach_function :login_tty, [ :int ], :int
     attach_function :close, [ :int ], :int
     attach_function :strerror, [ :int ], :string
     attach_function :execv, [ :string, :buffer_in ], :int
@@ -37,7 +42,7 @@ module PTY
     # execv in the child after fork is really flakey
     #
     exec_cmd, exec_args = build_args(args)
-    pid = LibC.forkpty(mfdp, name, nil, nil)
+    pid = LibUtil.forkpty(mfdp, name, nil, nil)
     raise "forkpty failed: #{LibC.strerror(FFI.errno)}" if pid < 0    
     if pid == 0
       LibC.execvp(exec_cmd, exec_args)
