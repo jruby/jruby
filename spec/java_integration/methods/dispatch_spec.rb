@@ -10,8 +10,8 @@ describe "Non-overloaded static Java methods" do
   end
 end
 
-describe "Overloaded Java static methods" do
-  it "call most exact overload" do
+describe "An overloaded Java static method" do
+  it "should be called with the most exact overload" do
     obj = java.lang.Integer.new(1)
     CoreTypeMethods.getType(1).should == "long"
     CoreTypeMethods.getType(1, obj).should == "long,object"
@@ -32,10 +32,34 @@ describe "Overloaded Java static methods" do
     CoreTypeMethods.getType(1.0, obj, obj).should == "double,string,string"
     CoreTypeMethods.getType(1.0, obj, obj, obj).should == "double,string,string,string"
   end
+
+  it "should raise error when called with too many args" do
+    lambda do
+      obj = java.lang.Integer.new(1)
+      CoreTypeMethods.getType(1, obj, obj, obj, obj)
+    end.should raise_error(ArgumentError)
+      
+    lambda do
+      obj = "foo"
+      CoreTypeMethods.getType(1, obj, obj, obj, obj)
+    end.should raise_error(ArgumentError)
+  end
+
+  it "should raise error when called with too few args" do
+    pending do
+      lambda do
+        CoreTypeMethods.getType()
+      end.should raise_error(ArgumentError)
+
+      lambda do
+        CoreTypeMethods.getType()
+      end.should raise_error(ArgumentError)
+    end
+  end
 end
 
-describe "Overloaded Java instance methods" do
-  it "call most exact overload" do
+describe "An overloaded Java instance method" do
+  it "should be called with the most exact overload" do
     obj = java.lang.Integer.new(1)
     ctm = CoreTypeMethods.new
     ctm.getTypeInstance(1).should == "long"
@@ -57,5 +81,29 @@ describe "Overloaded Java instance methods" do
     ctm.getTypeInstance(1.0, obj).should == "double,string"
     ctm.getTypeInstance(1.0, obj, obj).should == "double,string,string"
     ctm.getTypeInstance(1.0, obj, obj, obj).should == "double,string,string,string"
+  end
+
+  it "should raise error when called with too many args" do
+    lambda do
+      obj = java.lang.Integer.new(1)
+      CoreTypeMethods.new.getTypeInstance(1, obj, obj, obj, obj)
+    end.should raise_error(ArgumentError)
+      
+    lambda do
+      obj = "foo"
+      CoreTypeMethods.new.getTypeInstance(1, obj, obj, obj, obj)
+    end.should raise_error(ArgumentError)
+  end
+
+  it "should raise error when called with too few args" do
+    pending "not sure why these are failing" do
+      lambda do
+        CoreTypeMethods.new.getTypeInstance()
+      end.should raise_error(ArgumentError)
+
+      lambda do
+        CoreTypeMethods.new.getTypeInstance()
+      end.should raise_error(ArgumentError)
+    end
   end
 end
