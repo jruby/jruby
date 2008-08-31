@@ -18,6 +18,7 @@ module PTY
     attach_function :execvp, [ :string, :buffer_in ], :int
     attach_function :dup2, [ :int, :int ], :int
     attach_function :dup, [ :int ], :int
+    attach_function :_exit, [ :int ], :void
   end
   Buffer = JRuby::FFI::Buffer
   def self.build_args(args)
@@ -35,26 +36,27 @@ module PTY
   end
   public
   def self.getpty(*args)
-    mfdp = Buffer.new :int
-    name = Buffer.new 1024
-    #
-    # All the execv setup is done in the parent, since doing anything other than
-    # execv in the child after fork is really flakey
-    #
+    mfdp = Buffer.alloc_out :int
+    name = Buffer.alloc_out 1024
     exec_cmd, exec_args = build_args(args)
     pid = LibUtil.forkpty(mfdp, name, nil, nil)
-    raise "forkpty failed: #{LibC.strerror(FFI.errno)}" if pid < 0    
+    #
+    # We want to do as little as possible in the child process, since we're running
+    # without any GC thread now, so test for the child case first
+    #
     if pid == 0
       LibC.execvp(exec_cmd, exec_args)
-      exit 1
+      LibC._exit(1)
     end
+    raise "forkpty failed: #{LibC.strerror(FFI.errno)}" if pid < 0
     masterfd = mfdp.get_int(0)
     rfp = FFI::IO.for_fd(masterfd, "r")
     wfp = FFI::IO.for_fd(LibC.dup(masterfd), "w")
     if block_given?
-      yield rfp, wfp, pid
-      rfp.close unless rfp.closed?
-      wfp.close unless wfp.closed?
+      retval = yield rfp, wfp, pid
+      begin; rfp.close; rescue Exception; end
+      begin; wfp.close; rescue Exception; end
+      retval
     else
       [ rfp, wfp, pid ]
     end
