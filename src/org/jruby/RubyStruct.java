@@ -129,7 +129,7 @@ public class RubyStruct extends RubyObject {
 
         for (int i = 0; i < values.length; i++) {
             h = (h << 1) | (h < 0 ? 1 : 0);
-            h ^= RubyNumeric.num2long(values[i].callMethod(context, MethodIndex.HASH, "hash"));
+            h ^= RubyNumeric.num2long(values[i].callMethod(context, "hash"));
         }
         
         return runtime.newFixnum(h);

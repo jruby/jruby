@@ -54,13 +54,15 @@ public interface IRubyObject {
      *
      */
     public static final IRubyObject[] NULL_ARRAY = new IRubyObject[0];
-    
+
+    @Deprecated
     public IRubyObject callSuper(ThreadContext context, IRubyObject[] args, Block block);
 
     public IRubyObject callMethod(ThreadContext context, String name);
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject arg);
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args);
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, Block block);
+    @Deprecated
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name);
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject arg);
     

@@ -38,6 +38,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObjectAdapter;
 import org.jruby.RubyRuntimeAdapter;
 import org.jruby.RubyString;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassCache;
@@ -142,11 +143,11 @@ public class JavaEmbedUtils {
             }
 
             public IRubyObject callSuper(IRubyObject receiver, IRubyObject[] args) {
-                return receiver.callSuper(receiver.getRuntime().getCurrentContext(), args, Block.NULL_BLOCK);
+                return RuntimeHelpers.invokeSuper(receiver.getRuntime().getCurrentContext(), receiver, args, Block.NULL_BLOCK);
             }
 
             public IRubyObject callSuper(IRubyObject receiver, IRubyObject[] args, Block block) {
-                return receiver.callSuper(receiver.getRuntime().getCurrentContext(), args, block);
+                return RuntimeHelpers.invokeSuper(receiver.getRuntime().getCurrentContext(), receiver, args, block);
             }
         };
     }

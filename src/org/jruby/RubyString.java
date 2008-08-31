@@ -576,7 +576,7 @@ public class RubyString extends RubyObject {
     public static RubyString objAsString(ThreadContext context, IRubyObject obj) {
         if (obj instanceof RubyString) return (RubyString) obj;
 
-        IRubyObject str = obj.callMethod(context, MethodIndex.TO_S, "to_s");
+        IRubyObject str = obj.callMethod(context, "to_s");
 
         if (!(str instanceof RubyString)) return (RubyString) obj.anyToString();
 

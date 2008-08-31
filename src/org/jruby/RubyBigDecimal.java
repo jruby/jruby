@@ -939,7 +939,7 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
         StringBuilder val = new StringBuilder("#<BigDecimal:").append(Integer.toHexString(System.identityHashCode(this))).append(",");
-        val.append("'").append(this.callMethod(context, MethodIndex.TO_S, "to_s")).append("'").append(",");
+        val.append("'").append(this.callMethod(context, "to_s")).append("'").append(",");
 
         val.append(getSignificantDigits().length()).append("(");
 

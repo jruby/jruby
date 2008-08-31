@@ -513,7 +513,7 @@ public class RubyYAML {
         @JRubyMethod(name = "is_binary_data?")
         public static IRubyObject string_is_binary(IRubyObject self) {
             ThreadContext context = self.getRuntime().getCurrentContext();
-            if(self.callMethod(context, MethodIndex.EMPTY_P, "empty?").isTrue()) {
+            if(self.callMethod(context, "empty?").isTrue()) {
                 return self.getRuntime().getNil();
             }
             return self.toString().indexOf('\0') != -1 ? self.getRuntime().getTrue() : self.getRuntime().getFalse();
@@ -650,7 +650,7 @@ public class RubyYAML {
         @JRubyMethod(name = "to_yaml_node", required = 1)
         public static IRubyObject date_to_yaml_node(IRubyObject self, IRubyObject arg) {
             ThreadContext context = self.getRuntime().getCurrentContext();
-            return RuntimeHelpers.invoke(context, arg, "scalar", self.callMethod(context, "taguri"), self.callMethod(context, MethodIndex.TO_S, "to_s"), self.callMethod(context, "to_yaml_style"));
+            return RuntimeHelpers.invoke(context, arg, "scalar", self.callMethod(context, "taguri"), self.callMethod(context, "to_s"), self.callMethod(context, "to_yaml_style"));
         }
     }
     
@@ -659,7 +659,7 @@ public class RubyYAML {
         @JRubyMethod(name = "to_yaml_node", required = 1)
         public static IRubyObject true_to_yaml_node(IRubyObject self, IRubyObject arg) {
             ThreadContext context = self.getRuntime().getCurrentContext();
-            return RuntimeHelpers.invoke(context, arg, "scalar", self.callMethod(context, "taguri"), self.callMethod(context, MethodIndex.TO_S, "to_s"), self.callMethod(context, "to_yaml_style"));
+            return RuntimeHelpers.invoke(context, arg, "scalar", self.callMethod(context, "taguri"), self.callMethod(context, "to_s"), self.callMethod(context, "to_yaml_style"));
         }
         @JRubyMethod(name = "taguri")
         public static IRubyObject true_taguri(IRubyObject self) {
@@ -672,7 +672,7 @@ public class RubyYAML {
         @JRubyMethod(name = "to_yaml_node", required = 1)
         public static IRubyObject false_to_yaml_node(IRubyObject self, IRubyObject arg) {
             ThreadContext context = self.getRuntime().getCurrentContext();
-            return RuntimeHelpers.invoke(context, arg, "scalar", self.callMethod(context, "taguri"), self.callMethod(context, MethodIndex.TO_S, "to_s"), self.callMethod(context, "to_yaml_style"));
+            return RuntimeHelpers.invoke(context, arg, "scalar", self.callMethod(context, "taguri"), self.callMethod(context, "to_s"), self.callMethod(context, "to_yaml_style"));
         }
         @JRubyMethod(name = "taguri")
         public static IRubyObject false_taguri(IRubyObject self) {

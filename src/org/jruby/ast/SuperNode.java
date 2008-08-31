@@ -101,7 +101,7 @@ public class SuperNode extends Node implements BlockAcceptingNode {
         // If no explicit block passed to super, then use the one passed in, unless it's explicitly cleared with nil
         if (iterNode == null && !block.isGiven()) block = aBlock;
         
-        return self.callSuper(context, args, block);
+        return RuntimeHelpers.invokeSuper(context, self, args, block);
     }
     
     @Override

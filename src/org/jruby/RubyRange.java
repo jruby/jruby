@@ -185,9 +185,9 @@ public class RubyRange extends RubyObject {
         long hash = isExclusive ? 1 : 0;
         long h = hash;
         
-        long v = begin.callMethod(context, MethodIndex.HASH, "hash").convertToInteger().getLongValue();
+        long v = begin.callMethod(context, "hash").convertToInteger().getLongValue();
         hash ^= v << 1;
-        v = end.callMethod(context, MethodIndex.HASH, "hash").convertToInteger().getLongValue();
+        v = end.callMethod(context, "hash").convertToInteger().getLongValue();
         hash ^= v << 9;
         hash ^= h << 24;
         return getRuntime().newFixnum(hash);

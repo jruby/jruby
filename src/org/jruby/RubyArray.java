@@ -572,7 +572,7 @@ public class RubyArray extends RubyObject implements List {
                 concurrentModification();
                 continue;
             }
-            h ^= RubyNumeric.num2long(value.callMethod(context, MethodIndex.HASH, "hash"));
+            h ^= RubyNumeric.num2long(value.callMethod(context, "hash"));
         }
 
         return runtime.newFixnum(h);

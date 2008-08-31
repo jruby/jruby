@@ -666,24 +666,12 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     }
 
     /**
-     * The protocol for super method invocation is a bit complicated
-     * in Ruby. In real terms it involves first finding the real
-     * implementation class (the super class), getting the name of the
-     * method to call from the frame, and then invoke that on the
-     * super class with the current self as the actual object
-     * invoking.
+     * See org.jruby.javasupport.util.RuntimeHelpers#invokeSuper
      */
+    @Deprecated
     public IRubyObject callSuper(ThreadContext context, IRubyObject[] args, Block block) {
-        RubyModule klazz = context.getFrameKlazz();
-
-        RubyClass superClass = RuntimeHelpers.findImplementerIfNecessary(getMetaClass(), klazz).getSuperClass();
-        
-        if (superClass == null) {
-            String name = context.getFrameName(); 
-            return RuntimeHelpers.callMethodMissing(context, this, klazz.searchMethod(name), name, args, this, CallType.SUPER, block);
-        }
-        return RuntimeHelpers.invokeAs(context, superClass, this, context.getFrameName(), args, CallType.SUPER, block);
-    }    
+        return RuntimeHelpers.invokeSuper(context, this, args, block);
+    }
 
     /**
      * Will invoke a named method with no arguments and no block.
@@ -720,6 +708,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * Will invoke an indexed method with the no arguments and no
      * block.
      */
+    @Deprecated
     public final IRubyObject callMethod(ThreadContext context, int methodIndex, String name) {
         return RuntimeHelpers.invoke(context, this, name);
     }
@@ -1273,7 +1262,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      */
     @Override
     public int hashCode() {
-        IRubyObject hashValue = callMethod(getRuntime().getCurrentContext(), MethodIndex.HASH, "hash");
+        IRubyObject hashValue = callMethod(getRuntime().getCurrentContext(), "hash");
         
         if (hashValue instanceof RubyFixnum) return (int) RubyNumeric.fix2long(hashValue); 
         

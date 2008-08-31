@@ -360,7 +360,7 @@ public class YARVMachine {
             case YARVInstructions.TOSTRING:
                 IRubyObject top = peek();
                 if (!(top instanceof RubyString)) {
-                    set(top.callMethod(context, MethodIndex.TO_S, "to_s"));
+                    set(top.callMethod(context, "to_s"));
                 }
                 break;
             case YARVInstructions.NEWARRAY:

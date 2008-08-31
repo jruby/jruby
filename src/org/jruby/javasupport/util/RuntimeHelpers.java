@@ -399,8 +399,92 @@ public class RuntimeHelpers {
         return self.getMetaClass().invoke(context, self, name, arg, callType, block);
     }
     
-    public static IRubyObject invokeAs(ThreadContext context, RubyClass asClass, IRubyObject self, String name, IRubyObject[] args, CallType callType, Block block) {
-        return asClass.invoke(context, self, name, args, callType, block);
+    public static IRubyObject invokeAs(ThreadContext context, RubyClass asClass, IRubyObject self, String name, IRubyObject[] args, Block block) {
+        return asClass.finvoke(context, self, name, args, block);
+    }
+    
+    public static IRubyObject invokeAs(ThreadContext context, RubyClass asClass, IRubyObject self, String name, Block block) {
+        return asClass.finvoke(context, self, name, block);
+    }
+    
+    public static IRubyObject invokeAs(ThreadContext context, RubyClass asClass, IRubyObject self, String name, IRubyObject arg0, Block block) {
+        return asClass.finvoke(context, self, name, arg0, block);
+    }
+    
+    public static IRubyObject invokeAs(ThreadContext context, RubyClass asClass, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return asClass.finvoke(context, self, name, arg0, arg1, block);
+    }
+    
+    public static IRubyObject invokeAs(ThreadContext context, RubyClass asClass, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return asClass.finvoke(context, self, name, arg0, arg1, arg2, block);
+    }
+
+    /**
+     * The protocol for super method invocation is a bit complicated
+     * in Ruby. In real terms it involves first finding the real
+     * implementation class (the super class), getting the name of the
+     * method to call from the frame, and then invoke that on the
+     * super class with the current self as the actual object
+     * invoking.
+     */
+    public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        RubyModule klazz = context.getFrameKlazz();
+
+        RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
+        
+        if (superClass == null) {
+            String name = context.getFrameName(); 
+            return callMethodMissing(context, self, klazz.searchMethod(name), name, args, self, CallType.SUPER, block);
+        }
+        return invokeAs(context, superClass, self, context.getFrameName(), args, block);
+    }
+    
+    public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, Block block) {
+        RubyModule klazz = context.getFrameKlazz();
+
+        RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
+        
+        if (superClass == null) {
+            String name = context.getFrameName(); 
+            return callMethodMissing(context, self, klazz.searchMethod(name), name, self, CallType.SUPER, block);
+        }
+        return invokeAs(context, superClass, self, context.getFrameName(), block);
+    }
+    
+    public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, IRubyObject arg0, Block block) {
+        RubyModule klazz = context.getFrameKlazz();
+
+        RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
+        
+        if (superClass == null) {
+            String name = context.getFrameName(); 
+            return callMethodMissing(context, self, klazz.searchMethod(name), name, arg0, self, CallType.SUPER, block);
+        }
+        return invokeAs(context, superClass, self, context.getFrameName(), arg0, block);
+    }
+    
+    public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) {
+        RubyModule klazz = context.getFrameKlazz();
+
+        RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
+        
+        if (superClass == null) {
+            String name = context.getFrameName(); 
+            return callMethodMissing(context, self, klazz.searchMethod(name), name, arg0, arg1, self, CallType.SUPER, block);
+        }
+        return invokeAs(context, superClass, self, context.getFrameName(), arg0, arg1, block);
+    }
+    
+    public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        RubyModule klazz = context.getFrameKlazz();
+
+        RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
+        
+        if (superClass == null) {
+            String name = context.getFrameName(); 
+            return callMethodMissing(context, self, klazz.searchMethod(name), name, arg0, arg1, arg2, self, CallType.SUPER, block);
+        }
+        return invokeAs(context, superClass, self, context.getFrameName(), arg0, arg1, arg2, block);
     }
     
     @Deprecated
@@ -658,7 +742,7 @@ public class RuntimeHelpers {
         // Has the method that is calling super received a block argument
         if (!block.isGiven()) block = context.getCurrentFrame().getBlock(); 
         
-        return self.callSuper(context, context.getCurrentScope().getArgValues(), block);
+        return RuntimeHelpers.invokeSuper(context, self, context.getCurrentScope().getArgValues(), block);
     }
     
     public static IRubyObject[] appendToObjectArray(IRubyObject[] array, IRubyObject add) {
@@ -1066,7 +1150,7 @@ public class RuntimeHelpers {
             Ruby runtime = value.getRuntime();
             
             if (value.getMetaClass().searchMethod("to_a").getImplementationClass() != runtime.getKernel()) {
-                value = value.callMethod(runtime.getCurrentContext(), MethodIndex.TO_A, "to_a");
+                value = value.callMethod(runtime.getCurrentContext(), "to_a");
                 if (!(value instanceof RubyArray)) throw runtime.newTypeError("`to_a' did not return Array");
                 return (RubyArray)value;
             } else {

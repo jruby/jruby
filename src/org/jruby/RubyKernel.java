@@ -220,7 +220,7 @@ public class RubyKernel {
 
         if (value.isNil()) {
             if (object.getMetaClass().searchMethod("to_a").getImplementationClass() != context.getRuntime().getKernel()) {
-                value = object.callMethod(context, MethodIndex.TO_A, "to_a");
+                value = object.callMethod(context, "to_a");
                 if (!(value instanceof RubyArray)) throw context.getRuntime().newTypeError("`to_a' did not return Array");
                 return value;
             } else {

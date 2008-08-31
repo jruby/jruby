@@ -15,8 +15,10 @@ import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
@@ -76,11 +78,11 @@ public class WeakRef extends RubyObject {
         return weakRef;
     }
     
-    @JRubyMethod(name = "initialize", required = 1, frame = true, visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(IRubyObject obj) {
+    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject obj) {
         ref = new WeakReference<IRubyObject>(obj);
         
-        return callSuper(getRuntime().getCurrentContext(), new IRubyObject[] {obj}, Block.NULL_BLOCK);
+        return RuntimeHelpers.invokeSuper(context, this, obj, Block.NULL_BLOCK);
     }
     
     @JRubyMethod(name = "weakref_alive?")

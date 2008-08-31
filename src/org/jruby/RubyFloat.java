@@ -159,7 +159,7 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(required = 1, meta = true)
     public static IRubyObject induced_from(ThreadContext context, IRubyObject recv, IRubyObject number) {
         if (number instanceof RubyFixnum || number instanceof RubyBignum || number instanceof RubyRational) {
-            return number.callMethod(context, MethodIndex.TO_F, "to_f");
+            return number.callMethod(context, "to_f");
         } else if (number instanceof RubyFloat) {
             return number;
         }

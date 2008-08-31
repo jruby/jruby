@@ -171,7 +171,7 @@ public class RaiseException extends JumpException {
         IRubyObject backtrace = exception.backtrace();
         Ruby runtime = backtrace.getRuntime();
         if (runtime.getNil() != backtrace) {
-            String firstLine = backtrace.callMethod(runtime.getCurrentContext(), "first").callMethod(runtime.getCurrentContext(), MethodIndex.TO_S, "to_s").toString();
+            String firstLine = backtrace.callMethod(runtime.getCurrentContext(), "first").callMethod(runtime.getCurrentContext(), "to_s").toString();
             ps.print(firstLine + ": ");
         }
         ps.println(exception.message + " (" + exception.getMetaClass().toString() + ")");

@@ -93,7 +93,7 @@ public class JavaUtil {
         public Object convert(ThreadContext context, IRubyObject rubyObject) {
             if (rubyObject.respondsTo("to_i")) {
                 return new Byte((byte) ((RubyNumeric) rubyObject.callMethod(
-                        context, MethodIndex.TO_I, "to_i")).getLongValue());
+                        context, "to_i")).getLongValue());
             }
             return new Byte((byte) 0);
         }
@@ -103,7 +103,7 @@ public class JavaUtil {
         public Object convert(ThreadContext context, IRubyObject rubyObject) {
             if (rubyObject.respondsTo("to_i")) {
                 return new Short((short) ((RubyNumeric) rubyObject.callMethod(
-                        context, MethodIndex.TO_I, "to_i")).getLongValue());
+                        context, "to_i")).getLongValue());
             }
             return new Short((short) 0);
         }
@@ -113,7 +113,7 @@ public class JavaUtil {
         public Object convert(ThreadContext context, IRubyObject rubyObject) {
             if (rubyObject.respondsTo("to_i")) {
                 return new Character((char) ((RubyNumeric) rubyObject.callMethod(
-                        context, MethodIndex.TO_I, "to_i")).getLongValue());
+                        context, "to_i")).getLongValue());
             }
             return new Character((char) 0);
         }
@@ -123,7 +123,7 @@ public class JavaUtil {
         public Object convert(ThreadContext context, IRubyObject rubyObject) {
             if (rubyObject.respondsTo("to_i")) {
                 return new Integer((int) ((RubyNumeric) rubyObject.callMethod(
-                        context, MethodIndex.TO_I, "to_i")).getLongValue());
+                        context, "to_i")).getLongValue());
             }
             return new Integer(0);
         }
@@ -133,7 +133,7 @@ public class JavaUtil {
         public Object convert(ThreadContext context, IRubyObject rubyObject) {
             if (rubyObject.respondsTo("to_i")) {
                 return new Long(((RubyNumeric) rubyObject.callMethod(
-                        context, MethodIndex.TO_I, "to_i")).getLongValue());
+                        context, "to_i")).getLongValue());
             }
             return new Long(0);
         }
@@ -143,7 +143,7 @@ public class JavaUtil {
         public Object convert(ThreadContext context, IRubyObject rubyObject) {
             if (rubyObject.respondsTo("to_f")) {
                 return new Float((float) ((RubyNumeric) rubyObject.callMethod(
-                        context, MethodIndex.TO_F, "to_f")).getDoubleValue());
+                        context, "to_f")).getDoubleValue());
             }
             return new Float(0.0);
         }
@@ -153,7 +153,7 @@ public class JavaUtil {
         public Object convert(ThreadContext context, IRubyObject rubyObject) {
             if (rubyObject.respondsTo("to_f")) {
                 return new Double(((RubyNumeric) rubyObject.callMethod(
-                        context, MethodIndex.TO_F, "to_f")).getDoubleValue());
+                        context, "to_f")).getDoubleValue());
             }
             return new Double(0.0);
         }
@@ -503,7 +503,7 @@ public class JavaUtil {
             }
 	    return new Character('\0');
         } else if (javaClass == String.class) {
-            RubyString rubyString = (RubyString) rubyObject.callMethod(context, MethodIndex.TO_S, "to_s");
+            RubyString rubyString = (RubyString) rubyObject.callMethod(context, "to_s");
             ByteList bytes = rubyString.getByteList();
             try {
                 return new String(bytes.unsafeBytes(), bytes.begin(), bytes.length(), "UTF8");
@@ -518,12 +518,12 @@ public class JavaUtil {
          	} else if (rubyObject instanceof RubyNumeric) {
  				return  BigInteger.valueOf (((RubyNumeric)rubyObject).getLongValue());
          	} else if (rubyObject.respondsTo("to_i")) {
-         		RubyNumeric rubyNumeric = ((RubyNumeric)rubyObject.callMethod(context,MethodIndex.TO_F, "to_f"));
+         		RubyNumeric rubyNumeric = ((RubyNumeric)rubyObject.callMethod(context, "to_f"));
  				return  BigInteger.valueOf (rubyNumeric.getLongValue());
          	}
         } else if (javaClass == BigDecimal.class && !(rubyObject instanceof JavaObject)) {
          	if (rubyObject.respondsTo("to_f")) {
-             	double double_value = ((RubyNumeric)rubyObject.callMethod(context,MethodIndex.TO_F, "to_f")).getDoubleValue();
+             	double double_value = ((RubyNumeric)rubyObject.callMethod(context, "to_f")).getDoubleValue();
              	return new BigDecimal(double_value);
          	}
         }

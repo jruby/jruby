@@ -267,7 +267,7 @@ public class Generator {
         GeneratorData d = (GeneratorData)self.dataGetStruct();
         
         boolean emptyQueue = self.getInstanceVariables().getInstanceVariable("@queue").callMethod(
-                self.getRuntime().getCurrentContext(), MethodIndex.EMPTY_P, "empty?").isTrue();
+                self.getRuntime().getCurrentContext(), "empty?").isTrue();
         
         return (d.isEnd() && emptyQueue) ? self.getRuntime().getTrue() : self.getRuntime().getFalse();
     }
@@ -303,7 +303,7 @@ public class Generator {
     @JRubyMethod(frame = true)
     public static IRubyObject current(IRubyObject self, Block block) {
         // Generator#current
-        if(self.getInstanceVariables().getInstanceVariable("@queue").callMethod(self.getRuntime().getCurrentContext(),MethodIndex.EMPTY_P, "empty?").isTrue()) {
+        if(self.getInstanceVariables().getInstanceVariable("@queue").callMethod(self.getRuntime().getCurrentContext(), "empty?").isTrue()) {
             throw self.getRuntime().newEOFError("no more elements available");
         }
         return self.getInstanceVariables().getInstanceVariable("@queue").callMethod(self.getRuntime().getCurrentContext(),"first");

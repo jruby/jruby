@@ -76,7 +76,7 @@ public class JavaInterfaceTemplate {
             throw context.getRuntime().newTypeError("received " + clazz + ", expected Class/Module");
         }
 
-        return RuntimeHelpers.invokeAs(context, self.getMetaClass().getSuperClass(), self, "append_features", new IRubyObject[] {clazz}, CallType.SUPER, block);
+        return RuntimeHelpers.invokeAs(context, self.getMetaClass().getSuperClass(), self, "append_features", clazz, block);
     }
 
     private static void appendFeaturesToClass(ThreadContext context, IRubyObject self, RubyClass clazz) {
@@ -283,7 +283,7 @@ public class JavaInterfaceTemplate {
                         RubyModule ifcModule = (RubyModule)javaInterfaceMods.eltInternal(i);
                         ifcModule.append_features(arg);
                     }
-                    return RuntimeHelpers.invokeAs(context, clazz.getSuperClass(), self, name, new IRubyObject[] {arg}, CallType.SUPER, block);
+                    return RuntimeHelpers.invokeAs(context, clazz.getSuperClass(), self, name, arg, block);
                 }
             });
         } else {

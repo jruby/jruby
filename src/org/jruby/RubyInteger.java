@@ -276,7 +276,7 @@ public abstract class RubyInteger extends RubyNumeric {
         if (other instanceof RubyFixnum || other instanceof RubyBignum) {
             return other;
         } else if (other instanceof RubyFloat || other instanceof RubyRational) {
-            return other.callMethod(context, MethodIndex.TO_I, "to_i");
+            return other.callMethod(context, "to_i");
         } else {
             throw recv.getRuntime().newTypeError(
                     "failed to convert " + other.getMetaClass().getName() + " into Integer");

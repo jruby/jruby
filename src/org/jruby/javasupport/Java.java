@@ -656,8 +656,8 @@ public class Java implements Library {
         ThreadContext tc = runtime.getCurrentContext();
         JavaSupport javaSupport = runtime.getJavaSupport();
         RubyClass javaProxyClass = javaSupport.getJavaProxyClass().getMetaClass();
-        RuntimeHelpers.invokeAs(tc, javaProxyClass, recv, "inherited", new IRubyObject[]{subclass},
-                org.jruby.runtime.CallType.SUPER, Block.NULL_BLOCK);
+        RuntimeHelpers.invokeAs(tc, javaProxyClass, recv, "inherited", subclass,
+                Block.NULL_BLOCK);
         return setupJavaSubclass(tc, subclass, recv.callMethod(tc, "java_class"));
     }
 

@@ -43,7 +43,7 @@ public class JavaProxy extends RubyObject {
             subJavaClass = RuntimeHelpers.invoke(context, recv, "java_class");
             RuntimeHelpers.invoke(context, subclass, "java_class=", subJavaClass);
         }
-        return recv.callSuper(context, new IRubyObject[] {subclass}, Block.NULL_BLOCK);
+        return RuntimeHelpers.invokeSuper(context, recv, subclass, Block.NULL_BLOCK);
     }
     
     @JRubyMethod(meta = true)

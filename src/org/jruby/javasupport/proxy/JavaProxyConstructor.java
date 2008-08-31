@@ -187,7 +187,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
                     return JavaUtil.convertRubyToJava(RuntimeHelpers.invoke(runtime.getCurrentContext(), self, name, newArgs), m.getReturnType());
                 } else {
                     RubyClass superClass = self.getMetaClass().getSuperClass();
-                    return JavaUtil.convertRubyToJava(RuntimeHelpers.invokeAs(runtime.getCurrentContext(), superClass, self, name, newArgs, CallType.SUPER, Block.NULL_BLOCK), m.getReturnType());
+                    return JavaUtil.convertRubyToJava(RuntimeHelpers.invokeAs(runtime.getCurrentContext(), superClass, self, name, newArgs, Block.NULL_BLOCK), m.getReturnType());
                 }
             }
         };
@@ -223,7 +223,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
                     return JavaUtil.convertRubyToJava(RuntimeHelpers.invoke(runtime.getCurrentContext(), self, name, newArgs), m.getReturnType());
                 } else {
                     RubyClass superClass = self.getMetaClass().getSuperClass();
-                    return JavaUtil.convertRubyToJava(RuntimeHelpers.invokeAs(runtime.getCurrentContext(), superClass, self, name, newArgs, CallType.SUPER, Block.NULL_BLOCK), m.getReturnType());
+                    return JavaUtil.convertRubyToJava(RuntimeHelpers.invokeAs(runtime.getCurrentContext(), superClass, self, name, newArgs, Block.NULL_BLOCK), m.getReturnType());
                 }
             }
         };

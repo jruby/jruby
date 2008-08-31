@@ -242,7 +242,7 @@ public class RubyException extends RubyObject {
 
     @JRubyMethod(name = {"to_str", "message"})
     public IRubyObject to_str(ThreadContext context) {
-        return callMethod(context, MethodIndex.TO_S, "to_s");
+        return callMethod(context, "to_s");
     }
 
     /** inspects an object and return a kind of debug information

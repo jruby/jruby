@@ -272,7 +272,7 @@ public class Readline {
 
             IRubyObject comps = RuntimeHelpers
                     .invoke(context, procCompletor, "call", procCompletor.getRuntime().newString(buffer))
-                    .callMethod(context, MethodIndex.TO_A, "to_a");
+                    .callMethod(context, "to_a");
             if (comps instanceof List) {
                 for (Iterator i = ((List) comps).iterator(); i.hasNext();) {
                     Object obj = i.next();
