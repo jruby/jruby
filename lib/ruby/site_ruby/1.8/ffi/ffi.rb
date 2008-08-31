@@ -57,6 +57,7 @@ require 'ffi/platform'
 require 'ffi/struct'
 require 'ffi/memorypointer'
 require 'ffi/buffer'
+require 'ffi/io'
 
 module FFI
   NativeType = JRuby::FFI::NativeType

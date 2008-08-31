@@ -114,7 +114,7 @@ public class FileDescriptorByteChannel implements ByteChannel {
     /**
      * The native library functions used to access the file descriptor.
      */
-    private static interface LibC {
+    private static interface LibC extends com.sun.jna.Library {
         int read(int fd, ByteBuffer dst, int len);
         int write(int fd, ByteBuffer src, int len);
         int close(int fd);

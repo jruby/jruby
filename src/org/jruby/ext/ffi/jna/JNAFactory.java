@@ -62,7 +62,12 @@ public class JNAFactory extends org.jruby.ext.ffi.Factory {
     
     @Override
     public <T> T loadLibrary(String libraryName, Class<T> libraryClass) {
-        return libraryClass.cast(Native.loadLibrary(libraryName, libraryClass));
+        try {
+            return libraryClass.cast(Native.loadLibrary(libraryName, libraryClass));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return null;
+        }
     }
 
     @Override
