@@ -77,7 +77,7 @@ public interface InvocationCompiler {
      * If arguments have been prepared for the block, specify true. Otherwise the default
      * empty args will be used.
      */
-    public void yield(boolean hasArgs, boolean unwrap);
+    public void yield(CompilerCallback argsCallback, boolean unwrap);
     
     /**
      * Used for when nodes with a case; assumes stack is ..., case_value, when_cond_array

@@ -73,6 +73,16 @@ public class Block {
         }
 
         @Override
+        public IRubyObject yield(ThreadContext context, boolean aValue) {
+            throw context.getRuntime().newLocalJumpError("noreason", (IRubyObject)null, "yield called out of block");
+        }
+
+        @Override
+        public IRubyObject yield(ThreadContext context, IRubyObject value, boolean aValue) {
+            throw context.getRuntime().newLocalJumpError("noreason", (IRubyObject)value, "yield called out of block");
+        }
+
+        @Override
         public IRubyObject yield(ThreadContext context, IRubyObject value) {
             throw context.getRuntime().newLocalJumpError("noreason", (IRubyObject)value, "yield called out of block");
         }
@@ -103,6 +113,14 @@ public class Block {
     
     public IRubyObject yield(ThreadContext context, IRubyObject value) {
         return body.yield(context, value, binding, type);
+    }
+    
+    public IRubyObject yield(ThreadContext context, boolean aValue) {
+        return body.yield(context, null, null, null, aValue, binding, type);
+    }
+    
+    public IRubyObject yield(ThreadContext context, IRubyObject value, boolean aValue) {
+        return body.yield(context, value, null, null, aValue, binding, type);
     }
     
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 

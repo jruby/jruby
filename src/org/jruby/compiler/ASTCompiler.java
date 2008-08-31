@@ -3118,13 +3118,18 @@ public class ASTCompiler {
     }
 
     public void compileYield(Node node, MethodCompiler context) {
-        YieldNode yieldNode = (YieldNode) node;
+        final YieldNode yieldNode = (YieldNode) node;
 
+        CompilerCallback argsCallback = null;
         if (yieldNode.getArgsNode() != null) {
-            compile(yieldNode.getArgsNode(), context);
+            argsCallback = new CompilerCallback() {
+                public void call(MethodCompiler context) {
+                    compile(yieldNode.getArgsNode(), context);
+                }
+            };
         }
 
-        context.getInvocationCompiler().yield(yieldNode.getArgsNode() != null, yieldNode.getCheckState());
+        context.getInvocationCompiler().yield(argsCallback, yieldNode.getCheckState());
     }
 
     public void compileZArray(Node node, MethodCompiler context) {

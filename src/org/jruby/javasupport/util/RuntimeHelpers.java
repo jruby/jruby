@@ -89,6 +89,10 @@ public class RuntimeHelpers {
         callSite.call(context, receiver, args);
         return args[args.length - 1];
     }
+
+    public static IRubyObject invokeEqqForCaseWhen(IRubyObject receiver, IRubyObject arg, CallSite callSite, ThreadContext context) {
+        return callSite.call(context, receiver, arg);
+    }
     
     public static CompiledBlockCallback createBlockCallback(Ruby runtime, Object scriptObject, String closureMethod) {
         Class scriptClass = scriptObject.getClass();

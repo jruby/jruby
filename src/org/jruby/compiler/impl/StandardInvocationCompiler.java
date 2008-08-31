@@ -553,138 +553,32 @@ public class StandardInvocationCompiler implements InvocationCompiler {
                 sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class, CallSite.class));
     }
 
-    private void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, CompilerCallback closureArg, boolean attrAssign) {
-        String callSig = sig(IRubyObject.class, params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, String.class, IRubyObject.class, CallType.class, Block.class));
-        String callSigIndexed = sig(IRubyObject.class, params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, Byte.TYPE, String.class, IRubyObject.class, CallType.class, Block.class));
-
-        int index = MethodIndex.getIndex(name);
-
-        if (hasArgs) {
-            if (hasReceiver) {
-                // Call with args
-                // receiver already present
-            } else {
-                // FCall
-                // no receiver present, use self
-                methodCompiler.loadSelf();
-                // put self under args
-                method.swap();
-            }
-        } else {
-            if (hasReceiver) {
-                // receiver already present
-                // empty args list
-                method.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
-            } else {
-                // VCall
-                // no receiver present, use self
-                methodCompiler.loadSelf();
-
-                // empty args list
-                method.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
-            }
-        }
-
+    public void yield(CompilerCallback argsCallback, boolean unwrap) {
+        methodCompiler.loadBlock();
         methodCompiler.loadThreadContext();
 
-        if (index != 0) {
-            // load method index
-            method.ldc(new Integer(index));
-        }
-
-        method.ldc(name);
-
-        // load self for visibility checks
-        methodCompiler.loadSelf();
-
-        method.getstatic(p(CallType.class), callType.toString(), ci(CallType.class));
-
-        if (closureArg == null) {
-            method.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
+        String signature;
+        if (argsCallback != null) {
+            argsCallback.call(methodCompiler);
+            signature = sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, boolean.class);
         } else {
-            closureArg.call(methodCompiler);
+            signature = sig(IRubyObject.class, ThreadContext.class, boolean.class);
         }
+        method.ldc(unwrap);
 
-        Label tryBegin = new Label();
-        Label tryEnd = new Label();
-        Label tryCatch = new Label();
-        if (closureArg != null) {
-            // wrap with try/catch for block flow-control exceptions
-            // FIXME: for flow-control from containing blocks, but it's not working right;
-            // stack is not as expected for invoke calls below...
-            //method.trycatch(tryBegin, tryEnd, tryCatch, p(JumpException.class));
-            method.label(tryBegin);
-        }
-
-        if (attrAssign) {
-            if (index != 0) {
-                methodCompiler.invokeUtilityMethod("doAttrAssignIndexed", callSigIndexed);
-            } else {
-                methodCompiler.invokeUtilityMethod("doAttrAssign", callSig);
-            }
-        } else {
-            if (index != 0) {
-                methodCompiler.invokeUtilityMethod("doInvokeDynamicIndexed", callSigIndexed);
-            } else {
-                methodCompiler.invokeUtilityMethod("doInvokeDynamic", callSig);
-            }
-        }
-
-        if (closureArg != null) {
-            method.label(tryEnd);
-
-            // no physical break, terminate loop and skip catch block
-            Label normalEnd = new Label();
-            method.go_to(normalEnd);
-
-            method.label(tryCatch);
-            {
-                methodCompiler.loadBlock();
-                methodCompiler.invokeUtilityMethod("handleJumpException", sig(IRubyObject.class, params(JumpException.class, Block.class)));
-            }
-
-            method.label(normalEnd);
-        }
-    }
-
-    public void yield(boolean hasArgs, boolean unwrap) {
-        methodCompiler.loadBlock();
-
-        if (hasArgs) {
-            method.swap();
-
-            methodCompiler.loadThreadContext();
-            method.swap();
-
-            // args now here
-        } else {
-            methodCompiler.loadThreadContext();
-
-            // empty args
-            method.aconst_null();
-        }
-
-        method.aconst_null();
-        method.aconst_null();
-        method.ldc(new Boolean(unwrap));
-
-        method.invokevirtual(p(Block.class), "yield", sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, RubyModule.class, Boolean.TYPE)));
+        method.invokevirtual(p(Block.class), "yield", signature);
     }
 
     public void invokeEqq() {
         // receiver and args already present on the stack
         
-        // load call adapter under receiver
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, "===", CallType.NORMAL);
-        method.dup_x2();
-        method.pop();
-
-        methodCompiler.loadThreadContext(); // [adapter, tc]
-        method.dup_x2();
-        method.pop();
+        methodCompiler.loadThreadContext();
         
-        String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
-        
-        method.invokevirtual(p(CallSite.class), "call", signature);
+        methodCompiler.invokeUtilityMethod("invokeEqqForCaseWhen", sig(IRubyObject.class,
+                IRubyObject.class, /*receiver*/
+                IRubyObject.class, /*arg*/
+                CallSite.class,
+                ThreadContext.class));
     }
 }

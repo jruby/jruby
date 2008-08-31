@@ -47,7 +47,7 @@ public class TypeConverter {
             return handleUncoercibleObject(raise, obj, target);
         }
         
-        return obj.callMethod(obj.getRuntime().getCurrentContext(), convertMethodIndex, convertMethod);
+        return obj.callMethod(obj.getRuntime().getCurrentContext(), convertMethod);
     }
     /**
      * Converts this object to type 'targetType' using 'convertMethod' method (MRI: convert_type).
