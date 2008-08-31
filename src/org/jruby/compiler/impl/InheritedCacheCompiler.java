@@ -22,10 +22,6 @@ import static org.jruby.util.CodegenUtils.*;
  * @author headius
  */
 public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
-    public static final int MAX_INHERITED_CALL_SITES = 50;
-    public static final int MAX_INHERITED_SYMBOLS = 50;
-    public static final int MAX_INHERITED_FIXNUMS = 50;
-    
     int callSiteCount = 0;
     List<String> callSiteList = new ArrayList<String>();
     List<CallType> callTypeList = new ArrayList<CallType>();
@@ -49,44 +45,6 @@ public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
         
         callSiteCount++;
     }
-
-    public void finish() {
-        SkinnyMethodAdapter initMethod = scriptCompiler.getInitMethod();
-        initMethod.aload(StandardASMCompiler.THIS);
-
-        // generate call site initialization code
-        int size = callSiteList.size();
-        if (size != 0) {
-            initMethod.aload(0);
-            initMethod.pushInt(size);
-            initMethod.anewarray(p(CallSite.class));
-            
-            for (int i = 0; i < size; i++) {
-                String name = callSiteList.get(i);
-                CallType callType = callTypeList.get(i);
-
-                initMethod.pushInt(i);
-                initMethod.ldc(name);
-                if (callType.equals(CallType.NORMAL)) {
-                    initMethod.invokestatic(scriptCompiler.getClassname(), "setCallSite", sig(CallSite[].class, params(CallSite[].class, int.class, String.class)));
-                } else if (callType.equals(CallType.FUNCTIONAL)) {
-                    initMethod.invokestatic(scriptCompiler.getClassname(), "setFunctionalCallSite", sig(CallSite[].class, params(CallSite[].class, int.class, String.class)));
-                } else if (callType.equals(CallType.VARIABLE)) {
-                    initMethod.invokestatic(scriptCompiler.getClassname(), "setVariableCallSite", sig(CallSite[].class, params(CallSite[].class, int.class, String.class)));
-                }
-            }
-            initMethod.putfield(scriptCompiler.getClassname(), "callSites", ci(CallSite[].class));
-        }
-
-        // generate symbols initialization code
-        size = inheritedSymbolCount;
-        if (size != 0) {
-            initMethod.aload(0);
-            initMethod.pushInt(size);
-            initMethod.anewarray(p(RubySymbol.class));
-            initMethod.putfield(scriptCompiler.getClassname(), "symbols", ci(RubySymbol[].class));
-        }
-    }
     
     @Override
     public void cacheSymbol(StandardASMCompiler.AbstractMethodCompiler method, String symbol) {
@@ -98,8 +56,6 @@ public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
 
         inheritedSymbolCount++;
     }
-    
-    Map<Long, String> inheritedFixnums = new HashMap<Long, String>();
     
     @Override
     public void cacheFixnum(StandardASMCompiler.AbstractMethodCompiler method, long value) {
@@ -131,20 +87,64 @@ public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
                 throw new RuntimeException("wtf?");
             }
         } else {
-            String methodName = inheritedFixnums.get(value);
-            if (methodName == null && inheritedFixnumCount < MAX_INHERITED_FIXNUMS) {
-                methodName = "getFixnum" + inheritedFixnumCount++;
-                inheritedFixnums.put(value, methodName);
+            method.loadThis();
+            method.loadRuntime();
+            method.method.pushInt(inheritedFixnumCount);
+            if (value <= Integer.MAX_VALUE && value >= Integer.MIN_VALUE) {
+                method.method.pushInt((int)value);
+                method.method.invokevirtual(scriptCompiler.getClassname(), "getFixnum", sig(RubyFixnum.class, Ruby.class, int.class, int.class));
+            } else {
+                method.method.ldc(value);
+                method.method.invokevirtual(scriptCompiler.getClassname(), "getFixnum", sig(RubyFixnum.class, Ruby.class, int.class, long.class));
             }
 
-            if (methodName == null) {
-                super.cacheFixnum(method, value);
-            } else {
-                method.loadThis();
-                method.loadRuntime();
-                method.method.ldc(value);
-                method.method.invokevirtual(scriptCompiler.getClassname(), methodName, sig(RubyFixnum.class, Ruby.class, long.class));
+            inheritedFixnumCount++;
+        }
+    }
+
+    @Override
+    public void finish() {
+        SkinnyMethodAdapter initMethod = scriptCompiler.getInitMethod();
+        initMethod.aload(StandardASMCompiler.THIS);
+
+        // generate call sites initialization code
+        int size = callSiteList.size();
+        if (size != 0) {
+            initMethod.aload(0);
+            initMethod.pushInt(size);
+            initMethod.anewarray(p(CallSite.class));
+            
+            for (int i = 0; i < size; i++) {
+                String name = callSiteList.get(i);
+                CallType callType = callTypeList.get(i);
+
+                initMethod.pushInt(i);
+                initMethod.ldc(name);
+                if (callType.equals(CallType.NORMAL)) {
+                    initMethod.invokestatic(scriptCompiler.getClassname(), "setCallSite", sig(CallSite[].class, params(CallSite[].class, int.class, String.class)));
+                } else if (callType.equals(CallType.FUNCTIONAL)) {
+                    initMethod.invokestatic(scriptCompiler.getClassname(), "setFunctionalCallSite", sig(CallSite[].class, params(CallSite[].class, int.class, String.class)));
+                } else if (callType.equals(CallType.VARIABLE)) {
+                    initMethod.invokestatic(scriptCompiler.getClassname(), "setVariableCallSite", sig(CallSite[].class, params(CallSite[].class, int.class, String.class)));
+                }
             }
+            initMethod.putfield(scriptCompiler.getClassname(), "callSites", ci(CallSite[].class));
+        }
+
+        // generate symbols initialization code
+        size = inheritedSymbolCount;
+        if (size != 0) {
+            initMethod.aload(0);
+            initMethod.pushInt(size);
+            initMethod.invokevirtual(scriptCompiler.getClassname(), "initSymbols", sig(void.class, params(int.class)));
+        }
+
+        // generate fixnums initialization code
+        size = inheritedFixnumCount;
+        if (size != 0) {
+            initMethod.aload(0);
+            initMethod.pushInt(size);
+            initMethod.invokevirtual(scriptCompiler.getClassname(), "initFixnums", sig(void.class, params(int.class)));
         }
     }
 }
