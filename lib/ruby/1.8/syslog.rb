@@ -25,10 +25,10 @@ module Syslog
   
   module Foreign
     # methods
-    attach_function "openlog", :open, [:string, :int, :int], :void
-    attach_function "closelog", :close, [], :void
-    attach_function "syslog", :write, [:int, :string, :string], :void
-    attach_function "setlogmask", :set_mask, [:int], :int
+    attach_function :open, "openlog", [:string, :int, :int], :void
+    attach_function :close, "closelog", [], :void
+    attach_function :write, "syslog", [:int, :string, :string], :void
+    attach_function :set_mask, "setlogmask", [:int], :int
   end
   
   class << self
