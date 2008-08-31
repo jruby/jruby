@@ -73,7 +73,7 @@ public abstract class CallSite {
     public abstract IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1);
     public abstract IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2);
     public abstract IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3);
-    public abstract IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args);
+    public abstract IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject... args);
     // with block pass
     public abstract IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, Block block);
     public abstract IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, Block block);
@@ -115,7 +115,7 @@ public abstract class CallSite {
             totalCallSites++;
         }
         
-        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject... args) {
             RubyClass selfType = pollAndGetClass(context, self);
             CacheEntry myCache = cache;
             if (myCache.isOk(selfType)) {
@@ -340,7 +340,7 @@ public abstract class CallSite {
             }
         }
         
-        public IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject... args) {
             RubyClass selfType = pollAndGetClass(context, self);
             CacheEntry myCache = cache;
             if (myCache.isOk(selfType)) {
