@@ -65,14 +65,35 @@ describe "MemoryPointer#autorelease" do
     ref.get.should be_nil
   end
 end
-describe "MemoryPointer passed as an arg" do
+describe "MemoryPointer argument" do
   module Ptr
     extend FFI::Library
-    attach_function :memset, [ :pointer, :int, :int ], :pointer
+    attach_function :memset, [ :pointer, :int, :ulong ], :pointer
+    attach_function :memcpy, [ :pointer, :pointer, :ulong ], :pointer
   end
-  it "Pointer passed as argument" do
+  it "Pointer passed correctly" do
     p = MemoryPointer.new :int, 1
     ret = Ptr.memset(p, 0, p.total)
     ret.should == p
+  end
+  it "Data passed to native function" do
+    p = MemoryPointer.new :int, 1
+    p2 = MemoryPointer.new :int, 1
+    p2.put_int(0, 0xdeadbeef)
+    Ptr.memcpy(p, p2, p.total)
+    p.get_int(0).should == p2.get_int(0)
+  end
+end
+describe "MemoryPointer return value" do
+  module Stdio
+    extend FFI::Library
+    attach_function :fopen, [ :string, :string ], :pointer
+    attach_function :fclose, [ :pointer ], :int
+    attach_function :fwrite, [ :pointer, :ulong, :ulong, :string ], :ulong
+  end
+  it "fopen returns non-nil" do
+    fp = Stdio.fopen("/dev/null", "w")
+    fp.should_not be_nil
+    Stdio.fclose(fp).should == 0
   end
 end
