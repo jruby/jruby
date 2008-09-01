@@ -5,6 +5,10 @@ module Duby
   module Typer
     class << self
       attr_accessor :verbose
+
+      def log(message)
+        puts "* [#{name}] #{message}" if Typer.verbose
+      end
     end
     
     class InferenceError < Exception
@@ -17,10 +21,8 @@ module Duby
     
     class BaseTyper
       include Duby
-      
-      def log(message)
-        puts "* [#{name}] #{message}" if Typer.verbose
-      end
+
+      def log(message); Typer.log(message); end
     end
     
     class Simple < BaseTyper

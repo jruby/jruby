@@ -1,4 +1,8 @@
 require 'duby'
+require 'duby/jvm/method_lookup'
+require 'duby/typer'
+require 'duby/plugin/math'
+require 'duby/plugin/java'
 require 'compiler/builder'
 
 module Duby
@@ -6,8 +10,24 @@ module Duby
     class JVM
       import java.lang.System
       import java.io.PrintStream
+      include Duby::JVM::MethodLookup
+      
+      class << self
+        attr_accessor :verbose
+
+        def log(message)
+          puts "* [#{name}] #{message}" if JVM.verbose
+        end
+      end
+
+      module JVMLogger
+        def log(message); JVM.log(message); end
+      end
+      include JVMLogger
       
       class MathCompiler
+        include JVMLogger
+        
         def call(compiler, call)
           call.target.compile(compiler)
           call.parameters.each {|param| param.compile(compiler)}
@@ -48,25 +68,44 @@ module Duby
       end
 
       class InvokeCompiler
+        include JVMLogger
+        include Duby::JVM::MethodLookup
+        
         def call(compiler, call)
-          static = call.target.inferred_type.meta?
-          call.target.compile(compiler) unless static
-          call.parameters.each {|param| param.compile(compiler)}
+          meta = call.target.inferred_type.meta?
           
-          target_class = compiler.mapped_type(call.target.inferred_type)
+          mapped_target = compiler.mapped_type(call.target.inferred_type)
+          mapped_params = call.parameters.map {|param| compiler.mapped_type(param.inferred_type)}
 
-          raise "Invoke attempted on primitive type: #{call.target.inferred_type}" if (target_class.primitive?)
+          raise "Invoke attempted on primitive type: #{call.target.inferred_type}" if (mapped_target.primitive?)
 
-          if static
+          if meta
+            if call.name == 'new'
+              # object construction
+              constructor = find_method(mapped_target, call.name, mapped_params, meta)
+              compiler.method.new mapped_target
+              compiler.method.dup
+              call.parameters.each {|param| param.compile(compiler)}
+              compiler.method.invokespecial(
+                mapped_target,
+                "<init>",
+                [nil, *constructor.parameter_types])
+            else
+              method = find_method(mapped_target, call.name, mapped_params, meta)
+              call.parameters.each {|param| param.compile(compiler)}
               compiler.method.invokestatic(
-                target_class,
+                mapped_target,
                 call.name,
-                [compiler.mapped_type(call.inferred_type), *call.parameters.map {|param| compiler.mapped_type(param.inferred_type)}])
+                [compiler.mapped_type(call.inferred_type), *method.parameter_types])
+            end
           else
-              compiler.method.invokevirtual(
-                compiler.mapped_type(call.target.inferred_type),
-                call.name,
-                [compiler.mapped_type(call.inferred_type), *call.parameters.map {|param| compiler.mapped_type(param.inferred_type)}])
+            method = find_method(mapped_target, call.name, mapped_params, meta)
+            call.target.compile(compiler)
+            call.parameters.each {|param| param.compile(compiler)}
+            compiler.method.invokevirtual(
+              compiler.mapped_type(call.target.inferred_type),
+              call.name,
+              [compiler.mapped_type(call.inferred_type), *method.parameter_types])
           end
         end
       end
@@ -91,11 +130,14 @@ module Duby
       end
 
       def compile(ast)
-        ast.compile(this)
+        ast.compile(self)
+        log "Compilation successful!"
       end
 
       def define_main(body)
         oldmethod, @method = @method, @class.static_method("main", nil, mapped_type(AST.type(:string, true)))
+
+        log "Starting main method"
 
         @method.start
 
@@ -105,11 +147,15 @@ module Duby
         @method.stop
         
         @method = oldmethod
+
+        log "Main method complete!"
       end
       
       def define_method(name, signature, args, body)
         arg_types = args.args ? args.args.map {|arg| mapped_type(arg.inferred_type)} : []
         oldmethod, @method = @method, @class.static_method(name.to_s, mapped_type(signature[:return]), *arg_types)
+
+        log "Starting new method #{name}(#{arg_types})"
 
         @method.start
         
@@ -128,6 +174,8 @@ module Duby
         @method.stop
 
         @method = oldmethod
+
+        log "Method #{name}(#{arg_types}) complete!"
       end
       
       def declare_argument(name, type)
@@ -228,11 +276,16 @@ module Duby
       end
       
       def generate
-        if block_given?
-          @file.generate {|filename, builder| yield filename, builder}
-        else
-          @file.generate {|filename, builder| File.open(filename, 'w') {|f| f.write(builder.generate)}}
+        log "Generating classes..."
+        @file.generate do |filename, builder|
+          log "  #{builder.class_name}"
+          if block_given?
+            yield filename, builder
+          else
+            File.open(filename, 'w') {|f| f.write(builder.generate)}
+          end
         end
+        log "...done!"
       end
       
       def type_mapper
@@ -253,10 +306,17 @@ module Duby
       def println(printline)
         @method.getstatic System, "out", PrintStream
         printline.parameters.each {|param| param.compile(self)}
-        @method.invokevirtual(
-          PrintStream,
-          "println",
-          [nil, *printline.parameters.map {|param| mapped_type(param.inferred_type)}])
+        mapped_params = printline.parameters.map {|param| mapped_type(param.inferred_type)}
+        method = find_method(PrintStream.java_class, "println", mapped_params, false)
+        if (method)
+          @method.invokevirtual(
+            PrintStream,
+            "println",
+            [method.return_type, *method.parameter_types])
+        else
+          log "Could not find a match for #{PrintStream}.println(#{mapped_params})"
+          fail "Could not compile"
+        end
       end
     end
   end
@@ -265,6 +325,7 @@ end
 if __FILE__ == $0
   Duby::Typer.verbose = true
   Duby::AST.verbose = true
+  Duby::Compiler::JVM.verbose = true
   ast = Duby::AST.parse(File.read(ARGV[0]))
   
   typer = Duby::Typer::Simple.new(:script)
@@ -272,7 +333,7 @@ if __FILE__ == $0
   typer.resolve(true)
   
   compiler = Duby::Compiler::JVM.new(ARGV[0])
-  ast.compile(compiler)
+  compiler.compile(ast)
   
   compiler.generate
 end

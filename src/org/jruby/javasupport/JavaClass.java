@@ -1365,11 +1365,17 @@ public class JavaClass extends JavaObject {
     }
 
     private Class<?>[] buildClassArgs(IRubyObject[] args) {
-        JavaSupport javaSupport = getRuntime().getJavaSupport();
         Class<?>[] parameterTypes = new Class<?>[args.length];
-        for (int i = args.length; --i >= 0; ) {
-            String name = args[i].asJavaString();
-            parameterTypes[i] = javaSupport.loadJavaClassVerbose(name);
+        for (int i = 0; i < args.length; i++) {
+            JavaClass type;
+            if (args[i] instanceof JavaClass) {
+                type = (JavaClass)args[i];
+            } else if (args[i].respondsTo("java_class")) {
+                type = (JavaClass)args[i].callMethod(getRuntime().getCurrentContext(), "java_class");
+            } else {
+                type = for_name(this, args[i]);
+            }
+            parameterTypes[i] = type.javaClass();
         }
         return parameterTypes;
     }

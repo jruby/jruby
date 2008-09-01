@@ -58,7 +58,7 @@ module Duby
       def each(&b) children.each(&b) end
 
       def resolved!
-        log "resolved!"
+        log "#{to_s} resolved!"
         @resolved = true
       end
 
