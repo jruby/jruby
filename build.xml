@@ -703,34 +703,25 @@
   </target>
 
   <target name="fetch-stable-specs" depends="prepare, detect-stable-specs-need-update" if="stable-specs-need-update">
-    <echo message="Downlodaing stable mspec..."/>
-    <get src="http://github.com/rubyspec/mspec/tarball/${mspec.revision}" dest="${build.dir}/mspec.tgz"/>
-    <echo message="Downlodaing stable rubyspecs..."/>
-    <get src="http://github.com/rubyspec/rubyspec/tarball/${rubyspecs.revision}" dest="${build.dir}/rubyspec.tgz"/>
+    <echo message="Downloading stable mspec..."/>
+    <get src="http://github.com/rubyspec/mspec/zipball/${mspec.revision}" dest="${build.dir}/mspec.zip"/>
+    <echo message="Downloading stable rubyspecs..."/>
+    <get src="http://github.com/rubyspec/rubyspec/zipball/${rubyspecs.revision}" dest="${build.dir}/rubyspec.zip"/>
 
     <!-- Wipe the old mspec/rubyspecs, if any, and exctract new ones -->
 
     <delete dir="${mspec.dir}"/>
     <mkdir dir="${mspec.dir}"/>
-    <!-- TODO: We use 'tar' binary since Ant doesn't understand tarballs from GitHub,
-         at least in cases when long file names are present
-    <untar src="${build.dir}/mspec.tgz" dest="${mspec.dir}" compression="gzip">
+    <unzip src="${build.dir}/mspec.zip" dest="${mspec.dir}">
       <globmapper from="rubyspec-mspec-${mspec.revision}/*" to="*"/>
-    </untar> -->
-    <exec executable="tar" dir="${mspec.dir}" failonerror="true">
-      <arg line="-xzf ${build.dir}/mspec.tgz --strip-components=1"/>
-    </exec>
+    </unzip>
     <chmod file="${mspec.dir}/bin/mspec" perm="755"/>
 
     <delete dir="${rubyspec.dir}"/>
     <mkdir dir="${rubyspec.dir}"/>
-    <!-- TODO: disabled 'untar' due to problem, see comment above
-    <untar src="${build.dir}/rubyspec.tgz" dest="${rubyspec.dir}" compression="gzip">
+    <unzip src="${build.dir}/rubyspec.zip" dest="${rubyspec.dir}">
         <globmapper from="rubyspec-rubyspec-${rubyspecs.revision}/*" to="*"/>
-    </untar> -->
-    <exec executable="tar" dir="${rubyspec.dir}" failonerror="true">
-      <arg line="-xzf ${build.dir}/rubyspec.tgz --strip-components=1"/>
-    </exec>
+    </unzip>
 
   	<!-- Write down the revision of downloaded specs -->
     <propertyfile file="${spec.dir}/rubyspecs.current.revision" comment="Revision of downloaded specs.">
