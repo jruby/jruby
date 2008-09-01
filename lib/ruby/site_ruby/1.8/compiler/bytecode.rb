@@ -20,6 +20,27 @@ module Compiler
     import java.lang.Void
     
     b = binding
+    OpcodeStackDeltas = {}
+    %w[ALOAD ILOAD FLOAD BIPUSH SIPUSH DUP DUP_X1 DUP_X2 ACONST_NULL ICONST_M1
+       ICONST_0 ICONST_1 ICONST_2 ICONST_3 ICONST_4 ICONST_5 I2L I2D FCONST_0
+       FCONST_1 FCONST_2 F2L F2D NEW JSR].each {|opcode| OpcodeStackDeltas[opcode] = 1}
+    %w[LLOAD DLOAD DUP2 DUP2_X1 DUP2_X2 LCONST_0 LCONST_1 DCONST_0 DCONST_1].each {|opcode| OpcodeStackDeltas[opcode] = 2}
+    %w[ASTORE ISTORE FSTORE POP ARETURN IRETURN ATHROW AALOAD BALOAD CALOAD
+       SALOAD IALOAD FALOAD IADD ISUB IDIV IMUL IAND IOR IXOR IREM L2I L2F
+       FRETURN FADD FSUB FDIV FMUL FREM FCMPG FCMPL D2I D2F IFEQ IFNE IFNULL
+       IFNONNULL IFLT IFGT IFLE IFGE LOOKUPSWITCH TABLESWITCH MONITORENTER
+       MONITOREXIT].each {|opcode| OpcodeStackDeltas[opcode] = -1}
+    %w[LSTORE DSTORE POP2 LREM LADD LSUB LDIV LMUL LAND LOR LXOR LRETURN DRETURN
+       DADD DSUB DDIV DMUL DREM IF_ACMPEQ IF_ACMPNE IF_ICMPEQ IF_ICMPNE
+       IF_ICMPLT IF_ICMPGT IF_ICMPLE IF_ICMPGE].each {|opcode| OpcodeStackDeltas[opcode] = -2}
+    %w[AASTORE BASTORE CASTORE SASTORE IASTORE LCMP FASTORE DCMPL DCMPG].each {|opcode| OpcodeStackDeltas[opcode] = -3}
+    %w[LASTORE DASTORE].each {|opcode| OpcodeStackDeltas[opcode] = -4}
+    %w[RETURN SWAP NOP ARRAYLENGTH IINC INEG IUSHR ISHL ISHR I2S I2F I2B I2C
+       LALOAD LSHL LSHR LUSHR LINC LNEG L2D FNEG F2I DALOAD D2L DNEG RET
+       CHECKCAST ANEWARRAY NEWARRAY GOTO INSTANCEOF].each {|opcode| OpcodeStackDeltas[opcode] = 0}
+    
+    OpcodeInstructions = {}
+
     Opcodes.constants.each do |const_name|
       const_down = const_name.downcase
       
@@ -31,45 +52,87 @@ module Compiler
           "DSTORE", "DLOAD",
           "RET"
         # variable instructions
-        eval "
+        line = __LINE__; eval "
             def #{const_down}(var)
               method_visitor.visit_var_insn(Opcodes::#{const_name}, var)
+              #{OpcodeStackDeltas[const_name]}
             end
-          ", b, __FILE__, __LINE__
+          ", b, __FILE__, line
+        OpcodeInstructions[const_name] = const_down
           
       when "LDC"
         # constant loading is tricky because overloaded invocation is pretty bad in JRuby
-        def ldc_int(value); method_visitor.visit_ldc_insn(java.lang.Integer.new(value)); end
-        def ldc_long(value); method_visitor.visit_ldc_insn(java.lang.Long.new(value)); end
-        def ldc_float(value); method_visitor.visit_ldc_insn(java.lang.Float.new(value)); end
-        def ldc_double(value); method_visitor.visit_ldc_insn(java.lang.Double.new(value)); end
-        eval "
+        def ldc_int(value); method_visitor.visit_ldc_insn(java.lang.Integer.new(value)); 1; end
+        def ldc_long(value); method_visitor.visit_ldc_insn(java.lang.Long.new(value)); 2; end
+        def ldc_float(value); method_visitor.visit_ldc_insn(java.lang.Float.new(value)); 1; end
+        def ldc_double(value); method_visitor.visit_ldc_insn(java.lang.Double.new(value)); 2; end
+        line = __LINE__; eval "
             def #{const_down}(value)
               value = value.to_s if Symbol === value
               method_visitor.visit_ldc_insn(value)
+              if Fixnum === value || Float === value
+                2
+              else
+                1
+              end
             end
-          ", b, __FILE__, __LINE__
+          ", b, __FILE__, line
+        OpcodeInstructions[const_name] = const_down
 
       when "BIPUSH", "SIPUSH"
-        eval "
+        line = __LINE__; eval "
             def #{const_down}(value)
               method_visitor.visit_int_insn(Opcodes::#{const_name}, value)
+              1
             end
-        "
+          ", b, __FILE__, line
+        OpcodeInstructions[const_name] = const_down
           
       when "INVOKESTATIC", "INVOKEVIRTUAL", "INVOKEINTERFACE", "INVOKESPECIAL"
         # method instructions
-        eval "
+        line = __LINE__; eval "
             def #{const_down}(type, name, call_sig)
               method_visitor.visit_method_insn(Opcodes::#{const_name}, path(type), name.to_s, sig(*call_sig))
+
+              case call_sig[0]
+              when nil, Java::void, java.lang.Void
+                added = 0
+              when Java::boolean, Java::short, Java::char, Java::int, Java::float
+                added = 1
+              when Java::long, Java::double
+                added = 2
+              else
+                added = 1
+              end
+
+              this_subtracted = #{const_name == 'INVOKESTATIC' ? 0 : 1}
+
+              args_subtracted = 0
+              [*call_sig][1..-1].each do |param|
+                case param
+                when nil, Java::void, java.lang.Void
+                  args_subtracted += 0
+                when Java::boolean, Java::short, Java::char, Java::int, Java::float
+                  args_subtracted += 1
+                when Java::long, Java::double
+                  args_subtracted += 2
+                else
+                  args_subtracted += 1
+                end
+              end
+
+              added - (this_subtracted + args_subtracted)
             end
-          ", b, __FILE__, __LINE__
+          ", b, __FILE__, line
+        OpcodeInstructions[const_name] = const_down
           
       when "RETURN"
         # special case for void return, since return is a reserved word
         def returnvoid()
           method_visitor.visit_insn(Opcodes::RETURN)
+          0
         end
+        OpcodeInstructions['RETURN'] = 'returnvoid'
         
       when "DUP", "SWAP", "POP", "POP2", "DUP_X1", "DUP_X2", "DUP2", "DUP2_X1", "DUP2_X2",
           "NOP",
@@ -89,55 +152,83 @@ module Compiler
           "DADD", "DINC", "DSUB", "DDIV", "DMUL", "DNEG", "DCMPL", "DCMPG", "DREM",
           "MONITORENTER", "MONITOREXIT"
         # bare instructions
-        eval "
+        line = __LINE__; eval "
             def #{const_down}
               method_visitor.visit_insn(Opcodes::#{const_name})
+              #{OpcodeStackDeltas[const_name]}
             end
-          ", b, __FILE__, __LINE__
+          ", b, __FILE__, line
+        OpcodeInstructions[const_name] = const_down
           
       when "NEW", "ANEWARRAY", "NEWARRAY", "INSTANCEOF", "CHECKCAST"
         # type instructions
-        eval "
+        line = __LINE__; eval "
             def #{const_down}(type)
               method_visitor.visit_type_insn(Opcodes::#{const_name}, path(type))
+              #{OpcodeStackDeltas[const_name]}
             end
-          ", binding, __FILE__, __LINE__
+          ", b, __FILE__, line
+        OpcodeInstructions[const_name] = const_down
           
       when "GETFIELD", "PUTFIELD", "GETSTATIC", "PUTSTATIC"
         # field instructions
-        eval "
+        line = __LINE__; eval "
             def #{const_down}(type, name, field_sig)
               method_visitor.visit_field_insn(Opcodes::#{const_name}, path(type), name.to_s, ci(*field_sig))
+
+              case field_sig
+              when Java::boolean, Java::short, Java::char, Java::int, Java::float
+                delta = 1
+              when Java::long, Java::double
+                delta = 2
+              else
+                delta = 1
+              end
+
+              this_subtracted = #{const_name[3..7] == 'STATI' ? 0 : 1}
+
+              delta *= #{const_name[0..2] == 'PUT' ? -1 : 1}
+              delta -= this_subtracted
+              delta
             end
-          ", b, __FILE__, __LINE__
+          ", b, __FILE__, line
+        OpcodeInstructions[const_name] = const_down
           
       when "GOTO", "IFEQ", "IFNE", "IF_ACMPEQ", "IF_ACMPNE", "IF_ICMPEQ", "IF_ICMPNE", "IF_ICMPLT",
           "IF_ICMPGT", "IF_ICMPLE", "IF_ICMPGE", "IFNULL", "IFNONNULL", "JSR",
           "IFLE", "IFGE", "IFLT", "IFGT"
         # jump instructions
-        eval "
+        line = __LINE__; eval "
             def #{const_down}(target)
               method_visitor.visit_jump_insn(Opcodes::#{const_name}, target.label)
+              #{OpcodeStackDeltas[const_name]}
             end
-          ", b, __FILE__, __LINE__
+          ", b, __FILE__, line
+        OpcodeInstructions[const_name] = const_down
           
       when "MULTIANEWARRAY"
         # multi-dim array
-        eval "
+        line = __LINE__; eval "
             def #{const_down}(type, dims)
               method_visitor.visit_multi_anew_array_insn(ci(type), dims)
+              -dims
             end
-          ", b, __FILE__, __LINE__
+          ", b, __FILE__, line
+        OpcodeInstructions[const_name] = const_down
           
       when "LOOKUPSWITCH"
         def lookupswitch(default, ints, cases)
           method_visitor.visit_lookup_switch_insn(default, ints, cases)
+          -1
         end
+        OpcodeInstructions['LOOKUPSWITCH'] = 'lookupswitch'
         
       when "TABLESWITCH"
         def tableswitch(min, max, default, cases)
           method_visitor.visit_table_switch_insn(min, max, default, cases)
+          -1
         end
+        OpcodeInstructions['TABLESWITCH'] = 'tableswitch'
 
       when "F_FULL", "ACC_ENUM", "ACC_SYNTHETIC", "ACC_INTERFACE", "ACC_PUBLIC",
           "ACC_PRIVATE", "ACC_PROTECTED", "ACC_DEPRECATED", "ACC_BRIDGE",
