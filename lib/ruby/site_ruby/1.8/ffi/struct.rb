@@ -72,9 +72,14 @@ end
 
 module FFI
   class Struct < JRuby::FFI::BaseStruct
-    def self.layout(*spec)
-      return @layout if spec.size == 0
-
+    def self.jruby_layout(spec)
+        builder = JRuby::FFI::StructLayoutBuilder.new
+        spec[0].each do |name,type|
+          builder.add_field(name, JRuby::FFI.find_type(type))
+        end
+        builder.build
+    end
+    def self.rubinius_layout(spec)
       builder = JRuby::FFI::StructLayoutBuilder.new
       i = 0
       while i < spec.size
@@ -84,7 +89,12 @@ module FFI
         builder.add_field(name, code, offset)
         i += 3
       end
-      cspec = builder.build
+      builder.build
+    end
+    def self.layout(*spec)
+      return @layout if spec.size == 0
+
+      cspec = spec[0].kind_of?(Hash) ? jruby_layout(spec) : rubinius_layout(spec)
       @layout = cspec unless self == FFI::Struct
       @size = cspec.size
       return cspec
