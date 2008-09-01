@@ -48,7 +48,7 @@ arches.each { |arch|
       ffi_name = File.join(JRuby::FFI::Platform::FFI_DIR, "platform", "#{name}.rb.ffi")
       rb_name = "#{File.join(options[:platform_dir], name)}.rb"
       FFI::Generator.new ffi_name, rb_name, { :cppflags => options[:cppflags] }
-    }
+    } unless JRuby::FFI::Platform::IS_WINDOWS
   end
   task "#{arch}" => [ platform_conf, types_conf, "gen_ffi_files_#{arch}" ]
 }
