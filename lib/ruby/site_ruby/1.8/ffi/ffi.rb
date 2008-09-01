@@ -63,11 +63,11 @@ module FFI
   NativeType = JRuby::FFI::NativeType
 
   #  Specialised error classes
-  class TypeError < RuntimeError; end
+  class TypeError < LoadError; end
   
-  class SignatureError < RuntimeError; end
+  class SignatureError < LoadError; end
   
-  class NotFoundError < RuntimeError
+  class NotFoundError < LoadError
     def initialize(function, library)
       super("Function '#{function}' not found! (Looking in '#{library}' or this process)")
     end
