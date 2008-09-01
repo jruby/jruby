@@ -36,6 +36,7 @@ package org.jruby;
 
 import static org.jruby.util.Numeric.f_abs;
 import static org.jruby.util.Numeric.f_arg;
+import static org.jruby.util.Numeric.f_mul;
 import static org.jruby.util.Numeric.f_negative_p;
 
 import java.math.BigInteger;
@@ -52,6 +53,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Convert;
+import org.jruby.util.Numeric;
 
 /**
  * Base class for all numerical types in ruby.
@@ -847,6 +849,14 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(name = {"image", "imag"}, compat = CompatVersion.RUBY1_9)
     public IRubyObject image(ThreadContext context) {
         return RubyFixnum.zero(context.getRuntime());
+    }
+
+    /** numeric_abs2
+     * 
+     */
+    @JRubyMethod(name = "abs2", compat = CompatVersion.RUBY1_9)
+    public IRubyObject abs2(ThreadContext context) {
+        return f_mul(context, this, this);
     }
 
     /** numeric_arg
