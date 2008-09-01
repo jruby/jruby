@@ -135,7 +135,7 @@ module Duby
       end
 
       def define_main(body)
-        oldmethod, @method = @method, @class.static_method("main", nil, mapped_type(AST.type(:string, true)))
+        oldmethod, @method = @method, @class.public_static_method("main", nil, mapped_type(AST.type(:string, true)))
 
         log "Starting main method"
 
@@ -153,7 +153,7 @@ module Duby
       
       def define_method(name, signature, args, body)
         arg_types = args.args ? args.args.map {|arg| mapped_type(arg.inferred_type)} : []
-        oldmethod, @method = @method, @class.static_method(name.to_s, mapped_type(signature[:return]), *arg_types)
+        oldmethod, @method = @method, @class.public_static_method(name.to_s, mapped_type(signature[:return]), *arg_types)
 
         log "Starting new method #{name}(#{arg_types})"
 

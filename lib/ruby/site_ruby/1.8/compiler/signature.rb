@@ -29,7 +29,7 @@ module Compiler
     def class_id(cls)
       cls = cls.java_class if Class === cls
       
-      unless cls
+      if !cls || cls == java.lang.Void || cls == Java::void
         return "V"
       end
       
@@ -82,7 +82,7 @@ module Compiler
             return "F"
           when JavaTypes::Double::TYPE
             return "D"
-          when JavaTypes::Void::TYPE
+          when JavaTypes::Void::TYPE, java.lang.Void
             return "V"
           else
             raise "Unknown type in compiler: " + cls.name

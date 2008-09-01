@@ -47,11 +47,10 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
     protected JavaCallable findCallableArityZero(IRubyObject self, String name) {
         JavaCallable callable;
         if ((callable = javaCallable) == null) {
-            assert false : "If there's no callables we should never have gotten to this point";
             // TODO: varargs?
             JavaCallable[] callablesForArity = null;
             if (javaCallables.length == 0 || (callablesForArity = javaCallables[0]) == null) {
-                throw new RuntimeException("this should not happen");
+                raiseNoMatchingCallableError(name, self, EMPTY_OBJECT_ARRAY);
             }
             callable = callablesForArity[0];
         } else {

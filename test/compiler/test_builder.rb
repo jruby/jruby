@@ -1,71 +1,69 @@
 require 'test/unit'
-require 'compiler/builder2'
-require 'compiler/signature'
+require 'compiler/builder'
 
 class TestBuilder < Test::Unit::TestCase
-  import java.lang.String
   import java.util.ArrayList
-  import java.lang.Void
-  import java.lang.Object
-  import java.lang.Boolean
-  
-  include Compiler::Signature
-  
-  def test_class_builder
-    class_bytes = Compiler::ClassBuilder.build("MyClass", "MyClass.java") do
-      field :list, ArrayList
-      
-      constructor(String, ArrayList) do
-        aload 0
-        invokespecial Object, "<init>", Void::TYPE
-        aload 0
-        aload 1
-        aload 2
-        invokevirtual this, :bar, [ArrayList, String, ArrayList]
-        aload 0
-        swap
-        putfield this, :list, ArrayList
-        returnvoid
-      end
-      
-      static_method(:foo, this, String) do
-        new this
-        dup
-        aload 0
-        new ArrayList
-        dup
-        invokespecial ArrayList, "<init>", Void::TYPE
-        invokespecial this, "<init>", [Void::TYPE, String, ArrayList]
-        areturn
-      end
-      
-      method(:bar, ArrayList, String, ArrayList) do
-        aload 1
-        invokevirtual(String, :toLowerCase, String)
-        aload 2
-        swap
-        invokevirtual(ArrayList, :add, [Boolean::TYPE, Object])
-        aload 2
-        areturn
-      end
-      
-      method(:getList, ArrayList) do
-        aload 0
-        getfield this, :list, ArrayList
-        areturn
-      end
-      
-      static_method(:main, Void::TYPE, String[]) do
-        aload 0
-        ldc_int 0
-        aaload
-        invokestatic this, :foo, [this, String]
-        invokevirtual this, :getList, ArrayList
-        aprintln
-        returnvoid
+
+  def test_file_builder
+    builder = Compiler::FileBuilder.build("somefile.source") do
+      package "org.awesome", "stuff" do
+        public_class "MyClass", object do
+          public_field "list", ArrayList
+
+          public_constructor string, ArrayList do
+            aload 0
+            invokespecial object, "<init>", [void]
+            aload 0
+            aload 1
+            aload 2
+            invokevirtual this, "bar", [ArrayList, string, ArrayList]
+            aload 0
+            swap
+            putfield this, "list", ArrayList
+            returnvoid
+          end
+
+          public_static_method "foo", this, string do
+            new this
+            dup
+            aload 0
+            new ArrayList
+            dup
+            invokespecial ArrayList, "<init>", [void]
+            invokespecial this, "<init>", [void, string, ArrayList]
+            areturn
+          end
+
+          public_method "bar", ArrayList, string, ArrayList do
+            aload 1
+            invokevirtual(string, "toLowerCase", string)
+            aload 2
+            swap
+            invokevirtual(ArrayList, "add", [boolean, object])
+            aload 2
+            areturn
+          end
+
+          public_method("getList", ArrayList) do
+            aload 0
+            getfield this, "list", ArrayList
+            areturn
+          end
+
+          public_static_method("main", void, string[]) do
+            aload 0
+            ldc_int 0
+            aaload
+            invokestatic this, "foo", [this, string]
+            invokevirtual this, "getList", ArrayList
+            aprintln
+            returnvoid
+          end
+        end
       end
     end
-    
-    assert class_bytes
+
+    # admittedly, this isn't much of a unit test, but it is what it is
+    assert builder
   end
 end

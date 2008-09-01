@@ -31,11 +31,11 @@ module Duby
       def initialize(self_type)
         @known_types = {}
         
-        @known_types[:self] = type_reference(self_type)
-        @known_types[:fixnum] = type_reference(:fixnum)
-        @known_types[:float] = type_reference(:float)
-        @known_types[:string] = type_reference(:string)
-        @known_types[:boolean] = type_reference(:boolean)
+        @known_types["self"] = type_reference(self_type)
+        @known_types["fixnum"] = type_reference("fixnum")
+        @known_types["float"] = type_reference("float")
+        @known_types["string"] = type_reference("string")
+        @known_types["boolean"] = type_reference("boolean")
       end
       
       def name
@@ -43,7 +43,7 @@ module Duby
       end
       
       def self_type
-        known_types[:self]
+        known_types["self"]
       end
 
       def default_type
@@ -51,29 +51,30 @@ module Duby
       end
       
       def fixnum_type
-        known_types[:fixnum]
+        known_types["fixnum"]
       end
       
       def float_type
-        known_types[:float]
+        known_types["float"]
       end
       
       def string_type
-        known_types[:string]
+        known_types["string"]
       end
       
       def boolean_type
-        known_types[:boolean]
+        known_types["boolean"]
       end
       
       def define_type(name, superclass)
         raise InferenceError.new("Duplicate type definition: #{name} < #{superclass}") if known_types[name]
-        
+
+        log "New type defined: '#{name}' < '#{superclass}'"
         known_types[name] = AST::TypeDefinition.new(name, AST::TypeReference.new(superclass))
         
-        old_self, known_types[:self] = known_types[:self], known_types[name]
+        old_self, known_types["self"] = known_types["self"], known_types[name]
         yield
-        known_types[:self] = old_self
+        known_types["self"] = old_self
         
         known_types[name]
       end
@@ -196,7 +197,7 @@ if __FILE__ == $0
   Duby::AST.verbose = true
   Duby::Typer.verbose = true
   ast = Duby::AST.parse(File.read(ARGV[0]))
-  typer = Duby::Typer::Simple.new(:script)
+  typer = Duby::Typer::Simple.new("script")
   ast.infer(typer)
   begin
     typer.resolve(true)
