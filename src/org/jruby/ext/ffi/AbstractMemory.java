@@ -93,7 +93,7 @@ abstract public class AbstractMemory extends RubyObject {
      * @return The total offset from the base memory pointer.
      */
     protected final long getOffset(IRubyObject offset) {
-        return getOffset() + Util.int64Value(offset);
+        return getOffset() + Util.longValue(offset);
     }
     
     /**
@@ -639,7 +639,7 @@ abstract public class AbstractMemory extends RubyObject {
         getMemoryIO().put(getOffset(offset), array, 0, array.length);
         return this;
     }
-    @JRubyMethod(name = "get_string", required = 1, optional = 1)
+    @JRubyMethod(name = "get_string")
     public IRubyObject get_string(ThreadContext context, IRubyObject offArg) {
         long off = getOffset(offArg);
         int len = (int) getMemoryIO().indexOf(off, (byte) 0);
