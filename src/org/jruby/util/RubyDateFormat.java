@@ -158,6 +158,13 @@ public class RubyDateFormat extends DateFormat {
                         compiledPattern.add(new Token(FORMAT_STRING, " "));
                         compiledPattern.add(new Token(FORMAT_YEAR_LONG));
                         break;
+                    case 'D':
+                        compiledPattern.add(new Token(FORMAT_MONTH));
+                        compiledPattern.add(new Token(FORMAT_STRING, "/"));
+                        compiledPattern.add(new Token(FORMAT_DAY));
+                        compiledPattern.add(new Token(FORMAT_STRING, "/"));
+                        compiledPattern.add(new Token(FORMAT_YEAR_SHORT));
+                        break;
                     case 'd':
                         compiledPattern.add(new Token(FORMAT_DAY));
                         break;
@@ -190,6 +197,13 @@ public class RubyDateFormat extends DateFormat {
                         compiledPattern.add(new Token(FORMAT_MERIDIAN));
                         break;
                     case 'S':
+                        compiledPattern.add(new Token(FORMAT_SECONDS));
+                        break;
+                    case 'T':
+                        compiledPattern.add(new Token(FORMAT_HOUR));
+                        compiledPattern.add(new Token(FORMAT_STRING, ":"));
+                        compiledPattern.add(new Token(FORMAT_MINUTES));
+                        compiledPattern.add(new Token(FORMAT_STRING, ":"));
                         compiledPattern.add(new Token(FORMAT_SECONDS));
                         break;
                     case 'U':
