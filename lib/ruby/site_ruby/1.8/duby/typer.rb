@@ -82,7 +82,7 @@ module Duby
       def learn_local_type(scope, name, type)
         log "Learned local type under #{scope} : #{name} = #{type}"
 
-        get_local_type_hash(scope)[name] = type
+        get_local_type_hash(scope)[name] = known_types[type] || type
       end
       
       def local_type(scope, name)
@@ -102,7 +102,11 @@ module Duby
       def learn_method_type(target_type, name, parameter_types, type)
         log "Learned method #{name} (#{parameter_types}) on #{target_type} = #{type}"
 
-        get_method_type_hash(target_type, name, parameter_types)[:type] = type
+        get_method_type_hash(target_type, name, parameter_types)[:type] = known_types[type] || type
+
+        # if it's any args are imported types, also add a mapping for the expanded name
+        imported_types = parameter_types.map {|param| known_types[param] || param}
+        get_method_type_hash(target_type, name, imported_types)[:type] = type
       end
       
       def method_type(target_type, name, parameter_types)

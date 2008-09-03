@@ -114,7 +114,7 @@ module Duby
 
       def infer(typer)
         @inferred_type ||= begin
-          typer.known_types[name] || AST::type(name, false, true)
+          typer.known_types[AST::type(name, false, true)] || AST::type(name, false, true)
         end
       end
     end

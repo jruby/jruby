@@ -13,8 +13,9 @@ module Duby::AST
     end
 
     def infer(typer)
-      typer.known_types[short] = TypeReference.new(long, false, true)
-
+      # add both the meta and non-meta imports
+      typer.known_types[TypeReference.new(short, false, true)] = TypeReference.new(long, false, true)
+      typer.known_types[TypeReference.new(short, false, false)] = TypeReference.new(long, false, false)
       TypeReference::NoType
     end
   end
