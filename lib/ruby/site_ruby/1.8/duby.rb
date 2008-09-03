@@ -9,9 +9,13 @@ require 'jruby'
 module Duby
   def self.run(filename, *args)
     java.lang.System.set_property("jruby.duby.enabled", "true")
-    ast = Duby::AST.parse(File.read(filename))
-
-    ast = Duby::AST.parse(File.read(filename))
+    
+    if filename == '-e'
+      filename = 'dash_e'
+      ast = Duby::AST.parse(args[0])
+    else
+      ast = Duby::AST.parse(File.read(filename))
+    end
 
     typer = Duby::Typer::Simple.new(:script)
     ast.infer(typer)
@@ -30,5 +34,5 @@ module Duby
 end
 
 if __FILE__ == $0
-  Duby.run(ARGV[0], ARGV[1..-1])
+  Duby.run(ARGV[0], *ARGV[1..-1])
 end

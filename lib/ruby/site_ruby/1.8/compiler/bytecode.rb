@@ -14,10 +14,14 @@ module Compiler
       import "org.objectweb.asm.Label"
     end
   
-    import java.lang.Object
-    import java.lang.System
-    import java.io.PrintStream
-    import java.lang.Void
+    JObject = java.lang.Object
+    JSystem = java.lang.System
+    JPrintStream = java.io.PrintStream
+    JVoid = java.lang.Void
+    JInteger = java.lang.Integer
+    JFloat = java.lang.Float
+    JLong = java.lang.Long
+    JDobule = java.lang.Double
     
     b = binding
     OpcodeStackDeltas = {}
@@ -257,7 +261,7 @@ module Compiler
     end
     
     def trycatch(from, to, target, type) 
-      method_visitor.visit_try_catch_block(from, to, target, type) 
+      method_visitor.visit_try_catch_block(from, to, target, p(type)) 
     end
     
     class SmartLabel
@@ -278,10 +282,14 @@ module Compiler
     end
     
     def aprintln
+      println
+    end
+    
+    def println(type = JObject)
       dup
       getstatic System, "out", PrintStream
       swap
-      invokevirtual PrintStream, "println", [Void::TYPE, Object]
+      invokevirtual PrintStream, "println", [JVoid::TYPE, type]
     end
     
     def swap2
