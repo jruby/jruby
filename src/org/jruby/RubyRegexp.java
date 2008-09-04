@@ -184,6 +184,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
         RubyRegexp regexp = new RubyRegexp(runtime);
         regexp.pattern = regex;
         regexp.str = ByteList.EMPTY_BYTELIST;
+        regexp.kcode = KCode.NONE;
         return regexp;
     }
     
