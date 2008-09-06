@@ -42,31 +42,42 @@ import org.jruby.runtime.builtin.IRubyObject;
  * A DynamicMethod that has a callback argument as the last parameter.  It will
  * treat any block as the last argument.
  */
-class CallbackMethodWithBlock extends DynamicMethod {
-    final Marshaller[] marshallers;
-    final Function function;
-    final FunctionInvoker functionInvoker;
+final class CallbackMethodWithBlock extends DynamicMethod {
+    private final Marshaller[] marshallers;
+    private final Function function;
+    private final FunctionInvoker functionInvoker;
+    private final int cbindex;
+    
     public CallbackMethodWithBlock(RubyModule implementationClass, Function function, 
-            FunctionInvoker functionInvoker, Marshaller[] marshallers) {
+            FunctionInvoker functionInvoker, Marshaller[] marshallers, int cbindex) {
         super(implementationClass, Visibility.PUBLIC, CallConfiguration.FRAME_AND_SCOPE);
         this.function = function;
         this.functionInvoker = functionInvoker;
         this.marshallers = marshallers;
+        this.cbindex = cbindex;
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self,
             RubyModule clazz, String name, IRubyObject[] args, Block block) {
+        boolean blockGiven = block.isGiven();
         Arity.checkArgumentCount(context.getRuntime(), args,
-                marshallers.length - (block.isGiven() ? 1 : 0), marshallers.length);
+                marshallers.length - (blockGiven ? 1 : 0), marshallers.length);
         
         Invocation invocation = new Invocation();
         Object[] nativeArgs = new Object[marshallers.length];
-        for (int i = 0; i < args.length; ++i) {
-            nativeArgs[i] = marshallers[i].marshal(invocation, args[i]);
-        }
-        if (args.length < marshallers.length) {
-            nativeArgs[args.length] = ((CallbackMarshaller) marshallers[args.length]).marshal(context.getRuntime(), block);
+        if (!blockGiven) {
+            for (int i = 0; i < args.length; ++i) {
+                nativeArgs[i] = marshallers[i].marshal(invocation, args[i]);
+            }
+        } else {
+            for (int i = 0; i < cbindex; ++i) {
+                nativeArgs[i] = marshallers[i].marshal(invocation, args[i]);
+            }
+            nativeArgs[cbindex] = ((CallbackMarshaller) marshallers[cbindex]).marshal(context.getRuntime(), block);
+            for (int i = cbindex + 1; i < marshallers.length; ++i) {
+                nativeArgs[i] = marshallers[i].marshal(invocation, args[i - 1]);
+            }
         }
         IRubyObject retVal = functionInvoker.invoke(context.getRuntime(), function, nativeArgs);
         invocation.finish();
