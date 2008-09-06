@@ -399,6 +399,10 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, callType);
 
         methodCompiler.loadThreadContext(); // [adapter, tc]
+
+        // for visibility checking without requiring frame self
+        // TODO: don't bother passing when fcall or vcall, and adjust callsite appropriately
+        methodCompiler.loadSelf();
         
         if (receiverCallback != null) {
             receiverCallback.call(methodCompiler);
@@ -407,18 +411,18 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         }
         
         String signature;
-        String callSiteMethod = "call";
+        String callSiteMethod = "callFrom";
         // args
         if (argsCallback == null) {
             // block
             if (closureArg == null) {
                 // no args, no block
-                signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class));
+                signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
             } else {
                 // no args, with block
-                if (iterator) callSiteMethod = "callIter";
+                if (iterator) callSiteMethod = "callIterFrom";
                 closureArg.call(methodCompiler);
-                signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, Block.class));
+                signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class));
             }
         } else {
             argsCallback.call(methodCompiler);
@@ -427,34 +431,34 @@ public class StandardInvocationCompiler implements InvocationCompiler {
                 // with args, no block
                 switch (argsCallback.getArity()) {
                 case 1:
-                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
-                    break;
-                case 2:
                     signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
                     break;
-                case 3:
+                case 2:
                     signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
                     break;
+                case 3:
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+                    break;
                 default:
-                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject[].class));
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class));
                 }
             } else {
                 // with args, with block
-                if (iterator) callSiteMethod = "callIter";
+                if (iterator) callSiteMethod = "callIterFrom";
                 closureArg.call(methodCompiler);
                 
                 switch (argsCallback.getArity()) {
                 case 1:
-                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class));
-                    break;
-                case 2:
                     signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
                     break;
-                case 3:
+                case 2:
                     signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
                     break;
+                case 3:
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
+                    break;
                 default:
-                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class));
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class, Block.class));
                 }
             }
         }

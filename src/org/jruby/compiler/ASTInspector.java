@@ -46,6 +46,7 @@ import org.jruby.ast.BreakNode;
 import org.jruby.ast.CallNode;
 import org.jruby.ast.CaseNode;
 import org.jruby.ast.Colon2Node;
+import org.jruby.ast.ConstNode;
 import org.jruby.ast.DotNode;
 import org.jruby.ast.EvStrNode;
 import org.jruby.ast.FlipNode;
@@ -98,9 +99,17 @@ public class ASTInspector {
     private boolean hasDef;
     private boolean hasEval;
     private boolean hasFrameAwareMethods;
+    private boolean needsFrameSelf;
+    private boolean needsFrameVisibility;
+    private boolean needsFrameBlock;
+    private boolean needsFrameName;
+    private boolean needsBackref;
+    private boolean needsLastline;
+    private boolean needsFrameKlazz;
     private boolean hasOptArgs;
     private boolean hasRestArg;
     private boolean hasScopeAwareMethods;
+    private boolean hasZSuper;
     
     // pragmas
     private boolean noFrame;
@@ -139,9 +148,17 @@ public class ASTInspector {
         hasDef = true;
         hasScopeAwareMethods = true;
         hasFrameAwareMethods = true;
+        needsFrameBlock = true;
+        needsFrameKlazz = true;
+        needsFrameName = true;
+        needsFrameSelf = true;
+        needsFrameVisibility = true;
+        needsBackref = true;
+        needsLastline = true;
         hasBlockArg = true;
         hasOptArgs = true;
         hasRestArg = true;
+        hasZSuper = true;
     }
     
     public static final boolean ENABLED = SafePropertyAccessor.getProperty("jruby.astInspector.enabled", "true").equals("true");
@@ -174,7 +191,13 @@ public class ASTInspector {
         hasClass |= other.hasClass;
         hasClosure |= other.hasClosure;
         hasDef |= other.hasDef;
-        hasFrameAwareMethods |= other.hasFrameAwareMethods;
+        needsBackref |= other.needsBackref;
+        needsFrameBlock |= other.needsFrameBlock;
+        needsFrameKlazz |= other.needsFrameKlazz;
+        needsFrameName |= other.needsFrameName;
+        needsFrameSelf |= other.needsFrameSelf;
+        needsFrameVisibility |= other.needsFrameVisibility;
+        needsLastline |= other.needsLastline;
         hasOptArgs |= other.hasOptArgs;
         hasRestArg |= other.hasRestArg;
         hasScopeAwareMethods |= other.hasScopeAwareMethods;
@@ -229,11 +252,12 @@ public class ASTInspector {
             break;
         case ATTRASSIGNNODE:
             AttrAssignNode attrAssignNode = (AttrAssignNode)node;
+            needsFrameSelf = true;
             inspect(attrAssignNode.getArgsNode());
             inspect(attrAssignNode.getReceiverNode());
             break;
         case BACKREFNODE:
-            hasFrameAwareMethods = true;
+            needsBackref = true;
             break;
         case BEGINNODE:
             inspect(((BeginNode)node).getBodyNode());
@@ -258,6 +282,13 @@ public class ASTInspector {
         case CALLNODE:
             CallNode callNode = (CallNode)node;
             inspect(callNode.getReceiverNode());
+            // check for Proc.new, an especially magic method
+            if (callNode.getName() == "new" &&
+                    callNode.getReceiverNode() instanceof ConstNode &&
+                    ((ConstNode)callNode.getReceiverNode()).getName() == "Proc") {
+                // Proc.new needs the caller's block to instantiate a proc
+                needsFrameBlock = true;
+            }
         case FCALLNODE:
             inspect(((IArgumentNode)node).getArgsNode());
             inspect(((BlockAcceptingNode)node).getIterNode());
@@ -306,6 +337,7 @@ public class ASTInspector {
         case DEFNNODE:
         case DEFSNODE:
             hasDef = true;
+            needsFrameVisibility = true;
             hasScopeAwareMethods = true;
             break;
         case DEFINEDNODE:
@@ -340,7 +372,6 @@ public class ASTInspector {
         case FORNODE:
             hasClosure = true;
             hasScopeAwareMethods = true;
-            hasFrameAwareMethods = true;
             inspect(((ForNode)node).getIterNode());
             inspect(((ForNode)node).getBodyNode());
             inspect(((ForNode)node).getVarNode());
@@ -353,9 +384,9 @@ public class ASTInspector {
             break;
         case GLOBALVARNODE:
             if (((GlobalVarNode)node).getName().equals("$_")) {
-                hasFrameAwareMethods = true;
+                needsLastline = true;
             } else if (((GlobalVarNode)node).getName().equals("$~")) {
-                hasFrameAwareMethods = true;
+                needsBackref = true;
             }
             break;
         case HASHNODE:
@@ -379,7 +410,6 @@ public class ASTInspector {
             break;
         case ITERNODE:
             hasClosure = true;
-            hasFrameAwareMethods = true;
             break;
         case LOCALASGNNODE:
             LocalAsgnNode localAsgnNode = (LocalAsgnNode)node;
@@ -395,19 +425,19 @@ public class ASTInspector {
             break;
         case MATCHNODE:
             inspect(((MatchNode)node).getRegexpNode());
-            hasFrameAwareMethods = true;
+            needsBackref = true;
             break;
         case MATCH2NODE:
             Match2Node match2Node = (Match2Node)node;
             inspect(match2Node.getReceiverNode());
             inspect(match2Node.getValueNode());
-            hasFrameAwareMethods = true;
+            needsBackref = true;
             break;
         case MATCH3NODE:
             Match3Node match3Node = (Match3Node)node;
             inspect(match3Node.getReceiverNode());
             inspect(match3Node.getValueNode());
-            hasFrameAwareMethods = true;
+            needsBackref = true;
             break;
         case MODULENODE:
             hasClass = true;
@@ -447,6 +477,7 @@ public class ASTInspector {
             break;
         case OPELEMENTASGNNODE:
             OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode)node;
+            needsFrameSelf = true;
             inspect(opElementAsgnNode.getArgsNode());
             inspect(opElementAsgnNode.getReceiverNode());
             inspect(opElementAsgnNode.getValueNode());
@@ -459,7 +490,6 @@ public class ASTInspector {
         case POSTEXENODE:
             PostExeNode postExeNode = (PostExeNode)node;
             hasClosure = true;
-            hasFrameAwareMethods = true;
             hasScopeAwareMethods = true;
             inspect(postExeNode.getBodyNode());
             inspect(postExeNode.getVarNode());
@@ -467,7 +497,6 @@ public class ASTInspector {
         case PREEXENODE:
             PreExeNode preExeNode = (PreExeNode)node;
             hasClosure = true;
-            hasFrameAwareMethods = true;
             hasScopeAwareMethods = true;
             inspect(preExeNode.getBodyNode());
             inspect(preExeNode.getVarNode());
@@ -579,7 +608,7 @@ public class ASTInspector {
             break;
         case ZSUPERNODE:
             hasScopeAwareMethods = true;
-            hasFrameAwareMethods = true;
+            hasZSuper = true;
             inspect(((ZSuperNode)node).getIterNode());
             break;
         default:
@@ -602,7 +631,17 @@ public class ASTInspector {
     }
 
     public boolean hasFrameAwareMethods() {
-        return hasFrameAwareMethods;
+        return hasClosure ||
+                hasEval ||
+                hasFrameAwareMethods ||
+                needsBackref ||
+                needsFrameBlock ||
+                needsFrameKlazz ||
+                needsFrameName ||
+                needsFrameSelf ||
+                needsFrameVisibility ||
+                needsLastline ||
+                hasZSuper;
     }
 
     public boolean hasScopeAwareMethods() {
