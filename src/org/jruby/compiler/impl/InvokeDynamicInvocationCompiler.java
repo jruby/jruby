@@ -408,7 +408,15 @@ public class InvokeDynamicInvocationCompiler implements InvocationCompiler {
         methodCompiler.method.ldc(name);
         
         String signature;
-        String callName = name;
+        String callName;
+        if (callType == CallType.NORMAL) {
+            callName = "c";
+        } else if (callType == CallType.FUNCTIONAL) {
+            callName = "f";
+        } else {//if (callType == CallType.VARIABLE) {
+            callName = "v";
+        }
+        
         // args
         if (argsCallback == null) {
             // block
@@ -417,7 +425,7 @@ public class InvokeDynamicInvocationCompiler implements InvocationCompiler {
                 signature = sig(IRubyObject.class, params(ThreadContext.class, String.class));
             } else {
                 // no args, with block
-//                if (iterator) callName += "B";
+                if (iterator) callName += "b";
                 closureArg.call(methodCompiler);
                 signature = sig(IRubyObject.class, params(ThreadContext.class, String.class, Block.class));
             }
@@ -441,7 +449,7 @@ public class InvokeDynamicInvocationCompiler implements InvocationCompiler {
                 }
             } else {
                 // with args, with block
-//                if (iterator) callName += "B";
+                if (iterator) callName += "b";
                 closureArg.call(methodCompiler);
                 
                 switch (argsCallback.getArity()) {
@@ -462,7 +470,7 @@ public class InvokeDynamicInvocationCompiler implements InvocationCompiler {
         
         // adapter, tc, recv, args{0,1}, block{0,1}]
 
-        method.invokeinterface(p(Dynamic.class), JavaNameMangler.mangleStringForCleanJavaIdentifier(callName), signature);
+        method.invokeinterface(p(Dynamic.class), callName, signature);
     }
 
     public void invokeOpAsgnWithOr(String attrName, String attrAsgnName, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
