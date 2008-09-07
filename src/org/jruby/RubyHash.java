@@ -365,16 +365,24 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private final void JavaSoftCheckResize() {
-        if (size > threshold) {
-            int oldCapacity = table.length;
-            if (oldCapacity == MAXIMUM_CAPACITY) {
+        if (overThreshold()) {
+            RubyHashEntry[] tbl = table;
+            if (tbl.length == MAXIMUM_CAPACITY) {
                 threshold = Integer.MAX_VALUE;
                 return;
             }
-            int newCapacity = table.length << 1;
-            resize(newCapacity);
-            threshold = newCapacity - (newCapacity >> 2);
+            resizeAndAdjustThreshold(table);
         }
+    }
+    
+    private boolean overThreshold() {
+        return size > threshold;
+    }
+    
+    private void resizeAndAdjustThreshold(RubyHashEntry[] oldTable) {
+        int newCapacity = oldTable.length << 1;
+        resize(newCapacity);
+        threshold = newCapacity - (newCapacity >> 2);
     }
 
     private static final int MIN_CAPA = 8;

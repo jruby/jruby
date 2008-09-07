@@ -71,14 +71,16 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
     
     @Override
     public IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil) {
-        assert offset == 0 : "SingleVarDynamicScope only supports scopes with one variable";
-        if (variableValueZero == null) return variableValueZero = nil;
-        return variableValueZero;
+        assertGetValueDepthZeroOrNil(offset);
+        IRubyObject value = variableValueZero;
+        if (value == null) return variableValueZero = nil;
+        return value;
     }
     @Override
     public IRubyObject getValueZeroDepthZeroOrNil(IRubyObject nil) {
-        if (variableValueZero == null) return variableValueZero = nil;
-        return variableValueZero;
+        IRubyObject value = variableValueZero;
+        if (value == null) return variableValueZero = nil;
+        return value;
     }
 
     /**
@@ -91,18 +93,18 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
     @Override
     public IRubyObject setValue(int offset, IRubyObject value, int depth) {
         if (depth > 0) {
-            assert parent != null : "If depth > 0, then parent should not ever be null";
+            assertParent();
             
             return parent.setValue(offset, value, depth - 1);
         } else {
-            assert offset == 0 : "SingleVarDynamicScope only supports one variable";
+            assertSetValue(offset);
             return variableValueZero = value;
         }
     }
 
     @Override
     public IRubyObject setValueDepthZero(IRubyObject value, int offset) {
-        assert offset == 0 : "SingleVarDynamicScope only supports one variable";
+        assertSetValueDepthZero(offset);
         return variableValueZero = value;
     }
     @Override
@@ -123,7 +125,7 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
      */
     @Override
     public void setArgValues(IRubyObject[] values, int size) {
-        assert values.length == 1 : "SingleVarDynamicScope only supports one variable";
+        assertSetArgValues(values);
         if (size == 1) {
             variableValueZero = values[0];
         }
@@ -199,5 +201,25 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
         }
         
         return buf.toString();
+    }
+
+    private void assertGetValueDepthZeroOrNil(int offset) {
+        assert offset == 0 : "SingleVarDynamicScope only supports scopes with one variable";
+    }
+
+    private void assertParent() {
+        assert parent != null : "If depth > 0, then parent should not ever be null";
+    }
+
+    private void assertSetArgValues(IRubyObject[] values) {
+        assert values.length == 1 : "SingleVarDynamicScope only supports one variable";
+    }
+
+    private void assertSetValue(int offset) {
+        assert offset == 0 : "SingleVarDynamicScope only supports one variable";
+    }
+
+    private void assertSetValueDepthZero(int offset) {
+        assert offset == 0 : "SingleVarDynamicScope only supports one variable";
     }
 }

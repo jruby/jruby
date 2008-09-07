@@ -622,6 +622,9 @@ public class RubyArray extends RubyObject implements List {
         if (offset < 0 || offset >= realLength) {
             return getRuntime().getNil();
         }
+        return eltOk(offset);
+    }
+    private final IRubyObject eltOk(long offset) {
         try {
             return values[begin + (int)offset];
         } catch (ArrayIndexOutOfBoundsException e) {
@@ -2467,7 +2470,7 @@ public class RubyArray extends RubyObject implements List {
     static final class DefaultComparator implements Comparator {
         public int compare(Object o1, Object o2) {
             if (o1 instanceof RubyFixnum && o2 instanceof RubyFixnum) {
-                return compareFixnums(o1, o2);
+                return compareFixnums((RubyFixnum)o1, (RubyFixnum)o2);
             }
             if (o1 instanceof RubyString && o2 instanceof RubyString) {
                 return ((RubyString) o1).op_cmp((RubyString) o2);
@@ -2476,9 +2479,9 @@ public class RubyArray extends RubyObject implements List {
             return compareOthers((IRubyObject)o1, (IRubyObject)o2);
         }
 
-        private int compareFixnums(Object o1, Object o2) {
-            long a = ((RubyFixnum) o1).getLongValue();
-            long b = ((RubyFixnum) o2).getLongValue();
+        private int compareFixnums(RubyFixnum o1, RubyFixnum o2) {
+            long a = o1.getLongValue();
+            long b = o2.getLongValue();
             if (a > b) {
                 return 1;
             }
@@ -2490,7 +2493,7 @@ public class RubyArray extends RubyObject implements List {
 
         private int compareOthers(IRubyObject o1, IRubyObject o2) {
             ThreadContext context = o1.getRuntime().getCurrentContext();
-            IRubyObject ret = o1.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", o2);
+            IRubyObject ret = o1.callMethod(context, "<=>", o2);
             int n = RubyComparable.cmpint(context, ret, o1, o2);
             //TODO: ary_sort_check should be done here
             return n;

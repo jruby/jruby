@@ -387,8 +387,7 @@ public final class ThreadContext {
         Frame frame = frameStack[index];
         frameStack[index] = oldFrame;
         frameIndex = index - 1;
-        setFile(frame.getFile());
-        setLine(frame.getLine());
+        setFileAndLine(frame);
     }
     
     public Frame getCurrentFrame() {
@@ -468,6 +467,11 @@ public final class ThreadContext {
     public void setFileAndLine(String file, int line) {
         this.file = file;
         this.line = line;
+    }
+    
+    public void setFileAndLine(Frame frame) {
+        this.file = frame.getFile();
+        this.line = frame.getLine();
     }
     
     public Visibility getCurrentVisibility() {
@@ -870,6 +874,15 @@ public final class ThreadContext {
         
         return traceArray;
     }
+
+    private Frame pushFrameForBlock(Binding binding) {
+        Frame lastFrame = getNextFrame();
+        Frame f = pushFrame(binding.getFrame());
+        f.setFile(file);
+        f.setLine(line);
+        f.setVisibility(binding.getVisibility());
+        return lastFrame;
+    }
     
     public enum FrameType { METHOD, BLOCK, EVAL, CLASS, ROOT }
     public static final Map<String, FrameType> INTERPRETED_FRAMES = new HashMap<String, FrameType>();
@@ -1148,49 +1161,28 @@ public final class ThreadContext {
     }
     
     public Frame preForBlock(Binding binding, RubyModule klass) {
-        Frame lastFrame = getNextFrame();
-        Frame f = binding.getFrame();
-        f.setFile(file);
-        f.setLine(line);
-        pushFrame(f);
-        getCurrentFrame().setVisibility(binding.getVisibility());
+        Frame lastFrame = preYieldNoScope(binding, klass);
         pushScope(binding.getDynamicScope());
-        pushRubyClass((klass != null) ? klass : binding.getKlass());
         return lastFrame;
     }
     
     public Frame preYieldSpecificBlock(Binding binding, StaticScope scope, RubyModule klass) {
-        Frame lastFrame = getNextFrame();
-        Frame f = pushFrame(binding.getFrame());
-        f.setFile(file);
-        f.setLine(line);
-        f.setVisibility(binding.getVisibility());
+        Frame lastFrame = preYieldNoScope(binding, klass);
         // new scope for this invocation of the block, based on parent scope
         pushScope(DynamicScope.newDynamicScope(scope, binding.getDynamicScope()));
-        pushRubyClass((klass != null) ? klass : binding.getKlass());
         return lastFrame;
     }
     
     public Frame preYieldLightBlock(Binding binding, DynamicScope emptyScope, RubyModule klass) {
-        Frame lastFrame = getNextFrame();
-        Frame f = pushFrame(binding.getFrame());
-        f.setFile(file);
-        f.setLine(line);
-        f.setVisibility(binding.getVisibility());
+        Frame lastFrame = preYieldNoScope(binding, klass);
         // just push the same empty scope, since we won't use one
         pushScope(emptyScope);
-        pushRubyClass((klass != null) ? klass : binding.getKlass());
         return lastFrame;
     }
     
     public Frame preYieldNoScope(Binding binding, RubyModule klass) {
-        Frame lastFrame = getNextFrame();
-        Frame f = pushFrame(binding.getFrame());
-        f.setFile(file);
-        f.setLine(line);
-        f.setVisibility(binding.getVisibility());
         pushRubyClass((klass != null) ? klass : binding.getKlass());
-        return lastFrame;
+        return pushFrameForBlock(binding);
     }
     
     public Frame preEvalWithBinding(Binding binding) {

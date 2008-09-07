@@ -89,7 +89,7 @@ public class ManyVarsDynamicScope extends DynamicScope {
         //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
         IRubyObject value = variableValues[offset];
         if (value == null) {
-            return setValue(offset, value);
+            return setValueDepthZero(value, offset);
         }
         return value;
     }
@@ -99,7 +99,7 @@ public class ManyVarsDynamicScope extends DynamicScope {
         //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
         IRubyObject value = variableValues[0];
         if (value == null) {
-            return setValue(0, value);
+            return setValueZeroDepthZero(value);
         }
         return value;
     }
@@ -109,7 +109,7 @@ public class ManyVarsDynamicScope extends DynamicScope {
         //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
         IRubyObject value = variableValues[1];
         if (value == null) {
-            return setValue(1, value);
+            return setValueOneDepthZero(value);
         }
         return value;
     }
@@ -119,7 +119,7 @@ public class ManyVarsDynamicScope extends DynamicScope {
         //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
         IRubyObject value = variableValues[2];
         if (value == null) {
-            return setValue(2, value);
+            return setValueTwoDepthZero(value);
         }
         return value;
     }
@@ -129,7 +129,7 @@ public class ManyVarsDynamicScope extends DynamicScope {
         //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
         IRubyObject value = variableValues[3];
         if (value == null) {
-            return setValue(3, value);
+            return setValueThreeDepthZero(value);
         }
         return value;
     }
@@ -149,12 +149,8 @@ public class ManyVarsDynamicScope extends DynamicScope {
         } else {
             assertSetValue(offset, value);
             
-            return variableValues[offset] = value;
+            return setValueDepthZero(value, offset);
         }
-    }
-    
-    private IRubyObject setValue(int offset, IRubyObject value) {
-        return variableValues[offset] = value;
     }
 
     public IRubyObject setValueDepthZero(IRubyObject value, int offset) {
@@ -309,33 +305,33 @@ public class ManyVarsDynamicScope extends DynamicScope {
     }
 
     private void assertGetValue(int offset, int depth) {
-        assert variableValues != null : "No variables in getValue for off: " + offset + ", Dep: " + depth;
-        assert offset < variableValues.length : "Index to big for getValue off: " + offset + ", Dep: " + depth + ", O: " + this;
+        IRubyObject[] values = variableValues;
+        assert values != null && offset < values.length : "No variables or index to big for getValue off: " + offset + ", Dep: " + depth + ", O: " + this;
     }
 
     private void assertGetValueDepthZeroOrNil(int offset) {
-        assert variableValues != null : "No variables in getValue for off: " + offset + ", Dep: " + 0;
-        assert offset < variableValues.length : "Index to big for getValue off: " + offset + ", Dep: " + 0 + ", O: " + this;
+        IRubyObject[] values = variableValues;
+        assert values != null && offset < values.length : "No variables or index too big for getValue off: " + offset + ", Dep: " + 0 + ", O: " + this;
     }
 
     private void assertGetValueZeroDepthZeroOrNil() {
-        assert variableValues != null : "No variables in getValue for off: " + 0 + ", Dep: " + 0;
-        assert 0 < variableValues.length : "Index to big for getValue off: " + 0 + ", Dep: " + 0 + ", O: " + this;
+        IRubyObject[] values = variableValues;
+        assert values != null && 0 < values.length : "No variables or index to big for getValue off: " + 0 + ", Dep: " + 0 + ", O: " + this;
     }
 
     private void assertGetValueOneDepthZeroOrNil() {
-        assert variableValues != null : "No variables in getValue for off: " + 1 + ", Dep: " + 0;
-        assert 1 < variableValues.length : "Index to big for getValue off: " + 1 + ", Dep: " + 0 + ", O: " + this;
+        IRubyObject[] values = variableValues;
+        assert values != null && 1 < values.length : "No variables or index to big for getValue off: " + 1 + ", Dep: " + 0 + ", O: " + this;
     }
 
     private void assertGetValueTwoDepthZeroOrNil() {
-        assert variableValues != null : "No variables in getValue for off: " + 3 + ", Dep: " + 0;
-        assert 3 < variableValues.length : "Index to big for getValue off: " + 3 + ", Dep: " + 0 + ", O: " + this;
+        IRubyObject[] values = variableValues;
+        assert values != null && 3 < values.length : "No variables or index to big for getValue off: " + 3 + ", Dep: " + 0 + ", O: " + this;
     }
 
     private void assertGetValueThreeDepthZeroOrNil() {
-        assert variableValues != null : "No variables in getValue for off: " + 2 + ", Dep: " + 0;
-        assert 2 < variableValues.length : "Index to big for getValue off: " + 2 + ", Dep: " + 0 + ", O: " + this;
+        IRubyObject[] values = variableValues;
+        assert values != null && 2 < values.length : "No variables or index to big for getValue off: " + 2 + ", Dep: " + 0 + ", O: " + this;
     }
 
     private void assertParent() {

@@ -122,8 +122,14 @@ public class RubyString extends RubyObject {
      */
     @Override
     public final boolean eql(IRubyObject other) {
-        if (other.getMetaClass() == getRuntime().getString()) return value.equal(((RubyString)other).value);
+        if (otherIsString(other)) return eqlString(other);
         return super.eql(other);
+    }
+    private final boolean otherIsString(IRubyObject other) {
+        return other.getMetaClass() == getRuntime().getString();
+    }
+    private final boolean eqlString(IRubyObject other) {
+        return value.equal(((RubyString)other).value);
     }
 
     private RubyString(Ruby runtime, RubyClass rubyClass, CharSequence value) {
@@ -1574,14 +1580,19 @@ public class RubyString extends RubyObject {
     }
     
     private int strIndex(RubyString sub, int offset) {
+        ByteList byteList = value;
         if (offset < 0) {
-            offset += value.realSize;
+            offset += byteList.realSize;
             if (offset < 0) return -1;
         }
         
-        if (value.realSize - offset < sub.value.realSize) return -1;
-        if (sub.value.realSize == 0) return offset;
-        return value.indexOf(sub.value, offset);
+        ByteList other = sub.value;
+        if (sizeIsSmaller(byteList, offset, other)) return -1;
+        if (other.realSize == 0) return offset;
+        return byteList.indexOf(other, offset);
+    }
+    private static boolean sizeIsSmaller(ByteList byteList, int offset, ByteList other) {
+        return byteList.realSize - offset < other.realSize;
     }
 
     /**

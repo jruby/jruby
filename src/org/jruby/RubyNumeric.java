@@ -139,15 +139,21 @@ public class RubyNumeric extends RubyObject {
      * 
      */
     public static void checkInt(IRubyObject arg, long num){
-        String s;
         if (num < Integer.MIN_VALUE) {
-            s = "small";
+            tooSmall(arg, num);
         } else if (num > Integer.MAX_VALUE) {
-            s = "big";
+            tooBig(arg, num);
         } else {
             return;
         }
-        throw arg.getRuntime().newRangeError("integer " + num + " too " + s + " to convert to `int'");
+    }
+    
+    private static void tooSmall(IRubyObject arg, long num) {
+        throw arg.getRuntime().newRangeError("integer " + num + " too small to convert to `int'");
+    }
+    
+    private static void tooBig(IRubyObject arg, long num) {
+        throw arg.getRuntime().newRangeError("integer " + num + " too big to convert to `int'");
     }
 
     /**
@@ -169,25 +175,35 @@ public class RubyNumeric extends RubyObject {
     public static long num2long(IRubyObject arg) {
         if (arg instanceof RubyFixnum) {
             return ((RubyFixnum) arg).getLongValue();
+        } else {
+            return other2long(arg);
         }
+    }
+
+    private static long other2long(IRubyObject arg) throws RaiseException {
         if (arg.isNil()) {
             throw arg.getRuntime().newTypeError("no implicit conversion from nil to integer");
-        }
-
-        if (arg instanceof RubyFloat) {
-            double aFloat = ((RubyFloat) arg).getDoubleValue();
-            if (aFloat <= (double) Long.MAX_VALUE && aFloat >= (double) Long.MIN_VALUE) {
-                return (long) aFloat;
-            } else {
-                // TODO: number formatting here, MRI uses "%-.10g", 1.4 API is a must?
-                throw arg.getRuntime().newRangeError("float " + aFloat + " out of range of integer");
-            }
+        } else if (arg instanceof RubyFloat) {
+            return float2long((RubyFloat)arg);
         } else if (arg instanceof RubyBignum) {
             return RubyBignum.big2long((RubyBignum) arg);
         }
         return arg.convertToInteger().getLongValue();
     }
+    
+    private static long float2long(RubyFloat flt) {
+        double aFloat = flt.getDoubleValue();
+        if (aFloat <= (double) Long.MAX_VALUE && aFloat >= (double) Long.MIN_VALUE) {
+            return (long) aFloat;
+        } else {
+            // TODO: number formatting here, MRI uses "%-.10g", 1.4 API is a must?
+            throw flt.getRuntime().newRangeError("float " + aFloat + " out of range of integer");
+        }
+    }
 
+    /** rb_dbl2big + LONG2FIX at once (numeric.c)
+     * 
+     */
     /** rb_dbl2big + LONG2FIX at once (numeric.c)
      * 
      */
@@ -240,7 +256,7 @@ public class RubyNumeric extends RubyObject {
 
         checkInt(arg, num);
         return (int) num;
-        }
+    }
 
     public static RubyInteger str2inum(Ruby runtime, RubyString str, int base) {
         return str2inum(runtime,str,base,false);
@@ -522,9 +538,8 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "-@")
     public IRubyObject op_uminus(ThreadContext context) {
-        RubyFixnum zero = RubyFixnum.zero(getRuntime());
-        RubyArray ary = zero.doCoerce(context, this, true);
-        return ary.eltInternal(0).callMethod(context, MethodIndex.OP_MINUS, "-", ary.eltInternal(1));
+        RubyArray ary = RubyFixnum.zero(context.getRuntime()).doCoerce(context, this, true);
+        return ary.eltInternal(0).callMethod(context, "-", ary.eltInternal(1));
     }
     
     /** num_cmp
