@@ -89,19 +89,74 @@ public abstract class CallSite {
 
     public static class InlineCachingCallSite extends CallSite implements CacheMap.CacheSite {
         private static class CacheEntry {
+            /** The cached method */
             public final DynamicMethod cachedMethod;
+            /** The cached "real" type from the original method lookup */
             public final RubyClass cachedType;
-            public CacheEntry(DynamicMethod method, RubyClass type) {
+            /** The original name for which this cache was populated */
+            public final String methodName;
+            
+            public CacheEntry(DynamicMethod method, RubyClass type, String name) {
                 cachedMethod = method;
                 cachedType = type;
+                methodName = name;
             }
             
-            public boolean isOk(RubyClass otherType) {
-                return cachedType == otherType;
+            /**
+             * Check whether this site's cached type matches the incoming
+             * type closely enough to allow using the cached method as-is.
+             * 
+             * The primary check performed here is whether the incoming type
+             * and the cached type are exactly the same object. This is the
+             * fast path. If that fails, an additional set of checks are
+             * performed in case the incoming type is a singleton, which extends
+             * but may not mask the method in question on the cached type.
+             * 
+             * @see CacheEntry#typeGoodEnough
+             * @param otherType
+             * @return
+             */
+            public boolean typeOk(RubyClass incomingType) {
+                RubyClass cachedType = this.cachedType;
+                return cachedType == incomingType || typeGoodEnough(cachedType, incomingType);
+            }
+            
+            /**
+             * Check whether an incoming type is similar enough to the
+             * original cached type to allow using the cached method.
+             * 
+             * The logic here is as follows.
+             * 
+             * If the cached method...
+             * <ul>
+             * <li>Was not defined immediately on the cached type</li>
+             * </ul>
+             * 
+             * ...and the incoming type...
+             * <ul>
+             * <li>Immediately extends the same class as the cached type</li>
+             * <li>Has not itself overridden the method in question</li>
+             * <li>Has not included a module (which may have overridden) the
+             * method (caught by the superclass check)</li>
+             * </ul>
+             * 
+             * ...then it is safe to assume that the incoming type can be
+             * treated as though it were the cached type for this invocation.
+             * 
+             * @param thisType The cached type
+             * @param otherType The incoming type
+             * @return Whether the singleton type is similar enough to permit
+             * using the cached method.
+             */
+            private final boolean typeGoodEnough(RubyClass cachedType, RubyClass incomingType) {
+                return cachedType != null &&
+                        cachedMethod.getImplementationClass() != cachedType &&
+                        incomingType.getSuperClass() == cachedType.getSuperClass() &&
+                        incomingType.retrieveMethod(methodName) == null;
             }
         }
         
-        private static final CacheEntry NULL_CACHE = new CacheEntry(null, null);
+        private static final CacheEntry NULL_CACHE = new CacheEntry(null, null, null);
         
         private volatile CacheEntry cache = NULL_CACHE;
         private int misses = 0;
@@ -118,7 +173,7 @@ public abstract class CallSite {
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject... args) {
             RubyClass selfType = pollAndGetClass(context, self);
             CacheEntry myCache = cache;
-            if (myCache.isOk(selfType)) {
+            if (myCache.typeOk(selfType)) {
                 return myCache.cachedMethod.call(context, self, selfType, methodName, args);
             }
             return cacheAndCall(selfType, args, context, self);
@@ -128,7 +183,7 @@ public abstract class CallSite {
             RubyClass selfType = pollAndGetClass(context, self);
             try {
                 CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
+                if (myCache.typeOk(selfType)) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, args, block);
                 }
                 return cacheAndCall(selfType, block, args, context, self);
@@ -145,7 +200,7 @@ public abstract class CallSite {
             RubyClass selfType = pollAndGetClass(context, self);
             try {
                 CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
+                if (myCache.typeOk(selfType)) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, args, block);
                 }
                 return cacheAndCall(selfType, block, args, context, self);
@@ -163,7 +218,7 @@ public abstract class CallSite {
         public IRubyObject call(ThreadContext context, IRubyObject self) {
             RubyClass selfType = pollAndGetClass(context, self);
             CacheEntry myCache = cache;
-            if (myCache.isOk(selfType)) {
+            if (myCache.typeOk(selfType)) {
                 return myCache.cachedMethod.call(context, self, selfType, methodName);
             }
             return cacheAndCall(selfType, context, self);
@@ -173,7 +228,7 @@ public abstract class CallSite {
             RubyClass selfType = pollAndGetClass(context, self);
             try {
                 CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
+                if (myCache.typeOk(selfType)) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, block);
                 }
                 return cacheAndCall(selfType, block, context, self);
@@ -190,7 +245,7 @@ public abstract class CallSite {
             RubyClass selfType = pollAndGetClass(context, self);
             try {
                 CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
+                if (myCache.typeOk(selfType)) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, block);
                 }
                 return cacheAndCall(selfType, block, context, self);
@@ -208,7 +263,7 @@ public abstract class CallSite {
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1) {
             RubyClass selfType = pollAndGetClass(context, self);
             CacheEntry myCache = cache;
-            if (myCache.isOk(selfType)) {
+            if (myCache.typeOk(selfType)) {
                 return myCache.cachedMethod.call(context, self, selfType, methodName, arg1);
             }
             return cacheAndCall(selfType, context, self, arg1);
@@ -218,7 +273,7 @@ public abstract class CallSite {
             RubyClass selfType = pollAndGetClass(context, self);
             try {
                 CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
+                if (myCache.typeOk(selfType)) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, block);
                 }
                 return cacheAndCall(selfType, block, context, self, arg1);
@@ -235,7 +290,7 @@ public abstract class CallSite {
             RubyClass selfType = pollAndGetClass(context, self);
             try {
                 CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
+                if (myCache.typeOk(selfType)) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, block);
                 }
                 return cacheAndCall(selfType, block, context, self, arg1);
@@ -253,7 +308,7 @@ public abstract class CallSite {
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
             RubyClass selfType = pollAndGetClass(context, self);
             CacheEntry myCache = cache;
-            if (myCache.isOk(selfType)) {
+            if (myCache.typeOk(selfType)) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2);
             }
             return cacheAndCall(selfType, context, self, arg1, arg2);
@@ -263,7 +318,7 @@ public abstract class CallSite {
             RubyClass selfType = pollAndGetClass(context, self);
             try {
                 CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
+                if (myCache.typeOk(selfType)) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, block);
                 }
                 return cacheAndCall(selfType, block, context, self, arg1, arg2);
@@ -280,7 +335,7 @@ public abstract class CallSite {
             RubyClass selfType = pollAndGetClass(context, self);
             try {
                 CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
+                if (myCache.typeOk(selfType)) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, block);
                 }
                 return cacheAndCall(selfType, block, context, self, arg1, arg2);
@@ -298,7 +353,7 @@ public abstract class CallSite {
         public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
             RubyClass selfType = pollAndGetClass(context, self);
             CacheEntry myCache = cache;
-            if (myCache.isOk(selfType)) {
+            if (myCache.typeOk(selfType)) {
                 return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, arg3);
             }
             return cacheAndCall(selfType, context, self, arg1, arg2, arg3);
@@ -308,7 +363,7 @@ public abstract class CallSite {
             RubyClass selfType = pollAndGetClass(context, self);
             try {
                 CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
+                if (myCache.typeOk(selfType)) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
                 }
                 return cacheAndCall(selfType, block, context, self, arg1, arg2, arg3);
@@ -325,7 +380,7 @@ public abstract class CallSite {
             RubyClass selfType = pollAndGetClass(context, self);
             try {
                 CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
+                if (myCache.typeOk(selfType)) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
                 }
                 return cacheAndCall(selfType, block, context, self, arg1, arg2, arg3);
@@ -343,7 +398,7 @@ public abstract class CallSite {
         public IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject... args) {
             RubyClass selfType = pollAndGetClass(context, self);
             CacheEntry myCache = cache;
-            if (myCache.isOk(selfType)) {
+            if (myCache.typeOk(selfType)) {
                 return myCache.cachedMethod.call(context, self, selfType, methodName, args);
             }
             return cacheAndCall(caller, selfType, args, context, self);
@@ -353,7 +408,7 @@ public abstract class CallSite {
             RubyClass selfType = pollAndGetClass(context, self);
             try {
                 CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
+                if (myCache.typeOk(selfType)) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, args, block);
                 }
                 return cacheAndCall(caller, selfType, block, args, context, self);
@@ -370,7 +425,7 @@ public abstract class CallSite {
             RubyClass selfType = pollAndGetClass(context, self);
             try {
                 CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
+                if (myCache.typeOk(selfType)) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, args, block);
                 }
                 return cacheAndCall(caller, selfType, block, args, context, self);
@@ -388,7 +443,7 @@ public abstract class CallSite {
         public IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self) {
             RubyClass selfType = pollAndGetClass(context, self);
             CacheEntry myCache = cache;
-            if (myCache.isOk(selfType)) {
+            if (myCache.typeOk(selfType)) {
                 return myCache.cachedMethod.call(context, self, selfType, methodName);
             }
             return cacheAndCall(caller, selfType, context, self);
@@ -398,7 +453,7 @@ public abstract class CallSite {
             RubyClass selfType = pollAndGetClass(context, self);
             try {
                 CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
+                if (myCache.typeOk(selfType)) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, block);
                 }
                 return cacheAndCall(caller, selfType, block, context, self);
@@ -415,7 +470,7 @@ public abstract class CallSite {
             RubyClass selfType = pollAndGetClass(context, self);
             try {
                 CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
+                if (myCache.typeOk(selfType)) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, block);
                 }
                 return cacheAndCall(caller, selfType, block, context, self);
@@ -433,7 +488,7 @@ public abstract class CallSite {
         public IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1) {
             RubyClass selfType = pollAndGetClass(context, self);
             CacheEntry myCache = cache;
-            if (myCache.isOk(selfType)) {
+            if (myCache.typeOk(selfType)) {
                 return myCache.cachedMethod.call(context, self, selfType, methodName, arg1);
             }
             return cacheAndCall(caller, selfType, context, self, arg1);
@@ -443,7 +498,7 @@ public abstract class CallSite {
             RubyClass selfType = pollAndGetClass(context, self);
             try {
                 CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
+                if (myCache.typeOk(selfType)) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, block);
                 }
                 return cacheAndCall(caller, selfType, block, context, self, arg1);
@@ -460,7 +515,7 @@ public abstract class CallSite {
             RubyClass selfType = pollAndGetClass(context, self);
             try {
                 CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
+                if (myCache.typeOk(selfType)) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, block);
                 }
                 return cacheAndCall(caller, selfType, block, context, self, arg1);
@@ -478,7 +533,7 @@ public abstract class CallSite {
         public IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
             RubyClass selfType = pollAndGetClass(context, self);
             CacheEntry myCache = cache;
-            if (myCache.isOk(selfType)) {
+            if (myCache.typeOk(selfType)) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2);
             }
             return cacheAndCall(caller, selfType, context, self, arg1, arg2);
@@ -488,7 +543,7 @@ public abstract class CallSite {
             RubyClass selfType = pollAndGetClass(context, self);
             try {
                 CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
+                if (myCache.typeOk(selfType)) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, block);
                 }
                 return cacheAndCall(caller, selfType, block, context, self, arg1, arg2);
@@ -505,7 +560,7 @@ public abstract class CallSite {
             RubyClass selfType = pollAndGetClass(context, self);
             try {
                 CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
+                if (myCache.typeOk(selfType)) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, block);
                 }
                 return cacheAndCall(caller, selfType, block, context, self, arg1, arg2);
@@ -523,7 +578,7 @@ public abstract class CallSite {
         public IRubyObject callFrom(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
             RubyClass selfType = pollAndGetClass(context, self);
             CacheEntry myCache = cache;
-            if (myCache.isOk(selfType)) {
+            if (myCache.typeOk(selfType)) {
                 return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, arg3);
             }
             return cacheAndCall(caller, selfType, context, self, arg1, arg2, arg3);
@@ -533,7 +588,7 @@ public abstract class CallSite {
             RubyClass selfType = pollAndGetClass(context, self);
             try {
                 CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
+                if (myCache.typeOk(selfType)) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
                 }
                 return cacheAndCall(caller, selfType, block, context, self, arg1, arg2, arg3);
@@ -550,7 +605,7 @@ public abstract class CallSite {
             RubyClass selfType = pollAndGetClass(context, self);
             try {
                 CacheEntry myCache = cache;
-                if (myCache.isOk(selfType)) {
+                if (myCache.typeOk(selfType)) {
                     return myCache.cachedMethod.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
                 }
                 return cacheAndCall(caller, selfType, block, context, self, arg1, arg2, arg3);
@@ -801,7 +856,7 @@ public abstract class CallSite {
             if (misses < MAX_MISSES) {
                 misses++;
                 if (misses >= MAX_MISSES) failedCallSites++;
-                cache = new CacheEntry(method, selfType);
+                cache = new CacheEntry(method, selfType, methodName);
                 selfType.getRuntime().getCacheMap().add(method, this);
             }
         }
