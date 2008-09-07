@@ -32,9 +32,11 @@ package org.jruby.compiler.impl;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.util.Arrays;
 
@@ -95,6 +97,7 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.util.CheckClassAdapter;
 import org.objectweb.asm.util.TraceClassVisitor;
@@ -145,6 +148,30 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     StaticScope topLevelScope;
     
     CacheCompiler cacheCompiler;
+    
+    private static final Constructor invDynInvCompilerConstructor;
+    private static final Method invDynSupportInstaller;
+
+    static {
+        Constructor compilerConstructor = null;
+        Method installerMethod = null;
+        try {
+            // try to load java.dyn.Dynamic first
+            Class.forName("java.dyn.Dynamic");
+            
+            // if that succeeds, the others should as well
+            Class compiler =
+                    Class.forName("org.jruby.compiler.impl.InvokeDynamicInvocationCompiler");
+            Class support =
+                    Class.forName("org.jruby.runtime.invokedynamic.InvokeDynamicSupport");
+            compilerConstructor = compiler.getConstructor(AbstractMethodCompiler.class, SkinnyMethodAdapter.class);
+            installerMethod = support.getDeclaredMethod("installBytecode", MethodVisitor.class, String.class);
+        } catch (Exception e) {
+            // leave it null and fall back on our normal invocation logic
+        }
+        invDynInvCompilerConstructor = compilerConstructor;
+        invDynSupportInstaller = installerMethod;
+    }
     
     /** Creates a new instance of StandardCompilerContext */
     public StandardASMCompiler(String classname, String sourcename) {
@@ -400,6 +427,20 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         clinitMethod = new SkinnyMethodAdapter(cv.visitMethod(ACC_PUBLIC | ACC_STATIC, "<clinit>", sig(Void.TYPE), null, null));
         clinitMethod.start();
+
+        if (invDynSupportInstaller != null) {
+            // install invokedynamic bootstrapper
+            // TODO need to abstract this setup behind another compiler interface
+            try {
+                invDynSupportInstaller.invoke(null, clinitMethod, classname);
+            } catch (IllegalAccessException ex) {
+                // ignore; we won't use invokedynamic
+            } catch (IllegalArgumentException ex) {
+                // ignore; we won't use invokedynamic
+            } catch (InvocationTargetException ex) {
+                // ignore; we won't use invokedynamic
+            }
+        }
     }
 
     private void endClassInit() {
@@ -461,7 +502,20 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, methodName, getSignature(), null, null));
             
             createVariableCompiler();
-            invocationCompiler = new StandardInvocationCompiler(this, method);
+            if (invDynInvCompilerConstructor != null) {
+                try {
+                    invocationCompiler = (InvocationCompiler)invDynInvCompilerConstructor.newInstance(this, method);
+                } catch (InstantiationException ie) {
+                    // do nothing, fall back on default compiler below
+                } catch (IllegalAccessException ie) {
+                    // do nothing, fall back on default compiler below
+                } catch (InvocationTargetException ie) {
+                    // do nothing, fall back on default compiler below
+                }
+            }
+            if (invocationCompiler == null) {
+                invocationCompiler = new StandardInvocationCompiler(this, method);
+            }
         }
         
         protected abstract String getSignature();
@@ -477,6 +531,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 super(methodName, inspector, scope);
             }
 
+            @Override
             public void endMethod() {
                 // return last value from execution
                 method.areturn();
@@ -2406,15 +2461,15 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 final CompilerCallback pathCallback, 
                 final CompilerCallback bodyCallback, 
                 final CompilerCallback receiverCallback) {
-            String methodName = null;
+            String classMethodName = null;
             if (receiverCallback == null) {
                 String mangledName = JavaNameMangler.mangleStringForCleanJavaIdentifier(name);
-                methodName = "class_" + ++methodIndex + "$RUBY$" + mangledName;
+                classMethodName = "class_" + ++methodIndex + "$RUBY$" + mangledName;
             } else {
-                methodName = "sclass_" + ++methodIndex + "$RUBY$__singleton__";
+                classMethodName = "sclass_" + ++methodIndex + "$RUBY$__singleton__";
             }
 
-            final ASMMethodCompiler methodCompiler = new ASMMethodCompiler(methodName, null, staticScope);
+            final ASMMethodCompiler methodCompiler = new ASMMethodCompiler(classMethodName, null, staticScope);
             
             CompilerCallback bodyPrep = new CompilerCallback() {
                 public void call(MethodCompiler context) {
@@ -2510,14 +2565,14 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             }
             method.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
 
-            method.invokevirtual(classname, methodName, METHOD_SIGNATURES[0]);
+            method.invokevirtual(classname, classMethodName, METHOD_SIGNATURES[0]);
         }
 
         public void defineModule(final String name, final StaticScope staticScope, final CompilerCallback pathCallback, final CompilerCallback bodyCallback) {
             String mangledName = JavaNameMangler.mangleStringForCleanJavaIdentifier(name);
-            String methodName = "module__" + ++methodIndex + "$RUBY$" + mangledName;
+            String moduleMethodName = "module__" + ++methodIndex + "$RUBY$" + mangledName;
 
-            final ASMMethodCompiler methodCompiler = new ASMMethodCompiler(methodName, null, staticScope);
+            final ASMMethodCompiler methodCompiler = new ASMMethodCompiler(moduleMethodName, null, staticScope);
 
             CompilerCallback bodyPrep = new CompilerCallback() {
                 public void call(MethodCompiler context) {
@@ -2580,7 +2635,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
             method.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
 
-            method.invokevirtual(classname, methodName, METHOD_SIGNATURES[4]);
+            method.invokevirtual(classname, moduleMethodName, METHOD_SIGNATURES[4]);
         }
         
         public void unwrapPassedBlock() {
@@ -2696,15 +2751,15 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 CompilerCallback receiver, ASTInspector inspector, boolean root) {
             // TODO: build arg list based on number of args, optionals, etc
             ++methodIndex;
-            String methodName;
+            String newMethodName;
             if (root && Boolean.getBoolean("jruby.compile.toplevel")) {
-                methodName = name;
+                newMethodName = name;
             } else {
                 String mangledName = JavaNameMangler.mangleStringForCleanJavaIdentifier(name);
-                methodName = "method__" + methodIndex + "$RUBY$" + mangledName;
+                newMethodName = "method__" + methodIndex + "$RUBY$" + mangledName;
             }
 
-            MethodCompiler methodCompiler = startMethod(methodName, args, scope, inspector);
+            MethodCompiler methodCompiler = startMethod(newMethodName, args, scope, inspector);
 
             // callbacks to fill in method body
             body.call(methodCompiler);
@@ -2723,7 +2778,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             method.ldc(name);
 
-            method.ldc(methodName);
+            method.ldc(newMethodName);
 
             buildStaticScopeNames(method, scope);
 

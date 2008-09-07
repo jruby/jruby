@@ -168,6 +168,9 @@
     <java classname="org.jruby.anno.InvokerGenerator" fork="true" failonerror="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
+      <!-- uncomment this line when building on a JVM with invokedynamic
+      <jvmarg line="-XX:+InvokeDynamic"/>
+      -->
       <arg value="src_gen/annotated_classes.txt"/>
       <arg value="${jruby.classes.dir}"/>
     </java>
@@ -193,6 +196,9 @@
     <java classname="org.jruby.util.unsafe.UnsafeGenerator" fork="true" failonerror="true">
         <classpath refid="build.classpath"/>
         <classpath path="${jruby.classes.dir}"/>
+        <!-- uncomment this line when building on a JVM with invokedynamic
+        <jvmarg line="-XX:+InvokeDynamic"/>
+        -->
         <arg value="org.jruby.util.unsafe"/>
         <arg value="${jruby.classes.dir}/org/jruby/util/unsafe"/>
     </java>
