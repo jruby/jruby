@@ -6,15 +6,12 @@
 package org.jruby.compiler.impl;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.MethodIndex;
 import static org.jruby.util.CodegenUtils.*;
 
 /**

@@ -53,45 +53,45 @@ import org.jruby.util.TypeConverter;
  *
  */
 public class RuntimeHelpers {
-    public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, ThreadContext context, CallSite callSite) {
-        callSite.call(context, context.getFrameSelf(), receiver, value);
+    public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, ThreadContext context, IRubyObject caller, CallSite callSite) {
+        callSite.call(context, caller, receiver, value);
         return value;
     }
-    public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, IRubyObject arg0, ThreadContext context, CallSite callSite) {
-        callSite.call(context, context.getFrameSelf(), receiver, arg0, value);
+    public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, IRubyObject arg0, ThreadContext context, IRubyObject caller, CallSite callSite) {
+        callSite.call(context, caller, receiver, arg0, value);
         return value;
     }
-    public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, IRubyObject arg0, IRubyObject arg1, ThreadContext context, CallSite callSite) {
-        callSite.call(context, context.getFrameSelf(), receiver, arg0, arg1, value);
+    public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, IRubyObject arg0, IRubyObject arg1, ThreadContext context, IRubyObject caller, CallSite callSite) {
+        callSite.call(context, caller, receiver, arg0, arg1, value);
         return value;
     }
-    public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, ThreadContext context, CallSite callSite) {
-        callSite.call(context, context.getFrameSelf(), receiver, arg0, arg1, arg2, value);
+    public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, ThreadContext context, IRubyObject caller, CallSite callSite) {
+        callSite.call(context, caller, receiver, arg0, arg1, arg2, value);
         return value;
     }
-    public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, IRubyObject[] args, ThreadContext context, CallSite callSite) {
-        callSite.call(context, context.getFrameSelf(), receiver, appendToObjectArray(args, value));
+    public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, IRubyObject[] args, ThreadContext context, IRubyObject caller, CallSite callSite) {
+        callSite.call(context, caller, receiver, appendToObjectArray(args, value));
         return value;
     }
-    public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject value, ThreadContext context) {
-        callSite.call(context, context.getFrameSelf(), receiver, value);
+    public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject value, ThreadContext context, IRubyObject caller) {
+        callSite.call(context, caller, receiver, value);
         return value;
     }
-    public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject arg0, IRubyObject value, ThreadContext context) {
-        callSite.call(context, context.getFrameSelf(), receiver, arg0, value);
+    public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject arg0, IRubyObject value, ThreadContext context, IRubyObject caller) {
+        callSite.call(context, caller, receiver, arg0, value);
         return value;
     }
-    public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject arg0, IRubyObject arg1, IRubyObject value, ThreadContext context) {
-        callSite.call(context, context.getFrameSelf(), receiver, arg0, arg1, value);
+    public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject arg0, IRubyObject arg1, IRubyObject value, ThreadContext context, IRubyObject caller) {
+        callSite.call(context, caller, receiver, arg0, arg1, value);
         return value;
     }
-    public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject[] args, ThreadContext context) {
-        callSite.call(context, context.getFrameSelf(), receiver, args);
+    public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject[] args, ThreadContext context, IRubyObject caller) {
+        callSite.call(context, caller, receiver, args);
         return args[args.length - 1];
     }
 
-    public static IRubyObject invokeEqqForCaseWhen(IRubyObject receiver, IRubyObject arg, CallSite callSite, ThreadContext context) {
-        return callSite.call(context, context.getFrameSelf(), receiver, arg);
+    public static IRubyObject invokeEqqForCaseWhen(IRubyObject receiver, IRubyObject arg, CallSite callSite, ThreadContext context, IRubyObject caller) {
+        return callSite.call(context, caller, receiver, arg);
     }
     
     public static CompiledBlockCallback createBlockCallback(Ruby runtime, Object scriptObject, String closureMethod) {
@@ -204,127 +204,72 @@ public class RuntimeHelpers {
         }
     }
 
-    @Deprecated
-    public static IRubyObject doAttrAssign(IRubyObject receiver, IRubyObject[] args, 
-            ThreadContext context, String name, IRubyObject caller, CallType callType, Block block) {
-        if (receiver == caller) callType = CallType.VARIABLE;
-        
-        return compilerCallMethod(context, receiver, name, args, caller, callType, block);
-    }
-    
-    @Deprecated
-    public static IRubyObject doAttrAssignIndexed(IRubyObject receiver, IRubyObject[] args, 
-            ThreadContext context, byte methodIndex, String name, IRubyObject caller, 
-            CallType callType, Block block) {
-        if (receiver == caller) callType = CallType.VARIABLE;
-        
-        return compilerCallMethodWithIndex(context, receiver, methodIndex, name, args, caller, 
-                callType, block);
-    }
-    
-    @Deprecated
-    public static IRubyObject doInvokeDynamic(IRubyObject receiver, IRubyObject[] args, 
-            ThreadContext context, String name, IRubyObject caller, CallType callType, Block block) {
-        return compilerCallMethod(context, receiver, name, args, caller, callType, block);
-    }
-    @Deprecated
-    public static IRubyObject doInvokeDynamicIndexed(IRubyObject receiver, IRubyObject[] args, 
-            ThreadContext context, byte methodIndex, String name, IRubyObject caller, 
-            CallType callType, Block block) {
-        return compilerCallMethodWithIndex(context, receiver, methodIndex, name, args, caller, 
-                callType, block);
-    }
+    // TODO: Only used by interface implementation; eliminate it
+    public static IRubyObject invokeMethodMissing(IRubyObject receiver, String name, IRubyObject[] args) {
+        ThreadContext context = receiver.getRuntime().getCurrentContext();
 
-    /**
-     * Used by the compiler to ease calling indexed methods, also to handle visibility.
-     * NOTE: THIS IS NOT THE SAME AS THE SWITCHVALUE VERSIONS.
-     */
-    @Deprecated
-    public static IRubyObject compilerCallMethodWithIndex(ThreadContext context, IRubyObject receiver, int methodIndex, String name, IRubyObject[] args, IRubyObject caller, CallType callType, Block block) {
-        RubyClass clazz = receiver.getMetaClass();
-        
-        if (clazz.index != 0) {
-            return clazz.invoke(context, receiver, methodIndex, name, args, callType, block);
-        }
-        
-        return compilerCallMethod(context, receiver, name, args, caller, callType, block);
-    }
-    
-    /**
-     * Used by the compiler to handle visibility
-     */
-    @Deprecated
-    public static IRubyObject compilerCallMethod(ThreadContext context, IRubyObject receiver, String name,
-            IRubyObject[] args, IRubyObject caller, CallType callType, Block block) {
-        assert args != null;
-        DynamicMethod method = null;
-        RubyModule rubyclass = receiver.getMetaClass();
-        method = rubyclass.searchMethod(name);
-        
-        if (method.isUndefined() || (!name.equals("method_missing") && !method.isCallableFrom(caller, callType))) {
-            return callMethodMissing(context, receiver, method, name, args, caller, callType, block);
+        // store call information so method_missing impl can use it
+        context.setLastCallStatusAndVisibility(CallType.FUNCTIONAL, Visibility.PUBLIC);
+
+        if (name == "method_missing") {
+            return RubyKernel.method_missing(context, receiver, args, Block.NULL_BLOCK);
         }
 
-        return method.call(context, receiver, rubyclass, name, args, block);
-    }
+        IRubyObject[] newArgs = prepareMethodMissingArgs(args, context, name);
 
-    
-    @Deprecated
-    public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, int methodIndex,
-                                                IRubyObject[] args, IRubyObject self, CallType callType, Block block) {
-        return callMethodMissing(context, receiver, method, name, args, self, callType, block);
+        return invoke(context, receiver, "method_missing", newArgs, Block.NULL_BLOCK);
     }
 
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, 
-                                                IRubyObject[] args, IRubyObject self, CallType callType, Block block) {
+                                                IRubyObject[] args, CallType callType, Block block) {
         context.setLastCallStatusAndVisibility(callType, method.getVisibility());
-        return callMethodMissingInternal(context, receiver, name, args, self, block);
+        return callMethodMissingInternal(context, receiver, name, args, block);
     }
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, 
-                                                IRubyObject arg, IRubyObject self, CallType callType, Block block) {
+                                                IRubyObject arg, CallType callType, Block block) {
         context.setLastCallStatusAndVisibility(callType, method.getVisibility());
-        return callMethodMissingInternal(context, receiver, name, arg, self, block);
+        return callMethodMissingInternal(context, receiver, name, arg, block);
     }
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, 
-                                                IRubyObject arg0, IRubyObject arg1, IRubyObject self, CallType callType, Block block) {
+                                                IRubyObject arg0, IRubyObject arg1, CallType callType, Block block) {
         context.setLastCallStatusAndVisibility(callType, method.getVisibility());
-        return callMethodMissingInternal(context, receiver, name, arg0, arg1, self, block);
+        return callMethodMissingInternal(context, receiver, name, arg0, arg1, block);
     }
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, 
-                                                IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject self, CallType callType, Block block) {
+                                                IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, CallType callType, Block block) {
         context.setLastCallStatusAndVisibility(callType, method.getVisibility());
-        return callMethodMissingInternal(context, receiver, name, arg0, arg1, arg2, self, block);
+        return callMethodMissingInternal(context, receiver, name, arg0, arg1, arg2, block);
     }
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, 
-                                                IRubyObject self, CallType callType, Block block) {
+                                                CallType callType, Block block) {
         context.setLastCallStatusAndVisibility(callType, method.getVisibility());
-        return callMethodMissingInternal(context, receiver, name, self, block);
+        return callMethodMissingInternal(context, receiver, name, block);
     }
     
     private static IRubyObject callMethodMissingInternal(ThreadContext context, IRubyObject receiver, String name, 
-                                                IRubyObject[] args, IRubyObject self, Block block) {
-        if (name.equals("method_missing")) return RubyKernel.method_missing(context, self, args, block);
+                                                IRubyObject[] args, Block block) {
+        if (name.equals("method_missing")) return RubyKernel.method_missing(context, receiver, args, block);
         IRubyObject[] newArgs = prepareMethodMissingArgs(args, context, name);
         return invoke(context, receiver, "method_missing", newArgs, block);
     }
     private static IRubyObject callMethodMissingInternal(ThreadContext context, IRubyObject receiver, String name, 
-                                                IRubyObject self, Block block) {
-        if (name.equals("method_missing")) return RubyKernel.method_missing(context, self, IRubyObject.NULL_ARRAY, block);
+                                                Block block) {
+        if (name.equals("method_missing")) return RubyKernel.method_missing(context, receiver, IRubyObject.NULL_ARRAY, block);
         return invoke(context, receiver, "method_missing", context.getRuntime().newSymbol(name), block);
     }
     private static IRubyObject callMethodMissingInternal(ThreadContext context, IRubyObject receiver, String name, 
-                                                IRubyObject arg0, IRubyObject self, Block block) {
-        if (name.equals("method_missing")) return RubyKernel.method_missing(context, self, constructObjectArray(arg0), block);
+                                                IRubyObject arg0, Block block) {
+        if (name.equals("method_missing")) return RubyKernel.method_missing(context, receiver, constructObjectArray(arg0), block);
         return invoke(context, receiver, "method_missing", context.getRuntime().newSymbol(name), arg0, block);
     }
     private static IRubyObject callMethodMissingInternal(ThreadContext context, IRubyObject receiver, String name, 
-                                                IRubyObject arg0, IRubyObject arg1, IRubyObject self, Block block) {
-        if (name.equals("method_missing")) return RubyKernel.method_missing(context, self, constructObjectArray(arg0,arg1), block);
+                                                IRubyObject arg0, IRubyObject arg1, Block block) {
+        if (name.equals("method_missing")) return RubyKernel.method_missing(context, receiver, constructObjectArray(arg0,arg1), block);
         return invoke(context, receiver, "method_missing", context.getRuntime().newSymbol(name), arg0, arg1, block);
     }
     private static IRubyObject callMethodMissingInternal(ThreadContext context, IRubyObject receiver, String name, 
-                                                IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject self, Block block) {
-        if (name.equals("method_missing")) return RubyKernel.method_missing(context, self, constructObjectArray(arg0,arg1,arg2), block);
+                                                IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        if (name.equals("method_missing")) return RubyKernel.method_missing(context, receiver, constructObjectArray(arg0,arg1,arg2), block);
         return invoke(context, receiver, "method_missing", constructObjectArray(context.getRuntime().newSymbol(name), arg0, arg1, arg2), block);
     }
 
@@ -334,30 +279,6 @@ public class RuntimeHelpers {
         newArgs[0] = context.getRuntime().newSymbol(name);
 
         return newArgs;
-    }
-
-    @Deprecated
-    public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name, 
-                                                IRubyObject[] args, IRubyObject self) {
-        context.setLastCallStatusAndVisibility(CallType.FUNCTIONAL, Visibility.PUBLIC);
-        return callMethodMissingInternal(context, receiver, name, args, self, Block.NULL_BLOCK);
-    }
-    
-    @Deprecated
-    public static IRubyObject invokeMethodMissing(IRubyObject receiver, String name, IRubyObject[] args) {
-        ThreadContext context = receiver.getRuntime().getCurrentContext();
-        
-        // store call information so method_missing impl can use it            
-        context.setLastCallStatus(CallType.FUNCTIONAL);            
-        context.setLastVisibility(Visibility.PUBLIC);
-
-        if (name.equals(MethodIndex.METHOD_MISSING)) {
-            return RubyKernel.method_missing(context, context.getFrameSelf(), args, Block.NULL_BLOCK);
-        }
-        
-        IRubyObject[] newArgs = prepareMethodMissingArgs(args, context, name);
-
-        return invoke(context, receiver, "method_missing", newArgs, Block.NULL_BLOCK);
     }
     
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, Block block) {
@@ -438,7 +359,7 @@ public class RuntimeHelpers {
         
         if (superClass == null) {
             String name = context.getFrameName(); 
-            return callMethodMissing(context, self, klazz.searchMethod(name), name, args, self, CallType.SUPER, block);
+            return callMethodMissing(context, self, klazz.searchMethod(name), name, args, CallType.SUPER, block);
         }
         return invokeAs(context, superClass, self, context.getFrameName(), args, block);
     }
@@ -450,7 +371,7 @@ public class RuntimeHelpers {
         
         if (superClass == null) {
             String name = context.getFrameName(); 
-            return callMethodMissing(context, self, klazz.searchMethod(name), name, self, CallType.SUPER, block);
+            return callMethodMissing(context, self, klazz.searchMethod(name), name, CallType.SUPER, block);
         }
         return invokeAs(context, superClass, self, context.getFrameName(), block);
     }
@@ -462,7 +383,7 @@ public class RuntimeHelpers {
         
         if (superClass == null) {
             String name = context.getFrameName(); 
-            return callMethodMissing(context, self, klazz.searchMethod(name), name, arg0, self, CallType.SUPER, block);
+            return callMethodMissing(context, self, klazz.searchMethod(name), name, arg0, CallType.SUPER, block);
         }
         return invokeAs(context, superClass, self, context.getFrameName(), arg0, block);
     }
@@ -474,7 +395,7 @@ public class RuntimeHelpers {
         
         if (superClass == null) {
             String name = context.getFrameName(); 
-            return callMethodMissing(context, self, klazz.searchMethod(name), name, arg0, arg1, self, CallType.SUPER, block);
+            return callMethodMissing(context, self, klazz.searchMethod(name), name, arg0, arg1, CallType.SUPER, block);
         }
         return invokeAs(context, superClass, self, context.getFrameName(), arg0, arg1, block);
     }
@@ -486,18 +407,9 @@ public class RuntimeHelpers {
         
         if (superClass == null) {
             String name = context.getFrameName(); 
-            return callMethodMissing(context, self, klazz.searchMethod(name), name, arg0, arg1, arg2, self, CallType.SUPER, block);
+            return callMethodMissing(context, self, klazz.searchMethod(name), name, arg0, arg1, arg2, CallType.SUPER, block);
         }
         return invokeAs(context, superClass, self, context.getFrameName(), arg0, arg1, arg2, block);
-    }
-    
-    @Deprecated
-    public static IRubyObject invoke(ThreadContext context, IRubyObject self, int methodIndex, String name, IRubyObject[] args) {
-        return RuntimeHelpers.invoke(context, self, methodIndex,name,args,CallType.FUNCTIONAL, Block.NULL_BLOCK);
-    }
-    @Deprecated
-    public static IRubyObject invoke(ThreadContext context, IRubyObject self, int methodIndex, String name, IRubyObject[] args, CallType callType, Block block) {
-        return self.getMetaClass().invoke(context, self, methodIndex, name, args, callType, block);
     }
 
     public static RubyArray ensureRubyArray(IRubyObject value) {
@@ -1065,17 +977,16 @@ public class RuntimeHelpers {
         return backref;
     }
     
-    public static IRubyObject preOpAsgnWithOrAnd(IRubyObject receiver, ThreadContext context, CallSite varSite) {
-        return varSite.call(context, context.getFrameSelf(), receiver);
+    public static IRubyObject preOpAsgnWithOrAnd(IRubyObject receiver, ThreadContext context, IRubyObject self, CallSite varSite) {
+        return varSite.call(context, self, receiver);
     }
     
-    public static IRubyObject postOpAsgnWithOrAnd(IRubyObject receiver, IRubyObject value, ThreadContext context, CallSite varAsgnSite) {
-        varAsgnSite.call(context, context.getFrameSelf(), receiver, value);
+    public static IRubyObject postOpAsgnWithOrAnd(IRubyObject receiver, IRubyObject value, ThreadContext context, IRubyObject self, CallSite varAsgnSite) {
+        varAsgnSite.call(context, self, receiver, value);
         return value;
     }
     
-    public static IRubyObject opAsgnWithMethod(ThreadContext context, IRubyObject receiver, IRubyObject arg, CallSite varSite, CallSite opSite, CallSite opAsgnSite) {
-        IRubyObject self = context.getFrameSelf();
+    public static IRubyObject opAsgnWithMethod(ThreadContext context, IRubyObject self, IRubyObject receiver, IRubyObject arg, CallSite varSite, CallSite opSite, CallSite opAsgnSite) {
         IRubyObject var = varSite.call(context, self, receiver);
         IRubyObject result = opSite.call(context, self, var, arg);
         opAsgnSite.call(context, self, receiver, result);
@@ -1083,8 +994,7 @@ public class RuntimeHelpers {
         return result;
     }
     
-    public static IRubyObject opElementAsgnWithMethod(ThreadContext context, IRubyObject receiver, IRubyObject value, CallSite elementSite, CallSite opSite, CallSite elementAsgnSite) {
-        IRubyObject self = context.getFrameSelf();
+    public static IRubyObject opElementAsgnWithMethod(ThreadContext context, IRubyObject self, IRubyObject receiver, IRubyObject value, CallSite elementSite, CallSite opSite, CallSite elementAsgnSite) {
         IRubyObject var = elementSite.call(context, self, receiver);
         IRubyObject result = opSite.call(context, self, var, value);
         elementAsgnSite.call(context, self, receiver, result);
@@ -1092,8 +1002,7 @@ public class RuntimeHelpers {
         return result;
     }
     
-    public static IRubyObject opElementAsgnWithMethod(ThreadContext context, IRubyObject receiver, IRubyObject arg, IRubyObject value, CallSite elementSite, CallSite opSite, CallSite elementAsgnSite) {
-        IRubyObject self = context.getFrameSelf();
+    public static IRubyObject opElementAsgnWithMethod(ThreadContext context, IRubyObject self, IRubyObject receiver, IRubyObject arg, IRubyObject value, CallSite elementSite, CallSite opSite, CallSite elementAsgnSite) {
         IRubyObject var = elementSite.call(context, self, receiver, arg);
         IRubyObject result = opSite.call(context, self, var, value);
         elementAsgnSite.call(context, self, receiver, arg, result);
@@ -1101,8 +1010,7 @@ public class RuntimeHelpers {
         return result;
     }
     
-    public static IRubyObject opElementAsgnWithMethod(ThreadContext context, IRubyObject receiver, IRubyObject arg1, IRubyObject arg2, IRubyObject value, CallSite elementSite, CallSite opSite, CallSite elementAsgnSite) {
-        IRubyObject self = context.getFrameSelf();
+    public static IRubyObject opElementAsgnWithMethod(ThreadContext context, IRubyObject self, IRubyObject receiver, IRubyObject arg1, IRubyObject arg2, IRubyObject value, CallSite elementSite, CallSite opSite, CallSite elementAsgnSite) {
         IRubyObject var = elementSite.call(context, self, receiver, arg1, arg2);
         IRubyObject result = opSite.call(context, self, var, value);
         elementAsgnSite.call(context, self, receiver, arg1, arg2, result);
@@ -1110,8 +1018,7 @@ public class RuntimeHelpers {
         return result;
     }
     
-    public static IRubyObject opElementAsgnWithMethod(ThreadContext context, IRubyObject receiver, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject value, CallSite elementSite, CallSite opSite, CallSite elementAsgnSite) {
-        IRubyObject self = context.getFrameSelf();
+    public static IRubyObject opElementAsgnWithMethod(ThreadContext context, IRubyObject self, IRubyObject receiver, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject value, CallSite elementSite, CallSite opSite, CallSite elementAsgnSite) {
         IRubyObject var = elementSite.call(context, self, receiver, arg1, arg2, arg3);
         IRubyObject result = opSite.call(context, self, var, value);
         elementAsgnSite.call(context, self, receiver, new IRubyObject[] {arg1, arg2, arg3, result});
@@ -1119,35 +1026,35 @@ public class RuntimeHelpers {
         return result;
     }
     
-    public static IRubyObject opElementAsgnWithMethod(ThreadContext context, IRubyObject receiver, IRubyObject[] args, IRubyObject value, CallSite elementSite, CallSite opSite, CallSite elementAsgnSite) {
-        IRubyObject self = context.getFrameSelf();
+    public static IRubyObject opElementAsgnWithMethod(ThreadContext context, IRubyObject self, IRubyObject receiver, IRubyObject[] args, IRubyObject value, CallSite elementSite, CallSite opSite, CallSite elementAsgnSite) {
         IRubyObject var = elementSite.call(context, self, receiver);
         IRubyObject result = opSite.call(context, self, var, value);
         elementAsgnSite.call(context, self, receiver, appendToObjectArray(args, result));
 
         return result;
     }
+
     
-    public static IRubyObject opElementAsgnWithOrPartTwoOneArg(ThreadContext context, IRubyObject receiver, IRubyObject arg, IRubyObject value, CallSite asetSite) {
-        asetSite.call(context, context.getFrameSelf(), receiver, arg, value);
+    public static IRubyObject opElementAsgnWithOrPartTwoOneArg(ThreadContext context, IRubyObject self, IRubyObject receiver, IRubyObject arg, IRubyObject value, CallSite asetSite) {
+        asetSite.call(context, self, receiver, arg, value);
         return value;
     }
     
-    public static IRubyObject opElementAsgnWithOrPartTwoTwoArgs(ThreadContext context, IRubyObject receiver, IRubyObject[] args, IRubyObject value, CallSite asetSite) {
-        asetSite.call(context, context.getFrameSelf(), receiver, args[0], args[1], value);
+    public static IRubyObject opElementAsgnWithOrPartTwoTwoArgs(ThreadContext context, IRubyObject self, IRubyObject receiver, IRubyObject[] args, IRubyObject value, CallSite asetSite) {
+        asetSite.call(context, self, receiver, args[0], args[1], value);
         return value;
     }
     
-    public static IRubyObject opElementAsgnWithOrPartTwoThreeArgs(ThreadContext context, IRubyObject receiver, IRubyObject[] args, IRubyObject value, CallSite asetSite) {
-        asetSite.call(context, context.getFrameSelf(), receiver, new IRubyObject[] {args[0], args[1], args[2], value});
+    public static IRubyObject opElementAsgnWithOrPartTwoThreeArgs(ThreadContext context, IRubyObject self, IRubyObject receiver, IRubyObject[] args, IRubyObject value, CallSite asetSite) {
+        asetSite.call(context, self, receiver, new IRubyObject[] {args[0], args[1], args[2], value});
         return value;
     }
     
-    public static IRubyObject opElementAsgnWithOrPartTwoNArgs(ThreadContext context, IRubyObject receiver, IRubyObject[] args, IRubyObject value, CallSite asetSite) {
+    public static IRubyObject opElementAsgnWithOrPartTwoNArgs(ThreadContext context, IRubyObject self, IRubyObject receiver, IRubyObject[] args, IRubyObject value, CallSite asetSite) {
         IRubyObject[] newArgs = new IRubyObject[args.length + 1];
         System.arraycopy(args, 0, newArgs, 0, args.length);
         newArgs[args.length] = value;
-        asetSite.call(context, context.getFrameSelf(), receiver, newArgs);
+        asetSite.call(context, self, receiver, newArgs);
         return value;
     }
 

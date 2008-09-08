@@ -45,7 +45,7 @@ public class InvokeDynamicSupport {
         DynamicMethod method = self.getMetaClass().searchMethod(methodName);
         IRubyObject caller = context.getFrameSelf();
         if (shouldCallMethodMissing(method, methodName, caller, callType)) {
-            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, caller, callType, Block.NULL_BLOCK);
+            return RuntimeHelpers.callMethodMissing(context, self, method, methodName, callType, Block.NULL_BLOCK);
         }
 
         String dispatcherName = iterator ? "invokeDynamicIter" : "invokeDynamic";

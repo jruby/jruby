@@ -886,7 +886,7 @@ public class RubyIO extends RubyObject {
                 return block.yield(context, io);
             } finally {
                 try {
-                    io.getMetaClass().invoke(context, io, "close", IRubyObject.NULL_ARRAY, CallType.FUNCTIONAL, Block.NULL_BLOCK);
+                    io.getMetaClass().finvoke(context, io, "close", IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
                 } catch (RaiseException re) {
                     RubyException rubyEx = re.getException();
                     if (rubyEx.kind_of_p(context, runtime.getStandardError()).isTrue()) {

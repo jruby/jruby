@@ -70,6 +70,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
                     IRubyObject.class /*value*/,
                     IRubyObject.class /*receiver*/,
                     ThreadContext.class,
+                    IRubyObject.class, /*self*/
                     CallSite.class);
         } else {
             switch (argsCallback.getArity()) {
@@ -78,6 +79,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
                             IRubyObject.class /*value*/,
                             IRubyObject.class /*receiver*/,
                             ThreadContext.class,
+                            IRubyObject.class, /*self*/
                             CallSite.class);
                     break;
                 case 1:
@@ -87,6 +89,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
                             IRubyObject.class /*receiver*/,
                             IRubyObject.class /*arg0*/,
                             ThreadContext.class,
+                            IRubyObject.class, /*self*/
                             CallSite.class);
                     break;
                 case 2:
@@ -97,6 +100,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
                             IRubyObject.class /*arg0*/,
                             IRubyObject.class /*arg1*/,
                             ThreadContext.class,
+                            IRubyObject.class, /*self*/
                             CallSite.class);
                     break;
                 case 3:
@@ -108,6 +112,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
                             IRubyObject.class /*arg1*/,
                             IRubyObject.class /*arg2*/,
                             ThreadContext.class,
+                            IRubyObject.class, /*self*/
                             CallSite.class);
                     break;
                 default:
@@ -117,12 +122,14 @@ public class StandardInvocationCompiler implements InvocationCompiler {
                             IRubyObject.class /*receiver*/,
                             IRubyObject[].class /*args*/,
                             ThreadContext.class,
+                            IRubyObject.class, /*self*/
                             CallSite.class);
                     break;
             }
         }
         
         methodCompiler.loadThreadContext();
+        methodCompiler.loadSelf();
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, CallType.NORMAL);
 
         methodCompiler.invokeUtilityMethod("doAttrAsgn", signature);
@@ -153,7 +160,8 @@ public class StandardInvocationCompiler implements InvocationCompiler {
                     IRubyObject.class, /*receiver*/
                     CallSite.class,
                     IRubyObject.class, /*value*/
-                    ThreadContext.class);
+                    ThreadContext.class,
+                    IRubyObject.class /*self*/);
             break;
         case 2:
             signature = sig(IRubyObject.class,
@@ -161,7 +169,8 @@ public class StandardInvocationCompiler implements InvocationCompiler {
                     CallSite.class,
                     IRubyObject.class, /*arg0*/
                     IRubyObject.class, /*value*/
-                    ThreadContext.class);
+                    ThreadContext.class,
+                    IRubyObject.class /*self*/);
             break;
         case 3:
             signature = sig(IRubyObject.class,
@@ -170,18 +179,21 @@ public class StandardInvocationCompiler implements InvocationCompiler {
                     IRubyObject.class, /*arg0*/
                     IRubyObject.class, /*arg1*/
                     IRubyObject.class, /*value*/
-                    ThreadContext.class);
+                    ThreadContext.class,
+                    IRubyObject.class /*self*/);
             break;
         default:
             signature = sig(IRubyObject.class,
                     IRubyObject.class, /*receiver*/
                     CallSite.class,
                     IRubyObject[].class, /*args*/
-                    ThreadContext.class);
+                    ThreadContext.class,
+                    IRubyObject.class /*self*/);
         }
         
         argsCallback.call(methodCompiler);
         methodCompiler.loadThreadContext();
+        methodCompiler.loadSelf();
         
         methodCompiler.invokeUtilityMethod("doAttrAsgn", signature);
     }
@@ -220,6 +232,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         method.pop();
         // thread context, receiver and original args
         methodCompiler.loadThreadContext();
+        methodCompiler.loadSelf();
         methodCompiler.getVariableCompiler().getTempLocal(receiverLocal);
         methodCompiler.getVariableCompiler().getTempLocal(argsLocal);
         
@@ -235,19 +248,19 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             throw new NotCompilableException("Op Element Asgn with zero-arity args");
         case 1:
             methodCompiler.invokeUtilityMethod("opElementAsgnWithOrPartTwoOneArg", 
-                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, CallSite.class));
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, CallSite.class));
             break;
         case 2:
             methodCompiler.invokeUtilityMethod("opElementAsgnWithOrPartTwoTwoArgs", 
-                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject[].class, IRubyObject.class, CallSite.class));
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class, IRubyObject.class, CallSite.class));
             break;
         case 3:
             methodCompiler.invokeUtilityMethod("opElementAsgnWithOrPartTwoThreeArgs", 
-                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject[].class, IRubyObject.class, CallSite.class));
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class, IRubyObject.class, CallSite.class));
             break;
         default:
             methodCompiler.invokeUtilityMethod("opElementAsgnWithOrPartTwoNArgs", 
-                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject[].class, IRubyObject.class, CallSite.class));
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class, IRubyObject.class, CallSite.class));
             break;
         }
         
@@ -291,6 +304,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         method.pop();
         // thread context, receiver and original args
         methodCompiler.loadThreadContext();
+        methodCompiler.loadSelf();
         methodCompiler.getVariableCompiler().getTempLocal(receiverLocal);
         methodCompiler.getVariableCompiler().getTempLocal(argsLocal);
         
@@ -306,19 +320,19 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             throw new NotCompilableException("Op Element Asgn with zero-arity args");
         case 1:
             methodCompiler.invokeUtilityMethod("opElementAsgnWithOrPartTwoOneArg", 
-                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, CallSite.class));
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, CallSite.class));
             break;
         case 2:
             methodCompiler.invokeUtilityMethod("opElementAsgnWithOrPartTwoTwoArgs", 
-                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject[].class, IRubyObject.class, CallSite.class));
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class, IRubyObject.class, CallSite.class));
             break;
         case 3:
             methodCompiler.invokeUtilityMethod("opElementAsgnWithOrPartTwoThreeArgs", 
-                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject[].class, IRubyObject.class, CallSite.class));
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class, IRubyObject.class, CallSite.class));
             break;
         default:
             methodCompiler.invokeUtilityMethod("opElementAsgnWithOrPartTwoNArgs", 
-                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject[].class, IRubyObject.class, CallSite.class));
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class, IRubyObject.class, CallSite.class));
             break;
         }
         
@@ -330,6 +344,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
     
     public void opElementAsgnWithMethod(CompilerCallback receiver, ArgumentsCallback args, CompilerCallback valueCallback, String operator) {
         methodCompiler.loadThreadContext();
+        methodCompiler.loadSelf();
         receiver.call(methodCompiler);
         args.call(methodCompiler);
         valueCallback.call(methodCompiler); // receiver, args, result, value
@@ -340,23 +355,23 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         switch (args.getArity()) {
         case 0:
             methodCompiler.invokeUtilityMethod("opElementAsgnWithMethod",
-                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class, CallSite.class));
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class, CallSite.class));
             break;
         case 1:
             methodCompiler.invokeUtilityMethod("opElementAsgnWithMethod",
-                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class, CallSite.class));
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class, CallSite.class));
             break;
         case 2:
             methodCompiler.invokeUtilityMethod("opElementAsgnWithMethod",
-                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class, CallSite.class));
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class, CallSite.class));
             break;
         case 3:
             methodCompiler.invokeUtilityMethod("opElementAsgnWithMethod",
-                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class, CallSite.class));
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class, CallSite.class));
             break;
         default:
             methodCompiler.invokeUtilityMethod("opElementAsgnWithMethod",
-                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject[].class, IRubyObject.class, CallSite.class, CallSite.class, CallSite.class));
+                    sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class, IRubyObject.class, CallSite.class, CallSite.class, CallSite.class));
             break;
         }
     }
@@ -472,9 +487,10 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         receiverCallback.call(methodCompiler);
         method.dup();
         methodCompiler.loadThreadContext();
+        methodCompiler.loadSelf();
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, attrName, CallType.FUNCTIONAL);
         
-        methodCompiler.invokeUtilityMethod("preOpAsgnWithOrAnd", sig(IRubyObject.class, IRubyObject.class, ThreadContext.class, CallSite.class));
+        methodCompiler.invokeUtilityMethod("preOpAsgnWithOrAnd", sig(IRubyObject.class, IRubyObject.class, ThreadContext.class, IRubyObject.class, CallSite.class));
         
         Label done = new Label();
         Label isTrue = new Label();
@@ -486,10 +502,11 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         method.pop(); // pop extra attr value
         argsCallback.call(methodCompiler);
         methodCompiler.loadThreadContext();
+        methodCompiler.loadSelf();
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, attrAsgnName, CallType.NORMAL);
         
         methodCompiler.invokeUtilityMethod("postOpAsgnWithOrAnd",
-                sig(IRubyObject.class, IRubyObject.class, IRubyObject.class, ThreadContext.class, CallSite.class));
+                sig(IRubyObject.class, IRubyObject.class, IRubyObject.class, ThreadContext.class, IRubyObject.class, CallSite.class));
         method.go_to(done);
         
         method.label(isTrue);
@@ -503,9 +520,10 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         receiverCallback.call(methodCompiler);
         method.dup();
         methodCompiler.loadThreadContext();
+        methodCompiler.loadSelf();
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, attrName, CallType.FUNCTIONAL);
         
-        methodCompiler.invokeUtilityMethod("preOpAsgnWithOrAnd", sig(IRubyObject.class, IRubyObject.class, ThreadContext.class, CallSite.class));
+        methodCompiler.invokeUtilityMethod("preOpAsgnWithOrAnd", sig(IRubyObject.class, IRubyObject.class, ThreadContext.class, IRubyObject.class, CallSite.class));
         
         Label done = new Label();
         Label isFalse = new Label();
@@ -517,10 +535,11 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         method.pop(); // pop extra attr value
         argsCallback.call(methodCompiler);
         methodCompiler.loadThreadContext();
+        methodCompiler.loadSelf();
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, attrAsgnName, CallType.NORMAL);
         
         methodCompiler.invokeUtilityMethod("postOpAsgnWithOrAnd",
-                sig(IRubyObject.class, IRubyObject.class, IRubyObject.class, ThreadContext.class, CallSite.class));
+                sig(IRubyObject.class, IRubyObject.class, IRubyObject.class, ThreadContext.class, IRubyObject.class, CallSite.class));
         method.go_to(done);
         
         method.label(isFalse);
@@ -532,6 +551,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
 
     public void invokeOpAsgnWithMethod(String operatorName, String attrName, String attrAsgnName, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
         methodCompiler.loadThreadContext();
+        methodCompiler.loadSelf();
         receiverCallback.call(methodCompiler);
         argsCallback.call(methodCompiler);
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, attrName, CallType.FUNCTIONAL);
@@ -539,11 +559,12 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, attrAsgnName, CallType.NORMAL);
         
         methodCompiler.invokeUtilityMethod("opAsgnWithMethod",
-                sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class, CallSite.class));
+                sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class, CallSite.class));
     }
 
     public void invokeOpElementAsgnWithMethod(String operatorName, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
         methodCompiler.loadThreadContext(); // [adapter, tc]
+        methodCompiler.loadSelf();
         receiverCallback.call(methodCompiler);
         argsCallback.call(methodCompiler);
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, "[]", CallType.FUNCTIONAL);
@@ -551,7 +572,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, "[]=", CallType.NORMAL);
         
         methodCompiler.invokeUtilityMethod("opElementAsgnWithMethod",
-                sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class, CallSite.class));
+                sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class, CallSite.class));
     }
 
     public void yield(CompilerCallback argsCallback, boolean unwrap) {
@@ -575,11 +596,13 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, "===", CallType.NORMAL);
         methodCompiler.loadThreadContext();
+        methodCompiler.loadSelf();
         
         methodCompiler.invokeUtilityMethod("invokeEqqForCaseWhen", sig(IRubyObject.class,
                 IRubyObject.class, /*receiver*/
                 IRubyObject.class, /*arg*/
                 CallSite.class,
-                ThreadContext.class));
+                ThreadContext.class,
+                IRubyObject.class /*self*/));
     }
 }
