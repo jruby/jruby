@@ -29,11 +29,22 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import org.jruby.runtime.callsite.DivCallSite;
+import org.jruby.runtime.callsite.LtCallSite;
+import org.jruby.runtime.callsite.LeCallSite;
+import org.jruby.runtime.callsite.MinusCallSite;
+import org.jruby.runtime.callsite.MulCallSite;
+import org.jruby.runtime.callsite.NormalCachingCallSite;
+import org.jruby.runtime.callsite.GtCallSite;
+import org.jruby.runtime.callsite.PlusCallSite;
+import org.jruby.runtime.callsite.GeCallSite;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.runtime.callsite.FunctionalCachingCallSite;
+import org.jruby.runtime.callsite.VariableCachingCallSite;
 
 /**
  *
@@ -42,9 +53,6 @@ import org.jruby.RubyInstanceConfig;
 public class MethodIndex {
     public static final List<String> NAMES = new ArrayList<String>();
     private static final Map<String, Integer> NUMBERS = new HashMap<String, Integer>();
-    private static final Map<Integer, CallSite> CALL_SITES = new HashMap<Integer, CallSite>();
-    private static final Map<Integer, CallSite> FUNCTIONAL_CALL_SITES = new HashMap<Integer, CallSite>();
-    private static final Map<Integer, CallSite> VARIABLE_CALL_SITES = new HashMap<Integer, CallSite>();
     
     // ensure zero is devoted to no method name
     public static final int NO_INDEX = getIndex("");
@@ -91,35 +99,35 @@ public class MethodIndex {
     
     public synchronized static CallSite getCallSite(String name) {
         if (!RubyInstanceConfig.FASTOPS_COMPILE_ENABLED) {
-            return new CallSite.InlineCachingCallSite(name, CallType.NORMAL);
+            return new NormalCachingCallSite(name);
         } else {
             if (name.equals("+")) {
-                return new CallSite.PlusCallSite();
+                return new PlusCallSite();
             } else if (name.equals("-")) {
-                return new CallSite.MinusCallSite();
+                return new MinusCallSite();
             } else if (name.equals("*")) {
-                return new CallSite.MulCallSite();
+                return new MulCallSite();
             } else if (name.equals("/")) {
-                return new CallSite.DivCallSite();
+                return new DivCallSite();
             } else if (name.equals("<")) {
-                return new CallSite.LtCallSite();
+                return new LtCallSite();
             } else if (name.equals("<=")) {
-                return new CallSite.LeCallSite();
+                return new LeCallSite();
             } else if (name.equals(">")) {
-                return new CallSite.GtCallSite();
+                return new GtCallSite();
             } else if (name.equals(">=")) {
-                return new CallSite.GeCallSite();
+                return new GeCallSite();
             } else {
-                return new CallSite.InlineCachingCallSite(name, CallType.NORMAL);
+                return new NormalCachingCallSite(name);
             }
         }
     }
     
     public synchronized static CallSite getFunctionalCallSite(String name) {
-        return new CallSite.InlineCachingCallSite(name, CallType.FUNCTIONAL);
+        return new FunctionalCachingCallSite(name);
     }
     
     public synchronized static CallSite getVariableCallSite(String name) {
-        return new CallSite.InlineCachingCallSite(name, CallType.VARIABLE);
+        return new VariableCachingCallSite(name);
     }
 }

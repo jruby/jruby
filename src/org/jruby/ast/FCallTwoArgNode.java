@@ -35,7 +35,7 @@ public class FCallTwoArgNode extends FCallNode {
 
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return callAdapter.callFrom(context, self, self, 
+        return callAdapter.call(context, self, self,
                 arg1.interpret(runtime, context, self, aBlock),
                 arg2.interpret(runtime, context, self, aBlock));
     }

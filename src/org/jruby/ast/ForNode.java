@@ -104,7 +104,7 @@ public class ForNode extends IterNode {
                         context.setLine(savedLine);
                     }
    
-                    return callAdapter.callFrom(context, self, recv, block);
+                    return callAdapter.call(context, self, recv, block);
                 } catch (JumpException.RetryJump rj) {
                     // do nothing, allow loop to retry
                 }

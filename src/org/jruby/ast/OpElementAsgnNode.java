@@ -126,7 +126,7 @@ public class OpElementAsgnNode extends Node {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
         IRubyObject[] args = ASTInterpreter.setupArgs(runtime, context, argsNode, self, aBlock);
-        IRubyObject value = elementAdapter.callFrom(context, self, receiver, args);
+        IRubyObject value = elementAdapter.call(context, self, receiver, args);
         
         if (getOperatorName() == "||") {
             if (value.isTrue()) return value;
@@ -137,13 +137,13 @@ public class OpElementAsgnNode extends Node {
 
             value = valueNode.interpret(runtime,context, self, aBlock);
         } else {
-            value = callAdapter.callFrom(context, self, value, valueNode.interpret(runtime,context, self, aBlock));
+            value = callAdapter.call(context, self, value, valueNode.interpret(runtime,context, self, aBlock));
         }
    
         IRubyObject[] expandedArgs = new IRubyObject[args.length + 1];
         System.arraycopy(args, 0, expandedArgs, 0, args.length);
         expandedArgs[expandedArgs.length - 1] = value;
-        elementAsgnAdapter.callFrom(context, self, receiver, expandedArgs);
+        elementAsgnAdapter.call(context, self, receiver, expandedArgs);
         
         return value;
     }

@@ -57,7 +57,7 @@ public final class CallOneArgBlockNode extends CallNode {
         IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
         Block block = getBlock(context, self);
             
-        return callAdapter.callFrom(context, self, receiver, 
+        return callAdapter.call(context, self, receiver,
                 arg1.interpret(runtime, context, self, aBlock), block);
     }
 }

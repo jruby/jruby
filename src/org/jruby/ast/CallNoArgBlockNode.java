@@ -60,7 +60,7 @@ public final class CallNoArgBlockNode extends CallNode {
             
         while (true) {
             try {
-                return callAdapter.callFrom(context, self, receiver, block);
+                return callAdapter.call(context, self, receiver, block);
             } catch (JumpException.RetryJump rj) {
                 // allow loop to retry
             } finally {

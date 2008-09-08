@@ -42,9 +42,9 @@ public class AttrAssignThreeArgNode extends AttrAssignNode {
         
         // If reciever is self then we do the call the same way as vcall
         if (receiver == self) {
-            variableCallAdapter.callFrom(context, self, receiver, param1, param2, param3);
+            variableCallAdapter.call(context, self, receiver, param1, param2, param3);
         } else {
-            normalCallAdapter.callFrom(context, self, receiver, param1, param2, param3);
+            normalCallAdapter.call(context, self, receiver, param1, param2, param3);
         }
 
         return param3;
@@ -62,9 +62,9 @@ public class AttrAssignThreeArgNode extends AttrAssignNode {
         
         // If reciever is self then we do the call the same way as vcall
         if (receiver == self) {
-            variableCallAdapter.callFrom(context, self, receiver, new IRubyObject[] { param1, param2, param3, value});
+            variableCallAdapter.call(context, self, receiver, new IRubyObject[] { param1, param2, param3, value});
         } else {
-            normalCallAdapter.callFrom(context, self, receiver, new IRubyObject[] { param1, param2, param3, value});
+            normalCallAdapter.call(context, self, receiver, new IRubyObject[] { param1, param2, param3, value});
         }
         
         return runtime.getNil();

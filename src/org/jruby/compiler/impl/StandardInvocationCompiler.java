@@ -46,8 +46,6 @@ import org.objectweb.asm.Label;
 public class StandardInvocationCompiler implements InvocationCompiler {
     private StandardASMCompiler.AbstractMethodCompiler methodCompiler;
     private SkinnyMethodAdapter method;
-    
-    private static final int THIS = 0;
 
     public StandardInvocationCompiler(StandardASMCompiler.AbstractMethodCompiler methodCompiler, SkinnyMethodAdapter method) {
         this.methodCompiler = methodCompiler;
@@ -206,10 +204,10 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         // invoke
         switch (args.getArity()) {
         case 1:
-            method.invokevirtual(p(CallSite.class), "callFrom", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+            method.invokevirtual(p(CallSite.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
             break;
         default:
-            method.invokevirtual(p(CallSite.class), "callFrom", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class));
+            method.invokevirtual(p(CallSite.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class));
         }
         
         // check if it's true, ending if so
@@ -277,10 +275,10 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         // invoke
         switch (args.getArity()) {
         case 1:
-            method.invokevirtual(p(CallSite.class), "callFrom", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+            method.invokevirtual(p(CallSite.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
             break;
         default:
-            method.invokevirtual(p(CallSite.class), "callFrom", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class));
+            method.invokevirtual(p(CallSite.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class));
         }
         
         // check if it's true, ending if not
@@ -413,7 +411,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         }
         
         String signature;
-        String callSiteMethod = "callFrom";
+        String callSiteMethod = "call";
         // args
         if (argsCallback == null) {
             // block
@@ -422,7 +420,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
                 signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
             } else {
                 // no args, with block
-                if (iterator) callSiteMethod = "callIterFrom";
+                if (iterator) callSiteMethod = "callIter";
                 closureArg.call(methodCompiler);
                 signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class));
             }
@@ -446,7 +444,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
                 }
             } else {
                 // with args, with block
-                if (iterator) callSiteMethod = "callIterFrom";
+                if (iterator) callSiteMethod = "callIter";
                 closureArg.call(methodCompiler);
                 
                 switch (argsCallback.getArity()) {

@@ -67,7 +67,7 @@ public class IOOutputStream extends OutputStream {
     }
     
     public void write(final int bite) throws IOException {
-        writeAdapter.callFrom(io.getRuntime().getCurrentContext(), io, io, RubyString.newStringLight(io.getRuntime(), new ByteList(new byte[]{(byte)bite},false)));
+        writeAdapter.call(io.getRuntime().getCurrentContext(), io, io, RubyString.newStringLight(io.getRuntime(), new ByteList(new byte[]{(byte)bite},false)));
     }
 
     @Override
@@ -77,11 +77,11 @@ public class IOOutputStream extends OutputStream {
 
     @Override
     public void write(final byte[] b,final int off, final int len) throws IOException {
-        writeAdapter.callFrom(io.getRuntime().getCurrentContext(), io, io, RubyString.newStringLight(io.getRuntime(), new ByteList(b, off, len, false)));
+        writeAdapter.call(io.getRuntime().getCurrentContext(), io, io, RubyString.newStringLight(io.getRuntime(), new ByteList(b, off, len, false)));
     }
     
     @Override
     public void close() throws IOException {
-        if (io.respondsTo("close")) closeAdapter.callFrom(io.getRuntime().getCurrentContext(), io, io);
+        if (io.respondsTo("close")) closeAdapter.call(io.getRuntime().getCurrentContext(), io, io);
     }
 }

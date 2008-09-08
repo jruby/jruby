@@ -698,7 +698,7 @@ public class YARVMachine {
         }
         
         if (instruction.callAdapter == null) {
-            instruction.callAdapter = new CallSite.InlineCachingCallSite(name.intern(), callType);
+            instruction.callAdapter = MethodIndex.getCallSite(name.intern());
         }
         
         if (TAILCALL_OPT && (bytecodes[ip+1].bytecode == YARVInstructions.LEAVE || 
@@ -711,7 +711,7 @@ public class YARVMachine {
                 context.getCurrentScope().getValues()[i] = args[i];
             }
         } else {
-            push(instruction.callAdapter.callFrom(context, self, recv, args));
+            push(instruction.callAdapter.call(context, self, recv, args));
             //push(recv.callMethod(context, name, args, callType));
         }
         

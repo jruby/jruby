@@ -59,7 +59,7 @@ public final class CallTwoArgBlockNode extends CallNode {
         IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
         Block block = getBlock(context, self);
 
-        return callAdapter.callIterFrom(context, self, receiver, 
+        return callAdapter.callIter(context, self, receiver,
                 arg1.interpret(runtime, context, self, aBlock), 
                 arg2.interpret(runtime, context, self, aBlock), block);
     }

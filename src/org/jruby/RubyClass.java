@@ -43,9 +43,9 @@ import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
-import org.jruby.runtime.CallSite.InlineCachingCallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
@@ -68,7 +68,7 @@ public class RubyClass extends RubyModule {
     private final CallSite[] baseCallSites = new CallSite[CS_NAMES.length];
     {
         for(int i = 0; i < CS_NAMES.length; i++) {
-            baseCallSites[i] = new InlineCachingCallSite(CS_NAMES[i], CallType.FUNCTIONAL);
+            baseCallSites[i] = MethodIndex.getFunctionalCallSite(CS_NAMES[i]);
         }
     }
     
@@ -518,7 +518,7 @@ public class RubyClass extends RubyModule {
     */
     public IRubyObject newInstance(ThreadContext context, IRubyObject[] args, Block block) {
         IRubyObject obj = allocate();
-        baseCallSites[CS_IDX_INITIALIZE].callFrom(context, this, obj, args, block);
+        baseCallSites[CS_IDX_INITIALIZE].call(context, this, obj, args, block);
         return obj;
     }
     
@@ -530,31 +530,31 @@ public class RubyClass extends RubyModule {
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
             RubyClass cls = (RubyClass)self;
             IRubyObject obj = cls.allocate();
-            cls.baseCallSites[CS_IDX_INITIALIZE].callFrom(context, self, obj, args, block);
+            cls.baseCallSites[CS_IDX_INITIALIZE].call(context, self, obj, args, block);
             return obj;
         }
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
             RubyClass cls = (RubyClass)self;
             IRubyObject obj = cls.allocate();
-            cls.baseCallSites[CS_IDX_INITIALIZE].callFrom(context, self, obj, block);
+            cls.baseCallSites[CS_IDX_INITIALIZE].call(context, self, obj, block);
             return obj;
         }
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
             RubyClass cls = (RubyClass)self;
             IRubyObject obj = cls.allocate();
-            cls.baseCallSites[CS_IDX_INITIALIZE].callFrom(context, self, obj, arg0, block);
+            cls.baseCallSites[CS_IDX_INITIALIZE].call(context, self, obj, arg0, block);
             return obj;
         }
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
             RubyClass cls = (RubyClass)self;
             IRubyObject obj = cls.allocate();
-            cls.baseCallSites[CS_IDX_INITIALIZE].callFrom(context, self, obj, arg0, arg1, block);
+            cls.baseCallSites[CS_IDX_INITIALIZE].call(context, self, obj, arg0, arg1, block);
             return obj;
         }
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
             RubyClass cls = (RubyClass)self;
             IRubyObject obj = cls.allocate();
-            cls.baseCallSites[CS_IDX_INITIALIZE].callFrom(context, self, obj, arg0, arg1, arg2, block);
+            cls.baseCallSites[CS_IDX_INITIALIZE].call(context, self, obj, arg0, arg1, arg2, block);
             return obj;
         }
     }

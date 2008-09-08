@@ -54,44 +54,44 @@ import org.jruby.util.TypeConverter;
  */
 public class RuntimeHelpers {
     public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, ThreadContext context, CallSite callSite) {
-        callSite.callFrom(context, context.getFrameSelf(), receiver, value);
+        callSite.call(context, context.getFrameSelf(), receiver, value);
         return value;
     }
     public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, IRubyObject arg0, ThreadContext context, CallSite callSite) {
-        callSite.callFrom(context, context.getFrameSelf(), receiver, arg0, value);
+        callSite.call(context, context.getFrameSelf(), receiver, arg0, value);
         return value;
     }
     public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, IRubyObject arg0, IRubyObject arg1, ThreadContext context, CallSite callSite) {
-        callSite.callFrom(context, context.getFrameSelf(), receiver, arg0, arg1, value);
+        callSite.call(context, context.getFrameSelf(), receiver, arg0, arg1, value);
         return value;
     }
     public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, ThreadContext context, CallSite callSite) {
-        callSite.callFrom(context, context.getFrameSelf(), receiver, arg0, arg1, arg2, value);
+        callSite.call(context, context.getFrameSelf(), receiver, arg0, arg1, arg2, value);
         return value;
     }
     public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, IRubyObject[] args, ThreadContext context, CallSite callSite) {
-        callSite.callFrom(context, context.getFrameSelf(), receiver, appendToObjectArray(args, value));
+        callSite.call(context, context.getFrameSelf(), receiver, appendToObjectArray(args, value));
         return value;
     }
     public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject value, ThreadContext context) {
-        callSite.callFrom(context, context.getFrameSelf(), receiver, value);
+        callSite.call(context, context.getFrameSelf(), receiver, value);
         return value;
     }
     public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject arg0, IRubyObject value, ThreadContext context) {
-        callSite.callFrom(context, context.getFrameSelf(), receiver, arg0, value);
+        callSite.call(context, context.getFrameSelf(), receiver, arg0, value);
         return value;
     }
     public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject arg0, IRubyObject arg1, IRubyObject value, ThreadContext context) {
-        callSite.callFrom(context, context.getFrameSelf(), receiver, arg0, arg1, value);
+        callSite.call(context, context.getFrameSelf(), receiver, arg0, arg1, value);
         return value;
     }
     public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject[] args, ThreadContext context) {
-        callSite.callFrom(context, context.getFrameSelf(), receiver, args);
+        callSite.call(context, context.getFrameSelf(), receiver, args);
         return args[args.length - 1];
     }
 
     public static IRubyObject invokeEqqForCaseWhen(IRubyObject receiver, IRubyObject arg, CallSite callSite, ThreadContext context) {
-        return callSite.callFrom(context, context.getFrameSelf(), receiver, arg);
+        return callSite.call(context, context.getFrameSelf(), receiver, arg);
     }
     
     public static CompiledBlockCallback createBlockCallback(Ruby runtime, Object scriptObject, String closureMethod) {
@@ -1066,80 +1066,80 @@ public class RuntimeHelpers {
     }
     
     public static IRubyObject preOpAsgnWithOrAnd(IRubyObject receiver, ThreadContext context, CallSite varSite) {
-        return varSite.callFrom(context, context.getFrameSelf(), receiver);
+        return varSite.call(context, context.getFrameSelf(), receiver);
     }
     
     public static IRubyObject postOpAsgnWithOrAnd(IRubyObject receiver, IRubyObject value, ThreadContext context, CallSite varAsgnSite) {
-        varAsgnSite.callFrom(context, context.getFrameSelf(), receiver, value);
+        varAsgnSite.call(context, context.getFrameSelf(), receiver, value);
         return value;
     }
     
     public static IRubyObject opAsgnWithMethod(ThreadContext context, IRubyObject receiver, IRubyObject arg, CallSite varSite, CallSite opSite, CallSite opAsgnSite) {
         IRubyObject self = context.getFrameSelf();
-        IRubyObject var = varSite.callFrom(context, self, receiver);
-        IRubyObject result = opSite.callFrom(context, self, var, arg);
-        opAsgnSite.callFrom(context, self, receiver, result);
+        IRubyObject var = varSite.call(context, self, receiver);
+        IRubyObject result = opSite.call(context, self, var, arg);
+        opAsgnSite.call(context, self, receiver, result);
 
         return result;
     }
     
     public static IRubyObject opElementAsgnWithMethod(ThreadContext context, IRubyObject receiver, IRubyObject value, CallSite elementSite, CallSite opSite, CallSite elementAsgnSite) {
         IRubyObject self = context.getFrameSelf();
-        IRubyObject var = elementSite.callFrom(context, self, receiver);
-        IRubyObject result = opSite.callFrom(context, self, var, value);
-        elementAsgnSite.callFrom(context, self, receiver, result);
+        IRubyObject var = elementSite.call(context, self, receiver);
+        IRubyObject result = opSite.call(context, self, var, value);
+        elementAsgnSite.call(context, self, receiver, result);
 
         return result;
     }
     
     public static IRubyObject opElementAsgnWithMethod(ThreadContext context, IRubyObject receiver, IRubyObject arg, IRubyObject value, CallSite elementSite, CallSite opSite, CallSite elementAsgnSite) {
         IRubyObject self = context.getFrameSelf();
-        IRubyObject var = elementSite.callFrom(context, self, receiver, arg);
-        IRubyObject result = opSite.callFrom(context, self, var, value);
-        elementAsgnSite.callFrom(context, self, receiver, arg, result);
+        IRubyObject var = elementSite.call(context, self, receiver, arg);
+        IRubyObject result = opSite.call(context, self, var, value);
+        elementAsgnSite.call(context, self, receiver, arg, result);
 
         return result;
     }
     
     public static IRubyObject opElementAsgnWithMethod(ThreadContext context, IRubyObject receiver, IRubyObject arg1, IRubyObject arg2, IRubyObject value, CallSite elementSite, CallSite opSite, CallSite elementAsgnSite) {
         IRubyObject self = context.getFrameSelf();
-        IRubyObject var = elementSite.callFrom(context, self, receiver, arg1, arg2);
-        IRubyObject result = opSite.callFrom(context, self, var, value);
-        elementAsgnSite.callFrom(context, self, receiver, arg1, arg2, result);
+        IRubyObject var = elementSite.call(context, self, receiver, arg1, arg2);
+        IRubyObject result = opSite.call(context, self, var, value);
+        elementAsgnSite.call(context, self, receiver, arg1, arg2, result);
 
         return result;
     }
     
     public static IRubyObject opElementAsgnWithMethod(ThreadContext context, IRubyObject receiver, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject value, CallSite elementSite, CallSite opSite, CallSite elementAsgnSite) {
         IRubyObject self = context.getFrameSelf();
-        IRubyObject var = elementSite.callFrom(context, self, receiver, arg1, arg2, arg3);
-        IRubyObject result = opSite.callFrom(context, self, var, value);
-        elementAsgnSite.callFrom(context, self, receiver, new IRubyObject[] {arg1, arg2, arg3, result});
+        IRubyObject var = elementSite.call(context, self, receiver, arg1, arg2, arg3);
+        IRubyObject result = opSite.call(context, self, var, value);
+        elementAsgnSite.call(context, self, receiver, new IRubyObject[] {arg1, arg2, arg3, result});
 
         return result;
     }
     
     public static IRubyObject opElementAsgnWithMethod(ThreadContext context, IRubyObject receiver, IRubyObject[] args, IRubyObject value, CallSite elementSite, CallSite opSite, CallSite elementAsgnSite) {
         IRubyObject self = context.getFrameSelf();
-        IRubyObject var = elementSite.callFrom(context, self, receiver);
-        IRubyObject result = opSite.callFrom(context, self, var, value);
-        elementAsgnSite.callFrom(context, self, receiver, appendToObjectArray(args, result));
+        IRubyObject var = elementSite.call(context, self, receiver);
+        IRubyObject result = opSite.call(context, self, var, value);
+        elementAsgnSite.call(context, self, receiver, appendToObjectArray(args, result));
 
         return result;
     }
     
     public static IRubyObject opElementAsgnWithOrPartTwoOneArg(ThreadContext context, IRubyObject receiver, IRubyObject arg, IRubyObject value, CallSite asetSite) {
-        asetSite.callFrom(context, context.getFrameSelf(), receiver, arg, value);
+        asetSite.call(context, context.getFrameSelf(), receiver, arg, value);
         return value;
     }
     
     public static IRubyObject opElementAsgnWithOrPartTwoTwoArgs(ThreadContext context, IRubyObject receiver, IRubyObject[] args, IRubyObject value, CallSite asetSite) {
-        asetSite.callFrom(context, context.getFrameSelf(), receiver, args[0], args[1], value);
+        asetSite.call(context, context.getFrameSelf(), receiver, args[0], args[1], value);
         return value;
     }
     
     public static IRubyObject opElementAsgnWithOrPartTwoThreeArgs(ThreadContext context, IRubyObject receiver, IRubyObject[] args, IRubyObject value, CallSite asetSite) {
-        asetSite.callFrom(context, context.getFrameSelf(), receiver, new IRubyObject[] {args[0], args[1], args[2], value});
+        asetSite.call(context, context.getFrameSelf(), receiver, new IRubyObject[] {args[0], args[1], args[2], value});
         return value;
     }
     
@@ -1147,7 +1147,7 @@ public class RuntimeHelpers {
         IRubyObject[] newArgs = new IRubyObject[args.length + 1];
         System.arraycopy(args, 0, newArgs, 0, args.length);
         newArgs[args.length] = value;
-        asetSite.callFrom(context, context.getFrameSelf(), receiver, newArgs);
+        asetSite.call(context, context.getFrameSelf(), receiver, newArgs);
         return value;
     }
 

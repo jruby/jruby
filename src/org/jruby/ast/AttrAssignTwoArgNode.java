@@ -38,9 +38,9 @@ public class AttrAssignTwoArgNode extends AttrAssignNode {
         
         // If reciever is self then we do the call the same way as vcall
         if (receiver == self) {
-            variableCallAdapter.callFrom(context, self, receiver, param1, param2);
+            variableCallAdapter.call(context, self, receiver, param1, param2);
         } else {
-            normalCallAdapter.callFrom(context, self, receiver, param1, param2);
+            normalCallAdapter.call(context, self, receiver, param1, param2);
         }
 
         return param2;
@@ -57,9 +57,9 @@ public class AttrAssignTwoArgNode extends AttrAssignNode {
         
         // If reciever is self then we do the call the same way as vcall
         if (receiver == self) {
-            variableCallAdapter.callFrom(context, self, receiver, param1, param2, value);
+            variableCallAdapter.call(context, self, receiver, param1, param2, value);
         } else {
-            normalCallAdapter.callFrom(context, self, receiver, param1, param2, value);
+            normalCallAdapter.call(context, self, receiver, param1, param2, value);
         }
         
         return runtime.getNil();

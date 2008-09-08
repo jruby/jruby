@@ -3,7 +3,7 @@ package org.jruby.management;
 import java.lang.ref.SoftReference;
 
 import org.jruby.runtime.CacheMap;
-import org.jruby.runtime.CallSite;
+import org.jruby.runtime.callsite.CachingCallSite;
 
 public class MethodCache implements MethodCacheMBean {
     private final SoftReference<CacheMap> cacheMap;
@@ -33,11 +33,11 @@ public class MethodCache implements MethodCacheMBean {
     }
     
     public int getCallSiteCount() {
-        return CallSite.InlineCachingCallSite.totalCallSites;
+        return CachingCallSite.totalCallSites;
     }
     
     public int getFailedCallSiteCount() {
-        return CallSite.InlineCachingCallSite.failedCallSites;
+        return CachingCallSite.failedCallSites;
     }
     
     public void flush() {

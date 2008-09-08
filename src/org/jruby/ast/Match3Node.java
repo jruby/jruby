@@ -96,7 +96,7 @@ public class Match3Node extends Node {
         if (value instanceof RubyString) {
             return ((RubyRegexp) recv).op_match(context, value);
         } else {
-            return callAdapter.callFrom(context, self, value, recv);
+            return callAdapter.call(context, self, value, recv);
         }
     }
     

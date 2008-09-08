@@ -118,7 +118,7 @@ public class OpAsgnNode extends Node {
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
-        IRubyObject value = variableCallAdapter.callFrom(context, self, receiver);
+        IRubyObject value = variableCallAdapter.call(context, self, receiver);
    
         if (getOperatorName() == "||") {
             if (value.isTrue()) {
@@ -131,10 +131,10 @@ public class OpAsgnNode extends Node {
             }
             value = valueNode.interpret(runtime,context, self, aBlock);
         } else {
-            value = operatorCallAdapter.callFrom(context, self, value, valueNode.interpret(runtime, context, self, aBlock));
+            value = operatorCallAdapter.call(context, self, value, valueNode.interpret(runtime, context, self, aBlock));
         }
    
-        variableAsgnCallAdapter.callFrom(context, self, receiver, value);
+        variableAsgnCallAdapter.call(context, self, receiver, value);
    
         return ASTInterpreter.pollAndReturn(context, value);
     }

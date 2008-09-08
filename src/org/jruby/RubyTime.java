@@ -603,7 +603,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "now", backtrace = true, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv) {
         IRubyObject obj = ((RubyClass) recv).allocate();
-        obj.getMetaClass().getBaseCallSites()[RubyClass.CS_IDX_INITIALIZE].callFrom(context, recv, obj);
+        obj.getMetaClass().getBaseCallSites()[RubyClass.CS_IDX_INITIALIZE].call(context, recv, obj);
         return obj;
     }
 
@@ -638,7 +638,7 @@ public class RubyTime extends RubyObject {
             time.dt = time.dt.withMillis(seconds * 1000 + millisecs);
         }
 
-        time.getMetaClass().getBaseCallSites()[RubyClass.CS_IDX_INITIALIZE].callFrom(context, recv, time);
+        time.getMetaClass().getBaseCallSites()[RubyClass.CS_IDX_INITIALIZE].call(context, recv, time);
 
         return time;
     }
@@ -661,7 +661,7 @@ public class RubyTime extends RubyObject {
             time.setUSec(microsecs);
             time.dt = time.dt.withMillis(seconds * 1000 + millisecs);
 
-            time.getMetaClass().getBaseCallSites()[RubyClass.CS_IDX_INITIALIZE].callFrom(context, recv, time);
+            time.getMetaClass().getBaseCallSites()[RubyClass.CS_IDX_INITIALIZE].call(context, recv, time);
 
         return time;
     }

@@ -58,18 +58,18 @@ public final class CallSpecialArgBlockPassNode extends CallNode {
 
             switch (nodes.size()) {
                 case 0:
-                    return callAdapter.callFrom(context, self, receiver, block);
+                    return callAdapter.call(context, self, receiver, block);
                 case 1:
-                    return callAdapter.callFrom(context, self, receiver, nodes.eltInternal(0), block);
+                    return callAdapter.call(context, self, receiver, nodes.eltInternal(0), block);
                 case 2:
-                    return callAdapter.callFrom(context, self, receiver, nodes.eltInternal(0), nodes.eltInternal(1), block);
+                    return callAdapter.call(context, self, receiver, nodes.eltInternal(0), nodes.eltInternal(1), block);
                 case 3:
-                    return callAdapter.callFrom(context, self, receiver, nodes.eltInternal(0), nodes.eltInternal(1), nodes.eltInternal(2), block);
+                    return callAdapter.call(context, self, receiver, nodes.eltInternal(0), nodes.eltInternal(1), nodes.eltInternal(2), block);
                 default:
-                    return callAdapter.callFrom(context, self, receiver, nodes.toJavaArrayMaybeUnsafe(), block);
+                    return callAdapter.call(context, self, receiver, nodes.toJavaArrayMaybeUnsafe(), block);
             }
         }
 
-        return callAdapter.callFrom(context, self, receiver, arg, block);
+        return callAdapter.call(context, self, receiver, arg, block);
     }
 }

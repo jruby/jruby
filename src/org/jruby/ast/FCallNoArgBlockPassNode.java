@@ -23,6 +23,6 @@ public class FCallNoArgBlockPassNode extends FCallNode {
 
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return callAdapter.callFrom(context, self, self, getBlock(runtime, context, self, aBlock));
+        return callAdapter.call(context, self, self, getBlock(runtime, context, self, aBlock));
     }
 }

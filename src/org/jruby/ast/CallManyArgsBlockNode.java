@@ -55,7 +55,7 @@ public final class CallManyArgsBlockNode extends CallNode {
         
         while (true) {
             try {
-                return callAdapter.callFrom(context, self, receiver, args, block);
+                return callAdapter.call(context, self, receiver, args, block);
             } catch (JumpException.RetryJump rj) {
                 // allow loop to retry
             } finally {
