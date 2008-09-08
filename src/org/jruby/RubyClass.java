@@ -660,7 +660,8 @@ public class RubyClass extends RubyModule {
      */
     public void inherit(RubyClass superClazz) {
         if (superClazz == null) superClazz = getRuntime().getObject();
-        
+        index = superClass.index;
+
         superClazz.invokeInherited(getRuntime().getCurrentContext(), superClazz, this);
     }
 
