@@ -222,6 +222,7 @@
         <zipfileset src="${build.lib.dir}/bytelist-0.1.jar"/>
         <zipfileset src="${build.lib.dir}/jvyamlb-0.2.3.jar"/>
         <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
+        <zipfileset src="${build.lib.dir}/jcodings.jar"/>
         <zipfileset src="${build.lib.dir}/joni.jar"/>
         <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
         <zipfileset src="${build.lib.dir}/jna.jar"/>
@@ -253,6 +254,7 @@
         <zipfileset src="${build.lib.dir}/bytelist-0.1.jar"/>
         <zipfileset src="${build.lib.dir}/jvyamlb-0.2.3.jar"/>
         <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
+        <zipfileset src="${build.lib.dir}/jcodings.jar"/>        
         <zipfileset src="${build.lib.dir}/joni.jar"/>
         <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
         <zipfileset src="${build.lib.dir}/jna.jar"/>
@@ -365,6 +367,7 @@
         <zipfileset src="${build.lib.dir}/bytelist-0.1.jar"/>
         <zipfileset src="${build.lib.dir}/jvyamlb-0.2.3.jar"/>
         <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
+        <zipfileset src="${build.lib.dir}/jcodings.jar"/>
         <zipfileset src="${build.lib.dir}/joni.jar"/>
         <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
         <zipfileset src="${build.lib.dir}/jna.jar"/>
@@ -575,6 +578,7 @@
   <path id="test.class.path">
     <pathelement location="${jruby.instrumented.classes.dir}" />
     <fileset dir="${build.lib.dir}" includes="*.jar">
+      <exclude name="jcodings.jar"/>
       <exclude name="joni.jar"/>
     </fileset>
     <pathelement path="${lib.dir}/bsf.jar"/>
@@ -1175,6 +1179,7 @@
       <zipfileset src="${build.lib.dir}/bytelist-0.1.jar"/>
       <zipfileset src="${build.lib.dir}/jvyamlb-0.2.3.jar"/>
       <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
+      <zipfileset src="${build.lib.dir}/jcodings.jar"/>      
       <zipfileset src="${build.lib.dir}/joni.jar"/>
       <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
       <zipfileset src="${build.lib.dir}/jna.jar"/>
