@@ -228,7 +228,7 @@ public class RubyNumeric extends RubyObject {
         } else if (arg == arg.getRuntime().getNil()) {
             throw arg.getRuntime().newTypeError("no implicit conversion to float from nil");
         }
-        return arg.convertToFloat().getDoubleValue();
+        return RubyKernel.new_float(arg, arg).getDoubleValue();
     }
 
     /** rb_dbl_cmp (numeric.c)

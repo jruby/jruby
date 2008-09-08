@@ -257,11 +257,11 @@ public class RubyKernel {
     }
 
     @JRubyMethod(name = "Float", module = true, visibility = PRIVATE)
-    public static IRubyObject new_float(IRubyObject recv, IRubyObject object) {
+    public static RubyFloat new_float(IRubyObject recv, IRubyObject object) {
         if(object instanceof RubyFixnum){
             return RubyFloat.newFloat(object.getRuntime(), ((RubyFixnum)object).getDoubleValue());
         }else if(object instanceof RubyFloat){
-            return object;
+            return (RubyFloat)object;
         }else if(object instanceof RubyBignum){
             return RubyFloat.newFloat(object.getRuntime(), RubyBignum.big2dbl((RubyBignum)object));
         }else if(object instanceof RubyString){

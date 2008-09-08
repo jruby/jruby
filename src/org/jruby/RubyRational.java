@@ -66,7 +66,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
 /**
- *  1.9 rational.c as of revision: 18948
+ *  1.9 rational.c as of revision: 19253
  */
 
 @JRubyClass(name = "Rational", parent = "Numeric", include = "Precision")
@@ -830,8 +830,9 @@ public class RubyRational extends RubyNumeric {
 
         if (minus) {
             f = -f;
-            f = ldexp(f, e);
         }
+
+        f = ldexp(f, e);
 
         if (Double.isInfinite(f) || Double.isNaN(f)) {
             runtime.getWarnings().warn(IRubyWarnings.ID.FLOAT_OUT_OF_RANGE, "out of Float range", getMetaClass());
@@ -952,19 +953,27 @@ public class RubyRational extends RubyNumeric {
                 byte[]buf = bytes.bytes;
                 int i = bytes.begin;
                 int end = i + bytes.realSize;
-                while (i < end) if (ASCIIEncoding.INSTANCE.isDigit(buf[i++])) count++;
+
+                while (i < end) {
+                    if (ASCIIEncoding.INSTANCE.isDigit(buf[i])) count++;
+                    i++;
+                }
+
                 IRubyObject l = f_expt(context, RubyFixnum.newFixnum(runtime, 10), RubyFixnum.newFixnum(runtime, count));
                 v = f_mul(context, v, l);
                 v = f_add(context, v, f_to_i(context, fp));
                 v = f_div(context, v, l);
             }
+
+            if (!si.isNil()) {
+                ByteList siBytes = si.convertToString().getByteList();
+                if (siBytes.length() > 0 && siBytes.get(0) == '-') v = f_negate(context, v); 
+            }
+
             if (!exp.isNil()) {
                 v = f_mul(context, v, f_expt(context, RubyFixnum.newFixnum(runtime, 10), f_to_i(context, exp)));
             }
-            if (!si.isNil()) {
-                bytes = si.convertToString().getByteList();
-                if (bytes.length() > 0 && bytes.get(0) == '-') v = f_negate(context, v);
-            }
+
             if (!de.isNil()) {
                 v = f_div(context, v, f_to_i(context, de));
             }

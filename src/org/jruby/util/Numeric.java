@@ -207,6 +207,13 @@ public class Numeric {
         return x.callMethod(context, "scalar?");
     }
 
+    /** f_real_p
+     * 
+     */
+    public static IRubyObject f_real_p(ThreadContext context, IRubyObject x) {
+        return f_scalar_p(context, x);
+    }
+
     /** f_divmod
      * 
      */

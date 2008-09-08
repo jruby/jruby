@@ -537,12 +537,12 @@ public class RubyFloat extends RubyNumeric {
         double f = frexp(value, exp);
         f = ldexp(f, DBL_MANT_DIG);
         long n = exp[0] - DBL_MANT_DIG;
+
         Ruby runtime = context.getRuntime();
-        IRubyObject x = f_mul(context, f_to_i(context, runtime.newFloat(f)),
-                                       f_expt(context, 
-                                              RubyFixnum.newFixnum(context.getRuntime(), FLT_RADIX),
-                                              RubyFixnum.newFixnum(runtime, n)));
-        return x;
+
+        IRubyObject rf = RubyNumeric.dbl2num(runtime, f);
+        IRubyObject rn = RubyFixnum.newFixnum(runtime, n);
+        return f_mul(context, rf, f_expt(context, RubyFixnum.newFixnum(runtime, FLT_RADIX), rn));
     }
 
     /** floor
