@@ -50,7 +50,7 @@ import static org.jruby.util.Numeric.i_gcd;
 import static org.jruby.util.Numeric.i_ilog2;
 import static org.jruby.util.Numeric.ldexp;
 
-import org.joni.encoding.specific.ASCIIEncoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings;

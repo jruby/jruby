@@ -38,9 +38,9 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import org.joni.encoding.specific.ASCIIEncoding;
-import org.joni.encoding.specific.UTF8Encoding;
-import org.joni.encoding.unicode.UnicodeEncoding;
+import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
+import org.jcodings.unicode.UnicodeEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
@@ -1680,7 +1680,7 @@ public class Pack {
                     }
                     break;
                 case 'U' :
-                    UnicodeEncoding enc = UTF8Encoding.INSTANCE;
+                    UTF8Encoding enc = UTF8Encoding.INSTANCE;
                     byte[] packedBytes = new byte[enc.maxLength() * occurrences];
                     int index = 0;
                     

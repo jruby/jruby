@@ -48,8 +48,8 @@ import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
 import org.joni.Region;
-import org.joni.encoding.Encoding;
-import org.joni.encoding.specific.ASCIIEncoding;
+import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
@@ -2202,19 +2202,22 @@ public class RubyString extends RubyObject {
     
     private RubyArray split(ThreadContext context, IRubyObject pat, boolean limit, int lim, int i) {
         Ruby runtime = context.getRuntime();
-        
+
         final Regex regex = getPattern(pat, true).getPattern();
         int beg, end, start;
-        
+
         int begin = value.begin;
         start = begin;
         beg = 0;
         
-        int range = value.begin + value.realSize;
-        final Matcher matcher = regex.matcher(value.bytes, value.begin, range);
+        int range = begin + value.realSize;
+        byte[]bytes = value.bytes;
+        final Matcher matcher = regex.matcher(bytes, begin, range);
         
         boolean lastNull = false;
         RubyArray result = runtime.newArray();
+        final Encoding enc = regex.getEncoding();
+        
         if (regex.numberOfCaptures() == 0) { // shorter path, no captures defined, no region will be returned 
             while ((end = matcher.search(start, range, Option.NONE)) >= 0) {
                 if (start == end + begin && matcher.getBegin() == matcher.getEnd()) {
@@ -2222,13 +2225,13 @@ public class RubyString extends RubyObject {
                         result.append(newEmptyString(runtime, getMetaClass()));
                         break;
                     } else if (lastNull) {
-                        result.append(substr(runtime, beg, regex.getEncoding().length(value.bytes[begin + beg])));
+                        result.append(substr(runtime, beg, enc.length(bytes, begin + beg, range)));
                         beg = start - begin;
                     } else {
                         if (start == range) {
                             start++;
                         } else {
-                            start += regex.getEncoding().length(value.bytes[start]);
+                            start += enc.length(bytes, start, range);
                         }
                         lastNull = true;
                         continue;
@@ -2249,13 +2252,13 @@ public class RubyString extends RubyObject {
                         result.append(newEmptyString(runtime, getMetaClass()));
                         break;
                     } else if (lastNull) {
-                        result.append(substr(beg, regex.getEncoding().length(value.bytes[begin + beg])));
+                        result.append(substr(beg, enc.length(bytes, begin + beg, range)));
                         beg = start - begin;
                     } else {
                         if (start == range) {
                             start++;
                         } else {
-                            start += regex.getEncoding().length(value.bytes[start]);
+                            start += enc.length(bytes, start, range);
                         }
                         lastNull = true;
                         continue;

@@ -28,7 +28,7 @@
 package org.jruby.util;
 
 import org.joni.Regex;
-import org.joni.encoding.specific.ASCIIEncoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;

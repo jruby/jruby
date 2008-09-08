@@ -28,7 +28,7 @@
 
 package org.jruby.util;
 
-import org.joni.encoding.Encoding;
+import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 

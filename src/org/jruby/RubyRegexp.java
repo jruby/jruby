@@ -47,7 +47,7 @@ import org.joni.Regex;
 import org.joni.Region;
 import org.joni.Syntax;
 import org.joni.WarnCallback;
-import org.joni.encoding.Encoding;
+import org.jcodings.Encoding;
 import org.joni.exception.JOniException;
 
 import static org.jruby.anno.FrameField.*;
