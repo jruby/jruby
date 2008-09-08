@@ -30,18 +30,18 @@ public class FCallSpecialArgBlockNode extends FCallNode {
             
             switch (nodes.size()) {
                 case 0:
-                    return callAdapter.callIter(context, self, block);
+                    return callAdapter.callIterFrom(context, self, self, block);
                 case 1:
-                    return callAdapter.callIter(context, self, nodes.eltInternal(0), block);
+                    return callAdapter.callIterFrom(context, self, self, nodes.eltInternal(0), block);
                 case 2:
-                    return callAdapter.callIter(context, self, nodes.eltInternal(0), nodes.eltInternal(1), block);
+                    return callAdapter.callIterFrom(context, self, self, nodes.eltInternal(0), nodes.eltInternal(1), block);
                 case 3:
-                    return callAdapter.callIter(context, self, nodes.eltInternal(0), nodes.eltInternal(1), nodes.eltInternal(2), block);
+                    return callAdapter.callIterFrom(context, self, self, nodes.eltInternal(0), nodes.eltInternal(1), nodes.eltInternal(2), block);
                 default:
-                    return callAdapter.callIter(context, self, nodes.toJavaArrayMaybeUnsafe(), block);
+                    return callAdapter.callIterFrom(context, self, self, nodes.toJavaArrayMaybeUnsafe(), block);
             }
         }
         
-        return callAdapter.callIter(context, self, arg, block);
+        return callAdapter.callIterFrom(context, self, self, arg, block);
     }
 }

@@ -57,6 +57,6 @@ public class FCallManyArgsNode extends FCallNode implements INameNode, IArgument
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject[] args = ((ArrayNode) getArgsNode()).interpretPrimitive(runtime, context, self, aBlock);
 
-        return callAdapter.call(context, self, args);
+        return callAdapter.callFrom(context, self, self, args);
     }  
 }

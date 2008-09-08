@@ -85,7 +85,7 @@ public class IOInputStream extends InputStream {
     }
     
     public int read() throws IOException {
-        IRubyObject readValue = readAdapter.call(io.getRuntime().getCurrentContext(), io, numOne);
+        IRubyObject readValue = readAdapter.callFrom(io.getRuntime().getCurrentContext(), io, io, numOne);
         int returnValue = -1;
         if (!readValue.isNil()) {
             returnValue = readValue.toString().charAt(0);
@@ -94,7 +94,7 @@ public class IOInputStream extends InputStream {
     }
 
     public int read(byte[] b) throws IOException {
-        IRubyObject readValue = readAdapter.call(io.getRuntime().getCurrentContext(), io, io.getRuntime().newFixnum(b.length));
+        IRubyObject readValue = readAdapter.callFrom(io.getRuntime().getCurrentContext(), io, io, io.getRuntime().newFixnum(b.length));
         int returnValue = -1;
         if (!readValue.isNil()) {
             ByteList str = ((RubyString)readValue).getByteList();
@@ -105,7 +105,7 @@ public class IOInputStream extends InputStream {
     }
 
     public int read(byte[] b, int off, int len) throws IOException {
-        IRubyObject readValue = readAdapter.call(io.getRuntime().getCurrentContext(), io, io.getRuntime().newFixnum(len));
+        IRubyObject readValue = readAdapter.callFrom(io.getRuntime().getCurrentContext(), io, io, io.getRuntime().newFixnum(len));
         int returnValue = -1;
         if (!readValue.isNil()) {
             ByteList str = ((RubyString)readValue).getByteList();

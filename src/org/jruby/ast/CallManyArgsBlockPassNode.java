@@ -53,6 +53,6 @@ public final class CallManyArgsBlockPassNode extends CallNode {
         IRubyObject[] args = ((ArrayNode) getArgsNode()).interpretPrimitive(runtime, context, self, aBlock);
         Block block = getBlock(runtime, context, self, aBlock);
         
-        return callAdapter.call(context, receiver, args, block);
+        return callAdapter.callFrom(context, self, receiver, args, block);
     }
 }

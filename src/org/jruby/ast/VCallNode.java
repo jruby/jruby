@@ -79,7 +79,7 @@ public class VCallNode extends Node implements INameNode {
 
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return callAdapter.call(context, self);
+        return callAdapter.callFrom(context, self, self);
     }
     
     @Override

@@ -56,6 +56,6 @@ public final class CallManyArgsNode extends CallNode {
         IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
         IRubyObject[] args = ((ArrayNode) getArgsNode()).interpretPrimitive(runtime, context, self, aBlock);
         
-        return callAdapter.call(context, receiver, args);
+        return callAdapter.callFrom(context, self, receiver, args);
     }
 }

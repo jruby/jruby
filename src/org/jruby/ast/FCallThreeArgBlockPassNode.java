@@ -34,7 +34,7 @@ public class FCallThreeArgBlockPassNode extends FCallNode {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         Block block = getBlock(runtime, context, self, aBlock);
         
-        return callAdapter.call(context, self,
+        return callAdapter.callFrom(context, self, self,
                 arg1.interpret(runtime, context, self, aBlock),
                 arg2.interpret(runtime, context, self, aBlock),
                 arg3.interpret(runtime, context, self, aBlock), block);

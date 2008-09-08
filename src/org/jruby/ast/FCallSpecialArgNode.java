@@ -34,18 +34,18 @@ public class FCallSpecialArgNode extends FCallNode {
             
             switch (nodes.size()) {
                 case 0:
-                    return callAdapter.call(context, self);
+                    return callAdapter.callFrom(context, self, self);
                 case 1:
-                    return callAdapter.call(context, self, nodes.eltInternal(0));
+                    return callAdapter.callFrom(context, self, self, nodes.eltInternal(0));
                 case 2:
-                    return callAdapter.call(context, self, nodes.eltInternal(0), nodes.eltInternal(1));
+                    return callAdapter.callFrom(context, self, self, nodes.eltInternal(0), nodes.eltInternal(1));
                 case 3:
-                    return callAdapter.call(context, self, nodes.eltInternal(0), nodes.eltInternal(1), nodes.eltInternal(2));
+                    return callAdapter.callFrom(context, self, self, nodes.eltInternal(0), nodes.eltInternal(1), nodes.eltInternal(2));
                 default:
-                    return callAdapter.call(context, self, nodes.toJavaArrayMaybeUnsafe());
+                    return callAdapter.callFrom(context, self, self, nodes.toJavaArrayMaybeUnsafe());
             }
         }
         
-        return callAdapter.call(context, self, arg);
+        return callAdapter.callFrom(context, self, self, arg);
     }
 }

@@ -192,6 +192,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         // get call site and thread context
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, "[]", CallType.FUNCTIONAL);
         methodCompiler.loadThreadContext();
+        methodCompiler.loadSelf();
         
         // evaluate and save receiver and args
         receiver.call(methodCompiler);
@@ -205,10 +206,10 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         // invoke
         switch (args.getArity()) {
         case 1:
-            method.invokevirtual(p(CallSite.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
+            method.invokevirtual(p(CallSite.class), "callFrom", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
             break;
         default:
-            method.invokevirtual(p(CallSite.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject[].class));
+            method.invokevirtual(p(CallSite.class), "callFrom", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class));
         }
         
         // check if it's true, ending if so
@@ -262,6 +263,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         // get call site and thread context
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, "[]", CallType.FUNCTIONAL);
         methodCompiler.loadThreadContext();
+        methodCompiler.loadSelf();
         
         // evaluate and save receiver and args
         receiver.call(methodCompiler);
@@ -275,10 +277,10 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         // invoke
         switch (args.getArity()) {
         case 1:
-            method.invokevirtual(p(CallSite.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
+            method.invokevirtual(p(CallSite.class), "callFrom", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
             break;
         default:
-            method.invokevirtual(p(CallSite.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject[].class));
+            method.invokevirtual(p(CallSite.class), "callFrom", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class));
         }
         
         // check if it's true, ending if not

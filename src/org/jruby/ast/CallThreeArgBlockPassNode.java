@@ -61,7 +61,7 @@ public final class CallThreeArgBlockPassNode extends CallNode {
         IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
         Block block = getBlock(runtime, context, self, aBlock);
             
-        return callAdapter.call(context, receiver, 
+        return callAdapter.callFrom(context, self, receiver, 
                 arg1.interpret(runtime, context, self, aBlock),
                 arg2.interpret(runtime, context, self, aBlock),
                 arg3.interpret(runtime, context, self, aBlock), block);

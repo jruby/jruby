@@ -56,7 +56,7 @@ public final class CallTwoArgNode extends CallNode {
         
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return callAdapter.call(context, getReceiverNode().interpret(runtime, context, self, aBlock),
+        return callAdapter.callFrom(context, self, getReceiverNode().interpret(runtime, context, self, aBlock),
                 arg1.interpret(runtime, context, self, aBlock),
                 arg2.interpret(runtime, context, self, aBlock));
     }

@@ -62,18 +62,18 @@ public final class CallSpecialArgNode extends CallNode {
             
             switch (nodes.size()) {
                 case 0:
-                    return callAdapter.call(context, receiver);
+                    return callAdapter.callFrom(context, self, receiver);
                 case 1:
-                    return callAdapter.call(context, receiver, nodes.eltInternal(0));
+                    return callAdapter.callFrom(context, self, receiver, nodes.eltInternal(0));
                 case 2:
-                    return callAdapter.call(context, receiver, nodes.eltInternal(0), nodes.eltInternal(1));
+                    return callAdapter.callFrom(context, self, receiver, nodes.eltInternal(0), nodes.eltInternal(1));
                 case 3:
-                    return callAdapter.call(context, receiver, nodes.eltInternal(0), nodes.eltInternal(1), nodes.eltInternal(2));
+                    return callAdapter.callFrom(context, self, receiver, nodes.eltInternal(0), nodes.eltInternal(1), nodes.eltInternal(2));
                 default:
-                    return callAdapter.call(context, receiver, nodes.toJavaArrayMaybeUnsafe());
+                    return callAdapter.callFrom(context, self, receiver, nodes.toJavaArrayMaybeUnsafe());
             }
         }
         
-        return callAdapter.call(context, receiver, arg);
+        return callAdapter.callFrom(context, self, receiver, arg);
     }
 }

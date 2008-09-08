@@ -61,13 +61,13 @@ public class OpElementOneArgAndAsgnNode extends OpElementAsgnNode {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
         IRubyObject rArg1 = arg1.interpret(runtime, context, self, aBlock);
-        IRubyObject firstValue = elementAdapter.call(context, receiver, rArg1);
+        IRubyObject firstValue = elementAdapter.callFrom(context, self, receiver, rArg1);
         
         if (!firstValue.isTrue()) return firstValue;
 
         firstValue = getValueNode().interpret(runtime, context, self, aBlock);
 
-        elementAsgnAdapter.call(context, receiver, rArg1, firstValue);
+        elementAsgnAdapter.callFrom(context, self, receiver, rArg1, firstValue);
         
         return firstValue;
     }

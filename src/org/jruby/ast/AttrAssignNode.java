@@ -193,9 +193,9 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
         
         // If reciever is self then we do the call the same way as vcall
         if (receiver == self) {
-            variableCallAdapter.call(context, receiver, args);
+            variableCallAdapter.callFrom(context, self, receiver, args);
         } else {
-            normalCallAdapter.call(context, receiver, args);
+            normalCallAdapter.callFrom(context, self, receiver, args);
         }
 
         return args[args.length - 1];

@@ -711,7 +711,7 @@ public class YARVMachine {
                 context.getCurrentScope().getValues()[i] = args[i];
             }
         } else {
-            push(instruction.callAdapter.call(context, recv, args));
+            push(instruction.callAdapter.callFrom(context, self, recv, args));
             //push(recv.callMethod(context, name, args, callType));
         }
         
