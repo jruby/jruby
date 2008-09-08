@@ -34,6 +34,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import static org.jruby.util.Numeric.f_gcd;
+import static org.jruby.util.Numeric.f_lcm;
+import static org.jruby.util.Numeric.f_negative_p;
+
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
@@ -43,6 +47,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.Numeric;
 
 /** Implementation of the Integer class.
  *
@@ -257,11 +262,37 @@ public abstract class RubyInteger extends RubyNumeric {
         return recv.getRuntime().getFalse();
     }
 
-    @JRubyMethod
+    @JRubyMethod(name = "pred")
     public static IRubyObject pred(ThreadContext context, IRubyObject recv) {
         return recv.callMethod(context, "-", recv.getRuntime().newFixnum(1));
     }
 
+    /** rb_gcd
+     * 
+     */
+    @JRubyMethod(name = "gcd", compat = CompatVersion.RUBY1_9)
+    public static IRubyObject gcd(ThreadContext context, IRubyObject recv, IRubyObject other) {
+        RubyRational.intCheck(other);
+        return f_gcd(context, recv, other);
+    }    
+
+    /** rb_lcm
+     * 
+     */
+    @JRubyMethod(name = "lcm", compat = CompatVersion.RUBY1_9)
+    public static IRubyObject lcm(ThreadContext context, IRubyObject recv, IRubyObject other) {
+        RubyRational.intCheck(other);
+        return f_lcm(context, recv, other);
+    }    
+
+    /** rb_gcdlcm
+     * 
+     */
+    @JRubyMethod(name = "gcdlcm", compat = CompatVersion.RUBY1_9)
+    public static IRubyObject gcdlcm(ThreadContext context, IRubyObject recv, IRubyObject other) {
+        RubyRational.intCheck(other);
+        return context .getRuntime().newArray(f_gcd(context, recv, other), f_lcm(context, recv, other));
+    }
 
     /*  ================
      *  Singleton Methods

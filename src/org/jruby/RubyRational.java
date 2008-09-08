@@ -139,7 +139,7 @@ public class RubyRational extends RubyNumeric {
      * 
      */
     private static IRubyObject newRational(ThreadContext context, IRubyObject clazz, IRubyObject x, IRubyObject y) {
-        assert x instanceof RubyRational && y instanceof RubyRational;
+        assert !(x instanceof RubyRational) && !(y instanceof RubyRational);
         return canonicalizeInternal(context, clazz, x, y);
     }
 
@@ -147,7 +147,7 @@ public class RubyRational extends RubyNumeric {
      * 
      */
     private static IRubyObject newRational(ThreadContext context, IRubyObject clazz, IRubyObject x) {
-        assert x instanceof RubyRational;
+        assert !(x instanceof RubyRational);
         return canonicalizeInternal(context, clazz, x, RubyFixnum.one(context.getRuntime()));
     }
 
@@ -155,7 +155,7 @@ public class RubyRational extends RubyNumeric {
      * 
      */
     private static IRubyObject newRationalNoReduce(ThreadContext context, IRubyObject clazz, IRubyObject x, IRubyObject y) {
-        assert x instanceof RubyRational && y instanceof RubyRational;
+        assert !(x instanceof RubyRational) && !(y instanceof RubyRational);
         return canonicalizeInternalNoReduce(context, clazz, x, y);
     }
 
@@ -163,7 +163,7 @@ public class RubyRational extends RubyNumeric {
      * 
      */
     private static IRubyObject newRationalNoReduce(ThreadContext context, IRubyObject clazz, IRubyObject x) {
-        assert x instanceof RubyRational;
+        assert !(x instanceof RubyRational);
         return canonicalizeInternalNoReduce(context, clazz, x, RubyFixnum.one(context.getRuntime()));
     }
 
@@ -223,7 +223,7 @@ public class RubyRational extends RubyNumeric {
     /** nurat_int_check
      * 
      */
-    private static void intCheck(IRubyObject num) {
+    static void intCheck(IRubyObject num) {
         if (!(num instanceof RubyFixnum ) && !(num instanceof RubyBignum)) throw num.getRuntime().newArgumentError("not an integer");
     }
     
@@ -536,8 +536,8 @@ public class RubyRational extends RubyNumeric {
             num = f_mul(context, f_idiv(context, anum, g1), f_idiv(context, bnum, g2));
             den = f_mul(context, f_idiv(context, aden, g2), f_idiv(context, bden, g1));
         }
+
         return RubyRational.newRationalNoReduce(context, getMetaClass(), num, den);
-                
     }
 
     /** nurat_mul
@@ -561,7 +561,7 @@ public class RubyRational extends RubyNumeric {
     /** nurat_div
      * 
      */
-    @JRubyMethod(name = "/")
+    @JRubyMethod(name = {"/", "quo"})
     public IRubyObject op_div(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().index) {
         case ClassIndex.FIXNUM:
@@ -664,7 +664,7 @@ public class RubyRational extends RubyNumeric {
         switch (other.getMetaClass().index) {
         case ClassIndex.FIXNUM:
         case ClassIndex.BIGNUM:
-            if (f_zero_p(context, num) && f_zero_p(context, den)) return runtime.getTrue();
+            if (f_zero_p(context, num) && f_zero_p(context, other)) return runtime.getTrue();
             if (!(den instanceof RubyFixnum) || ((RubyFixnum)den).getLongValue() != 1) return runtime.getFalse();
             if (f_equal_p(context, num, other)) return runtime.getTrue();
             return runtime.getFalse();
