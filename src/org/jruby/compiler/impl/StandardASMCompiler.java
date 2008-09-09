@@ -47,6 +47,7 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
@@ -2834,6 +2835,46 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             loadException();
             method.athrow();
             method.label(ifEnd);
+        }
+
+        public void literalSwitch(int[] cases, Object bodies, ArrayCallback arrayCallback, CompilerCallback defaultCallback) {
+            // TODO assuming case is a fixnum
+            method.checkcast(p(RubyFixnum.class));
+            method.invokevirtual(p(RubyFixnum.class), "getLongValue", sig(long.class));
+            method.l2i();
+            
+            Label[] labels = new Label[cases.length];
+            for (int i = 0; i < labels.length; i++) labels[i] = new Label();
+            Label defaultLabel = new Label();
+            Label endLabel = new Label();
+
+            method.lookupswitch(defaultLabel, cases, labels);
+            for (int i = 0; i < cases.length; i ++) {
+                method.label(labels[i]);
+                arrayCallback.nextValue(this, bodies, i);
+                method.go_to(endLabel);
+            }
+
+            method.label(defaultLabel);
+            defaultCallback.call(this);
+            method.label(endLabel);
+        }
+
+        public void typeCheckBranch(Class type, BranchCallback trueCallback, BranchCallback falseCallback) {
+            Label elseLabel = new Label();
+            Label done = new Label();
+
+            method.dup();
+            method.instance_of(p(type));
+            method.ifeq(elseLabel);
+
+            trueCallback.branch(this);
+            method.go_to(done);
+
+            method.label(elseLabel);
+            falseCallback.branch(this);
+
+            method.label(done);
         }
     }
 

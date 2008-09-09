@@ -541,4 +541,6 @@ public interface MethodCompiler {
 
     public MethodCompiler chainToMethod(String name, ASTInspector inspector);
     public void wrapJavaException();
+    public void literalSwitch(int[] caseInts, Object caseBodies, ArrayCallback casesCallback, CompilerCallback defaultCallback);
+    public void typeCheckBranch(Class type, BranchCallback trueCallback, BranchCallback falseCallback);
 }

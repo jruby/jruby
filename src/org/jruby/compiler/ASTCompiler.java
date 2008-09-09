@@ -29,7 +29,12 @@
 
 package org.jruby.compiler;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.AliasNode;
 import org.jruby.ast.AndNode;
@@ -710,9 +715,126 @@ public class ASTCompiler {
         }
 
         context.pollThreadEvents();
-
+        
         Node firstWhenNode = caseNode.getFirstWhenNode();
-        compileWhen(firstWhenNode, context, hasCase);
+
+        // NOTE: Currently this optimization is limited to the following situations:
+        // * No multi-valued whens
+        // * All whens must be an int-ranged literal fixnum
+        // It also still emits the code for the "safe" when logic, which is rather
+        // wasteful (since it essentially doubles each code body). As such it is
+        // normally disabled, but it serves as an example of how this optimization
+        // could be done. Ideally, it should be combined with the when processing
+        // to improve code reuse before it's generally available.
+        if (hasCase && caseIsAllIntRangedFixnums(caseNode) && RubyInstanceConfig.FASTCASE_COMPILE_ENABLED) {
+            compileFixnumCase(firstWhenNode, context);
+        } else {
+            compileWhen(firstWhenNode, context, hasCase);
+        }
+    }
+
+    private boolean caseIsAllIntRangedFixnums(CaseNode caseNode) {
+        boolean caseIsAllLiterals = true;
+        for (Node node = caseNode.getFirstWhenNode(); node != null && node instanceof WhenNode; node = ((WhenNode)node).getNextCase()) {
+            WhenNode whenNode = (WhenNode)node;
+            if (whenNode.getExpressionNodes() instanceof ArrayNode) {
+                ArrayNode arrayNode = (ArrayNode)whenNode.getExpressionNodes();
+                if (arrayNode.size() == 1 && arrayNode.get(0) instanceof FixnumNode) {
+                    FixnumNode fixnumNode = (FixnumNode)arrayNode.get(0);
+                    long value = fixnumNode.getValue();
+                    if (value <= Integer.MAX_VALUE && value >= Integer.MIN_VALUE) {
+                        // OK! we can safely use it in a case
+                        continue;
+                    }
+                }
+            }
+            // if we get here, our rigid requirements have not been met; fail
+            caseIsAllLiterals = false;
+            break;
+        }
+        return caseIsAllLiterals;
+    }
+
+    @SuppressWarnings("unchecked")
+    public void compileFixnumCase(final Node node, MethodCompiler context) {
+        List<WhenNode> cases = new ArrayList<WhenNode>();
+        Node elseBody = null;
+
+        // first get all when nodes
+        for (Node tmpNode = node; tmpNode != null; tmpNode = ((WhenNode)tmpNode).getNextCase()) {
+            WhenNode whenNode = (WhenNode)tmpNode;
+
+            cases.add(whenNode);
+
+            if (whenNode.getNextCase() != null) {
+                // if there's another node coming, make sure it will be a when...
+                if (whenNode.getNextCase() instanceof WhenNode) {
+                    // normal when, continue
+                    continue;
+                } else {
+                    // ...or handle it as an else and we're done
+                    elseBody = whenNode.getNextCase();
+                    break;
+                }
+            }
+        }
+        // sort them based on literal value
+        Collections.sort(cases, new Comparator() {
+            public int compare(Object o1, Object o2) {
+                WhenNode w1 = (WhenNode)o1;
+                WhenNode w2 = (WhenNode)o2;
+                Integer value1 = (int)((FixnumNode)((ArrayNode)w1.getExpressionNodes()).get(0)).getValue();
+                Integer value2 = (int)((FixnumNode)((ArrayNode)w2.getExpressionNodes()).get(0)).getValue();
+                return value1.compareTo(value2);
+            }
+        });
+        final int[] intCases = new int[cases.size()];
+        final Node[] bodies = new Node[intCases.length];
+
+        // prepare arrays of int cases and code bodies
+        for (int i = 0 ; i < intCases.length; i++) {
+            intCases[i] = (int)((FixnumNode)((ArrayNode)cases.get(i).getExpressionNodes()).get(0)).getValue();
+            bodies[i] = cases.get(i).getBodyNode();
+        }
+        
+        final ArrayCallback callback = new ArrayCallback() {
+            public void nextValue(MethodCompiler context, Object array, int index) {
+                Node[] bodies = (Node[])array;
+                if (bodies[index] != null) {
+                    compile(bodies[index], context);
+                } else {
+                    context.loadNil();
+                }
+            }
+        };
+
+        final Node finalElse = elseBody;
+        final CompilerCallback elseCallback = new CompilerCallback() {
+            public void call(MethodCompiler context) {
+                if (finalElse == null) {
+                    context.loadNil();
+                } else {
+                    compile(finalElse, context);
+                }
+            }
+        };
+
+        // compile the literal switch; embed the fast version, but also the slow
+        // in case we need to fall back on it
+        // TODO: It would be nice to detect only types that fixnum is === to here
+        // and just fail fast for the others...maybe examine Ruby 1.9's optz?
+        context.typeCheckBranch(RubyFixnum.class,
+                new BranchCallback() {
+                    public void branch(MethodCompiler context) {
+                        context.literalSwitch(intCases, bodies, callback, elseCallback);
+                    }
+                },
+                new BranchCallback() {
+                    public void branch(MethodCompiler context) {
+                        compileWhen(node, context, true);
+                    }
+                }
+        );
     }
 
     public void compileWhen(Node node, MethodCompiler context, final boolean hasCase) {
