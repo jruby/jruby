@@ -55,8 +55,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -66,7 +64,6 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
-import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
@@ -78,7 +75,6 @@ import org.jruby.java.invokers.ConstructorInvoker;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -86,7 +82,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
-import org.jruby.util.SafePropertyAccessor;
 
 @JRubyClass(name="Java::JavaClass", parent="Java::JavaObject")
 public class JavaClass extends JavaObject {
@@ -494,116 +489,11 @@ public class JavaClass extends JavaObject {
         instanceNames.putAll(INSTANCE_RESERVED_NAMES);
         Map<String, NamedInstaller> staticCallbacks = new HashMap<String, NamedInstaller>();
         Map<String, NamedInstaller> instanceCallbacks = new HashMap<String, NamedInstaller>();
-        List<ConstantField> constantFields = new ArrayList<ConstantField>(); 
-        Field[] fields = EMPTY_FIELD_ARRAY;
-        try {
-            fields = javaClass.getFields();
-        } catch (SecurityException e) {
-        }
-        for (int i = fields.length; --i >= 0; ) {
-            Field field = fields[i];
-            if (javaClass != field.getDeclaringClass()) continue;
-
-            if (ConstantField.isConstant(field)) {
-                constantFields.add(new ConstantField(field));
-                continue;
-            }
-            String name = field.getName();
-            int modifiers = field.getModifiers();
-            if (Modifier.isStatic(modifiers)) {
-                AssignedName assignedName = staticNames.get(name);
-                if (assignedName != null && assignedName.type < AssignedName.FIELD)
-                    continue;
-                staticNames.put(name,new AssignedName(name,AssignedName.FIELD));
-                staticCallbacks.put(name,new StaticFieldGetterInstaller(name,field));
-                if (!Modifier.isFinal(modifiers)) {
-                    String setName = name + '=';
-                    staticCallbacks.put(setName,new StaticFieldSetterInstaller(setName,field));
-                }
-            } else {
-                AssignedName assignedName = instanceNames.get(name);
-                if (assignedName != null && assignedName.type < AssignedName.FIELD)
-                    continue;
-                instanceNames.put(name, new AssignedName(name,AssignedName.FIELD));
-                instanceCallbacks.put(name, new InstanceFieldGetterInstaller(name,field));
-                if (!Modifier.isFinal(modifiers)) {
-                    String setName = name + '=';
-                    instanceCallbacks.put(setName, new InstanceFieldSetterInstaller(setName,field));
-                }
-            }
-        }
-        // TODO: protected methods.  this is going to require a rework 
-        // of some of the mechanism.  
-        Method[] methods = EMPTY_METHOD_ARRAY;
-        for (Class c = javaClass; c != null; c = c.getSuperclass()) {
-            try {
-                methods = javaClass.getMethods();
-                break;
-            } catch (SecurityException e) {
-            }
-        }
-        for (int i = methods.length; --i >= 0; ) {
-            // we need to collect all methods, though we'll only
-            // install the ones that are named in this class
-            Method method = methods[i];
-            String name = method.getName();
-            if (Modifier.isStatic(method.getModifiers())) {
-                AssignedName assignedName = staticNames.get(name);
-                if (assignedName == null) {
-                    staticNames.put(name,new AssignedName(name,AssignedName.METHOD));
-                } else {
-                    if (assignedName.type < AssignedName.METHOD)
-                        continue;
-                    if (assignedName.type != AssignedName.METHOD) {
-                        staticCallbacks.remove(name);
-                        staticCallbacks.remove(name+'=');
-                        staticNames.put(name,new AssignedName(name,AssignedName.METHOD));
-                    }
-                }
-                StaticMethodInvokerInstaller invoker = (StaticMethodInvokerInstaller)staticCallbacks.get(name);
-                if (invoker == null) {
-                    invoker = new StaticMethodInvokerInstaller(name);
-                    staticCallbacks.put(name,invoker);
-                }
-                invoker.addMethod(method,javaClass);
-            } else {
-                AssignedName assignedName = instanceNames.get(name);
-                if (assignedName == null) {
-                    instanceNames.put(name,new AssignedName(name,AssignedName.METHOD));
-                } else {
-                    if (assignedName.type < AssignedName.METHOD)
-                        continue;
-                    if (assignedName.type != AssignedName.METHOD) {
-                        instanceCallbacks.remove(name);
-                        instanceCallbacks.remove(name+'=');
-                        instanceNames.put(name,new AssignedName(name,AssignedName.METHOD));
-                    }
-                }
-                InstanceMethodInvokerInstaller invoker = (InstanceMethodInvokerInstaller)instanceCallbacks.get(name);
-                if (invoker == null) {
-                    invoker = new InstanceMethodInvokerInstaller(name);
-                    instanceCallbacks.put(name,invoker);
-                }
-                invoker.addMethod(method,javaClass);
-            }
-        }
-        // TODO: protected methods.  this is going to require a rework 
-        // of some of the mechanism.  
-        Constructor[] constructors = EMPTY_CONSTRUCTOR_ARRAY;
-        try {
-            constructors = javaClass.getConstructors();
-        } catch (SecurityException e) {
-        }
-        for (int i = constructors.length; --i >= 0; ) {
-            // we need to collect all methods, though we'll only
-            // install the ones that are named in this class
-            Constructor ctor = constructors[i];
-            
-            if (constructorInstaller == null) {
-                constructorInstaller = new ConstructorInvokerInstaller("__jcreate!");
-            }
-            constructorInstaller.addConstructor(ctor,javaClass);
-        }
+        List<ConstantField> constantFields = new ArrayList<ConstantField>();
+        
+        setupClassFields(javaClass, constantFields, staticNames, staticCallbacks, instanceNames, instanceCallbacks);
+        setupClassMethods(javaClass, staticNames, staticCallbacks, instanceNames, instanceCallbacks);
+        setupClassConstructors(javaClass);
         
         this.staticAssignedNames = staticNames;
         this.instanceAssignedNames = instanceNames;
@@ -629,48 +519,11 @@ public class JavaClass extends JavaObject {
             return;
         }
 
-        for (ConstantField field: constantFields) {
-            field.install(proxy);
-        }
-        for (Iterator<NamedInstaller> iter = staticInstallers.values().iterator(); iter.hasNext(); ) {
-            NamedInstaller installer = iter.next();
-            if (installer.type == NamedInstaller.STATIC_METHOD && installer.hasLocalMethod()) {
-                assignAliases((MethodInstaller)installer,staticAssignedNames);
-            }
-            installer.install(proxy);
-        }
-        for (Iterator<NamedInstaller> iter = instanceInstallers.values().iterator(); iter.hasNext(); ) {
-            NamedInstaller installer = iter.next();
-            if (installer.type == NamedInstaller.INSTANCE_METHOD && installer.hasLocalMethod()) {
-                assignAliases((MethodInstaller)installer,instanceAssignedNames);
-            }
-            installer.install(proxy);
-        }
+        installClassFields(proxy);
+        installClassMethods(proxy);
+        installClassConstructors(proxy);
+        installClassConstants(javaClass, proxy);
         
-        if (constructorInstaller != null) {
-            constructorInstaller.install(proxy);
-        }
-        
-        // setup constants for public inner classes
-        Class<?>[] classes = EMPTY_CLASS_ARRAY;
-        try {
-            classes = javaClass.getClasses();
-        } catch (SecurityException e) {
-        }
-        for (int i = classes.length; --i >= 0; ) {
-            if (javaClass == classes[i].getDeclaringClass()) {
-                Class<?> clazz = classes[i];
-                String simpleName = getSimpleName(clazz);
-                
-                if (simpleName.length() == 0) continue;
-                
-                // Ignore bad constant named inner classes pending JRUBY-697
-                if (IdUtil.isConstant(simpleName) && proxy.getConstantAt(simpleName) == null) {
-                    proxy.setConstant(simpleName,
-                        Java.get_proxy_class(JAVA_UTILITIES,get(getRuntime(),clazz)));
-                }
-            }
-        }
         // FIXME: bit of a kludge here (non-interface classes assigned to both
         // class and module fields). simplifies proxy extender code, will go away
         // when JI is overhauled (and proxy extenders are deprecated).
@@ -747,6 +600,179 @@ public class JavaClass extends JavaObject {
                 // dealing with conflicting protected fields. 
                 installer.addAlias(name);
                 assignedNames.put(name,new AssignedName(name,AssignedName.ALIAS));
+            }
+        }
+    }
+
+    private void installClassConstants(final Class<?> javaClass, final RubyClass proxy) {
+        // setup constants for public inner classes
+        Class<?>[] classes = EMPTY_CLASS_ARRAY;
+        try {
+            classes = javaClass.getClasses();
+        } catch (SecurityException e) {
+        }
+        for (int i = classes.length; --i >= 0;) {
+            if (javaClass == classes[i].getDeclaringClass()) {
+                Class<?> clazz = classes[i];
+                String simpleName = getSimpleName(clazz);
+                if (simpleName.length() == 0) {
+                    continue;
+                }
+                // Ignore bad constant named inner classes pending JRUBY-697
+                if (IdUtil.isConstant(simpleName) && proxy.getConstantAt(simpleName) == null) {
+                    proxy.setConstant(simpleName, Java.get_proxy_class(JAVA_UTILITIES, get(getRuntime(), clazz)));
+                }
+            }
+        }
+    }
+
+    private void installClassConstructors(final RubyClass proxy) {
+        if (constructorInstaller != null) {
+            constructorInstaller.install(proxy);
+        }
+    }
+
+    private void installClassFields(final RubyClass proxy) {
+        for (ConstantField field : constantFields) {
+            field.install(proxy);
+        }
+    }
+
+    private void installClassMethods(final RubyClass proxy) {
+        for (Iterator<NamedInstaller> iter = staticInstallers.values().iterator(); iter.hasNext();) {
+            NamedInstaller installer = iter.next();
+            if (installer.type == NamedInstaller.STATIC_METHOD && installer.hasLocalMethod()) {
+                assignAliases((MethodInstaller) installer, staticAssignedNames);
+            }
+            installer.install(proxy);
+        }
+        for (Iterator<NamedInstaller> iter = instanceInstallers.values().iterator(); iter.hasNext();) {
+            NamedInstaller installer = iter.next();
+            if (installer.type == NamedInstaller.INSTANCE_METHOD && installer.hasLocalMethod()) {
+                assignAliases((MethodInstaller) installer, instanceAssignedNames);
+            }
+            installer.install(proxy);
+        }
+    }
+
+    private void setupClassConstructors(Class<?> javaClass) {
+        // TODO: protected methods.  this is going to require a rework
+        // of some of the mechanism.
+        Constructor[] constructors = EMPTY_CONSTRUCTOR_ARRAY;
+        try {
+            constructors = javaClass.getConstructors();
+        } catch (SecurityException e) {
+        }
+        for (int i = constructors.length; --i >= 0;) {
+            // we need to collect all methods, though we'll only
+            // install the ones that are named in this class
+            Constructor ctor = constructors[i];
+            if (constructorInstaller == null) {
+                constructorInstaller = new ConstructorInvokerInstaller("__jcreate!");
+            }
+            constructorInstaller.addConstructor(ctor, javaClass);
+        }
+    }
+
+    private void setupClassFields(Class<?> javaClass, List<ConstantField> constantFields, Map<String, AssignedName> staticNames, Map<String, NamedInstaller> staticCallbacks, Map<String, AssignedName> instanceNames, Map<String, NamedInstaller> instanceCallbacks) {
+        Field[] fields = EMPTY_FIELD_ARRAY;
+        try {
+            fields = javaClass.getFields();
+        } catch (SecurityException e) {
+        }
+        for (int i = fields.length; --i >= 0;) {
+            Field field = fields[i];
+            if (javaClass != field.getDeclaringClass()) {
+                continue;
+            }
+            if (ConstantField.isConstant(field)) {
+                constantFields.add(new ConstantField(field));
+                continue;
+            }
+            String name = field.getName();
+            int modifiers = field.getModifiers();
+            if (Modifier.isStatic(modifiers)) {
+                AssignedName assignedName = staticNames.get(name);
+                if (assignedName != null && assignedName.type < AssignedName.FIELD) {
+                    continue;
+                }
+                staticNames.put(name, new AssignedName(name, AssignedName.FIELD));
+                staticCallbacks.put(name, new StaticFieldGetterInstaller(name, field));
+                if (!Modifier.isFinal(modifiers)) {
+                    String setName = name + '=';
+                    staticCallbacks.put(setName, new StaticFieldSetterInstaller(setName, field));
+                }
+            } else {
+                AssignedName assignedName = instanceNames.get(name);
+                if (assignedName != null && assignedName.type < AssignedName.FIELD) {
+                    continue;
+                }
+                instanceNames.put(name, new AssignedName(name, AssignedName.FIELD));
+                instanceCallbacks.put(name, new InstanceFieldGetterInstaller(name, field));
+                if (!Modifier.isFinal(modifiers)) {
+                    String setName = name + '=';
+                    instanceCallbacks.put(setName, new InstanceFieldSetterInstaller(setName, field));
+                }
+            }
+        }
+    }
+
+    private void setupClassMethods(Class<?> javaClass, Map<String, AssignedName> staticNames, Map<String, NamedInstaller> staticCallbacks, Map<String, AssignedName> instanceNames, Map<String, NamedInstaller> instanceCallbacks) {
+        // TODO: protected methods.  this is going to require a rework
+        // of some of the mechanism.
+        Method[] methods = EMPTY_METHOD_ARRAY;
+        for (Class c = javaClass; c != null; c = c.getSuperclass()) {
+            try {
+                methods = javaClass.getMethods();
+                break;
+            } catch (SecurityException e) {
+            }
+        }
+        for (int i = methods.length; --i >= 0;) {
+            // we need to collect all methods, though we'll only
+            // install the ones that are named in this class
+            Method method = methods[i];
+            String name = method.getName();
+            if (Modifier.isStatic(method.getModifiers())) {
+                AssignedName assignedName = staticNames.get(name);
+                if (assignedName == null) {
+                    staticNames.put(name, new AssignedName(name, AssignedName.METHOD));
+                } else {
+                    if (assignedName.type < AssignedName.METHOD) {
+                        continue;
+                    }
+                    if (assignedName.type != AssignedName.METHOD) {
+                        staticCallbacks.remove(name);
+                        staticCallbacks.remove(name + '=');
+                        staticNames.put(name, new AssignedName(name, AssignedName.METHOD));
+                    }
+                }
+                StaticMethodInvokerInstaller invoker = (StaticMethodInvokerInstaller) staticCallbacks.get(name);
+                if (invoker == null) {
+                    invoker = new StaticMethodInvokerInstaller(name);
+                    staticCallbacks.put(name, invoker);
+                }
+                invoker.addMethod(method, javaClass);
+            } else {
+                AssignedName assignedName = instanceNames.get(name);
+                if (assignedName == null) {
+                    instanceNames.put(name, new AssignedName(name, AssignedName.METHOD));
+                } else {
+                    if (assignedName.type < AssignedName.METHOD) {
+                        continue;
+                    }
+                    if (assignedName.type != AssignedName.METHOD) {
+                        instanceCallbacks.remove(name);
+                        instanceCallbacks.remove(name + '=');
+                        instanceNames.put(name, new AssignedName(name, AssignedName.METHOD));
+                    }
+                }
+                InstanceMethodInvokerInstaller invoker = (InstanceMethodInvokerInstaller) instanceCallbacks.get(name);
+                if (invoker == null) {
+                    invoker = new InstanceMethodInvokerInstaller(name);
+                    instanceCallbacks.put(name, invoker);
+                }
+                invoker.addMethod(method, javaClass);
             }
         }
     }
