@@ -345,10 +345,10 @@ public class Pack {
         try {
             int end = i2Encode.begin + i2Encode.realSize;
             for (int i = i2Encode.begin; i < end; i++) {
-                byte lCurChar = l2Encode[i];
+                int lCurChar = l2Encode[i] & 0xff;
                 if (lCurChar > 126 || (lCurChar < 32 && lCurChar != '\n' && lCurChar != '\t') || lCurChar == '=') {
                     io2Append.append('=');
-                    io2Append.append(hex_table[lCurChar >> 4]);
+                    io2Append.append(hex_table[lCurChar >>> 4]);
                     io2Append.append(hex_table[lCurChar & 0x0f]);
                     lCurLineLength += 3;
                     lPrevChar = -1;

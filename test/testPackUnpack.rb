@@ -52,3 +52,4 @@ test_exception(TypeError){ [0].pack("h") }
 test_exception(TypeError){ [-1, 0, 1, 128].pack("m") }
 test_equal(["testingT"], "testing=54".unpack("M*"))
 test_equal(["12345"], "12345".unpack("M*"))
+test_equal("Vava=91u, Tonga=\n", ["Vava\221u, Tonga"].pack("M*"))
