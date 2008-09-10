@@ -273,25 +273,32 @@ public class JavaInterfaceTemplate {
         // variable to hold the list of interfaces, and modify append_features
         // for this module to call append_features on each of those interfaces as
         // well
-        if (!module.getInstanceVariables().fastHasInstanceVariable("@java_interface_mods")) {
-            final RubyArray javaInterfaceMods = RubyArray.newArray(runtime, self);
-            RubyClass singleton = module.getSingletonClass();
+        synchronized (module) {
+            if (!module.getInstanceVariables().fastHasInstanceVariable("@java_interface_mods")) {
+                RubyArray javaInterfaceMods = RubyArray.newArray(runtime, self);
+                module.getInstanceVariables().fastSetInstanceVariable("@java_interface_mods", javaInterfaceMods);
+                RubyClass singleton = module.getSingletonClass();
 
-            singleton.addMethod("append_features", new JavaMethodOneBlock(singleton, Visibility.PUBLIC) {
-                @Override
-                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg, Block block) {
-                    for (int i = 0; i < javaInterfaceMods.size(); i++) {
-                        RubyModule ifcModule = (RubyModule)javaInterfaceMods.eltInternal(i);
-                        ifcModule.append_features(arg);
+                singleton.addMethod("append_features", new JavaMethodOneBlock(singleton, Visibility.PUBLIC) {
+                    @Override
+                    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg, Block block) {
+                        if (!(arg instanceof RubyClass)) {
+                            throw context.getRuntime().newTypeError("append_features called with non-class");
+                        }
+                        RubyClass target = (RubyClass)arg;
+                        RubyArray javaInterfaceMods = (RubyArray)self.getInstanceVariables().fastGetInstanceVariable("@java_interface_mods");
+
+                        target.include(javaInterfaceMods.toJavaArray());
+
+                        return RuntimeHelpers.invokeAs(context, clazz.getSuperClass(), self, name, arg, block);
                     }
-                    return RuntimeHelpers.invokeAs(context, clazz.getSuperClass(), self, name, arg, block);
+                });
+            } else {
+                // already set up append_features, just add the interface if we haven't already
+                RubyArray javaInterfaceMods =(RubyArray)module.getInstanceVariables().fastGetInstanceVariable("@java_interface_mods");
+                if (!javaInterfaceMods.includes(context, self)) {
+                    javaInterfaceMods.append(self);
                 }
-            });
-        } else {
-            // already set up append_features, just add the interface if we haven't already
-            RubyArray javaInterfaceMods =(RubyArray)module.getInstanceVariables().fastGetInstanceVariable("@java_interface_mods");
-            if (!javaInterfaceMods.includes(context, self)) {
-                javaInterfaceMods.append(self);
             }
         }
     }
