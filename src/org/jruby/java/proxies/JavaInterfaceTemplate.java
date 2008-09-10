@@ -77,7 +77,7 @@ public class JavaInterfaceTemplate {
             throw context.getRuntime().newTypeError("received " + clazz + ", expected Class/Module");
         }
 
-        return RuntimeHelpers.invokeAs(context, self.getMetaClass().getSuperClass(), self, "append_features", clazz, block);
+        return RuntimeHelpers.invokeSuper(context, self, clazz, block);
     }
 
     private static void appendFeaturesToClass(ThreadContext context, IRubyObject self, RubyClass clazz) {
