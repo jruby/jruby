@@ -252,7 +252,7 @@ public class RubyComplex extends RubyNumeric {
         Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 1);
         return null;
     }
-    
+
     @JRubyMethod(name = "new!", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject newInstanceBang(ThreadContext context, IRubyObject recv, IRubyObject real) {
         if (!(real instanceof RubyNumeric)) real = f_to_i(context, real);
@@ -329,13 +329,23 @@ public class RubyComplex extends RubyNumeric {
         return null;
     }
 
-    @JRubyMethod(name = {"new", "rect", "rectangular"}, meta = true)
+    @JRubyMethod(name = "new", meta = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject newInstanceNew(ThreadContext context, IRubyObject recv, IRubyObject real) {
+        return newInstance(context, recv, real);
+    }
+
+    @JRubyMethod(name = {"rect", "rectangular"}, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject real) {
         realCheck(context, real);
         return canonicalizeInternal(context, recv, real, RubyFixnum.zero(context.getRuntime()));
     }
 
-    @JRubyMethod(name = {"new", "rect", "rectangular"}, meta = true)
+    @JRubyMethod(name = "new", meta = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject newInstanceNew(ThreadContext context, IRubyObject recv, IRubyObject real, IRubyObject image) {
+        return newInstance(context, recv, real, image);
+    }
+
+    @JRubyMethod(name = {"rect", "rectangular"}, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject real, IRubyObject image) {
         realCheck(context, real);
         realCheck(context, image);
@@ -511,10 +521,10 @@ public class RubyComplex extends RubyNumeric {
         return coerceBin(context, "*", other);
     }
     
-    /** nucomp_div
+    /** nucomp_div / nucomp_quo
      * 
      */
-    @JRubyMethod(name = "/")
+    @JRubyMethod(name = {"/", "quo"})
     public IRubyObject op_div(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyComplex) {
             RubyComplex otherComplex = (RubyComplex)other;
@@ -535,10 +545,10 @@ public class RubyComplex extends RubyNumeric {
         return coerceBin(context, "/", other);
     }
 
-    /** nucomp_fdiv / nucomp_quo
+    /** nucomp_fdiv
      *
      */
-    @JRubyMethod(name = {"fdiv", "quo"})
+    @JRubyMethod(name = "fdiv")
     public IRubyObject fdiv(ThreadContext context, IRubyObject other) {
         IRubyObject complex = newComplex(context, getMetaClass(),
                                          f_to_f(context, real),   

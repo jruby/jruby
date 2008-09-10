@@ -84,6 +84,8 @@ public class RubyRational extends RubyNumeric {
             }
         };
 
+        rationalc.includeModule(runtime.getPrecision());
+
         ThreadContext context = runtime.getCurrentContext();
         rationalc.callMethod(context, "private_class_method", runtime.newSymbol("allocate"));
 
@@ -346,7 +348,7 @@ public class RubyRational extends RubyNumeric {
             RubyComplex a1Complex = (RubyComplex)a1;
             if (a1Complex.getImage() instanceof RubyFloat || !f_zero_p(context, a1Complex.getImage())) {            
                 IRubyObject s = f_to_s(context, a1);
-                throw context.getRuntime().newArgumentError("can't accept " + s.convertToString());
+                throw context.getRuntime().newRangeError("can't accept " + s.convertToString());
             }
             a1 = a1Complex.getReal();
         }
@@ -354,7 +356,7 @@ public class RubyRational extends RubyNumeric {
             RubyComplex a2Complex = (RubyComplex)a2;
             if (a2Complex.getImage() instanceof RubyFloat || !f_zero_p(context, a2Complex.getImage())) {            
                 IRubyObject s = f_to_s(context, a2);
-                throw context.getRuntime().newArgumentError("can't accept " + s.convertToString());
+                throw context.getRuntime().newRangeError("can't accept " + s.convertToString());
             }
             a2 = a2Complex.getReal();
         }
@@ -472,16 +474,14 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "+")
     public IRubyObject op_add(ThreadContext context, IRubyObject other) {
-        switch (other.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
+        if (other instanceof RubyFixnum || other instanceof RubyBignum) {
             return f_addsub(context, num, den, other, RubyFixnum.one(context.getRuntime()), true);
-        case ClassIndex.FLOAT:
+        } else if (other instanceof RubyFloat) {
             return f_add(context, f_to_f(context, this), other);
-        case ClassIndex.RATIONAL:
+        } else if (other instanceof RubyRational) {
             RubyRational otherRational = (RubyRational)other;
             return f_addsub(context, num, den, otherRational.num, otherRational.den, true);
-        }
+        }            
         return coerceBin(context, "+", other);
     }
     
@@ -490,13 +490,11 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "-")
     public IRubyObject op_sub(ThreadContext context, IRubyObject other) {
-        switch (other.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
+        if (other instanceof RubyFixnum || other instanceof RubyBignum) {
             return f_addsub(context, num, den, other, RubyFixnum.one(context.getRuntime()), false);
-        case ClassIndex.FLOAT:
+        } else if (other instanceof RubyFloat) {
             return f_sub(context, f_to_f(context, this), other);
-        case ClassIndex.RATIONAL:
+        } else if (other instanceof RubyRational) {
             RubyRational otherRational = (RubyRational)other;
             return f_addsub(context, num, den, otherRational.num, otherRational.den, false);
         }
@@ -545,13 +543,11 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "*")
     public IRubyObject op_mul(ThreadContext context, IRubyObject other) {
-        switch (other.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
+        if (other instanceof RubyFixnum || other instanceof RubyBignum) {
             return f_muldiv(context, num, den, other, RubyFixnum.one(context.getRuntime()), true);
-        case ClassIndex.FLOAT:
+        } else if (other instanceof RubyFloat) {
             return f_mul(context, f_to_f(context, this), other);
-        case ClassIndex.RATIONAL:
+        } else if (other instanceof RubyRational) {
             RubyRational otherRational = (RubyRational)other;
             return f_muldiv(context, num, den, otherRational.num, otherRational.den, true);
         }
@@ -563,14 +559,12 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = {"/", "quo"})
     public IRubyObject op_div(ThreadContext context, IRubyObject other) {
-        switch (other.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
+        if (other instanceof RubyFixnum || other instanceof RubyBignum) {
             if (f_zero_p(context, other)) throw context.getRuntime().newZeroDivisionError();
             return f_muldiv(context, num, den, other, RubyFixnum.one(context.getRuntime()), false);
-        case ClassIndex.FLOAT:
+        } else if (other instanceof RubyFloat) {
             return f_to_f(context, this).callMethod(context, "/", other);
-        case ClassIndex.RATIONAL:
+        } else if (other instanceof RubyRational) {
             if (f_zero_p(context, other)) throw context.getRuntime().newZeroDivisionError();
             RubyRational otherRational = (RubyRational)other;
             return f_muldiv(context, num, den, otherRational.num, otherRational.den, false);
@@ -602,9 +596,7 @@ public class RubyRational extends RubyNumeric {
             if (f_one_p(context, otherRational.den)) other = otherRational.num;
         }
 
-        switch (other.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
+        if (other instanceof RubyFixnum || other instanceof RubyBignum) {        
             final IRubyObject tnum, tden;
             IRubyObject res = f_cmp(context, other, RubyFixnum.zero(runtime));
             if (res == RubyFixnum.one(runtime)) {
@@ -617,8 +609,7 @@ public class RubyRational extends RubyNumeric {
                 tnum = tden = RubyFixnum.one(runtime);
             }
             return RubyRational.newRational(context, getMetaClass(), tnum, tden);
-        case ClassIndex.FLOAT:
-        case ClassIndex.RATIONAL:
+        } else if (other instanceof RubyFloat || other instanceof RubyRational) {
             return f_expt(context, f_to_f(context, this), other);
         }
         return coerceBin(context, "**", other);
@@ -630,16 +621,12 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "<=>")
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
-        switch (other.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
+        if (other instanceof RubyFixnum || other instanceof RubyBignum) {
             if (den instanceof RubyFixnum && ((RubyFixnum)den).getLongValue() == 1) return f_cmp(context, num, other);
             return f_cmp(context, this, RubyRational.newRationalBang(context, getMetaClass(), other));
-        
-        case ClassIndex.FLOAT:
+        } else if (other instanceof RubyFloat) {
             return f_cmp(context, f_to_f(context, this), other);
-        
-        case ClassIndex.RATIONAL:
+        } else if (other instanceof RubyRational) {
             RubyRational otherRational = (RubyRational)other;
             final IRubyObject num1, num2;
             if (num instanceof RubyFixnum && den instanceof RubyFixnum &&
@@ -661,18 +648,14 @@ public class RubyRational extends RubyNumeric {
     @JRubyMethod(name = "==")
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.getRuntime();
-        switch (other.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
+        if (other instanceof RubyFixnum || other instanceof RubyBignum) {
             if (f_zero_p(context, num) && f_zero_p(context, other)) return runtime.getTrue();
             if (!(den instanceof RubyFixnum) || ((RubyFixnum)den).getLongValue() != 1) return runtime.getFalse();
             if (f_equal_p(context, num, other)) return runtime.getTrue();
             return runtime.getFalse();
-            
-        case ClassIndex.FLOAT:
+        } else if (other instanceof RubyFloat) {
             return f_equal_p(context, f_to_f(context, this), other) ? runtime.getTrue() : runtime.getFalse();
-            
-        case ClassIndex.RATIONAL:
+        } else if (other instanceof RubyRational) {
             RubyRational otherRational = (RubyRational)other;
             if (f_zero_p(context, num) && f_zero_p(context, otherRational.num)) return runtime.getTrue();
             if (f_equal_p(context, num, otherRational.num) && f_equal_p(context, den, otherRational.den)) return runtime.getTrue();
@@ -687,11 +670,9 @@ public class RubyRational extends RubyNumeric {
     @JRubyMethod(name = "coerce")
     public IRubyObject op_coerce(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.getRuntime();
-        switch (other.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
+        if (other instanceof RubyFixnum || other instanceof RubyBignum) {
             return runtime.newArray(RubyRational.newRationalBang(context, getMetaClass(), other), this);
-        case ClassIndex.FLOAT:
+        } else if (other instanceof RubyFloat) {
             return runtime.newArray(other, f_to_f(context, this));
         }
         throw runtime.newTypeError(other.getMetaClass() + " can't be coerced into " + getMetaClass());

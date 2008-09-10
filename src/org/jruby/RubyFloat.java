@@ -278,6 +278,14 @@ public class RubyFloat extends RubyNumeric {
         }
     }
 
+    /** flo_quo
+    *
+    */
+    @JRubyMethod(name = "quo", compat = CompatVersion.RUBY1_9)
+        public IRubyObject magnitude(ThreadContext context, IRubyObject other) {
+        return callMethod(context, "/", other);
+    }
+
     /** flo_mod
      * 
      */
