@@ -151,6 +151,9 @@ do
      # Run with JMX management enabled
      --manage)
         java_args=("${java_args[@]}" "-Dcom.sun.management.jmxremote") ;;
+     # Don't launch a GUI window, no matter what
+     --headless)
+        java_args=("${java_args[@]}" "-Djava.awt.headless=true") ;;
      # Run under JDB
      --jdb)
         if [ -z "$JAVA_HOME" ] ; then
