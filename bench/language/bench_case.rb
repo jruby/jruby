@@ -99,6 +99,77 @@ class BenchCase
     when 1
     end
   end
+
+  def do_case_nil_false_true_else
+    case 1
+      when nil
+      when false
+      when true
+      else
+    end
+    case 1
+      when nil
+      when false
+      when true
+      else
+    end
+    case 1
+      when nil
+      when false
+      when true
+      else
+    end
+    case 1
+      when nil
+      when false
+      when true
+      else
+    end
+    case 1
+      when nil
+      when false
+      when true
+      else
+    end
+  end
+
+  def do_case_nil_false_true_else
+    case :foo
+      when :bar
+      when :gar
+      when :har
+      when :jar
+      when :yar
+    end
+    case :foo
+      when :bar
+      when :gar
+      when :har
+      when :jar
+      when :yar
+    end
+    case :foo
+      when :bar
+      when :gar
+      when :har
+      when :jar
+      when :yar
+    end
+    case :foo
+      when :bar
+      when :gar
+      when :har
+      when :jar
+      when :yar
+    end
+    case :foo
+      when :bar
+      when :gar
+      when :har
+      when :jar
+      when :yar
+    end
+  end
 end
 
 def bench_case(bm)
@@ -124,6 +195,22 @@ def bench_case(bm)
     a = 0
     while a < 1_000_000
       bc.do_case3
+      a += 1
+    end
+  end
+
+  bm.report "1m x5 cases with nil-false-true-else" do
+    a = 0
+    while a < 1_000_000
+      bc.do_case_nil_false_true_else
+      a += 1
+    end
+  end
+
+  bm.report "1m x5 cases with symbol" do
+    a = 0
+    while a < 1_000_000
+      bc.do_case_nil_false_true_else
       a += 1
     end
   end
