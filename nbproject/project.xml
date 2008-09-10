@@ -20,6 +20,11 @@
                     <type>java</type>
                     <location>${test.dir}</location>
                 </source-folder>
+                <source-folder>
+                    <label>spec</label>
+                    <type>java</type>
+                    <location>spec</location>
+                </source-folder>
             </folders>
             <ide-actions>
                 <action name="build">
@@ -70,6 +75,10 @@
                         <label>Tests</label>
                         <location>${test.dir}</location>
                     </source-folder>
+                    <source-folder style="packages">
+                        <label>spec</label>
+                        <location>spec</location>
+                    </source-folder>
                     <source-file>
                         <location>build.xml</location>
                     </source-file>
@@ -100,6 +109,11 @@
                 <unit-tests/>
                 <classpath mode="compile">lib/bsf.jar:build/classes/jruby:build_lib/junit.jar:build_lib/asm-3.0.jar:build_lib/joda-time-1.5.1.jar:build_lib/jna-posix.jar:build_lib/jna.jar:build_lib/bytelist-0.1.jar</classpath>
                 <built-to>${test.classes.dir}</built-to>
+                <source-level>1.5</source-level>
+            </compilation-unit>
+            <compilation-unit>
+                <package-root>spec</package-root>
+                <unit-tests/>
                 <source-level>1.5</source-level>
             </compilation-unit>
         </java-data>

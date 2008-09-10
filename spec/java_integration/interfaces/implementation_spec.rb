@@ -6,6 +6,7 @@ import "java_integration.fixtures.DescendantOfSingleMethodInterface"
 import "java_integration.fixtures.UsesDescendantOfSingleMethodInterface"
 import "java_integration.fixtures.BeanLikeInterface"
 import "java_integration.fixtures.BeanLikeInterfaceHandler"
+import "java_integration.fixtures.ConstantHoldingInterface"
 
 describe "Single-method Java interfaces implemented in Ruby" do
   before :all do
@@ -366,8 +367,10 @@ describe "Single object implementing methods of interface" do
     end
     SingleMethodInterface::Caller.call(obj).should == "foo"
   end
+end
 
-  it "should implement all interfaces included into it" do
+describe "Calling include to include a Java interface into a Ruby class" do
+  it "should implement all interfaces specified into it" do
     m = Module.new do
       include SingleMethodInterface
       include BeanLikeInterface
@@ -384,6 +387,15 @@ describe "Single object implementing methods of interface" do
 
     SingleMethodInterface::Caller.call(obj).should == "bar"
     blih.value.should == 1
+  end
+
+  it "should incorporate constants from the interface into the class's metaclass" do
+    c = Class.new do
+      include ConstantHoldingInterface
+    end
+
+    c::MY_INT.should == 1
+    c::MY_STRING.should == "foo"
   end
 end
 
