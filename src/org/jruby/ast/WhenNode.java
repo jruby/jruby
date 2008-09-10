@@ -34,10 +34,14 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -48,10 +52,14 @@ public class WhenNode extends Node {
     private final Node expressionNodes;
     private final Node bodyNode;
     private final Node nextCase;
+    public final CallSite eqq = MethodIndex.getFunctionalCallSite("===");
 
     public WhenNode(ISourcePosition position, Node expressionNodes, Node bodyNode, Node nextCase) {
         super(position, NodeType.WHENNODE);
         this.expressionNodes = expressionNodes;
+
+        assert bodyNode != null : "bodyNode is not null";
+        
         this.bodyNode = bodyNode;
         this.nextCase = nextCase;
     }
@@ -92,8 +100,24 @@ public class WhenNode extends Node {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        if (bodyNode == null) return runtime.getNil();
-
         return bodyNode.interpret(runtime, context, self, aBlock);
+    }
+
+    // Ruby grammar has nested whens in a case body because of productions case_body and when_args.
+    @Override
+    public IRubyObject when(Node firstWhenNode, WhenNode whenNode, IRubyObject expression, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
+        RubyArray expressions = RuntimeHelpers.splatValue(expressionNodes.interpret(runtime, context, self, aBlock));
+
+        for (int j = 0,k = expressions.getLength(); j < k; j++) {
+            IRubyObject condition = expressions.eltInternal(j);
+
+            if ((expression != null && condition.callMethod(context, MethodIndex.OP_EQQ, "===", expression).isTrue())
+                    || (expression == null && condition.isTrue())) {
+                return firstWhenNode.interpret(runtime, context, self, aBlock);
+            }
+
+        }
+
+        return null;
     }
 }

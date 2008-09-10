@@ -134,6 +134,7 @@ import org.jruby.ast.StrNode;
 import org.jruby.ast.SuperNode;
 import org.jruby.ast.SymbolNode;
 import org.jruby.ast.TrueNode;
+import org.jruby.ast.WhenNode;
 import org.jruby.ast.YieldNode;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
@@ -799,6 +800,12 @@ public class ParserSupport {
         if (left == null && right == null) return new OrNode(position, makeNullNil(left), makeNullNil(right));
         
         return new OrNode(union(left, right), makeNullNil(left), makeNullNil(right));
+    }
+    
+    public WhenNode newWhenNode(ISourcePosition position, Node expressionNodes, Node bodyNode, Node nextCase) {
+        if (bodyNode == null) bodyNode = NilImplicitNode.NIL;
+
+        return new WhenNode(position, expressionNodes, bodyNode, nextCase);
     }
 
     public Node getReturnArgsNode(Node node) {

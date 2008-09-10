@@ -84,4 +84,14 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         return getSymbol(runtime);
     }
+    
+    @Override
+    public IRubyObject when(Node firstWhenNode, WhenNode whenNode, IRubyObject expression, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
+       if (expression == null) whenNode.interpret(runtime, context, self, aBlock);
+       if (expression instanceof RubySymbol && ((RubySymbol) expression).asJavaString() == name) {
+           return whenNode.interpret(runtime, context, self, aBlock);
+       }
+
+       return null;
+    }
 }

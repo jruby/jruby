@@ -108,7 +108,6 @@ import org.jruby.ast.TypedArgumentNode;
 import org.jruby.ast.UndefNode;
 import org.jruby.ast.UntilNode;
 import org.jruby.ast.VAliasNode;
-import org.jruby.ast.WhenNode;
 import org.jruby.ast.WhileNode;
 import org.jruby.ast.XStrNode;
 import org.jruby.ast.YieldNode;
@@ -1303,15 +1302,15 @@ brace_block   : tLCURLY {
               }
 
 case_body     : kWHEN when_args then compstmt cases {
-                  $$ = new WhenNode(support.union($1, support.unwrapNewlineNode($4)), $2, $4, $5);
+                  $$ = support.newWhenNode(support.union($1, support.unwrapNewlineNode($4)), $2, $4, $5);
               }
 
 when_args     : args
               | args ',' tSTAR arg_value {
-                  $$ = $1.add(new WhenNode(getPosition($1), $4, null, null));
+                  $$ = $1.add(support.newWhenNode(getPosition($1), $4, null, null));
               }
               | tSTAR arg_value {
-                  $$ = support.newArrayNode(getPosition($1), new WhenNode(getPosition($1), $2, null, null));
+                  $$ = support.newArrayNode(getPosition($1), support.newWhenNode(getPosition($1), $2, null, null));
               }
 
 cases         : opt_else | case_body

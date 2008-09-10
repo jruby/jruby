@@ -79,4 +79,13 @@ public class TrueNode extends Node implements INameNode {
     public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         return "true";
     }
+    
+    @Override
+    public IRubyObject when(Node firstWhenNode, WhenNode whenNode, IRubyObject expression, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
+        IRubyObject trueObject = interpret(runtime, context, self, aBlock);
+
+        if (expression != null && expression == trueObject || expression == null) return whenNode.interpret(runtime, context, self, aBlock);
+
+        return null;
+    }
 }

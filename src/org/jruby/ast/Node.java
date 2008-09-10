@@ -45,6 +45,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
 import org.jruby.lexer.yacc.IDESourcePosition;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -212,6 +213,19 @@ public abstract class Node implements ISourcePositionHolder {
         } catch (JumpException jumpExcptn) {
         }
         
+        return null;
+    }
+    
+    public IRubyObject when(Node firstWhenNode, WhenNode whenNode, IRubyObject expression, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
+        IRubyObject result = interpret(runtime, context, self, aBlock);
+
+//        System.out.println("HEH: " + this);
+
+        if ((expression != null && whenNode.eqq.call(context, self, result, expression).isTrue())
+                || (expression == null && result.isTrue())) {
+            return whenNode.interpret(runtime, context, self, aBlock);
+        }
+
         return null;
     }
 }
