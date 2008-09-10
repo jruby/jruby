@@ -112,11 +112,6 @@ public class JavaInterfaceTemplate {
         
         IRubyObject javaInterfaces = clazz.getInstanceVariables().fastGetInstanceVariable("@java_interfaces");
         if (javaInterfaces == null) {
-            javaInterfaces = runtime.getNil();
-            clazz.getInstanceVariables().fastSetInstanceVariable("@java_interfaces", javaInterfaces);
-        }
-
-        if (javaInterfaces.isNil()) {
             javaInterfaces = RubyArray.newArray(runtime, javaClassObj);
             clazz.getInstanceVariables().fastSetInstanceVariable("@java_interfaces", javaInterfaces);
 
@@ -239,13 +234,13 @@ public class JavaInterfaceTemplate {
                         return javaInterfaces;
                     }
                 });
-            } else {
-                // we've already done the above priming logic, just add another interface
-                // to the list of intentions unless we're past the point of no return or
-                // already intend to implement the given interface
-                if (!(javaInterfaces.isFrozen() || ((RubyArray)javaInterfaces).includes(context, javaClass))) {
-                    ((RubyArray)javaInterfaces).append(javaClass);
-                }
+            }
+        } else {
+            // we've already done the above priming logic, just add another interface
+            // to the list of intentions unless we're past the point of no return or
+            // already intend to implement the given interface
+            if (!(javaInterfaces.isFrozen() || ((RubyArray)javaInterfaces).includes(context, javaClass))) {
+                ((RubyArray)javaInterfaces).append(javaClassObj);
             }
         }
     }

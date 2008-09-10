@@ -366,4 +366,89 @@ describe "Single object implementing methods of interface" do
     end
     SingleMethodInterface::Caller.call(obj).should == "foo"
   end
+
+  it "should implement all interfaces included into it" do
+    m = Module.new do
+      include SingleMethodInterface
+      include BeanLikeInterface
+    end
+
+    c = Class.new do
+      include m
+      def call_it; "bar"; end
+      def value; 1; end
+    end
+
+    obj = c.new
+    blih = BeanLikeInterfaceHandler.new(obj)
+
+    SingleMethodInterface::Caller.call(obj).should == "bar"
+    blih.value.should == 1
+  end
+end
+
+describe "A ruby module used as a carrier for Java interfaces" do
+  it "allows multiple interfaces" do
+    m = Module.new do
+      include SingleMethodInterface
+      include BeanLikeInterface
+
+      def self.java_interfaces; @java_interface_mods; end
+    end
+    m.java_interfaces.should include(SingleMethodInterface)
+    m.java_interfaces.should include(BeanLikeInterface)
+  end
+
+  it "calls append_features on each interface" do
+    my_smi = SingleMethodInterface.dup
+    my_bli = BeanLikeInterface.dup
+    [my_smi, my_bli].each do |my|
+      class << my
+        alias :old_af :append_features
+        def append_features(cls)
+          if @append_features_called
+            @append_features_called += 1
+          else
+            @append_features_called = 1
+          end
+          old_af(cls)
+        end
+        def called; @append_features_called; end
+      end
+    end
+
+    m = Module.new do
+      include my_smi
+      include my_bli
+    end
+
+    my_smi.called.should == 1
+    my_bli.called.should == 1
+
+    c = Class.new do
+      include m
+    end
+
+    my_smi.called.should == 2
+    my_bli.called.should == 2
+  end
+
+  it "causes an including class to implement all interfaces" do
+    m = Module.new do
+      include SingleMethodInterface
+      include BeanLikeInterface
+    end
+
+    c = Class.new do
+      include m
+      def call_it; "bar"; end
+      def value; 1; end
+    end
+
+    obj = c.new
+    blih = BeanLikeInterfaceHandler.new(obj)
+    
+    SingleMethodInterface::Caller.call(obj).should == "bar"
+    blih.value.should == 1
+  end
 end
