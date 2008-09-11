@@ -315,7 +315,7 @@ public class JavaUtil {
             } else if (rubyObject instanceof JavaProxy) {
                 return ((JavaProxy)rubyObject).unwrap();
             } else {
-                return java_to_ruby(context.getRuntime(), rubyObject);
+                return convertRubyToJava(rubyObject);
             }
         }
     };
@@ -325,7 +325,7 @@ public class JavaUtil {
             if (rubyObject instanceof JavaClass) {
                 return ((JavaClass)rubyObject).javaClass();
             } else {
-                return java_to_ruby(context.getRuntime(), rubyObject);
+                return convertRubyToJava(rubyObject);
             }
         }
     };
@@ -490,7 +490,7 @@ public class JavaUtil {
             // rubyObject is already of the required jruby class (or subclass)
             return rubyObject;
         }
-
+        
         if (javaClass.isPrimitive()) {
             RubyConverter converter = RUBY_CONVERTERS.get(javaClass);
             if (converter != null) {
@@ -501,7 +501,7 @@ public class JavaUtil {
             if (s.length() > 0) {
                 return new Character(s.charAt(0));
             }
-	    return new Character('\0');
+            return new Character('\0');
         } else if (javaClass == String.class) {
             RubyString rubyString = (RubyString) rubyObject.callMethod(context, "to_s");
             ByteList bytes = rubyString.getByteList();

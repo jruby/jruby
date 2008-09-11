@@ -738,6 +738,20 @@ describe "A Java primitive Array of type" do
   end
 end
 
+describe "A Ruby array with a nil element" do
+  it "can be coerced to an array of objects" do
+    ary = [nil]
+    result = ary.to_java java.lang.Runnable
+    result[0].should be_nil
+  end
+
+  it "can be coerced to an array of classes" do
+    ary = [nil]
+    result = ary.to_java java.lang.Class
+    result[0].should be_nil
+  end
+end
+
 describe "A multi-dimensional Ruby array" do
   it "can be coerced to a multi-dimensional Java array" do
     ary = [[1,2],[3,4],[5,6],[7,8],[9,0]]
