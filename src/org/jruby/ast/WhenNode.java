@@ -105,15 +105,15 @@ public class WhenNode extends Node {
 
     // Ruby grammar has nested whens in a case body because of productions case_body and when_args.
     @Override
-    public IRubyObject when(Node firstWhenNode, WhenNode whenNode, IRubyObject expression, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
+    public IRubyObject when(WhenNode whenNode, IRubyObject value, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
         RubyArray expressions = RuntimeHelpers.splatValue(expressionNodes.interpret(runtime, context, self, aBlock));
 
         for (int j = 0,k = expressions.getLength(); j < k; j++) {
-            IRubyObject condition = expressions.eltInternal(j);
+            IRubyObject test = expressions.eltInternal(j);
 
-            if ((expression != null && condition.callMethod(context, MethodIndex.OP_EQQ, "===", expression).isTrue())
-                    || (expression == null && condition.isTrue())) {
-                return firstWhenNode.interpret(runtime, context, self, aBlock);
+            if ((value != null && test.callMethod(context, MethodIndex.OP_EQQ, "===", value).isTrue())
+                    || (value == null && test.isTrue())) {
+                return whenNode.interpret(runtime, context, self, aBlock);
             }
 
         }

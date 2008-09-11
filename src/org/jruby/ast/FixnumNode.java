@@ -92,16 +92,16 @@ public class FixnumNode extends Node implements ILiteralNode {
     }
     
     @Override
-    public IRubyObject when(Node firstWhenNode, WhenNode whenNode, IRubyObject expression, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
+    public IRubyObject when(WhenNode whenNode, IRubyObject whenValue, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
         interpret(runtime, context, self, aBlock); // For thread polling...maybe we can remove
 
-        if (expression == null) return whenNode.interpret(runtime, context, self, aBlock);
-        if (expression instanceof RubyFixnum) {
-            if (((RubyFixnum) expression).getLongValue() == value) {
+        if (whenValue == null) return whenNode.interpret(runtime, context, self, aBlock);
+        if (whenValue instanceof RubyFixnum) {
+            if (((RubyFixnum) whenValue).getLongValue() == value) {
                 return whenNode.interpret(runtime, context, self, aBlock);
             }
         } else {
-            return super.when(firstWhenNode, whenNode, expression, context, runtime, self, aBlock);
+            return super.when(whenNode, whenValue, context, runtime, self, aBlock);
         }
 
         return null;

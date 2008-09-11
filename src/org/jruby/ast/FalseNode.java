@@ -81,10 +81,10 @@ public class FalseNode extends Node implements INameNode {
     }
     
     @Override
-    public IRubyObject when(Node firstWhenNode, WhenNode whenNode, IRubyObject expression, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
+    public IRubyObject when(WhenNode whenNode, IRubyObject value, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
         IRubyObject falseObject = interpret(runtime, context, self, aBlock); // For thread polling...maybe we can remove
 
-        if (expression != null && expression == falseObject) return whenNode.interpret(runtime, context, self, aBlock);
+        if (value != null && value == falseObject) return whenNode.interpret(runtime, context, self, aBlock);
 
         return null;
     }

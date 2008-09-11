@@ -104,52 +104,36 @@ public class CaseNode extends Node {
 
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject expression = null;
-        
-        if (caseNode != null) {
-            expression = caseNode.interpret(runtime, context, self, aBlock);
-        }
+        IRubyObject value = caseNode == null ? null : caseNode.interpret(runtime, context, self, aBlock);
 
         context.pollThreadEvents();
 
-        Node firstWhenNode = caseBody;
-        while (firstWhenNode != null) {
-            if (!(firstWhenNode instanceof WhenNode)) {
-                return firstWhenNode.interpret(runtime, context, self, aBlock);
-            }
+        for (Node current = caseBody; current != null; current = ((WhenNode) current).getNextCase()) {
+            if (!(current instanceof WhenNode)) return current.interpret(runtime, context, self, aBlock);
+            
+            IRubyObject result = interpretExpressions((WhenNode) current, value, context, runtime, self, aBlock);
+            if (result != null) return result;
 
-            WhenNode whenNode = (WhenNode) firstWhenNode;
-
-            // if this when produces a successful hit and result, return it
-            assert whenNode.getExpressionNodes() instanceof ArrayNode;
-            IRubyObject tempResult = handleArrayExpression(firstWhenNode, whenNode, expression, context, runtime, self, aBlock);
-            if (tempResult != null) return tempResult;
-
-            // otherwise proceed to the next when
-            context.pollThreadEvents();
-            firstWhenNode = whenNode.getNextCase();
+            context.pollThreadEvents();            
         }
 
         return runtime.getNil();        
     }
     
-    private IRubyObject handleArrayExpression(Node firstWhenNode, WhenNode whenNode, IRubyObject expression, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
-        ArrayNode arrayNode = (ArrayNode) whenNode.getExpressionNodes();
-        
-        // All expressions in a while are in same file
-        context.setFile(arrayNode.getPosition().getFile());
-        for (int i = 0; i < arrayNode.size(); i++) {
-            Node tag = arrayNode.get(i);
+    private IRubyObject interpretExpressions(WhenNode whenNode, IRubyObject value,
+            ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
+        assert whenNode.getExpressionNodes() instanceof ArrayNode;
 
-            context.setLine(tag.getPosition().getStartLine());
+        for (Node expression: ((ArrayNode) whenNode.getExpressionNodes()).childNodes()) {
+            context.setFile(expression.getPosition().getFile());
+            context.setLine(expression.getPosition().getStartLine());
 
-            if (runtime.hasEventHooks()) {
-                ASTInterpreter.callTraceFunction(runtime, context, RubyEvent.LINE);
-            }
+            if (runtime.hasEventHooks()) ASTInterpreter.callTraceFunction(runtime, context, RubyEvent.LINE);
 
-            IRubyObject result = tag.when(firstWhenNode, whenNode, expression, context, runtime, self, aBlock);
+            IRubyObject result = expression.when(whenNode, value, context, runtime, self, aBlock);
             if (result != null) return result;
         }
+        
         return null;
     }
 }

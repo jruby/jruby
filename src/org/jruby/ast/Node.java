@@ -216,13 +216,11 @@ public abstract class Node implements ISourcePositionHolder {
         return null;
     }
     
-    public IRubyObject when(Node firstWhenNode, WhenNode whenNode, IRubyObject expression, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
-        IRubyObject result = interpret(runtime, context, self, aBlock);
+    public IRubyObject when(WhenNode whenNode, IRubyObject value, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
+        IRubyObject test = interpret(runtime, context, self, aBlock);
 
-//        System.out.println("HEH: " + this);
-
-        if ((expression != null && whenNode.eqq.call(context, self, result, expression).isTrue())
-                || (expression == null && result.isTrue())) {
+        if ((value != null && whenNode.eqq.call(context, self, test, value).isTrue())
+                || (value == null && test.isTrue())) {
             return whenNode.interpret(runtime, context, self, aBlock);
         }
 
