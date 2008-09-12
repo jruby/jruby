@@ -596,7 +596,7 @@ public class RubyClass extends RubyModule {
     /** rb_class_init_copy
      * 
      */
-    @JRubyMethod(name = "initialize_copy", required = 1)
+    @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject original){
         if (superClass != null) throw runtime.newTypeError("already initialized class");
@@ -650,7 +650,7 @@ public class RubyClass extends RubyModule {
         return this;
     }    
 
-    @JRubyMethod(name = "inherited", required = 1)
+    @JRubyMethod(name = "inherited", required = 1, visibility = Visibility.PRIVATE)
     public IRubyObject inherited(ThreadContext context, IRubyObject arg) {
         return context.getRuntime().getNil();
     }
