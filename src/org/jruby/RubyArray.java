@@ -321,6 +321,12 @@ public class RubyArray extends RubyObject implements List {
         }
     }
     
+    private RubyArray(Ruby runtime, RubyClass klass, IRubyObject[] vals) {
+        super(runtime, klass);
+        values = vals;
+        realLength = vals.length;
+    }
+    
     private final IRubyObject[] reserve(int length) {
         final IRubyObject[] arr = new IRubyObject[length];
         Arrays.fill(arr, getRuntime().getNil());
@@ -1865,7 +1871,27 @@ public class RubyArray extends RubyObject implements List {
      */
     @JRubyMethod(name = "reverse")
     public IRubyObject reverse() {
-        return aryDup().reverse_bang();
+        modify();
+        RubyArray dup = new RubyArray(getRuntime(), getMetaClass(), safeReverse(values, realLength));
+        dup.flags |= flags & TAINTED_F; // from DUP_SETUP
+        // rb_copy_generic_ivar from DUP_SETUP here ...unlikely..
+        return dup;
+    }
+
+    private IRubyObject[] safeReverse(final IRubyObject[] values, final int length) {
+        final IRubyObject[] newValues = new IRubyObject[length];
+        try {
+            int p1 = 0;
+            int p2 = length - 1;    
+
+            while (p1 <= p2) {
+                newValues[p1] = values[p2];
+                newValues[p2--] = values[p1++];
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            concurrentModification();
+        }
+        return newValues;
     }
 
     /** rb_ary_collect
