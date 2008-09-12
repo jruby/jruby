@@ -35,7 +35,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public final class MetaClass extends RubyClass {
     
-    private SoftReference<IRubyObject> attached = new SoftReference<IRubyObject>(null); 
+    private static final SoftReference<IRubyObject> NULL_SOFT_REF = new SoftReference<IRubyObject>(null);
+
+    private SoftReference<IRubyObject> attached = NULL_SOFT_REF; 
 
     /** NEWOBJ (in RubyObject#getSingletonClassClone()) 
      * 
