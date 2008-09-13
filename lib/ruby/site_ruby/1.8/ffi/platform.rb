@@ -10,4 +10,19 @@ module JRuby
     end
   end
 end
-
+module FFI
+  module Platform
+    def self.windows?
+      JRuby::FFI::Platform::IS_WINDOWS
+    end
+    def self.mac?
+      JRuby::FFI::Platform::IS_MAC
+    end
+    def self.unix?
+      !JRuby::FFI::Platform::IS_WINDOWS
+    end
+    def self.bsd?
+      JRuby::FFI::Platform::IS_BSD
+    end
+  end
+end
