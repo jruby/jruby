@@ -68,7 +68,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
 /**
- *  1.9 complex.c as of revision: 19253
+ *  1.9 complex.c as of revision: 19329
  */
 
 @JRubyClass(name = "Complex", parent = "Numeric")

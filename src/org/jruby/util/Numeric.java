@@ -106,22 +106,14 @@ public class Numeric {
         if (y instanceof RubyFixnum) {
             long iy = ((RubyFixnum)y).getLongValue();
             if (iy == 0) {
-                if (x instanceof RubyFloat) {
-                    return runtime.newFloat(0.0);
-                } else {
-                    return RubyFixnum.zero(runtime);
-                }
+                if (x instanceof RubyFixnum || x instanceof RubyBignum) return RubyFixnum.zero(runtime);
             } else if (iy == 1) {
                 return x;
             }
         } else if (x instanceof RubyFixnum) {
             long ix = ((RubyFixnum)x).getLongValue();
             if (ix == 0) {
-                if (y instanceof RubyFloat) {
-                    return runtime.newFloat(0.0);
-                } else {
-                    return RubyFixnum.zero(runtime);
-                }
+                if (y instanceof RubyFixnum || y instanceof RubyBignum) return RubyFixnum.zero(runtime);
             } else if (ix == 1) {
                 return y;
             }

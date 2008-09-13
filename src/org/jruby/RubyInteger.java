@@ -272,8 +272,7 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     @JRubyMethod(name = "gcd", compat = CompatVersion.RUBY1_9)
     public static IRubyObject gcd(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        RubyRational.intCheck(other);
-        return f_gcd(context, recv, other);
+        return f_gcd(context, recv, RubyRational.intValue(context, other));
     }    
 
     /** rb_lcm
@@ -281,8 +280,7 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     @JRubyMethod(name = "lcm", compat = CompatVersion.RUBY1_9)
     public static IRubyObject lcm(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        RubyRational.intCheck(other);
-        return f_lcm(context, recv, other);
+        return Numeric.f_lcm(context, recv, RubyRational.intValue(context, other));
     }    
 
     /** rb_gcdlcm
@@ -290,8 +288,8 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     @JRubyMethod(name = "gcdlcm", compat = CompatVersion.RUBY1_9)
     public static IRubyObject gcdlcm(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        RubyRational.intCheck(other);
-        return context .getRuntime().newArray(f_gcd(context, recv, other), f_lcm(context, recv, other));
+        other = RubyRational.intValue(context, other);
+        return context.getRuntime().newArray(f_gcd(context, recv, other), Numeric.f_lcm(context, recv, other));
     }
 
     /*  ================
