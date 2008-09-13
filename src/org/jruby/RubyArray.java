@@ -157,6 +157,10 @@ public class RubyArray extends RubyObject implements List {
         return new RubyArray(runtime, new IRubyObject[] { obj }, false);
     }
 
+    public static RubyArray newArrayLight(Ruby runtime, IRubyObject... objs) {
+        return new RubyArray(runtime, objs, false);
+    }
+
     /** rb_assoc_new
      *
      */

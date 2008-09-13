@@ -42,6 +42,7 @@ import java.io.PrintStream;
 import static java.lang.System.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -51,8 +52,11 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyModule;
 import org.jruby.ext.posix.util.FieldAccess;
 import org.jruby.ext.posix.util.Platform;
+import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.ModeFlags;
 
@@ -188,7 +192,7 @@ public class ShellLauncher {
     }
 
     public static int execAndWait(Ruby runtime, IRubyObject[] rawArgs) {
-        String[] args = parseCommandLine(runtime, rawArgs);
+        String[] args = parseCommandLine(runtime.getCurrentContext(), runtime, rawArgs);
         if (shouldRunInProcess(runtime, args)) {
             // exec needs to behave differently in-process, because it's technically
             // supposed to replace the calling process. So if we're supposed to run
@@ -239,29 +243,33 @@ public class ShellLauncher {
     }
 
     public static POpenProcess popen(Ruby runtime, IRubyObject string, ModeFlags modes) throws IOException {
+        return new POpenProcess(popenShared(runtime, new IRubyObject[] {string}), runtime, modes);
+    }
+
+    public static POpenProcess popen3(Ruby runtime, IRubyObject[] strings) throws IOException {
+        return new POpenProcess(popenShared(runtime, strings), runtime);
+    }
+    
+    private static Process popenShared(Ruby runtime, IRubyObject[] strings) throws IOException {
         String shell = getShell(runtime);
-        POpenProcess aProcess = null;
         Process childProcess = null;
         File pwd = new File(runtime.getCurrentDirectory());
-        String[] args = parseCommandLine(runtime, new IRubyObject[] {string});
 
         // CON: popen is a case where I think we should just always shell out.
-        if (shouldRunInShell(shell, args)) {
-            // execute command with sh -c
-            // this does shell expansion of wildcards
+        if (strings.length == 1) {
+            // single string command, pass to sh to expand wildcards
             String[] argArray = new String[3];
-            String cmdline = string.toString();
             argArray[0] = shell;
             argArray[1] = shell.endsWith("sh") ? "-c" : "/c";
-            argArray[2] = cmdline;
+            argArray[2] = strings[0].asJavaString();
             childProcess = Runtime.getRuntime().exec(argArray, getCurrentEnv(runtime), pwd);
         } else {
-            childProcess = Runtime.getRuntime().exec(args, getCurrentEnv(runtime), pwd);        
+            // direct invocation of the command
+            String[] args = parseCommandLine(runtime.getCurrentContext(), runtime, strings);
+            childProcess = Runtime.getRuntime().exec(args, getCurrentEnv(runtime), pwd);
         }
-            
-        aProcess = new POpenProcess(childProcess, runtime, modes);
         
-        return aProcess;
+        return childProcess;
     }
     
     /**
@@ -311,12 +319,15 @@ public class ShellLauncher {
         private final Ruby runtime;
         private final ModeFlags modes;
         
-        private final InputStream in;
-        private final OutputStream out;
-        private final FileChannel outChannel;
-        private final FileChannel inChannel;
-        private final Pumper readPumper;
-        private final Pumper writePumper;
+        private InputStream input;
+        private OutputStream output;
+        private InputStream inerr;
+        private FileChannel inputChannel;
+        private FileChannel outputChannel;
+        private FileChannel inerrChannel;
+        private Pumper inputPumper;
+        private Pumper inerrPumper;
+        private Pumper outputPumper;
         
         public POpenProcess(Process child, Ruby runtime, ModeFlags modes) {
             this.child = child;
@@ -324,101 +335,67 @@ public class ShellLauncher {
             this.modes = modes;
             
             if (modes.isWritable()) {
-                // popen caller wants to be able to write, provide subprocess out directly
-                out = unwrapBufferedStream(child.getOutputStream());
-                if (out instanceof FileOutputStream) {
-                    outChannel = ((FileOutputStream)out).getChannel();
-                } else {
-                    outChannel = null;
-                }
-                writePumper = null;
+                prepareOutput(child);
             } else {
-                // no write requested, hook up write to parent runtime's input
-                OutputStream childOut = unwrapBufferedStream(child.getOutputStream());
-                FileChannel childOutChannel = null;
-                if (childOut instanceof FileOutputStream) {
-                    childOutChannel = ((FileOutputStream)childOut).getChannel();
-                }
-                InputStream parentIn = unwrapBufferedStream(runtime.getIn());
-                FileChannel parentInChannel = null;
-                if (parentIn instanceof FileInputStream) {
-                    parentInChannel = ((FileInputStream)parentIn).getChannel();
-                }
-                if (parentInChannel != null && childOutChannel != null) {
-                    writePumper = new ChannelPumper(parentInChannel, childOutChannel, Pumper.Slave.OUT);
-                } else {
-                    writePumper = new StreamPumper(parentIn, childOut, false, Pumper.Slave.OUT);
-                }
-                writePumper.start();
-                out = null;
-                outChannel = null;
+                pumpOutput(child, runtime);
             }
             
             if (modes.isReadable()) {
-                // popen callers wants to be able to read, provide subprocess in directly
-                in = unwrapBufferedStream(child.getInputStream());
-                if (in instanceof FileInputStream) {
-                    inChannel = ((FileInputStream)in).getChannel();
-                } else {
-                    inChannel = null;
-                }
-                readPumper = null;
+                prepareInput(child);
             } else {
-                // no read requested, hook up read to parents output
-                InputStream childIn = unwrapBufferedStream(child.getInputStream());
-                FileChannel childInChannel = null;
-                if (childIn instanceof FileInputStream) {
-                    childInChannel = ((FileInputStream)childIn).getChannel();
-                }
-                OutputStream parentOut = unwrapBufferedStream(runtime.getOut());
-                FileChannel parentOutChannel = null;
-                if (parentOut instanceof FileOutputStream) {
-                    parentOutChannel = ((FileOutputStream)parentOut).getChannel();
-                }
-                if (childInChannel != null && parentOutChannel != null) {
-                    readPumper = new ChannelPumper(childInChannel, parentOutChannel, Pumper.Slave.IN);
-                } else {
-                    readPumper = new StreamPumper(childIn, parentOut, false, Pumper.Slave.IN);
-                }
-                readPumper.start();
-                in = null;
-                inChannel = null;
+                pumpInput(child, runtime);
             }
+            
+            pumpInerr(child, runtime);
+        }
+        
+        public POpenProcess(Process child, Ruby runtime) {
+            this.child = child;
+            this.runtime = runtime;
+            this.modes = null;
+            
+            prepareOutput(child);
+            prepareInput(child);
+            prepareInerr(child);
         }
 
         @Override
         public OutputStream getOutputStream() {
-            return out;
+            return output;
         }
 
         @Override
         public InputStream getInputStream() {
-            return in;
+            return input;
         }
 
         @Override
         public InputStream getErrorStream() {
-            throw new UnsupportedOperationException("Not supported yet.");
+            return inerr;
         }
         
         public FileChannel getInput() {
-            return inChannel;
+            return inputChannel;
         }
         
         public FileChannel getOutput() {
-            return outChannel;
+            return outputChannel;
+        }
+        
+        public FileChannel getError() {
+            return inerrChannel;
         }
 
         @Override
         public int waitFor() throws InterruptedException {
-            if (writePumper == null) {
+            if (outputPumper == null) {
                 try {
-                    out.close();
+                    output.close();
                 } catch (IOException ioe) {
                     // ignore, we're on the way out
                 }
             } else {
-                writePumper.quit();
+                outputPumper.quit();
             }
             
             int result = child.waitFor();
@@ -434,12 +411,112 @@ public class ShellLauncher {
         @Override
         public void destroy() {
             try {
-                in.close();
-                out.close();
+                input.close();
+                inerr.close();
+                output.close();
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
             }
             child.destroy();
+        }
+
+        private void prepareInput(Process child) {
+            // popen callers wants to be able to read, provide subprocess in directly
+            input = unwrapBufferedStream(child.getInputStream());
+            if (input instanceof FileInputStream) {
+                inputChannel = ((FileInputStream) input).getChannel();
+            } else {
+                inputChannel = null;
+            }
+            inputPumper = null;
+        }
+
+        private void prepareInerr(Process child) {
+            // popen callers wants to be able to read, provide subprocess in directly
+            inerr = unwrapBufferedStream(child.getErrorStream());
+            if (inerr instanceof FileInputStream) {
+                inerrChannel = ((FileInputStream) inerr).getChannel();
+            } else {
+                inerrChannel = null;
+            }
+            inerrPumper = null;
+        }
+
+        private void prepareOutput(Process child) {
+            // popen caller wants to be able to write, provide subprocess out directly
+            output = unwrapBufferedStream(child.getOutputStream());
+            if (output instanceof FileOutputStream) {
+                outputChannel = ((FileOutputStream) output).getChannel();
+            } else {
+                outputChannel = null;
+            }
+            outputPumper = null;
+        }
+
+        private void pumpInput(Process child, Ruby runtime) {
+            // no read requested, hook up read to parents output
+            InputStream childIn = unwrapBufferedStream(child.getInputStream());
+            FileChannel childInChannel = null;
+            if (childIn instanceof FileInputStream) {
+                childInChannel = ((FileInputStream) childIn).getChannel();
+            }
+            OutputStream parentOut = unwrapBufferedStream(runtime.getOut());
+            FileChannel parentOutChannel = null;
+            if (parentOut instanceof FileOutputStream) {
+                parentOutChannel = ((FileOutputStream) parentOut).getChannel();
+            }
+            if (childInChannel != null && parentOutChannel != null) {
+                inputPumper = new ChannelPumper(childInChannel, parentOutChannel, Pumper.Slave.IN);
+            } else {
+                inputPumper = new StreamPumper(childIn, parentOut, false, Pumper.Slave.IN);
+            }
+            inputPumper.start();
+            input = null;
+            inputChannel = null;
+        }
+
+        private void pumpInerr(Process child, Ruby runtime) {
+            // no read requested, hook up read to parents output
+            InputStream childIn = unwrapBufferedStream(child.getErrorStream());
+            FileChannel childInChannel = null;
+            if (childIn instanceof FileInputStream) {
+                childInChannel = ((FileInputStream) childIn).getChannel();
+            }
+            OutputStream parentOut = unwrapBufferedStream(runtime.getOut());
+            FileChannel parentOutChannel = null;
+            if (parentOut instanceof FileOutputStream) {
+                parentOutChannel = ((FileOutputStream) parentOut).getChannel();
+            }
+            if (childInChannel != null && parentOutChannel != null) {
+                inerrPumper = new ChannelPumper(childInChannel, parentOutChannel, Pumper.Slave.IN);
+            } else {
+                inerrPumper = new StreamPumper(childIn, parentOut, false, Pumper.Slave.IN);
+            }
+            inerrPumper.start();
+            inerr = null;
+            inerrChannel = null;
+        }
+
+        private void pumpOutput(Process child, Ruby runtime) {
+            // no write requested, hook up write to parent runtime's input
+            OutputStream childOut = unwrapBufferedStream(child.getOutputStream());
+            FileChannel childOutChannel = null;
+            if (childOut instanceof FileOutputStream) {
+                childOutChannel = ((FileOutputStream) childOut).getChannel();
+            }
+            InputStream parentIn = unwrapBufferedStream(runtime.getIn());
+            FileChannel parentInChannel = null;
+            if (parentIn instanceof FileInputStream) {
+                parentInChannel = ((FileInputStream) parentIn).getChannel();
+            }
+            if (parentInChannel != null && childOutChannel != null) {
+                outputPumper = new ChannelPumper(parentInChannel, childOutChannel, Pumper.Slave.OUT);
+            } else {
+                outputPumper = new StreamPumper(parentIn, childOut, false, Pumper.Slave.OUT);
+            }
+            outputPumper.start();
+            output = null;
+            outputChannel = null;
         }
     }
     
@@ -447,7 +524,7 @@ public class ShellLauncher {
         String shell = getShell(runtime);
         Process aProcess = null;
         File pwd = new File(runtime.getCurrentDirectory());
-        String[] args = parseCommandLine(runtime, rawArgs);
+        String[] args = parseCommandLine(runtime.getCurrentContext(), runtime, rawArgs);
 
         if (shouldRunInProcess(runtime, args)) {
             String command = args[0];
@@ -631,13 +708,12 @@ public class ShellLauncher {
         try { t3.interrupt(); } catch (SecurityException se) {}
     }
 
-    private static String[] parseCommandLine(Ruby runtime, IRubyObject[] rawArgs) {
+    private static String[] parseCommandLine(ThreadContext context, Ruby runtime, IRubyObject[] rawArgs) {
         String[] args;
         if (rawArgs.length == 1) {
-            RubyArray parts = (RubyArray) runtime.evalScriptlet(
-                "require 'jruby/path_helper'; JRuby::PathHelper"
-                ).callMethod(runtime.getCurrentContext(),
-                "smart_split_command", rawArgs);
+            runtime.getLoadService().require("jruby/path_helper");
+            RubyModule pathHelper = runtime.getClassFromPath("JRuby::PathHelper");
+            RubyArray parts = (RubyArray) RuntimeHelpers.invoke(context, pathHelper, "smart_split_command", rawArgs);
             args = new String[parts.getLength()];
             for (int i = 0; i < parts.getLength(); i++) {
                 args[i] = parts.entry(i).toString();

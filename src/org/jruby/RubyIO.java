@@ -133,7 +133,7 @@ public class RubyIO extends RubyObject {
         
         // We only want IO objects with valid streams (better to error now). 
         if (outputStream == null) {
-            throw runtime.newIOError("Opening invalid stream");
+            throw runtime.newRuntimeError("Opening null stream");
         }
         
         openFile = new OpenFile();
@@ -153,7 +153,7 @@ public class RubyIO extends RubyObject {
         super(runtime, runtime.getIO());
         
         if (inputStream == null) {
-            throw runtime.newIOError("Opening invalid stream");
+            throw runtime.newRuntimeError("Opening null stream");
         }
         
         openFile = new OpenFile();
@@ -174,7 +174,7 @@ public class RubyIO extends RubyObject {
         
         // We only want IO objects with valid streams (better to error now). 
         if (channel == null) {
-            throw runtime.newIOError("Opening invalid stream");
+            throw runtime.newRuntimeError("Opening null channelpo");
         }
         
         openFile = new OpenFile();
@@ -2860,6 +2860,47 @@ public class RubyIO extends RubyObject {
             return io;
         } catch (InvalidValueException ex) {
             throw runtime.newErrnoEINVALError();
+        } catch (IOException e) {
+            throw runtime.newIOErrorFromException(e);
+        } catch (InterruptedException e) {
+            throw runtime.newThreadError("unexpected interrupt");
+        }
+    }
+   
+    @JRubyMethod(required = 1, rest = true, frame = true, meta = true)
+    public static IRubyObject popen3(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        Ruby runtime = context.getRuntime();
+
+        try {        
+            ShellLauncher.POpenProcess process = ShellLauncher.popen3(runtime, args);
+            RubyIO input = process.getInput() != null ?
+                new RubyIO(runtime, process.getInput()) :
+                new RubyIO(runtime, process.getInputStream());
+            RubyIO output = process.getOutput() != null ?
+                new RubyIO(runtime, process.getOutput()) :
+                new RubyIO(runtime, process.getOutputStream());
+            RubyIO error = process.getError() != null ?
+                new RubyIO(runtime, process.getError()) :
+                new RubyIO(runtime, process.getErrorStream());
+
+            RubyArray yieldArgs = RubyArray.newArrayLight(runtime, output, input, error);
+            if (block.isGiven()) {
+                try {
+                    return block.yield(context, yieldArgs);
+                } finally {
+                    if (input.openFile.isOpen()) {
+                        input.close();
+                    }
+                    if (output.openFile.isOpen()) {
+                        output.close();
+                    }
+                    if (error.openFile.isOpen()) {
+                        error.close();
+                    }
+                    runtime.getGlobalVariables().set("$?", RubyProcess.RubyStatus.newProcessStatus(runtime, (process.waitFor() * 256)));
+                }
+            }
+            return yieldArgs;
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
         } catch (InterruptedException e) {
