@@ -293,7 +293,7 @@ public class RubyStringScanner extends RubyObject {
         if (enc.isSingleByte()) {
             len = 1;
         } else {
-            len = enc.length(value.bytes[value.begin + pos]);
+            len = enc.length(value.bytes, value.begin + pos, value.begin + value.realSize);
         }
         
         if (pos + len > value.realSize) len = value.realSize - pos;
