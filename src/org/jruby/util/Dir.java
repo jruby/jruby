@@ -532,12 +532,16 @@ public class Dir {
     private static String[] files(File directory) {
         String[] files = directory.list();
         
-        String[] filesPlusDotFiles = new String[files.length + 2];
-        System.arraycopy(files, 0, filesPlusDotFiles, 2, files.length);
-        filesPlusDotFiles[0] = ".";
-        filesPlusDotFiles[1] = "..";
-        
-        return filesPlusDotFiles;
+        if (files != null) {
+            String[] filesPlusDotFiles = new String[files.length + 2];
+            System.arraycopy(files, 0, filesPlusDotFiles, 2, files.length);
+            filesPlusDotFiles[0] = ".";
+            filesPlusDotFiles[1] = "..";
+
+            return filesPlusDotFiles;
+        } else {
+            return new String[0];
+        }
     }
 
     private static int glob_helper(String cwd, byte[] bytes, int begin, int end, int sub, int flags, GlobFunc func, GlobArgs arg) {
