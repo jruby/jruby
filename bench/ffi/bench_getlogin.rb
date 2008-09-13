@@ -2,7 +2,7 @@ require 'benchmark'
 require 'ffi'
 require 'etc'
 
-iter = 10000
+iter = 100000
 
 module Posix
   extend FFI::Library
