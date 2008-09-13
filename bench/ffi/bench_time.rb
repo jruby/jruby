@@ -3,7 +3,7 @@ require 'ffi'
 
 module Posix
   extend FFI::Library
-  attach_function :time, [ :pointer ], :time_t
+  attach_function :time, [ :pointer ], :ulong
 end
 
 iter = 1000_000

@@ -1,14 +1,14 @@
 require 'benchmark'
 require 'ffi'
 
-iter = 1000000
+iter = 100000
 
 module Posix
   extend FFI::Library
-  if JRuby::FFI::Platform::IS_WINDOWS
-    attach_function :getpid, :_getpid, [], :pid_t
+  if FFI::Platform.windows?
+    attach_function :getpid, :_getpid, [], :uint
   else
-    attach_function :getpid, [], :pid_t
+    attach_function :getpid, [], :uint
   end
 end
 

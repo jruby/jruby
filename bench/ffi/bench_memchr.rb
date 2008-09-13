@@ -1,6 +1,5 @@
 require 'benchmark'
 require 'ffi'
-require 'java'
 iter = 10000
 str = "test" * 1000
 module JLibC
