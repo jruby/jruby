@@ -1386,7 +1386,7 @@ public class RubyString extends RubyObject {
         dest.realSize = blen;
         int buf = 0;
         int bp = 0;
-        int cp = value.begin;
+        int cp = begin;
 
         int offset = 0;
         RubyString val;
@@ -1451,7 +1451,7 @@ public class RubyString extends RubyObject {
                 if (value.realSize <= endz) {
                     break;
                 }
-                len = regex.getEncoding().length(value.bytes[begin + endz]);
+                len = regex.getEncoding().length(value.bytes, begin + endz, range);
                 System.arraycopy(value.bytes, begin + endz, dest.bytes, bp, len);
                 bp += len;
                 offset = endz + len;
@@ -2424,7 +2424,7 @@ public class RubyString extends RubyObject {
             int end = matcher.getEnd();
             if (matcher.getBegin() == end) {
                 if (value.realSize > end) {
-                    matcher.value = end + regex.getPattern().getEncoding().length(value.bytes[value.begin + end]);
+                    matcher.value = end + regex.getPattern().getEncoding().length(value.bytes, value.begin + end, range);
                 } else {
                     matcher.value = end + 1;
                 }
@@ -2443,7 +2443,7 @@ public class RubyString extends RubyObject {
             int end = region.end[0];
             if (region.beg[0] == end) {
                 if (value.realSize > end) {
-                    matcher.value = end + regex.getPattern().getEncoding().length(value.bytes[value.begin + end]);
+                    matcher.value = end + regex.getPattern().getEncoding().length(value.bytes, value.begin + end, range);
                 } else {
                     matcher.value = end + 1;
                 }
