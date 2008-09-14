@@ -68,7 +68,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
 /**
- *  1.9 complex.c as of revision: 19329
+ *  1.9 complex.c as of revision: 19342
  */
 
 @JRubyClass(name = "Complex", parent = "Numeric")
@@ -465,7 +465,15 @@ public class RubyComplex extends RubyNumeric {
     public IRubyObject image() {
         return image;
     }
-    
+
+    /** nucomp_negate
+     * 
+     */
+    @JRubyMethod(name = "-@")
+    public IRubyObject negate(ThreadContext context) {
+        return newComplex(context, getMetaClass(), f_negate(context, real), f_negate(context, image));
+    }
+
     /** nucomp_add
      * 
      */
