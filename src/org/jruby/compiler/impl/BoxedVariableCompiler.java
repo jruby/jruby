@@ -38,7 +38,7 @@ public class BoxedVariableCompiler extends HeapBasedVariableCompiler {
     private int baseVariableIndex;
 
     public BoxedVariableCompiler(
-            AbstractMethodCompiler methodCompiler,
+            BaseBodyCompiler methodCompiler,
             SkinnyMethodAdapter method,
             StaticScope scope,
             boolean specificArity,

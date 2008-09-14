@@ -41,7 +41,7 @@ import static org.jruby.util.CodegenUtils.*;
  */
 public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
     public HeapBasedVariableCompiler(
-            AbstractMethodCompiler methodCompiler,
+            BaseBodyCompiler methodCompiler,
             SkinnyMethodAdapter method,
             StaticScope scope,
             boolean specificArity,

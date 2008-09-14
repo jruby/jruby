@@ -44,7 +44,7 @@ import org.jruby.ast.executable.AbstractScript;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.CacheCompiler;
 import org.jruby.compiler.CompilerCallback;
-import org.jruby.compiler.MethodCompiler;
+import org.jruby.compiler.BodyCompiler;
 import org.jruby.compiler.ScriptCompiler;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
@@ -124,7 +124,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                     Class.forName("org.jruby.compiler.impl.InvokeDynamicInvocationCompiler");
             Class support =
                     Class.forName("org.jruby.runtime.invokedynamic.InvokeDynamicSupport");
-            compilerConstructor = compiler.getConstructor(AbstractMethodCompiler.class, SkinnyMethodAdapter.class);
+            compilerConstructor = compiler.getConstructor(BaseBodyCompiler.class, SkinnyMethodAdapter.class);
             installerMethod = support.getDeclaredMethod("installBytecode", MethodVisitor.class, String.class);
         } catch (Exception e) {
             // leave it null and fall back on our normal invocation logic
@@ -420,8 +420,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         return cacheCompiler;
     }
     
-    public MethodCompiler startMethod(String friendlyName, CompilerCallback args, StaticScope scope, ASTInspector inspector) {
-        ASMMethodCompiler methodCompiler = new ASMMethodCompiler(friendlyName, inspector, scope,this);
+    public BodyCompiler startMethod(String friendlyName, CompilerCallback args, StaticScope scope, ASTInspector inspector) {
+        RootScopedBodyCompiler methodCompiler = new MethodBodyCompiler(this, friendlyName, inspector, scope);
         
         methodCompiler.beginMethod(args, scope);
         

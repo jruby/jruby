@@ -50,7 +50,7 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
         // no finish for field-based
     }
     
-    public void cacheCallSite(AbstractMethodCompiler method, String name, CallType callType) {
+    public void cacheCallSite(BaseBodyCompiler method, String name, CallType callType) {
         String fieldName = scriptCompiler.getNewConstant(ci(CallSite.class), JavaNameMangler.mangleStringForCleanJavaIdentifier(name));
         
         // retrieve call adapter
@@ -71,7 +71,7 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
         method.method.getfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
     }
     
-    public void cacheByteList(AbstractMethodCompiler method, String contents) {
+    public void cacheByteList(BaseBodyCompiler method, String contents) {
         String fieldName = byteLists.get(contents);
         if (fieldName == null) {
             SkinnyMethodAdapter clinitMethod = scriptCompiler.getClassInitMethod();
@@ -86,7 +86,7 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
         method.method.getstatic(scriptCompiler.getClassname(), fieldName, ci(ByteList.class));
     }
     
-    public void cacheBigInteger(AbstractMethodCompiler method, BigInteger bigint) {
+    public void cacheBigInteger(BaseBodyCompiler method, BigInteger bigint) {
         String fieldName = bigIntegers.get(bigint);
         if (fieldName == null) {
             SkinnyMethodAdapter clinitMethod = scriptCompiler.getClassInitMethod();
@@ -103,7 +103,7 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
         method.method.getstatic(scriptCompiler.getClassname(), fieldName, ci(BigInteger.class));
     }
     
-    public void cacheSymbol(AbstractMethodCompiler method, String symbol) {
+    public void cacheSymbol(BaseBodyCompiler method, String symbol) {
         String methodName = symbols.get(symbol);
         if (methodName == null) {
             String fieldName = scriptCompiler.getNewConstant(ci(RubySymbol.class), "symbol");
@@ -143,7 +143,7 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
                 sig(RubySymbol.class, params(Ruby.class)));
     }
     
-    public void cacheFixnum(AbstractMethodCompiler method, long value) {
+    public void cacheFixnum(BaseBodyCompiler method, long value) {
         String methodName = fixnums.get(value);
         if (methodName == null) {
             String fieldName = scriptCompiler.getNewConstant(ci(RubyFixnum.class), "symbol");
@@ -183,7 +183,7 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
                 sig(RubyFixnum.class, params(Ruby.class)));
     }
     
-    public void cacheClosure(AbstractMethodCompiler method, String closureMethod, int arity, StaticScope scope, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector) {
+    public void cacheClosure(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector) {
         String closureFieldName = scriptCompiler.getNewConstant(ci(BlockBody.class), "closure");
 
         String closureMethodName = "getClosure_" + closureFieldName;
@@ -235,7 +235,7 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
                 sig(BlockBody.class, ThreadContext.class));
     }
     
-    public void cacheClosureOld(AbstractMethodCompiler method, String closureMethod) {
+    public void cacheClosureOld(BaseBodyCompiler method, String closureMethod) {
         String closureFieldName = scriptCompiler.getNewConstant(ci(CompiledBlockCallback.class), "closure");
 
         String closureMethodName = "getClosure_" + closureFieldName;

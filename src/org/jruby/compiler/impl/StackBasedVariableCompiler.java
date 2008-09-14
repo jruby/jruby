@@ -44,7 +44,7 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
     private int baseVariableIndex;
 
     public StackBasedVariableCompiler(
-            AbstractMethodCompiler methodCompiler,
+            BaseBodyCompiler methodCompiler,
             SkinnyMethodAdapter method,
             StaticScope scope,
             boolean specificArity,

@@ -32,7 +32,7 @@ import org.jruby.compiler.ArrayCallback;
 import org.jruby.compiler.BranchCallback;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.compiler.InvocationCompiler;
-import org.jruby.compiler.MethodCompiler;
+import org.jruby.compiler.BodyCompiler;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.VariableCompiler;
 import org.jruby.exceptions.JumpException;
@@ -60,8 +60,11 @@ import org.objectweb.asm.Label;
 import static org.objectweb.asm.Opcodes.*;
 import static org.jruby.util.CodegenUtils.*;
 
-public abstract class AbstractMethodCompiler implements MethodCompiler {
-
+/**
+ * BaseBodyCompiler encapsulates all common behavior between BodyCompiler
+ * implementations.
+ */
+public abstract class BaseBodyCompiler implements BodyCompiler {
     protected SkinnyMethodAdapter method;
     protected VariableCompiler variableCompiler;
     protected InvocationCompiler invocationCompiler;
@@ -78,7 +81,7 @@ public abstract class AbstractMethodCompiler implements MethodCompiler {
     protected String methodName;
     protected StandardASMCompiler script;
 
-    public AbstractMethodCompiler(StandardASMCompiler scriptCompiler, StaticScope scope, ASTInspector inspector, String methodName) {
+    public BaseBodyCompiler(StandardASMCompiler scriptCompiler, String methodName, ASTInspector inspector, StaticScope scope) {
         this.script = scriptCompiler;
         this.scope = scope;
         this.inspector = inspector;
@@ -114,15 +117,15 @@ public abstract class AbstractMethodCompiler implements MethodCompiler {
 
     public abstract void beginMethod(CompilerCallback args, StaticScope scope);
 
-    public abstract void endMethod();
+    public abstract void endBody();
 
-    public MethodCompiler chainToMethod(String methodName, ASTInspector inspector) {
-        MethodCompiler compiler = outline(methodName, inspector);
-        endMethod();
+    public BodyCompiler chainToMethod(String methodName, ASTInspector inspector) {
+        BodyCompiler compiler = outline(methodName, inspector);
+        endBody();
         return compiler;
     }
 
-    public MethodCompiler outline(String methodName, ASTInspector inspector) {
+    public BodyCompiler outline(String methodName, ASTInspector inspector) {
         // chain to the next segment of this giant method
         method.aload(StandardASMCompiler.THIS);
 
@@ -132,7 +135,7 @@ public abstract class AbstractMethodCompiler implements MethodCompiler {
         }
         method.invokevirtual(script.getClassname(), methodName, getSignature());
 
-        ASMMethodContinuationCompiler methodCompiler = new ASMMethodContinuationCompiler(methodName, inspector, scope, script, this);
+        ASMMethodContinuationCompiler methodCompiler = new ASMMethodContinuationCompiler(script, methodName, inspector, scope, this);
 
         methodCompiler.beginChainedMethod();
 
@@ -650,7 +653,7 @@ public abstract class AbstractMethodCompiler implements MethodCompiler {
         method.aload(StandardASMCompiler.THIS);
         loadThreadContext();
         loadSelf();
-        if (this instanceof ASMClosureCompiler) {
+        if (this instanceof ChildScopedBodyCompiler) {
             pushNull();
         } else {
             loadBlock();
@@ -844,13 +847,13 @@ public abstract class AbstractMethodCompiler implements MethodCompiler {
             ASTInspector inspector) {
         String closureMethodName = "block_" + script.getAndIncrementInnerIndex() + "$RUBY$" + "__block__";
 
-        ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, inspector, scope, script);
+        ChildScopedBodyCompiler closureCompiler = new ChildScopedBodyCompiler(script, closureMethodName, inspector, scope);
 
         closureCompiler.beginMethod(args, scope);
 
         body.call(closureCompiler);
 
-        closureCompiler.endMethod();
+        closureCompiler.endBody();
 
         // Done with closure compilation
 
@@ -865,13 +868,13 @@ public abstract class AbstractMethodCompiler implements MethodCompiler {
     public void runBeginBlock(StaticScope scope, CompilerCallback body) {
         String closureMethodName = "block_" + script.getAndIncrementInnerIndex() + "$RUBY$__begin__";
 
-        ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, null, scope, script);
+        ChildScopedBodyCompiler closureCompiler = new ChildScopedBodyCompiler(script, closureMethodName, null, scope);
 
         closureCompiler.beginMethod(null, scope);
 
         body.call(closureCompiler);
 
-        closureCompiler.endMethod();
+        closureCompiler.endBody();
 
         // Done with closure compilation
         loadThreadContext();
@@ -888,13 +891,13 @@ public abstract class AbstractMethodCompiler implements MethodCompiler {
     public void createNewForLoop(int arity, CompilerCallback body, CompilerCallback args, boolean hasMultipleArgsHead, NodeType argsNodeId) {
         String closureMethodName = "block_" + script.getAndIncrementInnerIndex() + "$RUBY$__for__";
 
-        ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, null, scope, script);
+        ChildScopedBodyCompiler closureCompiler = new ChildScopedBodyCompiler(script, closureMethodName, null, scope);
 
         closureCompiler.beginMethod(args, null);
 
         body.call(closureCompiler);
 
-        closureCompiler.endMethod();
+        closureCompiler.endBody();
 
         // Done with closure compilation
         loadThreadContext();
@@ -913,13 +916,13 @@ public abstract class AbstractMethodCompiler implements MethodCompiler {
     public void createNewEndBlock(CompilerCallback body) {
         String closureMethodName = "block_" + script.getAndIncrementInnerIndex() + "$RUBY$__end__";
 
-        ASMClosureCompiler closureCompiler = new ASMClosureCompiler(closureMethodName, null, scope, script);
+        ChildScopedBodyCompiler closureCompiler = new ChildScopedBodyCompiler(script, closureMethodName, null, scope);
 
         closureCompiler.beginMethod(null, null);
 
         body.call(closureCompiler);
 
-        closureCompiler.endMethod();
+        closureCompiler.endBody();
 
         // Done with closure compilation
         loadThreadContext();
@@ -1216,7 +1219,7 @@ public abstract class AbstractMethodCompiler implements MethodCompiler {
         method.dup();
         isInstanceOf(RubyMatchData.class, new BranchCallback() {
 
-            public void branch(MethodCompiler context) {
+            public void branch(BodyCompiler context) {
                 method.visitTypeInsn(CHECKCAST, p(RubyMatchData.class));
                 method.dup();
                 method.invokevirtual(p(RubyMatchData.class), "use", sig(void.class));
@@ -1236,7 +1239,7 @@ public abstract class AbstractMethodCompiler implements MethodCompiler {
             }
         }, new BranchCallback() {
 
-            public void branch(MethodCompiler context) {
+            public void branch(BodyCompiler context) {
                 method.pop();
                 falseBranch.branch(context);
             }
@@ -1358,7 +1361,7 @@ public abstract class AbstractMethodCompiler implements MethodCompiler {
         method.aload(StandardASMCompiler.THIS);
         loadThreadContext();
         loadSelf();
-        if (this instanceof ASMClosureCompiler) {
+        if (this instanceof ChildScopedBodyCompiler) {
             pushNull();
         } else {
             loadBlock();
@@ -1478,7 +1481,7 @@ public abstract class AbstractMethodCompiler implements MethodCompiler {
         method.aload(StandardASMCompiler.THIS);
         loadThreadContext();
         loadSelf();
-        if (this instanceof ASMClosureCompiler) {
+        if (this instanceof ChildScopedBodyCompiler) {
             pushNull();
         } else {
             loadBlock();
@@ -1659,7 +1662,7 @@ public abstract class AbstractMethodCompiler implements MethodCompiler {
         method.aload(StandardASMCompiler.THIS);
         loadThreadContext();
         loadSelf();
-        if (this instanceof ASMClosureCompiler) {
+        if (this instanceof ChildScopedBodyCompiler) {
             pushNull();
         } else {
             loadBlock();
@@ -1836,8 +1839,8 @@ public abstract class AbstractMethodCompiler implements MethodCompiler {
     public void isConstantBranch(final BranchCallback setup, final BranchCallback isConstant, final BranchCallback isMethod, final BranchCallback none, final String name) {
         rescue(new BranchCallback() {
 
-            public void branch(MethodCompiler context) {
-                setup.branch(AbstractMethodCompiler.this);
+            public void branch(BodyCompiler context) {
+                setup.branch(BaseBodyCompiler.this);
                 method.dup(); //[C,C]
                 method.instance_of(p(RubyModule.class)); //[C, boolean]
 
@@ -1856,7 +1859,7 @@ public abstract class AbstractMethodCompiler implements MethodCompiler {
                 method.pop();
                 method.pop();
 
-                isConstant.branch(AbstractMethodCompiler.this);
+                isConstant.branch(BaseBodyCompiler.this);
 
                 method.go_to(afterJmp);
 
@@ -1871,11 +1874,11 @@ public abstract class AbstractMethodCompiler implements MethodCompiler {
                 method.invokevirtual(p(RubyClass.class), "isMethodBound", sig(boolean.class, params(String.class, boolean.class)));
                 method.ifeq(falseJmp); // EQ == 0 (i.e. false)
 
-                isMethod.branch(AbstractMethodCompiler.this);
+                isMethod.branch(BaseBodyCompiler.this);
                 method.go_to(afterJmp);
 
                 method.label(falseJmp);
-                none.branch(AbstractMethodCompiler.this);
+                none.branch(BaseBodyCompiler.this);
 
                 method.label(afterJmp);
             }
@@ -2046,58 +2049,58 @@ public abstract class AbstractMethodCompiler implements MethodCompiler {
             classMethodName = "sclass_" + script.getAndIncrementMethodIndex() + "$RUBY$__singleton__";
         }
 
-        final ASMMethodCompiler methodCompiler = new ASMMethodCompiler(classMethodName, null, staticScope, script);
+        final RootScopedBodyCompiler classBody = new ASMClassBodyCompiler(script, classMethodName, null, staticScope);
 
         CompilerCallback bodyPrep = new CompilerCallback() {
 
-            public void call(MethodCompiler context) {
+            public void call(BodyCompiler context) {
                 if (receiverCallback == null) {
                     if (superCallback != null) {
-                        methodCompiler.loadRuntime();
-                        superCallback.call(methodCompiler);
+                        classBody.loadRuntime();
+                        superCallback.call(classBody);
 
-                        methodCompiler.invokeUtilityMethod("prepareSuperClass", sig(RubyClass.class, params(Ruby.class, IRubyObject.class)));
+                        classBody.invokeUtilityMethod("prepareSuperClass", sig(RubyClass.class, params(Ruby.class, IRubyObject.class)));
                     } else {
-                        methodCompiler.method.aconst_null();
+                        classBody.method.aconst_null();
                     }
 
-                    methodCompiler.loadThreadContext();
+                    classBody.loadThreadContext();
 
-                    pathCallback.call(methodCompiler);
+                    pathCallback.call(classBody);
 
-                    methodCompiler.invokeUtilityMethod("prepareClassNamespace", sig(RubyModule.class, params(ThreadContext.class, IRubyObject.class)));
+                    classBody.invokeUtilityMethod("prepareClassNamespace", sig(RubyModule.class, params(ThreadContext.class, IRubyObject.class)));
 
-                    methodCompiler.method.swap();
+                    classBody.method.swap();
 
-                    methodCompiler.method.ldc(name);
+                    classBody.method.ldc(name);
 
-                    methodCompiler.method.swap();
+                    classBody.method.swap();
 
-                    methodCompiler.method.invokevirtual(p(RubyModule.class), "defineOrGetClassUnder", sig(RubyClass.class, params(String.class, RubyClass.class)));
+                    classBody.method.invokevirtual(p(RubyModule.class), "defineOrGetClassUnder", sig(RubyClass.class, params(String.class, RubyClass.class)));
                 } else {
-                    methodCompiler.loadRuntime();
+                    classBody.loadRuntime();
 
                     // we re-set self to the class, but store the old self in a temporary local variable
                     // this is to prevent it GCing in case the singleton is short-lived
-                    methodCompiler.method.aload(StandardASMCompiler.SELF_INDEX);
-                    int selfTemp = methodCompiler.getVariableCompiler().grabTempLocal();
-                    methodCompiler.getVariableCompiler().setTempLocal(selfTemp);
-                    methodCompiler.method.aload(StandardASMCompiler.SELF_INDEX);
+                    classBody.method.aload(StandardASMCompiler.SELF_INDEX);
+                    int selfTemp = classBody.getVariableCompiler().grabTempLocal();
+                    classBody.getVariableCompiler().setTempLocal(selfTemp);
+                    classBody.method.aload(StandardASMCompiler.SELF_INDEX);
 
-                    methodCompiler.invokeUtilityMethod("getSingletonClass", sig(RubyClass.class, params(Ruby.class, IRubyObject.class)));
+                    classBody.invokeUtilityMethod("getSingletonClass", sig(RubyClass.class, params(Ruby.class, IRubyObject.class)));
                 }
 
                 // set self to the class
-                methodCompiler.method.dup();
-                methodCompiler.method.astore(StandardASMCompiler.SELF_INDEX);
+                classBody.method.dup();
+                classBody.method.astore(StandardASMCompiler.SELF_INDEX);
 
                 // CLASS BODY
-                methodCompiler.loadThreadContext();
-                methodCompiler.method.swap();
+                classBody.loadThreadContext();
+                classBody.method.swap();
 
                 // static scope
-                script.buildStaticScopeNames(methodCompiler.method, staticScope);
-                methodCompiler.invokeThreadContext("preCompiledClass", sig(Void.TYPE, params(RubyModule.class, String[].class)));
+                script.buildStaticScopeNames(classBody.method, staticScope);
+                classBody.invokeThreadContext("preCompiledClass", sig(Void.TYPE, params(RubyModule.class, String[].class)));
             }
         };
 
@@ -2106,29 +2109,29 @@ public abstract class AbstractMethodCompiler implements MethodCompiler {
         Label end = new Label();
         Label after = new Label();
         Label noException = new Label();
-        methodCompiler.method.trycatch(start, end, after, null);
+        classBody.method.trycatch(start, end, after, null);
 
-        methodCompiler.beginClass(bodyPrep, staticScope);
+        classBody.beginMethod(bodyPrep, staticScope);
 
-        methodCompiler.method.label(start);
+        classBody.method.label(start);
 
-        bodyCallback.call(methodCompiler);
-        methodCompiler.method.label(end);
+        bodyCallback.call(classBody);
+        classBody.method.label(end);
         // finally with no exception
-        methodCompiler.loadThreadContext();
-        methodCompiler.invokeThreadContext("postCompiledClass", sig(Void.TYPE, params()));
+        classBody.loadThreadContext();
+        classBody.invokeThreadContext("postCompiledClass", sig(Void.TYPE, params()));
 
-        methodCompiler.method.go_to(noException);
+        classBody.method.go_to(noException);
 
-        methodCompiler.method.label(after);
+        classBody.method.label(after);
         // finally with exception
-        methodCompiler.loadThreadContext();
-        methodCompiler.invokeThreadContext("postCompiledClass", sig(Void.TYPE, params()));
-        methodCompiler.method.athrow();
+        classBody.loadThreadContext();
+        classBody.invokeThreadContext("postCompiledClass", sig(Void.TYPE, params()));
+        classBody.method.athrow();
 
-        methodCompiler.method.label(noException);
+        classBody.method.label(noException);
 
-        methodCompiler.endMethod();
+        classBody.endBody();
 
         // prepare to call class definition method
         method.aload(StandardASMCompiler.THIS);
@@ -2150,33 +2153,33 @@ public abstract class AbstractMethodCompiler implements MethodCompiler {
         String mangledName = JavaNameMangler.mangleStringForCleanJavaIdentifier(name);
         String moduleMethodName = "module__" + script.getAndIncrementMethodIndex() + "$RUBY$" + mangledName;
 
-        final ASMMethodCompiler methodCompiler = new ASMMethodCompiler(moduleMethodName, null, staticScope, script);
+        final RootScopedBodyCompiler classBody = new ASMClassBodyCompiler(script, moduleMethodName, null, staticScope);
 
         CompilerCallback bodyPrep = new CompilerCallback() {
 
-            public void call(MethodCompiler context) {
-                methodCompiler.loadThreadContext();
+            public void call(BodyCompiler context) {
+                classBody.loadThreadContext();
 
-                pathCallback.call(methodCompiler);
+                pathCallback.call(classBody);
 
-                methodCompiler.invokeUtilityMethod("prepareClassNamespace", sig(RubyModule.class, params(ThreadContext.class, IRubyObject.class)));
+                classBody.invokeUtilityMethod("prepareClassNamespace", sig(RubyModule.class, params(ThreadContext.class, IRubyObject.class)));
 
-                methodCompiler.method.ldc(name);
+                classBody.method.ldc(name);
 
-                methodCompiler.method.invokevirtual(p(RubyModule.class), "defineOrGetModuleUnder", sig(RubyModule.class, params(String.class)));
+                classBody.method.invokevirtual(p(RubyModule.class), "defineOrGetModuleUnder", sig(RubyModule.class, params(String.class)));
 
                 // set self to the class
-                methodCompiler.method.dup();
-                methodCompiler.method.astore(StandardASMCompiler.SELF_INDEX);
+                classBody.method.dup();
+                classBody.method.astore(StandardASMCompiler.SELF_INDEX);
 
                 // CLASS BODY
-                methodCompiler.loadThreadContext();
-                methodCompiler.method.swap();
+                classBody.loadThreadContext();
+                classBody.method.swap();
 
                 // static scope
-                script.buildStaticScopeNames(methodCompiler.method, staticScope);
+                script.buildStaticScopeNames(classBody.method, staticScope);
 
-                methodCompiler.invokeThreadContext("preCompiledClass", sig(Void.TYPE, params(RubyModule.class, String[].class)));
+                classBody.invokeThreadContext("preCompiledClass", sig(Void.TYPE, params(RubyModule.class, String[].class)));
             }
         };
 
@@ -2185,27 +2188,27 @@ public abstract class AbstractMethodCompiler implements MethodCompiler {
         Label end = new Label();
         Label after = new Label();
         Label noException = new Label();
-        methodCompiler.method.trycatch(start, end, after, null);
+        classBody.method.trycatch(start, end, after, null);
 
-        methodCompiler.beginClass(bodyPrep, staticScope);
+        classBody.beginMethod(bodyPrep, staticScope);
 
-        methodCompiler.method.label(start);
+        classBody.method.label(start);
 
-        bodyCallback.call(methodCompiler);
-        methodCompiler.method.label(end);
+        bodyCallback.call(classBody);
+        classBody.method.label(end);
 
-        methodCompiler.method.go_to(noException);
+        classBody.method.go_to(noException);
 
-        methodCompiler.method.label(after);
-        methodCompiler.loadThreadContext();
-        methodCompiler.invokeThreadContext("postCompiledClass", sig(Void.TYPE, params()));
-        methodCompiler.method.athrow();
+        classBody.method.label(after);
+        classBody.loadThreadContext();
+        classBody.invokeThreadContext("postCompiledClass", sig(Void.TYPE, params()));
+        classBody.method.athrow();
 
-        methodCompiler.method.label(noException);
-        methodCompiler.loadThreadContext();
-        methodCompiler.invokeThreadContext("postCompiledClass", sig(Void.TYPE, params()));
+        classBody.method.label(noException);
+        classBody.loadThreadContext();
+        classBody.invokeThreadContext("postCompiledClass", sig(Void.TYPE, params()));
 
-        methodCompiler.endMethod();
+        classBody.endBody();
 
         // prepare to call class definition method
         method.aload(StandardASMCompiler.THIS);
@@ -2338,12 +2341,12 @@ public abstract class AbstractMethodCompiler implements MethodCompiler {
             newMethodName = "method__" + script.getMethodIndex() + "$RUBY$" + mangledName;
         }
 
-        MethodCompiler methodCompiler = script.startMethod(newMethodName, args, scope, inspector);
+        BodyCompiler methodCompiler = script.startMethod(newMethodName, args, scope, inspector);
 
         // callbacks to fill in method body
         body.call(methodCompiler);
 
-        methodCompiler.endMethod();
+        methodCompiler.endBody();
 
         // prepare to call "def" utility method to handle def logic
         loadThreadContext();

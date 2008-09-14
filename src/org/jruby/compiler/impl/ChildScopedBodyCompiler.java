@@ -15,10 +15,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.objectweb.asm.Label;
 import static org.jruby.util.CodegenUtils.*;
 
-public class ASMClosureCompiler extends AbstractMethodCompiler {
+public class ChildScopedBodyCompiler extends BaseBodyCompiler {
 
-    public ASMClosureCompiler(String closureMethodName, ASTInspector inspector, StaticScope scope, StandardASMCompiler scriptCompiler) {
-        super(scriptCompiler, scope, inspector, closureMethodName);
+    public ChildScopedBodyCompiler(StandardASMCompiler scriptCompiler, String closureMethodName, ASTInspector inspector, StaticScope scope) {
+        super(scriptCompiler, closureMethodName, inspector, scope);
     }
 
     protected String getSignature() {
@@ -61,7 +61,7 @@ public class ASMClosureCompiler extends AbstractMethodCompiler {
         throw new NotCompilableException("ERROR: closure compiler should not be used for class bodies");
     }
 
-    public void endMethod() {
+    public void endBody() {
         // end of scoping for closure's vars
         method.areturn();
         method.label(scopeEnd);

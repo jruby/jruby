@@ -191,7 +191,7 @@ public class JITCompiler implements JITCompilerMBean {
             final ASTCompiler compiler = new ASTCompiler();
 
             CompilerCallback args = new CompilerCallback() {
-                public void call(MethodCompiler context) {
+                public void call(BodyCompiler context) {
                     compiler.compileArgs(argsNode, context);
                 }
             };
@@ -201,7 +201,7 @@ public class JITCompiler implements JITCompilerMBean {
             inspector.inspect(argsNode);
             inspector.inspect(bodyNode);
 
-            MethodCompiler methodCompiler;
+            BodyCompiler methodCompiler;
             if (bodyNode != null) {
                 // we have a body, do a full-on method
                 methodCompiler = asmCompiler.startMethod("__file__", args, staticScope, inspector);
@@ -220,7 +220,7 @@ public class JITCompiler implements JITCompilerMBean {
                     jitCallConfig = CallConfiguration.NO_FRAME_NO_SCOPE;
                 }
             }
-            methodCompiler.endMethod();
+            methodCompiler.endBody();
             asmCompiler.endScript(false, false);
             
             // if we haven't already decided on a do-nothing call

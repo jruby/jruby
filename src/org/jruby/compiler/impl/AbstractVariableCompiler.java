@@ -49,7 +49,7 @@ import org.objectweb.asm.Label;
  */
 public abstract class AbstractVariableCompiler implements VariableCompiler {
     protected SkinnyMethodAdapter method;
-    protected AbstractMethodCompiler methodCompiler;
+    protected BaseBodyCompiler methodCompiler;
     protected int argsIndex;
     protected int tempVariableIndex;
     protected Arity arity;
@@ -57,7 +57,7 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
     protected boolean specificArity;
 
     public AbstractVariableCompiler(
-            AbstractMethodCompiler methodCompiler,
+            BaseBodyCompiler methodCompiler,
             SkinnyMethodAdapter method,
             StaticScope scope,
             boolean specificArity,

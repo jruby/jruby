@@ -32,5 +32,5 @@ package org.jruby.compiler;
  * @author headius
  */
 public interface CompilerCallback {
-    public void call(MethodCompiler context);
+    public void call(BodyCompiler context);
 }

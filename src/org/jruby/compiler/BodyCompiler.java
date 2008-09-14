@@ -36,14 +36,14 @@ import org.jruby.util.ByteList;
  *
  * @author headius
  */
-public interface MethodCompiler {
+public interface BodyCompiler {
     /**
      * End compilation for the method associated with the specified token. This should
      * close out all structures created for compilation of the method.
      * 
      * @param token A token identifying the method to be terminated.
      */
-    public void endMethod();
+    public void endBody();
     
     /**
      * As code executes, values are assumed to be "generated", often by being pushed
@@ -539,7 +539,7 @@ public interface MethodCompiler {
     public void runBeginBlock(StaticScope scope, CompilerCallback body);
     public void rethrowIfSystemExit();
 
-    public MethodCompiler chainToMethod(String name, ASTInspector inspector);
+    public BodyCompiler chainToMethod(String name, ASTInspector inspector);
     public void wrapJavaException();
     public void literalSwitch(int[] caseInts, Object caseBodies, ArrayCallback casesCallback, CompilerCallback defaultCallback);
     public void typeCheckBranch(Class type, BranchCallback trueCallback, BranchCallback falseCallback);
