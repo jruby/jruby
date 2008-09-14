@@ -625,16 +625,16 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
         int no = -1;
         ByteList bs = str.getByteList();
         ByteList srcbs = src.getByteList();
-        int e = bs.length();
+        int e = bs.realSize;
         RubyString val = null;
         Encoding enc = kcode.getEncoding();
 
         int beg, end;
         while (s < e) {
             int ss = s;
-            int c = bs.charAt(s++);
-            int l;
-            if ((l = enc.length(bs.bytes, bs.begin + s, bs.begin + bs.realSize)) != 1) {
+            int c = bs.charAt(s);
+            int l = enc.length(bs.bytes, bs.begin + s++, bs.begin + e);
+            if (l != 1) {
                 s += l - 1;
                 continue;
             }
@@ -905,8 +905,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
         meta_found: do {
             for(; s < send; s++) {
                 int c = bs.bytes[s] & 0xff;
-                int l;
-                if ((l = enc.length(bs.bytes, s, send)) != 1) {
+                int l = enc.length(bs.bytes, s, send);
+                if (l != 1) {
                     int n = l;
                     while (n-- > 0 && s < send) {
                         s++;
@@ -932,8 +932,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
 
         for(; s<send; s++) {
             int c = bs.bytes[s] & 0xff;
-            int l;
-            if ((l = enc.length(bs.bytes, s, send)) != 1) {
+            int l = enc.length(bs.bytes, s, send);
+            if (l != 1) {
                 int n = l;
                 while (n-- > 0 && s < send) {
                     b1.bytes[tix++] = bs.bytes[s++];
