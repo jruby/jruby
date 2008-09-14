@@ -9,7 +9,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.objectweb.asm.Label;
 import static org.jruby.util.CodegenUtils.*;
 
-public class ASMMethodContinuationCompiler extends RootScopedBodyCompiler {
+public class ChainedBodyCompiler extends RootScopedBodyCompiler {
     BaseBodyCompiler parent;
 
     @Override
@@ -22,7 +22,7 @@ public class ASMMethodContinuationCompiler extends RootScopedBodyCompiler {
         method.end();
     }
 
-    public ASMMethodContinuationCompiler(StandardASMCompiler scriptCompiler, String methodName, ASTInspector inspector, StaticScope scope, BaseBodyCompiler parent) {
+    public ChainedBodyCompiler(StandardASMCompiler scriptCompiler, String methodName, ASTInspector inspector, StaticScope scope, BaseBodyCompiler parent) {
         super(scriptCompiler, methodName, inspector, scope);
         this.parent = parent;
     }

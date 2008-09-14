@@ -35,6 +35,19 @@ public abstract class CallConfiguration {
             return "FRAME_AND_SCOPE";
         }
     };
+    public static final CallConfiguration FRAME_AND_DUMMY_SCOPE = new CallConfiguration() {
+        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
+            context.preMethodFrameAndDummyScope(implementer, name, self, block, scope);
+        }
+        
+        public void post(ThreadContext context) {
+            context.postMethodFrameAndScope();
+        }
+        
+        public String name() {
+            return "FRAME_AND_DUMMY_SCOPE";
+        }
+    };
     public static final CallConfiguration FRAME_ONLY = new CallConfiguration() {
         public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
             context.preMethodFrameOnly(implementer, name, self, block);

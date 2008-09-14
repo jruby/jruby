@@ -75,7 +75,6 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(TestReflectionCallback.class);
         suite.addTestSuite(TestAdoptedThreading.class);
         suite.addTestSuite(TestRubyArray.class);
-        suite.addTestSuite(TestVariableCreation.class);
         suite.addTestSuite(YARVMachineTest.class);
         suite.addTestSuite(TestRaiseException.class);
         suite.addTest(VisitorTestSuite.suite());

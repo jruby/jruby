@@ -231,7 +231,7 @@ public class JITCompiler implements JITCompilerMBean {
                     jitCallConfig = CallConfiguration.FRAME_AND_SCOPE;
                 } else {
                     // switch to a slightly faster call config
-                    jitCallConfig = CallConfiguration.FRAME_ONLY;
+                    jitCallConfig = CallConfiguration.FRAME_AND_DUMMY_SCOPE;
                 }
             }
             

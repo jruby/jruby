@@ -1043,6 +1043,18 @@ public final class ThreadContext {
         pushRubyClass(implementationClass);
     }
     
+    public void preMethodFrameAndDummyScope(RubyModule clazz, String name, IRubyObject self, Block block, 
+            StaticScope staticScope) {
+        RubyModule implementationClass = staticScope.getModule();
+        // FIXME: This is currently only here because of some problems with IOOutputStream writing to a "bare" runtime without a proper scope
+        if (implementationClass == null) {
+            implementationClass = clazz;
+        }
+        pushCallFrame(clazz, name, self, block);
+        pushScope(staticScope.getDummyScope());
+        pushRubyClass(implementationClass);
+    }
+    
     public void postMethodFrameAndScope() {
         popRubyClass();
         popScope();
@@ -1183,6 +1195,14 @@ public final class ThreadContext {
     public Frame preYieldNoScope(Binding binding, RubyModule klass) {
         pushRubyClass((klass != null) ? klass : binding.getKlass());
         return pushFrameForBlock(binding);
+    }
+    
+    public void preEvalScriptlet(DynamicScope scope) {
+        pushScope(scope);
+    }
+    
+    public void postEvalScriptlet() {
+        popScope();
     }
     
     public Frame preEvalWithBinding(Binding binding) {

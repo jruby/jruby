@@ -288,12 +288,12 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     Label catchReturnJump = new Label();
                     Label catchRedoJump = new Label();
 
-                    if (callConfig != CallConfiguration.FRAME_ONLY) {
+                    if (callConfig != CallConfiguration.FRAME_AND_DUMMY_SCOPE) {
                         mv.trycatch(tryBegin, tryEnd, catchReturnJump, p(JumpException.ReturnJump.class));
                     }
                     mv.trycatch(tryBegin, tryEnd, catchRedoJump, p(JumpException.RedoJump.class));
                     mv.trycatch(tryBegin, tryEnd, doFinally, null);
-                    if (callConfig != CallConfiguration.FRAME_ONLY) {
+                    if (callConfig != CallConfiguration.FRAME_AND_DUMMY_SCOPE) {
                         mv.trycatch(catchReturnJump, doReturnFinally, doFinally, null);
                     }
                     mv.trycatch(catchRedoJump, doRedoFinally, doFinally, null);
@@ -328,7 +328,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     }
 
                     // return jump handling
-                    if (callConfig != CallConfiguration.FRAME_ONLY) {
+                    if (callConfig != CallConfiguration.FRAME_AND_DUMMY_SCOPE) {
                         mv.label(catchReturnJump);
                         {
                             mv.aload(0);
@@ -1036,6 +1036,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             mv.aload(1);
             if (callConfig == CallConfiguration.FRAME_AND_SCOPE) {
                 mv.invokevirtual(superClass, "postFrameAndScope", sig(void.class, params(ThreadContext.class)));
+            } else if (callConfig == CallConfiguration.FRAME_AND_DUMMY_SCOPE) {
+                mv.invokevirtual(superClass, "postFrameAndScope", sig(void.class, params(ThreadContext.class)));
             } else if (callConfig == CallConfiguration.FRAME_ONLY) {
                 mv.invokevirtual(superClass, "postFrameOnly", sig(void.class, params(ThreadContext.class)));
             } else if (callConfig == CallConfiguration.SCOPE_ONLY) {
@@ -1060,6 +1062,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 mv.aload(NAME_INDEX); // name
                 loadBlockForPre(mv, specificArity, block);
                 mv.invokevirtual(superClass, "preFrameAndScope", sig(void.class, params(ThreadContext.class, IRubyObject.class, String.class, Block.class)));
+            } else if (callConfig == CallConfiguration.FRAME_AND_DUMMY_SCOPE) {
+                mv.aload(RECEIVER_INDEX); // self
+                mv.aload(NAME_INDEX); // name
+                loadBlockForPre(mv, specificArity, block);
+                mv.invokevirtual(superClass, "preFrameAndDummyScope", sig(void.class, params(ThreadContext.class, IRubyObject.class, String.class, Block.class)));
             } else if (callConfig == CallConfiguration.FRAME_ONLY) {
                 mv.aload(RECEIVER_INDEX); // self
                 mv.aload(NAME_INDEX); // name

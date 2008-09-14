@@ -97,6 +97,7 @@ import org.jruby.management.BeanManager;
 import org.jruby.management.ClassCache;
 import org.jruby.management.Config;
 import org.jruby.management.ParserStats;
+import org.jruby.parser.EvalStaticScope;
 import org.jruby.parser.Parser;
 import org.jruby.parser.ParserConfiguration;
 import org.jruby.runtime.Binding;
@@ -115,6 +116,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.runtime.load.LoadService;
+import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.util.BuiltinScript;
 import org.jruby.util.ByteList;
 import org.jruby.util.IOInputStream;
@@ -226,9 +228,12 @@ public final class Ruby {
      */
     public IRubyObject evalScriptlet(String script) {
         ThreadContext context = getCurrentContext();
-        Node node = parseEval(script, "<script>", context.getCurrentScope(), 0);
+        DynamicScope currentScope = context.getCurrentScope();
+        ManyVarsDynamicScope newScope = new ManyVarsDynamicScope(new EvalStaticScope(currentScope.getStaticScope()), currentScope);
+        Node node = parseEval(script, "<script>", newScope, 0);
         
         try {
+            context.preEvalScriptlet(newScope);
             return node.interpret(this, context, context.getFrameSelf(), Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
             throw newLocalJumpError("return", (IRubyObject)rj.getValue(), "unexpected return");
@@ -236,6 +241,8 @@ public final class Ruby {
             throw newLocalJumpError("break", (IRubyObject)bj.getValue(), "unexpected break");
         } catch (JumpException.RedoJump rj) {
             throw newLocalJumpError("redo", (IRubyObject)rj.getValue(), "unexpected redo");
+        } finally {
+            context.postEvalScriptlet();
         }
     }
     

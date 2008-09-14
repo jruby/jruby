@@ -21,9 +21,9 @@ public class MethodBodyCompiler extends RootScopedBodyCompiler {
 
     public MethodBodyCompiler(StandardASMCompiler scriptCompiler, String friendlyName, ASTInspector inspector, StaticScope scope) {
         super(scriptCompiler, friendlyName, inspector, scope);
-        this.script = scriptCompiler;
     }
 
+    @Override
     protected String getSignature() {
         if (scope.getRestArg() >= 0 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() > 3) {
             specificArity = false;
@@ -34,6 +34,7 @@ public class MethodBodyCompiler extends RootScopedBodyCompiler {
         }
     }
 
+    @Override
     protected void createVariableCompiler() {
         if (inspector == null) {
             variableCompiler = new HeapBasedVariableCompiler(this, method, scope, specificArity, StandardASMCompiler.ARGS_INDEX, getFirstTempIndex());
@@ -48,6 +49,7 @@ public class MethodBodyCompiler extends RootScopedBodyCompiler {
         }
     }
 
+    @Override
     public void beginMethod(CompilerCallback args, StaticScope scope) {
         method.start();
 
@@ -56,7 +58,6 @@ public class MethodBodyCompiler extends RootScopedBodyCompiler {
         invokeThreadContext("getRuntime", sig(Ruby.class));
         method.dup();
         method.astore(getRuntimeIndex());
-
 
         // grab nil for local variables
         invokeIRuby("getNil", sig(IRubyObject.class));
@@ -68,6 +69,7 @@ public class MethodBodyCompiler extends RootScopedBodyCompiler {
         method.label(scopeStart);
     }
 
+    @Override
     public void endBody() {
         // return last value from execution
         method.areturn();
@@ -109,6 +111,7 @@ public class MethodBodyCompiler extends RootScopedBodyCompiler {
         }
     }
 
+    @Override
     public void performReturn() {
         // normal return for method body. return jump for within a begin/rescue/ensure
         if (withinProtection) {
@@ -120,6 +123,7 @@ public class MethodBodyCompiler extends RootScopedBodyCompiler {
         }
     }
 
+    @Override
     public void issueBreakEvent(CompilerCallback value) {
         if (currentLoopLabels != null) {
             value.call(this);
@@ -137,6 +141,7 @@ public class MethodBodyCompiler extends RootScopedBodyCompiler {
         }
     }
 
+    @Override
     public void issueNextEvent(CompilerCallback value) {
         if (currentLoopLabels != null) {
             value.call(this);
@@ -153,6 +158,7 @@ public class MethodBodyCompiler extends RootScopedBodyCompiler {
         }
     }
 
+    @Override
     public void issueRedoEvent() {
         if (currentLoopLabels != null) {
             issueLoopRedo();

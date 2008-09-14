@@ -37,7 +37,9 @@ import org.jruby.ast.AssignableNode;
 import org.jruby.ast.Node;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.scope.NoVarsDynamicScope;
 
 /**
  * StaticScope represents lexical scoping of variables and module/class constants.
@@ -79,6 +81,8 @@ public abstract class StaticScope implements Serializable {
     
     // Whether this scope is used as the "argument scope" for e.g. zsuper
     private boolean isArgumentScope = false;
+    
+    private DynamicScope dummyScope = new NoVarsDynamicScope(this);
     
     protected StaticScope(StaticScope enclosingScope, String[] names) {
         assert names != null : "names is not null";
@@ -330,6 +334,10 @@ public abstract class StaticScope implements Serializable {
         this.requiredArgs = required;
         this.optionalArgs = optional;
         this.restArg = rest;
+    }
+    
+    public DynamicScope getDummyScope() {
+        return dummyScope;
     }
 
     private void growVariableNames(String name) {

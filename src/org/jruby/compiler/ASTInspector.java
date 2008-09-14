@@ -308,23 +308,18 @@ public class ASTInspector {
             inspect(caseNode.getFirstWhenNode());
             break;
         case CLASSNODE:
-            hasScopeAwareMethods = true;
             hasClass = true;
             break;
         case CLASSVARNODE:
-            hasScopeAwareMethods = true;
             break;
         case CONSTDECLNODE:
             inspect(((AssignableNode)node).getValueNode());
-            hasScopeAwareMethods = true;
             break;
         case CLASSVARASGNNODE:
             inspect(((AssignableNode)node).getValueNode());
-            hasScopeAwareMethods = true;
             break;
         case CLASSVARDECLNODE:
             inspect(((AssignableNode)node).getValueNode());
-            hasScopeAwareMethods = true;
             break;
         case COLON2NODE:
             inspect(((Colon2Node)node).getLeftNode());
@@ -332,13 +327,11 @@ public class ASTInspector {
         case COLON3NODE:
             break;
         case CONSTNODE:
-            hasScopeAwareMethods = true;
             break;
         case DEFNNODE:
         case DEFSNODE:
             hasDef = true;
             needsFrameVisibility = true;
-            hasScopeAwareMethods = true;
             break;
         case DEFINEDNODE:
             disable();
@@ -378,8 +371,10 @@ public class ASTInspector {
             break;
         case GLOBALASGNNODE:
             GlobalAsgnNode globalAsgnNode = (GlobalAsgnNode)node;
-            if (globalAsgnNode.getName().equals("$_") || globalAsgnNode.getName().equals("$~")) {
-                hasScopeAwareMethods = true;
+            if (globalAsgnNode.getName().equals("$_")) {
+                needsLastline = true;
+            } else if (globalAsgnNode.getName().equals("$~")) {
+                needsBackref = true;
             }
             break;
         case GLOBALVARNODE:
@@ -441,7 +436,6 @@ public class ASTInspector {
             break;
         case MODULENODE:
             hasClass = true;
-            hasScopeAwareMethods = true;
             break;
         case MULTIPLEASGNNODE:
             MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode)node;
@@ -530,7 +524,6 @@ public class ASTInspector {
             break;
         case SCLASSNODE:
             hasClass = true;
-            hasScopeAwareMethods = true;
             break;
         case SCOPENODE:
             break;
@@ -559,7 +552,6 @@ public class ASTInspector {
         case TRUENODE:
             break;
         case UNDEFNODE:
-            hasScopeAwareMethods = true;
             break;
         case UNTILNODE:
             UntilNode untilNode = (UntilNode)node;
@@ -571,8 +563,10 @@ public class ASTInspector {
             // * a block-arg-based proc called within the loop
             if (untilInspector.hasClosure || untilInspector.hasEval) {
                 untilNode.containsNonlocalFlow = true;
+                
+                // we set scope-aware to true to force heap-based locals
+                hasScopeAwareMethods = true;
             }
-            hasScopeAwareMethods = true;
             break;
         case VALIASNODE:
             break;

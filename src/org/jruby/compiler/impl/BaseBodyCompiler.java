@@ -135,7 +135,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         }
         method.invokevirtual(script.getClassname(), methodName, getSignature());
 
-        ASMMethodContinuationCompiler methodCompiler = new ASMMethodContinuationCompiler(script, methodName, inspector, scope, this);
+        ChainedBodyCompiler methodCompiler = new ChainedBodyCompiler(script, methodName, inspector, scope, this);
 
         methodCompiler.beginChainedMethod();
 
@@ -2376,7 +2376,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
                 method.getstatic(p(CallConfiguration.class), CallConfiguration.FRAME_AND_SCOPE.name(), ci(CallConfiguration.class));
             } else {
-                method.getstatic(p(CallConfiguration.class), CallConfiguration.FRAME_ONLY.name(), ci(CallConfiguration.class));
+                method.getstatic(p(CallConfiguration.class), CallConfiguration.FRAME_AND_DUMMY_SCOPE.name(), ci(CallConfiguration.class));
             }
         } else {
             if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
