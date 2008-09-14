@@ -880,7 +880,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         loadThreadContext();
         loadSelf();
 
-        script.buildStaticScopeNames(method, scope);
+        StandardASMCompiler.buildStaticScopeNames(method, scope);
 
         script.getCacheCompiler().cacheClosureOld(this, closureMethodName);
 
@@ -2099,7 +2099,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                 classBody.method.swap();
 
                 // static scope
-                script.buildStaticScopeNames(classBody.method, staticScope);
+                StandardASMCompiler.buildStaticScopeNames(classBody.method, staticScope);
                 classBody.invokeThreadContext("preCompiledClass", sig(Void.TYPE, params(RubyModule.class, String[].class)));
             }
         };
@@ -2177,7 +2177,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                 classBody.method.swap();
 
                 // static scope
-                script.buildStaticScopeNames(classBody.method, staticScope);
+                StandardASMCompiler.buildStaticScopeNames(classBody.method, staticScope);
 
                 classBody.invokeThreadContext("preCompiledClass", sig(Void.TYPE, params(RubyModule.class, String[].class)));
             }
@@ -2362,7 +2362,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
         method.ldc(newMethodName);
 
-        script.buildStaticScopeNames(method, scope);
+        StandardASMCompiler.buildStaticScopeNames(method, scope);
 
         method.pushInt(methodArity);
 
@@ -2371,12 +2371,19 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.pushInt(scope.getOptionalArgs());
         method.pushInt(scope.getRestArg());
 
-        // if method has frame aware methods or frameless compilation is NOT enabled
         if (inspector.hasFrameAwareMethods() || !(inspector.noFrame() || RubyInstanceConfig.FRAMELESS_COMPILE_ENABLED)) {
+            // We're doing normal framed compilation or the method needs a frame
             if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
+                // The method also needs a scope, do both
                 method.getstatic(p(CallConfiguration.class), CallConfiguration.FRAME_AND_SCOPE.name(), ci(CallConfiguration.class));
             } else {
-                method.getstatic(p(CallConfiguration.class), CallConfiguration.FRAME_AND_DUMMY_SCOPE.name(), ci(CallConfiguration.class));
+                if (inspector.hasConstant() || inspector.hasMethod() || inspector.hasClass() || inspector.hasClassVar()) {
+                    // The method doesn't need a scope, but has static scope needs; use a dummy scope
+                    method.getstatic(p(CallConfiguration.class), CallConfiguration.FRAME_AND_DUMMY_SCOPE.name(), ci(CallConfiguration.class));
+                } else {
+                    // The method doesn't need a scope or static scope; frame only
+                    method.getstatic(p(CallConfiguration.class), CallConfiguration.FRAME_ONLY.name(), ci(CallConfiguration.class));
+                }
             }
         } else {
             if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {

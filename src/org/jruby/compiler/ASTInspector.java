@@ -93,23 +93,27 @@ import org.jruby.util.SafePropertyAccessor;
  * @author headius
  */
 public class ASTInspector {
-    private boolean hasBlockArg;
-    private boolean hasClosure;
-    private boolean hasClass;
-    private boolean hasDef;
-    private boolean hasEval;
-    private boolean hasFrameAwareMethods;
-    private boolean needsFrameSelf;
-    private boolean needsFrameVisibility;
-    private boolean needsFrameBlock;
-    private boolean needsFrameName;
-    private boolean needsBackref;
-    private boolean needsLastline;
-    private boolean needsFrameKlazz;
-    private boolean hasOptArgs;
-    private boolean hasRestArg;
-    private boolean hasScopeAwareMethods;
-    private boolean hasZSuper;
+    public static final int BLOCK_ARG = 0x1;
+    public static final int CLOSURE = 0x2;
+    public static final int CLASS = 0x4;
+    public static final int METHOD = 0x8; // method table mutations, def, defs, undef, alias
+    public static final int EVAL = 0x10;
+    public static final int FRAME_AWARE = 0x20;
+    public static final int FRAME_SELF = 0x40;
+    public static final int FRAME_VISIBILITY = 0x80;
+    public static final int FRAME_BLOCK = 0x100;
+    public static final int FRAME_NAME = 0x200;
+    public static final int BACKREF = 0x400;
+    public static final int LASTLINE = 0x800;
+    public static final int FRAME_CLASS = 0x1000;
+    public static final int OPT_ARGS = 0x2000;
+    public static final int REST_ARG = 0x4000;
+    public static final int SCOPE_AWARE = 0x8000;
+    public static final int ZSUPER = 0x10000;
+    public static final int CONSTANT = 0x20000;
+    public static final int CLASS_VAR = 0x40000;
+    
+    private int flags;
     
     // pragmas
     private boolean noFrame;
@@ -143,22 +147,7 @@ public class ASTInspector {
     }
     
     public void disable() {
-        hasClosure = true;
-        hasClass = true;
-        hasDef = true;
-        hasScopeAwareMethods = true;
-        hasFrameAwareMethods = true;
-        needsFrameBlock = true;
-        needsFrameKlazz = true;
-        needsFrameName = true;
-        needsFrameSelf = true;
-        needsFrameVisibility = true;
-        needsBackref = true;
-        needsLastline = true;
-        hasBlockArg = true;
-        hasOptArgs = true;
-        hasRestArg = true;
-        hasZSuper = true;
+        flags = 0xFFFFFFFF;
     }
     
     public static final boolean ENABLED = SafePropertyAccessor.getProperty("jruby.astInspector.enabled", "true").equals("true");
@@ -180,6 +169,14 @@ public class ASTInspector {
         return newInspector;
     }
     
+    public boolean getFlag(int modifier) {
+        return (flags & modifier) != 0;
+    }
+    
+    public void setFlag(int modifier) {
+        flags |= modifier;
+    }
+    
     /**
      * Integrate the results of a separate inspection into the state of this
      * inspector.
@@ -187,20 +184,7 @@ public class ASTInspector {
      * @param other The other inspector whose state to integrate.
      */
     public void integrate(ASTInspector other) {
-        hasBlockArg |= other.hasBlockArg;
-        hasClass |= other.hasClass;
-        hasClosure |= other.hasClosure;
-        hasDef |= other.hasDef;
-        needsBackref |= other.needsBackref;
-        needsFrameBlock |= other.needsFrameBlock;
-        needsFrameKlazz |= other.needsFrameKlazz;
-        needsFrameName |= other.needsFrameName;
-        needsFrameSelf |= other.needsFrameSelf;
-        needsFrameVisibility |= other.needsFrameVisibility;
-        needsLastline |= other.needsLastline;
-        hasOptArgs |= other.hasOptArgs;
-        hasRestArg |= other.hasRestArg;
-        hasScopeAwareMethods |= other.hasScopeAwareMethods;
+        flags |= other.flags;
     }
     
     public void inspect(Node node) {
@@ -211,6 +195,7 @@ public class ASTInspector {
         
         switch (node.nodeId) {
         case ALIASNODE:
+            setFlag(METHOD);
             break;
         case ANDNODE:
             AndNode andNode = (AndNode)node;
@@ -243,21 +228,21 @@ public class ASTInspector {
             break;
         case ARGSNODE:
             ArgsNode argsNode = (ArgsNode)node;
-            if (argsNode.getBlockArgNode() != null) hasBlockArg = true;
+            if (argsNode.getBlockArgNode() != null) setFlag(BLOCK_ARG);
             if (argsNode.getOptArgs() != null) {
-                hasOptArgs = true;
+                setFlag(OPT_ARGS);
                 inspect(argsNode.getOptArgs());
             }
-            if (argsNode.getRestArg() == -2 || argsNode.getRestArg() >= 0) hasRestArg = true;
+            if (argsNode.getRestArg() == -2 || argsNode.getRestArg() >= 0) setFlag(REST_ARG);
             break;
         case ATTRASSIGNNODE:
             AttrAssignNode attrAssignNode = (AttrAssignNode)node;
-            needsFrameSelf = true;
+            setFlag(FRAME_SELF);
             inspect(attrAssignNode.getArgsNode());
             inspect(attrAssignNode.getReceiverNode());
             break;
         case BACKREFNODE:
-            needsBackref = true;
+            setFlag(BACKREF);
             break;
         case BEGINNODE:
             inspect(((BeginNode)node).getBodyNode());
@@ -287,7 +272,7 @@ public class ASTInspector {
                     callNode.getReceiverNode() instanceof ConstNode &&
                     ((ConstNode)callNode.getReceiverNode()).getName() == "Proc") {
                 // Proc.new needs the caller's block to instantiate a proc
-                needsFrameBlock = true;
+                setFlag(FRAME_BLOCK);
             }
         case FCALLNODE:
             inspect(((IArgumentNode)node).getArgsNode());
@@ -295,11 +280,13 @@ public class ASTInspector {
         case VCALLNODE:
             INameNode nameNode = (INameNode)node;
             if (FRAME_AWARE_METHODS.contains(nameNode.getName())) {
-                hasFrameAwareMethods = true;
-                hasEval |= nameNode.getName().indexOf("eval") != -1;
+                setFlag(FRAME_AWARE);
+                if (nameNode.getName().indexOf("eval") != -1) {
+                    setFlag(EVAL);
+                }
             }
             if (SCOPE_AWARE_METHODS.contains(nameNode.getName())) {
-                hasScopeAwareMethods = true;
+                setFlag(SCOPE_AWARE);
             }
             break;
         case CASENODE:
@@ -308,18 +295,22 @@ public class ASTInspector {
             inspect(caseNode.getFirstWhenNode());
             break;
         case CLASSNODE:
-            hasClass = true;
+            setFlag(CLASS);
             break;
         case CLASSVARNODE:
+            setFlag(CLASS_VAR);
             break;
         case CONSTDECLNODE:
             inspect(((AssignableNode)node).getValueNode());
+            setFlag(CONSTANT);
             break;
         case CLASSVARASGNNODE:
             inspect(((AssignableNode)node).getValueNode());
+            setFlag(CLASS_VAR);
             break;
         case CLASSVARDECLNODE:
             inspect(((AssignableNode)node).getValueNode());
+            setFlag(CLASS_VAR);
             break;
         case COLON2NODE:
             inspect(((Colon2Node)node).getLeftNode());
@@ -327,11 +318,12 @@ public class ASTInspector {
         case COLON3NODE:
             break;
         case CONSTNODE:
+            setFlag(CONSTANT);
             break;
         case DEFNNODE:
         case DEFSNODE:
-            hasDef = true;
-            needsFrameVisibility = true;
+            setFlag(METHOD);
+            setFlag(FRAME_VISIBILITY);
             break;
         case DEFINEDNODE:
             disable();
@@ -363,8 +355,8 @@ public class ASTInspector {
         case FLOATNODE:
             break;
         case FORNODE:
-            hasClosure = true;
-            hasScopeAwareMethods = true;
+            setFlag(CLOSURE);
+            setFlag(SCOPE_AWARE);
             inspect(((ForNode)node).getIterNode());
             inspect(((ForNode)node).getBodyNode());
             inspect(((ForNode)node).getVarNode());
@@ -372,16 +364,16 @@ public class ASTInspector {
         case GLOBALASGNNODE:
             GlobalAsgnNode globalAsgnNode = (GlobalAsgnNode)node;
             if (globalAsgnNode.getName().equals("$_")) {
-                needsLastline = true;
+                setFlag(LASTLINE);
             } else if (globalAsgnNode.getName().equals("$~")) {
-                needsBackref = true;
+                setFlag(BACKREF);
             }
             break;
         case GLOBALVARNODE:
             if (((GlobalVarNode)node).getName().equals("$_")) {
-                needsLastline = true;
+                setFlag(LASTLINE);
             } else if (((GlobalVarNode)node).getName().equals("$~")) {
-                needsBackref = true;
+                setFlag(BACKREF);
             }
             break;
         case HASHNODE:
@@ -404,7 +396,7 @@ public class ASTInspector {
             inspect(iscopingNode.getCPath());
             break;
         case ITERNODE:
-            hasClosure = true;
+            setFlag(CLOSURE);
             break;
         case LOCALASGNNODE:
             LocalAsgnNode localAsgnNode = (LocalAsgnNode)node;
@@ -420,22 +412,22 @@ public class ASTInspector {
             break;
         case MATCHNODE:
             inspect(((MatchNode)node).getRegexpNode());
-            needsBackref = true;
+            setFlag(BACKREF);
             break;
         case MATCH2NODE:
             Match2Node match2Node = (Match2Node)node;
             inspect(match2Node.getReceiverNode());
             inspect(match2Node.getValueNode());
-            needsBackref = true;
+            setFlag(BACKREF);
             break;
         case MATCH3NODE:
             Match3Node match3Node = (Match3Node)node;
             inspect(match3Node.getReceiverNode());
             inspect(match3Node.getValueNode());
-            needsBackref = true;
+            setFlag(BACKREF);
             break;
         case MODULENODE:
-            hasClass = true;
+            setFlag(CLASS);
             break;
         case MULTIPLEASGNNODE:
             MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode)node;
@@ -471,7 +463,7 @@ public class ASTInspector {
             break;
         case OPELEMENTASGNNODE:
             OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode)node;
-            needsFrameSelf = true;
+            setFlag(FRAME_SELF);
             inspect(opElementAsgnNode.getArgsNode());
             inspect(opElementAsgnNode.getReceiverNode());
             inspect(opElementAsgnNode.getValueNode());
@@ -483,15 +475,15 @@ public class ASTInspector {
             break;
         case POSTEXENODE:
             PostExeNode postExeNode = (PostExeNode)node;
-            hasClosure = true;
-            hasScopeAwareMethods = true;
+            setFlag(CLOSURE);
+            setFlag(SCOPE_AWARE);
             inspect(postExeNode.getBodyNode());
             inspect(postExeNode.getVarNode());
             break;
         case PREEXENODE:
             PreExeNode preExeNode = (PreExeNode)node;
-            hasClosure = true;
-            hasScopeAwareMethods = true;
+            setFlag(CLOSURE);
+            setFlag(SCOPE_AWARE);
             inspect(preExeNode.getBodyNode());
             inspect(preExeNode.getVarNode());
             break;
@@ -506,7 +498,7 @@ public class ASTInspector {
                 if (blockNode.size() > 500) {
                     // method has more than 500 lines; we'll need to split it
                     // and therefore need to use a heap-based scope
-                    hasScopeAwareMethods = true;
+                    setFlag(SCOPE_AWARE);
                 }
             }
             break;
@@ -523,7 +515,7 @@ public class ASTInspector {
             inspect(((ReturnNode)node).getValueNode());
             break;
         case SCLASSNODE:
-            hasClass = true;
+            setFlag(CLASS);
             break;
         case SCOPENODE:
             break;
@@ -552,6 +544,7 @@ public class ASTInspector {
         case TRUENODE:
             break;
         case UNDEFNODE:
+            setFlag(METHOD);
             break;
         case UNTILNODE:
             UntilNode untilNode = (UntilNode)node;
@@ -561,11 +554,11 @@ public class ASTInspector {
             // * a closure within the loop
             // * an eval within the loop
             // * a block-arg-based proc called within the loop
-            if (untilInspector.hasClosure || untilInspector.hasEval) {
+            if (untilInspector.getFlag(CLOSURE) || untilInspector.getFlag(EVAL)) {
                 untilNode.containsNonlocalFlow = true;
                 
                 // we set scope-aware to true to force heap-based locals
-                hasScopeAwareMethods = true;
+                setFlag(SCOPE_AWARE);
             }
             break;
         case VALIASNODE:
@@ -583,11 +576,11 @@ public class ASTInspector {
             // * a closure within the loop
             // * an eval within the loop
             // * a block-arg-based proc called within the loop
-            if (whileInspector.hasClosure || whileInspector.hasEval || hasBlockArg) {
+            if (whileInspector.getFlag(CLOSURE) || whileInspector.getFlag(EVAL) || getFlag(BLOCK_ARG)) {
                 whileNode.containsNonlocalFlow = true;
                 
                 // we set scope-aware to true to force heap-based locals
-                hasScopeAwareMethods = true;
+                setFlag(SCOPE_AWARE);
             }
             integrate(whileInspector);
             break;
@@ -601,8 +594,8 @@ public class ASTInspector {
         case ZEROARGNODE:
             break;
         case ZSUPERNODE:
-            hasScopeAwareMethods = true;
-            hasZSuper = true;
+            setFlag(SCOPE_AWARE);
+            setFlag(ZSUPER);
             inspect(((ZSuperNode)node).getIterNode());
             break;
         default:
@@ -613,45 +606,51 @@ public class ASTInspector {
     }
 
     public boolean hasClass() {
-        return hasClass;
+        return getFlag(CLASS);
     }
 
     public boolean hasClosure() {
-        return hasClosure;
+        return getFlag(CLOSURE);
     }
 
-    public boolean hasDef() {
-        return hasDef;
+    /**
+     * Whether the tree under inspection contains any method-table mutations,
+     * including def, defs, undef, and alias.
+     * 
+     * @return True if there are mutations, false otherwise
+     */
+    public boolean hasMethod() {
+        return getFlag(METHOD);
     }
 
     public boolean hasFrameAwareMethods() {
-        return hasClosure ||
-                hasEval ||
-                hasFrameAwareMethods ||
-                needsBackref ||
-                needsFrameBlock ||
-                needsFrameKlazz ||
-                needsFrameName ||
-                needsFrameSelf ||
-                needsFrameVisibility ||
-                needsLastline ||
-                hasZSuper;
+        return getFlag(
+                FRAME_AWARE | FRAME_BLOCK | FRAME_CLASS | FRAME_NAME | FRAME_SELF | FRAME_VISIBILITY |
+                CLOSURE | EVAL | BACKREF | LASTLINE | ZSUPER);
     }
 
     public boolean hasScopeAwareMethods() {
-        return hasScopeAwareMethods;
+        return getFlag(SCOPE_AWARE);
     }
 
     public boolean hasBlockArg() {
-        return hasBlockArg;
+        return getFlag(BLOCK_ARG);
     }
 
     public boolean hasOptArgs() {
-        return hasOptArgs;
+        return getFlag(OPT_ARGS);
     }
 
     public boolean hasRestArg() {
-        return hasRestArg;
+        return getFlag(REST_ARG);
+    }
+    
+    public boolean hasConstant() {
+        return getFlag(CONSTANT);
+    }
+    
+    public boolean hasClassVar() {
+        return getFlag(CLASS_VAR);
     }
     
     public boolean noFrame() {
