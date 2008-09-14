@@ -15,7 +15,6 @@ import org.jruby.ast.NodeType;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.CacheCompiler;
 import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
@@ -51,7 +50,7 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
         // no finish for field-based
     }
     
-    public void cacheCallSite(StandardASMCompiler.AbstractMethodCompiler method, String name, CallType callType) {
+    public void cacheCallSite(AbstractMethodCompiler method, String name, CallType callType) {
         String fieldName = scriptCompiler.getNewConstant(ci(CallSite.class), JavaNameMangler.mangleStringForCleanJavaIdentifier(name));
         
         // retrieve call adapter
@@ -72,7 +71,7 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
         method.method.getfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
     }
     
-    public void cacheByteList(StandardASMCompiler.AbstractMethodCompiler method, String contents) {
+    public void cacheByteList(AbstractMethodCompiler method, String contents) {
         String fieldName = byteLists.get(contents);
         if (fieldName == null) {
             SkinnyMethodAdapter clinitMethod = scriptCompiler.getClassInitMethod();
@@ -87,7 +86,7 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
         method.method.getstatic(scriptCompiler.getClassname(), fieldName, ci(ByteList.class));
     }
     
-    public void cacheBigInteger(StandardASMCompiler.AbstractMethodCompiler method, BigInteger bigint) {
+    public void cacheBigInteger(AbstractMethodCompiler method, BigInteger bigint) {
         String fieldName = bigIntegers.get(bigint);
         if (fieldName == null) {
             SkinnyMethodAdapter clinitMethod = scriptCompiler.getClassInitMethod();
@@ -104,7 +103,7 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
         method.method.getstatic(scriptCompiler.getClassname(), fieldName, ci(BigInteger.class));
     }
     
-    public void cacheSymbol(StandardASMCompiler.AbstractMethodCompiler method, String symbol) {
+    public void cacheSymbol(AbstractMethodCompiler method, String symbol) {
         String methodName = symbols.get(symbol);
         if (methodName == null) {
             String fieldName = scriptCompiler.getNewConstant(ci(RubySymbol.class), "symbol");
@@ -144,7 +143,7 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
                 sig(RubySymbol.class, params(Ruby.class)));
     }
     
-    public void cacheFixnum(StandardASMCompiler.AbstractMethodCompiler method, long value) {
+    public void cacheFixnum(AbstractMethodCompiler method, long value) {
         String methodName = fixnums.get(value);
         if (methodName == null) {
             String fieldName = scriptCompiler.getNewConstant(ci(RubyFixnum.class), "symbol");
@@ -184,7 +183,7 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
                 sig(RubyFixnum.class, params(Ruby.class)));
     }
     
-    public void cacheClosure(StandardASMCompiler.AbstractMethodCompiler method, String closureMethod, int arity, StaticScope scope, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector) {
+    public void cacheClosure(AbstractMethodCompiler method, String closureMethod, int arity, StaticScope scope, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector) {
         String closureFieldName = scriptCompiler.getNewConstant(ci(BlockBody.class), "closure");
 
         String closureMethodName = "getClosure_" + closureFieldName;
@@ -236,7 +235,7 @@ public class FieldBasedCacheCompiler implements CacheCompiler {
                 sig(BlockBody.class, ThreadContext.class));
     }
     
-    public void cacheClosureOld(StandardASMCompiler.AbstractMethodCompiler method, String closureMethod) {
+    public void cacheClosureOld(AbstractMethodCompiler method, String closureMethod) {
         String closureFieldName = scriptCompiler.getNewConstant(ci(CompiledBlockCallback.class), "closure");
 
         String closureMethodName = "getClosure_" + closureFieldName;

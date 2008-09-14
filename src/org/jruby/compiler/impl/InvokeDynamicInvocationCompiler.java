@@ -37,7 +37,6 @@ import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.JavaNameMangler;
 import static org.jruby.util.CodegenUtils.*;
 import org.objectweb.asm.Label;
 
@@ -46,10 +45,10 @@ import org.objectweb.asm.Label;
  * @author headius
  */
 public class InvokeDynamicInvocationCompiler implements InvocationCompiler {
-    private StandardASMCompiler.AbstractMethodCompiler methodCompiler;
+    private AbstractMethodCompiler methodCompiler;
     private SkinnyMethodAdapter method;
 
-    public InvokeDynamicInvocationCompiler(StandardASMCompiler.AbstractMethodCompiler methodCompiler, SkinnyMethodAdapter method) {
+    public InvokeDynamicInvocationCompiler(AbstractMethodCompiler methodCompiler, SkinnyMethodAdapter method) {
         this.methodCompiler = methodCompiler;
         this.method = method;
     }

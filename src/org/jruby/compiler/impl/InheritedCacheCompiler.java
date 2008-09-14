@@ -30,7 +30,7 @@ public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
     }
     
     @Override
-    public void cacheCallSite(StandardASMCompiler.AbstractMethodCompiler method, String name, CallType callType) {
+    public void cacheCallSite(AbstractMethodCompiler method, String name, CallType callType) {
         // retrieve call site from sites array
         method.loadThis();
         method.method.pushInt(callSiteCount);
@@ -44,7 +44,7 @@ public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
     }
     
     @Override
-    public void cacheSymbol(StandardASMCompiler.AbstractMethodCompiler method, String symbol) {
+    public void cacheSymbol(AbstractMethodCompiler method, String symbol) {
         method.loadThis();
         method.loadRuntime();
         method.method.pushInt(inheritedSymbolCount);
@@ -55,7 +55,7 @@ public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
     }
     
     @Override
-    public void cacheFixnum(StandardASMCompiler.AbstractMethodCompiler method, long value) {
+    public void cacheFixnum(AbstractMethodCompiler method, long value) {
         if (value <= 5 && value >= -1) {
             method.loadRuntime();
             switch ((int)value) {

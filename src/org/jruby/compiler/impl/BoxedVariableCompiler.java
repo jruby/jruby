@@ -38,7 +38,7 @@ public class BoxedVariableCompiler extends HeapBasedVariableCompiler {
     private int baseVariableIndex;
 
     public BoxedVariableCompiler(
-            StandardASMCompiler.AbstractMethodCompiler methodCompiler,
+            AbstractMethodCompiler methodCompiler,
             SkinnyMethodAdapter method,
             StaticScope scope,
             boolean specificArity,

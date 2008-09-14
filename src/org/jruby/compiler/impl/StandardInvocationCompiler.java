@@ -44,10 +44,10 @@ import org.objectweb.asm.Label;
  * @author headius
  */
 public class StandardInvocationCompiler implements InvocationCompiler {
-    private StandardASMCompiler.AbstractMethodCompiler methodCompiler;
+    private AbstractMethodCompiler methodCompiler;
     private SkinnyMethodAdapter method;
 
-    public StandardInvocationCompiler(StandardASMCompiler.AbstractMethodCompiler methodCompiler, SkinnyMethodAdapter method) {
+    public StandardInvocationCompiler(AbstractMethodCompiler methodCompiler, SkinnyMethodAdapter method) {
         this.methodCompiler = methodCompiler;
         this.method = method;
     }
