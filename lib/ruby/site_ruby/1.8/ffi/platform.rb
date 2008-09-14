@@ -12,6 +12,8 @@ module JRuby
 end
 module FFI
   module Platform
+    ADDRESS_SIZE = JRuby::FFI::Platform::ADDRESS_SIZE
+    LONG_SIZE = JRuby::FFI::Platform::LONG_SIZE
     def self.windows?
       JRuby::FFI::Platform::IS_WINDOWS
     end
