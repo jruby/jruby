@@ -92,6 +92,25 @@ public class RubyEnumerator extends RubyObject {
         object = method = runtime.getNil();
     }
 
+    private RubyEnumerator(Ruby runtime, IRubyObject object, IRubyObject method, IRubyObject[]args) {
+        super(runtime, runtime.getEnumerator());
+        this.object = object;
+        this.method = method;
+        this.methodArgs = args;
+    }
+
+    static IRubyObject enumeratorize(Ruby runtime, IRubyObject object, String method) {
+        return new RubyEnumerator(runtime, object, runtime.fastNewSymbol(method), IRubyObject.NULL_ARRAY);
+    }
+
+    static IRubyObject enumeratorize(Ruby runtime, IRubyObject object, String method, IRubyObject arg) {
+        return new RubyEnumerator(runtime, object, runtime.fastNewSymbol(method), new IRubyObject[]{arg});
+    }
+
+    static IRubyObject enumeratorize(Ruby runtime, IRubyObject object, String method, IRubyObject[]args) {
+        return new RubyEnumerator(runtime, object, runtime.fastNewSymbol(method), args); // TODO: make sure it's really safe to not to copy it
+    }
+
     @JRubyMethod(name = "initialize", required = 1, rest = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args) {
         object = args[0];

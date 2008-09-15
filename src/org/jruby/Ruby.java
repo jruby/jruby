@@ -1406,7 +1406,7 @@ public final class Ruby {
         this.enumerableModule = enumerableModule;
     }
 
-    public RubyModule getEnumerator() {
+    public RubyClass getEnumerator() {
         return enumeratorClass;
     }
     void setEnumerator(RubyClass enumeratorClass) {

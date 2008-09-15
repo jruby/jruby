@@ -37,6 +37,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import static org.jruby.RubyEnumerator.enumeratorize;
+
 import java.lang.reflect.Array;
 import java.io.IOException;
 import java.util.Arrays;
@@ -1931,7 +1933,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_select
      *
      */
-    @JRubyMethod(name = "select", frame = true)
+    @JRubyMethod(name = "select", frame = true, compat = CompatVersion.RUBY1_8)
     public RubyArray select(ThreadContext context, Block block) {
         Ruby runtime = getRuntime();
         RubyArray result = new RubyArray(runtime, realLength);
@@ -1946,6 +1948,11 @@ public class RubyArray extends RubyObject implements List {
             }
         }
         return result;
+    }
+
+    @JRubyMethod(name = "select", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject select19(ThreadContext context, Block block) {
+        return block.isGiven() ? select(context, block) : enumeratorize(context.getRuntime(), this, "select");
     }
 
     /** rb_ary_delete
