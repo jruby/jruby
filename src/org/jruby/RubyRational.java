@@ -66,7 +66,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
 /**
- *  1.9 rational.c as of revision: 19329
+ *  1.9 rational.c as of revision: 19365
  */
 
 @JRubyClass(name = "Rational", parent = "Numeric", include = "Precision")
@@ -847,7 +847,7 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "hash")
     public IRubyObject hash(ThreadContext context) {
-        return f_xor(context, num, den);
+        return f_xor(context, num.callMethod(context, "hash"), den.callMethod(context, "hash"));
     }
 
     /** nurat_to_s

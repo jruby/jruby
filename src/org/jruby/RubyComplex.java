@@ -68,7 +68,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
 /**
- *  1.9 complex.c as of revision: 19342
+ *  1.9 complex.c as of revision: 19365
  */
 
 @JRubyClass(name = "Complex", parent = "Numeric")
@@ -757,13 +757,29 @@ public class RubyComplex extends RubyNumeric {
                                 f_numerator(context, image),
                                 f_div(context, cd, f_denominator(context, image))));
     }
-    
+
     /** nucomp_hash
      * 
      */
     @JRubyMethod(name = "hash")
     public IRubyObject hash(ThreadContext context) {
-        return f_xor(context, real, image);
+        return f_xor(context, real.callMethod(context, "hash"), image.callMethod(context, "hash"));
+    }
+
+    /** nucomp_eql_p
+     * 
+     */
+    @JRubyMethod(name = "eql?")
+    public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
+        if (other instanceof RubyComplex) {
+            RubyComplex otherComplex = (RubyComplex)other;
+            if (real.getMetaClass() == otherComplex.real.getMetaClass() &&
+                image.getMetaClass() == otherComplex.image.getMetaClass() &&
+                f_equal_p(context, this, otherComplex)) {
+                return context.getRuntime().getTrue();
+            }
+        }
+        return context.getRuntime().getFalse();
     }
 
     /** f_signbit
