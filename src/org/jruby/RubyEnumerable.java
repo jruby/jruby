@@ -66,12 +66,6 @@ public class RubyEnumerable {
                 Arity.noArguments(), callback, context));
     }
 
-    private static class ExitIteration extends RuntimeException {
-        public Throwable fillInStackTrace() {
-            return this;
-        }
-    }
-
     @JRubyMethod(name = "first")
     public static IRubyObject first_0(ThreadContext context, IRubyObject self) {
         Ruby runtime = self.getRuntime();
@@ -86,10 +80,10 @@ public class RubyEnumerable {
                             throw ctx.getRuntime().newThreadError("Enumerable#first cannot be parallelized");
                         }
                         holder[0] = largs[0];
-                        throw new ExitIteration();
+                        throw JumpException.SPECIAL_JUMP;
                     }
                 });
-        } catch(ExitIteration ei) {}
+        } catch (JumpException.SpecialJump sj) {}
 
         return holder[0];
     }
@@ -111,14 +105,14 @@ public class RubyEnumerable {
                         if (localContext != ctx) {
                             throw runtime.newThreadError("Enumerable#first cannot be parallelized");
                         }
-                        if(iter-- == 0) {
-                            throw new ExitIteration();
+                        if (iter-- == 0) {
+                            throw JumpException.SPECIAL_JUMP;
                         }
                         result.append(largs[0]);
                         return runtime.getNil();
                     }
                 });
-        } catch(ExitIteration ei) {}
+        } catch (JumpException.SpecialJump sj) {}
 
         return result;
     }
