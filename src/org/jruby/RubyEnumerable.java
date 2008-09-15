@@ -68,7 +68,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "first")
     public static IRubyObject first_0(ThreadContext context, IRubyObject self) {
-        Ruby runtime = self.getRuntime();
+        Ruby runtime = context.getRuntime();
         final ThreadContext localContext = context;
         
         final IRubyObject[] holder = new IRubyObject[]{runtime.getNil()};
@@ -90,7 +90,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "first")
     public static IRubyObject first_1(ThreadContext context, IRubyObject self, final IRubyObject num) {
-        final Ruby runtime = self.getRuntime();
+        final Ruby runtime = context.getRuntime();
         final RubyArray result = runtime.newArray();
         final ThreadContext localContext = context;
 
@@ -119,7 +119,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = {"to_a", "entries"})
     public static IRubyObject to_a(ThreadContext context, IRubyObject self) {
-        Ruby runtime = self.getRuntime();
+        Ruby runtime = context.getRuntime();
         RubyArray result = runtime.newArray();
 
         callEach(runtime, context, self, new AppendBlockCallback(runtime, result));
@@ -129,7 +129,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "sort", frame = true)
     public static IRubyObject sort(ThreadContext context, IRubyObject self, final Block block) {
-        Ruby runtime = self.getRuntime();
+        Ruby runtime = context.getRuntime();
         RubyArray result = runtime.newArray();
 
         callEach(runtime, context, self, new AppendBlockCallback(runtime, result));
@@ -140,7 +140,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "sort_by", frame = true)
     public static IRubyObject sort_by(ThreadContext context, IRubyObject self, final Block block) {
-        final Ruby runtime = self.getRuntime();
+        final Ruby runtime = context.getRuntime();
         final ThreadContext localContext = context; // MUST NOT be used across threads
 
         if (self instanceof RubyArray) {
@@ -197,7 +197,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "grep", required = 1, frame = true)
     public static IRubyObject grep(ThreadContext context, IRubyObject self, final IRubyObject pattern, final Block block) {
-        final Ruby runtime = self.getRuntime();
+        final Ruby runtime = context.getRuntime();
         final RubyArray result = runtime.newArray();
 
         if (block.isGiven()) {
@@ -232,7 +232,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = {"detect", "find"}, optional = 1, frame = true)
     public static IRubyObject detect(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
-        final Ruby runtime = self.getRuntime();
+        final Ruby runtime = context.getRuntime();
         final IRubyObject result[] = new IRubyObject[] { null };
         final ThreadContext localContext = context;
         IRubyObject ifnone = null;
@@ -261,7 +261,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = {"select", "find_all"}, frame = true)
     public static IRubyObject select(ThreadContext context, IRubyObject self, final Block block) {
-        final Ruby runtime = self.getRuntime();
+        final Ruby runtime = context.getRuntime();
         final RubyArray result = runtime.newArray();
 
         callEach(runtime, context, self, new BlockCallback() {
@@ -280,7 +280,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "reject", frame = true)
     public static IRubyObject reject(ThreadContext context, IRubyObject self, final Block block) {
-        final Ruby runtime = self.getRuntime();
+        final Ruby runtime = context.getRuntime();
         final RubyArray result = runtime.newArray();
 
         callEach(runtime, context, self, new BlockCallback() {
@@ -299,7 +299,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = {"collect", "map"}, frame = true)
     public static IRubyObject collect(ThreadContext context, IRubyObject self, final Block block) {
-        final Ruby runtime = self.getRuntime();
+        final Ruby runtime = context.getRuntime();
         final RubyArray result = runtime.newArray();
 
         if (block.isGiven()) {
@@ -320,7 +320,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "inject", optional = 1, frame = true)
     public static IRubyObject inject(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
-        final Ruby runtime = self.getRuntime();
+        final Ruby runtime = context.getRuntime();
         final IRubyObject result[] = new IRubyObject[] { null };
         final ThreadContext localContext = context;
 
@@ -343,7 +343,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "partition", frame = true)
     public static IRubyObject partition(ThreadContext context, IRubyObject self, final Block block) {
-        final Ruby runtime = self.getRuntime();
+        final Ruby runtime = context.getRuntime();
         final RubyArray arr_true = runtime.newArray();
         final RubyArray arr_false = runtime.newArray();
 
@@ -384,7 +384,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "each_with_index", frame = true)
     public static IRubyObject each_with_index(ThreadContext context, IRubyObject self, Block block) {
-        RuntimeHelpers.invoke(context, self, "each", CallBlock.newCallClosure(self, self.getRuntime().getEnumerable(), 
+        RuntimeHelpers.invoke(context, self, "each", CallBlock.newCallClosure(self, context.getRuntime().getEnumerable(), 
                 Arity.noArguments(), new EachWithIndex(context, block), context));
         
         return self;
@@ -416,7 +416,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "max", frame = true)
     public static IRubyObject max(ThreadContext context, IRubyObject self, final Block block) {
-        final Ruby runtime = self.getRuntime();
+        final Ruby runtime = context.getRuntime();
         final IRubyObject result[] = new IRubyObject[] { null };
         final ThreadContext localContext = context;
 
@@ -452,7 +452,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "min", frame = true)
     public static IRubyObject min(ThreadContext context, IRubyObject self, final Block block) {
-        final Ruby runtime = self.getRuntime();
+        final Ruby runtime = context.getRuntime();
         final IRubyObject result[] = new IRubyObject[] { null };
         final ThreadContext localContext = context;
 
@@ -488,7 +488,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "all?", frame = true)
     public static IRubyObject all_p(ThreadContext context, IRubyObject self, final Block block) {
-        final Ruby runtime = self.getRuntime();
+        final Ruby runtime = context.getRuntime();
         final ThreadContext localContext = context;
 
         try {
@@ -526,7 +526,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "any?", frame = true)
     public static IRubyObject any_p(ThreadContext context, IRubyObject self, final Block block) {
-        final Ruby runtime = self.getRuntime();
+        final Ruby runtime = context.getRuntime();
         final ThreadContext localContext = context;
 
         try {
@@ -564,7 +564,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "zip", rest = true, frame = true)
     public static IRubyObject zip(ThreadContext context, IRubyObject self, final IRubyObject[] args, final Block block) {
-        final Ruby runtime = self.getRuntime();
+        final Ruby runtime = context.getRuntime();
 
         for (int i = 0; i < args.length; i++) {
             args[i] = TypeConverter.convertToType(args[i], runtime.getArray(), MethodIndex.TO_A, "to_a");
@@ -612,7 +612,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "group_by", frame = true)
     public static IRubyObject group_by(ThreadContext context, IRubyObject self, final Block block) {
-        final Ruby runtime = self.getRuntime();
+        final Ruby runtime = context.getRuntime();
         final RubyHash result = new RubyHash(runtime);
 
         callEach(runtime, context, self, new BlockCallback() {
