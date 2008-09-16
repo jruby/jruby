@@ -312,12 +312,21 @@ public class RubyKernel {
                 defout.callMethod(context, "write", runtime.newString("\n"));
             }
         }
-        
+
+        IRubyObject result = runtime.getNil();
+        if (runtime.getInstanceConfig().getCompatVersion() == CompatVersion.RUBY1_9) {
+            if (args.length == 1) {
+                result = args[0];
+            } else if (args.length > 1) {
+                result = runtime.newArray(args);
+            }
+        }
+
         if (defout instanceof RubyFile) {
             ((RubyFile)defout).flush();
         }
-        
-        return context.getRuntime().getNil();
+
+        return result;
     }
 
     /** rb_f_putc
