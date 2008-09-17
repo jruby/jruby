@@ -192,18 +192,11 @@ public class Numeric {
         return x.callMethod(context, "polar");
     }
 
-    /** f_scalar_p
-     * 
-     */
-    public static IRubyObject f_scalar_p(ThreadContext context, IRubyObject x) {
-        return x.callMethod(context, "scalar?");
-    }
-
     /** f_real_p
      * 
      */
     public static IRubyObject f_real_p(ThreadContext context, IRubyObject x) {
-        return f_scalar_p(context, x);
+        return x.callMethod(context, "real?");
     }
 
     /** f_divmod
