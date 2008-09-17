@@ -655,10 +655,10 @@ public class RubyNumeric extends RubyObject {
         return RuntimeHelpers.invoke(context, this, "to_i");
     }
 
-    /** num_scalar_p
+    /** num_real_p
     *
     */
-    @JRubyMethod(name = "scalar?", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "real?", compat = CompatVersion.RUBY1_9)
     public IRubyObject scalar_p() {
         return getRuntime().getTrue();
     }
