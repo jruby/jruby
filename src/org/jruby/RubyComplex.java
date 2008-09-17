@@ -68,7 +68,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
 /**
- *  1.9 complex.c as of revision: 19365
+ *  1.9 complex.c as of revision: 19400
  */
 
 @JRubyClass(name = "Complex", parent = "Numeric")
@@ -447,6 +447,15 @@ public class RubyComplex extends RubyNumeric {
         if (a1 instanceof RubyComplex) {
             if (a2.isNil() || f_zero_p(context, a2)) return a1;
         }
+
+        if (a1 instanceof RubyNumeric && !f_real_p(context, a1).isTrue() ||
+            a2 instanceof RubyNumeric && !f_real_p(context, a2).isTrue()) {
+            Ruby runtime = context.getRuntime();
+            return f_add(context, a1, 
+                         f_mul(context, a2, newComplexBang(context, runtime.getComplex(),
+                                 RubyFixnum.zero(runtime), RubyFixnum.one(runtime))));
+        }
+
         return a2.isNil() ? newInstance(context, recv, a1) : newInstance(context, recv, a1, a2);
     }
     
@@ -706,7 +715,7 @@ public class RubyComplex extends RubyNumeric {
     /** nucomp_real_p
      * 
      */
-    @JRubyMethod(name = "scalar?")
+    @JRubyMethod(name = "real?")
     public IRubyObject real_p(ThreadContext context) {
         return context.getRuntime().getFalse();
     }
