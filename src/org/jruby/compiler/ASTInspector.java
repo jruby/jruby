@@ -93,25 +93,25 @@ import org.jruby.util.SafePropertyAccessor;
  * @author headius
  */
 public class ASTInspector {
-    public static final int BLOCK_ARG = 0x1;
-    public static final int CLOSURE = 0x2;
-    public static final int CLASS = 0x4;
+    public static final int BLOCK_ARG = 0x1; // block argument to the method
+    public static final int CLOSURE = 0x2; // closure present
+    public static final int CLASS = 0x4; // class present
     public static final int METHOD = 0x8; // method table mutations, def, defs, undef, alias
-    public static final int EVAL = 0x10;
-    public static final int FRAME_AWARE = 0x20;
-    public static final int FRAME_SELF = 0x40;
-    public static final int FRAME_VISIBILITY = 0x80;
-    public static final int FRAME_BLOCK = 0x100;
-    public static final int FRAME_NAME = 0x200;
-    public static final int BACKREF = 0x400;
-    public static final int LASTLINE = 0x800;
-    public static final int FRAME_CLASS = 0x1000;
-    public static final int OPT_ARGS = 0x2000;
-    public static final int REST_ARG = 0x4000;
-    public static final int SCOPE_AWARE = 0x8000;
-    public static final int ZSUPER = 0x10000;
-    public static final int CONSTANT = 0x20000;
-    public static final int CLASS_VAR = 0x40000;
+    public static final int EVAL = 0x10; // likely call to eval
+    public static final int FRAME_AWARE = 0x20; // makes calls that are aware of the frame
+    public static final int FRAME_SELF = 0x40; // makes calls that are aware of the frame's self
+    public static final int FRAME_VISIBILITY = 0x80; // makes calls that are aware of the frame's visibility
+    public static final int FRAME_BLOCK = 0x100; // makes calls that are aware of the frame's block
+    public static final int FRAME_NAME = 0x200; // makes calls that are aware of the frame's name
+    public static final int BACKREF = 0x400; // makes calls that set or get backref
+    public static final int LASTLINE = 0x800; // makes calls that set or get lastline
+    public static final int FRAME_CLASS = 0x1000; // makes calls that are aware of the frame's class
+    public static final int OPT_ARGS = 0x2000; // optional arguments to the method
+    public static final int REST_ARG = 0x4000; // rest arg to the method
+    public static final int SCOPE_AWARE = 0x8000; // makes calls that are aware of the scope
+    public static final int ZSUPER = 0x10000; // makes a zero-argument super call
+    public static final int CONSTANT = 0x20000; // accesses or sets constants
+    public static final int CLASS_VAR = 0x40000; // accesses or sets class variables
     
     private int flags;
     
