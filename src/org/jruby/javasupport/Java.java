@@ -84,7 +84,6 @@ import org.jruby.java.addons.IOJavaAddons;
 import org.jruby.java.addons.StringJavaAddons;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.ConcreteJavaProxy;
-import org.jruby.java.proxies.InterfaceJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.callback.Callback;
 
@@ -1044,13 +1043,7 @@ public class Java implements Library {
             }
         }
 
-        Object o1 = margs[0];
-
-        if (o1 instanceof JavaConstructor || o1 instanceof JavaProxyConstructor) {
-            throw recv.getRuntime().newNameError("no constructor with arguments matching " + arg_types + " on object " + recv.callMethod(recv.getRuntime().getCurrentContext(), "inspect"), null);
-        } else {
-            throw recv.getRuntime().newNameError("no " + ((JavaMethod) o1).name() + " with arguments matching " + arg_types + " on object " + recv.callMethod(recv.getRuntime().getCurrentContext(), "inspect"), null);
-        }
+        throw argumentError(recv.getRuntime().getCurrentContext(), margs[0], recv, arg_types);
     }
     
     public static int argsHashCode(Object[] a) {
@@ -1111,14 +1104,14 @@ public class Java implements Library {
     
     public static Class argClass(Object a) {
         if (a == null) return void.class;
-        
-        
+
+
         return a.getClass();
     }
-    
+
     public static Class argClass(IRubyObject a) {
         if (a == null) return void.class;
-        
+
         return a.getJavaClass();
     }
 
@@ -1177,17 +1170,7 @@ public class Java implements Library {
             }
         }
 
-        // We've fallen and can't get up...prepare for error message
-        Object o1 = methods[0];
-        ArrayList argTypes = new ArrayList(args.length);
-        for (Object o : args) argTypes.add(argClass(o));
-
-        if (o1 instanceof JavaConstructor || o1 instanceof JavaProxyConstructor) {
-            throw recv.getRuntime().newNameError("no constructor with arguments matching " + argTypes + " on object " + recv.callMethod(recv.getRuntime().getCurrentContext(), "inspect"), null);
-        } else {
-            Thread.dumpStack();
-            throw recv.getRuntime().newNameError("no " + ((JavaMethod) o1).name() + " with arguments matching " + argTypes + " on object " + recv.callMethod(recv.getRuntime().getCurrentContext(), "inspect"), null);
-        }
+        throw argTypesDoNotMatch(recv.getRuntime(), recv, methods, args);
     }
 
     // A version that just requires ParameterTypes; they will all move toward
@@ -1203,7 +1186,7 @@ public class Java implements Library {
         if (method == null) method = findCallable(methods, AssignableAndPrimitivable, args);
         if (method == null) method = findCallable(methods, AssignableOrDuckable, args);
         if (method == null) {
-            throw argTypesDoNotMatch(recv.getRuntime(), recv, methods, args);
+            throw argTypesDoNotMatch(recv.getRuntime(), recv, methods, (Object[]) args);
         } else {
             cache.put(signatureCode, method);
             return method;
@@ -1234,17 +1217,7 @@ public class Java implements Library {
         }
         return count;
     }
-    private static RaiseException argTypesDoNotMatch(Ruby runtime, IRubyObject receiver, ParameterTypes[] methods, IRubyObject... args) {
-        Object o1 = methods[0];
-        ArrayList<Class> argTypes = new ArrayList<Class>(args.length);
-        for (Object o : args) argTypes.add(argClass(o));
 
-        if (o1 instanceof JavaConstructor || o1 instanceof JavaProxyConstructor) {
-            throw runtime.newNameError("no constructor with arguments matching " + argTypes + " on object " + receiver.callMethod(runtime.getCurrentContext(), "inspect"), null);
-        } else {
-            throw runtime.newNameError("no " + ((JavaMethod) o1).name() + " with arguments matching " + argTypes + " on object " + receiver.callMethod(runtime.getCurrentContext(), "inspect"), null);
-        }
-    }
     
     // NOTE: The five match methods are arity-split to avoid the cost of boxing arguments
     // when there's already a cached match. Do not condense them into a single
@@ -1373,16 +1346,27 @@ public class Java implements Library {
         return JavaUtil.isDuckTypeConvertable(argClass(arg), type);
     }
     
-    private static RaiseException argTypesDoNotMatch(Ruby runtime, IRubyObject receiver, JavaCallable[] methods, IRubyObject... args) {
-        Object o1 = methods[0];
-        ArrayList<Class> argTypes = new ArrayList<Class>(args.length);
-        for (Object o : args) argTypes.add(argClass(o));
+    private static RaiseException argTypesDoNotMatch(Ruby runtime, IRubyObject receiver, Object[] methods, Object... args) {
+        ArrayList<Class<?>> argTypes = new ArrayList<Class<?>>(args.length);
+        
+        for (Object o : args) argTypes.add(argClassTypeError(o));
 
-        if (o1 instanceof JavaConstructor || o1 instanceof JavaProxyConstructor) {
-            throw runtime.newNameError("no constructor with arguments matching " + argTypes + " on object " + receiver.callMethod(runtime.getCurrentContext(), "inspect"), null);
-        } else {
-            throw runtime.newNameError("no " + ((JavaMethod) o1).name() + " with arguments matching " + argTypes + " on object " + receiver.callMethod(runtime.getCurrentContext(), "inspect"), null);
-        }
+        return argumentError(runtime.getCurrentContext(), methods[0], receiver, argTypes);
+    }
+
+    private static Class argClassTypeError(Object object) {
+        if (object == null) return void.class;
+        if (object instanceof ConcreteJavaProxy) return ((ConcreteJavaProxy) object).getJavaClass();
+
+        return object.getClass();
+    }
+    
+    private static RaiseException argumentError(ThreadContext context, Object method, IRubyObject receiver, List<Class<?>> argTypes) {
+        String methodName = (method instanceof JavaConstructor || method instanceof JavaProxyConstructor) ?
+            "constructor" : ((JavaMethod) method).name().toString();
+
+        return context.getRuntime().newNameError("no " + methodName + " with arguments matching " +
+                argTypes + " on object " + receiver.callMethod(context, "inspect"), null);
     }
     
     public static IRubyObject access(IRubyObject recv, IRubyObject java_type) {
