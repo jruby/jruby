@@ -85,12 +85,6 @@ import org.jruby.util.IdUtil;
 @JRubyClass(name="Java::JavaClass", parent="Java::JavaObject")
 public class JavaClass extends JavaObject {
 
-    // some null objects to simplify later code
-    private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[] {};
-    private static final Method[] EMPTY_METHOD_ARRAY = new Method[] {};
-    private static final Constructor[] EMPTY_CONSTRUCTOR_ARRAY = new Constructor[] {};
-    private static final Field[] EMPTY_FIELD_ARRAY = new Field[] {};
-
     private static class AssignedName {
         // to override an assigned name, the type must be less than
         // or equal to the assigned type. so a field name in a subclass
@@ -440,15 +434,8 @@ public class JavaClass extends JavaObject {
         Map<String, AssignedName> staticNames  = new HashMap<String, AssignedName>(STATIC_RESERVED_NAMES);
         List<ConstantField> constantFields = new ArrayList<ConstantField>(); 
         Map<String, NamedInstaller> staticCallbacks = new HashMap<String, NamedInstaller>();
-        Field[] fields = EMPTY_FIELD_ARRAY;
-        try {
-            fields = javaClass.getDeclaredFields();
-        } catch (SecurityException e) {
-            try {
-                fields = javaClass.getFields();
-            } catch (SecurityException e2) {
-            }
-        }
+        Field[] fields = getDeclaredFields(javaClass); 
+
         for (int i = fields.length; --i >= 0; ) {
             Field field = fields[i];
             if (javaClass != field.getDeclaringClass()) continue;
@@ -607,11 +594,8 @@ public class JavaClass extends JavaObject {
 
     private void installClassConstants(final Class<?> javaClass, final RubyClass proxy) {
         // setup constants for public inner classes
-        Class<?>[] classes = EMPTY_CLASS_ARRAY;
-        try {
-            classes = javaClass.getClasses();
-        } catch (SecurityException e) {
-        }
+        Class<?>[] classes = getClasses(javaClass);
+
         for (int i = classes.length; --i >= 0;) {
             if (javaClass == classes[i].getDeclaringClass()) {
                 Class<?> clazz = classes[i];
@@ -657,11 +641,8 @@ public class JavaClass extends JavaObject {
     private void setupClassConstructors(Class<?> javaClass) {
         // TODO: protected methods.  this is going to require a rework
         // of some of the mechanism.
-        Constructor[] constructors = EMPTY_CONSTRUCTOR_ARRAY;
-        try {
-            constructors = javaClass.getConstructors();
-        } catch (SecurityException e) {
-        }
+        Constructor[] constructors = getConstructors(javaClass);
+
         for (int i = constructors.length; --i >= 0;) {
             // we need to collect all methods, though we'll only
             // install the ones that are named in this class
@@ -674,11 +655,8 @@ public class JavaClass extends JavaObject {
     }
 
     private void setupClassFields(Class<?> javaClass, List<ConstantField> constantFields, Map<String, AssignedName> staticNames, Map<String, NamedInstaller> staticCallbacks, Map<String, AssignedName> instanceNames, Map<String, NamedInstaller> instanceCallbacks) {
-        Field[] fields = EMPTY_FIELD_ARRAY;
-        try {
-            fields = javaClass.getFields();
-        } catch (SecurityException e) {
-        }
+        Field[] fields = getFields(javaClass);
+        
         for (int i = fields.length; --i >= 0;) {
             Field field = fields[i];
             if (javaClass != field.getDeclaringClass()) {
@@ -717,16 +695,9 @@ public class JavaClass extends JavaObject {
     }
 
     private void setupClassMethods(Class<?> javaClass, Map<String, AssignedName> staticNames, Map<String, NamedInstaller> staticCallbacks, Map<String, AssignedName> instanceNames, Map<String, NamedInstaller> instanceCallbacks) {
-        // TODO: protected methods.  this is going to require a rework
-        // of some of the mechanism.
-        Method[] methods = EMPTY_METHOD_ARRAY;
-        for (Class c = javaClass; c != null; c = c.getSuperclass()) {
-            try {
-                methods = javaClass.getMethods();
-                break;
-            } catch (SecurityException e) {
-            }
-        }
+        // TODO: protected methods.  this is going to require a rework of some of the mechanism.
+        Method[] methods = getMethods(javaClass);
+
         for (int i = methods.length; --i >= 0;) {
             // we need to collect all methods, though we'll only
             // install the ones that are named in this class
@@ -802,11 +773,8 @@ public class JavaClass extends JavaObject {
             installer.install(module);
         }        
         // setup constants for public inner classes
-        Class<?>[] classes = EMPTY_CLASS_ARRAY;
-        try {
-            classes = javaClass.getClasses();
-        } catch (SecurityException e) {
-        }
+        Class<?>[] classes = getClasses(javaClass);
+
         for (int i = classes.length; --i >= 0; ) {
             if (javaClass == classes[i].getDeclaringClass()) {
                 Class<?> clazz = classes[i];
@@ -1690,4 +1658,46 @@ public class JavaClass extends JavaObject {
         return JavaClass.get(getRuntime(), javaClass().getComponentType());
     }
     
+    private static Constructor[] getConstructors(Class<?> javaClass) {
+        try {
+            return javaClass.getConstructors();
+        } catch (SecurityException e) {
+            return new Constructor[] {};
+        }        
+    }
+    
+    private static Class<?>[] getClasses(Class<?> javaClass) {
+        try {
+            return javaClass.getClasses();
+        } catch (SecurityException e) {
+            return new Class<?>[] {};
+        }
+    }
+
+    private static Field[] getDeclaredFields(Class<?> javaClass) {
+        try {
+            return javaClass.getDeclaredFields();
+        } catch (SecurityException e) {
+            return getFields(javaClass);
+        }
+    }
+    
+    private static Field[] getFields(Class<?> javaClass) {
+        try {
+            return javaClass.getFields();
+        } catch (SecurityException e) {
+            return new Field[] {};
+        }
+    }
+    
+    private static Method[] getMethods(Class<?> javaClass) {
+        for (Class c = javaClass; c != null; c = c.getSuperclass()) {
+            try {
+                return javaClass.getMethods();
+            } catch (SecurityException e) {
+            }
+        }
+
+        return new Method[] {};
+    }
 }
