@@ -220,9 +220,10 @@ public class RubyJRuby {
     }
 
     @JRubyMethod(name = "reference", required = 1, module = true)
-    public static IRubyObject reference(IRubyObject recv, IRubyObject obj) {
-        return Java.wrap(recv.getRuntime().getJavaSupport().getJavaUtilitiesModule(),
-                JavaObject.wrap(recv.getRuntime(), obj));
+    public static IRubyObject reference(ThreadContext context, IRubyObject recv, IRubyObject obj) {
+        Ruby runtime = context.getRuntime();
+
+        return Java.wrap(runtime, JavaObject.wrap(runtime, obj));
     }
 
     @JRubyMethod(name = "dereference", required = 1, module = true)
