@@ -5,8 +5,8 @@ module Posix
   extend FFI::Library
   attach_function :gettimeofday, [ :pointer, :pointer ], :int
 end
-class Timeval < JRuby::FFI::Struct
-  layout :tv_sec => :time_t, :tv_nsec => :ulong
+class Timeval < FFI::Struct
+  layout :tv_sec => :ulong, :tv_nsec => :ulong
 end
 
 iter = 100_000
