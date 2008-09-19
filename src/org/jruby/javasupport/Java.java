@@ -978,11 +978,9 @@ public class Java implements Library {
 
     public static IRubyObject get_top_level_proxy_or_package(ThreadContext context, IRubyObject recv, IRubyObject sym) {
         Ruby runtime = context.getRuntime();
-        RubyModule result;
-        if ((result = getTopLevelProxyOrPackage(context, runtime, sym.asJavaString())) != null) {
-            return result;
-        }
-        return runtime.getNil();
+        RubyModule result = getTopLevelProxyOrPackage(context, runtime, sym.asJavaString());
+
+        return result != null ? result : runtime.getNil();
     }
 
     public static IRubyObject matching_method(IRubyObject recv, IRubyObject methods, IRubyObject args) {
