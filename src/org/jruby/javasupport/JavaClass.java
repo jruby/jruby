@@ -51,7 +51,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
@@ -252,6 +251,7 @@ public class JavaClass extends JavaObject {
         }
 
         // modified only by addMethod; no synchronization required
+        @Override
         boolean hasLocalMethod () {
             return haveLocalMethod;
         }
@@ -430,6 +430,7 @@ public class JavaClass extends JavaObject {
         }
     }
     
+    @Override
     public boolean equals(Object other) {
         return other instanceof JavaClass &&
             this.getValue() == ((JavaClass)other).getValue();
@@ -589,7 +590,7 @@ public class JavaClass extends JavaObject {
     private static void addUnassignedAlias(String name, Map<String, AssignedName> assignedNames,
             MethodInstaller installer) {
         if (name != null) {
-            AssignedName assignedName = (AssignedName)assignedNames.get(name);
+            AssignedName assignedName = assignedNames.get(name);
             if (assignedName == null) {
                 installer.addAlias(name);
                 assignedNames.put(name,new AssignedName(name,AssignedName.ALIAS));
@@ -639,15 +640,13 @@ public class JavaClass extends JavaObject {
     }
 
     private void installClassMethods(final RubyClass proxy) {
-        for (Iterator<NamedInstaller> iter = staticInstallers.values().iterator(); iter.hasNext();) {
-            NamedInstaller installer = iter.next();
+        for (NamedInstaller installer : staticInstallers.values()) {
             if (installer.type == NamedInstaller.STATIC_METHOD && installer.hasLocalMethod()) {
                 assignAliases((MethodInstaller) installer, staticAssignedNames);
             }
-            installer.install(proxy);
+            installer.install(proxy);            
         }
-        for (Iterator<NamedInstaller> iter = instanceInstallers.values().iterator(); iter.hasNext();) {
-            NamedInstaller installer = iter.next();
+        for (NamedInstaller installer : instanceInstallers.values()) {
             if (installer.type == NamedInstaller.INSTANCE_METHOD && installer.hasLocalMethod()) {
                 assignAliases((MethodInstaller) installer, instanceAssignedNames);
             }
@@ -796,8 +795,7 @@ public class JavaClass extends JavaObject {
         for (ConstantField field: constantFields) {
             field.install(module);
         }
-        for (Iterator<NamedInstaller> iter = staticInstallers.values().iterator(); iter.hasNext(); ) {
-            NamedInstaller installer = iter.next();
+        for (NamedInstaller installer : staticInstallers.values()) {
             if (installer.type == NamedInstaller.STATIC_METHOD && installer.hasLocalMethod()) {
                 assignAliases((MethodInstaller)installer,staticAssignedNames);
             }
