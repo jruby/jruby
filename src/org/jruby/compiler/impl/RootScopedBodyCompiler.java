@@ -18,12 +18,10 @@ import static org.objectweb.asm.Opcodes.*;
  * variable scope. This includes method bodies and class bodies.
  */
 public abstract class RootScopedBodyCompiler extends BaseBodyCompiler {
-
     private boolean specificArity;
 
     protected RootScopedBodyCompiler(StandardASMCompiler scriptCompiler, String friendlyName, ASTInspector inspector, StaticScope scope) {
         super(scriptCompiler, friendlyName, inspector, scope);
-        this.script = scriptCompiler;
     }
 
     protected String getSignature() {

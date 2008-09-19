@@ -2,6 +2,7 @@ package org.jruby.compiler.impl;
 
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.exceptions.JumpException;
@@ -9,6 +10,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.objectweb.asm.AnnotationVisitor;
 import static org.jruby.util.CodegenUtils.*;
 import static org.objectweb.asm.Opcodes.*;
 
@@ -16,11 +18,12 @@ import static org.objectweb.asm.Opcodes.*;
  * MethodBodyCompiler is the base compiler for all method bodies.
  */
 public class MethodBodyCompiler extends RootScopedBodyCompiler {
-
     private boolean specificArity;
+    private String rubyName;
 
-    public MethodBodyCompiler(StandardASMCompiler scriptCompiler, String friendlyName, ASTInspector inspector, StaticScope scope) {
-        super(scriptCompiler, friendlyName, inspector, scope);
+    public MethodBodyCompiler(StandardASMCompiler scriptCompiler, String rubyName, String javaName, ASTInspector inspector, StaticScope scope) {
+        super(scriptCompiler, javaName, inspector, scope);
+        this.rubyName = rubyName;
     }
 
     @Override
@@ -79,9 +82,21 @@ public class MethodBodyCompiler extends RootScopedBodyCompiler {
 
         // method is done, declare all variables
         variableCompiler.declareLocals(scope, scopeStart, scopeEnd);
+        
+        // Define the annotation for the method
+        AnnotationVisitor annotation = method.visitAnnotation(ci(JRubyMethod.class), true);
+        annotation.visit("name", rubyName);
+        annotation.visit("frame", true);
+        annotation.visit("required", scope.getRequiredArgs());
+        annotation.visit("optional", scope.getOptionalArgs());
+        annotation.visit("rest", scope.getRestArg());
+        // TODO: reads/writes from frame
+        // TODO: information on scoping
+        // TODO: visibility?
 
         method.end();
         if (specificArity) {
+            
             method = new SkinnyMethodAdapter(script.getClassVisitor().visitMethod(ACC_PUBLIC, methodName, StandardASMCompiler.METHOD_SIGNATURES[4], null, null));
             method.start();
 

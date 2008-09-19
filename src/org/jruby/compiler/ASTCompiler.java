@@ -3041,7 +3041,7 @@ public class ASTCompiler {
         context.startScript(rootNode.getStaticScope());
 
         // create method for toplevel of script
-        BodyCompiler methodCompiler = context.startMethod("__file__", null, rootNode.getStaticScope(), inspector);
+        BodyCompiler methodCompiler = context.startMethod("__file__", "__file__", null, rootNode.getStaticScope(), inspector);
 
         Node nextNode = rootNode.getBodyNode();
         if (nextNode != null) {

@@ -204,7 +204,7 @@ public class JITCompiler implements JITCompilerMBean {
             BodyCompiler methodCompiler;
             if (bodyNode != null) {
                 // we have a body, do a full-on method
-                methodCompiler = asmCompiler.startMethod("__file__", args, staticScope, inspector);
+                methodCompiler = asmCompiler.startMethod("__file__", "__file__", args, staticScope, inspector);
                 compiler.compile(bodyNode, methodCompiler);
             } else {
                 // If we don't have a body, check for required or opt args
@@ -212,10 +212,10 @@ public class JITCompiler implements JITCompilerMBean {
                 // if required args, need to raise errors if too few args passed
                 // otherwise, method does nothing, make it a nop
                 if (argsNode != null && (argsNode.getRequiredArgsCount() > 0 || argsNode.getOptionalArgsCount() > 0)) {
-                    methodCompiler = asmCompiler.startMethod("__file__", args, staticScope, inspector);
+                    methodCompiler = asmCompiler.startMethod("__file__", "__file__", args, staticScope, inspector);
                     methodCompiler.loadNil();
                 } else {
-                    methodCompiler = asmCompiler.startMethod("__file__", null, staticScope, inspector);
+                    methodCompiler = asmCompiler.startMethod("__file__", "__file__", null, staticScope, inspector);
                     methodCompiler.loadNil();
                     jitCallConfig = CallConfiguration.NO_FRAME_NO_SCOPE;
                 }

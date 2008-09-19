@@ -420,8 +420,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         return cacheCompiler;
     }
     
-    public BodyCompiler startMethod(String friendlyName, CompilerCallback args, StaticScope scope, ASTInspector inspector) {
-        RootScopedBodyCompiler methodCompiler = new MethodBodyCompiler(this, friendlyName, inspector, scope);
+    public BodyCompiler startMethod(String rubyName, String javaName, CompilerCallback args, StaticScope scope, ASTInspector inspector) {
+        RootScopedBodyCompiler methodCompiler = new MethodBodyCompiler(this, rubyName, javaName, inspector, scope);
         
         methodCompiler.beginMethod(args, scope);
         

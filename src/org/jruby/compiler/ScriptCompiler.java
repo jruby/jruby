@@ -57,11 +57,11 @@ public interface ScriptCompiler {
      * Begin compilation for a method that has the specified number of local variables.
      * The returned value is a token that can be used to end the method later.
      * 
-     * @param friendlyName The outward user-readable name of the method. A unique name will be generated based on this.
+     * @param javaName The outward user-readable name of the method. A unique name will be generated based on this.
      * @param arity The arity of the method's argument list
      * @param localVarCount The number of local variables that will be used by the method.
      * @return An Object that represents the method within this compiler. Used in calls to
      * endMethod once compilation for this method is completed.
      */
-    public BodyCompiler startMethod(String friendlyName, CompilerCallback argsHandler, StaticScope scope, ASTInspector inspector);
+    public BodyCompiler startMethod(String rubyName, String javaName, CompilerCallback argsHandler, StaticScope scope, ASTInspector inspector);
 }
