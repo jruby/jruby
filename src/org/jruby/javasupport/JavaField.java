@@ -45,6 +45,7 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name="Java::JavaField")
@@ -121,12 +122,14 @@ public class JavaField extends JavaAccessibleObject {
     }
 
     @JRubyMethod
-    public IRubyObject value(IRubyObject object) {
-        Object javaObject = JavaUtil.unwrapJavaValue(getRuntime(), object, "not a java object");
+    public IRubyObject value(ThreadContext context, IRubyObject object) {
+        Ruby runtime = context.getRuntime();
+
+        Object javaObject = JavaUtil.unwrapJavaValue(runtime, object, "not a java object");
         try {
-            return JavaUtil.convertJavaToUsableRubyObject(getRuntime(), field.get(javaObject));
+            return JavaUtil.convertJavaToUsableRubyObject(runtime, field.get(javaObject));
         } catch (IllegalAccessException iae) {
-            throw getRuntime().newTypeError("illegal access");
+            throw runtime.newTypeError("illegal access");
         }
     }
 
