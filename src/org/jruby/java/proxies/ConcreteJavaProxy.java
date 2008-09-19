@@ -82,7 +82,7 @@ public class ConcreteJavaProxy extends JavaProxy {
     
     public static class ConcreteNewMethod extends org.jruby.internal.runtime.methods.JavaMethod {
         private DynamicMethod oldNew;
-        
+            
         public ConcreteNewMethod(RubyModule implClass, Visibility visibility, DynamicMethod oldNew) {
             super(implClass, visibility);
             this.oldNew = oldNew;
@@ -91,11 +91,8 @@ public class ConcreteJavaProxy extends JavaProxy {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
             IRubyObject proxy = oldNew.call(context, self, clazz, "new_proxy", args, block);
-            
-            if (proxy.dataGetStruct() instanceof JavaObject) {
-                // already initialized
-            } else {
-                // not initialized yet, call __jcreate!
+
+            if (!(proxy.dataGetStruct() instanceof JavaObject)) { // Need to initialize
                 RuntimeHelpers.invoke(context, proxy, "__jcreate!", args, block);
             }
 
@@ -105,11 +102,8 @@ public class ConcreteJavaProxy extends JavaProxy {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
             IRubyObject proxy = oldNew.call(context, self, clazz, "new_proxy", block);
-            
-            if (proxy.dataGetStruct() instanceof JavaObject) {
-                // already initialized
-            } else {
-                // not initialized yet, call __jcreate!
+
+            if (!(proxy.dataGetStruct() instanceof JavaObject)) { // Need to initialize
                 RuntimeHelpers.invoke(context, proxy, "__jcreate!", block);
             }
 
@@ -119,11 +113,8 @@ public class ConcreteJavaProxy extends JavaProxy {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
             IRubyObject proxy = oldNew.call(context, self, clazz, "new_proxy", arg0, block);
-            
-            if (proxy.dataGetStruct() instanceof JavaObject) {
-                // already initialized
-            } else {
-                // not initialized yet, call __jcreate!
+
+            if (!(proxy.dataGetStruct() instanceof JavaObject)) { // Need to initialize
                 RuntimeHelpers.invoke(context, proxy, "__jcreate!", arg0, block);
             }
 
@@ -133,11 +124,8 @@ public class ConcreteJavaProxy extends JavaProxy {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
             IRubyObject proxy = oldNew.call(context, self, clazz, "new_proxy", arg0, arg1, block);
-            
-            if (proxy.dataGetStruct() instanceof JavaObject) {
-                // already initialized
-            } else {
-                // not initialized yet, call __jcreate!
+
+            if (!(proxy.dataGetStruct() instanceof JavaObject)) { // Need to initialize
                 RuntimeHelpers.invoke(context, proxy, "__jcreate!", arg0, arg1, block);
             }
 
@@ -148,10 +136,7 @@ public class ConcreteJavaProxy extends JavaProxy {
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
             IRubyObject proxy = oldNew.call(context, self, clazz, "new_proxy", arg0, arg1, arg2, block);
             
-            if (proxy.dataGetStruct() instanceof JavaObject) {
-                // already initialized
-            } else {
-                // not initialized yet, call __jcreate!
+            if (!(proxy.dataGetStruct() instanceof JavaObject)) { // Need to initialize
                 RuntimeHelpers.invoke(context, proxy, "__jcreate!", arg0, arg1, arg2, block);
             }
 
@@ -161,11 +146,8 @@ public class ConcreteJavaProxy extends JavaProxy {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
             IRubyObject proxy = oldNew.call(context, self, clazz, "new_proxy", args);
-            
-            if (proxy.dataGetStruct() instanceof JavaObject) {
-                // already initialized
-            } else {
-                // not initialized yet, call __jcreate!
+
+            if (!(proxy.dataGetStruct() instanceof JavaObject)) { // Need to initialize
                 RuntimeHelpers.invoke(context, proxy, "__jcreate!", args);
             }
 
@@ -175,11 +157,8 @@ public class ConcreteJavaProxy extends JavaProxy {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
             IRubyObject proxy = oldNew.call(context, self, clazz, "new_proxy");
-            
-            if (proxy.dataGetStruct() instanceof JavaObject) {
-                // already initialized
-            } else {
-                // not initialized yet, call __jcreate!
+
+            if (!(proxy.dataGetStruct() instanceof JavaObject)) { // Need to initialize
                 RuntimeHelpers.invoke(context, proxy, "__jcreate!");
             }
 
@@ -189,11 +168,8 @@ public class ConcreteJavaProxy extends JavaProxy {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
             IRubyObject proxy = oldNew.call(context, self, clazz, "new_proxy", arg0);
-            
-            if (proxy.dataGetStruct() instanceof JavaObject) {
-                // already initialized
-            } else {
-                // not initialized yet, call __jcreate!
+
+            if (!(proxy.dataGetStruct() instanceof JavaObject)) { // Need to initialize
                 RuntimeHelpers.invoke(context, proxy, "__jcreate!", arg0);
             }
 
@@ -203,11 +179,8 @@ public class ConcreteJavaProxy extends JavaProxy {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
             IRubyObject proxy = oldNew.call(context, self, clazz, "new_proxy", arg0, arg1);
-            
-            if (proxy.dataGetStruct() instanceof JavaObject) {
-                // already initialized
-            } else {
-                // not initialized yet, call __jcreate!
+
+            if (!(proxy.dataGetStruct() instanceof JavaObject)) { // Need to initialize
                 RuntimeHelpers.invoke(context, proxy, "__jcreate!", arg0, arg1);
             }
 
@@ -217,11 +190,8 @@ public class ConcreteJavaProxy extends JavaProxy {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
             IRubyObject proxy = oldNew.call(context, self, clazz, "new_proxy", arg0, arg1, arg2);
-            
-            if (proxy.dataGetStruct() instanceof JavaObject) {
-                // already initialized
-            } else {
-                // not initialized yet, call __jcreate!
+
+            if (!(proxy.dataGetStruct() instanceof JavaObject)) { // Need to initialize
                 RuntimeHelpers.invoke(context, proxy, "__jcreate!", arg0, arg1, arg2);
             }
 
