@@ -13,12 +13,11 @@ class Module
       return
     end
     @included_packages = [package_name]
-    @java_aliases = {} unless @java_aliases
+    @java_aliases ||= {}
     
     
       def self.const_missing(constant)
-        real_name = @java_aliases[constant]
-        real_name = constant unless real_name
+        real_name = @java_aliases[constant] || constant
 
         java_class = nil
         return super unless @included_packages.detect {|package|
