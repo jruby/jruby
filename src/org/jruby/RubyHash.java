@@ -701,14 +701,20 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
     @JRubyMethod(name = "to_s")
-    public IRubyObject to_s() {
-        if (getRuntime().isInspecting(this)) return getRuntime().newString("{...}");
+    public IRubyObject to_s(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        if (runtime.isInspecting(this)) return runtime.newString("{...}");
         try {
-            getRuntime().registerInspecting(this);
+            runtime.registerInspecting(this);
             return to_a().to_s();
         } finally {
-            getRuntime().unregisterInspecting(this);
+            runtime.unregisterInspecting(this);
         }
+    }
+
+    @JRubyMethod(name = "to_s", compat = CompatVersion.RUBY1_9)
+    public IRubyObject to_s19(ThreadContext context) {
+        return inspect(context);
     }
 
     /** rb_hash_rehash
