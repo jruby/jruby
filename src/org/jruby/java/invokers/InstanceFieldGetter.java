@@ -15,7 +15,7 @@ public class InstanceFieldGetter extends FieldMethodZero {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
         try {
-            return JavaUtil.convertJavaToUsableRubyObject(self.getRuntime(), field.get(((JavaObject) self.dataGetStruct()).getValue()));
+            return JavaUtil.convertJavaToUsableRubyObject(context.getRuntime(), field.get(((JavaObject) self.dataGetStruct()).getValue()));
         } catch (IllegalAccessException iae) {
             throw context.getRuntime().newTypeError("illegal access getting variable: " + iae.getMessage());
         }
