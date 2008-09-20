@@ -34,6 +34,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.util.Numeric.f_gcd;
 import static org.jruby.util.Numeric.f_lcm;
 
@@ -142,6 +143,11 @@ public abstract class RubyInteger extends RubyNumeric {
         return this;
     }
 
+    @JRubyMethod(name = "upto", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject upto19(final ThreadContext context, IRubyObject to, final Block block) {
+        return block.isGiven() ? upto(context, to, block) : enumeratorize(context.getRuntime(), this, "upto", to);
+    }
+
     /** int_downto
      * 
      */
@@ -177,6 +183,11 @@ public abstract class RubyInteger extends RubyNumeric {
         return this;
     }
 
+    @JRubyMethod(name = "downto", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject downto19(final ThreadContext context, IRubyObject to, final Block block) {
+        return block.isGiven() ? downto(context, to, block) : enumeratorize(context.getRuntime(), this, "downto", to);
+    }
+
     @JRubyMethod(name = "times", frame = true)
     public IRubyObject times(ThreadContext context, Block block) {
         final Ruby runtime = context.getRuntime();
@@ -205,6 +216,11 @@ public abstract class RubyInteger extends RubyNumeric {
         }
 
         return this;
+    }
+
+    @JRubyMethod(name = "times", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject times19(final ThreadContext context, final Block block) {
+        return block.isGiven() ? times(context, block) : enumeratorize(context.getRuntime(), this, "times");
     }
 
     /** int_succ
