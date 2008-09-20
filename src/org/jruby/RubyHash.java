@@ -38,6 +38,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import static org.jruby.RubyEnumerator.enumeratorize;
+
 import java.io.IOException;
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
@@ -879,6 +881,11 @@ public class RubyHash extends RubyObject implements Map {
         return this;
     }
 
+    @JRubyMethod(name = "each", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject each19(final ThreadContext context, final Block block) {
+        return block.isGiven() ? each(context, block) : enumeratorize(context.getRuntime(), this, "each");
+    }
+
     /** rb_hash_each_pair
      *
      */
@@ -896,6 +903,11 @@ public class RubyHash extends RubyObject implements Map {
         return this;	
     }
 
+    @JRubyMethod(name = "each_pair", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject each_pair19(final ThreadContext context, final Block block) {
+        return block.isGiven() ? each_pair(context, block) : enumeratorize(context.getRuntime(), this, "each_pair");
+    }
+
     /** rb_hash_each_value
      *
      */
@@ -910,6 +922,11 @@ public class RubyHash extends RubyObject implements Map {
         return this;
     }
 
+    @JRubyMethod(name = "each_value", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject each_value19(final ThreadContext context, final Block block) {
+        return block.isGiven() ? each_value(context, block) : enumeratorize(context.getRuntime(), this, "each_value");
+    }
+
     /** rb_hash_each_key
      *
      */
@@ -922,6 +939,11 @@ public class RubyHash extends RubyObject implements Map {
         });
 
         return this;
+    }
+
+    @JRubyMethod(name = "each_key", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject each_key19(final ThreadContext context, final Block block) {
+        return block.isGiven() ? each_key(context, block) : enumeratorize(context.getRuntime(), this, "each_key");
     }
 
     /** rb_hash_sort
@@ -1107,6 +1129,11 @@ public class RubyHash extends RubyObject implements Map {
         return result;
     }
 
+    @JRubyMethod(name = "select", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject select19(final ThreadContext context, final Block block) {
+        return block.isGiven() ? select(context, block) : enumeratorize(context.getRuntime(), this, "select");
+    }
+
     /** rb_hash_delete_if
      *
      */
@@ -1127,12 +1154,22 @@ public class RubyHash extends RubyObject implements Map {
         return this;
     }
 
+    @JRubyMethod(name = "delete_if", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject delete_if19(final ThreadContext context, final Block block) {
+        return block.isGiven() ? delete_if(context, block) : enumeratorize(context.getRuntime(), this, "delete_if");
+    }
+
     /** rb_hash_reject
      *
      */
     @JRubyMethod(name = "reject", frame = true)
     public RubyHash reject(ThreadContext context, Block block) {
         return ((RubyHash)dup()).delete_if(context, block);
+    }
+
+    @JRubyMethod(name = "reject", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject reject19(final ThreadContext context, final Block block) {
+        return block.isGiven() ? reject(context, block) : enumeratorize(context.getRuntime(), this, "reject");
     }
 
     /** rb_hash_reject_bang
