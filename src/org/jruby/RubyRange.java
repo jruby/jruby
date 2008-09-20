@@ -36,6 +36,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import static org.jruby.RubyEnumerator.enumeratorize;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -339,6 +341,11 @@ public class RubyRange extends RubyObject {
         }
         return this;
     }
+    
+    @JRubyMethod(name = "each", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject each19(final ThreadContext context, final Block block) {
+        return block.isGiven() ? each(context, block) : enumeratorize(context.getRuntime(), this, "each");
+    }
 
     @JRubyMethod(name = "step", optional = 1, frame = true)
     public IRubyObject step(ThreadContext context, IRubyObject[] args, Block block) {
@@ -397,6 +404,11 @@ public class RubyRange extends RubyObject {
             }
         }
         return this;
+    }
+
+    @JRubyMethod(name = "step", optional = 1, frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject step19(final ThreadContext context, IRubyObject[] args, final Block block) {
+        return block.isGiven() ? step(context, args, block) : enumeratorize(context.getRuntime(), this, "step", args);
     }
 
     @JRubyMethod(name = {"include?", "member?", "==="}, required = 1)
