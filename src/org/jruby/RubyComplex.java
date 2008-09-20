@@ -54,6 +54,8 @@ import static org.jruby.util.Numeric.f_to_r;
 import static org.jruby.util.Numeric.f_to_s;
 import static org.jruby.util.Numeric.f_xor;
 import static org.jruby.util.Numeric.f_zero_p;
+import static org.jruby.util.Numeric.k_exact_p;
+import static org.jruby.util.Numeric.k_inexact_p;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -68,7 +70,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
 /**
- *  1.9 complex.c as of revision: 19400
+ *  1.9 complex.c as of revision: 19431
  */
 
 @JRubyClass(name = "Complex", parent = "Numeric")
@@ -291,8 +293,7 @@ public class RubyComplex extends RubyNumeric {
         if (f_zero_p(context, image) &&
             ((RubyModule)clazz).fastHasConstant("Unify") &&
             (!CL_CANNON ||
-            (!(real instanceof RubyFloat) &&
-            !(image instanceof RubyFloat)))) {
+            (k_exact_p(real) && k_exact_p(image)))) {
             return real;
         } else if (f_real_p(context, real).isTrue() &&
                    f_real_p(context, image).isTrue()) {
@@ -427,23 +428,23 @@ public class RubyComplex extends RubyNumeric {
 
         if (a1 instanceof RubyString) a1 = str_to_c_strict(context, a1);
         if (a2 instanceof RubyString) a2 = str_to_c_strict(context, a2);
-        
+
         frame.setBackRef(backref);
 
         if (a1 instanceof RubyComplex) {
             RubyComplex a1Complex = (RubyComplex)a1;
-            if (!(a1Complex.image instanceof RubyFloat) && f_zero_p(context, a1Complex.image)) {
+            if (k_exact_p(a1Complex.image) && f_zero_p(context, a1Complex.image)) {
                 a1 = a1Complex.real;
             }
         }
-        
+
         if (a2 instanceof RubyComplex) {
             RubyComplex a2Complex = (RubyComplex)a2;
-            if (!(a2Complex.image instanceof RubyFloat) && f_zero_p(context, a2Complex.image)) {
+            if (k_exact_p(a2Complex.image) && f_zero_p(context, a2Complex.image)) {
                 a2 = a2Complex.real;
             }
         }
-        
+
         if (a1 instanceof RubyComplex) {
             if (a2.isNil() || f_zero_p(context, a2)) return a1;
         }
@@ -458,7 +459,7 @@ public class RubyComplex extends RubyNumeric {
 
         return a2.isNil() ? newInstance(context, recv, a1) : newInstance(context, recv, a1, a2);
     }
-    
+
     /** nucomp_real
      * 
      */
@@ -862,7 +863,7 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "to_i")
     public IRubyObject to_i(ThreadContext context) {
-        if (image instanceof RubyFloat || !f_zero_p(context, image)) {
+        if (k_inexact_p(image) || !f_zero_p(context, image)) {
             throw context.getRuntime().newRangeError("can't convert " + f_to_s(context, this).convertToString() + " into Integer");
         }
         return f_to_i(context, real);
@@ -873,7 +874,7 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "to_f")
     public IRubyObject to_f(ThreadContext context) {
-        if (image instanceof RubyFloat || !f_zero_p(context, image)) {
+        if (k_inexact_p(image) || !f_zero_p(context, image)) {
             throw context.getRuntime().newRangeError("can't convert " + f_to_s(context, this).convertToString() + " into Float");
         }
         return f_to_f(context, real);
@@ -884,7 +885,7 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "to_r")
     public IRubyObject to_r(ThreadContext context) {
-        if (image instanceof RubyFloat || !f_zero_p(context, image)) {
+        if (k_inexact_p(image) || !f_zero_p(context, image)) {
             throw context.getRuntime().newRangeError("can't convert " + f_to_s(context, this).convertToString() + " into Rational");            
         }
         return f_to_r(context, real);

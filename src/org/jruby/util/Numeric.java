@@ -464,6 +464,14 @@ public class Numeric {
         return RubyFixnum.newFixnum(runtime, z);
     }
 
+    public static boolean k_exact_p(IRubyObject x) {
+        return !(x instanceof RubyFloat);
+    }
+
+    public static boolean k_inexact_p(IRubyObject x) {
+        return x instanceof RubyFloat;
+    }
+
     public static final class ComplexPatterns {
         public static final Regex comp_pat0, comp_pat1, comp_pat2, underscores_pat;
         static {

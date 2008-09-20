@@ -48,6 +48,8 @@ import static org.jruby.util.Numeric.f_xor;
 import static org.jruby.util.Numeric.f_zero_p;
 import static org.jruby.util.Numeric.i_gcd;
 import static org.jruby.util.Numeric.i_ilog2;
+import static org.jruby.util.Numeric.k_exact_p;
+import static org.jruby.util.Numeric.k_inexact_p;
 import static org.jruby.util.Numeric.ldexp;
 
 import org.jcodings.specific.ASCIIEncoding;
@@ -66,7 +68,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
 /**
- *  1.9 rational.c as of revision: 19365
+ *  1.9 rational.c as of revision: 19431
  */
 
 @JRubyClass(name = "Rational", parent = "Numeric", include = "Precision")
@@ -358,7 +360,7 @@ public class RubyRational extends RubyNumeric {
     private static IRubyObject convertCommon(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2) {
         if (a1 instanceof RubyComplex) {
             RubyComplex a1Complex = (RubyComplex)a1;
-            if (a1Complex.getImage() instanceof RubyFloat || !f_zero_p(context, a1Complex.getImage())) {            
+            if (k_inexact_p(a1Complex.getImage()) || !f_zero_p(context, a1Complex.getImage())) {            
                 IRubyObject s = f_to_s(context, a1);
                 throw context.getRuntime().newRangeError("can't accept " + s.convertToString());
             }
@@ -366,7 +368,7 @@ public class RubyRational extends RubyNumeric {
         }
         if (a2 instanceof RubyComplex) {
             RubyComplex a2Complex = (RubyComplex)a2;
-            if (a2Complex.getImage() instanceof RubyFloat || !f_zero_p(context, a2Complex.getImage())) {            
+            if (k_inexact_p(a2Complex.getImage()) || !f_zero_p(context, a2Complex.getImage())) {            
                 IRubyObject s = f_to_s(context, a2);
                 throw context.getRuntime().newRangeError("can't accept " + s.convertToString());
             }
@@ -599,7 +601,7 @@ public class RubyRational extends RubyNumeric {
     public IRubyObject op_expt(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.getRuntime();
 
-        if (f_zero_p(context, other)) {
+        if (k_exact_p(other) && f_zero_p(context, other)) {
             return RubyRational.newRationalBang(context, getMetaClass(), RubyFixnum.one(runtime));
         }
 

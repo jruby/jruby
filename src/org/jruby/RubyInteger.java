@@ -36,10 +36,9 @@ package org.jruby;
 
 import static org.jruby.util.Numeric.f_gcd;
 import static org.jruby.util.Numeric.f_lcm;
-import static org.jruby.util.Numeric.f_negative_p;
 
-import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.MethodIndex;
@@ -47,7 +46,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.Numeric;
 
 /** Implementation of the Integer class.
  *
@@ -280,7 +278,7 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     @JRubyMethod(name = "lcm", compat = CompatVersion.RUBY1_9)
     public static IRubyObject lcm(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        return Numeric.f_lcm(context, recv, RubyRational.intValue(context, other));
+        return f_lcm(context, recv, RubyRational.intValue(context, other));
     }    
 
     /** rb_gcdlcm
@@ -289,7 +287,7 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = "gcdlcm", compat = CompatVersion.RUBY1_9)
     public static IRubyObject gcdlcm(ThreadContext context, IRubyObject recv, IRubyObject other) {
         other = RubyRational.intValue(context, other);
-        return context.getRuntime().newArray(f_gcd(context, recv, other), Numeric.f_lcm(context, recv, other));
+        return context.getRuntime().newArray(f_gcd(context, recv, other), f_lcm(context, recv, other));
     }
 
     /*  ================
