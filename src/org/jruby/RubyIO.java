@@ -87,6 +87,7 @@ import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.ChannelDescriptor;
 
 import static org.jruby.CompatVersion.*;
+import static org.jruby.RubyEnumerator.enumeratorize;
 
 /**
  * 
@@ -2518,6 +2519,11 @@ public class RubyIO extends RubyObject {
         }
     }
 
+    @JRubyMethod(name = "each_byte", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject each_byte19(final ThreadContext context, final Block block) {
+        return block.isGiven() ? each_byte(context, block) : enumeratorize(context.getRuntime(), this, "each_byte");
+    }
+
     /** 
      * <p>Invoke a block for each line.</p>
      */
@@ -2534,6 +2540,15 @@ public class RubyIO extends RubyObject {
         return this;
     }
 
+    @JRubyMethod(name = "each", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject each19(final ThreadContext context, IRubyObject[]args, final Block block) {
+        return block.isGiven() ? each_line(context, args, block) : enumeratorize(context.getRuntime(), this, "each", args);
+    }
+
+    @JRubyMethod(name = "each_line", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject each_line19(final ThreadContext context, IRubyObject[]args, final Block block) {
+        return block.isGiven() ? each_line(context, args, block) : enumeratorize(context.getRuntime(), this, "each_line", args);
+    }
 
     @JRubyMethod(name = "readlines", optional = 1)
     public RubyArray readlines(ThreadContext context, IRubyObject[] args) {
@@ -2588,6 +2603,11 @@ public class RubyIO extends RubyObject {
         }
        
         return runtime.getNil();
+    }
+    
+    @JRubyMethod(name = "foreach", required = 1, optional = 1, frame = true, meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject foreach19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
+        return block.isGiven() ? foreach(context, recv, args, block) : enumeratorize(context.getRuntime(), recv, "foreach", args);
     }
 
     private static RubyIO convertToIO(ThreadContext context, IRubyObject obj) {
