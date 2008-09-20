@@ -31,6 +31,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import static org.jruby.RubyEnumerator.enumeratorize;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -319,6 +321,11 @@ public class RubyDir extends RubyObject {
         return recv.getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "foreach", frame = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject foreach19(ThreadContext context, IRubyObject recv, IRubyObject _path, Block block) {
+        return block.isGiven() ? foreach(context, recv, _path, block) : enumeratorize(context.getRuntime(), recv, "foreach", _path);
+    }
+
     /** Returns the current directory. */
     @JRubyMethod(name = {"getwd", "pwd"}, meta = true)
     public static RubyString getwd(IRubyObject recv) {
@@ -400,6 +407,11 @@ public class RubyDir extends RubyObject {
             block.yield(context, getRuntime().newString(contents[i]));
         }
         return this;
+    }
+
+    @JRubyMethod(name = "each", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject each19(ThreadContext context, Block block) {
+        return block.isGiven() ? each(context, block) : enumeratorize(context.getRuntime(), this, "each");
     }
 
     /**
