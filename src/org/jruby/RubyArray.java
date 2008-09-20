@@ -1448,6 +1448,11 @@ public class RubyArray extends RubyObject implements List {
         }
         return this;
     }
+    
+    @JRubyMethod(name = "each_index", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject each_index19(ThreadContext context, Block block) {
+        return block.isGiven() ? each_index(context, block) : enumeratorize(context.getRuntime(), this, "each_index");
+    }
 
     /** rb_ary_reverse_each
      *
@@ -1935,6 +1940,22 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
 
+    /** rb_ary_collect_bang
+    *
+    */
+    @JRubyMethod(name = "collect!", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject collect_bang19(ThreadContext context, Block block) {
+        return block.isGiven() ? collect_bang(context, block) : enumeratorize(context.getRuntime(), this, "collect!");
+    }
+
+    /** rb_ary_collect_bang
+    *
+    */
+    @JRubyMethod(name = "map!", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject map_bang19(ThreadContext context, Block block) {
+        return block.isGiven() ? collect_bang(context, block) : enumeratorize(context.getRuntime(), this, "map!");
+    }
+
     /** rb_ary_select
      *
      */
@@ -2043,6 +2064,11 @@ public class RubyArray extends RubyObject implements List {
         return ary;
     }
 
+    @JRubyMethod(name = "reject", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject reject19(ThreadContext context, Block block) {
+        return block.isGiven() ? reject(context, block) : enumeratorize(context.getRuntime(), this, "reject");
+    }
+
     /** rb_ary_reject_bang
      *
      */
@@ -2058,11 +2084,11 @@ public class RubyArray extends RubyObject implements List {
             if (i1 != i2) store(i2, v);
             i2++;
         }
-        if (realLength == i2) return getRuntime().getNil();
+        if (realLength == i2) return context.getRuntime().getNil();
 
         if (i2 < realLength) {
             try {
-                Arrays.fill(values, i2, realLength, getRuntime().getNil());
+                Arrays.fill(values, i2, realLength, context.getRuntime().getNil());
             } catch (ArrayIndexOutOfBoundsException e) {
                 concurrentModification();
             }
@@ -2072,6 +2098,11 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
 
+    @JRubyMethod(name = "reject!", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject reject_bang19(ThreadContext context, Block block) {
+        return block.isGiven() ? reject_bang(context, block) : enumeratorize(context.getRuntime(), this, "reject!");
+    }
+
     /** rb_ary_delete_if
      *
      */
@@ -2079,6 +2110,11 @@ public class RubyArray extends RubyObject implements List {
     public IRubyObject delete_if(ThreadContext context, Block block) {
         reject_bang(context, block);
         return this;
+    }
+
+    @JRubyMethod(name = "delete_if", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject delete_if19(ThreadContext context, Block block) {
+        return block.isGiven() ? delete_if(context, block) : enumeratorize(context.getRuntime(), this, "delete_if");
     }
 
     /** rb_ary_zip
