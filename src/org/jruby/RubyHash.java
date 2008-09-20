@@ -1115,8 +1115,8 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "select", frame = true)
     public IRubyObject select(final ThreadContext context, final Block block) {
-        final RubyArray result = getRuntime().newArray();
         final Ruby runtime = getRuntime();
+        final RubyArray result = runtime.newArray();
 
         visitAll(new Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
@@ -1131,7 +1131,20 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(name = "select", frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject select19(final ThreadContext context, final Block block) {
-        return block.isGiven() ? select(context, block) : enumeratorize(context.getRuntime(), this, "select");
+        final Ruby runtime = context.getRuntime();
+        if (!block.isGiven()) return enumeratorize(runtime, this, "select");
+
+        final RubyHash result = newHash(runtime);
+
+        visitAll(new Visitor() {
+            public void visit(IRubyObject key, IRubyObject value) {
+                if (block.yield(context, runtime.newArray(key, value), null, null, true).isTrue()) {
+                    result.fastASet(key, value);
+                }
+            }
+        });
+
+        return result;        
     }
 
     /** rb_hash_delete_if
