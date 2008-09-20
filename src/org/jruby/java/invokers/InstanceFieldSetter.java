@@ -1,8 +1,9 @@
 package org.jruby.java.invokers;
 
-import org.jruby.javasupport.*;
 import java.lang.reflect.Field;
 import org.jruby.RubyModule;
+import org.jruby.javasupport.JavaObject;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
