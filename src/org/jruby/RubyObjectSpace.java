@@ -138,6 +138,11 @@ public class RubyObjectSpace {
         return recv.getRuntime().newFixnum(count);
     }
 
+    @JRubyMethod(name = "each_object", optional = 1, frame = true, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject each_object19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        return block.isGiven() ? each_object(context, recv, args, block) : RubyEnumerator.enumeratorize(context.getRuntime(), recv, "each_object", args);
+    }
+    
     @JRubyMethod(name = "garbage_collect", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject garbage_collect(IRubyObject recv) {
         return RubyGC.start(recv);
