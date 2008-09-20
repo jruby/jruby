@@ -1424,12 +1424,17 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_each
      *
      */
-    @JRubyMethod(name = "each", frame = true)
+    @JRubyMethod(name = "each", frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject each(ThreadContext context, Block block) {
         for (int i = 0; i < realLength; i++) {
             block.yield(context, values[begin + i]);
         }
         return this;
+    }
+
+    @JRubyMethod(name = "each", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject each19(ThreadContext context, Block block) {
+        return block.isGiven() ? each(context, block) : enumeratorize(context.getRuntime(), this, "each");
     }
 
     /** rb_ary_each_index
