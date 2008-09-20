@@ -34,6 +34,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.util.Numeric.f_abs;
 import static org.jruby.util.Numeric.f_arg;
 import static org.jruby.util.Numeric.f_mul;
@@ -736,6 +737,11 @@ public class RubyNumeric extends RubyObject {
     public IRubyObject step(ThreadContext context, IRubyObject arg0, Block block) {
         return step(context, arg0, RubyFixnum.one(context.getRuntime()), block);
     }
+
+    @JRubyMethod(name = "step", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject step19(ThreadContext context, IRubyObject arg0, Block block) {
+        return block.isGiven() ? step(context, arg0, block) : enumeratorize(context.getRuntime(), this, "step", arg0);
+    }
     
     @JRubyMethod(name = "step", frame = true)
     public IRubyObject step(ThreadContext context, IRubyObject to, IRubyObject step, Block block) {
@@ -798,6 +804,11 @@ public class RubyNumeric extends RubyObject {
             }
         }
         return this;
+    }
+
+    @JRubyMethod(name = "step", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject step19(ThreadContext context, IRubyObject to, IRubyObject step, Block block) {
+        return block.isGiven() ? step(context, to, step, block) : enumeratorize(context.getRuntime(), this, "step", new IRubyObject[] {to, step});
     }
 
     /** num_equal, doesn't override RubyObject.op_equal
