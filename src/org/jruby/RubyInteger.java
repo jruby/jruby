@@ -59,15 +59,18 @@ public abstract class RubyInteger extends RubyNumeric {
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setInteger(integer);
         integer.kindOf = new RubyModule.KindOf() {
-                public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                    return obj instanceof RubyInteger;
-                }
-            };
+            public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                return obj instanceof RubyInteger;
+            }
+
+        };
 
         integer.getSingletonClass().undefineMethod("new");
 
-        integer.includeModule(runtime.getPrecision());
-        
+        if (runtime.getInstanceConfig().getCompatVersion() == CompatVersion.RUBY1_8) {
+            integer.includeModule(runtime.getPrecision());
+        }
+
         integer.defineAnnotatedMethods(RubyInteger.class);
         
         return integer;
@@ -298,7 +301,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /** rb_int_induced_from
      * 
      */
-    @JRubyMethod(name = "induced_from", meta = true)
+    @JRubyMethod(name = "induced_from", meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject induced_from(ThreadContext context, IRubyObject recv, IRubyObject other) {
         if (other instanceof RubyFixnum || other instanceof RubyBignum) {
             return other;

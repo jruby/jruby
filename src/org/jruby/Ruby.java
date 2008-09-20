@@ -1001,9 +1001,13 @@ public final class Ruby {
         if (profile.allowClass("Exception")) {
             RubyException.createExceptionClass(this);
         }
-        if (profile.allowModule("Precision")) {
-            RubyPrecision.createPrecisionModule(this);
+
+        if (config.getCompatVersion() == CompatVersion.RUBY1_8) {
+            if (profile.allowModule("Precision")) {
+                RubyPrecision.createPrecisionModule(this);
+            }
         }
+
         if (profile.allowClass("Numeric")) {
             RubyNumeric.createNumericClass(this);
         }

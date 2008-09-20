@@ -71,9 +71,12 @@ public class RubyFloat extends RubyNumeric {
                 return obj instanceof RubyFloat;
             }
         };        
-        
+
         floatc.getSingletonClass().undefineMethod("new");
-        floatc.includeModule(runtime.getPrecision());
+
+        if (runtime.getInstanceConfig().getCompatVersion() == CompatVersion.RUBY1_8) {
+            floatc.includeModule(runtime.getPrecision());
+        }
 
         // Java Doubles are 64 bit long:            
         floatc.defineConstant("ROUNDS", RubyFixnum.newFixnum(runtime, 1));
@@ -156,7 +159,7 @@ public class RubyFloat extends RubyNumeric {
     /** rb_flo_induced_from
      * 
      */
-    @JRubyMethod(required = 1, meta = true)
+    @JRubyMethod(name = "induced_from", meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject induced_from(ThreadContext context, IRubyObject recv, IRubyObject number) {
         if (number instanceof RubyFixnum || number instanceof RubyBignum || number instanceof RubyRational) {
             return number.callMethod(context, "to_f");

@@ -86,8 +86,6 @@ public class RubyRational extends RubyNumeric {
             }
         };
 
-        rationalc.includeModule(runtime.getPrecision());
-
         ThreadContext context = runtime.getCurrentContext();
         rationalc.callMethod(context, "private_class_method", runtime.newSymbol("allocate"));
 
@@ -404,15 +402,7 @@ public class RubyRational extends RubyNumeric {
 
         return a2.isNil() ? newInstance(context, recv, a1) : newInstance(context, recv, a1, a2);
     }
-    
-    /** nurat_s_induced_from
-     * 
-     */
-    @JRubyMethod(name = "induced_from", meta = true)
-    public static IRubyObject induced_from(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        return f_to_r(context, arg);
-    }
-    
+
     /** nurat_numerator
      * 
      */

@@ -450,7 +450,7 @@ public class RubyBignum extends RubyInteger {
             // MRI issuses warning here on (RBIGNUM(x)->len * SIZEOF_BDIGITS * yy > 1024*1024)
             if (((value.bitLength() + 7) / 8) * 4 * Math.abs(fixValue) > 1024 * 1024) {
                 getRuntime().getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big", fixValue);
-    	}
+            }
             if (fixValue >= 0) {
                 return bignorm(getRuntime(), value.pow((int) fixValue)); // num2int is also implemented
             } else {
@@ -493,9 +493,6 @@ public class RubyBignum extends RubyInteger {
                 return RubyFloat.newFloat(runtime, Math.pow(big2dbl(this), (double)fixValue));
             }
         } else if (other instanceof RubyBignum) {
-            if (other.callMethod(context, "<", RubyFixnum.zero(runtime)).isTrue()) {
-                return RubyRational.newRationalRaw(runtime, this).callMethod(context, "**", other);
-            }
             d = ((RubyBignum) other).getDoubleValue();
             getRuntime().getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big", d);
         } else if (other instanceof RubyFloat) {

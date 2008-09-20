@@ -64,14 +64,16 @@ public class RubyFixnum extends RubyInteger {
         runtime.setFixnum(fixnum);
         fixnum.index = ClassIndex.FIXNUM;
         fixnum.kindOf = new RubyModule.KindOf() {
-                @Override
-                public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                    return obj instanceof RubyFixnum;
-                }
-            };
+            @Override
+            public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                return obj instanceof RubyFixnum;
+            }
+        };
 
-        fixnum.includeModule(runtime.getPrecision());
-        
+        if (runtime.getInstanceConfig().getCompatVersion() == CompatVersion.RUBY1_8) {
+            fixnum.includeModule(runtime.getPrecision());
+        }
+
         fixnum.defineAnnotatedMethods(RubyFixnum.class);
         
         for (int i = 0; i < runtime.fixnumCache.length; i++) {
@@ -874,7 +876,7 @@ public class RubyFixnum extends RubyInteger {
     /** rb_fix_induced_from
      * 
      */
-    @JRubyMethod(meta = true)
+    @JRubyMethod(name = "induced_from", meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject induced_from(IRubyObject recv, IRubyObject other) {
         return RubyNumeric.num2fix(other);
     }
