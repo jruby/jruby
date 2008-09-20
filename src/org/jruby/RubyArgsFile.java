@@ -31,6 +31,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import static org.jruby.RubyEnumerator.enumeratorize;
+
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
@@ -218,10 +220,15 @@ public class RubyArgsFile {
         return recv;
     }
 
+    @JRubyMethod(name = "each_byte", optional = 1, frame = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject each_byte19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
+        return block.isGiven() ? each_byte(context, recv, block) : enumeratorize(context.getRuntime(), recv, "each_byte");
+    }
+
     /** Invoke a block for each line.
      *
      */
-    @JRubyMethod(name = "each_line", alias = {"each"}, optional = 1, frame = true)
+    @JRubyMethod(name = {"each_line", "each"}, optional = 1, frame = true)
     public static IRubyObject each_line(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         IRubyObject nextLine = internalGets(context, recv, args);
         
@@ -231,6 +238,16 @@ public class RubyArgsFile {
         }
         
         return recv;
+    }
+
+    @JRubyMethod(name = "each_line", optional = 1, frame = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject each_line19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
+        return block.isGiven() ? each_line(context, recv, args, block) : enumeratorize(context.getRuntime(), recv, "each_line", args);
+    }
+
+    @JRubyMethod(name = "each", optional = 1, frame = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject each19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
+        return block.isGiven() ? each_line(context, recv, args, block) : enumeratorize(context.getRuntime(), recv, "each", args);
     }
 
     @JRubyMethod(name = "file")
