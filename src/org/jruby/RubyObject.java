@@ -1608,6 +1608,12 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         return context.getRuntime().newBoolean(((RubyModule)type).isInstance(this));
     }
 
+    @JRubyMethod(name = "tap", compat = CompatVersion.RUBY1_9)
+    public IRubyObject tap(ThreadContext context, Block block) {
+        block.yield(context, this);
+        return this;
+    }
+
     /** rb_obj_methods
      *
      *  call-seq:
