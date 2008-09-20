@@ -247,5 +247,20 @@ public class RubyMethod extends RubyObject {
         str.setTaint(isTaint());
         return str;
     }
+
+    @JRubyMethod(name = "name", compat = CompatVersion.RUBY1_9)
+    public IRubyObject name(ThreadContext context) {
+        return context.getRuntime().newSymbol(methodName);
+    }
+
+    @JRubyMethod(name = "receiver", compat = CompatVersion.RUBY1_9)
+    public IRubyObject receiver(ThreadContext context) {
+        return receiver;
+    }
+
+    @JRubyMethod(name = "owner", compat = CompatVersion.RUBY1_9)
+    public IRubyObject owner(ThreadContext context) {
+        return implementationModule;
+    }
 }
 

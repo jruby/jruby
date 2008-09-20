@@ -111,7 +111,7 @@ public class RubyUnboundMethod extends RubyMethod {
         }
         return RubyMethod.newMethod(implementationModule, methodName, receiverClass, originName, method, aReceiver);
     }
-    
+
     @JRubyMethod(name = "clone")
     @Override
     public RubyMethod rbClone() {
@@ -122,5 +122,15 @@ public class RubyUnboundMethod extends RubyMethod {
     @Override
     public IRubyObject to_proc(ThreadContext context, Block unusedBlock) {
         return super.to_proc(context, unusedBlock);
+    }
+
+    @JRubyMethod(name = "name", compat = CompatVersion.RUBY1_9)
+    public IRubyObject name(ThreadContext context) {
+        return context.getRuntime().newSymbol(methodName);
+    }
+
+    @JRubyMethod(name = "owner", compat = CompatVersion.RUBY1_9)
+    public IRubyObject owner(ThreadContext context) {
+        return implementationModule;
     }
 }
