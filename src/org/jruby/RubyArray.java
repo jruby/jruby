@@ -2623,6 +2623,34 @@ public class RubyArray extends RubyObject implements List {
         return result.isNil() ? runtime.newEmptyArray() : result;
     }
 
+    /** rb_ary_cycle
+     * 
+     */
+    @JRubyMethod(name = "cycle", compat = CompatVersion.RUBY1_9)
+    public IRubyObject cycle(ThreadContext context, Block block) {
+        if (!block.isGiven()) return enumeratorize(context.getRuntime(), this, "cycle");
+        return cycleCommon(context, -1, block);
+    }
+
+    /** rb_ary_cycle
+     * 
+     */
+    @JRubyMethod(name = "cycle", compat = CompatVersion.RUBY1_9)
+    public IRubyObject cycle(ThreadContext context, IRubyObject arg, Block block) {
+        if (!block.isGiven()) return enumeratorize(context.getRuntime(), this, "cycle", arg);
+        long n = RubyNumeric.num2long(arg);
+        return n <= 0 ? context.getRuntime().getNil() : cycleCommon(context, n, block);
+    }
+
+    private IRubyObject cycleCommon(ThreadContext context, long n, Block block) {
+        while (realLength > 0 && (n < 0 || 0 < n--)) {
+            for (int i=begin; i < begin + realLength; i++) {
+                block.yield(context, values[i]);
+            }
+        }
+        return context.getRuntime().getNil();
+    }
+    
     final class BlockComparator implements Comparator {
         private Block block;
 
