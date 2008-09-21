@@ -1809,7 +1809,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_index
      *
      */
-    @JRubyMethod(name = "index", required = 1)
+    @JRubyMethod(name = "index", compat = CompatVersion.RUBY1_8)
     public IRubyObject index(ThreadContext context, IRubyObject obj) {
         Ruby runtime = getRuntime();
         for (int i = begin; i < begin + realLength; i++) {
@@ -1819,10 +1819,27 @@ public class RubyArray extends RubyObject implements List {
         return runtime.getNil();
     }
 
+    @JRubyMethod(name = "index", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject index19(ThreadContext context, IRubyObject obj, Block unused) {
+        return index(context, obj); 
+    }
+
+    @JRubyMethod(name = "index", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject index19(ThreadContext context, Block block) {
+        Ruby runtime = getRuntime();
+        if (!block.isGiven()) return enumeratorize(runtime, this, "index");
+        
+        for (int i = begin; i < begin + realLength; i++) {
+            if (block.yield(context, values[i]).isTrue()) return runtime.newFixnum(i - begin);
+        }
+
+        return runtime.getNil();
+    }
+
     /** rb_ary_rindex
      *
      */
-    @JRubyMethod(name = "rindex", required = 1)
+    @JRubyMethod(name = "rindex", required = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject rindex(ThreadContext context, IRubyObject obj) {
         Ruby runtime = getRuntime();
         int i = realLength;
@@ -1832,7 +1849,30 @@ public class RubyArray extends RubyObject implements List {
                 i = realLength;
                 continue;
             }
-            if (equalInternal(context, values[begin + i], obj)) return getRuntime().newFixnum(i);
+            if (equalInternal(context, values[begin + i], obj)) return runtime.newFixnum(i);
+        }
+
+        return runtime.getNil();
+    }
+
+    @JRubyMethod(name = "rindex", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject rindex19(ThreadContext context, IRubyObject obj, Block unused) {
+        return rindex(context, obj); 
+    }
+
+    @JRubyMethod(name = "rindex", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject rindex19(ThreadContext context, Block block) {
+        Ruby runtime = getRuntime();
+        if (!block.isGiven()) return enumeratorize(runtime, this, "rindex");
+
+        int i = realLength;
+
+        while (i-- > 0) {
+            if (i > realLength) {
+                i = realLength;
+                continue;
+            }
+            if (block.yield(context, values[begin + i]).isTrue()) return runtime.newFixnum(i);
         }
 
         return runtime.getNil();
