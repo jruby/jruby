@@ -57,6 +57,7 @@ import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.TypeConverter;
 
 /**
  * @author jpetersen
@@ -341,22 +342,24 @@ public class RubyRange extends RubyObject {
         }
         return this;
     }
-    
+
     @JRubyMethod(name = "each", frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject each19(final ThreadContext context, final Block block) {
         return block.isGiven() ? each(context, block) : enumeratorize(context.getRuntime(), this, "each");
     }
 
-    @JRubyMethod(name = "step", optional = 1, frame = true)
-    public IRubyObject step(ThreadContext context, IRubyObject[] args, Block block) {
-        final Ruby runtime = context.getRuntime();
-        final IRubyObject step;
-        if (args.length == 0) {
-            step = RubyFixnum.one(runtime);
-        } else {
-            step = args[0];
-        }
+    @JRubyMethod(name = "step", frame = true)
+    public IRubyObject step(ThreadContext context, IRubyObject step, Block block) {
+        return stepCommon(context, step, block);
+    }
 
+    @JRubyMethod(name = "step", frame = true)
+    public IRubyObject step(ThreadContext context, Block block) {
+        return stepCommon(context, RubyFixnum.one(context.getRuntime()), block);
+    }
+
+    private IRubyObject stepCommon(ThreadContext context, IRubyObject step, Block block) {
+        final Ruby runtime = context.getRuntime();
         long unit = RubyNumeric.num2long(step);
         if (unit < 0) throw runtime.newArgumentError("step can't be negative");
 
@@ -406,9 +409,14 @@ public class RubyRange extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "step", optional = 1, frame = true, compat = CompatVersion.RUBY1_9)
-    public IRubyObject step19(final ThreadContext context, IRubyObject[] args, final Block block) {
-        return block.isGiven() ? step(context, args, block) : enumeratorize(context.getRuntime(), this, "step", args);
+    @JRubyMethod(name = "step", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject step19(final ThreadContext context, final Block block) {
+        return block.isGiven() ? step(context, block) : enumeratorize(context.getRuntime(), this, "step");
+    }
+
+    @JRubyMethod(name = "step", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject step19(final ThreadContext context, IRubyObject step, final Block block) {
+        return block.isGiven() ? step(context, step, block) : enumeratorize(context.getRuntime(), this, "step", step);
     }
 
     @JRubyMethod(name = {"include?", "member?", "==="}, required = 1)
