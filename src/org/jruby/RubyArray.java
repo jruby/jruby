@@ -2566,6 +2566,62 @@ public class RubyArray extends RubyObject implements List {
         }
         return this;
     }
+    
+    /** rb_ary_take
+     * 
+     */
+    @JRubyMethod(name = "take", compat = CompatVersion.RUBY1_9)
+    public IRubyObject take(ThreadContext context, IRubyObject n) {
+        Ruby runtime = context.getRuntime();
+        long len = RubyNumeric.num2long(n);
+        if (len < 0) throw runtime.newArgumentError("attempt to take negative size");
+
+        return subseq(0, len);
+    }
+
+    /** rb_ary_take_while
+     * 
+     */
+    @JRubyMethod(name = "take_while", compat = CompatVersion.RUBY1_9)
+    public IRubyObject take_while(ThreadContext context, Block block) {
+        Ruby runtime = context.getRuntime();
+        if (!block.isGiven()) return enumeratorize(runtime, this, "take_while");
+
+        int i = begin;
+        for (; i < begin + realLength; i++) {
+            if (!block.yield(context, values[i]).isTrue()) break; 
+        }
+        return subseq(0, i - begin);
+    }
+
+    /** rb_ary_take
+     * 
+     */
+    @JRubyMethod(name = "drop", compat = CompatVersion.RUBY1_9)
+    public IRubyObject drop(ThreadContext context, IRubyObject n) {
+        Ruby runtime = context.getRuntime();
+        long pos = RubyNumeric.num2long(n);
+        if (pos < 0) throw runtime.newArgumentError("attempt to drop negative size");
+
+        IRubyObject result = subseq(pos, realLength);
+        return result.isNil() ? runtime.newEmptyArray() : result;
+    }
+
+    /** rb_ary_take_while
+     * 
+     */
+    @JRubyMethod(name = "drop_while", compat = CompatVersion.RUBY1_9)
+    public IRubyObject drop_while(ThreadContext context, Block block) {
+        Ruby runtime = context.getRuntime();
+        if (!block.isGiven()) return enumeratorize(runtime, this, "drop_while");
+
+        int i= begin;
+        for (; i < begin + realLength; i++) {
+            if (!block.yield(context, values[i]).isTrue()) break;
+        }
+        IRubyObject result = subseq(i - begin, realLength);
+        return result.isNil() ? runtime.newEmptyArray() : result;
+    }
 
     final class BlockComparator implements Comparator {
         private Block block;
