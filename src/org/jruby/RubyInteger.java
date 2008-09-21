@@ -263,20 +263,22 @@ public abstract class RubyInteger extends RubyNumeric {
     }
     
 
-    @JRubyMethod(name = {"odd?"})
+    @JRubyMethod(name = "odd?")
     public static RubyBoolean odd_p(ThreadContext context, IRubyObject recv) {
-        if(recv.callMethod(context, "%", recv.getRuntime().newFixnum(2)) != RubyFixnum.zero(recv.getRuntime())) {
-            return recv.getRuntime().getTrue();
+        Ruby runtime = context.getRuntime();
+        if (recv.callMethod(context, "%", RubyFixnum.two(runtime)) != RubyFixnum.zero(runtime)) {
+            return runtime.getTrue();
         }
-        return recv.getRuntime().getFalse();
+        return runtime.getFalse();
     }
 
-    @JRubyMethod(name = {"even?"})
+    @JRubyMethod(name = "even?")
     public static RubyBoolean even_p(ThreadContext context, IRubyObject recv) {
-        if(recv.callMethod(context, "%", recv.getRuntime().newFixnum(2)) == RubyFixnum.zero(recv.getRuntime())) {
-            return recv.getRuntime().getTrue();
+        Ruby runtime = context.getRuntime();
+        if (recv.callMethod(context, "%", RubyFixnum.two(runtime)) == RubyFixnum.zero(runtime)) {
+            return runtime.getTrue();
         }
-        return recv.getRuntime().getFalse();
+        return runtime.getFalse();
     }
 
     @JRubyMethod(name = "pred")
