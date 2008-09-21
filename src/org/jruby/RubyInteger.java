@@ -229,9 +229,9 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = {"succ", "next"})
     public IRubyObject succ(ThreadContext context) {
         if (this instanceof RubyFixnum) {
-            return RubyFixnum.newFixnum(getRuntime(), getLongValue() + 1L);
+            return RubyFixnum.newFixnum(context.getRuntime(), getLongValue() + 1L);
         } else {
-            return callMethod(context, MethodIndex.OP_PLUS, "+", RubyFixnum.one(getRuntime()));
+            return callMethod(context, MethodIndex.OP_PLUS, "+", RubyFixnum.one(context.getRuntime()));
         }
     }
 
@@ -283,7 +283,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(name = "pred")
     public static IRubyObject pred(ThreadContext context, IRubyObject recv) {
-        return recv.callMethod(context, "-", recv.getRuntime().newFixnum(1));
+        return recv.callMethod(context, "-", RubyFixnum.one(context.getRuntime()));
     }
 
     /** rb_gcd
