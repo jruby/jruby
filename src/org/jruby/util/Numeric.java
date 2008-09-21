@@ -199,6 +199,13 @@ public class Numeric {
         return x.callMethod(context, "real?");
     }
 
+    /** f_integer_p
+     * 
+     */
+    public static IRubyObject f_integer_p(ThreadContext context, IRubyObject x) {
+        return x.callMethod(context, "integer?");
+    }
+
     /** f_divmod
      * 
      */

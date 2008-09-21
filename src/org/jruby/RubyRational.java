@@ -33,6 +33,7 @@ import static org.jruby.util.Numeric.f_expt;
 import static org.jruby.util.Numeric.f_floor;
 import static org.jruby.util.Numeric.f_gcd;
 import static org.jruby.util.Numeric.f_idiv;
+import static org.jruby.util.Numeric.f_integer_p;
 import static org.jruby.util.Numeric.f_mul;
 import static org.jruby.util.Numeric.f_negate;
 import static org.jruby.util.Numeric.f_negative_p;
@@ -68,7 +69,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
 /**
- *  1.9 rational.c as of revision: 19431
+ *  1.9 rational.c as of revision: 19449
  */
 
 @JRubyClass(name = "Rational", parent = "Numeric", include = "Precision")
@@ -322,23 +323,13 @@ public class RubyRational extends RubyNumeric {
     @Deprecated
     public static IRubyObject convert(ThreadContext context, IRubyObject clazz, IRubyObject[]args) {
         switch (args.length) {
-        case 0: return convert(context, clazz);
         case 1: return convert(context, clazz, args[0]);        
         case 2: return convert(context, clazz, args[0], args[1]);
         }
-        Arity.raiseArgumentError(context.getRuntime(), args.length, 0, 2);
+        Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 1);
         return null;
     }
 
-    /** nurat_s_convert
-     * 
-     */
-    @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject convert(ThreadContext context, IRubyObject recv) {
-        IRubyObject nil = context.getRuntime().getNil();
-        return convertCommon(context, recv, nil, nil);
-    }
-    
     /** nurat_s_convert
      * 
      */
@@ -358,19 +349,12 @@ public class RubyRational extends RubyNumeric {
     private static IRubyObject convertCommon(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2) {
         if (a1 instanceof RubyComplex) {
             RubyComplex a1Complex = (RubyComplex)a1;
-            if (k_inexact_p(a1Complex.getImage()) || !f_zero_p(context, a1Complex.getImage())) {            
-                IRubyObject s = f_to_s(context, a1);
-                throw context.getRuntime().newRangeError("can't accept " + s.convertToString());
-            }
-            a1 = a1Complex.getReal();
+            if (k_exact_p(a1Complex.getImage()) && f_zero_p(context, a1Complex.getImage())) a1 = a1Complex.getReal();            
         }
+
         if (a2 instanceof RubyComplex) {
             RubyComplex a2Complex = (RubyComplex)a2;
-            if (k_inexact_p(a2Complex.getImage()) || !f_zero_p(context, a2Complex.getImage())) {            
-                IRubyObject s = f_to_s(context, a2);
-                throw context.getRuntime().newRangeError("can't accept " + s.convertToString());
-            }
-            a2 = a2Complex.getReal();
+            if (k_exact_p(a2Complex.getImage()) && f_zero_p(context, a2Complex.getImage())) a2 = a2Complex.getReal();
         }
         
         Frame frame = context.getCurrentFrame();
@@ -392,15 +376,20 @@ public class RubyRational extends RubyNumeric {
         frame.setBackRef(backref);
 
         if (a1 instanceof RubyRational) {
-            if (a2.isNil() || f_zero_p(context, a2)) return a1;
-            return f_div(context, a1, a2);
+            if (a2.isNil() || (k_exact_p(a2) && f_one_p(context, a2))) return a1;
+            return a1;
         }
         
-        if (a2 instanceof RubyRational) {
-            return f_div(context, a1, a2);
+        if (a2.isNil()) {
+            if (a1 instanceof RubyNumeric && !f_integer_p(context, a1).isTrue()) return a1;
+            return newInstance(context, recv, a1);
+        } else {
+            if (a1 instanceof RubyNumeric && a2 instanceof RubyNumeric &&
+                (!f_integer_p(context, a1).isTrue() || ! f_integer_p(context, a2).isTrue())) {
+                return f_div(context, a1, a2);
+            }
+            return newInstance(context, recv, a1, a2);
         }
-
-        return a2.isNil() ? newInstance(context, recv, a1) : newInstance(context, recv, a1, a2);
     }
 
     /** nurat_numerator

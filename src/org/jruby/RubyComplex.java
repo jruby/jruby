@@ -70,7 +70,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
 /**
- *  1.9 complex.c as of revision: 19431
+ *  1.9 complex.c as of revision: 19449
  */
 
 @JRubyClass(name = "Complex", parent = "Numeric")
@@ -291,9 +291,8 @@ public class RubyComplex extends RubyNumeric {
     private static final boolean CL_CANNON = true;
     private static IRubyObject canonicalizeInternal(ThreadContext context, IRubyObject clazz, IRubyObject real, IRubyObject image) {
         if (f_zero_p(context, image) &&
-            ((RubyModule)clazz).fastHasConstant("Unify") &&
-            (!CL_CANNON ||
-            (k_exact_p(real) && k_exact_p(image)))) {
+            (!CL_CANNON || k_exact_p(image)) &&
+            ((RubyModule)clazz).fastHasConstant("Unify")) {
             return real;
         } else if (f_real_p(context, real).isTrue() &&
                    f_real_p(context, image).isTrue()) {
@@ -388,23 +387,13 @@ public class RubyComplex extends RubyNumeric {
     @Deprecated
     public static IRubyObject convert(ThreadContext context, IRubyObject clazz, IRubyObject[]args) {
         switch (args.length) {
-        case 0: return convert(context, clazz);
         case 1: return convert(context, clazz, args[0]);        
         case 2: return convert(context, clazz, args[0], args[1]);
         }
-        Arity.raiseArgumentError(context.getRuntime(), args.length, 0, 2);
+        Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 1);
         return null;
     }
 
-    /** nucomp_s_convert
-     * 
-     */
-    @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject convert(ThreadContext context, IRubyObject recv) {
-        IRubyObject nil = context.getRuntime().getNil();
-        return convertCommon(context, recv, nil, nil);
-    }
-    
     /** nucomp_s_convert
      * 
      */
@@ -446,18 +435,22 @@ public class RubyComplex extends RubyNumeric {
         }
 
         if (a1 instanceof RubyComplex) {
-            if (a2.isNil() || f_zero_p(context, a2)) return a1;
+            if (a2.isNil() || (k_exact_p(a2) && f_zero_p(context, a2))) return a1;
         }
 
-        if (a1 instanceof RubyNumeric && !f_real_p(context, a1).isTrue() ||
-            a2 instanceof RubyNumeric && !f_real_p(context, a2).isTrue()) {
-            Ruby runtime = context.getRuntime();
-            return f_add(context, a1, 
-                         f_mul(context, a2, newComplexBang(context, runtime.getComplex(),
-                                 RubyFixnum.zero(runtime), RubyFixnum.one(runtime))));
+        if (a2.isNil()) {
+            if (a1 instanceof RubyNumeric && !f_real_p(context, a1).isTrue()) return a1;
+            return newInstance(context, recv, a1);
+        } else {
+            if (a1 instanceof RubyNumeric && a2 instanceof RubyNumeric &&
+                (!f_real_p(context, a1).isTrue() || !f_real_p(context, a2).isTrue())) {    
+                Ruby runtime = context.getRuntime();
+                return f_add(context, a1,
+                             f_mul(context, a2, newComplexBang(context, runtime.getComplex(),
+                                     RubyFixnum.zero(runtime), RubyFixnum.one(runtime))));
+            }
+            return newInstance(context, recv, a1, a2);
         }
-
-        return a2.isNil() ? newInstance(context, recv, a1) : newInstance(context, recv, a1, a2);
     }
 
     /** nucomp_real
@@ -471,7 +464,7 @@ public class RubyComplex extends RubyNumeric {
     /** nucomp_image
      * 
      */
-    @JRubyMethod(name = {"image", "imag"})
+    @JRubyMethod(name = {"imaginary", "imag"})
     public IRubyObject image() {
         return image;
     }
@@ -580,7 +573,7 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "**")
     public IRubyObject op_expt(ThreadContext context, IRubyObject other) {
-        if (f_zero_p(context, other)) {
+        if (k_exact_p(other) && f_zero_p(context, other)) {
             return newComplexBang(context, getMetaClass(), RubyFixnum.one(context.getRuntime()));
         } else if (other instanceof RubyRational && f_one_p(context, f_denominator(context, other))) {
             other = f_numerator(context, other); 

@@ -845,22 +845,6 @@ public class RubyNumeric extends RubyObject {
         return RubyComplex.newComplexCanonicalize(context, this);
     }
 
-    /** numeric_re
-     * 
-     */
-    @JRubyMethod(name = "re", compat = CompatVersion.RUBY1_9)
-    public IRubyObject re(ThreadContext context) {
-        return RubyComplex.newComplexConvert(context, this);
-    }
-
-    /** numeric_im
-     * 
-     */
-    @JRubyMethod(name = "im", compat = CompatVersion.RUBY1_9)
-    public IRubyObject im(ThreadContext context) {
-        return RubyComplex.newComplexConvert(context, RubyFixnum.zero(context.getRuntime()), this);
-    }
-
     /** numeric_real
      * 
      */
@@ -872,7 +856,7 @@ public class RubyNumeric extends RubyObject {
     /** numeric_image
      * 
      */
-    @JRubyMethod(name = {"image", "imag"}, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"imaginary", "imag"}, compat = CompatVersion.RUBY1_9)
     public IRubyObject image(ThreadContext context) {
         return RubyFixnum.zero(context.getRuntime());
     }
