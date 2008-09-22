@@ -965,7 +965,7 @@ public class ChannelStream implements Stream, Finalizable {
                 return read(number);
             }
         } else {
-            return null;
+            return fread(number);
         }
     }
 
