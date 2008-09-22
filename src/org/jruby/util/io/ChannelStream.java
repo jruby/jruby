@@ -927,6 +927,8 @@ public class ChannelStream implements Stream, Finalizable {
                     selectableChannel.configureBlocking(oldBlocking);
                 }
             }
+        } else if (descriptor.getChannel() instanceof FileChannel) {
+            return fread(number);
         } else {
             return null;
         }
