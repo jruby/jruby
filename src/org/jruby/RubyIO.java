@@ -1343,7 +1343,7 @@ public class RubyIO extends RubyObject {
         int c = RubyNumeric.num2chr(object);
 
         try {
-            getOpenFileChecked().getMainStream().fputc(c);
+            getOpenFileChecked().getWriteStream().fputc(c);
         } catch (BadDescriptorException e) {
             return RubyFixnum.zero(context.getRuntime());
         } catch (IOException e) {
