@@ -2650,7 +2650,51 @@ public class RubyArray extends RubyObject implements List {
         }
         return context.getRuntime().getNil();
     }
-    
+
+    /** rb_ary_product
+     * 
+     */
+    @JRubyMethod(name = "product", rest = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject product(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+
+        int n = args.length + 1;
+        RubyArray arrays[] = new RubyArray[n];
+        int counters[] = new int[n];
+
+        arrays[0] = this;
+        for (int i = 1; i < n; i++) arrays[i] = args[i - 1].convertToArray();
+
+        int resultLen = 1;
+        for (int i = 0; i < n; i++) {
+            int k = arrays[i].realLength;
+            int l = resultLen;
+            if (k == 0) return newEmptyArray(runtime);
+            resultLen *= k;
+            if (resultLen < k || resultLen < l || resultLen / k != l) {
+                throw runtime.newRangeError("too big to product");
+            }
+        }
+
+        RubyArray result = newArray(runtime, resultLen);
+
+        for (int i = 0; i < resultLen; i++) {
+            RubyArray sub = newArray(runtime, n);
+            for (int j = 0; j < n; j++) sub.append(arrays[j].entry(counters[j]));
+
+            result.append(sub);
+            int m = n - 1;
+            counters[m]++;
+
+            while (m > 0 && counters[m] == arrays[m].realLength) {
+                counters[m] = 0;
+                m--;
+                counters[m]++;
+            }
+        }
+        return result;
+    }
+
     final class BlockComparator implements Comparator {
         private Block block;
 
