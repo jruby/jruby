@@ -846,11 +846,8 @@ public class ChannelStream implements Stream, Finalizable {
     }
 
     public synchronized void fputc(int c) throws IOException, BadDescriptorException {
-        try {
-            bufferedWrite(c);
-            fflush();
-        } catch (IOException e) {
-        }
+        bufferedWrite(c);
+        fflush();
     }
 
     public int ungetc(int c) {
