@@ -2695,6 +2695,109 @@ public class RubyArray extends RubyObject implements List {
         return result;
     }
 
+    private int combinationLength(ThreadContext context, int n, int k) {
+        if (k * 2 > n) k = n - k;
+        if (k == 0) return 1;
+        if (k < 0) return 0;
+        int val = 1;
+        for (int i = 1; i <= k; i++, n--) {
+            long m = val;
+            val *= n;
+            if (val < m) throw context.getRuntime().newRangeError("too big for combination");
+            val /= i;
+        }
+        return val;
+    }
+
+    /** rb_ary_combination
+     * 
+     */
+    @JRubyMethod(name = "combination", compat = CompatVersion.RUBY1_9)
+    public IRubyObject combination(ThreadContext context, IRubyObject num, Block block) {
+        Ruby runtime = context.getRuntime();
+        if (!block.isGiven()) return enumeratorize(runtime, this, "combination", num);
+
+        int n = RubyNumeric.num2int(num);
+
+        if (n == 0) {
+            block.yield(context, newEmptyArray(runtime));
+        } else if (n == 1) {
+            for (int i = 0; i < realLength; i++) {
+                block.yield(context, values[begin + i]);
+            }
+        } else if (n >= 0 && realLength >= n) {
+            int stack[] = new int[n + 1];
+            int nlen = combinationLength(context, (int)realLength, n);
+            IRubyObject chosen[] = new IRubyObject[n];
+            int lev = 0;
+
+            stack[0] = -1;
+            for (int i = 0; i < nlen; i++) {
+                chosen[lev] = values[begin + stack[lev + 1]];
+                for (lev++; lev < n; lev++) {
+                    chosen[lev] = values[begin + (stack[lev + 1] = stack[lev] + 1)];
+                }
+                block.yield(context, newArray(runtime, chosen));
+                do {
+                    stack[lev--]++;
+                } while (lev != 0 && stack[lev + 1] + n == realLength + lev + 1);
+            }
+        }
+        return this;
+    }
+    
+    private void permute(ThreadContext context, int n, int r, int[]p, int index, boolean[]used, RubyArray values, Block block) {
+        for (int i = 0; i < n; i++) {
+            if (!used[i]) {
+                p[index] = i;
+                if (index < r - 1) {
+                    used[i] = true;
+                    permute(context, n, r, p, index + 1, used, values, block);
+                    used[i] = false;
+                } else {
+                    RubyArray result = newArray(context.getRuntime(), r);
+
+                    for (int j = 0; j < r; j++) {
+                        result.values[result.begin + j] = values.values[values.begin + p[j]];
+                    }
+
+                    result.realLength = r;
+                    block.yield(context, result);
+                }
+            }
+        }
+    }
+
+    /** rb_ary_permutation
+     * 
+     */
+    @JRubyMethod(name = "permutation", compat = CompatVersion.RUBY1_9)
+    public IRubyObject permutation(ThreadContext context, IRubyObject num, Block block) {
+        return block.isGiven() ? permutationCommon(context, RubyNumeric.num2int(num), block) : enumeratorize(context.getRuntime(), this, "permutation", num);
+    }
+
+    @JRubyMethod(name = "permutation", compat = CompatVersion.RUBY1_9)
+    public IRubyObject permutation(ThreadContext context, Block block) {
+        return block.isGiven() ? permutationCommon(context, realLength, block) : enumeratorize(context.getRuntime(), this, "permutation");
+    }
+
+    private IRubyObject permutationCommon(ThreadContext context, int r, Block block) {
+        if (r == 0) {
+            return newEmptyArray(context.getRuntime());
+        } else if (r == 1) {
+            for (int i = 0; i < realLength; i++) {
+                block.yield(context, newArray(context.getRuntime(), values[begin + i]));
+            }
+        } else if (r >= 0 && realLength >= r) {
+            int n = realLength;
+            permute(context, n, r,
+                    new int[n], 0,
+                    new boolean[n],
+                    makeShared(0, realLength, getMetaClass()), block);
+        }
+        return this;
+    }
+
     final class BlockComparator implements Comparator {
         private Block block;
 
