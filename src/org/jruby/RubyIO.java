@@ -966,8 +966,19 @@ public class RubyIO extends RubyObject {
         // MRI behavior: always check whether the file is writable
         // or not, even if we are to write 0 bytes.
         OpenFile myOpenFile = getOpenFileChecked();
+
         try {
             myOpenFile.checkWritable(context.getRuntime());
+            RubyString str = obj.asString();
+            if (str.getByteList().length() == 0) {
+                return context.getRuntime().newFixnum(0);
+            }
+
+            if (myOpenFile.isWriteBuffered()) {
+                context.getRuntime().getWarnings().warn(ID.SYSWRITE_BUFFERED_IO, "write_nonblock for buffered IO");
+            }
+            int written = myOpenFile.getWriteStream().getDescriptor().write(str.getByteList());
+            return context.getRuntime().newFixnum(written);
         } catch (IOException ex) {
             throw context.getRuntime().newIOErrorFromException(ex);
         } catch (BadDescriptorException ex) {
@@ -977,9 +988,6 @@ public class RubyIO extends RubyObject {
         }  catch (PipeException ex) {
             throw context.getRuntime().newErrnoEPIPEError();
         }
-
-        // TODO: Obviously, we're not doing a non-blocking write here
-        return write(context, obj);
     }
     
     /** io_write
