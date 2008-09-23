@@ -43,14 +43,12 @@ import static org.jruby.util.Numeric.f_sub;
 import static org.jruby.util.Numeric.f_to_f;
 import static org.jruby.util.Numeric.f_to_i;
 import static org.jruby.util.Numeric.f_to_r;
-import static org.jruby.util.Numeric.f_to_s;
 import static org.jruby.util.Numeric.f_truncate;
 import static org.jruby.util.Numeric.f_xor;
 import static org.jruby.util.Numeric.f_zero_p;
 import static org.jruby.util.Numeric.i_gcd;
 import static org.jruby.util.Numeric.i_ilog2;
 import static org.jruby.util.Numeric.k_exact_p;
-import static org.jruby.util.Numeric.k_inexact_p;
 import static org.jruby.util.Numeric.ldexp;
 
 import org.jcodings.specific.ASCIIEncoding;
@@ -69,7 +67,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
 /**
- *  1.9 rational.c as of revision: 19449
+ *  1.9 rational.c as of revision: 19496
  */
 
 @JRubyClass(name = "Rational", parent = "Numeric", include = "Precision")
@@ -89,6 +87,8 @@ public class RubyRational extends RubyNumeric {
 
         ThreadContext context = runtime.getCurrentContext();
         rationalc.callMethod(context, "private_class_method", runtime.newSymbol("allocate"));
+
+        rationalc.getSingletonClass().undefineMethod("new");
 
         rationalc.defineAnnotatedMethods(RubyRational.class);
 
@@ -258,8 +258,11 @@ public class RubyRational extends RubyNumeric {
         IRubyObject gcd = f_gcd(context, num, den);
         num = f_idiv(context, num, gcd);
         den = f_idiv(context, den, gcd);
-       
-        if (f_one_p(context, den) && ((RubyModule)clazz).fastHasConstant("Unify")) return num;
+
+        if (Numeric.CANON) {
+            if (f_one_p(context, den) && ((RubyModule)clazz).fastHasConstant("Unify")) return num;
+        }
+
         return new RubyRational(context.getRuntime(), clazz, num, den);
     }
     
@@ -276,7 +279,10 @@ public class RubyRational extends RubyNumeric {
             throw runtime.newZeroDivisionError();            
         }        
 
-        if (f_one_p(context, den) && ((RubyModule)clazz).fastHasConstant("Unify")) return num;
+        if (Numeric.CANON) {
+            if (f_one_p(context, den) && ((RubyModule)clazz).fastHasConstant("Unify")) return num;
+        }
+
         return new RubyRational(context.getRuntime(), clazz, num, den);
     }
     
@@ -293,13 +299,13 @@ public class RubyRational extends RubyNumeric {
         return null;
     }
 
-    @JRubyMethod(name = "new", meta = true, visibility = Visibility.PRIVATE)
+    // @JRubyMethod(name = "new", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject clazz, IRubyObject num) {
         num = intValue(context, num);
         return canonicalizeInternal(context, clazz, num, RubyFixnum.one(context.getRuntime()));
     }
 
-    @JRubyMethod(name = "new", meta = true, visibility = Visibility.PRIVATE)
+    // @JRubyMethod(name = "new", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject clazz, IRubyObject num, IRubyObject den) {
         num = intValue(context, num);
         den = intValue(context, den);
@@ -377,15 +383,14 @@ public class RubyRational extends RubyNumeric {
 
         if (a1 instanceof RubyRational) {
             if (a2.isNil() || (k_exact_p(a2) && f_one_p(context, a2))) return a1;
-            return a1;
         }
-        
+
         if (a2.isNil()) {
             if (a1 instanceof RubyNumeric && !f_integer_p(context, a1).isTrue()) return a1;
             return newInstance(context, recv, a1);
         } else {
             if (a1 instanceof RubyNumeric && a2 instanceof RubyNumeric &&
-                (!f_integer_p(context, a1).isTrue() || ! f_integer_p(context, a2).isTrue())) {
+                (!f_integer_p(context, a1).isTrue() || !f_integer_p(context, a2).isTrue())) {
                 return f_div(context, a1, a2);
             }
             return newInstance(context, recv, a1, a2);
@@ -852,7 +857,9 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "marshal_dump")
     public IRubyObject marshal_dump(ThreadContext context) {
-        return context.getRuntime().newArray(num, den);
+        RubyArray dump = context.getRuntime().newArray(num, den);
+        if (hasVariables()) dump.syncVariables(getVariableList());
+        return dump;
     }
 
     /** nurat_marshal_load
@@ -860,11 +867,12 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "marshal_load")
     public IRubyObject marshal_load(ThreadContext context, IRubyObject arg) {
-        RubyArray a = arg.convertToArray();
-        num = a.size() > 0 ? a.eltInternal(0) : context.getRuntime().getNil();
-        den = a.size() > 1 ? a.eltInternal(1) : context.getRuntime().getNil();
+        RubyArray load = arg.convertToArray();
+        num = load.size() > 0 ? load.eltInternal(0) : context.getRuntime().getNil();
+        den = load.size() > 1 ? load.eltInternal(1) : context.getRuntime().getNil();
 
         if (f_zero_p(context, den)) throw context.getRuntime().newZeroDivisionError();
+        if (load.hasVariables()) syncVariables(load.getVariableList());
         return this;
     }
 

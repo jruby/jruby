@@ -70,7 +70,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
 /**
- *  1.9 complex.c as of revision: 19449
+ *  1.9 complex.c as of revision: 19496
  */
 
 @JRubyClass(name = "Complex", parent = "Numeric")
@@ -92,6 +92,8 @@ public class RubyComplex extends RubyNumeric {
         complexc.callMethod(context, "private_class_method", runtime.newSymbol("allocate"));
 
         complexc.defineAnnotatedMethods(RubyComplex.class);
+
+        complexc.getSingletonClass().undefineMethod("new");
 
         String[]undefined = {"<", "<=", "<=>", ">", ">=", "between?", "divmod",
                              "floor", "ceil", "modulo", "round", "step", "truncate"};
@@ -288,13 +290,15 @@ public class RubyComplex extends RubyNumeric {
     /** nucomp_s_canonicalize_internal
      * 
      */
-    private static final boolean CL_CANNON = true;
+    private static final boolean CL_CANON = true;
     private static IRubyObject canonicalizeInternal(ThreadContext context, IRubyObject clazz, IRubyObject real, IRubyObject image) {
-        if (f_zero_p(context, image) &&
-            (!CL_CANNON || k_exact_p(image)) &&
-            ((RubyModule)clazz).fastHasConstant("Unify")) {
-            return real;
-        } else if (f_real_p(context, real).isTrue() &&
+        if (Numeric.CANON) {
+            if (f_zero_p(context, image) &&
+                    (!CL_CANON || k_exact_p(image)) &&
+                    ((RubyModule)clazz).fastHasConstant("Unify"))
+                    return real;
+        }
+        if (f_real_p(context, real).isTrue() &&
                    f_real_p(context, image).isTrue()) {
             return new RubyComplex(context.getRuntime(), clazz, real, image);
         } else if (f_real_p(context, real).isTrue()) {
@@ -329,7 +333,7 @@ public class RubyComplex extends RubyNumeric {
         return null;
     }
 
-    @JRubyMethod(name = "new", meta = true, visibility = Visibility.PRIVATE)
+    // @JRubyMethod(name = "new", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject newInstanceNew(ThreadContext context, IRubyObject recv, IRubyObject real) {
         return newInstance(context, recv, real);
     }
@@ -340,7 +344,7 @@ public class RubyComplex extends RubyNumeric {
         return canonicalizeInternal(context, recv, real, RubyFixnum.zero(context.getRuntime()));
     }
 
-    @JRubyMethod(name = "new", meta = true, visibility = Visibility.PRIVATE)
+    // @JRubyMethod(name = "new", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject newInstanceNew(ThreadContext context, IRubyObject recv, IRubyObject real, IRubyObject image) {
         return newInstance(context, recv, real, image);
     }
@@ -837,7 +841,9 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "marshal_dump")
     public IRubyObject marshal_dump(ThreadContext context) {
-        return context.getRuntime().newArray(real, image);
+        RubyArray dump = context.getRuntime().newArray(real, image);
+        if (hasVariables()) dump.syncVariables(getVariableList());
+        return dump;
     }
 
     /** nucomp_marshal_load
@@ -845,9 +851,11 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "marshal_load")
     public IRubyObject marshal_load(ThreadContext context, IRubyObject arg) {
-        RubyArray a = arg.convertToArray();
-        real = a.size() > 0 ? a.eltInternal(0) : context.getRuntime().getNil();
-        image = a.size() > 1 ? a.eltInternal(1) : context.getRuntime().getNil();
+        RubyArray load = arg.convertToArray();
+        real = load.size() > 0 ? load.eltInternal(0) : context.getRuntime().getNil();
+        image = load.size() > 1 ? load.eltInternal(1) : context.getRuntime().getNil();
+
+        if (load.hasVariables()) syncVariables(load.getVariableList());
         return this;
     }
 
