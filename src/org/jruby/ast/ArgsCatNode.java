@@ -77,8 +77,7 @@ public class ArgsCatNode extends Node {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject args = firstNode.interpret(runtime, context, self, aBlock);
         IRubyObject secondArgs = RuntimeHelpers.splatValue(secondNode.interpret(runtime, context, self, aBlock));
-        RubyArray list = args instanceof RubyArray ? (RubyArray) args : runtime.newArray(args);
    
-        return list.concat(secondArgs);    
+        return RuntimeHelpers.ensureRubyArray(runtime, args).concat(secondArgs);    
     }
 }

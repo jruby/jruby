@@ -100,14 +100,22 @@ public class Colon3Node extends Node implements INameNode {
         try {
             RubyModule left = runtime.getObject();
 
-            if (left.fastGetConstantAt(name) != null) {
+            if (hasConstant(left)) {
                 return "constant";
-            } else if (left.getMetaClass().isMethodBound(name, true)) {
+            } else if (hasMethod(left)) {
                 return "method";
             }
         } catch (JumpException excptn) {
         }
             
         return null;
+    }
+    
+    private boolean hasConstant(RubyModule left) {
+        return left.fastGetConstantAt(name) != null;
+    }
+    
+    private boolean hasMethod(IRubyObject left) {
+        return left.getMetaClass().isMethodBound(name, true);
     }
 }

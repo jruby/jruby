@@ -78,6 +78,7 @@ public class HashNode extends Node {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         RubyHash hash = RubyHash.newHash(runtime);
         
+        ListNode listNode = this.listNode;
         if (listNode != null) {
             int size = listNode.size();
    

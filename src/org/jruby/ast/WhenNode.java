@@ -111,7 +111,7 @@ public class WhenNode extends Node {
         for (int j = 0,k = expressions.getLength(); j < k; j++) {
             IRubyObject test = expressions.eltInternal(j);
 
-            if ((value != null && test.callMethod(context, MethodIndex.OP_EQQ, "===", value).isTrue())
+            if ((value != null && eqq.call(context, self, test, value).isTrue())
                     || (value == null && test.isTrue())) {
                 return whenNode.interpret(runtime, context, self, aBlock);
             }

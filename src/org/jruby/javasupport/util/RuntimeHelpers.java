@@ -413,10 +413,11 @@ public class RuntimeHelpers {
     }
 
     public static RubyArray ensureRubyArray(IRubyObject value) {
-        if (!(value instanceof RubyArray)) {
-            value = RubyArray.newArray(value.getRuntime(), value);
-        }
-        return (RubyArray) value;
+        return ensureRubyArray(value.getRuntime(), value);
+    }
+
+    public static RubyArray ensureRubyArray(Ruby runtime, IRubyObject value) {
+        return value instanceof RubyArray ? (RubyArray)value : RubyArray.newArray(runtime, value);
     }
 
     public static RubyArray ensureMultipleAssignableRubyArray(IRubyObject value, Ruby runtime, boolean masgnHasHead) {

@@ -62,18 +62,25 @@ public class DStrNode extends ListNode implements ILiteralNode {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return buildDynamicString(runtime, context, self, aBlock, this);
+    }
+    
+    public static RubyString buildDynamicString(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock, ListNode list) {
         RubyString string = runtime.newString(new ByteList());
         
-        for (int i = 0; i < size(); i++) {
-            Node iterNode = get(i);
-            
-            if (iterNode instanceof StrNode) {
-                string.getByteList().append(((StrNode) iterNode).getValue());
-            } else {
-                string.append(iterNode.interpret(runtime, context, self, aBlock));
-            }
+        int size = list.size();
+        for (int i = 0; i < size; i++) {
+            DStrNode.appendToString(runtime, context, self, aBlock, string, list.get(i));
         }
    
         return string;
+    }
+    
+    public static void appendToString(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock, RubyString string, Node node) {
+        if (node instanceof StrNode) {
+            string.getByteList().append(((StrNode) node).getValue());
+        } else {
+            string.append(node.interpret(runtime, context, self, aBlock));
+        }
     }
 }

@@ -189,16 +189,26 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
         IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
         IRubyObject[] args = ASTInterpreter.setupArgs(runtime, context, argsNode, self, aBlock);
         
-        assert receiver.getMetaClass() != null : receiver.getClass().getName();
+        assert hasMetaClass(receiver) : receiverClassName(receiver);
         
         // If reciever is self then we do the call the same way as vcall
-        if (receiver == self) {
-            variableCallAdapter.call(context, self, receiver, args);
-        } else {
-            normalCallAdapter.call(context, self, receiver, args);
-        }
+        CallSite callSite;
+        callSite = selectCallSite(self, receiver);
+        callSite.call(context, self, receiver, args);
 
         return args[args.length - 1];
+    }
+    
+    protected static boolean hasMetaClass(IRubyObject object) {
+        return object.getMetaClass() != null;
+    }
+    
+    protected static String receiverClassName(IRubyObject object) {
+        return object.getClass().getName();
+    }
+    
+    protected CallSite selectCallSite( IRubyObject self,IRubyObject receiver) {
+        return (receiver == self) ? variableCallAdapter : normalCallAdapter;
     }
     
     @Override
@@ -217,11 +227,11 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
         IRubyObject receiver = receiverNode.interpret(runtime, context, self, block);
         
         if (argsNode == null) { // attribute set.
-            RuntimeHelpers.invoke(context, receiver, name, value, Block.NULL_BLOCK);
+            RuntimeHelpers.invoke(context, receiver, name, value);
         } else { // element set
             RubyArray args = (RubyArray) argsNode.interpret(runtime, context, self, block);
             args.append(value);
-            RuntimeHelpers.invoke(context, receiver, name, args.toJavaArray(), Block.NULL_BLOCK);
+            RuntimeHelpers.invoke(context, receiver, name, args.toJavaArray());
         } 
         
         return runtime.getNil();

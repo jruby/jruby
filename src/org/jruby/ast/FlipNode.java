@@ -35,6 +35,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -138,7 +139,7 @@ public class FlipNode extends Node {
    
         if (exclusive) {
             if (result == null || !result.isTrue()) {
-                result = beginNode.interpret(runtime, context, self, aBlock).isTrue() ? runtime.getTrue() : runtime.getFalse();
+                result = trueIfTrue(runtime, beginNode.interpret(runtime, context, self, aBlock));
                 flipScope.setValueDepthZero(result, index);
                 return result;
             } else {
@@ -151,7 +152,7 @@ public class FlipNode extends Node {
         } else {
             if (result == null || !result.isTrue()) {
                 if (beginNode.interpret(runtime, context, self, aBlock).isTrue()) {
-                    flipScope.setValueDepthZero(endNode.interpret(runtime, context, self, aBlock).isTrue() ? runtime.getFalse() : runtime.getTrue(), index);
+                    flipScope.setValueDepthZero(falseIfTrue(runtime, endNode.interpret(runtime, context, self, aBlock)), index);
                     return runtime.getTrue();
                 } 
 
@@ -163,5 +164,13 @@ public class FlipNode extends Node {
                 return runtime.getTrue();
             }
         }
+    }
+    
+    private static RubyBoolean trueIfTrue(Ruby runtime, IRubyObject truish) {
+        return truish.isTrue() ? runtime.getTrue() : runtime.getFalse();
+    }
+    
+    private static RubyBoolean falseIfTrue(Ruby runtime, IRubyObject truish) {
+        return truish.isTrue() ? runtime.getFalse() : runtime.getTrue();
     }
 }

@@ -100,8 +100,7 @@ public class ForNode extends IterNode {
                     try {
                         recv = iterNode.interpret(runtime, context, self, aBlock);
                     } finally {
-                        context.setFile(savedFile);
-                        context.setLine(savedLine);
+                        context.setFileAndLine(savedFile, savedLine);
                     }
    
                     return callAdapter.call(context, self, recv, block);

@@ -8,6 +8,7 @@ package org.jruby.ast;
 import org.jruby.Ruby;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -34,14 +35,11 @@ public class AttrAssignTwoArgNode extends AttrAssignNode {
         IRubyObject param1 = arg1.interpret(runtime, context, self, aBlock);
         IRubyObject param2 = arg2.interpret(runtime, context, self, aBlock);
         
-        assert receiver.getMetaClass() != null : receiver.getClass().getName();
+        assert hasMetaClass(receiver) : receiverClassName(receiver);
         
         // If reciever is self then we do the call the same way as vcall
-        if (receiver == self) {
-            variableCallAdapter.call(context, self, receiver, param1, param2);
-        } else {
-            normalCallAdapter.call(context, self, receiver, param1, param2);
-        }
+        CallSite callSite = selectCallSite(self, receiver);
+        callSite.call(context, self, receiver, param1, param2);
 
         return param2;
     }
@@ -53,14 +51,11 @@ public class AttrAssignTwoArgNode extends AttrAssignNode {
         IRubyObject param1 = arg1.interpret(runtime, context, self, aBlock);
         IRubyObject param2 = arg2.interpret(runtime, context, self, aBlock);
         
-        assert receiver.getMetaClass() != null : receiver.getClass().getName();
+        assert hasMetaClass(receiver) : receiverClassName(receiver);
         
         // If reciever is self then we do the call the same way as vcall
-        if (receiver == self) {
-            variableCallAdapter.call(context, self, receiver, param1, param2, value);
-        } else {
-            normalCallAdapter.call(context, self, receiver, param1, param2, value);
-        }
+        CallSite callSite = selectCallSite(self, receiver);
+        callSite.call(context, self, receiver, param1, param2, value);
         
         return runtime.getNil();
     }

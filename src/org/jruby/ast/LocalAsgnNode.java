@@ -58,7 +58,12 @@ public class LocalAsgnNode extends AssignableNode implements INameNode {
     public LocalAsgnNode(ISourcePosition position, String name, int location, Node valueNode) {
         super(position, NodeType.LOCALASGNNODE, valueNode);
         this.name = name;
-        this.location = location;
+        // in order to make pragma's noops we set location to a special value
+        if (ASTInspector.PRAGMAS.contains(name)) {
+            this.location = 0xFFFFFFFF;
+        } else {
+            this.location = location;
+        }
     }
     
     /**
@@ -110,7 +115,7 @@ public class LocalAsgnNode extends AssignableNode implements INameNode {
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         // ignore compiler pragmas
-        if (ASTInspector.PRAGMAS.contains(name)) return runtime.getNil();
+        if (location == 0xFFFFFFFF) return runtime.getNil();
         
         return context.getCurrentScope().setValue(getIndex(),
                 getValueNode().interpret(runtime,context, self, aBlock), getDepth());

@@ -114,27 +114,22 @@ public class DRegexpNode extends ListNode implements ILiteralNode {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         if (once && onceRegexp != null) return onceRegexp;
 
-        RubyString string = runtime.newString(new ByteList());
-        for (int i = 0; i < size(); i++) {
-            Node iterNode = get(i);
-            if (iterNode instanceof StrNode) {
-                string.getByteList().append(((StrNode) iterNode).getValue());
-            } else {
-                string.append(iterNode.interpret(runtime,context, self, aBlock));
-            }
-        }
+        RubyString string = DStrNode.buildDynamicString(runtime, context, self, aBlock, this);
 
-        RubyRegexp regexp;
+        RubyRegexp regexp = createRegexp(runtime, string);
+        
+        if (once) setOnceRegexp(regexp);
+
+        return regexp;
+    }
+    
+    private RubyRegexp createRegexp(Ruby runtime, RubyString string) {
         try {
-            regexp = RubyRegexp.newRegexp(runtime, string.getByteList(), options);
+            return RubyRegexp.newRegexp(runtime, string.getByteList(), options);
         } catch(Exception e) {
         //                    System.err.println(iVisited.getValue().toString());
         //                    e.printStackTrace();
             throw runtime.newRegexpError(e.getMessage());
         }
-        
-        if (once) setOnceRegexp(regexp);
-
-        return regexp;
     }
 }

@@ -120,13 +120,13 @@ public class CaseNode extends Node {
         return runtime.getNil();        
     }
     
-    private IRubyObject interpretExpressions(WhenNode whenNode, IRubyObject value,
+    private static IRubyObject interpretExpressions(WhenNode whenNode, IRubyObject value,
             ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
-        assert whenNode.getExpressionNodes() instanceof ArrayNode;
+        assert whenIsArray(whenNode);
 
         for (Node expression: ((ArrayNode) whenNode.getExpressionNodes()).childNodes()) {
-            context.setFile(expression.getPosition().getFile());
-            context.setLine(expression.getPosition().getStartLine());
+            ISourcePosition position = expression.getPosition();
+            context.setFileAndLine(position.getFile(), position.getStartLine());
 
             if (runtime.hasEventHooks()) ASTInterpreter.callTraceFunction(runtime, context, RubyEvent.LINE);
 
@@ -135,5 +135,9 @@ public class CaseNode extends Node {
         }
         
         return null;
+    }
+    
+    private static boolean whenIsArray(WhenNode whenNode) {
+        return whenNode.getExpressionNodes() instanceof ArrayNode;
     }
 }

@@ -67,15 +67,8 @@ public class DSymbolNode extends ListNode {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        RubyString string = runtime.newString(new ByteList());
-        for (int i = 0; i < size(); i++) {
-            Node iterNode = get(i);
-            if (iterNode instanceof StrNode) {
-                string.getByteList().append(((StrNode) iterNode).getValue());
-            } else {
-                string.append(iterNode.interpret(runtime, context, self, aBlock));
-            }
-        }
+        RubyString string = DStrNode.buildDynamicString(runtime, context, self, aBlock, this);
    
-        return runtime.newSymbol(string.toString());    }
+        return runtime.newSymbol(string.toString());
+    }
 }

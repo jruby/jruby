@@ -62,8 +62,9 @@ public class BlockNode extends ListNode {
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject result = runtime.getNil();
+        int size = size();
         
-        for (int i = 0; i < size(); i++) {
+        for (int i = 0; i < size; i++) {
             result = get(i).interpret(runtime,context, self, aBlock);
         }
    

@@ -51,10 +51,12 @@ import org.jruby.util.IdUtil;
  */
 public final class Colon2Node extends Colon3Node implements INameNode {
     private final Node leftNode;
+    private final boolean isConstant;
 
     public Colon2Node(ISourcePosition position, Node leftNode, String name) {
         super(position, NodeType.COLON2NODE, name);
         this.leftNode = leftNode;
+        this.isConstant = IdUtil.isConstant(name);
     }
     
     /**
@@ -109,13 +111,17 @@ public final class Colon2Node extends Colon3Node implements INameNode {
 
         IRubyObject result = leftNode.interpret(runtime, context, self, aBlock);
         
-        if (IdUtil.isConstant(name)) {
-            if (result instanceof RubyModule) return ((RubyModule) result).fastGetConstantFrom(name);
-
-            throw runtime.newTypeError(result + " is not a class/module");
+        if (isConstant) {
+            return getConstantFrom(runtime, result);
         }
 
         return RuntimeHelpers.invoke(context, result, name, aBlock);
+    }
+    
+    private IRubyObject getConstantFrom(Ruby runtime, IRubyObject result) {
+        if (result instanceof RubyModule) return ((RubyModule) result).fastGetConstantFrom(name);
+
+        throw runtime.newTypeError(result + " is not a class/module");
     }
     
     @Override
@@ -123,14 +129,22 @@ public final class Colon2Node extends Colon3Node implements INameNode {
        try {
             IRubyObject left = leftNode.interpret(runtime, context, self, aBlock);
 
-            if (left instanceof RubyModule && ((RubyModule) left).fastGetConstantAt(name) != null) {
+            if (isModuleAndHasConstant(left)) {
                 return "constant";
-            } else if (left.getMetaClass().isMethodBound(name, true)) {
+            } else if (hasMethod(left)) {
                 return "method";
             }
         } catch (JumpException e) {
         }
             
         return null;
+    }
+    
+    private boolean isModuleAndHasConstant(IRubyObject left) {
+        return left instanceof RubyModule && ((RubyModule) left).fastGetConstantAt(name) != null;
+    }
+    
+    private boolean hasMethod(IRubyObject left) {
+        return left.getMetaClass().isMethodBound(name, true);
     }
  }
