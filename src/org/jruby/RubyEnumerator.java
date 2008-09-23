@@ -175,7 +175,7 @@ public class RubyEnumerator extends RubyObject {
 
         RubyEnumerable.callEach(runtime, context, self, new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                if (result.size() == size) result.shift();
+                if (result.size() == size) result.shift(ctx);
                 result.append(largs[0]);
                 if (result.size() == size) block.yield(ctx, result.aryDup());
                 return runtime.getNil();

@@ -749,7 +749,7 @@ public class RubyKernel {
         RubyString str = RubyString.stringValue(args[0]);
 
         RubyArray newArgs = context.getRuntime().newArrayNoCopy(args);
-        newArgs.shift();
+        newArgs.shift(context);
 
         return str.op_format(context, newArgs);
     }

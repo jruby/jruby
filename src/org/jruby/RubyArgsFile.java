@@ -71,7 +71,7 @@ public class RubyArgsFile {
                 }
             }
 
-            IRubyObject arg = args.shift();
+            IRubyObject arg = args.shift(context);
             RubyString filename = (RubyString)((RubyObject)arg).to_s();
             ByteList filenameBytes = filename.getByteList();
             ((RubyString) runtime.getGlobalVariables().get("$FILENAME")).setValue(filenameBytes);

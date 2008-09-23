@@ -2193,7 +2193,7 @@ public class RubyString extends RubyObject {
 
         if (!limit && lim == 0) {
             while (result.size() > 0 && ((RubyString) result.eltInternal(result.size() - 1)).value.realSize == 0) {
-                result.pop();
+                result.pop(context);
             }
         }
 

@@ -398,14 +398,30 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_make_shared
     *
     */
-    private final RubyArray makeShared(int beg, int len, RubyClass klass) {
+    private RubyArray makeShared(int beg, int len, RubyClass klass) {
         return makeShared(beg, len, klass, klass.getRuntime().isObjectSpaceEnabled());
-    }    
+    }
+    
+    /** ary_shared_first
+     * 
+     */
+    private RubyArray makeSharedFirst(ThreadContext context, IRubyObject num, boolean last) {
+        int n = RubyNumeric.num2int(num);
+        
+        if (n > realLength) {
+            n = realLength;
+        } else if (n < 0) {
+            throw context.getRuntime().newArgumentError("negative array size");
+        }
+        
+        return makeShared(last ? realLength - n : 0, n, getMetaClass());
+    }
+    
     
     /** rb_ary_make_shared
      *
      */
-    private final RubyArray makeShared(int beg, int len, RubyClass klass, boolean objectSpace) {
+    private RubyArray makeShared(int beg, int len, RubyClass klass, boolean objectSpace) {
         RubyArray sharedArray = new RubyArray(getRuntime(), klass, objectSpace);
         isShared = true;
         sharedArray.values = values;
@@ -1074,48 +1090,61 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_pop
      *
      */
-    @JRubyMethod(name = "pop")
-    public IRubyObject pop() {
+    @JRubyMethod(name = "pop", compat = CompatVersion.RUBY1_8)
+    public IRubyObject pop(ThreadContext context) {
         modifyCheck();
         
-        if (realLength == 0) return getRuntime().getNil();
+        if (realLength == 0) return context.getRuntime().getNil();
 
         if (isShared) {
             try {
                 return values[begin + --realLength];
             } catch (ArrayIndexOutOfBoundsException e) {
                 concurrentModification();
-                return getRuntime().getNil();
+                return context.getRuntime().getNil();
             }
         } else {
             int index = begin + --realLength;
             try {
                 final IRubyObject obj = values[index];
-                values[index] = getRuntime().getNil();
+                values[index] = context.getRuntime().getNil();
                 return obj;
             } catch (ArrayIndexOutOfBoundsException e) {
                 concurrentModification();
-                return getRuntime().getNil();
+                return context.getRuntime().getNil();
             }
         }
+    }
+    
+    @JRubyMethod(name = "pop", compat = CompatVersion.RUBY1_9)
+    public IRubyObject pop19(ThreadContext context) {
+        return pop(context);
+    }
+
+    @JRubyMethod(name = "pop", compat = CompatVersion.RUBY1_9)
+    public IRubyObject pop19(ThreadContext context, IRubyObject num) {
+        modifyCheck();
+        RubyArray result = makeSharedFirst(context, num, true);
+        realLength -= result.realLength;
+        return result;
     }
 
     /** rb_ary_shift
      *
      */
-    @JRubyMethod(name = "shift")
-    public IRubyObject shift() {
+    @JRubyMethod(name = "shift", compat = CompatVersion.RUBY1_8)
+    public IRubyObject shift(ThreadContext context) {
         modify();
 
-        if (realLength == 0) return getRuntime().getNil();
+        if (realLength == 0) return context.getRuntime().getNil();
 
         final IRubyObject obj;
         try {
             obj = values[begin];
-            values[begin] = getRuntime().getNil();
+            values[begin] = context.getRuntime().getNil();
         } catch (ArrayIndexOutOfBoundsException e) {
             concurrentModification();
-            return getRuntime().getNil();
+            return context.getRuntime().getNil();
         }
 
         isShared = true;
@@ -1124,6 +1153,23 @@ public class RubyArray extends RubyObject implements List {
         realLength--;
 
         return obj;
+    }
+
+    @JRubyMethod(name = "shift", compat = CompatVersion.RUBY1_9)
+    public IRubyObject shift19(ThreadContext context) {
+        return shift(context);
+    }
+
+    @JRubyMethod(name = "shift", compat = CompatVersion.RUBY1_9)
+    public IRubyObject shift19(ThreadContext context, IRubyObject num) {
+        modify();
+
+        RubyArray result = makeSharedFirst(context, num, false);
+
+        int n = result.realLength;
+        begin += n;
+        realLength -= n;
+        return result;
     }
 
     /** rb_ary_unshift
@@ -2326,7 +2372,7 @@ public class RubyArray extends RubyObject implements List {
             }
             i++;
         }
-        memo.pop();
+        memo.pop(context);
         return lim - index - 1; /* returns number of increased items */
     }
 
