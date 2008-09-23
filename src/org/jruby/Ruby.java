@@ -1220,6 +1220,7 @@ public final class Ruby {
         addLazyBuiltin("minijava.rb", "minijava", "org.jruby.java.MiniJava");
         
         addLazyBuiltin("jruby/ext.rb", "jruby/ext", "org.jruby.RubyJRuby$ExtLibrary");
+        addLazyBuiltin("jruby/core_ext.rb", "jruby/ext", "org.jruby.RubyJRuby$CoreExtLibrary");
         addLazyBuiltin("jruby/type.rb", "jruby/type", "org.jruby.RubyJRuby$TypeLibrary");
         addLazyBuiltin("iconv.so", "iconv", "org.jruby.libraries.IConvLibrary");
         addLazyBuiltin("nkf.so", "nkf", "org.jruby.libraries.NKFLibrary");

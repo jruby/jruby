@@ -90,11 +90,21 @@ public class RubyJRuby {
         return mJRubyExt;
     }
 
+    public static void createJRubyCoreExt(Ruby runtime) {
+        runtime.getClassClass().defineAnnotatedMethods(JRubyClassExtensions.class);
+    }
+
     public static class ExtLibrary implements Library {
         public void load(Ruby runtime, boolean wrap) throws IOException {
             RubyJRuby.createJRubyExt(runtime);
             
             runtime.getMethod().defineAnnotatedMethods(MethodExtensions.class);
+        }
+    }
+
+    public static class CoreExtLibrary implements Library {
+        public void load(Ruby runtime, boolean wrap) throws IOException {
+            RubyJRuby.createJRubyCoreExt(runtime);
         }
     }
     
@@ -294,6 +304,30 @@ public class RubyJRuby {
                 steal_method(recv, type, args[i]);
             }
             return recv.getRuntime().getNil();
+        }
+    }
+    
+    public static class JRubyClassExtensions {
+        // TODO: Someday, enable.
+        @JRubyMethod(name = "subclasses", optional = 1)
+        public static IRubyObject subclasses(ThreadContext context, IRubyObject maybeClass, IRubyObject[] args) {
+            RubyClass clazz;
+            if (maybeClass instanceof RubyClass) {
+                clazz = (RubyClass)maybeClass;
+            } else {
+                throw context.getRuntime().newTypeError(maybeClass, context.getRuntime().getClassClass());
+            }
+
+            boolean recursive = false;
+            if (args.length == 1) {
+                if (args[0] instanceof RubyBoolean) {
+                    recursive = args[0].isTrue();
+                } else {
+                    context.getRuntime().newTypeError(args[0], context.getRuntime().fastGetClass("Boolean"));
+                }
+            }
+
+            return RubyArray.newArray(context.getRuntime(), clazz.subclasses(recursive)).freeze(context);
         }
     }
     

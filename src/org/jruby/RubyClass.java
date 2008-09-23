@@ -607,21 +607,6 @@ public class RubyClass extends RubyModule {
         return this;        
     }
     
-    // TODO: Someday, enable.
-    // @JRubyMethod(name = "subclasses", optional = 1)
-    public IRubyObject subclasses(ThreadContext context, IRubyObject[] args) {
-        boolean recursive = false;
-        if (args.length == 1) {
-            if (args[0] instanceof RubyBoolean) {
-                recursive = args[0].isTrue();
-            } else {
-                context.getRuntime().newTypeError(args[0], context.getRuntime().fastGetClass("Boolean"));
-            }
-        }
-        
-        return RubyArray.newArray(context.getRuntime(), subclasses(recursive)).freeze(context);
-    }
-    
     public Collection subclasses(boolean includeDescendants) {
         if (subclasses != null) {
             Collection<RubyClass> mine = new ArrayList<RubyClass>(subclasses);
