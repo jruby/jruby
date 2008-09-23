@@ -6,6 +6,6 @@ class TestJrubyCoreExt < Test::Unit::TestCase
     superclass = Class.new
     sub1 = Class.new(superclass)
     sub2 = Class.new(superclass)
-    assert_equal([sub1, sub2].sort, superclass.subclasses.sort)
+    assert_equal([sub1.to_s, sub2.to_s].sort, superclass.subclasses.map{|c| c.to_s}.sort)
   end
 end
