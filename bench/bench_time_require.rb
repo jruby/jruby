@@ -8,7 +8,8 @@ Benchmark.bm(30) {|bm|
 }
 
 puts "Now with rubygems and activerecord"
-require 'rubygems'
+require 'minigems'
+gem 'activerecord'
 require 'activerecord'
 
 Benchmark.bm(30) {|bm|
