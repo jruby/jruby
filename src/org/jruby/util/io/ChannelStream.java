@@ -440,7 +440,7 @@ public class ChannelStream implements Stream, Finalizable {
      */
     private void flushWrite() throws IOException, BadDescriptorException {
         if (reading || !modes.isWritable() || buffer.position() == 0) return; // Don't bother
-            
+        
         int len = buffer.position();
         buffer.flip();
         int n = descriptor.write(buffer);
@@ -448,8 +448,44 @@ public class ChannelStream implements Stream, Finalizable {
         if(n != len) {
             // TODO: check the return value here
         }
-
         buffer.clear();
+    }
+    
+    /**
+     * Flush the write buffer to the channel (if needed)
+     * @throws IOException
+     */
+    private boolean flushWrite(final boolean block) throws IOException, BadDescriptorException {
+        if (reading || !modes.isWritable() || buffer.position() == 0) return false; // Don't bother
+        int len = buffer.position();
+        int nWritten = 0;
+        buffer.flip();
+
+        // For Sockets, only write as much as will fit.
+        if (descriptor.getChannel() instanceof SelectableChannel) {
+            SelectableChannel selectableChannel = (SelectableChannel)descriptor.getChannel();
+            synchronized (selectableChannel.blockingLock()) {
+                boolean oldBlocking = selectableChannel.isBlocking();
+                try {
+                    if (oldBlocking != block) {
+                        selectableChannel.configureBlocking(block);
+                    }
+                    nWritten = descriptor.write(buffer);
+                } finally {
+                    if (oldBlocking != block) {
+                        selectableChannel.configureBlocking(oldBlocking);
+                    }
+                }
+            }
+        } else {
+            nWritten = descriptor.write(buffer);
+        }
+        if (nWritten != len) {
+            buffer.compact();
+            return false;
+        }
+        buffer.clear();
+        return true;
     }
 
     /**
@@ -884,7 +920,35 @@ public class ChannelStream implements Stream, Finalizable {
     public synchronized int fwrite(ByteList string) throws IOException, BadDescriptorException {
         return bufferedWrite(string);
     }
-
+    public synchronized int writenonblock(ByteList buf) throws IOException, BadDescriptorException {
+        getRuntime().secure(4);
+        checkWritable();
+        ensureWrite();
+        
+        // Ruby ignores empty syswrites
+        if (buf == null || buf.length() == 0) return 0;
+        
+        if (buffer.position() != 0 && !flushWrite(false)) return 0;
+        
+        if (descriptor.getChannel() instanceof SelectableChannel) {
+            SelectableChannel selectableChannel = (SelectableChannel)descriptor.getChannel();
+            synchronized (selectableChannel.blockingLock()) {
+                boolean oldBlocking = selectableChannel.isBlocking();
+                try {
+                    if (oldBlocking) {
+                        selectableChannel.configureBlocking(false);
+                    }
+                    return descriptor.write(ByteBuffer.wrap(buf.unsafeBytes(), buf.begin(), buf.length()));
+                } finally {
+                    if (oldBlocking) {
+                        selectableChannel.configureBlocking(oldBlocking);
+                    }
+                }
+            }
+        } else {
+            return descriptor.write(ByteBuffer.wrap(buf.unsafeBytes(), buf.begin(), buf.length()));
+        }
+    }
     public synchronized ByteList fread(int number) throws IOException, BadDescriptorException {
         try {
             if (number == 0) {
