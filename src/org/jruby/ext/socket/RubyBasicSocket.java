@@ -181,6 +181,8 @@ public class RubyBasicSocket extends RubyIO {
             return (InetSocketAddress)((SocketChannel)socketChannel).socket().getLocalSocketAddress();
         } else if (socketChannel instanceof ServerSocketChannel) {
             return (InetSocketAddress)((ServerSocketChannel) socketChannel).socket().getLocalSocketAddress();
+        } else if (socketChannel instanceof DatagramChannel) {
+            return (InetSocketAddress)((DatagramChannel) socketChannel).socket().getLocalSocketAddress();
         } else {
             return null;
         }
