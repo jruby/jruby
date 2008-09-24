@@ -44,6 +44,8 @@ package org.jruby;
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
+
+import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.*;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -1297,4 +1299,19 @@ public class RubyKernel {
         block.yield(context, recv);
         return recv;
     }
+
+    @JRubyMethod(name = {"to_enum", "enum_for"}, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject to_enum(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+        switch (args.length) {
+        case 0: return enumeratorize(runtime, recv, "each");
+        case 1: return enumeratorize(runtime, recv, args[0].asJavaString());
+        case 2: return enumeratorize(runtime, recv, args[0].asJavaString(), args[1]);
+        default:
+            IRubyObject enumArgs[] = new IRubyObject[args.length - 1];
+            System.arraycopy(args, 1, enumArgs, 0, enumArgs.length);
+            return enumeratorize(runtime, recv, args[0].asJavaString(), enumArgs);
+        }
+    }
+
 }

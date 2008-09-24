@@ -73,8 +73,9 @@ public class RubyEnumerator extends RubyObject {
             enmr = runtime.defineClass("Enumerator", runtime.getObject(), ENUMERATOR_ALLOCATOR);
         } else {
             enmr = enm.defineClassUnder("Enumerator", runtime.getObject(), ENUMERATOR_ALLOCATOR);
-            enmr.includeModule(enm);
         }
+
+        enmr.includeModule(enm);
 
         enmr.defineAnnotatedMethod(RubyEnumerator.class, "initialize");
         enmr.defineAnnotatedMethod(RubyEnumerator.class, "each");
