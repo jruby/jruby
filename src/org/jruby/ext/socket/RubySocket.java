@@ -128,6 +128,8 @@ public class RubySocket extends RubyBasicSocket {
     public static final int SOCK_STREAM = 1;
     public static final int SOCK_DGRAM = 2;
     public static final int SOCK_RAW = 3;
+    public static final int SOCK_RDM = 4;
+    public static final int SOCK_SEQPACKET = 5;
 
     public static final int AF_UNSPEC = 0;
     public static final int PF_UNSPEC = 0;
@@ -135,12 +137,18 @@ public class RubySocket extends RubyBasicSocket {
     public static final int PF_UNIX = 1;
     public static final int AF_INET = 2;
     public static final int PF_INET = 2;
+    public static final int AF_IPX = 23;
+    public static final int PF_IPX = 23;
     public static final int AF_INET6 = 30;
 
     public static final int IPPROTO_IP = 0;
     public static final int IPPROTO_ICMP = 1;
     public static final int IPPROTO_TCP = 6;
     public static final int IPPROTO_UDP = 17;
+    
+    public static final int MSG_OOB = 0x1;
+    public static final int MSG_PEEK = 0x2;
+    public static final int MSG_DONTROUTE = 0x4;
 
     @JRubyModule(name="Socket::Constants")
     public static class Constants {}
@@ -154,13 +162,22 @@ public class RubySocket extends RubyBasicSocket {
         rb_mConstants.fastSetConstant("SOCK_STREAM", runtime.newFixnum(SOCK_STREAM));
         rb_mConstants.fastSetConstant("SOCK_DGRAM", runtime.newFixnum(SOCK_DGRAM));
         rb_mConstants.fastSetConstant("SOCK_RAW", runtime.newFixnum(SOCK_RAW));
+        rb_mConstants.fastSetConstant("SOCK_RDM", runtime.newFixnum(SOCK_RDM));
+        rb_mConstants.fastSetConstant("SOCK_SEQPACKET", runtime.newFixnum(SOCK_SEQPACKET));
         rb_mConstants.fastSetConstant("PF_UNSPEC", runtime.newFixnum(PF_UNSPEC));
         rb_mConstants.fastSetConstant("AF_UNSPEC", runtime.newFixnum(AF_UNSPEC));
         rb_mConstants.fastSetConstant("PF_INET", runtime.newFixnum(PF_INET));
         rb_mConstants.fastSetConstant("AF_INET", runtime.newFixnum(AF_INET));
+        rb_mConstants.fastSetConstant("PF_INET6", runtime.newFixnum(AF_INET6));
         rb_mConstants.fastSetConstant("AF_INET6", runtime.newFixnum(AF_INET6));
+        rb_mConstants.fastSetConstant("PF_UNIX", runtime.newFixnum(PF_UNIX));
+        rb_mConstants.fastSetConstant("AF_UNIX", runtime.newFixnum(AF_UNIX));
+        rb_mConstants.fastSetConstant("PF_IPX", runtime.newFixnum(PF_IPX));
+        rb_mConstants.fastSetConstant("AF_IPX", runtime.newFixnum(AF_IPX));
         // mandatory constants we haven't implemented
-        rb_mConstants.fastSetConstant("MSG_OOB", runtime.newFixnum(0x01));
+        rb_mConstants.fastSetConstant("MSG_OOB", runtime.newFixnum(MSG_OOB));
+        rb_mConstants.fastSetConstant("MSG_PEEK", runtime.newFixnum(MSG_PEEK));
+        rb_mConstants.fastSetConstant("MSG_DONTROUTE", runtime.newFixnum(MSG_DONTROUTE));
         rb_mConstants.fastSetConstant("SOL_SOCKET", runtime.newFixnum(SOL_SOCKET));
         rb_mConstants.fastSetConstant("SOL_IP", runtime.newFixnum(SOL_IP));
         rb_mConstants.fastSetConstant("SOL_TCP", runtime.newFixnum(SOL_TCP));
@@ -204,6 +221,7 @@ public class RubySocket extends RubyBasicSocket {
 
         // drb needs defined
         rb_mConstants.fastSetConstant("TCP_NODELAY", runtime.newFixnum(1));
+        rb_mConstants.fastSetConstant("TCP_MAXSEG", runtime.newFixnum(2));
 
         // flags/limits used by Net::SSH
         rb_mConstants.fastSetConstant("NI_DGRAM", runtime.newFixnum(NI_DGRAM));
@@ -214,7 +232,14 @@ public class RubySocket extends RubyBasicSocket {
         rb_mConstants.fastSetConstant("NI_NUMERICHOST", runtime.newFixnum(NI_NUMERICHOST));
         rb_mConstants.fastSetConstant("NI_NUMERICSERV", runtime.newFixnum(NI_NUMERICSERV));
        
-        
+        // More constants needed by specs
+        rb_mConstants.fastSetConstant("IP_MULTICAST_TTL", runtime.newFixnum(10));
+        rb_mConstants.fastSetConstant("IP_MULTICAST_LOOP", runtime.newFixnum(11));
+        rb_mConstants.fastSetConstant("IP_ADD_MEMBERSHIP", runtime.newFixnum(12));
+        rb_mConstants.fastSetConstant("IP_MAX_MEMBERSHIPS", runtime.newFixnum(20));
+        rb_mConstants.fastSetConstant("IP_DEFAULT_MULTICAST_LOOP", runtime.newFixnum(1));
+        rb_mConstants.fastSetConstant("IP_DEFAULT_MULTICAST_TTL", runtime.newFixnum(1));
+
         rb_cSocket.includeModule(rb_mConstants);
 
         rb_cSocket.defineAnnotatedMethods(RubySocket.class);
