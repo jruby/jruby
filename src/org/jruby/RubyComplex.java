@@ -70,14 +70,14 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
 /**
- *  1.9 complex.c as of revision: 19496
+ *  1.9 complex.c as of revision: 19531
  */
 
 @JRubyClass(name = "Complex", parent = "Numeric")
 public class RubyComplex extends RubyNumeric {
 
     public static RubyClass createComplexClass(Ruby runtime) {
-        RubyClass complexc = runtime.defineClass("Complex", runtime.getNumeric(), COMPLEX_ALLOCATOR); // because one can Complex.send(:allocate)
+        RubyClass complexc = runtime.defineClass("Complex", runtime.getNumeric(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setComplex(complexc);
 
         complexc.index = ClassIndex.COMPLEX;
@@ -88,11 +88,9 @@ public class RubyComplex extends RubyNumeric {
             }
         };
 
-        ThreadContext context = runtime.getCurrentContext();
-        complexc.callMethod(context, "private_class_method", runtime.newSymbol("allocate"));
-
         complexc.defineAnnotatedMethods(RubyComplex.class);
 
+        complexc.getSingletonClass().undefineMethod("allocate");
         complexc.getSingletonClass().undefineMethod("new");
 
         String[]undefined = {"<", "<=", "<=>", ">", ">=", "between?", "divmod",
@@ -102,16 +100,10 @@ public class RubyComplex extends RubyNumeric {
             complexc.undefineMethod(undef);
         }
 
-        complexc.defineConstant("I", RubyComplex.newComplexConvert(context, RubyFixnum.zero(runtime), RubyFixnum.one(runtime)));
+        complexc.defineConstant("I", RubyComplex.newComplexConvert(runtime.getCurrentContext(), RubyFixnum.zero(runtime), RubyFixnum.one(runtime)));
 
         return complexc;
     }
-
-    private static ObjectAllocator COMPLEX_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyComplex(runtime, klass, RubyFixnum.zero(runtime), RubyFixnum.zero(runtime));
-        }
-    };
 
     /** internal
      * 

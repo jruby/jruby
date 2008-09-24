@@ -67,14 +67,14 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
 /**
- *  1.9 rational.c as of revision: 19496
+ *  1.9 rational.c as of revision: 19531
  */
 
 @JRubyClass(name = "Rational", parent = "Numeric", include = "Precision")
 public class RubyRational extends RubyNumeric {
     
     public static RubyClass createRationalClass(Ruby runtime) {
-        RubyClass rationalc = runtime.defineClass("Rational", runtime.getNumeric(), RATIONAL_ALLOCATOR); // because one can Complex.send(:allocate)
+        RubyClass rationalc = runtime.defineClass("Rational", runtime.getNumeric(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setRational(rationalc);
 
         rationalc.index = ClassIndex.RATIONAL;
@@ -85,22 +85,14 @@ public class RubyRational extends RubyNumeric {
             }
         };
 
-        ThreadContext context = runtime.getCurrentContext();
-        rationalc.callMethod(context, "private_class_method", runtime.newSymbol("allocate"));
-
-        rationalc.getSingletonClass().undefineMethod("new");
-
         rationalc.defineAnnotatedMethods(RubyRational.class);
+
+        rationalc.getSingletonClass().undefineMethod("allocate");
+        rationalc.getSingletonClass().undefineMethod("new");
 
         return rationalc;
     }
 
-    private static ObjectAllocator RATIONAL_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyRational(runtime, klass, RubyFixnum.zero(runtime), RubyFixnum.one(runtime));
-        }
-    }; 
-    
     /** internal
      * 
      */
