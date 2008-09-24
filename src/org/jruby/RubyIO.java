@@ -1352,11 +1352,13 @@ public class RubyIO extends RubyObject {
         try {
             OpenFile myOpenFile = getOpenFileChecked();            
             myOpenFile.checkWritable(context.getRuntime());
-            myOpenFile.getWriteStream().fputc(RubyNumeric.num2chr(object));
+            Stream writeStream = myOpenFile.getWriteStream();
+            writeStream.fputc(RubyNumeric.num2chr(object));
+            if (myOpenFile.isSync()) myOpenFile.fflush(writeStream);
         } catch (IOException ex) {
             throw context.getRuntime().newIOErrorFromException(ex);
         } catch (BadDescriptorException e) {
-            return RubyFixnum.zero(context.getRuntime());
+            throw context.getRuntime().newErrnoEBADFError();
         } catch (InvalidValueException ex) {
             throw context.getRuntime().newErrnoEINVALError();
         } catch (PipeException ex) {
