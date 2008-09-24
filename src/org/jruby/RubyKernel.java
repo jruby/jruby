@@ -1300,7 +1300,7 @@ public class RubyKernel {
         return recv;
     }
 
-    @JRubyMethod(name = {"to_enum", "enum_for"}, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"to_enum", "enum_for"}, rest = true, compat = CompatVersion.RUBY1_9)
     public static IRubyObject to_enum(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
         switch (args.length) {
