@@ -1348,14 +1348,19 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(name = "putc", required = 1, backtrace = true)
     public IRubyObject putc(ThreadContext context, IRubyObject object) {
-        int c = RubyNumeric.num2chr(object);
 
         try {
-            getOpenFileChecked().getWriteStream().fputc(c);
+            OpenFile myOpenFile = getOpenFileChecked();            
+            myOpenFile.checkWritable(context.getRuntime());
+            myOpenFile.getWriteStream().fputc(RubyNumeric.num2chr(object));
+        } catch (IOException ex) {
+            throw context.getRuntime().newIOErrorFromException(ex);
         } catch (BadDescriptorException e) {
             return RubyFixnum.zero(context.getRuntime());
-        } catch (IOException e) {
-            return RubyFixnum.zero(context.getRuntime());
+        } catch (InvalidValueException ex) {
+            throw context.getRuntime().newErrnoEINVALError();
+        } catch (PipeException ex) {
+            throw context.getRuntime().newErrnoEPIPEError();
         }
 
         return object;
