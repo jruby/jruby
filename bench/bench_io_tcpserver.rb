@@ -1,16 +1,18 @@
 require 'benchmark'
 require 'socket'
 iter = 50000
-buf_sizes = [ 1024, 2048 ]
+buf_sizes = [ 1024, 2048, 4096, 8192 ]
 PORT = 54321
 
 serv = TCPServer.new('localhost', PORT)
 Thread.new {
   loop do
-    buf = 0.chr * 4096
+    len = 4096
+    buf = 0.chr * len
     client = serv.accept
-      while s = client.read(buf.length, buf)
+      while client.read(len)
       end
+      client.write(0.chr)
       client.close
   end
 }
@@ -21,7 +23,8 @@ Thread.new {
         sock = TCPSocket.new('localhost', PORT)
         buf = 0.chr * size
         iter.times { sock.write buf }
-        sock.close
+        sock.close_write
+        sock.read(1)
       end
     end
   end
