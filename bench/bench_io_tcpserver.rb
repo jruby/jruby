@@ -25,6 +25,7 @@ Thread.new {
         iter.times { sock.write buf }
         sock.close_write
         sock.read(1)
+        sock.close
       end
     end
   end
