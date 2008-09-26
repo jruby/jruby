@@ -1,10 +1,20 @@
 package org.jruby.java.proxies;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.HashMap;
+import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyHash;
+import org.jruby.RubyHash.Visitor;
+import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.java.invokers.InstanceFieldGetter;
+import org.jruby.java.invokers.InstanceFieldSetter;
 import org.jruby.javasupport.Java;
+import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
@@ -63,6 +73,109 @@ public class JavaProxy extends RubyObject {
         } else {
             return Java.get_proxy_class(javaClass, RuntimeHelpers.invoke(context, javaClass, "array_class"));
         }
+    }
+
+    private static Class<?> getJavaClass(ThreadContext context, RubyModule module) {
+        try {
+        IRubyObject jClass = RuntimeHelpers.invoke(context, module, "java_class");
+
+
+        return !(jClass instanceof JavaClass) ? null : ((JavaClass) jClass).javaClass();
+        } catch (Exception e) { return null; }
+    }
+    
+    /**
+     * Create a name/newname map of fields to be exposed as methods.
+     */
+    private static Map<String, String> getFieldListFromArgs(IRubyObject[] args) {
+        final Map<String, String> map = new HashMap<String, String>();
+        
+        // Get map of all fields we want to define.  
+        for (int i = 0; i < args.length; i++) {
+            if (args[i] instanceof RubyHash) {
+                ((RubyHash) args[i]).visitAll(new Visitor() {
+                    @Override
+                    public void visit(IRubyObject key, IRubyObject value) {
+                        map.put(key.asString().toString(), value.asString().toString());
+                    }
+                });
+            } else {
+                String value = args[i].asString().toString();
+                map.put(value, value);
+            }
+        }
+        
+        return map;
+    }
+
+    // Look through all mappings to find a match entry for this field
+    private static void installField(ThreadContext context, Map<String, String> fieldMap,
+            Field field, RubyModule module, boolean asReader, boolean asWriter) {
+        boolean isFinal = Modifier.isFinal(field.getModifiers());
+
+        for (String key : fieldMap.keySet()) {
+            if (key.equals(field.getName())) {
+                if (Ruby.isSecurityRestricted() && !Modifier.isPublic(field.getModifiers())) {
+                    throw context.getRuntime().newSecurityError("Cannot change accessibility on fields in a restricted mode: field '" + field.getName() + "'");
+                }
+                
+                String asName = fieldMap.get(key);
+
+                if (asReader) module.addMethod(asName, new InstanceFieldGetter(key, module, field));
+                if (asWriter) {
+                    if (isFinal) throw context.getRuntime().newSecurityError("Cannot change final field '" + field.getName() + "'");
+                    module.addMethod(asName + "=", new InstanceFieldSetter(key, module, field));
+                }
+                
+                fieldMap.remove(key);
+                break;
+            }
+        }
+    }    
+
+    private static void findFields(ThreadContext context, RubyModule topModule,
+            IRubyObject args[], boolean asReader, boolean asWriter) {
+        Map<String, String> fieldMap = getFieldListFromArgs(args);
+        
+        for (RubyModule module = topModule; module != null; module = module.getSuperClass()) {
+            Class<?> javaClass = getJavaClass(context, module);
+            
+            // Hit a non-java proxy class (included Modules can be a cause of this...skip)
+            if (javaClass == null) continue;
+
+            Field[] fields = JavaClass.getDeclaredFields(javaClass);
+            for (int j = 0; j < fields.length; j++) {
+                installField(context, fieldMap, fields[j], module, asReader, asWriter);
+            }
+        }
+        
+        // We could not find all of them print out first one (we could print them all?)
+        if (!fieldMap.isEmpty()) {
+            throw JavaClass.undefinedFieldError(context.getRuntime(),
+                    topModule.getName(), fieldMap.keySet().iterator().next());
+        }
+
+    }
+    
+    @JRubyMethod(meta = true, rest = true)
+    public static IRubyObject field_accessor(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        findFields(context, (RubyModule) recv, args, true, true);
+
+        return context.getRuntime().getNil();
+    }
+
+    @JRubyMethod(meta = true, rest = true)
+    public static IRubyObject field_reader(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        findFields(context, (RubyModule) recv, args, true, false);
+
+        return context.getRuntime().getNil();
+    }
+    
+    @JRubyMethod(meta = true, rest = true)
+    public static IRubyObject field_writer(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        findFields(context, (RubyModule) recv, args, false, true);
+
+        return context.getRuntime().getNil();
     }
     
     @JRubyMethod(meta = true)

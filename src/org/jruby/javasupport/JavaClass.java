@@ -82,27 +82,43 @@ import org.jruby.runtime.callback.Callback;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 
+
 @JRubyClass(name="Java::JavaClass", parent="Java::JavaObject")
 public class JavaClass extends JavaObject {
+    /**
+     * Assigned names only override based priority of an assigned type, the type must be less than
+     * or equal to the assigned type. For example, field name (FIELD) in a subclass will override
+     * an alias (ALIAS) in a superclass, but not a method (METHOD).
+     */
+    private enum Priority {
+        RESERVED(0), METHOD(1), FIELD(2), PROTECTED_METHOD(3),
+        WEAKLY_RESERVED(4), ALIAS(5), PROTECTED_FIELD(6);
+
+        private int value;
+
+        Priority(int value) {
+            this.value = value;
+        }
+
+        public boolean asImportantAs(AssignedName other) {
+            return other != null && other.type.value == value;
+        }
+        
+        public boolean lessImportantThan(AssignedName other) {
+            return other != null && other.type.value < value;
+        }
+        
+        public boolean moreImportantThan(AssignedName other) {
+            return other == null || other.type.value > value;
+        }
+    }
 
     private static class AssignedName {
-        // to override an assigned name, the type must be less than
-        // or equal to the assigned type. so a field name in a subclass
-        // will override an alias in a superclass, but not a method.
-        static final int RESERVED = 0;
-        static final int METHOD = 1;
-        static final int FIELD = 2;
-        static final int PROTECTED_METHOD = 3;
-        static final int WEAKLY_RESERVED = 4; // we'll be peeved, but not devastated, if you override
-        static final int ALIAS = 5;
-        // yes, protected fields are weaker than aliases. many conflicts
-        // in the old AWT code, for example, where you really want 'size'
-        // to mean the public method getSize, not the protected field 'size'.
-        static final int PROTECTED_FIELD = 6;
         String name;
-        int type;
+        Priority type;
+        
         AssignedName () {}
-        AssignedName(String name, int type) {
+        AssignedName(String name, Priority type) {
             this.name = name;
             this.type = type;
         }
@@ -111,21 +127,21 @@ public class JavaClass extends JavaObject {
     // TODO: other reserved names?
     private static final Map<String, AssignedName> RESERVED_NAMES = new HashMap<String, AssignedName>();
     static {
-        RESERVED_NAMES.put("__id__", new AssignedName("__id__", AssignedName.RESERVED));
-        RESERVED_NAMES.put("__send__", new AssignedName("__send__", AssignedName.RESERVED));
-        RESERVED_NAMES.put("class", new AssignedName("class", AssignedName.RESERVED));
-        RESERVED_NAMES.put("initialize", new AssignedName("initialize", AssignedName.RESERVED));
-        RESERVED_NAMES.put("object_id", new AssignedName("object_id", AssignedName.RESERVED));
-        RESERVED_NAMES.put("private", new AssignedName("private", AssignedName.RESERVED));
-        RESERVED_NAMES.put("protected", new AssignedName("protected", AssignedName.RESERVED));
-        RESERVED_NAMES.put("public", new AssignedName("public", AssignedName.RESERVED));
+        RESERVED_NAMES.put("__id__", new AssignedName("__id__", Priority.RESERVED));
+        RESERVED_NAMES.put("__send__", new AssignedName("__send__", Priority.RESERVED));
+        RESERVED_NAMES.put("class", new AssignedName("class", Priority.RESERVED));
+        RESERVED_NAMES.put("initialize", new AssignedName("initialize", Priority.RESERVED));
+        RESERVED_NAMES.put("object_id", new AssignedName("object_id", Priority.RESERVED));
+        RESERVED_NAMES.put("private", new AssignedName("private", Priority.RESERVED));
+        RESERVED_NAMES.put("protected", new AssignedName("protected", Priority.RESERVED));
+        RESERVED_NAMES.put("public", new AssignedName("public", Priority.RESERVED));
 
         // weakly reserved names
-        RESERVED_NAMES.put("id", new AssignedName("id", AssignedName.WEAKLY_RESERVED));
+        RESERVED_NAMES.put("id", new AssignedName("id", Priority.WEAKLY_RESERVED));
     }
     private static final Map<String, AssignedName> STATIC_RESERVED_NAMES = new HashMap<String, AssignedName>(RESERVED_NAMES);
     static {
-        STATIC_RESERVED_NAMES.put("new", new AssignedName("new", AssignedName.RESERVED));
+        STATIC_RESERVED_NAMES.put("new", new AssignedName("new", Priority.RESERVED));
     }
     private static final Map<String, AssignedName> INSTANCE_RESERVED_NAMES = new HashMap<String, AssignedName>(RESERVED_NAMES);
 
@@ -432,33 +448,21 @@ public class JavaClass extends JavaObject {
     
     private void initializeInterface(Class<?> javaClass) {
         Map<String, AssignedName> staticNames  = new HashMap<String, AssignedName>(STATIC_RESERVED_NAMES);
-        List<ConstantField> constantFields = new ArrayList<ConstantField>(); 
+        List<ConstantField> constants = new ArrayList<ConstantField>(); 
         Map<String, NamedInstaller> staticCallbacks = new HashMap<String, NamedInstaller>();
         Field[] fields = getDeclaredFields(javaClass); 
 
         for (int i = fields.length; --i >= 0; ) {
             Field field = fields[i];
             if (javaClass != field.getDeclaringClass()) continue;
-            if (ConstantField.isConstant(field)) {
-                constantFields.add(new ConstantField(field));
-            }
+            if (ConstantField.isConstant(field)) constants.add(new ConstantField(field));
             
-            String name = field.getName();
             int modifiers = field.getModifiers();
-            if (Modifier.isStatic(modifiers)) {
-                AssignedName assignedName = staticNames.get(name);
-                if (assignedName != null && assignedName.type < AssignedName.FIELD) continue;
-                staticNames.put(name,new AssignedName(name,AssignedName.FIELD));
-                staticCallbacks.put(name,new StaticFieldGetterInstaller(name,field));
-                if (!Modifier.isFinal(modifiers)) {
-                    String setName = name + '=';
-                    staticCallbacks.put(setName,new StaticFieldSetterInstaller(setName,field));
-                }
-            }            
+            if (Modifier.isStatic(modifiers)) addField(staticCallbacks, staticNames, field, Modifier.isFinal(modifiers), true);
         }
         this.staticAssignedNames = staticNames;
         this.staticInstallers = staticCallbacks;        
-        this.constantFields = constantFields;
+        this.constantFields = constants;
     }
 
     private void initializeClass(Class<?> javaClass) {
@@ -576,19 +580,15 @@ public class JavaClass extends JavaObject {
     
     private static void addUnassignedAlias(String name, Map<String, AssignedName> assignedNames,
             MethodInstaller installer) {
-        if (name != null) {
-            AssignedName assignedName = assignedNames.get(name);
-            if (assignedName == null) {
-                installer.addAlias(name);
-                assignedNames.put(name,new AssignedName(name,AssignedName.ALIAS));
-            } else if (assignedName.type == AssignedName.ALIAS) {
-                installer.addAlias(name);
-            } else if (assignedName.type > AssignedName.ALIAS) {
-                // TODO: there will be some additional logic in this branch
-                // dealing with conflicting protected fields. 
-                installer.addAlias(name);
-                assignedNames.put(name,new AssignedName(name,AssignedName.ALIAS));
-            }
+        if (name == null) return;
+
+        AssignedName assignedName = assignedNames.get(name);
+        // TODO: missing additional logic for dealing with conflicting protected fields.
+        if (Priority.ALIAS.moreImportantThan(assignedName)) {
+            installer.addAlias(name);
+            assignedNames.put(name, new AssignedName(name, Priority.ALIAS));
+        } else if (Priority.ALIAS.asImportantAs(assignedName)) {
+            installer.addAlias(name);
         }
     }
 
@@ -653,43 +653,41 @@ public class JavaClass extends JavaObject {
             constructorInstaller.addConstructor(ctor, javaClass);
         }
     }
+    
+    private void addField(Map <String, NamedInstaller> callbacks, Map<String, AssignedName> names,
+            Field field, boolean isFinal, boolean isStatic) {
+        String name = field.getName();
 
+        if (Priority.FIELD.lessImportantThan(names.get(name))) return;
+
+        names.put(name, new AssignedName(name, Priority.FIELD));
+        callbacks.put(name, isStatic ? new StaticFieldGetterInstaller(name, field) :
+            new InstanceFieldGetterInstaller(name, field));
+
+        if (!isFinal) {
+            String setName = name + '=';
+            callbacks.put(setName, isStatic ? new StaticFieldSetterInstaller(setName, field) :
+                new InstanceFieldSetterInstaller(setName, field));
+        }
+    }
+    
     private void setupClassFields(Class<?> javaClass, List<ConstantField> constantFields, Map<String, AssignedName> staticNames, Map<String, NamedInstaller> staticCallbacks, Map<String, AssignedName> instanceNames, Map<String, NamedInstaller> instanceCallbacks) {
         Field[] fields = getFields(javaClass);
         
         for (int i = fields.length; --i >= 0;) {
             Field field = fields[i];
-            if (javaClass != field.getDeclaringClass()) {
-                continue;
-            }
+            if (javaClass != field.getDeclaringClass()) continue;
+
             if (ConstantField.isConstant(field)) {
                 constantFields.add(new ConstantField(field));
                 continue;
             }
-            String name = field.getName();
+
             int modifiers = field.getModifiers();
             if (Modifier.isStatic(modifiers)) {
-                AssignedName assignedName = staticNames.get(name);
-                if (assignedName != null && assignedName.type < AssignedName.FIELD) {
-                    continue;
-                }
-                staticNames.put(name, new AssignedName(name, AssignedName.FIELD));
-                staticCallbacks.put(name, new StaticFieldGetterInstaller(name, field));
-                if (!Modifier.isFinal(modifiers)) {
-                    String setName = name + '=';
-                    staticCallbacks.put(setName, new StaticFieldSetterInstaller(setName, field));
-                }
+                addField(staticCallbacks, staticNames, field, Modifier.isFinal(modifiers), true);
             } else {
-                AssignedName assignedName = instanceNames.get(name);
-                if (assignedName != null && assignedName.type < AssignedName.FIELD) {
-                    continue;
-                }
-                instanceNames.put(name, new AssignedName(name, AssignedName.FIELD));
-                instanceCallbacks.put(name, new InstanceFieldGetterInstaller(name, field));
-                if (!Modifier.isFinal(modifiers)) {
-                    String setName = name + '=';
-                    instanceCallbacks.put(setName, new InstanceFieldSetterInstaller(setName, field));
-                }
+                addField(instanceCallbacks, instanceNames, field, Modifier.isFinal(modifiers), false);
             }
         }
     }
@@ -706,15 +704,13 @@ public class JavaClass extends JavaObject {
             if (Modifier.isStatic(method.getModifiers())) {
                 AssignedName assignedName = staticNames.get(name);
                 if (assignedName == null) {
-                    staticNames.put(name, new AssignedName(name, AssignedName.METHOD));
+                    staticNames.put(name, new AssignedName(name, Priority.METHOD));
                 } else {
-                    if (assignedName.type < AssignedName.METHOD) {
-                        continue;
-                    }
-                    if (assignedName.type != AssignedName.METHOD) {
+                    if (Priority.METHOD.lessImportantThan(assignedName)) continue;
+                    if (!Priority.METHOD.asImportantAs(assignedName)) {
                         staticCallbacks.remove(name);
                         staticCallbacks.remove(name + '=');
-                        staticNames.put(name, new AssignedName(name, AssignedName.METHOD));
+                        staticNames.put(name, new AssignedName(name, Priority.METHOD));
                     }
                 }
                 StaticMethodInvokerInstaller invoker = (StaticMethodInvokerInstaller) staticCallbacks.get(name);
@@ -726,15 +722,13 @@ public class JavaClass extends JavaObject {
             } else {
                 AssignedName assignedName = instanceNames.get(name);
                 if (assignedName == null) {
-                    instanceNames.put(name, new AssignedName(name, AssignedName.METHOD));
+                    instanceNames.put(name, new AssignedName(name, Priority.METHOD));
                 } else {
-                    if (assignedName.type < AssignedName.METHOD) {
-                        continue;
-                    }
-                    if (assignedName.type != AssignedName.METHOD) {
+                    if (Priority.METHOD.lessImportantThan(assignedName)) continue;
+                    if (!Priority.METHOD.asImportantAs(assignedName)) {
                         instanceCallbacks.remove(name);
                         instanceCallbacks.remove(name + '=');
-                        instanceNames.put(name, new AssignedName(name, AssignedName.METHOD));
+                        instanceNames.put(name, new AssignedName(name, Priority.METHOD));
                     }
                 }
                 InstanceMethodInvokerInstaller invoker = (InstanceMethodInvokerInstaller) instanceCallbacks.get(name);
@@ -1557,45 +1551,45 @@ public class JavaClass extends JavaObject {
     }
 
     @JRubyMethod(required = 1)
-    public JavaField field(IRubyObject name) {
+    public JavaField field(ThreadContext context, IRubyObject name) {
+        Class<?> javaClass = javaClass();
+        Ruby runtime = context.getRuntime();
         String stringName = name.asJavaString();
-        Field field = null;
+
         try {
-            field = javaClass().getField(stringName);
-            return new JavaField(getRuntime(), field);
+            return new JavaField(runtime, javaClass.getField(stringName));
         } catch (NoSuchFieldException nsfe) {
             String newName = JavaUtil.getJavaCasedName(stringName);
             if(newName != null) {
                 try {
-                    field = javaClass().getField(newName);
-                    return new JavaField(getRuntime(), field);
+                    return new JavaField(runtime, javaClass.getField(newName));
                 } catch (NoSuchFieldException nsfe2) {}
             }
-            throw undefinedFieldError(stringName);
+            throw undefinedFieldError(runtime, javaClass.getName(), stringName);
          }
     }
 
     @JRubyMethod(required = 1)
-    public JavaField declared_field(IRubyObject name) {
+    public JavaField declared_field(ThreadContext context, IRubyObject name) {
+        Class<?> javaClass = javaClass();
+        Ruby runtime = context.getRuntime();
         String stringName = name.asJavaString();
-        Field field = null;
+        
         try {
-            field = javaClass().getDeclaredField(stringName);
-            return new JavaField(getRuntime(), field);
+            return new JavaField(runtime, javaClass.getDeclaredField(stringName));
         } catch (NoSuchFieldException nsfe) {
             String newName = JavaUtil.getJavaCasedName(stringName);
             if(newName != null) {
                 try {
-                    field = javaClass().getDeclaredField(newName);
-                    return new JavaField(getRuntime(), field);
+                    return new JavaField(runtime, javaClass.getDeclaredField(newName));
                 } catch (NoSuchFieldException nsfe2) {}
             }
-            throw undefinedFieldError(stringName);
+            throw undefinedFieldError(runtime, javaClass.getName(), stringName);
         }
     }
-
-    private RaiseException undefinedFieldError(String name) {
-        return getRuntime().newNameError("undefined field '" + name + "' for class '" + javaClass().getName() + "'", name);
+    
+    public static RaiseException undefinedFieldError(Ruby runtime, String javaClassName, String name) {
+        return runtime.newNameError("undefined field '" + name + "' for class '" + javaClassName + "'", name);
     }
 
     @JRubyMethod
@@ -1674,15 +1668,15 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private static Field[] getDeclaredFields(Class<?> javaClass) {
+    public static Field[] getDeclaredFields(Class<?> javaClass) {
         try {
             return javaClass.getDeclaredFields();
         } catch (SecurityException e) {
             return getFields(javaClass);
         }
     }
-    
-    private static Field[] getFields(Class<?> javaClass) {
+
+    public static Field[] getFields(Class<?> javaClass) {
         try {
             return javaClass.getFields();
         } catch (SecurityException e) {
