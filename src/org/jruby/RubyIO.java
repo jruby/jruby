@@ -2106,6 +2106,7 @@ public class RubyIO extends RubyObject {
                 }
                 
                 buffer = str.getByteList();
+                buffer.length(0);
             }
             
             OpenFile myOpenFile = getOpenFileChecked();
