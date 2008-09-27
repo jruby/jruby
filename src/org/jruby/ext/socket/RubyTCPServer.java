@@ -149,6 +149,15 @@ public class RubyTCPServer extends RubyTCPSocket {
                     try {
                         SocketChannel connected = ssc.accept();
                         connected.finishConnect();
+                        
+                        //
+                        // Force the client socket to be blocking
+                        //
+                        synchronized (connected.blockingLock()) {
+                            connected.configureBlocking(false);
+                            connected.configureBlocking(true);
+                        }
+        
                         // otherwise one key has been selected (ours) so we get the channel and hand it off
                         socket.initSocket(new ChannelDescriptor(connected, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
                     } catch (InvalidValueException ex) {
