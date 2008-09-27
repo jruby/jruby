@@ -6,22 +6,18 @@ WPORT = 54321
 RPORT = 12345
 
 wserv = TCPServer.new('localhost', WPORT)
+rserv = TCPServer.new('localhost', RPORT)
+
 Thread.new {
-  
   len = 4096
   buf = 0.chr * len    
   loop do
     client = wserv.accept
     total = 0
     begin
-      if RUBY_PLATFORM == "java"
-        # Use read instead of sysread on jruby until sysread is fixed
-        while s = client.read(len); total += s.length; end
-      else
-        loop do
-          s = client.sysread(len)
-          total += s.length if s
-        end
+      loop do
+        s = client.sysread(len, buf)
+        total += s.length if s
       end      
     rescue Exception => ex
 #      puts "sysread failed total=#{total}: #{ex}"
@@ -31,7 +27,6 @@ Thread.new {
   end
 }
 
-rserv = TCPServer.new('localhost', RPORT)
 Thread.new {  
   loop do
     len = 4096
@@ -48,7 +43,7 @@ Thread.new {
     client.close
   end
 }
-#while true;sleep 1000;end
+
 (ARGV[0] || 5).to_i.times do
   Benchmark.bm(30) do |x|
     x.report("#{iter}.times { putc(0) }") do
@@ -63,7 +58,8 @@ Thread.new {
         TCPSocket.open('localhost', RPORT) { |sock| iter.times { sock.read(size) } }
       end if true
       x.report("#{iter}.times { sysread(#{size}) }") do
-        TCPSocket.open('localhost', RPORT) { |sock| iter.times { sock.sysread(size) } }
+        buf = 0.chr * size
+        TCPSocket.open('localhost', RPORT) { |sock| iter.times { sock.sysread(size, buf) } }
       end if true
       x.report("#{iter}.times { write(#{size}) }") do
         TCPSocket.open('localhost', WPORT) do |sock|
