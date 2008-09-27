@@ -1,32 +1,86 @@
 require 'benchmark'
 require 'socket'
 iter = 50000
-buf_sizes = [ 1024, 2048, 4096, 8192 ]
-PORT = 54321
+buf_sizes = [ 1, 16, 64, 256, 1024, 2048, 4096, 8192 ]
+WPORT = 54321
+RPORT = 12345
 
-serv = TCPServer.new('localhost', PORT)
+wserv = TCPServer.new('localhost', WPORT)
 Thread.new {
+  
+  len = 4096
+  buf = 0.chr * len    
+  loop do
+    client = wserv.accept
+    total = 0
+    begin
+      if RUBY_PLATFORM == "java"
+        # Use read instead of sysread on jruby until sysread is fixed
+        while s = client.read(len); total += s.length; end
+      else
+        loop do
+          s = client.sysread(len)
+          total += s.length if s
+        end
+      end      
+    rescue Exception => ex
+#      puts "sysread failed total=#{total}: #{ex}"
+    end
+    client.write(0.chr)
+    client.close
+  end
+}
+
+rserv = TCPServer.new('localhost', RPORT)
+Thread.new {  
   loop do
     len = 4096
     buf = 0.chr * len
-    client = serv.accept
-      while client.read(len)
+    client = rserv.accept
+    total = 0
+    begin
+      loop do
+        total += client.syswrite(buf)
       end
-      client.write(0.chr)
-      client.close
+    rescue Exception => ex
+    end
+#    puts "closing client total written=#{total}"      
+    client.close
   end
 }
+#while true;sleep 1000;end
 (ARGV[0] || 5).to_i.times do
   Benchmark.bm(30) do |x|
-    buf_sizes.each do |size|
-      x.report("#{iter}.times { socket.write(#{size}) }") do
-        sock = TCPSocket.new('localhost', PORT)
-        buf = 0.chr * size
-        iter.times { sock.write buf }
+    x.report("#{iter}.times { putc(0) }") do
+      TCPSocket.open('localhost', WPORT) do |sock|
+        iter.times { sock.putc 0 }
         sock.close_write
         sock.read(1)
-        sock.close
       end
+    end if true
+    buf_sizes.each do |size|
+      x.report("#{iter}.times { read(#{size}) }") do
+        TCPSocket.open('localhost', RPORT) { |sock| iter.times { sock.read(size) } }
+      end if true
+      x.report("#{iter}.times { sysread(#{size}) }") do
+        TCPSocket.open('localhost', RPORT) { |sock| iter.times { sock.sysread(size) } }
+      end if true
+      x.report("#{iter}.times { write(#{size}) }") do
+        TCPSocket.open('localhost', WPORT) do |sock|
+          buf = 0.chr * size
+          iter.times { sock.write buf }
+          sock.close_write
+          sock.read(1)
+        end
+      end if true
+      x.report("#{iter}.times { syswrite(#{size}) }") do
+        TCPSocket.open('localhost', WPORT) do |sock|
+          buf = 0.chr * size
+          iter.times { sock.syswrite buf }
+          sock.close_write
+          sock.read(1)
+        end
+      end if true      
     end
   end
 end
