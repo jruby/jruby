@@ -29,6 +29,7 @@
 
 package org.jruby.compiler;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import org.jruby.ast.AndNode;
@@ -118,10 +119,10 @@ public class ASTInspector {
     // pragmas
     private boolean noFrame;
     
-    public static Set<String> FRAME_AWARE_METHODS = new HashSet<String>();
-    private static Set<String> SCOPE_AWARE_METHODS = new HashSet<String>();
+    public static Set<String> FRAME_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
+    private static Set<String> SCOPE_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
     
-    public static Set<String> PRAGMAS = new HashSet<String>();
+    public static Set<String> PRAGMAS = Collections.synchronizedSet(new HashSet<String>());
     
     static {
         FRAME_AWARE_METHODS.add("eval");
