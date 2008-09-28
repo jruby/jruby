@@ -4,12 +4,9 @@ require 'socket'
 server_read = nil
 client_read = nil
 
+serv = TCPServer.new('localhost',2202)
 server_thread = Thread.new do
-  serv = TCPServer.new('localhost',2202)
   sock = serv.accept
-
-  # Hack until we resolve JRUBY-2940
-  sleep 0.2
 
   server_read = sock.read(5)
   sock.write "world!"
@@ -18,7 +15,6 @@ server_thread = Thread.new do
 end
 
 # This test is seriously broken, prone to race conditions and sometimes fail. This is why the rescue nil is there.
-sleep 1
 
 begin
   socket = TCPSocket.new("localhost",2202) 
