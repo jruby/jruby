@@ -48,14 +48,12 @@ port = 4321
 
 received = []
 
+server = UDPSocket.open
+server.bind(nil, port)
 server_thread = Thread.start do
-  server = UDPSocket.open
-  server.bind(nil, port)
   2.times { received << server.recvfrom(64) } 
   server.close
 end
-
-sleep 2 # Give thread a chance to be ready for input
 
 # Ad-hoc client
 UDPSocket.open.send("ad hoc", 0, 'localhost', port)
@@ -86,15 +84,13 @@ test_equal(nil, sock.close)
 # Test UDPSocket using recv instead of recvfrom
 
 # server thread echoes received data
+server_socket = UDPSocket.open
+server_socket.bind(nil, port)
 server_thread = Thread.start do
-  server_socket = UDPSocket.open
-  server_socket.bind(nil, port)
   data, remote_info = server_socket.recvfrom(64)
   server_socket.send(data, 0, remote_info[3], remote_info[1])
   server_socket.close
 end
-
-sleep 2
 
 client_socket = UDPSocket.open
 client_socket.send("udp recv", 0, "localhost", port) 
@@ -106,8 +102,8 @@ test_equal(nil, client_socket.close)
 
 # JRUBY-2005: test a large write that causes the buffer to flush
 # make sure the result is not corrupted
+serv = TCPServer.new('localhost',2202)
 t = Thread.new {
-  serv = TCPServer.new('localhost',2202)
   sock = serv.accept
 
   result = ''
@@ -119,8 +115,6 @@ t = Thread.new {
 
   result
 }
-
-sleep 2
 
 # 20k string is larger than our default 16k buffer
 # FIXME: of course if our buffer size changes
