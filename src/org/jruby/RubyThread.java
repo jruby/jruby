@@ -60,6 +60,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.Visibility;
+import org.jruby.util.io.BlockingIO;
 
 /**
  * Implementation of Ruby's <code>Thread</code> class.  Each Ruby thread is
@@ -86,7 +87,7 @@ public class RubyThread extends RubyObject {
     private final ThreadService threadService;
     private volatile boolean isStopped = false;
     private volatile boolean isDead = false;
-    public Object stopLock = new Object();
+    public final Object stopLock = new Object();
     
     private volatile boolean killed = false;
     public Object killLock = new Object();
@@ -683,7 +684,7 @@ public class RubyThread extends RubyObject {
     @JRubyMethod(name = "status")
     public IRubyObject status() {
         if (threadImpl.isAlive()) {
-            if (isStopped || currentSelector != null && currentSelector.isOpen()) {
+            if (isStopped || (currentSelector != null && currentSelector.isOpen()) || blockingIO != null) {
             	return getRuntime().newString("sleep");
             } else if (killed) {
                 return getRuntime().newString("aborting");
@@ -791,7 +792,7 @@ public class RubyThread extends RubyObject {
         return receiver.getRuntime().getThreadService().getMainThread();
     }
     
-    private Selector currentSelector;
+    private volatile Selector currentSelector;
     
     @Deprecated
     public boolean selectForAccept(RubyIO io) {
@@ -859,11 +860,40 @@ public class RubyThread extends RubyObject {
     }
     
     public void interrupt() {
-        if (currentSelector != null) {
-            currentSelector.wakeup();
+        Selector selector = currentSelector;
+        if (selector != null) {
+            selector.wakeup();
+        }
+        BlockingIO.Condition iowait = blockingIO;
+        if (iowait != null) {
+            iowait.cancel();
         }
     }
-    
+    private volatile BlockingIO.Condition blockingIO = null;
+    public boolean waitForIO(ThreadContext context, RubyIO io, int ops) {
+        Channel channel = io.getChannel();
+
+        if (!(channel instanceof SelectableChannel)) {
+            return true;
+        }
+        try {
+            io.addBlockingThread(this);
+            blockingIO = BlockingIO.newCondition(channel, ops);
+            boolean ready = blockingIO.await();
+            
+            // check for thread events, in case we've been woken up to die
+            pollThreadEvents();
+            return ready;
+        } catch (IOException ioe) {
+            throw context.getRuntime().newRuntimeError("Error with selector: " + ioe);
+        } catch (InterruptedException ex) {
+            // FIXME: not correct exception
+            throw context.getRuntime().newRuntimeError("Interrupted");
+        } finally {
+            blockingIO = null;
+            io.removeBlockingThread(this);
+        }
+    }
     public void beforeBlockingCall() {
         isStopped = true;
     }
