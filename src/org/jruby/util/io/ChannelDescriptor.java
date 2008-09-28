@@ -346,7 +346,8 @@ public class ChannelDescriptor {
      * Mimics the POSIX dup2(2) function, returning a new descriptor that references
      * the same open channel but with a specified fileno. This differs from the fileno
      * version by making the target descriptor into a new reference to the current
-     * descriptor's channel, closing it and incrementing reference counts in the process.
+     * descriptor's channel, closing what it originally pointed to and preserving
+     * its original fileno.
      * 
      * @param fileno The fileno to use for the new descriptor
      * @return A duplicate ChannelDescriptor based on this one
@@ -360,7 +361,6 @@ public class ChannelDescriptor {
             other.close();
             
             other.channel = channel;
-            other.fileno = fileno;
             other.originalModes = originalModes;
             other.fileDescriptor = fileDescriptor;
             other.refCounter = refCounter;
