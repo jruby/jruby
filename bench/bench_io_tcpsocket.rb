@@ -55,11 +55,27 @@ Thread.new {
     end if true
     buf_sizes.each do |size|
       x.report("#{iter}.times { read(#{size}) }") do
-        TCPSocket.open('localhost', RPORT) { |sock| iter.times { sock.read(size) } }
+        TCPSocket.open('localhost', RPORT) do |sock|
+          iter.times do
+            len = 0
+            while len < size
+              s = sock.sysread(size - len)
+              len += s.length if s
+            end
+          end
+        end
       end if true
       x.report("#{iter}.times { sysread(#{size}) }") do
         buf = 0.chr * size
-        TCPSocket.open('localhost', RPORT) { |sock| iter.times { sock.sysread(size, buf) } }
+        TCPSocket.open('localhost', RPORT) do |sock|
+          iter.times do
+            len = 0
+            while len < size
+              s = sock.sysread(size - len)
+              len += s.length if s
+            end
+          end
+        end
       end if true
       x.report("#{iter}.times { write(#{size}) }") do
         TCPSocket.open('localhost', WPORT) do |sock|
