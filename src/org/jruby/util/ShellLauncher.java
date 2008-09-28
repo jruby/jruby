@@ -745,11 +745,7 @@ public class ShellLauncher {
             char[] firstLast = new char[] {c.charAt(0), c.charAt(c.length()-1)};
             for (int j = 0; j < firstLast.length; j++) {
                 switch (firstLast[j]) {
-                case '<': case '>': case '|': case ';':
-                case '*': case '?': case '{': case '}':
-                case '[': case ']': case '(': case ')':
-                case '~': case '&': case '$': case '"':
-                case '`': case '\n': case '\\': case '\'':
+                case '<': case '>': case '|':
                     return false;
                 }
             }
