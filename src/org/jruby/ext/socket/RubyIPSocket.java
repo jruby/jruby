@@ -37,6 +37,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -61,14 +62,13 @@ public class RubyIPSocket extends RubyBasicSocket {
     public RubyIPSocket(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
-
-    protected static RuntimeException sockerr(IRubyObject recv, String msg) {
-        return new RaiseException(recv.getRuntime(), recv.getRuntime().fastGetClass("SocketError"), msg, true);
+    
+    protected static RuntimeException sockerr(Ruby runtime, String msg) {
+        return new RaiseException(runtime, runtime.fastGetClass("SocketError"), msg, true);
     }
 
-    private IRubyObject addrFor(InetSocketAddress addr) {
+    private IRubyObject addrFor(Ruby r, InetSocketAddress addr) {
         IRubyObject[] ret = new IRubyObject[4];
-        Ruby r = getRuntime();
         ret[0] = r.newString("AF_INET");
         ret[1] = r.newFixnum(addr.getPort());
         if(r.isDoNotReverseLookupEnabled()) {
@@ -79,31 +79,40 @@ public class RubyIPSocket extends RubyBasicSocket {
         ret[3] = r.newString(addr.getAddress().getHostAddress());
         return r.newArrayNoCopy(ret);
     }
-
-    @JRubyMethod
+    @Deprecated
     public IRubyObject addr() {
+        return addr(getRuntime().getCurrentContext());
+    }
+    @JRubyMethod
+    public IRubyObject addr(ThreadContext context) {
         InetSocketAddress address = getLocalSocket();
         if (address == null) {
-            throw getRuntime().newErrnoENOTSOCKError("Not socket or not connected");
+            throw context.getRuntime().newErrnoENOTSOCKError("Not socket or not connected");
         }
-        return addrFor(address);
+        return addrFor(context.getRuntime(), address);
     }
-
-    @JRubyMethod
+    @Deprecated
     public IRubyObject peeraddr() {
+        return peeraddr(getRuntime().getCurrentContext());
+    }
+    @JRubyMethod
+    public IRubyObject peeraddr(ThreadContext context) {
         InetSocketAddress address = getRemoteSocket();
         if (address == null) {
-            throw getRuntime().newErrnoENOTSOCKError("Not socket or not connected");
+            throw context.getRuntime().newErrnoENOTSOCKError("Not socket or not connected");
         }
-        return addrFor(address);
+        return addrFor(context.getRuntime(), address);
     }
-
-    @JRubyMethod(meta = true)
+    @Deprecated
     public static IRubyObject getaddress(IRubyObject recv, IRubyObject hostname) {
+        return getaddress(recv.getRuntime().getCurrentContext(), recv, hostname);
+    }
+    @JRubyMethod(meta = true)
+    public static IRubyObject getaddress(ThreadContext context, IRubyObject recv, IRubyObject hostname) {
         try {
-            return recv.getRuntime().newString(InetAddress.getByName(hostname.convertToString().toString()).getHostAddress());
+            return context.getRuntime().newString(InetAddress.getByName(hostname.convertToString().toString()).getHostAddress());
         } catch(UnknownHostException e) {
-            throw sockerr(recv, "getaddress: name or service not known");
+            throw sockerr(context.getRuntime(), "getaddress: name or service not known");
         }
     }
 }// RubyIPSocket

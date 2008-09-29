@@ -82,18 +82,18 @@ public class RubyUDPSocket extends RubyIPSocket {
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
-    public IRubyObject initialize() {
+    public IRubyObject initialize(ThreadContext context) {
         try {
             DatagramChannel channel = DatagramChannel.open();
-            initSocket(new ChannelDescriptor(channel, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
+            initSocket(context.getRuntime(), new ChannelDescriptor(channel, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
         } catch (org.jruby.util.io.InvalidValueException ex) {
-            throw getRuntime().newErrnoEINVALError();
+            throw context.getRuntime().newErrnoEINVALError();
         } catch (ConnectException e) {
-            throw getRuntime().newErrnoECONNREFUSEDError();
+            throw context.getRuntime().newErrnoECONNREFUSEDError();
         } catch (UnknownHostException e) {
-            throw sockerr(this, "initialize: name or service not known");
+            throw sockerr(context.getRuntime(), "initialize: name or service not known");
         } catch (IOException e) {
-            throw sockerr(this, "initialize: name or service not known");
+            throw sockerr(context.getRuntime(), "initialize: name or service not known");
         }
         return this;
     }
@@ -104,13 +104,16 @@ public class RubyUDPSocket extends RubyIPSocket {
         return initialize();
     }
 
-    public IRubyObject setsockopt(IRubyObject[] args) {
+    public IRubyObject setsockopt(ThreadContext context, IRubyObject[] args) {
         // Stubbed out
-        return getRuntime().getNil();
+        return context.getRuntime().getNil();
     }
-
-    @JRubyMethod
+    @Deprecated
     public IRubyObject bind(IRubyObject host, IRubyObject port) {
+        return bind(getRuntime().getCurrentContext(), host, port);
+    }
+    @JRubyMethod
+    public IRubyObject bind(ThreadContext context, IRubyObject host, IRubyObject port) {
         InetSocketAddress addr = null;
         try {
             if (host.isNil()) {
@@ -119,36 +122,40 @@ public class RubyUDPSocket extends RubyIPSocket {
                 addr = new InetSocketAddress(InetAddress.getByName(host.convertToString().toString()), RubyNumeric.fix2int(port));
             }
             ((DatagramChannel) this.getChannel()).socket().bind(addr);
-            return RubyFixnum.zero(this.getRuntime());
+            return RubyFixnum.zero(context.getRuntime());
         } catch (UnknownHostException e) {
-            throw sockerr(this, "bind: name or service not known");
+            throw sockerr(context.getRuntime(), "bind: name or service not known");
         } catch (SocketException e) {
-            throw sockerr(this, "bind: name or service not known");
+            throw sockerr(context.getRuntime(), "bind: name or service not known");
         } catch (Error e) {
             // Workaround for a bug in Sun's JDK 1.5.x, see
             // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6303753
             if (e.getCause() instanceof SocketException) {
-                throw sockerr(this, "bind: name or service not known");
+                throw sockerr(context.getRuntime(), "bind: name or service not known");
             } else {
                 throw e;
             }
         }
     }
-
-    @JRubyMethod
+    @Deprecated
     public IRubyObject connect(IRubyObject host, IRubyObject port) {
+        return connect(getRuntime().getCurrentContext(), host, port);
+    }
+    @JRubyMethod
+    public IRubyObject connect(ThreadContext context, IRubyObject host, IRubyObject port) {
         try {
             InetSocketAddress addr;
             addr = new InetSocketAddress(InetAddress.getByName(host.convertToString().toString()), RubyNumeric.fix2int(port));
             ((DatagramChannel) this.getChannel()).connect(addr);
-            return RubyFixnum.zero(this.getRuntime());
+            return RubyFixnum.zero(context.getRuntime());
         } catch (UnknownHostException e) {
-            throw sockerr(this, "connect: name or service not known");
+            throw sockerr(context.getRuntime(), "connect: name or service not known");
         } catch (IOException e) {
-            throw sockerr(this, "connect: name or service not known");
+            throw sockerr(context.getRuntime(), "connect: name or service not known");
         }
     }
 
+    @Deprecated
     public IRubyObject recvfrom(IRubyObject[] args) {
         return recvfrom(getRuntime().getCurrentContext(), args);
     }
@@ -161,35 +168,39 @@ public class RubyUDPSocket extends RubyIPSocket {
             ((DatagramChannel) this.getChannel()).configureBlocking(false);
             context.getThread().select(this, SelectionKey.OP_READ);
             InetSocketAddress sender = (InetSocketAddress) ((DatagramChannel) this.getChannel()).receive(buf);
-            IRubyObject addressArray = getRuntime().newArray(new IRubyObject[]{
-                getRuntime().newString("AF_INET"),
-                getRuntime().newFixnum(sender.getPort()),
-                getRuntime().newString(sender.getHostName()),
-                getRuntime().newString(sender.getAddress().getHostAddress())
+            IRubyObject addressArray = context.getRuntime().newArray(new IRubyObject[]{
+                context.getRuntime().newString("AF_INET"),
+                context.getRuntime().newFixnum(sender.getPort()),
+                context.getRuntime().newString(sender.getHostName()),
+                context.getRuntime().newString(sender.getAddress().getHostAddress())
             });
-            IRubyObject result = getRuntime().newString(new ByteList(buf.array(), 0, buf.position()));
-            return getRuntime().newArray(new IRubyObject[]{result, addressArray});
+            IRubyObject result = context.getRuntime().newString(new ByteList(buf.array(), 0, buf.position()));
+            return context.getRuntime().newArray(new IRubyObject[]{result, addressArray});
         } catch (UnknownHostException e) {
-            throw sockerr(this, "recvfrom: name or service not known");
+            throw sockerr(context.getRuntime(), "recvfrom: name or service not known");
         } catch (IOException e) {
-            throw sockerr(this, "recvfrom: name or service not known");
+            throw sockerr(context.getRuntime(), "recvfrom: name or service not known");
         }
     }
 
     @Override
-    public IRubyObject recv(IRubyObject[] args) {
+    public IRubyObject recv(ThreadContext context, IRubyObject[] args) {
         try {
             int length = RubyNumeric.fix2int(args[0]);
             ByteBuffer buf = ByteBuffer.allocate(length);
             ((DatagramChannel) this.getChannel()).receive(buf);
-            return getRuntime().newString(new ByteList(buf.array(), 0, buf.position()));
+            return context.getRuntime().newString(new ByteList(buf.array(), 0, buf.position()));
         } catch (IOException e) {
-            throw sockerr(this, "recv: name or service not known");
+            throw sockerr(context.getRuntime(), "recv: name or service not known");
         }
+    }
+    @Deprecated
+    public IRubyObject send(IRubyObject[] args) {
+        return send(getRuntime().getCurrentContext(), args);
     }
 
     @JRubyMethod(required = 1, rest = true)
-    public IRubyObject send(IRubyObject[] args) {
+    public IRubyObject send(ThreadContext context, IRubyObject[] args) {
         try {
             if (args.length >= 3) { // host and port given
                 InetSocketAddress addr =
@@ -205,21 +216,24 @@ public class RubyUDPSocket extends RubyIPSocket {
                 return data.length();
             }
         } catch (UnknownHostException e) {
-            throw sockerr(this, "send: name or service not known");
+            throw sockerr(context.getRuntime(), "send: name or service not known");
         } catch (IOException e) {
-            throw sockerr(this, "send: name or service not known");
+            throw sockerr(context.getRuntime(), "send: name or service not known");
         }
     }
-
-    @JRubyMethod(rest = true, frame = true, meta = true)
+    @Deprecated
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
-        RubyUDPSocket sock = (RubyUDPSocket) recv.callMethod(recv.getRuntime().getCurrentContext(), "new", args);
+        return open(recv.getRuntime().getCurrentContext(), recv, args, block);
+    }
+    @JRubyMethod(rest = true, frame = true, meta = true)
+    public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        RubyUDPSocket sock = (RubyUDPSocket) recv.callMethod(context, "new", args);
         if (!block.isGiven()) {
             return sock;
         }
 
         try {
-            return block.yield(recv.getRuntime().getCurrentContext(), sock);
+            return block.yield(context, sock);
         } finally {
             if (sock.openFile.isOpen()) {
                 sock.close();

@@ -51,6 +51,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.ModeFlags;
@@ -78,19 +79,19 @@ public class RubyTCPSocket extends RubyIPSocket {
         super(runtime, type);
     }
     
-    private int getPortFrom(IRubyObject arg) {
+    private int getPortFrom(Ruby runtime, IRubyObject arg) {
         return RubyNumeric.fix2int(arg instanceof RubyString ? 
-                RubyNumeric.str2inum(getRuntime(), (RubyString) arg, 0, true) : arg);
+                RubyNumeric.str2inum(runtime, (RubyString) arg, 0, true) : arg);
     }
 
     @JRubyMethod(required = 2, optional = 2, visibility = Visibility.PRIVATE, backtrace = true)
-    public IRubyObject initialize(IRubyObject[] args) {
-        Arity.checkArgumentCount(getRuntime(), args, 2, 4);
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context.getRuntime(), args, 2, 4);
 
         String remoteHost = args[0].isNil()? "localhost" : args[0].convertToString().toString();
-        int remotePort = getPortFrom(args[1]);
+        int remotePort = getPortFrom(context.getRuntime(), args[1]);
         String localHost = args.length >= 3 ? args[2].convertToString().toString() : null;
-        int localPort = args.length == 4 ? getPortFrom(args[3]) : 0;
+        int localPort = args.length == 4 ? getPortFrom(context.getRuntime(), args[3]) : 0;
 
         try {
             SocketChannel channel = null;
@@ -104,38 +105,47 @@ public class RubyTCPSocket extends RubyIPSocket {
                 socket.connect(new InetSocketAddress(InetAddress.getByName(remoteHost), remotePort));
             }
             channel.finishConnect();
-            initSocket(new ChannelDescriptor(channel, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
+            initSocket(context.getRuntime(), new ChannelDescriptor(channel, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
         } catch (InvalidValueException ex) {
-            throw getRuntime().newErrnoEINVALError();
+            throw context.getRuntime().newErrnoEINVALError();
         } catch(ConnectException e) {
-            throw getRuntime().newErrnoECONNREFUSEDError();
+            throw context.getRuntime().newErrnoECONNREFUSEDError();
         } catch(UnknownHostException e) {
-            throw sockerr(this, "initialize: name or service not known");
+            throw sockerr(context.getRuntime(), "initialize: name or service not known");
         } catch(IOException e) {
-            throw sockerr(this, "initialize: name or service not known");
+            throw sockerr(context.getRuntime(), "initialize: name or service not known");
         } catch (IllegalArgumentException iae) {
-            throw sockerr(this, iae.getMessage());
+            throw sockerr(context.getRuntime(), iae.getMessage());
         }
         return this;
     }
 
-    @JRubyMethod(frame = true, rest = true, meta = true)
+    @Deprecated
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
-        RubyTCPSocket sock = (RubyTCPSocket)recv.callMethod(recv.getRuntime().getCurrentContext(),"new",args);
+        return open(recv.getRuntime().getCurrentContext(), recv, args, block);
+    }
+    @JRubyMethod(frame = true, rest = true, meta = true)
+    public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        RubyTCPSocket sock = (RubyTCPSocket)recv.callMethod(context,"new",args);
         if (!block.isGiven()) return sock;
 
         try {
-            return block.yield(recv.getRuntime().getCurrentContext(), sock);
+            return block.yield(context, sock);
         } finally {
             if (sock.openFile.isOpen()) sock.close();
         }
     }
 
-    @JRubyMethod(meta = true)
+    @Deprecated
     public static IRubyObject gethostbyname(IRubyObject recv, IRubyObject hostname) {
+        return gethostbyname(recv.getRuntime().getCurrentContext(), recv, hostname);
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject gethostbyname(ThreadContext context, IRubyObject recv, IRubyObject hostname) {
         try {
             IRubyObject[] ret = new IRubyObject[4];
-            Ruby r = recv.getRuntime();
+            Ruby r = context.getRuntime();
             InetAddress addr;
             String hostString = hostname.convertToString().toString();
             addr = InetAddress.getByName(hostString);
@@ -153,7 +163,7 @@ public class RubyTCPSocket extends RubyIPSocket {
             }
             return r.newArrayNoCopy(ret);
         } catch(UnknownHostException e) {
-            throw sockerr(recv, "gethostbyname: name or service not known");
+            throw sockerr(context.getRuntime(), "gethostbyname: name or service not known");
         }
     }
 }

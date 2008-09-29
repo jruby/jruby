@@ -53,6 +53,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.ChannelDescriptor;
@@ -213,10 +214,6 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     protected int fd;
     protected String fpath;
 
-    protected void rb_sys_fail(String message) {
-        rb_sys_fail(getRuntime(), message);
-    }
-
     protected static void rb_sys_fail(Ruby runtime, String message) {
         int n = Native.getLastError();
         Native.setLastError(0);
@@ -237,14 +234,14 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     protected final static int O_NONBLOCK = 0x0004;
 
-    protected void init_unixsock(IRubyObject _path, boolean server) throws Exception {
+    protected void init_unixsock(Ruby runtime, IRubyObject _path, boolean server) throws Exception {
         int status;
         fd = -1;
         try {
             fd = INSTANCE.socket(RubySocket.AF_UNIX, RubySocket.SOCK_STREAM, 0);
         } catch (UnsatisfiedLinkError ule) { }
         if (fd < 0) {
-            rb_sys_fail("socket(2)");
+            rb_sys_fail(runtime, "socket(2)");
         }
 
         LibCSocket.sockaddr_un sockaddr = new LibCSocket.sockaddr_un();
@@ -254,7 +251,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         fpath = path.toString();
 
         if(sockaddr.sun_path.length <= path.realSize) {
-            throw getRuntime().newArgumentError("too long unix socket path (max: " + (sockaddr.sun_path.length-1) + "bytes)");
+            throw runtime.newArgumentError("too long unix socket path (max: " + (sockaddr.sun_path.length-1) + "bytes)");
         }
 
         System.arraycopy(path.bytes, path.begin, sockaddr.sun_path, 0, path.realSize);
@@ -272,14 +269,14 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
         if(status < 0) {
             INSTANCE.close(fd);
-            rb_sys_fail(fpath);
+            rb_sys_fail(runtime, fpath);
         }
 
         if(server) {
             INSTANCE.listen(fd, 5);
         }
 
-        init_sock();
+        init_sock(runtime);
 
         if(server) {
             openFile.setPath(fpath);
@@ -287,7 +284,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     }
 
     @Override
-    public IRubyObject setsockopt(IRubyObject lev, IRubyObject optname, IRubyObject val) {
+    public IRubyObject setsockopt(ThreadContext context, IRubyObject lev, IRubyObject optname, IRubyObject val) {
         int level = RubyNumeric.fix2int(lev);
         int opt = RubyNumeric.fix2int(optname);
 
@@ -297,32 +294,32 @@ public class RubyUNIXSocket extends RubyBasicSocket {
             case RubySocket.SO_KEEPALIVE: {
                 int res = INSTANCE.setsockopt(fd, level, opt, asBoolean(val) ? new byte[]{32,0,0,0} : new byte[]{0,0,0,0}, 4);
                 if(res == -1) {
-                    rb_sys_fail(openFile.getPath());
+                    rb_sys_fail(context.getRuntime(), openFile.getPath());
                 }
             }
                 break;
             default:
-                throw getRuntime().newErrnoENOPROTOOPTError();
+                throw context.getRuntime().newErrnoENOPROTOOPTError();
             }
             break;
         default:
-            throw getRuntime().newErrnoENOPROTOOPTError();
+            throw context.getRuntime().newErrnoENOPROTOOPTError();
         }
 
-        return getRuntime().newFixnum(0);
+        return context.getRuntime().newFixnum(0);
     }
 
-    protected void init_sock() throws Exception {
+    protected void init_sock(Ruby runtime) throws Exception {
         ModeFlags modes = new ModeFlags(ModeFlags.RDWR);
-        openFile.setMainStream(new ChannelStream(getRuntime(), new ChannelDescriptor(new UnixDomainSocketChannel(fd), getNewFileno(), modes, new java.io.FileDescriptor())));
+        openFile.setMainStream(new ChannelStream(runtime, new ChannelDescriptor(new UnixDomainSocketChannel(fd), getNewFileno(), modes, new java.io.FileDescriptor())));
         openFile.setPipeStream(openFile.getMainStream());
         openFile.setMode(modes.getOpenFileFlags());
         openFile.getMainStream().setSync(true);
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(IRubyObject path) throws Exception {
-        init_unixsock(path, false);
+    public IRubyObject initialize(ThreadContext context, IRubyObject path) throws Exception {
+        init_unixsock(context.getRuntime(), path, false);
         return this;
     }
 
@@ -342,45 +339,59 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         }
     }
 
-    private IRubyObject unixaddr(LibCSocket.sockaddr_un addr, IntByReference len) throws Exception {
-        return getRuntime().newArrayNoCopy(new IRubyObject[]{getRuntime().newString("AF_UNIX"), getRuntime().newString(unixpath(addr, len))});
+    private IRubyObject unixaddr(Ruby runtime, LibCSocket.sockaddr_un addr, IntByReference len) throws Exception {
+        return runtime.newArrayNoCopy(new IRubyObject[]{runtime.newString("AF_UNIX"), runtime.newString(unixpath(addr, len))});
     }
-
-    @JRubyMethod
+    @Deprecated
     public IRubyObject path() throws Exception {
+        return path(getRuntime().getCurrentContext());
+    }
+    @JRubyMethod
+    public IRubyObject path(ThreadContext context) throws Exception {
         if(openFile.getPath() == null) {
             LibCSocket.sockaddr_un addr = new LibCSocket.sockaddr_un();
             IntByReference len = new IntByReference(LibCSocket.sockaddr_un.LENGTH);
             if(INSTANCE.getsockname(fd, addr, len) < 0) {
-                rb_sys_fail(null);
+                rb_sys_fail(context.getRuntime(), null);
             }
             openFile.setPath(unixpath(addr, len));
         }
-        return getRuntime().newString(openFile.getPath());
+        return context.getRuntime().newString(openFile.getPath());
     }
 
-    @JRubyMethod
+    @Deprecated
     public IRubyObject addr() throws Exception {
+        return addr(getRuntime().getCurrentContext());
+    }
+    @JRubyMethod
+    public IRubyObject addr(ThreadContext context) throws Exception {
         LibCSocket.sockaddr_un addr = new LibCSocket.sockaddr_un();
         IntByReference len = new IntByReference(LibCSocket.sockaddr_un.LENGTH);
         if(INSTANCE.getsockname(fd, addr, len) < 0) {
-            rb_sys_fail("getsockname(2)");
+            rb_sys_fail(context.getRuntime(), "getsockname(2)");
         }
-        return unixaddr(addr, len);
+        return unixaddr(context.getRuntime(), addr, len);
     }
-    
-    @JRubyMethod
+    @Deprecated
     public IRubyObject peeraddr() throws Exception {
+        return peeraddr(getRuntime().getCurrentContext());
+    }
+    @JRubyMethod
+    public IRubyObject peeraddr(ThreadContext context) throws Exception {
         LibCSocket.sockaddr_un addr = new LibCSocket.sockaddr_un();
         IntByReference len = new IntByReference(LibCSocket.sockaddr_un.LENGTH);
         if(INSTANCE.getpeername(fd, addr, len) < 0) {
-            rb_sys_fail("getpeername(2)");
+            rb_sys_fail(context.getRuntime(), "getpeername(2)");
         }
-        return unixaddr(addr, len);
+        return unixaddr(context.getRuntime(), addr, len);
+    }
+    @Deprecated
+    public IRubyObject recvfrom(IRubyObject[] args) throws Exception {
+        return recvfrom(getRuntime().getCurrentContext(), args);
     }
 
     @JRubyMethod(name = "recvfrom", required = 1, optional = 1)
-    public IRubyObject recvfrom(IRubyObject[] args) throws Exception {
+    public IRubyObject recvfrom(ThreadContext context, IRubyObject[] args) throws Exception {
         ByteBuffer str = ByteBuffer.allocateDirect(1024);
         LibCSocket.sockaddr_un buf = new LibCSocket.sockaddr_un();
         IntByReference alen = new IntByReference(LibCSocket.sockaddr_un.LENGTH);
@@ -389,10 +400,10 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
         int flags;
 
-        if(Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2) {
+        if(Arity.checkArgumentCount(context.getRuntime(), args, 1, 2) == 2) {
             flg = args[1];
         } else {
-            flg = getRuntime().getNil();
+            flg = context.getRuntime().getNil();
         }
 
         len = args[0];
@@ -406,7 +417,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         int buflen = RubyNumeric.fix2int(len);
         int slen = INSTANCE.recvfrom(fd, str, buflen, flags, buf, alen);
         if(slen < 0) {
-            rb_sys_fail("recvfrom(2)");
+            rb_sys_fail(context.getRuntime(), "recvfrom(2)");
         }
 
         if(slen < buflen) {
@@ -414,9 +425,9 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         }
         byte[] outp = new byte[buflen];
         str.get(outp);
-        RubyString _str = getRuntime().newString(new ByteList(outp, 0, buflen, false));
+        RubyString _str = context.getRuntime().newString(new ByteList(outp, 0, buflen, false));
 
-        return getRuntime().newArrayNoCopy(new IRubyObject[]{_str, unixaddr(buf, alen)});
+        return context.getRuntime().newArrayNoCopy(new IRubyObject[]{_str, unixaddr(context.getRuntime(), buf, alen)});
     }
 
     @JRubyMethod
@@ -437,10 +448,13 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         INSTANCE.close(fd);
         return getRuntime().getNil();
     }
-
-    @JRubyMethod(meta = true)
+    @Deprecated
     public static IRubyObject open(IRubyObject recv, IRubyObject path) {
-        return RuntimeHelpers.invoke(recv.getRuntime().getCurrentContext(), recv, "new", path);
+        return open(recv.getRuntime().getCurrentContext(), recv, path);
+    }
+    @JRubyMethod(meta = true)
+    public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject path) {
+        return RuntimeHelpers.invoke(context, recv, "new", path);
     }
 
     private static int getSocketType(IRubyObject tp) {
@@ -458,11 +472,14 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         }
         return RubyNumeric.fix2int(tp);
     }
-
-    @JRubyMethod(name = {"socketpair", "pair"}, optional = 2, meta = true)
+    @Deprecated
     public static IRubyObject socketpair(IRubyObject recv, IRubyObject[] args) throws Exception {
+        return socketpair(recv.getRuntime().getCurrentContext(), recv, args);
+    }
+    @JRubyMethod(name = {"socketpair", "pair"}, optional = 2, meta = true)
+    public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject[] args) throws Exception {
         int domain = RubySocket.PF_UNIX;
-        Ruby runtime = recv.getRuntime();
+        Ruby runtime = context.getRuntime();
         Arity.checkArgumentCount(runtime, args, 0, 2);
         
         int type;
@@ -490,13 +507,13 @@ public class RubyUNIXSocket extends RubyBasicSocket {
             rb_sys_fail(runtime, "socketpair(2)");
         }
 
-        RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(runtime.getCurrentContext(), runtime.fastGetClass("UNIXSocket"), "allocate"));
+        RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.fastGetClass("UNIXSocket"), "allocate"));
         sock.fd = sp[0];
-        sock.init_sock();
-        RubyUNIXSocket sock2 = (RubyUNIXSocket)(RuntimeHelpers.invoke(runtime.getCurrentContext(), runtime.fastGetClass("UNIXSocket"), "allocate"));
+        sock.init_sock(runtime);
+        RubyUNIXSocket sock2 = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.fastGetClass("UNIXSocket"), "allocate"));
         sock2.fd = sp[1];
-        sock2.init_sock();
+        sock2.init_sock(runtime);
 
-        return recv.getRuntime().newArrayNoCopy(new IRubyObject[]{sock, sock2});
+        return runtime.newArrayNoCopy(new IRubyObject[]{sock, sock2});
     }
 }

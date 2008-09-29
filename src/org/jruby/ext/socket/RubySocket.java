@@ -54,6 +54,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.ByteList;
@@ -256,10 +257,13 @@ public class RubySocket extends RubyBasicSocket {
     private int soDomain;
     private int soType;
     private int soProtocol;
-
-    @JRubyMethod(frame = true, meta = true)
+    @Deprecated
     public static IRubyObject for_fd(IRubyObject socketClass, IRubyObject fd) {
-        Ruby ruby = socketClass.getRuntime();
+        return for_fd(socketClass.getRuntime().getCurrentContext(), socketClass, fd);
+    }
+    @JRubyMethod(frame = true, meta = true)
+    public static IRubyObject for_fd(ThreadContext context, IRubyObject socketClass, IRubyObject fd) {
+        Ruby ruby = context.getRuntime();
         if (fd instanceof RubyFixnum) {
             RubySocket socket = (RubySocket)((RubyClass)socketClass).allocate();
             
@@ -285,19 +289,19 @@ public class RubySocket extends RubyBasicSocket {
                 socket.soType = SOCK_DGRAM;
                 socket.soProtocol = 0;
             } else {
-                throw socket.getRuntime().newErrnoENOTSOCKError("can't Socket.new/for_fd against a non-socket");
+                throw context.getRuntime().newErrnoENOTSOCKError("can't Socket.new/for_fd against a non-socket");
             }
 
-            socket.initSocket(descriptor);
+            socket.initSocket(ruby, descriptor);
             
             return socket;
         } else {
-            throw socketClass.getRuntime().newTypeError(fd, socketClass.getRuntime().getFixnum());
+            throw context.getRuntime().newTypeError(fd, context.getRuntime().getFixnum());
         }
     }
 
     @JRubyMethod
-    public IRubyObject initialize(IRubyObject domain, IRubyObject type, IRubyObject protocol) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject domain, IRubyObject type, IRubyObject protocol) {
         try {
             if(domain instanceof RubyString) {
                 String domainString = domain.toString();
@@ -306,7 +310,7 @@ public class RubySocket extends RubyBasicSocket {
                 } else if(domainString.equals("PF_INET")) {
                     soDomain = PF_INET;
                 } else {
-                    throw sockerr(this, "unknown socket domain " + domainString);
+                    throw sockerr(context.getRuntime(), "unknown socket domain " + domainString);
                 }
             } else {
                 soDomain = RubyNumeric.fix2int(domain);
@@ -319,7 +323,7 @@ public class RubySocket extends RubyBasicSocket {
                 } else if(typeString.equals("SOCK_DGRAM")) {
                     soType = SOCK_DGRAM;
                 } else {
-                    throw sockerr(this, "unknown socket type " + typeString);
+                    throw sockerr(context.getRuntime(), "unknown socket type " + typeString);
                 }
             } else {
                 soType = RubyNumeric.fix2int(type);
@@ -334,76 +338,90 @@ public class RubySocket extends RubyBasicSocket {
                 channel = DatagramChannel.open();
             }
             
-            initSocket(new ChannelDescriptor(channel, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
+            initSocket(context.getRuntime(), new ChannelDescriptor(channel, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
         } catch (InvalidValueException ex) {
-            throw getRuntime().newErrnoEINVALError();
+            throw context.getRuntime().newErrnoEINVALError();
         } catch(IOException e) {
-            throw sockerr(this, "initialize: " + e.toString());
+            throw sockerr(context.getRuntime(), "initialize: " + e.toString());
         }
 
         return this;
     }
 
-    private static RuntimeException sockerr(IRubyObject recv, String msg) {
-        return new RaiseException(recv.getRuntime(), recv.getRuntime().fastGetClass("SocketError"), msg, true);
+    private static RuntimeException sockerr(Ruby runtime, String msg) {
+        return new RaiseException(runtime, runtime.fastGetClass("SocketError"), msg, true);
     }
 
-    @JRubyMethod(meta = true)
+    @Deprecated
     public static IRubyObject gethostname(IRubyObject recv) {
+        return gethostname(recv.getRuntime().getCurrentContext(), recv);
+    }
+    @JRubyMethod(meta = true)
+    public static IRubyObject gethostname(ThreadContext context, IRubyObject recv) {
         try {
-            return recv.getRuntime().newString(InetAddress.getLocalHost().getHostName());
+            return context.getRuntime().newString(InetAddress.getLocalHost().getHostName());
         } catch(UnknownHostException e) {
             try {
-                return recv.getRuntime().newString(InetAddress.getByAddress(new byte[]{0,0,0,0}).getHostName());
+                return context.getRuntime().newString(InetAddress.getByAddress(new byte[]{0,0,0,0}).getHostName());
             } catch(UnknownHostException e2) {
-                throw sockerr(recv, "gethostname: name or service not known");
+                throw sockerr(context.getRuntime(), "gethostname: name or service not known");
             }
         }
     }
 
-    private static InetAddress intoAddress(IRubyObject recv, String s) {
+    private static InetAddress intoAddress(Ruby runtime, String s) {
         try {
             byte[] bs = ByteList.plain(s);
             return InetAddress.getByAddress(bs);
         } catch(Exception e) {
-            throw sockerr(recv, "strtoaddr: " + e.toString());
+            throw sockerr(runtime, "strtoaddr: " + e.toString());
         }
     }
 
-    private static String intoString(IRubyObject recv, InetAddress as) {
+    private static String intoString(Ruby runtime, InetAddress as) {
         try {
             return new String(ByteList.plain(as.getAddress()));
         } catch(Exception e) {
-            throw sockerr(recv, "addrtostr: " + e.toString());
+            throw sockerr(runtime, "addrtostr: " + e.toString());
         }
     }
-
-    @JRubyMethod(required = 1, rest = true, meta = true)
+    @Deprecated
     public static IRubyObject gethostbyaddr(IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = recv.getRuntime();
+        return gethostbyaddr(recv.getRuntime().getCurrentContext(), recv, args);
+    }
+    @JRubyMethod(required = 1, rest = true, meta = true)
+    public static IRubyObject gethostbyaddr(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
         IRubyObject[] ret = new IRubyObject[4];
-        ret[0] = runtime.newString(intoAddress(recv,args[0].convertToString().toString()).getCanonicalHostName());
+        ret[0] = runtime.newString(intoAddress(runtime,args[0].convertToString().toString()).getCanonicalHostName());
         ret[1] = runtime.newArray();
         ret[2] = runtime.newFixnum(2); // AF_INET
         ret[3] = args[0];
         return runtime.newArrayNoCopy(ret);
     }
-
-    @JRubyMethod(required = 1, optional = 1, meta = true)
+    @Deprecated
     public static IRubyObject getservbyname(IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = recv.getRuntime();
+        return getservbyname(recv.getRuntime().getCurrentContext(), recv, args);
+    }
+    @JRubyMethod(required = 1, optional = 1, meta = true)
+    public static IRubyObject getservbyname(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
         int argc = Arity.checkArgumentCount(runtime, args, 1, 2);
         String name = args[0].convertToString().toString();
         String service = argc == 1 ? "tcp" : args[1].convertToString().toString();
         Integer port = IANA.serviceToPort.get(name + "/" + service);
         if(port == null) {
-            throw sockerr(recv, "no such service " + name + "/" + service);
+            throw sockerr(runtime, "no such service " + name + "/" + service);
         }
         return runtime.newFixnum(port.intValue());
     }
 
-    @JRubyMethod(name = {"pack_sockaddr_un", "sockaddr_un"}, meta = true)
+    @Deprecated
     public static IRubyObject pack_sockaddr_un(IRubyObject recv, IRubyObject filename) {
+        return pack_sockaddr_un(recv.getRuntime().getCurrentContext(), recv, filename);
+    }
+    @JRubyMethod(name = {"pack_sockaddr_un", "sockaddr_un"}, meta = true)
+    public static IRubyObject pack_sockaddr_un(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         StringBuilder sb = new StringBuilder();
         sb.append((char)0);
         sb.append((char)1);
@@ -412,11 +430,15 @@ public class RubySocket extends RubyBasicSocket {
         for(int i=str.length();i<104;i++) {
             sb.append((char)0);
         }
-        return recv.getRuntime().newString(sb.toString());
+        return context.getRuntime().newString(sb.toString());
     }
 
-    @JRubyMethod(name = {"pack_sockaddr_in", "sockaddr_in"}, meta = true)
+    @Deprecated
     public static IRubyObject pack_sockaddr_in(IRubyObject recv, IRubyObject port, IRubyObject host) {
+        return pack_sockaddr_in(recv.getRuntime().getCurrentContext(), recv, port, host);
+    }
+    @JRubyMethod(name = {"pack_sockaddr_in", "sockaddr_in"}, meta = true)
+    public static IRubyObject pack_sockaddr_in(ThreadContext context, IRubyObject recv, IRubyObject port, IRubyObject host) {
         StringBuilder sb = new StringBuilder();
         sb.append((char)16);
         sb.append((char)2);
@@ -442,7 +464,7 @@ public class RubySocket extends RubyBasicSocket {
                 sb.append((char)addr[3]);
             }
         } catch(UnknownHostException e) {
-            throw sockerr(recv, "getaddrinfo: No address associated with nodename");
+            throw sockerr(context.getRuntime(), "getaddrinfo: No address associated with nodename");
         }
 
         sb.append((char)0);
@@ -454,14 +476,18 @@ public class RubySocket extends RubyBasicSocket {
         sb.append((char)0);
         sb.append((char)0);
 
-        return recv.getRuntime().newString(sb.toString());
+        return context.getRuntime().newString(sb.toString());
     }
 
-    @JRubyMethod(meta = true)
+    @Deprecated
     public static IRubyObject unpack_sockaddr_in(IRubyObject recv, IRubyObject addr) {
+        return unpack_sockaddr_in(recv.getRuntime().getCurrentContext(), recv, addr);
+    }
+    @JRubyMethod(meta = true)
+    public static IRubyObject unpack_sockaddr_in(ThreadContext context, IRubyObject recv, IRubyObject addr) {
         String val = addr.convertToString().toString();
         if(val.charAt(0) != 16 || val.charAt(1) != 2) {
-            throw recv.getRuntime().newArgumentError("can't resolve socket address of wrong type");
+            throw context.getRuntime().newArgumentError("can't resolve socket address of wrong type");
         }
         
         int port = (val.charAt(2) << 8) + (val.charAt(3));
@@ -475,39 +501,47 @@ public class RubySocket extends RubyBasicSocket {
         sb.append((int)val.charAt(7));
 
         IRubyObject[] result = new IRubyObject[]{
-            recv.getRuntime().newFixnum(port),
-            recv.getRuntime().newString(sb.toString())};
+            context.getRuntime().newFixnum(port),
+            context.getRuntime().newString(sb.toString())};
 
-        return recv.getRuntime().newArrayNoCopy(result);
+        return context.getRuntime().newArrayNoCopy(result);
     }
 
-    @JRubyMethod(meta = true)
+    @Deprecated
     public static IRubyObject gethostbyname(IRubyObject recv, IRubyObject hostname) {
+        return gethostbyname(recv.getRuntime().getCurrentContext(), recv, hostname);
+    }
+    @JRubyMethod(meta = true)
+    public static IRubyObject gethostbyname(ThreadContext context, IRubyObject recv, IRubyObject hostname) {
         try {
             InetAddress addr = InetAddress.getByName(hostname.convertToString().toString());
-            Ruby runtime = recv.getRuntime();
+            Ruby runtime = context.getRuntime();
             IRubyObject[] ret = new IRubyObject[4];
             ret[0] = runtime.newString(addr.getCanonicalHostName());
             ret[1] = runtime.newArray();
             ret[2] = runtime.newFixnum(2); // AF_INET
-            ret[3] = runtime.newString(intoString(recv,addr));
+            ret[3] = runtime.newString(intoString(runtime,addr));
             return runtime.newArrayNoCopy(ret);
         } catch(UnknownHostException e) {
-            throw sockerr(recv, "gethostbyname: name or service not known");
+            throw sockerr(context.getRuntime(), "gethostbyname: name or service not known");
         }
     }
 
+    @Deprecated
+    public static IRubyObject getaddrinfo(IRubyObject recv, IRubyObject[] args) {
+        return getaddrinfo(recv.getRuntime().getCurrentContext(), recv, args);
+    }
     //def self.getaddrinfo(host, port, family = nil, socktype = nil, protocol = nil, flags = nil)
     @JRubyMethod(required = 2, optional = 4, meta = true)
-    public static IRubyObject getaddrinfo(IRubyObject recv, IRubyObject[] args) {
-        args = Arity.scanArgs(recv.getRuntime(),args,2,4);
+    public static IRubyObject getaddrinfo(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        args = Arity.scanArgs(context.getRuntime(),args,2,4);
         try {
-            Ruby r = recv.getRuntime();
+            Ruby r = context.getRuntime();
             IRubyObject host = args[0];
             IRubyObject port = args[1];
 
             if(port instanceof RubyString) {
-                port = getservbyname(recv, new IRubyObject[]{port});
+                port = getservbyname(context, recv, new IRubyObject[]{port});
             }
 
             //IRubyObject family = args[2];
@@ -553,7 +587,7 @@ public class RubySocket extends RubyBasicSocket {
             }
             return r.newArray(l);
         } catch(UnknownHostException e) {
-            throw sockerr(recv, "getaddrinfo: name or service not known");
+            throw sockerr(context.getRuntime(), "getaddrinfo: name or service not known");
         }
     }
 
@@ -564,9 +598,13 @@ public class RubySocket extends RubyBasicSocket {
     private static final int HOST_GROUP = 3;
     private static final int PORT_GROUP = 5;
     
-    @JRubyMethod(required = 1, optional = 1, meta = true)
+    @Deprecated
     public static IRubyObject getnameinfo(IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = recv.getRuntime();
+        return getnameinfo(recv.getRuntime().getCurrentContext(), recv, args);
+    }
+    @JRubyMethod(required = 1, optional = 1, meta = true)
+    public static IRubyObject getnameinfo(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
         int argc = Arity.checkArgumentCount(runtime, args, 1, 2);
         int flags = argc == 2 ? RubyNumeric.num2int(args[1]) : 0;
         IRubyObject arg0 = args[0];
@@ -599,7 +637,7 @@ public class RubySocket extends RubyBasicSocket {
         try {
             addr = InetAddress.getByName(host);
         } catch (UnknownHostException e) {
-            throw sockerr(recv, "unknown host: "+ host);
+            throw sockerr(runtime, "unknown host: "+ host);
         }
         if ((flags & NI_NUMERICHOST) == 0) {
             host = addr.getCanonicalHostName();
