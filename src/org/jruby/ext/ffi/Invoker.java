@@ -95,7 +95,7 @@ public abstract class Invoker extends RubyObject {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
                 arity.checkArity(context.getRuntime(), args);
-                return invoke(context.getRuntime(), args);
+                return invoke(context, args);
             }
 
             @Override
@@ -121,11 +121,11 @@ public abstract class Invoker extends RubyObject {
      * @return The return value from the native function, as a ruby object.
      */
     @JRubyMethod(name= { "invoke", "call" }, rest = true)
-    public IRubyObject invoke(ThreadContext context, IRubyObject[] rubyArgs) {
-        return invoke(context.getRuntime(), ((RubyArray) rubyArgs[0]).toJavaArrayMaybeUnsafe());
+    public IRubyObject call(ThreadContext context, IRubyObject[] rubyArgs) {
+        return invoke(context, ((RubyArray) rubyArgs[0]).toJavaArrayMaybeUnsafe());
     }
     
-    public abstract IRubyObject invoke(Ruby runtime, IRubyObject[] args);
+    public abstract IRubyObject invoke(ThreadContext context, IRubyObject[] args);
     
     /**
      * Returns the {@link org.jruby.runtime.Arity} of this function.

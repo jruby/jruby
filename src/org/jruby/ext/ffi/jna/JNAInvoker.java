@@ -34,6 +34,7 @@ import org.jruby.RubyModule;
 import org.jruby.ext.ffi.Invoker;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -52,13 +53,13 @@ final class JNAInvoker extends Invoker {
         this.marshallers = marshallers;
     }
 
-    public IRubyObject invoke(Ruby runtime, IRubyObject[] rubyArgs) {
+    public IRubyObject invoke(ThreadContext context, IRubyObject[] rubyArgs) {
         Object[] args = new Object[rubyArgs.length];
         Invocation invocation = new Invocation();
         for (int i = 0; i < args.length; ++i) {
             args[i] = marshallers[i].marshal(invocation, rubyArgs[i]);
         }
-        IRubyObject retVal = functionInvoker.invoke(runtime, function, args);
+        IRubyObject retVal = functionInvoker.invoke(context.getRuntime(), function, args);
         invocation.finish();
         return retVal;
     }
