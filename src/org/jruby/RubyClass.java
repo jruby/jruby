@@ -185,6 +185,16 @@ public class RubyClass extends RubyModule {
         this.runtime = runtime;
         this.superClass = superClass; // this is the only case it might be null here (in MetaClass construction)
     }
+
+    /** separate path for MetaClass and IncludedModuleWrapper construction
+     *  (rb_class_boot version for MetaClasses)
+     *  no marshal, allocator initialization and addSubclass(this) here!
+     */
+    protected RubyClass(Ruby runtime, RubyClass superClass, Generation generation, boolean objectSpace) {
+        super(runtime, runtime.getClassClass(), generation, objectSpace);
+        this.runtime = runtime;
+        this.superClass = superClass; // this is the only case it might be null here (in MetaClass construction)
+    }
     
     /** used by CLASS_ALLOCATOR (any Class' class will be a Class!)
      *  also used to bootstrap Object class
@@ -606,6 +616,15 @@ public class RubyClass extends RubyModule {
         allocator = ((RubyClass)original).allocator; 
         return this;        
     }
+
+    protected void setModuleSuperClass(RubyClass superClass) {
+        // remove us from old superclass's child classes
+        if (this.superClass != null) this.superClass.removeSubclass(this);
+        // add us to new superclass's child classes
+        superClass.addSubclass(this);
+        // update superclass reference
+        this.superClass = superClass;
+    }
     
     public Collection subclasses(boolean includeDescendants) {
         if (subclasses != null) {
@@ -625,6 +644,19 @@ public class RubyClass extends RubyModule {
     public synchronized void addSubclass(RubyClass subclass) {
         if (subclasses == null) subclasses = new WeakHashSet<RubyClass>();
         subclasses.add(subclass);
+    }
+    
+    public synchronized void removeSubclass(RubyClass subclass) {
+        if (subclasses == null) return;
+        subclasses.remove(subclass);
+    }
+
+    protected synchronized void invalidateCacheDescendants() {
+        super.invalidateCacheDescendants();
+        // update all subclasses
+        if (subclasses != null) for (RubyClass subclass : subclasses) {
+            subclass.invalidateCacheDescendants();
+        }
     }
     
     public Ruby getClassRuntime() {

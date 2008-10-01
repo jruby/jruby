@@ -55,9 +55,10 @@ public final class IncludedModuleWrapper extends RubyClass {
     private final RubyModule delegate;
 
     public IncludedModuleWrapper(Ruby runtime, RubyClass superClass, RubyModule delegate) {
-        super(runtime, superClass, false);
+        super(runtime, superClass, delegate.generation, false);
         this.delegate = delegate;
         this.metaClass = delegate.metaClass;
+        delegate.addIncludingHierarchy(this);
     }
 
     /**
@@ -67,6 +68,7 @@ public final class IncludedModuleWrapper extends RubyClass {
      * @see org.jruby.RubyModule#newIncludeClass(RubyClass)
      */
     @Override
+    @Deprecated
     public IncludedModuleWrapper newIncludeClass(RubyClass superClass) {
         IncludedModuleWrapper includedModule = new IncludedModuleWrapper(getRuntime(), superClass, getNonIncludedClass());
         
