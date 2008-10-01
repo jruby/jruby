@@ -1432,8 +1432,17 @@ public class RubyFile extends RubyIO {
         Ruby runtime = context.getRuntime();
         RubyString filename = arg1.convertToString(); // TODO: SafeStringValue here
         RubyInteger newLength = arg2.convertToInteger(); 
-        
-        if (!new File(runtime.getCurrentDirectory(), filename.getByteList().toString()).exists()) {
+
+        File testFile ;
+        File childFile = new File(filename.getByteList().toString() );
+
+        if ( childFile.isAbsolute() ) {
+          testFile = childFile ;
+        } else {
+          testFile = new File(runtime.getCurrentDirectory(), filename.getByteList().toString());
+        }
+
+        if (!testFile.exists()) {
             throw runtime.newErrnoENOENTError(
                     "No such file or directory - " + filename.getByteList().toString());
         }
@@ -1441,7 +1450,7 @@ public class RubyFile extends RubyIO {
         if (newLength.getLongValue() < 0) {
             throw runtime.newErrnoEINVALError("invalid argument: " + filename);
         }
-        
+
         IRubyObject[] args = new IRubyObject[] { filename, runtime.newString("r+") };
         RubyFile file = (RubyFile) open(context, recv, args, Block.NULL_BLOCK);
         file.truncate(context, newLength);
