@@ -2155,7 +2155,14 @@ public class RubyModule extends RubyObject {
         // if the insertion point is a class, update subclass lists
         if (insertAbove instanceof RubyClass) {
             RubyClass insertAboveClass = (RubyClass)insertAbove;
-//            if (insertAboveClass.getSuperClass() != null) insertAboveClass.getSuperClass().removeSubclass(insertAboveClass);
+            
+            // if there's a non-null superclass, we're including into a normal class hierarchy;
+            // update subclass relationships to avoid stale parent/child relationships
+            if (insertAboveClass.getSuperClass() != null) {
+                insertAboveClass.getSuperClass().removeSubclass(insertAboveClass);
+                insertAboveClass.getSuperClass().addSubclass(wrapper);
+            }
+            
             wrapper.addSubclass(insertAboveClass);
         }
         
