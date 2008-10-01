@@ -57,7 +57,7 @@ public class RubyNameError extends RubyException {
      *
      * TODO: this class should not be lookupable
      */
-    @JRubyClass(name = "NameError::Message", parent = "Object")
+    @JRubyClass(name = "NameError::Message", parent = "Data")
     public static final class RubyNameErrorMessage extends RubyObject {
 
         static ObjectAllocator NAMEERRORMESSAGE_ALLOCATOR = new ObjectAllocator() {
@@ -147,7 +147,7 @@ public class RubyNameError extends RubyException {
     }
 
     public static RubyClass createNameErrorMessageClass(Ruby runtime, RubyClass nameErrorClass) {
-        RubyClass messageClass = nameErrorClass.defineClassUnder("Message", runtime.getObject(), RubyNameErrorMessage.NAMEERRORMESSAGE_ALLOCATOR);
+        RubyClass messageClass = nameErrorClass.defineClassUnder("Message", runtime.getClass("Data"), RubyNameErrorMessage.NAMEERRORMESSAGE_ALLOCATOR);
         messageClass.defineAnnotatedMethods(RubyNameErrorMessage.class);
         return messageClass;
     }

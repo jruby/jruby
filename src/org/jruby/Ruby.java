@@ -1102,7 +1102,7 @@ public final class Ruby {
             RubyUnboundMethod.defineUnboundMethodClass(this);
         }
         if (profile.allowClass("Data")) {
-            defineClass("Data", objectClass, objectClass.getAllocator());
+            defineClass("Data", objectClass, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         }
         if (!isSecurityRestricted()) {
             // Signal uses sun.misc.* classes, this is not allowed

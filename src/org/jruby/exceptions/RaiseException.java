@@ -171,10 +171,10 @@ public class RaiseException extends JumpException {
         IRubyObject backtrace = exception.backtrace();
         Ruby runtime = backtrace.getRuntime();
         if (runtime.getNil() != backtrace) {
-            String firstLine = backtrace.callMethod(runtime.getCurrentContext(), "first").callMethod(runtime.getCurrentContext(), "to_s").toString();
+            String firstLine = backtrace.callMethod(runtime.getCurrentContext(), "first").convertToString().toString();
             ps.print(firstLine + ": ");
         }
-        ps.println(exception.message + " (" + exception.getMetaClass().toString() + ")");
+        ps.println(exception.message.convertToString() + " (" + exception.getMetaClass().toString() + ")");
         exception.printBacktrace(ps);
         ps.println("\t...internal jruby stack elided...");
         for (int i = externalIndex; i < trace.length; i++) {

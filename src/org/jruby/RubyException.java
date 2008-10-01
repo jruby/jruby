@@ -39,12 +39,10 @@ package org.jruby;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.List;
+
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Frame;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
@@ -233,15 +231,15 @@ public class RubyException extends RubyObject {
         }
     }
 
-    @JRubyMethod
-    public IRubyObject to_s() {
-        if (message.isNil()) return getRuntime().newString(getMetaClass().getName());
+    @JRubyMethod(name = "to_s")
+    public IRubyObject to_s(ThreadContext context) {
+        if (message.isNil()) return context.getRuntime().newString(getMetaClass().getName());
         message.setTaint(isTaint());
         return message;
     }
 
-    @JRubyMethod(name = {"to_str", "message"})
-    public IRubyObject to_str(ThreadContext context) {
+    @JRubyMethod(name = "message")
+    public IRubyObject message(ThreadContext context) {
         return callMethod(context, "to_s");
     }
 
@@ -249,7 +247,7 @@ public class RubyException extends RubyObject {
      * 
      *@return A RubyString containing the debug information.
      */
-    @JRubyMethod
+    @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
         RubyModule rubyClass = getMetaClass();
         RubyString exception = RubyString.objAsString(context, this);
