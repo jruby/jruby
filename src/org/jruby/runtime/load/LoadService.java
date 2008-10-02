@@ -195,6 +195,10 @@ public class LoadService {
         }
     }
 
+    private void addLoadedFeature(RubyString loadNameRubyString) {
+        loadedFeaturesInternal.add(loadNameRubyString);
+    }
+
     private void addPath(String path) {
         // Empty paths do not need to be added
         if (path == null || path.length() == 0) return;
@@ -225,122 +229,172 @@ public class LoadService {
         }
     }
 
-    public boolean smartLoad(String file) {
-        checkEmptyLoad(file);
-        
-        Library library = null;
-        String loadName = file;
-        String[] extensionsToSearch = null;
-        
-        // if an extension is specified, try more targetted searches
-        if (file.lastIndexOf('.') > file.lastIndexOf('/')) {
-            Matcher matcher = null;
-            if ((matcher = sourcePattern.matcher(file)).find()) {
-                // source extensions
-                extensionsToSearch = sourceSuffixes;
-                
-                // trim extension to try other options
-                file = file.substring(0,matcher.start());
-            } else if ((matcher = extensionPattern.matcher(file)).find()) {
-                // extension extensions
-                extensionsToSearch = extensionSuffixes;
-                
-                // trim extension to try other options
-                file = file.substring(0,matcher.start());
-            } else {
-                // unknown extension, fall back to search with extensions
-                extensionsToSearch = allSuffixes;
-            }
-        } else {
-            // try all extensions
-            extensionsToSearch = allSuffixes;
-        }
-        
-        // First try suffixes with normal loading
-        for (int i = 0; i < extensionsToSearch.length; i++) {
-            String searchName = file + extensionsToSearch[i];
-            if (Ruby.isSecurityRestricted()) {
-                // search in CWD only in if no security restrictions
-                library = findLibraryWithoutCWD(searchName);
-            } else {
-                library = findLibraryWithCWD(searchName);
-            }
+    private boolean featureAlreadyLoaded(RubyString loadNameRubyString) {
+        return loadedFeaturesInternal.contains(loadNameRubyString);
+    }
 
-            if (library != null) {
-                loadName = searchName;
+    private boolean isJarfileLibrary(SearchState state, final String file) {
+        return state.library instanceof JarredScript && file.endsWith(".jar");
+    }
+
+    private void removeLoadedFeature(RubyString loadNameRubyString) {
+
+        loadedFeaturesInternal.remove(loadNameRubyString);
+    }
+
+    private void reraiseRaiseExceptions(Throwable e) throws RaiseException {
+
+        if (e instanceof RaiseException) {
+            throw (RaiseException) e;
+        }
+    }
+
+    private void tryClassLoaderSearch(SearchState state) {
+        // Then try suffixes with classloader loading
+        for (int i = 0; i < state.extensionsToSearch.length; i++) {
+            String searchName = state.searchFile + state.extensionsToSearch[i];
+            state.library = findLibraryWithClassloaders(searchName);
+
+            if (state.library != null) {
+                state.loadName = searchName;
                 break;
             }
         }
+    }
 
-        // Then try suffixes with classloader loading
-        if (library == null) {
-            for (int i = 0; i < extensionsToSearch.length; i++) {
-                String searchName = file + extensionsToSearch[i];
-                library = findLibraryWithClassloaders(searchName);
-                
-                if (library != null) {
-                    loadName = searchName;
-                    break;
-                }
+    private void tryNormalSearch(SearchState state) {
+        // First try suffixes with normal loading
+        for (int i = 0; i < state.extensionsToSearch.length; i++) {
+            String searchName = state.searchFile + state.extensionsToSearch[i];
+            if (Ruby.isSecurityRestricted()) {
+                // search in CWD only in if no security restrictions
+                state.library = findLibraryWithoutCWD(searchName);
+            } else {
+                state.library = findLibraryWithCWD(searchName);
+            }
+
+            if (state.library != null) {
+                state.loadName = searchName;
+                break;
             }
         }
+    }
+    
+    public class ScriptClassLibrary implements Library {
+        private Script script;
+        
+        public ScriptClassLibrary(Script script) {
+            this.script = script;
+        }
+        
+        public void load(Ruby runtime, boolean wrap) {
+            runtime.loadScript(script);
+        }
+    }
 
-        library = tryLoadExtension(library,file);
-
+    private void tryScriptClassLoading(SearchState state, String originalFileName) throws RaiseException {
         // no library or extension found, try to load directly as a class
-        Script script = null;
-        if (library == null) {
-            String className = buildClassName(file);
-            int lastSlashIndex = className.lastIndexOf('/');
-            if (lastSlashIndex > -1 &&
-                    lastSlashIndex < className.length() - 1 &&
-                    !Character.isJavaIdentifierStart(className.charAt(lastSlashIndex + 1))) {
-                if (lastSlashIndex == -1) {
-                    className = "_" + className;
-                } else {
-                    className = className.substring(0, lastSlashIndex + 1) + "_" + className.substring(lastSlashIndex + 1);
-                }
-            }
-            className = className.replace('/', '.');
-            try {
-                Class scriptClass = Class.forName(className);
-                script = (Script)scriptClass.newInstance();
-            } catch (Exception cnfe) {
-                throw runtime.newLoadError("no such file to load -- " + file);
+        Script script;
+        String className = buildClassName(originalFileName);
+        int lastSlashIndex = className.lastIndexOf('/');
+        if (lastSlashIndex > -1 && lastSlashIndex < className.length() - 1 && !Character.isJavaIdentifierStart(className.charAt(lastSlashIndex + 1))) {
+            if (lastSlashIndex == -1) {
+                className = "_" + className;
+            } else {
+                className = className.substring(0, lastSlashIndex + 1) + "_" + className.substring(lastSlashIndex + 1);
             }
         }
-        
-        RubyString loadNameRubyString = runtime.newString(loadName);
-        if (loadedFeaturesInternal.contains(loadNameRubyString)) {
-            return false;
-        }
-        
-        // attempt to load the found library
+        className = className.replace('/', '.');
         try {
-            loadedFeaturesInternal.add(loadNameRubyString);
+            Class scriptClass = Class.forName(className);
+            script = (Script) scriptClass.newInstance();
+        } catch (Exception cnfe) {
+            throw runtime.newLoadError("no such file to load -- " + originalFileName);
+        }
+        state.library = new ScriptClassLibrary(script);
+    }
+    
+    public class SearchState {
+        public Library library;
+        public String loadName;
+        public String[] extensionsToSearch;
+        public String searchFile;
+        
+        public SearchState(String file) {
+            chooseSearchType(file);
+        }
 
-            if (script != null) {
-                runtime.loadScript(script);
-                return true;
+        private void chooseSearchType(final String file) {
+            // if an extension is specified, try more targetted searches
+            if (file.lastIndexOf('.') > file.lastIndexOf('/')) {
+                Matcher matcher = null;
+                if ((matcher = sourcePattern.matcher(file)).find()) {
+                    // source extensions
+                    extensionsToSearch = sourceSuffixes;
+
+                    // trim extension to try other options
+                    searchFile = file.substring(0, matcher.start());
+                } else if ((matcher = extensionPattern.matcher(file)).find()) {
+                    // extension extensions
+                    extensionsToSearch = extensionSuffixes;
+
+                    // trim extension to try other options
+                    searchFile = file.substring(0, matcher.start());
+                } else {
+                    // unknown extension, fall back to search with extensions
+                    extensionsToSearch = allSuffixes;
+                    searchFile = file;
+                }
+            } else {
+                // try all extensions
+                extensionsToSearch = allSuffixes;
+                searchFile = file;
             }
+        }
+    }
+    
+    private boolean tryLoadingLibraryOrScript(Ruby runtime, SearchState state) {
+        // attempt to load the found library
+        RubyString loadNameRubyString = RubyString.newString(runtime, state.loadName);
+        try {
+            addLoadedFeature(loadNameRubyString);
             
-            library.load(runtime, false);
+            // otherwise load the library we've found
+            state.library.load(runtime, false);
             return true;
         } catch (Throwable e) {
-            if(library instanceof JarredScript && file.endsWith(".jar")) {
+            if(isJarfileLibrary(state, state.searchFile)) {
                 return true;
             }
 
-            loadedFeaturesInternal.remove(loadNameRubyString);
-            
-            if (e instanceof RaiseException) throw (RaiseException) e;
+            removeLoadedFeature(loadNameRubyString);
+            reraiseRaiseExceptions(e);
 
             if(runtime.getDebug().isTrue()) e.printStackTrace();
             
-            RaiseException re = runtime.newLoadError("IO error -- " + file);
+            RaiseException re = runtime.newLoadError("IO error -- " + state.searchFile);
             re.initCause(e);
             throw re;
         }
+    }
+
+    public boolean smartLoad(final String file) {
+        checkEmptyLoad(file);
+        
+        SearchState state = new SearchState(file);
+        
+        tryNormalSearch(state);
+        if (state.library == null) tryClassLoaderSearch(state);
+        if (state.library == null) tryLoadExtension(state);
+        if (state.library == null) tryScriptClassLoading(state, file);
+        
+        // FIXME: Why do we not bail out *before* the expensive searching?
+        RubyString loadNameRubyString = runtime.newString(state.loadName);
+        if (featureAlreadyLoaded(loadNameRubyString)) {
+            return false;
+        }
+        
+        return tryLoadingLibraryOrScript(runtime, state);
     }
 
     public boolean require(String file) {
@@ -611,14 +665,14 @@ public class LoadService {
         return isRequireable(loc) ? new LoadServiceResource(loc, loc.getPath()) : null;
     }
 
-    private Library tryLoadExtension(Library library, String file) {
+    private void tryLoadExtension(SearchState state) {
         // This code exploits the fact that all .jar files will be found for the JarredScript feature.
         // This is where the basic extension mechanism gets fixed
-        Library oldLibrary = library;
+        Library oldLibrary = state.library;
         
-        if((library == null || library instanceof JarredScript) && !file.equalsIgnoreCase("")) {
+        if (state.library instanceof JarredScript && !state.searchFile.equalsIgnoreCase("")) {
             // Create package name, by splitting on / and joining all but the last elements with a ".", and downcasing them.
-            String[] all = file.split("/");
+            String[] all = state.searchFile.split("/");
 
             StringBuilder finName = new StringBuilder();
             for(int i=0, j=(all.length-1); i<j; i++) {
@@ -639,26 +693,25 @@ public class LoadService {
                 String className = finName.toString().replaceAll("^\\.*","");
 
                 // If there is a jar-file with the required name, we add this to the class path.
-                if(library instanceof JarredScript) {
+                if(state.library instanceof JarredScript) {
                     // It's _really_ expensive to check that the class actually exists in the Jar, so
                     // we don't do that now.
-                    runtime.getJRubyClassLoader().addURL(((JarredScript)library).getResource().getURL());
+                    runtime.getJRubyClassLoader().addURL(((JarredScript)state.library).getResource().getURL());
                 }
 
                 // quietly try to load the class
                 Class theClass = runtime.getJavaSupport().loadJavaClassQuiet(className);
-                library = new ClassExtensionLibrary(theClass);
+                state.library = new ClassExtensionLibrary(theClass);
             } catch (Exception ee) {
-                library = null;
+                state.library = null;
                 runtime.getGlobalVariables().set("$!", runtime.getNil());
             }
         }
         
         // If there was a good library before, we go back to that
-        if(library == null && oldLibrary != null) {
-            library = oldLibrary;
+        if(state.library == null && oldLibrary != null) {
+            state.library = oldLibrary;
         }
-        return library;
     }
     
     /* Directories and unavailable resources are not able to open a stream. */
