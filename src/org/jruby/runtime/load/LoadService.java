@@ -209,7 +209,7 @@ public class LoadService {
             throw runtime.newLoadError("No such file to load -- " + file);
         }
 
-        Library library = findLibrary(file, false);
+        Library library = findLibraryWithoutCWD(file);
 
         if (library == null) {
             library = findLibraryWithClassloaders(file);
@@ -226,9 +226,7 @@ public class LoadService {
     }
 
     public boolean smartLoad(String file) {
-        if (file.equals("")) {
-            throw runtime.newLoadError("No such file to load -- " + file);
-        }
+        checkEmptyLoad(file);
         
         Library library = null;
         String loadName = file;
@@ -260,15 +258,16 @@ public class LoadService {
         
         // First try suffixes with normal loading
         for (int i = 0; i < extensionsToSearch.length; i++) {
+            String searchName = file + extensionsToSearch[i];
             if (Ruby.isSecurityRestricted()) {
                 // search in CWD only in if no security restrictions
-                library = findLibrary(file + extensionsToSearch[i], false);
+                library = findLibraryWithoutCWD(searchName);
             } else {
-                library = findLibrary(file + extensionsToSearch[i], true);
+                library = findLibraryWithCWD(searchName);
             }
 
             if (library != null) {
-                loadName = file + extensionsToSearch[i];
+                loadName = searchName;
                 break;
             }
         }
@@ -276,9 +275,11 @@ public class LoadService {
         // Then try suffixes with classloader loading
         if (library == null) {
             for (int i = 0; i < extensionsToSearch.length; i++) {
-                library = findLibraryWithClassloaders(file + extensionsToSearch[i]);
+                String searchName = file + extensionsToSearch[i];
+                library = findLibraryWithClassloaders(searchName);
+                
                 if (library != null) {
-                    loadName = file + extensionsToSearch[i];
+                    loadName = searchName;
                     break;
                 }
             }
@@ -289,11 +290,7 @@ public class LoadService {
         // no library or extension found, try to load directly as a class
         Script script = null;
         if (library == null) {
-            String className = file;
-            // Remove any relative prefix, e.g. "./foo/bar" becomes "foo/bar".
-            className = className.replaceFirst("^\\.\\/", "");
-            if (className.lastIndexOf(".") != -1) className = className.substring(0, className.lastIndexOf("."));
-            className = className.replace("-", "_minus_").replace('.', '_');
+            String className = buildClassName(file);
             int lastSlashIndex = className.lastIndexOf('/');
             if (lastSlashIndex > -1 &&
                     lastSlashIndex < className.length() - 1 &&
@@ -321,7 +318,6 @@ public class LoadService {
         // attempt to load the found library
         try {
             loadedFeaturesInternal.add(loadNameRubyString);
-//            firstLineLoadedFeatures.add(file);
 
             if (script != null) {
                 runtime.loadScript(script);
@@ -336,10 +332,7 @@ public class LoadService {
             }
 
             loadedFeaturesInternal.remove(loadNameRubyString);
-            //firstLineLoadedFeatures.remove(file);
-//            synchronized(loadedFeatures) {
-//                loadedFeatures.remove(runtime.newString(loadName));
-//            }
+            
             if (e instanceof RaiseException) throw (RaiseException) e;
 
             if(runtime.getDebug().isTrue()) e.printStackTrace();
@@ -397,9 +390,30 @@ public class LoadService {
         loadedFeaturesInternal.remove(name);
     }
 
-    private Library findLibrary(String file, boolean checkCWD) {
+    private String buildClassName(String className) {
+        // Remove any relative prefix, e.g. "./foo/bar" becomes "foo/bar".
+        className = className.replaceFirst("^\\.\\/", "");
+        if (className.lastIndexOf(".") != -1) {
+            className = className.substring(0, className.lastIndexOf("."));
+        }
+        className = className.replace("-", "_minus_").replace('.', '_');
+        return className;
+    }
+
+    private void checkEmptyLoad(String file) throws RaiseException {
+        if (file.equals("")) {
+            throw runtime.newLoadError("No such file to load -- " + file);
+        }
+    }
+
+    private Library findLibraryWithCWD(String file) {
         if (builtinLibraries.containsKey(file)) return builtinLibraries.get(file);
-        return createLibrary(file, findFile(file, checkCWD));
+        return createLibrary(file, findFileWithCWD(file));
+    }
+
+    private Library findLibraryWithoutCWD(String file) {
+        if (builtinLibraries.containsKey(file)) return builtinLibraries.get(file);
+        return createLibrary(file, findFileWithoutCWD(file));
     }
 
     private Library findLibraryWithClassloaders(String file) {
@@ -427,94 +441,10 @@ public class LoadService {
      * @param name the file to find, this is a path name
      * @return the correct file
      */
-    private LoadServiceResource findFile(String name, boolean checkCWD) {
-        // if a jar URL, return load service resource directly without further searching
-        if (name.startsWith("jar:")) {
-            try {
-                return new LoadServiceResource(new URL(name), name);
-            } catch (MalformedURLException e) {
-                throw runtime.newIOErrorFromException(e);
-            }
-        } else if(name.startsWith("file:") && name.indexOf("!/") != -1) {
-            try {
-                JarFile file = new JarFile(name.substring(5, name.indexOf("!/")));
-                String filename = name.substring(name.indexOf("!/") + 2);
-                if(file.getJarEntry(filename) != null) {
-                    return new LoadServiceResource(new URL("jar:" + name), name);
-                }
-            } catch(Exception e) {}
-        }
+    private LoadServiceResource findFileWithCWD(String name) {
+        LoadServiceResource foundResource = findFileWithoutCWD(name);
 
-        for (Iterator pathIter = loadPath.getList().iterator(); pathIter.hasNext();) {
-            // TODO this is really ineffient, ant potentially a problem everytime anyone require's something.
-            // we should try to make LoadPath a special array object.
-            String entry = ((IRubyObject)pathIter.next()).toString();
-            if (entry.startsWith("jar:") || entry.endsWith(".jar") || (entry.startsWith("file:") && entry.indexOf("!/") != -1)) {
-                JarFile current = jarFiles.get(entry);
-                String after = (entry.startsWith("file:") && entry.indexOf("!/") != -1) ? entry.substring(entry.indexOf("!/") + 2) + "/" : "";
-                String before = (entry.startsWith("file:") && entry.indexOf("!/") != -1) ? entry.substring(0, entry.indexOf("!/")) : entry;
-
-                if(null == current) {
-                    try {
-                        if(entry.startsWith("jar:")) {
-                            current = new JarFile(entry.substring(4));
-                        } else if (entry.endsWith(".jar")) {
-                            current = new JarFile(entry);
-                        } else {
-                            current = new JarFile(entry.substring(5,entry.indexOf("!/")));
-                        }
-                        jarFiles.put(entry,current);
-                    } catch (ZipException ignored) {
-                        if (runtime.getInstanceConfig().isVerbose()) {
-                            runtime.getErr().println("ZipException trying to access " + entry + ", stack trace follows:");
-                            ignored.printStackTrace(runtime.getErr());
-                        }
-                    } catch (FileNotFoundException ignored) {
-                    } catch (IOException e) {
-                        throw runtime.newIOErrorFromException(e);
-                    }
-                }
-                String canonicalEntry = after+name;
-                if(after.length()>0) {
-                    try {
-                        canonicalEntry = new File(after+name).getCanonicalPath().substring(new File(".")
-                                                             .getCanonicalPath().length()+1).replaceAll("\\\\","/");
-                    } catch(Exception e) {}
-                }
-                if (current != null && current.getJarEntry(canonicalEntry) != null) {
-                    try {
-                        if (entry.endsWith(".jar")) {
-                            return new LoadServiceResource(new URL("jar:file:" + entry + "!/" + canonicalEntry), "/" + name);
-                        } else if (entry.startsWith("file:")) {
-                            return new LoadServiceResource(new URL("jar:" + before + "!/" + canonicalEntry), entry + "/" + name);
-                        } else {
-                            return new LoadServiceResource(new URL("jar:file:" + entry.substring(4) + "!/" + name), entry + name);
-                        }
-                    } catch (MalformedURLException e) {
-                        throw runtime.newIOErrorFromException(e);
-                    }
-                }
-            } 
-            try {
-                if (!Ruby.isSecurityRestricted()) {
-                    JRubyFile current = JRubyFile.create(
-                            JRubyFile.create(runtime.getCurrentDirectory(),entry).getAbsolutePath(),
-                            RubyFile.expandUserPath(runtime.getCurrentContext(), name));
-                    if (current.isFile()) {
-                        try {
-                            // relative paths without ./ on front get absolute path
-                            String resourcePath = name.startsWith("./") ? name : current.getPath();
-                            
-                            return new LoadServiceResource(current.toURI().toURL(), resourcePath);
-                        } catch (MalformedURLException e) {
-                            throw runtime.newIOErrorFromException(e);
-                        }
-                    }
-                }
-            } catch (SecurityException secEx) { }
-        }
-
-        if (checkCWD) {
+        if (foundResource == null) {
             // check current directory; if file exists, retrieve URL and return resource
             try {
                 JRubyFile file = JRubyFile.create(
@@ -522,7 +452,7 @@ public class LoadService {
                         RubyFile.expandUserPath(runtime.getCurrentContext(), name));
                 if (file.isFile() && file.isAbsolute()) {
                     try {
-                        return new LoadServiceResource(file.toURI().toURL(), name);
+                        foundResource = new LoadServiceResource(file.toURI().toURL(), name);
                     } catch (MalformedURLException e) {
                         throw runtime.newIOErrorFromException(e);
                     }
@@ -533,7 +463,109 @@ public class LoadService {
         }
 
 
-        return null;
+        return foundResource;
+    }
+
+    /**
+     * this method uses the appropriate lookup strategy to find a file.
+     * It is used by Kernel#require.
+     *
+     * @mri rb_find_file
+     * @param name the file to find, this is a path name
+     * @return the correct file
+     */
+    private LoadServiceResource findFileWithoutCWD(String name) {
+        LoadServiceResource foundResource = null;
+        // if a jar URL, return load service resource directly without further searching
+        if (name.startsWith("jar:")) {
+            try {
+                foundResource = new LoadServiceResource(new URL(name), name);
+            } catch (MalformedURLException e) {
+                throw runtime.newIOErrorFromException(e);
+            }
+        } else if(name.startsWith("file:") && name.indexOf("!/") != -1) {
+            try {
+                JarFile file = new JarFile(name.substring(5, name.indexOf("!/")));
+                String filename = name.substring(name.indexOf("!/") + 2);
+                if(file.getJarEntry(filename) != null) {
+                    foundResource = new LoadServiceResource(new URL("jar:" + name), name);
+                }
+            } catch(Exception e) {}
+        }
+
+        if (foundResource == null) {
+            for (Iterator pathIter = loadPath.getList().iterator(); pathIter.hasNext();) {
+                // TODO this is really ineffient, ant potentially a problem everytime anyone require's something.
+                // we should try to make LoadPath a special array object.
+                String entry = ((IRubyObject)pathIter.next()).toString();
+                if (entry.startsWith("jar:") || entry.endsWith(".jar") || (entry.startsWith("file:") && entry.indexOf("!/") != -1)) {
+                    JarFile current = jarFiles.get(entry);
+                    String after = (entry.startsWith("file:") && entry.indexOf("!/") != -1) ? entry.substring(entry.indexOf("!/") + 2) + "/" : "";
+                    String before = (entry.startsWith("file:") && entry.indexOf("!/") != -1) ? entry.substring(0, entry.indexOf("!/")) : entry;
+
+                    if(null == current) {
+                        try {
+                            if(entry.startsWith("jar:")) {
+                                current = new JarFile(entry.substring(4));
+                            } else if (entry.endsWith(".jar")) {
+                                current = new JarFile(entry);
+                            } else {
+                                current = new JarFile(entry.substring(5,entry.indexOf("!/")));
+                            }
+                            jarFiles.put(entry,current);
+                        } catch (ZipException ignored) {
+                            if (runtime.getInstanceConfig().isVerbose()) {
+                                runtime.getErr().println("ZipException trying to access " + entry + ", stack trace follows:");
+                                ignored.printStackTrace(runtime.getErr());
+                            }
+                        } catch (FileNotFoundException ignored) {
+                        } catch (IOException e) {
+                            throw runtime.newIOErrorFromException(e);
+                        }
+                    }
+                    String canonicalEntry = after+name;
+                    if(after.length()>0) {
+                        try {
+                            canonicalEntry = new File(after+name).getCanonicalPath().substring(new File(".")
+                                                                 .getCanonicalPath().length()+1).replaceAll("\\\\","/");
+                        } catch(Exception e) {}
+                    }
+                    if (current != null && current.getJarEntry(canonicalEntry) != null) {
+                        try {
+                            if (entry.endsWith(".jar")) {
+                                foundResource = new LoadServiceResource(new URL("jar:file:" + entry + "!/" + canonicalEntry), "/" + name);
+                            } else if (entry.startsWith("file:")) {
+                                foundResource = new LoadServiceResource(new URL("jar:" + before + "!/" + canonicalEntry), entry + "/" + name);
+                            } else {
+                                foundResource =  new LoadServiceResource(new URL("jar:file:" + entry.substring(4) + "!/" + name), entry + name);
+                            }
+                            break;
+                        } catch (MalformedURLException e) {
+                            throw runtime.newIOErrorFromException(e);
+                        }
+                    }
+                } 
+                try {
+                    if (!Ruby.isSecurityRestricted()) {
+                        JRubyFile current = JRubyFile.create(
+                                JRubyFile.create(runtime.getCurrentDirectory(),entry).getAbsolutePath(),
+                                RubyFile.expandUserPath(runtime.getCurrentContext(), name));
+                        if (current.isFile()) {
+                            try {
+                                // relative paths without ./ on front get absolute path
+                                String resourcePath = name.startsWith("./") ? name : current.getPath();
+
+                                foundResource = new LoadServiceResource(current.toURI().toURL(), resourcePath);
+                            } catch (MalformedURLException e) {
+                                throw runtime.newIOErrorFromException(e);
+                            }
+                        }
+                    }
+                } catch (SecurityException secEx) { }
+            }
+        }
+
+        return foundResource;
     }
 
     /**
