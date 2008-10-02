@@ -80,4 +80,9 @@ public class RubyNoMethodError extends RubyNameError {
         return args;
     }
 
+    protected void copySpecialInstanceVariables(IRubyObject clone) {
+        super.copySpecialInstanceVariables(clone);
+        RubyNoMethodError exception = (RubyNoMethodError)clone;
+        exception.args = args;
+    }
 }

@@ -258,6 +258,14 @@ public class RubyException extends RubyObject {
         return getRuntime().newString(sb.toString());
     }
 
+    protected void copySpecialInstanceVariables(IRubyObject clone) {
+        RubyException exception = (RubyException)clone;
+        exception.backtraceFrames = backtraceFrames;
+        exception.javaStackTrace = javaStackTrace;
+        exception.backtrace = backtrace;
+        exception.message = message;
+    }
+
     public void printBacktrace(PrintStream errorStream) {
         IRubyObject backtrace = callMethod(getRuntime().getCurrentContext(), "backtrace");
         boolean debug = getRuntime().getDebug().isTrue();
