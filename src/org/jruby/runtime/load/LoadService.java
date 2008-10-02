@@ -252,7 +252,35 @@ public class LoadService {
     
     public interface LoadSearcher {
         public boolean shouldTrySearch(SearchState state);
-        public void trySearch(SearchState state);
+        public void trySearch(SearchState state) throws AlreadyLoaded;
+    }
+    
+    public class AlreadyLoaded extends Exception {
+        private RubyString searchNameString;
+        
+        public AlreadyLoaded(RubyString searchNameString) {
+            this.searchNameString = searchNameString;
+        }
+        
+        public RubyString getSearchNameString() {
+            return searchNameString;
+        }
+    }
+    
+    public class BailoutSearcher implements LoadSearcher {
+        public boolean shouldTrySearch(SearchState state) {
+            return true;
+        }
+    
+        public void trySearch(SearchState state) throws AlreadyLoaded {
+            for (int i = 0; i < state.extensionsToSearch.length; i++) {
+                String searchName = state.searchFile + state.extensionsToSearch[i];
+                RubyString searchNameString = RubyString.newString(runtime, searchName);
+                if (featureAlreadyLoaded(searchNameString)) {
+                    throw new AlreadyLoaded(searchNameString);
+                }
+            }
+        }
     }
 
     public class ClassLoaderSearcher implements LoadSearcher {
@@ -273,7 +301,6 @@ public class LoadService {
             }
         }
     }
-
 
     public class NormalSearcher implements LoadSearcher {
         public boolean shouldTrySearch(SearchState state) {
@@ -459,6 +486,7 @@ public class LoadService {
     
     private final List<LoadSearcher> searchers = new ArrayList<LoadSearcher>();
     {
+        searchers.add(new BailoutSearcher());
         searchers.add(new NormalSearcher());
         searchers.add(new ClassLoaderSearcher());
         searchers.add(new ExtensionSearcher());
@@ -470,13 +498,16 @@ public class LoadService {
         
         SearchState state = new SearchState(file);
         
-        for (LoadSearcher searcher : searchers) {
-            if (searcher.shouldTrySearch(state)) searcher.trySearch(state);
-        }
-        
-        // FIXME: Why do we not bail out *before* the expensive searching?
-        RubyString loadNameRubyString = runtime.newString(state.loadName);
-        if (featureAlreadyLoaded(loadNameRubyString)) {
+        try {
+            for (LoadSearcher searcher : searchers) {
+                if (searcher.shouldTrySearch(state)) {
+                    searcher.trySearch(state);
+                } else {
+                    continue;
+                }
+            }
+        } catch (AlreadyLoaded al) {
+            // Library has already been loaded in some form, bail out
             return false;
         }
         
