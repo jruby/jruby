@@ -37,6 +37,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -248,70 +249,147 @@ public class LoadService {
             throw (RaiseException) e;
         }
     }
-
-    private void tryClassLoaderSearch(SearchState state) {
-        // Then try suffixes with classloader loading
-        for (int i = 0; i < state.extensionsToSearch.length; i++) {
-            String searchName = state.searchFile + state.extensionsToSearch[i];
-            state.library = findLibraryWithClassloaders(searchName);
-
-            if (state.library != null) {
-                state.loadName = searchName;
-                break;
-            }
-        }
-    }
-
-    private void tryNormalSearch(SearchState state) {
-        // First try suffixes with normal loading
-        for (int i = 0; i < state.extensionsToSearch.length; i++) {
-            String searchName = state.searchFile + state.extensionsToSearch[i];
-            if (Ruby.isSecurityRestricted()) {
-                // search in CWD only in if no security restrictions
-                state.library = findLibraryWithoutCWD(searchName);
-            } else {
-                state.library = findLibraryWithCWD(searchName);
-            }
-
-            if (state.library != null) {
-                state.loadName = searchName;
-                break;
-            }
-        }
-    }
     
-    public class ScriptClassLibrary implements Library {
-        private Script script;
-        
-        public ScriptClassLibrary(Script script) {
-            this.script = script;
+    public interface LoadSearcher {
+        public boolean shouldTrySearch(SearchState state);
+        public void trySearch(SearchState state);
+    }
+
+    public class ClassLoaderSearcher implements LoadSearcher {
+        public boolean shouldTrySearch(SearchState state) {
+            return state.library == null;
         }
         
-        public void load(Ruby runtime, boolean wrap) {
-            runtime.loadScript(script);
+        public void trySearch(SearchState state) {
+            // Then try suffixes with classloader loading
+            for (int i = 0; i < state.extensionsToSearch.length; i++) {
+                String searchName = state.searchFile + state.extensionsToSearch[i];
+                state.library = findLibraryWithClassloaders(searchName);
+
+                if (state.library != null) {
+                    state.loadName = searchName;
+                    break;
+                }
+            }
         }
     }
 
-    private void tryScriptClassLoading(SearchState state) throws RaiseException {
-        // no library or extension found, try to load directly as a class
-        Script script;
-        String className = buildClassName(state.searchFile);
-        int lastSlashIndex = className.lastIndexOf('/');
-        if (lastSlashIndex > -1 && lastSlashIndex < className.length() - 1 && !Character.isJavaIdentifierStart(className.charAt(lastSlashIndex + 1))) {
-            if (lastSlashIndex == -1) {
-                className = "_" + className;
-            } else {
-                className = className.substring(0, lastSlashIndex + 1) + "_" + className.substring(lastSlashIndex + 1);
+
+    public class NormalSearcher implements LoadSearcher {
+        public boolean shouldTrySearch(SearchState state) {
+            return state.library == null;
+        }
+        
+        public void trySearch(SearchState state) {
+            // First try suffixes with normal loading
+            for (int i = 0; i < state.extensionsToSearch.length; i++) {
+                String searchName = state.searchFile + state.extensionsToSearch[i];
+                if (Ruby.isSecurityRestricted()) {
+                    // search in CWD only in if no security restrictions
+                    state.library = findLibraryWithoutCWD(searchName);
+                } else {
+                    state.library = findLibraryWithCWD(searchName);
+                }
+
+                if (state.library != null) {
+                    state.loadName = searchName;
+                    break;
+                }
             }
         }
-        className = className.replace('/', '.');
-        try {
-            Class scriptClass = Class.forName(className);
-            script = (Script) scriptClass.newInstance();
-        } catch (Exception cnfe) {
-            throw runtime.newLoadError("no such file to load -- " + state.searchFile);
+    }
+
+    public class ExtensionSearcher implements LoadSearcher {
+        public boolean shouldTrySearch(SearchState state) {
+            return (state.library == null || state.library instanceof JarredScript) && !state.searchFile.equalsIgnoreCase("");
         }
-        state.library = new ScriptClassLibrary(script);
+        
+        public void trySearch(SearchState state) {
+            // This code exploits the fact that all .jar files will be found for the JarredScript feature.
+            // This is where the basic extension mechanism gets fixed
+            Library oldLibrary = state.library;
+
+            // Create package name, by splitting on / and joining all but the last elements with a ".", and downcasing them.
+            String[] all = state.searchFile.split("/");
+
+            StringBuilder finName = new StringBuilder();
+            for(int i=0, j=(all.length-1); i<j; i++) {
+                finName.append(all[i].toLowerCase()).append(".");
+
+            }
+
+            try {
+                // Make the class name look nice, by splitting on _ and capitalize each segment, then joining
+                // the, together without anything separating them, and last put on "Service" at the end.
+                String[] last = all[all.length-1].split("_");
+                for(int i=0, j=last.length; i<j; i++) {
+                    finName.append(Character.toUpperCase(last[i].charAt(0))).append(last[i].substring(1));
+                }
+                finName.append("Service");
+
+                // We don't want a package name beginning with dots, so we remove them
+                String className = finName.toString().replaceAll("^\\.*","");
+
+                // If there is a jar-file with the required name, we add this to the class path.
+                if(state.library instanceof JarredScript) {
+                    // It's _really_ expensive to check that the class actually exists in the Jar, so
+                    // we don't do that now.
+                    runtime.getJRubyClassLoader().addURL(((JarredScript)state.library).getResource().getURL());
+                }
+
+                // quietly try to load the class
+                Class theClass = runtime.getJavaSupport().loadJavaClassQuiet(className);
+                state.library = new ClassExtensionLibrary(theClass);
+            } catch (Exception ee) {
+                state.library = null;
+                runtime.getGlobalVariables().set("$!", runtime.getNil());
+            }
+
+            // If there was a good library before, we go back to that
+            if(state.library == null && oldLibrary != null) {
+                state.library = oldLibrary;
+            }
+        }
+    }
+
+    public class ScriptClassSearcher implements LoadSearcher {
+        public class ScriptClassLibrary implements Library {
+            private Script script;
+
+            public ScriptClassLibrary(Script script) {
+                this.script = script;
+            }
+
+            public void load(Ruby runtime, boolean wrap) {
+                runtime.loadScript(script);
+            }
+        }
+        
+        public boolean shouldTrySearch(SearchState state) {
+            return state.library == null;
+        }
+        
+        public void trySearch(SearchState state) throws RaiseException {
+            // no library or extension found, try to load directly as a class
+            Script script;
+            String className = buildClassName(state.searchFile);
+            int lastSlashIndex = className.lastIndexOf('/');
+            if (lastSlashIndex > -1 && lastSlashIndex < className.length() - 1 && !Character.isJavaIdentifierStart(className.charAt(lastSlashIndex + 1))) {
+                if (lastSlashIndex == -1) {
+                    className = "_" + className;
+                } else {
+                    className = className.substring(0, lastSlashIndex + 1) + "_" + className.substring(lastSlashIndex + 1);
+                }
+            }
+            className = className.replace('/', '.');
+            try {
+                Class scriptClass = Class.forName(className);
+                script = (Script) scriptClass.newInstance();
+            } catch (Exception cnfe) {
+                throw runtime.newLoadError("no such file to load -- " + state.searchFile);
+            }
+            state.library = new ScriptClassLibrary(script);
+        }
     }
     
     public class SearchState {
@@ -378,18 +456,23 @@ public class LoadService {
             throw re;
         }
     }
+    
+    private final List<LoadSearcher> searchers = new ArrayList<LoadSearcher>();
+    {
+        searchers.add(new NormalSearcher());
+        searchers.add(new ClassLoaderSearcher());
+        searchers.add(new ExtensionSearcher());
+        searchers.add(new ScriptClassSearcher());
+    }
 
     public boolean smartLoad(final String file) {
         checkEmptyLoad(file);
         
         SearchState state = new SearchState(file);
         
-        tryNormalSearch(state);
-        if (state.library == null) tryClassLoaderSearch(state);
-        // we always tryLoadExtension because it tries to do things with JarredScripts
-        // FIXME: fix that
-        tryLoadExtension(state);
-        if (state.library == null) tryScriptClassLoading(state);
+        for (LoadSearcher searcher : searchers) {
+            if (searcher.shouldTrySearch(state)) searcher.trySearch(state);
+        }
         
         // FIXME: Why do we not bail out *before* the expensive searching?
         RubyString loadNameRubyString = runtime.newString(state.loadName);
@@ -666,55 +749,6 @@ public class LoadService {
         URL loc = classLoader.getResource(name);
 
         return isRequireable(loc) ? new LoadServiceResource(loc, loc.getPath()) : null;
-    }
-
-    private void tryLoadExtension(SearchState state) {
-        // This code exploits the fact that all .jar files will be found for the JarredScript feature.
-        // This is where the basic extension mechanism gets fixed
-        Library oldLibrary = state.library;
-        
-        if ((state.library == null || state.library instanceof JarredScript) && !state.searchFile.equalsIgnoreCase("")) {
-            // Create package name, by splitting on / and joining all but the last elements with a ".", and downcasing them.
-            String[] all = state.searchFile.split("/");
-
-            StringBuilder finName = new StringBuilder();
-            for(int i=0, j=(all.length-1); i<j; i++) {
-                finName.append(all[i].toLowerCase()).append(".");
-                
-            }
-            
-            try {
-                // Make the class name look nice, by splitting on _ and capitalize each segment, then joining
-                // the, together without anything separating them, and last put on "Service" at the end.
-                String[] last = all[all.length-1].split("_");
-                for(int i=0, j=last.length; i<j; i++) {
-                    finName.append(Character.toUpperCase(last[i].charAt(0))).append(last[i].substring(1));
-                }
-                finName.append("Service");
-
-                // We don't want a package name beginning with dots, so we remove them
-                String className = finName.toString().replaceAll("^\\.*","");
-
-                // If there is a jar-file with the required name, we add this to the class path.
-                if(state.library instanceof JarredScript) {
-                    // It's _really_ expensive to check that the class actually exists in the Jar, so
-                    // we don't do that now.
-                    runtime.getJRubyClassLoader().addURL(((JarredScript)state.library).getResource().getURL());
-                }
-
-                // quietly try to load the class
-                Class theClass = runtime.getJavaSupport().loadJavaClassQuiet(className);
-                state.library = new ClassExtensionLibrary(theClass);
-            } catch (Exception ee) {
-                state.library = null;
-                runtime.getGlobalVariables().set("$!", runtime.getNil());
-            }
-        }
-        
-        // If there was a good library before, we go back to that
-        if(state.library == null && oldLibrary != null) {
-            state.library = oldLibrary;
-        }
     }
     
     /* Directories and unavailable resources are not able to open a stream. */
