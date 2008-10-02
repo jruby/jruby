@@ -1419,10 +1419,21 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "name")
     public IRubyObject name() {
+        Ruby runtime = getRuntime();
         if (getBaseName() == null) {
-            return getRuntime().getNil();
+            return RubyString.newEmptyString(runtime);
         } else {
-            return getRuntime().newString(getName());
+            return runtime.newString(getName());
+        }
+    }
+
+    @JRubyMethod(name = "name", compat = CompatVersion.RUBY1_9)
+    public IRubyObject name19() {
+        Ruby runtime = getRuntime();
+        if (getBaseName() == null) {
+            return runtime.getNil();
+        } else {
+            return runtime.newString(getName());
         }
     }
 
