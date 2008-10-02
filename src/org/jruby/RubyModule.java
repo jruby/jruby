@@ -1418,8 +1418,12 @@ public class RubyModule extends RubyObject {
     }
 
     @JRubyMethod(name = "name")
-    public RubyString name() {
-        return getRuntime().newString(getBaseName() == null ? "" : getName());
+    public IRubyObject name() {
+        if (getBaseName() == null) {
+            return getRuntime().getNil();
+        } else {
+            return getRuntime().newString(getName());
+        }
     }
 
     protected IRubyObject cloneMethods(RubyModule clone) {
