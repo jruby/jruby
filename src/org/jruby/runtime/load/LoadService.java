@@ -292,10 +292,10 @@ public class LoadService {
         }
     }
 
-    private void tryScriptClassLoading(SearchState state, String originalFileName) throws RaiseException {
+    private void tryScriptClassLoading(SearchState state) throws RaiseException {
         // no library or extension found, try to load directly as a class
         Script script;
-        String className = buildClassName(originalFileName);
+        String className = buildClassName(state.searchFile);
         int lastSlashIndex = className.lastIndexOf('/');
         if (lastSlashIndex > -1 && lastSlashIndex < className.length() - 1 && !Character.isJavaIdentifierStart(className.charAt(lastSlashIndex + 1))) {
             if (lastSlashIndex == -1) {
@@ -309,7 +309,7 @@ public class LoadService {
             Class scriptClass = Class.forName(className);
             script = (Script) scriptClass.newInstance();
         } catch (Exception cnfe) {
-            throw runtime.newLoadError("no such file to load -- " + originalFileName);
+            throw runtime.newLoadError("no such file to load -- " + state.searchFile);
         }
         state.library = new ScriptClassLibrary(script);
     }
@@ -321,6 +321,7 @@ public class LoadService {
         public String searchFile;
         
         public SearchState(String file) {
+            loadName = file;
             chooseSearchType(file);
         }
 
@@ -385,8 +386,10 @@ public class LoadService {
         
         tryNormalSearch(state);
         if (state.library == null) tryClassLoaderSearch(state);
-        if (state.library == null) tryLoadExtension(state);
-        if (state.library == null) tryScriptClassLoading(state, file);
+        // we always tryLoadExtension because it tries to do things with JarredScripts
+        // FIXME: fix that
+        tryLoadExtension(state);
+        if (state.library == null) tryScriptClassLoading(state);
         
         // FIXME: Why do we not bail out *before* the expensive searching?
         RubyString loadNameRubyString = runtime.newString(state.loadName);
@@ -670,7 +673,7 @@ public class LoadService {
         // This is where the basic extension mechanism gets fixed
         Library oldLibrary = state.library;
         
-        if (state.library instanceof JarredScript && !state.searchFile.equalsIgnoreCase("")) {
+        if ((state.library == null || state.library instanceof JarredScript) && !state.searchFile.equalsIgnoreCase("")) {
             // Create package name, by splitting on / and joining all but the last elements with a ".", and downcasing them.
             String[] all = state.searchFile.split("/");
 
