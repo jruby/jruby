@@ -110,13 +110,13 @@ class TestStruct < Test::Unit::TestCase
     t = Struct::StructForTesting.new('a','b')
     assert_equal(['a','b'], t.values)
   end
-  
+
   def test_anonymous_struct
     t = Struct.new(:foo)
     u = Struct.new(nil, :foo)
-    
-    assert_equal("", t.name)
-    assert_equal("", u.name)
+
+    assert_equal(nil, t.name)
+    assert_equal(nil, u.name)
     assert_equal('foo', t.new('foo')[:foo])
     assert_equal('foo', u.new('foo')[:foo])
     assert_equal('foo', t.new('foo').foo)
