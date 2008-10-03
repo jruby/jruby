@@ -354,8 +354,8 @@ module JRuby::FFI::Library
       begin
         find_type(e)
       rescue Exception
-        if @callbacks && @callbacks.has_key?(e)
-          @callbacks[e]
+        if defined?(@ffi_callbacks) && @ffi_callbacks.has_key?(e)
+          @ffi_callbacks[e]
         else
           e
         end
@@ -373,11 +373,16 @@ module JRuby::FFI::Library
   end
   def attach_function(mname, a3, a4, a5=nil)
     cname, args, ret = a5 ? [ a3, a4, a5 ] : [ mname.to_sym, a3, a4 ]
-    jffi_attach(ret, cname, args, { :as => mname, :from => @ffi_lib, :convention => @ffi_convention })
+    opts = { \
+      :as => mname,
+      :from => defined?(@ffi_lib) ? @ffi_lib : nil,
+      :convention => defined?(@ffi_convention) ? @ffi_convention : :default
+    }
+    jffi_attach(ret, cname, args, opts)
   end
   def callback(name, args, ret)
-    @callbacks = Hash.new unless @callbacks
-    @callbacks[name] = JRuby::FFI::CallbackFactory.createCallback(FFI.find_type(ret), args.map { |e| FFI.find_type(e) })
+    @ffi_callbacks = Hash.new unless defined?(@ffi_callbacks)
+    @ffi_callbacks[name] = JRuby::FFI::CallbackFactory.createCallback(FFI.find_type(ret), args.map { |e| FFI.find_type(e) })
   end
 end
 module FFI::Library
@@ -400,16 +405,16 @@ module FFI::Library
 
   def attach_function(mname, a3, a4, a5=nil)
     cname, arg_types, ret_type = a5 ? [ a3, a4, a5 ] : [ mname.to_s, a3, a4 ]
-    lib = @ffi_lib
-    convention = @ffi_convention ? @ffi_convention : :default
+    lib = defined?(@ffi_lib) ? @ffi_lib : nil
+    convention = defined?(@ffi_convention) ? @ffi_convention : :default
     
     # Convert :foo to the native type
     arg_types.map! { |e| 
       begin
         find_type(e)
       rescue Exception
-        if @callbacks && @callbacks.has_key?(e)
-          @callbacks[e]
+        if defined?(@ffi_callbacks) && @ffi_callbacks.has_key?(e)
+          @ffi_callbacks[e]
         else
           e
         end
@@ -426,8 +431,8 @@ module FFI::Library
   end
   
   def callback(name, args, ret)
-    @callbacks = Hash.new unless @callbacks
-    @callbacks[name] = JRuby::FFI::CallbackFactory.createCallback(FFI.find_type(ret), args.map { |e| FFI.find_type(e) })
+    @ffi_callbacks = Hash.new unless defined?(@ffi_callbacks)
+    @ffi_callbacks[name] = JRuby::FFI::CallbackFactory.createCallback(FFI.find_type(ret), args.map { |e| FFI.find_type(e) })
   end
 end
 
