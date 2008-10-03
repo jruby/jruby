@@ -163,9 +163,9 @@ public class JavaSupport {
         } catch (ExceptionInInitializerError eiie) {
             throw runtime.newNameError("cannot initialize Java class " + className, className, eiie);
         } catch (LinkageError le) {
-            throw runtime.newNameError("cannot link Java class " + className, className, le);
+            throw runtime.newNameError("cannot link Java class " + className + ", probable missing dependency: " + le.getLocalizedMessage(), className, le);
         } catch (SecurityException se) {
-            throw runtime.newNameError("security: cannot load Java class " + className, className, se);
+            throw runtime.newNameError("security exception loading Java class " + className, className, se);
         }
     }
     
