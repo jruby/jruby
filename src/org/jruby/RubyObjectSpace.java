@@ -133,8 +133,12 @@ public class RubyObjectSpace {
             Iterator iter = runtime.getObject().subclasses(true).iterator();
             
             while (iter.hasNext()) {
+                IRubyObject obj = (IRubyObject)iter.next();
+                if (obj instanceof RubyClass && ((RubyClass)obj).isIncluded()) {
+                    continue;
+                }
                 count++;
-                block.yield(context, (IRubyObject)iter.next());
+                block.yield(context, obj);
             }
         }
         return recv.getRuntime().newFixnum(count);
