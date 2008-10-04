@@ -1539,7 +1539,7 @@ public class Java implements Library {
             // normal new class implementing interfaces
             interfacesHashCode = 31 * interfacesHashCode + wrapper.getMetaClass().hashCode();
         }
-        String implClassName = "InterfaceImpl" + interfacesHashCode;
+        String implClassName = "InterfaceImpl" + Math.abs(interfacesHashCode);
         Class proxyImplClass;
         try {
             proxyImplClass = Class.forName(implClassName, true, runtime.getJRubyClassLoader());
