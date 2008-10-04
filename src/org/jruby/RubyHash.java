@@ -810,6 +810,61 @@ public class RubyHash extends RubyObject implements Map {
         return internalGet(key);
     }
 
+    /** hash_equal
+     * 
+     */
+    private IRubyObject equal(final ThreadContext context, IRubyObject other, final boolean eql) {
+        Ruby runtime = context.getRuntime();
+        if (this == other) return runtime.getTrue();
+
+        if (!(other instanceof RubyHash)) {
+            if (!other.respondsTo("to_hash")) return runtime.getFalse();
+            return (eql ?
+                    eqlInternal(context, other, this) :
+                    equalInternal(context, other, this)) ?
+                            runtime.getTrue() : runtime.getFalse();
+        }
+
+        final RubyHash otherHash = (RubyHash)other;
+
+        if (size != otherHash.size || runtime.isInspecting(this)) return runtime.getFalse();
+        if ((size | otherHash.size) == 0) runtime.getTrue();
+
+        try {
+            runtime.registerInspecting(this);
+            visitAll(new Visitor() {
+                public void visit(IRubyObject key, IRubyObject value) {
+                    IRubyObject value2 = otherHash.fastARef(key);
+                    if (value2 == null || 
+                       !(eql ? eqlInternal(context, value, value2) : equalInternal(context, value, value2))) {
+                        throw new Mismatch();
+                    }
+                }
+            });
+        } catch (Mismatch e) {
+            return runtime.getFalse();
+        } finally {
+            runtime.unregisterInspecting(this);
+        }
+        return runtime.getTrue();
+    }
+
+    /** rb_hash_equal
+     * 
+     */
+    @JRubyMethod(name = "==", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_equal19(final ThreadContext context, IRubyObject other) {
+        return equal(context, other, false);
+    }
+
+    /** rb_hash_eql
+     * 
+     */
+    @JRubyMethod(name = "eql?", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_eql19(final ThreadContext context, IRubyObject other) {
+        return equal(context, other, true);
+    }
+
     /** rb_hash_aref
      *
      */
@@ -817,6 +872,29 @@ public class RubyHash extends RubyObject implements Map {
     public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
         IRubyObject value;
         return ((value = internalGet(key)) == null) ? callMethod(context, MethodIndex.DEFAULT, "default", key) : value;
+    }
+
+    /** rb_hash_hash
+     * 
+     */
+    @JRubyMethod(name = "hash", compat = CompatVersion.RUBY1_9)
+    public IRubyObject hash19(final ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        if (size == 0 || runtime.isInspecting(this)) return RubyFixnum.zero(runtime);
+        final long hash[] = new long[]{size};
+        
+        try {
+            runtime.registerInspecting(this);
+            visitAll(new Visitor() {
+                public void visit(IRubyObject key, IRubyObject value) {
+                    hash[0] ^= key.callMethod(context, "hash").convertToInteger().getLongValue();
+                    hash[0] ^= value.callMethod(context, "hash").convertToInteger().getLongValue();
+                }
+            });
+        } finally {
+            runtime.unregisterInspecting(this);
+        }
+        return RubyFixnum.newFixnum(runtime, hash[0]);
     }
 
     /** rb_hash_fetch
