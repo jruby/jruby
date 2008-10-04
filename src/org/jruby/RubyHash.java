@@ -402,8 +402,8 @@ public class RubyHash extends RubyObject implements Map {
         }
     }
     // ------------------------------
-    private static boolean MRI_HASH = true;
-    private static boolean MRI_HASH_RESIZE = true;
+    private static final boolean MRI_HASH = true;
+    private static final boolean MRI_HASH_RESIZE = true;
 
     private static int hashValue(final int h) {
         return MRI_HASH ? MRIHashValue(h) : JavaSoftHashValue(h);
