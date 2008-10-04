@@ -603,11 +603,12 @@ public class LoadService {
         
         switch (suffixType) {
         case Both:
-            library = createLibrary(state, tryResourceFromJarURL(state, baseName, SuffixType.Source));
+            library = findBuiltinLibrary(state, baseName, SuffixType.Source);
+            if (library == null) library = createLibrary(state, tryResourceFromJarURL(state, baseName, SuffixType.Source));
             if (library == null) library = createLibrary(state, tryResourceFromLoadPathOrURL(state, baseName, SuffixType.Source));
             // If we fail to find as a normal Ruby script, we try to find as an extension,
             // checking for a builtin first.
-            if (library == null) library = findBuiltinLibrary(state, baseName, suffixType);
+            if (library == null) library = findBuiltinLibrary(state, baseName, SuffixType.Extension);
             if (library == null) library = createLibrary(state, tryResourceFromJarURL(state, baseName, SuffixType.Extension));
             if (library == null) library = createLibrary(state, tryResourceFromLoadPathOrURL(state, baseName, SuffixType.Extension));
             break;
