@@ -587,23 +587,28 @@ public class RubyArray extends RubyObject implements List {
      */
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        int h = realLength;
+        Ruby runtime = context.getRuntime();
+        if (runtime.isInspecting(this)) return  RubyFixnum.zero(runtime);
 
-        Ruby runtime = getRuntime();
-        int begin = this.begin;
-        for (int i = begin; i < begin + realLength; i++) {
-            h = (h << 1) | (h < 0 ? 1 : 0);
-            final IRubyObject value;
-            try {
-                value = values[i];
-            } catch (ArrayIndexOutOfBoundsException e) {
-                concurrentModification();
-                continue;
+        try {
+            runtime.registerInspecting(this);
+            int begin = this.begin;
+            int h = realLength;
+            for (int i = begin; i < begin + realLength; i++) {
+                h = (h << 1) | (h < 0 ? 1 : 0);
+                final IRubyObject value;
+                try {
+                    value = values[i];
+                } catch (ArrayIndexOutOfBoundsException e) {
+                    concurrentModification();
+                    continue;
+                }
+                h ^= RubyNumeric.num2long(value.callMethod(context, "hash"));
             }
-            h ^= RubyNumeric.num2long(value.callMethod(context, "hash"));
+            return runtime.newFixnum(h);
+        } finally {
+            runtime.unregisterInspecting(this);
         }
-
-        return runtime.newFixnum(h);
     }
 
     /** rb_ary_store
@@ -1647,23 +1652,28 @@ public class RubyArray extends RubyObject implements List {
     @JRubyMethod(name = "==", required = 1)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-        if (this == obj) return getRuntime().getTrue();
+        Ruby runtime = context.getRuntime();
+        if (this == obj) return runtime.getTrue();
 
         if (!(obj instanceof RubyArray)) {
             if (!obj.respondsTo("to_ary")) {
-                return getRuntime().getFalse();
+                return runtime.getFalse();
             } else {
-                if (equalInternal(context, obj.callMethod(context, "to_ary"), this)) return getRuntime().getTrue();
-                return getRuntime().getFalse();                
+                if (equalInternal(context, obj.callMethod(context, "to_ary"), this)) return runtime.getTrue();
+                return runtime.getFalse();                
             }
         }
 
         RubyArray ary = (RubyArray) obj;
-        if (realLength != ary.realLength) return getRuntime().getFalse();
+        if (realLength != ary.realLength || runtime.isInspecting(this)) return getRuntime().getFalse();
 
-        Ruby runtime = getRuntime();
-        for (long i = 0; i < realLength; i++) {
-            if (!equalInternal(context, elt(i), ary.elt(i))) return runtime.getFalse();            
+        try {
+            runtime.registerInspecting(this);
+            for (long i = 0; i < realLength; i++) {
+                if (!equalInternal(context, elt(i), ary.elt(i))) return runtime.getFalse();            
+            }
+        } finally {
+            runtime.unregisterInspecting(this);
         }
         return runtime.getTrue();
     }
@@ -1673,17 +1683,23 @@ public class RubyArray extends RubyObject implements List {
      */
     @JRubyMethod(name = "eql?", required = 1)
     public RubyBoolean eql_p(ThreadContext context, IRubyObject obj) {
-        if (this == obj) return getRuntime().getTrue();
-        if (!(obj instanceof RubyArray)) return getRuntime().getFalse();
+        Ruby runtime = context.getRuntime();
+        if (this == obj) return runtime.getTrue();
+        if (!(obj instanceof RubyArray)) return runtime.getFalse();
 
         RubyArray ary = (RubyArray) obj;
 
-        if (realLength != ary.realLength) return getRuntime().getFalse();
+        if (realLength != ary.realLength || runtime.isInspecting(this)) return runtime.getFalse();
 
-        Ruby runtime = getRuntime();
-        for (int i = 0; i < realLength; i++) {
-            if (!eqlInternal(context, elt(i), ary.elt(i))) return runtime.getFalse();
+        try {
+            runtime.registerInspecting(this);
+            for (int i = 0; i < realLength; i++) {
+                if (!eqlInternal(context, elt(i), ary.elt(i))) return runtime.getFalse();
+            }
+        } finally {
+            runtime.unregisterInspecting(this);
         }
+
         return runtime.getTrue();
     }
 
@@ -2243,18 +2259,26 @@ public class RubyArray extends RubyObject implements List {
      */
     @JRubyMethod(name = "<=>", required = 1)
     public IRubyObject op_cmp(ThreadContext context, IRubyObject obj) {
+        Ruby runtime = context.getRuntime(); 
         RubyArray ary2 = obj.convertToArray();
 
-        int len = realLength;
+        if (this == ary2 || runtime.isInspecting(this)) return RubyFixnum.zero(runtime);
 
-        if (len > ary2.realLength) len = ary2.realLength;
+        try {
+            runtime.registerInspecting(this);
 
-        Ruby runtime = getRuntime();
-        for (int i = 0; i < len; i++) {
-            IRubyObject v = elt(i).callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", ary2.elt(i));
-            if (!(v instanceof RubyFixnum) || ((RubyFixnum) v).getLongValue() != 0) return v;
+            int len = realLength;
+            if (len > ary2.realLength) len = ary2.realLength;
+
+            for (int i = 0; i < len; i++) {
+                IRubyObject v = elt(i).callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", ary2.elt(i));
+                if (!(v instanceof RubyFixnum) || ((RubyFixnum) v).getLongValue() != 0) return v;
+            }
+        } finally {
+            runtime.unregisterInspecting(this);
         }
-        len = realLength - ary2.realLength;
+
+        int len = realLength - ary2.realLength;
 
         if (len == 0) return RubyFixnum.zero(runtime);
         if (len > 0) return RubyFixnum.one(runtime);
