@@ -220,12 +220,12 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     # server VM when explicitly set --server
     result = jruby(%Q{--server -rjava \
       -e "print java.lang.management.ManagementFactory.getCompilationMXBean.name"})
-    assert_match /(tiered|server)/, result.downcase
+    assert_match /(tiered|server|j9jit24)/, result.downcase
 
     # server VM when explicitly set via -J-server
     result = jruby(%Q{-J-server -rjava \
       -e "print java.lang.management.ManagementFactory.getCompilationMXBean.name"})
-    assert_match /(tiered|server)/, result.downcase
+    assert_match /(tiered|server|j9jit24)/, result.downcase
   end
 
   # JRUBY-2648
@@ -239,17 +239,17 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     # client VM by default:
     result = jruby(%Q{-rjava \
       -e "print java.lang.management.ManagementFactory.getCompilationMXBean.name"})
-    assert_match /client/, result.downcase
+    assert_match /client|j9jit24/, result.downcase
 
     # client VM when explicitly set via --client
     result = jruby(%Q{--client -rjava \
       -e "print java.lang.management.ManagementFactory.getCompilationMXBean.name"})
-    assert_match /client/, result.downcase
+    assert_match /client|j9jit24/, result.downcase
 
     # client VM when explicitly set via -J-client
     result = jruby(%Q{-J-client -rjava \
       -e "print java.lang.management.ManagementFactory.getCompilationMXBean.name"})
-    assert_match /client/, result.downcase
+    assert_match /client|j9jit24/, result.downcase
   end
   
   # JRUBY-2821

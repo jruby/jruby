@@ -135,6 +135,9 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal("a", inner_instance_entry.getKey)
   end
 
+  # This test depends on specific impl details of Sun's JDK
+  # See JRUBY-3037
+=begin
   class FooArrayList < ArrayList
     $ensureCapacity = false
     def foo
@@ -153,6 +156,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal(1, l.foo)
     assert_equal(true, $ensureCapacity)
   end
+=end
 
   def test_extending_java_interfaces
     if java.lang.Comparable.instance_of?(Module)
@@ -527,7 +531,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
       list.get(5)
       assert(false)
     rescue java.lang.IndexOutOfBoundsException => e
-      assert_equal("java.lang.IndexOutOfBoundsException: Index: 5, Size: 0", e.message)
+      assert(/java\.lang\.IndexOutOfBoundsException/ === e.message)
     end
   end
 
