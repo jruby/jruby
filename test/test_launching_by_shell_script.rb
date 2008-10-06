@@ -38,20 +38,23 @@ class TestLaunchingByShellScript < Test::Unit::TestCase
       assert_equal("a b c", res)
     end
     
-    # JRUBY-2615
-    def test_interactive_child_process
-      lines = []
-      IO.popen(%q{sh -c 'echo enter something:; read value; echo got: $value; read value'}, 'r+') do |handle|
-        begin
-          while (line = handle.readline)
-            lines << line
-            handle.puts('foobar')
+    # JRUBY-2615, and see JRUBY-JRUBY-3040 on the IBM JVM disabling
+    require 'rbconfig'
+    unless Config::CONFIG['host_vendor'] == 'IBM Corporation'
+      def test_interactive_child_process
+        lines = []
+        IO.popen(%q{sh -c 'echo enter something:; read value; echo got: $value; read value'}, 'r+') do |handle|
+          begin
+            while (line = handle.readline)
+              lines << line
+              handle.puts('foobar')
+            end
+          rescue EOFError
+            lines << "STDIN closed"
           end
-        rescue EOFError
-          lines << "STDIN closed"
         end
+        assert_equal(["enter something:\n", "got: foobar\n", "STDIN closed"], lines)
       end
-      assert_equal(["enter something:\n", "got: foobar\n", "STDIN closed"], lines)
     end
   end
 
