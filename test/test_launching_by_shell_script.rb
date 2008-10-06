@@ -40,7 +40,7 @@ class TestLaunchingByShellScript < Test::Unit::TestCase
     
     # JRUBY-2615, and see JRUBY-JRUBY-3040 on the IBM JVM disabling
     require 'rbconfig'
-    unless Config::CONFIG['host_vendor'] == 'IBM Corporation'
+    unless IBM_JVM
       def test_interactive_child_process
         lines = []
         IO.popen(%q{sh -c 'echo enter something:; read value; echo got: $value; read value'}, 'r+') do |handle|

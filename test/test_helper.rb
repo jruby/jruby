@@ -8,6 +8,8 @@ module TestHelper
   
   arch = java.lang.System.getProperty('sun.arch.data.model')
   WINDOWS_JVM_64 = (WINDOWS && arch == '64')
+  
+  IBM_JVM = Config::CONFIG['host_vendor'] =~ /IBM Corporation/
 
   def jruby(*args)
     prev_in_process = JRuby.runtime.instance_config.run_ruby_in_process

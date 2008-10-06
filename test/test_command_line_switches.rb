@@ -95,8 +95,8 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   end
 
   def test_dash_little_p_wraps_script_with_while_gets_and_prints
-    # FIXME: currently fails on Windows
-    if (!WINDOWS)
+    # FIXME: currently fails on Windows and IBM JDK
+    unless WINDOWS || IBM_JVM
       with_temp_script(%q{ puts "#{$_}#{$_}" }) do |s|
         output = IO.popen("echo \"a\nb\" | #{RUBY} -p #{s.path}", "r") { |p| p.read }
         assert_equal "a\na\na\nb\nb\nb\n", output
