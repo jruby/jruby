@@ -17,11 +17,6 @@ class CacheEntry {
     }
 
     public boolean typeOk(RubyClass incomingType) {
-//        RubyClass cachedType = this.cachedType;
-        return generation == incomingType.getSerialNumber();// || typeGoodEnough(cachedType, incomingType);
-    }
-
-    private final boolean typeGoodEnough(RubyClass cachedType, RubyClass incomingType) {
-        return cachedType != null && cachedMethod.getImplementationClass() != cachedType && incomingType.getSuperClass() == cachedType.getSuperClass() && incomingType.retrieveMethod(methodName) == null;
+        return generation == incomingType.getSerialNumber();
     }
 }
