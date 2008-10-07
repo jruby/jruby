@@ -129,4 +129,8 @@ DEPS
 
     assert_equal File.expand_path(File.join('test', 'test_loading_behavior.rb')), res
   end
+  
+  def test_loading_so_fails
+    assert_raise(LoadError) { load("test/bogus.so") }
+  end
 end

@@ -645,7 +645,9 @@ public class LoadService {
             return null;
         }
         String file = state.loadName;
-        if (file.endsWith(".jar")) {
+        if (file.contains(".so")) {
+            throw runtime.newLoadError("JRuby does not support .so libraries from filesystem");
+        } else if (file.endsWith(".jar")) {
             return new JarredScript(resource);
         } else if (file.endsWith(".class")) {
             return new JavaCompiledScript(resource);
