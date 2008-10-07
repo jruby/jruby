@@ -132,6 +132,7 @@ import org.jruby.ast.XStrNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.IdUtil;
 
 /**
  *
@@ -1167,7 +1168,7 @@ public class ASTCompiler {
                         }
                     };
 
-            context.branchIfModule(receiverCallback, moduleCallback, notModuleCallback);
+            context.branchIfModule(receiverCallback, moduleCallback, notModuleCallback, IdUtil.isConstant(name));
         }
     }
 

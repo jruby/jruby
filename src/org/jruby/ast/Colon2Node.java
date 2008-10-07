@@ -119,9 +119,7 @@ public final class Colon2Node extends Colon3Node implements INameNode {
     }
     
     private IRubyObject getConstantFrom(Ruby runtime, IRubyObject result) {
-        if (result instanceof RubyModule) return ((RubyModule) result).fastGetConstantFrom(name);
-
-        throw runtime.newTypeError(result + " is not a class/module");
+        return RuntimeHelpers.checkIsModule(result).fastGetConstantFrom(name);
     }
     
     @Override

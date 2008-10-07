@@ -1246,8 +1246,9 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         });
     }
 
-    public void branchIfModule(CompilerCallback receiverCallback, BranchCallback moduleCallback, BranchCallback notModuleCallback) {
+    public void branchIfModule(CompilerCallback receiverCallback, BranchCallback moduleCallback, BranchCallback notModuleCallback, boolean mustBeModule) {
         receiverCallback.call(this);
+        invokeUtilityMethod("checkIsModule", sig(RubyModule.class, IRubyObject.class));
         isInstanceOf(RubyModule.class, moduleCallback, notModuleCallback);
     }
 

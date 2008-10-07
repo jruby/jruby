@@ -1217,4 +1217,10 @@ public class RuntimeHelpers {
             return RubyArray.newEmptyArray(runtime);
         }
     }
+    
+    public static RubyModule checkIsModule(IRubyObject maybeModule) {
+        if (maybeModule instanceof RubyModule) return (RubyModule)maybeModule;
+        
+        throw maybeModule.getRuntime().newTypeError(maybeModule + " is not a class/module");
+    }
 }
