@@ -317,29 +317,6 @@ public class RubyRange extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "to_a", frame = true)
-    public IRubyObject to_a(ThreadContext context, final Block block) {
-        final Ruby runtime = context.getRuntime();
-
-        if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
-            long lim = ((RubyFixnum) end).getLongValue();
-            if (!isExclusive) lim++;
-
-            long base = ((RubyFixnum) begin).getLongValue();
-            long size = lim - base;
-            if (size > Integer.MAX_VALUE) {
-                throw runtime.newRangeError("Range size too large for to_a");
-            }
-            IRubyObject[] array = new IRubyObject[(int)size];
-            for (int i = 0; i < size; i++) {
-                array[i] = RubyFixnum.newFixnum(runtime, base + i);
-            }
-            return RubyArray.newArray(runtime, array);
-        } else {
-            return RubyEnumerable.to_a(context, this);
-        }
-    }
-
     @JRubyMethod(name = "each", frame = true)
     public IRubyObject each(ThreadContext context, final Block block) {
         final Ruby runtime = context.getRuntime();
