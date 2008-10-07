@@ -197,6 +197,7 @@ public class RubyModule extends RubyObject {
 
     private final Map<String, DynamicMethod> methods = new ConcurrentHashMap<String, DynamicMethod>(12, 0.75f, 1);
     private final Map<String, CacheEntry> cachedMethods = new ConcurrentHashMap<String, CacheEntry>(12, 0.75f, 1);
+    
     protected static class Generation {
         public volatile int hash;
         public Generation() {
@@ -921,7 +922,6 @@ public class RubyModule extends RubyObject {
             
             runtime.getCacheMap().remove(method);
 
-//            System.out.println("REMOVEMETHOD: " + name + "@" + getName() + "[" + generation.get() + "]");
             invalidateCacheDescendants();
         }
         
@@ -932,10 +932,6 @@ public class RubyModule extends RubyObject {
             callMethod(context, "method_removed", runtime.newSymbol(name));
         }
     }
-    
-//    static int blown_count = 0;
-//    static int hit_count = 0;
-//    static int miss_count = 0;    
 
     /**
      * Search through this module and supermodules for method definitions. Cache superclass definitions in this class.
@@ -950,7 +946,7 @@ public class RubyModule extends RubyObject {
 
         method = searchMethodInner(name);
 
-        return method != null ? addToCache(name, method) : UndefinedMethod.getInstance();
+        return method != null ? addToCache(name, method) : addToCache(name, UndefinedMethod.getInstance());
     }
     
     public final int getSerialNumber() {
@@ -962,24 +958,14 @@ public class RubyModule extends RubyObject {
 
         if (cacheEntry != null) {
             if (cacheEntry.getGeneration() == getSerialNumber()) {
-//                if ((hit_count++ % 1000) == 0) System.err.println("HIT: " + hit_count);
-                
-//                System.out.println("HIT: " + name + "@" + getName() + "[" + generation.get() + "]");
                 return cacheEntry.getMethod();
-            } else {
-//                if ((blown_count++ % 1000) == 0) System.err.println("BLOWN: " + blown_count);
-//                System.out.println("BLOWN: " + name + "@" + getName() + "[" + generation.get() + "]");
             }
-        } else {
-//            if ((miss_count++ % 1000) == 0) System.err.println("MISS: " + miss_count);
-//            System.out.println("MISS: " + name + "@" + getName() + "[" + generation.get() + "]");
         }
         
         return null;
     }
     
     private DynamicMethod addToCache(String name, DynamicMethod method) {
-//        System.out.println("CACHED: " + name + "@" + getName() + "[" + generation.get() + "]");
         cachedMethods.put(name, new CacheEntry(getSerialNumber(), method));
 
         return method;
