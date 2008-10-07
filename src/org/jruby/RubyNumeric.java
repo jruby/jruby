@@ -106,6 +106,10 @@ public class RubyNumeric extends RubyObject {
         super(runtime, metaClass, useObjectSpace);
     }    
 
+    public RubyNumeric(Ruby runtime, RubyClass metaClass, boolean useObjectSpace, boolean canBeTainted) {
+        super(runtime, metaClass, useObjectSpace, canBeTainted);
+    }    
+    
     // The implementations of these are all bonus (see TODO above)  I was going
     // to throw an error from these, but it appears to be the wrong place to
     // do it.

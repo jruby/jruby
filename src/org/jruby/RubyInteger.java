@@ -85,6 +85,10 @@ public abstract class RubyInteger extends RubyNumeric {
         super(runtime, rubyClass, useObjectSpace);
     }     
 
+    public RubyInteger(Ruby runtime, RubyClass rubyClass, boolean useObjectSpace, boolean canBeTainted) {
+        super(runtime, rubyClass, useObjectSpace, canBeTainted);
+    }     
+
     public RubyInteger convertToInteger() {
     	return this;
     }

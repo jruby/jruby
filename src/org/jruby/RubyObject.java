@@ -293,6 +293,13 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * ObjectSpace even when it is on. (notably used by objects being
      * considered immediate, they'll always pass false here)
      */
+    protected RubyObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace, boolean canBeTainted) {
+        this.metaClass = metaClass;
+
+        if (useObjectSpace) addToObjectSpace(runtime);
+        if (canBeTainted && runtime.getSafeLevel() >= 3) taint(runtime);
+    }
+    
     protected RubyObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace) {
         this.metaClass = metaClass;
         

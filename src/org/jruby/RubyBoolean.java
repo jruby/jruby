@@ -49,7 +49,7 @@ public class RubyBoolean extends RubyObject {
     
     public RubyBoolean(Ruby runtime, boolean value) {
         super(runtime, (value ? runtime.getTrueClass() : runtime.getFalseClass()), // Don't initialize with class
-                false); // Don't put in object space
+                false, false); // Don't put in object space and don't taint
 
         if (!value) flags = FALSE_F;
     }

@@ -46,7 +46,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 @JRubyClass(name="NilClass")
 public class RubyNil extends RubyObject {
     public RubyNil(Ruby runtime) {
-        super(runtime, runtime.getNilClass(), false);
+        super(runtime, runtime.getNilClass(), false, false);
         flags |= NIL_F | FALSE_F;
     }
     

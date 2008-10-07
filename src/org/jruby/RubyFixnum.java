@@ -103,12 +103,12 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public RubyFixnum(Ruby runtime, long value) {
-        super(runtime, runtime.getFixnum(), false);
+        super(runtime, runtime.getFixnum(), false, false);
         this.value = value;
     }
     
     private RubyFixnum(Ruby runtime, RubyClass klazz, long value) {
-        super(runtime, klazz, false);
+        super(runtime, klazz, false, false);
         this.value = value;
     }
     
