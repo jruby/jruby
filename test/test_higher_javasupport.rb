@@ -784,4 +784,11 @@ CLASSDEF
     cls = Class.new(Java::DefaultPackageClass);
     assert_nothing_raised { cls.new }
   end
+  
+  # JRUBY-3046
+  def test_java_methods_have_arity
+    assert_nothing_raised do
+      assert_equal(-1, java.lang.String.instance_method(:toString).arity)
+    end
+  end
 end

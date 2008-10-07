@@ -4,6 +4,7 @@ import org.jruby.javasupport.*;
 import java.util.Arrays;
 import java.util.Map;
 import org.jruby.RubyModule;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -16,6 +17,8 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
     
     RubyToJavaInvoker(RubyModule host) {
         super(host, Visibility.PUBLIC);
+        // we set all Java methods to optional, since many/most have overloads
+        setArity(Arity.OPTIONAL);
     }
 
     void raiseNoMatchingCallableError(String name, IRubyObject proxy, Object... args) {
