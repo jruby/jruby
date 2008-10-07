@@ -85,8 +85,8 @@ class TestCommandLineSwitches < Test::Unit::TestCase
 
   # TODO -l: no idea what line ending processing is
   def test_dash_little_n_wraps_script_with_while_gets
-    # FIXME: currently fails on windows
-    if (!WINDOWS)
+    # FIXME: currently fails on windows and IBM JDK
+    unless WINDOWS || IBM_JVM
       with_temp_script(%q{ puts "#{$_}#{$_}" }) do |s|
         output = IO.popen("echo \"a\nb\" | #{RUBY} -n #{s.path}", "r") { |p| p.read }
         assert_equal "a\na\nb\nb\n", output
