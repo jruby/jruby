@@ -181,7 +181,23 @@ public class RubyMatchData extends RubyObject {
 
     @JRubyMethod(name = "select", frame = true)
     public IRubyObject select(ThreadContext context, Block block) {
-        return block.yield(context, to_a());
+        Ruby runtime = context.getRuntime();
+        final RubyArray result;
+        if (regs == null) {
+            if (begin < 0) return runtime.newEmptyArray();
+            IRubyObject s = str.substr(runtime, begin, end - begin);
+            s.setTaint(isTaint());
+            result = block.yield(context, s).isTrue() ? runtime.newArray(s) : runtime.newEmptyArray();
+        } else {
+            result = runtime.newArray();
+            boolean taint = isTaint();
+            for (int i = 0; i < regs.numRegs; i++) {
+                IRubyObject s = str.substr(runtime, regs.beg[i], regs.end[i] - regs.beg[i]);
+                if (taint) s.setTaint(true);
+                if (block.yield(context, s).isTrue()) result.append(s);
+            }
+        }
+        return result;
     }
 
     /** match_captures
