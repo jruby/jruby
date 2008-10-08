@@ -507,3 +507,11 @@ otherkey: othervalue
 YAMLSTR
 
 test_equal FooXSmith, obj.class
+
+# JRUBY-2976
+class PersonTestOne
+  yaml_as 'tag:data.allman.ms,2008:Person'
+end
+
+test_equal "--- !data.allman.ms,2008/Person {}\n\n", PersonTestOne.new.to_yaml
+test_equal PersonTestOne, YAML.load(PersonTestOne.new.to_yaml).class
