@@ -477,6 +477,13 @@ class TestIO < Test::Unit::TestCase
                    "RDONLY", "RDWR", "SEEK_CUR", "SEEK_END", "SEEK_SET", "SYNC", "TRUNC",
                    "WRONLY"], IO.constants.sort
   end
+  
+  #JRUBY-3012
+  def test_io_reopen
+    quiet_script = File.dirname(__FILE__) + '/quiet.rb'
+    result = `jruby #{quiet_script}`.chomp
+    assert_equal("foo", result)
+  end
 
   private
   def ensure_files(*files)
