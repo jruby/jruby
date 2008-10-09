@@ -244,10 +244,32 @@ public class RubyMatchData extends RubyObject {
     }
 
     /** match_aref
+    *
+    */
+    @JRubyMethod(name = "[]")
+    public IRubyObject op_aref(IRubyObject idx) {
+        if (!(idx instanceof RubyFixnum) || ((RubyFixnum)idx).getLongValue() < 0) {
+            return ((RubyArray)to_a()).aref(idx);
+        }
+        return RubyRegexp.nth_match(RubyNumeric.fix2int(idx), this);
+    }
+
+    /** match_aref
      *
      */
     @JRubyMethod(name = "[]")
-    public IRubyObject op_aref(IRubyObject idx) {
+    public IRubyObject op_aref(IRubyObject idx, IRubyObject rest) {
+        if (!rest.isNil() || !(idx instanceof RubyFixnum) || ((RubyFixnum)idx).getLongValue() < 0) {
+            return ((RubyArray)to_a()).aref(idx, rest);
+        }
+        return RubyRegexp.nth_match(RubyNumeric.fix2int(idx), this);
+    }
+
+    /** match_aref
+     *
+     */
+    @JRubyMethod(name = "[]", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_aref19(IRubyObject idx) {
         IRubyObject result = op_arefCommon(idx);
         return result == null ? ((RubyArray)to_a()).aref(idx) : result;
     }
@@ -255,8 +277,8 @@ public class RubyMatchData extends RubyObject {
     /** match_aref
     *
     */
-    @JRubyMethod(name = "[]")
-    public IRubyObject op_aref(IRubyObject idx, IRubyObject rest) {
+    @JRubyMethod(name = "[]", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_aref19(IRubyObject idx, IRubyObject rest) {
         IRubyObject result;
         return !rest.isNil() || (result = op_arefCommon(idx)) == null ? ((RubyArray)to_a()).aref(idx, rest) : result;
     }
