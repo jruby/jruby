@@ -1264,12 +1264,13 @@ public final class Ruby {
         for (String library : builtins) {
             addBuiltinIfAllowed(library + ".rb", new BuiltinScript(library));
         }
-
-        getLoadService().require("builtin/core_ext/symbol");
         
         RubyKernel.autoload(topSelf, newSymbol("Java"), newString("java"));
 
-        getLoadService().require("enumerator");
+        if (config.getCompatVersion() == CompatVersion.RUBY1_9) {
+            getLoadService().require("builtin/core_ext/symbol");
+            getLoadService().require("enumerator");
+        }
     }
 
     private void addLazyBuiltin(String name, String shortName, String className) {

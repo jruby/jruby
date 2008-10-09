@@ -1294,7 +1294,7 @@ public class RubyKernel {
         }
     }
 
-    @JRubyMethod(frame = true, module = true)
+    @JRubyMethod(frame = true, module = true, compat = CompatVersion.RUBY1_9)
     public static IRubyObject tap(ThreadContext context, IRubyObject recv, Block block) {
         block.yield(context, recv);
         return recv;

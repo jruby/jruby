@@ -78,11 +78,3 @@ class Foo
 end
 
 test_exception(TypeError){Integer(Foo.new)}
-
-test_ok 1000000000000000000000000000000.even?
-test_ok 1000000000000000000000000000001.odd?
-
-test_equal 10000000000000000000000000000000, 10000000000000000000000000000001.pred
-test_equal 1, 2.pred
-test_equal 0, 1.pred
-test_equal -1, 0.pred

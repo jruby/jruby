@@ -1,4 +1,5 @@
 require 'test/minirunit'
+require 'enumerator'
 
 test_ok defined?(Enumerable::Enumerator)
 

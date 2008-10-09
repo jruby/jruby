@@ -267,7 +267,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
     
 
-    @JRubyMethod(name = "odd?")
+    @JRubyMethod(name = "odd?", compat = CompatVersion.RUBY1_9)
     public static RubyBoolean odd_p(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
         if (recv.callMethod(context, "%", RubyFixnum.two(runtime)) != RubyFixnum.zero(runtime)) {
@@ -276,7 +276,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return runtime.getFalse();
     }
 
-    @JRubyMethod(name = "even?")
+    @JRubyMethod(name = "even?", compat = CompatVersion.RUBY1_9)
     public static RubyBoolean even_p(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
         if (recv.callMethod(context, "%", RubyFixnum.two(runtime)) == RubyFixnum.zero(runtime)) {
@@ -285,7 +285,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return runtime.getFalse();
     }
 
-    @JRubyMethod(name = "pred")
+    @JRubyMethod(name = "pred", compat = CompatVersion.RUBY1_9)
     public static IRubyObject pred(ThreadContext context, IRubyObject recv) {
         return recv.callMethod(context, "-", RubyFixnum.one(context.getRuntime()));
     }

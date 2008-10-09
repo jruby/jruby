@@ -166,27 +166,6 @@ test_ok c1.instance_variable_defined?(:@two)
 test_ok c1.private_methods.include?("initialize")
 test_ok c1.private_methods.include?("initialize_copy")
 
-# Test tap
-value = nil
-1.tap { |v| value = v }
-test_equal 1, value
-
-[].tap { |v| value = v }
-test_equal [], value
-
-test_equal 1, 1.tap { }
-
-obj = Object.new
-
-test_equal obj, obj.tap { }
-
-test_equal "str", "str".tap { value = "foo" }
-test_equal "foo", value
-
-test_exception(LocalJumpError) do 
-  "str".tap
-end
-
 # JRUBY-2247
 test_equal ['now'], Time.methods.grep('now')
 test_equal ["_load", "at", "gm", "local", "mktime", "now", "utc"], Time.methods(false).sort

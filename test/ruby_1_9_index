@@ -2,4 +2,8 @@
 # compat mode is working.
 test_loading_builtin_libraries_1_9
 test_kernel_1_9_features
+test_fixnum_1_9
+test_integer_1_9
+test_object_1_9
+test_symbol_1_9
 externals/mri/ruby/test_fiber

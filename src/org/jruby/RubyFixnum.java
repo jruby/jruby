@@ -418,7 +418,7 @@ public class RubyFixnum extends RubyInteger {
         return idiv(context, other, "/");
     }
 
-    @JRubyMethod(name = {"odd?"})
+    @JRubyMethod(name = {"odd?"}, compat = CompatVersion.RUBY1_9)
     public RubyBoolean odd_p() {
         if(value%2 != 0) {
             return getRuntime().getTrue();
@@ -426,7 +426,7 @@ public class RubyFixnum extends RubyInteger {
         return getRuntime().getFalse();
     }
 
-    @JRubyMethod(name = {"even?"})
+    @JRubyMethod(name = {"even?"}, compat = CompatVersion.RUBY1_9)
     public RubyBoolean even_p() {
         if(value%2 == 0) {
             return getRuntime().getTrue();
@@ -434,7 +434,7 @@ public class RubyFixnum extends RubyInteger {
         return getRuntime().getFalse();
     }
 
-    @JRubyMethod
+    @JRubyMethod(compat = CompatVersion.RUBY1_9)
     public IRubyObject pred() {
         return getRuntime().newFixnum(value-1);
     }
