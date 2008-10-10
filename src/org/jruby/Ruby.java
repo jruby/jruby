@@ -40,14 +40,12 @@
 package org.jruby;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -100,6 +98,7 @@ import org.jruby.management.ParserStats;
 import org.jruby.parser.EvalStaticScope;
 import org.jruby.parser.Parser;
 import org.jruby.parser.ParserConfiguration;
+import org.jruby.platform.Errno;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CacheMap;
@@ -1187,15 +1186,8 @@ public final class Ruby {
     private void initErrno() {
         if (profile.allowModule("Errno")) {
             errnoModule = defineModule("Errno");
-
-            Field[] fields = IErrno.class.getFields();
-
-            for (int i = 0; i < fields.length; i++) {
-                try {
-                    createSysErr(fields[i].getInt(IErrno.class), fields[i].getName());
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException("Someone defined a non-public constant in IErrno.java", e);
-                }
+            for (Map.Entry<String, Integer> entry : Errno.entries().entrySet()) {
+                createSysErr(entry.getValue(), entry.getKey());
             }
         }
     }
