@@ -1,5 +1,5 @@
 
-def gen_errno_java(f)
+def gen_errno_java
   FFI::ConstGenerator.new 'rbx.platform.errno' do |cg|
     cg.include "errno.h"
     consts = %w[
@@ -88,7 +88,6 @@ def gen_errno_java(f)
       ENOSTR
       EPROTO
       ETIME
-      EOPNOTSUPP_DARWIN
     ]
     consts.each { |c| cg.const c }
   end
