@@ -120,7 +120,7 @@ public class RubyFileTest {
     @JRubyMethod(name = "file?", required = 1, module = true)
     public static RubyBoolean file_p(IRubyObject recv, IRubyObject filename) {
         JRubyFile file = file(filename);
-        
+
         return filename.getRuntime().newBoolean(file.exists() && file.isFile());
     }
 
@@ -263,7 +263,9 @@ public class RubyFileTest {
     }
 
     private static JRubyFile file(IRubyObject path) {
-        String filename = path.convertToString().toString();
+        //String filename = path.convertToString().toString();
+        String filename = path.convertToString().getUnicodeValue();
+        
         
         return JRubyFile.create(path.getRuntime().getCurrentDirectory(), filename);
     }

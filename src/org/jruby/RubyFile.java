@@ -439,6 +439,7 @@ public class RubyFile extends RubyIO {
                         modeString = args[1].convertToString().toString();
                     }
                 }
+                
                 openInternal(path, modeString);
             }
         } catch (InvalidValueException ex) {
@@ -801,6 +802,7 @@ public class RubyFile extends RubyIO {
                 throw runtime.newErrnoENOENTError("No such file or directory - " + filename);
             }
             
+            // UNICODE?
             boolean result = 0 == runtime.getPosix().chown(filename.toString(), owner, group);
             if (result) {
                 count++;
@@ -813,7 +815,10 @@ public class RubyFile extends RubyIO {
     @JRubyMethod(required = 1, meta = true)
     public static IRubyObject dirname(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         RubyString filename = RubyString.stringValue(arg);
+        
+        // UNICODE?
         String jfilename = filename.toString();
+        
         String name = jfilename.replace('\\', '/');
         int minPathLength = 1;
         boolean trimmedSlashes = false;
@@ -887,6 +892,8 @@ public class RubyFile extends RubyIO {
     @JRubyMethod(required = 1, meta = true)
     public static IRubyObject extname(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         IRubyObject baseFilename = basename(context, recv, new IRubyObject[]{arg});
+        
+        // UNICODE?
         String filename = RubyString.stringValue(baseFilename).toString();
         String result = "";
 
@@ -1163,6 +1170,7 @@ public class RubyFile extends RubyIO {
     
     @JRubyMethod(name = "ftype", required = 1, meta = true)
     public static IRubyObject ftype(ThreadContext context, IRubyObject recv, IRubyObject filename) {
+        // UNICODE?
         return context.getRuntime().newFileStat(filename.convertToString().toString(), true).ftype();
     }
 
@@ -1235,6 +1243,7 @@ public class RubyFile extends RubyIO {
     
     @JRubyMethod(name = "lstat", required = 1, meta = true)
     public static IRubyObject lstat(ThreadContext context, IRubyObject recv, IRubyObject filename) {
+        // UNICODE?
         String f = filename.convertToString().toString();
         if(f.startsWith("file:") && f.indexOf('!') != -1) {
             f = f.substring(5, f.indexOf("!"));
@@ -1244,6 +1253,7 @@ public class RubyFile extends RubyIO {
 
     @JRubyMethod(name = "stat", required = 1, meta = true)
     public static IRubyObject stat(ThreadContext context, IRubyObject recv, IRubyObject filename) {
+        // UNICODE?
         String f = filename.convertToString().toString();
         if(f.startsWith("file:") && f.indexOf('!') != -1) {
             f = f.substring(5, f.indexOf("!"));
@@ -1253,6 +1263,7 @@ public class RubyFile extends RubyIO {
 
     @JRubyMethod(name = "atime", required = 1, meta = true)
     public static IRubyObject atime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
+        // UNICODE?
         String f = filename.convertToString().toString();
         if(f.startsWith("file:") && f.indexOf('!') != -1) {
             f = f.substring(5, f.indexOf("!"));
@@ -1262,6 +1273,7 @@ public class RubyFile extends RubyIO {
 
     @JRubyMethod(name = "ctime", required = 1, meta = true)
     public static IRubyObject ctime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
+        // UNICODE?
         String f = filename.convertToString().toString();
         if(f.startsWith("file:") && f.indexOf('!') != -1) {
             f = f.substring(5, f.indexOf("!"));
@@ -1319,6 +1331,7 @@ public class RubyFile extends RubyIO {
         Ruby runtime = context.getRuntime();
         RubyString fromStr = RubyString.stringValue(from);
         RubyString toStr = RubyString.stringValue(to);
+        // UNICODE?
         try {
             if (runtime.getPosix().link(
                     fromStr.toString(),toStr.toString()) == -1) {
@@ -1335,6 +1348,7 @@ public class RubyFile extends RubyIO {
 
     @JRubyMethod(name = "mtime", required = 1, meta = true)
     public static IRubyObject mtime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
+        // UNICODE?
         return getLastModified(context.getRuntime(), filename.convertToString().toString());
     }
     
@@ -1345,6 +1359,8 @@ public class RubyFile extends RubyIO {
         RubyString newNameString = RubyString.stringValue(newName);
         runtime.checkSafeString(oldNameString);
         runtime.checkSafeString(newNameString);
+
+        // UNICODE?
         JRubyFile oldFile = JRubyFile.create(runtime.getCurrentDirectory(), oldNameString.toString());
         JRubyFile newFile = JRubyFile.create(runtime.getCurrentDirectory(), newNameString.toString());
         
@@ -1388,6 +1404,7 @@ public class RubyFile extends RubyIO {
         RubyString fromStr = RubyString.stringValue(from);
         RubyString toStr = RubyString.stringValue(to);
         try {
+            // UNICODE?
             if (runtime.getPosix().symlink(
                     fromStr.toString(), toStr.toString()) == -1) {
                 // FIXME: When we get JNA3 we need to properly write this to errno.
@@ -1406,6 +1423,7 @@ public class RubyFile extends RubyIO {
         Ruby runtime = context.getRuntime();
         
         try {
+            // UNICODE?
             String realPath = runtime.getPosix().readlink(path.toString());
         
             if (!RubyFileTest.exist_p(recv, path).isTrue()) {
@@ -1434,6 +1452,7 @@ public class RubyFile extends RubyIO {
         RubyInteger newLength = arg2.convertToInteger(); 
 
         File testFile ;
+        // UNICODE?
         File childFile = new File(filename.getByteList().toString() );
 
         if ( childFile.isAbsolute() ) {
@@ -1499,6 +1518,8 @@ public class RubyFile extends RubyIO {
         for (int i = 2, j = args.length; i < j; i++) {
             RubyString filename = RubyString.stringValue(args[i]);
             runtime.checkSafeString(filename);
+            
+            // UNICODE?
             JRubyFile fileToTouch = JRubyFile.create(runtime.getCurrentDirectory(),filename.toString());
             
             if (!fileToTouch.exists()) {
@@ -1514,11 +1535,11 @@ public class RubyFile extends RubyIO {
     @JRubyMethod(name = {"unlink", "delete"}, rest = true, meta = true)
     public static IRubyObject unlink(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
-        
+         
         for (int i = 0; i < args.length; i++) {
             RubyString filename = RubyString.stringValue(args[i]);
             runtime.checkSafeString(filename);
-            JRubyFile lToDelete = JRubyFile.create(runtime.getCurrentDirectory(),filename.toString());
+            JRubyFile lToDelete = JRubyFile.create(runtime.getCurrentDirectory(), filename.getUnicodeValue());
             
             boolean isSymlink = RubyFileTest.symlink_p(recv, filename).isTrue();
             // Broken symlinks considered by exists() as non-existing,

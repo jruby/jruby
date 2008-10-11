@@ -664,6 +664,24 @@ class TestFile < Test::Unit::TestCase
     File.delete(filename)
   end
 
+  def test_file_utf8
+    # name contains a German "umlaut", maybe this should be encoded as Unicode integer (\u00FC) somehow
+    filename = 'jrüby'  
+    f = File.new(filename, File::CREAT)
+    begin
+      assert_equal(nil, f.read(1))
+      
+      assert File.file?(filename)
+      assert File.exist?(filename)
+    ensure
+      f.close
+      File.delete(filename)
+      
+      assert !File.file?(filename)
+      assert !File.exist?(filename)
+    end
+  end
+  
   def test_file_create
     filename = '2nnever'
     f = File.new(filename, File::CREAT)
