@@ -507,7 +507,15 @@ public class MiniJava implements Library {
         
         // create the class
         byte[] bytes = cw.toByteArray();
-        Class newClass = ruby.getJRubyClassLoader().defineClass(name, cw.toByteArray());
+        Class newClass;
+        synchronized (ruby.getJRubyClassLoader()) {
+            // try to load the specified name; only if that fails, try to define the class
+            try {
+                newClass = ruby.getJRubyClassLoader().loadClass(name);
+            } catch (ClassNotFoundException cnfe) {
+                newClass = ruby.getJRubyClassLoader().defineClass(name, cw.toByteArray());
+            }
+        }
         
         if (DEBUG) {
             FileOutputStream fos = null;
