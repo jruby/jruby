@@ -28,7 +28,7 @@ end
 
 describe "A Ruby subclass of a Java class" do
   it "can invoke protected methods of the superclass" do
-    pending "Invoking protected methods from subclasses does not work yet" do
+#    pending "Invoking protected methods from subclasses does not work yet" do
       subtype = Class.new(ProtectedInstanceMethod) do
         def go; theProtectedMethod; end
       end
@@ -38,6 +38,6 @@ describe "A Ruby subclass of a Java class" do
         def go; ProtectedStaticMethod.theProtectedMethod; end
       end
       subtype.new.go.should == "42"
-    end
+#    end
   end
 end

@@ -50,6 +50,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -142,6 +143,7 @@ public class JavaClass extends JavaObject {
     private static final Map<String, AssignedName> STATIC_RESERVED_NAMES = new HashMap<String, AssignedName>(RESERVED_NAMES);
     static {
         STATIC_RESERVED_NAMES.put("new", new AssignedName("new", Priority.RESERVED));
+        STATIC_RESERVED_NAMES.put("inspect", new AssignedName("inspect", Priority.RESERVED));
     }
     private static final Map<String, AssignedName> INSTANCE_RESERVED_NAMES = new HashMap<String, AssignedName>(RESERVED_NAMES);
 
@@ -1685,13 +1687,17 @@ public class JavaClass extends JavaObject {
     }
     
     private static Method[] getMethods(Class<?> javaClass) {
+        ArrayList<Method> list = new ArrayList<Method>();
+        
         for (Class c = javaClass; c != null; c = c.getSuperclass()) {
             try {
-                return javaClass.getMethods();
+                for (Method m : c.getDeclaredMethods()) {
+                    list.add(m);
+                }
             } catch (SecurityException e) {
             }
         }
 
-        return new Method[] {};
+        return list.toArray(new Method[list.size()]);
     }
 }
