@@ -35,6 +35,7 @@ test_frame_self
 test_hash
 test_higher_javasupport
 test_iconv
+test_included_in_object_space
 test_io
 test_load
 test_math
