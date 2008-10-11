@@ -31,8 +31,10 @@ package org.jruby.platform;
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import org.jruby.IErrno;
 
 /**
@@ -47,7 +49,12 @@ public final class Errno {
     static {
         Map<String, Integer> n2e;
         try {
-            n2e = getConstantsMap(Class.forName(Platform.getPlatform().getPackageName() + ".Errno"));
+            Class errnoClass = Class.forName(Platform.getPlatform().getPackageName() + ".Errno");
+            if (Enum.class.isAssignableFrom(errnoClass)) {
+                n2e = getConstantsFromEnum(errnoClass);
+            } else {
+                n2e = getConstantsMap(errnoClass);
+            }
         } catch (ClassNotFoundException ex) {
             n2e = getConstantsFromFields(IErrno.class);
         }
@@ -93,9 +100,24 @@ public final class Errno {
     public static Map<String, Integer> entries() {
         return nameToErrno;
     }
+    /**
+     * Loads the errno values from a java enum.
+     *
+     * @param errnoClass The class to load errno constants from.
+     * @return A map of errno name to errno value.
+     */
+    private static Map<String, Integer> getConstantsFromEnum(Class errnoClass) {
+        Set<Enum> enumValues = EnumSet.allOf(errnoClass);
+        Map<String, Integer> n2e = new HashMap<String, Integer>(enumValues.size());
+        for (Enum e : enumValues) {
+            n2e.put(e.name(), ((IntConstant) e).value());
+        }
+        return n2e;
+    }
 
     /**
      * Loads the errno values from a static field called 'CONSTANTS' in the class.
+     *
      * @param errnoClass The class to load errno constants from.
      * @return A map of errno name to errno value.
      */
