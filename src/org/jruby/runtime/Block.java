@@ -32,6 +32,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -64,27 +65,27 @@ public class Block {
         @Override
         public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
                 RubyModule klass, boolean aValue) {
-            throw context.getRuntime().newLocalJumpError("noreason", (IRubyObject)value, "yield called out of block");
+            throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, (IRubyObject)value, "yield called out of block");
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject[] args) {
-            throw context.getRuntime().newLocalJumpError("noreason", context.getRuntime().newArrayNoCopy(args), "yield called out of block");
+            throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(args), "yield called out of block");
         }
 
         @Override
         public IRubyObject yield(ThreadContext context, boolean aValue) {
-            throw context.getRuntime().newLocalJumpError("noreason", (IRubyObject)null, "yield called out of block");
+            throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, (IRubyObject)null, "yield called out of block");
         }
 
         @Override
         public IRubyObject yield(ThreadContext context, IRubyObject value, boolean aValue) {
-            throw context.getRuntime().newLocalJumpError("noreason", (IRubyObject)value, "yield called out of block");
+            throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, (IRubyObject)value, "yield called out of block");
         }
 
         @Override
         public IRubyObject yield(ThreadContext context, IRubyObject value) {
-            throw context.getRuntime().newLocalJumpError("noreason", (IRubyObject)value, "yield called out of block");
+            throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, (IRubyObject)value, "yield called out of block");
         }
         
         @Override

@@ -6,6 +6,7 @@ import java.dyn.MethodHandle;
 import java.dyn.MethodHandles;
 import java.dyn.MethodType;
 import org.jruby.RubyClass;
+import org.jruby.RubyLocalJumpError;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
@@ -307,6 +308,6 @@ public class InvokeDynamicSupport {
     }
 
     private static RaiseException retryJumpError(ThreadContext context) {
-        return context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not supported");
+        return context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.RETRY, context.getRuntime().getNil(), "retry outside of rescue not supported");
     }
 }

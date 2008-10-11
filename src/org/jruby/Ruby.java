@@ -238,11 +238,11 @@ public final class Ruby {
             context.preEvalScriptlet(newScope);
             return node.interpret(this, context, context.getFrameSelf(), Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
-            throw newLocalJumpError("return", (IRubyObject)rj.getValue(), "unexpected return");
+            throw newLocalJumpError(RubyLocalJumpError.Reason.RETURN, (IRubyObject)rj.getValue(), "unexpected return");
         } catch (JumpException.BreakJump bj) {
-            throw newLocalJumpError("break", (IRubyObject)bj.getValue(), "unexpected break");
+            throw newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "unexpected break");
         } catch (JumpException.RedoJump rj) {
-            throw newLocalJumpError("redo", (IRubyObject)rj.getValue(), "unexpected redo");
+            throw newLocalJumpError(RubyLocalJumpError.Reason.REDO, (IRubyObject)rj.getValue(), "unexpected redo");
         } finally {
             context.postEvalScriptlet();
         }
@@ -2672,12 +2672,12 @@ public final class Ruby {
                 this, getNameError(), message, name), true);
     }
 
-    public RaiseException newLocalJumpError(String reason, IRubyObject exitValue, String message) {
+    public RaiseException newLocalJumpError(RubyLocalJumpError.Reason reason, IRubyObject exitValue, String message) {
         return new RaiseException(new RubyLocalJumpError(this, getLocalJumpError(), message, reason, exitValue), true);
     }
 
     public RaiseException newRedoLocalJumpError() {
-        return new RaiseException(new RubyLocalJumpError(this, getLocalJumpError(), "unexpected redo", "redo", getNil()), true);
+        return new RaiseException(new RubyLocalJumpError(this, getLocalJumpError(), "unexpected redo", RubyLocalJumpError.Reason.REDO, getNil()), true);
     }
 
     public RaiseException newLoadError(String message) {

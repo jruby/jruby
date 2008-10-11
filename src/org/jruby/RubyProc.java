@@ -203,11 +203,11 @@ public class RubyProc extends RubyObject implements JumpTarget {
             case LAMBDA: if (bj.getTarget() == jumpTarget) {
                 return (IRubyObject) bj.getValue();
             } else {
-                throw runtime.newLocalJumpError("break", (IRubyObject)bj.getValue(), "unexpected break");
+                throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "unexpected break");
             }
             case PROC:
                 if (newBlock.isEscaped()) {
-                    throw runtime.newLocalJumpError("break", (IRubyObject)bj.getValue(), "break from proc-closure");
+                    throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "break from proc-closure");
                 } else {
                     throw bj;
                 }
@@ -223,7 +223,7 @@ public class RubyProc extends RubyObject implements JumpTarget {
             }
             throw rj;
         } catch (JumpException.RetryJump rj) {
-            throw runtime.newLocalJumpError("retry", (IRubyObject)rj.getValue(), "retry not supported outside rescue");
+            throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.RETRY, (IRubyObject)rj.getValue(), "retry not supported outside rescue");
         }
     }
 

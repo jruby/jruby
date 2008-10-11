@@ -34,6 +34,7 @@ package org.jruby.evaluator;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBinding;
+import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
@@ -122,9 +123,9 @@ public class ASTInterpreter {
 
             return node.interpret(runtime, context, newSelf, binding.getFrame().getBlock());
         } catch (JumpException.BreakJump bj) {
-            throw runtime.newLocalJumpError("break", (IRubyObject)bj.getValue(), "unexpected break");
+            throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "unexpected break");
         } catch (JumpException.RedoJump rj) {
-            throw runtime.newLocalJumpError("redo", (IRubyObject)rj.getValue(), "unexpected redo");
+            throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.REDO, (IRubyObject)rj.getValue(), "unexpected redo");
         } catch (StackOverflowError sfe) {
             throw runtime.newSystemStackError("stack level too deep");            
         } finally {
@@ -177,7 +178,7 @@ public class ASTInterpreter {
             
             return node.interpret(runtime, context, self, Block.NULL_BLOCK);
         } catch (JumpException.BreakJump bj) {
-            throw runtime.newLocalJumpError("break", (IRubyObject)bj.getValue(), "unexpected break");
+            throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "unexpected break");
         } catch (StackOverflowError sfe) {
             throw runtime.newSystemStackError("stack level too deep");
         } finally {

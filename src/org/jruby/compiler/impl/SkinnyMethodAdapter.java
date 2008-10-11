@@ -400,6 +400,24 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         getMethodVisitor().visitTryCatchBlock(arg0, arg1, arg2, arg3);
     }
     
+    public void trycatch(String type, Runnable body, Runnable catchBody) {
+        Label before = new Label();
+        Label after = new Label();
+        Label catchStart = new Label();
+        Label done = new Label();
+
+        trycatch(before, after, catchStart, type);
+        label(before);
+        body.run();
+        label(after);
+        go_to(done);
+        if (catchBody != null) {
+            label(catchStart);
+            catchBody.run();
+        }
+        label(done);
+    }
+    
     public void go_to(Label arg0) {
         getMethodVisitor().visitJumpInsn(GOTO, arg0);
     }

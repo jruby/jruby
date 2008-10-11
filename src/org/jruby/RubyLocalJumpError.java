@@ -35,6 +35,15 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name="LocalJumpError",parent="StandardError")
 public class RubyLocalJumpError extends RubyException {
+    public enum Reason {
+        REDO, BREAK, NEXT, RETURN, RETRY, NOREASON;
+        
+        @Override
+        public String toString() {
+            return super.toString().toLowerCase();
+        }
+    }
+    
     private static ObjectAllocator LOCALJUMPERROR_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyLocalJumpError(runtime, klass);
@@ -49,19 +58,26 @@ public class RubyLocalJumpError extends RubyException {
         return nameErrorClass;
     }
     
+    private Reason reason;
+    
     private RubyLocalJumpError(Ruby runtime, RubyClass exceptionClass) {
         super(runtime, exceptionClass);
     }
 
-    public RubyLocalJumpError(Ruby runtime, RubyClass exceptionClass, String message, String reason, IRubyObject exitValue) {
+    public RubyLocalJumpError(Ruby runtime, RubyClass exceptionClass, String message, Reason reason, IRubyObject exitValue) {
         super(runtime, exceptionClass, message);
-        fastSetInternalVariable("reason", runtime.newSymbol(reason));
+        this.reason = reason;
+        fastSetInternalVariable("reason", runtime.newSymbol(reason.toString()));
         fastSetInternalVariable("exit_value", exitValue);
     }
 
     @JRubyMethod(name = "reason")
     public IRubyObject reason() {
         return fastGetInternalVariable("reason");
+    }
+    
+    public Reason getReason() {
+        return reason;
     }
     
     @JRubyMethod(name = "exit_value")

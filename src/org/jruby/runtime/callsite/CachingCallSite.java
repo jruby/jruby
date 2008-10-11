@@ -1,6 +1,7 @@
 package org.jruby.runtime.callsite;
 
 import org.jruby.RubyClass;
+import org.jruby.RubyLocalJumpError;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.JumpException.BreakJump;
 import org.jruby.exceptions.RaiseException;
@@ -391,6 +392,6 @@ public abstract class CachingCallSite extends CallSite implements CacheMap.Cache
     }
 
     private RaiseException retryJumpError(ThreadContext context) {
-        return context.getRuntime().newLocalJumpError("retry", context.getRuntime().getNil(), "retry outside of rescue not supported");
+        return context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.RETRY, context.getRuntime().getNil(), "retry outside of rescue not supported");
     }
 }

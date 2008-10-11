@@ -550,6 +550,28 @@ public class RuntimeHelpers {
         }
     }
     
+    /**
+     * If it's Redo, Next, or Break, rethrow it as a normal exception for while to handle
+     * @param re
+     * @param runtime
+     */
+    public static Throwable unwrapRedoNextBreakOrJustLocalJump(RaiseException re, ThreadContext context) {
+        RubyException exception = re.getException();
+        if (context.getRuntime().getLocalJumpError().isInstance(exception)) {
+            RubyLocalJumpError jumpError = (RubyLocalJumpError)re.getException();
+
+            switch (jumpError.getReason()) {
+            case REDO:
+                return JumpException.REDO_JUMP;
+            case NEXT:
+                return new JumpException.NextJump(jumpError.exit_value());
+            case BREAK:
+                return new JumpException.BreakJump(context.getFrameJumpTarget(), jumpError.exit_value());
+            }
+        }
+        return re;
+    }
+    
     public static String getLocalJumpTypeOrRethrow(RaiseException re) {
         RubyException exception = re.getException();
         Ruby runtime = exception.getRuntime();
@@ -693,7 +715,7 @@ public class RuntimeHelpers {
     }
     
     public static IRubyObject breakLocalJumpError(Ruby runtime, IRubyObject value) {
-        throw runtime.newLocalJumpError("break", value, "unexpected break");
+        throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, value, "unexpected break");
     }
     
     public static IRubyObject[] concatObjectArrays(IRubyObject[] array, IRubyObject[] add) {
@@ -795,7 +817,7 @@ public class RuntimeHelpers {
     }
     
     public static IRubyObject redoLocalJumpError(Ruby runtime) {
-        throw runtime.newLocalJumpError("redo", runtime.getNil(), "unexpected redo");
+        throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.REDO, runtime.getNil(), "unexpected redo");
     }
     
     public static IRubyObject nextJump(IRubyObject value) {
@@ -803,7 +825,7 @@ public class RuntimeHelpers {
     }
     
     public static IRubyObject nextLocalJumpError(Ruby runtime, IRubyObject value) {
-        throw runtime.newLocalJumpError("next", value, "unexpected next");
+        throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.NEXT, value, "unexpected next");
     }
     
     public static final int MAX_SPECIFIC_ARITY_OBJECT_ARRAY = 5;

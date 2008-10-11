@@ -661,26 +661,19 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.invokevirtual(script.getClassname(), mname, signature);
     }
 
-    public void performBooleanLoop(BranchCallback condition, BranchCallback body, boolean checkFirst) {
+    public void performBooleanLoop(BranchCallback condition, final BranchCallback body, boolean checkFirst) {
         // FIXME: handle next/continue, break, etc
         Label tryBegin = new Label();
         Label tryEnd = new Label();
-        Label catchRedo = new Label();
         Label catchNext = new Label();
         Label catchBreak = new Label();
-        Label catchRaised = new Label();
         Label endOfBody = new Label();
         Label conditionCheck = new Label();
-        Label topOfBody = new Label();
+        final Label topOfBody = new Label();
         Label done = new Label();
         Label normalLoopEnd = new Label();
-        method.trycatch(tryBegin, tryEnd, catchRedo, p(JumpException.RedoJump.class));
         method.trycatch(tryBegin, tryEnd, catchNext, p(JumpException.NextJump.class));
         method.trycatch(tryBegin, tryEnd, catchBreak, p(JumpException.BreakJump.class));
-        if (checkFirst) {
-            // only while loops seem to have this RaiseException magic
-            method.trycatch(tryBegin, tryEnd, catchRaised, p(RaiseException.class));
-        }
 
         method.label(tryBegin);
         {
@@ -697,7 +690,22 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
             method.label(topOfBody);
 
-            body.branch(this);
+            Runnable redoBody = new Runnable() { public void run() {
+                Runnable raiseBody = new Runnable() { public void run() {
+                    body.branch(BaseBodyCompiler.this);
+                }};
+                Runnable raiseCatch = new Runnable() { public void run() {
+                    loadThreadContext();
+                    invokeUtilityMethod("unwrapRedoNextBreakOrJustLocalJump", sig(Throwable.class, RaiseException.class, ThreadContext.class));
+                    method.athrow();
+                }};
+                method.trycatch(p(RaiseException.class), raiseBody, raiseCatch);
+            }};
+            Runnable redoCatch = new Runnable() { public void run() {
+                method.pop();
+                method.go_to(topOfBody);
+            }};
+            method.trycatch(p(JumpException.RedoJump.class), redoBody, redoCatch);
 
             method.label(endOfBody);
 
@@ -718,15 +726,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         // skip catch block
         method.go_to(normalLoopEnd);
 
-        // catch logic for flow-control exceptions
+        // catch logic for flow-control: next, break
         {
-            // redo jump
-            {
-                method.label(catchRedo);
-                method.pop();
-                method.go_to(topOfBody);
-            }
-
             // next jump
             {
                 method.label(catchNext);
@@ -742,54 +743,6 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                 loadThreadContext();
                 invokeUtilityMethod("breakJumpInWhile", sig(IRubyObject.class, JumpException.BreakJump.class, Block.class, ThreadContext.class));
                 method.go_to(done);
-            }
-
-            // FIXME: This generates a crapload of extra code that is frequently *never* needed
-            // raised exception
-            if (checkFirst) {
-                // only while loops seem to have this RaiseException magic
-                method.label(catchRaised);
-                Label raiseNext = new Label();
-                Label raiseRedo = new Label();
-                Label raiseRethrow = new Label();
-                method.dup();
-                invokeUtilityMethod("getLocalJumpTypeOrRethrow", sig(String.class, params(RaiseException.class)));
-                // if we get here we have a RaiseException we know is a local jump error and an error type
-
-                // is it break?
-                method.dup(); // dup string
-                method.ldc("break");
-                method.invokevirtual(p(String.class), "equals", sig(boolean.class, params(Object.class)));
-                method.ifeq(raiseNext);
-                // pop the extra string, get the break value, and end the loop
-                method.pop();
-                invokeUtilityMethod("unwrapLocalJumpErrorValue", sig(IRubyObject.class, params(RaiseException.class)));
-                method.go_to(done);
-
-                // is it next?
-                method.label(raiseNext);
-                method.dup();
-                method.ldc("next");
-                method.invokevirtual(p(String.class), "equals", sig(boolean.class, params(Object.class)));
-                method.ifeq(raiseRedo);
-                // pop the extra string and the exception, jump to the condition
-                method.pop2();
-                method.go_to(conditionCheck);
-
-                // is it redo?
-                method.label(raiseRedo);
-                method.dup();
-                method.ldc("redo");
-                method.invokevirtual(p(String.class), "equals", sig(boolean.class, params(Object.class)));
-                method.ifeq(raiseRethrow);
-                // pop the extra string and the exception, jump to the condition
-                method.pop2();
-                method.go_to(topOfBody);
-
-                // just rethrow it
-                method.label(raiseRethrow);
-                method.pop(); // pop extra string
-                method.athrow();
             }
         }
 
