@@ -3,6 +3,10 @@ require File.dirname(__FILE__) + "/../spec_helper"
 import "java.util.ArrayList"
 import "java_integration.fixtures.ProtectedInstanceMethod"
 import "java_integration.fixtures.ProtectedStaticMethod"
+import "java_integration.fixtures.PackageInstanceMethod"
+import "java_integration.fixtures.PackageStaticMethod"
+import "java_integration.fixtures.PrivateInstanceMethod"
+import "java_integration.fixtures.PrivateStaticMethod"
 
 describe "A Ruby subclass of a Java concrete class" do
   it "should allow access to the proxy object for the class" do
@@ -28,16 +32,48 @@ end
 
 describe "A Ruby subclass of a Java class" do
   it "can invoke protected methods of the superclass" do
-#    pending "Invoking protected methods from subclasses does not work yet" do
-      subtype = Class.new(ProtectedInstanceMethod) do
-        def go; theProtectedMethod; end
-      end
-      subtype.new.go.should == "42"
-      
-      subtype = Class.new(ProtectedInstanceMethod) do
-        def go; ProtectedStaticMethod.theProtectedMethod; end
-      end
-      subtype.new.go.should == "42"
-#    end
+    subtype = Class.new(ProtectedInstanceMethod) do
+      def go; theProtectedMethod; end
+    end
+    subtype.new.go.should == "42"
+
+    subtype = Class.new(ProtectedInstanceMethod) do
+      def go; ProtectedStaticMethod.theProtectedMethod; end
+    end
+    subtype.new.go.should == "42"
+  end
+  it "can not invoke package-visible methods of the superclass" do
+    subtype = Class.new(PackageInstanceMethod) do
+      def go; thePackageMethod; end
+    end
+    pending "Why doesn't this raise NoMethodError?" do
+      lambda {subtype.new.go}.should raise_error(NoMethodError)
+    end
+    lambda {subtype.new.go}.should raise_error
+
+    subtype = Class.new(PackageInstanceMethod) do
+      def go; PackageStaticMethod.thePackageMethod; end
+    end
+    pending "Why doesn't this raise NoMethodError?" do
+      lambda {subtype.new.go}.should raise_error(NoMethodError)
+    end
+    lambda {subtype.new.go}.should raise_error
+  end
+  it "can not invoke private methods of the superclass" do
+    subtype = Class.new(PrivateInstanceMethod) do
+      def go; thePrivateMethod; end
+    end
+    pending "Why doesn't this raise NoMethodError?" do
+      lambda {subtype.new.go}.should raise_error(NoMethodError)
+    end
+    lambda {subtype.new.go}.should raise_error
+
+    subtype = Class.new(PrivateInstanceMethod) do
+      def go; PrivateStaticMethod.thePrivateMethod; end
+    end
+    pending "Why doesn't this raise NoMethodError?" do
+      lambda {subtype.new.go}.should raise_error(NoMethodError)
+    end
+    lambda {subtype.new.go}.should raise_error
   end
 end

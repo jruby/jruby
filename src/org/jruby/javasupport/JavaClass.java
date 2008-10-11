@@ -1692,7 +1692,10 @@ public class JavaClass extends JavaObject {
         for (Class c = javaClass; c != null; c = c.getSuperclass()) {
             try {
                 for (Method m : c.getDeclaredMethods()) {
-                    list.add(m);
+                    int modifiers = m.getModifiers();
+                    if (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) {
+                        list.add(m);
+                    }
                 }
             } catch (SecurityException e) {
             }
