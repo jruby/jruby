@@ -46,6 +46,9 @@ public class Platform {
     public String getPackageName() {
         return String.format("%s.%s.%s", Platform.class.getPackage().getName(), OS, ARCH);
     }
+    public String getOSPackageName() {
+        return String.format("%s.%s", Platform.class.getPackage().getName(), OS);
+    }
     
     private static final String DARWIN = "darwin";
     private static final String WINDOWS = "windows";

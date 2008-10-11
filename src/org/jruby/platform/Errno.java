@@ -47,15 +47,23 @@ public final class Errno {
     private static final Map<String, Integer> nameToErrno;
     
     static {
-        Map<String, Integer> n2e;
-        try {
-            Class errnoClass = Class.forName(Platform.getPlatform().getPackageName() + ".Errno");
-            if (Enum.class.isAssignableFrom(errnoClass)) {
-                n2e = getConstantsFromEnum(errnoClass);
-            } else {
-                n2e = getConstantsMap(errnoClass);
-            }
-        } catch (ClassNotFoundException ex) {
+        Map<String, Integer> n2e = null;
+        String[] prefixes = {
+            Platform.getPlatform().getPackageName(),
+            Platform.getPlatform().getOSPackageName(),
+        };
+        
+        for (String prefix : prefixes) {
+            try {
+                Class errnoClass = Class.forName(prefix + ".Errno");
+                if (Enum.class.isAssignableFrom(errnoClass)) {
+                    n2e = getConstantsFromEnum(errnoClass);
+                } else {
+                    n2e = getConstantsMap(errnoClass);
+                }
+            } catch (ClassNotFoundException ex) {}
+        }
+        if (n2e == null) {
             n2e = getConstantsFromFields(IErrno.class);
         }
         Map<Integer, String> e2n = new HashMap<Integer, String>(n2e.size());

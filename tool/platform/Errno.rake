@@ -1,6 +1,6 @@
 
-def gen_errno_java
-  FFI::ConstGenerator.new 'rbx.platform.errno' do |cg|
+def gen_errno_java(options)
+  FFI::ConstGenerator.new 'rbx.platform.errno', options do |cg|
     cg.include "errno.h"
     consts = %w[
       EPERM
