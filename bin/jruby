@@ -18,6 +18,20 @@ case "`uname`" in
 CYGWIN*) cygwin=true
 esac
 
+#
+# Figure out the OS and cpu the same as JNA would, so the library path can be set
+#
+case "`uname -m`" in
+  i[34567]86) JNA_CPU="i386";;
+  i86pc) JNA_CPU="x86";;
+  amd64|x86_64) JNA_CPU=amd64;;
+esac
+JNA_OS="`uname -s | tr '[A-Z]' '[a-z]'`"
+case "$JNA_OS" in
+  darwin) JNA_PATH="darwin";;
+  *) JNA_PATH="${OS}-${JNA_CPU}";;
+esac
+
 # ----- Verify and Set Required Environment Variables -------------------------
 
 ## resolve links - $0 may be a link to  home
@@ -194,6 +208,10 @@ ruby_args=("${ruby_args[@]}" "$@")
 set -- "${ruby_args[@]}"
 
 JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_STACK"
+case "$JNA_OS" in
+  darwin) JAVA_LDPATH="DYLD_LIBRARY_PATH=$JRUBY_HOME/lib/native/$JNA_PATH";;
+  *) JAVA_LDPATH="LD_LIBRARY_PATH=$JRUBY_HOME/lib/native/$JNA_PATH";;
+esac
 
 if $cygwin; then
   JRUBY_HOME=`cygpath --mixed "$JRUBY_HOME"`
@@ -212,7 +230,7 @@ if [ "$VERIFY_JRUBY" != "" ]; then
       echo "Running with instrumented profiler"
   fi
 
-  $JAVA_CMD $PROFILE_ARGS $JAVA_OPTS "${java_args[@]}" -classpath "$JRUBY_CP$CP_DELIMETER$CP$CP_DELIMETER$CLASSPATH" \
+  env $JAVA_LDPATH $JAVA_CMD $PROFILE_ARGS $JAVA_OPTS "${java_args[@]}" -classpath "$JRUBY_CP$CP_DELIMETER$CP$CP_DELIMETER$CLASSPATH" \
     "-Djruby.home=$JRUBY_HOME" \
     "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
     "-Djruby.shell=$JRUBY_SHELL" \
@@ -228,7 +246,7 @@ if [ "$VERIFY_JRUBY" != "" ]; then
 
   exit $JRUBY_STATUS
 else
-  exec "$JAVA_CMD" $JAVA_OPTS "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMETER$CLASSPATH" \
+  exec env $JAVA_LDPATH "$JAVA_CMD" $JAVA_OPTS "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMETER$CLASSPATH" \
     "-Djruby.home=$JRUBY_HOME" \
     "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
     "-Djruby.shell=$JRUBY_SHELL" \

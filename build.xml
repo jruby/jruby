@@ -1015,7 +1015,6 @@
     <include name="jruby.bnd.template"/>
     <exclude name="lib/jruby.jar"/>
   </patternset>
-
   <target name="dist-bin" depends="jar-dist">
     <mkdir dir="dist"/>
     <copy todir="dist">
@@ -1024,6 +1023,17 @@
         <patternset refid="dist.lib.files"/>
       </fileset>
     </copy>
+    <mkdir dir="dist/lib/native"/>
+    <unzip src="build_lib/jna.jar" dest="dist/lib/native">
+        <patternset>
+            <include name="**/libjnidispatch.*"/>
+        </patternset>
+        <mapper>
+            <filtermapper>
+                <replacestring from="com/sun/jna" to="."/>
+            </filtermapper>
+        </mapper>
+    </unzip>
     <fixEOLs/>
     <antcall target="install-gems">
       <param name="jruby.home" value="dist"/>
