@@ -310,7 +310,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void retrieveConstant(String name) {
         loadThreadContext();
         method.ldc(name);
-        invokeThreadContext("getConstant", sig(IRubyObject.class, params(String.class)));
+        invokeUtilityMethod("getConstant", sig(IRubyObject.class, params(ThreadContext.class, String.class)));
     }
 
     public void retrieveConstantFromModule(String name) {

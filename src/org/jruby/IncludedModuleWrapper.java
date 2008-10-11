@@ -32,6 +32,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -270,43 +271,15 @@ public final class IncludedModuleWrapper extends RubyClass {
         // this _is_ legal (when removing an undef)
         return delegate.constantTableRemove(name);
     }
-
+    
     @Override
-    protected ConstantTableEntry[] constantTableGetTable() {
-        return delegate.constantTableGetTable();
+    @Deprecated
+    public List<String> getStoredConstantNameList() {
+        return delegate.getStoredConstantNameList();
     }
-
+    
     @Override
-    protected int constantTableGetSize() {
-        return delegate.constantTableGetSize();
+    public Collection<String> getConstantNames() {
+        return delegate.getConstantNames();
     }
-
-    @Override
-    protected void constantTableSync(List<Variable<IRubyObject>> vars) {
-        // FIXME: legal here? may want UnsupportedOperationException
-        delegate.constantTableSync(vars);
-    }
-
-    /**
-     * Method to help ease transition to new variables implementation.
-     * Will likely be deprecated in the near future.
-     */
-    @SuppressWarnings("unchecked")
-    @Override
-    @Deprecated // born deprecated
-    protected Map constantTableGetMap() {
-        return delegate.constantTableGetMap();
-    }
-
-    /**
-     * Method to help ease transition to new variables implementation.
-     * Will likely be deprecated in the near future.
-     */
-    @SuppressWarnings("unchecked")
-    @Override
-    @Deprecated // born deprecated
-    protected Map constantTableGetMap(Map map) {
-        return delegate.constantTableGetMap(map);
-    }
-
 }

@@ -631,9 +631,8 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
 
        clone.setSuperClass(klass.getSuperClass());
 
-       if (klass.hasVariables()) {
-           clone.syncVariables(klass.getVariableList());
-       }
+       if (klass.hasVariables()) clone.syncVariables(klass.getVariableList());
+       clone.syncConstants(klass);
 
        klass.cloneMethods(clone);
 
@@ -654,9 +653,8 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
 
         original.copySpecialInstanceVariables(clone);
 
-        if (original.hasVariables()) {
-            clone.syncVariables(original.getVariableList());
-        }
+        if (original.hasVariables()) clone.syncVariables(original.getVariableList());
+        if (original instanceof RubyModule) ((RubyModule) clone).syncConstants((RubyModule) original);
 
         /* FIXME: finalizer should be dupped here */
         clone.callMethod(clone.getRuntime().getCurrentContext(), "initialize_copy", original);
@@ -1528,16 +1526,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect() {
         Ruby runtime = getRuntime();
-        if ((!isImmediate()) &&
-                // TYPE(obj) == T_OBJECT
-                !(this instanceof RubyClass) &&
-                this != runtime.getObject() &&
-                this != runtime.getModule() &&
-                !(this instanceof RubyModule) &&
-                // TODO: should have #hasInstanceVariables method, though
-                // this will work here:
-                hasVariables()) {
-
+        if ((!isImmediate()) && !(this instanceof RubyModule) && hasVariables()) {
             StringBuilder part = new StringBuilder();
             String cname = getMetaClass().getRealClass().getName();
             part.append("#<").append(cname).append(":0x");
@@ -2716,7 +2705,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * @return the object or null if not found
      */
     protected IRubyObject variableTableFastFetch(String internedName) {
-        assert internedName == internedName.intern() : internedName + " not interned";
         VariableTableEntry[] table;
         IRubyObject readValue;
         if ((table = variableTable) != null) {
@@ -2771,6 +2759,8 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * needs to be an interned Java String.
      */
     protected IRubyObject variableTableFastStore(String internedName, IRubyObject value) {
+        if (IdUtil.isConstant(internedName)) new Exception().printStackTrace();
+
         assert internedName == internedName.intern() : internedName + " not interned";
         int hash = internedName.hashCode();
         synchronized(this) {

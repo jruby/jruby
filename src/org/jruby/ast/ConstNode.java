@@ -41,12 +41,16 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.ConstantSite;
 
 /**
  * The access to a Constant.
  */
-public class ConstNode extends Node implements INameNode {
+public class ConstNode extends Node implements INameNode, ConstantSite {
+    public static volatile int failedCallSites;
+
     private String name;
+    private transient IRubyObject cachedValue = null;
     
     public ConstNode(ISourcePosition position, String name) {
         super(position, NodeType.CONSTNODE);
@@ -84,11 +88,36 @@ public class ConstNode extends Node implements INameNode {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return context.getConstant(name);
+        IRubyObject value = getValue(context);
+
+        // We can callsite cache const_missing if we want
+        return value != null ? value :
+            context.getRubyClass().callMethod(context, "const_missing", runtime.fastNewSymbol(name));
     }
 
     @Override
     public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         return context.getConstantDefined(name) ? "constant" : null;
+    }
+    
+    public IRubyObject getValue(ThreadContext context) {
+        IRubyObject value = cachedValue; // Store to temp so it does null out on us mid-stream
+
+         return value == null ? reCache(context, name) : value;
+    }
+    
+    public IRubyObject reCache(ThreadContext context, String name) {
+        IRubyObject value = context.getConstant(name);
+            
+        cachedValue = value;
+            
+        if (value != null) context.getRuntime().getConstantCacheMap().add(name, this);
+        
+        return value;
+    }
+    
+    public void invalidate() {
+        cachedValue = null;
+        failedCallSites++;
     }
 }

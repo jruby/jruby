@@ -37,4 +37,9 @@ public class VariableEntry<BaseObjectType> implements Variable<BaseObjectType> {
         char c;
         return name.length() > 0 && ((c = name.charAt(0)) == '@' || (c <= 'Z' && c >= 'A'));
     }
+
+    @Override
+    public String toString() {
+        return "Name: " + getName();
+    }
 }

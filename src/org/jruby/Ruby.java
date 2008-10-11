@@ -104,6 +104,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ConstantCacheMap;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.EventHook;
 import org.jruby.runtime.GlobalVariable;
@@ -182,6 +183,7 @@ public final class Ruby {
         config.setError(err);
         return newInstance(config);
     }
+    private ConstantCacheMap constantCacheMap;
     
     /**
      * Create and initialize a new JRuby runtime. The properties of the
@@ -214,6 +216,7 @@ public final class Ruby {
         this.beanManager.register(new ClassCache(this));
         
         this.cacheMap = new CacheMap(this);
+        this.constantCacheMap = new ConstantCacheMap(this);
     }
     
     /**
@@ -1300,6 +1303,10 @@ public final class Ruby {
      */
     public CacheMap getCacheMap() {
         return cacheMap;
+    }
+
+    public ConstantCacheMap getConstantCacheMap() {
+        return constantCacheMap;
     }
 
     /** Getter for property rubyTopSelf.

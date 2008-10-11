@@ -119,12 +119,20 @@ public abstract class StaticScope implements Serializable {
         System.arraycopy(names, 0, variableNames, 0, names.length);
         variableCaptured = new boolean[variableNames.length];
     }
+
+    /* Note: Only used by compiler until it can use getConstant again or use some other refactoring */
+    public IRubyObject getConstantWithConstMissing(Ruby runtime, String internedName, RubyModule object) {
+        IRubyObject result = getConstantInner(runtime, internedName, object);
+
+        // If we could not find the constant from cref..then try getting from inheritence hierarchy
+        return result == null ? cref.fastGetConstant(internedName) : result;        
+    }
     
     public IRubyObject getConstant(Ruby runtime, String internedName, RubyModule object) {
         IRubyObject result = getConstantInner(runtime, internedName, object);
 
         // If we could not find the constant from cref..then try getting from inheritence hierarchy
-        return result == null ? cref.fastGetConstant(internedName) : result;
+        return result == null ? cref.getConstantNoConstMissing(internedName) : result;
     }
     
     private IRubyObject getConstantInner(Ruby runtime, String internedName, RubyModule object) {
@@ -142,9 +150,7 @@ public abstract class StaticScope implements Serializable {
 
     /* Try and unload the autoload specified from internedName */
     private IRubyObject getUndefConstant(Ruby runtime, String internedName, RubyModule object) {
-        cref.deleteConstant(internedName);
-
-        if (runtime.getLoadService().autoload(cref.getName() + "::" + internedName) == null) return null;
+        if (cref.resolveUndefConstant(runtime, internedName) == null) return null;
 
         return getConstantInner(runtime, internedName, object);
     }

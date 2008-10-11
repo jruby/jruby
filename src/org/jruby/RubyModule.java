@@ -41,15 +41,14 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.jruby.anno.JRubyMethod;
@@ -88,8 +87,8 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.ConstantCacheMap;
 import org.jruby.runtime.MethodFactory;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.util.collections.WeakHashSet;
 
 /**
@@ -186,15 +185,8 @@ public class RubyModule extends RubyObject {
     // write methods are overridden here to use this lock rather than Java
     // synchronization for faster concurrent writes for modules/classes.
     protected final ReentrantLock variableWriteLock = new ReentrantLock();
-    
-    protected transient volatile ConstantTableEntry[] constantTable =
-        new ConstantTableEntry[CONSTANT_TABLE_DEFAULT_CAPACITY];
 
-    protected transient int constantTableSize;
-
-    protected transient int constantTableThreshold = 
-        (int)(CONSTANT_TABLE_DEFAULT_CAPACITY * CONSTANT_TABLE_LOAD_FACTOR);
-
+    private final Map<String, IRubyObject> constants = new ConcurrentHashMap<String, IRubyObject>();
     private final Map<String, DynamicMethod> methods = new ConcurrentHashMap<String, DynamicMethod>(12, 0.75f, 1);
     private final Map<String, CacheEntry> cachedMethods = new ConcurrentHashMap<String, CacheEntry>(12, 0.75f, 1);
     
@@ -500,8 +492,19 @@ public class RubyModule extends RubyObject {
 
         infectBy(module);
 
+        flushConstants();
         doIncludeModule(module);
         invalidateCacheDescendants();
+    }
+
+    private void flushConstants() {
+        ConstantCacheMap map = getRuntime().getConstantCacheMap();
+
+        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
+            for (String name : p.getConstantNames()) {
+                map.remove(name);
+            }
+        }
     }
 
     public void defineMethod(String name, Callback method) {
@@ -527,7 +530,7 @@ public class RubyModule extends RubyObject {
     public void defineAnnotatedConstants(Class clazz) {
         Field[] declaredFields = clazz.getDeclaredFields();
         for (Field field : declaredFields) {
-            if(Modifier.isStatic(field.getModifiers())) {
+            if (Modifier.isStatic(field.getModifiers())) {
                 defineAnnotatedConstant(field);
             }
         }
@@ -862,17 +865,15 @@ public class RubyModule extends RubyObject {
             callMethod(context, "method_undefined", runtime.newSymbol(name));
         }
     }
-    
+
     @JRubyMethod(name = "include?", required = 1)
     public IRubyObject include_p(ThreadContext context, IRubyObject arg) {
-        if (!arg.isModule()) {
-            throw context.getRuntime().newTypeError(arg, context.getRuntime().getModule());
-        }
-        
-        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
-            if ((p instanceof IncludedModuleWrapper) && ((IncludedModuleWrapper) p).getNonIncludedClass() == arg) {
-                return context.getRuntime().getTrue();
-            }
+        if (!arg.isModule()) throw context.getRuntime().newTypeError(arg, context.getRuntime().getModule());
+        RubyModule moduleToCompare = (RubyModule) arg;
+
+        // See if module is in chain...Cannot match against itself so start at superClass.
+        for (RubyModule p = getSuperClass(); p != null; p = p.getSuperClass()) {
+            if (p.isSame(moduleToCompare)) return context.getRuntime().getTrue();
         }
         
         return context.getRuntime().getFalse();
@@ -1005,10 +1006,8 @@ public class RubyModule extends RubyObject {
      * @return The method, or UndefinedMethod if not found
      */
     public RubyModule findImplementer(RubyModule clazz) {
-        for (RubyModule searchModule = this; searchModule != null; searchModule = searchModule.getSuperClass()) {
-            if (searchModule.isSame(clazz)) {
-                return searchModule;
-            }
+        for (RubyModule module = this; module != null; module = module.getSuperClass()) {
+            if (module.isSame(clazz)) return module;
         }
 
         return null;
@@ -1454,14 +1453,16 @@ public class RubyModule extends RubyObject {
 
         if (!getMetaClass().isSingleton()) setMetaClass(originalModule.getSingletonClassClone());
         setSuperClass(originalModule.getSuperClass());
-
-        if (originalModule.hasVariables()){
-            syncVariables(originalModule.getVariableList());
-        }
+        if (originalModule.hasVariables()) syncVariables(originalModule.getVariableList());
+        syncConstants(originalModule);
 
         originalModule.cloneMethods(this);
 
         return this;
+    }
+
+    public void syncConstants(RubyModule other) {
+        constants.putAll(other.constants);
     }
 
     /** rb_mod_included_modules
@@ -1496,10 +1497,8 @@ public class RubyModule extends RubyObject {
     public List<IRubyObject> getAncestorList() {
         ArrayList<IRubyObject> list = new ArrayList<IRubyObject>();
 
-        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
-            if(!p.isSingleton()) {
-                list.add(p.getNonIncludedClass());
-            }
+        for (RubyModule module = this; module != null; module = module.getSuperClass()) {
+            if(!module.isSingleton()) list.add(module.getNonIncludedClass());
         }
 
         return list;
@@ -1510,8 +1509,8 @@ public class RubyModule extends RubyObject {
         // when scanning the hierarchy. However the == check may be safe; we should only ever have
         // one instance bound to a given type/constant. If it's found to be unsafe, examine ways
         // to avoid the == call.
-        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
-            if (p.getNonIncludedClass() == type) return true;
+        for (RubyModule module = this; module != null; module = module.getSuperClass()) {
+            if (module.getNonIncludedClass() == type) return true;
         }
 
         return false;
@@ -1584,11 +1583,8 @@ public class RubyModule extends RubyObject {
             throw getRuntime().newTypeError("compared with non class/module");
         }
 
-        if (isKindOfModule((RubyModule) obj)) {
-            return getRuntime().getTrue();
-        } else if (((RubyModule) obj).isKindOfModule(this)) {
-            return getRuntime().getFalse();
-        }
+        if (isKindOfModule((RubyModule) obj)) return getRuntime().getTrue();
+        if (((RubyModule) obj).isKindOfModule(this)) return getRuntime().getFalse();
 
         return getRuntime().getNil();
     }
@@ -1631,20 +1627,15 @@ public class RubyModule extends RubyObject {
 
         RubyModule module = (RubyModule) obj;
 
-        if (module.isKindOfModule(this)) {
-            return getRuntime().newFixnum(1);
-        } else if (this.isKindOfModule(module)) {
-            return getRuntime().newFixnum(-1);
-        }
+        if (module.isKindOfModule(this)) return getRuntime().newFixnum(1);
+        if (this.isKindOfModule(module)) return getRuntime().newFixnum(-1);
 
         return getRuntime().getNil();
     }
 
     public boolean isKindOfModule(RubyModule type) {
-        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
-            if (p.isSame(type)) {
-                return true;
-            }
+        for (RubyModule module = this; module != null; module = module.getSuperClass()) {
+            if (module.isSame(type)) return true;
         }
 
         return false;
@@ -1692,9 +1683,7 @@ public class RubyModule extends RubyObject {
         return getRuntime().getNil();
     }
 
-    /**
-     * @deprecated
-     */
+    @Deprecated
     public IRubyObject attr_reader(IRubyObject[] args) {
         return attr_reader(getRuntime().getCurrentContext(), args);
     }
@@ -1723,9 +1712,8 @@ public class RubyModule extends RubyObject {
         return context.getRuntime().getNil();
     }
 
-    /**
-     * @deprecated
-     */
+
+    @Deprecated
     public IRubyObject attr_accessor(IRubyObject[] args) {
         return attr_accessor(getRuntime().getCurrentContext(), args);
     }
@@ -1761,14 +1749,13 @@ public class RubyModule extends RubyObject {
 
         for (RubyModule type = this; type != null; type = type.getSuperClass()) {
             RubyModule realType = type.getNonIncludedClass();
-            for (Iterator iter = type.getMethods().entrySet().iterator(); iter.hasNext();) {
-                Map.Entry entry = (Map.Entry) iter.next();
-                DynamicMethod method = (DynamicMethod) entry.getValue();
+            for (Map.Entry entry : type.getMethods().entrySet()) {
                 String methodName = (String) entry.getKey();
 
                 if (! seen.contains(methodName)) {
                     seen.add(methodName);
-                    
+
+                    DynamicMethod method = (DynamicMethod) entry.getValue();
                     if (method.getImplementationClass() == realType &&
                         (!not && method.getVisibility() == visibility || (not && method.getVisibility() != visibility)) &&
                         ! method.isUndefined()) {
@@ -2233,17 +2220,12 @@ public class RubyModule extends RubyObject {
         Set<String> names = new HashSet<String>();
 
         for (RubyModule p = this; p != null; p = p.getSuperClass()) {
-            for (String name : p.getClassVariableNameList()) {
-                names.add(name);
-            }
+            names.addAll(p.getClassVariableNameList());
         }
 
-        Ruby runtime = context.getRuntime();
-        RubyArray ary = runtime.newArray();
+        RubyArray ary = context.getRuntime().newArray();
 
-        for (String name : names) {
-            ary.append(runtime.newString(name));
-        }
+        ary.addAll(names);
 
         return ary;
     }
@@ -2267,7 +2249,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "const_get", required = 1)
     public IRubyObject const_get(IRubyObject symbol) {
-        return fastGetConstant(validateConstant(symbol.asJavaString()).intern());
+        return getConstant(validateConstant(symbol.asJavaString()));
     }
 
     /** rb_mod_const_set
@@ -2279,31 +2261,32 @@ public class RubyModule extends RubyObject {
     }
 
     @JRubyMethod(name = "remove_const", required = 1, visibility = PRIVATE)
-    public IRubyObject remove_const(ThreadContext context, IRubyObject name) {
-        String id = validateConstant(name.asJavaString());
+    public IRubyObject remove_const(ThreadContext context, IRubyObject rubyName) {
+        String name = validateConstant(rubyName.asJavaString());
         IRubyObject value;
-        if ((value = deleteConstant(id)) != null) {
+        if ((value = deleteConstant(name)) != null) {
+            getRuntime().getConstantCacheMap().remove(name);
             if (value != UNDEF) {
                 return value;
             }
-            context.getRuntime().getLoadService().removeAutoLoadFor(getName() + "::" + id);
+            context.getRuntime().getLoadService().removeAutoLoadFor(getName() + "::" + name);
             // FIXME: I'm not sure this is right, but the old code returned
             // the undef, which definitely isn't right...
             return context.getRuntime().getNil();
         }
 
-        if (hasConstantInHierarchy(id)) {
-            throw cannotRemoveError(id);
+        if (hasConstantInHierarchy(name)) {
+            throw cannotRemoveError(name);
         }
 
-        throw context.getRuntime().newNameError("constant " + id + " not defined for " + getName(), id);
+        throw context.getRuntime().newNameError("constant " + name + " not defined for " + getName(), name);
     }
 
     private boolean hasConstantInHierarchy(final String name) {
         for (RubyModule p = this; p != null; p = p.getSuperClass()) {
             if (p.hasConstant(name)) {
                 return true;
-            }
+        }
         }
         return false;
     }
@@ -2315,13 +2298,17 @@ public class RubyModule extends RubyObject {
      * @return Nothing! Absolutely nothing! (though subclasses might choose to return something)
      */
     @JRubyMethod(name = "const_missing", required = 1, frame = true)
-    public IRubyObject const_missing(ThreadContext context, IRubyObject name, Block block) {
-        /* Uninitialized constant */
-        if (this != context.getRuntime().getObject()) {
-            throw context.getRuntime().newNameError("uninitialized constant " + getName() + "::" + name.asJavaString(), "" + getName() + "::" + name.asJavaString());
+    public IRubyObject const_missing(ThreadContext context, IRubyObject rubyName, Block block) {
+        Ruby runtime = context.getRuntime();
+        String name;
+        
+        if (this != runtime.getObject()) {
+            name = getName() + "::" + rubyName.asJavaString();
+        } else {
+            name = rubyName.asJavaString();
         }
 
-        throw context.getRuntime().newNameError("uninitialized constant " + name.asJavaString(), name.asJavaString());
+        throw runtime.newNameError("uninitialized constant " + name, name);
     }
 
     /** rb_mod_constants
@@ -2333,30 +2320,14 @@ public class RubyModule extends RubyObject {
         RubyArray array = runtime.newArray();
         RubyModule objectClass = runtime.getObject();
 
-        if (getRuntime().getModule() == this) {
-
-            for (String name : objectClass.getStoredConstantNameList()) {
-                array.append(runtime.newString(name));
-            }
-
-        } else if (objectClass == this) {
-
-            for (String name : getStoredConstantNameList()) {
-                array.append(runtime.newString(name));
-            }
-
+        if (getRuntime().getModule() == this || objectClass == this) {
+            array.addAll(objectClass.getConstantNames());
         } else {
             Set<String> names = new HashSet<String>();
-            for (RubyModule p = this; p != null; p = p.getSuperClass()) {
-                if (objectClass != p) {
-                    for (String name : p.getStoredConstantNameList()) {
-                        names.add(name);
-                    }
-                }
+            for (RubyModule module = this; module != null && module != objectClass; module = module.getSuperClass()) {
+                names.addAll(module.getConstantNames());
             }
-            for (String name : names) {
-                array.append(runtime.newString(name));
-            }
+            array.addAll(names);
         }
 
         return array;
@@ -2484,22 +2455,16 @@ public class RubyModule extends RubyObject {
     //
 
     public IRubyObject getConstantAt(String name) {
-        IRubyObject value;
-        if ((value = fetchConstant(name)) != UNDEF) {
-            return value;
-        }
-        deleteConstant(name);
-        return getRuntime().getLoadService().autoload(getName() + "::" + name);
+        IRubyObject value = fetchConstant(name);
+        
+        return value == UNDEF ? resolveUndefConstant(getRuntime(), name) : value;
     }
 
     public IRubyObject fastGetConstantAt(String internedName) {
         assert internedName == internedName.intern() : internedName + " is not interned";
-        IRubyObject value;
-        if ((value = fastFetchConstant(internedName)) != UNDEF) {
-            return value;
-        }
-        deleteConstant(internedName);
-        return getRuntime().getLoadService().autoload(getName() + "::" + internedName);
+        IRubyObject value = fastFetchConstant(internedName);
+
+        return value == UNDEF ? resolveUndefConstant(getRuntime(), internedName) : value;
     }
 
     /**
@@ -2509,74 +2474,43 @@ public class RubyModule extends RubyObject {
      * @return The value for the constant, or null if not found
      */
     public IRubyObject getConstant(String name) {
-        assert IdUtil.isConstant(name);
-        boolean retryForModule = false;
-        IRubyObject value;
-        RubyModule p = this;
-
-        retry: while (true) {
-            while (p != null) {
-                if ((value = p.constantTableFetch(name)) != null) {
-                    if (value != UNDEF) {
-                        return value;
-                    }
-                    p.deleteConstant(name);
-                    if (getRuntime().getLoadService().autoload(
-                            p.getName() + "::" + name) == null) {
-                        break;
-                    }
-                    continue;
-                }
-                p = p.getSuperClass();
-            }
-
-            if (!retryForModule && !isClass()) {
-                retryForModule = true;
-                p = getRuntime().getObject();
-                continue retry;
-            }
-
-            break;
-        }
-
-        return callMethod(getRuntime().getCurrentContext(),
-                "const_missing", getRuntime().newSymbol(name));
+        return fastGetConstant(name);
     }
     
     public IRubyObject fastGetConstant(String internedName) {
-        assert internedName == internedName.intern() : internedName + " is not interned";
-        assert IdUtil.isConstant(internedName);
-        boolean retryForModule = false;
-        IRubyObject value;
-        RubyModule p = this;
+        IRubyObject value = getConstantNoConstMissing(internedName);
+        Ruby runtime = getRuntime();
+        
+        return value == null ? callMethod(runtime.getCurrentContext(), "const_missing",
+                runtime.fastNewSymbol(internedName)) : value;
+    }
+    
+    public IRubyObject getConstantNoConstMissing(String name) {
+        assert IdUtil.isConstant(name);
 
-        retry: while (true) {
-            while (p != null) {
-                if ((value = p.constantTableFastFetch(internedName)) != null) {
-                    if (value != UNDEF) {
-                        return value;
-                    }
-                    p.deleteConstant(internedName);
-                    if (getRuntime().getLoadService().autoload(
-                            p.getName() + "::" + internedName) == null) {
-                        break;
-                    }
-                    continue;
-                }
-                p = p.getSuperClass();
-            }
+        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
+            IRubyObject value = p.getConstantInner(name);
 
-            if (!retryForModule && !isClass()) {
-                retryForModule = true;
-                p = getRuntime().getObject();
-                continue retry;
-            }
-
-            break;
+            if (value != null) return value == UNDEF ? null : value;
         }
 
-        return callMethod(getRuntime().getCurrentContext(),
-                "const_missing", getRuntime().fastNewSymbol(internedName));
+        if (!isClass()) {
+            IRubyObject value = getRuntime().getObject().getConstantInner(name);
+
+            return value == UNDEF ? null : value;
+        }
+
+        return null;
+    }
+    
+    protected IRubyObject getConstantInner(String name) {
+        IRubyObject value = constantTableFetch(name);
+
+        for (; value == UNDEF; value = constantTableFetch(name)) {
+            if (resolveUndefConstant(getRuntime(), name) == null) return UNDEF;
+        }
+        
+        return value;
     }
 
     // not actually called anywhere (all known uses call the fast version)
@@ -2587,27 +2521,26 @@ public class RubyModule extends RubyObject {
     public IRubyObject fastGetConstantFrom(String internedName) {
         assert internedName == internedName.intern() : internedName + " is not interned";
         assert IdUtil.isConstant(internedName);
-        RubyClass objectClass = getRuntime().getObject();
+        Ruby runtime = getRuntime();
+        RubyClass objectClass = runtime.getObject();
         IRubyObject value;
 
         RubyModule p = this;
         
         while (p != null) {
             if ((value = p.constantTableFastFetch(internedName)) != null) {
-                if (value != UNDEF) {
-                    if (p == objectClass && this != objectClass) {
-                        String badCName = getName() + "::" + internedName;
-                        getRuntime().getWarnings().warn(ID.CONSTANT_BAD_REFERENCE, "toplevel constant " + 
-                                internedName + " referenced by " + badCName, badCName);
-                    }
-                    return value;
+                if (value == UNDEF) {
+                    if (p.resolveUndefConstant(runtime, internedName) == null) break;
+                    continue; // Not that is loaded loop around to resolve it next pass
                 }
-                p.deleteConstant(internedName);
-                if (getRuntime().getLoadService().autoload(
-                        p.getName() + "::" + internedName) == null) {
-                    break;
+
+                if (p == objectClass && this != objectClass) {
+                    String badCName = getName() + "::" + internedName;
+                    runtime.getWarnings().warn(ID.CONSTANT_BAD_REFERENCE, "toplevel constant " +
+                            internedName + " referenced by " + badCName, badCName);
                 }
-                continue;
+
+                return value;
             }
             p = p.getSuperClass();
         }
@@ -2615,6 +2548,13 @@ public class RubyModule extends RubyObject {
         return callMethod(getRuntime().getCurrentContext(),
                 "const_missing", getRuntime().fastNewSymbol(internedName));
     }
+    
+    public IRubyObject resolveUndefConstant(Ruby runtime, String name) {
+        deleteConstant(name);
+        
+        return runtime.getLoadService().autoload(getName() + "::" + name);
+    }
+    
     /**
      * Set the named constant on this module. Also, if the value provided is another Module and
      * that module has not yet been named, assign it the specified name.
@@ -2624,12 +2564,14 @@ public class RubyModule extends RubyObject {
      * @return The result of setting the variable.
      */
     public IRubyObject setConstant(String name, IRubyObject value) {
-        IRubyObject oldValue;
-        if ((oldValue = fetchConstant(name)) != null) {
+        IRubyObject oldValue = fetchConstant(name);
+        if (oldValue != null) {
+            Ruby runtime = getRuntime();
+            runtime.getConstantCacheMap().remove(name);
             if (oldValue == UNDEF) {
-                getRuntime().getLoadService().removeAutoLoadFor(getName() + "::" + name);
+                runtime.getLoadService().removeAutoLoadFor(getName() + "::" + name);
             } else {
-                getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name, name);
+                runtime.getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name, name);
             }
         }
 
@@ -2642,38 +2584,12 @@ public class RubyModule extends RubyObject {
                 module.setBaseName(name);
                 module.setParent(this);
             }
-            /*
-            module.setParent(this);
-            */
         }
         return value;
     }
 
     public IRubyObject fastSetConstant(String internedName, IRubyObject value) {
-        assert internedName == internedName.intern() : internedName + " is not interned";
-        IRubyObject oldValue;
-        if ((oldValue = fastFetchConstant(internedName)) != null) {
-            if (oldValue == UNDEF) {
-                getRuntime().getLoadService().removeAutoLoadFor(getName() + "::" + internedName);
-            } else {
-                getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + internedName, internedName);
-            }
-        }
-
-        fastStoreConstant(internedName, value);
-
-        // if adding a module under a constant name, set that module's basename to the constant name
-        if (value instanceof RubyModule) {
-            RubyModule module = (RubyModule)value;
-            if (module.getBaseName() == null) {
-                module.setBaseName(internedName);
-                module.setParent(this);
-            }
-            /*
-            module.setParent(this);
-            */
-        }
-        return value;
+        return setConstant(internedName, value);
     }
     
     /** rb_define_const
@@ -2759,12 +2675,9 @@ public class RubyModule extends RubyObject {
      * @see #setInternalModuleVariable(String, IRubyObject)
      */
     public boolean hasInternalModuleVariable(final String name) {
-        RubyModule module = this;
-        do {
-            if (module.hasInternalVariable(name)) {
-                return true;
-            }
-        } while ((module = module.getSuperClass()) != null);
+        for (RubyModule module = this; module != null; module = module.getSuperClass()) {
+            if (module.hasInternalVariable(name)) return true;
+        }
 
         return false;
     }
@@ -2778,13 +2691,10 @@ public class RubyModule extends RubyObject {
      * @see #setInternalModuleVariable(String, IRubyObject)
      */
     public IRubyObject searchInternalModuleVariable(final String name) {
-        RubyModule module = this;
-        IRubyObject value;
-        do {
-            if ((value = module.getInternalVariable(name)) != null) {
-                return value;
-            }
-        } while ((module = module.getSuperClass()) != null);
+        for (RubyModule module = this; module != null; module = module.getSuperClass()) {
+            IRubyObject value = module.getInternalVariable(name);
+            if (value != null) return value;
+        }
 
         return null;
     }
@@ -2799,13 +2709,12 @@ public class RubyModule extends RubyObject {
      * @see #searchInternalModuleVariable(String)
      */
     public void setInternalModuleVariable(final String name, final IRubyObject value) {
-        RubyModule module = this;
-        do {
+        for (RubyModule module = this; module != null; module = module.getSuperClass()) {
             if (module.hasInternalVariable(name)) {
                 module.setInternalVariable(name, value);
                 return;
             }
-        } while ((module = module.getSuperClass()) != null);
+        }
 
         setInternalVariable(name, value);
     }
@@ -2958,26 +2867,22 @@ public class RubyModule extends RubyObject {
         return constantTableRemove(name);
     }
 
+
+    @Deprecated
     public List<Variable<IRubyObject>> getStoredConstantList() {
-        ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
-        ConstantTableEntry[] table = constantTableGetTable();
-        for (int i = table.length; --i >= 0; ) {
-            for (ConstantTableEntry e = table[i]; e != null; e = e.next) {
-                list.add(e);
-            }
-        }
-        return list;
+        return null;
     }
 
+    @Deprecated
     public List<String> getStoredConstantNameList() {
-        ArrayList<String> list = new ArrayList<String>();
-        ConstantTableEntry[] table = constantTableGetTable();
-        for (int i = table.length; --i >= 0; ) {
-            for (ConstantTableEntry e = table[i]; e != null; e = e.next) {
-                list.add(e.name);
-            }
-        }
-        return list;
+        return new ArrayList<String>(constants.keySet());
+    }
+
+    /**
+     * @return a list of constant names that exists at time this was called
+     */
+    public Collection<String> getConstantNames() {
+        return constants.keySet();
     }
 
     protected static final String ERR_INSECURE_SET_CONSTANT  = "Insecure: can't modify constant";
@@ -2991,583 +2896,41 @@ public class RubyModule extends RubyObject {
     }
 
     protected final void ensureConstantsSettable() {
-        Ruby runtime = getRuntime();
-        
-        if (!isFrozen() && (runtime.getSafeLevel() < 4 || isTaint())) {
-            return;
-        }
-        
-        if (runtime.getSafeLevel() >= 4 && !isTaint()) {
-            throw runtime.newSecurityError(ERR_INSECURE_SET_CONSTANT);
-        }
-        if (isFrozen()) {
-            if (this instanceof RubyModule) {
-                throw runtime.newFrozenError(ERR_FROZEN_CONST_TYPE);
-            } else {
-                throw runtime.newFrozenError("");
-            }
-        }
-    }
+        boolean isSecure = getRuntime().getSafeLevel() >= 4 && !isTaint();
 
-     
-    //
-    ////////////////// VARIABLE TABLE METHODS ////////////////
-    //
-    // Overridden to use variableWriteLock in place of synchronization  
-    //
-
-    @Override
-    protected IRubyObject variableTableStore(String name, IRubyObject value) {
-        int hash = name.hashCode();
-        ReentrantLock lock;
-        (lock = variableWriteLock).lock();
-        try {
-            VariableTableEntry[] table;
-            VariableTableEntry e;
-            if ((table = variableTable) == null) {
-                table =  new VariableTableEntry[VARIABLE_TABLE_DEFAULT_CAPACITY];
-                e = new VariableTableEntry(hash, name.intern(), value, null);
-                table[hash & (VARIABLE_TABLE_DEFAULT_CAPACITY - 1)] = e;
-                variableTableThreshold = (int)(VARIABLE_TABLE_DEFAULT_CAPACITY * VARIABLE_TABLE_LOAD_FACTOR);
-                variableTableSize = 1;
-                variableTable = table;
-                return value;
-            }
-            int potentialNewSize;
-            if ((potentialNewSize = variableTableSize + 1) > variableTableThreshold) {
-                table = variableTableRehash();
-            }
-            int index;
-            for (e = table[index = hash & (table.length - 1)]; e != null; e = e.next) {
-                if (hash == e.hash && name.equals(e.name)) {
-                    e.value = value;
-                    return value;
-                }
-            }
-            // external volatile value initialization intended to obviate the need for
-            // readValueUnderLock technique used in ConcurrentHashMap. may be a little
-            // slower, but better to pay a price on first write rather than all reads.
-            e = new VariableTableEntry(hash, name.intern(), value, table[index]);
-            table[index] = e;
-            variableTableSize = potentialNewSize;
-            variableTable = table; // write-volatile
-        } finally {
-            lock.unlock();
-        }
-        return value;
-    }
-    
-    @Override
-    protected IRubyObject variableTableFastStore(String internedName, IRubyObject value) {
-        assert internedName == internedName.intern() : internedName + " not interned";
-        int hash = internedName.hashCode();
-        ReentrantLock lock;
-        (lock = variableWriteLock).lock();
-        try {
-            VariableTableEntry[] table;
-            VariableTableEntry e;
-            if ((table = variableTable) == null) {
-                table =  new VariableTableEntry[VARIABLE_TABLE_DEFAULT_CAPACITY];
-                e = new VariableTableEntry(hash, internedName, value, null);
-                table[hash & (VARIABLE_TABLE_DEFAULT_CAPACITY - 1)] = e;
-                variableTableThreshold = (int)(VARIABLE_TABLE_DEFAULT_CAPACITY * VARIABLE_TABLE_LOAD_FACTOR);
-                variableTableSize = 1;
-                variableTable = table;
-                return value;
-            }
-            int potentialNewSize;
-            if ((potentialNewSize = variableTableSize + 1) > variableTableThreshold) {
-                table = variableTableRehash();
-            }
-            int index;
-            for (e = table[index = hash & (table.length - 1)]; e != null; e = e.next) {
-                if (internedName == e.name) {
-                    e.value = value;
-                    return value;
-                }
-            }
-            // external volatile value initialization intended to obviate the need for
-            // readValueUnderLock technique used in ConcurrentHashMap. may be a little
-            // slower, but better to pay a price on first write rather than all reads.
-            e = new VariableTableEntry(hash, internedName, value, table[index]);
-            table[index] = e;
-            variableTableSize = potentialNewSize;
-            variableTable = table; // write-volatile
-        } finally {
-            lock.unlock();
-        }
-        return value;
-    }
-
-    @Override   
-    protected IRubyObject variableTableRemove(String name) {
-        ReentrantLock lock;
-        (lock = variableWriteLock).lock();
-        try {
-            VariableTableEntry[] table;
-            if ((table = variableTable) != null) {
-                int hash = name.hashCode();
-                int index = hash & (table.length - 1);
-                VariableTableEntry first = table[index];
-                VariableTableEntry e;
-                for (e = first; e != null; e = e.next) {
-                    if (hash == e.hash && name.equals(e.name)) {
-                        IRubyObject oldValue = e.value;
-                        // All entries following removed node can stay
-                        // in list, but all preceding ones need to be
-                        // cloned.
-                        VariableTableEntry newFirst = e.next;
-                        for (VariableTableEntry p = first; p != e; p = p.next) {
-                            newFirst = new VariableTableEntry(p.hash, p.name, p.value, newFirst);
-                        }
-                        table[index] = newFirst;
-                        variableTableSize--;
-                        variableTable = table; // write-volatile 
-                        return oldValue;
-                    }
-                }
-            }
-        } finally {
-            lock.unlock();
-        }
-        return null;
-    }
-    
-    @Override
-    protected IRubyObject variableTableReadLocked(VariableTableEntry entry) {
-        ReentrantLock lock;
-        (lock = variableWriteLock).lock();
-        try {
-            return entry.value;
-        } finally {
-            lock.unlock();
-        }
-    }
-    
-    @Override
-    protected void variableTableSync(List<Variable<IRubyObject>> vars) {
-        ReentrantLock lock;
-        (lock = variableWriteLock).lock();
-        try {
-            variableTableSize = 0;
-            variableTableThreshold = (int)(VARIABLE_TABLE_DEFAULT_CAPACITY * VARIABLE_TABLE_LOAD_FACTOR);
-            variableTable =  new VariableTableEntry[VARIABLE_TABLE_DEFAULT_CAPACITY];
-            for (Variable<IRubyObject> var : vars) {
-                assert !var.isConstant() && var.getValue() != null;
-                variableTableStore(var.getName(), var.getValue());
-            }
-        } finally {
-            lock.unlock();
-        }
-    }
-    
-    @Override
-    public void syncVariables(List<Variable<IRubyObject>> variables) {
-        ArrayList<Variable<IRubyObject>> constants = new ArrayList<Variable<IRubyObject>>(variables.size());
-        Variable<IRubyObject> var;
-        for (Iterator<Variable<IRubyObject>> iter = variables.iterator(); iter.hasNext(); ) {
-            if ((var = iter.next()).isConstant()) {
-                constants.add(var);
-                iter.remove();
-            }
-        }
-        ReentrantLock lock;
-        (lock = variableWriteLock).lock();
-        try {
-            variableTableSync(variables);
-            constantTableSync(constants);
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    @Deprecated // born deprecated
-    public Map getVariableMap() {
-        Map map = variableTableGetMap();
-        constantTableGetMap(map);
-        return map;
-    }
-
-    @Override
-    public boolean hasVariables() {
-        return variableTableGetSize() > 0 || constantTableGetSize() > 0;
-    }
-
-    @Override
-    public int getVariableCount() {
-        return variableTableGetSize() + constantTableGetSize();
-    }
-    
-    @Override
-    public List<Variable<IRubyObject>> getVariableList() {
-        VariableTableEntry[] vtable = variableTableGetTable();
-        ConstantTableEntry[] ctable = constantTableGetTable();
-        ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
-        IRubyObject readValue;
-        for (int i = vtable.length; --i >= 0; ) {
-            for (VariableTableEntry e = vtable[i]; e != null; e = e.next) {
-                if ((readValue = e.value) == null) readValue = variableTableReadLocked(e);
-                list.add(new VariableEntry<IRubyObject>(e.name, readValue));
-            }
-        }
-        for (int i = ctable.length; --i >= 0; ) {
-            for (ConstantTableEntry e = ctable[i]; e != null; e = e.next) {
-                list.add(e);
-            }
-        }
-        return list;
-    }
-
-    @Override
-    public List<String> getVariableNameList() {
-        VariableTableEntry[] vtable = variableTableGetTable();
-        ConstantTableEntry[] ctable = constantTableGetTable();
-        ArrayList<String> list = new ArrayList<String>();
-        for (int i = vtable.length; --i >= 0; ) {
-            for (VariableTableEntry e = vtable[i]; e != null; e = e.next) {
-                list.add(e.name);
-            }
-        }
-        for (int i = ctable.length; --i >= 0; ) {
-            for (ConstantTableEntry e = ctable[i]; e != null; e = e.next) {
-                list.add(e.name);
-            }
-        }
-        return list;
-    }
-    
-
-    //
-    ////////////////// CONSTANT TABLE METHODS, ETC. ////////////////
-    //
-    
-    protected static final int CONSTANT_TABLE_DEFAULT_CAPACITY = 8; // MUST be power of 2!
-    protected static final int CONSTANT_TABLE_MAXIMUM_CAPACITY = 1 << 30;
-    protected static final float CONSTANT_TABLE_LOAD_FACTOR = 0.75f;
-
-    protected static final class ConstantTableEntry implements Variable<IRubyObject> {
-        final int hash;
-        final String name;
-        final IRubyObject value;
-        final ConstantTableEntry next;
-
-        // constant table entry values are final; if a constant is redefined, the
-        // entry will be removed and replaced with a new entry.
-        ConstantTableEntry(
-                int hash,
-                String name,
-                IRubyObject value,
-                ConstantTableEntry next) {
-            this.hash = hash;
-            this.name = name;
-            this.value = value;
-            this.next = next;
-        }
-        
-        public String getName() {
-            return name;
-        }
-        
-        public IRubyObject getValue() {
-            return value;
-        }
-        public final boolean isClassVariable() {
-            return false;
-        }
-        
-        public final boolean isConstant() {
-            return true;
-        }
-        
-        public final boolean isInstanceVariable() {
-            return false;
-        }
-
-        public final boolean isRubyVariable() {
-            return true;
-        }
+        if (isSecure) throw getRuntime().newSecurityError(ERR_INSECURE_SET_CONSTANT);
+        if (isFrozen()) throw getRuntime().newFrozenError(ERR_FROZEN_CONST_TYPE);
     }
 
     protected boolean constantTableContains(String name) {
-        int hash = name.hashCode();
-        ConstantTableEntry[] table;
-        for (ConstantTableEntry e = (table = constantTable)[hash & (table.length - 1)]; e != null; e = e.next) {
-            if (hash == e.hash && name.equals(e.name)) {
-                return true;
-            }
-        }
-        return false;
+        return constants.containsKey(name);
     }
     
     protected boolean constantTableFastContains(String internedName) {
-        ConstantTableEntry[] table;
-        for (ConstantTableEntry e = (table = constantTable)[internedName.hashCode() & (table.length - 1)]; e != null; e = e.next) {
-            if (internedName == e.name) {
-                return true;
-            }
-        }
-        return false;
+        return constants.containsKey(internedName);
     }
     
     protected IRubyObject constantTableFetch(String name) {
-        int hash = name.hashCode();
-        ConstantTableEntry[] table;
-        for (ConstantTableEntry e = (table = constantTable)[hash & (table.length - 1)]; e != null; e = e.next) {
-            if (hash == e.hash && name.equals(e.name)) {
-                return e.value;
-            }
-        }
-        return null;
+        return constants.get(name);
     }
     
     protected IRubyObject constantTableFastFetch(String internedName) {
-        ConstantTableEntry[] table;
-        for (ConstantTableEntry e = (table = constantTable)[internedName.hashCode() & (table.length - 1)]; e != null; e = e.next) {
-            if (internedName == e.name) {
-                return e.value;
-            }
-        }
-        return null;
+        return constants.get(internedName);
     }
     
     protected IRubyObject constantTableStore(String name, IRubyObject value) {
-        int hash = name.hashCode();
-        ReentrantLock lock;
-        (lock = variableWriteLock).lock();
-        try {
-            ConstantTableEntry[] table;
-            ConstantTableEntry e;
-            ConstantTableEntry first;
-            int potentialNewSize;
-            if ((potentialNewSize = constantTableSize + 1) > constantTableThreshold) {
-                table = constantTableRehash();
-            } else {
-                table = constantTable;
-            }
-            int index;
-            for (e = first = table[index = hash & (table.length - 1)]; e != null; e = e.next) {
-                if (hash == e.hash && name.equals(e.name)) {
-                    // if value is unchanged, do nothing
-                    if (value == e.value) {
-                        return value;
-                    }
-                    // create new entry, prepend to any trailing entries
-                    ConstantTableEntry newFirst = new ConstantTableEntry(e.hash, e.name, value, e.next);
-                    // all entries before this one must be cloned
-                    for (ConstantTableEntry n = first; n != e; n = n.next) {
-                        newFirst = new ConstantTableEntry(n.hash, n.name, n.value, newFirst);
-                    }
-                    table[index] = newFirst;
-                    constantTable = table; // write-volatile
-                    return value;
-                }
-            }
-            table[index] = new ConstantTableEntry(hash, name.intern(), value, table[index]);
-            constantTableSize = potentialNewSize;
-            constantTable = table; // write-volatile
-        } finally {
-            lock.unlock();
-        }
+        constants.put(name, value);
         return value;
     }
     
     protected IRubyObject constantTableFastStore(String internedName, IRubyObject value) {
-        assert internedName == internedName.intern() : internedName + " not interned";
-        int hash = internedName.hashCode();
-        ReentrantLock lock;
-        (lock = variableWriteLock).lock();
-        try {
-            ConstantTableEntry[] table;
-            ConstantTableEntry e;
-            ConstantTableEntry first;
-            int potentialNewSize;
-            if ((potentialNewSize = constantTableSize + 1) > constantTableThreshold) {
-                table = constantTableRehash();
-            } else {
-                table = constantTable;
-            }
-            int index;
-            for (e = first = table[index = hash & (table.length - 1)]; e != null; e = e.next) {
-                if (internedName == e.name) {
-                    // if value is unchanged, do nothing
-                    if (value == e.value) {
-                        return value;
-                    }
-                    // create new entry, prepend to any trailing entries
-                    ConstantTableEntry newFirst = new ConstantTableEntry(e.hash, e.name, value, e.next);
-                    // all entries before this one must be cloned
-                    for (ConstantTableEntry n = first; n != e; n = n.next) {
-                        newFirst = new ConstantTableEntry(n.hash, n.name, n.value, newFirst);
-                    }
-                    table[index] = newFirst;
-                    constantTable = table; // write-volatile
-                    return value;
-                }
-            }
-            table[index] = new ConstantTableEntry(hash, internedName, value, table[index]);
-            constantTableSize = potentialNewSize;
-            constantTable = table; // write-volatile
-        } finally {
-            lock.unlock();
-        }
+        constants.put(internedName, value);
         return value;
     }
         
     protected IRubyObject constantTableRemove(String name) {
-        ReentrantLock lock;
-        (lock = variableWriteLock).lock();
-        try {
-            ConstantTableEntry[] table;
-            if ((table = constantTable) != null) {
-                int hash = name.hashCode();
-                int index = hash & (table.length - 1);
-                ConstantTableEntry first = table[index];
-                ConstantTableEntry e;
-                for (e = first; e != null; e = e.next) {
-                    if (hash == e.hash && name.equals(e.name)) {
-                        IRubyObject oldValue = e.value;
-                        // All entries following removed node can stay
-                        // in list, but all preceding ones need to be
-                        // cloned.
-                        ConstantTableEntry newFirst = e.next;
-                        for (ConstantTableEntry p = first; p != e; p = p.next) {
-                            newFirst = new ConstantTableEntry(p.hash, p.name, p.value, newFirst);
-                        }
-                        table[index] = newFirst;
-                        constantTableSize--;
-                        constantTable = table; // write-volatile 
-                        return oldValue;
-                    }
-                }
-            }
-        } finally {
-            lock.unlock();
-        }
-        return null;
+        return constants.remove(name);
     }
-    
-
-    protected ConstantTableEntry[] constantTableGetTable() {
-        return constantTable;
-    }
-    
-    protected int constantTableGetSize() {
-        if (constantTable != null) {
-            return constantTableSize;
-        }
-        return 0;
-    }
-    
-    protected void constantTableSync(List<Variable<IRubyObject>> vars) {
-        ReentrantLock lock;
-        (lock = variableWriteLock).lock();
-        try {
-            constantTableSize = 0;
-            constantTableThreshold = (int)(CONSTANT_TABLE_DEFAULT_CAPACITY * CONSTANT_TABLE_LOAD_FACTOR);
-            constantTable =  new ConstantTableEntry[CONSTANT_TABLE_DEFAULT_CAPACITY];
-            for (Variable<IRubyObject> var : vars) {
-                assert var.isConstant() && var.getValue() != null;
-                constantTableStore(var.getName(), var.getValue());
-            }
-        } finally {
-            lock.unlock();
-        }
-    }
-    
-    // MUST be called from synchronized/locked block!
-    // should only be called by constantTableStore/constantTableFastStore
-    private final ConstantTableEntry[] constantTableRehash() {
-        ConstantTableEntry[] oldTable = constantTable;
-        int oldCapacity;
-        if ((oldCapacity = oldTable.length) >= CONSTANT_TABLE_MAXIMUM_CAPACITY) {
-            return oldTable;
-        }
-        
-        int newCapacity = oldCapacity << 1;
-        ConstantTableEntry[] newTable = new ConstantTableEntry[newCapacity];
-        constantTableThreshold = (int)(newCapacity * CONSTANT_TABLE_LOAD_FACTOR);
-        int sizeMask = newCapacity - 1;
-        ConstantTableEntry e;
-        for (int i = oldCapacity; --i >= 0; ) {
-            // We need to guarantee that any existing reads of old Map can
-            //  proceed. So we cannot yet null out each bin.
-            e = oldTable[i];
-
-            if (e != null) {
-                ConstantTableEntry next = e.next;
-                int idx = e.hash & sizeMask;
-
-                //  Single node on list
-                if (next == null)
-                    newTable[idx] = e;
-
-                else {
-                    // Reuse trailing consecutive sequence at same slot
-                    ConstantTableEntry lastRun = e;
-                    int lastIdx = idx;
-                    for (ConstantTableEntry last = next;
-                         last != null;
-                         last = last.next) {
-                        int k = last.hash & sizeMask;
-                        if (k != lastIdx) {
-                            lastIdx = k;
-                            lastRun = last;
-                        }
-                    }
-                    newTable[lastIdx] = lastRun;
-
-                    // Clone all remaining nodes
-                    for (ConstantTableEntry p = e; p != lastRun; p = p.next) {
-                        int k = p.hash & sizeMask;
-                        ConstantTableEntry m = new ConstantTableEntry(p.hash, p.name, p.value, newTable[k]);
-                        newTable[k] = m;
-                    }
-                }
-            }
-        }
-        constantTable = newTable;
-        return newTable;
-    }
-    
-
-    /**
-     * Method to help ease transition to new variables implementation.
-     * Will likely be deprecated in the near future.
-     */
-    @SuppressWarnings("unchecked")
-    protected Map constantTableGetMap() {
-        HashMap map = new HashMap();
-        ConstantTableEntry[] table;
-        if ((table = constantTable) != null) {
-            for (int i = table.length; --i >= 0; ) {
-                for (ConstantTableEntry e = table[i]; e != null; e = e.next) {
-                    map.put(e.name, e.value);
-                }
-            }
-        }
-        return map;
-    }
-    
-    /**
-     * Method to help ease transition to new variables implementation.
-     * Will likely be deprecated in the near future.
-     */
-    @SuppressWarnings("unchecked")
-    protected Map constantTableGetMap(Map map) {
-        ConstantTableEntry[] table;
-        if ((table = constantTable) != null) {
-            for (int i = table.length; --i >= 0; ) {
-                for (ConstantTableEntry e = table[i]; e != null; e = e.next) {
-                    map.put(e.name, e.value);
-                }
-            }
-        }
-        return map;
-    }
-
-    private CacheEntry UNDEFINED_METHOD = new CacheEntry(-1, UndefinedMethod.getInstance());
 
     public static class CacheEntry {
         private int generation;
