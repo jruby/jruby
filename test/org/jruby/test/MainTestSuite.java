@@ -42,6 +42,7 @@ import org.jruby.ext.posix.JavaFileStatTest;
 import org.jruby.javasupport.TestJava;
 import org.jruby.javasupport.TestJavaClass;
 import org.jruby.javasupport.test.JavaSupportTestSuite;
+import org.jruby.runtime.EventHookTest;
 import org.jruby.runtime.callback.TestReflectionCallback;
 import org.jruby.util.JRubyThreadContextTest;
 import org.jruby.util.PlatformTest;
@@ -81,12 +82,13 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(PlatformTest.class);
         suite.addTestSuite(ShellLauncherTest.class);
         suite.addTestSuite(TestRbConfigLibrary.class);
-        suite.addTestSuite(TestParser.class);    
+        suite.addTestSuite(TestParser.class);
         suite.addTestSuite(TestRubyBigDecimal.class);
         suite.addTestSuite(JRubyThreadContextTest.class);
         suite.addTestSuite(JavaFileStatTest.class);
         suite.addTestSuite(TestCodeCache.class);
         suite.addTestSuite(TestJavaReentrantExceptions.class);
+        suite.addTestSuite(EventHookTest.class);
         return suite;
     }
 }
