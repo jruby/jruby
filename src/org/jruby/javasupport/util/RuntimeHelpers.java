@@ -925,25 +925,6 @@ public class RuntimeHelpers {
         return runtime.getNil();
     }
     
-    public static IRubyObject getInstanceVariable(Ruby runtime, IRubyObject self, String name) {
-        IRubyObject result = self.getInstanceVariables().getInstanceVariable(name);
-        
-        if (result != null) return result;
-        
-        runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED, "instance variable " + name + " not initialized");
-        
-        return runtime.getNil();
-    }
-    
-    public static IRubyObject fastGetInstanceVariable(Ruby runtime, IRubyObject self, String internedName) {
-        IRubyObject result;
-        if ((result = self.getInstanceVariables().fastGetInstanceVariable(internedName)) != null) return result;
-        
-        runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED, "instance variable " + internedName + " not initialized");
-        
-        return runtime.getNil();
-    }
-    
     public static IRubyObject negate(IRubyObject value, Ruby runtime) {
         if (value.isTrue()) return runtime.getFalse();
         return runtime.getTrue();
@@ -1250,5 +1231,28 @@ public class RuntimeHelpers {
         if (maybeModule instanceof RubyModule) return (RubyModule)maybeModule;
         
         throw maybeModule.getRuntime().newTypeError(maybeModule + " is not a class/module");
+    }
+    
+    public static IRubyObject getGlobalVariable(Ruby runtime, String name) {
+        return runtime.getGlobalVariables().get(name);
+    }
+    
+    public static IRubyObject setGlobalVariable(IRubyObject value, Ruby runtime, String name) {
+        return runtime.getGlobalVariables().set(name, value);
+    }
+    
+    public static IRubyObject getInstanceVariable(IRubyObject self, Ruby runtime, String internedName) {
+        IRubyObject result;
+        
+        if ((result = self.getInstanceVariables().fastGetInstanceVariable(internedName)) == null) {
+            runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED, "instance variable " + internedName + " not initialized");
+            return runtime.getNil();
+        }
+        
+        return result;
+    }
+    
+    public static IRubyObject setInstanceVariable(IRubyObject value, IRubyObject self, String name) {
+        return self.getInstanceVariables().fastSetInstanceVariable(name, value);
     }
 }

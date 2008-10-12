@@ -934,62 +934,42 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void retrieveInstanceVariable(String name) {
-        loadRuntime();
         loadSelf();
+        loadRuntime();
         method.ldc(name);
-        invokeUtilityMethod("fastGetInstanceVariable", sig(IRubyObject.class, Ruby.class, IRubyObject.class, String.class));
+        invokeUtilityMethod("getInstanceVariable", sig(IRubyObject.class, IRubyObject.class, Ruby.class, String.class));
     }
 
     public void assignInstanceVariable(String name) {
-        // FIXME: more efficient with a callback
         loadSelf();
-        invokeIRubyObject("getInstanceVariables", sig(InstanceVariables.class));
-        method.swap();
-
         method.ldc(name);
-        method.swap();
-
-        method.invokeinterface(p(InstanceVariables.class), "fastSetInstanceVariable", sig(IRubyObject.class, params(String.class, IRubyObject.class)));
+        invokeUtilityMethod("setInstanceVariable", sig(IRubyObject.class, IRubyObject.class, IRubyObject.class, String.class));
     }
 
     public void assignInstanceVariable(String name, CompilerCallback value) {
-        // FIXME: more efficient with a callback
-        loadSelf();
-        invokeIRubyObject("getInstanceVariables", sig(InstanceVariables.class));
-
-        method.ldc(name);
         value.call(this);
-
-        method.invokeinterface(p(InstanceVariables.class), "fastSetInstanceVariable", sig(IRubyObject.class, params(String.class, IRubyObject.class)));
+        loadSelf();
+        method.ldc(name);
+        invokeUtilityMethod("setInstanceVariable", sig(IRubyObject.class, IRubyObject.class, IRubyObject.class, String.class));
     }
 
     public void retrieveGlobalVariable(String name) {
         loadRuntime();
-
-        invokeIRuby("getGlobalVariables", sig(GlobalVariables.class));
         method.ldc(name);
-        method.invokevirtual(p(GlobalVariables.class), "get", sig(IRubyObject.class, params(String.class)));
+        invokeUtilityMethod("getGlobalVariable", sig(IRubyObject.class, Ruby.class, String.class));
     }
 
     public void assignGlobalVariable(String name) {
-        // FIXME: more efficient with a callback
         loadRuntime();
-
-        invokeIRuby("getGlobalVariables", sig(GlobalVariables.class));
-        method.swap();
         method.ldc(name);
-        method.swap();
-        method.invokevirtual(p(GlobalVariables.class), "set", sig(IRubyObject.class, params(String.class, IRubyObject.class)));
+        invokeUtilityMethod("setGlobalVariable", sig(IRubyObject.class, IRubyObject.class, Ruby.class, String.class));
     }
 
     public void assignGlobalVariable(String name, CompilerCallback value) {
-        // FIXME: more efficient with a callback
-        loadRuntime();
-
-        invokeIRuby("getGlobalVariables", sig(GlobalVariables.class));
-        method.ldc(name);
         value.call(this);
-        method.invokevirtual(p(GlobalVariables.class), "set", sig(IRubyObject.class, params(String.class, IRubyObject.class)));
+        loadRuntime();
+        method.ldc(name);
+        invokeUtilityMethod("setGlobalVariable", sig(IRubyObject.class, IRubyObject.class, Ruby.class, String.class));
     }
 
     public void negateCurrentValue() {
