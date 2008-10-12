@@ -739,9 +739,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             // break jump
             {
                 method.label(catchBreak);
-                loadBlock();
                 loadThreadContext();
-                invokeUtilityMethod("breakJumpInWhile", sig(IRubyObject.class, JumpException.BreakJump.class, Block.class, ThreadContext.class));
+                invokeUtilityMethod("breakJumpInWhile", sig(IRubyObject.class, JumpException.BreakJump.class, ThreadContext.class));
                 method.go_to(done);
             }
         }
@@ -1352,7 +1351,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             getVariableCompiler().setMethodAdapter(mv);
             getInvocationCompiler().setMethodAdapter(mv);
 
-            mv.visitCode();
+            mv.start();
 
             // set up a local IRuby variable
             mv.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
@@ -1379,8 +1378,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             Label beforeBody = new Label();
             Label afterBody = new Label();
             Label catchBlock = new Label();
-            mv.visitTryCatchBlock(beforeBody, afterBody, catchBlock, p(exception));
-            mv.visitLabel(beforeBody);
+            mv.trycatch(beforeBody, afterBody, catchBlock, p(exception));
+            mv.label(beforeBody);
 
             regularCode.branch(this);
 
@@ -1421,8 +1420,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             invokeUtilityMethod("setErrorInfo", sig(void.class, Ruby.class, IRubyObject.class));
 
             mv.areturn();
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
+            mv.end();
         } finally {
             withinProtection = oldWithinProtection;
             this.method = old_method;

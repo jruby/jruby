@@ -150,7 +150,7 @@ public class WhileNode extends Node {
                     break loop;
                 } catch (JumpException.BreakJump bj) {
                     // JRUBY-530, while case
-                    result = RuntimeHelpers.breakJumpInWhile(bj, aBlock, context);
+                    result = RuntimeHelpers.breakJumpInWhile(bj, context);
                     break outerLoop;
                 }
             }
