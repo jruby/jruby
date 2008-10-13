@@ -69,7 +69,6 @@ import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -893,12 +892,7 @@ public class RubyModule extends RubyObject {
         // We can safely reference methods here instead of doing getMethods() since if we
         // are adding we are not using a IncludedModuleWrapper.
         synchronized(getMethods()) {
-            // If we add a method which already is cached in this class, then we should update the 
-            // cachemap so it stays up to date.
-            DynamicMethod existingMethod = getMethods().put(name, method);
-            if (existingMethod != null) {
-                runtime.getCacheMap().remove(existingMethod);
-            }
+            getMethods().put(name, method);
             invalidateCacheDescendants();
         }
     }
@@ -920,8 +914,6 @@ public class RubyModule extends RubyObject {
             if (method == null) {
                 throw runtime.newNameError("method '" + name + "' not defined in " + getName(), name);
             }
-            
-            runtime.getCacheMap().remove(method);
 
             invalidateCacheDescendants();
         }
@@ -1063,7 +1055,6 @@ public class RubyModule extends RubyObject {
             runtime.secure(4);
         }
         DynamicMethod method = searchMethod(oldName);
-        DynamicMethod oldMethod = searchMethod(name);
         if (method.isUndefined()) {
             if (isModule()) {
                 method = runtime.getObject().searchMethod(oldName);
@@ -1074,12 +1065,7 @@ public class RubyModule extends RubyObject {
                         (isModule() ? "module" : "class") + " `" + getName() + "'", oldName);
             }
         }
-        CacheMap cacheMap = runtime.getCacheMap();
-        cacheMap.remove(method);
-        cacheMap.remove(oldMethod);
-        if (oldMethod != oldMethod.getRealMethod()) {
-            cacheMap.remove(oldMethod.getRealMethod());
-        }
+
         invalidateCacheDescendants();
         putMethod(name, new AliasMethod(this, method, oldName));
     }
@@ -1101,15 +1087,10 @@ public class RubyModule extends RubyObject {
                         (isModule() ? "module" : "class") + " `" + getName() + "'", oldName);
             }
         }
-        CacheMap cacheMap = runtime.getCacheMap();
-        cacheMap.remove(method);
+
         for (String name: aliases) {
             if (oldName.equals(name)) continue;
-            DynamicMethod oldMethod = searchMethod(name);
-            cacheMap.remove(oldMethod);
-            if (oldMethod != oldMethod.getRealMethod()) {
-                cacheMap.remove(oldMethod.getRealMethod());
-            }
+
             putMethod(name, new AliasMethod(this, method, oldName));
         }
         invalidateCacheDescendants();
@@ -2132,9 +2113,6 @@ public class RubyModule extends RubyObject {
      * @return The new module wrapper resulting from this include
      */
     private RubyModule proceedWithInclude(RubyModule insertAbove, RubyModule moduleToInclude) {
-        // blow away caches for any methods that are redefined by module
-        getRuntime().getCacheMap().moduleIncluded(insertAbove, moduleToInclude);
-
         // In the current logic, if we get here we know that module is not an
         // IncludedModuleWrapper, so there's no need to fish out the delegate. But just
         // in case the logic should change later, let's do it anyway

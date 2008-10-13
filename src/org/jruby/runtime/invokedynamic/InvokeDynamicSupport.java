@@ -13,7 +13,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CacheMap.CacheSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -56,12 +55,6 @@ public class InvokeDynamicSupport {
                 MethodType.make(IRubyObject.class, DynamicMethod.class, site.type().parameterArray()));
         MethodHandle inHandle = MethodHandles.insertArgument(outHandle, method);
         site.setTarget(inHandle);
-        
-        context.getRuntime().getCacheMap().add(method, new CacheSite() {
-            public void removeCachedMethod() {
-                site.setTarget(null);
-            }
-        });
 
         // do normal invocation this time
         int length = args.length;

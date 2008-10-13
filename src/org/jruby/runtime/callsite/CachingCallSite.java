@@ -8,13 +8,12 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public abstract class CachingCallSite extends CallSite implements CacheMap.CacheSite {
+public abstract class CachingCallSite extends CallSite {
     protected volatile CacheEntry cache = CacheEntry.NULL_CACHE;
     private int misses = 0;
     private static final int MAX_MISSES = 50;
@@ -376,7 +375,6 @@ public abstract class CachingCallSite extends CallSite implements CacheMap.Cache
                 failedCallSites++;
             }
             cache = new CacheEntry(method, selfType, methodName);
-            selfType.getRuntime().getCacheMap().add(method, this);
         }
     }
 

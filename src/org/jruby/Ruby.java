@@ -101,7 +101,6 @@ import org.jruby.parser.ParserConfiguration;
 import org.jruby.platform.Errno;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ConstantCacheMap;
@@ -215,7 +214,6 @@ public final class Ruby {
         this.beanManager.register(parserStats);
         this.beanManager.register(new ClassCache(this));
         
-        this.cacheMap = new CacheMap(this);
         this.constantCacheMap = new ConstantCacheMap(this);
     }
     
@@ -1292,17 +1290,6 @@ public final class Ruby {
 
     void setObjectToYamlMethod(Object otym) {
         this.objectToYamlMethod = otym;
-    }
-
-    /**
-     * Retrieve mappings of cached methods to where they have been cached.  When a cached
-     * method needs to be invalidated this map can be used to remove all places it has been
-     * cached.
-     *
-     * @return the mappings of where cached methods have been stored
-     */
-    public CacheMap getCacheMap() {
-        return cacheMap;
     }
 
     public ConstantCacheMap getConstantCacheMap() {
@@ -2908,7 +2895,6 @@ public final class Ruby {
         return localTimeZoneCache;
     }
 
-    private final CacheMap cacheMap;
     private final ThreadService threadService;
     private Hashtable<Object, Object> runtimeInformation;
     
