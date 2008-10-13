@@ -86,7 +86,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.ConstantCacheMap;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.util.collections.WeakHashSet;
 
@@ -199,6 +198,7 @@ public class RubyModule extends RubyObject {
         }
     }
     protected final Generation generation;
+    protected final Generation constantGeneration;
     
     protected Set<RubyClass> includingHierarchies;
     
@@ -219,18 +219,20 @@ public class RubyModule extends RubyObject {
         id = runtime.allocModuleId();
         // if (parent == null) parent = runtime.getObject();
         setFlag(USER7_F, !isClass());
-        this.generation = new Generation();
+        generation = new Generation();
+        constantGeneration = new Generation();
     }
 
     /** separate path for MetaClass construction
      * 
      */
-    protected RubyModule(Ruby runtime, RubyClass metaClass, Generation generation, boolean objectSpace) {
+    protected RubyModule(Ruby runtime, RubyClass metaClass, Generation generation, Generation constantGeneration, boolean objectSpace) {
         super(runtime, metaClass, objectSpace);
         id = runtime.allocModuleId();
         // if (parent == null) parent = runtime.getObject();
         setFlag(USER7_F, !isClass());
         this.generation = generation;
+        this.constantGeneration = constantGeneration;
     }
     
     /** used by MODULE_ALLOCATOR and RubyClass constructors
@@ -491,19 +493,9 @@ public class RubyModule extends RubyObject {
 
         infectBy(module);
 
-        flushConstants();
         doIncludeModule(module);
+        invalidateConstantCacheDescendants();
         invalidateCacheDescendants();
-    }
-
-    private void flushConstants() {
-        ConstantCacheMap map = getRuntime().getConstantCacheMap();
-
-        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
-            for (String name : p.getConstantNames()) {
-                map.remove(name);
-            }
-        }
     }
 
     public void defineMethod(String name, Callback method) {
@@ -946,6 +938,10 @@ public class RubyModule extends RubyObject {
         return generation.hash;
     }
     
+    public final int getConstantSerialNumber() {
+        return constantGeneration.hash;
+    }
+    
     private DynamicMethod cacheHit(String name) {
         CacheEntry cacheEntry = cachedMethods.get(name);
 
@@ -980,6 +976,14 @@ public class RubyModule extends RubyObject {
             includingHierarchy.invalidateCacheDescendants();
         }
     }
+    
+    protected synchronized void invalidateConstantCacheDescendants() {
+        constantGeneration.update();
+        // update all hierarchies into which this module has been included
+        if (includingHierarchies != null) for (RubyClass includingHierarchy : includingHierarchies) {
+            includingHierarchy.invalidateConstantCacheDescendants();
+        }
+    }    
 
     /**
      * Search through this module and supermodules for method definitions. Cache superclass definitions in this class.
@@ -2243,7 +2247,7 @@ public class RubyModule extends RubyObject {
         String name = validateConstant(rubyName.asJavaString());
         IRubyObject value;
         if ((value = deleteConstant(name)) != null) {
-            getRuntime().getConstantCacheMap().remove(name);
+            invalidateConstantCacheDescendants();
             if (value != UNDEF) {
                 return value;
             }
@@ -2545,7 +2549,7 @@ public class RubyModule extends RubyObject {
         IRubyObject oldValue = fetchConstant(name);
         if (oldValue != null) {
             Ruby runtime = getRuntime();
-            runtime.getConstantCacheMap().remove(name);
+            invalidateConstantCacheDescendants();
             if (oldValue == UNDEF) {
                 runtime.getLoadService().removeAutoLoadFor(getName() + "::" + name);
             } else {
