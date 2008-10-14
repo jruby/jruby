@@ -99,6 +99,7 @@ import org.jruby.ast.FCallTwoArgBlockNode;
 import org.jruby.ast.FCallTwoArgBlockPassNode;
 import org.jruby.ast.FCallTwoArgNode;
 import org.jruby.ast.FalseNode;
+import org.jruby.ast.FileNode;
 import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FlipNode;
 import org.jruby.ast.FloatNode;
@@ -253,7 +254,7 @@ public class ParserSupport {
         case Tokens.kFALSE:
             return new FalseNode(token.getPosition());
         case Tokens.k__FILE__:
-            return new StrNode(token.getPosition(), ByteList.create(token.getPosition().getFile()));
+            return new FileNode(token.getPosition(), ByteList.create(token.getPosition().getFile()));
         case Tokens.k__LINE__:
             return new FixnumNode(token.getPosition(), token.getPosition().getEndLine()+1);
         case Tokens.tIDENTIFIER:
