@@ -39,6 +39,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import constantine.Constant;
 import java.io.ByteArrayInputStream;
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -1183,8 +1184,8 @@ public final class Ruby {
     private void initErrno() {
         if (profile.allowModule("Errno")) {
             errnoModule = defineModule("Errno");
-            for (Map.Entry<String, Integer> entry : Errno.entries().entrySet()) {
-                createSysErr(entry.getValue(), entry.getKey());
+            for (Constant c : Errno.values()) {
+                createSysErr(c.value(), c.name());
             }
         }
     }
