@@ -66,6 +66,7 @@ public class RbConfigLibrary implements Library {
         RUBY_OS_NAMES.put("Windows 98", RUBY_WIN32);
         RUBY_OS_NAMES.put("Windows Me", RUBY_WIN32);
         RUBY_OS_NAMES.put("Windows NT", RUBY_WIN32);
+        RUBY_OS_NAMES.put("Windows 2000", RUBY_WIN32);
         // that's what JDK5 produces on Windows Vista
         RUBY_OS_NAMES.put("Windows NT (unknown)", RUBY_WIN32);
         RUBY_OS_NAMES.put("Windows XP", RUBY_WIN32);
