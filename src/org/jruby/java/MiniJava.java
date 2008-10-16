@@ -539,30 +539,33 @@ public class MiniJava implements Library {
             mv.anewarray(p(IRubyObject.class));
 
             // TODO: make this do specific-arity calling
-            for (int i = 0; i < paramTypes.length; i++) {
+            for (int i = 0, argIndex = 1; i < paramTypes.length; i++) {
+                Class paramType = paramTypes[i];
                 mv.dup();
                 mv.pushInt(i);
                 // convert to IRubyObject
                 mv.getstatic(name, "ruby", ci(Ruby.class));
                 if (paramTypes[i].isPrimitive()) {
-                    if (paramTypes[i] == byte.class || paramTypes[i] == short.class || paramTypes[i] == char.class || paramTypes[i] == int.class) {
-                        mv.iload(i + 1);
+                    if (paramType == byte.class || paramType == short.class || paramType == char.class || paramType == int.class) {
+                        mv.iload(argIndex++);
                         mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, int.class));
-                    } else if (paramTypes[i] == long.class) {
-                        mv.lload(i + 1);
+                    } else if (paramType == long.class) {
+                        mv.lload(argIndex);
+                        argIndex += 2; // up two slots, for long's two halves
                         mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, long.class));
-                    } else if (paramTypes[i] == float.class) {
-                        mv.fload(i + 1);
+                    } else if (paramType == float.class) {
+                        mv.fload(argIndex++);
                         mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, float.class));
-                    } else if (paramTypes[i] == double.class) {
-                        mv.dload(i + 1);
+                    } else if (paramType == double.class) {
+                        mv.dload(argIndex);
+                        argIndex += 2; // up two slots, for long's two halves
                         mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, double.class));
-                    } else if (paramTypes[i] == boolean.class) {
-                        mv.iload(i + 1);
+                    } else if (paramType == boolean.class) {
+                        mv.iload(argIndex++);
                         mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, boolean.class));
                     }
                 } else {
-                    mv.aload(i + 1);
+                    mv.aload(argIndex++);
                     mv.invokestatic(p(JavaUtil.class), "convertJavaToUsableRubyObject", sig(IRubyObject.class, Ruby.class, Object.class));
                 }
                 mv.aastore();

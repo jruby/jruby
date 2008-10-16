@@ -214,6 +214,12 @@ describe "Java String, primitive, and object-typed interface methods" do
         obj
       end
       
+      def receiveLongAndDouble(l, d)
+        str = (l + d).to_s
+        self.result = str
+        str
+      end
+      
       %w[String Byte Short Char Int Long Float Double Null True False].each do |type|
         alias_method "receive#{type}".intern, :receiveObject
       end
@@ -275,6 +281,10 @@ describe "Java String, primitive, and object-typed interface methods" do
     vri_handler.receiveFalse(false).should == false
     vri.result.should == false
     vri.result.class.should == FalseClass
+    
+    vri_handler.receiveLongAndDouble(1, 1.0).should == "2.0"
+    vri.result.should == "2.0"
+    vri.result.class.should == String
   end
 end
 

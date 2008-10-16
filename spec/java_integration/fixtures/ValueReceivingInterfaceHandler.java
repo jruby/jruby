@@ -54,6 +54,10 @@ public class ValueReceivingInterfaceHandler {
     public Object receiveNull(Object nil) {
         return vri.receiveNull(nil);
     }
+    
+    public String receiveLongAndDouble(long l, double d) {
+        return vri.receiveLongAndDouble(l, d);
+    }
 
     public Byte receiveByteObj(Byte b) {
         return vri.receiveByteObj(b);

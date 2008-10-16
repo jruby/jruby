@@ -13,6 +13,7 @@ public interface ValueReceivingInterface {
   public boolean receiveTrue(boolean t);
   public boolean receiveFalse(boolean f);
   public Object receiveNull(Object nil);
+  public String receiveLongAndDouble(long l, double d);
   
   public Byte receiveByteObj(Byte b);
   public Short receiveShortObj(Short s);
