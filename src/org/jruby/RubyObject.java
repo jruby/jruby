@@ -282,6 +282,8 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * only if ObjectSpace is enabled.
      */
     public RubyObject(Ruby runtime, RubyClass metaClass) {
+        assert metaClass != null: "NULL Metaclass!!?!?!";
+
         this.metaClass = metaClass;
         
         if (runtime.isObjectSpaceEnabled()) addToObjectSpace(runtime);

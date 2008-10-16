@@ -910,13 +910,17 @@ public final class Ruby {
         }
         
         // initialize the root of the class hierarchy completely
-        initRoot(tc);
+        initRoot();
 
         // Construct the top-level execution frame and scope for the main thread
         tc.prepareTopLevel(objectClass, topSelf);
 
         // Initialize all the core classes
         bootstrap();
+        
+        // Initialize the "dummy" class used as a marker
+        dummyClass = new RubyClass(this, classClass);
+        dummyClass.freeze(tc);
         
         // Create global constants and variables
         RubyGlobal.createGlobals(tc, this);
@@ -938,7 +942,7 @@ public final class Ruby {
         initExceptions();
     }
 
-    private void initRoot(ThreadContext context) {
+    private void initRoot() {
         // Bootstrap the top of the hierarchy
         objectClass = RubyClass.createBootstrapClass(this, "Object", null, RubyObject.OBJECT_ALLOCATOR);
         moduleClass = RubyClass.createBootstrapClass(this, "Module", objectClass, RubyModule.MODULE_ALLOCATOR);
@@ -965,10 +969,6 @@ public final class Ruby {
         // Initialize Kernel and include into Object
         RubyKernel.createKernelModule(this);
         objectClass.includeModule(kernelModule);
-        
-        // Initialize the "dummy" class used as a marker
-        dummyClass = new RubyClass(this);
-        dummyClass.freeze(context);
 
         // Object is ready, create top self
         topSelf = TopSelfFactory.createTopSelf(this);
