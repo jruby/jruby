@@ -54,25 +54,13 @@ import org.jruby.runtime.builtin.IRubyObject;
  * method definition node.
  */
 public class DefnNode extends MethodDefNode implements INameNode {
-    private final Visibility visibility;
-    
     public DefnNode(ISourcePosition position, ArgumentNode nameNode, ArgsNode argsNode, 
-            StaticScope scope, Node bodyNode, Visibility visibility) {
+            StaticScope scope, Node bodyNode) {
         super(position, nameNode, argsNode, scope, bodyNode, NodeType.DEFNNODE);
-        
-        this.visibility = visibility;
     }
 
     public Instruction accept(NodeVisitor iVisitor) {
         return iVisitor.visitDefnNode(this);
-    }
-
-    /**
-     * Gets the visibility of the method.
-     * @return the visibility
-     */
-    public Visibility getVisibility() {
-        return visibility;
     }
     
     /**

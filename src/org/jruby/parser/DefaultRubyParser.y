@@ -126,7 +126,6 @@ import org.jruby.lexer.yacc.StrTerm;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.lexer.yacc.Token;
-import org.jruby.runtime.Visibility;
 import org.jruby.util.ByteList;
 
 public class DefaultRubyParser {
@@ -1170,7 +1169,7 @@ primary       : literal
                   Node body = $5; //$5 == null ? NilImplicitNode.NIL : $5;
 
                   /* NOEX_PRIVATE for toplevel */
-                  $$ = new DefnNode(support.union($1, $6), new ArgumentNode($2.getPosition(), (String) $2.getValue()), $<ArgsNode>4, support.getCurrentScope(), body, Visibility.PRIVATE);
+                  $$ = new DefnNode(support.union($1, $6), new ArgumentNode($2.getPosition(), (String) $2.getValue()), $<ArgsNode>4, support.getCurrentScope(), body);
                   support.popCurrentScope();
                   support.setInDef(false);
               }
