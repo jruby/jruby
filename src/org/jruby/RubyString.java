@@ -132,25 +132,25 @@ public class RubyString extends RubyObject {
         return value.equal(((RubyString)other).value);
     }
 
-    private RubyString(Ruby runtime, RubyClass rubyClass, CharSequence value) {
+    public RubyString(Ruby runtime, RubyClass rubyClass, CharSequence value) {
         super(runtime, rubyClass);
         assert value != null;
         this.value = new ByteList(ByteList.plain(value), false);
     }
 
-    private RubyString(Ruby runtime, RubyClass rubyClass, byte[] value) {
+    public RubyString(Ruby runtime, RubyClass rubyClass, byte[] value) {
         super(runtime, rubyClass);
         assert value != null;
         this.value = new ByteList(value);
     }
 
-    private RubyString(Ruby runtime, RubyClass rubyClass, ByteList value) {
+    public RubyString(Ruby runtime, RubyClass rubyClass, ByteList value) {
         super(runtime, rubyClass);
         assert value != null;
         this.value = value;
     }
     
-    private RubyString(Ruby runtime, RubyClass rubyClass, ByteList value, boolean objectSpace) {
+    public RubyString(Ruby runtime, RubyClass rubyClass, ByteList value, boolean objectSpace) {
         super(runtime, rubyClass, objectSpace);
         assert value != null;
         this.value = value;
