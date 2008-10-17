@@ -401,9 +401,9 @@ public class RubyDateFormat extends DateFormat {
                 case FORMAT_ZONE_OFF:
                     value = dt.getZone().getOffset(dt.getMillis());
                     if (value <= 0) {
-                        toAppendTo.append('+');
-                    } else {
                         toAppendTo.append('-');
+                    } else {
+                        toAppendTo.append('+');
                     }
                     value = Math.abs(value);
                     if (value / 3600000 < 10) {

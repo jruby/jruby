@@ -124,3 +124,13 @@ test_equal 1969, Time.utc(69).year
 test_equal 2038, Time.utc(38).year
 test_equal 2038, Time.utc(138).year
 test_equal 1902, Time.utc(1902).year
+
+old_tz = ENV['TZ']
+begin
+  ENV['TZ']='Europe/Helsinki'
+  test_equal "+0300 EEST", Time.now.strftime('%z %Z')
+  ENV['TZ']='America/New_York'
+  test_equal "-0400 EDT", Time.now.strftime('%z %Z')
+ensure
+  ENV['TZ'] = old_tz
+end
