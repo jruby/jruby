@@ -1314,4 +1314,10 @@ public class RubyKernel {
         }
     }
 
+    @JRubyMethod(name = { "__method__", "__callee__" }, module = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject __method__(ThreadContext context, IRubyObject recv) {
+        Frame f = context.getCurrentFrame();
+        String name = f != null ? f.getName() : null;
+        return name != null ? context.getRuntime().newSymbol(name) : context.getRuntime().getNil();
+    }
 }
