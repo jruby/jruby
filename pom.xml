@@ -67,6 +67,16 @@
       </snapshots>
       <url>http://repository.codehaus.org</url>
     </repository>
+    <repository>
+      <id>constantine-kenai</id>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <url>http://kenai.com/svn/constantine~repo</url>
+    </repository>
   </repositories>
   <developers>
     <developer>

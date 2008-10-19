@@ -87,6 +87,12 @@
       <version>0.1</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>com.kenai</groupId>
+      <artifactId>constantine</artifactId>
+      <version>0.2</version>
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
 
   <build>
