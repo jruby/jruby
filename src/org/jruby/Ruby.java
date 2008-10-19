@@ -39,7 +39,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import constantine.Constant;
+import com.kenai.constantine.Constant;
 import java.io.ByteArrayInputStream;
 import java.io.FileDescriptor;
 import java.io.IOException;

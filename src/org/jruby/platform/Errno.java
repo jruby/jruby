@@ -28,8 +28,8 @@
 
 package org.jruby.platform;
 
-import constantine.Constant;
-import constantine.ConstantSet;
+import com.kenai.constantine.Constant;
+import com.kenai.constantine.ConstantSet;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
