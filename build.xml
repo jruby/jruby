@@ -433,7 +433,7 @@
     </java>
   </target>
 
-  <target name="install-mocha">
+  <target name="install-build-gems" depends="install-gems">
     <property name="jruby.home" value="${basedir}"/>
     <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
       <classpath refid="build.classpath"/>
@@ -442,6 +442,7 @@
       <arg value="--command"/>
       <arg value="maybe_install_gems"/>
       <arg value="mocha"/>
+      <arg value="hoe"/>
       <arg value="--env-shebang"/>
     </java>
   </target>
@@ -708,7 +709,7 @@
     </java>
   </target>
   
-  <target name="test-specs" depends="install-gems">
+  <target name="test-specs" depends="install-build-gems">
       <run-rake rake.target="spec:ji:quiet"/>
   </target>
 
@@ -1293,7 +1294,7 @@
       <delete dir="${rails.dir}"/>
   </target>
 
-  <target name="test-rails" depends="jar,install-gems,install-mocha,fetch-rails">
+  <target name="test-rails" depends="jar,install-build-gems,fetch-rails">
       <java dir="${rails.dir}" classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
         <classpath>
           <pathelement location="${jruby.classes.dir}"/>
