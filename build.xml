@@ -708,7 +708,7 @@
     </java>
   </target>
   
-  <target name="test-specs">
+  <target name="test-specs" depends="install-gems">
       <run-rake rake.target="spec:ji:quiet"/>
   </target>
 
