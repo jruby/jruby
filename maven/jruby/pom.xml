@@ -64,9 +64,9 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.jruby.extras</groupId>
+      <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
-      <version>3.0.2</version>
+      <version>3.0.8</version>
       <scope>provided</scope>
     </dependency>
     <dependency>

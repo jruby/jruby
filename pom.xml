@@ -77,6 +77,12 @@
       </snapshots>
       <url>http://kenai.com/svn/constantine~repo</url>
     </repository>
+    <repository>
+      <id>maven2-repository.dev.java.net</id>
+      <name>Java.net Repository for Maven</name>
+      <url>http://download.java.net/maven/2/</url>
+      <layout>default</layout>
+    </repository>
   </repositories>
   <developers>
     <developer>
