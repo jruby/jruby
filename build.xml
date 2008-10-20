@@ -1253,7 +1253,7 @@
       <delete dir="${rails.dir}"/>
   </target>
 
-  <target name="test-rails" depends="jar,install-gems,install-mocha">
+  <target name="test-rails" depends="jar,install-gems,install-mocha,fetch-rails">
       <java dir="${rails.dir}" classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
         <classpath>
           <pathelement location="${jruby.classes.dir}"/>
