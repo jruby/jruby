@@ -3,17 +3,15 @@ package org.jruby.runtime.callsite;
 import org.jruby.RubyClass;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 
-class CacheEntry {
-    public static final CacheEntry NULL_CACHE = new CacheEntry(null, null, null);
-    public final DynamicMethod cachedMethod;
+public class CacheEntry {
+    public static final CacheEntry NULL_CACHE = new CacheEntry(null, -1);
+    public final DynamicMethod method;
     public final int generation;
-    public final String methodName;
 
-    public CacheEntry(DynamicMethod method, RubyClass type, String name) {
+    public CacheEntry(DynamicMethod method, int gen) {
         super();
-        cachedMethod = method;
-        generation = type == null ? 0 : type.getSerialNumber();
-        methodName = name;
+        this.method = method;
+        generation = gen;
     }
 
     public boolean typeOk(RubyClass incomingType) {

@@ -87,6 +87,7 @@ import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodFactory;
+import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.util.collections.WeakHashSet;
 
 /**
@@ -925,13 +926,26 @@ public class RubyModule extends RubyObject {
      * @return The method, or UndefinedMethod if not found
      */    
     public DynamicMethod searchMethod(String name) {
-        DynamicMethod method = cacheHit(name);
+        return searchWithCache(name).method;
+    }
 
-        if (method != null) return method;
+    /**
+     * Search through this module and supermodules for method definitions. Cache superclass definitions in this class.
+     * 
+     * @param name The name of the method to search for
+     * @return The method, or UndefinedMethod if not found
+     */    
+    public CacheEntry searchWithCache(String name) {
+        CacheEntry entry = cacheHit(name);
 
-        method = searchMethodInner(name);
+        if (entry != null) return entry;
 
-        return method != null ? addToCache(name, method) : addToCache(name, UndefinedMethod.getInstance());
+        // we grab serial number first; the worst that will happen is we cache a later
+        // update with an earlier serial number, which would just flush anyway
+        int serial = getSerialNumber();
+        DynamicMethod method = searchMethodInner(name);
+
+        return method != null ? addToCache(name, method, serial) : addToCache(name, UndefinedMethod.getInstance(), serial);
     }
     
     public final int getSerialNumber() {
@@ -942,22 +956,23 @@ public class RubyModule extends RubyObject {
         return constantGeneration.hash;
     }
     
-    private DynamicMethod cacheHit(String name) {
+    private CacheEntry cacheHit(String name) {
         CacheEntry cacheEntry = cachedMethods.get(name);
 
         if (cacheEntry != null) {
-            if (cacheEntry.getGeneration() == getSerialNumber()) {
-                return cacheEntry.getMethod();
+            if (cacheEntry.generation == getSerialNumber()) {
+                return cacheEntry;
             }
         }
         
         return null;
     }
     
-    private DynamicMethod addToCache(String name, DynamicMethod method) {
-        cachedMethods.put(name, new CacheEntry(getSerialNumber(), method));
+    private CacheEntry addToCache(String name, DynamicMethod method, int serial) {
+        CacheEntry entry = new CacheEntry(method, serial);
+        cachedMethods.put(name, entry);
 
-        return method;
+        return entry;
     }
     
     protected DynamicMethod searchMethodInner(String name) {
@@ -965,7 +980,6 @@ public class RubyModule extends RubyObject {
         
         if (method != null) return method;
         
-//        System.out.println("MISS(recurse): " + name + "@" + getName() + "[" + generation.get() + "]");
         return superClass == null ? null : superClass.searchMethodInner(name);
     }
 
@@ -2912,23 +2926,5 @@ public class RubyModule extends RubyObject {
         
     protected IRubyObject constantTableRemove(String name) {
         return constants.remove(name);
-    }
-
-    public static class CacheEntry {
-        private int generation;
-        DynamicMethod method;
-
-        public CacheEntry(int generation, DynamicMethod method) {
-            this.generation = generation;
-            this.method = method;
-        }
-
-        public int getGeneration() {
-            return generation;
-        }
-
-        public DynamicMethod getMethod() {
-            return method;
-        }
     }
 }
