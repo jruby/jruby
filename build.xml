@@ -432,6 +432,19 @@
       <arg value="--env-shebang"/>
     </java>
   </target>
+
+  <target name="install-mocha">
+    <property name="jruby.home" value="${basedir}"/>
+    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
+      <classpath refid="build.classpath"/>
+      <classpath path="${jruby.classes.dir}"/>
+      <sysproperty key="jruby.home" value="${jruby.home}"/>
+      <arg value="--command"/>
+      <arg value="maybe_install_gems"/>
+      <arg value="mocha"/>
+      <arg value="--env-shebang"/>
+    </java>
+  </target>
   
   <target name="compile-stdlib" unless="test">
     <copy todir="${build.dir}/stdlib">
@@ -1205,5 +1218,51 @@
         <attribute name="Main-Class" value="org.jruby.Main"/>
       </manifest>
     </jarjar>
+  </target>
+  
+  <target name="fetch-rails">
+      <condition property="rails-repo-exists">
+          <available file="${rails.dir}/.git"/>
+      </condition>
+      
+      <antcall target="do-fetch-rails"/>
+      <antcall target="do-update-rails"/>
+  </target>
+
+  <target name="do-fetch-rails" unless="rails-repo-exists">
+      <!-- Rails repo might already have been pulled, so delete it -->
+      <antcall target="clear-rails" inheritall="false"/>
+
+      <echo message="Cloning rails repo to: ${rails.dir}"/>
+      <exec executable="git">
+          <arg value="clone"/>
+          <arg value="--depth"/><arg value="1"/>
+          <arg value="git://github.com/rails/rails.git"/>
+          <arg value="${rails.dir}"/>
+      </exec>
+  </target>
+
+  <target name="do-update-rails" if="rails-repo-exists">
+      <echo message="Updading rubyspec repo -- ${rails.dir}"/>
+      <exec dir="${rails.dir}" executable="git">
+        <arg value="pull"/>
+      </exec>
+  </target>
+
+  <target name="clear-rails">
+      <delete dir="${rails.dir}"/>
+  </target>
+
+  <target name="test-rails" depends="jar,install-gems,install-mocha">
+      <java dir="${rails.dir}" classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
+        <classpath>
+          <pathelement location="${jruby.classes.dir}"/>
+          <pathelement location="${build.dir}/jar-complete"/>
+          <path refid="build.classpath"/>
+        </classpath>
+        <sysproperty key="jruby.home" value="${base.dir}"/>
+        <arg value="${base.dir}/bin/rake"/>
+        <arg value="test"/>
+      </java>
   </target>
 </project>
