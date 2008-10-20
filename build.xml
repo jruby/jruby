@@ -506,6 +506,7 @@
     run-junit-compiled,
     run-junit-compiled-1.9,
     test-security-manager,
+    test-specs,
     coverage-report"
     description="Runs unit tests.">
   </target>
@@ -706,6 +707,46 @@
       <arg value="puts 'Restricted policy looks ok'"/>
     </java>
   </target>
+  
+  <target name="test-specs">
+      <run-rake rake.target="spec:ji:quiet"/>
+  </target>
+
+  <macrodef name="run-rake">
+    <attribute name="compile.mode" default="OFF"/>
+    <attribute name="jit.threshold" default="20"/>
+    <attribute name="jit.max" default="-1"/>
+    <attribute name="objectspace.enabled" default="true"/>
+    <attribute name="thread.pooling" default="false"/>
+    <attribute name="reflection" default="false"/>
+    <attribute name="rake.target"/>
+
+    <sequential>
+      <echo message="compile=@{compile.mode}, threshold=@{jit.threshold}, objectspace=@{objectspace.enabled} threadpool=@{thread.pooling} reflection=@{reflection}"/>
+    
+      <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${base.dir}">
+	<classpath refid="build.classpath"/>
+	<classpath path="${jruby.classes.dir}"/>
+
+	<jvmarg value="-ea"/>
+
+	<sysproperty key="jruby.home" value="${basedir}"/>
+	<sysproperty key="jruby.launch.inproc" value="false"/>
+      
+	<!-- properties tweaked for individual runs -->
+	<sysproperty key="jruby.compile.mode" value="@{compile.mode}"/>
+	<sysproperty key="jruby.jit.threshold" value="@{jit.threshold}"/>
+	<sysproperty key="jruby.jit.max" value="@{jit.max}"/>
+	<sysproperty key="jruby.objectspace.enabled" value="@{objectspace.enabled}"/>
+	<sysproperty key="jruby.thread.pool.enabled" value="@{thread.pooling}"/>
+	<sysproperty key="jruby.reflection" value="@{reflection}"/>
+	<sysproperty key="jruby.launch.inproc" value="false"/>
+
+	<arg line="${base.dir}/bin/rake"/>
+	<arg line="@{rake.target}"/>
+      </java>
+    </sequential>
+  </macrodef>
 
   <target name="detect-stable-specs-need-update">
     <property file="${spec.dir}/rubyspecs.current.revision"/>
@@ -894,7 +935,6 @@
     <attribute name="thread.pooling" default="false"/>
     <attribute name="reflection" default="false"/>
     <attribute name="mode.name"/>
-    <element name="extra-args" optional="true"/>
 
     <sequential>
       <echo message="compile=@{compile.mode}, threshold=@{jit.threshold}, objectspace=@{objectspace.enabled} threadpool=@{thread.pooling} reflection=@{reflection}"/>
