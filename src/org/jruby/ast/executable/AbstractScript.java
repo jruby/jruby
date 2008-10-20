@@ -94,8 +94,13 @@ public abstract class AbstractScript implements Script {
         callSites[index] = MethodIndex.getVariableCallSite(name);
         return callSites;
     }
+    
+    public final void setFilename(String filename) {
+        this.filename = filename;
+    }
 
     public CallSite[] callSites;
     public RubySymbol[] symbols;
     public RubyFixnum[] fixnums;
+    public String filename;
 }

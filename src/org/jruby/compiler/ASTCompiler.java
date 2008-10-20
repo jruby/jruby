@@ -114,6 +114,7 @@ import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.DSymbolNode;
 import org.jruby.ast.DXStrNode;
 import org.jruby.ast.DefsNode;
+import org.jruby.ast.FileNode;
 import org.jruby.ast.FlipNode;
 import org.jruby.ast.ForNode;
 import org.jruby.ast.ModuleNode;
@@ -3089,7 +3090,11 @@ public class ASTCompiler {
     public void compileStr(Node node, BodyCompiler context) {
         StrNode strNode = (StrNode) node;
 
-        context.createNewString(strNode.getValue());
+        if (strNode instanceof FileNode) {
+            context.loadFilename();
+        } else {
+            context.createNewString(strNode.getValue());
+        }
     }
 
     public void compileSuper(Node node, BodyCompiler context) {

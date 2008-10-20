@@ -543,4 +543,5 @@ public interface BodyCompiler {
     public void wrapJavaException();
     public void literalSwitch(int[] caseInts, Object caseBodies, ArrayCallback casesCallback, CompilerCallback defaultCallback);
     public void typeCheckBranch(Class type, BranchCallback trueCallback, BranchCallback falseCallback);
+    public void loadFilename();
 }

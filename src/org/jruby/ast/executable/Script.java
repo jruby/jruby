@@ -13,4 +13,5 @@ public interface Script {
     
     public IRubyObject run(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
     public IRubyObject load(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
+    public void setFilename(String filename);
 }

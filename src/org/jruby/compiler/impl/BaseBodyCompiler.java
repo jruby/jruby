@@ -34,6 +34,7 @@ import org.jruby.compiler.CompilerCallback;
 import org.jruby.compiler.InvocationCompiler;
 import org.jruby.compiler.BodyCompiler;
 import org.jruby.compiler.NotCompilableException;
+import org.jruby.compiler.ScriptCompiler;
 import org.jruby.compiler.VariableCompiler;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
@@ -2396,5 +2397,12 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         falseCallback.branch(this);
 
         method.label(done);
+    }
+    
+    public void loadFilename() {
+        loadRuntime();
+        loadThis();
+        method.getfield(getScriptCompiler().getClassname(), "filename", ci(String.class));
+        method.invokestatic(p(RubyString.class), "newString", sig(RubyString.class, Ruby.class, CharSequence.class));
     }
 }

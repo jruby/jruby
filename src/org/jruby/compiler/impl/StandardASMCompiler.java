@@ -375,6 +375,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         initMethod.ldc(c(getClassname()));
         initMethod.invokestatic(p(Class.class), "forName", sig(Class.class, params(String.class)));
         initMethod.putfield(getClassname(), "$class", ci(Class.class));
+        
+        // JRUBY-3014: make __FILE__ dynamically determined at load time, but
+        // we provide a reasonable default here
+        initMethod.aload(THIS);
+        initMethod.ldc(getSourcename());
+        initMethod.putfield(getClassname(), "filename", ci(String.class));
     }
 
     private void endInit() {
