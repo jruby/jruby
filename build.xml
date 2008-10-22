@@ -444,6 +444,7 @@
       <arg value="maybe_install_gems"/>
       <arg value="mocha"/>
       <arg value="hoe"/>
+      <arg value="diff-lcs"/>
       <arg value="--env-shebang"/>
     </java>
   </target>
