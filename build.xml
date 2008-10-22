@@ -151,6 +151,7 @@
       <src path="${src.dir}"/>
       <patternset refid="java.src.pattern"/>
       <compilerarg line="-XDignore.symbol.file=true"/>
+      <compilerarg line="-J-Xmx512M"/>
     </apt>
   </target>
 
