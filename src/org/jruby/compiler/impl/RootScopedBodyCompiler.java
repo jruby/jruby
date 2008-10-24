@@ -68,6 +68,25 @@ public abstract class RootScopedBodyCompiler extends BaseBodyCompiler {
         method.label(scopeStart);
     }
 
+    public ChainedRootBodyCompiler outline(String methodName) {
+        // chain to the next segment of this giant method
+        method.aload(StandardASMCompiler.THIS);
+
+        // load all arguments straight through
+        for (int i = 1; i <= getClosureIndex(); i++) {
+            method.aload(i);
+        }
+        // we append an index to ensure two identical method names will not conflict
+        methodName = methodName + "_" + script.getAndIncrementMethodIndex();
+        method.invokevirtual(script.getClassname(), methodName, getSignature());
+
+        ChainedRootBodyCompiler methodCompiler = new ChainedRootBodyCompiler(script, methodName, inspector, scope, this);
+
+        methodCompiler.beginChainedMethod();
+
+        return methodCompiler;
+    }
+
     public void endBody() {
         // return last value from execution
         method.areturn();
@@ -111,7 +130,7 @@ public abstract class RootScopedBodyCompiler extends BaseBodyCompiler {
 
     public void performReturn() {
         // normal return for method body. return jump for within a begin/rescue/ensure
-        if (withinProtection) {
+        if (inNestedMethod) {
             loadThreadContext();
             invokeUtilityMethod("returnJump", sig(JumpException.ReturnJump.class, IRubyObject.class, ThreadContext.class));
             method.athrow();
@@ -124,7 +143,7 @@ public abstract class RootScopedBodyCompiler extends BaseBodyCompiler {
         if (currentLoopLabels != null) {
             value.call(this);
             issueLoopBreak();
-        } else if (withinProtection) {
+        } else if (inNestedMethod) {
             loadThreadContext();
             value.call(this);
             invokeUtilityMethod("breakJump", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
@@ -141,7 +160,7 @@ public abstract class RootScopedBodyCompiler extends BaseBodyCompiler {
         if (currentLoopLabels != null) {
             value.call(this);
             issueLoopNext();
-        } else if (withinProtection) {
+        } else if (inNestedMethod) {
             value.call(this);
             invokeUtilityMethod("nextJump", sig(IRubyObject.class, IRubyObject.class));
         } else {
@@ -156,7 +175,7 @@ public abstract class RootScopedBodyCompiler extends BaseBodyCompiler {
     public void issueRedoEvent() {
         if (currentLoopLabels != null) {
             issueLoopRedo();
-        } else if (withinProtection) {
+        } else if (inNestedMethod) {
             invokeUtilityMethod("redoJump", sig(IRubyObject.class));
         } else {
             // in method body with no containing loop, issue jump error

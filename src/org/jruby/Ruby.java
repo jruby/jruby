@@ -452,7 +452,6 @@ public final class Ruby {
         } else if (compile) {
             script = tryCompile(scriptNode);
             if (forceCompile && script == null) {
-                System.err.println("Error, could not compile; pass -J-Djruby.jit.logging.verbose=true for more details");
                 return getNil();
             }
         }
@@ -498,29 +497,39 @@ public final class Ruby {
                 System.err.println("compiled: " + node.getPosition().getFile());
             }
         } catch (NotCompilableException nce) {
-            if (config.isJitLoggingVerbose()) {
+            if (config.isJitLoggingVerbose() || config.isDebug()) {
                 System.err.println("Error -- Not compileable: " + nce.getMessage());
                 nce.printStackTrace();
+            } else {
+                System.err.println("Error, could not compile; pass -d or -J-Djruby.jit.logging.verbose=true for more details");
             }
         } catch (ClassNotFoundException e) {
-            if (config.isJitLoggingVerbose()) {
+            if (config.isJitLoggingVerbose() || config.isDebug()) {
                 System.err.println("Error -- Not compileable: " + e.getMessage());
                 e.printStackTrace();
+            } else {
+                System.err.println("Error, could not compile; pass -d or -J-Djruby.jit.logging.verbose=true for more details");
             }
         } catch (InstantiationException e) {
-            if (config.isJitLoggingVerbose()) {
+            if (config.isJitLoggingVerbose() || config.isDebug()) {
                 System.err.println("Error -- Not compileable: " + e.getMessage());
                 e.printStackTrace();
+            } else {
+                System.err.println("Error, could not compile; pass -d or -J-Djruby.jit.logging.verbose=true for more details");
             }
         } catch (IllegalAccessException e) {
-            if (config.isJitLoggingVerbose()) {
+            if (config.isJitLoggingVerbose() || config.isDebug()) {
                 System.err.println("Error -- Not compileable: " + e.getMessage());
                 e.printStackTrace();
+            } else {
+                System.err.println("Error, could not compile; pass -d or -J-Djruby.jit.logging.verbose=true for more details");
             }
         } catch (Throwable t) {
-            if (config.isJitLoggingVerbose()) {
+            if (config.isJitLoggingVerbose() || config.isDebug()) {
                 System.err.println("could not compile: " + node.getPosition().getFile() + " because of: \"" + t.getMessage() + "\"");
                 t.printStackTrace();
+            } else {
+                System.err.println("Error, could not compile; pass -d or -J-Djruby.jit.logging.verbose=true for more details");
             }
         }
         

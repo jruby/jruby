@@ -1930,7 +1930,7 @@ public class ASTCompiler {
         final EnsureNode ensureNode = (EnsureNode) node;
 
         if (ensureNode.getEnsureNode() != null) {
-            context.protect(new BranchCallback() {
+            context.performEnsure(new BranchCallback() {
 
                         public void branch(BodyCompiler context) {
                             if (ensureNode.getBodyNode() != null) {
@@ -1946,7 +1946,7 @@ public class ASTCompiler {
                             compile(ensureNode.getEnsureNode(), context);
                             context.consumeCurrentValue();
                         }
-                    }, IRubyObject.class);
+                    });
         } else {
             if (ensureNode.getBodyNode() != null) {
                 compile(ensureNode.getBodyNode(), context);
@@ -2896,10 +2896,6 @@ public class ASTCompiler {
         BranchCallback rubyHandler = new BranchCallback() {
 
                     public void branch(BodyCompiler context) {
-                        context.loadException();
-                        context.unwrapRaiseException();
-                        context.assignGlobalVariable("$!");
-                        context.consumeCurrentValue();
                         compileRescueBody(rescueNode.getRescueNode(), context);
                     }
                 };
@@ -2918,7 +2914,6 @@ public class ASTCompiler {
         final RescueBodyNode rescueBodyNode = (RescueBodyNode) node;
 
         context.loadException();
-        context.unwrapRaiseException();
 
         Node exceptionList = rescueBodyNode.getExceptionNodes();
         if (exceptionList == null) {
@@ -2928,35 +2923,37 @@ public class ASTCompiler {
             compileArguments(exceptionList, context);
         }
 
-        context.checkIsExceptionHandled();
+        context.checkIsJavaExceptionHandled();
 
         BranchCallback trueBranch = new BranchCallback() {
+            public void branch(BodyCompiler context) {
+                if (rescueBodyNode.getBodyNode() != null) {
+                    context.storeExceptionInErrorInfo();
 
-                    public void branch(BodyCompiler context) {
-                        if (rescueBodyNode.getBodyNode() != null) {
-                            compile(rescueBodyNode.getBodyNode(), context);
-                            context.loadNil();
-                            // FIXME: this should reset to what it was before
-                            context.assignGlobalVariable("$!");
-                            context.consumeCurrentValue();
-                        } else {
-                            context.loadNil();
-                            // FIXME: this should reset to what it was before
-                            context.assignGlobalVariable("$!");
-                        }
-                    }
-                };
+                    BodyCompiler nestedBody = context.outline("rescue_line_" + rescueBodyNode.getPosition().getStartLine());
+                    compile(rescueBodyNode.getBodyNode(), nestedBody);
+                    nestedBody.endBody();
+
+                    // FIXME: this should reset to what it was before
+                    context.clearErrorInfo();
+                } else {
+                    // FIXME: this should reset to what it was before
+                    context.clearErrorInfo();
+                    // return nil from empty rescue
+                    context.loadNil();
+                }
+            }
+        };
 
         BranchCallback falseBranch = new BranchCallback() {
-
-                    public void branch(BodyCompiler context) {
-                        if (rescueBodyNode.getOptRescueNode() != null) {
-                            compileRescueBody(rescueBodyNode.getOptRescueNode(), context);
-                        } else {
-                            context.rethrowException();
-                        }
-                    }
-                };
+            public void branch(BodyCompiler context) {
+                if (rescueBodyNode.getOptRescueNode() != null) {
+                    compileRescueBody(rescueBodyNode.getOptRescueNode(), context);
+                } else {
+                    context.rethrowException();
+                }
+            }
+        };
 
         context.performBooleanBranch(trueBranch, falseBranch);
     }
@@ -2977,39 +2974,35 @@ public class ASTCompiler {
             context.checkIsJavaExceptionHandled();
 
             BranchCallback trueBranch = new BranchCallback() {
+                public void branch(BodyCompiler context) {
+                    if (rescueBodyNode.getBodyNode() != null) {
+                        context.storeExceptionInErrorInfo();
 
-                        public void branch(BodyCompiler context) {
-                            if (rescueBodyNode.getBodyNode() != null) {
-                                // we now wrap the Java exception and stuff it into $!
-                                context.wrapJavaException();
-                                context.assignGlobalVariable("$!");
-                                context.consumeCurrentValue();
+                        // proceed with normal exception-handling logic
+                        BodyCompiler nestedBody = context.outline("java_rescue_line_" + rescueBodyNode.getPosition().getStartLine());
+                        compile(rescueBodyNode.getBodyNode(), nestedBody);
+                        nestedBody.endBody();
 
-                                // proceed with normal exception-handling logic
-                                compile(rescueBodyNode.getBodyNode(), context);
-                                
-                                // FIXME: this should reset to what it was before
-                                context.loadNil();  
-                                context.assignGlobalVariable("$!");
-                                context.consumeCurrentValue();
-                            } else {
-                                context.loadNil();
-                                // FIXME: this should reset to what it was before
-                                context.assignGlobalVariable("$!");
-                            }
-                        }
-                    };
+                        // FIXME: this should reset to what it was before
+                        context.clearErrorInfo();
+                    } else {
+                        // FIXME: this should reset to what it was before
+                        context.clearErrorInfo();
+                        // return nil from empty rescue
+                        context.loadNil();
+                    }
+                }
+            };
 
             BranchCallback falseBranch = new BranchCallback() {
-
-                        public void branch(BodyCompiler context) {
-                            if (rescueBodyNode.getOptRescueNode() != null) {
-                                compileJavaRescueBody(rescueBodyNode.getOptRescueNode(), context);
-                            } else {
-                                context.rethrowException();
-                            }
-                        }
-                    };
+                public void branch(BodyCompiler context) {
+                    if (rescueBodyNode.getOptRescueNode() != null) {
+                        compileJavaRescueBody(rescueBodyNode.getOptRescueNode(), context);
+                    } else {
+                        context.rethrowException();
+                    }
+                }
+            };
 
             context.performBooleanBranch(trueBranch, falseBranch);
         }
@@ -3053,7 +3046,7 @@ public class ASTCompiler {
 
                 for (int i = 0; i < blockNode.size(); i++) {
                     if ((i + 1) % RubyInstanceConfig.CHAINED_COMPILE_LINE_COUNT == 0) {
-                        methodCompiler = methodCompiler.chainToMethod("__file__from_line_" + (i + 1), inspector);
+                        methodCompiler = methodCompiler.chainToMethod("__file__from_line_" + (i + 1));
                     }
                     compile(blockNode.get(i), methodCompiler);
 

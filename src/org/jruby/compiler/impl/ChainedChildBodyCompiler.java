@@ -9,8 +9,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.objectweb.asm.Label;
 import static org.jruby.util.CodegenUtils.*;
 
-public class ChainedBodyCompiler extends RootScopedBodyCompiler {
-    BaseBodyCompiler parent;
+public class ChainedChildBodyCompiler extends ChildScopedBodyCompiler {
+    ChildScopedBodyCompiler parent;
 
     @Override
     public void endBody() {
@@ -22,9 +22,10 @@ public class ChainedBodyCompiler extends RootScopedBodyCompiler {
         method.end();
     }
 
-    public ChainedBodyCompiler(StandardASMCompiler scriptCompiler, String methodName, ASTInspector inspector, StaticScope scope, BaseBodyCompiler parent) {
+    public ChainedChildBodyCompiler(StandardASMCompiler scriptCompiler, String methodName, ASTInspector inspector, StaticScope scope, ChildScopedBodyCompiler parent) {
         super(scriptCompiler, methodName, inspector, scope);
         this.parent = parent;
+        this.inNestedMethod = true;
     }
 
     public void beginChainedMethod() {

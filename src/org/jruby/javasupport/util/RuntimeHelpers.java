@@ -26,6 +26,7 @@ import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.javasupport.JavaClass;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
@@ -737,20 +738,38 @@ public class RuntimeHelpers {
     }
     
     public static IRubyObject isJavaExceptionHandled(Exception currentException, IRubyObject[] exceptions, Ruby runtime, ThreadContext context, IRubyObject self) {
-        for (int i = 0; i < exceptions.length; i++) {
-            if (exceptions[i] instanceof RubyClass) {
-                RubyClass rubyClass = (RubyClass)exceptions[i];
-                JavaClass javaClass = (JavaClass)rubyClass.fastGetInstanceVariable("@java_class");
-                if (javaClass != null) {
-                    Class cls = javaClass.javaClass();
-                    if (cls.isInstance(currentException)) {
-                        return runtime.getTrue();
+        if (currentException instanceof RaiseException) {
+            return isExceptionHandled(((RaiseException)currentException).getException(), exceptions, runtime, context, self);
+        } else {
+            for (int i = 0; i < exceptions.length; i++) {
+                if (exceptions[i] instanceof RubyClass) {
+                    RubyClass rubyClass = (RubyClass)exceptions[i];
+                    JavaClass javaClass = (JavaClass)rubyClass.fastGetInstanceVariable("@java_class");
+                    if (javaClass != null) {
+                        Class cls = javaClass.javaClass();
+                        if (cls.isInstance(currentException)) {
+                            return runtime.getTrue();
+                        }
                     }
                 }
             }
+
+            return runtime.getFalse();
         }
-        
-        return runtime.getFalse();
+    }
+
+    public static void storeExceptionInErrorInfo(Exception currentException, ThreadContext context) {
+        IRubyObject exception = null;
+        if (currentException instanceof RaiseException) {
+            exception = ((RaiseException)currentException).getException();
+        } else {
+            exception = JavaUtil.convertJavaToUsableRubyObject(context.getRuntime(), currentException);
+        }
+        context.setErrorInfo(exception);
+    }
+
+    public static void clearErrorInfo(ThreadContext context) {
+        context.setErrorInfo(context.getRuntime().getNil());
     }
     
     public static void checkSuperDisabledOrOutOfMethod(ThreadContext context) {

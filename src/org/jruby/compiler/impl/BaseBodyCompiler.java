@@ -74,7 +74,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     protected Label scopeStart = new Label();
     protected Label scopeEnd = new Label();
     protected Label redoJump;
-    protected boolean withinProtection = false;
+    protected boolean inNestedMethod = false;
     private int lastLine = -1;
     private int lastPositionLine = -1;
     protected StaticScope scope;
@@ -120,28 +120,13 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public abstract void endBody();
 
-    public BodyCompiler chainToMethod(String methodName, ASTInspector inspector) {
-        BodyCompiler compiler = outline(methodName, inspector);
+    public BodyCompiler chainToMethod(String methodName) {
+        BodyCompiler compiler = outline(methodName);
         endBody();
         return compiler;
     }
 
-    public BodyCompiler outline(String methodName, ASTInspector inspector) {
-        // chain to the next segment of this giant method
-        method.aload(StandardASMCompiler.THIS);
-
-        // load all arguments straight through
-        for (int i = 1; i <= getClosureIndex(); i++) {
-            method.aload(i);
-        }
-        method.invokevirtual(script.getClassname(), methodName, getSignature());
-
-        ChainedBodyCompiler methodCompiler = new ChainedBodyCompiler(script, methodName, inspector, scope, this);
-
-        methodCompiler.beginChainedMethod();
-
-        return methodCompiler;
-    }
+    public abstract BaseBodyCompiler outline(String methodName);
 
     public StandardASMCompiler getScriptCompiler() {
         return script;
@@ -594,76 +579,17 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void performBooleanLoopSafe(BranchCallback condition, BranchCallback body, boolean checkFirst) {
         String mname = getNewRescueName();
-        String signature = sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, Block.class});
-        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(script.getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, mname, signature, null, null));
-        SkinnyMethodAdapter old_method = null;
-        SkinnyMethodAdapter var_old_method = null;
-        SkinnyMethodAdapter inv_old_method = null;
-        boolean oldWithinProtection = withinProtection;
-        withinProtection = true;
-        Label[] oldLoopLabels = currentLoopLabels;
-        currentLoopLabels = null;
-        int oldArgCount = argParamCount;
-        argParamCount = 0; // synthetic methods always have zero arg parameters
-        try {
-            old_method = this.method;
-            var_old_method = getVariableCompiler().getMethodAdapter();
-            inv_old_method = getInvocationCompiler().getMethodAdapter();
-            this.method = mv;
-            getVariableCompiler().setMethodAdapter(mv);
-            getInvocationCompiler().setMethodAdapter(mv);
+        BaseBodyCompiler nested = outline(mname);
+        nested.performBooleanLoopSafeInner(condition, body, checkFirst);
+    }
 
-            mv.visitCode();
+    private void performBooleanLoopSafeInner(BranchCallback condition, BranchCallback body, boolean checkFirst) {
+        performBooleanLoop(condition, body, checkFirst);
 
-            // set up a local IRuby variable
-            mv.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
-            mv.dup();
-            mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-            mv.dup();
-            mv.astore(getRuntimeIndex());
-
-            // store previous exception for restoration if we rescue something
-            loadRuntime();
-            invokeUtilityMethod("getErrorInfo", sig(IRubyObject.class, Ruby.class));
-            mv.astore(getPreviousExceptionIndex());
-
-            // grab nil for local variables
-            mv.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
-            mv.astore(getNilIndex());
-
-            mv.invokevirtual(p(ThreadContext.class), "getCurrentScope", sig(DynamicScope.class));
-            mv.dup();
-            mv.astore(getDynamicScopeIndex());
-            mv.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
-            mv.astore(getVarsArrayIndex());
-
-            performBooleanLoop(condition, body, checkFirst);
-
-            mv.areturn();
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        } finally {
-            withinProtection = oldWithinProtection;
-            this.method = old_method;
-            getVariableCompiler().setMethodAdapter(var_old_method);
-            getInvocationCompiler().setMethodAdapter(inv_old_method);
-            currentLoopLabels = oldLoopLabels;
-            argParamCount = oldArgCount;
-        }
-
-        method.aload(StandardASMCompiler.THIS);
-        loadThreadContext();
-        loadSelf();
-        if (this instanceof ChildScopedBodyCompiler) {
-            pushNull();
-        } else {
-            loadBlock();
-        }
-        method.invokevirtual(script.getClassname(), mname, signature);
+        endBody();
     }
 
     public void performBooleanLoop(BranchCallback condition, final BranchCallback body, boolean checkFirst) {
-        // FIXME: handle next/continue, break, etc
         Label tryBegin = new Label();
         Label tryEnd = new Label();
         Label catchNext = new Label();
@@ -1217,14 +1143,13 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void protect(BranchCallback regularCode, BranchCallback protectedCode, Class ret) {
-
         String mname = getNewEnsureName();
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(script.getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, mname, sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, Block.class}), null, null));
         SkinnyMethodAdapter old_method = null;
         SkinnyMethodAdapter var_old_method = null;
         SkinnyMethodAdapter inv_old_method = null;
-        boolean oldWithinProtection = withinProtection;
-        withinProtection = true;
+        boolean oldInNestedMethod = inNestedMethod;
+        inNestedMethod = true;
         Label[] oldLoopLabels = currentLoopLabels;
         currentLoopLabels = null;
         int oldArgCount = argParamCount;
@@ -1249,13 +1174,11 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             // grab nil for local variables
             mv.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
             mv.astore(getNilIndex());
-
             mv.invokevirtual(p(ThreadContext.class), "getCurrentScope", sig(DynamicScope.class));
             mv.dup();
             mv.astore(getDynamicScopeIndex());
             mv.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
             mv.astore(getVarsArrayIndex());
-
             Label codeBegin = new Label();
             Label codeEnd = new Label();
             Label ensureBegin = new Label();
@@ -1272,7 +1195,6 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             method.label(ensureBegin);
             method.astore(getExceptionIndex());
             method.label(ensureEnd);
-
             protectedCode.branch(this);
 
             method.aload(getExceptionIndex());
@@ -1280,14 +1202,13 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
             method.trycatch(codeBegin, codeEnd, ensureBegin, null);
             method.trycatch(ensureBegin, ensureEnd, ensureBegin, null);
-
             mv.visitMaxs(1, 1);
             mv.visitEnd();
         } finally {
             this.method = old_method;
             getVariableCompiler().setMethodAdapter(var_old_method);
             getInvocationCompiler().setMethodAdapter(inv_old_method);
-            withinProtection = oldWithinProtection;
+            inNestedMethod = oldInNestedMethod;
             currentLoopLabels = oldLoopLabels;
             argParamCount = oldArgCount;
         }
@@ -1303,8 +1224,55 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.invokevirtual(script.getClassname(), mname, sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, Block.class}));
     }
 
+    public void performEnsure(BranchCallback regularCode, BranchCallback protectedCode) {
+        String mname = getNewEnsureName();
+        BaseBodyCompiler ensure = outline(mname);
+        ensure.performEnsureInner(regularCode, protectedCode);
+    }
+
+    private void performEnsureInner(BranchCallback regularCode, BranchCallback protectedCode) {
+        Label codeBegin = new Label();
+        Label codeEnd = new Label();
+        Label ensureBegin = new Label();
+        Label ensureEnd = new Label();
+        method.label(codeBegin);
+
+        regularCode.branch(this);
+
+        method.label(codeEnd);
+
+        protectedCode.branch(this);
+        method.areturn();
+
+        method.label(ensureBegin);
+        method.astore(getExceptionIndex());
+        method.label(ensureEnd);
+
+        protectedCode.branch(this);
+
+        method.aload(getExceptionIndex());
+        method.athrow();
+
+        method.trycatch(codeBegin, codeEnd, ensureBegin, null);
+        method.trycatch(ensureBegin, ensureEnd, ensureBegin, null);
+
+        loadNil();
+        endBody();
+    }
+
     protected String getNewRescueName() {
         return "rescue_" + (script.getAndIncrementRescueNumber()) + "$RUBY$__rescue__";
+    }
+
+    public void storeExceptionInErrorInfo() {
+        loadException();
+        loadThreadContext();
+        invokeUtilityMethod("storeExceptionInErrorInfo", sig(void.class, Exception.class, ThreadContext.class));
+    }
+
+    public void clearErrorInfo() {
+        loadThreadContext();
+        invokeUtilityMethod("clearErrorInfo", sig(void.class, ThreadContext.class));
     }
 
     public void rescue(BranchCallback regularCode, Class exception, BranchCallback catchCode, Class ret) {
@@ -1318,8 +1286,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         Label catchRaised = new Label();
         Label catchJumps = new Label();
         Label exitRescue = new Label();
-        boolean oldWithinProtection = withinProtection;
-        withinProtection = true;
+        boolean oldWithinProtection = inNestedMethod;
+        inNestedMethod = true;
         Label[] oldLoopLabels = currentLoopLabels;
         currentLoopLabels = null;
         int oldArgCount = argParamCount;
@@ -1403,7 +1371,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             mv.areturn();
             mv.end();
         } finally {
-            withinProtection = oldWithinProtection;
+            inNestedMethod = oldWithinProtection;
             this.method = old_method;
             getVariableCompiler().setMethodAdapter(var_old_method);
             getInvocationCompiler().setMethodAdapter(inv_old_method);
@@ -1424,10 +1392,11 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void performRescue(BranchCallback regularCode, BranchCallback rubyCatchCode, BranchCallback javaCatchCode) {
         String mname = getNewRescueName();
-        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(script.getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, mname, sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, Block.class}), null, null));
-        SkinnyMethodAdapter old_method = null;
-        SkinnyMethodAdapter var_old_method = null;
-        SkinnyMethodAdapter inv_old_method = null;
+        BaseBodyCompiler rescueMethod = outline(mname);
+        rescueMethod.performRescueInner(regularCode, rubyCatchCode, javaCatchCode);
+    }
+
+    public void performRescueInner(BranchCallback regularCode, BranchCallback rubyCatchCode, BranchCallback javaCatchCode) {
         Label afterRubyCatchBody = new Label();
         Label afterJavaCatchBody = new Label();
         Label rubyCatchRetry = new Label();
@@ -1437,170 +1406,118 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         Label javaCatchRaised = new Label();
         Label javaCatchJumps = new Label();
         Label exitRescue = new Label();
-        boolean oldWithinProtection = withinProtection;
-        withinProtection = true;
-        Label[] oldLoopLabels = currentLoopLabels;
-        currentLoopLabels = null;
-        int oldArgCount = argParamCount;
-        argParamCount = 0; // synthetic methods always have zero arg parameters
-        try {
-            old_method = this.method;
-            var_old_method = getVariableCompiler().getMethodAdapter();
-            inv_old_method = getInvocationCompiler().getMethodAdapter();
-            this.method = mv;
-            getVariableCompiler().setMethodAdapter(mv);
-            getInvocationCompiler().setMethodAdapter(mv);
 
-            mv.visitCode();
+        // store previous exception for restoration if we rescue something
+        loadRuntime();
+        invokeUtilityMethod("getErrorInfo", sig(IRubyObject.class, Ruby.class));
+        method.astore(getPreviousExceptionIndex());
 
-            // set up a local IRuby variable
-            mv.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
-            mv.dup();
-            mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-            mv.dup();
-            mv.astore(getRuntimeIndex());
+        Label beforeBody = new Label();
+        Label afterBody = new Label();
+        Label rubyCatchBlock = new Label();
+        Label flowCatchBlock = new Label();
+        Label javaCatchBlock = new Label();
+        method.visitTryCatchBlock(beforeBody, afterBody, rubyCatchBlock, p(RaiseException.class));
+        method.visitTryCatchBlock(beforeBody, afterBody, flowCatchBlock, p(JumpException.FlowControlException.class));
+        method.visitTryCatchBlock(beforeBody, afterBody, javaCatchBlock, p(Exception.class));
 
-            // store previous exception for restoration if we rescue something
-            loadRuntime();
-            invokeUtilityMethod("getErrorInfo", sig(IRubyObject.class, Ruby.class));
-            mv.astore(getPreviousExceptionIndex());
+        method.visitLabel(beforeBody);
+        {
+            regularCode.branch(this);
+        }
+        method.label(afterBody);
+        method.go_to(exitRescue);
 
-            // grab nil for local variables
-            mv.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
-            mv.astore(getNilIndex());
+        // first handle Ruby exceptions (RaiseException)
+        method.label(rubyCatchBlock);
+        {
+            method.astore(getExceptionIndex());
 
-            mv.invokevirtual(p(ThreadContext.class), "getCurrentScope", sig(DynamicScope.class));
-            mv.dup();
-            mv.astore(getDynamicScopeIndex());
-            mv.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
-            mv.astore(getVarsArrayIndex());
+            rubyCatchCode.branch(this);
+            method.label(afterRubyCatchBody);
+            method.go_to(exitRescue);
 
-            Label beforeBody = new Label();
-            Label afterBody = new Label();
-            Label rubyCatchBlock = new Label();
-            Label flowCatchBlock = new Label();
-            Label javaCatchBlock = new Label();
-            mv.visitTryCatchBlock(beforeBody, afterBody, rubyCatchBlock, p(RaiseException.class));
-            mv.visitTryCatchBlock(beforeBody, afterBody, flowCatchBlock, p(JumpException.FlowControlException.class));
-            mv.visitTryCatchBlock(beforeBody, afterBody, javaCatchBlock, p(Exception.class));
-
-            mv.visitLabel(beforeBody);
+            // retry handling in the rescue block
+            method.trycatch(rubyCatchBlock, afterRubyCatchBody, rubyCatchRetry, p(JumpException.RetryJump.class));
+            method.label(rubyCatchRetry);
             {
-                regularCode.branch(this);
+                method.pop();
             }
-            mv.label(afterBody);
-            mv.go_to(exitRescue);
+            method.go_to(beforeBody);
 
-            // first handle Ruby exceptions (RaiseException)
-            mv.label(rubyCatchBlock);
+            // any exceptions raised must continue to be raised, skipping $! restoration
+            method.trycatch(beforeBody, afterRubyCatchBody, rubyCatchRaised, p(RaiseException.class));
+            method.label(rubyCatchRaised);
             {
-                mv.astore(getExceptionIndex());
-
-                rubyCatchCode.branch(this);
-                mv.label(afterRubyCatchBody);
-                mv.go_to(exitRescue);
-
-                // retry handling in the rescue block
-                mv.trycatch(rubyCatchBlock, afterRubyCatchBody, rubyCatchRetry, p(JumpException.RetryJump.class));
-                mv.label(rubyCatchRetry);
-                {
-                    mv.pop();
-                }
-                mv.go_to(beforeBody);
-
-                // any exceptions raised must continue to be raised, skipping $! restoration
-                mv.trycatch(beforeBody, afterRubyCatchBody, rubyCatchRaised, p(RaiseException.class));
-                mv.label(rubyCatchRaised);
-                {
-                    mv.athrow();
-                }
-
-                // and remaining jump exceptions should restore $!
-                mv.trycatch(beforeBody, afterRubyCatchBody, rubyCatchJumps, p(JumpException.class));
-                mv.label(rubyCatchJumps);
-                {
-                    loadRuntime();
-                    mv.aload(getPreviousExceptionIndex());
-                    invokeUtilityMethod("setErrorInfo", sig(void.class, Ruby.class, IRubyObject.class));
-                    mv.athrow();
-                }
+                method.athrow();
             }
 
-            // Next handle Flow exceptions, just propagating them
-            mv.label(flowCatchBlock);
+            // and remaining jump exceptions should restore $!
+            method.trycatch(beforeBody, afterRubyCatchBody, rubyCatchJumps, p(JumpException.class));
+            method.label(rubyCatchJumps);
             {
-                // restore the original exception
                 loadRuntime();
-                mv.aload(getPreviousExceptionIndex());
+                method.aload(getPreviousExceptionIndex());
                 invokeUtilityMethod("setErrorInfo", sig(void.class, Ruby.class, IRubyObject.class));
-
-                // rethrow
-                mv.athrow();
+                method.athrow();
             }
+        }
 
-            // now handle Java exceptions
-            mv.label(javaCatchBlock);
-            {
-                mv.astore(getExceptionIndex());
-
-                javaCatchCode.branch(this);
-                mv.label(afterJavaCatchBody);
-                mv.go_to(exitRescue);
-
-                // retry handling in the rescue block
-                mv.trycatch(javaCatchBlock, afterJavaCatchBody, javaCatchRetry, p(JumpException.RetryJump.class));
-                mv.label(javaCatchRetry);
-                {
-                    mv.pop();
-                }
-                mv.go_to(beforeBody);
-
-                // any exceptions raised must continue to be raised, skipping $! restoration
-                mv.trycatch(javaCatchBlock, afterJavaCatchBody, javaCatchRaised, p(RaiseException.class));
-                mv.label(javaCatchRaised);
-                {
-                    mv.athrow();
-                }
-
-                // and remaining jump exceptions should restore $!
-                mv.trycatch(javaCatchBlock, afterJavaCatchBody, javaCatchJumps, p(JumpException.class));
-                mv.label(javaCatchJumps);
-                {
-                    loadRuntime();
-                    mv.aload(getPreviousExceptionIndex());
-                    invokeUtilityMethod("setErrorInfo", sig(void.class, Ruby.class, IRubyObject.class));
-                    mv.athrow();
-                }
-            }
-
-            mv.label(exitRescue);
-
+        // Next handle Flow exceptions, just propagating them
+        method.label(flowCatchBlock);
+        {
             // restore the original exception
             loadRuntime();
-            mv.aload(getPreviousExceptionIndex());
+            method.aload(getPreviousExceptionIndex());
             invokeUtilityMethod("setErrorInfo", sig(void.class, Ruby.class, IRubyObject.class));
 
-            mv.areturn();
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        } finally {
-            withinProtection = oldWithinProtection;
-            this.method = old_method;
-            getVariableCompiler().setMethodAdapter(var_old_method);
-            getInvocationCompiler().setMethodAdapter(inv_old_method);
-            currentLoopLabels = oldLoopLabels;
-            argParamCount = oldArgCount;
+            // rethrow
+            method.athrow();
         }
 
-        method.aload(StandardASMCompiler.THIS);
-        loadThreadContext();
-        loadSelf();
-        if (this instanceof ChildScopedBodyCompiler) {
-            pushNull();
-        } else {
-            loadBlock();
+        // now handle Java exceptions
+        method.label(javaCatchBlock);
+        {
+            method.astore(getExceptionIndex());
+
+            javaCatchCode.branch(this);
+            method.label(afterJavaCatchBody);
+            method.go_to(exitRescue);
+
+            // retry handling in the rescue block
+            method.trycatch(javaCatchBlock, afterJavaCatchBody, javaCatchRetry, p(JumpException.RetryJump.class));
+            method.label(javaCatchRetry);
+            {
+                method.pop();
+            }
+            method.go_to(beforeBody);
+
+            // any exceptions raised must continue to be raised, skipping $! restoration
+            method.trycatch(javaCatchBlock, afterJavaCatchBody, javaCatchRaised, p(RaiseException.class));
+            method.label(javaCatchRaised);
+            {
+                method.athrow();
+            }
+
+            // and remaining jump exceptions should restore $!
+            method.trycatch(javaCatchBlock, afterJavaCatchBody, javaCatchJumps, p(JumpException.class));
+            method.label(javaCatchJumps);
+            {
+                loadRuntime();
+                method.aload(getPreviousExceptionIndex());
+                invokeUtilityMethod("setErrorInfo", sig(void.class, Ruby.class, IRubyObject.class));
+                method.athrow();
+            }
         }
-        method.invokevirtual(script.getClassname(), mname, sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, Block.class}));
+
+        method.label(exitRescue);
+
+        // restore the original exception
+        loadRuntime();
+        method.aload(getPreviousExceptionIndex());
+        invokeUtilityMethod("setErrorInfo", sig(void.class, Ruby.class, IRubyObject.class));
+
+        endBody();
     }
 
     public void wrapJavaException() {

@@ -61,6 +61,25 @@ public class ChildScopedBodyCompiler extends BaseBodyCompiler {
         throw new NotCompilableException("ERROR: closure compiler should not be used for class bodies");
     }
 
+    public ChainedChildBodyCompiler outline(String methodName) {
+        // chain to the next segment of this giant method
+        method.aload(StandardASMCompiler.THIS);
+
+        // load all arguments straight through
+        for (int i = 1; i <= 3; i++) {
+            method.aload(i);
+        }
+        // we append an index to ensure two identical method names will not conflict
+        methodName = methodName + "_" + script.getAndIncrementMethodIndex();
+        method.invokevirtual(script.getClassname(), methodName, getSignature());
+
+        ChainedChildBodyCompiler methodCompiler = new ChainedChildBodyCompiler(script, methodName, inspector, scope, this);
+
+        methodCompiler.beginChainedMethod();
+
+        return methodCompiler;
+    }
+
     public void endBody() {
         // end of scoping for closure's vars
         method.areturn();
@@ -135,7 +154,7 @@ public class ChildScopedBodyCompiler extends BaseBodyCompiler {
         // FIXME: This isn't right for within ensured/rescued code
         if (currentLoopLabels != null) {
             issueLoopRedo();
-        } else if (withinProtection) {
+        } else if (inNestedMethod) {
             invokeUtilityMethod("redoJump", sig(IRubyObject.class));
         } else {
             // jump back to the top of the main body of this closure

@@ -10,23 +10,30 @@
 package org.jruby.compiler.impl;
 
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import static org.jruby.util.CodegenUtils.*;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.util.TraceMethodVisitor;
 
 /**
  *
  * @author headius
  */
 public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
+    private final static boolean DEBUG = false;
     private MethodVisitor method;
     
     /** Creates a new instance of SkinnyMethodAdapter */
     public SkinnyMethodAdapter(MethodVisitor method) {
-        this.method = method;
+        if (DEBUG) {
+            this.method = new TraceMethodVisitor(method);
+        } else {
+            this.method = method;
+        }
     }
     
     public SkinnyMethodAdapter() {
@@ -37,7 +44,11 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
     }
     
     public void setMethodVisitor(MethodVisitor mv) {
-        this.method = mv;
+        if (DEBUG) {
+            this.method = new TraceMethodVisitor(mv);
+        } else {
+            this.method = mv;
+        }
     }
     
     public void aload(int arg0) {
@@ -479,6 +490,12 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
     }
     
     public void end() {
+        if (DEBUG) {
+            PrintWriter pw = new PrintWriter(System.out);
+            pw.write("*** Dumping ***\n");
+            ((TraceMethodVisitor)getMethodVisitor()).print(pw);
+            pw.flush();
+        }
         getMethodVisitor().visitMaxs(1, 1);
         getMethodVisitor().visitEnd();
     }
@@ -828,6 +845,12 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
     }
 
     public void visitMaxs(int arg0, int arg1) {
+        if (DEBUG) {
+            PrintWriter pw = new PrintWriter(System.out);
+            pw.write("*** Dumping ***\n");
+            ((TraceMethodVisitor)getMethodVisitor()).print(pw);
+            pw.flush();
+        }
         getMethodVisitor().visitMaxs(arg0, arg1);
     }
 
