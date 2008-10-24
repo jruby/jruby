@@ -1,3 +1,0 @@
-#!/usr/bin/env jruby
-
-abort "`gemwhich` has been deprecated.  Use `gem which` instead."

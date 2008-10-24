@@ -1,5 +1,6 @@
 require 'net/http'
 require 'stringio'
+require 'time'
 require 'uri'
 
 require 'rubygems'
@@ -74,7 +75,12 @@ class Gem::RemoteFetcher
   # always replaced.
 
   def download(spec, source_uri, install_dir = Gem.dir)
-    cache_dir = File.join install_dir, 'cache'
+    if File.writable?(install_dir)
+      cache_dir = File.join install_dir, 'cache'
+    else
+      cache_dir = File.join(Gem.user_dir, 'cache')
+    end
+
     gem_file_name = "#{spec.full_name}.gem"
     local_gem_path = File.join cache_dir, gem_file_name
 
@@ -87,7 +93,7 @@ class Gem::RemoteFetcher
     scheme = nil if scheme =~ /^[a-z]$/i
 
     case scheme
-    when 'http' then
+    when 'http', 'https' then
       unless File.exist? local_gem_path then
         begin
           say "Downloading gem #{gem_file_name}" if
@@ -132,50 +138,26 @@ class Gem::RemoteFetcher
   ##
   # Downloads +uri+ and returns it as a String.
 
-  def fetch_path(uri)
-    open_uri_or_path(uri) do |input|
-      input.read
-    end
+  def fetch_path(uri, mtime = nil, head = false)
+    data = open_uri_or_path uri, mtime, head
+    data = Gem.gunzip data if data and not head and uri.to_s =~ /gz$/
+    data
   rescue FetchError
     raise
   rescue Timeout::Error
     raise FetchError.new('timed out', uri)
   rescue IOError, SocketError, SystemCallError => e
     raise FetchError.new("#{e.class}: #{e}", uri)
-  rescue => e
-    raise FetchError.new("#{e.class}: #{e}", uri)
   end
 
   ##
   # Returns the size of +uri+ in bytes.
 
-  def fetch_size(uri)
-    return File.size(get_file_uri_path(uri)) if file_uri? uri
+  def fetch_size(uri) # TODO: phase this out
+    response = fetch_path(uri, nil, true)
 
-    uri = URI.parse uri unless URI::Generic === uri
-
-    raise ArgumentError, 'uri is not an HTTP URI' unless URI::HTTP === uri
-
-    response = request uri, Net::HTTP::Head
-
-    case response
-    when Net::HTTPOK then
-    else
-      raise FetchError.new("bad response #{response.message} #{response.code}", uri)
-    end
-
-    if response['content-length'] then
-      return response['content-length'].to_i
-    else
-      response = http.get uri.request_uri
-      return response.body.size
-    end
-
-  rescue SocketError, SystemCallError, Timeout::Error => e
-    raise FetchError.new("#{e.message} (#{e.class})\n\tfetching size", uri)
+    response['content-length'].to_i
   end
-
-  private
 
   def escape(str)
     return unless str
@@ -234,8 +216,9 @@ class Gem::RemoteFetcher
     connection = @connections[connection_id]
 
     if uri.scheme == 'https' and not connection.started? then
-      http_obj.use_ssl = true
-      http_obj.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      require 'net/https'
+      connection.use_ssl = true
+      connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
     end
 
     connection.start unless connection.started?
@@ -247,24 +230,27 @@ class Gem::RemoteFetcher
   # Read the data from the (source based) URI, but if it is a file:// URI,
   # read from the filesystem instead.
 
-  def open_uri_or_path(uri, depth = 0, &block)
-    if file_uri?(uri)
-      open(get_file_uri_path(uri), &block)
+  def open_uri_or_path(uri, last_modified = nil, head = false, depth = 0)
+    raise "block is dead" if block_given?
+
+    return open(get_file_uri_path(uri)) if file_uri? uri
+
+    uri = URI.parse uri unless URI::Generic === uri
+    raise ArgumentError, 'uri is not an HTTP URI' unless URI::HTTP === uri
+
+    fetch_type = head ? Net::HTTP::Head : Net::HTTP::Get
+    response   = request uri, fetch_type, last_modified
+
+    case response
+    when Net::HTTPOK, Net::HTTPNotModified then
+      head ? response : response.body
+    when Net::HTTPMovedPermanently, Net::HTTPFound, Net::HTTPSeeOther,
+         Net::HTTPTemporaryRedirect then
+      raise FetchError.new('too many redirects', uri) if depth > 10
+
+      open_uri_or_path(response['Location'], last_modified, head, depth + 1)
     else
-      uri = URI.parse uri unless URI::Generic === uri
-
-      response = request uri
-
-      case response
-      when Net::HTTPOK then
-        block.call(StringIO.new(response.body)) if block
-      when Net::HTTPRedirection then
-        raise FetchError.new('too many redirects', uri) if depth > 10
-
-        open_uri_or_path(response['Location'], depth + 1, &block)
-      else
-        raise FetchError.new("bad response #{response.message} #{response.code}", uri)
-      end
+      raise FetchError.new("bad response #{response.message} #{response.code}", uri)
     end
   end
 
@@ -273,7 +259,7 @@ class Gem::RemoteFetcher
   # a Net::HTTP response object.  request maintains a table of persistent
   # connections to reduce connect overhead.
 
-  def request(uri, request_class = Net::HTTP::Get)
+  def request(uri, request_class, last_modified = nil)
     request = request_class.new uri.request_uri
 
     unless uri.nil? || uri.user.nil? || uri.user.empty? then
@@ -289,14 +275,16 @@ class Gem::RemoteFetcher
     request.add_field 'Connection', 'keep-alive'
     request.add_field 'Keep-Alive', '30'
 
+    if last_modified then
+      last_modified = last_modified.utc
+      request.add_field 'If-Modified-Since', last_modified.rfc2822
+    end
+
     connection = connection_for uri
 
     retried = false
     bad_response = false
 
-    # HACK work around EOFError bug in Net::HTTP
-    # NOTE Errno::ECONNABORTED raised a lot on Windows, and make impossible
-    # to install gems.
     begin
       @requests[connection.object_id] += 1
       response = connection.request request
@@ -309,6 +297,9 @@ class Gem::RemoteFetcher
 
       bad_response = true
       retry
+    # HACK work around EOFError bug in Net::HTTP
+    # NOTE Errno::ECONNABORTED raised a lot on Windows, and make impossible
+    # to install gems.
     rescue EOFError, Errno::ECONNABORTED, Errno::ECONNRESET
       requests = @requests[connection.object_id]
       say "connection reset after #{requests} requests, retrying" if

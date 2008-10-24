@@ -1,3 +1,0 @@
-#!/usr/bin/env jruby
-
-abort "`gem_mirror` has been deprecated.  Use `gem mirror` instead."

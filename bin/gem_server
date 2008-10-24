@@ -1,3 +1,0 @@
-#!/usr/bin/env jruby
-
-abort "`gem_server` has been deprecated.  Use `gem server` instead."

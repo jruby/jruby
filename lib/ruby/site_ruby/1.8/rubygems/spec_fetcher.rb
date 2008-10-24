@@ -167,7 +167,7 @@ class Gem::SpecFetcher
 
       if all and @specs.include? source_uri then
         list[source_uri] = @specs[source_uri]
-      elsif @latest_specs.include? source_uri then
+      elsif not all and @latest_specs.include? source_uri then
         list[source_uri] = @latest_specs[source_uri]
       else
         specs = load_specs source_uri, file
@@ -182,30 +182,28 @@ class Gem::SpecFetcher
     list
   end
 
+  ##
+  # Loads specs in +file+, fetching from +source_uri+ if the on-disk cache is
+  # out of date.
+
   def load_specs(source_uri, file)
-    file_name = "#{file}.#{Gem.marshal_version}.gz"
-
-    spec_path = source_uri + file_name
-
-    cache_dir = cache_dir spec_path
-
-    local_file = File.join(cache_dir, file_name).chomp '.gz'
+    file_name  = "#{file}.#{Gem.marshal_version}"
+    spec_path  = source_uri + "#{file_name}.gz"
+    cache_dir  = cache_dir spec_path
+    local_file = File.join(cache_dir, file_name)
+    loaded     = false
 
     if File.exist? local_file then
-      local_size = File.stat(local_file).size
+      spec_dump = @fetcher.fetch_path spec_path, File.mtime(local_file)
 
-      remote_file = spec_path.dup
-      remote_file.path = remote_file.path.chomp '.gz'
-      remote_size = @fetcher.fetch_size remote_file
-
-      spec_dump = Gem.read_binary local_file if remote_size == local_size
-    end
-
-    unless spec_dump then
+      if spec_dump.nil? then
+        spec_dump = Gem.read_binary local_file
+      else
+        loaded = true
+      end
+    else
+      spec_dump = @fetcher.fetch_path spec_path
       loaded = true
-
-      spec_dump_gz = @fetcher.fetch_path spec_path
-      spec_dump = Gem.gunzip spec_dump_gz
     end
 
     specs = Marshal.load spec_dump

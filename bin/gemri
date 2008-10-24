@@ -1,3 +1,0 @@
-#!/usr/bin/env jruby
-
-abort "`gemri` has been deprecated.  Use `ri` instead."
