@@ -1399,12 +1399,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void performRescueInner(BranchCallback regularCode, BranchCallback rubyCatchCode, BranchCallback javaCatchCode) {
         Label afterRubyCatchBody = new Label();
         Label afterJavaCatchBody = new Label();
-        Label rubyCatchRetry = new Label();
-        Label rubyCatchRaised = new Label();
-        Label rubyCatchJumps = new Label();
-        Label javaCatchRetry = new Label();
-        Label javaCatchRaised = new Label();
-        Label javaCatchJumps = new Label();
+        Label catchRetry = new Label();
+        Label catchJumps = new Label();
         Label exitRescue = new Label();
 
         // store previous exception for restoration if we rescue something
@@ -1417,9 +1413,9 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         Label rubyCatchBlock = new Label();
         Label flowCatchBlock = new Label();
         Label javaCatchBlock = new Label();
-        method.visitTryCatchBlock(beforeBody, afterBody, rubyCatchBlock, p(RaiseException.class));
         method.visitTryCatchBlock(beforeBody, afterBody, flowCatchBlock, p(JumpException.FlowControlException.class));
-        method.visitTryCatchBlock(beforeBody, afterBody, javaCatchBlock, p(Exception.class));
+        method.visitTryCatchBlock(beforeBody, afterBody, rubyCatchBlock, p(Exception.class));
+//        method.visitTryCatchBlock(beforeBody, afterBody, javaCatchBlock, p(Exception.class));
 
         method.visitLabel(beforeBody);
         {
@@ -1428,42 +1424,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.label(afterBody);
         method.go_to(exitRescue);
 
-        // first handle Ruby exceptions (RaiseException)
-        method.label(rubyCatchBlock);
-        {
-            method.astore(getExceptionIndex());
-
-            rubyCatchCode.branch(this);
-            method.label(afterRubyCatchBody);
-            method.go_to(exitRescue);
-
-            // retry handling in the rescue block
-            method.trycatch(rubyCatchBlock, afterRubyCatchBody, rubyCatchRetry, p(JumpException.RetryJump.class));
-            method.label(rubyCatchRetry);
-            {
-                method.pop();
-            }
-            method.go_to(beforeBody);
-
-            // any exceptions raised must continue to be raised, skipping $! restoration
-            method.trycatch(beforeBody, afterRubyCatchBody, rubyCatchRaised, p(RaiseException.class));
-            method.label(rubyCatchRaised);
-            {
-                method.athrow();
-            }
-
-            // and remaining jump exceptions should restore $!
-            method.trycatch(beforeBody, afterRubyCatchBody, rubyCatchJumps, p(JumpException.class));
-            method.label(rubyCatchJumps);
-            {
-                loadRuntime();
-                method.aload(getPreviousExceptionIndex());
-                invokeUtilityMethod("setErrorInfo", sig(void.class, Ruby.class, IRubyObject.class));
-                method.athrow();
-            }
-        }
-
-        // Next handle Flow exceptions, just propagating them
+        // Handle Flow exceptions, just propagating them
         method.label(flowCatchBlock);
         {
             // restore the original exception
@@ -1475,39 +1436,44 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             method.athrow();
         }
 
-        // now handle Java exceptions
-        method.label(javaCatchBlock);
+        // Handle Ruby exceptions (RaiseException)
+        method.label(rubyCatchBlock);
         {
             method.astore(getExceptionIndex());
 
-            javaCatchCode.branch(this);
-            method.label(afterJavaCatchBody);
+            rubyCatchCode.branch(this);
+            method.label(afterRubyCatchBody);
             method.go_to(exitRescue);
+        }
 
-            // retry handling in the rescue block
-            method.trycatch(javaCatchBlock, afterJavaCatchBody, javaCatchRetry, p(JumpException.RetryJump.class));
-            method.label(javaCatchRetry);
-            {
-                method.pop();
-            }
-            method.go_to(beforeBody);
+        // Handle Java exceptions
+//        method.label(javaCatchBlock);
+//        {
+//            method.astore(getExceptionIndex());
+//
+//            javaCatchCode.branch(this);
+//            method.label(afterJavaCatchBody);
+//            method.go_to(exitRescue);
+//        }
 
-            // any exceptions raised must continue to be raised, skipping $! restoration
-            method.trycatch(javaCatchBlock, afterJavaCatchBody, javaCatchRaised, p(RaiseException.class));
-            method.label(javaCatchRaised);
-            {
-                method.athrow();
-            }
+        // retry handling in the rescue blocks
+        method.trycatch(rubyCatchBlock, afterRubyCatchBody, catchRetry, p(JumpException.RetryJump.class));
+//        method.trycatch(javaCatchBlock, afterJavaCatchBody, catchRetry, p(JumpException.RetryJump.class));
+        method.label(catchRetry);
+        {
+            method.pop();
+        }
+        method.go_to(beforeBody);
 
-            // and remaining jump exceptions should restore $!
-            method.trycatch(javaCatchBlock, afterJavaCatchBody, javaCatchJumps, p(JumpException.class));
-            method.label(javaCatchJumps);
-            {
-                loadRuntime();
-                method.aload(getPreviousExceptionIndex());
-                invokeUtilityMethod("setErrorInfo", sig(void.class, Ruby.class, IRubyObject.class));
-                method.athrow();
-            }
+        // and remaining jump exceptions should restore $!
+//        method.trycatch(javaCatchBlock, afterJavaCatchBody, catchJumps, p(JumpException.FlowControlException.class));
+        method.trycatch(rubyCatchBlock, afterRubyCatchBody, catchJumps, p(JumpException.FlowControlException.class));
+        method.label(catchJumps);
+        {
+            loadRuntime();
+            method.aload(getPreviousExceptionIndex());
+            invokeUtilityMethod("setErrorInfo", sig(void.class, Ruby.class, IRubyObject.class));
+            method.athrow();
         }
 
         method.label(exitRescue);
