@@ -46,7 +46,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.EventHook;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -68,6 +67,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget, Me
     private boolean hasOptArgs;
     private CallConfiguration jitCallConfig;
     private ISourcePosition position;
+    private boolean noArgHack;
 
     public DefaultMethod(RubyModule implementationClass, StaticScope staticScope, Node body, 
             ArgsNode argsNode, Visibility visibility, ISourcePosition position) {
@@ -80,6 +80,8 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget, Me
         this.restArg = argsNode.getRestArg();
         this.hasOptArgs = argsNode.getOptArgs() != null;
         this.position = position;
+        
+        noArgHack = argsNode.getBlockArgNode() == null && requiredArgsCount == 0 && maxArgsCount == 0;
 		
         assert argsNode != null;
     }
@@ -415,7 +417,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget, Me
             traceCall(context, runtime, name);
         }
         
-        interpretArgs(runtime, args, context, self, block);
+        if (!noArgHack) interpretArgs(runtime, args, context, self, block);
     }
     
     private void processBlockArg(ThreadContext context, Block block) {
