@@ -1398,7 +1398,6 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void performRescueInner(BranchCallback regularCode, BranchCallback rubyCatchCode, BranchCallback javaCatchCode) {
         Label afterRubyCatchBody = new Label();
-        Label afterJavaCatchBody = new Label();
         Label catchRetry = new Label();
         Label catchJumps = new Label();
         Label exitRescue = new Label();
@@ -1412,10 +1411,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         Label afterBody = new Label();
         Label rubyCatchBlock = new Label();
         Label flowCatchBlock = new Label();
-        Label javaCatchBlock = new Label();
         method.visitTryCatchBlock(beforeBody, afterBody, flowCatchBlock, p(JumpException.FlowControlException.class));
         method.visitTryCatchBlock(beforeBody, afterBody, rubyCatchBlock, p(Exception.class));
-//        method.visitTryCatchBlock(beforeBody, afterBody, javaCatchBlock, p(Exception.class));
 
         method.visitLabel(beforeBody);
         {
@@ -1446,19 +1443,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             method.go_to(exitRescue);
         }
 
-        // Handle Java exceptions
-//        method.label(javaCatchBlock);
-//        {
-//            method.astore(getExceptionIndex());
-//
-//            javaCatchCode.branch(this);
-//            method.label(afterJavaCatchBody);
-//            method.go_to(exitRescue);
-//        }
-
         // retry handling in the rescue blocks
         method.trycatch(rubyCatchBlock, afterRubyCatchBody, catchRetry, p(JumpException.RetryJump.class));
-//        method.trycatch(javaCatchBlock, afterJavaCatchBody, catchRetry, p(JumpException.RetryJump.class));
         method.label(catchRetry);
         {
             method.pop();
@@ -1466,7 +1452,6 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.go_to(beforeBody);
 
         // and remaining jump exceptions should restore $!
-//        method.trycatch(javaCatchBlock, afterJavaCatchBody, catchJumps, p(JumpException.FlowControlException.class));
         method.trycatch(rubyCatchBlock, afterRubyCatchBody, catchJumps, p(JumpException.FlowControlException.class));
         method.label(catchJumps);
         {
