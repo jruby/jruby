@@ -507,7 +507,7 @@
     run-junit-compiled,
     run-junit-compiled-1.9,
     test-security-manager,
-    test-specs,
+    test-rake-targets,
     coverage-report"
     description="Runs unit tests.">
   </target>
@@ -709,8 +709,9 @@
     </java>
   </target>
   
-  <target name="test-specs" depends="install-gems">
-      <run-rake rake.target="spec:ji:quiet"/>
+  <target name="test-rake-targets" depends="install-gems">
+      <run-rake rake.targets="spec:ji:quiet"/>
+      <run-rake rake.targets="test:tracing" jruby.args="--debug"/>
   </target>
 
   <macrodef name="run-rake">
@@ -720,31 +721,34 @@
     <attribute name="objectspace.enabled" default="true"/>
     <attribute name="thread.pooling" default="false"/>
     <attribute name="reflection" default="false"/>
-    <attribute name="rake.target"/>
+    <attribute name="inproc" default="true"/>
+    <attribute name="jruby.args" default=""/>
+    <attribute name="rake.targets"/>
 
     <sequential>
       <echo message="compile=@{compile.mode}, threshold=@{jit.threshold}, objectspace=@{objectspace.enabled} threadpool=@{thread.pooling} reflection=@{reflection}"/>
-    
+
       <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${base.dir}">
-	<classpath refid="build.classpath"/>
-	<classpath path="${jruby.classes.dir}"/>
+        <classpath refid="build.classpath"/>
+        <classpath path="${jruby.classes.dir}"/>
 
-	<jvmarg value="-ea"/>
+        <jvmarg value="-ea"/>
 
-	<sysproperty key="jruby.home" value="${basedir}"/>
-	<sysproperty key="jruby.launch.inproc" value="false"/>
-      
-	<!-- properties tweaked for individual runs -->
-	<sysproperty key="jruby.compile.mode" value="@{compile.mode}"/>
-	<sysproperty key="jruby.jit.threshold" value="@{jit.threshold}"/>
-	<sysproperty key="jruby.jit.max" value="@{jit.max}"/>
-	<sysproperty key="jruby.objectspace.enabled" value="@{objectspace.enabled}"/>
-	<sysproperty key="jruby.thread.pool.enabled" value="@{thread.pooling}"/>
-	<sysproperty key="jruby.reflection" value="@{reflection}"/>
-	<sysproperty key="jruby.launch.inproc" value="false"/>
+        <sysproperty key="jruby.home" value="${basedir}"/>
+        <sysproperty key="jruby.launch.inproc" value="false"/>
 
-	<arg line="${base.dir}/bin/rake"/>
-	<arg line="@{rake.target}"/>
+        <!-- properties tweaked for individual runs -->
+        <sysproperty key="jruby.compile.mode" value="@{compile.mode}"/>
+        <sysproperty key="jruby.jit.threshold" value="@{jit.threshold}"/>
+        <sysproperty key="jruby.jit.max" value="@{jit.max}"/>
+        <sysproperty key="jruby.objectspace.enabled" value="@{objectspace.enabled}"/>
+        <sysproperty key="jruby.thread.pool.enabled" value="@{thread.pooling}"/>
+        <sysproperty key="jruby.reflection" value="@{reflection}"/>
+        <sysproperty key="jruby.launch.inproc" value="@{inproc}"/>
+
+        <arg line="@{jruby.args}"/>
+        <arg line="${base.dir}/bin/rake"/>
+        <arg line="@{rake.targets}"/>
       </java>
     </sequential>
   </macrodef>
