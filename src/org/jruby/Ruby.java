@@ -2334,7 +2334,10 @@ public final class Ruby {
         if (finalizers != null) {
             synchronized (finalizers) {
                 for (Iterator<Finalizable> finalIter = new ArrayList<Finalizable>(finalizers.keySet()).iterator(); finalIter.hasNext();) {
-                    finalIter.next().finalize();
+                    Finalizable f = finalIter.next();
+                    if (f != null) {
+                        f.finalize();
+                    }
                     finalIter.remove();
                 }
             }
@@ -2344,7 +2347,10 @@ public final class Ruby {
             if (internalFinalizers != null) {
                 for (Iterator<Finalizable> finalIter = new ArrayList<Finalizable>(
                         internalFinalizers.keySet()).iterator(); finalIter.hasNext();) {
-                    finalIter.next().finalize();
+                    Finalizable f = finalIter.next();
+                    if (f != null) {
+                        f.finalize();
+                    }
                     finalIter.remove();
                 }
             }
