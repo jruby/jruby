@@ -712,6 +712,8 @@
   <target name="test-rake-targets" depends="install-gems">
       <run-rake rake.targets="spec:ji:quiet"/>
       <run-rake rake.targets="test:tracing" jruby.args="--debug"/>
+      <run-rake rake.targets="spec:compiler"/>
+      <run-rake rake.targets="spec:ffi"/>
   </target>
 
   <macrodef name="run-rake">

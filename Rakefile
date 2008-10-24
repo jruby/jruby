@@ -96,6 +96,11 @@ namespace :spec do
   Spec::Rake::SpecTask.new("compiler" => "build/jruby-test-classes.jar") do |t|
     t.spec_files = FileList['spec/compiler/**/*_spec.rb']
   end
+
+  desc "Runs FFI specs"
+  Spec::Rake::SpecTask.new("ffi" => "build/jruby-test-classes.jar") do |t|
+    t.spec_files = FileList['spec/ffi/**/*_spec.rb']
+  end
 end
 
 desc "Clean all built output"
