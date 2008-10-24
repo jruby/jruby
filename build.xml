@@ -426,13 +426,11 @@
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${jruby.home}"/>
-      <arg line="-S gem install rspec -v 1.1.8 --env-shebang"/>
-    </java>
-    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
-      <classpath refid="build.classpath"/>
-      <classpath path="${jruby.classes.dir}"/>
-      <sysproperty key="jruby.home" value="${jruby.home}"/>
-      <arg line="-S gem install rake --env-shebang"/>
+      <arg value="--command"/>
+      <arg value="maybe_install_gems"/>
+      <arg value="rspec"/>
+      <arg value="rake"/>
+      <arg value="--env-shebang"/>
     </java>
   </target>
 
@@ -442,7 +440,10 @@
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${jruby.home}"/>
-      <arg line="-S gem install mocha --env-shebang --no-rdoc --no-ri"/>
+      <arg value="--command"/>
+      <arg value="maybe_install_gems"/>
+      <arg value="mocha"/>
+      <arg value="--env-shebang"/>
     </java>
   </target>
   
