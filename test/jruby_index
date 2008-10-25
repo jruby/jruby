@@ -89,3 +89,4 @@ test_jruby_core_ext
 test_thread_context_frame_dereferences_unreachable_variables
 test_context_classloader
 test_rexml_document
+test_load_compiled_ruby

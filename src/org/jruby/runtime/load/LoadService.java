@@ -234,12 +234,13 @@ public class LoadService {
         }
 
         SearchState state = new SearchState(file);
+        state.prepareLoadSearch(file);
         
-        Library library = findBuiltinLibrary(state, file, SuffixType.Neither);
-        if (library == null) library = findLibraryWithoutCWD(state, file, SuffixType.Neither);
+        Library library = findBuiltinLibrary(state, state.searchFile, state.suffixType);
+        if (library == null) library = findLibraryWithoutCWD(state, state.searchFile, state.suffixType);
 
         if (library == null) {
-            library = findLibraryWithClassloaders(state, file, SuffixType.Neither);
+            library = findLibraryWithClassloaders(state, state.searchFile, state.suffixType);
             if (library == null) {
                 throw runtime.newLoadError("No such file to load -- " + file);
             }
@@ -250,6 +251,75 @@ public class LoadService {
             if (runtime.getDebug().isTrue()) e.printStackTrace();
             throw runtime.newLoadError("IO error -- " + file);
         }
+    }
+
+    public boolean smartLoad(final String file) {
+        checkEmptyLoad(file);
+
+        SearchState state = new SearchState(file);
+        state.prepareRequireSearch(file);
+
+        try {
+            for (LoadSearcher searcher : searchers) {
+                if (searcher.shouldTrySearch(state)) {
+                    searcher.trySearch(state);
+                } else {
+                    continue;
+                }
+            }
+        } catch (AlreadyLoaded al) {
+            // Library has already been loaded in some form, bail out
+            return false;
+        }
+
+        return tryLoadingLibraryOrScript(runtime, state);
+    }
+
+    public boolean require(String file) {
+        if(!runtime.getProfile().allowRequire(file)) {
+            throw runtime.newLoadError("No such file to load -- " + file);
+        }
+        return smartLoad(file);
+    }
+
+    public IRubyObject getLoadPath() {
+        return loadPath;
+    }
+
+    public IRubyObject getLoadedFeatures() {
+        return loadedFeatures;
+    }
+
+    public IAutoloadMethod autoloadFor(String name) {
+        return autoloadMap.get(name);
+    }
+
+    public void removeAutoLoadFor(String name) {
+        autoloadMap.remove(name);
+    }
+
+    public IRubyObject autoload(String name) {
+        IAutoloadMethod loadMethod = autoloadMap.remove(name);
+        if (loadMethod != null) {
+            return loadMethod.load(runtime, name);
+        }
+        return null;
+    }
+
+    public void addAutoload(String name, IAutoloadMethod loadMethod) {
+        autoloadMap.put(name, loadMethod);
+    }
+
+    public void addBuiltinLibrary(String name, Library library) {
+        builtinLibraries.put(name, library);
+    }
+
+    public void removeBuiltinLibrary(String name) {
+        builtinLibraries.remove(name);
+    }
+
+    public void removeInternalLoadedFeature(String name) {
+        loadedFeaturesInternal.remove(name);
     }
 
     private boolean featureAlreadyLoaded(RubyString loadNameRubyString) {
@@ -430,10 +500,9 @@ public class LoadService {
         
         public SearchState(String file) {
             loadName = file;
-            chooseSearchType(file);
         }
 
-        private void chooseSearchType(final String file) {
+        public void prepareRequireSearch(final String file) {
             // if an extension is specified, try more targetted searches
             if (file.lastIndexOf('.') > file.lastIndexOf('/')) {
                 Matcher matcher = null;
@@ -457,6 +526,28 @@ public class LoadService {
             } else {
                 // try all extensions
                 suffixType = SuffixType.Both;
+                searchFile = file;
+            }
+        }
+
+        public void prepareLoadSearch(final String file) {
+            // if a source extension is specified, try all source extensions
+            if (file.lastIndexOf('.') > file.lastIndexOf('/')) {
+                Matcher matcher = null;
+                if ((matcher = sourcePattern.matcher(file)).find()) {
+                    // source extensions
+                    suffixType = SuffixType.Source;
+
+                    // trim extension to try other options
+                    searchFile = file.substring(0, matcher.start());
+                } else {
+                    // unknown extension, fall back to exact search
+                    suffixType = SuffixType.Neither;
+                    searchFile = file;
+                }
+            } else {
+                // try only literal search
+                suffixType = SuffixType.Neither;
                 searchFile = file;
             }
         }
@@ -494,74 +585,6 @@ public class LoadService {
         searchers.add(new ClassLoaderSearcher());
         searchers.add(new ExtensionSearcher());
         searchers.add(new ScriptClassSearcher());
-    }
-
-    public boolean smartLoad(final String file) {
-        checkEmptyLoad(file);
-        
-        SearchState state = new SearchState(file);
-        
-        try {
-            for (LoadSearcher searcher : searchers) {
-                if (searcher.shouldTrySearch(state)) {
-                    searcher.trySearch(state);
-                } else {
-                    continue;
-                }
-            }
-        } catch (AlreadyLoaded al) {
-            // Library has already been loaded in some form, bail out
-            return false;
-        }
-        
-        return tryLoadingLibraryOrScript(runtime, state);
-    }
-
-    public boolean require(String file) {
-        if(!runtime.getProfile().allowRequire(file)) {
-            throw runtime.newLoadError("No such file to load -- " + file);
-        }
-        return smartLoad(file);
-    }
-
-    public IRubyObject getLoadPath() {
-        return loadPath;
-    }
-
-    public IRubyObject getLoadedFeatures() {
-        return loadedFeatures;
-    }
-
-    public IAutoloadMethod autoloadFor(String name) {
-        return autoloadMap.get(name);
-    }
-    
-    public void removeAutoLoadFor(String name) {
-        autoloadMap.remove(name);
-    }
-
-    public IRubyObject autoload(String name) {
-        IAutoloadMethod loadMethod = autoloadMap.remove(name);
-        if (loadMethod != null) {
-            return loadMethod.load(runtime, name);
-        }
-        return null;
-    }
-
-    public void addAutoload(String name, IAutoloadMethod loadMethod) {
-        autoloadMap.put(name, loadMethod);
-    }
-
-    public void addBuiltinLibrary(String name, Library library) {
-        builtinLibraries.put(name, library);
-    }
-
-    public void removeBuiltinLibrary(String name) {
-        builtinLibraries.remove(name);
-    }
-
-    public void removeInternalLoadedFeature(String name) {
-        loadedFeaturesInternal.remove(name);
     }
 
     private String buildClassName(String className) {
