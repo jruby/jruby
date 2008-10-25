@@ -711,7 +711,9 @@ public class ShellLauncher {
     private static String[] parseCommandLine(ThreadContext context, Ruby runtime, IRubyObject[] rawArgs) {
         String[] args;
         if (rawArgs.length == 1) {
-            runtime.getLoadService().require("jruby/path_helper");
+            synchronized (runtime.getLoadService()) {
+                runtime.getLoadService().require("jruby/path_helper");
+            }
             RubyModule pathHelper = runtime.getClassFromPath("JRuby::PathHelper");
             RubyArray parts = (RubyArray) RuntimeHelpers.invoke(context, pathHelper, "smart_split_command", rawArgs);
             args = new String[parts.getLength()];
