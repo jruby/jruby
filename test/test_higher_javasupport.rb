@@ -135,29 +135,6 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal("a", inner_instance_entry.getKey)
   end
 
-  # This test depends on specific impl details of Sun's JDK
-  # See JRUBY-3037
-=begin
-  class FooArrayList < ArrayList
-    $ensureCapacity = false
-    def foo
-      size
-    end
-    def ensureCapacity(howmuch)
-      $ensureCapacity = true
-      super
-    end
-  end
-
-  def test_extending_java_classes
-    l = FooArrayList.new
-    assert_equal(0, l.foo)
-    l.add(100)
-    assert_equal(1, l.foo)
-    assert_equal(true, $ensureCapacity)
-  end
-=end
-
   def test_extending_java_interfaces
     if java.lang.Comparable.instance_of?(Module)
       anonymous = Class.new(Object)

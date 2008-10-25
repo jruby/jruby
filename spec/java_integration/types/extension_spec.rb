@@ -7,6 +7,7 @@ import "java_integration.fixtures.PackageInstanceMethod"
 import "java_integration.fixtures.PackageStaticMethod"
 import "java_integration.fixtures.PrivateInstanceMethod"
 import "java_integration.fixtures.PrivateStaticMethod"
+import "java_integration.fixtures.ConcreteWithVirtualCall"
 
 describe "A Ruby subclass of a Java concrete class" do
   it "should allow access to the proxy object for the class" do
@@ -75,5 +76,16 @@ describe "A Ruby subclass of a Java class" do
       lambda {subtype.new.go}.should raise_error(NoMethodError)
     end
     lambda {subtype.new.go}.should raise_error
+  end
+end
+
+describe "A Ruby subclass of a Java concrete class" do
+  it "can override virtually-invoked methods from super" do
+    my_arraylist = Class.new(ConcreteWithVirtualCall) {
+      def virtualMethod
+        "derived"
+      end
+    }
+    my_arraylist.new.callVirtualMethod.should == "derived"
   end
 end
