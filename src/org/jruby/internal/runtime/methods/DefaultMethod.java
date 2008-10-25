@@ -381,7 +381,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget, Me
 
     private void interpretArgs(Ruby runtime, IRubyObject[] args, ThreadContext context, IRubyObject self, Block block) {
 
-        checkArgCount(runtime, args.length);
+//        checkArgCount(runtime, args.length);
 
         prepareArguments(context, runtime, self, args);
 
@@ -416,7 +416,7 @@ public final class DefaultMethod extends DynamicMethod implements JumpTarget, Me
         if (runtime.hasEventHooks()) {
             traceCall(context, runtime, name);
         }
-        
+        checkArgCount(runtime, args.length);    
         if (!noArgHack) interpretArgs(runtime, args, context, self, block);
     }
     
