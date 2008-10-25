@@ -41,8 +41,11 @@ if [ -d "${JRUBY_HOME_1}/lib" ] ; then
   JRUBY_HOME="${JRUBY_HOME_1}"
 fi
 
+# JRUBY_OPTS and RUBYOPT
 if [ -z "$JRUBY_OPTS" ] ; then
-  JRUBY_OPTS=""
+  JRUBY_OPTS="$RUBYOPT"
+else
+  JRUBY_OPTS="$JRUBY_OPTS $RUBYOPT"
 fi
 
 if [ -z "$JAVA_HOME" ] ; then

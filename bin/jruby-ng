@@ -27,6 +27,13 @@ while [ -h "$PRG" ] ; do
   fi
 done
 
+# JRUBY_OPTS and RUBYOPT
+if [ -z "$JRUBY_OPTS" ] ; then
+  JRUBY_OPTS="$RUBYOPT"
+else
+  JRUBY_OPTS="$JRUBY_OPTS $RUBYOPT"
+fi
+
 JRUBY_HOME_1=`dirname "$PRG"`           # the ./bin dir
 JRUBY_HOME_1=`dirname "$JRUBY_HOME_1"`  # the . dir
 if [ -d "${JRUBY_HOME_1}/lib" ] ; then
