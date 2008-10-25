@@ -726,7 +726,7 @@ public class RubyKernel {
         return localVariables;
     }
 
-    @JRubyMethod(name = "binding", frame = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "binding", module = true, visibility = PRIVATE)
     public static RubyBinding binding(ThreadContext context, IRubyObject recv, Block block) {
         return RubyBinding.newBinding(context.getRuntime());
     }
