@@ -111,11 +111,12 @@ public class ConstNode extends Node implements INameNode {
     }
     
     public IRubyObject reCache(ThreadContext context, String name) {
+        int newGeneration = context.getRubyClass().getConstantSerialNumber();
         IRubyObject value = context.getConstant(name);
             
         cachedValue = value;
             
-        if (value != null) generation = context.getRubyClass().getConstantSerialNumber();
+        if (value != null) generation = newGeneration;
         
         return value;
     }
