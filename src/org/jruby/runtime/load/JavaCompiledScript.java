@@ -76,9 +76,20 @@ public class JavaCompiledScript implements Library {
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
         } catch (InstantiationException ie) {
+            if (runtime.getDebug().isTrue()) {
+                ie.printStackTrace();
+            }
             throw runtime.newLoadError("Error loading compiled script: " + ie);
         } catch (IllegalAccessException iae) {
+            if (runtime.getDebug().isTrue()) {
+                iae.printStackTrace();
+            }
             throw runtime.newLoadError("Error loading compiled script: " + iae);
+        } catch (LinkageError le) {
+            if (runtime.getDebug().isTrue()) {
+                le.printStackTrace();
+            }
+            throw runtime.newLoadError("Linkage error loading compiled script; you may need to recompile: " + le);
         } finally {
             try {
                 in.close();
