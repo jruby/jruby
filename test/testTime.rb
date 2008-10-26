@@ -125,6 +125,7 @@ test_equal 2038, Time.utc(38).year
 test_equal 2038, Time.utc(138).year
 test_equal 1902, Time.utc(1902).year
 
+=begin Disabled, see http://jira.codehaus.org/browse/JRUBY-3079
 old_tz = ENV['TZ']
 begin
   ENV['TZ']='Europe/Helsinki'
@@ -134,3 +135,4 @@ begin
 ensure
   ENV['TZ'] = old_tz
 end
+=end
