@@ -76,5 +76,21 @@ class TestEvalWithBinding < Test::Unit::TestCase
     assert_raises(NameError) { eval("k", b2) }
     assert_equal(6, eval("k", b3))
   end
+
+  def test_bound_eval_in_class
+    cls = Class.new {
+      eval "def foo; true; end", binding
+      1.times {
+        eval "def bar; true; end", binding
+      }
+      proc {
+        eval "def baz; true; end", binding
+      }.call
+    }
+    obj = cls.new
+    assert obj.foo
+    assert obj.bar
+    assert obj.baz
+  end
 end
 

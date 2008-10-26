@@ -533,12 +533,11 @@ public final class ThreadContext {
     public RubyModule getBindingRubyClass() {
         int index = parentIndex;
         RubyModule parentModule = null;
-        if(index == 0) {
+//        if(index == 0) {
             parentModule = parentStack[index];
-        } else {
-            parentModule = parentStack[index-1];
-            
-        }
+//        } else {
+//            parentModule = parentStack[index-1];
+//        }
         return parentModule.getNonIncludedClass();
     }
     
