@@ -30,5 +30,7 @@ public interface CacheCompiler {
     
     public void cacheClosureOld(BaseBodyCompiler method, String closureMethod);
 
+    public void cacheConstant(BaseBodyCompiler method, String constantName);
+
     public void finish();
 }

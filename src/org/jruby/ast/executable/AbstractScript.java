@@ -5,6 +5,7 @@
 
 package org.jruby.ast.executable;
 
+import java.util.Arrays;
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.RubySymbol;
@@ -80,6 +81,12 @@ public abstract class AbstractScript implements Script {
         fixnums = new RubyFixnum[size];
     }
 
+    public final void initConstants(int size) {
+        constants = new IRubyObject[size];
+        constantGenerations = new int[size];
+        Arrays.fill(constantGenerations, -1);
+    }
+
     public static CallSite[] setCallSite(CallSite[] callSites, int index, String name) {
         callSites[index] = MethodIndex.getCallSite(name);
         return callSites;
@@ -99,8 +106,43 @@ public abstract class AbstractScript implements Script {
         this.filename = filename;
     }
 
+    public final IRubyObject getConstant(ThreadContext context, String name, int index) {
+        IRubyObject value = getValue(context, name, index);
+
+        // We can callsite cache const_missing if we want
+        return value != null ? value :
+            context.getRubyClass().callMethod(context, "const_missing", context.getRuntime().fastNewSymbol(name));
+    }
+
+    public IRubyObject getValue(ThreadContext context, String name, int index) {
+        IRubyObject value = constants[index]; // Store to temp so it does null out on us mid-stream
+
+        return isCached(context, value, index) ? value : reCache(context, name, index);
+    }
+
+    private boolean isCached(ThreadContext context, IRubyObject value, int index) {
+        return value != null && constantGenerations[index] == context.getRubyClass().getConstantSerialNumber();
+    }
+
+    public IRubyObject reCache(ThreadContext context, String name, int index) {
+        int newGeneration = context.getRubyClass().getConstantSerialNumber();
+        IRubyObject value = context.getConstant(name);
+
+        constants[index] = value;
+
+        if (value != null) constantGenerations[index] = newGeneration;
+
+        return value;
+    }
+
+    public void invalidate(int index) {
+        constants[index] = null;
+    }
+
     public CallSite[] callSites;
     public RubySymbol[] symbols;
     public RubyFixnum[] fixnums;
     public String filename;
+    public IRubyObject[] constants;
+    public int[] constantGenerations;
 }

@@ -294,9 +294,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void retrieveConstant(String name) {
-        loadThreadContext();
-        method.ldc(name);
-        invokeUtilityMethod("getConstant", sig(IRubyObject.class, params(ThreadContext.class, String.class)));
+        script.getCacheCompiler().cacheConstant(this, name);
     }
 
     public void retrieveConstantFromModule(String name) {

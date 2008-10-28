@@ -12,6 +12,8 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.util.CodegenUtils.*;
 
 /**
@@ -24,6 +26,7 @@ public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
     List<CallType> callTypeList = new ArrayList<CallType>();
     int inheritedSymbolCount = 0;
     int inheritedFixnumCount = 0;
+    int inheritedConstantCount = 0;
     
     public InheritedCacheCompiler(StandardASMCompiler scriptCompiler) {
         super(scriptCompiler);
@@ -143,5 +146,24 @@ public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
             initMethod.pushInt(size);
             initMethod.invokevirtual(scriptCompiler.getClassname(), "initFixnums", sig(void.class, params(int.class)));
         }
+
+        // generate constants initialization code
+        size = inheritedConstantCount;
+        if (size != 0) {
+            initMethod.aload(0);
+            initMethod.pushInt(size);
+            initMethod.invokevirtual(scriptCompiler.getClassname(), "initConstants", sig(void.class, params(int.class)));
+        }
+    }
+
+    @Override
+    public void cacheConstant(BaseBodyCompiler method, String constantName) {
+        method.loadThis();
+        method.loadThreadContext();
+        method.method.ldc(constantName);
+        method.method.pushInt(inheritedConstantCount);
+        method.method.invokevirtual(scriptCompiler.getClassname(), "getConstant", sig(IRubyObject.class, ThreadContext.class, String.class, int.class));
+
+        inheritedConstantCount++;
     }
 }

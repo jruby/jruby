@@ -1,8 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package org.jruby.compiler.impl;
 
 import java.math.BigInteger;
@@ -29,11 +24,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import static org.jruby.util.CodegenUtils.*;
 
-/**
- *
- * @author headius
- */
-public class FieldBasedCacheCompiler implements CacheCompiler {
+public abstract class FieldBasedCacheCompiler implements CacheCompiler {
     protected StandardASMCompiler scriptCompiler;
     
     Map<String, String> sourcePositions = new HashMap<String, String>();
