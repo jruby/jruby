@@ -156,7 +156,6 @@ public class InheritedCacheCompiler extends FieldBasedCacheCompiler {
         }
     }
 
-    @Override
     public void cacheConstant(BaseBodyCompiler method, String constantName) {
         method.loadThis();
         method.loadThreadContext();
