@@ -212,6 +212,9 @@ set -- "${ruby_args[@]}"
 
 JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_STACK"
 JAVA_OPTS="$JAVA_OPTS -Djna.boot.library.path=$JRUBY_HOME/lib/native/$JNA_PATH"
+if [ `uname -s` = Linux ]; then
+    JAVA_OPTS="$JAVA_OPTS -Djna.platform.library.path=:"
+fi
 
 if $cygwin; then
   JRUBY_HOME=`cygpath --mixed "$JRUBY_HOME"`
