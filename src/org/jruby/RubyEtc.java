@@ -2,6 +2,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.ext.posix.Passwd;
 import org.jruby.ext.posix.Group;
 import org.jruby.ext.posix.POSIX;
@@ -98,48 +99,72 @@ public class RubyEtc {
     public static IRubyObject getpwuid(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         POSIX posix = runtime.getPosix();
-        int uid = args.length == 0 ? posix.getuid() : RubyNumeric.fix2int(args[0]);
-        Passwd pwd = posix.getpwuid(uid);
-        if(pwd == null) {
-            if (Platform.IS_WINDOWS) {  // MRI behavior
-                return recv.getRuntime().getNil();
+        try {
+            int uid = args.length == 0 ? posix.getuid() : RubyNumeric.fix2int(args[0]);
+            Passwd pwd = posix.getpwuid(uid);
+            if(pwd == null) {
+                if (Platform.IS_WINDOWS) {  // MRI behavior
+                    return recv.getRuntime().getNil();
+                }
+                throw runtime.newArgumentError("can't find user for " + uid);
             }
-            throw runtime.newArgumentError("can't find user for " + uid);
+            return setupPasswd(runtime, pwd);
+        } catch (Exception e) {
+            if (runtime.getDebug().isTrue()) {
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getpwuid is not supported by JRuby on this platform", e);
+            }
+            return runtime.getNil();
         }
-        return setupPasswd(runtime, pwd);
     }
 
     @JRubyMethod(name = "getpwnam", required=1, module = true)
     public static IRubyObject getpwnam(IRubyObject recv, IRubyObject name) {
+        Ruby runtime = recv.getRuntime();
         String nam = name.convertToString().toString();
-        Passwd pwd = recv.getRuntime().getPosix().getpwnam(nam);
-        if(pwd == null) {
-            if (Platform.IS_WINDOWS) {  // MRI behavior
-                return recv.getRuntime().getNil();
+        try {
+            Passwd pwd = runtime.getPosix().getpwnam(nam);
+            if(pwd == null) {
+                if (Platform.IS_WINDOWS) {  // MRI behavior
+                    return runtime.getNil();
+                }
+                throw runtime.newArgumentError("can't find user for " + nam);
             }
-            throw recv.getRuntime().newArgumentError("can't find user for " + nam);
+            return setupPasswd(recv.getRuntime(), pwd);
+        } catch (Exception e) {
+            if (runtime.getDebug().isTrue()) {
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getpwnam is not supported by JRuby on this platform", e);
+            }
+            return runtime.getNil();
         }
-        return setupPasswd(recv.getRuntime(), pwd);
     }
 
     @JRubyMethod(name = "passwd", module = true, frame=true)
     public static IRubyObject passwd(IRubyObject recv, Block block) {
         Ruby runtime = recv.getRuntime();
         POSIX posix = runtime.getPosix();
-        if(block.isGiven()) {
-            ThreadContext context = runtime.getCurrentContext();
-            posix.setpwent();
-            Passwd pw;
-            while((pw = posix.getpwent()) != null) {
-                block.yield(context, setupPasswd(runtime, pw));
+        try {
+            // call getpwent to fail early if unsupported
+            posix.getpwent();
+            if(block.isGiven()) {
+                ThreadContext context = runtime.getCurrentContext();
+                posix.setpwent();
+                Passwd pw;
+                while((pw = posix.getpwent()) != null) {
+                    block.yield(context, setupPasswd(runtime, pw));
+                }
+                posix.endpwent();
             }
-            posix.endpwent();
-        }
 
-        Passwd pw = posix.getpwent();
-        if (pw != null) {
-            return setupPasswd(runtime, pw);
-        } else {
+            Passwd pw = posix.getpwent();
+            if (pw != null) {
+                return setupPasswd(runtime, pw);
+            } else {
+                return runtime.getNil();
+            }
+        } catch (Exception e) {
+            if (runtime.getDebug().isTrue()) {
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.passwd is not supported by JRuby on this platform", e);
+            }
             return runtime.getNil();
         }
     }
@@ -147,80 +172,131 @@ public class RubyEtc {
     @JRubyMethod(name = "getlogin", module = true)
     public static IRubyObject getlogin(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
-        
-        String login = runtime.getPosix().getlogin();
-        
-        if (login != null) {
-            return runtime.newString(login);
-        } else {
-            return runtime.getNil();
+
+        try {
+            String login = runtime.getPosix().getlogin();
+
+            if (login != null) {
+                return runtime.newString(login);
+            } else {
+                return runtime.getNil();
+            }
+        } catch (Exception e) {
+            // fall back on env entry for USER
+            return runtime.newString(System.getProperty("user.name"));
         }
     }
 
     @JRubyMethod(name = "endpwent", module = true)
     public static IRubyObject endpwent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
-        runtime.getPosix().endpwent();
+        try {
+            runtime.getPosix().endpwent();
+        } catch (Exception e) {
+            if (runtime.getDebug().isTrue()) {
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.endpwent is not supported by JRuby on this platform", e);
+            }
+        }
         return runtime.getNil();
     }
 
     @JRubyMethod(name = "setpwent", module = true)
     public static IRubyObject setpwent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
-        runtime.getPosix().setpwent();
+        try {
+            runtime.getPosix().setpwent();
+        } catch (Exception e) {
+            if (runtime.getDebug().isTrue()) {
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.setpwent is not supported by JRuby on this platform", e);
+            }
+        }
         return runtime.getNil();
     }
 
     @JRubyMethod(name = "getpwent", module = true)
     public static IRubyObject getpwent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
-        Passwd passwd = runtime.getPosix().getpwent();
-        if (passwd != null) {
-            return setupPasswd(recv.getRuntime(), passwd);
-        } else {
+        try {
+            Passwd passwd = runtime.getPosix().getpwent();
+            if (passwd != null) {
+                return setupPasswd(runtime, passwd);
+            } else {
+                return runtime.getNil();
+            }
+        } catch (Exception e) {
+            if (runtime.getDebug().isTrue()) {
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getpwent is not supported by JRuby on this platform", e);
+            }
             return runtime.getNil();
         }
     }
 
     @JRubyMethod(name = "getgrnam", required=1, module = true)
     public static IRubyObject getgrnam(IRubyObject recv, IRubyObject name) {
+        Ruby runtime = recv.getRuntime();
         String nam = name.convertToString().toString();
-        Group grp = recv.getRuntime().getPosix().getgrnam(nam);
-        if(grp == null) {
-            if (Platform.IS_WINDOWS) {  // MRI behavior
-                return recv.getRuntime().getNil();
+        try {
+            Group grp = runtime.getPosix().getgrnam(nam);
+            if(grp == null) {
+                if (Platform.IS_WINDOWS) {  // MRI behavior
+                    return runtime.getNil();
+                }
+                throw runtime.newArgumentError("can't find group for " + nam);
             }
-            throw recv.getRuntime().newArgumentError("can't find group for " + nam);
+            return setupGroup(runtime, grp);
+        } catch (Exception e) {
+            if (runtime.getDebug().isTrue()) {
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getgrnam is not supported by JRuby on this platform", e);
+            }
+            return runtime.getNil();
         }
-        return setupGroup(recv.getRuntime(), grp);
     }
 
     @JRubyMethod(name = "getgrgid", optional=1, module = true)
     public static IRubyObject getgrgid(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         POSIX posix = runtime.getPosix();
-        int gid = args.length == 0 ? posix.getgid() : RubyNumeric.fix2int(args[0]);
-        Group gr = posix.getgrgid(gid);
-        if(gr == null) {
-            if (Platform.IS_WINDOWS) {  // MRI behavior
-                return runtime.getNil();
+        try {
+            int gid = args.length == 0 ? posix.getgid() : RubyNumeric.fix2int(args[0]);
+            Group gr = posix.getgrgid(gid);
+            if(gr == null) {
+                if (Platform.IS_WINDOWS) {  // MRI behavior
+                    return runtime.getNil();
+                }
+                throw runtime.newArgumentError("can't find group for " + gid);
             }
-            throw runtime.newArgumentError("can't find group for " + gid);
+            return setupGroup(runtime, gr);
+        } catch (Exception e) {
+            if (runtime.getDebug().isTrue()) {
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.gegrgid is not supported by JRuby on this platform", e);
+            }
+            return runtime.getNil();
         }
-        return setupGroup(runtime, gr);
     }
 
     @JRubyMethod(name = "endgrent", module = true)
     public static IRubyObject endgrent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
-        runtime.getPosix().endgrent();
+        try {
+            runtime.getPosix().endgrent();
+        } catch (Exception e) {
+            if (runtime.getDebug().isTrue()) {
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.engrent is not supported by JRuby on this platform", e);
+            }
+        }
         return runtime.getNil();
     }
 
     @JRubyMethod(name = "setgrent", module = true)
     public static IRubyObject setgrent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
-        runtime.getPosix().setgrent();
+        try {
+            runtime.getPosix().setgrent();
+        } catch (Exception e) {
+            if (runtime.getDebug().isTrue()) {
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.setgrent is not supported by JRuby on this platform", e);
+            }
+        }
         return runtime.getNil();
     }
 
@@ -228,20 +304,29 @@ public class RubyEtc {
     public static IRubyObject group(IRubyObject recv, Block block) {
         Ruby runtime = recv.getRuntime();
         POSIX posix = runtime.getPosix();
-        if(block.isGiven()) {
-            ThreadContext context = runtime.getCurrentContext();
-            posix.setgrent();
-            Group gr;
-            while((gr = posix.getgrent()) != null) {
-                block.yield(context, setupGroup(runtime, gr));
+        try {
+            // try to read grent to fail fast
+            posix.getgrent();
+            if(block.isGiven()) {
+                ThreadContext context = runtime.getCurrentContext();
+                posix.setgrent();
+                Group gr;
+                while((gr = posix.getgrent()) != null) {
+                    block.yield(context, setupGroup(runtime, gr));
+                }
+                posix.endgrent();
             }
-            posix.endgrent();
-        }
 
-        Group gr = posix.getgrent();
-        if (gr != null) {
-            return setupGroup(runtime, gr);
-        } else {
+            Group gr = posix.getgrent();
+            if (gr != null) {
+                return setupGroup(runtime, gr);
+            } else {
+                return runtime.getNil();
+            }
+        } catch (Exception e) {
+            if (runtime.getDebug().isTrue()) {
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.group is not supported by JRuby on this platform", e);
+            }
             return runtime.getNil();
         }
     }
@@ -249,11 +334,18 @@ public class RubyEtc {
     @JRubyMethod(name = "getgrent", module = true)
     public static IRubyObject getgrent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
-        Group gr = runtime.getPosix().getgrent();
-        if (gr != null) {
-            return setupGroup(recv.getRuntime(), gr);
-        } else {
+        try {
+            Group gr = runtime.getPosix().getgrent();
+            if (gr != null) {
+                return setupGroup(recv.getRuntime(), gr);
+            } else {
+                return runtime.getNil();
+            }
+        } catch (Exception e) {
+            if (runtime.getDebug().isTrue()) {
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getgrent is not supported by JRuby on this platform", e);
+            }
             return runtime.getNil();
-        }        
+        }
     }
 }
