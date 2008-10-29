@@ -40,6 +40,7 @@ test_included_in_object_space
 test_io
 test_load
 test_math
+test_method_cache
 test_nkf
 test_java_accessible_object
 test_java_extension
