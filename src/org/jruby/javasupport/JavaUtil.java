@@ -923,66 +923,60 @@ public class JavaUtil {
     }
     
     public static Object coerceFixnumToType(RubyFixnum fixnum, Class target) {
-        if (target.isPrimitive()) {
-            if (target == Integer.TYPE) {
-                return Integer.valueOf((int)fixnum.getLongValue());
-            } else if (target == Double.TYPE) {
-                return Double.valueOf(fixnum.getLongValue());
-            } else if (target == Byte.TYPE) {
-                return Byte.valueOf((byte)fixnum.getLongValue());
-            } else if (target == Character.TYPE) {
-                return Character.valueOf((char)fixnum.getLongValue());
-            } else if (target == Float.TYPE) {
-                return Float.valueOf((float)fixnum.getLongValue());
-            } else if (target == Long.TYPE) {
-                return Long.valueOf(fixnum.getLongValue());
-            } else if (target == Short.TYPE) {
-                return Short.valueOf((short)fixnum.getLongValue());
-            }
-        }
-        return Long.valueOf(fixnum.getLongValue());
+        return coerceNumericToType(fixnum, target);
     }
         
     public static Object coerceBignumToType(RubyBignum bignum, Class target) {
-        if (target.isPrimitive()) {
-            if (target == Integer.TYPE) {
-                return Integer.valueOf((int)bignum.getLongValue());
-            } else if (target == Double.TYPE) {
-                return Double.valueOf(bignum.getLongValue());
-            } else if (target == Byte.TYPE) {
-                return Byte.valueOf((byte)bignum.getLongValue());
-            } else if (target == Character.TYPE) {
-                return Character.valueOf((char)bignum.getLongValue());
-            } else if (target == Float.TYPE) {
-                return Float.valueOf((float)bignum.getLongValue());
-            } else if (target == Long.TYPE) {
-                return Long.valueOf(bignum.getLongValue());
-            } else if (target == Short.TYPE) {
-                return Short.valueOf((short)bignum.getLongValue());
-            }
-        }
-        return bignum.getValue();
+        return coerceNumericToType(bignum, target);
     }
     
     public static Object coerceFloatToType(RubyFloat flote, Class target) {
+        return coerceNumericToType(flote, target);
+    }
+
+    public static Object coerceNumericToType(RubyNumeric numeric, Class target) {
+        // TODO: this could be faster
         if (target.isPrimitive()) {
-            if (target == Integer.TYPE) {
-                return Integer.valueOf((int)flote.getLongValue());
-            } else if (target == Double.TYPE) {
-                return Double.valueOf(flote.getDoubleValue());
-            } else if (target == Byte.TYPE) {
-                return Byte.valueOf((byte)flote.getLongValue());
-            } else if (target == Character.TYPE) {
-                return Character.valueOf((char)flote.getLongValue());
-            } else if (target == Float.TYPE) {
-                return Float.valueOf((float)flote.getDoubleValue());
-            } else if (target == Long.TYPE) {
-                return Long.valueOf(flote.getLongValue());
+            if (target == Byte.TYPE) {
+                return Byte.valueOf((byte)numeric.getLongValue());
             } else if (target == Short.TYPE) {
-                return Short.valueOf((short)flote.getLongValue());
+                return Short.valueOf((short)numeric.getLongValue());
+            } else if (target == Character.TYPE) {
+                return Character.valueOf((char)numeric.getLongValue());
+            } else if (target == Integer.TYPE) {
+                return Integer.valueOf((int)numeric.getLongValue());
+            } else if (target == Long.TYPE) {
+                return Long.valueOf(numeric.getLongValue());
+            } else if (target == Double.TYPE) {
+                return Double.valueOf(numeric.getDoubleValue());
+            } else if (target == Float.TYPE) {
+                return Float.valueOf((float)numeric.getDoubleValue());
+            }
+        } else if (target == Byte.class) {
+            return Byte.valueOf((byte)numeric.getLongValue());
+        } else if (target == Short.class) {
+            return Short.valueOf((short)numeric.getLongValue());
+        } else if (target == Character.class) {
+            return Character.valueOf((char)numeric.getLongValue());
+        } else if (target == Integer.class) {
+            return Integer.valueOf((int)numeric.getLongValue());
+        } else if (target == Long.class) {
+            return Long.valueOf((long)numeric.getLongValue());
+        } else if (target == Float.class) {
+            return Float.valueOf((float)numeric.getDoubleValue());
+        } else if (target == Double.class) {
+            return Double.valueOf((double)numeric.getDoubleValue());
+        } else if (target == Object.class) {
+            // for Object, default to natural wrapper type
+            if (numeric instanceof RubyFixnum) {
+                return Long.valueOf(numeric.getLongValue());
+            } else if (numeric instanceof RubyFloat) {
+                return Double.valueOf(numeric.getDoubleValue());
+            } else if (numeric instanceof RubyBignum) {
+                return ((RubyBignum)numeric).getValue();
             }
         }
-        return Double.valueOf(flote.getDoubleValue());
+        throw numeric.getRuntime().newTypeError("could not coerce " + numeric.getMetaClass() + " to " + target);
     }
     
     public static Object coerceStringToType(RubyString string, Class target) {

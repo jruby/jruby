@@ -92,6 +92,42 @@ public class CoreTypeMethods {
     public static String setNull(Object nil) {
         return String.valueOf(nil);
     }
+
+    public static String setByteObj(Byte b) {
+        return String.valueOf(b);
+    }
+
+    public static String setShortObj(Short s) {
+        return String.valueOf(s);
+    }
+
+    public static String setCharObj(Character c) {
+        return String.valueOf(c);
+    }
+
+    public static String setIntObj(Integer i) {
+        return String.valueOf(i);
+    }
+
+    public static String setLongObj(Long l) {
+        return String.valueOf(l);
+    }
+
+    public static String setFloatObj(Float f) {
+        return String.valueOf(f);
+    }
+
+    public static String setDoubleObj(Double d) {
+        return String.valueOf(d);
+    }
+
+    public static String setBooleanTrueObj(Boolean t) {
+        return String.valueOf(t);
+    }
+
+    public static String setBooleanFalseObj(Boolean f) {
+        return String.valueOf(f);
+    }
     
     public static String getType(byte b) {
         return "byte";

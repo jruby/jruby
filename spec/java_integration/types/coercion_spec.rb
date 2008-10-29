@@ -46,11 +46,41 @@ describe "Java String and primitive-typed methods" do
     CoreTypeMethods.setInt(1).should == "1"
     CoreTypeMethods.setLong(1).should == "1"
     
+    CoreTypeMethods.setFloat(1).should == "1.0"
+    CoreTypeMethods.setDouble(1).should == "1.0"
+
+    CoreTypeMethods.setByte(1.5).should == "1"
+    CoreTypeMethods.setShort(1.5).should == "1"
+    CoreTypeMethods.setChar(1.5).should == "\001"
+    CoreTypeMethods.setInt(1.5).should == "1"
+    CoreTypeMethods.setLong(1.5).should == "1"
+
     CoreTypeMethods.setFloat(1.5).should == "1.5"
     CoreTypeMethods.setDouble(1.5).should == "1.5"
     
     CoreTypeMethods.setBooleanTrue(true).should == "true"
     CoreTypeMethods.setBooleanFalse(false).should == "false"
+
+    CoreTypeMethods.setByteObj(1).should == "1"
+    CoreTypeMethods.setShortObj(1).should == "1"
+    CoreTypeMethods.setCharObj(1).should == "\001"
+    CoreTypeMethods.setIntObj(1).should == "1"
+    CoreTypeMethods.setLongObj(1).should == "1"
+
+    CoreTypeMethods.setFloatObj(1).should == "1.0"
+    CoreTypeMethods.setDoubleObj(1).should == "1.0"
+
+    CoreTypeMethods.setByteObj(1.5).should == "1"
+    CoreTypeMethods.setShortObj(1.5).should == "1"
+    CoreTypeMethods.setCharObj(1.5).should == "\001"
+    CoreTypeMethods.setIntObj(1.5).should == "1"
+    CoreTypeMethods.setLongObj(1.5).should == "1"
+
+    CoreTypeMethods.setFloatObj(1.5).should == "1.5"
+    CoreTypeMethods.setDoubleObj(1.5).should == "1.5"
+
+    CoreTypeMethods.setBooleanTrueObj(true).should == "true"
+    CoreTypeMethods.setBooleanFalseObj(false).should == "false"
     
     CoreTypeMethods.setNull(nil).should == "null"
   end
