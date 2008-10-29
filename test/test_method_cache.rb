@@ -82,4 +82,46 @@ class TestMethodCache < Test::Unit::TestCase
     assert_equal(1, $test_simple_include3)
     assert_equal(4, $test_simple_include4)
   end
+
+  def test_simple_alias
+    obj = Object.new
+    class << obj
+      class A; def foo; 1; end; end;
+      class B < A; def bar; 2; end; end
+      class C < B; end
+      class D < C; def go; bar; end; end
+      $test_simple_include1 = D.new.bar
+
+      class A; alias bar foo; end
+      $test_simple_include2 = D.new.bar
+
+      class C; alias bar foo; end
+      $test_simple_include3 = D.new.bar
+    end
+
+    assert_equal(2, $test_simple_include1)
+    assert_equal(2, $test_simple_include2)
+    assert_equal(1, $test_simple_include3)
+  end
+
+  def test_simple_alias_send
+    obj = Object.new
+    class << obj
+      class A; def foo; 1; end; end;
+      class B < A; def bar; 2; end; end
+      class C < B; end
+      class D < C; def go; bar; end; end
+      $test_simple_include1 = D.new.send :bar
+
+      class A; alias bar foo; end
+      $test_simple_include2 = D.new.send: bar
+
+      class C; alias bar foo; end
+      $test_simple_include3 = D.new.send :bar
+    end
+
+    assert_equal(2, $test_simple_include1)
+    assert_equal(2, $test_simple_include2)
+    assert_equal(1, $test_simple_include3)
+  end
 end
