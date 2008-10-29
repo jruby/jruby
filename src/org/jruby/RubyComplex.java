@@ -77,7 +77,7 @@ import org.jruby.util.Numeric;
 public class RubyComplex extends RubyNumeric {
 
     public static RubyClass createComplexClass(Ruby runtime) {
-        RubyClass complexc = runtime.defineClass("Complex", runtime.getNumeric(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        RubyClass complexc = runtime.defineClass("Complex", runtime.getNumeric(), COMPLEX_ALLOCATOR);
         runtime.setComplex(complexc);
 
         complexc.index = ClassIndex.COMPLEX;
@@ -104,6 +104,13 @@ public class RubyComplex extends RubyNumeric {
 
         return complexc;
     }
+
+    private static ObjectAllocator COMPLEX_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            RubyFixnum zero = RubyFixnum.zero(runtime);
+            return new RubyComplex(runtime, klass, zero, zero);
+        }
+    };
 
     /** internal
      * 

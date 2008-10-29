@@ -74,7 +74,7 @@ import org.jruby.util.Numeric;
 public class RubyRational extends RubyNumeric {
     
     public static RubyClass createRationalClass(Ruby runtime) {
-        RubyClass rationalc = runtime.defineClass("Rational", runtime.getNumeric(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        RubyClass rationalc = runtime.defineClass("Rational", runtime.getNumeric(), RATIONAL_ALLOCATOR);
         runtime.setRational(rationalc);
 
         rationalc.index = ClassIndex.RATIONAL;
@@ -92,6 +92,13 @@ public class RubyRational extends RubyNumeric {
 
         return rationalc;
     }
+
+    private static ObjectAllocator RATIONAL_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            RubyFixnum zero = RubyFixnum.zero(runtime);
+            return new RubyRational(runtime, klass, zero, zero);
+        }
+    };
 
     /** internal
      * 
