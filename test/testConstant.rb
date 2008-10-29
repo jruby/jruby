@@ -227,3 +227,25 @@ test_exception(TypeError) {
   JRuby2004 = 5
   JRuby2004::X = 5
 }
+
+# JRUBY-3091
+JRuby3091CONST1 = 1
+class JRuby3091A1; end
+class JRuby3091B1 < JRuby3091A1
+  def const; JRuby3091CONST1; end
+end
+
+test_equal(1, JRuby3091B1.new.const)
+JRuby3091A1.const_set(:JRuby3091CONST1, 2)
+test_equal(2, JRuby3091B1.new.const)
+
+JRuby3091CONST2 = 1
+class JRuby3091A2
+  class JRuby3091B2
+    def const; JRuby3091CONST2; end
+  end
+end
+
+test_equal(1, JRuby3091A2::JRuby3091B2.new.const)
+JRuby3091A2.const_set(:JRuby3091CONST2, 2)
+test_equal(2, JRuby3091A2::JRuby3091B2.new.const)

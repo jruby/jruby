@@ -88,7 +88,8 @@ public class ConstNode extends Node implements INameNode {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject value = getValue(context);
+//        IRubyObject value = getValue(context);
+        IRubyObject value = context.getConstant(name);
 
         // We can callsite cache const_missing if we want
         return value != null ? value :

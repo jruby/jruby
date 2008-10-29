@@ -107,7 +107,8 @@ public abstract class AbstractScript implements Script {
     }
 
     public final IRubyObject getConstant(ThreadContext context, String name, int index) {
-        IRubyObject value = getValue(context, name, index);
+//        IRubyObject value = getValue(context, name, index);
+        IRubyObject value = context.getConstant(name);
 
         // We can callsite cache const_missing if we want
         return value != null ? value :
