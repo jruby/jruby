@@ -37,7 +37,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class Numeric {
-    public static final boolean CANON = false;
+    public static final boolean CANON = true;
 
     /** f_add
      * 
