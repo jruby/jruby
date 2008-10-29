@@ -114,7 +114,7 @@ class TestMethodCache < Test::Unit::TestCase
       $test_simple_include1 = D.new.send :bar
 
       class A; alias bar foo; end
-      $test_simple_include2 = D.new.send: bar
+      $test_simple_include2 = D.new.send :bar
 
       class C; alias bar foo; end
       $test_simple_include3 = D.new.send :bar
