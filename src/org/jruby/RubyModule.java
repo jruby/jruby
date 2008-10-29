@@ -2480,7 +2480,7 @@ public class RubyModule extends RubyObject {
         return value == null ? callMethod(runtime.getCurrentContext(), "const_missing",
                 runtime.fastNewSymbol(internedName)) : value;
     }
-    
+
     public IRubyObject getConstantNoConstMissing(String name) {
         assert IdUtil.isConstant(name);
 
@@ -2491,9 +2491,11 @@ public class RubyModule extends RubyObject {
         }
 
         if (!isClass()) {
-            IRubyObject value = getRuntime().getObject().getConstantInner(name);
+            for (RubyModule p = getRuntime().getObject(); p != null; p = p.getSuperClass()) {
+                IRubyObject value = p.getConstantInner(name);
 
-            return value == UNDEF ? null : value;
+                if (value != null) return value == UNDEF ? null : value;
+            }
         }
 
         return null;
