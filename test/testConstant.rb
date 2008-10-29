@@ -249,3 +249,21 @@ end
 test_equal(1, JRuby3091A2::JRuby3091B2.new.const)
 JRuby3091A2.const_set(:JRuby3091CONST2, 2)
 test_equal(2, JRuby3091A2::JRuby3091B2.new.const)
+
+# More JRUBY-3091
+# 7867 broke const lookup by not eventually searching Object *and* its supers
+module JRuby3091A3
+  JRuby3091CONST3 = 1
+end
+
+class Object
+  include JRuby3091A3
+end
+
+module JRuby3091B3
+  def self.const
+    JRuby3091CONST3
+  end
+end
+
+test_equal(1, JRuby3091B3.const)
