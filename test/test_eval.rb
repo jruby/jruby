@@ -22,4 +22,30 @@ class TestEval < Test::Unit::TestCase
     assert_nothing_raised { eval "", binding, 'foo', :foo }
     assert_nothing_raised { eval "", binding, 'foo', ToInt.new }
   end
+
+  module Mod
+    def m1; @result << "M1"; end
+  end
+  
+  CHANGE='
+  alias_method :m1_orig, :m1
+  
+  def m1
+   m1_orig
+   @result << "M2"
+  end
+  '
+  
+  class Test
+    include Mod  
+    eval CHANGE
+
+    def initialize; @result = []; end
+    def t1; m1; end
+  end
+
+  def test_eval_alias_method
+    o = Test.new
+    assert_equal(["M1", "M2"], o.t1)
+  end
 end
