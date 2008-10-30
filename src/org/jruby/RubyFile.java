@@ -797,13 +797,13 @@ public class RubyFile extends RubyIO {
         }
         for (int i = 2; i < args.length; i++) {
             IRubyObject filename = args[i];
-            
-            if (!RubyFileTest.exist_p(filename, filename.convertToString()).isTrue()) {
+
+            RubyString fileString = filename.convertToString();
+            if (!RubyFileTest.exist_p(filename, fileString).isTrue()) {
                 throw runtime.newErrnoENOENTError("No such file or directory - " + filename);
             }
             
-            // UNICODE?
-            boolean result = 0 == runtime.getPosix().chown(filename.toString(), owner, group);
+            boolean result = 0 == runtime.getPosix().chown(fileString.getUnicodeValue(), owner, group);
             if (result) {
                 count++;
             }
@@ -816,8 +816,7 @@ public class RubyFile extends RubyIO {
     public static IRubyObject dirname(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         RubyString filename = RubyString.stringValue(arg);
         
-        // UNICODE?
-        String jfilename = filename.toString();
+        String jfilename = filename.getUnicodeValue();
         
         String name = jfilename.replace('\\', '/');
         int minPathLength = 1;
@@ -893,8 +892,7 @@ public class RubyFile extends RubyIO {
     public static IRubyObject extname(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         IRubyObject baseFilename = basename(context, recv, new IRubyObject[]{arg});
         
-        // UNICODE?
-        String filename = RubyString.stringValue(baseFilename).toString();
+        String filename = RubyString.stringValue(baseFilename).getUnicodeValue();
         String result = "";
 
         int dotIndex = filename.lastIndexOf(".");
@@ -1170,8 +1168,7 @@ public class RubyFile extends RubyIO {
     
     @JRubyMethod(name = "ftype", required = 1, meta = true)
     public static IRubyObject ftype(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        // UNICODE?
-        return context.getRuntime().newFileStat(filename.convertToString().toString(), true).ftype();
+        return context.getRuntime().newFileStat(filename.convertToString().getUnicodeValue(), true).ftype();
     }
 
     private static String inspectJoin(ThreadContext context, IRubyObject recv, RubyArray parent, RubyArray array) {
@@ -1243,8 +1240,7 @@ public class RubyFile extends RubyIO {
     
     @JRubyMethod(name = "lstat", required = 1, meta = true)
     public static IRubyObject lstat(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        // UNICODE?
-        String f = filename.convertToString().toString();
+        String f = filename.convertToString().getUnicodeValue();
         if(f.startsWith("file:") && f.indexOf('!') != -1) {
             f = f.substring(5, f.indexOf("!"));
         }
@@ -1253,8 +1249,7 @@ public class RubyFile extends RubyIO {
 
     @JRubyMethod(name = "stat", required = 1, meta = true)
     public static IRubyObject stat(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        // UNICODE?
-        String f = filename.convertToString().toString();
+        String f = filename.convertToString().getUnicodeValue();
         if(f.startsWith("file:") && f.indexOf('!') != -1) {
             f = f.substring(5, f.indexOf("!"));
         }
@@ -1263,8 +1258,7 @@ public class RubyFile extends RubyIO {
 
     @JRubyMethod(name = "atime", required = 1, meta = true)
     public static IRubyObject atime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        // UNICODE?
-        String f = filename.convertToString().toString();
+        String f = filename.convertToString().getUnicodeValue();
         if(f.startsWith("file:") && f.indexOf('!') != -1) {
             f = f.substring(5, f.indexOf("!"));
         }
@@ -1273,8 +1267,7 @@ public class RubyFile extends RubyIO {
 
     @JRubyMethod(name = "ctime", required = 1, meta = true)
     public static IRubyObject ctime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        // UNICODE?
-        String f = filename.convertToString().toString();
+        String f = filename.convertToString().getUnicodeValue();
         if(f.startsWith("file:") && f.indexOf('!') != -1) {
             f = f.substring(5, f.indexOf("!"));
         }
@@ -1331,10 +1324,10 @@ public class RubyFile extends RubyIO {
         Ruby runtime = context.getRuntime();
         RubyString fromStr = RubyString.stringValue(from);
         RubyString toStr = RubyString.stringValue(to);
-        // UNICODE?
+        
         try {
             if (runtime.getPosix().link(
-                    fromStr.toString(),toStr.toString()) == -1) {
+                    fromStr.getUnicodeValue(),toStr.getUnicodeValue()) == -1) {
                 // FIXME: When we get JNA3 we need to properly write this to errno.
                 throw runtime.newErrnoEEXISTError("File exists - " 
                                + fromStr + " or " + toStr);
@@ -1348,8 +1341,7 @@ public class RubyFile extends RubyIO {
 
     @JRubyMethod(name = "mtime", required = 1, meta = true)
     public static IRubyObject mtime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        // UNICODE?
-        return getLastModified(context.getRuntime(), filename.convertToString().toString());
+        return getLastModified(context.getRuntime(), filename.convertToString().getUnicodeValue());
     }
     
     @JRubyMethod(required = 2, meta = true)
@@ -1360,16 +1352,17 @@ public class RubyFile extends RubyIO {
         runtime.checkSafeString(oldNameString);
         runtime.checkSafeString(newNameString);
 
-        // UNICODE?
-        JRubyFile oldFile = JRubyFile.create(runtime.getCurrentDirectory(), oldNameString.toString());
-        JRubyFile newFile = JRubyFile.create(runtime.getCurrentDirectory(), newNameString.toString());
+        String newNameJavaString = newNameString.getUnicodeValue();
+        String oldNameJavaString = oldNameString.getUnicodeValue();
+        JRubyFile oldFile = JRubyFile.create(runtime.getCurrentDirectory(), oldNameJavaString);
+        JRubyFile newFile = JRubyFile.create(runtime.getCurrentDirectory(), newNameJavaString);
         
         if (!oldFile.exists() || !newFile.getParentFile().exists()) {
-            throw runtime.newErrnoENOENTError("No such file or directory - " + oldNameString + 
-                    " or " + newNameString);
+            throw runtime.newErrnoENOENTError("No such file or directory - " + oldNameJavaString +
+                    " or " + newNameJavaString);
         }
 
-        JRubyFile dest = JRubyFile.create(runtime.getCurrentDirectory(), newNameString.toString());
+        JRubyFile dest = JRubyFile.create(runtime.getCurrentDirectory(), newNameJavaString);
 
         if (oldFile.renameTo(dest)) {  // rename is successful
             return RubyFixnum.zero(runtime);
@@ -1378,7 +1371,7 @@ public class RubyFile extends RubyIO {
         // rename via Java API call wasn't successful, let's try some tricks, similar to MRI 
 
         if (newFile.exists()) {
-            runtime.getPosix().chmod(newNameString.toString(), 0666);
+            runtime.getPosix().chmod(newNameJavaString, 0666);
             newFile.delete();
         }
 
@@ -1386,8 +1379,8 @@ public class RubyFile extends RubyIO {
             return RubyFixnum.zero(runtime);
         }
 
-        throw runtime.newErrnoEACCESError("Permission denied - " + oldNameString + " or " + 
-                newNameString);
+        throw runtime.newErrnoEACCESError("Permission denied - " + oldNameJavaString + " or " +
+                newNameJavaString);
     }
     
     @JRubyMethod(required = 1, meta = true)
@@ -1404,9 +1397,8 @@ public class RubyFile extends RubyIO {
         RubyString fromStr = RubyString.stringValue(from);
         RubyString toStr = RubyString.stringValue(to);
         try {
-            // UNICODE?
             if (runtime.getPosix().symlink(
-                    fromStr.toString(), toStr.toString()) == -1) {
+                    fromStr.getUnicodeValue(), toStr.getUnicodeValue()) == -1) {
                 // FIXME: When we get JNA3 we need to properly write this to errno.
                 throw runtime.newErrnoEEXISTError("File exists - " 
                                + fromStr + " or " + toStr);
@@ -1423,8 +1415,7 @@ public class RubyFile extends RubyIO {
         Ruby runtime = context.getRuntime();
         
         try {
-            // UNICODE?
-            String realPath = runtime.getPosix().readlink(path.toString());
+            String realPath = runtime.getPosix().readlink(path.convertToString().getUnicodeValue());
         
             if (!RubyFileTest.exist_p(recv, path).isTrue()) {
                 throw runtime.newErrnoENOENTError("No such file or directory - " + path);
@@ -1452,8 +1443,7 @@ public class RubyFile extends RubyIO {
         RubyInteger newLength = arg2.convertToInteger(); 
 
         File testFile ;
-        // UNICODE?
-        File childFile = new File(filename.getByteList().toString() );
+        File childFile = new File(filename.getUnicodeValue() );
 
         if ( childFile.isAbsolute() ) {
           testFile = childFile ;
@@ -1519,8 +1509,7 @@ public class RubyFile extends RubyIO {
             RubyString filename = RubyString.stringValue(args[i]);
             runtime.checkSafeString(filename);
             
-            // UNICODE?
-            JRubyFile fileToTouch = JRubyFile.create(runtime.getCurrentDirectory(),filename.toString());
+            JRubyFile fileToTouch = JRubyFile.create(runtime.getCurrentDirectory(),filename.getUnicodeValue());
             
             if (!fileToTouch.exists()) {
                 throw runtime.newErrnoENOENTError(" No such file or directory - \"" + filename + "\"");
