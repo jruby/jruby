@@ -325,7 +325,7 @@ public class RubyMath {
         short sign = 1;
         long exponent = 0;
 
-        if (mantissa != 0.0) {
+        if (!Double.isInfinite(mantissa) && mantissa != 0.0) {
             // Make mantissa same sign so we only have one code path.
             if (mantissa < 0) {
                 mantissa = -mantissa;
