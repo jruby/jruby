@@ -1,3 +1,0 @@
-#!/usr/bin/env jruby
-
-abort "`gemlock` has been deprecated.  Use `gem lock` instead."
