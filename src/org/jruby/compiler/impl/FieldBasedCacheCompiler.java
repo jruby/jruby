@@ -28,53 +28,12 @@ public abstract class FieldBasedCacheCompiler implements CacheCompiler {
     protected StandardASMCompiler scriptCompiler;
     
     Map<String, String> sourcePositions = new HashMap<String, String>();
-    Map<String, String> byteLists = new HashMap<String, String>();
     Map<BigInteger, String> bigIntegers = new HashMap<BigInteger, String>();
     Map<String, String> symbols = new HashMap<String, String>();
     Map<Long, String> fixnums = new HashMap<Long, String>();
     
     public FieldBasedCacheCompiler(StandardASMCompiler scriptCompiler) {
         this.scriptCompiler = scriptCompiler;
-    }
-
-    public void finish() {
-        // no finish for field-based
-    }
-    
-    public void cacheCallSite(BaseBodyCompiler method, String name, CallType callType) {
-        String fieldName = scriptCompiler.getNewConstant(ci(CallSite.class), JavaNameMangler.mangleStringForCleanJavaIdentifier(name));
-        
-        // retrieve call adapter
-        SkinnyMethodAdapter initMethod = scriptCompiler.getInitMethod();
-        initMethod.aload(StandardASMCompiler.THIS);
-        initMethod.ldc(name);
-        
-        if (callType.equals(CallType.NORMAL)) {
-            initMethod.invokestatic(p(MethodIndex.class), "getCallSite", sig(CallSite.class, params(String.class)));
-        } else if (callType.equals(CallType.FUNCTIONAL)) {
-            initMethod.invokestatic(p(MethodIndex.class), "getFunctionalCallSite", sig(CallSite.class, params(String.class)));
-        } else if (callType.equals(CallType.VARIABLE)) {
-            initMethod.invokestatic(p(MethodIndex.class), "getVariableCallSite", sig(CallSite.class, params(String.class)));
-        }
-
-        initMethod.putfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
-        
-        method.method.getfield(scriptCompiler.getClassname(), fieldName, ci(CallSite.class));
-    }
-    
-    public void cacheByteList(BaseBodyCompiler method, String contents) {
-        String fieldName = byteLists.get(contents);
-        if (fieldName == null) {
-            SkinnyMethodAdapter clinitMethod = scriptCompiler.getClassInitMethod();
-            fieldName = scriptCompiler.getNewStaticConstant(ci(ByteList.class), "byteList");
-            byteLists.put(contents, fieldName);
-
-            clinitMethod.ldc(contents);
-            clinitMethod.invokestatic(p(ByteList.class), "create", sig(ByteList.class, CharSequence.class));
-            clinitMethod.putstatic(scriptCompiler.getClassname(), fieldName, ci(ByteList.class));
-        }
-        
-        method.method.getstatic(scriptCompiler.getClassname(), fieldName, ci(ByteList.class));
     }
     
     public void cacheBigInteger(BaseBodyCompiler method, BigInteger bigint) {
@@ -92,86 +51,6 @@ public abstract class FieldBasedCacheCompiler implements CacheCompiler {
         }
         
         method.method.getstatic(scriptCompiler.getClassname(), fieldName, ci(BigInteger.class));
-    }
-    
-    public void cacheSymbol(BaseBodyCompiler method, String symbol) {
-        String methodName = symbols.get(symbol);
-        if (methodName == null) {
-            String fieldName = scriptCompiler.getNewConstant(ci(RubySymbol.class), "symbol");
-            
-            methodName = "getSymbol" + fieldName;
-            symbols.put(symbol, methodName);
-            
-            ClassVisitor cv = scriptCompiler.getClassVisitor();
-            
-            SkinnyMethodAdapter symMethod = new SkinnyMethodAdapter(
-                    cv.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_SYNTHETIC, methodName, 
-                            sig(RubySymbol.class, Ruby.class), null, null));
-            symMethod.start();
-            symMethod.aload(0);
-            symMethod.getfield(scriptCompiler.getClassname(), fieldName, ci(RubySymbol.class));
-            symMethod.dup();
-            symMethod.astore(2);
-            
-            Label ifNullEnd = new Label();
-            symMethod.ifnull(ifNullEnd);
-            symMethod.aload(2);
-            symMethod.areturn();
-            symMethod.label(ifNullEnd);
-            symMethod.aload(0);
-            symMethod.aload(1);
-            symMethod.ldc(symbol);
-            symMethod.invokevirtual(p(Ruby.class), "fastNewSymbol", sig(RubySymbol.class, String.class));
-            symMethod.dup_x1();
-            symMethod.putfield(scriptCompiler.getClassname(), fieldName, ci(RubySymbol.class));
-            symMethod.areturn();
-            symMethod.end();
-        }
-        
-        method.loadThis();
-        method.loadRuntime();
-        method.method.invokevirtual(scriptCompiler.getClassname(), methodName, 
-                sig(RubySymbol.class, params(Ruby.class)));
-    }
-    
-    public void cacheFixnum(BaseBodyCompiler method, long value) {
-        String methodName = fixnums.get(value);
-        if (methodName == null) {
-            String fieldName = scriptCompiler.getNewConstant(ci(RubyFixnum.class), "symbol");
-            
-            methodName = "getFixnum" + fieldName;
-            fixnums.put(value, methodName);
-            
-            ClassVisitor cv = scriptCompiler.getClassVisitor();
-            
-            SkinnyMethodAdapter symMethod = new SkinnyMethodAdapter(
-                    cv.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_SYNTHETIC, methodName, 
-                            sig(RubyFixnum.class, Ruby.class), null, null));
-            symMethod.start();
-            symMethod.aload(0);
-            symMethod.getfield(scriptCompiler.getClassname(), fieldName, ci(RubyFixnum.class));
-            symMethod.dup();
-            symMethod.astore(2);
-            
-            Label ifNullEnd = new Label();
-            symMethod.ifnull(ifNullEnd);
-            symMethod.aload(2);
-            symMethod.areturn();
-            symMethod.label(ifNullEnd);
-            symMethod.aload(0);
-            symMethod.aload(1);
-            symMethod.ldc(value);
-            symMethod.invokevirtual(p(Ruby.class), "newFixnum", sig(RubyFixnum.class, long.class));
-            symMethod.dup_x1();
-            symMethod.putfield(scriptCompiler.getClassname(), fieldName, ci(RubyFixnum.class));
-            symMethod.areturn();
-            symMethod.end();
-        }
-        
-        method.loadThis();
-        method.loadRuntime();
-        method.method.invokevirtual(scriptCompiler.getClassname(), methodName, 
-                sig(RubyFixnum.class, params(Ruby.class)));
     }
     
     public void cacheClosure(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector) {

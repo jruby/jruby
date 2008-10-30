@@ -394,7 +394,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void createNewString(ByteList value) {
         // FIXME: this is sub-optimal, storing string value in a java.lang.String again
         loadRuntime();
-        script.getCacheCompiler().cacheByteList(this, value.toString());
+        script.getCacheCompiler().cacheByteList(this, value);
 
         invokeIRuby("newStringShared", sig(RubyString.class, params(ByteList.class)));
     }

@@ -10,6 +10,7 @@ import org.jruby.ast.NodeType;
 import org.jruby.compiler.impl.BaseBodyCompiler;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.CallType;
+import org.jruby.util.ByteList;
 
 /**
  *
@@ -18,7 +19,7 @@ import org.jruby.runtime.CallType;
 public interface CacheCompiler {
     public void cacheCallSite(BaseBodyCompiler method, String name, CallType callType);
     
-    public void cacheByteList(BaseBodyCompiler method, String contents);
+    public void cacheByteList(BaseBodyCompiler method, ByteList contents);
     
     public void cacheSymbol(BaseBodyCompiler method, String symbol);
     
