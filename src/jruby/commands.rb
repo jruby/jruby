@@ -39,6 +39,8 @@ module JRuby
         ARGV.delete_if do |g|
           begin
             # Want the kernel gem method here
+            # Hack to make it public; RubyGems 1.3.1 made it private. TODO: less grossness.
+            Object.class_eval { public :gem }
             Object.new.gem g
             puts "#{g} already installed"
             true
