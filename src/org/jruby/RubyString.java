@@ -3487,7 +3487,7 @@ public class RubyString extends RubyObject {
      */
     public String getUnicodeValue() {
         try {
-            return new String(value.bytes,value.begin,value.realSize, "UTF8");
+            return new String(value.bytes, value.begin, value.realSize, "UTF-8");
         } catch (Exception e) {
             throw new RuntimeException("Something's seriously broken with encodings", e);
         }

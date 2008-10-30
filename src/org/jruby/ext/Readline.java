@@ -29,6 +29,7 @@
 package org.jruby.ext;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Iterator;
 import java.util.Collections;
@@ -52,6 +53,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.Visibility;
+import org.jruby.util.ByteList;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -144,7 +146,9 @@ public class Readline {
             if (add_to_hist.isTrue()) {
                 holder.readline.getHistory().addToHistory(v);
             }
-            line = recv.getRuntime().newString(v);
+
+            /* Explicitly use UTF-8 here. c.f. history.addToHistory using line.asUTF8() */
+            line = RubyString.newUnicodeString(recv.getRuntime(), v);
         }
         return line;
     }
