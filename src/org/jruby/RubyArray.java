@@ -53,6 +53,7 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -93,7 +94,7 @@ public class RubyArray extends RubyObject implements List {
 
     private static ObjectAllocator ARRAY_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyArray(runtime, klass);
+            return new RubyArray(runtime, klass, IRubyObject.NULL_ARRAY);
         }
     };
 
@@ -112,8 +113,7 @@ public class RubyArray extends RubyObject implements List {
     @JRubyMethod(name = "[]", rest = true, frame = true, meta = true)
     public static IRubyObject create(IRubyObject klass, IRubyObject[] args, Block block) {
         RubyArray arr = (RubyArray) ((RubyClass) klass).allocate();
-        arr.callInit(IRubyObject.NULL_ARRAY, block);
-    
+
         if (args.length > 0) {
             arr.alloc(args.length);
             System.arraycopy(args, 0, arr.values, 0, args.length);
@@ -467,36 +467,65 @@ public class RubyArray extends RubyObject implements List {
      *  ================ 
      */
 
+    /**
+     * Variable arity version for compatibility. Not bound to a Ruby method.
+     * @deprecated Use the versions with zero, one, or two args.
+     */
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
+        switch (args.length) {
+        case 0:
+            return initialize(context, block);
+        case 1:
+            return initializeCommon(context, args[0], null, block);
+        case 2:
+            return initializeCommon(context, args[0], args[1], block);
+        default:
+            Arity.raiseArgumentError(getRuntime(), args.length, 0, 2);
+            return null; // not reached
+        }
+    }    
+    
     /** rb_ary_initialize
      * 
      */
-    @JRubyMethod(name = "initialize", required = 0, optional = 2, frame = true, visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
-        int argc = args.length;
-        Ruby runtime = getRuntime();
+    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(ThreadContext context, Block block) {
+        modifyCheck();
+        realLength = 0;
+        if (block.isGiven()) context.getRuntime().getWarnings().warn(ID.BLOCK_UNUSED, "given block not used");
+        return this;
+    }
 
-        if (argc == 0) {
-            modifyCheck();
-            realLength = 0;
-            if (block.isGiven()) runtime.getWarnings().warn(ID.BLOCK_UNUSED, "given block not used");
+    /** rb_ary_initialize
+     * 
+     */
+    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject arg0, Block block) {
+        return initializeCommon(context, arg0, null, block);
+    }
 
-    	    return this;
-    	}
+    /** rb_ary_initialize
+     * 
+     */
+    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return initializeCommon(context, arg0, arg1, block);
+    }
 
-        if (argc == 1 && !(args[0] instanceof RubyFixnum)) {
-            IRubyObject val = args[0].checkArrayType();
+    private IRubyObject initializeCommon(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        Ruby runtime = context.getRuntime();
+
+        if (arg1 == null && !(arg0 instanceof RubyFixnum)) {
+            IRubyObject val = arg0.checkArrayType();
             if (!val.isNil()) {
                 replace(val);
                 return this;
             }
         }
 
-        long len = RubyNumeric.num2long(args[0]);
-
+        long len = RubyNumeric.num2long(arg0);
         if (len < 0) throw runtime.newArgumentError("negative array size");
-
         if (len >= Integer.MAX_VALUE) throw runtime.newArgumentError("array size too big");
-
         int ilen = (int) len;
 
         modify();
@@ -504,23 +533,32 @@ public class RubyArray extends RubyObject implements List {
         if (ilen > values.length) values = reserve(ilen);
 
         if (block.isGiven()) {
-            if (argc == 2) {
+            if (arg1 != null) {
                 runtime.getWarnings().warn(ID.BLOCK_BEATS_DEFAULT_VALUE, "block supersedes default value argument");
             }
 
-            for (int i = 0; i < ilen; i++) {
-                store(i, block.yield(context, new RubyFixnum(runtime, i)));
-                realLength = i + 1;
+            if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
+                IRubyObject nil = runtime.getNil();
+                for (int i = 0; i < ilen; i++) {
+                    store(i, block.yield(context, nil));
+                    realLength = i + 1;
+                }
+            } else {
+                for (int i = 0; i < ilen; i++) {
+                    store(i, block.yield(context, RubyFixnum.newFixnum(runtime, i)));
+                    realLength = i + 1;
+                }
             }
+            
         } else {
             try {
-                Arrays.fill(values, 0, ilen, (argc == 2) ? args[1] : runtime.getNil());
+                Arrays.fill(values, 0, ilen, (arg1 != null) ? arg1 : runtime.getNil());
             } catch (ArrayIndexOutOfBoundsException e) {
                 concurrentModification();
             }
             realLength = ilen;
         }
-    	return this;
+        return this;
     }
 
     /** rb_ary_initialize_copy
