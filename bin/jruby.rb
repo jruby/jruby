@@ -69,8 +69,6 @@ jruby_home = File.dirname(bin_dir)
 jruby_opts = ENV['JRUBY_OPTS']
 if jruby_opts.nil?
   jruby_opts = ""
-else
-  jruby_opts = "#{jruby_opts} #{ENV['RUBYOPTS'] || ''}"
 end
 
 launch = JavaLaunch.new("#{java_home}/bin/java", "org.jruby.Main")

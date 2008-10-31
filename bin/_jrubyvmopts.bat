@@ -11,7 +11,7 @@ set _STK=%JAVA_STACK%
 :stackOptDone
 
 set _VM_OPTS=
-set _RUBY_OPTS=%RUBYOPT%
+set _RUBY_OPTS=
 set _DFLT_VM_OPTS=%JAVA_OPTS%
 set _JAVA_VM=-client
 
