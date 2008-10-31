@@ -355,9 +355,10 @@ public class MiniJava implements Library {
      */
     public static Class defineOldStyleImplClass(Ruby ruby, String name, String[] superTypeNames, Map<String, List<Method>> simpleToAll) {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        String pathName = name.replace('.', '/');
         
         // construct the class, implementing all supertypes
-        cw.visit(V1_5, ACC_PUBLIC | ACC_SUPER, name, null, p(Object.class), superTypeNames);
+        cw.visit(V1_5, ACC_PUBLIC | ACC_SUPER, pathName, null, p(Object.class), superTypeNames);
         
         // fields needed for dispatch and such
         cw.visitField(ACC_STATIC | ACC_PRIVATE, "ruby", ci(Ruby.class), null, null).visitEnd();
@@ -372,7 +373,7 @@ public class MiniJava implements Library {
         // store the wrapper
         initMethod.aload(0);
         initMethod.aload(1);
-        initMethod.putfield(name, "self", ci(IRubyObject.class));
+        initMethod.putfield(pathName, "self", ci(IRubyObject.class));
         
         // end constructor
         initMethod.voidreturn();
@@ -385,11 +386,11 @@ public class MiniJava implements Library {
         // set RubyClass
         setupMethod.aload(0);
         setupMethod.dup();
-        setupMethod.putstatic(name, "rubyClass", ci(RubyClass.class));
+        setupMethod.putstatic(pathName, "rubyClass", ci(RubyClass.class));
         
         // set Ruby
         setupMethod.invokevirtual(p(RubyClass.class), "getClassRuntime", sig(Ruby.class));
-        setupMethod.putstatic(name, "ruby", ci(Ruby.class));
+        setupMethod.putstatic(pathName, "ruby", ci(Ruby.class));
         
         // for each simple method name, implement the complex methods, calling the simple version
         for (Map.Entry<String, List<Method>> entry : simpleToAll.entrySet()) {
@@ -429,13 +430,13 @@ public class MiniJava implements Library {
                     // Try to look up field for simple name
 
                     // get field; if nonnull, go straight to dispatch
-                    mv.getstatic(name, simpleName, ci(DynamicMethod.class));
+                    mv.getstatic(pathName, simpleName, ci(DynamicMethod.class));
                     mv.dup();
                     mv.ifnonnull(dispatch);
 
                     // field is null, lock class and try to populate
                     mv.pop();
-                    mv.getstatic(name, "rubyClass", ci(RubyClass.class));
+                    mv.getstatic(pathName, "rubyClass", ci(RubyClass.class));
                     mv.monitorenter();
 
                     // try/finally block to ensure unlock
@@ -446,7 +447,7 @@ public class MiniJava implements Library {
                     mv.label(tryStart);
 
                     mv.aload(0);
-                    mv.getfield(name, "self", ci(IRubyObject.class));
+                    mv.getfield(pathName, "self", ci(IRubyObject.class));
                     for (String eachName : nameSet) {
                         mv.ldc(eachName);
                     }
@@ -460,12 +461,12 @@ public class MiniJava implements Library {
 
                     // store it
                     mv.dup();
-                    mv.putstatic(name, simpleName, ci(DynamicMethod.class));
+                    mv.putstatic(pathName, simpleName, ci(DynamicMethod.class));
 
                     // all done with lookup attempts, pop any result and release monitor
                     mv.label(noStore);
                     mv.pop();
-                    mv.getstatic(name, "rubyClass", ci(RubyClass.class));
+                    mv.getstatic(pathName, "rubyClass", ci(RubyClass.class));
                     mv.monitorexit();
                     mv.go_to(recheckMethod);
 
@@ -474,7 +475,7 @@ public class MiniJava implements Library {
 
                     // finally block to release monitor
                     mv.label(finallyStart);
-                    mv.getstatic(name, "rubyClass", ci(RubyClass.class));
+                    mv.getstatic(pathName, "rubyClass", ci(RubyClass.class));
                     mv.monitorexit();
                     mv.label(finallyEnd);
                     mv.athrow();
@@ -485,7 +486,7 @@ public class MiniJava implements Library {
 
                     // re-get, re-check method; if not null now, go to dispatch
                     mv.label(recheckMethod);
-                    mv.getstatic(name, simpleName, ci(DynamicMethod.class));
+                    mv.getstatic(pathName, simpleName, ci(DynamicMethod.class));
                     mv.dup();
                     mv.ifnonnull(dispatch);
 
@@ -494,26 +495,26 @@ public class MiniJava implements Library {
                     // exit monitor before making call
                     // FIXME: this not being in a finally is a little worrisome
                     mv.aload(0);
-                    mv.getfield(name, "self", ci(IRubyObject.class));
+                    mv.getfield(pathName, "self", ci(IRubyObject.class));
                     mv.ldc(simpleName);
-                    coerceArgumentsToRuby(mv, paramTypes, name);
+                    coerceArgumentsToRuby(mv, paramTypes, pathName);
                     mv.invokestatic(p(RuntimeHelpers.class), "invokeMethodMissing", sig(IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class));
                     mv.go_to(end);
                 
                     // perform the dispatch
                     mv.label(dispatch);
                     // get current context
-                    mv.getstatic(name, "ruby", ci(Ruby.class));
+                    mv.getstatic(pathName, "ruby", ci(Ruby.class));
                     mv.invokevirtual(p(Ruby.class), "getCurrentContext", sig(ThreadContext.class));
                 
                     // load self, class, and name
                     mv.aload(0);
-                    mv.getfield(name, "self", ci(IRubyObject.class));
-                    mv.getstatic(name, "rubyClass", ci(RubyClass.class));
+                    mv.getfield(pathName, "self", ci(IRubyObject.class));
+                    mv.getstatic(pathName, "rubyClass", ci(RubyClass.class));
                     mv.ldc(simpleName);
                 
                     // coerce arguments
-                    coerceArgumentsToRuby(mv, paramTypes, name);
+                    coerceArgumentsToRuby(mv, paramTypes, pathName);
                 
                     // load null block
                     mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
