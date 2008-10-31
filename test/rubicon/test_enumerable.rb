@@ -271,6 +271,10 @@ class TestEnumerable < Test::Unit::TestCase
 
     assert_equal(1010101010,   @e_ints.max {|a,b| a <=> b })
     assert_equal(666666,       @e_ints.max {|a,b| a.to_s <=> b.to_s })
+
+    result = nil
+    [1,2].max {|*a| result = a; -1}
+    assert_equal([2,1], result)
   end
 
   def test_member?
