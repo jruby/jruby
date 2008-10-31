@@ -874,7 +874,7 @@ public class JavaUtil {
             // ensure the object is associated with the wrapper we found it in,
             // so that if it comes back we don't re-wrap it
             context.getRuntime().getJavaSupport().getObjectProxyCache().put(innerWrapper.getValue(), arg);
-            
+
             return innerWrapper.getValue();
         } else {
             switch (arg.getMetaClass().index) {

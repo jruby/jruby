@@ -5,6 +5,10 @@ import "java_integration.fixtures.JavaFields"
 import "java_integration.fixtures.ValueReceivingInterface"
 import "java_integration.fixtures.ValueReceivingInterfaceHandler"
 
+import "java_integration.fixtures.PackageConstructor"
+import "java_integration.fixtures.ProtectedConstructor"
+import "java_integration.fixtures.PrivateConstructor"
+
 describe "Java String and primitive-typed methods" do
   it "should coerce to Ruby types when returned" do 
     CoreTypeMethods.getString.should be_kind_of(String)
@@ -376,5 +380,21 @@ describe "Java primitive-box-typed interface methods" do
       vri.result.should == false
       vri.result.class.should == FalseClass
     end
+  end
+end
+
+describe "Java types with package or private constructors" do
+  it "should not be construcible" do
+    lambda { PackageConstructor.new }.should raise_error(TypeError)
+    lambda { PrivateConstructor.new }.should raise_error(TypeError)
+  end
+end
+
+describe "Java types with protected constructors" do
+  it "should not be construcible" do
+    pc = nil
+    lambda { pc = ProtectedConstructor.new }.should_not raise_error(TypeError)
+    ProtectedConstructor.should === pc
+    pc.java_class.name.should == "java_integration.fixtures.ProtectedConstructor"
   end
 end

@@ -293,6 +293,14 @@ public class JavaClass extends JavaObject {
             if (haveLocalConstructor) {
                 DynamicMethod method = new ConstructorInvoker(proxy, constructors);
                 proxy.addMethod(name, method);
+            } else {
+                // if there's no constructor, we must prevent construction
+                proxy.addMethod(name, new org.jruby.internal.runtime.methods.JavaMethod() {
+                    @Override
+                    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                        throw context.getRuntime().newTypeError("no public constructors for " + clazz);
+                    }
+                });
             }
         }
     }
@@ -644,14 +652,14 @@ public class JavaClass extends JavaObject {
         // TODO: protected methods.  this is going to require a rework
         // of some of the mechanism.
         Constructor[] constructors = getConstructors(javaClass);
+        
+        // create constructorInstaller; if there are no constructors, it will disable construction
+        constructorInstaller = new ConstructorInvokerInstaller("__jcreate!");
 
         for (int i = constructors.length; --i >= 0;) {
             // we need to collect all methods, though we'll only
             // install the ones that are named in this class
             Constructor ctor = constructors[i];
-            if (constructorInstaller == null) {
-                constructorInstaller = new ConstructorInvokerInstaller("__jcreate!");
-            }
             constructorInstaller.addConstructor(ctor, javaClass);
         }
     }
