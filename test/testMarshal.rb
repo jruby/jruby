@@ -451,3 +451,34 @@ test_exception(ArgumentError) {
   (data = Marshal.dump(C.new("a")))[-2, 1] = "\003\377\377\377"
   Marshal.load(data)
 }
+
+# JRUBY-2975: Overriding Time._dump does not behave the same as MRI
+class Time
+  class << self
+    alias_method :_original_load, :_load
+    def _load(marshaled_time)
+      time = _original_load(marshaled_time)
+      utc = time.send(:remove_instance_variable, '@marshal_with_utc_coercion')
+      utc ? time.utc : time
+    end
+  end
+
+  alias_method :_original_dump, :_dump
+  def _dump(*args)
+    obj = self.frozen? ? self.dup : self
+    obj.instance_variable_set('@marshal_with_utc_coercion', utc?)
+    obj._original_dump(*args)
+  end
+end
+
+t = Time.local(2000).freeze
+t2 = Marshal.load(Marshal.dump(t))
+test_equal t, t2
+
+# reset _load and _dump
+class Time
+  class << self
+    alias_method :load, :_original_load
+  end
+  alias_method :dump, :_original_dump
+end

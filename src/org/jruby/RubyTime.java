@@ -715,6 +715,8 @@ public class RubyTime extends RubyObject {
             time.setUSec((s & 0xFFFFF) % 1000);
         }
         time.setDateTime(dt);
+
+        from.getInstanceVariables().copyInstanceVariablesInto(time);
         return time;
     }
 

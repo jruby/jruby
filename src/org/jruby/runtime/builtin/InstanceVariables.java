@@ -87,4 +87,9 @@ public interface InstanceVariables {
      * @return instance variable names
      */
     List<String> getInstanceVariableNameList();
+
+    /**
+     * Copies all instance variables from the given object into the receiver
+     */
+    void copyInstanceVariablesInto(InstanceVariables other);
 }

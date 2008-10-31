@@ -108,12 +108,17 @@ public class UnmarshalStream extends BufferedInputStream {
         return (RubyClass)value;
     }
 
+    boolean ivarsWaiting = false;
+
     private IRubyObject unmarshalObjectDirectly(int type) throws IOException {
     	IRubyObject rubyObj = null;
         switch (type) {
             case 'I':
+                ivarsWaiting = true;
                 rubyObj = unmarshalObject();
-                defaultVariablesUnmarshal(rubyObj);
+                if (ivarsWaiting) {
+                    defaultVariablesUnmarshal(rubyObj);
+                }
                 break;
             case '0' :
                 rubyObj = runtime.getNil();
@@ -287,10 +292,10 @@ public class UnmarshalStream extends BufferedInputStream {
     
     public void defaultVariablesUnmarshal(IRubyObject object) throws IOException {
         int count = unmarshalInt();
-
+        
         List<Variable<IRubyObject>> attrs = new ArrayList<Variable<IRubyObject>>(count);
         
-        for (int i = count; --i >= 0; ) {            
+        for (int i = count; --i >= 0; ) {
             String name = unmarshalObject().asJavaString();
             IRubyObject value = unmarshalObject();
             attrs.add(new VariableEntry<IRubyObject>(name, value));
@@ -320,8 +325,13 @@ public class UnmarshalStream extends BufferedInputStream {
         if (!classInstance.respondsTo("_load")) {
             throw runtime.newTypeError("class " + classInstance.getName() + " needs to have method `_load'");
         }
+        RubyString data = RubyString.newString(getRuntime(), marshaled);
+        if (ivarsWaiting) {
+            defaultVariablesUnmarshal(data);
+            ivarsWaiting = false;
+        }
         IRubyObject result = classInstance.callMethod(getRuntime().getCurrentContext(),
-            "_load", RubyString.newString(getRuntime(), marshaled));
+            "_load", data);
         registerLinkTarget(result);
         return result;
     }

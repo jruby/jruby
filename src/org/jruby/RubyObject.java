@@ -2399,6 +2399,20 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     }
 
     /**
+     * @see org.jruby.runtime.builtin.InstanceVariables#getInstanceVariableNameList
+     */
+    public void copyInstanceVariablesInto(InstanceVariables other) {
+        VariableTableEntry[] table = variableTableGetTable();
+        for (int i = table.length; --i >= 0; ) {
+            for (VariableTableEntry e = table[i]; e != null; e = e.next) {
+                if (IdUtil.isInstanceVariable(e.name)) {
+                    other.setInstanceVariable(e.name, e.value);
+                }
+            }
+        }
+    }
+
+    /**
      * The error message used when some one tries to modify an
      * instance variable in a high security setting.
      */
