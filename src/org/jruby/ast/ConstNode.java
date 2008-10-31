@@ -88,8 +88,7 @@ public class ConstNode extends Node implements INameNode {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-//        IRubyObject value = getValue(context);
-        IRubyObject value = context.getConstant(name);
+        IRubyObject value = getValue(context);
 
         // We can callsite cache const_missing if we want
         return value != null ? value :
@@ -108,11 +107,11 @@ public class ConstNode extends Node implements INameNode {
     }
     
     private boolean isCached(ThreadContext context, IRubyObject value) {
-        return value != null && generation == context.getRubyClass().getConstantSerialNumber();
+        return value != null && generation == context.getRuntime().getConstantGeneration();
     }
     
     public IRubyObject reCache(ThreadContext context, String name) {
-        int newGeneration = context.getRubyClass().getConstantSerialNumber();
+        int newGeneration = context.getRuntime().getConstantGeneration();
         IRubyObject value = context.getConstant(name);
             
         cachedValue = value;
@@ -120,10 +119,5 @@ public class ConstNode extends Node implements INameNode {
         if (value != null) generation = newGeneration;
         
         return value;
-    }
-    
-    public void invalidate() {
-        cachedValue = null;
-        failedCallSites++;
     }
 }

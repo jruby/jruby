@@ -107,8 +107,7 @@ public abstract class AbstractScript implements Script {
     }
 
     public final IRubyObject getConstant(ThreadContext context, String name, int index) {
-//        IRubyObject value = getValue(context, name, index);
-        IRubyObject value = context.getConstant(name);
+        IRubyObject value = getValue(context, name, index);
 
         // We can callsite cache const_missing if we want
         return value != null ? value :
@@ -122,11 +121,11 @@ public abstract class AbstractScript implements Script {
     }
 
     private boolean isCached(ThreadContext context, IRubyObject value, int index) {
-        return value != null && constantGenerations[index] == context.getRubyClass().getConstantSerialNumber();
+        return value != null && constantGenerations[index] == context.getRuntime().getConstantGeneration();
     }
 
     public IRubyObject reCache(ThreadContext context, String name, int index) {
-        int newGeneration = context.getRubyClass().getConstantSerialNumber();
+        int newGeneration = context.getRuntime().getConstantGeneration();
         IRubyObject value = context.getConstant(name);
 
         constants[index] = value;

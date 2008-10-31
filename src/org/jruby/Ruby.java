@@ -2903,8 +2903,16 @@ public final class Ruby {
         return localTimeZoneCache;
     }
 
+    public int getConstantGeneration() {
+        return constantGeneration;
+    }
+
+    public synchronized void incrementConstantGeneration() {
+        constantGeneration++;
+    }
+
+    private volatile int constantGeneration = 1;
     private final ThreadService threadService;
-    private Hashtable<Object, Object> runtimeInformation;
     
     private POSIX posix;
 

@@ -190,8 +190,8 @@ public class RubyClass extends RubyModule {
      *  (rb_class_boot version for MetaClasses)
      *  no marshal, allocator initialization and addSubclass(this) here!
      */
-    protected RubyClass(Ruby runtime, RubyClass superClass, Generation generation, Generation constantGeneration, boolean objectSpace) {
-        super(runtime, runtime.getClassClass(), generation, constantGeneration, objectSpace);
+    protected RubyClass(Ruby runtime, RubyClass superClass, Generation generation, boolean objectSpace) {
+        super(runtime, runtime.getClassClass(), generation, objectSpace);
         this.runtime = runtime;
         this.superClass = superClass; // this is the only case it might be null here (in MetaClass construction)
     }
