@@ -54,9 +54,9 @@
 require 'rbconfig'
 require 'ffi.so' # Load the JRuby implementation class
 require 'ffi/platform'
-require 'ffi/struct'
 require 'ffi/memorypointer'
 require 'ffi/buffer'
+require 'ffi/struct'
 require 'ffi/io'
 
 module FFI
@@ -325,21 +325,7 @@ MemoryPointer = JRuby::FFI::MemoryPointer
 
 module FFI
   def self.create_invoker(lib, name, args, ret, convention = :default)
-    # Ugly hack to simulate the effect of dlopen(NULL, x) - not quite correct
-    unless lib
-      lib = JRuby::FFI::Platform::LIBC
-    else
-      # jna & jffi need just the last part of the library name
-      lib = lib[3..-1] if lib =~ /^lib/ unless lib =~ /\.so/
-    end
-    
-    # Current artificial limitation based on JRuby::FFI limit
-    raise SignatureError, 'FFI functions may take max 32 arguments!' if args.size > 32
-
-    invoker = JRuby::FFI::InvokerFactory.createInvoker(lib, name, find_type(ret),
-      args.map { |e| find_type(e) }, convention.to_s)
-    raise NotFoundError.new(name, lib) unless invoker
-    return invoker
+    JRuby::FFI.create_invoker(lib, name, args, ret, convention)
   end
   
 end

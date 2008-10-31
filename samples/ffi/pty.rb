@@ -4,7 +4,7 @@ require 'ffi'
 module PTY
   private
   module LibC
-    extend JRuby::FFI::Library
+    extend FFI::Library
     attach_function :forkpty, [ :buffer_out, :buffer_out, :buffer_in, :buffer_in ], :pid_t
     attach_function :openpty, [ :buffer_out, :buffer_out, :buffer_out, :buffer_in, :buffer_in ], :int
     attach_function :login_tty, [ :int ], :int
@@ -16,7 +16,7 @@ module PTY
     attach_function :dup2, [ :int, :int ], :int
     attach_function :dup, [ :int ], :int
   end
-  Buffer = JRuby::FFI::Buffer
+  Buffer = FFI::Buffer
   def self.build_args(args)
     cmd = args.shift
     cmd_args = args.map do |arg|
@@ -61,7 +61,7 @@ module PTY
   end
 end
 module LibC
-  extend JRuby::FFI::Library
+  extend FFI::Library
   attach_function :close, [ :int ], :int
   attach_function :write, [ :int, :buffer_in, :size_t ], :ssize_t
   attach_function :read, [ :int, :buffer_out, :size_t ], :ssize_t

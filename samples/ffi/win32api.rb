@@ -2,7 +2,7 @@ require 'ffi'
 
 module Win32  
   class API < Module
-    CONVENTION = JRuby::FFI::Platform::IS_WINDOWS ? :stdcall : :default
+    CONVENTION = FFI::Platform.windows? ? :stdcall : :default
     SUFFIXES = $KCODE == 'UTF8' ? [ '', 'W', 'A' ] : [ '', 'A', 'W' ]
     TypeDefs = {
       'V' => :void,
@@ -46,7 +46,7 @@ module Win32
     end
   end
 end
-if !JRuby::FFI::Platform::IS_WINDOWS
+unless FFI::Platform.windows?
   cputs = Win32::API.new("puts", "S", 'L', 'c')
   cputs.call("Hello, World")
   exit 0

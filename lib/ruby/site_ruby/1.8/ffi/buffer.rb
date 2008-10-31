@@ -29,4 +29,6 @@ module JRuby
     end
   end
 end
-
+module FFI
+  Buffer = JRuby::FFI::Buffer
+end

@@ -1,7 +1,7 @@
 require 'ffi'
-Buffer = JRuby::FFI::Buffer
-Platform = JRuby::FFI::Platform
-LongSize = JRuby::FFI::Platform::LONG_SIZE / 8
+Buffer = FFI::Buffer
+Platform = FFI::Platform
+LongSize = FFI::Platform::LONG_SIZE / 8
 
 describe "Buffer#total" do
   [1,2,3].each do |i|
