@@ -424,20 +424,26 @@ public class MiniJava implements Library {
                 } else {
                     Label dispatch = new Label();
                     Label end = new Label();
+                    Label recheckMethod = new Label();
 
                     // Try to look up field for simple name
 
-                    // lock self
-                    mv.getstatic(name, "rubyClass", ci(RubyClass.class));
-                    mv.monitorenter();
-                
-                    // get field
+                    // get field; if nonnull, go straight to dispatch
                     mv.getstatic(name, simpleName, ci(DynamicMethod.class));
                     mv.dup();
                     mv.ifnonnull(dispatch);
-                
-                    // not retrieved yet, retrieve it now
+
+                    // field is null, lock class and try to populate
                     mv.pop();
+                    mv.getstatic(name, "rubyClass", ci(RubyClass.class));
+                    mv.monitorenter();
+
+                    // try/finally block to ensure unlock
+                    Label tryStart = new Label();
+                    Label tryEnd = new Label();
+                    Label finallyStart = new Label();
+                    Label finallyEnd = new Label();
+                    mv.label(tryStart);
 
                     mv.aload(0);
                     mv.getfield(name, "self", ci(IRubyObject.class));
@@ -447,16 +453,46 @@ public class MiniJava implements Library {
                     mv.invokestatic(p(MiniJava.class), "searchMethod", sig(DynamicMethod.class, params(IRubyObject.class, String.class, nameSet.size())));
                     mv.dup();
                 
-                    // check if it's UndefinedMethod
+                    // if it's not undefined...
                     mv.getstatic(p(UndefinedMethod.class), "INSTANCE", ci(UndefinedMethod.class));
-                    mv.if_acmpne(dispatch);
-                
-                    // undefined, call method_missing
+                    Label noStore = new Label();
+                    mv.if_acmpeq(noStore);
+
+                    // store it
+                    mv.dup();
+                    mv.putstatic(name, simpleName, ci(DynamicMethod.class));
+
+                    // all done with lookup attempts, pop any result and release monitor
+                    mv.label(noStore);
+                    mv.pop();
+                    mv.getstatic(name, "rubyClass", ci(RubyClass.class));
+                    mv.monitorexit();
+                    mv.go_to(recheckMethod);
+
+                    // end of try block
+                    mv.label(tryEnd);
+
+                    // finally block to release monitor
+                    mv.label(finallyStart);
+                    mv.getstatic(name, "rubyClass", ci(RubyClass.class));
+                    mv.monitorexit();
+                    mv.label(finallyEnd);
+                    mv.athrow();
+
+                    // exception handling for monitor release
+                    mv.trycatch(tryStart, tryEnd, finallyStart, null);
+                    mv.trycatch(finallyStart, finallyEnd, finallyStart, null);
+
+                    // re-get, re-check method; if not null now, go to dispatch
+                    mv.label(recheckMethod);
+                    mv.getstatic(name, simpleName, ci(DynamicMethod.class));
+                    mv.dup();
+                    mv.ifnonnull(dispatch);
+
+                    // method still not available, call method_missing
                     mv.pop();
                     // exit monitor before making call
                     // FIXME: this not being in a finally is a little worrisome
-                    mv.getstatic(name, "rubyClass", ci(RubyClass.class));
-                    mv.monitorexit();
                     mv.aload(0);
                     mv.getfield(name, "self", ci(IRubyObject.class));
                     mv.ldc(simpleName);
@@ -464,14 +500,8 @@ public class MiniJava implements Library {
                     mv.invokestatic(p(RuntimeHelpers.class), "invokeMethodMissing", sig(IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class));
                     mv.go_to(end);
                 
-                    // re-save the method, release monitor, and dispatch
+                    // perform the dispatch
                     mv.label(dispatch);
-                    mv.dup();
-                    mv.putstatic(name, simpleName, ci(DynamicMethod.class));
-                
-                    mv.getstatic(name, "rubyClass", ci(RubyClass.class));
-                    mv.monitorexit();
-                
                     // get current context
                     mv.getstatic(name, "ruby", ci(Ruby.class));
                     mv.invokevirtual(p(Ruby.class), "getCurrentContext", sig(ThreadContext.class));
