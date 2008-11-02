@@ -749,14 +749,6 @@ public class RubyString extends RubyObject {
         return other.callMethod(context, "=~", this);
     }
 
-    /** rb_str_match2
-     *
-     */
-    @JRubyMethod(name = "~", reads = {LASTLINE, BACKREF}, writes = BACKREF)
-    public IRubyObject op_match2(ThreadContext context) {
-        return RubyRegexp.newRegexp(context.getRuntime(), value, 0, false).op_match2(context);
-    }
-
     /**
      * String#match(pattern)
      *
