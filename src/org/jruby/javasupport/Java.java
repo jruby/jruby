@@ -1541,34 +1541,66 @@ public class Java implements Library {
 
         // hashcode is a combination of the interfaces and the Ruby class we're using
         // to implement them
-        int interfacesHashCode = argsHashCode(interfaces);
-        // if it's a singleton class and the real class is proc, we're doing closure conversion
-        // so just use Proc's hashcode
-        if (wrapper.getMetaClass().isSingleton() && wrapper.getMetaClass().getRealClass() == runtime.getProc()) {
-            interfacesHashCode = 31 * interfacesHashCode + runtime.getProc().hashCode();
+        if (!Boolean.getBoolean("jruby.interfaces.useProxy")) {
+            int interfacesHashCode = argsHashCode(interfaces);
+            // if it's a singleton class and the real class is proc, we're doing closure conversion
+            // so just use Proc's hashcode
+            if (wrapper.getMetaClass().isSingleton() && wrapper.getMetaClass().getRealClass() == runtime.getProc()) {
+                interfacesHashCode = 31 * interfacesHashCode + runtime.getProc().hashCode();
+            } else {
+                // normal new class implementing interfaces
+                interfacesHashCode = 31 * interfacesHashCode + wrapper.getMetaClass().hashCode();
+            }
+            String implClassName = "org.jruby.gen.InterfaceImpl" + Math.abs(interfacesHashCode);
+            Class proxyImplClass;
+            try {
+                proxyImplClass = Class.forName(implClassName, true, runtime.getJRubyClassLoader());
+            } catch (ClassNotFoundException cnfe) {
+                proxyImplClass = MiniJava.createOldStyleImplClass(interfaces, wrapper.getMetaClass(), runtime, implClassName);
+            }
+
+            try {
+                Constructor proxyConstructor = proxyImplClass.getConstructor(IRubyObject.class);
+                return JavaObject.wrap(recv.getRuntime(), proxyConstructor.newInstance(wrapper));
+            } catch (NoSuchMethodException nsme) {
+                throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + nsme);
+            } catch (InvocationTargetException ite) {
+                throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + ite);
+            } catch (InstantiationException ie) {
+                throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + ie);
+            } catch (IllegalAccessException iae) {
+                throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + iae);
+            }
         } else {
-            // normal new class implementing interfaces
-            interfacesHashCode = 31 * interfacesHashCode + wrapper.getMetaClass().hashCode();
-        }
-        String implClassName = "org.jruby.gen.InterfaceImpl" + Math.abs(interfacesHashCode);
-        Class proxyImplClass;
-        try {
-            proxyImplClass = Class.forName(implClassName, true, runtime.getJRubyClassLoader());
-        } catch (ClassNotFoundException cnfe) {
-            proxyImplClass = MiniJava.createOldStyleImplClass(interfaces, wrapper.getMetaClass(), runtime, implClassName);
-        }
-        
-        try {
-            Constructor proxyConstructor = proxyImplClass.getConstructor(IRubyObject.class);
-            return JavaObject.wrap(recv.getRuntime(), proxyConstructor.newInstance(wrapper));
-        } catch (NoSuchMethodException nsme) {
-            throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + nsme);
-        } catch (InvocationTargetException ite) {
-            throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + ite);
-        } catch (InstantiationException ie) {
-            throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + ie);
-        } catch (IllegalAccessException iae) {
-            throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + iae);
+            return JavaObject.wrap(recv.getRuntime(), Proxy.newProxyInstance(recv.getRuntime().getJRubyClassLoader(), interfaces, new InvocationHandler() {
+                private Map parameterTypeCache = new ConcurrentHashMap();
+
+                public Object invoke(Object proxy, Method method, Object[] nargs) throws Throwable {
+                    String methodName = method.getName();
+                    int length = nargs == null ? 0 : nargs.length;
+
+                    // FIXME: wtf is this? Why would these use the class?
+                    if (methodName == "toString" && length == 0) {
+                        return proxy.getClass().getName();
+                    } else if (methodName == "hashCode" && length == 0) {
+                        return new Integer(proxy.getClass().hashCode());
+                    } else if (methodName == "equals" && length == 1) {
+                        Class[] parameterTypes = (Class[]) parameterTypeCache.get(method);
+                        if (parameterTypes == null) {
+                            parameterTypes = method.getParameterTypes();
+                            parameterTypeCache.put(method, parameterTypes);
+                        }
+                        if (parameterTypes[0].equals(Object.class)) {
+                            return Boolean.valueOf(proxy == nargs[0]);
+                        }
+                    }
+
+                    IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, nargs);
+                    try {
+                        return JavaUtil.convertRubyToJava(RuntimeHelpers.invoke(runtime.getCurrentContext(), wrapper, methodName, rubyArgs), method.getReturnType());
+                    } catch (RuntimeException e) { e.printStackTrace(); throw e; }
+                }
+            }));
         }
     }
 }
