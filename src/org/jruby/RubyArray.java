@@ -833,21 +833,15 @@ public class RubyArray extends RubyObject implements List {
         if (beg >= realLength) {
             len = beg + rlen;
 
-            if (len >= values.length) {
-                int tryNewLength = values.length + (values.length >> 1);
-                realloc(len > tryNewLength ? (int)len : tryNewLength);
-            }
+            if (len >= values.length) spliceRealloc((int)len);
 
             fill(values, begin + realLength, begin + ((int)beg), getRuntime().getNil());
             realLength = (int) len;
         } else {
             if (beg + len > realLength) len = realLength - beg;
+            int alen = realLength + rlen - (int)len;
 
-            long alen = realLength + rlen - len;
-            if (alen >= values.length) {
-                int tryNewLength = values.length + (values.length >> 1);
-                realloc(alen > tryNewLength ? (int)alen : tryNewLength);
-            }
+            if (alen >= values.length) spliceRealloc(alen);
 
             if (len != rlen) {
                 try {
@@ -855,7 +849,7 @@ public class RubyArray extends RubyObject implements List {
                 } catch (ArrayIndexOutOfBoundsException e) {
                     concurrentModification();
                 }
-                realLength = (int) alen;
+                realLength = alen;
             }
         }
 
@@ -863,7 +857,7 @@ public class RubyArray extends RubyObject implements List {
             try {
                 System.arraycopy(rplArr.values, rplArr.begin, values, (int) beg, rlen);
             } catch (ArrayIndexOutOfBoundsException e) {
-                    concurrentModification();
+                concurrentModification();
             }
         }
     }
@@ -887,20 +881,15 @@ public class RubyArray extends RubyObject implements List {
         if (beg >= realLength) {
             len = beg + 1;
 
-            if (len >= values.length) {
-                int tryNewLength = values.length + (values.length >> 1);
-                realloc(len > tryNewLength ? (int)len : tryNewLength);
-            }
+            if (len >= values.length) spliceRealloc((int)len);
 
+            fill(values, begin + realLength, begin + ((int)beg), getRuntime().getNil());
             realLength = (int) len;
         } else {
             if (beg + len > realLength) len = realLength - beg;
-
             int alen = realLength + 1 - (int)len;
-            if (alen >= values.length) {
-                int tryNewLength = values.length + (values.length >> 1);
-                realloc(alen > tryNewLength ? alen : tryNewLength);
-            }
+
+            if (alen >= values.length) spliceRealloc((int)alen);
 
             if (len != 1) {
                 try {
@@ -917,6 +906,18 @@ public class RubyArray extends RubyObject implements List {
         } catch (ArrayIndexOutOfBoundsException e) {
             concurrentModification();
         }
+    }
+
+    private void spliceRealloc(int length) {
+        int tryLength = values.length + (values.length >> 1);
+        int len = length > tryLength ? length : tryLength;
+        IRubyObject[] vals = new IRubyObject[len];
+        System.arraycopy(values, begin, vals, 0, realLength);
+
+        // only fill if there actually will remain trailing storage
+        if (tryLength > length) fill(vals, length, tryLength, getRuntime().getNil());
+
+        values = vals;
     }
 
     @JRubyMethod
