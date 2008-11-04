@@ -117,7 +117,7 @@ public class TestRuby extends TestRubyBase {
             RubyString.newString(ruby, "Line 1"),
             RubyString.newString(ruby, "Line 2"),
         };
-        RubyArray backtrace = RubyArray.newArray(ruby, Arrays.asList(lines));
+        RubyArray backtrace = RubyArray.newArray(ruby, Arrays.<IRubyObject>asList(lines));
         exception.set_backtrace(backtrace);
         ruby.printError(exception);
         assertEquals("Line 1: A message (NameError)\n\tfrom Line 2\n", err.toString());

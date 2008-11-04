@@ -202,7 +202,7 @@ public class RubyArray extends RubyObject implements List {
         return arr;
     }
 
-    public static RubyArray newArray(Ruby runtime, Collection collection) {
+    public static RubyArray newArray(Ruby runtime, Collection<IRubyObject> collection) {
         RubyArray arr = new RubyArray(runtime, collection.size());
         collection.toArray(arr.values);
         arr.realLength = arr.values.length;
@@ -273,25 +273,6 @@ public class RubyArray extends RubyObject implements List {
     private RubyArray(Ruby runtime, int length, boolean objectspace) {
         super(runtime, runtime.getArray(), objectspace);
         values = new IRubyObject[length];
-    }
-    
-    /* rb_ary_new3, rb_ary_new4
-     * allocates the internal array of size length and copies the 'length' elements
-     */
-    private RubyArray(Ruby runtime, long length, IRubyObject[] vals) {
-        super(runtime, runtime.getArray());
-        checkLength(length);
-        int ilength = (int) length;
-
-        values = new IRubyObject[ilength];
-        if (ilength > 0) {
-            System.arraycopy(vals, 0, values, 0, ilength);
-            fill(values, ilength, vals.length, runtime.getNil());
-        } else {
-            fill(values, runtime.getNil());
-        }
-
-        realLength = ilength;
     }
 
     /* NEWOBJ and OBJSETUP equivalent
@@ -1190,8 +1171,8 @@ public class RubyArray extends RubyObject implements List {
     }
     
     /** rb_ary_shift
-    *
-    */
+     *
+     */
     @JRubyMethod(name = "shift", compat = CompatVersion.RUBY1_8)
     public IRubyObject shift(ThreadContext context) {
         modify();

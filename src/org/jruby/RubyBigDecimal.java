@@ -971,7 +971,7 @@ public class RubyBigDecimal extends RubyNumeric {
         int pow = len / 4;
         array[1] = runtime.newFixnum((pow + 1) * 4);
 
-        return RubyArray.newArray(runtime, array);
+        return RubyArray.newArrayNoCopy(runtime, array);
     }
 
     @JRubyMethod(name = "round", optional = 2)
@@ -1067,7 +1067,7 @@ public class RubyBigDecimal extends RubyNumeric {
         // base
         array[2] = runtime.newFixnum(10);
 
-        return RubyArray.newArray(runtime, array);
+        return RubyArray.newArrayNoCopy(runtime, array);
     }
 
     // it doesn't handle special cases
