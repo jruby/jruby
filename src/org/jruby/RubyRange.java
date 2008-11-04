@@ -334,7 +334,7 @@ public class RubyRange extends RubyObject {
             for (int i = 0; i < size; i++) {
                 array[i] = RubyFixnum.newFixnum(runtime, base + i);
             }
-            return RubyArray.newArray(runtime, array);
+            return RubyArray.newArrayNoCopy(runtime, array);
         } else {
             return RubyEnumerable.to_a(context, this);
         }
