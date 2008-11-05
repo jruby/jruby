@@ -990,6 +990,8 @@ public final class Ruby {
         RubyBoolean.createTrueClass(this);
 
         nilObject = new RubyNil(this);
+        for (int i=0; i<NIL_PREFILLED_ARRAY_SIZE; i++) nilPrefilledArray[i] = nilObject;
+
         falseObject = new RubyBoolean(this, false);
         trueObject = new RubyBoolean(this, true);
 
@@ -1120,6 +1122,12 @@ public final class Ruby {
         if (profile.allowClass("Continuation")) {
             RubyContinuation.createContinuation(this);
         }
+    }
+
+    public static final int NIL_PREFILLED_ARRAY_SIZE = RubyArray.ARRAY_DEFAULT_SIZE * 8;
+    private final IRubyObject nilPrefilledArray[] = new IRubyObject[NIL_PREFILLED_ARRAY_SIZE];
+    public IRubyObject[] getNilPrefilledArray() {
+        return nilPrefilledArray;
     }
 
     private void initExceptions() {
