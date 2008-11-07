@@ -88,6 +88,8 @@ public abstract class Platform {
     public static final boolean IS_SOLARIS = OS.equals(SOLARIS);
     public static final boolean IS_BSD = IS_MAC || IS_FREEBSD || IS_OPENBSD;
     public static final String LIBC = IS_WINDOWS ? "msvcrt" : IS_LINUX ? "libc.so.6" : "c";
+    public static final String LIBPREFIX = IS_WINDOWS ? "" : "lib";
+    public static final String LIBSUFFIX = IS_WINDOWS ? "dll" : IS_MAC ? "dylib" : "so";
     public static final String NAME = String.format("%s-%s", ARCH, OS);
     public static final int BIG_ENDIAN = 4321;
     public static final int LITTLE_ENDIAN = 1234;
@@ -110,6 +112,8 @@ public abstract class Platform {
         platform.defineConstant("IS_LINUX", runtime.newBoolean(IS_LINUX));
         platform.defineConstant("IS_MAC", runtime.newBoolean(IS_MAC));
         platform.defineConstant("LIBC", runtime.newString(LIBC));
+        platform.defineConstant("LIBPREFIX", runtime.newString(LIBPREFIX));
+        platform.defineConstant("LIBSUFFIX", runtime.newString(LIBSUFFIX));
         platform.defineConstant("BYTE_ORDER", runtime.newFixnum(BYTE_ORDER));
         platform.defineConstant("BIG_ENDIAN", runtime.newFixnum(BIG_ENDIAN));
         platform.defineConstant("LITTLE_ENDIAN", runtime.newFixnum(LITTLE_ENDIAN));

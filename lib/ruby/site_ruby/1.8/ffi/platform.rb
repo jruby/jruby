@@ -17,6 +17,8 @@ module FFI
     NAME = JRuby::FFI::Platform::NAME
     ARCH = JRuby::FFI::Platform::ARCH
     OS = JRuby::FFI::Platform::OS
+    LIBPREFIX = JRuby::FFI::Platform::LIBPREFIX
+    LIBSUFFIX = JRuby::FFI::Platform::LIBSUFFIX
     def self.windows?
       JRuby::FFI::Platform::IS_WINDOWS
     end

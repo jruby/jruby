@@ -68,8 +68,8 @@ module FFI
   class SignatureError < LoadError; end
   
   class NotFoundError < LoadError
-    def initialize(function, library)
-      super("Function '#{function}' not found! (Looking in '#{library}' or this process)")
+    def initialize(function, *libraries)
+      super("Function '#{function}' not found in [#{libraries[0].nil? ? 'current process' : libraries.join(", ")}]")
     end
   end
   
@@ -213,8 +213,10 @@ module JRuby::FFI
     unless lib
       lib = JRuby::FFI::Platform::LIBC
     else
-      # jna & jffi need just the last part of the library name
-      lib = lib[3..-1] if lib =~ /^lib/ unless lib =~ /\.so/
+      # Mangle the library name to be what the platform expects
+      ext = ".#{Platform::LIBSUFFIX}"
+      lib = Platform::LIBPREFIX + lib unless lib =~ /^#{Platform::LIBPREFIX}/
+      lib += ext unless lib =~ /#{ext}/
     end
     # Current artificial limitation based on JFFI limit
     raise FFI::SignatureError, 'FFI functions may take max 32 arguments!' if args.size > 32
@@ -379,8 +381,8 @@ module JRuby::FFI::Library
 end
 module FFI::Library
   # TODO: Rubinius does *names here and saves the array. Multiple libs?
-  def ffi_lib(name)
-    @ffi_lib = name
+  def ffi_lib(*names)
+    @ffi_lib = names
   end
   def ffi_convention(convention)
     @ffi_convention = convention
@@ -397,7 +399,7 @@ module FFI::Library
 
   def attach_function(mname, a3, a4, a5=nil)
     cname, arg_types, ret_type = a5 ? [ a3, a4, a5 ] : [ mname.to_s, a3, a4 ]
-    lib = defined?(@ffi_lib) ? @ffi_lib : nil
+    libraries = defined?(@ffi_lib) ? @ffi_lib : [ nil ]
     convention = defined?(@ffi_convention) ? @ffi_convention : :default
     
     # Convert :foo to the native type
@@ -412,8 +414,15 @@ module FFI::Library
         end
       end
     }
-    invoker = FFI.create_invoker lib, cname.to_s, arg_types, ret_type, convention
-    raise ArgumentError, "Unable to find function '#{cname}' to bind to #{self.name}.#{mname}" unless invoker
+    # Try to locate the function in any of the libraries
+    invoker = libraries.collect do |lib|
+      begin
+        FFI.create_invoker lib, cname.to_s, arg_types, ret_type, convention
+      rescue Exception
+        nil
+      end
+    end.compact.shift
+    raise FFI::NotFoundError.new(cname.to_s, libraries) unless invoker
     invoker.attach(self.class, mname.to_s)
     # Return a callable version of the invoker
     Module.new do
