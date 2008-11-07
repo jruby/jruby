@@ -31,8 +31,8 @@ public final class EncodingService {
         aliases = EncodingDB.getAliases();
         
         encodingList = new IRubyObject[encodings.size()];
-        defineEncodings(encodings.entryIterator(), true);
-        defineEncodings(aliases.entryIterator(), false);        
+        defineEncodings();
+        defineAliases();        
     }
 
     public CaseInsensitiveBytesHash<Entry> getEncodings() {
@@ -77,15 +77,25 @@ public final class EncodingService {
         return encodingIndex[enc.getIndex()];
     }
 
-    private void defineEncodings(HashEntryIterator hei, boolean addToList) {
+    private void defineEncodings() {
+        HashEntryIterator hei = encodings.entryIterator();
         while (hei.hasNext()) {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e = 
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)hei.next());
             Entry ee = e.value; 
             RubyEncoding encoding = RubyEncoding.newEncoding(runtime, e.bytes, e.p, e.end, ee.isDummy());
+            encodingList[ee.getIndex()] = encoding;
+            defineEncodingConstants(encoding, e.bytes, e.p, e.end);
+        }
+    }
 
-            if (addToList) encodingList[ee.getIndex()] = encoding;
-
+    private void defineAliases() {
+        HashEntryIterator hei = aliases.entryIterator();
+        while (hei.hasNext()) {
+            CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e = 
+                ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)hei.next());
+            Entry ee = e.value; 
+            RubyEncoding encoding = (RubyEncoding)encodingList[ee.getIndex()];  
             defineEncodingConstants(encoding, e.bytes, e.p, e.end);
         }
     }
