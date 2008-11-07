@@ -55,7 +55,7 @@ final class JNAInvoker extends Invoker {
 
     public IRubyObject invoke(ThreadContext context, IRubyObject[] rubyArgs) {
         Object[] args = new Object[rubyArgs.length];
-        Invocation invocation = new Invocation();
+        Invocation invocation = new Invocation(context);
         for (int i = 0; i < args.length; ++i) {
             args[i] = marshallers[i].marshal(invocation, rubyArgs[i]);
         }

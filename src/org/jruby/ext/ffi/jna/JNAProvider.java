@@ -413,6 +413,11 @@ public final class JNAProvider extends FFIProvider {
                     }
                 });
                 return memory;
+            } else if (parameter.respondsTo("to_ptr")) {
+                IRubyObject ptr = parameter.callMethod(invocation.getThreadContext(), "to_ptr");
+                if (ptr instanceof JNAMemory) {
+                    return (((JNAMemory) ptr).getNativeMemory());
+                }
             }
             return Util.convertParameter(parameter, Pointer.class);
         }

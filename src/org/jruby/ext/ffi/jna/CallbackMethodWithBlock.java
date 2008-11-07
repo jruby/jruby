@@ -64,7 +64,7 @@ final class CallbackMethodWithBlock extends DynamicMethod {
         Arity.checkArgumentCount(context.getRuntime(), args,
                 marshallers.length - (blockGiven ? 1 : 0), marshallers.length);
         
-        Invocation invocation = new Invocation();
+        Invocation invocation = new Invocation(context);
         Object[] nativeArgs = new Object[marshallers.length];
         if (!blockGiven) {
             for (int i = 0; i < args.length; ++i) {

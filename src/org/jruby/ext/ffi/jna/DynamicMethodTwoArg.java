@@ -55,7 +55,7 @@ final class DynamicMethodTwoArg extends JNADynamicMethod {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self,
             RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2) {
-        final Invocation invocation = new Invocation();
+        final Invocation invocation = new Invocation(context);
         final Object[] nativeArgs = new Object[]{
             marshaller1.marshal(invocation, arg1),
             marshaller2.marshal(invocation, arg2),

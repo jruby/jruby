@@ -679,7 +679,7 @@ abstract public class AbstractMemory extends RubyObject {
     }
     @JRubyMethod(name = "get_pointer", required = 1)
     public IRubyObject get_pointer(ThreadContext context, IRubyObject offset) {
-        return getMemoryPointer(context.getRuntime(), Util.int64Value(offset));
+        return getPointer(context.getRuntime(), Util.int64Value(offset));
     }
     @JRubyMethod(name = "__get_buffer", required = 2)
     public IRubyObject get_buffer(ThreadContext context, IRubyObject off, IRubyObject len_) {
@@ -696,7 +696,5 @@ abstract public class AbstractMemory extends RubyObject {
         getMemoryIO().put(getOffset(off), bl.unsafeBytes(), bl.begin(), len);
         return context.getRuntime().newFixnum(len);
     }
-    abstract protected AbstractMemoryPointer getMemoryPointer(Ruby runtime, long offset);
-    
-    
+    abstract protected Pointer getPointer(Ruby runtime, long offset);
 }

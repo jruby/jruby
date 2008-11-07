@@ -45,8 +45,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  * This implements the Rubinius FFI MemoryPointer class, but in java for speed.
  * </p>
  */
-@JRubyClass(name=AbstractMemoryPointer.className, parent=AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS)
-public abstract class AbstractMemoryPointer extends AbstractMemory {
+@JRubyClass(name=AbstractMemoryPointer.className, parent="FFI::Pointer")
+public abstract class AbstractMemoryPointer extends Pointer {
     /** The base class name to register in the Ruby runtime */
     public static final String className = "AbstractMemoryPointer";
     /**
@@ -59,7 +59,7 @@ public abstract class AbstractMemoryPointer extends AbstractMemory {
     public static RubyClass createMemoryPointerClass(Ruby runtime) {
         RubyModule module = FFIProvider.getModule(runtime);
         RubyClass result = module.defineClassUnder(className, 
-                module.getClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS),
+                runtime.getModule("FFI").getClass("Pointer"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         
         result.defineAnnotatedMethods(AbstractMemoryPointer.class);
@@ -72,32 +72,13 @@ public abstract class AbstractMemoryPointer extends AbstractMemory {
         super(runtime, klass, io, offset, size);
     }
     
-    /**
-     * Tests if this <tt>MemoryPointer</tt> represents the C <tt>NULL</tt> value.
-     *
-     * @return true if the address is NULL.
-     */
-    @JRubyMethod(name = "null?")
-    public IRubyObject null_p(ThreadContext context) {
-        return context.getRuntime().newBoolean(getMemoryIO().isNull());
-    }
-    
-    /**
-     * Reads a pointer value from the memory address.
-     *
-     * @return A new <tt>MemoryPointer</tt>.
-     */
-    @JRubyMethod(name = "read_pointer")
-    public IRubyObject read_pointer(ThreadContext context) {
-        return getMemoryPointer(context.getRuntime(), 0);
-    }
-
     @JRubyMethod(name = "free")
     public IRubyObject free(ThreadContext context) {
         // Just let the GC collect and free the pointer
         pointerSet.remove(this);
         return context.getRuntime().getNil();
     }
+
     @JRubyMethod(name = "autorelease=", required = 1)
     public IRubyObject autorelease(ThreadContext context, IRubyObject release) {
         if (release.isTrue()) {

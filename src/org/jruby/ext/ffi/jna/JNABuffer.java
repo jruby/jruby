@@ -137,7 +137,7 @@ public class JNABuffer extends AbstractBuffer implements JNAMemory {
         return this;
     }
     
-    protected AbstractMemoryPointer getMemoryPointer(Ruby runtime, long offset) {
+    protected AbstractMemoryPointer getPointer(Ruby runtime, long offset) {
         return new JNAMemoryPointer(runtime,
                 getMemoryIO().getMemoryIO(this.offset + offset), 0, Long.MAX_VALUE);
     }

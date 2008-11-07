@@ -96,6 +96,7 @@ public abstract class Factory {
      * @param module the module to register the classes under
      */
     public void init(Ruby runtime, RubyModule module) {
+        RubyModule ffi = runtime.defineModule("FFI");
         synchronized (module) {
             if (module.fastGetClass(FFIProvider.CLASS_NAME) == null) {
                 FFIProvider.createProviderClass(runtime);
@@ -105,6 +106,9 @@ public abstract class Factory {
             }
             if (module.fastGetClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS) == null) {
                 AbstractMemory.createAbstractMemoryClass(runtime);
+            }
+            if (ffi.fastGetClass("Pointer") == null) {
+                Pointer.createPointerClass(runtime);
             }
             if (module.fastGetClass(AbstractMemoryPointer.className) == null) {
                 AbstractMemoryPointer.createMemoryPointerClass(runtime);

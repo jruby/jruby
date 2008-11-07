@@ -51,7 +51,7 @@ class DynamicMethodOneArg extends JNADynamicMethod {
     
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg) {
-        Invocation invocation = new Invocation();
+        Invocation invocation = new Invocation(context);
         Object[] nativeArgs = new Object[1];
         nativeArgs[0] = marshaller.marshal(invocation, arg);
         IRubyObject retVal = functionInvoker.invoke(context.getRuntime(), function, nativeArgs);
