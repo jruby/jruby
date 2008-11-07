@@ -39,7 +39,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import com.kenai.constantine.Constant;
 import java.io.ByteArrayInputStream;
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -50,7 +49,6 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -113,6 +111,7 @@ import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.load.Library;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
@@ -126,6 +125,8 @@ import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.io.ChannelDescriptor;
+
+import com.kenai.constantine.Constant;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -998,6 +999,12 @@ public final class Ruby {
         RubyComparable.createComparable(this);
         RubyEnumerable.createEnumerableModule(this);
         RubyString.createStringClass(this);
+
+        if (config.getCompatVersion() == CompatVersion.RUBY1_9) {
+            RubyEncoding.createEncodingClass(this);
+            encodingService = new EncodingService(this);
+        }
+
         RubySymbol.createSymbolClass(this);
 
         if (profile.allowClass("ThreadGroup")) {
@@ -1413,21 +1420,28 @@ public final class Ruby {
     }
     void setEnumerator(RubyClass enumeratorClass) {
         this.enumeratorClass = enumeratorClass;
-    }  
+    }
 
     public RubyClass getString() {
         return stringClass;
-    }    
+    }
     void setString(RubyClass stringClass) {
         this.stringClass = stringClass;
-    }    
+    }
+
+    public RubyClass getEncoding() {
+        return encodingClass;
+    }
+    void setEncoding(RubyClass encodingClass) {
+        this.encodingClass = encodingClass;
+    }
 
     public RubyClass getSymbol() {
         return symbolClass;
     }
     void setSymbol(RubyClass symbolClass) {
         this.symbolClass = symbolClass;
-    }   
+    }
 
     public RubyClass getArray() {
         return arrayClass;
@@ -1873,7 +1887,7 @@ public final class Ruby {
     public JavaSupport getJavaSupport() {
         return javaSupport;
     }
-    
+
     public static ClassLoader getClassLoader() {
         // we try to get the classloader that loaded JRuby, falling back on System
         ClassLoader loader = Ruby.class.getClassLoader();
@@ -1980,6 +1994,10 @@ public final class Ruby {
      */
     public LoadService getLoadService() {
         return loadService;
+    }
+
+    public EncodingService getEncodingService() {
+        return encodingService;
     }
 
     public RubyWarnings getWarnings() {
@@ -2970,7 +2988,7 @@ public final class Ruby {
             objectClass, moduleClass, classClass, nilClass, trueClass,
             falseClass, numericClass, floatClass, integerClass, fixnumClass,
             complexClass, rationalClass, enumeratorClass,
-            arrayClass, hashClass, rangeClass, stringClass, symbolClass,
+            arrayClass, hashClass, rangeClass, stringClass, encodingClass, symbolClass,
             procClass, bindingClass, methodClass, unboundMethodClass,
             matchDataClass, regexpClass, timeClass, bignumClass, dirClass,
             fileClass, fileStatClass, ioClass, threadClass, threadGroupClass,
@@ -3042,6 +3060,7 @@ public final class Ruby {
     private Parser parser = new Parser(this);
 
     private LoadService loadService;
+    private EncodingService encodingService;
     private GlobalVariables globalVariables = new GlobalVariables(this);
     private RubyWarnings warnings = new RubyWarnings(this);
 

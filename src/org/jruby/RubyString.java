@@ -245,9 +245,11 @@ public class RubyString extends RubyObject {
     }    
 
     public static RubyString newStringShared(Ruby runtime, byte[] bytes, int start, int length) {
-        RubyString str = new RubyString(runtime, runtime.getString(), new ByteList(bytes, start, length, false));
-        str.shareLevel = SHARE_LEVEL_BUFFER;
-        return str;
+        return newStringShared(runtime, new ByteList(bytes, start, length, false));
+    }
+
+    public static RubyString newStringShared(Ruby runtime, byte[] bytes) {
+        return newStringShared(runtime, bytes, 0, bytes.length);
     }
 
     @Override
