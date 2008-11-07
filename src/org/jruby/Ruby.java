@@ -1183,6 +1183,13 @@ public final class Ruby {
         zeroDivisionError = defineClassIfAllowed("ZeroDivisionError", standardError);
         floatDomainError  = defineClassIfAllowed("FloatDomainError", rangeError);
 
+        if (config.getCompatVersion() == CompatVersion.RUBY1_9) {
+            if (profile.allowClass("EncodingError")) {
+                encodingError = defineClass("EncodingError", standardError, standardError.getAllocator()); 
+                encodingCompatibilityError = defineClassUnder("CompatibilityError", encodingError, encodingError.getAllocator(), encodingClass);
+            }
+        }
+
         initErrno();
     }
     
@@ -1848,6 +1855,14 @@ public final class Ruby {
 
     public RubyClass getFloatDomainError() {
         return floatDomainError;
+    }
+
+    public RubyClass getEncodingError() {
+        return encodingError;
+    }
+
+    public RubyClass getEncodingCompatibilityError() {
+        return encodingCompatibilityError;
     }
 
     private RubyHash charsetMap;
@@ -2998,7 +3013,8 @@ public final class Ruby {
             rangeError, dummyClass, systemExit, localJumpError, nativeException,
             systemCallError, fatal, interrupt, typeError, argumentError, indexError,
             syntaxError, standardError, loadError, notImplementedError, securityError, noMemoryError,
-            regexpError, eofError, threadError, concurrencyError, systemStackError, zeroDivisionError, floatDomainError;
+            regexpError, eofError, threadError, concurrencyError, systemStackError, zeroDivisionError, floatDomainError,
+            encodingError, encodingCompatibilityError;
 
     /**
      * All the core modules we keep direct references to, for quick access and
