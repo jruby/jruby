@@ -92,7 +92,7 @@ module FFI
       end
       
       output = `#{binary}`.split "\n"
-      File.unlink(binary + (JRuby::FFI::Platform::IS_WINDOWS ? ".exe" : ""))
+      File.unlink(binary + (FFI::Platform.windows? ? ".exe" : ""))
       sizeof = output.shift
       unless @size
         m = /\s*sizeof\([^)]+\) (\d+)/.match sizeof
