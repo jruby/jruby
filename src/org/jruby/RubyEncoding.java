@@ -140,16 +140,26 @@ public class RubyEncoding extends RubyObject {
     }
 
     @JRubyMethod(name = "find", meta = true)
-    public static IRubyObject find(ThreadContext context, IRubyObject recv, IRubyObject enc) {
+    public static IRubyObject find(ThreadContext context, IRubyObject recv, IRubyObject str) {
         Ruby runtime = context.getRuntime();
         EncodingService service = runtime.getEncodingService();
         // TODO: check for ascii string
-        ByteList name = enc.convertToString().getByteList();
+        ByteList name = str.convertToString().getByteList();
         Entry e = service.findEncodingOrAliasEntry(name);
 
         if (e == null) throw context.getRuntime().newArgumentError("unknown encoding name - " + name);
 
         return service.getEncodingList()[e.getIndex()];
+    }
+
+    @JRubyMethod(name = "_dump")
+    public IRubyObject _dump(ThreadContext context) {
+        return to_s(context);
+    }
+
+    @JRubyMethod(name = "_load", meta = true)
+    public static IRubyObject _load(ThreadContext context, IRubyObject recv, IRubyObject str) {
+        return find(context, recv, str);
     }
 
     @JRubyMethod(name = {"to_s", "name"})
@@ -162,7 +172,7 @@ public class RubyEncoding extends RubyObject {
     public IRubyObject inspect(ThreadContext context) {
         // TODO: rb_usascii_str_new2
         ByteList bytes = new ByteList();
-        bytes.append("<Encoding:".getBytes());
+        bytes.append("#<Encoding:".getBytes());
         bytes.append(name);
         if (isDummy) bytes.append(" (dummy)".getBytes());
         bytes.append('>');
