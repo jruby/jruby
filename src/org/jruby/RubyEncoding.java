@@ -35,6 +35,7 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.ByteList;
 
@@ -84,6 +85,25 @@ public class RubyEncoding extends RubyObject {
         // TODO: make threadsafe
         if (encoding == null) encoding = getRuntime().getEncodingService().loadEncoding(name);
         return encoding;
+    }
+
+    public static boolean isAsciiCompatible(Ruby runtime, Encoding enc) {
+        return enc.minLength() == 1 && !runtime.getEncodingService().getEncoding(enc).isDummy;
+    }
+
+    public static final Encoding areCompatible(Ruby runtime, IRubyObject obj1, IRubyObject obj2) {
+        if (obj1 instanceof EncodingCapable && obj2 instanceof EncodingCapable) {
+            Encoding enc1 = ((EncodingCapable)obj1).getEncoding();
+            if (obj2 instanceof RubyString && ((RubyString)obj2).getByteList().realSize == 0) return enc1; 
+            Encoding enc2 = ((EncodingCapable)obj2).getEncoding();
+            if (obj1 instanceof RubyString && ((RubyString)obj1).getByteList().realSize == 0) return enc2;
+            if (!isAsciiCompatible(runtime, enc1) && !isAsciiCompatible(runtime, enc2)) return null;
+        }
+        return null;
+    }
+
+    public static final Encoding areCompatible(Encoding enc1, Encoding enc2) {
+        return enc1 == enc2 ? enc1 : null;
     }
 
     @JRubyMethod(name = "list", meta = true)

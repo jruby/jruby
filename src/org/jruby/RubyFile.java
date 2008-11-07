@@ -35,6 +35,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jcodings.Encoding;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.ChannelDescriptor;
 import java.io.File;
@@ -57,6 +58,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.DirectoryAsFileException;
 import org.jruby.util.io.Stream;
@@ -73,7 +75,7 @@ import org.jruby.util.io.PipeException;
  * Ruby File class equivalent in java.
  **/
 @JRubyClass(name="File", parent="IO", include="FileTest")
-public class RubyFile extends RubyIO {
+public class RubyFile extends RubyIO implements EncodingCapable {
     private static final long serialVersionUID = 1L;
     
     public static final int LOCK_SH = 1;
@@ -93,6 +95,10 @@ public class RubyFile extends RubyIO {
         } else {
             FNM_SYSCASE = 0;
         }
+    }
+
+    public Encoding getEncoding() {
+        return null;
     }
 
     private static boolean startsWithDriveLetterOnWindows(String path) {

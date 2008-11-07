@@ -63,6 +63,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
@@ -73,7 +74,7 @@ import org.jruby.util.TypeConverter;
  *
  */
 @JRubyClass(name="Regexp")
-public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
+public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, EncodingCapable {
     private KCode kcode;
     private Regex pattern;
     private ByteList str;
@@ -107,6 +108,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
 
     public KCode getKCode() {
         return kcode;
+    }
+
+    public Encoding getEncoding() {
+        return pattern.getEncoding();
     }
 
     private static Map<ByteList, Regex> getPatternCache() {
@@ -1195,7 +1200,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback {
             hash.fastASet(RubyString.newStringShared(getRuntime(), e.name, e.nameP, e.nameEnd - e.nameP).freeze(context), ary);
         }
         return hash;
-    }    
+    }
 
     public static RubyRegexp unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         RubyRegexp result = newRegexp(input.getRuntime(), input.unmarshalString(), input.unmarshalInt(), false);

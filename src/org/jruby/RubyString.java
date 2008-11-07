@@ -64,6 +64,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
@@ -79,7 +80,7 @@ import org.jruby.util.string.JavaCrypt;
  *
  */
 @JRubyClass(name="String", include={"Enumerable", "Comparable"})
-public class RubyString extends RubyObject {
+public class RubyString extends RubyObject implements EncodingCapable {
     private static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
 
     // string doesn't share any resources
@@ -115,6 +116,11 @@ public class RubyString extends RubyObject {
         stringClass.defineAnnotatedMethods(RubyString.class);
         
         return stringClass;
+    }
+
+    public Encoding getEncoding() {
+        // TODO: return value.getEncoding();
+        return null;
     }
 
     /** short circuit for String key comparison
