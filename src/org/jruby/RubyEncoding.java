@@ -25,8 +25,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.util.Iterator;
-
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB.Entry;
 import org.jcodings.util.CaseInsensitiveBytesHash;
@@ -36,7 +34,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.ByteList;
