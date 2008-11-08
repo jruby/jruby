@@ -1,6 +1,6 @@
 # -*- ruby -*-
 #--
-# Copyright 2006 by Chad Fowler, Rich Kilmer, Jim Weirich and others.
+# Copyright 2006, 2008 by Chad Fowler, Rich Kilmer, Jim Weirich and others.
 # All rights reserved.
 # See LICENSE.txt for permissions.
 #++

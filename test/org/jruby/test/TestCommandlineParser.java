@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2002, 2008 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2005 Jason Voegele <jason@jvoegele.com>
  * Copyright (C) 2005 Tim Azzopardi <tim@tigerfive.com>
  * Copyright (C) 2006 Charles O Nutter <headius@headius.com>
@@ -103,9 +103,7 @@ public class TestCommandlineParser extends TestCase {
         String[] args = new String[]{"--command", "gem"};
         RubyInstanceConfig parser = new RubyInstanceConfig();
         parser.processArguments(args);
-        assertEquals(1, parser.requiredLibraries().size());
-        assertEquals("jruby/commands", parser.requiredLibraries().get(0));
-        assertEquals("JRuby::Commands.gem\n", new String(parser.inlineScript()));
+        assertNotNull(parser.getScriptFileName());
     }
 
     public void testCommandAllowedOnlyOnceAndRemainderAreScriptArgs() {

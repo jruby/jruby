@@ -486,11 +486,11 @@ public class RubyDir extends RubyObject {
             throw runtime.newErrnoENOENTError("No such file or directory - " + path);
         }
         boolean isDirectory = result.isDirectory();
-        
-        if (mustExist && !isDirectory) {
+
+        if (path.startsWith("file:") || (mustExist && !isDirectory)) {
             throw runtime.newErrnoENOTDIRError(path + " is not a directory");
         } else if (!mustExist && isDirectory) {
-            throw runtime.newErrnoEEXISTError("File exists - " + path); 
+            throw runtime.newErrnoEEXISTError("File exists - " + path);
         }
 
         return result;

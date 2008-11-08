@@ -127,8 +127,12 @@ class TestDir < Test::Unit::TestCase
     
     jar_file = prefix + File.join(first, "test", "dir with spaces", "test_jar.jar") + "!"
 
-    assert_equal ["#{jar_file}/abc", "#{jar_file}/inside_jar.rb", "#{jar_file}/second_jar.rb"].sort, $__glob_value.sort
-    assert_equal ["#{jar_file}/abc", "#{jar_file}/abc/foo.rb", "#{jar_file}/inside_jar.rb", "#{jar_file}/second_jar.rb"].sort, $__glob_value2.sort
+    ["#{jar_file}/abc", "#{jar_file}/inside_jar.rb", "#{jar_file}/second_jar.rb"].each do |f|
+      assert $__glob_value.include?(f)
+    end
+    ["#{jar_file}/abc", "#{jar_file}/abc/foo.rb", "#{jar_file}/inside_jar.rb", "#{jar_file}/second_jar.rb"].each do |f|
+      assert $__glob_value2.include?(f)
+    end
     assert_equal ["#{jar_file}/abc"], Dir["#{jar_file}/abc"]
   end
   

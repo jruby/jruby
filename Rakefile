@@ -77,6 +77,7 @@ namespace :spec do
     ant "spec-all"
   end
 
+  gem 'rspec'
   require 'spec/rake/spectask'
   desc "Runs Java Integration Specs"
   Spec::Rake::SpecTask.new("ji" => "build/jruby-test-classes.jar") do |t|

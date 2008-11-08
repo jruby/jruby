@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
+ * Copyright (C) 2007, 2008 Nick Sieger <nicksieger@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -636,21 +636,16 @@ public class RubyInstanceConfig {
 
     public String getJRubyHome() {
         if (jrubyHome == null) {
-            if (Ruby.isSecurityRestricted()) {
-                return "SECURITY RESTRICTED";
+            if (!Ruby.isSecurityRestricted()) {
+                jrubyHome = SafePropertyAccessor.getProperty("jruby.home");
             }
-            jrubyHome = verifyHome(SafePropertyAccessor.getProperty("jruby.home",
-                    SafePropertyAccessor.getProperty("user.home") + "/.jruby"));
 
-            try {
-                // This comment also in rbConfigLibrary
-                // Our shell scripts pass in non-canonicalized paths, but even if we didn't
-                // anyone who did would become unhappy because Ruby apps expect no relative
-                // operators in the pathname (rubygems, for example).
-                jrubyHome = new NormalizedFile(jrubyHome).getCanonicalPath();
-            } catch (IOException e) { }
-
-            jrubyHome = new NormalizedFile(jrubyHome).getAbsolutePath();
+            if (jrubyHome != null) {
+                jrubyHome = verifyHome(jrubyHome);
+            } else {
+                jrubyHome = getClass().getResource("/org/jruby/jruby.properties")
+                    .getPath().replace("org/jruby/jruby.properties", "META-INF/jruby.home");
+            }
         }
         return jrubyHome;
     }
@@ -977,27 +972,36 @@ public class RubyInstanceConfig {
                 scriptName = "jirb";
             }
 
-            scriptFileName = scriptName;
+            scriptFileName = resolveScript(scriptName);
 
-            if (!new File(scriptFileName).exists()) {
-                try {
-                    String jrubyHome = JRubyFile.create(System.getProperty("user.dir"), JRubyFile.getFileProperty("jruby.home")).getCanonicalPath();
-                    scriptFileName = JRubyFile.create(jrubyHome + JRubyFile.separator + "bin", scriptName).getCanonicalPath();
-                } catch (IOException io) {
-                    MainExitException mee = new MainExitException(1, "jruby: Can't determine script filename");
-                    mee.setUsageError(true);
-                    throw mee;
-                }
-            }
-
-            // route 'gem' through ruby code in case we're running out of the complete jar
-            if (scriptName.equals("gem") || !new File(scriptFileName).exists()) {
+            if (scriptFileName.equals(scriptName)) {
                 requiredLibraries.add("jruby/commands");
                 inlineScript.append("JRuby::Commands." + scriptName);
                 inlineScript.append("\n");
                 hasInlineScript = true;
             }
+
             endOfArguments = true;
+        }
+
+        private String resolveScript(String scriptName) {
+            File fullName = new File(getJRubyHome(), "bin/" + scriptName);
+            if (fullName.exists()) {
+                return fullName.getAbsolutePath();
+            }
+
+            String path = System.getenv("PATH");
+            if (path != null) {
+                String[] paths = path.split(System.getProperty("path.separator"));
+                for (int i = 0; i < paths.length; i++) {
+                    fullName = new File(paths[i], scriptName);
+                    if (fullName.exists()) {
+                        return fullName.getAbsolutePath();
+                    }
+                }
+            }
+
+            return scriptName;
         }
 
         private String grabValue(String errorMessage) {

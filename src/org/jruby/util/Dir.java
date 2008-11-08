@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2007 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2007, 2008 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -569,7 +569,7 @@ public class Dir {
                     status = func.call(bytes, begin, end, arg);
                 }
             } else if (isJarFilePath(bytes, begin, end)) {
-                int ix = -1;
+                int ix = end;
                 for(int i = 0;i<end;i++) {
                     if(bytes[begin+i] == '!') {
                         ix = i;
@@ -615,7 +615,7 @@ public class Dir {
                     if(dir[0] == '/'  || (DOSISH && 2<dir.length && dir[1] == ':' && isdirsep(dir[2]))) {
                         st = new File(newStringFromUTF8(dir));
                     } else if(isJarFilePath(dir, 0, dir.length)) {
-                        int ix = -1;
+                        int ix = dir.length;
                         for(int i = 0;i<dir.length;i++) {
                             if(dir[i] == '!') {
                                 ix = i;
@@ -708,7 +708,7 @@ public class Dir {
                                 JarEntry je = eje.nextElement();
                                 String name = je.getName();
                                 int ix = name.indexOf('/', jar.length());
-                                if((!name.startsWith("META-INF") && (ix == -1 || ix == name.length()-1))) {
+                                if (ix == -1 || ix == name.length()-1) {
                                     if("/".equals(jar) || (name.startsWith(jar) && name.length()>jar.length())) {
                                         dirp.add(je);
                                     }
