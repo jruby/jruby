@@ -57,7 +57,7 @@ public final class Arity implements Serializable {
     public final static Arity OPTIONAL = newArity(-1);
     public final static Arity ONE_REQUIRED = newArity(-2);
     public final static Arity TWO_REQUIRED = newArity(-3);
-    public final static Arity THREE_REQUIRED = newArity(-3);
+    public final static Arity THREE_REQUIRED = newArity(-4);
 
     private Arity(int value) {
         this.value = value;
