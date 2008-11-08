@@ -283,7 +283,9 @@ public final class JNAProvider extends FFIProvider {
             bl.length(len);
             address.read(0, bl.unsafeBytes(), bl.begin(), len);
             
-            return RubyString.newString(runtime, bl);
+            RubyString s =  RubyString.newString(runtime, bl);
+            s.setTaint(true);
+            return s;
         }
         public static final FunctionInvoker INSTANCE = new StringInvoker();
     }
@@ -435,6 +437,9 @@ public final class JNAProvider extends FFIProvider {
         public final Object marshal(Invocation invocation, IRubyObject parameter) {
             // Ruby strings are UTF-8, so should be able to just copy directly
             RubyString s = parameter.asString();
+            if (s.isTaint()) {
+                throw invocation.getThreadContext().getRuntime().newSecurityError("Unsafe string parameter");
+            }
             ByteList bl = s.getByteList();
             final Memory memory = new Memory(bl.length() + 1);
             memory.write(0, bl.unsafeBytes(), bl.begin(), bl.length());

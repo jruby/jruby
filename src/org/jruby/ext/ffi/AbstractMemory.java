@@ -646,7 +646,9 @@ abstract public class AbstractMemory extends RubyObject {
         ByteList bl = new ByteList(len);
         getMemoryIO().get(off, bl.unsafeBytes(), bl.begin(), len);
         bl.length(len);
-        return context.getRuntime().newString(bl);
+        RubyString s = context.getRuntime().newString(bl);
+        s.setTaint(true);
+        return s;
     }
     @JRubyMethod(name = "get_string")
     public IRubyObject get_string(ThreadContext context, IRubyObject offArg, IRubyObject lenArg) {
@@ -659,7 +661,9 @@ abstract public class AbstractMemory extends RubyObject {
         ByteList bl = new ByteList(len);
         getMemoryIO().get(off, bl.unsafeBytes(), bl.begin(), len);
         bl.length(len);
-        return context.getRuntime().newString(bl);
+        RubyString s = context.getRuntime().newString(bl);
+        s.setTaint(true);
+        return s;
     }
     @JRubyMethod(name = "put_string", required = 2, optional = 1)
     public IRubyObject put_string(ThreadContext context, IRubyObject[] args) {
