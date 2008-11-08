@@ -86,6 +86,7 @@ module FFI
   end
   def self.find_type(name)
     code = TypeDefs[name]
+    code = name if !code && name.kind_of?(Integer)
     code = name if !code && name.kind_of?(JRuby::FFI::Callback)
     raise TypeError, "Unable to resolve type '#{name}'" unless code
     return code
@@ -159,7 +160,12 @@ module FFI
 
   # Converts NUL-terminated C strings
   add_typedef(NativeType::STRING, :string)
-  
+
+  # Converts FFI::Buffer objects
+  add_typedef(NativeType::BUFFER_IN, :buffer_in)
+  add_typedef(NativeType::BUFFER_OUT, :buffer_out)
+  add_typedef(NativeType::BUFFER_INOUT, :buffer_inout)
+
   # Use for a C struct with a char [] embedded inside.
   add_typedef(NativeType::CHAR_ARRAY, :char_array)
   
@@ -203,6 +209,7 @@ module JRuby::FFI
 
   def self.find_type(name)
     code = TypeDefs[name] || FFI::TypeDefs[name]
+    code = name if !code && name.kind_of?(Integer)
     code = name if !code && name.kind_of?(JRuby::FFI::Callback)
     raise FFI::TypeError, "Unable to resolve type '#{name}'" unless code
     return code
@@ -348,11 +355,13 @@ module JRuby::FFI::Library
     arg_types.map! { |e| 
       begin
         find_type(e)
-      rescue Exception
+      rescue Exception => ex
         if defined?(@ffi_callbacks) && @ffi_callbacks.has_key?(e)
           @ffi_callbacks[e]
+        elsif e.is_a?(Class) && e < FFI::Struct
+          FFI::NativeType::POINTER
         else
-          e
+          raise ex
         end
       end
     }
@@ -406,12 +415,14 @@ module FFI::Library
     # Convert :foo to the native type
     arg_types.map! { |e| 
       begin
-        find_type(e)
-      rescue Exception
+        FFI.find_type(e)
+      rescue FFI::TypeError => ex
         if defined?(@ffi_callbacks) && @ffi_callbacks.has_key?(e)
           @ffi_callbacks[e]
+        elsif e.is_a?(Class) && e < FFI::Struct
+          FFI::NativeType::POINTER
         else
-          e
+          raise ex
         end
       end
     }
@@ -419,7 +430,7 @@ module FFI::Library
     invoker = libraries.collect do |lib|
       begin
         FFI.create_invoker lib, cname.to_s, arg_types, ret_type, convention
-      rescue Exception
+      rescue FFI::NotFoundError => ex
         nil
       end
     end.compact.shift

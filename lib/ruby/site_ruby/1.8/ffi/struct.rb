@@ -30,6 +30,12 @@ module JRuby
       def self.members
         @layout.members
       end
+      def self.in
+        :buffer_in
+      end
+      def self.out
+        :buffer_out
+      end
       def size
         self.class.size
       end
@@ -48,6 +54,9 @@ module JRuby
       def clear
         @pointer.clear
         self
+      end
+      def to_ptr
+        @pointer
       end
     end
     class Struct < JRuby::FFI::BaseStruct
