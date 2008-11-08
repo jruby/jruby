@@ -369,6 +369,7 @@ module JRuby::FFI::Library
     invoker = JRuby::FFI.create_invoker(lib, name.to_s, arg_types, ret_type, convention)
     raise ArgumentError, "Unable to find function '#{name}' to bind to #{self.name}.#{(opts[:as] || name)}" unless invoker
     invoker.attach(self.class, (opts[:as] || name).to_s)
+    invoker.attach(self, (opts[:as] || name).to_s)
     # Return a callable version of the invoker
     Module.new do
       invoker.attach(self, "call")
@@ -436,6 +437,7 @@ module FFI::Library
     end.compact.shift
     raise FFI::NotFoundError.new(cname.to_s, libraries) unless invoker
     invoker.attach(self.class, mname.to_s)
+    invoker.attach(self, mname.to_s)
     # Return a callable version of the invoker
     Module.new do
       invoker.attach(self, "call")
