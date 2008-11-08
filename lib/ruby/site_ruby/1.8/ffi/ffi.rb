@@ -209,15 +209,16 @@ module JRuby::FFI
   end
 
   def self.create_invoker(lib, name, args, ret, convention = :default)
-    # Ugly hack to simulate the effect of dlopen(NULL, x) - not quite correct
-    unless lib
-      lib = JRuby::FFI::Platform::LIBC
-    else
-      # Mangle the library name to be what the platform expects
+    # Mangle the library name to reflect the native library naming conventions
+    if lib && File.basename(lib) == lib
       ext = ".#{Platform::LIBSUFFIX}"
       lib = Platform::LIBPREFIX + lib unless lib =~ /^#{Platform::LIBPREFIX}/
       lib += ext unless lib =~ /#{ext}/
+    elsif lib.nil?
+      # Ugly hack to simulate the effect of dlopen(NULL, x) - not quite correct
+      lib = JRuby::FFI::Platform::LIBC
     end
+
     # Current artificial limitation based on JFFI limit
     raise FFI::SignatureError, 'FFI functions may take max 32 arguments!' if args.size > 32
 
