@@ -18,6 +18,9 @@ public final class EncodingService {
     private final CaseInsensitiveBytesHash<Entry> encodings;
     private final CaseInsensitiveBytesHash<Entry> aliases;
 
+    private Encoding defaultInternalEncoding;
+    private Encoding defaultExternalEncoding;
+    
     // for fast lookup: encoding entry => org.jruby.RubyEncoding
     private final IRubyObject[] encodingList;
     // for fast lookup: org.joni.encoding.Encoding => org.jruby.RubyEncoding
@@ -41,6 +44,22 @@ public final class EncodingService {
 
     public CaseInsensitiveBytesHash<Entry> getAliases() {
         return aliases;
+    }
+
+    public Encoding getDefaultInternalEncoding() {
+        return defaultInternalEncoding;
+    }
+
+    public void setDefaultInternalEncoding(Encoding defaultInternalEncoding) {
+        this.defaultInternalEncoding = defaultInternalEncoding;
+    }
+
+    public Encoding getDefaultExternalEncoding() {
+        return defaultExternalEncoding;
+    }
+
+    public void setDefaultExternalEncoding(Encoding defaultExternalEncoding) {
+        this.defaultExternalEncoding = defaultExternalEncoding;
     }
 
     public Entry findEncodingEntry(ByteList bytes) {
