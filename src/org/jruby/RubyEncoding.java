@@ -88,7 +88,7 @@ public class RubyEncoding extends RubyObject {
     }
 
     public static boolean isAsciiCompatible(Ruby runtime, Encoding enc) {
-        return enc.minLength() == 1 && !runtime.getEncodingService().getEncoding(enc).isDummy;
+        return enc.minLength() == 1 && !enc.isDummy();
     }
 
     public static final Encoding areCompatible(Ruby runtime, IRubyObject obj1, IRubyObject obj2) {
