@@ -258,6 +258,38 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return newStringShared(runtime, bytes, 0, bytes.length);
     }
 
+    /** Encoding aware String construction routines for 1.9
+     * 
+     */
+    private static final ByteList EMPTY_BYTELISTS[] = new ByteList[4];
+    static ByteList getEmptyByteList(Encoding enc) {
+        int index = enc.getIndex();
+        ByteList bytes;
+        if (index < EMPTY_BYTELISTS.length && (bytes = EMPTY_BYTELISTS[index]) != null) {
+            return bytes;
+        }
+        return prepareEmptyByteList(enc);
+    }
+
+    private static ByteList prepareEmptyByteList(Encoding enc) {
+        int index = enc.getIndex();
+        if (index >= EMPTY_BYTELISTS.length) {
+            ByteList tmp[] = new ByteList[index + 4];
+            System.arraycopy(EMPTY_BYTELISTS,0, tmp, 0, EMPTY_BYTELISTS.length);
+        }
+        return EMPTY_BYTELISTS[index] = new ByteList(ByteList.NULL_ARRAY, enc);
+    }
+
+    public static RubyString newEmptyString(Ruby runtime, RubyClass metaClass, Encoding enc) {
+        RubyString empty = new RubyString(runtime, metaClass, getEmptyByteList(enc));
+        empty.shareLevel = SHARE_LEVEL_BYTELIST;
+        return empty;
+    }
+
+    public static RubyString newEmptyString(Ruby runtime, Encoding enc) {
+        return newEmptyString(runtime, runtime.getString(), enc);
+    }
+
     @Override
     public int getNativeTypeIndex() {
         return ClassIndex.STRING;
