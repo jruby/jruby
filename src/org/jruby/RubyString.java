@@ -119,8 +119,33 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     public Encoding getEncoding() {
-        // TODO: return value.getEncoding();
-        return null;
+        return value.encoding;
+    }
+
+    public static final int CODERANGE_MASK      = USER0_F | USER1_F;  
+    public static final int CODERANGE_UNKNOWN   = 0;
+    public static final int CODERANGE_7BIT      = USER0_F; 
+    public static final int CODERANGE_VALID     = USER1_F;
+    public static final int CODERANGE_BROKEN    = USER0_F | USER1_F;
+
+    public final int getCodeRange() {
+        return flags & CODERANGE_MASK;
+    }
+
+    public final void setCodeRange(int codeRange) {
+        flags |= codeRange & CODERANGE_MASK;
+    }
+
+    public final boolean isCodeRangeAsciiOnly() {
+        return (flags & CODERANGE_7BIT) != 0;
+    }
+
+    public final boolean isCodeRangeValid() {
+        return (flags & CODERANGE_VALID) != 0;
+    }
+
+    public final boolean isCodeRangeBroken() {
+        return (flags & CODERANGE_BROKEN) != 0;
     }
 
     /** short circuit for String key comparison
