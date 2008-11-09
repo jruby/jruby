@@ -94,9 +94,11 @@ public final class EncodingService {
 
     public RubyEncoding getEncoding(Encoding enc) {
         int index = enc.getIndex();
-        if (index > encodingIndex.length || encodingIndex[index] == null) {
-            loadEncoding(new ByteList(enc.getName(), false));
+        RubyEncoding rubyEncoding;
+        if (index < encodingIndex.length && (rubyEncoding = encodingIndex[index]) != null) {
+            return rubyEncoding;
         }
+        loadEncoding(new ByteList(enc.getName(), false));
         return encodingIndex[index];
     }
 
