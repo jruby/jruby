@@ -29,6 +29,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
+import com.kenai.constantine.platform.AddressFamily;
 import java.io.FileDescriptor;
 import java.io.IOException;
 
@@ -156,10 +157,10 @@ public class RubyTCPSocket extends RubyIPSocket {
             
             if (addr instanceof Inet4Address) {
                 Inet4Address addr4 = (Inet4Address)addr;
-                ret[2] = r.newFixnum(RubySocket.AF_INET); //AF_INET
+                ret[2] = r.newFixnum(AddressFamily.AF_INET.value()); //AF_INET
             } else if (addr instanceof Inet6Address) {
                 Inet6Address addr6 = (Inet6Address)addr;
-                ret[2] = r.newFixnum(RubySocket.AF_INET6); //AF_INET
+                ret[2] = r.newFixnum(AddressFamily.AF_INET6.value()); //AF_INET
             }
             return r.newArrayNoCopy(ret);
         } catch(UnknownHostException e) {

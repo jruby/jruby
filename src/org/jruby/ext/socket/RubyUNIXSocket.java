@@ -27,6 +27,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
+import com.kenai.constantine.platform.AddressFamily;
+import com.kenai.constantine.platform.ProtocolFamily;
 import com.kenai.constantine.platform.SocketOption;
 import java.io.IOException;
 
@@ -239,14 +241,14 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         int status;
         fd = -1;
         try {
-            fd = INSTANCE.socket(RubySocket.AF_UNIX, RubySocket.SOCK_STREAM, 0);
+            fd = INSTANCE.socket(AddressFamily.AF_UNIX.value(), RubySocket.SOCK_STREAM, 0);
         } catch (UnsatisfiedLinkError ule) { }
         if (fd < 0) {
             rb_sys_fail(runtime, "socket(2)");
         }
 
         LibCSocket.sockaddr_un sockaddr = new LibCSocket.sockaddr_un();
-        sockaddr.setFamily(RubySocket.AF_UNIX);
+        sockaddr.setFamily(AddressFamily.AF_UNIX.value());
 
         ByteList path = _path.convertToString().getByteList();
         fpath = path.toString();
@@ -479,7 +481,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     }
     @JRubyMethod(name = {"socketpair", "pair"}, optional = 2, meta = true)
     public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject[] args) throws Exception {
-        int domain = RubySocket.PF_UNIX;
+        int domain = ProtocolFamily.PF_UNIX.value();
         Ruby runtime = context.getRuntime();
         Arity.checkArgumentCount(runtime, args, 0, 2);
         
