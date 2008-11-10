@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
+import com.kenai.constantine.platform.SocketOption;
 import java.io.IOException;
 
 import java.nio.Buffer;
@@ -290,8 +291,8 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
         switch(level) {
         case RubySocket.SOL_SOCKET:
-            switch(opt) {
-            case RubySocket.SO_KEEPALIVE: {
+            switch(SocketOption.valueOf(opt)) {
+            case SO_KEEPALIVE: {
                 int res = INSTANCE.setsockopt(fd, level, opt, asBoolean(val) ? new byte[]{32,0,0,0} : new byte[]{0,0,0,0}, 4);
                 if(res == -1) {
                     rb_sys_fail(context.getRuntime(), openFile.getPath());

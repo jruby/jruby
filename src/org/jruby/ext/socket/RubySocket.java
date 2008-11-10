@@ -27,6 +27,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
+import com.kenai.constantine.Constant;
+import com.kenai.constantine.ConstantSet;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -109,23 +111,6 @@ public class RubySocket extends RubyBasicSocket {
     public static final int SOL_TCP = 6;
     public static final int SOL_UDP = 17;
 
-    public static final int SO_BROADCAST = 32;
-    public static final int SO_DEBUG = 1;
-    public static final int SO_DONTROUTE = 16;
-    public static final int SO_ERROR = 4103;
-    public static final int SO_KEEPALIVE = 8;
-    public static final int SO_LINGER = 128;
-    public static final int SO_OOBINLINE = 256;
-    public static final int SO_RCVBUF = 4098;
-    public static final int SO_RCVLOWAT = 4100;
-    public static final int SO_RCVTIMEO = 4102;
-    public static final int SO_REUSEADDR = 4;
-    public static final int SO_SNDBUF = 4097;
-    public static final int SO_SNDLOWAT = 4099;
-    public static final int SO_SNDTIMEO = 4101;
-    public static final int SO_TIMESTAMP = 1024;
-    public static final int SO_TYPE = 4104;
-
     public static final int SOCK_STREAM = 1;
     public static final int SOCK_DGRAM = 2;
     public static final int SOCK_RAW = 3;
@@ -202,23 +187,10 @@ public class RubySocket extends RubyBasicSocket {
         // constants webrick crashes without
         rb_mConstants.fastSetConstant("AI_PASSIVE", runtime.newFixnum(1));
 
-        // constants from MacOS X 10.4
-        rb_mConstants.fastSetConstant("SO_BROADCAST", runtime.newFixnum(SO_BROADCAST));
-        rb_mConstants.fastSetConstant("SO_DEBUG", runtime.newFixnum(SO_DEBUG));
-        rb_mConstants.fastSetConstant("SO_DONTROUTE", runtime.newFixnum(SO_DONTROUTE));
-        rb_mConstants.fastSetConstant("SO_ERROR", runtime.newFixnum(SO_ERROR));
-        rb_mConstants.fastSetConstant("SO_KEEPALIVE", runtime.newFixnum(SO_KEEPALIVE));
-        rb_mConstants.fastSetConstant("SO_LINGER", runtime.newFixnum(SO_LINGER));
-        rb_mConstants.fastSetConstant("SO_OOBINLINE", runtime.newFixnum(SO_OOBINLINE));
-        rb_mConstants.fastSetConstant("SO_RCVBUF", runtime.newFixnum(SO_RCVBUF));
-        rb_mConstants.fastSetConstant("SO_RCVLOWAT", runtime.newFixnum(SO_RCVLOWAT));
-        rb_mConstants.fastSetConstant("SO_RCVTIMEO", runtime.newFixnum(SO_RCVTIMEO));
-        rb_mConstants.fastSetConstant("SO_REUSEADDR", runtime.newFixnum(SO_REUSEADDR));
-        rb_mConstants.fastSetConstant("SO_SNDBUF", runtime.newFixnum(SO_SNDBUF));
-        rb_mConstants.fastSetConstant("SO_SNDLOWAT", runtime.newFixnum(SO_SNDLOWAT));
-        rb_mConstants.fastSetConstant("SO_SNDTIMEO", runtime.newFixnum(SO_SNDTIMEO));
-        rb_mConstants.fastSetConstant("SO_TIMESTAMP", runtime.newFixnum(SO_TIMESTAMP));
-        rb_mConstants.fastSetConstant("SO_TYPE", runtime.newFixnum(SO_TYPE));
+        // Load platform-specific constants from Constantine
+        for (Constant c : ConstantSet.getConstantSet("SocketOption")) {
+            rb_mConstants.fastSetConstant(c.name(), runtime.newFixnum(c.value()));
+        }
 
         // drb needs defined
         rb_mConstants.fastSetConstant("TCP_NODELAY", runtime.newFixnum(1));
