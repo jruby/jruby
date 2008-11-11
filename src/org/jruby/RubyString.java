@@ -49,6 +49,7 @@ import org.joni.Option;
 import org.joni.Regex;
 import org.joni.Region;
 import org.jcodings.Encoding;
+import org.jcodings.EncodingDB.Entry;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -122,6 +123,24 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return value.encoding;
     }
 
+    public void associateEncoding(Encoding enc) {
+        if (value.encoding != enc) {
+            if (!isCodeRangeAsciiOnly() || !enc.isAsciiCompatible()) clearCodeRange();
+            value.encoding = enc;
+        }
+    }
+
+    public final Encoding toEncoding(Ruby runtime) {
+        if (!value.encoding.isAsciiCompatible()) {
+            throw runtime.newArgumentError("invalid name encoding (non ASCII)");
+        }
+        Entry entry = runtime.getEncodingService().findEncodingOrAliasEntry(value);
+        if (entry == null) {
+            throw runtime.newArgumentError("unknown encoding name - " + value);
+        }
+        return entry.getEncoding();
+    }
+
     public static final int CODERANGE_MASK      = USER0_F | USER1_F;  
     public static final int CODERANGE_UNKNOWN   = 0;
     public static final int CODERANGE_7BIT      = USER0_F; 
@@ -136,6 +155,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
         flags |= codeRange & CODERANGE_MASK;
     }
 
+    public final void clearCodeRange() {
+        flags &= ~CODERANGE_MASK;
+    }
+    
     public final boolean isCodeRangeAsciiOnly() {
         return (flags & CODERANGE_7BIT) != 0;
     }
@@ -3507,6 +3530,25 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "encoding", compat = CompatVersion.RUBY1_9)
     public IRubyObject encoding(ThreadContext context) {
         return context.getRuntime().getEncodingService().getEncoding(value.encoding);
+    }
+    
+    @JRubyMethod(name = "force_encoding", compat = CompatVersion.RUBY1_9)
+    public IRubyObject force_encoding(ThreadContext context, IRubyObject enc) {
+        modify();
+        associateEncoding(enc.convertToString().toEncoding(context.getRuntime()));
+        return this;
+    }
+
+    @JRubyMethod(name = "valid_encoding?", compat = CompatVersion.RUBY1_9)
+    public IRubyObject valid_encoding_p(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        return isCodeRangeBroken() ? runtime.getFalse() : runtime.getTrue();
+    }
+    
+    @JRubyMethod(name = "ascii_only?", compat = CompatVersion.RUBY1_9)
+    public IRubyObject ascii_only_p(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        return isCodeRangeAsciiOnly() ? runtime.getFalse() : runtime.getTrue();
     }
 
     /**

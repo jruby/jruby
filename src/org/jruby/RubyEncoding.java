@@ -87,17 +87,13 @@ public class RubyEncoding extends RubyObject {
         return encoding;
     }
 
-    public static boolean isAsciiCompatible(Ruby runtime, Encoding enc) {
-        return enc.minLength() == 1 && !enc.isDummy();
-    }
-
     public static final Encoding areCompatible(Ruby runtime, IRubyObject obj1, IRubyObject obj2) {
         if (obj1 instanceof EncodingCapable && obj2 instanceof EncodingCapable) {
             Encoding enc1 = ((EncodingCapable)obj1).getEncoding();
             if (obj2 instanceof RubyString && ((RubyString)obj2).getByteList().realSize == 0) return enc1; 
             Encoding enc2 = ((EncodingCapable)obj2).getEncoding();
             if (obj1 instanceof RubyString && ((RubyString)obj1).getByteList().realSize == 0) return enc2;
-            if (!isAsciiCompatible(runtime, enc1) && !isAsciiCompatible(runtime, enc2)) return null;
+            if (!enc1.isAsciiCompatible() && !enc2.isAsciiCompatible()) return null;
         }
         return null;
     }
