@@ -211,6 +211,11 @@ public class RubySymbol extends RubyObject {
         return this;
     }
 
+    @JRubyMethod(name = "encoding", compat = CompatVersion.RUBY1_9)
+    public IRubyObject encoding(ThreadContext context) {
+        return context.getRuntime().getEncodingService().getEncoding(symbolBytes.encoding);
+    }
+
     private static class ToProcCallback implements BlockCallback {
         private RubySymbol symbol;
         public ToProcCallback(RubySymbol symbol) {
