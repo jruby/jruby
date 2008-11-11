@@ -833,3 +833,10 @@ end
 # JRUBY-1778
 "hello.".gsub('.', "!")
 test_ok("hello".match('.') != nil, "match after gsub must not return nil")
+
+# JRUBY-3132
+str="a\\nb\\nc"
+str.split( "\\n" )
+str.split( "\\n" )
+str.split( "\n" )
+test_equal(["a", "b", "c"], str.split( "\\n" ))

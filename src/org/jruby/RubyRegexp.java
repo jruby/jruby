@@ -293,9 +293,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
             ((pat.getUserOptions() & REGEX_QUOTED) != 0) == quote) { // cache hit
             pattern = pat;
         } else {
-            if (quote) bytes = quote(bytes, getRuntime().getKCode());
-            makeRegexp(bytes, bytes.begin, bytes.realSize, options & 0xf, kcode.getEncoding());
-            if (quote) pattern.setUserOptions(REGEX_QUOTED);
+            if (quote) {
+                ByteList quoted = quote(bytes, getRuntime().getKCode());
+                makeRegexp(quoted, quoted.begin, quoted.realSize, options & 0xf, kcode.getEncoding());
+                pattern.setUserOptions(REGEX_QUOTED);
+            } else {
+                makeRegexp(bytes, bytes.begin, bytes.realSize, options & 0xf, kcode.getEncoding());
+            }
             cache.put(bytes, pattern);
         }
 
