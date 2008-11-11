@@ -27,9 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
-import com.kenai.constantine.platform.AddressFamily;
-import com.kenai.constantine.platform.ProtocolFamily;
-import com.kenai.constantine.platform.SocketOption;
 import java.io.IOException;
 
 import java.nio.Buffer;
@@ -241,14 +238,14 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         int status;
         fd = -1;
         try {
-            fd = INSTANCE.socket(AddressFamily.AF_UNIX.value(), RubySocket.SOCK_STREAM, 0);
+            fd = INSTANCE.socket(RubySocket.AF_UNIX, RubySocket.SOCK_STREAM, 0);
         } catch (UnsatisfiedLinkError ule) { }
         if (fd < 0) {
             rb_sys_fail(runtime, "socket(2)");
         }
 
         LibCSocket.sockaddr_un sockaddr = new LibCSocket.sockaddr_un();
-        sockaddr.setFamily(AddressFamily.AF_UNIX.value());
+        sockaddr.setFamily(RubySocket.AF_UNIX);
 
         ByteList path = _path.convertToString().getByteList();
         fpath = path.toString();
@@ -293,8 +290,8 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
         switch(level) {
         case RubySocket.SOL_SOCKET:
-            switch(SocketOption.valueOf(opt)) {
-            case SO_KEEPALIVE: {
+            switch(opt) {
+            case RubySocket.SO_KEEPALIVE: {
                 int res = INSTANCE.setsockopt(fd, level, opt, asBoolean(val) ? new byte[]{32,0,0,0} : new byte[]{0,0,0,0}, 4);
                 if(res == -1) {
                     rb_sys_fail(context.getRuntime(), openFile.getPath());
@@ -481,7 +478,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     }
     @JRubyMethod(name = {"socketpair", "pair"}, optional = 2, meta = true)
     public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject[] args) throws Exception {
-        int domain = ProtocolFamily.PF_UNIX.value();
+        int domain = RubySocket.PF_UNIX;
         Ruby runtime = context.getRuntime();
         Arity.checkArgumentCount(runtime, args, 0, 2);
         

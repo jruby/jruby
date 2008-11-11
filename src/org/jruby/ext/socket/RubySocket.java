@@ -27,10 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
-import com.kenai.constantine.Constant;
-import com.kenai.constantine.ConstantSet;
-import com.kenai.constantine.platform.AddressFamily;
-import com.kenai.constantine.platform.ProtocolFamily;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -113,11 +109,38 @@ public class RubySocket extends RubyBasicSocket {
     public static final int SOL_TCP = 6;
     public static final int SOL_UDP = 17;
 
+    public static final int SO_BROADCAST = 32;
+    public static final int SO_DEBUG = 1;
+    public static final int SO_DONTROUTE = 16;
+    public static final int SO_ERROR = 4103;
+    public static final int SO_KEEPALIVE = 8;
+    public static final int SO_LINGER = 128;
+    public static final int SO_OOBINLINE = 256;
+    public static final int SO_RCVBUF = 4098;
+    public static final int SO_RCVLOWAT = 4100;
+    public static final int SO_RCVTIMEO = 4102;
+    public static final int SO_REUSEADDR = 4;
+    public static final int SO_SNDBUF = 4097;
+    public static final int SO_SNDLOWAT = 4099;
+    public static final int SO_SNDTIMEO = 4101;
+    public static final int SO_TIMESTAMP = 1024;
+    public static final int SO_TYPE = 4104;
+
     public static final int SOCK_STREAM = 1;
     public static final int SOCK_DGRAM = 2;
     public static final int SOCK_RAW = 3;
     public static final int SOCK_RDM = 4;
     public static final int SOCK_SEQPACKET = 5;
+
+    public static final int AF_UNSPEC = 0;
+    public static final int PF_UNSPEC = 0;
+    public static final int AF_UNIX = 1;
+    public static final int PF_UNIX = 1;
+    public static final int AF_INET = 2;
+    public static final int PF_INET = 2;
+    public static final int AF_IPX = 23;
+    public static final int PF_IPX = 23;
+    public static final int AF_INET6 = 30;
 
     public static final int IPPROTO_IP = 0;
     public static final int IPPROTO_ICMP = 1;
@@ -142,7 +165,16 @@ public class RubySocket extends RubyBasicSocket {
         rb_mConstants.fastSetConstant("SOCK_RAW", runtime.newFixnum(SOCK_RAW));
         rb_mConstants.fastSetConstant("SOCK_RDM", runtime.newFixnum(SOCK_RDM));
         rb_mConstants.fastSetConstant("SOCK_SEQPACKET", runtime.newFixnum(SOCK_SEQPACKET));
-        
+        rb_mConstants.fastSetConstant("PF_UNSPEC", runtime.newFixnum(PF_UNSPEC));
+        rb_mConstants.fastSetConstant("AF_UNSPEC", runtime.newFixnum(AF_UNSPEC));
+        rb_mConstants.fastSetConstant("PF_INET", runtime.newFixnum(PF_INET));
+        rb_mConstants.fastSetConstant("AF_INET", runtime.newFixnum(AF_INET));
+        rb_mConstants.fastSetConstant("PF_INET6", runtime.newFixnum(AF_INET6));
+        rb_mConstants.fastSetConstant("AF_INET6", runtime.newFixnum(AF_INET6));
+        rb_mConstants.fastSetConstant("PF_UNIX", runtime.newFixnum(PF_UNIX));
+        rb_mConstants.fastSetConstant("AF_UNIX", runtime.newFixnum(AF_UNIX));
+        rb_mConstants.fastSetConstant("PF_IPX", runtime.newFixnum(PF_IPX));
+        rb_mConstants.fastSetConstant("AF_IPX", runtime.newFixnum(AF_IPX));
         // mandatory constants we haven't implemented
         rb_mConstants.fastSetConstant("MSG_OOB", runtime.newFixnum(MSG_OOB));
         rb_mConstants.fastSetConstant("MSG_PEEK", runtime.newFixnum(MSG_PEEK));
@@ -163,15 +195,30 @@ public class RubySocket extends RubyBasicSocket {
         rb_mConstants.fastSetConstant("INADDR_ALLHOSTS_GROUP", runtime.newFixnum(0xe0000001));
         rb_mConstants.fastSetConstant("INADDR_MAX_LOCAL_GROUP", runtime.newFixnum(0xe00000ff));
         rb_mConstants.fastSetConstant("INADDR_NONE", runtime.newFixnum(0xffffffff));
+        rb_mConstants.fastSetConstant("SHUT_RD", runtime.newFixnum(0));
+        rb_mConstants.fastSetConstant("SHUT_WR", runtime.newFixnum(1));
+        rb_mConstants.fastSetConstant("SHUT_RDWR", runtime.newFixnum(2));
     
         // constants webrick crashes without
         rb_mConstants.fastSetConstant("AI_PASSIVE", runtime.newFixnum(1));
 
-        // Load platform-specific constants from Constantine
-        loadConstants(runtime, rb_mConstants, "SocketOption");
-        loadConstants(runtime, rb_mConstants, "ProtocolFamily");
-        loadConstants(runtime, rb_mConstants, "AddressFamily");
-        loadConstants(runtime, rb_mConstants, "Shutdown");
+        // constants from MacOS X 10.4
+        rb_mConstants.fastSetConstant("SO_BROADCAST", runtime.newFixnum(SO_BROADCAST));
+        rb_mConstants.fastSetConstant("SO_DEBUG", runtime.newFixnum(SO_DEBUG));
+        rb_mConstants.fastSetConstant("SO_DONTROUTE", runtime.newFixnum(SO_DONTROUTE));
+        rb_mConstants.fastSetConstant("SO_ERROR", runtime.newFixnum(SO_ERROR));
+        rb_mConstants.fastSetConstant("SO_KEEPALIVE", runtime.newFixnum(SO_KEEPALIVE));
+        rb_mConstants.fastSetConstant("SO_LINGER", runtime.newFixnum(SO_LINGER));
+        rb_mConstants.fastSetConstant("SO_OOBINLINE", runtime.newFixnum(SO_OOBINLINE));
+        rb_mConstants.fastSetConstant("SO_RCVBUF", runtime.newFixnum(SO_RCVBUF));
+        rb_mConstants.fastSetConstant("SO_RCVLOWAT", runtime.newFixnum(SO_RCVLOWAT));
+        rb_mConstants.fastSetConstant("SO_RCVTIMEO", runtime.newFixnum(SO_RCVTIMEO));
+        rb_mConstants.fastSetConstant("SO_REUSEADDR", runtime.newFixnum(SO_REUSEADDR));
+        rb_mConstants.fastSetConstant("SO_SNDBUF", runtime.newFixnum(SO_SNDBUF));
+        rb_mConstants.fastSetConstant("SO_SNDLOWAT", runtime.newFixnum(SO_SNDLOWAT));
+        rb_mConstants.fastSetConstant("SO_SNDTIMEO", runtime.newFixnum(SO_SNDTIMEO));
+        rb_mConstants.fastSetConstant("SO_TIMESTAMP", runtime.newFixnum(SO_TIMESTAMP));
+        rb_mConstants.fastSetConstant("SO_TYPE", runtime.newFixnum(SO_TYPE));
 
         // drb needs defined
         rb_mConstants.fastSetConstant("TCP_NODELAY", runtime.newFixnum(1));
@@ -198,11 +245,7 @@ public class RubySocket extends RubyBasicSocket {
 
         rb_cSocket.defineAnnotatedMethods(RubySocket.class);
     }
-    private static final void loadConstants(Ruby runtime, RubyModule m, String name) {
-        for (Constant c : ConstantSet.getConstantSet(name)) {
-            m.fastSetConstant(c.name(), runtime.newFixnum(c.value()));
-        }
-    }
+    
     public RubySocket(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
@@ -236,13 +279,13 @@ public class RubySocket extends RubyBasicSocket {
             if (mainChannel instanceof SocketChannel) {
                 // ok, it's a socket...set values accordingly
                 // just using AF_INET since we can't tell from SocketChannel...
-                socket.soDomain = AddressFamily.AF_INET.value();
+                socket.soDomain = AF_INET;
                 socket.soType = SOCK_STREAM;
                 socket.soProtocol = 0;
             } else if (mainChannel instanceof DatagramChannel) {
                 // datagram, set accordingly
                 // again, AF_INET
-                socket.soDomain = AddressFamily.AF_INET.value();
+                socket.soDomain = AF_INET;
                 socket.soType = SOCK_DGRAM;
                 socket.soProtocol = 0;
             } else {
@@ -263,9 +306,9 @@ public class RubySocket extends RubyBasicSocket {
             if(domain instanceof RubyString) {
                 String domainString = domain.toString();
                 if(domainString.equals("AF_INET")) {
-                    soDomain = AddressFamily.AF_INET.value();
+                    soDomain = AF_INET;
                 } else if(domainString.equals("PF_INET")) {
-                    soDomain = ProtocolFamily.PF_INET.value();
+                    soDomain = PF_INET;
                 } else {
                     throw sockerr(context.getRuntime(), "unknown socket domain " + domainString);
                 }
@@ -525,7 +568,7 @@ public class RubySocket extends RubyBasicSocket {
                     c[1] = port;
                     c[2] = r.newString(addrs[i].getCanonicalHostName());
                     c[3] = r.newString(addrs[i].getHostAddress());
-                    c[4] = r.newFixnum(ProtocolFamily.PF_INET.value());
+                    c[4] = r.newFixnum(PF_INET);
                     c[5] = r.newFixnum(SOCK_DGRAM);
                     c[6] = r.newFixnum(IPPROTO_UDP);
                     l.add(r.newArrayNoCopy(c));
@@ -536,7 +579,7 @@ public class RubySocket extends RubyBasicSocket {
                     c[1] = port;
                     c[2] = r.newString(addrs[i].getCanonicalHostName());
                     c[3] = r.newString(addrs[i].getHostAddress());
-                    c[4] = r.newFixnum(ProtocolFamily.PF_INET.value());
+                    c[4] = r.newFixnum(PF_INET);
                     c[5] = r.newFixnum(SOCK_STREAM);
                     c[6] = r.newFixnum(IPPROTO_TCP);
                     l.add(r.newArrayNoCopy(c));
