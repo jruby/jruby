@@ -2466,15 +2466,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
     }
 
-    /**
-     * rb_enc_check
-     */
-    @SuppressWarnings("unused")
-    private Encoding encodingCheck(RubyRegexp pattern) {
-        // For 1.9 compatibility, should check encoding compat between string and pattern
-        return pattern.getKCode().getEncoding();
-    }
-    
     // no group version
     private IRubyObject scanOnceNG(RubyRegexp regex, Matcher matcher, int range) {    
         if (matcher.search(matcher.value + value.begin, range, Option.NONE) >= 0) {
@@ -3511,6 +3502,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public void empty() {
         value = ByteList.EMPTY_BYTELIST;
         shareLevel = SHARE_LEVEL_BYTELIST;
+    }
+
+    @JRubyMethod(name = "encoding", compat = CompatVersion.RUBY1_9)
+    public IRubyObject encoding(ThreadContext context) {
+        return context.getRuntime().getEncodingService().getEncoding(value.encoding);
     }
 
     /**
