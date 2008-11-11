@@ -1,0 +1,20 @@
+require 'jruby'
+
+def short_name(long_name)
+  long_name.sub(/.*\./, '')
+end
+
+def node_string(node)
+  return "#{short_name(node.java_class.name)}" if node.invisible?
+  p = node.position
+  "#{short_name(node.java_class.name)},#{p.startLine},#{p.endLine},#{p.startOffset},#{p.endOffset}"
+end
+
+def print_tree(node, indent="")
+    puts indent + node_string(node)
+
+    node.childNodes.each {|child| print_tree(child, indent + "  ") }
+end
+
+print_tree JRuby.parse(ARGF.gets(nil))
+
