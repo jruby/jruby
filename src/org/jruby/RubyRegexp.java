@@ -1202,6 +1202,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         return hash;
     }
 
+    @JRubyMethod(name = "encoding", compat = CompatVersion.RUBY1_9)
+    public IRubyObject encoding(ThreadContext context) {
+        return context.getRuntime().getEncodingService().getEncoding(pattern.getEncoding());
+    }
+
     public static RubyRegexp unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         RubyRegexp result = newRegexp(input.getRuntime(), input.unmarshalString(), input.unmarshalInt(), false);
         input.registerLinkTarget(result);
