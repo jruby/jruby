@@ -726,8 +726,13 @@ public class RubyKernel {
         return localVariables;
     }
 
-    @JRubyMethod(name = "binding", module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "binding", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyBinding binding(ThreadContext context, IRubyObject recv, Block block) {
+        return RubyBinding.newBinding(context.getRuntime(), recv);
+    }
+
+    @JRubyMethod(name = "binding", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static RubyBinding binding_1_9(ThreadContext context, IRubyObject recv, Block block) {
         return RubyBinding.newBinding(context.getRuntime());
     }
 

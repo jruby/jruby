@@ -96,6 +96,16 @@ public class RubyBinding extends RubyObject {
         return new RubyBinding(runtime, runtime.getBinding(), binding);
     }
 
+    public static RubyBinding newBinding(Ruby runtime, IRubyObject recv) {
+        ThreadContext context = runtime.getCurrentContext();
+
+        // FIXME: We should be cloning, not reusing: frame, scope, dynvars, and potentially iter/block info
+        Frame frame = context.getCurrentFrame();
+        Binding binding = new Binding(recv, frame, frame.getVisibility(), context.getImmediateBindingRubyClass(), context.getCurrentScope());
+
+        return new RubyBinding(runtime, runtime.getBinding(), binding);
+    }
+
     /**
      * Create a binding appropriate for a bare "eval", by using the previous (caller's) frame and current
      * scope.

@@ -34,4 +34,11 @@ class TestBindingEvalYield < Test::Unit::TestCase
     b = binding
     eval('yield', b)
   end
+
+  # I question whether this is reasonable to support, since 1.9 does not
+  def test_eval_on_send_binding
+    obj = Object.new
+    obj2 = eval "self", obj.send(:binding)
+    assert_equal(obj, obj2)
+  end
 end
