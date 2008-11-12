@@ -238,6 +238,11 @@ public class RubyException extends RubyObject {
         return message;
     }
 
+    @JRubyMethod(name = "to_str", compat = CompatVersion.RUBY1_8)
+    public IRubyObject to_str(ThreadContext context) {
+        return callMethod(context, "to_s");
+    }
+
     @JRubyMethod(name = "message")
     public IRubyObject message(ThreadContext context) {
         return callMethod(context, "to_s");
