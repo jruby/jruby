@@ -157,7 +157,7 @@ public class RubyDigest {
             String name = ((RubyClass)recv).searchInternalModuleVariable("metadata").toString();
             try {
                 MessageDigest md = createMessageDigest(runtime, name);
-                return RubyString.newString(runtime, md.digest(str.convertToString().getBytes()));
+                return RubyString.newStringShared(runtime, md.digest(str.convertToString().getBytes()));
             } catch(NoSuchAlgorithmException e) {
                 throw recv.getRuntime().newNotImplementedError("Unsupported digest algorithm (" + name + ")");
             }
@@ -169,7 +169,7 @@ public class RubyDigest {
             String name = ((RubyClass)recv).searchInternalModuleVariable("metadata").toString();
             try {
                 MessageDigest md = createMessageDigest(runtime, name);
-                return RubyString.newString(runtime, ByteList.plain(toHex(md.digest(str.convertToString().getBytes()))));
+                return RubyString.newStringShared(runtime, ByteList.plain(toHex(md.digest(str.convertToString().getBytes()))));
             } catch(NoSuchAlgorithmException e) {
                 throw recv.getRuntime().newNotImplementedError("Unsupported digest algorithm (" + name + ")");
             }
@@ -244,7 +244,7 @@ public class RubyDigest {
         
         private IRubyObject getDigest() {
             algo.reset();
-            return RubyString.newString(getRuntime(), algo.digest(ByteList.plain(data)));
+            return RubyString.newStringShared(getRuntime(), algo.digest(ByteList.plain(data)));
         }
         
         @JRubyMethod(name = "digest!")
@@ -252,7 +252,7 @@ public class RubyDigest {
             algo.reset();            
             byte[] digest = algo.digest(ByteList.plain(data));
             reset();
-            return RubyString.newString(getRuntime(), digest);
+            return RubyString.newStringShared(getRuntime(), digest);
         }
 
         @JRubyMethod(name = {"hexdigest"}, optional = 1)
@@ -268,13 +268,13 @@ public class RubyDigest {
             if (args.length == 1) {
                 reset();
             }
-            return RubyString.newString(getRuntime(), digest);
+            return RubyString.newStringShared(getRuntime(), digest);
         }
         
         @JRubyMethod(name = {"to_s"})
         public IRubyObject to_s() {
             algo.reset();
-            return RubyString.newString(getRuntime(), ByteList.plain(toHex(algo.digest(ByteList.plain(data)))));
+            return RubyString.newStringShared(getRuntime(), ByteList.plain(toHex(algo.digest(ByteList.plain(data)))));
         }
 
         @JRubyMethod(name = {"hexdigest!"})
@@ -282,13 +282,13 @@ public class RubyDigest {
             algo.reset();
             byte[] digest = ByteList.plain(toHex(algo.digest(ByteList.plain(data))));
             reset();
-            return RubyString.newString(getRuntime(), digest);
+            return RubyString.newStringShared(getRuntime(), digest);
         }
         
         @JRubyMethod(name = "inspect")
         public IRubyObject inspect() {
             algo.reset();
-            return RubyString.newString(getRuntime(), ByteList.plain("#<" + getMetaClass().getRealClass().getName() + ": " + toHex(algo.digest(ByteList.plain(data))) + ">"));
+            return RubyString.newStringShared(getRuntime(), ByteList.plain("#<" + getMetaClass().getRealClass().getName() + ": " + toHex(algo.digest(ByteList.plain(data))) + ">"));
         }
 
         @JRubyMethod(name = "==", required = 1)

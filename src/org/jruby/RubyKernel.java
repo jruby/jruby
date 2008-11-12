@@ -1172,7 +1172,7 @@ public class RubyKernel {
         
         runtime.getGlobalVariables().set("$?", RubyProcess.RubyStatus.newProcessStatus(runtime, resultCode));
         
-        return RubyString.newString(runtime, output.toByteArray());
+        return RubyString.newStringShared(runtime, output.toByteArray());
     }
     
     @JRubyMethod(name = "srand", optional = 1, module = true, visibility = PRIVATE)
