@@ -57,11 +57,10 @@ public class RubyMatchData extends RubyObject {
     int begin;          // begin and end are used when not groups defined
     int end;
     RubyString str;
-    Regex pattern;
+    RubyRegexp regexp;
     
     public static RubyClass createMatchDataClass(Ruby runtime) {
-        // TODO: Is NOT_ALLOCATABLE_ALLOCATOR ok here, since you can't actually instantiate MatchData directly?
-        RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getObject(), MATCH_DATA_ALLOCATOR);
         runtime.setMatchData(matchDataClass);
         runtime.defineGlobalConstant("MatchingData", matchDataClass);
         matchDataClass.kindOf = new RubyModule.KindOf() {
@@ -71,14 +70,22 @@ public class RubyMatchData extends RubyObject {
         };
 
         matchDataClass.getMetaClass().undefineMethod("new");
-        
         matchDataClass.defineAnnotatedMethods(RubyMatchData.class);
-
         return matchDataClass;
     }
 
+    private static ObjectAllocator MATCH_DATA_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyMatchData(runtime, klass);
+        }
+    };
+
     public RubyMatchData(Ruby runtime) {
         super(runtime, runtime.getMatchData());
+    }
+
+    public RubyMatchData(Ruby runtime, RubyClass metaClass) {
+        super(runtime, metaClass);
     }
 
     public final static int MATCH_BUSY = USER2_F;
@@ -92,7 +99,12 @@ public class RubyMatchData extends RubyObject {
         return (flags & MATCH_BUSY) != 0;
     }
 
+    private void check() {
+        if (regexp == null) throw getRuntime().newTypeError("uninitialized Match");
+    }
+
     private RubyArray match_array(Ruby runtime, int start) {
+        check();
         if (regs == null) {
             if (start != 0) return runtime.newEmptyArray();
             if (begin == -1) {
@@ -128,7 +140,7 @@ public class RubyMatchData extends RubyObject {
 
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect() {
-        if (pattern == null) return anyToString();
+        if (regexp == null) return anyToString();
 
         RubyString result = getRuntime().newString();
         result.cat((byte)'#').cat((byte)'<');
@@ -136,6 +148,7 @@ public class RubyMatchData extends RubyObject {
 
         NameEntry[]names = new NameEntry[regs == null ? 1 : regs.numRegs];
 
+        Regex pattern = regexp.getPattern();
         if (pattern.numberOfNames() > 0) {
             for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
                 NameEntry e = i.next();
@@ -165,6 +178,18 @@ public class RubyMatchData extends RubyObject {
         return result.cat((byte)'>');
     }
 
+    @JRubyMethod(name = "regexp", compat = CompatVersion.RUBY1_9)
+    public IRubyObject regexp(ThreadContext context, Block block) {
+        check();
+        return regexp;
+    }
+
+    @JRubyMethod(name = "names", compat = CompatVersion.RUBY1_9)
+    public IRubyObject names(ThreadContext context, Block block) {
+        check();
+        return regexp.names(context);
+    }
+
     /** match_to_a
      *
      */
@@ -179,7 +204,7 @@ public class RubyMatchData extends RubyObject {
         return to_a().values_at(args);
     }
 
-    @JRubyMethod(name = "select", frame = true)
+    @JRubyMethod(name = "select", frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject select(ThreadContext context, Block block) {
         Ruby runtime = context.getRuntime();
         final RubyArray result;
@@ -211,13 +236,14 @@ public class RubyMatchData extends RubyObject {
     private int nameToBackrefNumber(RubyString str) {
         ByteList value = str.getByteList();
         try {
-            return pattern.nameToBackrefNumber(value.bytes, value.begin, value.begin + value.realSize, regs);
+            return regexp.getPattern().nameToBackrefNumber(value.bytes, value.begin, value.begin + value.realSize, regs);
         } catch (JOniException je) {
             throw getRuntime().newIndexError(je.getMessage());
         }
     }
 
     final int backrefNumber(IRubyObject obj) {
+        check();
         if (obj instanceof RubySymbol) {
             return nameToBackrefNumber((RubyString)((RubySymbol)obj).id2name());
         } else if (obj instanceof RubyString) {
@@ -301,8 +327,10 @@ public class RubyMatchData extends RubyObject {
      *
      */
     @JRubyMethod(name = {"size", "length"})
-    public IRubyObject size() {
-        return regs == null ? RubyFixnum.one(getRuntime()) : RubyFixnum.newFixnum(getRuntime(), regs.numRegs);
+    public IRubyObject size(ThreadContext context) {
+        check();
+        Ruby runtime = context.getRuntime();
+        return regs == null ? RubyFixnum.one(runtime) : RubyFixnum.newFixnum(runtime, regs.numRegs);
     }
 
     /** match_begin
@@ -319,6 +347,7 @@ public class RubyMatchData extends RubyObject {
     }
 
     private IRubyObject beginCommon(ThreadContext context, int i) {
+        check();
         Ruby runtime = context.getRuntime();
         if (regs == null) {
             if (i != 0) throw runtime.newIndexError("index " + i + " out of matches");
@@ -345,6 +374,7 @@ public class RubyMatchData extends RubyObject {
     }
 
     private IRubyObject endCommon(ThreadContext context, int i) {
+        check();
         Ruby runtime = context.getRuntime(); 
         if (regs == null) {
             if (i != 0) throw runtime.newIndexError("index " + i + " out of matches");
@@ -372,6 +402,7 @@ public class RubyMatchData extends RubyObject {
     }
 
     private IRubyObject offsetCommon(ThreadContext context, int i) {
+        check();
         Ruby runtime = context.getRuntime();
 
         if (regs == null) {
@@ -389,13 +420,14 @@ public class RubyMatchData extends RubyObject {
      */
     @JRubyMethod(name = "pre_match")
     public IRubyObject pre_match(ThreadContext context) {
+        check();
         RubyString ss;
         
         if (regs == null) {
-            if(begin == -1) return context.getRuntime().getNil();
+            if (begin == -1) return context.getRuntime().getNil();
             ss = str.makeShared(context.getRuntime(), 0, begin);
         } else {
-            if(regs.beg[0] == -1) return context.getRuntime().getNil();
+            if (regs.beg[0] == -1) return context.getRuntime().getNil();
             ss = str.makeShared(context.getRuntime(), 0, regs.beg[0]);
         }
         
@@ -408,6 +440,7 @@ public class RubyMatchData extends RubyObject {
      */
     @JRubyMethod(name = "post_match")
     public IRubyObject post_match(ThreadContext context) {
+        check();
         RubyString ss;
         
         if (regs == null) {
@@ -427,6 +460,7 @@ public class RubyMatchData extends RubyObject {
      */
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s() {
+        check();
         IRubyObject ss = RubyRegexp.last_match(this);
         if (ss.isNil()) ss = RubyString.newEmptyString(getRuntime());
         if (isTaint()) ss.setTaint(true);
@@ -438,6 +472,7 @@ public class RubyMatchData extends RubyObject {
      */
     @JRubyMethod(name = "string")
     public IRubyObject string() {
+        check();
         return str; //str is frozen
     }
 

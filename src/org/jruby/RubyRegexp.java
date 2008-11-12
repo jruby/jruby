@@ -569,22 +569,22 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         Ruby runtime = context.getRuntime();
         IRubyObject backref = frame.getBackRef();
         final RubyMatchData match;
-        if (backref == null || backref.isNil() || ((RubyMatchData)backref).used()) {
+        if (backref.isNil() || ((RubyMatchData)backref).used()) {
             match = new RubyMatchData(runtime);
         } else {
             match = (RubyMatchData)backref;
             match.setTaint(runtime.getSafeLevel() >= 3);
         }
-        
+
         match.regs = matcher.getRegion(); // lazy, null when no groups defined
         match.begin = matcher.getBegin();
         match.end = matcher.getEnd();
-        
+
         match.str = (RubyString)str.strDup(runtime).freeze(context);
-        match.pattern = pattern;
+        match.regexp = this;
 
         frame.setBackRef(match);
-        
+
         match.infectBy(this);
         match.infectBy(str);
         return match;
@@ -1176,10 +1176,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
      * 
      */
     @JRubyMethod(name = "names", compat = CompatVersion.RUBY1_9)
-    public IRubyObject names() {
+    public IRubyObject names(ThreadContext context) {
         if (pattern.numberOfNames() == 0) return getRuntime().newEmptyArray();
 
-        RubyArray ary = getRuntime().newArray(pattern.numberOfNames());
+        RubyArray ary = context.getRuntime().newArray(pattern.numberOfNames());
         for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
             NameEntry e = i.next();
             ary.append(RubyString.newStringShared(getRuntime(), e.name, e.nameP, e.nameEnd - e.nameP));
