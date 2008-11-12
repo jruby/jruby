@@ -2092,7 +2092,7 @@ public class RubyIO extends RubyObject {
             ByteList buffer;
             if (args.length == 1 || args[1].isNil()) {
                 if (len == 0) {
-                    return RubyString.newStringShared(getRuntime(), ByteList.EMPTY_BYTELIST);
+                    return RubyString.newEmptyString(getRuntime());
                 }
                 
                 buffer = new ByteList(len);
