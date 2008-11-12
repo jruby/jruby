@@ -169,7 +169,7 @@ public class RubyDigest {
             String name = ((RubyClass)recv).searchInternalModuleVariable("metadata").toString();
             try {
                 MessageDigest md = createMessageDigest(runtime, name);
-                return RubyString.newStringShared(runtime, ByteList.plain(toHex(md.digest(str.convertToString().getBytes()))));
+                return RubyString.newStringNoCopy(runtime, ByteList.plain(toHex(md.digest(str.convertToString().getBytes()))));
             } catch(NoSuchAlgorithmException e) {
                 throw recv.getRuntime().newNotImplementedError("Unsupported digest algorithm (" + name + ")");
             }
@@ -274,7 +274,7 @@ public class RubyDigest {
         @JRubyMethod(name = {"to_s"})
         public IRubyObject to_s() {
             algo.reset();
-            return RubyString.newStringShared(getRuntime(), ByteList.plain(toHex(algo.digest(ByteList.plain(data)))));
+            return RubyString.newStringNoCopy(getRuntime(), ByteList.plain(toHex(algo.digest(ByteList.plain(data)))));
         }
 
         @JRubyMethod(name = {"hexdigest!"})
@@ -288,7 +288,7 @@ public class RubyDigest {
         @JRubyMethod(name = "inspect")
         public IRubyObject inspect() {
             algo.reset();
-            return RubyString.newStringShared(getRuntime(), ByteList.plain("#<" + getMetaClass().getRealClass().getName() + ": " + toHex(algo.digest(ByteList.plain(data))) + ">"));
+            return RubyString.newStringNoCopy(getRuntime(), ByteList.plain("#<" + getMetaClass().getRealClass().getName() + ": " + toHex(algo.digest(ByteList.plain(data))) + ">"));
         }
 
         @JRubyMethod(name = "==", required = 1)

@@ -209,14 +209,15 @@ public class RubyString extends RubyObject implements EncodingCapable {
         assert value != null;
         this.value = value;
     }
-    
 
+    // Deprecated String construction routines
     /** Create a new String which uses the same Ruby runtime and the same
      *  class like this String.
      *
      *  This method should be used to satisfy RCR #38.
      *  @deprecated  
      */
+    @Deprecated
     public RubyString newString(CharSequence s) {
         return new RubyString(getRuntime(), getType(), s);
     }
@@ -227,35 +228,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
      *  This method should be used to satisfy RCR #38.
      *  @deprecated
      */
+    @Deprecated
     public RubyString newString(ByteList s) {
         return new RubyString(getRuntime(), getMetaClass(), s);
-    }
-
-    // Methods of the String class (rb_str_*):
-
-    /** rb_str_new2
-     *
-     */
-    public static RubyString newString(Ruby runtime, CharSequence str) {
-        return new RubyString(runtime, runtime.getString(), str);
-    }
-    
-    public static RubyString newEmptyString(Ruby runtime) {
-        return newEmptyString(runtime, runtime.getString());
-    }
-
-    public static RubyString newEmptyString(Ruby runtime, RubyClass metaClass) {
-        RubyString empty = new RubyString(runtime, metaClass, ByteList.EMPTY_BYTELIST);
-        empty.shareLevel = SHARE_LEVEL_BYTELIST;
-        return empty;
-    }
-
-    public static RubyString newUnicodeString(Ruby runtime, String str) {
-        try {
-            return new RubyString(runtime, runtime.getString(), new ByteList(str.getBytes("UTF8"), false));
-        } catch (UnsupportedEncodingException uee) {
-            return new RubyString(runtime, runtime.getString(), str);
-        }
     }
 
     @Deprecated
@@ -263,6 +238,15 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return new RubyString(runtime, clazz, str);
     }
 
+    public static RubyString newStringLight(Ruby runtime, ByteList bytes) {
+        return new RubyString(runtime, runtime.getString(), bytes, false);
+    }
+
+    // String construction routines by copying byte[] buffer   
+    public static RubyString newString(Ruby runtime, CharSequence str) {
+        return new RubyString(runtime, runtime.getString(), str);
+    }
+    
     public static RubyString newString(Ruby runtime, byte[] bytes) {
         return new RubyString(runtime, runtime.getString(), bytes);
     }
@@ -276,18 +260,23 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public static RubyString newString(Ruby runtime, ByteList bytes) {
         return new RubyString(runtime, runtime.getString(), bytes);
     }
-
-    public static RubyString newStringLight(Ruby runtime, ByteList bytes) {
-        return new RubyString(runtime, runtime.getString(), bytes, false);
+    
+    public static RubyString newUnicodeString(Ruby runtime, String str) {
+        try {
+            return new RubyString(runtime, runtime.getString(), new ByteList(str.getBytes("UTF8"), false));
+        } catch (UnsupportedEncodingException uee) {
+            return new RubyString(runtime, runtime.getString(), str);
+        }
     }
 
+    // String construction routines by NOT byte[] buffer and making the target String shared 
     public static RubyString newStringShared(Ruby runtime, RubyString orig) {
         orig.shareLevel = SHARE_LEVEL_BYTELIST;
         RubyString str = new RubyString(runtime, runtime.getString(), orig.value);
         str.shareLevel = SHARE_LEVEL_BYTELIST;
         return str;
     }       
-    
+
     public static RubyString newStringShared(Ruby runtime, ByteList bytes) {
         return newStringShared(runtime, runtime.getString(), bytes);
     }    
@@ -296,14 +285,41 @@ public class RubyString extends RubyObject implements EncodingCapable {
         RubyString str = new RubyString(runtime, clazz, bytes);
         str.shareLevel = SHARE_LEVEL_BYTELIST;
         return str;
-    }    
+    }
+
+    public static RubyString newStringShared(Ruby runtime, byte[] bytes) {
+        return newStringShared(runtime, new ByteList(bytes, false));
+    }
 
     public static RubyString newStringShared(Ruby runtime, byte[] bytes, int start, int length) {
         return newStringShared(runtime, new ByteList(bytes, start, length, false));
     }
 
-    public static RubyString newStringShared(Ruby runtime, byte[] bytes) {
-        return newStringShared(runtime, bytes, 0, bytes.length);
+    public static RubyString newEmptyString(Ruby runtime) {
+        return newEmptyString(runtime, runtime.getString());
+    }
+
+    public static RubyString newEmptyString(Ruby runtime, RubyClass metaClass) {
+        RubyString empty = new RubyString(runtime, metaClass, ByteList.EMPTY_BYTELIST);
+        empty.shareLevel = SHARE_LEVEL_BYTELIST;
+        return empty;
+    }
+
+    // String construction routines by NOT byte[] buffer and NOT making the target String shared 
+    public static RubyString newStringNoCopy(Ruby runtime, ByteList bytes) {
+        return newStringNoCopy(runtime, runtime.getString(), bytes);
+    }    
+
+    public static RubyString newStringNoCopy(Ruby runtime, RubyClass clazz, ByteList bytes) {
+        return new RubyString(runtime, clazz, bytes);
+    }    
+
+    public static RubyString newStringNoCopy(Ruby runtime, byte[] bytes, int start, int length) {
+        return newStringNoCopy(runtime, new ByteList(bytes, start, length, false));
+    }
+
+    public static RubyString newStringNoCopy(Ruby runtime, byte[] bytes) {
+        return newStringNoCopy(runtime, new ByteList(bytes, false));
     }
 
     /** Encoding aware String construction routines for 1.9

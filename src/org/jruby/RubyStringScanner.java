@@ -498,7 +498,7 @@ public class RubyStringScanner extends RubyObject {
     private IRubyObject inspect1() {
         if (pos == 0) return RubyString.newEmptyString(getRuntime());
         if (pos > INSPECT_LENGTH) {
-            return RubyString.newStringShared(getRuntime(), "...".getBytes()).append(str.substr(pos - INSPECT_LENGTH, INSPECT_LENGTH)).inspect();
+            return RubyString.newStringNoCopy(getRuntime(), "...".getBytes()).append(str.substr(pos - INSPECT_LENGTH, INSPECT_LENGTH)).inspect();
         } else {
             return str.substr(0, pos).inspect();
         }
