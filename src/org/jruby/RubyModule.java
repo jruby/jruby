@@ -2459,7 +2459,7 @@ public class RubyModule extends RubyObject {
      * @return The value for the constant, or null if not found
      */
     public IRubyObject getConstant(String name) {
-        return fastGetConstant(name);
+        return fastGetConstant(name.intern());
     }
     
     public IRubyObject fastGetConstant(String internedName) {

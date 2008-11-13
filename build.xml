@@ -774,25 +774,25 @@
       </or>
     </condition>
   </target>
-
+  
   <target name="fetch-stable-specs" depends="prepare, detect-stable-specs-need-update" if="stable-specs-need-update">
     <echo message="Downloading stable mspec..."/>
-    <get src="http://github.com/rubyspec/mspec/zipball/${mspec.revision}" dest="${build.dir}/mspec.zip"/>
+    <get src="http://github.com/rubyspec/mspec/zipball/${mspec.revision}" dest="${build.dir}/rubyspec-mspec-${mspec.revision}.zip"/>
     <echo message="Downloading stable rubyspecs..."/>
-    <get src="http://github.com/rubyspec/rubyspec/zipball/${rubyspecs.revision}" dest="${build.dir}/rubyspec.zip"/>
+    <get src="http://github.com/rubyspec/rubyspec/zipball/${rubyspecs.revision}" dest="${build.dir}/rubyspec-rubyspec-${rubyspecs.revision}.zip"/>
 
     <!-- Wipe the old mspec/rubyspecs, if any, and exctract new ones -->
 
     <delete dir="${mspec.dir}"/>
     <mkdir dir="${mspec.dir}"/>
-    <unzip src="${build.dir}/mspec.zip" dest="${mspec.dir}">
+    <unzip src="${build.dir}/rubyspec-mspec-${mspec.revision}.zip" dest="${mspec.dir}">
       <globmapper from="rubyspec-mspec-${mspec.revision}/*" to="*"/>
     </unzip>
     <chmod file="${mspec.dir}/bin/mspec" perm="755"/>
 
     <delete dir="${rubyspec.dir}"/>
     <mkdir dir="${rubyspec.dir}"/>
-    <unzip src="${build.dir}/rubyspec.zip" dest="${rubyspec.dir}">
+    <unzip src="${build.dir}/rubyspec-rubyspec-${rubyspecs.revision}.zip" dest="${rubyspec.dir}">
         <globmapper from="rubyspec-rubyspec-${rubyspecs.revision}/*" to="*"/>
     </unzip>
 
@@ -814,6 +814,8 @@
   <!-- stable specs -->
   <target name="spec" depends="fetch-stable-specs, run-specs"
       description="Runs known good version of rubyspecs."/>
+  <target name="spec-short" depends="fetch-stable-specs, run-specs-short"
+      description="Runs known good version of rubyspecs, excluding library specs."/>
   <target name="spec-all" depends="fetch-stable-specs, run-specs-all"
       description="Runs known good version of rubyspecs without exclusions."/>
   <target name="spec-all-interpreted" depends="fetch-stable-specs, run-specs-all-interpreted"
@@ -885,6 +887,16 @@
     <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
   </target>
 
+  <target name="run-specs-short" depends="run-specs-compiled-short, run-specs-interpreted-short, jar">
+    <condition property="spec.status.combined.OK">
+      <and>
+        <equals arg1="${spec.status.COMPILED}"    arg2="0"/>
+        <equals arg1="${spec.status.INTERPRETED}" arg2="0"/>
+      </and>
+    </condition>
+    <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
+  </target>
+
   <target name="run-specs-all" depends="jar"><antcall target="run-specs-all-precompiled"/></target>
 
   <target name="run-specs-compiled" depends="jar">
@@ -895,6 +907,16 @@
   </target>
   <target name="run-specs-interpreted" depends="jar">
     <_run_specs_internal mode.name="INTERPRETED" compile.mode="OFF"/>
+  </target>
+  
+  <target name="run-specs-compiled-short" depends="jar">
+    <_run_specs_internal mode.name="COMPILED" compile.mode="JIT" jit.threshold="0" spec.config="${spec.dir}/no-library.mspec"/>
+  </target>
+  <target name="run-specs-precompiled-short" depends="jar">
+    <_run_specs_internal mode.name="PRECOMPILED" compile.mode="FORCE" jit.threshold="0" spec.config="${spec.dir}/no-library.mspec"/>
+  </target>
+  <target name="run-specs-interpreted-short" depends="jar">
+    <_run_specs_internal mode.name="INTERPRETED" compile.mode="OFF" spec.config="${spec.dir}/no-library.mspec"/>
   </target>
 
   <target name="run-specs-all-interpreted"><_run_specs_all_internal compile.mode="OFF"/></target>
@@ -942,6 +964,7 @@
     <attribute name="thread.pooling" default="false"/>
     <attribute name="reflection" default="false"/>
     <attribute name="mode.name"/>
+    <attribute name="spec.config"/>
 
     <sequential>
       <echo message="compile=@{compile.mode}, threshold=@{jit.threshold}, objectspace=@{objectspace.enabled} threadpool=@{thread.pooling} reflection=@{reflection}"/>
@@ -973,8 +996,7 @@
 	<arg line="-T -J-Djruby.thread.pool.enabled=@{thread.pooling}"/>
 	<arg line="-T -J-Djruby.reflection=@{reflection}"/>
 	<arg line="-f m"/>
-	<extra-args/>
-	<arg line="-B ${spec.dir}/default.mspec"/>
+	<arg line="-B @{spec.config}"/>
       </java>
     </sequential>
   </macrodef>
@@ -983,11 +1005,13 @@
     <attribute name="compile.mode" default="OFF"/>
     <attribute name="jit.threshold" default="20"/>
     <attribute name="mode.name"/>
+    <attribute name="spec.config" default="${spec.dir}/default.mspec"/>
 
     <sequential>
       <echo message="Excludes: ${spec.tags.dir}"/>
       <run-specs mode.name="@{mode.name}"
-        compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}"/>
+        compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}"
+        spec.config="@{spec.config}"/>
     </sequential>
   </macrodef>
 

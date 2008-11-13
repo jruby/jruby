@@ -1,1 +1,4 @@
 fails(JRUBY-2677,macos):IO::popen allows the io to be closed inside the block
+fails:IO::popen reads from a read-only pipe
+fails:IO::popen reads and writes to a read/write pipe
+fails:IO::popen writes to a write-only pipe
