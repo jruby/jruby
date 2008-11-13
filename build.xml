@@ -995,7 +995,7 @@
 	<arg line="-T -J-Djruby.objectspace.enabled=@{objectspace.enabled}"/>
 	<arg line="-T -J-Djruby.thread.pool.enabled=@{thread.pooling}"/>
 	<arg line="-T -J-Djruby.reflection=@{reflection}"/>
-	<arg line="-f m"/>
+	<arg line="-f s"/>
 	<arg line="-B @{spec.config}"/>
       </java>
     </sequential>

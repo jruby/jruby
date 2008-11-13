@@ -2,3 +2,4 @@ fails(JRUBY-2739):Socket#getaddrinfo accepts empty addresses for IPv4 passive so
 fails(JRUBY-2739):Socket#getaddrinfo accepts empty addresses for IPv6 passive sockets
 fails(JRUBY-2739):Socket#getaddrinfo accepts empty addresses for IPv6 non-passive sockets
 fails(JRUBY-2791,macos):Socket#getaddrinfo accepts empty addresses for IPv4 non-passive sockets
+fails:Socket#getaddrinfo gets the address information

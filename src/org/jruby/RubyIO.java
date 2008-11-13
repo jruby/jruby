@@ -44,6 +44,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
@@ -2741,13 +2742,20 @@ public class RubyIO extends RubyObject {
            List e = new ArrayList();
            for (Iterator i = selector.selectedKeys().iterator(); i.hasNext(); ) {
                SelectionKey key = (SelectionKey) i.next();
-               if ((key.interestOps() & key.readyOps()
-                       & (SelectionKey.OP_READ|SelectionKey.OP_ACCEPT|SelectionKey.OP_CONNECT)) != 0) {
-                   r.add(key.attachment());
+               try {
+                   int interestAndReady = key.interestOps() & key.readyOps();
+                   if ((interestAndReady
+                           & (SelectionKey.OP_READ|SelectionKey.OP_ACCEPT|SelectionKey.OP_CONNECT)) != 0) {
+                       r.add(key.attachment());
+                       pending.remove(key.attachment());
+                   }
+                   if ((interestAndReady & (SelectionKey.OP_WRITE)) != 0) {
+                       w.add(key.attachment());
+                   }
+               } catch (CancelledKeyException cke) {
+                   // TODO: is this the right thing to do?
                    pending.remove(key.attachment());
-               }
-               if ((key.interestOps() & key.readyOps() & (SelectionKey.OP_WRITE)) != 0) {
-                   w.add(key.attachment());
+                   e.add(key.attachment());
                }
            }
            r.addAll(pending);

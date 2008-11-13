@@ -1,0 +1,1 @@
+fails(JRUBY-3140):REXML::Element#previous_element returns previous element

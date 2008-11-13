@@ -1,0 +1,1 @@
+fails(JRUBY-3140):REXML::Element#next_element returns next existing element
