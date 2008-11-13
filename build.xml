@@ -59,11 +59,12 @@
       <not><isset property="ruby.home"/></not>
     </condition>
     <property name="rdoc.archive" value="docs/rdocs.tar.gz"/>
-    <uptodate property="docsNotNeeded" srcfile="${rdoc.archive}" targetfile="${basedir}/share/ri"/>
+    <uptodate property="docsNotNeeded" srcfile="${rdoc.archive}" targetfile="${basedir}/share/ri/1.8/system/created.rid"/>
   </target>
   
   <target name="extract-rdocs" depends="init" unless="docsNotNeeded">
       <untar src="${rdoc.archive}" dest="${basedir}" compression="gzip"/>
+      <touch file="${basedir}/share/ri/1.8/system/created.rid"/>
   </target>
 
   <!-- Creates the directories needed for building -->
@@ -887,11 +888,10 @@
     <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
   </target>
 
-  <target name="run-specs-short" depends="run-specs-compiled-short, run-specs-interpreted-short, jar">
+  <target name="run-specs-short" depends="run-specs-compiled-short, jar">
     <condition property="spec.status.combined.OK">
       <and>
         <equals arg1="${spec.status.COMPILED}"    arg2="0"/>
-        <equals arg1="${spec.status.INTERPRETED}" arg2="0"/>
       </and>
     </condition>
     <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
