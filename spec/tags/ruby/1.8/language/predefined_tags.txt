@@ -1,0 +1,2 @@
+fails(does not work on headless CI server):The predefined global constants includes DATA when main script contains __END__
+fails(does not work on headless CI server):The predefined global constants does not include DATA when main script contains no __END__
