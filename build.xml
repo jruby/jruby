@@ -778,22 +778,28 @@
   
   <target name="fetch-stable-specs" depends="prepare, detect-stable-specs-need-update" if="stable-specs-need-update">
     <echo message="Downloading stable mspec..."/>
-    <get src="http://github.com/rubyspec/mspec/zipball/${mspec.revision}" dest="${build.dir}/rubyspec-mspec-${mspec.revision}.zip"/>
+    <exec command="wget">
+        <arg value="http://github.com/rubyspec/mspec/zipball/${mspec.revision}"/>
+        <arg line="-O ${build.dir}/rubyspec-mspec.zip"/>
+    </exec>
     <echo message="Downloading stable rubyspecs..."/>
-    <get src="http://github.com/rubyspec/rubyspec/zipball/${rubyspecs.revision}" dest="${build.dir}/rubyspec-rubyspec-${rubyspecs.revision}.zip"/>
+    <exec command="wget">
+        <arg value="http://github.com/rubyspec/rubyspec/zipball/${rubyspecs.revision}"/>
+        <arg line="-O ${build.dir}/rubyspec-rubyspec.zip"/>
+    </exec>
 
     <!-- Wipe the old mspec/rubyspecs, if any, and exctract new ones -->
 
     <delete dir="${mspec.dir}"/>
     <mkdir dir="${mspec.dir}"/>
-    <unzip src="${build.dir}/rubyspec-mspec-${mspec.revision}.zip" dest="${mspec.dir}">
+    <unzip src="${build.dir}/rubyspec-mspec.zip" dest="${mspec.dir}">
       <globmapper from="rubyspec-mspec-${mspec.revision}/*" to="*"/>
     </unzip>
     <chmod file="${mspec.dir}/bin/mspec" perm="755"/>
 
     <delete dir="${rubyspec.dir}"/>
     <mkdir dir="${rubyspec.dir}"/>
-    <unzip src="${build.dir}/rubyspec-rubyspec-${rubyspecs.revision}.zip" dest="${rubyspec.dir}">
+    <unzip src="${build.dir}/rubyspec-rubyspec.zip" dest="${rubyspec.dir}">
         <globmapper from="rubyspec-rubyspec-${rubyspecs.revision}/*" to="*"/>
     </unzip>
 

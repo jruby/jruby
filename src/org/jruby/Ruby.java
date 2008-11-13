@@ -2712,6 +2712,10 @@ public final class Ruby {
         return new RaiseException(new RubyLocalJumpError(this, getLocalJumpError(), message, reason, exitValue), true);
     }
 
+    public RaiseException newLocalJumpErrorNoBlock() {
+        return newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, getNil(), "no block given");
+    }
+
     public RaiseException newRedoLocalJumpError() {
         return new RaiseException(new RubyLocalJumpError(this, getLocalJumpError(), "unexpected redo", RubyLocalJumpError.Reason.REDO, getNil()), true);
     }

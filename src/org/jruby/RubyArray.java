@@ -1533,6 +1533,9 @@ public class RubyArray extends RubyObject implements List {
      */
     @JRubyMethod(name = "each", frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject each(ThreadContext context, Block block) {
+        if (!block.isGiven()) {
+            throw context.getRuntime().newLocalJumpErrorNoBlock();
+        }
         for (int i = 0; i < realLength; i++) {
             block.yield(context, values[begin + i]);
         }
@@ -1550,6 +1553,9 @@ public class RubyArray extends RubyObject implements List {
     @JRubyMethod(name = "each_index", frame = true)
     public IRubyObject each_index(ThreadContext context, Block block) {
         Ruby runtime = getRuntime();
+        if (!block.isGiven()) {
+            throw runtime.newLocalJumpErrorNoBlock();
+        }
         for (int i = 0; i < realLength; i++) {
             block.yield(context, runtime.newFixnum(i));
         }
@@ -2089,6 +2095,9 @@ public class RubyArray extends RubyObject implements List {
      */
     @JRubyMethod(name = {"collect!", "map!"}, frame = true)
     public RubyArray collect_bang(ThreadContext context, Block block) {
+        if (!block.isGiven()) {
+            throw context.getRuntime().newLocalJumpErrorNoBlock();
+        }
         modify();
         for (int i = 0, len = realLength; i < len; i++) {
             store(i, block.yield(context, values[begin + i]));
@@ -2231,6 +2240,9 @@ public class RubyArray extends RubyObject implements List {
      */
     @JRubyMethod(name = "reject!", frame = true)
     public IRubyObject reject_bang(ThreadContext context, Block block) {
+        if (!block.isGiven()) {
+            throw context.getRuntime().newLocalJumpErrorNoBlock();
+        }
         int i2 = 0;
         modify();
 

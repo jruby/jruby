@@ -1,1 +1,1 @@
-fails(JRUBY-2760):Executing return from within a block raises a LocalJumpError if there is no lexicaly enclosing method
+fails(JRUBY-2760):Return from within a block raises a LocalJumpError if there is no lexicaly enclosing method

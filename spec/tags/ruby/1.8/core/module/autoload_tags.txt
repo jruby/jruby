@@ -1,0 +1,1 @@
+fails(JRUBY-3144):Module#autoload uses dup copies for autoloaded constants
