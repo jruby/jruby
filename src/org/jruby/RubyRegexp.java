@@ -531,7 +531,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     
     /** rb_reg_search
      */
-    public int search(ThreadContext context, RubyString str, int pos, boolean reverse) {
+    public final int search(ThreadContext context, RubyString str, int pos, boolean reverse) {
         Ruby runtime = context.getRuntime();
         Frame frame = context.getCurrentRubyFrame();
 
@@ -549,19 +549,16 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
 
         int realSize = value.realSize;
         int begin = value.begin;
-        int range = reverse ? -pos : realSize - pos;
+        //int range = reverse ? -pos : realSize - pos;
 
         Matcher matcher = pattern.matcher(value.bytes, begin, begin + realSize);
-
-        int result = matcher.search(begin + pos, begin + pos + range, Option.NONE);
+        int result = matcher.search(begin + pos, begin + (reverse ? 0 : realSize), Option.NONE);
 
         if (result < 0) {
             frame.setBackRef(runtime.getNil());
-            return result;
+        } else {
+            updateBackRef(context, str, frame, matcher);
         }
-
-        updateBackRef(context, str, frame, matcher);
-
         return result;
     }
     
