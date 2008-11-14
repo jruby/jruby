@@ -354,7 +354,7 @@ module JRuby::FFI::Library
     # Convert :foo to the native type
     arg_types.map! { |e| 
       begin
-        find_type(e)
+        JRuby::FFI.find_type(e)
       rescue Exception => ex
         if defined?(@ffi_callbacks) && @ffi_callbacks.has_key?(e)
           @ffi_callbacks[e]
