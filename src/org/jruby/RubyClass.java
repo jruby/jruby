@@ -572,36 +572,51 @@ public class RubyClass extends RubyModule {
     /** rb_class_initialize
      * 
      */
-    @JRubyMethod(name = "initialize", optional = 1, frame = true, visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if (superClass != null) {
-            throw getRuntime().newTypeError("already initialized class");
-        }
- 
-        IRubyObject superObject;
-        if (args.length == 0) {
-            superObject = getRuntime().getObject();
-        } else {
-            superObject = args[0];
-            checkInheritable(superObject);
-        }
- 
-        RubyClass superClazz = (RubyClass) superObject;
+    @JRubyMethod(name = "initialize", compat = CompatVersion.RUBY1_8, frame = true, visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(ThreadContext context, Block block) {
+        checkNotInitialized();
+        return initializeCommon(context.getRuntime().getObject(), block, false);
+    }
+        
+    @JRubyMethod(name = "initialize", compat = CompatVersion.RUBY1_8, frame = true, visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject superObject, Block block) {
+        checkNotInitialized();
+        checkInheritable(superObject);
+        return initializeCommon((RubyClass)superObject, block, false);
+    }
+        
+    @JRubyMethod(name = "initialize", compat = CompatVersion.RUBY1_9, frame = true, visibility = Visibility.PRIVATE)
+    public IRubyObject initialize19(ThreadContext context, Block block) {
+        checkNotInitialized();
+        return initializeCommon(context.getRuntime().getObject(), block, true);
+    }
+        
+    @JRubyMethod(name = "initialize", compat = CompatVersion.RUBY1_9, frame = true, visibility = Visibility.PRIVATE)
+    public IRubyObject initialize19(ThreadContext context, IRubyObject superObject, Block block) {
+        checkNotInitialized();
+        checkInheritable(superObject);
+        return initializeCommon((RubyClass)superObject, block, true);
+    }
 
+    private IRubyObject initializeCommon(RubyClass superClazz, Block block, boolean callInheritBeforeSuper) {
         superClass = superClazz;
         allocator = superClazz.allocator;
         makeMetaClass(superClazz.getMetaClass());
-        
-        marshal = superClazz.marshal;
-       
-        superClazz.addSubclass(this);
-       
-        super.initialize(block);
-       
-        inherit(superClazz);
 
-        return this;        
-    }    
+        marshal = superClazz.marshal;
+
+        superClazz.addSubclass(this);
+
+        if (callInheritBeforeSuper) {
+            inherit(superClazz);
+            super.initialize(block);
+        } else {
+            super.initialize(block);
+            inherit(superClazz);
+        }
+
+        return this;
+    }
 
     /** rb_class_init_copy
      * 
@@ -698,6 +713,9 @@ public class RubyClass extends RubyModule {
         return superClazz != null ? superClazz : context.getRuntime().getNil();
     }
 
+    private void checkNotInitialized() {
+        if (superClass != null) throw getRuntime().newTypeError("already initialized class");
+    }
     /** rb_check_inheritable
      * 
      */
