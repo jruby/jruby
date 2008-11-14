@@ -421,7 +421,7 @@ public final class JNAProvider extends FFIProvider {
                     return (((JNAMemory) ptr).getNativeMemory());
                 }
             }
-            return Util.convertParameter(parameter, Pointer.class);
+            throw invocation.getThreadContext().getRuntime().newArgumentError("Invalid Pointer argument");
         }
         public static final Marshaller INSTANCE = new PointerMarshaller();
     }
@@ -490,9 +490,13 @@ public final class JNAProvider extends FFIProvider {
             } else if (parameter instanceof RubyString) {
                 ByteList bl = ((RubyString) parameter).getByteList();
                 return ByteBuffer.wrap(bl.unsafeBytes(), bl.begin(), bl.realSize);
-            } else { 
-                return Util.convertParameter(parameter, Object.class);
+            } else if (parameter.respondsTo("to_ptr")) {
+                IRubyObject ptr = parameter.callMethod(invocation.getThreadContext(), "to_ptr");
+                if (ptr instanceof JNAMemory) {
+                    return (((JNAMemory) ptr).getNativeMemory());
+                }
             }
+            throw invocation.getThreadContext().getRuntime().newArgumentError("Invalid Buffer argument");
         }
         public static final Marshaller INSTANCE = new BufferMarshaller();
     }
