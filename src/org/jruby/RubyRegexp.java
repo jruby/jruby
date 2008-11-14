@@ -549,7 +549,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
 
         int realSize = value.realSize;
         int begin = value.begin;
-        //int range = reverse ? -pos : realSize - pos;
 
         Matcher matcher = pattern.matcher(value.bytes, begin, begin + realSize);
         int result = matcher.search(begin + pos, begin + (reverse ? 0 : realSize), Option.NONE);
