@@ -97,7 +97,9 @@ public final class JNAProvider extends FFIProvider {
             case INT32:
                 return Signed32Invoker.INSTANCE;
             case UINT8:
+                return Unsigned8Invoker.INSTANCE;
             case UINT16:
+                return Unsigned16Invoker.INSTANCE;
             case UINT32:
                 return Unsigned32Invoker.INSTANCE;
             case INT64:
@@ -198,7 +200,27 @@ public final class JNAProvider extends FFIProvider {
         }
         public static final FunctionInvoker INSTANCE = new VoidInvoker();
     }
+    /**
+     * Invokes the native function with an unsigned 32 bit integer return value.
+     * Returns a Fixnum to ruby.
+     */
+    private static final class Unsigned8Invoker implements FunctionInvoker {
+        public final IRubyObject invoke(Ruby runtime, Function function, Object[] args) {
+            return Util.newUnsigned8(runtime, function.invokeInt(args));
+        }
+        public static final FunctionInvoker INSTANCE = new Unsigned8Invoker();
+    }
     
+    /**
+     * Invokes the native function with an unsigned 32 bit integer return value.
+     * Returns a Fixnum to ruby.
+     */
+    private static final class Unsigned16Invoker implements FunctionInvoker {
+        public final IRubyObject invoke(Ruby runtime, Function function, Object[] args) {
+            return Util.newUnsigned16(runtime, function.invokeInt(args));
+        }
+        public static final FunctionInvoker INSTANCE = new Unsigned16Invoker();
+    }
     /**
      * Invokes the native function with a 32 bit integer return value.
      * Returns a Fixnum to ruby.

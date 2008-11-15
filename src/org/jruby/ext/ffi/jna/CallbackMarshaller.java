@@ -36,7 +36,9 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
 import org.jruby.Ruby;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
+import org.jruby.RubyString;
 import org.jruby.ext.ffi.Callback;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.Util;
@@ -189,29 +191,45 @@ final class CallbackMarshaller implements Marshaller {
             super(runtime, recv);
         }
     }
+    /**
+     * Extracts the primitive value from a Ruby object.
+     * This is similar to Util.longValue(), except it won't throw exceptions for
+     * invalid values.
+     *
+     * @param value The Ruby object to convert
+     * @return a java long value.
+     */
+    private static final long longValue(IRubyObject value) {
+        if (value instanceof RubyNumeric) {
+            return ((RubyNumeric) value).getLongValue();
+        } else if (value.isNil()) {
+            return 0L;
+        }
+        return 0;
+    }
     private static final Object toNative(Ruby runtime, NativeType type, IRubyObject value) {
         switch (type) {
             case VOID:
                 return Long.valueOf(0);
             case INT8:
-                return (byte) Util.int8Value(value);
+                return (byte) longValue(value);
             case UINT8:
-                return (byte) Util.uint8Value(value);
+                return (byte) longValue(value);
             case INT16:
-                return (short) Util.int16Value(value);
+                return (short) longValue(value);
             case UINT16:
-                return (short) Util.uint16Value(value);
+                return (short) longValue(value);
             case INT32:
-                return (int) Util.int32Value(value);
+                return (int) longValue(value);
             case UINT32:
-                return (int) Util.uint32Value(value);
+                return (int) longValue(value);
             case INT64:
             case UINT64:
-                return (long) Util.int64Value(value);
+                return (long) longValue(value);
             case FLOAT32:
-                return (float) Util.floatValue(value);
+                return (float) RubyNumeric.num2dbl(value);
             case FLOAT64:
-                return (double) Util.doubleValue(value);
+                return (double) RubyNumeric.num2dbl(value);
             case POINTER:
                 return ((JNAMemoryPointer) value).getNativeMemory();
             default:

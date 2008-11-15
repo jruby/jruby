@@ -139,10 +139,10 @@ public final class Util {
                     + parameter + " is not an integer");
     }
     public static final IRubyObject newUnsigned8(Ruby runtime, int value) {
-        return newUnsigned32(runtime, value);
+        return runtime.newFixnum(value < 0 ? (long)((value & 0x7FL) + 0x80L) : value);
     }
     public static final IRubyObject newUnsigned16(Ruby runtime, int value) {
-        return newUnsigned32(runtime, value);
+        return runtime.newFixnum(value < 0 ? (long)((value & 0x7FFFL) + 0x8000L) : value);
     }
     public static final IRubyObject newUnsigned32(Ruby runtime, int value) {
         return runtime.newFixnum(value < 0 ? (long)((value & 0x7FFFFFFFL) + 0x80000000L) : value);
