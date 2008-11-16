@@ -823,6 +823,8 @@
       description="Runs known good version of rubyspecs."/>
   <target name="spec-short" depends="fetch-stable-specs, run-specs-short"
       description="Runs known good version of rubyspecs, excluding library specs."/>
+  <target name="spec-ci" depends="fetch-stable-specs, run-specs-ci"
+      description="Runs known good version of rubyspecs interpreted, compiled, and precompile, excluding library specs."/>
   <target name="spec-all" depends="fetch-stable-specs, run-specs-all"
       description="Runs known good version of rubyspecs without exclusions."/>
   <target name="spec-all-interpreted" depends="fetch-stable-specs, run-specs-all-interpreted"
@@ -898,6 +900,17 @@
     <condition property="spec.status.combined.OK">
       <and>
         <equals arg1="${spec.status.COMPILED}"    arg2="0"/>
+      </and>
+    </condition>
+    <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
+  </target>
+
+  <target name="run-specs-ci" depends="run-specs-compiled-short, run-specs-interpreted-short, run-specs-precompiled-short, jar">
+    <condition property="spec.status.combined.OK">
+      <and>
+        <equals arg1="${spec.status.PRECOMPILED}" arg2="0"/>
+        <equals arg1="${spec.status.COMPILED}"    arg2="0"/>
+        <equals arg1="${spec.status.INTERPRETED}" arg2="0"/>
       </and>
     </condition>
     <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
@@ -1001,7 +1014,7 @@
 	<arg line="-T -J-Djruby.objectspace.enabled=@{objectspace.enabled}"/>
 	<arg line="-T -J-Djruby.thread.pool.enabled=@{thread.pooling}"/>
 	<arg line="-T -J-Djruby.reflection=@{reflection}"/>
-	<arg line="-f s"/>
+	<arg line="-f m"/>
 	<arg line="-B @{spec.config}"/>
       </java>
     </sequential>
