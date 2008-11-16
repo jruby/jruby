@@ -48,9 +48,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -67,7 +65,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.builtin.InstanceVariables;
 import org.jruby.runtime.builtin.InternalVariables;
 import org.jruby.runtime.marshal.CoreObjectType;
@@ -447,7 +444,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     public boolean equals(Object other) {
         return other == this || 
                 other instanceof IRubyObject && 
-                callMethod(getRuntime().getCurrentContext(), MethodIndex.EQUALEQUAL, "==", (IRubyObject) other).isTrue();
+                callMethod(getRuntime().getCurrentContext(), "==", (IRubyObject) other).isTrue();
     }
 
     /**
@@ -693,7 +690,8 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * Will invoke a named method with one argument and no block with
      * functional invocation.
      */
-     public final IRubyObject callMethod(ThreadContext context, String name, IRubyObject arg) {
+    @Deprecated
+    public final IRubyObject callMethod(ThreadContext context, int methodContext, String name, IRubyObject arg) {
         return RuntimeHelpers.invoke(context, this, name, arg);
     }
 
@@ -726,7 +724,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * Will invoke an indexed method with the one argument and no
      * block with a functional invocation.
      */
-    public final IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject arg) {
+    public IRubyObject callMethod(ThreadContext context, String name, IRubyObject arg) {
         return RuntimeHelpers.invoke(context, this, name, arg, Block.NULL_BLOCK);
     }
 
@@ -755,7 +753,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * method.
      */
     public RubyArray convertToArray() {
-        return (RubyArray) TypeConverter.convertToType(this, getRuntime().getArray(), MethodIndex.TO_ARY, "to_ary");
+        return (RubyArray) TypeConverter.convertToType(this, getRuntime().getArray(), "to_ary");
     }
 
     /**
@@ -763,7 +761,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * method.
      */
     public RubyHash convertToHash() {
-        return (RubyHash)TypeConverter.convertToType(this, getRuntime().getHash(), MethodIndex.TO_HASH, "to_hash");
+        return (RubyHash)TypeConverter.convertToType(this, getRuntime().getHash(), "to_hash");
     }
     
     /**
@@ -771,7 +769,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * method.
      */
     public RubyFloat convertToFloat() {
-        return (RubyFloat) TypeConverter.convertToType(this, getRuntime().getFloat(), MethodIndex.TO_F, "to_f");
+        return (RubyFloat) TypeConverter.convertToType(this, getRuntime().getFloat(), "to_f");
     }
 
     /**
@@ -779,15 +777,24 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * method.
      */
     public RubyInteger convertToInteger() {
-        return convertToInteger(MethodIndex.TO_INT, "to_int");
+        return convertToInteger("to_int");
     }
 
     /**
      * Tries to convert this object to a Ruby Integer using the
      * supplied conversion method.
      */
-    public RubyInteger convertToInteger(int convertMethodIndex, String convertMethod) {
-        IRubyObject val = TypeConverter.convertToType(this, getRuntime().getInteger(), convertMethodIndex, convertMethod, true);
+    @Deprecated
+    public RubyInteger convertToInteger(int index, String convertMethod) {
+        return convertToInteger(convertMethod);
+    }
+
+    /**
+     * Tries to convert this object to a Ruby Integer using the
+     * supplied conversion method.
+     */
+    public RubyInteger convertToInteger(String convertMethod) {
+        IRubyObject val = TypeConverter.convertToType(this, getRuntime().getInteger(), convertMethod, true);
         if (!(val instanceof RubyInteger)) throw getRuntime().newTypeError(getMetaClass().getName() + "#" + convertMethod + " should return Integer");
         return (RubyInteger)val;
     }
@@ -797,15 +804,16 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * "to_str" method.
      */
     public RubyString convertToString() {
-        return (RubyString) TypeConverter.convertToType(this, getRuntime().getString(), MethodIndex.TO_STR, "to_str");
+        return (RubyString) TypeConverter.convertToType(this, getRuntime().getString(), "to_str");
     }
     
     /**
      * Tries to convert this object to the specified Ruby type, using
      * a specific conversion method.
      */
+    @Deprecated
     public final IRubyObject convertToType(RubyClass target, int convertMethodIndex) {
-        return TypeConverter.convertToType(this, target, convertMethodIndex, (String)MethodIndex.NAMES.get(convertMethodIndex));
+        throw new RuntimeException("Not supported; use the String versions");
     }
 
     /** rb_obj_as_string
@@ -831,7 +839,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *
      */
     public IRubyObject checkStringType() {
-        IRubyObject str = TypeConverter.convertToTypeWithCheck(this, getRuntime().getString(), MethodIndex.TO_STR, "to_str");
+        IRubyObject str = TypeConverter.convertToTypeWithCheck(this, getRuntime().getString(), "to_str");
         if(!str.isNil() && !(str instanceof RubyString)) {
             str = RubyString.newEmptyString(getRuntime());
         }
@@ -844,7 +852,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     * with "to_ary".
     */    
     public IRubyObject checkArrayType() {
-        return TypeConverter.convertToTypeWithCheck(this, getRuntime().getArray(), MethodIndex.TO_ARY, "to_ary");
+        return TypeConverter.convertToTypeWithCheck(this, getRuntime().getArray(), "to_ary");
     }
 
     /** specific_eval
@@ -1125,7 +1133,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * Will by default just call the Ruby method "eql?"
      */
     public boolean eql(IRubyObject other) {
-        return callMethod(getRuntime().getCurrentContext(), MethodIndex.EQL_P, "eql?", other).isTrue();
+        return callMethod(getRuntime().getCurrentContext(), "eql?", other).isTrue();
     }
 
     /** rb_obj_equal
@@ -1153,7 +1161,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * equality, and then calling the "==" method.
      */
     protected static boolean equalInternal(final ThreadContext context, final IRubyObject that, final IRubyObject other){
-        return that == other || that.callMethod(context, MethodIndex.EQUALEQUAL, "==", other).isTrue();
+        return that == other || that.callMethod(context, "==", other).isTrue();
     }
 
     /**
@@ -1161,7 +1169,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * equality, and then calling the "eql?" method.
      */
     protected static boolean eqlInternal(final ThreadContext context, final IRubyObject that, final IRubyObject other){
-        return that == other || that.callMethod(context, MethodIndex.EQL_P, "eql?", other).isTrue();
+        return that == other || that.callMethod(context, "eql?", other).isTrue();
     }
 
     /** rb_obj_init_copy

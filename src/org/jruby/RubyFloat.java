@@ -38,7 +38,6 @@ package org.jruby;
 
 import static org.jruby.util.Numeric.f_expt;
 import static org.jruby.util.Numeric.f_mul;
-import static org.jruby.util.Numeric.f_to_i;
 import static org.jruby.util.Numeric.frexp;
 import static org.jruby.util.Numeric.ldexp;
 
@@ -49,7 +48,6 @@ import java.util.Locale;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;

@@ -53,7 +53,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -403,7 +402,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
         
         if (args.length > 0 && args.length < 3) {
-            IRubyObject fd = TypeConverter.convertToTypeWithCheck(args[0], getRuntime().getFixnum(), MethodIndex.TO_INT, "to_int");
+            IRubyObject fd = TypeConverter.convertToTypeWithCheck(args[0], getRuntime().getFixnum(), "to_int");
             if (!fd.isNil()) {
                 args[0] = fd;
                 return super.initialize(args, block);
@@ -1507,7 +1506,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         } else if (args[1] == runtime.getNil()) {
             mtime = System.currentTimeMillis();
         } else {
-            RubyTime time = (RubyTime) TypeConverter.convertToType(args[1], runtime.getTime(), MethodIndex.NO_INDEX,"to_time", true);
+            RubyTime time = (RubyTime) TypeConverter.convertToType(args[1], runtime.getTime(),"to_time", true);
             mtime = time.getJavaDate().getTime();
         }
         

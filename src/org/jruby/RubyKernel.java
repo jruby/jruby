@@ -61,7 +61,6 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Frame;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import static org.jruby.runtime.Visibility.*;
@@ -274,7 +273,7 @@ public class RubyKernel {
         }else if(object.isNil()){
             throw recv.getRuntime().newTypeError("can't convert nil into Float");
         } else {
-            RubyFloat rFloat = (RubyFloat)TypeConverter.convertToType(object, recv.getRuntime().getFloat(), MethodIndex.TO_F, "to_f");
+            RubyFloat rFloat = (RubyFloat)TypeConverter.convertToType(object, recv.getRuntime().getFloat(), "to_f");
             if (Double.isNaN(rFloat.getDoubleValue())) throw recv.getRuntime().newArgumentError("invalid value for Float()");
             return rFloat;
         }
@@ -293,14 +292,14 @@ public class RubyKernel {
             return RubyNumeric.str2inum(context.getRuntime(),(RubyString)object,0,true);
         }
         
-        IRubyObject tmp = TypeConverter.convertToType(object, context.getRuntime().getInteger(), MethodIndex.TO_INT, "to_int", false);
-        if (tmp.isNil()) return object.convertToInteger(MethodIndex.TO_I, "to_i");
+        IRubyObject tmp = TypeConverter.convertToType(object, context.getRuntime().getInteger(), "to_int", false);
+        if (tmp.isNil()) return object.convertToInteger("to_i");
         return tmp;
     }
 
     @JRubyMethod(name = "String", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject new_string(ThreadContext context, IRubyObject recv, IRubyObject object) {
-        return TypeConverter.convertToType(object, context.getRuntime().getString(), MethodIndex.TO_S, "to_s");
+        return TypeConverter.convertToType(object, context.getRuntime().getString(), "to_s");
     }
 
     @JRubyMethod(name = "p", rest = true, module = true, visibility = PRIVATE)
@@ -983,7 +982,7 @@ public class RubyKernel {
         if (var.charAt(0) != '$') return context.getRuntime().getNil();
         if (args.length == 1) proc = RubyProc.newProc(context.getRuntime(), block, Block.Type.PROC);
         if (args.length == 2) {
-            proc = (RubyProc)TypeConverter.convertToType(args[1], context.getRuntime().getProc(), 0, "to_proc", true);
+            proc = (RubyProc)TypeConverter.convertToType(args[1], context.getRuntime().getProc(), "to_proc", true);
         }
         
         context.getRuntime().getGlobalVariables().setTraceVar(var, proc);
@@ -1181,7 +1180,7 @@ public class RubyKernel {
         long oldRandomSeed = runtime.getRandomSeed();
 
         if (args.length > 0) {
-            RubyInteger integerSeed = args[0].convertToInteger(MethodIndex.TO_INT, "to_int");
+            RubyInteger integerSeed = args[0].convertToInteger("to_int");
             runtime.setRandomSeed(integerSeed.getLongValue());
         } else {
             // Not sure how well this works, but it works much better than

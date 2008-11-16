@@ -60,7 +60,6 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Frame;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -575,7 +574,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         // deal with case when "other" is not a string
         if (other.respondsTo("to_str") && other.respondsTo("<=>")) {
-            IRubyObject result = other.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", this);
+            IRubyObject result = other.callMethod(context, "<=>", this);
 
             if (result instanceof RubyNumeric) {
                 return ((RubyNumeric) result).op_uminus(context);
@@ -598,7 +597,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (!(other instanceof RubyString)) {
             if (!other.respondsTo("to_str")) return runtime.getFalse();
 
-            return other.callMethod(context, MethodIndex.EQUALEQUAL, "==", this).isTrue() ? runtime.getTrue() : runtime.getFalse();
+            return other.callMethod(context, "==", this).isTrue() ? runtime.getTrue() : runtime.getFalse();
         }
         return value.equal(((RubyString)other).value) ? runtime.getTrue() : runtime.getFalse();
     }

@@ -37,7 +37,6 @@ import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -157,8 +156,7 @@ public class RubyStringIO extends RubyObject {
     public IRubyObject initialize_copy(IRubyObject other) {
 
         RubyStringIO otherIO = (RubyStringIO) TypeConverter.convertToType(
-                other, getRuntime().fastGetClass("StringIO"),
-                MethodIndex.getIndex("to_strio"), "to_strio");
+                other, getRuntime().fastGetClass("StringIO"), "to_strio");
 
         if (this == otherIO) {
             return this;

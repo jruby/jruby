@@ -37,8 +37,6 @@ package org.jruby;
 
 import java.io.EOFException;
 import java.io.FileDescriptor;
-import java.io.FilterInputStream;
-import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -64,11 +62,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.ext.posix.util.FieldAccess;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallType;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -363,8 +357,7 @@ public class RubyIO extends RubyObject {
             throw runtime.newArgumentError("wrong number of arguments");
     	}
     	
-    	IRubyObject tmp = TypeConverter.convertToTypeWithCheck(args[0], runtime.getIO(), 
-                MethodIndex.getIndex("to_io"), "to_io");
+    	IRubyObject tmp = TypeConverter.convertToTypeWithCheck(args[0], runtime.getIO(), "to_io");
         
     	if (!tmp.isNil()) {
             try {
@@ -1575,7 +1568,7 @@ public class RubyIO extends RubyObject {
         
         if (this == original) return this;
 
-        RubyIO originalIO = (RubyIO) TypeConverter.convertToTypeWithCheck(original, runtime.getIO(), MethodIndex.TO_IO, "to_io");
+        RubyIO originalIO = (RubyIO) TypeConverter.convertToTypeWithCheck(original, runtime.getIO(), "to_io");
         
         OpenFile originalFile = originalIO.getOpenFileChecked();
         OpenFile newFile = openFile;
@@ -2037,7 +2030,7 @@ public class RubyIO extends RubyObject {
             ByteList buf = ((ChannelStream)openFile.getMainStream()).readnonblock(RubyNumeric.fix2int(args[0]));
             IRubyObject strbuf = RubyString.newString(runtime, buf == null ? new ByteList(ByteList.NULL_ARRAY) : buf);
             if(args.length > 1) {
-                args[1].callMethod(context, MethodIndex.OP_LSHIFT, "<<", strbuf);
+                args[1].callMethod(context, "<<", strbuf);
                 return args[1];
             }
 
@@ -2069,7 +2062,7 @@ public class RubyIO extends RubyObject {
             ByteList buf = ((ChannelStream)openFile.getMainStream()).readpartial(RubyNumeric.fix2int(args[0]));
             IRubyObject strbuf = RubyString.newString(runtime, buf == null ? new ByteList(ByteList.NULL_ARRAY) : buf);
             if(args.length > 1) {
-                args[1].callMethod(context, MethodIndex.OP_LSHIFT, "<<", strbuf);
+                args[1].callMethod(context, "<<", strbuf);
                 return args[1];
             }
 
@@ -2628,7 +2621,7 @@ public class RubyIO extends RubyObject {
     }
 
     private static RubyIO convertToIO(ThreadContext context, IRubyObject obj) {
-        return (RubyIO)TypeConverter.convertToType(obj, context.getRuntime().getIO(), MethodIndex.TO_IO, "to_io");
+        return (RubyIO)TypeConverter.convertToType(obj, context.getRuntime().getIO(), "to_io");
     }
    
     private static boolean registerSelect(ThreadContext context, Selector selector, IRubyObject obj, RubyIO ioObj, int ops) throws IOException {
@@ -2768,8 +2761,7 @@ public class RubyIO extends RubyObject {
                SelectableChannel channel = key.channel();
                synchronized(channel.blockingLock()) {
                    RubyIO originalIO = (RubyIO) TypeConverter.convertToType(
-                           (IRubyObject) key.attachment(), runtime.getIO(),
-                           MethodIndex.TO_IO, "to_io");
+                           (IRubyObject) key.attachment(), runtime.getIO(), "to_io");
                    boolean blocking = originalIO.getBlocking();
                    key.cancel();
                    channel.configureBlocking(blocking);

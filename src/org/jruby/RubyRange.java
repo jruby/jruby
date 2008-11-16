@@ -48,7 +48,6 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
@@ -57,7 +56,6 @@ import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.util.TypeConverter;
 
 /**
  * @author jpetersen
@@ -155,7 +153,7 @@ public class RubyRange extends RubyObject {
     private void init(ThreadContext context, IRubyObject begin, IRubyObject end, boolean isExclusive) {
         if (!(begin instanceof RubyFixnum && end instanceof RubyFixnum)) {
             try {
-                IRubyObject result = begin.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", end);
+                IRubyObject result = begin.callMethod(context, "<=>", end);
                 if (result.isNil()) throw getRuntime().newArgumentError("bad value for range");
             } catch (RaiseException re) {
                 throw getRuntime().newArgumentError("bad value for range");
@@ -277,7 +275,7 @@ public class RubyRange extends RubyObject {
             if (iter instanceof RubyFixnum) {
                 iter = RubyFixnum.newFixnum(context.getRuntime(), ((RubyFixnum)iter).getLongValue() - 1);                
             } else {
-                iter = iter.callMethod(context, MethodIndex.OP_MINUS, "-", RubyFixnum.one(context.getRuntime()));
+                iter = iter.callMethod(context, "-", RubyFixnum.one(context.getRuntime()));
             }
             if (iter == RubyFixnum.zero(context.getRuntime())) {
                 block.yield(context, arg);
@@ -287,13 +285,13 @@ public class RubyRange extends RubyObject {
     }
 
     private IRubyObject rangeLt(ThreadContext context, IRubyObject a, IRubyObject b) {
-        IRubyObject result = a.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", b);
+        IRubyObject result = a.callMethod(context, "<=>", b);
         if (result.isNil()) return null;
         return RubyComparable.cmpint(context, result, a, b) < 0 ? getRuntime().getTrue() : null;
     }
 
     private IRubyObject rangeLe(ThreadContext context, IRubyObject a, IRubyObject b) {
-        IRubyObject result = a.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", b);
+        IRubyObject result = a.callMethod(context, "<=>", b);
         if (result.isNil()) return null;
         int c = RubyComparable.cmpint(context, result, a, b);
         if (c == 0) return RubyFixnum.zero(getRuntime());
@@ -408,18 +406,15 @@ public class RubyRange extends RubyObject {
                     throw runtime.newArgumentError("step can't be 0");
                 }
                 final String method;
-                final int methodIndex;
                 if (isExclusive) {
                     method = "<";
-                    methodIndex = MethodIndex.OP_LT;
                 } else {
                     method = "<=";
-                    methodIndex = MethodIndex.OP_LE;
                 }
                 IRubyObject beg = begin;
-                while (beg.callMethod(context, methodIndex, method, end).isTrue()) {
+                while (beg.callMethod(context, method, end).isTrue()) {
                     block.yield(context, beg);
-                    beg = beg.callMethod(context, MethodIndex.OP_PLUS, "+", step);
+                    beg = beg.callMethod(context, "+", step);
                 }
             } else {
                 if (unit == 0) throw runtime.newArgumentError("step can't be 0");

@@ -495,7 +495,7 @@ public class YARVMachine {
                 break;
             case YARVInstructions.OPT_MULT: 
                 other = pop();
-                push(pop().callMethod(context,MethodIndex.OP_TIMES, "*", other));
+                push(pop().callMethod(context, "*", other));
                 break;
             case YARVInstructions.OPT_DIV: 
                 other = pop();
@@ -507,22 +507,22 @@ public class YARVMachine {
                 break;
             case YARVInstructions.OPT_EQ:
                 other = pop();
-                push(pop().callMethod(context,MethodIndex.EQUALEQUAL, "==", other));
+                push(pop().callMethod(context, "==", other));
                 break;
             case YARVInstructions.OPT_LT:
                 op_lt(runtime, context, pop(), pop());
                 break;
             case YARVInstructions.OPT_LE: 
                 other = pop();
-                push(pop().callMethod(context,MethodIndex.OP_LE, "<=", other));
+                push(pop().callMethod(context, "<=", other));
                 break;
             case YARVInstructions.OPT_LTLT: 
                 other = pop();
-                push(pop().callMethod(context,MethodIndex.OP_LSHIFT, "<<", other));
+                push(pop().callMethod(context, "<<", other));
                 break;
             case YARVInstructions.OPT_AREF: 
                 other = pop();
-                push(pop().callMethod(context,MethodIndex.AREF, "[]",other));
+                push(pop().callMethod(context, "[]",other));
                 break;
             case YARVInstructions.OPT_ASET:  {
                 //YARV will never emit this, for some reason.
@@ -629,7 +629,7 @@ public class YARVMachine {
 
             push(runtime.newFixnum(result));
         } else {
-            push(receiver.callMethod(context, MethodIndex.OP_PLUS, "+", other));
+            push(receiver.callMethod(context, "+", other));
         }
     }
 
@@ -644,7 +644,7 @@ public class YARVMachine {
 
             push(runtime.newFixnum(result));
         } else {
-            push(receiver.callMethod(context, MethodIndex.OP_MINUS, "-", other));
+            push(receiver.callMethod(context, "-", other));
         }
     }
 
@@ -655,7 +655,7 @@ public class YARVMachine {
             
             push(runtime.newBoolean(receiverValue < otherValue));
         } else {
-            push(receiver.callMethod(context, MethodIndex.OP_LT, "<", other));
+            push(receiver.callMethod(context, "<", other));
         }
     }
 

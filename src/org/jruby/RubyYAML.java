@@ -46,7 +46,6 @@ import org.jruby.javasupport.JavaEmbedUtils;
 
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.Visibility;
 
 import org.jruby.yaml.JRubyRepresenter;
@@ -467,7 +466,7 @@ public class RubyYAML {
             Map mep = (Map)(new RubyHash(self.getRuntime()));
             for(Iterator iter = ((RubyArray)self.callMethod(context, "members")).getList().iterator();iter.hasNext();) {
                 IRubyObject key = self.getRuntime().newString(iter.next().toString());
-                mep.put(key,self.callMethod(context,MethodIndex.AREF, "[]", key));
+                mep.put(key,self.callMethod(context, "[]", key));
             }            
             for(Iterator iter = ((RubyArray)self.callMethod(context, "to_yaml_properties")).getList().iterator(); iter.hasNext();) {
                 String m = iter.next().toString();
@@ -624,11 +623,11 @@ public class RubyYAML {
                 IRubyObject utc_same_writing = RuntimeHelpers.invoke(context, self.getRuntime().getTime(), "utc", new IRubyObject[]{
                         self.callMethod(context, "year"),self.callMethod(context, "month"),self.callMethod(context, "day"),self.callMethod(context, "hour"),
                         self.callMethod(context, "min"),self.callMethod(context, "sec"),self.callMethod(context, "usec")});
-                IRubyObject difference_to_utc = utc_same_writing.callMethod(context,MethodIndex.OP_MINUS, "-", utc_same_instant);
+                IRubyObject difference_to_utc = utc_same_writing.callMethod(context, "-", utc_same_instant);
                 IRubyObject absolute_difference;
-                if(difference_to_utc.callMethod(context,MethodIndex.OP_LT, "<", RubyFixnum.zero(self.getRuntime())).isTrue()) {
+                if(difference_to_utc.callMethod(context, "<", RubyFixnum.zero(self.getRuntime())).isTrue()) {
                     difference_sign = self.getRuntime().newString("-");
-                    absolute_difference = RubyFixnum.zero(self.getRuntime()).callMethod(context,MethodIndex.OP_MINUS, "-", difference_to_utc);
+                    absolute_difference = RubyFixnum.zero(self.getRuntime()).callMethod(context, "-", difference_to_utc);
                 } else {
                     difference_sign = self.getRuntime().newString("+");
                     absolute_difference = difference_to_utc;
@@ -638,9 +637,9 @@ public class RubyYAML {
             }
             IRubyObject standard = self.callMethod(context,"strftime", self.getRuntime().newString("%Y-%m-%d %H:%M:%S"));
             if(self.callMethod(context, "usec").callMethod(context, "nonzero?").isTrue()) {
-                standard = standard.callMethod(context, MethodIndex.OP_PLUS, "+", self.getRuntime().newString(".%06d").callMethod(context,"%", self.getRuntime().newArray(self.callMethod(context, "usec"))));
+                standard = standard.callMethod(context, "+", self.getRuntime().newString(".%06d").callMethod(context,"%", self.getRuntime().newArray(self.callMethod(context, "usec"))));
             }
-            standard = standard.callMethod(context,MethodIndex.OP_PLUS, "+", self.getRuntime().newString(" %s").callMethod(context,"%", self.getRuntime().newArray(tz)));
+            standard = standard.callMethod(context, "+", self.getRuntime().newString(" %s").callMethod(context,"%", self.getRuntime().newArray(tz)));
             return RuntimeHelpers.invoke(context, arg, "scalar", self.callMethod(context, "taguri"), standard, self.callMethod(context, "to_yaml_style"));
         }
     }

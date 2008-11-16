@@ -1115,7 +1115,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         if (args.length == 0) {
             return newRegexp(recv.getRuntime(), ByteList.create("(?!)"), 0, false);
         } else if (args.length == 1) {
-            IRubyObject v = TypeConverter.convertToTypeWithCheck(args[0], recv.getRuntime().getRegexp(), 0, "to_regexp");
+            IRubyObject v = TypeConverter.convertToTypeWithCheck(args[0], recv.getRuntime().getRegexp(), "to_regexp");
             if (!v.isNil()) {
                 return v;
             } else {
@@ -1132,7 +1132,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
                 if (0 < i) {
                     source.cat((byte)'|');
                 }
-                IRubyObject v = TypeConverter.convertToTypeWithCheck(args[i], recv.getRuntime().getRegexp(), 0, "to_regexp");
+                IRubyObject v = TypeConverter.convertToTypeWithCheck(args[i], recv.getRuntime().getRegexp(), "to_regexp");
                 if (!v.isNil()) {
                     if (!((RubyRegexp)v).isKCodeDefault()) {
                         if (kcode == null) {

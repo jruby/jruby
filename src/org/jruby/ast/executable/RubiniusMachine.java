@@ -37,7 +37,6 @@ import org.jruby.parser.StaticScope;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -205,7 +204,7 @@ public class RubiniusMachine {
                 if((t1 instanceof RubyFixnum) && (t1 instanceof RubyFixnum)) {
                     stack[++stackTop] = (((RubyFixnum)t1).getLongValue() < ((RubyFixnum)t2).getLongValue()) ? runtime.getTrue() : runtime.getFalse();
                 } else {
-                    stack[++stackTop] = t1.callMethod(context, MethodIndex.OP_LT, "<", t2);
+                    stack[++stackTop] = t1.callMethod(context, "<", t2);
                 }
                 break;
             }
@@ -216,7 +215,7 @@ public class RubiniusMachine {
                 if((t1 instanceof RubyFixnum) && (t1 instanceof RubyFixnum)) {
                     stack[++stackTop] = (((RubyFixnum)t1).getLongValue() > ((RubyFixnum)t1).getLongValue()) ? runtime.getTrue() : runtime.getFalse();
                 } else {
-                    stack[++stackTop] = t1.callMethod(context, MethodIndex.OP_GT, ">", t2);
+                    stack[++stackTop] = t1.callMethod(context, ">", t2);
                 }
                 break;
             }
@@ -227,7 +226,7 @@ public class RubiniusMachine {
                 if((t1 instanceof RubyFixnum) && (t2 instanceof RubyFixnum)) {
                     stack[++stackTop] = ((RubyFixnum)t1).op_plus(context, t2);
                 } else {
-                    stack[++stackTop] = t1.callMethod(context, MethodIndex.OP_PLUS, "+", t2);
+                    stack[++stackTop] = t1.callMethod(context, "+", t2);
                 }
                 break;
             }
@@ -238,7 +237,7 @@ public class RubiniusMachine {
                 if((t1 instanceof RubyFixnum) && (t2 instanceof RubyFixnum)) {
                     stack[++stackTop] = ((RubyFixnum)t1).op_minus(context, t2);
                 } else {
-                    stack[++stackTop] = t1.callMethod(context, MethodIndex.OP_MINUS, "-", t2);
+                    stack[++stackTop] = t1.callMethod(context, "-", t2);
                 }
                 break;
             }
@@ -265,7 +264,6 @@ public class RubiniusMachine {
                 ip += 4;
                 
                 String name = literals[index].toString();
-                int ixi = MethodIndex.getIndex(name);
                 recv = stack[stackTop--];
                 IRubyObject[] argu = new IRubyObject[num_args];
                 for(int i=0;i<num_args;i++) {

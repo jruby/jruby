@@ -29,7 +29,6 @@
 package org.jruby.ext;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Iterator;
 import java.util.Collections;
@@ -51,9 +50,7 @@ import jline.History;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.Visibility;
-import org.jruby.util.ByteList;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>

@@ -50,9 +50,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.EventHook;
 import org.jruby.runtime.RubyEvent;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Binding;
@@ -368,7 +366,7 @@ public class ASTInterpreter {
         if (value instanceof RubyArray) return value;
 
         if (value.respondsTo("to_ary")) {
-            return TypeConverter.convertToType(value, runtime.getArray(), MethodIndex.TO_A, "to_ary", false);
+            return TypeConverter.convertToType(value, runtime.getArray(), "to_ary", false);
         }
 
         return runtime.newArray(value);

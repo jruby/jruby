@@ -39,12 +39,13 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import org.jruby.*;
+import org.jruby.NativeException;
+import org.jruby.Ruby;
+import org.jruby.RubyClass;
+import org.jruby.RubyException;
+import org.jruby.RubyString;
 import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.EventHook;
 import org.jruby.runtime.RubyEvent;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 

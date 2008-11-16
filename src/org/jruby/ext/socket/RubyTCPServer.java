@@ -49,7 +49,6 @@ import org.jruby.RubyNumeric;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -107,7 +106,7 @@ public class RubyTCPServer extends RubyTCPSocket {
                 portInt = RubyNumeric.fix2int(port);
             } else {
                 IRubyObject portString = port.convertToString();
-                IRubyObject portInteger = portString.convertToInteger(MethodIndex.TO_I, "to_i");
+                IRubyObject portInteger = portString.convertToInteger( "to_i");
                 portInt = RubyNumeric.fix2int(portInteger);
 
                 if (portInt <= 0) {

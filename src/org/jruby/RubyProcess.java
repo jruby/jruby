@@ -37,7 +37,6 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -122,7 +121,7 @@ public class RubyProcess {
         
         @JRubyMethod(name = "==")
         public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-            return other.callMethod(context, MethodIndex.EQUALEQUAL, "==", this.to_i());
+            return other.callMethod(context, "==", this.to_i());
         }
 
         @JRubyMethod

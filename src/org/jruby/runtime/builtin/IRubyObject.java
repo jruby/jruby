@@ -64,6 +64,7 @@ public interface IRubyObject {
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, Block block);
     @Deprecated
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name);
+    @Deprecated
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject arg);
     
     /**
@@ -188,7 +189,13 @@ public interface IRubyObject {
      *
      * @return
      */
+    @Deprecated
     RubyInteger convertToInteger(int convertMethodIndex, String convertMethod);
+    /**
+     *
+     * @return
+     */
+    RubyInteger convertToInteger(String convertMethod);
     /**
      *
      * @return

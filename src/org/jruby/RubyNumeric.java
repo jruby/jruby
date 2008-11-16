@@ -47,14 +47,12 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Convert;
-import org.jruby.util.Numeric;
 
 /**
  * Base class for all numerical types in ruby.
@@ -623,11 +621,11 @@ public class RubyNumeric extends RubyObject {
         RubyFixnum zero = RubyFixnum.zero(getRuntime());
 
         if (!equalInternal(context, z, zero) &&
-                ((x.callMethod(context, MethodIndex.OP_LT, "<", zero).isTrue() &&
-                dividend.callMethod(context, MethodIndex.OP_GT, ">", zero).isTrue()) ||
-                (x.callMethod(context, MethodIndex.OP_GT, ">", zero).isTrue() &&
-                dividend.callMethod(context, MethodIndex.OP_LT, "<", zero).isTrue()))) {
-            return z.callMethod(context, MethodIndex.OP_MINUS, "-", dividend);
+                ((x.callMethod(context, "<", zero).isTrue() &&
+                dividend.callMethod(context, ">", zero).isTrue()) ||
+                (x.callMethod(context, ">", zero).isTrue() &&
+                dividend.callMethod(context, "<", zero).isTrue()))) {
+            return z.callMethod(context, "-", dividend);
         } else {
             return z;
         }
@@ -638,7 +636,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "abs")
     public IRubyObject abs(ThreadContext context) {
-        if (callMethod(context, MethodIndex.OP_LT, "<", RubyFixnum.zero(getRuntime())).isTrue()) {
+        if (callMethod(context, "<", RubyFixnum.zero(getRuntime())).isTrue()) {
             return callMethod(context, "-@");
         }
         return this;
@@ -790,21 +788,19 @@ public class RubyNumeric extends RubyObject {
         } else {
             RubyNumeric i = this;
             
-            int cmp;
             String cmpString;
-            if (((RubyBoolean) step.callMethod(context, MethodIndex.OP_GT, ">", RubyFixnum.zero(getRuntime()))).isTrue()) {
-                cmp = MethodIndex.OP_GT;
+            if (((RubyBoolean) step.callMethod(context, ">", RubyFixnum.zero(getRuntime()))).isTrue()) {
+                cmpString = ">";
             } else {
-                cmp = MethodIndex.OP_LT;
+                cmpString = "<";
             }
-            cmpString = MethodIndex.NAMES.get(cmp);
 
             while (true) {
-                if (i.callMethod(context, cmp, cmpString, to).isTrue()) {
+                if (i.callMethod(context, cmpString, to).isTrue()) {
                     break;
                 }
                 block.yield(context, i);
-                i = (RubyNumeric) i.callMethod(context, MethodIndex.OP_PLUS, "+", step);
+                i = (RubyNumeric) i.callMethod(context, "+", step);
             }
         }
         return this;
@@ -822,7 +818,7 @@ public class RubyNumeric extends RubyObject {
         // it won't hurt fixnums
         if (this == other)  return getRuntime().getTrue();
 
-        return other.callMethod(context, MethodIndex.EQUALEQUAL, "==", this);
+        return other.callMethod(context, "==", this);
     }
 
     /** num_numerator

@@ -62,7 +62,6 @@ import org.jruby.RubyStruct;
 import org.jruby.RubyRange;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.util.ByteList;

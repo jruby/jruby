@@ -42,7 +42,6 @@ import org.jruby.runtime.CompiledBlockLight;
 import org.jruby.runtime.CompiledSharedScopeBlock;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.MethodFactory;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -623,7 +622,7 @@ public class RuntimeHelpers {
     }
 
     private static IRubyObject coerceProc(IRubyObject proc, Ruby runtime) throws RaiseException {
-        proc = TypeConverter.convertToType(proc, runtime.getProc(), 0, "to_proc", false);
+        proc = TypeConverter.convertToType(proc, runtime.getProc(), "to_proc", false);
 
         if (!(proc instanceof RubyProc)) {
             throw runtime.newTypeError("wrong argument type " + proc.getMetaClass().getName() + " (expected Proc)");
@@ -813,7 +812,7 @@ public class RuntimeHelpers {
         for (int j = 0,k = expressions.getLength(); j < k; j++) {
             IRubyObject condition = expressions.eltInternal(j);
 
-            if ((expression != null && condition.callMethod(context, MethodIndex.OP_EQQ, "===", expression)
+            if ((expression != null && condition.callMethod(context, "===", expression)
                     .isTrue())
                     || (expression == null && condition.isTrue())) {
                 return context.getRuntime().getTrue();
@@ -1110,7 +1109,7 @@ public class RuntimeHelpers {
         if (value instanceof RubyArray) return value;
 
         if (value.respondsTo("to_ary")) {
-            return TypeConverter.convertToType(value, value.getRuntime().getArray(), MethodIndex.TO_A, "to_ary", false);
+            return TypeConverter.convertToType(value, value.getRuntime().getArray(), "to_ary", false);
         }
 
         return value.getRuntime().newArray(value);

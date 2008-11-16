@@ -36,7 +36,6 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -69,8 +68,8 @@ public class RubyComparable {
 
         RubyFixnum zero = RubyFixnum.zero(context.getRuntime());
         
-        if (val.callMethod(context, MethodIndex.OP_GT, ">", zero).isTrue()) return 1;
-        if (val.callMethod(context, MethodIndex.OP_LT, "<", zero).isTrue()) return -1;
+        if (val.callMethod(context, ">", zero).isTrue()) return 1;
+        if (val.callMethod(context, "<", zero).isTrue()) return -1;
 
         return 0;
     }
@@ -104,7 +103,7 @@ public class RubyComparable {
         if (recv == other) return runtime.getTrue();
 
         try {
-            IRubyObject result = recv.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", other);
+            IRubyObject result = recv.callMethod(context, "<=>", other);
             
             return RubyBoolean.newBoolean(runtime, cmpint(context, result, recv, other) == 0);
         } catch (RaiseException e) {
@@ -122,7 +121,7 @@ public class RubyComparable {
     // <=> may return nil in many circumstances, e.g. 3 <=> NaN        
     @JRubyMethod(name = ">", required = 1)
     public static RubyBoolean op_gt(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        IRubyObject result = recv.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", other);
+        IRubyObject result = recv.callMethod(context, "<=>", other);
         
         if (result.isNil()) cmperr(recv, other);
 
@@ -134,7 +133,7 @@ public class RubyComparable {
      */
     @JRubyMethod(name = ">=", required = 1)
     public static RubyBoolean op_ge(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        IRubyObject result = recv.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", other);
+        IRubyObject result = recv.callMethod(context, "<=>", other);
         
         if (result.isNil()) cmperr(recv, other);
 
@@ -146,7 +145,7 @@ public class RubyComparable {
      */
     @JRubyMethod(name = "<", required = 1)
     public static RubyBoolean op_lt(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        IRubyObject result = recv.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", other);
+        IRubyObject result = recv.callMethod(context, "<=>", other);
 
         if (result.isNil()) cmperr(recv, other);
 
@@ -158,7 +157,7 @@ public class RubyComparable {
      */
     @JRubyMethod(name = "<=", required = 1)
     public static RubyBoolean op_le(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        IRubyObject result = recv.callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", other);
+        IRubyObject result = recv.callMethod(context, "<=>", other);
 
         if (result.isNil()) cmperr(recv, other);
 

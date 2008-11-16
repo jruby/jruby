@@ -56,7 +56,6 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -143,7 +142,7 @@ public class RubyHash extends RubyObject implements Map {
 
         if (args.length == 1) {
             IRubyObject tmp = TypeConverter.convertToTypeWithCheck(
-                    args[0], runtime.getHash(), MethodIndex.TO_HASH, "to_hash");
+                    args[0], runtime.getHash(), "to_hash");
 
             if (!tmp.isNil()) {
                 RubyHash otherHash = (RubyHash) tmp;
@@ -871,7 +870,7 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "[]", required = 1)
     public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
         IRubyObject value;
-        return ((value = internalGet(key)) == null) ? callMethod(context, MethodIndex.DEFAULT, "default", key) : value;
+        return ((value = internalGet(key)) == null) ? callMethod(context, "default", key) : value;
     }
 
     /** rb_hash_hash

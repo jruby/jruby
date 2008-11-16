@@ -42,7 +42,6 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.BlockCallback;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
@@ -349,7 +348,7 @@ public class RubyEnumerable {
             
             Arrays.sort(valuesAndCriteria, new Comparator<IRubyObject[]>() {
                 public int compare(IRubyObject[] o1, IRubyObject[] o2) {
-                    return RubyFixnum.fix2int(o1[1].callMethod(localContext, MethodIndex.OP_SPACESHIP, "<=>", o2[1]));
+                    return RubyFixnum.fix2int(o1[1].callMethod(localContext, "<=>", o2[1]));
                 }
             });
             
@@ -372,7 +371,7 @@ public class RubyEnumerable {
             
             Arrays.sort(valuesAndCriteria, new Comparator<IRubyObject[]>() {
                 public int compare(IRubyObject[] o1, IRubyObject[] o2) {
-                    return RubyFixnum.fix2int(o1[1].callMethod(localContext, MethodIndex.OP_SPACESHIP, "<=>", o2[1]));
+                    return RubyFixnum.fix2int(o1[1].callMethod(localContext, "<=>", o2[1]));
                 }
             });
             
@@ -398,7 +397,7 @@ public class RubyEnumerable {
             callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     ctx.setRubyFrameDelta(ctx.getRubyFrameDelta()+2);
-                    if (pattern.callMethod(ctx, MethodIndex.OP_EQQ, "===", largs[0]).isTrue()) {
+                    if (pattern.callMethod(ctx, "===", largs[0]).isTrue()) {
                         IRubyObject value = block.yield(ctx, largs[0]);
                         synchronized (result) {
                             result.append(value);
@@ -411,7 +410,7 @@ public class RubyEnumerable {
         } else {
             callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    if (pattern.callMethod(ctx, MethodIndex.OP_EQQ, "===", largs[0]).isTrue()) {
+                    if (pattern.callMethod(ctx, "===", largs[0]).isTrue()) {
                         synchronized (result) {
                             result.append(largs[0]);
                         }
@@ -740,8 +739,7 @@ public class RubyEnumerable {
             callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     synchronized (result) {
-                        if (result[0] == null || RubyComparable.cmpint(ctx, largs[0].callMethod(ctx,
-                                MethodIndex.OP_SPACESHIP, "<=>", result[0]), largs[0], result[0]) > 0) {
+                        if (result[0] == null || RubyComparable.cmpint(ctx, largs[0].callMethod(ctx, "<=>", result[0]), largs[0], result[0]) > 0) {
                             result[0] = largs[0];
                         }
                     }
@@ -768,8 +766,7 @@ public class RubyEnumerable {
                 checkContext(localContext, ctx, "max_by");
                 IRubyObject v = block.yield(ctx, largs[0]);
 
-                if (memo == null || RubyComparable.cmpint(ctx, v.callMethod(ctx,
-                        MethodIndex.OP_SPACESHIP, "<=>", memo), v, memo) > 0) {
+                if (memo == null || RubyComparable.cmpint(ctx, v.callMethod(ctx, "<=>", memo), v, memo) > 0) {
                     memo = v;
                     result[0] = largs[0];
                 }
@@ -800,8 +797,7 @@ public class RubyEnumerable {
             callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     synchronized (result) {
-                        if (result[0] == null || RubyComparable.cmpint(ctx, largs[0].callMethod(ctx,
-                                MethodIndex.OP_SPACESHIP, "<=>", result[0]), largs[0], result[0]) < 0) {
+                        if (result[0] == null || RubyComparable.cmpint(ctx, largs[0].callMethod(ctx, "<=>", result[0]), largs[0], result[0]) < 0) {
                             result[0] = largs[0];
                         }
                     }
@@ -828,8 +824,7 @@ public class RubyEnumerable {
                 checkContext(localContext, ctx, "min_by");
                 IRubyObject v = block.yield(ctx, largs[0]);
 
-                if (memo == null || RubyComparable.cmpint(ctx, v.callMethod(ctx,
-                        MethodIndex.OP_SPACESHIP, "<=>", memo), v, memo) < 0) {
+                if (memo == null || RubyComparable.cmpint(ctx, v.callMethod(ctx, "<=>", memo), v, memo) < 0) {
                     memo = v;
                     result[0] = largs[0];
                 }
@@ -914,13 +909,11 @@ public class RubyEnumerable {
                     minMemo = maxMemo = v;
                     result[0] = result[1] = arg;
                 } else {
-                    if (RubyComparable.cmpint(ctx, v.callMethod(ctx,
-                        MethodIndex.OP_SPACESHIP, "<=>", minMemo), v, minMemo) < 0) {
+                    if (RubyComparable.cmpint(ctx, v.callMethod(ctx, "<=>", minMemo), v, minMemo) < 0) {
                         minMemo = v;
                         result[0] = arg;
                     }
-                    if (RubyComparable.cmpint(ctx, v.callMethod(ctx,
-                            MethodIndex.OP_SPACESHIP, "<=>", maxMemo), v, maxMemo) > 0) {
+                    if (RubyComparable.cmpint(ctx, v.callMethod(ctx, "<=>", maxMemo), v, maxMemo) > 0) {
                         maxMemo = v;
                         result[1] = arg;
                     }
@@ -1076,7 +1069,7 @@ public class RubyEnumerable {
         final Ruby runtime = context.getRuntime();
 
         for (int i = 0; i < args.length; i++) {
-            args[i] = TypeConverter.convertToType(args[i], runtime.getArray(), MethodIndex.TO_A, "to_a");
+            args[i] = TypeConverter.convertToType(args[i], runtime.getArray(), "to_a");
         }
         
         final int aLen = args.length + 1;
