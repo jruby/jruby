@@ -98,6 +98,8 @@ public class ChannelStream implements Stream, Finalizable {
     protected int ungotc = -1;
     private volatile boolean closedExplicitly = false;
 
+    private boolean eof = false;
+
     public ChannelStream(Ruby runtime, ChannelDescriptor descriptor, ModeFlags modes, FileDescriptor fileDescriptor) throws InvalidValueException {
         descriptor.checkNewModes(modes);
         
@@ -507,8 +509,6 @@ public class ChannelStream implements Stream, Finalizable {
         return new BufferedOutputStream(Channels.newOutputStream((WritableByteChannel)descriptor.getChannel()));
     }
     
-    private boolean eof = false;
-    
     public void clearerr() {
         eof = false;
     }
@@ -518,7 +518,7 @@ public class ChannelStream implements Stream, Finalizable {
      * @throws BadDescriptorException 
      * @see org.jruby.util.IOHandler#isEOF()
      */
-    public synchronized boolean feof() throws IOException, BadDescriptorException {
+    public boolean feof() throws IOException, BadDescriptorException {
         checkReadable();
         
         if (eof) {
@@ -526,33 +526,6 @@ public class ChannelStream implements Stream, Finalizable {
         } else {
             return false;
         }
-//        
-//        if (reading && buffer.hasRemaining()) return false;
-//        
-//        if (descriptor.isSeekable()) {
-//            FileChannel fileChannel = (FileChannel)descriptor.getChannel();
-//            return (fileChannel.size() == fileChannel.position());
-//        } else if (descriptor.getChannel() instanceof SocketChannel) {
-//            return false;
-//        } else {
-//            checkReadable();
-//            ensureRead();
-//
-//            if (ungotc > 0) {
-//                return false;
-//            }
-//            // TODO: this is new to replace what's below
-//            ungotc = read();
-//            if (ungotc == -1) {
-//                eof = true;
-//                return true;
-//            }
-//            // FIXME: this was here before; need a better way?
-////            if (fillInBuffer() < 0) {
-////                return true;
-////            }
-//            return false;
-//        }
     }
     
     /**
