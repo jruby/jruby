@@ -643,8 +643,10 @@ public class RubyInstanceConfig {
             if (jrubyHome != null) {
                 jrubyHome = verifyHome(jrubyHome);
             } else {
-                jrubyHome = getClass().getResource("/org/jruby/jruby.properties")
-                    .getPath().replace("org/jruby/jruby.properties", "META-INF/jruby.home");
+                try {
+                    jrubyHome = getClass().getResource("/META-INF/jruby.home")
+                        .toURI().getSchemeSpecificPart();
+                } catch (Exception e) {}
             }
         }
         return jrubyHome;
