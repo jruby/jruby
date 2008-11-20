@@ -344,15 +344,14 @@ public class RubyStringIO extends RubyObject {
             ByteList add;
             if (-1 == ix) {
                 ix = internal.getByteList().realSize;
-                add = new ByteList(new byte[0], false);
+                add = ByteList.EMPTY_BYTELIST;
             } else {
                 add = isParagraph? NEWLINE : sep;
             }
 
-            ByteList line = internal.getByteList().makeShared((int)pos, ix - (int)pos);
-            line.unshare();
+            ByteList line = new ByteList(ix - (int)pos + add.length());
+            line.append(internal.getByteList(), (int)pos, ix - (int)pos);
             line.append(add);
-            line.invalidate();
             pos = ix + add.realSize;
             lineno++;
 
