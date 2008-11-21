@@ -39,7 +39,7 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /** 
- * Represents a star in a multiple assignent.
+ * Represents the unassignable star in a multiple assignent (e.g. a,b,* = arr).
  * 
  * AssignmentVisitor.multiAssign checks for this (this is never visited directly)
  */
