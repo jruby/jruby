@@ -13,7 +13,7 @@ module JavaArrayUtilities
           end
         else
           length.times do |i|
-            ruby_array[i] = java_array[i];      
+            ruby_array[i] = java_array[i]
           end
         end
       end

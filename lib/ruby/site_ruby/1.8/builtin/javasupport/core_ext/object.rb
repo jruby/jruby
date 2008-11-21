@@ -29,7 +29,7 @@ class Object
     end
     
     if include_class.respond_to? "_name"
-      return self.class.instance_eval { import(include_class._name) };
+      return self.class.instance_eval { import(include_class._name) }
     end
     
     # else, pull in the class
