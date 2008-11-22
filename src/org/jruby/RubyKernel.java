@@ -44,6 +44,7 @@ package org.jruby;
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Random;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.*;
@@ -1174,60 +1175,61 @@ public class RubyKernel {
         return RubyString.newStringNoCopy(runtime, output.toByteArray());
     }
     
-    @JRubyMethod(name = "srand", optional = 1, module = true, visibility = PRIVATE)
-    public static RubyInteger srand(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+    @JRubyMethod(name = "srand", module = true, visibility = PRIVATE)
+    public static RubyInteger srand(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
-        long oldRandomSeed = runtime.getRandomSeed();
 
-        if (args.length > 0) {
-            RubyInteger integerSeed = args[0].convertToInteger("to_int");
-            runtime.setRandomSeed(integerSeed.getLongValue());
-        } else {
-            // Not sure how well this works, but it works much better than
-            // just currentTimeMillis by itself.
-            runtime.setRandomSeed(System.currentTimeMillis() ^
-              recv.hashCode() ^ runtime.incrementRandomSeedSequence() ^
-              runtime.getRandom().nextInt(Math.max(1, Math.abs((int)runtime.getRandomSeed()))));
-        }
+        // Not sure how well this works, but it works much better than
+        // just currentTimeMillis by itself.
+        runtime.setRandomSeed(System.currentTimeMillis() ^
+               recv.hashCode() ^ runtime.incrementRandomSeedSequence() ^
+               runtime.getRandom().nextInt(Math.max(1, Math.abs((int)runtime.getRandomSeed()))));
+
+        long oldRandomSeed = runtime.getRandomSeed();
+        runtime.getRandom().setSeed(runtime.getRandomSeed());
+        return runtime.newFixnum(oldRandomSeed);
+    }
+    
+    @JRubyMethod(name = "srand", module = true, visibility = PRIVATE)
+    public static RubyInteger srand(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        RubyInteger integerSeed = arg.convertToInteger("to_int");
+        Ruby runtime = context.getRuntime();
+
+        long oldRandomSeed = runtime.getRandomSeed();
+        runtime.setRandomSeed(integerSeed.getLongValue());
+
         runtime.getRandom().setSeed(runtime.getRandomSeed());
         return runtime.newFixnum(oldRandomSeed);
     }
 
-    @JRubyMethod(name = "rand", optional = 1, module = true, visibility = PRIVATE)
-    public static RubyNumeric rand(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+    @JRubyMethod(name = "rand", module = true, visibility = PRIVATE)
+    public static RubyNumeric rand(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
-        long ceil;
-        if (args.length == 0) {
-            ceil = 0;
-        } else if (args.length == 1) {
-            if (args[0] instanceof RubyBignum) {
-                byte[] bigCeilBytes = ((RubyBignum) args[0]).getValue().toByteArray();
-                BigInteger bigCeil = new BigInteger(bigCeilBytes).abs();
-                
-                byte[] randBytes = new byte[bigCeilBytes.length];
-                runtime.getRandom().nextBytes(randBytes);
-                
-                BigInteger result = new BigInteger(randBytes).abs().mod(bigCeil);
-                
-                return new RubyBignum(runtime, result); 
-            }
-             
-            RubyInteger integerCeil = (RubyInteger)RubyKernel.new_integer(context, recv, args[0]); 
-            ceil = Math.abs(integerCeil.getLongValue());
-        } else {
-            throw runtime.newArgumentError("wrong # of arguments(" + args.length + " for 1)");
+        return RubyFloat.newFloat(runtime, runtime.getRandom().nextDouble());
+    }
+
+    @JRubyMethod(name = "rand", module = true, visibility = PRIVATE)
+    public static RubyNumeric rand(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        Ruby runtime = context.getRuntime();
+        Random random = runtime.getRandom();
+
+        if (arg instanceof RubyBignum) {
+            byte[] bigCeilBytes = ((RubyBignum) arg).getValue().toByteArray();
+            BigInteger bigCeil = new BigInteger(bigCeilBytes).abs();
+            byte[] randBytes = new byte[bigCeilBytes.length];
+            random.nextBytes(randBytes);
+            BigInteger result = new BigInteger(randBytes).abs().mod(bigCeil);
+            return new RubyBignum(runtime, result); 
         }
 
-        if (ceil == 0) {
-            return RubyFloat.newFloat(runtime, runtime.getRandom().nextDouble()); 
-        }
-        if (ceil > Integer.MAX_VALUE) {
-            return runtime.newFixnum(Math.abs(runtime.getRandom().nextLong()) % ceil);
-        }
-            
-        return runtime.newFixnum(runtime.getRandom().nextInt((int) ceil));
+        RubyInteger integerCeil = (RubyInteger)RubyKernel.new_integer(context, recv, arg); 
+        long ceil = Math.abs(integerCeil.getLongValue());
+        if (ceil == 0) return RubyFloat.newFloat(runtime, random.nextDouble());
+        if (ceil > Integer.MAX_VALUE) return runtime.newFixnum(Math.abs(random.nextLong()) % ceil);
+
+        return runtime.newFixnum(random.nextInt((int) ceil));
     }
-    
+
     @JRubyMethod(name = "syscall", required = 1, optional = 9, module = true, visibility = PRIVATE)
     public static IRubyObject syscall(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         throw context.getRuntime().newNotImplementedError("Kernel#syscall is not implemented in JRuby");
