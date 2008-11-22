@@ -47,6 +47,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Random;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -2934,6 +2935,34 @@ public class RubyArray extends RubyObject implements List {
                     makeShared(0, realLength, getMetaClass()), block);
         }
         return this;
+    }
+
+    @JRubyMethod(name = "shuffle!", compat = CompatVersion.RUBY1_9)
+    public IRubyObject shuffle_bang(ThreadContext context) {
+        modify();
+        Random random = context.getRuntime().getRandom();
+        
+        int i = realLength;
+        
+        try {
+            while (i > 0) {
+                int r = (int)(random.nextDouble() * i);
+                IRubyObject tmp = values[begin + --i];
+                values[begin + i] = values[begin + r];
+                values[begin + r] = tmp;
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            concurrentModification();
+        }
+
+        return this;
+    }
+
+    @JRubyMethod(name = "shuffle", compat = CompatVersion.RUBY1_9)
+    public IRubyObject shuffle(ThreadContext context) {
+        RubyArray ary = aryDup();
+        ary.shuffle_bang(context);
+        return ary;
     }
 
     final class BlockComparator implements Comparator {
