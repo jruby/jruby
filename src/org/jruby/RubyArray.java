@@ -2472,7 +2472,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_flatten_bang
      *
      */
-    @JRubyMethod(name = "flatten!")
+    @JRubyMethod(name = "flatten!", compat = CompatVersion.RUBY1_8)
     public IRubyObject flatten_bang(ThreadContext context) {
         int i = 0;
         RubyArray memo = null;
@@ -2497,7 +2497,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_flatten
     *
     */
-    @JRubyMethod(name = "flatten")
+    @JRubyMethod(name = "flatten", compat = CompatVersion.RUBY1_8)
     public IRubyObject flatten(ThreadContext context) {
         RubyArray ary = aryDup();
         ary.flatten_bang(context);
