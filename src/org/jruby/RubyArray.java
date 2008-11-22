@@ -2946,7 +2946,7 @@ public class RubyArray extends RubyObject implements List {
         
         try {
             while (i > 0) {
-                int r = (int)(random.nextDouble() * i);
+                int r = random.nextInt(i);
                 IRubyObject tmp = values[begin + --i];
                 values[begin + i] = values[begin + r];
                 values[begin + r] = tmp;
@@ -2963,6 +2963,83 @@ public class RubyArray extends RubyObject implements List {
         RubyArray ary = aryDup();
         ary.shuffle_bang(context);
         return ary;
+    }
+
+    @JRubyMethod(name = "sample", compat = CompatVersion.RUBY1_9)
+    public IRubyObject sample(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        if (realLength == 0) return runtime.getNil();
+        int i = realLength == 1 ? 0 : runtime.getRandom().nextInt(realLength);
+        try {
+            return values[begin + i];
+        } catch (ArrayIndexOutOfBoundsException e) {
+            concurrentModification();
+            return runtime.getNil();
+        }
+    }
+
+    private static int SORTED_THRESHOLD = 10; 
+    @JRubyMethod(name = "sample", compat = CompatVersion.RUBY1_9)
+    public IRubyObject sample(ThreadContext context, IRubyObject nv) {
+        Ruby runtime = context.getRuntime();
+        Random random = runtime.getRandom();
+        int n = RubyNumeric.num2int(nv);
+
+        int i, j, k;
+        switch (n) {
+        case 0: 
+            return newEmptyArray(runtime);
+        case 1:
+            return newArray(runtime, values[random.nextInt(realLength)]);
+        case 2:
+            i = random.nextInt(realLength);
+            j = random.nextInt(realLength - 1);
+            if (j >= i) j++;
+            return newArray(runtime, values[begin + i], values[begin + j]);
+        case 3:
+            i = random.nextInt(realLength);
+            j = random.nextInt(realLength - 1);
+            k = random.nextInt(realLength - 2);
+            int l = j, g = i;
+            if (j >= i) {
+                l = i;
+                g = ++j;
+            }
+            if (k >= l && (++k >= g)) ++k;
+            return new RubyArray(runtime, new IRubyObject[] {values[begin + i], values[begin + j], values[begin + k]});
+        }
+        
+        int len = realLength;
+        if (n > len) n = len;
+        if (n < SORTED_THRESHOLD) {
+            int idx[] = new int[SORTED_THRESHOLD];
+            int sorted[] = new int[SORTED_THRESHOLD];
+            sorted[0] = idx[0] = random.nextInt(len);
+            for (i = 1; i < n; i++) {
+                k = random.nextInt(--len);
+                for (j = 0; j < i; j++) {
+                    if (k < sorted[j]) break;
+                    k++;
+                }
+                System.arraycopy(sorted, j, sorted, j + 1, i - j);
+                sorted[j] = idx[i] = k;
+            }
+            IRubyObject[]result = new IRubyObject[n];
+            for (i = 0; i < n; i++) result[i] = values[begin + idx[i]];
+            return new RubyArray(runtime, result);
+        } else {
+            IRubyObject[]result = new IRubyObject[len];
+            System.arraycopy(values, begin, result, 0, len);
+            for (i = 0; i < n; i++) {
+                j = random.nextInt(len - i) + i;
+                IRubyObject tmp = result[j];
+                result[j] = result[i];
+                result[i] = tmp;
+            }
+            RubyArray ary = new RubyArray(runtime, result);
+            ary.realLength = n;
+            return ary;
+        }
     }
 
     final class BlockComparator implements Comparator {
