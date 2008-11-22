@@ -2494,6 +2494,16 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
 
+    /** rb_ary_flatten
+    *
+    */
+    @JRubyMethod(name = "flatten")
+    public IRubyObject flatten(ThreadContext context) {
+        RubyArray ary = aryDup();
+        ary.flatten_bang(context);
+        return ary;
+    }
+
     private boolean flatten19(ThreadContext context, int level, RubyArray result) {
         Ruby runtime = context.getRuntime();
         RubyArray stack = new RubyArray(runtime, ARRAY_DEFAULT_SIZE, false);
