@@ -182,12 +182,17 @@ public class RubyProc extends RubyObject implements JumpTarget {
         return getRuntime().newBinding(block.getBinding());
     }
 
-    @JRubyMethod(name = {"call", "[]"}, rest = true, frame = true)
+    @JRubyMethod(name = {"call", "[]"}, rest = true, frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
-        return call(context, args, null);
+        return call(context, args, null, Block.NULL_BLOCK);
     }
-    
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self) {
+
+    @JRubyMethod(name = {"call", "[]"}, rest = true, frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject call19(ThreadContext context, IRubyObject[] args, Block block) {
+        return call(context, args, null, block);
+    }
+
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, Block passedBlock) {
         assert args != null;
         
         Ruby runtime = getRuntime();
@@ -197,7 +202,7 @@ public class RubyProc extends RubyObject implements JumpTarget {
         try {
             if (self != null) newBlock.getBinding().setSelf(self);
             
-            return newBlock.call(context, args);
+            return newBlock.call(context, args, passedBlock);
         } catch (JumpException.BreakJump bj) {
             switch(block.type) {
             case LAMBDA: if (bj.getTarget() == jumpTarget) {

@@ -111,6 +111,10 @@ public class Block {
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
         return body.call(context, args, binding, type);
     }
+
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
+        return body.call(context, args, binding, type, block);
+    }
     
     public IRubyObject yield(ThreadContext context, IRubyObject value) {
         return body.yield(context, value, binding, type);

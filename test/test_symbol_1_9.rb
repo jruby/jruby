@@ -9,7 +9,7 @@ class TestSymbol19 < Test::Unit::TestCase
   end
 
   def test_to_proc
-    assert Symbol.instance_methods.include?('to_proc')
+    assert Symbol.instance_methods.include?(:to_proc)
   
     s = SymTest.new
     [s].each &:call

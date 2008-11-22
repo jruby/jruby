@@ -188,6 +188,22 @@ public class FourVarDynamicScope extends ThreeVarDynamicScope {
     }
 
     @Override
+    public void setEndArgValues(IRubyObject[] values, int index, int size) {
+        assert size <= 2 : "FourVarDynamicScope only supports scopes with four variables, not " + size;
+
+        switch (size) {
+         case 4:
+            variableValueZero = values[values.length - 4];
+        case 3:
+            variableValueOne = values[values.length - 3];
+        case 2:
+            variableValueTwo = values[values.length - 2];
+        case 1:
+            variableValueThree = values[values.length - 1];
+        }
+    }
+
+    @Override
     public void setArgValues(IRubyObject arg0) {
         variableValueZero = arg0;
     }

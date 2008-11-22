@@ -287,15 +287,13 @@ public class ReWriteVisitor implements NodeVisitor {
 	private ArrayList<Node> collectAllArguments(ArgsNode iVisited) {
 		ArrayList<Node> arguments = new ArrayList<Node>();
         
-		if (iVisited.getArgs() != null) arguments.addAll(iVisited.getArgs().childNodes());
-        
-		if (iVisited.getOptArgs() != null) arguments.addAll(iVisited.getOptArgs().childNodes());
-        
-		if (iVisited.getRestArgNode() != null) {
-			arguments.add(new ConstNode(iVisited.getRestArgNode().getPosition(), '*' + iVisited.getRestArgNode().getName()));
-        	}
-        
-		if (iVisited.getBlockArgNode() != null) arguments.add(iVisited.getBlockArgNode());
+		if (iVisited.getPre() != null) arguments.addAll(iVisited.getPre().childNodes());
+        if (iVisited.getOptArgs() != null) arguments.addAll(iVisited.getOptArgs().childNodes());
+        if (iVisited.getRestArgNode() != null) {
+            arguments.add(new ConstNode(iVisited.getRestArgNode().getPosition(), '*' + iVisited.getRestArgNode().getName()));
+        }
+        if (iVisited.getPost() != null) arguments.addAll(iVisited.getPost().childNodes());
+		if (iVisited.getBlock() != null) arguments.add(iVisited.getBlock());
         
 		return arguments;
 	}
@@ -677,8 +675,8 @@ public class ReWriteVisitor implements NodeVisitor {
 	private boolean hasArguments(Node n) {
 		if (n instanceof ArgsNode) {
 			ArgsNode args = (ArgsNode) n;
-			return (args.getArgs() != null || args.getOptArgs() != null
-					|| args.getBlockArgNode() != null || args.getRestArgNode() != null);
+			return (args.getPre() != null || args.getOptArgs() != null
+					|| args.getBlock() != null || args.getRestArgNode() != null);
 		} else if (n instanceof ArrayNode && n.childNodes().isEmpty()) {
 			return false;
 		}
@@ -1008,6 +1006,27 @@ public class ReWriteVisitor implements NodeVisitor {
         }
 		if (iVisited.getValueNode() == null || iVisited.getValueNode().isInvisible()) {
 			visitNode(iVisited.getArgsNode());
+			return null;
+		}
+		print(config.getFormatHelper().beforeAssignment());
+		print("=");
+		print(config.getFormatHelper().afterAssignment());
+		enterCall();
+		if (iVisited.getValueNode() instanceof ArrayNode) {
+			visitAndPrintWithSeparator(iVisited.getValueNode().childNodes().iterator());
+        } else {
+			visitNode(iVisited.getValueNode());
+        }
+		leaveCall();
+		return null;
+	}
+
+	public Instruction visitMultipleAsgnNode(MultipleAsgn19Node iVisited) {
+		if (iVisited.getPre() != null) {
+			factory.createMultipleAssignmentReWriteVisitor().visitAndPrintWithSeparator(iVisited.getPre().childNodes().iterator());
+        }
+		if (iVisited.getValueNode() == null || iVisited.getValueNode().isInvisible()) {
+			visitNode(iVisited.getRest());
 			return null;
 		}
 		print(config.getFormatHelper().beforeAssignment());
@@ -1656,4 +1675,9 @@ public class ReWriteVisitor implements NodeVisitor {
 
 		return null;
 	}
+
+    public Instruction visitRestArgNode(RestArgNode iVisited) {
+        print("*" + iVisited.getName());
+        return null;
+    }
 }

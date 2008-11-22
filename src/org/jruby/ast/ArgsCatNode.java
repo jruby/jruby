@@ -34,7 +34,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -52,7 +51,7 @@ public class ArgsCatNode extends Node {
         
         assert firstNode != null : "ArgsCatNode.first == null";
         assert secondNode != null : "ArgsCatNode.second == null";
-        
+
         this.firstNode = firstNode;
         this.secondNode = secondNode;
     }

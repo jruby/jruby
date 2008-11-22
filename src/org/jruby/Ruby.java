@@ -450,7 +450,8 @@ public final class Ruby {
         boolean forceCompile = getInstanceConfig().getCompileMode().shouldPrecompileAll();
         if (yarvCompile) {
             runner = tryCompileYarv(scriptNode);
-        } else if (compile) {
+        // FIXME: Once 1.9 compilation is supported this should be removed
+        } else if (compile && getInstanceConfig().getCompatVersion() != CompatVersion.RUBY1_9) {
             script = tryCompile(scriptNode);
             if (forceCompile && script == null) {
                 return getNil();
@@ -953,25 +954,35 @@ public final class Ruby {
     }
 
     private void initRoot() {
+        boolean oneNine = config.getCompatVersion() == CompatVersion.RUBY1_9;
         // Bootstrap the top of the hierarchy
-        objectClass = RubyClass.createBootstrapClass(this, "Object", null, RubyObject.OBJECT_ALLOCATOR);
+        if (oneNine) {
+            basicObjectClass = RubyClass.createBootstrapClass(this, "BasicObject", null, RubyBasicObject.OBJECT_ALLOCATOR);
+            objectClass = RubyClass.createBootstrapClass(this, "Object", basicObjectClass, RubyObject.OBJECT_ALLOCATOR);
+        } else {
+            objectClass = RubyClass.createBootstrapClass(this, "Object", null, RubyObject.OBJECT_ALLOCATOR);
+        }
         moduleClass = RubyClass.createBootstrapClass(this, "Module", objectClass, RubyModule.MODULE_ALLOCATOR);
         classClass = RubyClass.createBootstrapClass(this, "Class", moduleClass, RubyClass.CLASS_ALLOCATOR);
 
+        if (oneNine) basicObjectClass.setMetaClass(classClass);
         objectClass.setMetaClass(classClass);
         moduleClass.setMetaClass(classClass);
         classClass.setMetaClass(classClass);
 
         RubyClass metaClass;
+        if (oneNine) metaClass = basicObjectClass.makeMetaClass(classClass);
         metaClass = objectClass.makeMetaClass(classClass);
         metaClass = moduleClass.makeMetaClass(metaClass);
         metaClass = classClass.makeMetaClass(metaClass);
 
+        if (oneNine) RubyBasicObject.createBasicObjectClass(this, basicObjectClass);
         RubyObject.createObjectClass(this, objectClass);
         RubyModule.createModuleClass(this, moduleClass);
         RubyClass.createClassClass(this, classClass);
         
         // set constants now that they're initialized
+        if (oneNine) objectClass.setConstant("BasicObject", basicObjectClass);
         objectClass.setConstant("Object", objectClass);
         objectClass.setConstant("Class", classClass);
         objectClass.setConstant("Module", moduleClass);
@@ -1345,6 +1356,10 @@ public final class Ruby {
 
     public RubyClass getObject() {
         return objectClass;
+    }
+
+    public RubyClass getBasicObject() {
+        return basicObjectClass;
     }
 
     public RubyClass getModule() {
@@ -1945,12 +1960,12 @@ public final class Ruby {
     
     public Node parseFile(InputStream in, String file, DynamicScope scope) {
         if (parserStats != null) parserStats.addLoadParse();
-        return parser.parse(file, in, scope, new ParserConfiguration(0, false, false, true));
+        return parser.parse(file, in, scope, new ParserConfiguration(0, false, false, true, config.getCompatVersion()));
     }
 
     public Node parseInline(InputStream in, String file, DynamicScope scope) {
         if (parserStats != null) parserStats.addEvalParse();
-        return parser.parse(file, in, scope, new ParserConfiguration(0, false, true));
+        return parser.parse(file, in, scope, new ParserConfiguration(0, false, true, config.getCompatVersion()));
     }
 
     public Node parseEval(String content, String file, DynamicScope scope, int lineNumber) {
@@ -1964,7 +1979,7 @@ public final class Ruby {
         
         if (parserStats != null) parserStats.addEvalParse();
         return parser.parse(file, new ByteArrayInputStream(bytes), scope, 
-                new ParserConfiguration(lineNumber, false));
+                new ParserConfiguration(lineNumber, false, config.getCompatVersion()));
     }
 
     @Deprecated
@@ -1979,19 +1994,19 @@ public final class Ruby {
         }
 
         return parser.parse(file, new ByteArrayInputStream(bytes), scope, 
-                new ParserConfiguration(lineNumber, extraPositionInformation, false));
+                new ParserConfiguration(lineNumber, extraPositionInformation, false, config.getCompatVersion()));
     }
     
     public Node parseEval(ByteList content, String file, DynamicScope scope, int lineNumber) {
         if (parserStats != null) parserStats.addEvalParse();
-        return parser.parse(file, content, scope, new ParserConfiguration(lineNumber, false));
+        return parser.parse(file, content, scope, new ParserConfiguration(lineNumber, false, config.getCompatVersion()));
     }
 
     public Node parse(ByteList content, String file, DynamicScope scope, int lineNumber, 
             boolean extraPositionInformation) {
         if (parserStats != null) parserStats.addJRubyModuleParse();
         return parser.parse(file, content, scope, 
-                new ParserConfiguration(lineNumber, extraPositionInformation, false));
+                new ParserConfiguration(lineNumber, extraPositionInformation, false, config.getCompatVersion()));
     }
 
 
@@ -2539,7 +2554,7 @@ public final class Ruby {
      * @return the symbol for name
      */
     public RubySymbol fastNewSymbol(String internedName) {
-        assert internedName == internedName.intern() : internedName + " is not interned";
+        //        assert internedName == internedName.intern() : internedName + " is not interned";
 
         return symbolTable.fastGetSymbol(internedName);
     }
@@ -3004,7 +3019,7 @@ public final class Ruby {
      * access than going through normal hash lookup on the Object class.
      */
     private RubyClass
-            objectClass, moduleClass, classClass, nilClass, trueClass,
+           basicObjectClass, objectClass, moduleClass, classClass, nilClass, trueClass,
             falseClass, numericClass, floatClass, integerClass, fixnumClass,
             complexClass, rationalClass, enumeratorClass,
             arrayClass, hashClass, rangeClass, stringClass, encodingClass, symbolClass,

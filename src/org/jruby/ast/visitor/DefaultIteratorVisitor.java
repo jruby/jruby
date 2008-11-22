@@ -86,6 +86,7 @@ import org.jruby.ast.Match2Node;
 import org.jruby.ast.Match3Node;
 import org.jruby.ast.MatchNode;
 import org.jruby.ast.ModuleNode;
+import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NewlineNode;
 import org.jruby.ast.NextNode;
@@ -103,6 +104,7 @@ import org.jruby.ast.RedoNode;
 import org.jruby.ast.RegexpNode;
 import org.jruby.ast.RescueBodyNode;
 import org.jruby.ast.RescueNode;
+import org.jruby.ast.RestArgNode;
 import org.jruby.ast.RetryNode;
 import org.jruby.ast.ReturnNode;
 import org.jruby.ast.RootNode;
@@ -467,6 +469,11 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 		return null;
 	}
 
+	public Instruction visitMultipleAsgnNode(MultipleAsgn19Node iVisited) {
+		iVisited.accept(_Payload);
+		return null;
+	}
+
 	public Instruction visitMatch2Node(Match2Node iVisited) {
 		iVisited.accept(_Payload);
 		return null;
@@ -726,4 +733,9 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 		iVisited.accept(_Payload);
 		return null;
 	}
+
+    public Instruction visitRestArgNode(RestArgNode iVisited) {
+        iVisited.accept(_Payload);
+        return null;
+    }
 }

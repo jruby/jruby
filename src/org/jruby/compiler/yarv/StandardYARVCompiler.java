@@ -356,7 +356,7 @@ public class StandardYARVCompiler {
                 c.compile(((DefnNode)node).getBodyNode());
                 YARVMachine.InstructionSequence iseqval =  c.getInstructionSequence(((DefnNode)node).getName(), nd_file(node), "method");
                 List argNames = new ArrayList();
-                ListNode argsNode = ((DefnNode)node).getArgsNode().getArgs();
+                ListNode argsNode = ((DefnNode)node).getArgsNode().getPre();
                 if (argsNode != null) {
                     for (int i = 0; i < argsNode.size(); i++) {
                         ArgumentNode argumentNode = (ArgumentNode)argsNode.get(i);

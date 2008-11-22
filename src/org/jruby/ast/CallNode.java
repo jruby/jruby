@@ -48,6 +48,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.Interpreted19Block;
 import org.jruby.runtime.InterpretedBlock;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
@@ -163,7 +164,11 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
             
         // Create block for this iter node
         // FIXME: We shouldn't use the current scope if it's not actually from the same hierarchy of static scopes
-        return InterpretedBlock.newInterpretedClosure(context, iter.getBlockBody(), self);
+        if (iter.getBlockBody() instanceof InterpretedBlock) {
+            return InterpretedBlock.newInterpretedClosure(context, iter.getBlockBody(), self);
+        } else {
+            return Interpreted19Block.newInterpretedClosure(context, iter.getBlockBody(), self);
+        }
     }
     
     public Block getBlock(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {

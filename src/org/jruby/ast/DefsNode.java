@@ -33,14 +33,18 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.internal.runtime.methods.DefaultMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.InterpretedMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -117,8 +121,14 @@ public class DefsNode extends MethodDefNode implements INameNode {
         // Make a nil node if no body.  Notice this is not part of AST.
         Node body = bodyNode == null ? new NilNode(getPosition()) : bodyNode;
         
-        DefaultMethod newMethod = new DefaultMethod(rubyClass, scope, body, argsNode, 
-                Visibility.PUBLIC, getPosition());
+        DynamicMethod newMethod;
+        if (runtime.getInstanceConfig().getCompileMode() == CompileMode.OFF || runtime.getInstanceConfig().getCompatVersion() == CompatVersion.RUBY1_9) {
+            newMethod = new InterpretedMethod(rubyClass, name, scope, body, argsNode,
+                    Visibility.PUBLIC, getPosition());
+        } else  {
+            newMethod = new DefaultMethod(rubyClass, name, scope, body, argsNode,
+                    Visibility.PUBLIC, getPosition());
+        }
    
         rubyClass.addMethod(name, newMethod);
         receiver.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));

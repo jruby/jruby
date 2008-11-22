@@ -263,7 +263,8 @@ public class RubyException extends RubyObject {
         return getRuntime().newString(sb.toString());
     }
 
-    protected void copySpecialInstanceVariables(IRubyObject clone) {
+    @Override
+    public void copySpecialInstanceVariables(IRubyObject clone) {
         RubyException exception = (RubyException)clone;
         exception.backtraceFrames = backtraceFrames;
         exception.javaStackTrace = javaStackTrace;

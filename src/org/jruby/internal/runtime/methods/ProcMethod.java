@@ -30,7 +30,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.internal.runtime.JumpTarget;
@@ -61,13 +60,15 @@ public class ProcMethod extends DynamicMethod implements JumpTarget {
      * @see org.jruby.runtime.ICallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
      */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
-        return proc.call(context, args, self);
+        // FIXME: Not sure if we should pass block or not if 1.9
+        return proc.call(context, args, self, Block.NULL_BLOCK);
     }
     
     public DynamicMethod dup() {
         return new ProcMethod(getImplementationClass(), proc, getVisibility());
     }
     
+    @Override
     public Arity getArity() {
         return proc.getBlock().arity();
     }    

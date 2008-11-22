@@ -196,7 +196,11 @@ public class RubyArray extends RubyObject implements List {
     public static RubyArray newArrayNoCopy(Ruby runtime, IRubyObject[] args, int begin) {
         return new RubyArray(runtime, args, begin);
     }
-    
+
+    public static RubyArray newArrayNoCopy(Ruby runtime, IRubyObject[] args, int begin, int length) {
+        return new RubyArray(runtime, args, begin, length);
+    }
+
     public static RubyArray newArrayNoCopyLight(Ruby runtime, IRubyObject[] args) {
         RubyArray arr = new RubyArray(runtime, false);
         arr.values = args;
@@ -249,6 +253,14 @@ public class RubyArray extends RubyObject implements List {
         this.values = vals;
         this.begin = begin;
         this.realLength = vals.length - begin;
+        this.isShared = true;
+    }
+
+    private RubyArray(Ruby runtime, IRubyObject[] vals, int begin, int length) {
+        super(runtime, runtime.getArray());
+        this.values = vals;
+        this.begin = begin;
+        this.realLength = length;
         this.isShared = true;
     }
     

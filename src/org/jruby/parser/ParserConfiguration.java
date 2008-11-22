@@ -30,6 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.parser;
 
+import org.jruby.CompatVersion;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.util.SafePropertyAccessor;
@@ -47,22 +48,26 @@ public class ParserConfiguration {
     private boolean extraPositionInformation = false;
     // Will parser parse Duby grammar Extensions
     private boolean isDubyExtensionsEnabled = SafePropertyAccessor.getBoolean("jruby.duby.enabled", false);
+
+    private CompatVersion version;
     
-    public ParserConfiguration(int lineNumber, boolean inlineSource) {
-        this(lineNumber, false, inlineSource);
+    public ParserConfiguration(int lineNumber, boolean inlineSource, CompatVersion version) {
+        this(lineNumber, false, inlineSource, version);
     }
     
-    public ParserConfiguration(int lineNumber, boolean extraPositionInformation, boolean inlineSource) {
+    public ParserConfiguration(int lineNumber, boolean extraPositionInformation, boolean inlineSource, CompatVersion version) {
         this.inlineSource = inlineSource;
         this.lineNumber = lineNumber;
         this.extraPositionInformation = extraPositionInformation;
+        this.version = version;
     }
 
-    public ParserConfiguration(int lineNumber, boolean extraPositionInformation, boolean inlineSource, boolean isFileParse) {
+    public ParserConfiguration(int lineNumber, boolean extraPositionInformation, boolean inlineSource, boolean isFileParse, CompatVersion version) {
         this.inlineSource = inlineSource;
         this.lineNumber = lineNumber;
         this.extraPositionInformation = extraPositionInformation;
         this.isEvalParse = !isFileParse;
+        this.version = version;
     }
 
     /**
@@ -129,6 +134,10 @@ public class ParserConfiguration {
         // FIXME: Because we end up adjusting this after-the-fact, we can't use
         // any of the specific-size scopes.
         return new ManyVarsDynamicScope(new LocalStaticScope(null), existingScope);
+    }
+
+    public CompatVersion getVersion() {
+        return version;
     }
     
     /**

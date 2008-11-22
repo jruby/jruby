@@ -32,6 +32,8 @@ package org.jruby.evaluator;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.ast.ListNode;
+import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NodeType;
@@ -80,6 +82,43 @@ public class AssignmentVisitor {
             node.getHeadNode().get(j++).assign(runtime, context, self, runtime.getNil(), Block.NULL_BLOCK, checkArity);
         }
         
+        return value;
+    }
+
+    public static IRubyObject multiAssign(Ruby runtime, ThreadContext context, IRubyObject self, MultipleAsgn19Node node, RubyArray value) {
+        // Assign the values.
+        int valueLen = value.getLength();
+        int postCount = node.getPreCount();
+        int preCount = node.getPreCount();
+        ListNode pre = node.getPre();
+        ListNode post = node.getPost();
+
+        int j = 0;
+        for (; j < valueLen && j < preCount; j++) {
+            pre.get(j).assign(runtime, context, self, value.eltInternal(j), Block.NULL_BLOCK, false);
+        }
+
+        Node rest = node.getRest();
+        if (rest != null) {
+            if (rest.nodeId == NodeType.STARNODE) {
+                // no check for '*'
+            } else if (preCount + postCount < valueLen) {
+                rest.assign(runtime, context, self, value.subseqLight(preCount, valueLen - preCount - postCount), Block.NULL_BLOCK, false);
+            } else {
+                rest.assign(runtime, context, self, RubyArray.newArrayLight(runtime, 0), Block.NULL_BLOCK, false);
+            }
+
+            // FIXME: This is wrong
+            int postIndexBase = valueLen - postCount;
+            for (int i = 0; i < valueLen && i < postCount; i++) {
+                post.get(i).assign(runtime, context, self, value.eltInternal(i + postIndexBase), Block.NULL_BLOCK, false);
+            }
+        }
+
+        while (j < preCount) {
+            pre.get(j++).assign(runtime, context, self, runtime.getNil(), Block.NULL_BLOCK, false);
+        }
+
         return value;
     }
 }

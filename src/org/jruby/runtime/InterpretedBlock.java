@@ -86,7 +86,7 @@ public class InterpretedBlock extends BlockBody {
                          context.getCurrentScope());
     }
 
-    public static Block newInterpretedClosure(ThreadContext context, InterpretedBlock body, IRubyObject self) {
+    public static Block newInterpretedClosure(ThreadContext context, BlockBody body, IRubyObject self) {
         Frame f = context.getCurrentFrame();
 
         Binding binding = new Binding(self,

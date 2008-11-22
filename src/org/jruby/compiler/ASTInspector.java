@@ -229,7 +229,7 @@ public class ASTInspector {
             break;
         case ARGSNODE:
             ArgsNode argsNode = (ArgsNode)node;
-            if (argsNode.getBlockArgNode() != null) setFlag(BLOCK_ARG);
+            if (argsNode.getBlock() != null) setFlag(BLOCK_ARG);
             if (argsNode.getOptArgs() != null) {
                 setFlag(OPT_ARGS);
                 inspect(argsNode.getOptArgs());

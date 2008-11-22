@@ -148,6 +148,18 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
             variableValueZero = values[0];
         }
     }
+
+    @Override
+    public void setEndArgValues(IRubyObject[] values, int index, int size) {
+        assert size <= 2 : "TwoVarDynamicScope only supports scopes with two variables, not " + size;
+
+        switch (size) {
+        case 2:
+            variableValueZero = values[values.length - 2];
+        case 1:
+            variableValueOne = values[values.length - 1];
+        }
+    }
     
     @Override
     public void setArgValues(IRubyObject arg0) {

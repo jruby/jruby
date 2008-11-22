@@ -116,10 +116,8 @@ public class Parser {
         if (blockScope != null) {
             configuration.parseAsBlock(blockScope);
         }
-        
-        DefaultRubyParser parser = null;
+        RubyParser parser = RubyParserPool.getInstance().borrowParser(configuration.getVersion());
         RubyParserResult result = null;
-        parser = RubyParserPool.getInstance().borrowParser();
         parser.setWarnings(runtime.getWarnings());
         LexerSource lexerSource = LexerSource.getSource(file, content, list, configuration);
         try {

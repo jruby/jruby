@@ -248,6 +248,10 @@ public class JavaInterfaceTemplate {
     private static IRubyObject jcreateProxy(IRubyObject self, IRubyObject interfaces, IRubyObject[] args) {
         if (!interfaces.isFrozen()) interfaces.setFrozen(true);
 
+        if (interfaces.isNil()) {
+            interfaces = self.getRuntime().newArray();
+        }
+
         IRubyObject newObject = Java.new_proxy_instance2(self, self, interfaces, Block.NULL_BLOCK);
         return Java.JavaUtilities.set_java_object(self, self, newObject);
     }

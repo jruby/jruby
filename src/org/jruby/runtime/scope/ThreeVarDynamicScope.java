@@ -175,6 +175,20 @@ public class ThreeVarDynamicScope extends TwoVarDynamicScope {
             variableValueZero = values[0];
         }
     }
+
+    @Override
+    public void setEndArgValues(IRubyObject[] values, int index, int size) {
+        assert size <= 2 : "ThreeVarDynamicScope only supports scopes with three variables, not " + size;
+
+        switch (size) {
+        case 3:
+            variableValueZero = values[values.length - 3];
+        case 2:
+            variableValueOne = values[values.length - 2];
+        case 1:
+            variableValueTwo = values[values.length - 1];
+        }
+    }
     
     @Override
     public void setArgValues(IRubyObject arg0) {

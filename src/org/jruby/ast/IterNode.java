@@ -41,6 +41,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
+import org.jruby.runtime.Interpreted19Block;
 import org.jruby.runtime.InterpretedBlock;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -54,7 +55,7 @@ public class IterNode extends Node {
     
     // What static scoping relationship exists when it comes into being.
     private StaticScope scope;
-    private InterpretedBlock blockBody;
+    private BlockBody blockBody;
 
     public IterNode(ISourcePosition position, Node varNode, StaticScope scope, Node bodyNode) {
         this(position, varNode, scope, bodyNode, NodeType.ITERNODE);
@@ -68,6 +69,15 @@ public class IterNode extends Node {
         this.bodyNode = bodyNode;
         NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(this);
         this.blockBody = new InterpretedBlock(this, Arity.procArityOf(varNode), BlockBody.asArgumentType(argsNodeId));
+    }
+
+    public IterNode(ISourcePosition position, ArgsNode args, Node body, StaticScope scope) {
+        super(position, NodeType.ITERNODE);
+
+        this.varNode = args;
+        this.bodyNode = body;
+        this.scope = scope;
+        this.blockBody = new Interpreted19Block(this);
     }
 
     /**
@@ -98,7 +108,7 @@ public class IterNode extends Node {
         return varNode;
     }
     
-    public InterpretedBlock getBlockBody() {
+    public BlockBody getBlockBody() {
         return blockBody;
     }
     

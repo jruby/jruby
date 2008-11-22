@@ -41,6 +41,8 @@ import org.jruby.ast.util.SexpMaker;
 import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DefaultMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.JITMethod;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ClassCache;
@@ -67,11 +69,13 @@ public class JITCompiler implements JITCompilerMBean {
         
         ruby.getBeanManager().register(this);
     }
-    
-    public void tryJIT(final DefaultMethod method, final ThreadContext context, final String name) {
+
+    public DynamicMethod tryJIT(final DefaultMethod method, final ThreadContext context, final String name) {
         if (context.getRuntime().getInstanceConfig().getCompileMode().shouldJIT()) {
-            jitIsEnabled(method, context, name);
+            return jitIsEnabled(method, context, name);
         }
+
+        return null;
     }
     
     @Deprecated
@@ -83,24 +87,25 @@ public class JITCompiler implements JITCompilerMBean {
             jitIsEnabled(method, context, name);
         }
     }
-    
-    private void jitIsEnabled(final DefaultMethod method, final ThreadContext context, final String name) {
+
+    private DynamicMethod jitIsEnabled(final DefaultMethod method, final ThreadContext context, final String name) {
         RubyInstanceConfig instanceConfig = ruby.get().getInstanceConfig();
-        int callCount = method.incrementCallCount();
         
-        if (callCount >= instanceConfig.getJitThreshold()) {
-            jitThresholdReached(method, instanceConfig, context, name);
+        if (method.incrementCallCount() >= instanceConfig.getJitThreshold()) {
+            return jitThresholdReached(method, instanceConfig, context, name);
         }
+
+        return null;
     }
     
-    private void jitThresholdReached(final DefaultMethod method, RubyInstanceConfig instanceConfig, final ThreadContext context, final String name) {
+    private DynamicMethod jitThresholdReached(final DefaultMethod method, RubyInstanceConfig instanceConfig, final ThreadContext context, final String name) {
         try {
             // The cache is full. Abandon JIT for this method and bail out.
             ClassCache classCache = instanceConfig.getClassCache();
             if (classCache.isFull()) {
                 abandonCount.incrementAndGet();
                 method.setCallCount(-1);
-                return;
+                return null;
             }
 
             // Check if the method has been explicitly excluded
@@ -110,7 +115,7 @@ public class JITCompiler implements JITCompilerMBean {
                     instanceConfig.getExcludedMethods().contains(moduleName+"#"+name) ||
                     instanceConfig.getExcludedMethods().contains(name))) {
                 method.setCallCount(-1);
-                return;
+                return null;
             }
 
             JITClassGenerator generator = new JITClassGenerator(name, method, context);
@@ -123,7 +128,7 @@ public class JITCompiler implements JITCompilerMBean {
                 // class could not be found nor generated; give up on JIT and bail out
                 failCount.incrementAndGet();
                 method.setCallCount(-1);
-                return;
+                return null;
             }
 
             // successfully got back a jitted method
@@ -146,14 +151,17 @@ public class JITCompiler implements JITCompilerMBean {
 
             if (instanceConfig.isJitLogging()) log(method, name, "done jitting");
 
-            method.setJITCallConfig(generator.callConfig());
-            method.setJITCompiledScript(jitCompiledScript);
+            DynamicMethod newMethod = new JITMethod(method, jitCompiledScript, generator.callConfig());
+            method.getImplementationClass().addMethodInternal(name, newMethod);
             method.setCallCount(-1);
+            return newMethod;
         } catch (Throwable t) {
+            t.printStackTrace();
             if (instanceConfig.isJitLoggingVerbose()) log(method, name, "could not compile", t.getMessage());
 
             failCount.incrementAndGet();
             method.setCallCount(-1);
+            return null;
         }
     }
     

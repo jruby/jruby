@@ -209,7 +209,8 @@ public class RubyNameError extends RubyException {
         return name;
     }
 
-    protected void copySpecialInstanceVariables(IRubyObject clone) {
+    @Override
+    public void copySpecialInstanceVariables(IRubyObject clone) {
         super.copySpecialInstanceVariables(clone);
         RubyNameError exception = (RubyNameError)clone;
         exception.name = name;

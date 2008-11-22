@@ -24,7 +24,7 @@
  * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * Copyright (C) 2007 MenTaLguY <mental@rydia.net>
  * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -42,8 +42,6 @@ package org.jruby;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.evaluator.ASTInterpreter;
@@ -54,21 +52,12 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
-import org.jruby.runtime.component.VariableEntry;
 import org.jruby.util.IdUtil;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.builtin.InstanceVariables;
-import org.jruby.runtime.builtin.InternalVariables;
-import org.jruby.runtime.marshal.CoreObjectType;
-import org.jruby.util.TypeConverter;
 
 /**
  * RubyObject is the only implementation of the
@@ -92,199 +81,18 @@ import org.jruby.util.TypeConverter;
  * and internal variables are handled this way, but the implementation
  * in RubyObject only returns "this" in {@link #getInstanceVariables()} and
  * {@link #getInternalVariables()}.
- * 
+ *
  * @author  jpetersen
  */
 @JRubyClass(name="Object", include="Kernel")
-public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObjectType, InstanceVariables, InternalVariables {
-    
-    /**
-     * It's not valid to create a totally empty RubyObject. Since the
-     * RubyObject is always defined in relation to a runtime, that
-     * means that creating RubyObjects from outside the class might
-     * cause problems.
-     */
-    private RubyObject(){};
-
-    /** 
-     *  A value that is used as a null sentinel in among other places
-     *  the RubyArray implementation. It will cause large problems to
-     *  call any methods on this object.
-     */
-    public static final IRubyObject NEVER = new RubyObject();
+public class RubyObject extends RubyBasicObject {
 
     /**
-     * A value that specifies an undefined value. This value is used
-     * as a sentinel for undefined constant values, and other places
-     * where neither null nor NEVER makes sense.
-     */
-    public static final IRubyObject UNDEF = new RubyObject();
-    
-    // The class of this object
-    protected transient RubyClass metaClass;
-
-    /**
-     * The variableTable contains variables for an object, defined as:
-     * <ul>
-     * <li> instance variables
-     * <li> class variables (for classes/modules)
-     * <li> internal variables (such as those used when marshaling RubyRange and RubyException)
-     * </ul>
-     * 
-     * Constants are stored separately, see {@link RubyModule}. 
-     * 
-     */
-    protected transient volatile VariableTableEntry[] variableTable;
-    protected transient int variableTableSize;
-    protected transient int variableTableThreshold;
-
-    // The dataStruct is a place where custom information can be
-    // contained for core implementations that doesn't necessarily
-    // want to go to the trouble of creating a subclass of
-    // RubyObject. The OpenSSL implementation uses this heavily to
-    // save holder objects containing Java cryptography objects.
-    // Java integration uses this to store the Java object ref.
-    protected transient Object dataStruct;
-
-    protected int flags; // zeroed by jvm
-    public static final int ALL_F = -1;
-    public static final int FALSE_F = 1 << 0;
-
-    /**
-     * This flag is a bit funny. It's used to denote that this value
-     * is nil. It's a bit counterintuitive for a Java programmer to
-     * not use subclassing to handle this case, since we have a
-     * RubyNil subclass anyway. Well, the reason for it being a flag
-     * is that the {@link #isNil()} method is called extremely often. So often
-     * that it gives a good speed boost to make it monomorphic and
-     * final. It turns out using a flag for this actually gives us
-     * better performance than having a polymorphic {@link #isNil()} method.
-     */
-    public static final int NIL_F = 1 << 1;
-
-    public static final int FROZEN_F = 1 << 2;
-    public static final int TAINTED_F = 1 << 3;
-
-    public static final int FL_USHIFT = 4;
-    
-    public static final int USER0_F = (1<<(FL_USHIFT+0));
-    public static final int USER1_F = (1<<(FL_USHIFT+1));
-    public static final int USER2_F = (1<<(FL_USHIFT+2));
-    public static final int USER3_F = (1<<(FL_USHIFT+3));
-    public static final int USER4_F = (1<<(FL_USHIFT+4));
-    public static final int USER5_F = (1<<(FL_USHIFT+5));
-    public static final int USER6_F = (1<<(FL_USHIFT+6));
-    public static final int USER7_F = (1<<(FL_USHIFT+7));
-
-    /**
-     * Sets or unsets a flag on this object. The only flags that are
-     * guaranteed to be valid to use as the first argument is:
-     *
-     * <ul>
-     *  <li>{@link #FALSE_F}</li>
-     *  <li>{@link NIL_F}</li>
-     *  <li>{@link FROZEN_F}</li>
-     *  <li>{@link TAINTED_F}</li>
-     *  <li>{@link USER0_F}</li>
-     *  <li>{@link USER1_F}</li>
-     *  <li>{@link USER2_F}</li>
-     *  <li>{@link USER3_F}</li>
-     *  <li>{@link USER4_F}</li>
-     *  <li>{@link USER5_F}</li>
-     *  <li>{@link USER6_F}</li>
-     *  <li>{@link USER7_F}</li>
-     * </ul>
-     *
-     * @param flag the actual flag to set or unset.
-     * @param set if true, the flag will be set, if false, the flag will be unset.
-     */
-    public final void setFlag(int flag, boolean set) {
-        if (set) {
-            flags |= flag;
-        } else {
-            flags &= ~flag;
-        }
-    }
-    
-    /**
-     * Get the value of a custom flag on this object. The only
-     * guaranteed flags that can be sent in to this method is:
-     *
-     * <ul>
-     *  <li>{@link #FALSE_F}</li>
-     *  <li>{@link NIL_F}</li>
-     *  <li>{@link FROZEN_F}</li>
-     *  <li>{@link TAINTED_F}</li>
-     *  <li>{@link USER0_F}</li>
-     *  <li>{@link USER1_F}</li>
-     *  <li>{@link USER2_F}</li>
-     *  <li>{@link USER3_F}</li>
-     *  <li>{@link USER4_F}</li>
-     *  <li>{@link USER5_F}</li>
-     *  <li>{@link USER6_F}</li>
-     *  <li>{@link USER7_F}</li>
-     * </ul>
-     *
-     * @param flag the flag to get
-     * @return true if the flag is set, false otherwise
-     */
-    public final boolean getFlag(int flag) { 
-        return (flags & flag) != 0;
-    }
-    
-    private transient Finalizer finalizer;
-    
-    /**
-     * Class that keeps track of the finalizers for the object under
-     * operation.
-     */
-    public class Finalizer implements Finalizable {
-        private long id;
-        private List<IRubyObject> finalizers;
-        private AtomicBoolean finalized;
-        
-        public Finalizer(long id) {
-            this.id = id;
-            this.finalized = new AtomicBoolean(false);
-        }
-        
-        public void addFinalizer(IRubyObject finalizer) {
-            if (finalizers == null) {
-                finalizers = new ArrayList<IRubyObject>();
-            }
-            finalizers.add(finalizer);
-        }
-
-        public void removeFinalizers() {
-            finalizers = null;
-        }
-    
-        @Override
-        public void finalize() {
-            if (finalized.compareAndSet(false, true)) {
-                if (finalizers != null) {
-                    for (int i = 0; i < finalizers.size(); i++) {
-                        IRubyObject finalizer = finalizers.get(i);                        
-                        RuntimeHelpers.invoke(
-                                finalizer.getRuntime().getCurrentContext(),
-                                finalizer, "call", RubyObject.this.id());
-                    }
-                }
-            }
-        }
-    }
-
-    /** 
      * Standard path for object creation. Objects are entered into ObjectSpace
      * only if ObjectSpace is enabled.
      */
     public RubyObject(Ruby runtime, RubyClass metaClass) {
-        assert metaClass != null: "NULL Metaclass!!?!?!";
-
-        this.metaClass = metaClass;
-        
-        if (runtime.isObjectSpaceEnabled()) addToObjectSpace(runtime);
-        if (runtime.getSafeLevel() >= 3) taint(runtime);
+        super(runtime, metaClass);
     }
 
     /**
@@ -293,24 +101,18 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * considered immediate, they'll always pass false here)
      */
     protected RubyObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace, boolean canBeTainted) {
-        this.metaClass = metaClass;
-
-        if (useObjectSpace) addToObjectSpace(runtime);
-        if (canBeTainted && runtime.getSafeLevel() >= 3) taint(runtime);
+        super(runtime, metaClass, useObjectSpace, canBeTainted);
     }
-    
+
     protected RubyObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace) {
-        this.metaClass = metaClass;
-        
-        if (useObjectSpace) addToObjectSpace(runtime);
-        if (runtime.getSafeLevel() >= 3) taint(runtime);
+        super(runtime, metaClass, useObjectSpace);
     }
 
     private void addToObjectSpace(Ruby runtime) {
         assert runtime.isObjectSpaceEnabled();
         runtime.getObjectSpace().add(this);
     }
-    
+
     /**
      * Will create the Ruby class Object in the runtime
      * specified. This method needs to take the actual class as an
@@ -324,7 +126,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
 
         return objectClass;
     }
-    
+
     /**
      * Interestingly, the Object class doesn't really have that many
      * methods for itself. Instead almost all of the Object methods
@@ -339,7 +141,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
             return self.getRuntime().getNil();
         }
     }
-    
+
     /**
      * Default allocator instance for all Ruby objects. The only
      * reason to not use this allocator is if you actually need to
@@ -362,7 +164,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     public void attachToObjectSpace() {
         getRuntime().getObjectSpace().add(this);
     }
-    
+
     /**
      * This is overridden in the other concrete Java builtins to provide a fast way
      * to determine what type they are.
@@ -371,63 +173,11 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *
      * @see org.jruby.runtime.ClassInde
      */
+    @Override
     public int getNativeTypeIndex() {
         return ClassIndex.OBJECT;
     }
 
-    /**
-     * Specifically polymorphic method that are meant to be overridden
-     * by modules to specify that they are modules in an easy way.
-     */
-    public boolean isModule() {
-        return false;
-    }
-    
-    /**
-     * Specifically polymorphic method that are meant to be overridden
-     * by classes to specify that they are classes in an easy way.
-     */
-    public boolean isClass() {
-        return false;
-    }
-
-    /**
-     *  Is object immediate (def: Fixnum, Symbol, true, false, nil?).
-     */
-    public boolean isImmediate() {
-    	return false;
-    }
-
-    /** rb_make_metaclass
-     *
-     * Will create a new meta class, insert this in the chain of
-     * classes for this specific object, and return the generated meta
-     * class.
-     */
-    public RubyClass makeMetaClass(RubyClass superClass) {
-        MetaClass klass = new MetaClass(getRuntime(), superClass); // rb_class_boot
-        setMetaClass(klass);
-
-        klass.setAttached(this);
-        klass.setMetaClass(superClass.getRealClass().getMetaClass());
-
-        superClass.addSubclass(klass);
-
-        return klass;
-    }
-
-    /**
-     * Will return the Java interface that most closely can represent
-     * this object, when working through JAva integration
-     * translations.
-     */
-    public Class getJavaClass() {
-        if (dataGetStruct() instanceof JavaObject) {
-            return ((JavaObject)dataGetStruct()).getValue().getClass();
-        }
-        return getClass();
-    }
-    
     /**
      * Simple helper to print any objects.
      */
@@ -442,8 +192,8 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      */
     @Override
     public boolean equals(Object other) {
-        return other == this || 
-                other instanceof IRubyObject && 
+        return other == this ||
+                other instanceof IRubyObject &&
                 callMethod(getRuntime().getCurrentContext(), "==", (IRubyObject) other).isTrue();
     }
 
@@ -456,69 +206,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         return RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, "to_s").toString();
     }
 
-    /** 
-     * Will return the runtime that this object is associated with.
-     *
-     * @return current runtime
-     */
-    public final Ruby getRuntime() {
-        return getMetaClass().getClassRuntime();
-    }
-
-    /**
-     * if exist return the meta-class else return the type of the object.
-     *
-     */
-    public final RubyClass getMetaClass() {
-        return metaClass;
-    }
-
-    /** 
-     * Makes it possible to change the metaclass of an object. In
-     * practice, this is a simple version of Smalltalks Become, except
-     * that it doesn't work when we're dealing with subclasses. In
-     * practice it's used to change the singleton/meta class used,
-     * without changing the "real" inheritance chain.
-     */
-    public void setMetaClass(RubyClass metaClass) {
-        this.metaClass = metaClass;
-    }
-
-    /**
-     * Is this value frozen or not? Shortcut for doing
-     * getFlag(FROZEN_F).
-     *
-     * @return true if this object is frozen, false otherwise
-     */
-    public boolean isFrozen() {
-        return (flags & FROZEN_F) != 0;
-    }
-
-    /**
-     * Sets whether this object is frozen or not. Shortcut for doing
-     * setFlag(FROZEN_F, frozen).
-     *
-     * @param frozen should this object be frozen?
-     */
-    public void setFrozen(boolean frozen) {
-        if (frozen) {
-            flags |= FROZEN_F;
-        } else {
-            flags &= ~FROZEN_F;
-        }
-    }
-
-    /** rb_frozen_class_p
-     *
-     * Helper to test whether this object is frozen, and if it is will
-     * throw an exception based on the message.
-     */
-   protected final void testFrozen(String message) {
-       if (isFrozen()) {
-           throw getRuntime().newFrozenError(message + " " + getMetaClass().getName());
-       }
-   }
-
     /**
      * The actual method that checks frozen with the default frozen message from MRI.
      * If possible, call this instead of {@link #testFrozen}.
@@ -527,123 +214,8 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
        testFrozen("can't modify frozen ");
    }
 
-    /**
-     * Gets the taint. Shortcut for getFlag(TAINTED_F).
-     * 
-     * @return true if this object is tainted
-     */
-    public boolean isTaint() {
-        return (flags & TAINTED_F) != 0; 
-    }
-
-    /**
-     * Sets the taint flag. Shortcut for setFlag(TAINTED_F, taint)
-     *
-     * @param taint should this object be tainted or not?
-     */
-    public void setTaint(boolean taint) {
-        if (taint) {
-            flags |= TAINTED_F;
-        } else {
-            flags &= ~TAINTED_F;
-        }
-    }
-
-    /**
-     * Does this object represent nil? See the docs for the {@link
-     * #NIL_F} flag for more information.
-     */
-    public final boolean isNil() {
-        return (flags & NIL_F) != 0;
-    }
-
-    /**
-     * Is this value a true value or not? Based on the {@link #FALSE_F} flag.
-     */
-    public final boolean isTrue() {
-        return (flags & FALSE_F) == 0;
-    }
-
-    /**
-     * Is this value a false value or not? Based on the {@link #FALSE_F} flag.
-     */
-    public final boolean isFalse() {
-        return (flags & FALSE_F) != 0;
-    }
-
-    /**
-     * Does this object respond to the specified message? Uses a
-     * shortcut if it can be proved that respond_to? haven't been
-     * overridden.
-     */
-    public final boolean respondsTo(String name) {
-        if(getMetaClass().searchMethod("respond_to?") == getRuntime().getRespondToMethod()) {
-            return getMetaClass().isMethodBound(name, false);
-        } else {
-            return callMethod(getRuntime().getCurrentContext(),"respond_to?",getRuntime().newSymbol(name)).isTrue();
-        }
-    }
-
-    /** rb_singleton_class
-     * 
-     * Note: this method is specialized for RubyFixnum, RubySymbol,
-     * RubyNil and RubyBoolean
-     *
-     * Will either return the existing singleton class for this
-     * object, or create a new one and return that.
-     */    
-    public RubyClass getSingletonClass() {
-        RubyClass klass;
-        
-        if (getMetaClass().isSingleton() && ((MetaClass)getMetaClass()).getAttached() == this) {
-            klass = getMetaClass();            
-        } else {
-            klass = makeMetaClass(getMetaClass());
-        }
-        
-        klass.setTaint(isTaint());
-        if (isFrozen()) klass.setFrozen(true);
-        
-        return klass;
-    }
-    
-    /** rb_singleton_class_clone
-     *
-     * Will make sure that if the current objects class is a
-     * singleton, it will get cloned.
-     *
-     * @return either a real class, or a clone of the current singleton class
-     */
-    protected RubyClass getSingletonClassClone() {
-       RubyClass klass = getMetaClass();
-
-       if (!klass.isSingleton()) return klass;
-
-       MetaClass clone = new MetaClass(getRuntime());
-       clone.flags = flags;
-
-       if (this instanceof RubyClass) {
-           clone.setMetaClass(clone);
-       } else {
-           clone.setMetaClass(klass.getSingletonClassClone());
-       }
-
-       clone.setSuperClass(klass.getSuperClass());
-
-       if (klass.hasVariables()) clone.syncVariables(klass.getVariableList());
-       clone.syncConstants(klass);
-
-       klass.cloneMethods(clone);
-
-       ((MetaClass)clone.getMetaClass()).setAttached(clone);
-
-       ((MetaClass)clone).setAttached(((MetaClass)klass).getAttached());
-
-       return clone;
-    }
-
     /** init_copy
-     * 
+     *
      * Initializes a copy with variable and special instance variable
      * information, and then call the initialize_copy Ruby method.
      */
@@ -659,75 +231,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         clone.callMethod(clone.getRuntime().getCurrentContext(), "initialize_copy", original);
     }
 
-    /** OBJ_INFECT
-     *
-     * Infects this object with traits from the argument obj. In real
-     * terms this currently means that if obj is tainted, this object
-     * will get tainted too. It's possible to hijack this method to do
-     * other infections if that would be interesting.
-     */
-    public IRubyObject infectBy(IRubyObject obj) {
-        if (obj.isTaint()) setTaint(true);
-        return this;
-    }
-
-    /**
-     * See org.jruby.javasupport.util.RuntimeHelpers#invokeSuper
-     */
-    @Deprecated
-    public IRubyObject callSuper(ThreadContext context, IRubyObject[] args, Block block) {
-        return RuntimeHelpers.invokeSuper(context, this, args, block);
-    }
-
-    /**
-     * Will invoke a named method with no arguments and no block.
-     */
-    public final IRubyObject callMethod(ThreadContext context, String name) {
-        return RuntimeHelpers.invoke(context, this, name);
-    }
-
-    /**
-     * Will invoke a named method with one argument and no block with
-     * functional invocation.
-     */
-    @Deprecated
-    public final IRubyObject callMethod(ThreadContext context, int methodContext, String name, IRubyObject arg) {
-        return RuntimeHelpers.invoke(context, this, name, arg);
-    }
-
-    /**
-     * Will invoke a named method with the supplied arguments and no
-     * block with functional invocation.
-     */
-    public final IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args) {
-        return RuntimeHelpers.invoke(context, this, name, args);
-    }
-
-    /**
-     * Will invoke a named method with the supplied arguments and
-     * supplied block with functional invocation.
-     */
-    public final IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, Block block) {
-        return RuntimeHelpers.invoke(context, this, name, args, block);
-    }
-
-    /**
-     * Will invoke an indexed method with the no arguments and no
-     * block.
-     */
-    @Deprecated
-    public final IRubyObject callMethod(ThreadContext context, int methodIndex, String name) {
-        return RuntimeHelpers.invoke(context, this, name);
-    }
-
-    /**
-     * Will invoke an indexed method with the one argument and no
-     * block with a functional invocation.
-     */
-    public IRubyObject callMethod(ThreadContext context, String name, IRubyObject arg) {
-        return RuntimeHelpers.invoke(context, this, name, arg, Block.NULL_BLOCK);
-    }
-
     /**
      * Call the Ruby initialize method with the supplied arguments and block.
      */
@@ -735,78 +238,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         callMethod(getRuntime().getCurrentContext(), "initialize", args, block);
     }
 
-    /** rb_to_id
-     *
-     * Will try to convert this object to a String using the Ruby
-     * "to_str" if the object isn't already a String. If this still
-     * doesn't work, will throw a Ruby TypeError.
-     *
-     */
-    public String asJavaString() {
-        IRubyObject asString = checkStringType();
-        if(!asString.isNil()) return ((RubyString)asString).asJavaString();
-        throw getRuntime().newTypeError(inspect().toString() + " is not a symbol");
-    }
-
-    /**
-     * Tries to convert this object to a Ruby Array using the "to_ary"
-     * method.
-     */
-    public RubyArray convertToArray() {
-        return (RubyArray) TypeConverter.convertToType(this, getRuntime().getArray(), "to_ary");
-    }
-
-    /**
-     * Tries to convert this object to a Ruby Hash using the "to_hash"
-     * method.
-     */
-    public RubyHash convertToHash() {
-        return (RubyHash)TypeConverter.convertToType(this, getRuntime().getHash(), "to_hash");
-    }
-    
-    /**
-     * Tries to convert this object to a Ruby Float using the "to_f"
-     * method.
-     */
-    public RubyFloat convertToFloat() {
-        return (RubyFloat) TypeConverter.convertToType(this, getRuntime().getFloat(), "to_f");
-    }
-
-    /**
-     * Tries to convert this object to a Ruby Integer using the "to_int"
-     * method.
-     */
-    public RubyInteger convertToInteger() {
-        return convertToInteger("to_int");
-    }
-
-    /**
-     * Tries to convert this object to a Ruby Integer using the
-     * supplied conversion method.
-     */
-    @Deprecated
-    public RubyInteger convertToInteger(int index, String convertMethod) {
-        return convertToInteger(convertMethod);
-    }
-
-    /**
-     * Tries to convert this object to a Ruby Integer using the
-     * supplied conversion method.
-     */
-    public RubyInteger convertToInteger(String convertMethod) {
-        IRubyObject val = TypeConverter.convertToType(this, getRuntime().getInteger(), convertMethod, true);
-        if (!(val instanceof RubyInteger)) throw getRuntime().newTypeError(getMetaClass().getName() + "#" + convertMethod + " should return Integer");
-        return (RubyInteger)val;
-    }
-
-    /**
-     * Tries to convert this object to a Ruby String using the
-     * "to_str" method.
-     */
-    public RubyString convertToString() {
-        return (RubyString) TypeConverter.convertToType(this, getRuntime().getString(), "to_str");
-    }
-    
     /**
      * Tries to convert this object to the specified Ruby type, using
      * a specific conversion method.
@@ -814,45 +245,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     @Deprecated
     public final IRubyObject convertToType(RubyClass target, int convertMethodIndex) {
         throw new RuntimeException("Not supported; use the String versions");
-    }
-
-    /** rb_obj_as_string
-     *
-     * First converts this object into a String using the "to_s"
-     * method, infects it with the current taint and returns it. If
-     * to_s doesn't return a Ruby String, {@link #anyToString} is used
-     * instead.
-     */
-    public RubyString asString() {
-        IRubyObject str = RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, "to_s");
-        
-        if (!(str instanceof RubyString)) return (RubyString)anyToString();
-        if (isTaint()) str.setTaint(true);
-        return (RubyString) str;
-    }
-    
-    /** rb_check_string_type
-     *
-     * Tries to return a coerced string representation of this object,
-     * using "to_str". If that returns something other than a String
-     * or nil, an empty String will be returned.
-     *
-     */
-    public IRubyObject checkStringType() {
-        IRubyObject str = TypeConverter.convertToTypeWithCheck(this, getRuntime().getString(), "to_str");
-        if(!str.isNil() && !(str instanceof RubyString)) {
-            str = RubyString.newEmptyString(getRuntime());
-        }
-        return str;
-    }
-
-    /** rb_check_array_type
-    *
-    * Returns the result of trying to convert this object to an Array
-    * with "to_ary".
-    */    
-    public IRubyObject checkArrayType() {
-        return TypeConverter.convertToTypeWithCheck(this, getRuntime().getArray(), "to_ary");
     }
 
     /** specific_eval
@@ -880,7 +272,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
             throw getRuntime().newArgumentError(
                 "wrong # of arguments: " + lastFuncName + "(src) or " + lastFuncName + "{..}");
         }
-        
+
         // We just want the TypeError if the argument doesn't convert to a String (JRUBY-386)
         RubyString evalStr;
         if (args[0] instanceof RubyString) {
@@ -936,7 +328,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      */
     public IRubyObject specificEval(ThreadContext context, RubyModule mod, IRubyObject arg, Block block) {
         if (block.isGiven()) throw context.getRuntime().newArgumentError(1, 0);
-        
+
         // We just want the TypeError if the argument doesn't convert to a String (JRUBY-386)
         RubyString evalStr;
         if (arg instanceof RubyString) {
@@ -963,7 +355,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      */
     public IRubyObject specificEval(ThreadContext context, RubyModule mod, IRubyObject arg0, IRubyObject arg1, Block block) {
         if (block.isGiven()) throw context.getRuntime().newArgumentError(2, 0);
-        
+
         // We just want the TypeError if the argument doesn't convert to a String (JRUBY-386)
         RubyString evalStr;
         if (arg0 instanceof RubyString) {
@@ -990,7 +382,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      */
     public IRubyObject specificEval(ThreadContext context, RubyModule mod, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         if (block.isGiven()) throw context.getRuntime().newArgumentError(2, 0);
-        
+
         // We just want the TypeError if the argument doesn't convert to a String (JRUBY-386)
         RubyString evalStr;
         if (arg0 instanceof RubyString) {
@@ -1023,7 +415,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         context.setCurrentVisibility(Visibility.PUBLIC);
         context.preExecuteUnder(under, Block.NULL_BLOCK);
         try {
-            return ASTInterpreter.evalSimple(context, this, src, 
+            return ASTInterpreter.evalSimple(context, this, src,
                     file, line);
         } finally {
             context.postExecuteUnder();
@@ -1042,10 +434,10 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      */
     private IRubyObject yieldUnder(final ThreadContext context, RubyModule under, IRubyObject[] args, Block block) {
         context.preExecuteUnder(under, block);
-        
+
         Visibility savedVisibility = block.getBinding().getVisibility();
         block.getBinding().setVisibility(Visibility.PUBLIC);
-        
+
         try {
             IRubyObject valueInYield;
             boolean aValue;
@@ -1069,7 +461,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
             return (IRubyObject) bj.getValue();
         } finally {
             block.getBinding().setVisibility(savedVisibility);
-            
+
             context.postExecuteUnder();
         }
     }
@@ -1085,10 +477,10 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      */
     private IRubyObject yieldUnder(final ThreadContext context, RubyModule under, Block block) {
         context.preExecuteUnder(under, block);
-        
+
         Visibility savedVisibility = block.getBinding().getVisibility();
         block.getBinding().setVisibility(Visibility.PUBLIC);
-        
+
         try {
             // FIXME: This is an ugly hack to resolve JRUBY-1381; I'm not proud of it
             block = block.cloneBlock();
@@ -1102,7 +494,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
             return (IRubyObject) bj.getValue();
         } finally {
             block.getBinding().setVisibility(savedVisibility);
-            
+
             context.postExecuteUnder();
         }
     }
@@ -1114,46 +506,40 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * Will by default use identity equality to compare objects. This
      * follows the Ruby semantics.
      */
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "==", required = 1, compat = CompatVersion.RUBY1_8)
+    @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-        return this == obj ? context.getRuntime().getTrue() : context.getRuntime().getFalse();
+        return super.op_equal(context, obj);
     }
-    
+
     /** rb_obj_equal
      *
      * Will use Java identity equality.
      */
-    @JRubyMethod(name = "equal?", required = 1)
+    @JRubyMethod(name = "equal?", required = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject equal_p(ThreadContext context, IRubyObject obj) {
         return this == obj ? context.getRuntime().getTrue() : context.getRuntime().getFalse();
     }
 
-    /** method used for Hash key comparison (specialized for String, Symbol and Fixnum)
-     * 
-     * Will by default just call the Ruby method "eql?"
-     */
-    public boolean eql(IRubyObject other) {
-        return callMethod(getRuntime().getCurrentContext(), "eql?", other).isTrue();
-    }
-
     /** rb_obj_equal
-     * 
+     *
      * Just like "==" and "equal?", "eql?" will use identity equality for Object.
-     */    
+     */
     @JRubyMethod(name = "eql?", required = 1)
     public IRubyObject eql_p(IRubyObject obj) {
         return this == obj ? getRuntime().getTrue() : getRuntime().getFalse();
     }
-    
+
     /** rb_equal
-     * 
+     *
      * The Ruby "===" method is used by default in case/when
      * statements. The Object implementation first checks Java identity
      * equality and then calls the "==" method too.
      */
     @JRubyMethod(name = "===", required = 1)
+    @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
-        return context.getRuntime().newBoolean(equalInternal(context, this, other));
+        return super.op_eqq(context, other);
     }
 
     /**
@@ -1173,7 +559,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     }
 
     /** rb_obj_init_copy
-     * 
+     *
      * Initializes this object as a copy of the original, that is the
      * parameter to this object. Will make sure that the argument
      * actually has the same real class as this object. It shouldn't
@@ -1238,19 +624,20 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         return getRuntime().newBoolean(getMetaClass().isMethodBound(name, !includePrivate.isTrue()));
     }
 
-    /** rb_obj_id 
+    /** rb_obj_id
      *
      * Return the internal id of an object.
      *
      * FIXME: Should this be renamed to match its ruby name?
      */
-    @JRubyMethod(name = {"object_id", "__id__"})
-    public synchronized IRubyObject id() {
-        return getRuntime().newFixnum(getRuntime().getObjectSpace().idOf(this));
-    }
+     @JRubyMethod(name = {"object_id", "__id__"})
+     @Override
+     public synchronized IRubyObject id() {
+        return super.id();
+     }
 
     /** rb_obj_id_obsolete
-     * 
+     *
      * Old id version. This one is bound to the "id" name and will emit a deprecation warning.
      */
     @JRubyMethod(name = "id")
@@ -1265,7 +652,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * this method will use the Java identity hash code instead of
      * using rb_obj_id, since the usage of id in JRuby will incur the
      * cost of some. ObjectSpace maintenance.
-     */    
+     */
     @JRubyMethod(name = "hash")
     public RubyFixnum hash() {
         return getRuntime().newFixnum(super.hashCode());
@@ -1280,9 +667,9 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     @Override
     public int hashCode() {
         IRubyObject hashValue = callMethod(getRuntime().getCurrentContext(), "hash");
-        
-        if (hashValue instanceof RubyFixnum) return (int) RubyNumeric.fix2long(hashValue); 
-        
+
+        if (hashValue instanceof RubyFixnum) return (int) RubyNumeric.fix2long(hashValue);
+
         return super.hashCode();
     }
 
@@ -1315,18 +702,9 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * call initCopy and then copy frozen state.
      */
     @JRubyMethod(name = "clone", frame = true)
+    @Override
     public IRubyObject rbClone() {
-        if (isImmediate()) throw getRuntime().newTypeError("can't clone " + getMetaClass().getName());
-        
-        // We're cloning ourselves, so we know the result should be a RubyObject
-        RubyObject clone = (RubyObject)getMetaClass().getRealClass().allocate();
-        clone.setMetaClass(getSingletonClassClone());
-        if (isTaint()) clone.setTaint(true);
-
-        initCopy(clone, this);
-
-        if (isFrozen()) clone.setFrozen(true);
-        return clone;
+        return super.rbClone();
     }
 
     /** rb_obj_dup
@@ -1338,48 +716,34 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      * #rbClone} in that it doesn't copy the singleton class.
      */
     @JRubyMethod(name = "dup")
+    @Override
     public IRubyObject dup() {
-        if (isImmediate()) throw getRuntime().newTypeError("can't dup " + getMetaClass().getName());
-
-        IRubyObject dup = getMetaClass().getRealClass().allocate();
-        if (isTaint()) dup.setTaint(true);
-
-        initCopy(dup, this);
-
-        return dup;
+        return super.dup();
     }
-    
-    /** 
-     * Lots of MRI objects keep their state in non-lookupable ivars
-     * (e:g. Range, Struct, etc). This method is responsible for
-     * dupping our java field equivalents
-     */
-    protected void copySpecialInstanceVariables(IRubyObject clone) {
-    }    
 
     /** rb_obj_display
      *
      *  call-seq:
      *     obj.display(port=$>)    => nil
-     *  
+     *
      *  Prints <i>obj</i> on the given port (default <code>$></code>).
      *  Equivalent to:
-     *     
+     *
      *     def display(port=$>)
      *       port.write self
      *     end
-     *     
+     *
      *  For example:
-     *     
+     *
      *     1.display
      *     "cat".display
      *     [ 4, 5, 6 ].display
      *     puts
-     *     
+     *
      *  <em>produces:</em>
-     *     
+     *
      *     1cat456
-     * 
+     *
      */
     @JRubyMethod(name = "display", optional = 1)
     public IRubyObject display(ThreadContext context, IRubyObject[] args) {
@@ -1394,7 +758,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *
      *  call-seq:
      *     obj.tainted?    => true or false
-     *  
+     *
      *  Returns <code>true</code> if the object is tainted.
      *
      */
@@ -1407,7 +771,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *
      *  call-seq:
      *     obj.taint -> obj
-     *  
+     *
      *  Marks <i>obj</i> as tainted---if the <code>$SAFE</code> level is
      *  set appropriately, many method calls which might alter the running
      *  programs environment will refuse to accept tainted strings.
@@ -1417,33 +781,25 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         taint(context.getRuntime());
         return this;
     }
-    
-    private void taint(Ruby runtime) {
-        runtime.secure(4);
-        if (!isTaint()) {
-        	testFrozen("object");
-            setTaint(true);
-        }
-    }
 
     /** rb_obj_untaint
      *
      *  call-seq:
      *     obj.untaint    => obj
-     *  
+     *
      *  Removes the taint from <i>obj</i>.
-     * 
+     *
      *  Only callable in if more secure than 3.
      */
     @JRubyMethod(name = "untaint")
     public IRubyObject untaint(ThreadContext context) {
         context.getRuntime().secure(3);
-        
+
         if (isTaint()) {
             testFrozen("object");
             setTaint(false);
         }
-        
+
         return this;
     }
 
@@ -1451,18 +807,18 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *
      *  call-seq:
      *     obj.freeze    => obj
-     *  
+     *
      *  Prevents further modifications to <i>obj</i>. A
      *  <code>TypeError</code> will be raised if modification is attempted.
      *  There is no way to unfreeze a frozen object. See also
      *  <code>Object#frozen?</code>.
-     *     
+     *
      *     a = [ "a", "b", "c" ]
      *     a.freeze
      *     a << "z"
-     *     
+     *
      *  <em>produces:</em>
-     *     
+     *
      *     prog.rb:3:in `<<': can't modify frozen array (TypeError)
      *     	from prog.rb:3
      */
@@ -1481,89 +837,51 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *
      *  call-seq:
      *     obj.frozen?    => true or false
-     *  
+     *
      *  Returns the freeze status of <i>obj</i>.
-     *     
+     *
      *     a = [ "a", "b", "c" ]
      *     a.freeze    #=> ["a", "b", "c"]
      *     a.frozen?   #=> true
-     */    
+     */
     @JRubyMethod(name = "frozen?")
     public RubyBoolean frozen_p(ThreadContext context) {
         return context.getRuntime().newBoolean(isFrozen());
     }
 
-    /** inspect_obj
-     * 
-     * The internal helper method that takes care of the part of the
-     * inspection that inspects instance variables.
-     */
-    private StringBuilder inspectObj(StringBuilder part) {
-        ThreadContext context = getRuntime().getCurrentContext();
-        String sep = "";
-        
-        for (Variable<IRubyObject> ivar : getInstanceVariableList()) {
-            part.append(sep).append(" ").append(ivar.getName()).append("=");
-            part.append(ivar.getValue().callMethod(context, "inspect"));
-            sep = ",";
-        }
-        part.append(">");
-        return part;
-    }
-
     /** rb_inspect
-     * 
+     *
      * The internal helper that ensures a RubyString instance is returned
      * so dangerous casting can be omitted
-     * Prefered over callMethod(context, "inspect") 
+     * Prefered over callMethod(context, "inspect")
      */
     static RubyString inspect(ThreadContext context, IRubyObject object) {
         return RubyString.objAsString(context, object.callMethod(context, "inspect"));
-    }    
+    }
 
     /** rb_obj_inspect
      *
      *  call-seq:
      *     obj.inspect   => string
-     *  
+     *
      *  Returns a string containing a human-readable representation of
      *  <i>obj</i>. If not overridden, uses the <code>to_s</code> method to
      *  generate the string.
-     *     
+     *
      *     [ 1, 2, 3..4, 'five' ].inspect   #=> "[1, 2, 3..4, \"five\"]"
      *     Time.new.inspect                 #=> "Wed Apr 09 08:54:39 CDT 2003"
      */
     @JRubyMethod(name = "inspect")
+    @Override
     public IRubyObject inspect() {
-        Ruby runtime = getRuntime();
-        if ((!isImmediate()) && !(this instanceof RubyModule) && hasVariables()) {
-            StringBuilder part = new StringBuilder();
-            String cname = getMetaClass().getRealClass().getName();
-            part.append("#<").append(cname).append(":0x");
-            part.append(Integer.toHexString(System.identityHashCode(this)));
-
-            if (runtime.isInspecting(this)) {
-                /* 6:tags 16:addr 1:eos */
-                part.append(" ...>");
-                return runtime.newString(part.toString());
-            }
-            try {
-                runtime.registerInspecting(this);
-                return runtime.newString(inspectObj(part).toString());
-            } finally {
-                runtime.unregisterInspecting(this);
-            }
-        }
-
-        if (isNil()) return RubyNil.inspect(this);
-        return RuntimeHelpers.invoke(runtime.getCurrentContext(), this, "to_s");
+        return super.inspect();
     }
 
     /** rb_obj_is_instance_of
      *
      *  call-seq:
      *     obj.instance_of?(class)    => true or false
-     *  
+     *
      *  Returns <code>true</code> if <i>obj</i> is an instance of the given
      *  class. See also <code>Object#kind_of?</code>.
      */
@@ -1584,11 +902,11 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *  call-seq:
      *     obj.is_a?(class)       => true or false
      *     obj.kind_of?(class)    => true or false
-     *  
+     *
      *  Returns <code>true</code> if <i>class</i> is the class of
      *  <i>obj</i>, or if <i>class</i> is one of the superclasses of
      *  <i>obj</i> or modules included in <i>obj</i>.
-     *     
+     *
      *     module M;    end
      *     class A
      *       include M
@@ -1620,17 +938,17 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *
      *  call-seq:
      *     obj.methods    => array
-     *  
+     *
      *  Returns a list of the names of methods publicly accessible in
      *  <i>obj</i>. This will include all the methods accessible in
      *  <i>obj</i>'s ancestors.
-     *     
+     *
      *     class Klass
      *       def kMethod()
      *       end
      *     end
      *     k = Klass.new
-     *     k.methods[0..9]    #=> ["kMethod", "freeze", "nil?", "is_a?", 
+     *     k.methods[0..9]    #=> ["kMethod", "freeze", "nil?", "is_a?",
      *                             "class", "instance_variable_set",
      *                              "methods", "extend", "__send__", "instance_eval"]
      *     k.methods.length   #=> 42
@@ -1656,7 +974,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
                 singletonMethods = context.getRuntime().newEmptyArray();
             }
         }
-        
+
         return singletonMethods;
     }
 
@@ -1664,7 +982,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *
      *  call-seq:
      *     obj.public_methods(all=true)   => array
-     *  
+     *
      *  Returns the list of public methods accessible to <i>obj</i>. If
      *  the <i>all</i> parameter is set to <code>false</code>, only those methods
      *  in the receiver will be listed.
@@ -1682,12 +1000,12 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *
      *  call-seq:
      *     obj.protected_methods(all=true)   => array
-     *  
+     *
      *  Returns the list of protected methods accessible to <i>obj</i>. If
      *  the <i>all</i> parameter is set to <code>false</code>, only those methods
      *  in the receiver will be listed.
      *
-     *  Internally this implementation uses the 
+     *  Internally this implementation uses the
      *  {@link RubyModule#protected_instance_methods} method.
      */
     @JRubyMethod(name = "protected_methods", optional = 1)
@@ -1703,12 +1021,12 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *
      *  call-seq:
      *     obj.private_methods(all=true)   => array
-     *  
+     *
      *  Returns the list of private methods accessible to <i>obj</i>. If
      *  the <i>all</i> parameter is set to <code>false</code>, only those methods
      *  in the receiver will be listed.
      *
-     *  Internally this implementation uses the 
+     *  Internally this implementation uses the
      *  {@link RubyModule#private_instance_methods} method.
      */
     @JRubyMethod(name = "private_methods", optional = 1)
@@ -1724,30 +1042,30 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *
      *  call-seq:
      *     obj.singleton_methods(all=true)    => array
-     *  
+     *
      *  Returns an array of the names of singleton methods for <i>obj</i>.
      *  If the optional <i>all</i> parameter is true, the list will include
      *  methods in modules included in <i>obj</i>.
-     *     
+     *
      *     module Other
      *       def three() end
      *     end
-     *     
+     *
      *     class Single
      *       def Single.four() end
      *     end
-     *     
+     *
      *     a = Single.new
-     *     
+     *
      *     def a.one()
      *     end
-     *     
+     *
      *     class << a
      *       include Other
      *       def two()
      *       end
      *     end
-     *     
+     *
      *     Single.singleton_methods    #=> ["four"]
      *     a.singleton_methods(false)  #=> ["two", "one"]
      *     a.singleton_methods         #=> ["two", "one", "three"]
@@ -1773,7 +1091,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         } else {
             singletonMethods = context.getRuntime().newEmptyArray();
         }
-        
+
         return singletonMethods;
     }
 
@@ -1781,13 +1099,13 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *
      *  call-seq:
      *     obj.method(sym)    => method
-     *  
+     *
      *  Looks up the named method as a receiver in <i>obj</i>, returning a
      *  <code>Method</code> object (or raising <code>NameError</code>). The
      *  <code>Method</code> object acts as a closure in <i>obj</i>'s object
      *  instance, so instance variables and the value of <code>self</code>
      *  remain available.
-     *     
+     *
      *     class Demo
      *       def initialize(n)
      *         @iv = n
@@ -1796,11 +1114,11 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *         "Hello, @iv = #{@iv}"
      *       end
      *     end
-     *     
+     *
      *     k = Demo.new(99)
      *     m = k.method(:hello)
      *     m.call   #=> "Hello, @iv = 99"
-     *     
+     *
      *     l = Demo.new('Fred')
      *     m = l.method("hello")
      *     m.call   #=> "Hello, @iv = Fred"
@@ -1810,23 +1128,11 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         return getMetaClass().newMethod(this, symbol.asJavaString(), true);
     }
 
-    /**
-     * Internal method that helps to convert any object into the
-     * format of a class name and a hex string inside of #<>.
-     */
-    public IRubyObject anyToString() {
-        String cname = getMetaClass().getRealClass().getName();
-        /* 6:tags 16:addr 1:eos */
-        RubyString str = getRuntime().newString("#<" + cname + ":0x" + Integer.toHexString(System.identityHashCode(this)) + ">");
-        str.setTaint(isTaint());
-        return str;
-    }
-
     /** rb_any_to_s
      *
      *  call-seq:
      *     obj.to_s    => string
-     *  
+     *
      *  Returns a string representing <i>obj</i>. The default
      *  <code>to_s</code> prints the object's class and an encoding of the
      *  object id. As a special case, the top-level object that is the
@@ -1841,18 +1147,18 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *
      *  call-seq:
      *     obj.to_a -> anArray
-     *  
+     *
      *  Returns an array representation of <i>obj</i>. For objects of class
      *  <code>Object</code> and others that don't explicitly override the
-     *  method, the return value is an array containing <code>self</code>. 
+     *  method, the return value is an array containing <code>self</code>.
      *  However, this latter behavior will soon be obsolete.
-     *     
+     *
      *     self.to_a       #=> -:1: warning: default `to_a' will be obsolete
      *     "hello".to_a    #=> ["hello"]
      *     Time.new.to_a   #=> [39, 54, 8, 9, 4, 2003, 3, 99, true, "CDT"]
-     * 
+     *
      *  The default to_a method is deprecated.
-     */    
+     */
     @JRubyMethod(name = "to_a", visibility = Visibility.PUBLIC)
     public RubyArray to_a() {
         getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "default 'to_a' will be obsolete", "to_a");
@@ -1864,7 +1170,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *  call-seq:
      *     obj.instance_eval(string [, filename [, lineno]] )   => obj
      *     obj.instance_eval {| | block }                       => obj
-     *  
+     *
      *  Evaluates a string containing Ruby source code, or the given block,
      *  within the context of the receiver (_obj_). In order to set the
      *  context, the variable +self+ is set to _obj_ while
@@ -1873,7 +1179,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *  that takes a +String+, the optional second and third
      *  parameters supply a filename and starting line number that are used
      *  when reporting compilation errors.
-     *     
+     *
      *     class Klass
      *       def initialize
      *         @secret = 99
@@ -1901,17 +1207,17 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     @Deprecated
     public IRubyObject instance_eval(ThreadContext context, IRubyObject[] args, Block block) {
         RubyModule klazz;
-        
+
         if (isImmediate()) {
             // Ruby uses Qnil here, we use "dummy" because we need a class
             klazz = context.getRuntime().getDummy();
         } else {
             klazz = getSingletonClass();
         }
-        
+
         return specificEval(context, klazz, args, block);
     }
-    
+
     private RubyModule getInstanceEvalClass() {
         if (isImmediate()) {
             // Ruby uses Qnil here, we use "dummy" because we need a class
@@ -1946,7 +1252,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         RubyModule klazz;
         if (isImmediate()) {
             // Ruby uses Qnil here, we use "dummy" because we need a class
-            klazz = context.getRuntime().getDummy();          
+            klazz = context.getRuntime().getDummy();
         } else {
             klazz = getSingletonClass();
         }
@@ -1958,22 +1264,22 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *
      *  call-seq:
      *     obj.extend(module, ...)    => obj
-     *  
+     *
      *  Adds to _obj_ the instance methods from each module given as a
      *  parameter.
-     *     
+     *
      *     module Mod
      *       def hello
      *         "Hello from Mod.\n"
      *       end
      *     end
-     *     
+     *
      *     class Klass
      *       def hello
      *         "Hello from Klass.\n"
      *       end
      *     end
-     *     
+     *
      *     k = Klass.new
      *     k.hello         #=> "Hello from Klass.\n"
      *     k.extend(Mod)   #=> #<Klass:0x401b3bc8>
@@ -1982,14 +1288,14 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     @JRubyMethod(name = "extend", required = 1, rest = true)
     public IRubyObject extend(IRubyObject[] args) {
         Ruby runtime = getRuntime();
-        
+
         // Make sure all arguments are modules before calling the callbacks
         for (int i = 0; i < args.length; i++) {
-            if (!args[i].isModule()) throw runtime.newTypeError(args[i], runtime.getModule()); 
+            if (!args[i].isModule()) throw runtime.newTypeError(args[i], runtime.getModule());
         }
 
         ThreadContext context = runtime.getCurrentContext();
-                
+
         // MRI extends in order from last to first
         for (int i = args.length - 1; i >= 0; i--) {
             args[i].callMethod(context, "extend_object", this);
@@ -2083,16 +1389,16 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *
      *  call-seq:
      *     obj =~ other  => false
-     *  
+     *
      *  Pattern Match---Overridden by descendents (notably
      *  <code>Regexp</code> and <code>String</code>) to provide meaningful
      *  pattern-match semantics.
-     */    
+     */
     @JRubyMethod(name = "=~", required = 1)
     public IRubyObject op_match(ThreadContext context, IRubyObject arg) {
     	return context.getRuntime().getFalse();
     }
-    
+
     public IRubyObject to_java() {
         throw getRuntime().newTypeError(getMetaClass().getBaseName() + " cannot coerce to a Java type.");
     }
@@ -2100,55 +1406,12 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
     public IRubyObject as(Class javaClass) {
         throw getRuntime().newTypeError(getMetaClass().getBaseName() + " cannot coerce to a Java type.");
     }
-    
-    /**
-     * @see org.jruby.runtime.builtin.IRubyObject#getType()
-     */
-    public RubyClass getType() {
-        return type();
-    }
-
-    /**
-     * @see org.jruby.runtime.builtin.IRubyObject#dataWrapStruct()
-     */
-    public synchronized void dataWrapStruct(Object obj) {
-        this.dataStruct = obj;
-    }
-
-    /**
-     * @see org.jruby.runtime.builtin.IRubyObject#dataGetStruct()
-     */
-    public synchronized Object dataGetStruct() {
-        return dataStruct;
-    }
-
-    /**
-     * Adds the specified object as a finalizer for this object.
-     */ 
-    public void addFinalizer(IRubyObject finalizer) {
-        if (this.finalizer == null) {
-            this.finalizer = new Finalizer(getRuntime().getObjectSpace().idOf(this));
-            getRuntime().addFinalizer(this.finalizer);
-        }
-        this.finalizer.addFinalizer(finalizer);
-    }
-
-    /**
-     * Remove all the finalizers for this object.
-     */
-    public void removeFinalizers() {
-        if (finalizer != null) {
-            finalizer.removeFinalizers();
-            finalizer = null;
-            getRuntime().removeFinalizer(this.finalizer);
-        }
-    }
 
 
     //
     // INSTANCE VARIABLE RUBY METHODS
     //
-    
+
     /** rb_obj_ivar_defined
      *
      *  call-seq:
@@ -2185,7 +1448,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *  variable name should be included for regular instance
      *  variables. Throws a <code>NameError</code> exception if the
      *  supplied symbol is not valid as an instance variable name.
-     *     
+     *
      *     class Fred
      *       def initialize(p1, p2)
      *         @a, @b = p1, p2
@@ -2208,12 +1471,12 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *
      *  call-seq:
      *     obj.instance_variable_set(symbol, obj)    => obj
-     *  
+     *
      *  Sets the instance variable names by <i>symbol</i> to
      *  <i>object</i>, thereby frustrating the efforts of the class's
      *  author to attempt to provide proper encapsulation. The variable
      *  did not have to exist prior to this call.
-     *     
+     *
      *     class Fred
      *       def initialize(p1, p2)
      *         @a, @b = p1, p2
@@ -2234,10 +1497,10 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *
      *  call-seq:
      *     obj.remove_instance_variable(symbol)    => obj
-     *  
+     *
      *  Removes the named instance variable from <i>obj</i>, returning that
      *  variable's value.
-     *     
+     *
      *     class Dummy
      *       attr_reader :var
      *       def initialize
@@ -2266,11 +1529,11 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *
      *  call-seq:
      *     obj.instance_variables    => array
-     *  
+     *
      *  Returns an array of instance variable names for the receiver. Note
      *  that simply defining an accessor does not create the corresponding
      *  instance variable.
-     *     
+     *
      *     class Fred
      *       attr_accessor :a1
      *       def initialize
@@ -2278,7 +1541,7 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
      *       end
      *     end
      *     Fred.new.instance_variables   #=> ["@iv"]
-     */    
+     */
     @JRubyMethod(name = "instance_variables")
     public RubyArray instance_variables(ThreadContext context) {
         Ruby runtime = context.getRuntime();
@@ -2293,133 +1556,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         return array;
     }
 
-    //
-    // INSTANCE VARIABLE API METHODS
-    //
-
-    /**
-     * Dummy method to avoid a cast, and to avoid polluting the
-     * IRubyObject interface with all the instance variable management
-     * methods.
-     */    
-    public InstanceVariables getInstanceVariables() {
-        return this;
-    }
-    
-    /**
-     * @see org.jruby.runtime.builtin.InstanceVariables#hasInstanceVariable
-     */
-    public boolean hasInstanceVariable(String name) {
-        assert IdUtil.isInstanceVariable(name);
-        return variableTableContains(name);
-    }
-    
-    /**
-     * @see org.jruby.runtime.builtin.InstanceVariables#fastHasInstanceVariable
-     */
-    public boolean fastHasInstanceVariable(String internedName) {
-        assert IdUtil.isInstanceVariable(internedName);
-        return variableTableFastContains(internedName);
-    }
-    
-    /**
-     * @see org.jruby.runtime.builtin.InstanceVariables#getInstanceVariable
-     */
-    public IRubyObject getInstanceVariable(String name) {
-        assert IdUtil.isInstanceVariable(name);
-        return variableTableFetch(name);
-    }
-    
-    /**
-     * @see org.jruby.runtime.builtin.InstanceVariables#fastGetInstanceVariable
-     */
-    public IRubyObject fastGetInstanceVariable(String internedName) {
-        assert IdUtil.isInstanceVariable(internedName);
-        return variableTableFastFetch(internedName);
-    }
-
-    /** rb_iv_set / rb_ivar_set
-    *
-    * @see org.jruby.runtime.builtin.InstanceVariables#setInstanceVariable
-    */
-    public IRubyObject setInstanceVariable(String name, IRubyObject value) {
-        assert IdUtil.isInstanceVariable(name) && value != null;
-        ensureInstanceVariablesSettable();
-        return variableTableStore(name, value);
-    }
-
-    /**
-     * @see org.jruby.runtime.builtin.InstanceVariables#fastSetInstanceVariable
-     */    
-    public IRubyObject fastSetInstanceVariable(String internedName, IRubyObject value) {
-        assert IdUtil.isInstanceVariable(internedName) && value != null;
-        ensureInstanceVariablesSettable();
-        return variableTableFastStore(internedName, value);
-     }
-
-    /**
-     * @see org.jruby.runtime.builtin.InstanceVariables#removeInstanceVariable
-     */    
-    public IRubyObject removeInstanceVariable(String name) {
-        assert IdUtil.isInstanceVariable(name);
-        ensureInstanceVariablesSettable();
-        return variableTableRemove(name);
-    }
-
-    /**
-     * @see org.jruby.runtime.builtin.InstanceVariables#getInstanceVariableList
-     */    
-    public List<Variable<IRubyObject>> getInstanceVariableList() {
-        VariableTableEntry[] table = variableTableGetTable();
-        ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
-        IRubyObject readValue;
-        for (int i = table.length; --i >= 0; ) {
-            for (VariableTableEntry e = table[i]; e != null; e = e.next) {
-                if (IdUtil.isInstanceVariable(e.name)) {
-                    if ((readValue = e.value) == null) readValue = variableTableReadLocked(e);
-                    list.add(new VariableEntry<IRubyObject>(e.name, readValue));
-                }
-            }
-        }
-        return list;
-    }
-
-    /**
-     * @see org.jruby.runtime.builtin.InstanceVariables#getInstanceVariableNameList
-     */    
-    public List<String> getInstanceVariableNameList() {
-        VariableTableEntry[] table = variableTableGetTable();
-        ArrayList<String> list = new ArrayList<String>();
-        for (int i = table.length; --i >= 0; ) {
-            for (VariableTableEntry e = table[i]; e != null; e = e.next) {
-                if (IdUtil.isInstanceVariable(e.name)) {
-                    list.add(e.name);
-                }
-            }
-        }
-        return list;
-    }
-
-    /**
-     * @see org.jruby.runtime.builtin.InstanceVariables#getInstanceVariableNameList
-     */
-    public void copyInstanceVariablesInto(InstanceVariables other) {
-        VariableTableEntry[] table = variableTableGetTable();
-        for (int i = table.length; --i >= 0; ) {
-            for (VariableTableEntry e = table[i]; e != null; e = e.next) {
-                if (IdUtil.isInstanceVariable(e.name)) {
-                    other.setInstanceVariable(e.name, e.value);
-                }
-            }
-        }
-    }
-
-    /**
-     * The error message used when some one tries to modify an
-     * instance variable in a high security setting.
-     */
-    protected static final String ERR_INSECURE_SET_INST_VAR  = "Insecure: can't modify instance variable";
-
     /**
      * Checks if the name parameter represents a legal instance variable name, and otherwise throws a Ruby NameError
      */
@@ -2427,556 +1563,6 @@ public class RubyObject implements Cloneable, IRubyObject, Serializable, CoreObj
         if (IdUtil.isValidInstanceVariableName(name)) return name;
 
         throw getRuntime().newNameError("`" + name + "' is not allowable as an instance variable name", name);
-    }
-
-    /**
-     * Makes sure that instance variables can be set on this object,
-     * including information about whether this object is frozen, or
-     * tainted. Will throw a suitable exception in that case.
-     */
-    protected void ensureInstanceVariablesSettable() {
-        if (!isFrozen() && (getRuntime().getSafeLevel() < 4 || isTaint())) {
-            return;
-        }
-        
-        if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
-            throw getRuntime().newSecurityError(ERR_INSECURE_SET_INST_VAR);
-        }
-        if (isFrozen()) {
-            if (this instanceof RubyModule) {
-                throw getRuntime().newFrozenError("class/module ");
-            } else {
-                throw getRuntime().newFrozenError("");
-            }
-        }
-    }
-
-    //
-    // INTERNAL VARIABLE METHODS
-    //
-    
-    /**
-     * Dummy method to avoid a cast, and to avoid polluting the
-     * IRubyObject interface with all the instance variable management
-     * methods.
-     */    
-    public InternalVariables getInternalVariables() {
-        return this;
-    }
-
-    /**
-     * @see org.jruby.runtime.builtin.InternalVariables#hasInternalVariable
-     */    
-    public boolean hasInternalVariable(String name) {
-        assert !isRubyVariable(name);
-        return variableTableContains(name);
-    }
-
-    /**
-     * @see org.jruby.runtime.builtin.InternalVariables#fastHasInternalVariable
-     */    
-    public boolean fastHasInternalVariable(String internedName) {
-        assert !isRubyVariable(internedName);
-        return variableTableFastContains(internedName);
-    }
-
-    /**
-     * @see org.jruby.runtime.builtin.InternalVariables#getInternalVariable
-     */    
-    public IRubyObject getInternalVariable(String name) {
-        assert !isRubyVariable(name);
-        return variableTableFetch(name);
-    }
-
-    /**
-     * @see org.jruby.runtime.builtin.InternalVariables#fastGetInternalVariable
-     */    
-    public IRubyObject fastGetInternalVariable(String internedName) {
-        assert !isRubyVariable(internedName);
-        return variableTableFastFetch(internedName);
-    }
-
-    /**
-     * @see org.jruby.runtime.builtin.InternalVariables#setInternalVariable
-     */    
-    public void setInternalVariable(String name, IRubyObject value) {
-        assert !isRubyVariable(name);
-        variableTableStore(name, value);
-    }
-
-    /**
-     * @see org.jruby.runtime.builtin.InternalVariables#fastSetInternalVariable
-     */    
-    public void fastSetInternalVariable(String internedName, IRubyObject value) {
-        assert !isRubyVariable(internedName);
-        variableTableFastStore(internedName, value);
-    }
-
-    /**
-     * @see org.jruby.runtime.builtin.InternalVariables#removeInternalVariable
-     */    
-    public IRubyObject removeInternalVariable(String name) {
-        assert !isRubyVariable(name);
-        return variableTableRemove(name);
-    }
-
-    /**
-     * Sync one variable table with another - this is used to make
-     * rbClone work correctly.
-     */
-    public void syncVariables(List<Variable<IRubyObject>> variables) {
-        variableTableSync(variables);
-    }
-
-    /**
-     * @see org.jruby.runtime.builtin.InternalVariables#getInternalVariableList
-     */    
-    public List<Variable<IRubyObject>> getInternalVariableList() {
-        VariableTableEntry[] table = variableTableGetTable();
-        ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
-        IRubyObject readValue;
-        for (int i = table.length; --i >= 0; ) {
-            for (VariableTableEntry e = table[i]; e != null; e = e.next) {
-                if (!isRubyVariable(e.name)) {
-                    if ((readValue = e.value) == null) readValue = variableTableReadLocked(e);
-                    list.add(new VariableEntry<IRubyObject>(e.name, readValue));
-                }
-            }
-        }
-        return list;
-    }
-
-    
-    //
-    // COMMON VARIABLE METHODS
-    //
-
-    /**
-     * Returns true if object has any variables, defined as:
-     * <ul>
-     * <li> instance variables
-     * <li> class variables
-     * <li> constants
-     * <li> internal variables, such as those used when marshaling Ranges and Exceptions
-     * </ul>
-     * @return true if object has any variables, else false
-     */
-    public boolean hasVariables() {
-        return variableTableGetSize() > 0;
-    }
-
-    /**
-     * Returns the amount of instance variables, class variables,
-     * constants and internal variables this object has.
-     */
-    public int getVariableCount() {
-        return variableTableGetSize();
-    }
-    
-    /**
-     * Gets a list of all variables in this object.
-     */
-    // TODO: must override in RubyModule to pick up constants
-    public List<Variable<IRubyObject>> getVariableList() {
-        VariableTableEntry[] table = variableTableGetTable();
-        ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
-        IRubyObject readValue;
-        for (int i = table.length; --i >= 0; ) {
-            for (VariableTableEntry e = table[i]; e != null; e = e.next) {
-                if ((readValue = e.value) == null) readValue = variableTableReadLocked(e);
-                list.add(new VariableEntry<IRubyObject>(e.name, readValue));
-            }
-        }
-        return list;
-    }
-
-    /**
-     * Gets a name list of all variables in this object.
-     */
-   // TODO: must override in RubyModule to pick up constants
-   public List<String> getVariableNameList() {
-        VariableTableEntry[] table = variableTableGetTable();
-        ArrayList<String> list = new ArrayList<String>();
-        for (int i = table.length; --i >= 0; ) {
-            for (VariableTableEntry e = table[i]; e != null; e = e.next) {
-                list.add(e.name);
-            }
-        }
-        return list;
-    }
-    
-    /**
-     * Gets internal access to the getmap for variables.
-     */
-    @SuppressWarnings("unchecked")
-    @Deprecated // born deprecated
-    public Map getVariableMap() {
-        return variableTableGetMap();
-    }
-
-    /**
-     * Check the syntax of a Ruby variable, including that it's longer
-     * than zero characters, and starts with either an @ or a capital
-     * letter.
-     */
-    // FIXME: this should go somewhere more generic -- maybe IdUtil
-    protected static final boolean isRubyVariable(String name) {
-        char c;
-        return name.length() > 0 && ((c = name.charAt(0)) == '@' || (c <= 'Z' && c >= 'A'));
-    }
-    
-    //
-    // VARIABLE TABLE METHODS, ETC.
-    //
-    
-    protected static final int VARIABLE_TABLE_DEFAULT_CAPACITY = 8; // MUST be power of 2!
-    protected static final int VARIABLE_TABLE_MAXIMUM_CAPACITY = 1 << 30;
-    protected static final float VARIABLE_TABLE_LOAD_FACTOR = 0.75f;
-    protected static final VariableTableEntry[] VARIABLE_TABLE_EMPTY_TABLE = new VariableTableEntry[0];
-
-    /**
-     * Every entry in the variable map is represented by an instance
-     * of this class.
-     */
-    protected static final class VariableTableEntry {
-        final int hash;
-        final String name;
-        volatile IRubyObject value;
-        final VariableTableEntry next;
-        
-        VariableTableEntry(int hash, String name, IRubyObject value, VariableTableEntry next) {
-            assert name == name.intern() : name + " is not interned";
-            this.hash = hash;
-            this.name = name;
-            this.value = value;
-            this.next = next;
-        }
-    }
-
-    /**
-     * Reads the value of the specified entry, locked on the current
-     * object.
-     */    
-    protected synchronized IRubyObject variableTableReadLocked(VariableTableEntry entry) {
-        return entry.value;
-    }
-
-    /**
-     * Checks if the variable table contains a variable of the
-     * specified name.
-     */
-    protected boolean variableTableContains(String name) {
-        VariableTableEntry[] table;
-        if ((table = variableTable) != null) {
-            int hash = name.hashCode();
-            for (VariableTableEntry e = table[hash & (table.length - 1)]; e != null; e = e.next) {
-                if (hash == e.hash && name.equals(e.name)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Checks if the variable table contains the the variable of the
-     * specified name, where the precondition is that the name must be
-     * an interned Java String.
-     */
-    protected boolean variableTableFastContains(String internedName) {
-        assert internedName == internedName.intern() : internedName + " not interned";
-        VariableTableEntry[] table;
-        if ((table = variableTable) != null) {
-            for (VariableTableEntry e = table[internedName.hashCode() & (table.length - 1)]; e != null; e = e.next) {
-                if (internedName == e.name) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Fetch an object from the variable table based on the name.
-     *
-     * @return the object or null if not found
-     */
-    protected IRubyObject variableTableFetch(String name) {
-        VariableTableEntry[] table;
-        IRubyObject readValue;
-        if ((table = variableTable) != null) {
-            int hash = name.hashCode();
-            for (VariableTableEntry e = table[hash & (table.length - 1)]; e != null; e = e.next) {
-                if (hash == e.hash && name.equals(e.name)) {
-                    if ((readValue = e.value) != null) return readValue;
-                    return variableTableReadLocked(e);
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Fetch an object from the variable table based on the name,
-     * where the name must be an interned Java String.
-     *
-     * @return the object or null if not found
-     */
-    protected IRubyObject variableTableFastFetch(String internedName) {
-        VariableTableEntry[] table;
-        IRubyObject readValue;
-        if ((table = variableTable) != null) {
-            for (VariableTableEntry e = table[internedName.hashCode() & (table.length - 1)]; e != null; e = e.next) {
-                if (internedName == e.name) {
-                    if ((readValue = e.value) != null) return readValue;
-                    return variableTableReadLocked(e);
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Store a value in the variable store under the specific name.
-     */
-    protected IRubyObject variableTableStore(String name, IRubyObject value) {
-        int hash = name.hashCode();
-        synchronized(this) {
-            VariableTableEntry[] table;
-            VariableTableEntry e;
-            if ((table = variableTable) == null) {
-                table =  new VariableTableEntry[VARIABLE_TABLE_DEFAULT_CAPACITY];
-                e = new VariableTableEntry(hash, name.intern(), value, null);
-                table[hash & (VARIABLE_TABLE_DEFAULT_CAPACITY - 1)] = e;
-                variableTableThreshold = (int)(VARIABLE_TABLE_DEFAULT_CAPACITY * VARIABLE_TABLE_LOAD_FACTOR);
-                variableTableSize = 1;
-                variableTable = table;
-                return value;
-            }
-            int potentialNewSize;
-            if ((potentialNewSize = variableTableSize + 1) > variableTableThreshold) {
-                table = variableTableRehash();
-            }
-            int index;
-            for (e = table[index = hash & (table.length - 1)]; e != null; e = e.next) {
-                if (hash == e.hash && name.equals(e.name)) {
-                    e.value = value;
-                    return value;
-                }
-            }
-            e = new VariableTableEntry(hash, name.intern(), value, table[index]);
-            table[index] = e;
-            variableTableSize = potentialNewSize;
-            variableTable = table; // write-volatile
-        }
-        return value;
-    }
-
-    /**
-     * Will store the value under the specified name, where the name
-     * needs to be an interned Java String.
-     */
-    protected IRubyObject variableTableFastStore(String internedName, IRubyObject value) {
-        if (IdUtil.isConstant(internedName)) new Exception().printStackTrace();
-
-        assert internedName == internedName.intern() : internedName + " not interned";
-        int hash = internedName.hashCode();
-        synchronized(this) {
-            VariableTableEntry[] table;
-            VariableTableEntry e;
-            if ((table = variableTable) == null) {
-                table =  new VariableTableEntry[VARIABLE_TABLE_DEFAULT_CAPACITY];
-                e = new VariableTableEntry(hash, internedName, value, null);
-                table[hash & (VARIABLE_TABLE_DEFAULT_CAPACITY - 1)] = e;
-                variableTableThreshold = (int)(VARIABLE_TABLE_DEFAULT_CAPACITY * VARIABLE_TABLE_LOAD_FACTOR);
-                variableTableSize = 1;
-                variableTable = table;
-                return value;
-            }
-            int potentialNewSize;
-            if ((potentialNewSize = variableTableSize + 1) > variableTableThreshold) {
-                table = variableTableRehash();
-            }
-            int index;
-            for (e = table[index = hash & (table.length - 1)]; e != null; e = e.next) {
-                if (internedName == e.name) {
-                    e.value = value;
-                    return value;
-                }
-            }
-            e = new VariableTableEntry(hash, internedName, value, table[index]);
-            table[index] = e;
-            variableTableSize = potentialNewSize;
-            variableTable = table; // write-volatile
-        }
-        return value;
-    }
-
-    /**
-     * Removes the entry with the specified name from the variable
-     * table, and returning the removed value.
-     */
-    protected IRubyObject variableTableRemove(String name) {
-        synchronized(this) {
-            VariableTableEntry[] table;
-            if ((table = variableTable) != null) {
-                int hash = name.hashCode();
-                int index = hash & (table.length - 1);
-                VariableTableEntry first = table[index];
-                VariableTableEntry e;
-                for (e = first; e != null; e = e.next) {
-                    if (hash == e.hash && name.equals(e.name)) {
-                        IRubyObject oldValue = e.value;
-                        // All entries following removed node can stay
-                        // in list, but all preceding ones need to be
-                        // cloned.
-                        VariableTableEntry newFirst = e.next;
-                        for (VariableTableEntry p = first; p != e; p = p.next) {
-                            newFirst = new VariableTableEntry(p.hash, p.name, p.value, newFirst);
-                        }
-                        table[index] = newFirst;
-                        variableTableSize--;
-                        variableTable = table; // write-volatile 
-                        return oldValue;
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Get the actual table used to save variable entries.
-     */
-    protected VariableTableEntry[] variableTableGetTable() {
-        VariableTableEntry[] table;
-        if ((table = variableTable) != null) {
-            return table;
-        }
-        return VARIABLE_TABLE_EMPTY_TABLE;
-    }
-
-    /**
-     * Get the size of the variable table.
-     */
-    protected int variableTableGetSize() {
-        if (variableTable != null) {
-            return variableTableSize;
-        }
-        return 0;
-    }
-
-    /**
-     * Synchronize the variable table with the argument. In real terms
-     * this means copy all entries into a newly allocated table.
-     */
-    protected void variableTableSync(List<Variable<IRubyObject>> vars) {
-        synchronized(this) {
-            variableTableSize = 0;
-            variableTableThreshold = (int)(VARIABLE_TABLE_DEFAULT_CAPACITY * VARIABLE_TABLE_LOAD_FACTOR);
-            variableTable =  new VariableTableEntry[VARIABLE_TABLE_DEFAULT_CAPACITY];
-            for (Variable<IRubyObject> var : vars) {
-                variableTableStore(var.getName(), var.getValue());
-            }
-        }
-    }
-
-    /**
-     * Rehashes the variable table. Must be called from a synchronized
-     * block.
-     */
-    // MUST be called from synchronized/locked block!
-    // should only be called by variableTableStore/variableTableFastStore
-    protected final VariableTableEntry[] variableTableRehash() {
-        VariableTableEntry[] oldTable = variableTable;
-        int oldCapacity;
-        if ((oldCapacity = oldTable.length) >= VARIABLE_TABLE_MAXIMUM_CAPACITY) {
-            return oldTable;
-        }
-
-        int newCapacity = oldCapacity << 1;
-        VariableTableEntry[] newTable = new VariableTableEntry[newCapacity];
-        variableTableThreshold = (int)(newCapacity * VARIABLE_TABLE_LOAD_FACTOR);
-        int sizeMask = newCapacity - 1;
-        VariableTableEntry e;
-        for (int i = oldCapacity; --i >= 0; ) {
-            // We need to guarantee that any existing reads of old Map can
-            //  proceed. So we cannot yet null out each bin.
-            e = oldTable[i];
-
-            if (e != null) {
-                VariableTableEntry next = e.next;
-                int idx = e.hash & sizeMask;
-
-                //  Single node on list
-                if (next == null)
-                    newTable[idx] = e;
-
-                else {
-                    // Reuse trailing consecutive sequence at same slot
-                    VariableTableEntry lastRun = e;
-                    int lastIdx = idx;
-                    for (VariableTableEntry last = next;
-                         last != null;
-                         last = last.next) {
-                        int k = last.hash & sizeMask;
-                        if (k != lastIdx) {
-                            lastIdx = k;
-                            lastRun = last;
-                        }
-                    }
-                    newTable[lastIdx] = lastRun;
-
-                    // Clone all remaining nodes
-                    for (VariableTableEntry p = e; p != lastRun; p = p.next) {
-                        int k = p.hash & sizeMask;
-                        VariableTableEntry m = new VariableTableEntry(p.hash, p.name, p.value, newTable[k]);
-                        newTable[k] = m;
-                    }
-                }
-            }
-        }
-        variableTable = newTable;
-        return newTable;
-    }
-
-    /**
-     * Method to help ease transition to new variables implementation.
-     * Will likely be deprecated in the near future.
-     */
-    @SuppressWarnings("unchecked")
-    protected Map variableTableGetMap() {
-        HashMap map = new HashMap();
-        VariableTableEntry[] table;
-        IRubyObject readValue;
-        if ((table = variableTable) != null) {
-            for (int i = table.length; --i >= 0; ) {
-                for (VariableTableEntry e = table[i]; e != null; e = e.next) {
-                    if ((readValue = e.value) == null) readValue = variableTableReadLocked(e);
-                    map.put(e.name, readValue);
-                }
-            }
-        }
-        return map;
-    }
-
-    /**
-     * Method to help ease transition to new variables implementation.
-     * Will likely be deprecated in the near future.
-     */
-    @SuppressWarnings("unchecked")
-    protected Map variableTableGetMap(Map map) {
-        VariableTableEntry[] table;
-        IRubyObject readValue;
-        if ((table = variableTable) != null) {
-            for (int i = table.length; --i >= 0; ) {
-                for (VariableTableEntry e = table[i]; e != null; e = e.next) {
-                    if ((readValue = e.value) == null) readValue = variableTableReadLocked(e);
-                    map.put(e.name, readValue);
-                }
-            }
-        }
-        return map;
     }
 
     /**

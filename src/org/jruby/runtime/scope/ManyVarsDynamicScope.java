@@ -209,6 +209,12 @@ public class ManyVarsDynamicScope extends DynamicScope {
         variableValues[2] = arg2;
     }
     
+    public void setEndArgValues(IRubyObject[] values, int index, int size) {
+        // FIXME: Some asserts
+        System.out.println("VALUEL: " + values.length + ", SIZE: " + size + ", INDEX: " + index);
+        System.arraycopy(values, values.length - size, variableValues, index, size);
+    }
+
     /**
      * Copy variable values back for ZSuper call.
      */

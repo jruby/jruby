@@ -132,7 +132,6 @@ import org.jruby.ast.WhenNode;
 import org.jruby.ast.XStrNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.runtime.BlockBody;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IdUtil;
 
 /**
@@ -1820,17 +1819,17 @@ public class ASTCompiler {
                     };
         }
 
-        if (argsNode.getBlockArgNode() != null) {
+        if (argsNode.getBlock() != null) {
             blockAssignment = new CompilerCallback() {
 
                         public void call(BodyCompiler context) {
-                            context.getVariableCompiler().assignLocalVariable(argsNode.getBlockArgNode().getCount());
+                            context.getVariableCompiler().assignLocalVariable(argsNode.getBlock().getCount());
                         }
                     };
         }
 
         context.getVariableCompiler().checkMethodArity(required, opt, rest);
-        context.getVariableCompiler().assignMethodArguments(argsNode.getArgs(),
+        context.getVariableCompiler().assignMethodArguments(argsNode.getPre(),
                 argsNode.getRequiredArgsCount(),
                 argsNode.getOptArgs(),
                 argsNode.getOptionalArgsCount(),

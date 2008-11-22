@@ -34,14 +34,18 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.CompatVersion;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.RubyModule;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.evaluator.Instruction;
 import org.jruby.internal.runtime.methods.DefaultMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.InterpretedMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
@@ -102,10 +106,13 @@ public class DefnNode extends MethodDefNode implements INameNode {
         
         // Make a nil node if no body.  Notice this is not part of AST.
         Node body = bodyNode == null ? new NilNode(getPosition()) : bodyNode;
-        
-        DefaultMethod newMethod = new DefaultMethod(containingClass, scope, 
-                body, (ArgsNode) argsNode, 
-                visibility, getPosition());
+
+        DynamicMethod newMethod;
+        if (runtime.getInstanceConfig().getCompileMode() == CompileMode.OFF || runtime.getInstanceConfig().getCompatVersion() == CompatVersion.RUBY1_9) {
+            newMethod = new InterpretedMethod(containingClass, name, scope, body, argsNode, visibility, getPosition());
+        } else {
+            newMethod = new DefaultMethod(containingClass, name, scope, body, argsNode, visibility, getPosition());
+        }
    
         containingClass.addMethod(name, newMethod);
    

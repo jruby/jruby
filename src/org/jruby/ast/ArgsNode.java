@@ -35,27 +35,43 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * Arguments for a function definition.
- * <ul>
- * <li>u1 ==&gt; optNode (BlockNode) Optional argument description</li>
- * <li>u2 ==&gt; rest (int) index of the rest argument (the array arg with a * in front</li>
- * <li>u3 ==&gt; count (int) number of arguments</li>
- * </ul>
+ * Represents the argument declarations of a method.  The fields:
+ * foo(p1, ..., pn, o1 = v1, ..., on = v2, *r, q1, ..., qn)
+ *
+ * p1...pn = pre arguments
+ * o1...on = optional arguments
+ * r       = rest argument
+ * q1...qn = post arguments (only in 1.9)
  */
 public class ArgsNode extends Node {
-    private final ListNode arguments;
+    private final ListNode pre;
+    private final int preCount;
     private final ListNode optArgs;
-    private final ArgumentNode restArgNode;
-    private final int restArg;
+    protected final ArgumentNode restArgNode;
+    protected final int restArg;
     private final BlockArgNode blockArgNode;
-    private final Arity arity;
+    protected Arity arity;
+    private final int requiredArgsCount;
+    protected final boolean hasOptArgs;
+    protected int maxArgsCount;
 
+    // Only in ruby 1.9 methods
+    private final ListNode post;
+    private final int postCount;
+    private final int postIndex;
     /**
      * 
      * @param optionalArguments  Node describing the optional arguments
@@ -68,23 +84,30 @@ public class ArgsNode extends Node {
      * @param restArgNode The rest argument (*args).
      * @param blockArgNode An optional block argument (&amp;arg).
      **/
-    public ArgsNode(ISourcePosition position, ListNode arguments, ListNode optionalArguments, 
-            int restArguments, ArgumentNode restArgNode, BlockArgNode blockArgNode) {
+    public ArgsNode(ISourcePosition position, ListNode pre, ListNode optionalArguments,
+            RestArgNode rest, ListNode post, BlockArgNode blockArgNode) {
         super(position, NodeType.ARGSNODE);
 
-        this.arguments = arguments;
+        this.pre = pre;
+        this.preCount = pre == null ? 0 : pre.size();
+        this.post = post;
+        this.postCount = post == null ? 0 : post.size();
+        this.postIndex = rest == null ? 0 : rest.getIndex() + 1;
         this.optArgs = optionalArguments;
-        this.restArg = restArguments;
-        this.restArgNode = restArgNode;
+        this.restArg = rest == null ? -1 : rest.getIndex();
+        this.restArgNode = rest;
         this.blockArgNode = blockArgNode;
-        
-        if (getRestArg() == -2) {
-            arity = Arity.optional();
-        } else if (getOptArgs() != null || getRestArg() >= 0) {
-            arity = Arity.required(getRequiredArgsCount());
-        } else {   
-            arity = Arity.createArity(getRequiredArgsCount());
-        }
+        this.requiredArgsCount = preCount + postCount;
+        this.hasOptArgs = getOptArgs() != null;
+        this.maxArgsCount = getRestArg() >= 0 ? -1 : getRequiredArgsCount() + getOptionalArgsCount();
+        this.arity = calculateArity();
+    }
+
+    protected Arity calculateArity() {
+        if (restArgNode instanceof UnnamedRestArgNode) return Arity.optional();
+        if (getOptArgs() != null || getRestArg() >= 0) return Arity.required(getRequiredArgsCount());
+
+        return Arity.createArity(getRequiredArgsCount());
     }
     
     /**
@@ -96,22 +119,35 @@ public class ArgsNode extends Node {
     }
 
     /**
-     * Gets main arguments (as Tokens)
+     * Gets the required arguments at the beginning of the argument definition
      */
-    public ListNode getArgs() {
-        return arguments;
+    public ListNode getPre() {
+        return pre;
     }
 
+    @Deprecated
+    public ListNode getArgs() {
+        return pre;
+    }
+    
     public Arity getArity() {
         return arity;
     }
-    
+
     public int getRequiredArgsCount() {
-        return arguments == null ? 0 : arguments.size();
+        return requiredArgsCount;
     }
     
     public int getOptionalArgsCount() {
         return optArgs == null ? 0 : optArgs.size();
+    }
+
+    public ListNode getPost() {
+        return post;
+    }
+
+    public int getMaxArgumentsCount() {
+        return maxArgsCount;
     }
 
     /**
@@ -138,15 +174,100 @@ public class ArgsNode extends Node {
         return restArgNode;
     }
 
-    /**
-     * Gets the blockArgNode.
-     * @return Returns a BlockArgNode
-     */
+    @Deprecated
     public BlockArgNode getBlockArgNode() {
         return blockArgNode;
     }
-    
+
+    /**
+     * Gets the explicit block argument of the parameter list (&block).
+     * 
+     * @return Returns a BlockArgNode
+     */
+    public BlockArgNode getBlock() {
+        return blockArgNode;
+    }
+
+    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject[] args, Block block) {
+        DynamicScope scope = context.getCurrentScope();
+
+        // Bind 'normal' parameter values to the local scope for this method.
+        if (preCount > 0) scope.setArgValues(args, Math.min(args.length, preCount));
+        if (postCount > 0) scope.setEndArgValues(args, postIndex, postCount);
+
+        // optArgs and restArgs require more work, so isolate them and ArrayList creation here
+        if (hasOptArgs || restArg != -1) prepareOptOrRestArgs(context, runtime, scope, self, args);
+        if (getBlock() != null) processBlockArg(scope, runtime, block);
+    }
+
+    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, Block block) {
+        prepare(context, runtime, self, IRubyObject.NULL_ARRAY, block);
+    }
+    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject arg0,
+            Block block) {
+        prepare(context, runtime, self, new IRubyObject[] { arg0 }, block);
+    }
+
+    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject arg0,
+            IRubyObject arg1, Block block) {
+        prepare(context, runtime, self, new IRubyObject[] { arg0, arg1 }, block);
+    }
+
+    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject arg0,
+            IRubyObject arg1, IRubyObject arg2, Block block) {
+        prepare(context, runtime, self, new IRubyObject[] { arg0, arg1, arg2 }, block);
+    }
+
+    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject arg0,
+            IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+        prepare(context, runtime, self, new IRubyObject[] { arg0, arg1, arg2, arg3 }, block);
+    }
+
+    public void checkArgCount(Ruby runtime, int argsLength) {
+//        arity.checkArity(runtime, argsLength);
+        Arity.checkArgumentCount(runtime, argsLength, requiredArgsCount, maxArgsCount);
+    }
+
+    protected void prepareOptOrRestArgs(ThreadContext context, Ruby runtime, DynamicScope scope,
+            IRubyObject self, IRubyObject[] args) {
+        prepareRestArg(context, runtime, scope, args, prepareOptionalArguments(context, runtime, self, args));
+    }
+
+    protected int prepareOptionalArguments(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject[] args) {
+        return hasOptArgs ? assignOptArgs(args, runtime, context, self, preCount) : preCount;
+    }
+
+    protected void prepareRestArg(ThreadContext context, Ruby runtime, DynamicScope scope,
+            IRubyObject[] args, int givenArgsCount) {
+        if (restArg >= 0) {
+            scope.setValue(restArg, RubyArray.newArrayNoCopy(runtime, args, givenArgsCount, args.length - postCount - givenArgsCount), 0);
+        }
+    }
+
+    protected int assignOptArgs(IRubyObject[] args, Ruby runtime, ThreadContext context, IRubyObject self, int givenArgsCount) {
+        // assign given optional arguments to their variables
+        int j = 0;
+        for (int i = preCount; i < args.length - postCount && j < optArgs.size(); i++, j++) {
+            // in-frame EvalState should already have receiver set as self, continue to use it
+            optArgs.get(j).assign(runtime, context, self, args[i], Block.NULL_BLOCK, true);
+            givenArgsCount++;
+        }
+
+        // assign the default values, adding to the end of allArgs
+        for (int i = 0; j < optArgs.size(); i++, j++) {
+            optArgs.get(j).interpret(runtime, context, self, Block.NULL_BLOCK);
+        }
+
+        return givenArgsCount;
+    }
+
+    protected void processBlockArg(DynamicScope scope, Ruby runtime, Block block) {
+        scope.setValue(getBlock().getCount(), RuntimeHelpers.processBlockArgument(runtime, block), 0);
+    }
+
     public List<Node> childNodes() {
-        return Node.createList(arguments, optArgs, restArgNode, blockArgNode);
+        if (post != null) return Node.createList(pre, optArgs, restArgNode, post, blockArgNode);
+
+        return Node.createList(pre, optArgs, restArgNode, blockArgNode);
     }
 }

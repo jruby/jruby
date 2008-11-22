@@ -94,6 +94,7 @@ import org.jruby.ast.RedoNode;
 import org.jruby.ast.RegexpNode;
 import org.jruby.ast.RescueBodyNode;
 import org.jruby.ast.RescueNode;
+import org.jruby.ast.RestArgNode;
 import org.jruby.ast.RetryNode;
 import org.jruby.ast.ReturnNode;
 import org.jruby.ast.SClassNode;
@@ -106,6 +107,7 @@ import org.jruby.ast.SymbolNode;
 import org.jruby.ast.ToAryNode;
 import org.jruby.ast.TypedArgumentNode;
 import org.jruby.ast.UndefNode;
+import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.ast.UntilNode;
 import org.jruby.ast.VAliasNode;
 import org.jruby.ast.WhileNode;
@@ -128,7 +130,7 @@ import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.lexer.yacc.Token;
 import org.jruby.util.ByteList;
 
-public class DefaultRubyParser {
+public class DefaultRubyParser implements RubyParser {
     private ParserSupport support;
     private RubyYaccLexer lexer;
     private IRubyWarnings warnings;
@@ -151,34 +153,13 @@ public class DefaultRubyParser {
   kUNLESS kTHEN kELSIF kELSE kCASE kWHEN kWHILE kUNTIL kFOR kBREAK kNEXT
   kREDO kRETRY kIN kDO kDO_COND kDO_BLOCK kRETURN kYIELD kSUPER kSELF kNIL
   kTRUE kFALSE kAND kOR kNOT kIF_MOD kUNLESS_MOD kWHILE_MOD kUNTIL_MOD
-  kRESCUE_MOD kALIAS kDEFINED klBEGIN klEND k__LINE__ k__FILE__
+  kRESCUE_MOD kALIAS kDEFINED klBEGIN klEND k__LINE__ k__FILE__ 
+  k__ENCODING__ kDO_LAMBDA 
 
-%token <Token>  tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR 
-%token <Node> tNTH_REF tBACK_REF tSTRING_CONTENT tINTEGER 
-%token <FloatNode> tFLOAT
-%token <RegexpNode> tREGEXP_END
-
-%type <Node>  singleton strings string string1 xstring regexp
-%type <Node>  string_contents xstring_contents string_content method_call
-%type <Node>  words qwords word literal numeric dsym cpath command_call
-%type <Node>  compstmt bodystmt stmts stmt expr arg primary command 
-%type <Node>  expr_value primary_value opt_else cases if_tail exc_var 
-%type <Node>  call_args call_args2 open_args opt_ensure paren_args superclass
-%type <Node>  command_args var_ref opt_paren_args block_call block_command
-%type <Node>  f_arglist f_args f_opt undef_list string_dvar backref 
-%type <Node>  mrhs mlhs_item mlhs_node arg_value case_body exc_list aref_args 
-%type <Node>  block_var opt_block_var lhs none
-%type <ListNode> qword_list word_list f_arg f_optarg 
-%type <ListNode> args when_args mlhs_head assocs assoc assoc_list 
-%type <BlockPassNode> opt_block_arg block_arg none_block_pass
-%type <BlockArgNode> opt_f_block_arg f_block_arg 
-%type <IterNode> brace_block do_block cmd_brace_block 
-%type <MultipleAsgnNode> mlhs mlhs_basic mlhs_entry
-%type <RescueBodyNode> opt_rescue
-%type <AssignableNode> var_lhs
+%token <Token> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL tCHAR
 %type <Token> variable 
 %type <Token>  fitem sym symbol operation operation2 operation3 cname fname op
-%type <Token>  f_norm_arg f_rest_arg dot_or_colon restarg_mark blkarg_mark
+%type <Token>  f_norm_arg dot_or_colon restarg_mark blkarg_mark
 %token <Token> tUPLUS         /* unary+ */
 %token <Token> tUMINUS        /* unary- */
 %token <Token> tUMINUS_NUM    /* unary- */
@@ -226,7 +207,32 @@ public class DefaultRubyParser {
 %token <Token> tBACK_REF2     /* { is just '`' in ruby and not a token */
 %token <Token> tSYMBEG tSTRING_BEG tXSTRING_BEG tREGEXP_BEG tWORDS_BEG tQWORDS_BEG
 %token <Token> tSTRING_DBEG tSTRING_DVAR tSTRING_END
+%token <Token> tLAMBDA tLAMBEG
+%token <Node> tNTH_REF tBACK_REF tSTRING_CONTENT tINTEGER 
+%token <FloatNode> tFLOAT
+%token <RegexpNode> tREGEXP_END
 
+%type <Node>  singleton strings string string1 xstring regexp
+%type <Node>  string_contents xstring_contents string_content method_call
+%type <Node>  words qwords word literal numeric dsym cpath command_call
+%type <Node>  compstmt bodystmt stmts stmt expr arg primary command 
+%type <Node>  expr_value primary_value opt_else cases if_tail exc_var 
+%type <Node>  call_args call_args2 open_args opt_ensure paren_args superclass
+%type <Node>  command_args var_ref opt_paren_args block_call block_command
+%type <Node>  f_arglist f_args f_opt undef_list string_dvar backref 
+%type <Node>  mrhs mlhs_item mlhs_node arg_value case_body exc_list aref_args 
+%type <Node>  block_var opt_block_var lhs none
+%type <ListNode> qword_list word_list f_arg f_optarg 
+%type <ListNode> args when_args mlhs_head assocs assoc assoc_list 
+%type <BlockPassNode> opt_block_arg block_arg none_block_pass
+%type <BlockArgNode> opt_f_block_arg f_block_arg 
+%type <IterNode> brace_block do_block cmd_brace_block 
+%type <MultipleAsgnNode> mlhs mlhs_basic mlhs_entry
+%type <RescueBodyNode> opt_rescue
+%type <AssignableNode> var_lhs
+
+%type <RestArgNode> f_rest_arg 
+   //%type <Token> rparen rbracket reswords f_bad_arg
 
 /*
  *    precedence table
@@ -254,8 +260,6 @@ public class DefaultRubyParser {
 %right tUMINUS_NUM tUMINUS
 %right tPOW
 %right tBANG tTILDE tUPLUS
-
-%token <Integer> tLAST_TOKEN
 
 %%
 program       : {
@@ -1615,31 +1619,31 @@ f_arglist      : tLPAREN2 f_args opt_nl tRPAREN {
 
 // Node:f_args - Arguments for a method definition [!null]
 f_args         : f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg {
-                   $$ = new ArgsNode(support.union($1, $6), $1, $3, ((Integer) $5.getValue()).intValue(), support.getRestArgNode($5), $6);
+                   $$ = support.new_args(support.union($1, $6), $1, $3, $5, null, $6);
                }
                | f_arg ',' f_optarg opt_f_block_arg {
-                   $$ = new ArgsNode(getPosition($1), $1, $3, -1, null, $4);
+                   $$ = support.new_args(getPosition($1), $1, $3, null, null, $4);
                }
                | f_arg ',' f_rest_arg opt_f_block_arg {
-                   $$ = new ArgsNode(support.union($1, $4), $1, null, ((Integer) $3.getValue()).intValue(), support.getRestArgNode($3), $4);
+                   $$ = support.new_args(support.union($1, $4), $1, null, $3, null, $4);
                }
                | f_arg opt_f_block_arg {
-                   $$ = new ArgsNode($<ISourcePositionHolder>1.getPosition(), $1, null, -1, null, $2);
+                   $$ = support.new_args($<ISourcePositionHolder>1.getPosition(), $1, null, null, null, $2);
                }
                | f_optarg ',' f_rest_arg opt_f_block_arg {
-                   $$ = new ArgsNode(getPosition($1), null, $1, ((Integer) $3.getValue()).intValue(), support.getRestArgNode($3), $4);
+                   $$ = support.new_args(getPosition($1), null, $1, $3, null, $4);
                }
                | f_optarg opt_f_block_arg {
-                   $$ = new ArgsNode(getPosition($1), null, $1, -1, null, $2);
+                   $$ = support.new_args(getPosition($1), null, $1, null, null, $2);
                }
                | f_rest_arg opt_f_block_arg {
-                   $$ = new ArgsNode(getPosition($1), null, null, ((Integer) $1.getValue()).intValue(), support.getRestArgNode($1), $2);
+                   $$ = support.new_args(getPosition($1), null, null, $1, null, $2);
                }
                | f_block_arg {
-                   $$ = new ArgsNode(getPosition($1), null, null, -1, null, $1);
+                   $$ = support.new_args(getPosition($1), null, null, null, null, $1);
                }
                | /* none */ {
-                   $$ = new ArgsNode(support.createEmptyArgsNodePosition(getPosition(null)), null, null, -1, null, null);
+                   $$ = support.new_args(support.createEmptyArgsNodePosition(getPosition(null)), null, null, null, null, null);
                }
 
 // Token:f_norm_arg - normal argument to method declaration [!null]
@@ -1716,12 +1720,11 @@ f_rest_arg    : restarg_mark tIDENTIFIER {
                   if (support.getCurrentScope().getLocalScope().isDefined(identifier) >= 0) {
                       yyerror("duplicate rest argument name");
                   }
-		  $1.setValue(new Integer(support.getCurrentScope().getLocalScope().addVariable(identifier)));
-                  $$ = $1;
+
+                  $$ = new RestArgNode(support.union($1, $2), (String) $2.getValue(), support.getCurrentScope().getLocalScope().addVariable(identifier));
               }
               | restarg_mark {
-                  $1.setValue(new Integer(support.getCurrentScope().getLocalScope().addVariable("*")));
-                  $$ = $1;
+                  $$ = new UnnamedRestArgNode($1.getPosition(), support.getCurrentScope().getLocalScope().addVariable("*"));
               }
 
 // Token:blkarg_mark - '&' as in '&block' [!null]

@@ -46,6 +46,7 @@ import org.jruby.ast.CommentNode;
 import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FloatNode;
 import org.jruby.ast.NthRefNode;
+import org.jruby.ast.StrNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.yacc.SyntaxException.PID;
@@ -185,7 +186,7 @@ public class RubyYaccLexer {
     
     public enum LexState {
         EXPR_BEG, EXPR_END, EXPR_ARG, EXPR_CMDARG, EXPR_ENDARG, EXPR_MID,
-        EXPR_FNAME, EXPR_DOT, EXPR_CLASS
+        EXPR_FNAME, EXPR_DOT, EXPR_CLASS, EXPR_VALUE
     }
     
     public static Keyword getKeyword(String str) {
@@ -218,7 +219,7 @@ public class RubyYaccLexer {
     private StackState conditionState = new StackState();
     private StackState cmdArgumentState = new StackState();
     private StrTerm lex_strterm;
-    private boolean commandStart;
+    public boolean commandStart;
     
     // Whether we're processing comments
     private boolean doComments;
@@ -241,9 +242,35 @@ public class RubyYaccLexer {
     private static final int str_regexp = STR_FUNC_REGEXP | STR_FUNC_ESCAPE | STR_FUNC_EXPAND;
     private static final int str_ssym   = STR_FUNC_SYMBOL;
     private static final int str_dsym   = STR_FUNC_SYMBOL | STR_FUNC_EXPAND;
-    
+
+    // Are we lexing Ruby 1.8 or 1.9+ syntax
+    private boolean isOneEight;
+    // Count of nested parentheses (1.9 only)
+    private int parenNest = 0;
+    // 1.9 only
+    private int leftParenBegin = 0;
+
+    public int incrementParenNest() {
+        parenNest++;
+
+        return parenNest;
+    }
+
+    public int getLeftParenBegin() {
+        return leftParenBegin;
+    }
+
+    public void setLeftParenBegin(int value) {
+        leftParenBegin = value;
+    }
+
     public RubyYaccLexer() {
+    	this(true);
+    }
+    
+    public RubyYaccLexer(boolean isOneEight) {
     	reset();
+        this.isOneEight = isOneEight;
     }
     
     public void reset() {
@@ -369,6 +396,15 @@ public class RubyYaccLexer {
         src.unread(c);
 
         return c != EOF && (Character.isLetterOrDigit(c) || c == '_');
+    }
+
+    private boolean isBEG() {
+        return lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_MID ||
+                (!isOneEight && (lex_state == LexState.EXPR_VALUE || lex_state == LexState.EXPR_CLASS));
+    }
+
+    private boolean isARG() {
+        return lex_state == LexState.EXPR_ARG || lex_state == LexState.EXPR_CMDARG;
     }
 
     private void determineExpressionState() {
@@ -607,67 +643,69 @@ public class RubyYaccLexer {
      * Not normally used, but is left in here since it can be useful in debugging
      * grammar and lexing problems.
      *
-     *
+     */
     private void printToken(int token) {
         //System.out.print("LOC: " + support.getPosition() + " ~ ");
         
         switch (token) {
-        	case Tokens.yyErrorCode: System.err.print("yyErrorCode,"); break;
-        	case Tokens.kCLASS: System.err.print("kClass,"); break;
-        	case Tokens.kMODULE: System.err.print("kModule,"); break;
-        	case Tokens.kDEF: System.err.print("kDEF,"); break;
-        	case Tokens.kUNDEF: System.err.print("kUNDEF,"); break;
-        	case Tokens.kBEGIN: System.err.print("kBEGIN,"); break;
-        	case Tokens.kRESCUE: System.err.print("kRESCUE,"); break;
-        	case Tokens.kENSURE: System.err.print("kENSURE,"); break;
-        	case Tokens.kEND: System.err.print("kEND,"); break;
-        	case Tokens.kIF: System.err.print("kIF,"); break;
-        	case Tokens.kUNLESS: System.err.print("kUNLESS,"); break;
-        	case Tokens.kTHEN: System.err.print("kTHEN,"); break;
-        	case Tokens.kELSIF: System.err.print("kELSIF,"); break;
-        	case Tokens.kELSE: System.err.print("kELSE,"); break;
-        	case Tokens.kCASE: System.err.print("kCASE,"); break;
-        	case Tokens.kWHEN: System.err.print("kWHEN,"); break;
-        	case Tokens.kWHILE: System.err.print("kWHILE,"); break;
-        	case Tokens.kUNTIL: System.err.print("kUNTIL,"); break;
-        	case Tokens.kFOR: System.err.print("kFOR,"); break;
-        	case Tokens.kBREAK: System.err.print("kBREAK,"); break;
-        	case Tokens.kNEXT: System.err.print("kNEXT,"); break;
-        	case Tokens.kREDO: System.err.print("kREDO,"); break;
-        	case Tokens.kRETRY: System.err.print("kRETRY,"); break;
-        	case Tokens.kIN: System.err.print("kIN,"); break;
-        	case Tokens.kDO: System.err.print("kDO,"); break;
-        	case Tokens.kDO_COND: System.err.print("kDO_COND,"); break;
-        	case Tokens.kDO_BLOCK: System.err.print("kDO_BLOCK,"); break;
-        	case Tokens.kRETURN: System.err.print("kRETURN,"); break;
-        	case Tokens.kYIELD: System.err.print("kYIELD,"); break;
-        	case Tokens.kSUPER: System.err.print("kSUPER,"); break;
-        	case Tokens.kSELF: System.err.print("kSELF,"); break;
-        	case Tokens.kNIL: System.err.print("kNIL,"); break;
-        	case Tokens.kTRUE: System.err.print("kTRUE,"); break;
-        	case Tokens.kFALSE: System.err.print("kFALSE,"); break;
-        	case Tokens.kAND: System.err.print("kAND,"); break;
-        	case Tokens.kOR: System.err.print("kOR,"); break;
-        	case Tokens.kNOT: System.err.print("kNOT,"); break;
-        	case Tokens.kIF_MOD: System.err.print("kIF_MOD,"); break;
-        	case Tokens.kUNLESS_MOD: System.err.print("kUNLESS_MOD,"); break;
-        	case Tokens.kWHILE_MOD: System.err.print("kWHILE_MOD,"); break;
-        	case Tokens.kUNTIL_MOD: System.err.print("kUNTIL_MOD,"); break;
-        	case Tokens.kRESCUE_MOD: System.err.print("kRESCUE_MOD,"); break;
-        	case Tokens.kALIAS: System.err.print("kALIAS,"); break;
-        	case Tokens.kDEFINED: System.err.print("kDEFINED,"); break;
-        	case Tokens.klBEGIN: System.err.print("klBEGIN,"); break;
-        	case Tokens.klEND: System.err.print("klEND,"); break;
-        	case Tokens.k__LINE__: System.err.print("k__LINE__,"); break;
-        	case Tokens.k__FILE__: System.err.print("k__FILE__,"); break;
-        	case Tokens.tIDENTIFIER: System.err.print("tIDENTIFIER["+ value() + "],"); break;
-        	case Tokens.tFID: System.err.print("tFID[" + value() + "],"); break;
-        	case Tokens.tGVAR: System.err.print("tGVAR[" + value() + "],"); break;
-        	case Tokens.tIVAR: System.err.print("tIVAR[" + value() +"],"); break;
-        	case Tokens.tCONSTANT: System.err.print("tCONSTANT["+ value() +"],"); break;
-        	case Tokens.tCVAR: System.err.print("tCVAR,"); break;
-        	case Tokens.tINTEGER: System.err.print("tINTEGER,"); break;
-        	case Tokens.tFLOAT: System.err.print("tFLOAT,"); break;
+            case Tokens.yyErrorCode: System.err.print("yyErrorCode,"); break;
+            case Tokens.kCLASS: System.err.print("kClass,"); break;
+            case Tokens.kMODULE: System.err.print("kModule,"); break;
+            case Tokens.kDEF: System.err.print("kDEF,"); break;
+            case Tokens.kUNDEF: System.err.print("kUNDEF,"); break;
+            case Tokens.kBEGIN: System.err.print("kBEGIN,"); break;
+            case Tokens.kRESCUE: System.err.print("kRESCUE,"); break;
+            case Tokens.kENSURE: System.err.print("kENSURE,"); break;
+            case Tokens.kEND: System.err.print("kEND,"); break;
+            case Tokens.kIF: System.err.print("kIF,"); break;
+            case Tokens.kUNLESS: System.err.print("kUNLESS,"); break;
+            case Tokens.kTHEN: System.err.print("kTHEN,"); break;
+            case Tokens.kELSIF: System.err.print("kELSIF,"); break;
+            case Tokens.kELSE: System.err.print("kELSE,"); break;
+            case Tokens.kCASE: System.err.print("kCASE,"); break;
+            case Tokens.kWHEN: System.err.print("kWHEN,"); break;
+            case Tokens.kWHILE: System.err.print("kWHILE,"); break;
+            case Tokens.kUNTIL: System.err.print("kUNTIL,"); break;
+            case Tokens.kFOR: System.err.print("kFOR,"); break;
+            case Tokens.kBREAK: System.err.print("kBREAK,"); break;
+            case Tokens.kNEXT: System.err.print("kNEXT,"); break;
+            case Tokens.kREDO: System.err.print("kREDO,"); break;
+            case Tokens.kRETRY: System.err.print("kRETRY,"); break;
+            case Tokens.kIN: System.err.print("kIN,"); break;
+            case Tokens.kDO: System.err.print("kDO,"); break;
+            case Tokens.kDO_COND: System.err.print("kDO_COND,"); break;
+            case Tokens.kDO_BLOCK: System.err.print("kDO_BLOCK,"); break;
+            case Tokens.kRETURN: System.err.print("kRETURN,"); break;
+            case Tokens.kYIELD: System.err.print("kYIELD,"); break;
+            case Tokens.kSUPER: System.err.print("kSUPER,"); break;
+            case Tokens.kSELF: System.err.print("kSELF,"); break;
+            case Tokens.kNIL: System.err.print("kNIL,"); break;
+            case Tokens.kTRUE: System.err.print("kTRUE,"); break;
+            case Tokens.kFALSE: System.err.print("kFALSE,"); break;
+            case Tokens.kAND: System.err.print("kAND,"); break;
+            case Tokens.kOR: System.err.print("kOR,"); break;
+            case Tokens.kNOT: System.err.print("kNOT,"); break;
+            case Tokens.kIF_MOD: System.err.print("kIF_MOD,"); break;
+            case Tokens.kUNLESS_MOD: System.err.print("kUNLESS_MOD,"); break;
+            case Tokens.kWHILE_MOD: System.err.print("kWHILE_MOD,"); break;
+            case Tokens.kUNTIL_MOD: System.err.print("kUNTIL_MOD,"); break;
+            case Tokens.kRESCUE_MOD: System.err.print("kRESCUE_MOD,"); break;
+            case Tokens.kALIAS: System.err.print("kALIAS,"); break;
+            case Tokens.kDEFINED: System.err.print("kDEFINED,"); break;
+            case Tokens.klBEGIN: System.err.print("klBEGIN,"); break;
+            case Tokens.klEND: System.err.print("klEND,"); break;
+            case Tokens.k__LINE__: System.err.print("k__LINE__,"); break;
+            case Tokens.k__FILE__: System.err.print("k__FILE__,"); break;
+            case Tokens.k__ENCODING__: System.err.print("k__ENCODING__,"); break;
+            case Tokens.kDO_LAMBDA: System.err.print("kDO_LAMBDA,"); break;
+            case Tokens.tIDENTIFIER: System.err.print("tIDENTIFIER["+ value() + "],"); break;
+            case Tokens.tFID: System.err.print("tFID[" + value() + "],"); break;
+            case Tokens.tGVAR: System.err.print("tGVAR[" + value() + "],"); break;
+            case Tokens.tIVAR: System.err.print("tIVAR[" + value() +"],"); break;
+            case Tokens.tCONSTANT: System.err.print("tCONSTANT["+ value() +"],"); break;
+            case Tokens.tCVAR: System.err.print("tCVAR,"); break;
+            case Tokens.tINTEGER: System.err.print("tINTEGER,"); break;
+            case Tokens.tFLOAT: System.err.print("tFLOAT,"); break;
             case Tokens.tSTRING_CONTENT: System.err.print("tSTRING_CONTENT[" + ((StrNode) value()).getValue().toString() + "],"); break;
             case Tokens.tSTRING_BEG: System.err.print("tSTRING_BEG,"); break;
             case Tokens.tSTRING_END: System.err.print("tSTRING_END,"); break;
@@ -678,52 +716,74 @@ public class RubyYaccLexer {
             case Tokens.tREGEXP_END: System.err.print("tREGEXP_END,"); break;
             case Tokens.tWORDS_BEG: System.err.print("tWORDS_BEG,"); break;
             case Tokens.tQWORDS_BEG: System.err.print("tQWORDS_BEG,"); break;
-        	case Tokens.tBACK_REF: System.err.print("tBACK_REF,"); break;
-        	case Tokens.tNTH_REF: System.err.print("tNTH_REF,"); break;
-        	case Tokens.tUPLUS: System.err.print("tUPLUS"); break;
-        	case Tokens.tUMINUS: System.err.print("tUMINUS,"); break;
-        	case Tokens.tPOW: System.err.print("tPOW,"); break;
-        	case Tokens.tCMP: System.err.print("tCMP,"); break;
-        	case Tokens.tEQ: System.err.print("tEQ,"); break;
-        	case Tokens.tEQQ: System.err.print("tEQQ,"); break;
-        	case Tokens.tNEQ: System.err.print("tNEQ,"); break;
-        	case Tokens.tGEQ: System.err.print("tGEQ,"); break;
-        	case Tokens.tLEQ: System.err.print("tLEQ,"); break;
-        	case Tokens.tANDOP: System.err.print("tANDOP,"); break;
-        	case Tokens.tOROP: System.err.print("tOROP,"); break;
-        	case Tokens.tMATCH: System.err.print("tMATCH,"); break;
-        	case Tokens.tNMATCH: System.err.print("tNMATCH,"); break;
-        	case Tokens.tDOT2: System.err.print("tDOT2,"); break;
-        	case Tokens.tDOT3: System.err.print("tDOT3,"); break;
-        	case Tokens.tAREF: System.err.print("tAREF,"); break;
-        	case Tokens.tASET: System.err.print("tASET,"); break;
-        	case Tokens.tLSHFT: System.err.print("tLSHFT,"); break;
-        	case Tokens.tRSHFT: System.err.print("tRSHFT,"); break;
-        	case Tokens.tCOLON2: System.err.print("tCOLON2,"); break;
-        	case Tokens.tCOLON3: System.err.print("tCOLON3,"); break;
-        	case Tokens.tOP_ASGN: System.err.print("tOP_ASGN,"); break;
-        	case Tokens.tASSOC: System.err.print("tASSOC,"); break;
-        	case Tokens.tLPAREN: System.err.print("tLPAREN,"); break;
-        	case Tokens.tLPAREN_ARG: System.err.print("tLPAREN_ARG,"); break;
-        	case Tokens.tLBRACK: System.err.print("tLBRACK,"); break;
-        	case Tokens.tLBRACE: System.err.print("tLBRACE,"); break;
+            case Tokens.tBACK_REF: System.err.print("tBACK_REF,"); break;
+            case Tokens.tBACK_REF2: System.err.print("tBACK_REF2,"); break;
+            case Tokens.tNTH_REF: System.err.print("tNTH_REF,"); break;
+            case Tokens.tUPLUS: System.err.print("tUPLUS"); break;
+            case Tokens.tUMINUS: System.err.print("tUMINUS,"); break;
+            case Tokens.tPOW: System.err.print("tPOW,"); break;
+            case Tokens.tCMP: System.err.print("tCMP,"); break;
+            case Tokens.tEQ: System.err.print("tEQ,"); break;
+            case Tokens.tEQQ: System.err.print("tEQQ,"); break;
+            case Tokens.tNEQ: System.err.print("tNEQ,"); break;
+            case Tokens.tGEQ: System.err.print("tGEQ,"); break;
+            case Tokens.tLEQ: System.err.print("tLEQ,"); break;
+            case Tokens.tANDOP: System.err.print("tANDOP,"); break;
+            case Tokens.tOROP: System.err.print("tOROP,"); break;
+            case Tokens.tMATCH: System.err.print("tMATCH,"); break;
+            case Tokens.tNMATCH: System.err.print("tNMATCH,"); break;
+            case Tokens.tDOT: System.err.print("tDOT,"); break;
+            case Tokens.tDOT2: System.err.print("tDOT2,"); break;
+            case Tokens.tDOT3: System.err.print("tDOT3,"); break;
+            case Tokens.tAREF: System.err.print("tAREF,"); break;
+            case Tokens.tASET: System.err.print("tASET,"); break;
+            case Tokens.tLSHFT: System.err.print("tLSHFT,"); break;
+            case Tokens.tRSHFT: System.err.print("tRSHFT,"); break;
+            case Tokens.tCOLON2: System.err.print("tCOLON2,"); break;
+            case Tokens.tCOLON3: System.err.print("tCOLON3,"); break;
+            case Tokens.tOP_ASGN: System.err.print("tOP_ASGN,"); break;
+            case Tokens.tASSOC: System.err.print("tASSOC,"); break;
+            case Tokens.tLPAREN: System.err.print("tLPAREN,"); break;
+            case Tokens.tLPAREN2: System.err.print("tLPAREN2,"); break;
+            case Tokens.tLPAREN_ARG: System.err.print("tLPAREN_ARG,"); break;
+            case Tokens.tLBRACK: System.err.print("tLBRACK,"); break;
+            case Tokens.tRBRACK: System.err.print("tRBRACK,"); break;
+            case Tokens.tLBRACE: System.err.print("tLBRACE,"); break;
+            case Tokens.tLBRACE_ARG: System.err.print("tLBRACE_ARG,"); break;
             case Tokens.tSTAR: System.err.print("tSTAR,"); break;
             case Tokens.tSTAR2: System.err.print("tSTAR2,"); break;
-        	case Tokens.tAMPER: System.err.print("tAMPER,"); break;
-        	case Tokens.tSYMBEG: System.err.print("tSYMBEG,"); break;
-        	case '\n': System.err.println("NL"); break;
-        	default: System.err.print("'" + (char)token + "',"); break;
+            case Tokens.tAMPER: System.err.print("tAMPER,"); break;
+            case Tokens.tAMPER2: System.err.print("tAMPER2,"); break;
+            case Tokens.tSYMBEG: System.err.print("tSYMBEG,"); break;
+            case Tokens.tTILDE: System.err.print("tTILDE,"); break;
+            case Tokens.tPERCENT: System.err.print("tPERCENT,"); break;
+            case Tokens.tDIVIDE: System.err.print("tDIVIDE,"); break;
+            case Tokens.tPLUS: System.err.print("tPLUS,"); break;
+            case Tokens.tMINUS: System.err.print("tMINUS,"); break;
+            case Tokens.tLT: System.err.print("tLT,"); break;
+            case Tokens.tGT: System.err.print("tGT,"); break;
+            case Tokens.tCARET: System.err.print("tCARET,"); break;
+            case Tokens.tBANG: System.err.print("tBANG,"); break;
+            case Tokens.tLCURLY: System.err.print("tTLCURLY,"); break;
+            case Tokens.tRCURLY: System.err.print("tRCURLY,"); break;
+            case Tokens.tPIPE: System.err.print("tTPIPE,"); break;
+            case Tokens.tLAMBDA: System.err.print("tLAMBDA,"); break;
+            case Tokens.tLAMBEG: System.err.print("tLAMBEG,"); break;
+            case Tokens.tRPAREN: System.err.print("tRPAREN,"); break;
+            case '\n': System.err.println("NL"); break;
+            case EOF: System.out.println("EOF"); break;
+            default: System.err.print("'" + (char)token + "',"); break;
         }
     }
 
     // DEBUGGING HELP 
     private int yylex2() throws IOException {
-        int token = yylex();
+        int token = yylex2();
         
         printToken(token);
         
         return token;
-    }*/
+    }
 
     /**
      *  Returns the next token. Also sets yyVal is needed.
@@ -736,12 +796,12 @@ public class RubyYaccLexer {
         boolean commandState;
         
         if (lex_strterm != null) {
-			int tok = lex_strterm.parseString(this, src);
-			if (tok == Tokens.tSTRING_END || tok == Tokens.tREGEXP_END) {
-			    lex_strterm = null;
-			    lex_state = LexState.EXPR_END;
-			}
-			return tok;
+            int tok = lex_strterm.parseString(this, src);
+            if (tok == Tokens.tSTRING_END || tok == Tokens.tREGEXP_END) {
+                lex_strterm = null;
+                lex_state = LexState.EXPR_END;
+            }
+            return tok;
         }
 
         commandState = commandStart;
@@ -762,12 +822,43 @@ public class RubyYaccLexer {
                 spaceSeen = true;
                 continue;
             case '#':		/* it's a comment */
+                // FIXME: Need to detect magic_comment in 1.9 here for encoding
                 if (readComment(c) == EOF) return EOF;
                     
                 /* fall through */
             case '\n':
-            	// Replace a string of newlines with a single one
-                while((c = src.read()) == '\n');
+                if (isOneEight) {             	// Replace a string of newlines with a single one
+                    while((c = src.read()) == '\n');
+                } else {
+                    switch (lex_state) {
+                    case EXPR_BEG: case EXPR_FNAME: case EXPR_DOT:
+                    case EXPR_CLASS: case EXPR_VALUE:
+                        continue loop;
+                    }
+
+                    boolean done = false;
+                    while(!done) {
+                        c = src.read();
+
+                        switch (c) {
+                        case ' ': case '\t': case '\f': case '\r': case '\13': /* '\v' */
+                            spaceSeen = true;
+                            continue;
+                        case '.': {
+                            if ((c = src.read()) != '.') {
+                                src.unread(c);
+                                src.unread('.');
+
+                                continue loop;
+                            }
+                        }
+                        default:
+                        case -1:		// EOF (ENEBO: After default?
+                            done = true;
+                        }
+                    }
+                }
+
                 src.unread(c);
                 getPosition();
 
@@ -891,6 +982,11 @@ public class RubyYaccLexer {
                 return caret();
             case ';':
                 commandStart = true;
+                if (!isOneEight) {
+                    lex_state = LexState.EXPR_BEG;
+                    yaccValue = new Token(";", getPosition());
+                    return ';';
+                }
             case ',':
                 return comma(c);
             case '~':
@@ -982,12 +1078,10 @@ public class RubyYaccLexer {
         //if the warning is generated, the getPosition() on line 954 (this line + 18) will create
         //a wrong position if the "inclusive" flag is not set.
         ISourcePosition tmpPosition = getPosition();
-        if ((lex_state == LexState.EXPR_ARG || lex_state == LexState.EXPR_CMDARG) && 
-                spaceSeen && !Character.isWhitespace(c)) {
+        if (isARG() && spaceSeen && !Character.isWhitespace(c)) {
             warnings.warning(ID.ARGUMENT_AS_PREFIX, tmpPosition, "`&' interpreted as argument prefix", "&");
             c = Tokens.tAMPER;
-        } else if (lex_state == LexState.EXPR_BEG || 
-                lex_state == LexState.EXPR_MID) {
+        } else if (isBEG()) {
             c = Tokens.tAMPER;
         } else {
             c = Tokens.tAMPER2;
@@ -1055,7 +1149,16 @@ public class RubyYaccLexer {
     
     private int bang() throws IOException {
         int c = src.read();
-        lex_state = LexState.EXPR_BEG;
+
+        if (!isOneEight && (lex_state == LexState.EXPR_FNAME || lex_state == LexState.EXPR_DOT)) {
+            lex_state = LexState.EXPR_ARG;
+            if (c == '@') {
+                yaccValue = new Token("!",getPosition());
+                return Tokens.tBANG;
+            }
+        } else {
+            lex_state = LexState.EXPR_BEG;
+        }
         
         switch (c) {
         case '=':
@@ -1093,10 +1196,7 @@ public class RubyYaccLexer {
         int c = src.read();
         
         if (c == ':') {
-            if (lex_state == LexState.EXPR_BEG ||
-                lex_state == LexState.EXPR_MID ||
-                lex_state == LexState.EXPR_CLASS || 
-                ((lex_state == LexState.EXPR_ARG || lex_state == LexState.EXPR_CMDARG) && spaceSeen)) {
+            if (isBEG() || lex_state == LexState.EXPR_CLASS || (isARG() && spaceSeen)) {
                 lex_state = LexState.EXPR_BEG;
                 yaccValue = new Token("::", getPosition());
                 return Tokens.tCOLON3;
@@ -1105,9 +1205,8 @@ public class RubyYaccLexer {
             yaccValue = new Token(":",getPosition());
             return Tokens.tCOLON2;
         }
-        
-        if (lex_state == LexState.EXPR_END || 
-            lex_state == LexState.EXPR_ENDARG || Character.isWhitespace(c)) {
+
+        if (lex_state == LexState.EXPR_END || lex_state == LexState.EXPR_ENDARG || Character.isWhitespace(c)) {
             src.unread(c);
             lex_state = LexState.EXPR_BEG;
             yaccValue = new Token(":",getPosition());
@@ -1360,6 +1459,19 @@ public class RubyYaccLexer {
 
         String tempVal = tokenBuffer.toString().intern();
 
+	    if (!isOneEight && ((lex_state == LexState.EXPR_BEG && !commandState) ||
+                lex_state == LexState.EXPR_ARG || lex_state == LexState.EXPR_CMDARG)) {
+            int c2 = src.read();
+            if (c2 == ':' && !src.peek(':')) {
+                src.unread(c2);
+                lex_state = LexState.EXPR_BEG;
+                src.read();
+                yaccValue = new Token(tempVal, getPosition());
+                return Tokens.tLABEL;
+            }
+            src.unread(c2);
+        }
+
         if (lex_state != LexState.EXPR_DOT) {
             /* See if it is a reserved word.  */
             //Keyword keyword = Keyword.getKeyword(tempVal, tempVal.length());
@@ -1374,17 +1486,23 @@ public class RubyYaccLexer {
                 } else {
                     yaccValue = new Token(tempVal, getPosition());
                     if (keyword.id0 == Tokens.kDO) {
+                        if (!isOneEight && leftParenBegin > 0 && leftParenBegin == parenNest) {
+                            leftParenBegin = 0;
+                            parenNest--;
+                            return Tokens.kDO_LAMBDA;
+                        }
+
                         if (conditionState.isInState()) return Tokens.kDO_COND;
 
                         if (state != LexState.EXPR_CMDARG && cmdArgumentState.isInState()) {
                             return Tokens.kDO_BLOCK;
                         }
-                        if (state == LexState.EXPR_ENDARG) return Tokens.kDO_BLOCK;
+                        if (state == LexState.EXPR_ENDARG || state == LexState.EXPR_BEG) return Tokens.kDO_BLOCK;
                         return Tokens.kDO;
                     }
                 }
 
-                if (state == LexState.EXPR_BEG) return keyword.id0;
+                if (state == LexState.EXPR_BEG || (!isOneEight && state == LexState.EXPR_VALUE)) return keyword.id0;
 
                 if (keyword.id0 != keyword.id1) lex_state = LexState.EXPR_BEG;
 
@@ -1392,22 +1510,19 @@ public class RubyYaccLexer {
             }
         }
 
-        switch (lex_state) {
-        case EXPR_BEG: case EXPR_MID: case EXPR_DOT: case EXPR_ARG: case EXPR_CMDARG:
+        if (isBEG() || lex_state == LexState.EXPR_DOT || isARG()) {
             lex_state = commandState ? LexState.EXPR_CMDARG : LexState.EXPR_ARG; 
-            break;
-        default:
+        } else {
             lex_state = LexState.EXPR_END;
-        break;
         }
         
         return identifierToken(last_state, result, tempVal);
     }
 
     private int leftBracket(boolean spaceSeen) throws IOException {
+        parenNest++;
         int c = '[';
-        switch (lex_state) {
-        case EXPR_FNAME: case EXPR_DOT:
+        if (lex_state == LexState.EXPR_FNAME || lex_state == LexState.EXPR_DOT) {
             lex_state = LexState.EXPR_ARG;
             
             if ((c = src.read()) == ']') {
@@ -1422,11 +1537,8 @@ public class RubyYaccLexer {
             src.unread(c);
             yaccValue = new Token("[", getPosition());
             return '[';
-        case EXPR_BEG: case EXPR_MID:            
+        } else if (isBEG() || (isARG() && spaceSeen)) {
             c = Tokens.tLBRACK;
-            break;
-        case EXPR_ARG: case EXPR_CMDARG:
-            if (spaceSeen) c = Tokens.tLBRACK; 
         }
 
         lex_state = LexState.EXPR_BEG;
@@ -1438,15 +1550,19 @@ public class RubyYaccLexer {
     
     private int leftCurly() {
         char c;
-        
-        switch (lex_state) {
-        case EXPR_ARG: case EXPR_CMDARG: case EXPR_END: // block (primary)
+        if (!isOneEight && leftParenBegin > 0 && leftParenBegin == parenNest) {
+            lex_state = LexState.EXPR_BEG;
+            leftParenBegin = 0;
+            parenNest--;
+            yaccValue = new Token("{", getPosition());
+            return Tokens.tLAMBEG;
+        }
+
+        if (isARG() || lex_state == LexState.EXPR_END) { // block (primary)
             c = Tokens.tLCURLY;
-            break;
-        case EXPR_ENDARG: // block (expr)
+        } else if (lex_state == LexState.EXPR_ENDARG) { // block (expr)
             c = Tokens.tLBRACE_ARG;
-            break;
-        default: // hash
+        } else { // hash
             c = Tokens.tLBRACE;
         }
 
@@ -1455,28 +1571,31 @@ public class RubyYaccLexer {
         lex_state = LexState.EXPR_BEG;
         
         yaccValue = new Token("{", getPosition());
+        if (!isOneEight && c != Tokens.tLBRACE) commandStart = true;
         return c;
     }
 
     private int leftParen(boolean spaceSeen) throws IOException {
-        commandStart = true;
-        
-        int result;
-        switch (lex_state) {
-        case EXPR_BEG: case EXPR_MID:
+        if (isOneEight) commandStart = true;
+
+        int result = Tokens.tLPAREN2;
+        if (isBEG()) {
             result = Tokens.tLPAREN;
-            break;
-        case EXPR_CMDARG:
-            result = spaceSeen ? Tokens.tLPAREN_ARG : Tokens.tLPAREN2;
-            break;
-        case EXPR_ARG:
-            if (spaceSeen) {
-                warnings.warn(ID.ARGUMENT_EXTRA_SPACE, getPosition(), "don't put space before argument parentheses");
+        } else if (spaceSeen) {
+            // ENEBO: 1.9 is IS_ARG, but we need to break apart for 1.8 support.
+            if (lex_state == LexState.EXPR_CMDARG) {
+                result = Tokens.tLPAREN_ARG;
+            } else if (lex_state == LexState.EXPR_ARG) {
+                if (isOneEight) {
+                    warnings.warn(ID.ARGUMENT_EXTRA_SPACE, getPosition(), "don't put space before argument parentheses");
+                    result = Tokens.tLPAREN2;
+                } else {
+                    result = Tokens.tLPAREN_ARG;
+                }
             }
-        default:
-            result = Tokens.tLPAREN2;
         }
 
+        parenNest++;
         conditionState.stop();
         cmdArgumentState.stop();
         lex_state = LexState.EXPR_BEG;
@@ -1489,7 +1608,7 @@ public class RubyYaccLexer {
         int c = src.read();
         if (c == '<' && lex_state != LexState.EXPR_END && lex_state != LexState.EXPR_DOT &&
                 lex_state != LexState.EXPR_ENDARG && lex_state != LexState.EXPR_CLASS &&
-                ((lex_state != LexState.EXPR_ARG && lex_state != LexState.EXPR_CMDARG) || spaceSeen)) {
+                (!isARG() || spaceSeen)) {
             int tok = hereDocumentIdentifier();
             
             if (tok != 0) return tok;
@@ -1540,9 +1659,13 @@ public class RubyYaccLexer {
             yaccValue = new Token("-", getPosition());
             return Tokens.tOP_ASGN;
         }
-        if (lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_MID ||
-                ((lex_state == LexState.EXPR_ARG || lex_state == LexState.EXPR_CMDARG) && spaceSeen && !Character.isWhitespace(c))) {
-            if (lex_state == LexState.EXPR_ARG || lex_state == LexState.EXPR_CMDARG) arg_ambiguous();
+        if (!isOneEight && c == '>') {
+            lex_state = LexState.EXPR_ARG;
+            yaccValue = new Token("->", getPosition());
+            return Tokens.tLAMBDA;
+        }
+        if (isBEG() || (isARG() && spaceSeen && !Character.isWhitespace(c))) {
+            if (isARG()) arg_ambiguous();
             lex_state = LexState.EXPR_BEG;
             src.unread(c);
             yaccValue = new Token("-", getPosition());
@@ -1558,9 +1681,7 @@ public class RubyYaccLexer {
     }
 
     private int percent(boolean spaceSeen) throws IOException {
-        if (lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_MID) {
-            return parseQuote(src.read());
-        }
+        if (isBEG()) return parseQuote(src.read());
 
         int c = src.read();
 
@@ -1570,10 +1691,7 @@ public class RubyYaccLexer {
             return Tokens.tOP_ASGN;
         }
         
-        if ((lex_state == LexState.EXPR_ARG || lex_state == LexState.EXPR_CMDARG) && spaceSeen && 
-                !Character.isWhitespace(c)) {
-            return parseQuote(c);
-        }
+        if (isARG() && spaceSeen && !Character.isWhitespace(c)) return parseQuote(c);
         
         determineExpressionState();
         
@@ -1628,10 +1746,8 @@ public class RubyYaccLexer {
             return Tokens.tOP_ASGN;
         }
         
-        if (lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_MID ||
-                ((lex_state == LexState.EXPR_ARG || lex_state == LexState.EXPR_CMDARG) && 
-                        spaceSeen && !Character.isWhitespace(c))) {
-            if (lex_state == LexState.EXPR_ARG || lex_state == LexState.EXPR_CMDARG) arg_ambiguous();
+        if (isBEG() || (isARG() && spaceSeen && !Character.isWhitespace(c))) {
+            if (isARG()) arg_ambiguous();
             lex_state = LexState.EXPR_BEG;
             src.unread(c);
             if (Character.isDigit(c)) {
@@ -1652,7 +1768,7 @@ public class RubyYaccLexer {
         int c;
         
         if (lex_state == LexState.EXPR_END || lex_state == LexState.EXPR_ENDARG) {
-            lex_state = LexState.EXPR_BEG;
+            lex_state = isOneEight ? LexState.EXPR_BEG : LexState.EXPR_VALUE;
             yaccValue = new Token("?",getPosition());
             return '?';
         }
@@ -1661,7 +1777,7 @@ public class RubyYaccLexer {
         if (c == EOF) throw new SyntaxException(PID.INCOMPLETE_CHAR_SYNTAX, getPosition(), "incomplete character syntax");
 
         if (Character.isWhitespace(c)){
-            if (lex_state != LexState.EXPR_ARG && lex_state != LexState.EXPR_CMDARG) {
+            if (!isARG()) {
                 int c2 = 0;
                 switch (c) {
                 case ' ':
@@ -1690,7 +1806,7 @@ public class RubyYaccLexer {
                 }
             }
             src.unread(c);
-            lex_state = LexState.EXPR_BEG;
+            lex_state = isOneEight ? LexState.EXPR_BEG : LexState.EXPR_VALUE;
             yaccValue = new Token("?", getPosition());
             return '?';
             /*} else if (ismbchar(c)) { // ruby - we don't support them either?
@@ -1700,10 +1816,11 @@ public class RubyYaccLexer {
                 return '?';*/
         } else if (isIdentifierChar(c) && !src.peek('\n') && isNext_identchar()) {
             src.unread(c);
-            lex_state = LexState.EXPR_BEG;
+            lex_state = isOneEight ? LexState.EXPR_BEG : LexState.EXPR_VALUE;
             yaccValue = new Token("?", getPosition());
             return '?';
         } else if (c == '\\') {
+            // FIXME: peek('u') utf8 stuff for 1.9
             c = readEscape();
         }
         
@@ -1714,9 +1831,10 @@ public class RubyYaccLexer {
     }
     
     private int rightBracket() {
+        parenNest--;
         conditionState.restart();
         cmdArgumentState.restart();
-        lex_state = LexState.EXPR_END;
+        lex_state = isOneEight ? LexState.EXPR_END : LexState.EXPR_ENDARG;
         yaccValue = new Token(")", getPosition());
         return Tokens.tRBRACK;
     }
@@ -1724,12 +1842,13 @@ public class RubyYaccLexer {
     private int rightCurly() {
         conditionState.restart();
         cmdArgumentState.restart();
-        lex_state = LexState.EXPR_END;
+        lex_state = isOneEight ? LexState.EXPR_END : LexState.EXPR_ENDARG;
         yaccValue = new Token("}",getPosition());
         return Tokens.tRCURLY;
     }
 
     private int rightParen() {
+        parenNest--;
         conditionState.restart();
         cmdArgumentState.restart();
         lex_state = LexState.EXPR_END;
@@ -1745,7 +1864,7 @@ public class RubyYaccLexer {
     }
     
     private int slash(boolean spaceSeen) throws IOException {
-        if (lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_MID) {
+        if (isBEG()) {
             lex_strterm = new StringTerm(str_regexp, '\0', '/');
             yaccValue = new Token("/",getPosition());
             return Tokens.tREGEXP_BEG;
@@ -1759,7 +1878,7 @@ public class RubyYaccLexer {
             return Tokens.tOP_ASGN;
         }
         src.unread(c);
-        if ((lex_state == LexState.EXPR_ARG || lex_state == LexState.EXPR_CMDARG) && spaceSeen) {
+        if (isARG() && spaceSeen) {
             if (!Character.isWhitespace(c)) {
                 arg_ambiguous();
                 lex_strterm = new StringTerm(str_regexp, '\0', '/');
@@ -1794,11 +1913,10 @@ public class RubyYaccLexer {
             return Tokens.tOP_ASGN;
         default:
             src.unread(c);
-            if ((lex_state == LexState.EXPR_ARG || lex_state == LexState.EXPR_CMDARG) && 
-                    spaceSeen && !Character.isWhitespace(c)) {
+            if (isARG() && spaceSeen && !Character.isWhitespace(c)) {
                 warnings.warning(ID.ARGUMENT_AS_PREFIX, getPosition(), "`*' interpreted as argument prefix", "*");
                 c = Tokens.tSTAR;
-            } else if (lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_MID) {
+            } else if (isBEG()) {
                 c = Tokens.tSTAR;
             } else {
                 c = Tokens.tSTAR2;
@@ -1815,9 +1933,10 @@ public class RubyYaccLexer {
         
         if (lex_state == LexState.EXPR_FNAME || lex_state == LexState.EXPR_DOT) {
             if ((c = src.read()) != '@') src.unread(c);
+            lex_state = LexState.EXPR_ARG;
+        } else {
+            lex_state = LexState.EXPR_BEG;
         }
-        
-        determineExpressionState();
         
         yaccValue = new Token("~", getPosition());
         return Tokens.tTILDE;

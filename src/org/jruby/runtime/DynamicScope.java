@@ -269,6 +269,14 @@ public abstract class DynamicScope {
     public abstract void setArgValues(IRubyObject arg0);
     public abstract void setArgValues(IRubyObject arg0, IRubyObject arg1);
     public abstract void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2);
+
+    /**
+     *
+     * @param values group where last n(size) values are used
+     * @param index index in the dynamic scope to start setting these values
+     * @param size which of the last size arguments of values parameter to set
+     */
+    public abstract void setEndArgValues(IRubyObject[] values, int index, int size);
     
     /**
      * Copy variable values back for ZSuper call.

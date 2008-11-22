@@ -43,8 +43,12 @@ public class ArgumentNode extends Node implements INameNode {
     private String identifier;
     
     public ArgumentNode(ISourcePosition position, String identifier) {
-        super(position, NodeType.ARGUMENTNODE);
-        
+        this(position, NodeType.ARGUMENTNODE, identifier);
+    }
+
+    protected ArgumentNode(ISourcePosition position, NodeType type, String identifier) {
+        super(position, type);
+
         this.identifier = identifier;
     }
     

@@ -48,6 +48,7 @@ import org.jruby.runtime.load.Library;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 
 import org.jruby.ast.Node;
+import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.ASTCompiler;
 import org.jruby.compiler.impl.StandardASMCompiler;
@@ -334,7 +335,7 @@ public class RubyJRuby {
     public static class MethodExtensions {
         @JRubyMethod(name = "args")
         public static IRubyObject methodArgs(IRubyObject recv) {
-            Ruby ruby = recv.getRuntime();
+            Ruby runtime = recv.getRuntime();
             RubyMethod rubyMethod = (RubyMethod)recv;
             
             DynamicMethod method = rubyMethod.method;
@@ -342,40 +343,33 @@ public class RubyJRuby {
             if (method instanceof MethodArgs) {
                 MethodArgs interpMethod = (MethodArgs)method;
                 ArgsNode args = interpMethod.getArgsNode();
-                RubyArray argsArray = RubyArray.newArray(ruby);
+                RubyArray argsArray = RubyArray.newArray(runtime);
                 
-                RubyArray reqArray = RubyArray.newArray(ruby);
-                ListNode requiredArgs = args.getArgs();
+                RubyArray reqArray = RubyArray.newArray(runtime);
+                ListNode requiredArgs = args.getPre();
                 for (int i = 0; requiredArgs != null && i < requiredArgs.size(); i++) {
-                    ArgumentNode arg = (ArgumentNode)requiredArgs.get(i);
-                    reqArray.append(RubySymbol.newSymbol(ruby, arg.getName()));
+                    reqArray.append(getNameFrom(runtime, (INameNode) requiredArgs.get(i)));
                 }
                 argsArray.append(reqArray);
                 
-                RubyArray optArray = RubyArray.newArray(ruby);
+                RubyArray optArray = RubyArray.newArray(runtime);
                 ListNode optArgs = args.getOptArgs();
                 for (int i = 0; optArgs != null && i < optArgs.size(); i++) {
-                    LocalAsgnNode arg = (LocalAsgnNode)optArgs.get(i);
-                    optArray.append(RubySymbol.newSymbol(ruby, arg.getName()));
+                    optArray.append(getNameFrom(runtime, (INameNode) optArgs.get(i)));
                 }
                 argsArray.append(optArray);
-                
-                if (args.getRestArgNode() != null) {
-                    argsArray.append(RubySymbol.newSymbol(ruby, args.getRestArgNode().getName()));
-                } else {
-                    argsArray.append(ruby.getNil());
-                }
-                
-                if (args.getBlockArgNode() != null) {
-                    argsArray.append(RubySymbol.newSymbol(ruby, args.getBlockArgNode().getName()));
-                } else {
-                    argsArray.append(ruby.getNil());
-                }
+
+                argsArray.append(getNameFrom(runtime, args.getRestArgNode()));
+                argsArray.append(getNameFrom(runtime, args.getBlock()));
                 
                 return argsArray;
             }
             
-            throw ruby.newTypeError("Method args are only available for standard interpreted or jitted methods");
+            throw runtime.newTypeError("Method args are only available for standard interpreted or jitted methods");
         }
+    }
+
+    private static IRubyObject getNameFrom(Ruby runtime, INameNode node) {
+        return node == null ? runtime.getNil() : RubySymbol.newSymbol(runtime, node.getName());
     }
 }

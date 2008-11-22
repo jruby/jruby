@@ -115,7 +115,8 @@ public class RubyRange extends RubyObject {
         return range;
     }
 
-    protected void copySpecialInstanceVariables(IRubyObject clone) {
+    @Override
+    public void copySpecialInstanceVariables(IRubyObject clone) {
         RubyRange range = (RubyRange)clone;
         range.begin = begin;
         range.end = end;

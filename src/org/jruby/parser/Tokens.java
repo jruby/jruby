@@ -78,6 +78,8 @@ public interface Tokens {
     int klEND       = DefaultRubyParser.klEND;
     int k__LINE__   = DefaultRubyParser.k__LINE__;
     int k__FILE__   = DefaultRubyParser.k__FILE__;
+    int k__ENCODING__ = DefaultRubyParser.k__ENCODING__;
+    int kDO_LAMBDA = DefaultRubyParser.kDO_LAMBDA;
 
     int tIDENTIFIER = DefaultRubyParser.tIDENTIFIER;
     int tFID        = DefaultRubyParser.tFID;
@@ -152,6 +154,9 @@ public interface Tokens {
     int tLCURLY     = DefaultRubyParser.tLCURLY;
     int tRCURLY     = DefaultRubyParser.tRCURLY;
     int tPIPE       = DefaultRubyParser.tPIPE;
+    int tLAMBDA     = DefaultRubyParser.tLAMBDA;
+    int tLAMBEG     = DefaultRubyParser.tLAMBEG;
+    int tLABEL      = DefaultRubyParser.tLABEL;
 
     String[] operators = {"+@", "-@", "**", "<=>", "==", "===", "!=", ">=", "<=", "&&",
                           "||", "=~", "!~", "..", "...", "[]", "[]=", "<<", ">>", "::"};

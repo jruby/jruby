@@ -335,4 +335,6 @@ public interface IRubyObject {
      * @return a list of all variable names (ivar/cvar/constant/internal)
      */
     List<String> getVariableNameList();
+
+    void copySpecialInstanceVariables(IRubyObject clone);
 }

@@ -104,7 +104,12 @@ public class FiberLibrary implements Library {
         @JRubyMethod(rest = true, compat = CompatVersion.RUBY1_9)
         public IRubyObject resume(ThreadContext context, IRubyObject[] args) throws InterruptedException {
             synchronized (yieldLock) {
-                result = context.getRuntime().newArrayNoCopyLight(args);
+                // FIXME: Broken but behaving
+                if (args.length == 1) {
+                    result = args[0];
+                } else {
+                    result = context.getRuntime().newArrayNoCopyLight(args);
+                }
                 if (!alive) {
                     thread.start();
                     yieldLock.wait();

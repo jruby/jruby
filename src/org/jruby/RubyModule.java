@@ -879,6 +879,10 @@ public class RubyModule extends RubyObject {
         }
         testFrozen("class/module");
 
+        addMethodInternal(name, method);
+    }
+
+    public void addMethodInternal(String name, DynamicMethod method) {
         // We can safely reference methods here instead of doing getMethods() since if we
         // are adding we are not using a IncludedModuleWrapper.
         synchronized(getMethods()) {
@@ -1730,9 +1734,10 @@ public class RubyModule extends RubyObject {
      * @param not if true only find methods not matching supplied visibility
      * @return a RubyArray of instance method names
      */
-    private RubyArray instance_methods(IRubyObject[] args, final Visibility visibility, boolean not) {
+    private RubyArray instance_methods(IRubyObject[] args, final Visibility visibility, boolean not, boolean useSymbols) {
         boolean includeSuper = args.length > 0 ? args[0].isTrue() : true;
-        RubyArray ary = getRuntime().newArray();
+        Ruby runtime = getRuntime();
+        RubyArray ary = runtime.newArray();
         Set<String> seen = new HashSet<String>();
 
         for (RubyModule type = this; type != null; type = type.getSuperClass()) {
@@ -1748,7 +1753,7 @@ public class RubyModule extends RubyObject {
                         (!not && method.getVisibility() == visibility || (not && method.getVisibility() != visibility)) &&
                         ! method.isUndefined()) {
 
-                        ary.append(getRuntime().newString(methodName));
+                        ary.append(useSymbols ? runtime.newSymbol(methodName) : runtime.newString(methodName));
                     }
                 }
             }
@@ -1761,14 +1766,24 @@ public class RubyModule extends RubyObject {
         return ary;
     }
 
-    @JRubyMethod(name = "instance_methods", optional = 1)
+    @JRubyMethod(name = "instance_methods", optional = 1, compat = CompatVersion.RUBY1_8)
     public RubyArray instance_methods(IRubyObject[] args) {
-        return instance_methods(args, PRIVATE, true);
+        return instance_methods(args, PRIVATE, true, false);
     }
 
-    @JRubyMethod(name = "public_instance_methods", optional = 1)
+    @JRubyMethod(name = "instance_methods", optional = 1, compat = CompatVersion.RUBY1_9)
+    public RubyArray instance_methods19(IRubyObject[] args) {
+        return instance_methods(args, PRIVATE, true, true);
+    }
+
+    @JRubyMethod(name = "public_instance_methods", optional = 1, compat = CompatVersion.RUBY1_8)
     public RubyArray public_instance_methods(IRubyObject[] args) {
-        return instance_methods(args, PUBLIC, false);
+        return instance_methods(args, PUBLIC, false, false);
+    }
+
+    @JRubyMethod(name = "public_instance_methods", optional = 1, compat = CompatVersion.RUBY1_9)
+    public RubyArray public_instance_methods19(IRubyObject[] args) {
+        return instance_methods(args, PUBLIC, false, false);
     }
 
     @JRubyMethod(name = "instance_method", required = 1)
@@ -1779,17 +1794,27 @@ public class RubyModule extends RubyObject {
     /** rb_class_protected_instance_methods
      *
      */
-    @JRubyMethod(name = "protected_instance_methods", optional = 1)
+    @JRubyMethod(name = "protected_instance_methods", optional = 1, compat = CompatVersion.RUBY1_8)
     public RubyArray protected_instance_methods(IRubyObject[] args) {
-        return instance_methods(args, PROTECTED, false);
+        return instance_methods(args, PROTECTED, false, false);
+    }
+
+    @JRubyMethod(name = "protected_instance_methods", optional = 1, compat = CompatVersion.RUBY1_9)
+    public RubyArray protected_instance_methods19(IRubyObject[] args) {
+        return instance_methods(args, PROTECTED, false, true);
     }
 
     /** rb_class_private_instance_methods
      *
      */
-    @JRubyMethod(name = "private_instance_methods", optional = 1)
+    @JRubyMethod(name = "private_instance_methods", optional = 1, compat = CompatVersion.RUBY1_8)
     public RubyArray private_instance_methods(IRubyObject[] args) {
-        return instance_methods(args, PRIVATE, false);
+        return instance_methods(args, PRIVATE, false, false);
+    }
+
+    @JRubyMethod(name = "private_instance_methods", optional = 1, compat = CompatVersion.RUBY1_9)
+    public RubyArray private_instance_methods19(IRubyObject[] args) {
+        return instance_methods(args, PRIVATE, false, true);
     }
 
     /** rb_mod_append_features

@@ -36,7 +36,11 @@
 package org.jruby.parser;
 
 import org.jruby.ast.AndNode;
+import org.jruby.ast.ArgsPreOneArgNode;
+import org.jruby.ast.ArgsPreTwoArgNode;
 import org.jruby.ast.ArgsCatNode;
+import org.jruby.ast.ArgsNoArgNode;
+import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgsPushNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
@@ -48,6 +52,7 @@ import org.jruby.ast.AttrAssignTwoArgNode;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BeginNode;
 import org.jruby.ast.BignumNode;
+import org.jruby.ast.BlockArgNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.BreakNode;
@@ -127,6 +132,7 @@ import org.jruby.ast.OpElementOneArgAsgnNode;
 import org.jruby.ast.OpElementOneArgOrAsgnNode;
 import org.jruby.ast.OrNode;
 import org.jruby.ast.RegexpNode;
+import org.jruby.ast.RestArgNode;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.SValueNode;
 import org.jruby.ast.SelfNode;
@@ -155,7 +161,7 @@ import org.jruby.util.ByteList;
  */
 public class ParserSupport {
     // Parser states:
-    private StaticScope currentScope;
+    protected StaticScope currentScope;
     
     // Is the parser current within a singleton (value is number of nested singletons)
     private int inSingleton;
@@ -163,7 +169,7 @@ public class ParserSupport {
     // Is the parser currently within a method definition
     private boolean inDefinition;
 
-    private IRubyWarnings warnings;
+    protected IRubyWarnings warnings;
 
     private ParserConfiguration configuration;
     private RubyParserResult result;
@@ -233,8 +239,8 @@ public class ParserSupport {
             return new GlobalVarNode(node.getPosition(), ((INameNode) node).getName());
         }
         
-        throw new SyntaxException(PID.BAD_IDENTIFIER, node.getPosition(), "identifier " + 
-                ((INameNode) node).getName() + " is not valid", ((INameNode) node).getName());
+        getterIdentifierError(node.getPosition(), ((INameNode) node).getName());
+        return null;
     }
     
     /**
@@ -257,6 +263,10 @@ public class ParserSupport {
             return new FileNode(token.getPosition(), ByteList.create(token.getPosition().getFile()));
         case Tokens.k__LINE__:
             return new FixnumNode(token.getPosition(), token.getPosition().getEndLine()+1);
+        case Tokens.k__ENCODING__:
+            // ENEBO: 1.8 will never see this, but 1.9 can
+            // TODO: Replace with proper encoding support
+            return new FixnumNode(token.getPosition(), token.getPosition().getEndLine()+1);            
         case Tokens.tIDENTIFIER:
             return currentScope.declare(token.getPosition(), (String) token.getValue());
         case Tokens.tCONSTANT:
@@ -269,8 +279,13 @@ public class ParserSupport {
             return new GlobalVarNode(token.getPosition(), (String) token.getValue());
         }
 
-        throw new SyntaxException(PID.BAD_IDENTIFIER, token.getPosition(), "identifier " + 
-                (String) token.getValue() + " is not valid", token.getValue());
+        getterIdentifierError(token.getPosition(), (String) token.getValue());
+        return null;
+    }
+    
+    protected void getterIdentifierError(ISourcePosition position, String identifier) {
+        throw new SyntaxException(PID.BAD_IDENTIFIER, position, "identifier " +
+                identifier + " is not valid", identifier);
     }
     
     public AssignableNode assignable(Token lhs, Node value) {
@@ -689,7 +704,7 @@ public class ParserSupport {
     }
 
 	/**
-	 * @fixme error handling
+     * assign_in_cond
 	 **/
     private boolean checkAssignmentInCondition(Node node) {
         if (node instanceof MultipleAsgnNode) {
@@ -705,7 +720,7 @@ public class ParserSupport {
         return false;
     }
     
-    private Node makeNullNil(Node node) {
+    protected Node makeNullNil(Node node) {
         return node == null ? NilImplicitNode.NIL : node;
     }
 
@@ -715,6 +730,7 @@ public class ParserSupport {
         Node leftNode = null;
         Node rightNode = null;
 
+        // FIXME: DSTR,EVSTR,STR: warning "string literal in condition"
         switch(node.nodeId) {
         case DREGEXPNODE: {
             ISourcePosition position = node.getPosition();
@@ -1133,7 +1149,8 @@ public class ParserSupport {
             if (node instanceof BlockPassNode) {
                 throw new SyntaxException(PID.BLOCK_ARG_UNEXPECTED, node.getPosition(), "Block argument should not be given.");
             }
-            
+
+            // FIXME: This does not seem to be in 1.9
             if (node instanceof ArrayNode && ((ArrayNode)node).size() == 1) {
                 node = ((ArrayNode)node).get(0);
                 state = false;
@@ -1191,7 +1208,19 @@ public class ParserSupport {
             return null;
         }
         String name = getCurrentScope().getLocalScope().getVariables()[index];
+        // FIXME: We should not need to specify IDESourcePosition here...
         ISourcePosition position = new IDESourcePosition(token.getPosition().getFile(), token.getPosition().getStartLine(), token.getPosition().getEndLine(), token.getPosition().getStartOffset(), token.getPosition().getEndOffset() + name.length());
         return new ArgumentNode(position, name);
+    }
+
+    public Node new_args(ISourcePosition position, ListNode pre, ListNode optional, RestArgNode rest,
+            ListNode post, BlockArgNode block) {
+        // Zero-Argument declaration
+        if (optional == null && rest == null && post == null && block == null) {
+            if (pre == null || pre.size() == 0) return new ArgsNoArgNode(position);
+            if (pre.size() == 1) return new ArgsPreOneArgNode(position, pre);
+            if (pre.size() == 2) return new ArgsPreTwoArgNode(position, pre);
+        }
+        return new ArgsNode(position, pre, optional, rest, post, block);
     }
 }

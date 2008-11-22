@@ -125,7 +125,7 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
      */
     @Override
     public void setArgValues(IRubyObject[] values, int size) {
-        assertSetArgValues(values);
+        assertSetArgValues(values, size);
         if (size == 1) {
             variableValueZero = values[0];
         }
@@ -145,6 +145,17 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
     public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         assert false : "SingleVarDynamicScope only supports one variable not three";
     }    
+
+    /*
+     * If we are setting post arguments we can assume there are no pre or others
+     */
+    @Override
+    public void setEndArgValues(IRubyObject[] values, int index, int size) {
+        assertSetArgValues(values, size);
+        assert index == 0 && size == 1 : "SingleVarDynamicScope only supports one variable";
+
+        variableValueZero = values[0];
+    }
 
     @Override
     public IRubyObject[] getArgValues() {
@@ -211,8 +222,8 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
         assert parent != null : "If depth > 0, then parent should not ever be null";
     }
 
-    private void assertSetArgValues(IRubyObject[] values) {
-        assert values.length == 1 : "SingleVarDynamicScope only supports one variable";
+    private void assertSetArgValues(IRubyObject[] values, int size) {
+        assert values.length <= 1 : "SingleVarDynamicScope only supports one variable ant not " + size + " of value array of length " + values.length;
     }
 
     private void assertSetValue(int offset) {

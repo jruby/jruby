@@ -63,6 +63,12 @@ public abstract class BlockBody implements JumpTarget {
 
         return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding, type);
     }
+
+    // This should only be called by 1.8 (1.9 subclasses this to handle unusedBlock).
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, 
+            Block.Type type, Block unusedBlock) {
+        return call(context, args, binding, type);
+    }
     
     public int getArgumentType() {
         return argumentType;

@@ -69,7 +69,7 @@ public class ListNode extends Node {
     
     public ListNode add(Node node) {
         // Ruby Grammar productions return plenty of nulls.
-        if (node == null) {
+        if (node == null || node == NilImplicitNode.NIL) {
             list.add(NilImplicitNode.NIL);
 
             return this;
