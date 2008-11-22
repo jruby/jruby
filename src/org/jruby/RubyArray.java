@@ -44,10 +44,12 @@ import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Random;
+import java.util.Stack;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -2492,14 +2494,92 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
 
-    /** rb_ary_flatten
-     *
-     */
-    @JRubyMethod(name = "flatten")
-    public IRubyObject flatten(ThreadContext context) {
-        RubyArray ary = aryDup();
-        ary.flatten_bang(context);
-        return ary;
+    private boolean flatten19(ThreadContext context, int level, RubyArray result) {
+        Ruby runtime = context.getRuntime();
+        RubyArray stack = new RubyArray(runtime, ARRAY_DEFAULT_SIZE, false);
+        IdentityHashMap<Object, Object> memo = new IdentityHashMap<Object, Object>();
+        RubyArray ary = this;
+        memo.put(ary, NEVER);
+        boolean modified = false;
+
+        int i = 0;
+
+        while (true) {
+            IRubyObject tmp;
+            while (i < ary.realLength) {
+                IRubyObject elt = ary.values[ary.begin + i++];
+                tmp = elt.checkArrayType();
+                if (tmp.isNil() || (level >= 0 && stack.realLength / 2 >= level)) {
+                    result.append(elt);
+                } else {
+                    modified = true;
+                    if (memo.get(tmp) != null) throw runtime.newArgumentError("tried to flatten recursive array");
+                    memo.put(tmp, NEVER);
+                    stack.append(ary);
+                    stack.append(RubyFixnum.newFixnum(runtime, i));
+                    ary = (RubyArray)tmp;
+                    i = 0;
+                }
+            }
+            if (stack.realLength == 0) break;
+            memo.remove(ary);
+            tmp = stack.pop19(context);
+            i = (int)((RubyFixnum)tmp).getLongValue();
+            ary = (RubyArray)stack.pop19(context);
+        }
+        return modified;
+    }
+
+    @JRubyMethod(name = "flatten!", compat = CompatVersion.RUBY1_9)
+    public IRubyObject flatten_bang19(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+
+        RubyArray result = new RubyArray(runtime, realLength);
+        if (flatten19(context, -1, result)) {
+            begin = 0;
+            realLength = result.realLength;
+            values = result.values;
+            return this;
+        }
+        return runtime.getNil();
+    }
+
+    @JRubyMethod(name = "flatten!", compat = CompatVersion.RUBY1_9)
+    public IRubyObject flatten_bang19(ThreadContext context, IRubyObject arg) {
+        Ruby runtime = context.getRuntime();
+        int level = RubyNumeric.num2int(arg);
+        if (level == 0) return this;
+
+        RubyArray result = new RubyArray(runtime, realLength);
+        if (flatten19(context, level, result)) {
+            begin = 0;
+            realLength = result.realLength;
+            values = result.values;
+            return this;
+        }
+        return runtime.getNil();
+    }
+
+    @JRubyMethod(name = "flatten", compat = CompatVersion.RUBY1_9)
+    public IRubyObject flatten19(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+
+        RubyArray result = new RubyArray(runtime, realLength);
+        flatten19(context, -1, result);
+        result.infectBy(this);
+        return result;
+    }
+
+    @JRubyMethod(name = "flatten", compat = CompatVersion.RUBY1_9)
+    public IRubyObject flatten19(ThreadContext context, IRubyObject arg) {
+        Ruby runtime = context.getRuntime();
+        int level = RubyNumeric.num2int(arg);
+        if (level == 0) return this;
+
+        RubyArray result = new RubyArray(runtime, realLength);
+        flatten19(context, level, result);
+        result.infectBy(this);
+        return result;
     }
 
     /** rb_ary_nitems
