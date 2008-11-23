@@ -639,7 +639,7 @@ abstract public class AbstractMemory extends RubyObject {
         getMemoryIO().put(getOffset(offset), array, 0, array.length);
         return this;
     }
-    @JRubyMethod(name = "get_string")
+    @JRubyMethod(name = "get_string", required = 1)
     public IRubyObject get_string(ThreadContext context, IRubyObject offArg) {
         long off = getOffset(offArg);
         int len = (int) getMemoryIO().indexOf(off, (byte) 0);
@@ -650,7 +650,7 @@ abstract public class AbstractMemory extends RubyObject {
         s.setTaint(true);
         return s;
     }
-    @JRubyMethod(name = "get_string")
+    @JRubyMethod(name = "get_string", required = 2)
     public IRubyObject get_string(ThreadContext context, IRubyObject offArg, IRubyObject lenArg) {
         long off = getOffset(offArg);
         int maxlen = Util.int32Value(lenArg);
@@ -665,20 +665,41 @@ abstract public class AbstractMemory extends RubyObject {
         s.setTaint(true);
         return s;
     }
-    @JRubyMethod(name = "put_string", required = 2, optional = 1)
-    public IRubyObject put_string(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod(name = "put_string")
+    public IRubyObject put_string(ThreadContext context, IRubyObject offArg, IRubyObject strArg) {
+        long off = getOffset(offArg);
+        ByteList bl = strArg.convertToString().getByteList();
+
+        getMemoryIO().put(off, bl.unsafeBytes(), bl.begin(), bl.length());
+        getMemoryIO().putByte(off + bl.length(), (byte) 0);
+        return this;
+    }
+    @JRubyMethod(name = "get_bytes")
+    public IRubyObject get_bytes(ThreadContext context, IRubyObject offArg, IRubyObject lenArg) {
+        long off = getOffset(offArg);
+        int len = Util.int32Value(lenArg);
+        ByteList bl = new ByteList(len);
+        checkBounds(context, off, len);
+        getMemoryIO().get(off, bl.unsafeBytes(), bl.begin(), len);
+        bl.length(len);
+        RubyString s = context.getRuntime().newString(bl);
+        s.setTaint(true);
+        return s;
+    }
+    @JRubyMethod(name = "put_bytes", required = 2, optional = 2)
+    public IRubyObject put_bytes(ThreadContext context, IRubyObject[] args) {
         long off = getOffset(args[0]);
         ByteList bl = args[1].convertToString().getByteList();
-        int len = bl.length();
-        boolean nulTerminate = true;
-        if (args.length > 2) {
-            len = Math.min(Util.int32Value(args[2]) - 1, len);
-            nulTerminate = false;
+        int idx = args.length > 2 ? Util.int32Value(args[2]) : 0;
+        if (idx < 0 || idx > bl.length()) {
+            throw context.getRuntime().newRangeError("Invalid string index");
         }
-        getMemoryIO().put(off, bl.unsafeBytes(), bl.begin(), len);
-        if (nulTerminate) {
-            getMemoryIO().putByte(off + bl.length(), (byte) 0);
+        int len = args.length > 3 ? Util.int32Value(args[3]) : (bl.length() - idx);
+        if (len < 0 || len > (bl.length() - idx)) {
+            throw context.getRuntime().newRangeError("Invalid length");
         }
+        checkBounds(context, off, len);
+        getMemoryIO().put(off, bl.unsafeBytes(), bl.begin() + idx, len);
         return this;
     }
     @JRubyMethod(name = "get_pointer", required = 1)
