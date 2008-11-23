@@ -527,7 +527,7 @@ public class RubyStruct extends RubyObject {
     // of something lower.
     @JRubyMethod(rest = true)
     public IRubyObject values_at(IRubyObject[] args) {
-        long olen = values.length;
+        int olen = values.length;
         RubyArray result = getRuntime().newArray(args.length);
 
         for (int i = 0; i < args.length; i++) {
@@ -536,13 +536,13 @@ public class RubyStruct extends RubyObject {
                 continue;
             }
 
-            long beglen[];
+            int beglen[];
             if (!(args[i] instanceof RubyRange)) {
-            } else if ((beglen = ((RubyRange) args[i]).begLen(olen, 0)) == null) {
+            } else if ((beglen = ((RubyRange) args[i]).begLenInt(olen, 0)) == null) {
                 continue;
             } else {
-                int beg = (int) beglen[0];
-                int len = (int) beglen[1];
+                int beg = beglen[0];
+                int len = beglen[1];
                 int end = len;
                 for (int j = 0; j < end; j++) {
                     result.append(aref(getRuntime().newFixnum(j + beg)));

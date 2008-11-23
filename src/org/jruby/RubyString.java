@@ -1869,9 +1869,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
             return value.indexOf(stringValue(arg).value) != -1 ?
                 arg : context.getRuntime().getNil();
         } else if (arg instanceof RubyRange) {
-            long[] begLen = ((RubyRange) arg).begLen(value.length(), 0);
+            int[] begLen = ((RubyRange) arg).begLenInt(value.length(), 0);
             return begLen == null ? context.getRuntime().getNil() :
-                substr(context.getRuntime(), (int) begLen[0], (int) begLen[1]);
+                substr(context.getRuntime(), begLen[0], begLen[1]);
         }
         int idx = (int) arg.convertToInteger().getLongValue();
         
@@ -1966,8 +1966,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
             return arg1;
         }
         if (arg0 instanceof RubyRange) {
-            long[] begLen = ((RubyRange) arg0).begLen(value.realSize, 2);
-            replace((int) begLen[0], (int) begLen[1], stringValue(arg1));
+            int[] begLen = ((RubyRange) arg0).begLenInt(value.realSize, 2);
+            replace(begLen[0], begLen[1], stringValue(arg1));
             return arg1;
         }
         throw context.getRuntime().newTypeError("wrong argument type");
