@@ -54,6 +54,7 @@ import java.util.Stack;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.ext.posix.POSIXHandler.WARNING_ID;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -2628,6 +2629,30 @@ public class RubyArray extends RubyObject implements List {
         flatten19(context, level, result);
         result.infectBy(this);
         return result;
+    }
+
+    @JRubyMethod(name = "count", compat = CompatVersion.RUBY1_9)
+    public IRubyObject count(ThreadContext context, Block block) {
+        if (block.isGiven()) {
+            int n = 0;
+            for (int i = 0; i < realLength; i++) {
+                if (block.yield(context, values[begin + i]).isTrue()) n++;
+            }
+            return RubyFixnum.newFixnum(context.getRuntime(), n);
+        } else {
+            return RubyFixnum.newFixnum(context.getRuntime(), realLength);
+        }
+    }
+
+    @JRubyMethod(name = "count", compat = CompatVersion.RUBY1_9)
+    public IRubyObject count(ThreadContext context, IRubyObject obj, Block block) {
+        if (block.isGiven()) context.getRuntime().getWarnings().warn(ID.BLOCK_UNUSED, "given block not used");
+
+        int n = 0;
+        for (int i = 0; i < realLength; i++) {
+            if (equalInternal(context, values[begin + i], obj)) n++;
+        }
+        return RubyFixnum.newFixnum(context.getRuntime(), n);
     }
 
     /** rb_ary_nitems
