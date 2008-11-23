@@ -519,7 +519,7 @@ public class RubyRange extends RubyObject {
         final RubyArray result = runtime.newArray(num);
         try {
             RubyEnumerable.callEach(runtime, context, this, new BlockCallback() {
-                long n = num;
+                int n = num;
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     if (n-- <= 0) throw JumpException.SPECIAL_JUMP;
                     result.append(largs[0]);
