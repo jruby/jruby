@@ -3118,7 +3118,7 @@ public class RubyArray extends RubyObject implements List {
         case 0: 
             return newEmptyArray(runtime);
         case 1:
-            return newArray(runtime, values[random.nextInt(realLength)]);
+            return newArray(runtime, values[begin + random.nextInt(realLength)]);
         case 2:
             i = random.nextInt(realLength);
             j = random.nextInt(realLength - 1);
