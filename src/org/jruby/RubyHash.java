@@ -922,14 +922,37 @@ public class RubyHash extends RubyObject implements Map {
         return internalGetEntry(key) == NO_ENTRY ? getRuntime().getFalse() : getRuntime().getTrue();
     }
 
-    private class Found extends RuntimeException {}
+    private static class Found extends RuntimeException {
+        @Override
+        public synchronized Throwable fillInStackTrace() {
+            return null;
+        }
+    }
+
+    private static final Found FOUND = new Found();
+
+    private static class FoundKey extends Found {
+        public final IRubyObject key;
+        FoundKey(IRubyObject key) {
+            super();
+            this.key = key;
+        }
+    }
+
+    private static class FoundPair extends FoundKey {
+        public final IRubyObject value;
+        FoundPair(IRubyObject key, IRubyObject value) {
+            super(key);
+            this.value = value;
+        }
+    }
 
     private boolean hasValue(final ThreadContext context, final IRubyObject expected) {
         try {
             visitAll(new Visitor() {
                 public void visit(IRubyObject key, IRubyObject value) {
                     if (equalInternal(context, value, expected)) {
-                        throw new Found();
+                        throw FOUND;
                     }
                 }
             });
@@ -1035,14 +1058,6 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "sort", frame = true)
     public RubyArray sort(Block block) {
         return to_a().sort_bang(block);
-    }
-
-    private static class FoundKey extends RuntimeException {
-        public IRubyObject key;
-        FoundKey(IRubyObject key) {
-            super();
-            this.key = key;
-        }
     }
 
     /** rb_hash_index
@@ -1397,6 +1412,38 @@ public class RubyHash extends RubyObject implements Map {
             result.append(op_aref(context, args[i]));
         }
         return result;
+    }
+
+    @JRubyMethod(name = "assoc", compat = CompatVersion.RUBY1_9)
+    public IRubyObject assoc(final ThreadContext context, final IRubyObject obj) {
+        try {
+            visitAll(new Visitor() {
+                public void visit(IRubyObject key, IRubyObject value) {
+                    if (equalInternal(context, obj, key)) {
+                        throw new FoundPair(key, value);
+                    }
+                }
+            });
+            return context.getRuntime().getNil();
+        } catch (FoundPair found) {
+            return context.getRuntime().newArray(found.key, found.value);
+        }
+    }
+
+    @JRubyMethod(name = "rassoc", compat = CompatVersion.RUBY1_9)
+    public IRubyObject rassoc(final ThreadContext context, final IRubyObject obj) {
+        try {
+            visitAll(new Visitor() {
+                public void visit(IRubyObject key, IRubyObject value) {
+                    if (equalInternal(context, obj, value)) {
+                        throw new FoundPair(key, value);
+                    }
+                }
+            });
+            return context.getRuntime().getNil();
+        } catch (FoundPair found) {
+            return context.getRuntime().newArray(found.key, found.value);
+        }
     }
 
     public boolean hasDefaultProc() {
