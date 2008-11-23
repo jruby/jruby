@@ -1984,12 +1984,12 @@ public class RubyArray extends RubyObject implements List {
         return runtime.getNil();
     }
 
-    @JRubyMethod(name = "index", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"index", "find_index"}, frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject index19(ThreadContext context, IRubyObject obj, Block unused) {
         return index(context, obj); 
     }
 
-    @JRubyMethod(name = "index", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"index", "find_index"}, frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject index19(ThreadContext context, Block block) {
         Ruby runtime = getRuntime();
         if (!block.isGiven()) return enumeratorize(runtime, this, "index");
