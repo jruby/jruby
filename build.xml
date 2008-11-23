@@ -528,7 +528,6 @@
       run-junit-precompiled,
       run-junit-interpreted-1.9,
       run-junit-compiled-1.9,
-      run-junit-precompiled-1.9,
       run-junit-reflected-precompiled,
       run-junit-interpreted-threadpool,
       compile-stdlib,
