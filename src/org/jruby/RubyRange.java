@@ -149,7 +149,35 @@ public class RubyRange extends RubyObject {
         if (len < 0) len = 0;
 
         return new long[]{beg, len};
-    }    
+    }
+
+    final int[] begLenInt(int len, int err){
+        int beg = RubyNumeric.num2int(this.begin);
+        int end = RubyNumeric.num2int(this.end);
+
+        if (beg < 0) {
+            beg += len;
+            if (beg < 0) {
+                if (err != 0) throw getRuntime().newRangeError(beg + ".." + (isExclusive ? "." : "") + end + " out of range");
+                return null;
+            }
+        }
+
+        if (err == 0 || err == 2) {
+            if (beg > len) {
+                if (err != 0) throw getRuntime().newRangeError(beg + ".." + (isExclusive ? "." : "") + end + " out of range");
+                return null;
+            }
+            if (end > len) end = len;
+        }
+
+        if (end < 0) end += len;
+        if (!isExclusive) end++;
+        len = end - beg;
+        if (len < 0) len = 0;
+
+        return new int[]{beg, len};
+    }
 
     private void init(ThreadContext context, IRubyObject begin, IRubyObject end, boolean isExclusive) {
         if (!(begin instanceof RubyFixnum && end instanceof RubyFixnum)) {

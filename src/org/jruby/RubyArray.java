@@ -1849,100 +1849,126 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
 
-    /** rb_ary_fill
-     *
-     */
-    @JRubyMethod(name = "fill", optional = 3, frame = true)
-    public IRubyObject fill(ThreadContext context, IRubyObject[] args, Block block) {
-        IRubyObject item = null;
-        IRubyObject begObj = null;
-        IRubyObject lenObj = null;
-        int argc = args.length;
+    @JRubyMethod(name = "fill", frame = true)
+    public IRubyObject fill(ThreadContext context, Block block) {
+        if (block.isGiven()) return fillCommon(context, 0, realLength, block);
+        throw context.getRuntime().newArgumentError(0, 1);
+    }
 
+    @JRubyMethod(name = "fill", frame = true)
+    public IRubyObject fill(ThreadContext context, IRubyObject arg, Block block) {
         if (block.isGiven()) {
-            Arity.checkArgumentCount(getRuntime(), args, 0, 2);
-            item = null;
-        	begObj = argc > 0 ? args[0] : null;
-        	lenObj = argc > 1 ? args[1] : null;
-        	argc++;
+            if (arg instanceof RubyRange) {
+                int[] beglen = ((RubyRange) arg).begLenInt(realLength, 1);
+                return fillCommon(context, beglen[0], beglen[1], block);
+            }
+            int beg;
+            return fillCommon(context, beg = fillBegin(arg), fillLen(beg, null),  block);
         } else {
-            Arity.checkArgumentCount(getRuntime(), args, 1, 3);
-            item = args[0];
-        	begObj = argc > 1 ? args[1] : null;
-        	lenObj = argc > 2 ? args[2] : null;
+            return fillCommon(context, 0, realLength, arg);
         }
+    }
 
-        int beg = 0, end = 0, len = 0;
-        switch (argc) {
-        case 1:
-            beg = 0;
-            len = realLength;
-            break;
-        case 2:
-            if (begObj instanceof RubyRange) {
-                long[] beglen = ((RubyRange) begObj).begLen(realLength, 1);
-                beg = (int) beglen[0];
-                len = (int) beglen[1];
-                break;
+    @JRubyMethod(name = "fill", frame = true)
+    public IRubyObject fill(ThreadContext context, IRubyObject arg1, IRubyObject arg2, Block block) {
+        if (block.isGiven()) {
+            int beg;
+            return fillCommon(context, beg = fillBegin(arg1), fillLen(beg, arg2), block);
+        } else {
+            if (arg2 instanceof RubyRange) {
+                int[] beglen = ((RubyRange) arg2).begLenInt(realLength, 1);
+                return fillCommon(context, beglen[0], beglen[1], arg1);
             }
-            /* fall through */
-        case 3:
-            beg = begObj.isNil() ? 0 : RubyNumeric.num2int(begObj);
-            if (beg < 0) {
-                beg = realLength + beg;
-                if (beg < 0) beg = 0;
-            }
-            len = (lenObj == null || lenObj.isNil()) ? realLength - beg : RubyNumeric.num2int(lenObj);
-            // TODO: In MRI 1.9, an explicit check for negative length is
-            // added here. IndexError is raised when length is negative.
-            // See [ruby-core:12953] for more details.
-            //
-            // New note: This is actually under re-evaluation,
-            // see [ruby-core:17483].
-            break;
+            int beg;
+            return fillCommon(context, beg = fillBegin(arg2), fillLen(beg, null), arg1);
         }
+    }
 
+    @JRubyMethod(name = "fill", frame = true)
+    public IRubyObject fill(ThreadContext context, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+        if (block.isGiven()) {
+            throw context.getRuntime().newArgumentError(3, 2);
+        } else {
+            int beg;
+            return fillCommon(context, beg = fillBegin(arg2), fillLen(beg, arg3), arg1);
+        }
+    }
+
+    private int fillBegin(IRubyObject arg) {
+        int beg = arg.isNil() ? 0 : RubyNumeric.num2int(arg);
+        if (beg < 0) {
+            beg = realLength + beg;
+            if (beg < 0) beg = 0;
+        }
+        return beg;
+    }
+
+    private int fillLen(int beg, IRubyObject arg) {
+        if (arg == null || arg.isNil()) {
+            return realLength - beg;
+        } else {
+            return RubyNumeric.num2int(arg);
+        }
+        // TODO: In MRI 1.9, an explicit check for negative length is
+        // added here. IndexError is raised when length is negative.
+        // See [ruby-core:12953] for more details.
+        //
+        // New note: This is actually under re-evaluation,
+        // see [ruby-core:17483].
+    }
+
+    private IRubyObject fillCommon(ThreadContext context, int beg, int len, IRubyObject item) {
         modify();
 
         // See [ruby-core:17483]
-        if (len < 0) {
-            return this;
-        }
+        if (len < 0) return this;
 
-        if (len > Integer.MAX_VALUE - beg) {
-            throw getRuntime().newArgumentError("argument too big");
-        }
+        if (len > Integer.MAX_VALUE - beg) throw context.getRuntime().newArgumentError("argument too big");
 
-        end = beg + len;
+        int end = beg + len;
         if (end > realLength) {
             if (end >= values.length) realloc(end);
-
             realLength = end;
         }
 
-        if (block.isGiven()) {
-            Ruby runtime = getRuntime();
-            for (int i = beg; i < end; i++) {
-                IRubyObject v = block.yield(context, runtime.newFixnum(i));
-                if (i >= realLength) break;
-                try {
-                    values[i] = v;
-                } catch (ArrayIndexOutOfBoundsException e) {
-                    concurrentModification();
-                }
-            }
-        } else {
-            if (len > 0) {
-                try {
-                    fill(values, beg, beg + len, item);
-                } catch (ArrayIndexOutOfBoundsException e) {
-                    concurrentModification();
-                }
+        if (len > 0) {
+            try {
+                fill(values, beg, beg + len, item);
+            } catch (ArrayIndexOutOfBoundsException e) {
+                concurrentModification();
             }
         }
 
         return this;
     }
+
+    private IRubyObject fillCommon(ThreadContext context, int beg, int len, Block block) {
+        modify();
+
+        // See [ruby-core:17483]
+        if (len < 0) return this;
+
+        if (len > Integer.MAX_VALUE - beg) throw getRuntime().newArgumentError("argument too big");
+
+        int end = beg + len;
+        if (end > realLength) {
+            if (end >= values.length) realloc(end);
+            realLength = end;
+        }
+
+        Ruby runtime = context.getRuntime();
+        for (int i = beg; i < end; i++) {
+            IRubyObject v = block.yield(context, runtime.newFixnum(i));
+            if (i >= realLength) break;
+            try {
+                values[i] = v;
+            } catch (ArrayIndexOutOfBoundsException e) {
+                concurrentModification();
+            }
+        }
+        return this;
+    }
+
 
     /** rb_ary_index
      *
