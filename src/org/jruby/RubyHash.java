@@ -1446,6 +1446,20 @@ public class RubyHash extends RubyObject implements Map {
         }
     }
 
+    @JRubyMethod(name = "flatten", compat = CompatVersion.RUBY1_9)
+    public IRubyObject flatten(ThreadContext context) {
+        RubyArray ary = to_a(); 
+        ary.callMethod(context, "flatten!", RubyFixnum.one(context.getRuntime()));
+        return ary;
+    }
+
+    @JRubyMethod(name = "flatten", compat = CompatVersion.RUBY1_9)
+    public IRubyObject flatten(ThreadContext context, IRubyObject level) {
+        RubyArray ary = to_a();
+        ary.callMethod(context, "flatten!", level);
+        return ary;
+    }
+
     public boolean hasDefaultProc() {
         return (flags & PROCDEFAULT_HASH_F) != 0;
     }
