@@ -160,6 +160,11 @@ public class RubyHash extends RubyObject implements Map {
         return hash;
     }
 
+    @JRubyMethod(name = "try_convert", meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject try_convert(ThreadContext context, IRubyObject recv, IRubyObject args) {
+        return TypeConverter.convertToTypeWithCheck(args, context.getRuntime().getHash(), "to_hash");
+    }
+
     /** rb_hash_new
      *
      */
