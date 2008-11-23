@@ -399,7 +399,7 @@ public abstract class DynamicMethod {
      * @return true if this method is the undefined method; false otherwise
      */
     public final boolean isUndefined() {
-        return this instanceof UndefinedMethod;
+        return this == UndefinedMethod.INSTANCE;
     }
 
     /**

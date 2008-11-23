@@ -1420,7 +1420,7 @@ public class RubyModule extends RubyObject {
             DynamicMethod method = entry.getValue();
             // Do not clone cached methods
             // FIXME: MRI copies all methods here
-            if (method.getImplementationClass() == realType || method instanceof UndefinedMethod) {
+            if (method.getImplementationClass() == realType || method.isUndefined()) {
                 
                 // A cloned method now belongs to a new class.  Set it.
                 // TODO: Make DynamicMethod immutable
