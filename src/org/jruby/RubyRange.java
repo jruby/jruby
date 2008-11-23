@@ -44,6 +44,7 @@ import java.util.List;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
@@ -476,6 +477,33 @@ public class RubyRange extends RubyObject {
             }
         }
         return context.getRuntime().getFalse();
+    }
+
+    @JRubyMethod(name = "min", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject min(ThreadContext context, Block block) {
+        if (block.isGiven()) {
+            return RuntimeHelpers.invokeSuper(context, this, block);
+        } else {
+            int c = RubyComparable.cmpint(context, begin.callMethod(context, "<=>", end), begin, end);
+            if (c > 0 || (c == 0 && isExclusive)) return context.getRuntime().getNil();
+            return begin;
+        }
+    }
+
+    @JRubyMethod(name = "max", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject max(ThreadContext context, Block block) {
+        if (block.isGiven() || isExclusive && !(end instanceof RubyInteger)) {
+            return RuntimeHelpers.invokeSuper(context, this, block);
+        } else {
+            int c = RubyComparable.cmpint(context, begin.callMethod(context, "<=>", end), begin, end);
+            Ruby runtime = context.getRuntime();
+            if (isExclusive) {
+                if (c == 0) return runtime.getNil();
+                if (end instanceof RubyFixnum) return RubyFixnum.newFixnum(runtime, ((RubyFixnum)end).getLongValue() - 1);
+                return end.callMethod(context, "-", RubyFixnum.one(runtime));
+            }
+            return end;
+        }
     }
 
     private static final ObjectMarshal RANGE_MARSHAL = new ObjectMarshal() {
