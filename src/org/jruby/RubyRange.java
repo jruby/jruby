@@ -41,6 +41,8 @@ import static org.jruby.RubyEnumerator.enumeratorize;
 import java.io.IOException;
 import java.util.List;
 
+import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException;
@@ -58,6 +60,8 @@ import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.ByteList;
+import org.jruby.util.TypeConverter;
 
 /**
  * @author jpetersen
@@ -468,7 +472,7 @@ public class RubyRange extends RubyObject {
         return block.isGiven() ? step(context, step, block) : enumeratorize(context.getRuntime(), this, "step", step);
     }
 
-    @JRubyMethod(name = {"include?", "member?", "==="}, required = 1)
+    @JRubyMethod(name = {"include?", "member?", "==="}, required = 1, compat = CompatVersion.RUBY1_8)
     public RubyBoolean include_p(ThreadContext context, IRubyObject obj) {
         if (rangeLe(context, begin, obj) != null) {
             if (isExclusive) {
@@ -478,6 +482,51 @@ public class RubyRange extends RubyObject {
             }
         }
         return context.getRuntime().getFalse();
+    }
+
+    @JRubyMethod(name = {"include?", "member?"}, frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject include_p19(ThreadContext context, IRubyObject obj) {
+        Ruby runtime = context.getRuntime();
+        if (begin instanceof RubyNumeric || end instanceof RubyNumeric ||
+                !TypeConverter.convertToTypeWithCheck(begin, runtime.getInteger(), "to_int").isNil() ||
+                !TypeConverter.convertToTypeWithCheck(end, runtime.getInteger(), "to_int").isNil()) {
+            if (rangeLe(context, begin, obj) != null) {
+                if (isExclusive) {
+                    if (rangeLt(context, obj, end) != null) return runtime.getTrue();
+                } else {
+                    if (rangeLe(context, obj, end) != null) return runtime.getTrue();
+                }
+            }
+            return runtime.getFalse();
+        } else if (begin instanceof RubyString && end instanceof RubyString &&
+                ((RubyString)begin).getByteList().realSize == 1 &&
+                ((RubyString)end).getByteList().realSize == 1) {
+            if (obj.isNil()) return runtime.getFalse();
+            if (obj instanceof RubyString) {
+                ByteList Vbytes = ((RubyString)obj).getByteList();
+                if (Vbytes.realSize != 1) return runtime.getFalse();
+                int v = Vbytes.bytes[Vbytes.begin] & 0xff;
+                ByteList Bbytes = ((RubyString)begin).getByteList();
+                int b = Bbytes.bytes[Bbytes.begin] & 0xff;
+                ByteList Ebytes = ((RubyString)end).getByteList();
+                int e = Ebytes.bytes[Ebytes.begin] & 0xff;
+                if (Encoding.isAscii(v) && Encoding.isAscii(b) && Encoding.isAscii(e)) {
+                    if ((b <= v && v < e) || (!isExclusive && v == e)) return runtime.getTrue();
+                    return runtime.getFalse();
+                }
+            }
+        }
+        return RuntimeHelpers.invokeSuper(context, this, obj, Block.NULL_BLOCK);
+    }
+
+    @JRubyMethod(name = "===", compat = CompatVersion.RUBY1_9)
+    public IRubyObject eqq_p19(ThreadContext context, IRubyObject obj) {
+        return callMethod(context, "include?", obj);
+    }
+
+    @JRubyMethod(name = "cover?", compat = CompatVersion.RUBY1_9)
+    public IRubyObject cover_p(ThreadContext context, IRubyObject obj) {
+        return include_p(context, obj); // 1.8 "include?"
     }
 
     @JRubyMethod(name = "min", frame = true, compat = CompatVersion.RUBY1_9)
