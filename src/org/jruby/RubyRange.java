@@ -43,6 +43,7 @@ import java.util.List;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
@@ -504,6 +505,39 @@ public class RubyRange extends RubyObject {
             }
             return end;
         }
+    }
+
+    @JRubyMethod(name = "first", compat = CompatVersion.RUBY1_9)
+    public IRubyObject first(ThreadContext context) {
+        return begin;
+    }
+
+    @JRubyMethod(name = "first", compat = CompatVersion.RUBY1_9)
+    public IRubyObject first(ThreadContext context, IRubyObject arg) {
+        final Ruby runtime = context.getRuntime();
+        final int num = RubyNumeric.num2int(arg);
+        final RubyArray result = runtime.newArray(num);
+        try {
+            RubyEnumerable.callEach(runtime, context, this, new BlockCallback() {
+                long n = num;
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                    if (n-- <= 0) throw JumpException.SPECIAL_JUMP;
+                    result.append(largs[0]);
+                    return runtime.getNil();
+                }
+            });
+        } catch (JumpException.SpecialJump sj) {}
+        return result;
+    }
+
+    @JRubyMethod(name = "last", compat = CompatVersion.RUBY1_9)
+    public IRubyObject last(ThreadContext context) {
+        return end;
+    }
+
+    @JRubyMethod(name = "last", compat = CompatVersion.RUBY1_9)
+    public IRubyObject last(ThreadContext context, IRubyObject arg) {
+        return ((RubyArray)RubyKernel.new_array(context, this, this)).last(arg);
     }
 
     private static final ObjectMarshal RANGE_MARSHAL = new ObjectMarshal() {
