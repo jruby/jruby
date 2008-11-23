@@ -126,7 +126,7 @@ public class DefsNode extends MethodDefNode implements INameNode {
             newMethod = new InterpretedMethod(rubyClass, name, scope, body, argsNode,
                     Visibility.PUBLIC, getPosition());
         } else  {
-            newMethod = new DefaultMethod(rubyClass, name, scope, body, argsNode,
+            newMethod = new DefaultMethod(rubyClass, scope, body, argsNode,
                     Visibility.PUBLIC, getPosition());
         }
    

@@ -111,7 +111,7 @@ public class DefnNode extends MethodDefNode implements INameNode {
         if (runtime.getInstanceConfig().getCompileMode() == CompileMode.OFF || runtime.getInstanceConfig().getCompatVersion() == CompatVersion.RUBY1_9) {
             newMethod = new InterpretedMethod(containingClass, name, scope, body, argsNode, visibility, getPosition());
         } else {
-            newMethod = new DefaultMethod(containingClass, name, scope, body, argsNode, visibility, getPosition());
+            newMethod = new DefaultMethod(containingClass, scope, body, argsNode, visibility, getPosition());
         }
    
         containingClass.addMethod(name, newMethod);

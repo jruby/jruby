@@ -42,7 +42,6 @@ import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.JITMethod;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ClassCache;
@@ -151,10 +150,10 @@ public class JITCompiler implements JITCompilerMBean {
 
             if (instanceConfig.isJitLogging()) log(method, name, "done jitting");
 
-            DynamicMethod newMethod = new JITMethod(method, jitCompiledScript, generator.callConfig());
-            method.getImplementationClass().addMethodInternal(name, newMethod);
+            method.setJITCallConfig(generator.callConfig());
+            method.setJITCompiledScript(jitCompiledScript);
             method.setCallCount(-1);
-            return newMethod;
+            return null;
         } catch (Throwable t) {
             t.printStackTrace();
             if (instanceConfig.isJitLoggingVerbose()) log(method, name, "could not compile", t.getMessage());
