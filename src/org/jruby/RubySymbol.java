@@ -211,6 +211,86 @@ public class RubySymbol extends RubyObject {
         return this;
     }
 
+    private RubyString newShared(Ruby runtime) {
+        return RubyString.newStringShared(runtime, symbolBytes);
+    }
+
+    @JRubyMethod(name = {"succ", "next"}, compat = CompatVersion.RUBY1_9)
+    public IRubyObject succ(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        return newSymbol(runtime, newShared(runtime).succ(context).toString());
+    }
+
+    @JRubyMethod(name = "<=>", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
+        Ruby runtime = context.getRuntime();
+        if (other instanceof RubySymbol) {
+            return (newShared(runtime).op_cmp(context, ((RubySymbol)other).newShared(runtime)));
+        }
+        return runtime.getNil();
+    }
+
+    @JRubyMethod(name = "casecmp", compat = CompatVersion.RUBY1_9)
+    public IRubyObject casecmp(ThreadContext context, IRubyObject other) {
+        Ruby runtime = context.getRuntime();
+        if (other instanceof RubySymbol) {
+            return newShared(runtime).casecmp(((RubySymbol) other).newShared(runtime));
+        }
+        return runtime.getNil();
+    }
+
+    @JRubyMethod(name = {"=~", "match"}, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_match(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        return newSymbol(runtime, newShared(runtime).succ(context).toString());
+    }
+
+    @JRubyMethod(name = {"[]", "slice"}, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
+        Ruby runtime = context.getRuntime();
+        return newShared(runtime).op_aref(context, arg);
+    }
+
+    @JRubyMethod(name = {"[]", "slice"}, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_aref(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
+        Ruby runtime = context.getRuntime();
+        return newShared(runtime).op_aref(context, arg1, arg2);
+    }
+
+    @JRubyMethod(name = {"length", "size"}, compat = CompatVersion.RUBY1_9)
+    public IRubyObject length() {
+        return newShared(getRuntime()).length();
+    }
+
+    @JRubyMethod(name = "empty?", compat = CompatVersion.RUBY1_9)
+    public IRubyObject empty_p(ThreadContext context) {
+        return newShared(context.getRuntime()).empty_p(context);
+    }
+
+    @JRubyMethod(name = "upcase", compat = CompatVersion.RUBY1_9)
+    public IRubyObject upcase(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        return newSymbol(runtime, newShared(runtime).upcase(context).toString());
+    }
+
+    @JRubyMethod(name = "downcase", compat = CompatVersion.RUBY1_9)
+    public IRubyObject downcase(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        return newSymbol(runtime, newShared(runtime).downcase(context).toString());
+    }
+
+    @JRubyMethod(name = "capitalize", compat = CompatVersion.RUBY1_9)
+    public IRubyObject capitalize(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        return newSymbol(runtime, newShared(runtime).capitalize(context).toString());
+    }
+
+    @JRubyMethod(name = "swapcase", compat = CompatVersion.RUBY1_9)
+    public IRubyObject swapcase(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        return newSymbol(runtime, newShared(runtime).swapcase(context).toString());
+    }
+
     @JRubyMethod(name = "encoding", compat = CompatVersion.RUBY1_9)
     public IRubyObject encoding(ThreadContext context) {
         return context.getRuntime().getEncodingService().getEncoding(symbolBytes.encoding);
