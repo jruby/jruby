@@ -585,7 +585,7 @@ public class RubyFixnum extends RubyInteger {
             if (a == 0) return RubyFixnum.zero(runtime);
             if (a == 1) return RubyFixnum.one(runtime);
             if (a == -1) {
-                return RubyInteger.even_p(context, other).isTrue() ? RubyFixnum.one(runtime) : RubyFixnum.minus_one(runtime);
+                return ((RubyBignum)other).even_p(context).isTrue() ? RubyFixnum.one(runtime) : RubyFixnum.minus_one(runtime);
             }
             RubyBignum.newBignum(runtime, RubyBignum.fix2big(this)).op_pow(context, other);
         } else if (other instanceof RubyFloat) {
