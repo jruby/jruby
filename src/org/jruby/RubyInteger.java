@@ -314,6 +314,16 @@ public abstract class RubyInteger extends RubyNumeric {
         return context.getRuntime().newArray(f_gcd(context, this, other), f_lcm(context, this, other));
     }
 
+    @JRubyMethod(name = "numerator", compat = CompatVersion.RUBY1_9)
+    public IRubyObject numerator(ThreadContext context) {
+        return this;
+    }
+
+    @JRubyMethod(name = "denominator", compat = CompatVersion.RUBY1_9)
+    public IRubyObject denominator(ThreadContext context) {
+        return RubyFixnum.one(context.getRuntime());
+    }
+
     /*  ================
      *  Singleton Methods
      *  ================ 
