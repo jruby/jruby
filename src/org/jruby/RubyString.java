@@ -159,7 +159,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
     
     public final boolean isCodeRangeAsciiOnly() {
-        return (flags & CODERANGE_7BIT) != 0;
+        return getCodeRange() == CODERANGE_7BIT;
     }
 
     public final boolean isCodeRangeValid() {
@@ -168,6 +168,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     public final boolean isCodeRangeBroken() {
         return (flags & CODERANGE_BROKEN) != 0;
+    }
+
+    private final boolean singleByteOptimizable() {
+        return getCodeRange() == CODERANGE_7BIT || value.encoding.isSingleByte();
     }
 
     /** short circuit for String key comparison
