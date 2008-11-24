@@ -2283,10 +2283,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 if (strSpat.value.bytes[strSpat.value.begin] == (byte) ' ') {
                     result = awkSplit(limit, lim, i);
                 } else {
-                    result = split(context, spat, limit, lim, i);
+                    result = regexSplit(context, spat, limit, lim, i);
                 }
             } else {
-                result = split(context, spat, limit, lim, i);
+                result = regexSplit(context, spat, limit, lim, i);
             }
         }
 
@@ -2298,92 +2298,28 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         return result;
     }
-    
-    private RubyArray split(ThreadContext context, IRubyObject pat, boolean limit, int lim, int i) {
+
+    private RubyArray regexSplit(ThreadContext context, IRubyObject pat, boolean limit, int lim, int i) {
         Ruby runtime = context.getRuntime();
 
         final Regex regex = getPattern(pat, true).getPattern();
-        int beg, end, start;
 
         int begin = value.begin;
-        start = begin;
-        beg = 0;
-        
-        int range = begin + value.realSize;
-        byte[]bytes = value.bytes;
-        final Matcher matcher = regex.matcher(bytes, begin, range);
-        
-        boolean lastNull = false;
+        final Matcher matcher = regex.matcher(value.bytes, begin, begin + value.realSize);
+
         RubyArray result = runtime.newArray();
         final Encoding enc = regex.getEncoding();
-        
-        if (regex.numberOfCaptures() == 0) { // shorter path, no captures defined, no region will be returned 
-            while ((end = matcher.search(start, range, Option.NONE)) >= 0) {
-                if (start == end + begin && matcher.getBegin() == matcher.getEnd()) {
-                    if (value.realSize == 0) {
-                        result.append(newEmptyString(runtime, getMetaClass()));
-                        break;
-                    } else if (lastNull) {
-                        result.append(substr(runtime, beg, enc.length(bytes, begin + beg, range)));
-                        beg = start - begin;
-                    } else {
-                        if (start == range) {
-                            start++;
-                        } else {
-                            start += enc.length(bytes, start, range);
-                        }
-                        lastNull = true;
-                        continue;
-                    }
-                } else {
-                    result.append(substr(beg, end - beg));
-                    beg = matcher.getEnd();
-                    start = begin + matcher.getEnd();
-                }
-                lastNull = false;
-                if (limit && lim <= ++i) break;
-            }
+
+        final int beg;
+        if (regex.numberOfCaptures() == 0) { // shorter path, no captures defined, no region will be returned
+            beg = regexSplitNG(result, matcher, enc, limit, lim, i, runtime);
         } else {
-            while ((end = matcher.search(start, range, Option.NONE)) >= 0) {
-                final Region region = matcher.getRegion();
-                if (start == end + begin && region.beg[0] == region.end[0]) {
-                    if (value.realSize == 0) {                        
-                        result.append(newEmptyString(runtime, getMetaClass()));
-                        break;
-                    } else if (lastNull) {
-                        result.append(substr(beg, enc.length(bytes, begin + beg, range)));
-                        beg = start - begin;
-                    } else {
-                        if (start == range) {
-                            start++;
-                        } else {
-                            start += enc.length(bytes, start, range);
-                        }
-                        lastNull = true;
-                        continue;
-                    }                    
-                } else {
-                    result.append(substr(beg, end - beg));
-                    beg = start = region.end[0];
-                    start += begin;
-                }
-                lastNull = false;
-                
-                for (int idx=1; idx<region.numRegs; idx++) {
-                    if (region.beg[idx] == -1) continue;
-                    if (region.beg[idx] == region.end[idx]) {
-                        result.append(newEmptyString(runtime, getMetaClass()));
-                    } else {
-                        result.append(substr(region.beg[idx], region.end[idx] - region.beg[idx]));
-                    }
-                }
-                if (limit && lim <= ++i) break;
-            }
+            beg = regexSplit(result, matcher, enc, limit, lim, i, runtime);
         }
-        
+
         // only this case affects backrefs 
         context.getCurrentFrame().setBackRef(runtime.getNil());
-        
+
         if (value.realSize > 0 && (limit || value.realSize > beg || lim < 0)) {
             if (value.realSize == beg) {
                 result.append(newEmptyString(runtime, getMetaClass()));
@@ -2391,20 +2327,102 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 result.append(substr(beg, value.realSize - beg));
             }
         }
-        
+
         return result;
     }
-    
+
+    private int regexSplit(RubyArray result, Matcher matcher, Encoding enc, boolean limit, int lim, int i, Ruby runtime) {
+        byte[]bytes = value.bytes;
+        int begin = value.begin;
+        int start = begin;
+        int range = begin + value.realSize;
+        int end, beg = 0;
+        boolean lastNull = false;
+
+        while ((end = matcher.search(start, range, Option.NONE)) >= 0) {
+            final Region region = matcher.getRegion();
+            if (start == end + begin && region.beg[0] == region.end[0]) {
+                if (value.realSize == 0) {                        
+                    result.append(newEmptyString(runtime, getMetaClass()));
+                    break;
+                } else if (lastNull) {
+                    result.append(substr(beg, enc.length(bytes, begin + beg, range)));
+                    beg = start - begin;
+                } else {
+                    if (start == range) {
+                        start++;
+                    } else {
+                        start += enc.length(bytes, start, range);
+                    }
+                    lastNull = true;
+                    continue;
+                }                    
+            } else {
+                result.append(substr(beg, end - beg));
+                beg = start = region.end[0];
+                start += begin;
+            }
+            lastNull = false;
+            
+            for (int idx=1; idx<region.numRegs; idx++) {
+                if (region.beg[idx] == -1) continue;
+                if (region.beg[idx] == region.end[idx]) {
+                    result.append(newEmptyString(runtime, getMetaClass()));
+                } else {
+                    result.append(substr(region.beg[idx], region.end[idx] - region.beg[idx]));
+                }
+            }
+            if (limit && lim <= ++i) break;
+        }
+        return beg;
+    }
+
+    private int regexSplitNG(RubyArray result, Matcher matcher, Encoding enc, boolean limit, int lim, int i, Ruby runtime) {
+        byte[]bytes = value.bytes;
+        int begin = value.begin;
+        int start = begin;
+        int range = begin + value.realSize;
+        int end, beg = 0;
+        boolean lastNull = false;
+
+        while ((end = matcher.search(start, range, Option.NONE)) >= 0) {
+            if (start == end + begin && matcher.getBegin() == matcher.getEnd()) {
+                if (value.realSize == 0) {
+                    result.append(newEmptyString(runtime, getMetaClass()));
+                    break;
+                } else if (lastNull) {
+                    result.append(substr(runtime, beg, enc.length(bytes, begin + beg, range)));
+                    beg = start - begin;
+                } else {
+                    if (start == range) {
+                        start++;
+                    } else {
+                        start += enc.length(bytes, start, range);
+                    }
+                    lastNull = true;
+                    continue;
+                }
+            } else {
+                result.append(substr(beg, end - beg));
+                beg = matcher.getEnd();
+                start = begin + matcher.getEnd();
+            }
+            lastNull = false;
+            if (limit && lim <= ++i) break;
+        }
+        return beg;
+    }
+
     private RubyArray awkSplit(boolean limit, int lim, int i) {
         Ruby runtime = getRuntime();
         RubyArray result = runtime.newArray();
-        
+
         byte[]bytes = value.bytes;
         int p = value.begin; 
         int endp = p + value.realSize;
-                    
+
         boolean skip = true;
-        
+
         int end, beg = 0;        
         for (end = beg = 0; p < endp; p++) {
             if (skip) {
@@ -2426,7 +2444,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 }
             }
         }
-        
+
         if (value.realSize > 0 && (limit || value.realSize > beg || lim < 0)) {
             if (value.realSize == beg) {
                 result.append(newEmptyString(runtime, getMetaClass()));
