@@ -8,20 +8,25 @@ def bench_colon(bm)
     class ::Object
       module Foo
         def self.a; end
-        module Bar; end
+        module Bar; module Gar; module Har; end; end; end
         $bm.report("control, const access directly") do
           1_000_000.times do
             Foo; Bar; Foo; Bar; Foo; Bar; Foo; Bar; Foo; Bar; Foo; Bar; Foo; Bar; Foo; Bar; Foo; Bar; Foo; Bar
           end
         end
-        $bm.report("1m colon2 (constant)") do
+        $bm.report("1m colon2 (constant 2)") do
           1_000_000.times do
             Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar
           end
         end
-        $bm.report("1m colon2 (method)") do
+        $bm.report("1m colon2 (constant 3)") do
           1_000_000.times do
-            Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar
+            Foo::Bar::Gar; Foo::Bar::Gar; Foo::Bar::Gar; Foo::Bar::Gar; Foo::Bar::Gar; Foo::Bar::Gar; Foo::Bar::Gar; Foo::Bar::Gar; Foo::Bar::Gar; Foo::Bar::Gar
+          end
+        end
+        $bm.report("1m colon2 (constant 4)") do
+          1_000_000.times do
+            Foo::Bar::Gar::Har; Foo::Bar::Gar::Har; Foo::Bar::Gar::Har; Foo::Bar::Gar::Har; Foo::Bar::Gar::Har; Foo::Bar::Gar::Har; Foo::Bar::Gar::Har; Foo::Bar::Gar::Har; Foo::Bar::Gar::Har; Foo::Bar::Gar::Har
           end
         end
       end
