@@ -1301,9 +1301,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "sub!", frame = true, reads = BACKREF, writes = BACKREF)
     public IRubyObject sub_bang(ThreadContext context, IRubyObject arg0, Block block) {
         if (block.isGiven()) {
-            RubyRegexp rubyRegex = getPattern(arg0, true);
-            Regex regex = rubyRegex.getPattern();
-            return subBangCommon(regex, context, true, rubyRegex, block, null, false);
+            return subBangIter(context, getPattern(arg0, true), block);
         } else {
             throw context.getRuntime().newArgumentError("wrong number of arguments (1 for 2)");
         }
@@ -1314,74 +1312,82 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "sub!", frame = true, reads = BACKREF, writes = BACKREF)
     public IRubyObject sub_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        RubyString repl = arg1.convertToString();
-        RubyRegexp rubyRegex = getPattern(arg0, true);
-        Regex regex = rubyRegex.getPattern();
-        return subBangCommon(regex, context, false, rubyRegex, block, repl, repl.isTaint());
+        return subBangNoIter(context, getPattern(arg0, true), arg1.convertToString());
     }
 
-    private IRubyObject subBangCommon(Regex regex, ThreadContext context, final boolean iter, RubyRegexp rubyRegex, Block block, RubyString repl, boolean tainted) {
-
+    private IRubyObject subBangIter(ThreadContext context, RubyRegexp rubyRegex, Block block) {
+        Regex regex = rubyRegex.getPattern();
         int range = value.begin + value.realSize;
         Matcher matcher = regex.matcher(value.bytes, value.begin, range);
 
         Frame frame = context.getPreviousFrame();
         if (matcher.search(value.begin, range, Option.NONE) >= 0) {
-            if (iter) {
-                byte[] bytes = value.bytes;
-                int size = value.realSize;
-                RubyMatchData match = rubyRegex.updateBackRef(context, this, frame, matcher);
-                match.use();
-                if (regex.numberOfCaptures() == 0) {
-                    repl = objAsString(context, block.yield(context, substr(matcher.getBegin(), matcher.getEnd() - matcher.getBegin())));
-                } else {
-                    Region region = matcher.getRegion();
-                    repl = objAsString(context, block.yield(context, substr(region.beg[0], region.end[0] - region.beg[0])));
-                }
-                modifyCheck(bytes, size);
-                frozenCheck();
-                frame.setBackRef(match);
-            } else {
-                repl = rubyRegex.regsub(repl, this, matcher);
-                rubyRegex.updateBackRef(context, this, frame, matcher);
-            }
-
-            final int beg;
-            final int plen;
+            byte[] bytes = value.bytes;
+            int size = value.realSize;
+            RubyMatchData match = rubyRegex.updateBackRef(context, this, frame, matcher);
+            match.use();
+            final RubyString repl;
             if (regex.numberOfCaptures() == 0) {
-                beg = matcher.getBegin();
-                plen = matcher.getEnd() - beg;
+                repl = objAsString(context, block.yield(context, substr(matcher.getBegin(), matcher.getEnd() - matcher.getBegin())));
             } else {
                 Region region = matcher.getRegion();
-                beg = region.beg[0];
-                plen = region.end[0] - beg;
+                repl = objAsString(context, block.yield(context, substr(region.beg[0], region.end[0] - region.beg[0])));
             }
-
-            ByteList replValue = repl.value;
-            if (replValue.realSize > plen) {
-                modify(value.realSize + replValue.realSize - plen);
-            } else {
-                modify();
-            }
-            if (repl.isTaint()) {
-                tainted = true;
-            }
-            if (replValue.realSize != plen) {
-                int src = value.begin + beg + plen;
-                int dst = value.begin + beg + replValue.realSize;
-                int length = value.realSize - beg - plen;
-                System.arraycopy(value.bytes, src, value.bytes, dst, length);
-            }
-            System.arraycopy(replValue.bytes, replValue.begin, value.bytes, value.begin + beg, replValue.realSize);
-            value.realSize += replValue.realSize - plen;
-            if (tainted) {
-                setTaint(true);
-            }
-            return this;
+            modifyCheck(bytes, size);
+            frozenCheck();
+            frame.setBackRef(match);            
+            return subBangCommon(context, regex, matcher, repl, false);
         } else {
-            frame.setBackRef(context.getRuntime().getNil());
-            return context.getRuntime().getNil();
+            return frame.setBackRef(context.getRuntime().getNil());
         }
+    }
+
+    private IRubyObject subBangNoIter(ThreadContext context, RubyRegexp rubyRegex, RubyString repl) {
+        boolean tained = repl.isTaint();
+        Regex regex = rubyRegex.getPattern();
+        int range = value.begin + value.realSize;
+        Matcher matcher = regex.matcher(value.bytes, value.begin, range);
+
+        Frame frame = context.getPreviousFrame();
+        if (matcher.search(value.begin, range, Option.NONE) >= 0) {
+            repl = rubyRegex.regsub(repl, this, matcher);
+            rubyRegex.updateBackRef(context, this, frame, matcher);
+            return subBangCommon(context, regex, matcher, repl, tained);
+        } else {
+            return frame.setBackRef(context.getRuntime().getNil());
+        }
+    }
+
+    private IRubyObject subBangCommon(ThreadContext context, Regex regex, Matcher matcher, RubyString repl, boolean tainted) {
+        final int beg;
+        final int plen;
+        if (regex.numberOfCaptures() == 0) {
+            beg = matcher.getBegin();
+            plen = matcher.getEnd() - beg;
+        } else {
+            Region region = matcher.getRegion();
+            beg = region.beg[0];
+            plen = region.end[0] - beg;
+        }
+
+        ByteList replValue = repl.value;
+        if (replValue.realSize > plen) {
+            modify(value.realSize + replValue.realSize - plen);
+        } else {
+            modify();
+        }
+        if (repl.isTaint()) tainted = true;
+
+        if (replValue.realSize != plen) {
+            int src = value.begin + beg + plen;
+            int dst = value.begin + beg + replValue.realSize;
+            int length = value.realSize - beg - plen;
+            System.arraycopy(value.bytes, src, value.bytes, dst, length);
+        }
+        System.arraycopy(replValue.bytes, replValue.begin, value.bytes, value.begin + beg, replValue.realSize);
+        value.realSize += replValue.realSize - plen;
+        if (tainted) setTaint(true);
+        return this;
     }
 
     /**
@@ -1450,84 +1456,65 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private final IRubyObject gsub(ThreadContext context, IRubyObject arg0, Block block, final boolean bang) {
         if (block.isGiven()) {
-            RubyRegexp rubyRegex = getPattern(arg0, true);
-            Regex regex = rubyRegex.getPattern();
-            return gsubCommon(regex, context, bang, true, rubyRegex, block, null, false);
+            return gsubCommon(context, bang, getPattern(arg0, true), block, null, false);
         } else {
             throw context.getRuntime().newArgumentError("wrong number of arguments (1 for 2)");
         }
     }
 
     private final IRubyObject gsub(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block, final boolean bang) {
-        IRubyObject repl = arg1.convertToString();
-        RubyRegexp rubyRegex = getPattern(arg0, true);
-        Regex regex = rubyRegex.getPattern();
-        return gsubCommon(regex, context, bang, false, rubyRegex, block, repl, repl.isTaint());
+        RubyString repl = arg1.convertToString();
+        return gsubCommon(context, bang, getPattern(arg0, true), block, repl, repl.isTaint());
     }
 
-    private IRubyObject gsubCommon(Regex regex, ThreadContext context, final boolean bang, final boolean iter, RubyRegexp rubyRegex, Block block, IRubyObject repl, boolean tainted) {
+    private IRubyObject gsubCommon(ThreadContext context, final boolean bang, RubyRegexp rubyRegex, Block block, RubyString repl, boolean tainted) {
+        Ruby runtime = context.getRuntime();
+        Regex regex = rubyRegex.getPattern();
+        Frame frame = context.getPreviousFrame();
 
         int begin = value.begin;
         int range = begin + value.realSize;
         Matcher matcher = regex.matcher(value.bytes, begin, range);
 
         int beg = matcher.search(begin, range, Option.NONE);
-
-        Frame frame = context.getPreviousFrame();
-
         if (beg < 0) {
-            frame.setBackRef(context.getRuntime().getNil());
-            return bang ? context.getRuntime().getNil() : strDup(context.getRuntime()); /* bang: true, no match, no substitution */
+            frame.setBackRef(runtime.getNil());
+            return bang ? runtime.getNil() : strDup(runtime); /* bang: true, no match, no substitution */
         }
 
         int blen = value.realSize + 30; /* len + margin */
         ByteList dest = new ByteList(blen);
         dest.realSize = blen;
-        int buf = 0;
-        int bp = 0;
-        int cp = begin;
-
-        int offset = 0;
-        RubyString val;
+        int offset = 0, buf = 0, bp = 0, cp = begin;
 
         RubyMatchData match = null;
         while (beg >= 0) {
+            final RubyString val;
             final int begz;
             final int endz;
-            if (iter) {
+            if (regex.numberOfCaptures() == 0) {
+                begz = matcher.getBegin();
+                endz = matcher.getEnd();
+            } else {
+                Region region = matcher.getRegion();
+                begz = region.beg[0];
+                endz = region.end[0];
+            }
+
+            if (repl == null) { // block given
                 byte[] bytes = value.bytes;
                 int size = value.realSize;
                 match = rubyRegex.updateBackRef(context, this, frame, matcher);
                 match.use();
-                if (regex.numberOfCaptures() == 0) {
-                    begz = matcher.getBegin();
-                    endz = matcher.getEnd();
-                    val = objAsString(context, block.yield(context, substr(context.getRuntime(), begz, endz - begz)));
-                } else {
-                    Region region = matcher.getRegion();
-                    begz = region.beg[0];
-                    endz = region.end[0];
-                    val = objAsString(context, block.yield(context, substr(context.getRuntime(), begz, endz - begz)));
-                }
+                val = objAsString(context, block.yield(context, substr(runtime, begz, endz - begz)));
                 modifyCheck(bytes, size);
-                if (bang) {
-                    frozenCheck();
-                }
+                if (bang) frozenCheck();
             } else {
-                val = rubyRegex.regsub((RubyString) repl, this, matcher);
-                if (regex.numberOfCaptures() == 0) {
-                    begz = matcher.getBegin();
-                    endz = matcher.getEnd();
-                } else {
-                    Region region = matcher.getRegion();
-                    begz = region.beg[0];
-                    endz = region.end[0];
-                }
+                val = rubyRegex.regsub(repl, this, matcher);
             }
 
-            if (val.isTaint()) {
-                tainted = true;
-            }
+            if (val.isTaint()) tainted = true;
+
             ByteList vbuf = val.value;
             int len = (bp - buf) + (beg - offset) + vbuf.realSize + 3;
             if (blen < len) {
@@ -1582,16 +1569,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
         dest.realSize = bp - buf;
         if (bang) {
             view(dest);
-            if (tainted) {
-                setTaint(true);
-            }
+            if (tainted) setTaint(true);
             return this;
         } else {
-            RubyString destStr = new RubyString(context.getRuntime(), getMetaClass(), dest);
+            RubyString destStr = new RubyString(runtime, getMetaClass(), dest);
             destStr.infectBy(this);
-            if (tainted) {
-                destStr.setTaint(true);
-            }
+            if (tainted) destStr.setTaint(true);
             return destStr;
         }
     }
