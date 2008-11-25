@@ -19,6 +19,11 @@ def bench_colon(bm)
             Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar; Foo::Bar
           end
         end
+        $bm.report("1m colon3 colon2 (constant)") do
+          1_000_000.times do
+            ::Foo::Bar; ::Foo::Bar; ::Foo::Bar; ::Foo::Bar; ::Foo::Bar; ::Foo::Bar; ::Foo::Bar; ::Foo::Bar; ::Foo::Bar; ::Foo::Bar
+          end
+        end
         $bm.report("1m colon2 (constant 3)") do
           1_000_000.times do
             Foo::Bar::Gar; Foo::Bar::Gar; Foo::Bar::Gar; Foo::Bar::Gar; Foo::Bar::Gar; Foo::Bar::Gar; Foo::Bar::Gar; Foo::Bar::Gar; Foo::Bar::Gar; Foo::Bar::Gar
