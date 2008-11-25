@@ -1401,9 +1401,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         Ruby runtime = context.getRuntime();
         RubyString fromStr = RubyString.stringValue(from);
         RubyString toStr = RubyString.stringValue(to);
+        String tovalue = toStr.getUnicodeValue();
+        tovalue = JRubyFile.create(runtime.getCurrentDirectory(), tovalue).getAbsolutePath();
         try {
             if (runtime.getPosix().symlink(
-                    fromStr.getUnicodeValue(), toStr.getUnicodeValue()) == -1) {
+                    fromStr.getUnicodeValue(), tovalue) == -1) {
                 // FIXME: When we get JNA3 we need to properly write this to errno.
                 throw runtime.newErrnoEEXISTError("File exists - " 
                                + fromStr + " or " + toStr);
