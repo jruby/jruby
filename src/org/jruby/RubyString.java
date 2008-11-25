@@ -40,6 +40,13 @@ package org.jruby;
 
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.anno.FrameField.LASTLINE;
+import static org.jruby.util.StringSupport.CODERANGE_7BIT;
+import static org.jruby.util.StringSupport.CODERANGE_BROKEN;
+import static org.jruby.util.StringSupport.CODERANGE_MASK;
+import static org.jruby.util.StringSupport.CODERANGE_VALID;
+import static org.jruby.util.StringSupport.strLengthWithCodeRange;
+import static org.jruby.util.StringSupport.unpackCodeRange;
+import static org.jruby.util.StringSupport.unpackLength;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Locale;
@@ -70,6 +77,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 import org.jruby.util.Pack;
 import org.jruby.util.Sprintf;
+import org.jruby.util.StringSupport;
 import org.jruby.util.string.JavaCrypt;
 
 /**
@@ -140,12 +148,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return entry.getEncoding();
     }
 
-    public static final int CODERANGE_MASK      = USER0_F | USER1_F;  
-    public static final int CODERANGE_UNKNOWN   = 0;
-    public static final int CODERANGE_7BIT      = USER0_F; 
-    public static final int CODERANGE_VALID     = USER1_F;
-    public static final int CODERANGE_BROKEN    = USER0_F | USER1_F;
-
     public final int getCodeRange() {
         return flags & CODERANGE_MASK;
     }
@@ -172,6 +174,24 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private final boolean singleByteOptimizable() {
         return getCodeRange() == CODERANGE_7BIT || value.encoding.isSingleByte();
+    }
+
+    private int strLength(Encoding enc) {
+        if (singleByteOptimizable()) return value.realSize;
+        value.encoding = enc;
+        return strLength(value);
+    }
+
+    private int strLength() {
+        if (singleByteOptimizable()) return value.realSize;
+        return strLength(value);
+    }
+
+    private int strLength(ByteList bytes) {
+        long lencr = strLengthWithCodeRange(value);
+        int cr = unpackCodeRange(lencr);
+        if (cr != 0) setCodeRange(cr);
+        return unpackLength(lencr);
     }
 
     /** short circuit for String key comparison
@@ -1189,11 +1209,20 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_length
      *
      */
-    @JRubyMethod(name = {"length", "size"})
+    @JRubyMethod(name = {"length", "size"}, compat = CompatVersion.RUBY1_8)
     public RubyFixnum length() {
-        return getRuntime().newFixnum(value.length());
+        return getRuntime().newFixnum(value.realSize);
     }
 
+    @JRubyMethod(name = {"length", "size"}, compat = CompatVersion.RUBY1_9)
+    public RubyFixnum length19() {
+        return getRuntime().newFixnum(strLength());
+    }
+
+    @JRubyMethod(name = "bytesize", compat = CompatVersion.RUBY1_9)
+    public RubyFixnum bytesize() {
+        return length(); // use 1.8 impl
+    }
     /** rb_str_empty
      *
      */
