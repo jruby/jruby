@@ -45,7 +45,6 @@ import org.jruby.ast.BreakNode;
 import org.jruby.ast.CaseNode;
 import org.jruby.ast.ClassNode;
 import org.jruby.ast.ClassVarNode;
-import org.jruby.ast.Colon2Node;
 import org.jruby.ast.Colon3Node;
 import org.jruby.ast.ConstDeclNode;
 import org.jruby.ast.DRegexpNode;
@@ -600,7 +599,7 @@ mlhs_node       : variable {
 
                     ISourcePosition position = support.union($1, $3);
 
-                    $$ = new ConstDeclNode(position, null, new Colon2Node(position, $1, (String) $3.getValue()), NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(position, null, support.new_colon2(position, $1, (String) $3.getValue()), NilImplicitNode.NIL);
                 }
                 | tCOLON3 tCONSTANT {
                     if (support.isInDef() || support.isInSingle()) {
@@ -609,7 +608,7 @@ mlhs_node       : variable {
 
                     ISourcePosition position = support.union($1, $2);
 
-                    $$ = new ConstDeclNode(position, null, new Colon3Node(position, (String) $2.getValue()), NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(position, null, support.new_colon3(position, (String) $2.getValue()), NilImplicitNode.NIL);
                 }
                 | backref {
                     support.backrefAssignError($1);
@@ -638,7 +637,7 @@ lhs             : variable {
 
                     ISourcePosition position = support.union($1, $3);
 
-                    $$ = new ConstDeclNode(position, null, new Colon2Node(position, $1, (String) $3.getValue()), NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(position, null, support.new_colon2(position, $1, (String) $3.getValue()), NilImplicitNode.NIL);
                 }
                 | tCOLON3 tCONSTANT {
                     if (support.isInDef() || support.isInSingle()) {
@@ -647,7 +646,7 @@ lhs             : variable {
 
                     ISourcePosition position = support.union($1, $2);
 
-                    $$ = new ConstDeclNode(position, null, new Colon3Node(position, (String) $2.getValue()), NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(position, null, support.new_colon3(position, (String) $2.getValue()), NilImplicitNode.NIL);
                 }
                 | backref {
                     support.backrefAssignError($1);
@@ -659,13 +658,13 @@ cname           : tIDENTIFIER {
                 | tCONSTANT
 
 cpath           : tCOLON3 cname {
-                    $$ = new Colon3Node(support.union($1, $2), (String) $2.getValue());
+                    $$ = support.new_colon3(support.union($1, $2), (String) $2.getValue());
                 }
                 | cname {
-                    $$ = new Colon2Node($1.getPosition(), null, (String) $1.getValue());
+                    $$ = support.new_colon2($1.getPosition(), null, (String) $1.getValue());
                 }
                 | primary_value tCOLON2 cname {
-                    $$ = new Colon2Node(support.union($1, $3), $1, (String) $3.getValue());
+                    $$ = support.new_colon2(support.union($1, $3), $1, (String) $3.getValue());
                 }
 
 // Token:fname - A function name [!null]
@@ -969,6 +968,7 @@ args            : arg_value {
                     $$ = support.newArrayNode(getPosition2($1), $1);
                 }
                 | tSTAR arg_value {
+// Newline this
                     $$ = support.newSplatNode(support.union($1, $2), $2);
                 }
                 | args ',' arg_value {
@@ -1043,10 +1043,10 @@ primary         : literal
                     $$ = $2;
                 }
                 | primary_value tCOLON2 tCONSTANT {
-                    $$ = new Colon2Node(support.union($1, $3), $1, (String) $3.getValue());
+                    $$ = support.new_colon2(support.union($1, $3), $1, (String) $3.getValue());
                 }
                 | tCOLON3 tCONSTANT {
-                    $$ = new Colon3Node(support.union($1, $2), (String) $2.getValue());
+                    $$ = support.new_colon3(support.union($1, $2), (String) $2.getValue());
                 }
                 | tLBRACK aref_args tRBRACK {
                     ISourcePosition position = support.union($1, $3);

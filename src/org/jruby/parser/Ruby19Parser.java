@@ -48,7 +48,6 @@ import org.jruby.ast.BreakNode;
 import org.jruby.ast.CaseNode;
 import org.jruby.ast.ClassNode;
 import org.jruby.ast.ClassVarNode;
-import org.jruby.ast.Colon2Node;
 import org.jruby.ast.Colon3Node;
 import org.jruby.ast.ConstDeclNode;
 import org.jruby.ast.DRegexpNode;
@@ -143,7 +142,7 @@ public class Ruby19Parser implements RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 147 "-"
+					// line 146 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -951,14 +950,14 @@ public class Ruby19Parser implements RubyParser {
         yyVal = yyDefault(yyV > yyTop ? null : yyVals[yyV]);
         switch (yyN) {
 case 1:
-					// line 275 "Ruby19Parser.y"
+					// line 274 "Ruby19Parser.y"
   {
                   lexer.setState(LexState.EXPR_BEG);
                   support.initTopLocalVariables();
               }
   break;
 case 2:
-					// line 278 "Ruby19Parser.y"
+					// line 277 "Ruby19Parser.y"
   {
   /* ENEBO: Removed !compile_for_eval which probably is to reduce warnings*/
                   if (((Node)yyVals[0+yyTop]) != null) {
@@ -973,7 +972,7 @@ case 2:
               }
   break;
 case 3:
-					// line 291 "Ruby19Parser.y"
+					// line 290 "Ruby19Parser.y"
   {
                   Node node = ((Node)yyVals[-3+yyTop]);
 
@@ -992,7 +991,7 @@ case 3:
                 }
   break;
 case 4:
-					// line 308 "Ruby19Parser.y"
+					// line 307 "Ruby19Parser.y"
   {
                     if (((Node)yyVals[-1+yyTop]) instanceof BlockNode) {
                         support.checkUselessStatements(((BlockNode)yyVals[-1+yyTop]));
@@ -1001,73 +1000,73 @@ case 4:
                 }
   break;
 case 6:
-					// line 316 "Ruby19Parser.y"
+					// line 315 "Ruby19Parser.y"
   {
                     yyVal = support.newline_node(((Node)yyVals[0+yyTop]), getPosition(((Node)yyVals[0+yyTop]), true));
                 }
   break;
 case 7:
-					// line 319 "Ruby19Parser.y"
+					// line 318 "Ruby19Parser.y"
   {
                     yyVal = support.appendToBlock(((Node)yyVals[-2+yyTop]), support.newline_node(((Node)yyVals[0+yyTop]), getPosition(((Node)yyVals[0+yyTop]), true)));
                 }
   break;
 case 8:
-					// line 322 "Ruby19Parser.y"
+					// line 321 "Ruby19Parser.y"
   {
                     yyVal = ((Node)yyVals[0+yyTop]);
                 }
   break;
 case 9:
-					// line 326 "Ruby19Parser.y"
+					// line 325 "Ruby19Parser.y"
   {
                     lexer.setState(LexState.EXPR_FNAME);
                 }
   break;
 case 10:
-					// line 328 "Ruby19Parser.y"
+					// line 327 "Ruby19Parser.y"
   {
                     yyVal = new AliasNode(support.union(((Token)yyVals[-3+yyTop]), ((Token)yyVals[0+yyTop])), (String) ((Token)yyVals[-2+yyTop]).getValue(), (String) ((Token)yyVals[0+yyTop]).getValue());
                 }
   break;
 case 11:
-					// line 331 "Ruby19Parser.y"
+					// line 330 "Ruby19Parser.y"
   {
                     yyVal = new VAliasNode(getPosition(((Token)yyVals[-2+yyTop])), (String) ((Token)yyVals[-1+yyTop]).getValue(), (String) ((Token)yyVals[0+yyTop]).getValue());
                 }
   break;
 case 12:
-					// line 334 "Ruby19Parser.y"
+					// line 333 "Ruby19Parser.y"
   {
                     yyVal = new VAliasNode(getPosition(((Token)yyVals[-2+yyTop])), (String) ((Token)yyVals[-1+yyTop]).getValue(), "$" + ((BackRefNode)yyVals[0+yyTop]).getType());
                 }
   break;
 case 13:
-					// line 337 "Ruby19Parser.y"
+					// line 336 "Ruby19Parser.y"
   {
                     yyerror("can't make alias for the number variables");
                 }
   break;
 case 14:
-					// line 340 "Ruby19Parser.y"
+					// line 339 "Ruby19Parser.y"
   {
                     yyVal = ((Node)yyVals[0+yyTop]);
                 }
   break;
 case 15:
-					// line 343 "Ruby19Parser.y"
+					// line 342 "Ruby19Parser.y"
   {
                     yyVal = new IfNode(support.union(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])), ((Node)yyVals[-2+yyTop]), null);
                 }
   break;
 case 16:
-					// line 346 "Ruby19Parser.y"
+					// line 345 "Ruby19Parser.y"
   {
                     yyVal = new IfNode(support.union(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])), null, ((Node)yyVals[-2+yyTop]));
                 }
   break;
 case 17:
-					// line 349 "Ruby19Parser.y"
+					// line 348 "Ruby19Parser.y"
   {
                     if (((Node)yyVals[-2+yyTop]) != null && ((Node)yyVals[-2+yyTop]) instanceof BeginNode) {
                         yyVal = new WhileNode(getPosition(((Node)yyVals[-2+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])), ((BeginNode)yyVals[-2+yyTop]).getBodyNode(), false);
@@ -1077,7 +1076,7 @@ case 17:
                 }
   break;
 case 18:
-					// line 356 "Ruby19Parser.y"
+					// line 355 "Ruby19Parser.y"
   {
                     if (((Node)yyVals[-2+yyTop]) != null && ((Node)yyVals[-2+yyTop]) instanceof BeginNode) {
                         yyVal = new UntilNode(getPosition(((Node)yyVals[-2+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])), ((BeginNode)yyVals[-2+yyTop]).getBodyNode(), false);
@@ -1087,14 +1086,14 @@ case 18:
                 }
   break;
 case 19:
-					// line 363 "Ruby19Parser.y"
+					// line 362 "Ruby19Parser.y"
   {
                     Node body = ((Node)yyVals[0+yyTop]) == null ? NilImplicitNode.NIL : ((Node)yyVals[0+yyTop]);
                     yyVal = new RescueNode(getPosition(((Node)yyVals[-2+yyTop])), ((Node)yyVals[-2+yyTop]), new RescueBodyNode(getPosition(((Node)yyVals[-2+yyTop])), null, body, null), null);
                 }
   break;
 case 20:
-					// line 367 "Ruby19Parser.y"
+					// line 366 "Ruby19Parser.y"
   {
                     if (support.isInDef() || support.isInSingle()) {
                         yyerror("BEGIN in method");
@@ -1103,7 +1102,7 @@ case 20:
                 }
   break;
 case 21:
-					// line 372 "Ruby19Parser.y"
+					// line 371 "Ruby19Parser.y"
   {
                     support.getResult().addBeginNode(new PreExeNode(getPosition(((Node)yyVals[-1+yyTop])), support.getCurrentScope(), ((Node)yyVals[-1+yyTop])));
                     support.popCurrentScope();
@@ -1111,7 +1110,7 @@ case 21:
                 }
   break;
 case 22:
-					// line 377 "Ruby19Parser.y"
+					// line 376 "Ruby19Parser.y"
   {
                     if (support.isInDef() || support.isInSingle()) {
                         warnings.warn(ID.END_IN_METHOD, getPosition(((Token)yyVals[-3+yyTop])), "END in method; use at_exit");
@@ -1120,14 +1119,14 @@ case 22:
                 }
   break;
 case 23:
-					// line 383 "Ruby19Parser.y"
+					// line 382 "Ruby19Parser.y"
   {
                     support.checkExpression(((Node)yyVals[0+yyTop]));
                     yyVal = support.node_assign(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
                 }
   break;
 case 24:
-					// line 387 "Ruby19Parser.y"
+					// line 386 "Ruby19Parser.y"
   {
                     support.checkExpression(((Node)yyVals[0+yyTop]));
                     ((MultipleAsgn19Node)yyVals[-2+yyTop]).setValueNode(((Node)yyVals[0+yyTop]));
@@ -1135,7 +1134,7 @@ case 24:
                 }
   break;
 case 25:
-					// line 392 "Ruby19Parser.y"
+					// line 391 "Ruby19Parser.y"
   {
                     support.checkExpression(((Node)yyVals[0+yyTop]));
 
@@ -1154,51 +1153,51 @@ case 25:
                 }
   break;
 case 26:
-					// line 408 "Ruby19Parser.y"
+					// line 407 "Ruby19Parser.y"
   {
   /* FIXME: arg_concat logic missing for opt_call_args*/
                     yyVal = support.new_opElementAsgnNode(getPosition(((Node)yyVals[-5+yyTop])), ((Node)yyVals[-5+yyTop]), (String) ((Token)yyVals[-1+yyTop]).getValue(), ((Node)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
                 }
   break;
 case 27:
-					// line 412 "Ruby19Parser.y"
+					// line 411 "Ruby19Parser.y"
   {
                     yyVal = new OpAsgnNode(getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((Node)yyVals[0+yyTop]), (String) ((Token)yyVals[-2+yyTop]).getValue(), (String) ((Token)yyVals[-1+yyTop]).getValue());
                 }
   break;
 case 28:
-					// line 415 "Ruby19Parser.y"
+					// line 414 "Ruby19Parser.y"
   {
                     yyVal = new OpAsgnNode(getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((Node)yyVals[0+yyTop]), (String) ((Token)yyVals[-2+yyTop]).getValue(), (String) ((Token)yyVals[-1+yyTop]).getValue());
                 }
   break;
 case 29:
-					// line 418 "Ruby19Parser.y"
+					// line 417 "Ruby19Parser.y"
   {
                     yyVal = new OpAsgnNode(getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((Node)yyVals[0+yyTop]), (String) ((Token)yyVals[-2+yyTop]).getValue(), (String) ((Token)yyVals[-1+yyTop]).getValue());
                 }
   break;
 case 30:
-					// line 421 "Ruby19Parser.y"
+					// line 420 "Ruby19Parser.y"
   {
                     support.backrefAssignError(((Node)yyVals[-2+yyTop]));
                 }
   break;
 case 31:
-					// line 424 "Ruby19Parser.y"
+					// line 423 "Ruby19Parser.y"
   {
                     yyVal = support.node_assign(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
                 }
   break;
 case 32:
-					// line 427 "Ruby19Parser.y"
+					// line 426 "Ruby19Parser.y"
   {
                     ((MultipleAsgn19Node)yyVals[-2+yyTop]).setValueNode(((Node)yyVals[0+yyTop]));
                     yyVal = ((MultipleAsgn19Node)yyVals[-2+yyTop]);
                 }
   break;
 case 33:
-					// line 431 "Ruby19Parser.y"
+					// line 430 "Ruby19Parser.y"
   {
                     ((AssignableNode)yyVals[-2+yyTop]).setValueNode(((Node)yyVals[0+yyTop]));
                     yyVal = ((MultipleAsgn19Node)yyVals[-2+yyTop]);
@@ -1206,266 +1205,266 @@ case 33:
                 }
   break;
 case 36:
-					// line 440 "Ruby19Parser.y"
+					// line 439 "Ruby19Parser.y"
   {
                     yyVal = support.newAndNode(getPosition(((Token)yyVals[-1+yyTop])), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
                 }
   break;
 case 37:
-					// line 443 "Ruby19Parser.y"
+					// line 442 "Ruby19Parser.y"
   {
                     yyVal = support.newOrNode(getPosition(((Token)yyVals[-1+yyTop])), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
                 }
   break;
 case 38:
-					// line 446 "Ruby19Parser.y"
+					// line 445 "Ruby19Parser.y"
   {
                     yyVal = new NotNode(support.union(((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])));
                 }
   break;
 case 39:
-					// line 449 "Ruby19Parser.y"
+					// line 448 "Ruby19Parser.y"
   {
                     yyVal = new NotNode(support.union(((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])));
                 }
   break;
 case 41:
-					// line 454 "Ruby19Parser.y"
+					// line 453 "Ruby19Parser.y"
   {
                     support.checkExpression(((Node)yyVals[0+yyTop]));
                 }
   break;
 case 44:
-					// line 461 "Ruby19Parser.y"
+					// line 460 "Ruby19Parser.y"
   {
                     yyVal = new ReturnNode(support.union(((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop])), support.ret_args(((Node)yyVals[0+yyTop]), getPosition(((Token)yyVals[-1+yyTop]))));
                 }
   break;
 case 45:
-					// line 464 "Ruby19Parser.y"
+					// line 463 "Ruby19Parser.y"
   {
                     yyVal = new BreakNode(support.union(((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop])), support.ret_args(((Node)yyVals[0+yyTop]), getPosition(((Token)yyVals[-1+yyTop]))));
                 }
   break;
 case 46:
-					// line 467 "Ruby19Parser.y"
+					// line 466 "Ruby19Parser.y"
   {
                     yyVal = new NextNode(support.union(((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop])), support.ret_args(((Node)yyVals[0+yyTop]), getPosition(((Token)yyVals[-1+yyTop]))));
                 }
   break;
 case 48:
-					// line 473 "Ruby19Parser.y"
+					// line 472 "Ruby19Parser.y"
   {
                     yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
                 }
   break;
 case 49:
-					// line 476 "Ruby19Parser.y"
+					// line 475 "Ruby19Parser.y"
   {
                     yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
                 }
   break;
 case 50:
-					// line 481 "Ruby19Parser.y"
+					// line 480 "Ruby19Parser.y"
   {
                     support.pushBlockScope();
                 }
   break;
 case 51:
-					// line 483 "Ruby19Parser.y"
+					// line 482 "Ruby19Parser.y"
   {
                     yyVal = new IterNode(getPosition(((Token)yyVals[-4+yyTop])), ((ArgsNode)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]), support.getCurrentScope());
                     support.popCurrentScope();
                 }
   break;
 case 52:
-					// line 489 "Ruby19Parser.y"
+					// line 488 "Ruby19Parser.y"
   {
                     yyVal = support.new_fcall(((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
                 }
   break;
 case 53:
-					// line 492 "Ruby19Parser.y"
+					// line 491 "Ruby19Parser.y"
   {
                     yyVal = support.new_fcall(((Token)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]), ((IterNode)yyVals[0+yyTop]));
                 }
   break;
 case 54:
-					// line 495 "Ruby19Parser.y"
+					// line 494 "Ruby19Parser.y"
   {
                     yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
                 }
   break;
 case 55:
-					// line 498 "Ruby19Parser.y"
+					// line 497 "Ruby19Parser.y"
   {
                     yyVal = support.new_call(((Node)yyVals[-4+yyTop]), ((Token)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]), ((IterNode)yyVals[0+yyTop])); 
                 }
   break;
 case 56:
-					// line 501 "Ruby19Parser.y"
+					// line 500 "Ruby19Parser.y"
   {
                     yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
                 }
   break;
 case 57:
-					// line 504 "Ruby19Parser.y"
+					// line 503 "Ruby19Parser.y"
   {
                     yyVal = support.new_call(((Node)yyVals[-4+yyTop]), ((Token)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]), ((IterNode)yyVals[0+yyTop]));
                 }
   break;
 case 58:
-					// line 507 "Ruby19Parser.y"
+					// line 506 "Ruby19Parser.y"
   {
                     yyVal = support.new_super(((Node)yyVals[0+yyTop]), ((Token)yyVals[-1+yyTop])); /* .setPosFrom($2);*/
                 }
   break;
 case 59:
-					// line 510 "Ruby19Parser.y"
+					// line 509 "Ruby19Parser.y"
   {
                     yyVal = support.new_yield(support.union(((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop])), ((Node)yyVals[0+yyTop]));
                 }
   break;
 case 61:
-					// line 516 "Ruby19Parser.y"
+					// line 515 "Ruby19Parser.y"
   {
                     yyVal = ((Node)yyVals[-1+yyTop]);
                 }
   break;
 case 62:
-					// line 521 "Ruby19Parser.y"
+					// line 520 "Ruby19Parser.y"
   {
                     yyVal = ((MultipleAsgn19Node)yyVals[0+yyTop]);
                 }
   break;
 case 63:
-					// line 524 "Ruby19Parser.y"
+					// line 523 "Ruby19Parser.y"
   {
                     yyVal = new MultipleAsgn19Node(getPosition(((Token)yyVals[-2+yyTop])), support.newArrayNode(getPosition(((Token)yyVals[-2+yyTop])), ((Node)yyVals[-1+yyTop])), null, null);
                 }
   break;
 case 64:
-					// line 529 "Ruby19Parser.y"
+					// line 528 "Ruby19Parser.y"
   {
                     yyVal = new MultipleAsgn19Node(getPosition(((ListNode)yyVals[0+yyTop])), ((ListNode)yyVals[0+yyTop]), null, null);
                 }
   break;
 case 65:
-					// line 532 "Ruby19Parser.y"
+					// line 531 "Ruby19Parser.y"
   {
                     yyVal = new MultipleAsgn19Node(support.union(((Node)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop])), ((ListNode)yyVals[-1+yyTop]).add(((Node)yyVals[0+yyTop])), null, null);
                 }
   break;
 case 66:
-					// line 535 "Ruby19Parser.y"
+					// line 534 "Ruby19Parser.y"
   {
                     yyVal = new MultipleAsgn19Node(getPosition(((ListNode)yyVals[-2+yyTop])), ((ListNode)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]), (ListNode) null);
                 }
   break;
 case 67:
-					// line 538 "Ruby19Parser.y"
+					// line 537 "Ruby19Parser.y"
   {
                     yyVal = new MultipleAsgn19Node(getPosition(((ListNode)yyVals[-4+yyTop])), ((ListNode)yyVals[-4+yyTop]), ((Node)yyVals[-2+yyTop]), ((ListNode)yyVals[0+yyTop]));
                 }
   break;
 case 68:
-					// line 541 "Ruby19Parser.y"
+					// line 540 "Ruby19Parser.y"
   {
                     yyVal = new MultipleAsgn19Node(getPosition(((ListNode)yyVals[-1+yyTop])), ((ListNode)yyVals[-1+yyTop]), new StarNode(getPosition(null)), null);
                 }
   break;
 case 69:
-					// line 544 "Ruby19Parser.y"
+					// line 543 "Ruby19Parser.y"
   {
                     yyVal = new MultipleAsgn19Node(getPosition(((ListNode)yyVals[-3+yyTop])), ((ListNode)yyVals[-3+yyTop]), new StarNode(getPosition(null)), ((ListNode)yyVals[0+yyTop]));
                 }
   break;
 case 70:
-					// line 547 "Ruby19Parser.y"
+					// line 546 "Ruby19Parser.y"
   {
                     yyVal = new MultipleAsgn19Node(getPosition(((Token)yyVals[-1+yyTop])), null, ((Node)yyVals[0+yyTop]), null);
                 }
   break;
 case 71:
-					// line 550 "Ruby19Parser.y"
+					// line 549 "Ruby19Parser.y"
   {
                     yyVal = new MultipleAsgn19Node(getPosition(((Token)yyVals[-3+yyTop])), null, ((Node)yyVals[-2+yyTop]), ((ListNode)yyVals[0+yyTop]));
                 }
   break;
 case 72:
-					// line 553 "Ruby19Parser.y"
+					// line 552 "Ruby19Parser.y"
   {
                       yyVal = new MultipleAsgn19Node(getPosition(((Token)yyVals[0+yyTop])), null, new StarNode(getPosition(null)), null);
                 }
   break;
 case 73:
-					// line 556 "Ruby19Parser.y"
+					// line 555 "Ruby19Parser.y"
   {
                       yyVal = new MultipleAsgn19Node(getPosition(((Token)yyVals[-2+yyTop])), null, new StarNode(getPosition(null)), ((ListNode)yyVals[0+yyTop]));
                 }
   break;
 case 75:
-					// line 561 "Ruby19Parser.y"
+					// line 560 "Ruby19Parser.y"
   {
                     yyVal = ((Node)yyVals[-1+yyTop]);
                 }
   break;
 case 76:
-					// line 566 "Ruby19Parser.y"
+					// line 565 "Ruby19Parser.y"
   {
                     yyVal = support.newArrayNode(((Node)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop]));
                 }
   break;
 case 77:
-					// line 569 "Ruby19Parser.y"
+					// line 568 "Ruby19Parser.y"
   {
                     yyVal = ((ListNode)yyVals[-2+yyTop]).add(((Node)yyVals[-1+yyTop]));
                 }
   break;
 case 78:
-					// line 574 "Ruby19Parser.y"
+					// line 573 "Ruby19Parser.y"
   {
                     yyVal = support.newArrayNode(((Node)yyVals[0+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]));
                 }
   break;
 case 79:
-					// line 577 "Ruby19Parser.y"
+					// line 576 "Ruby19Parser.y"
   {
                     yyVal = ((ListNode)yyVals[-2+yyTop]).add(((Node)yyVals[0+yyTop]));
                 }
   break;
 case 80:
-					// line 581 "Ruby19Parser.y"
+					// line 580 "Ruby19Parser.y"
   {
                     yyVal = support.assignable(((Token)yyVals[0+yyTop]), NilImplicitNode.NIL);
                 }
   break;
 case 81:
-					// line 584 "Ruby19Parser.y"
+					// line 583 "Ruby19Parser.y"
   {
                     yyVal = support.aryset(((Node)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]));
                 }
   break;
 case 82:
-					// line 587 "Ruby19Parser.y"
+					// line 586 "Ruby19Parser.y"
   {
                     yyVal = support.attrset(((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
                 }
   break;
 case 83:
-					// line 590 "Ruby19Parser.y"
+					// line 589 "Ruby19Parser.y"
   {
                     yyVal = support.attrset(((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
                 }
   break;
 case 84:
-					// line 593 "Ruby19Parser.y"
+					// line 592 "Ruby19Parser.y"
   {
                     yyVal = support.attrset(((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
                 }
   break;
 case 85:
-					// line 596 "Ruby19Parser.y"
+					// line 595 "Ruby19Parser.y"
   {
                     if (support.isInDef() || support.isInSingle()) {
                         yyerror("dynamic constant assignment");
@@ -1473,11 +1472,11 @@ case 85:
 
                     ISourcePosition position = support.union(((Node)yyVals[-2+yyTop]), ((Token)yyVals[0+yyTop]));
 
-                    yyVal = new ConstDeclNode(position, null, new Colon2Node(position, ((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue()), NilImplicitNode.NIL);
+                    yyVal = new ConstDeclNode(position, null, support.new_colon2(position, ((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue()), NilImplicitNode.NIL);
                 }
   break;
 case 86:
-					// line 605 "Ruby19Parser.y"
+					// line 604 "Ruby19Parser.y"
   {
                     if (support.isInDef() || support.isInSingle()) {
                         yyerror("dynamic constant assignment");
@@ -1485,48 +1484,48 @@ case 86:
 
                     ISourcePosition position = support.union(((Token)yyVals[-1+yyTop]), ((Token)yyVals[0+yyTop]));
 
-                    yyVal = new ConstDeclNode(position, null, new Colon3Node(position, (String) ((Token)yyVals[0+yyTop]).getValue()), NilImplicitNode.NIL);
+                    yyVal = new ConstDeclNode(position, null, support.new_colon3(position, (String) ((Token)yyVals[0+yyTop]).getValue()), NilImplicitNode.NIL);
                 }
   break;
 case 87:
-					// line 614 "Ruby19Parser.y"
+					// line 613 "Ruby19Parser.y"
   {
                     support.backrefAssignError(((Node)yyVals[0+yyTop]));
                 }
   break;
 case 88:
-					// line 618 "Ruby19Parser.y"
+					// line 617 "Ruby19Parser.y"
   {
                       /* if (!($$ = assignable($1, 0))) $$ = NEW_BEGIN(0);*/
                     yyVal = support.assignable(((Token)yyVals[0+yyTop]), NilImplicitNode.NIL);
                 }
   break;
 case 89:
-					// line 622 "Ruby19Parser.y"
+					// line 621 "Ruby19Parser.y"
   {
                     yyVal = support.aryset(((Node)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]));
                 }
   break;
 case 90:
-					// line 625 "Ruby19Parser.y"
+					// line 624 "Ruby19Parser.y"
   {
                     yyVal = support.attrset(((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
                 }
   break;
 case 91:
-					// line 628 "Ruby19Parser.y"
+					// line 627 "Ruby19Parser.y"
   {
                     yyVal = support.attrset(((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
                 }
   break;
 case 92:
-					// line 631 "Ruby19Parser.y"
+					// line 630 "Ruby19Parser.y"
   {
                     yyVal = support.attrset(((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
                 }
   break;
 case 93:
-					// line 634 "Ruby19Parser.y"
+					// line 633 "Ruby19Parser.y"
   {
                     if (support.isInDef() || support.isInSingle()) {
                         yyerror("dynamic constant assignment");
@@ -1534,11 +1533,11 @@ case 93:
 
                     ISourcePosition position = support.union(((Node)yyVals[-2+yyTop]), ((Token)yyVals[0+yyTop]));
 
-                    yyVal = new ConstDeclNode(position, null, new Colon2Node(position, ((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue()), NilImplicitNode.NIL);
+                    yyVal = new ConstDeclNode(position, null, support.new_colon2(position, ((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue()), NilImplicitNode.NIL);
                 }
   break;
 case 94:
-					// line 643 "Ruby19Parser.y"
+					// line 642 "Ruby19Parser.y"
   {
                     if (support.isInDef() || support.isInSingle()) {
                         yyerror("dynamic constant assignment");
@@ -1546,97 +1545,97 @@ case 94:
 
                     ISourcePosition position = support.union(((Token)yyVals[-1+yyTop]), ((Token)yyVals[0+yyTop]));
 
-                    yyVal = new ConstDeclNode(position, null, new Colon3Node(position, (String) ((Token)yyVals[0+yyTop]).getValue()), NilImplicitNode.NIL);
+                    yyVal = new ConstDeclNode(position, null, support.new_colon3(position, (String) ((Token)yyVals[0+yyTop]).getValue()), NilImplicitNode.NIL);
                 }
   break;
 case 95:
-					// line 652 "Ruby19Parser.y"
+					// line 651 "Ruby19Parser.y"
   {
                     support.backrefAssignError(((Node)yyVals[0+yyTop]));
                 }
   break;
 case 96:
-					// line 656 "Ruby19Parser.y"
+					// line 655 "Ruby19Parser.y"
   {
                     yyerror("class/module name must be CONSTANT");
                 }
   break;
 case 98:
-					// line 661 "Ruby19Parser.y"
+					// line 660 "Ruby19Parser.y"
   {
-                    yyVal = new Colon3Node(support.union(((Token)yyVals[-1+yyTop]), ((Token)yyVals[0+yyTop])), (String) ((Token)yyVals[0+yyTop]).getValue());
+                    yyVal = support.new_colon3(support.union(((Token)yyVals[-1+yyTop]), ((Token)yyVals[0+yyTop])), (String) ((Token)yyVals[0+yyTop]).getValue());
                 }
   break;
 case 99:
-					// line 664 "Ruby19Parser.y"
+					// line 663 "Ruby19Parser.y"
   {
-                    yyVal = new Colon2Node(((Token)yyVals[0+yyTop]).getPosition(), null, (String) ((Token)yyVals[0+yyTop]).getValue());
+                    yyVal = support.new_colon2(((Token)yyVals[0+yyTop]).getPosition(), null, (String) ((Token)yyVals[0+yyTop]).getValue());
                 }
   break;
 case 100:
-					// line 667 "Ruby19Parser.y"
+					// line 666 "Ruby19Parser.y"
   {
-                    yyVal = new Colon2Node(support.union(((Node)yyVals[-2+yyTop]), ((Token)yyVals[0+yyTop])), ((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
+                    yyVal = support.new_colon2(support.union(((Node)yyVals[-2+yyTop]), ((Token)yyVals[0+yyTop])), ((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
                 }
   break;
 case 104:
-					// line 673 "Ruby19Parser.y"
+					// line 672 "Ruby19Parser.y"
   {
                    lexer.setState(LexState.EXPR_END);
                    yyVal = ((Token)yyVals[0+yyTop]);
                }
   break;
 case 105:
-					// line 677 "Ruby19Parser.y"
+					// line 676 "Ruby19Parser.y"
   {
                    lexer.setState(LexState.EXPR_END);
                    yyVal = ((Token)yyVals[0+yyTop]);
                }
   break;
 case 106:
-					// line 683 "Ruby19Parser.y"
+					// line 682 "Ruby19Parser.y"
   {
                     yyVal = ((Token)yyVals[0+yyTop]);
                 }
   break;
 case 107:
-					// line 686 "Ruby19Parser.y"
+					// line 685 "Ruby19Parser.y"
   {
                     yyVal = ((Token)yyVals[0+yyTop]);
                 }
   break;
 case 108:
-					// line 691 "Ruby19Parser.y"
+					// line 690 "Ruby19Parser.y"
   {
                     yyVal = ((Token)yyVals[0+yyTop]);
                 }
   break;
 case 109:
-					// line 694 "Ruby19Parser.y"
+					// line 693 "Ruby19Parser.y"
   {
                     yyVal = ((Node)yyVals[0+yyTop]);
                 }
   break;
 case 110:
-					// line 698 "Ruby19Parser.y"
+					// line 697 "Ruby19Parser.y"
   {
                     yyVal = new UndefNode(getPosition(((Token)yyVals[0+yyTop])), (String) ((Token)yyVals[0+yyTop]).getValue());
                 }
   break;
 case 111:
-					// line 701 "Ruby19Parser.y"
+					// line 700 "Ruby19Parser.y"
   {
                     lexer.setState(LexState.EXPR_FNAME);
                 }
   break;
 case 112:
-					// line 703 "Ruby19Parser.y"
+					// line 702 "Ruby19Parser.y"
   {
                     yyVal = support.appendToBlock(((Node)yyVals[-3+yyTop]), new UndefNode(getPosition(((Node)yyVals[-3+yyTop])), (String) ((Token)yyVals[0+yyTop]).getValue()));
                 }
   break;
 case 184:
-					// line 722 "Ruby19Parser.y"
+					// line 721 "Ruby19Parser.y"
   {
                     yyVal = support.node_assign(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
                     /* FIXME: Consider fixing node_assign itself rather than single case*/
@@ -1644,7 +1643,7 @@ case 184:
                 }
   break;
 case 185:
-					// line 727 "Ruby19Parser.y"
+					// line 726 "Ruby19Parser.y"
   {
                     ISourcePosition position = support.union(((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
                     Node body = ((Node)yyVals[0+yyTop]) == null ? NilImplicitNode.NIL : ((Node)yyVals[0+yyTop]);
@@ -1652,7 +1651,7 @@ case 185:
                 }
   break;
 case 186:
-					// line 732 "Ruby19Parser.y"
+					// line 731 "Ruby19Parser.y"
   {
                     support.checkExpression(((Node)yyVals[0+yyTop]));
                     String asgnOp = (String) ((Token)yyVals[-1+yyTop]).getValue();
@@ -1671,7 +1670,7 @@ case 186:
                 }
   break;
 case 187:
-					// line 748 "Ruby19Parser.y"
+					// line 747 "Ruby19Parser.y"
   {
                     support.checkExpression(((Node)yyVals[-2+yyTop]));
                     ISourcePosition position = support.union(((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
@@ -1693,50 +1692,50 @@ case 187:
                 }
   break;
 case 188:
-					// line 767 "Ruby19Parser.y"
+					// line 766 "Ruby19Parser.y"
   {
   /* FIXME: arg_concat missing for opt_call_args*/
                     yyVal = support.new_opElementAsgnNode(getPosition(((Node)yyVals[-5+yyTop])), ((Node)yyVals[-5+yyTop]), (String) ((Token)yyVals[-1+yyTop]).getValue(), ((Node)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
                 }
   break;
 case 189:
-					// line 771 "Ruby19Parser.y"
+					// line 770 "Ruby19Parser.y"
   {
                     yyVal = new OpAsgnNode(getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((Node)yyVals[0+yyTop]), (String) ((Token)yyVals[-2+yyTop]).getValue(), (String) ((Token)yyVals[-1+yyTop]).getValue());
                 }
   break;
 case 190:
-					// line 774 "Ruby19Parser.y"
+					// line 773 "Ruby19Parser.y"
   {
                     yyVal = new OpAsgnNode(getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((Node)yyVals[0+yyTop]), (String) ((Token)yyVals[-2+yyTop]).getValue(), (String) ((Token)yyVals[-1+yyTop]).getValue());
                 }
   break;
 case 191:
-					// line 777 "Ruby19Parser.y"
+					// line 776 "Ruby19Parser.y"
   {
                     yyVal = new OpAsgnNode(getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((Node)yyVals[0+yyTop]), (String) ((Token)yyVals[-2+yyTop]).getValue(), (String) ((Token)yyVals[-1+yyTop]).getValue());
                 }
   break;
 case 192:
-					// line 780 "Ruby19Parser.y"
+					// line 779 "Ruby19Parser.y"
   {
                     yyerror("constant re-assignment");
                 }
   break;
 case 193:
-					// line 783 "Ruby19Parser.y"
+					// line 782 "Ruby19Parser.y"
   {
                     yyerror("constant re-assignment");
                 }
   break;
 case 194:
-					// line 786 "Ruby19Parser.y"
+					// line 785 "Ruby19Parser.y"
   {
                     support.backrefAssignError(((Node)yyVals[-2+yyTop]));
                 }
   break;
 case 195:
-					// line 789 "Ruby19Parser.y"
+					// line 788 "Ruby19Parser.y"
   {
                     support.checkExpression(((Node)yyVals[-2+yyTop]));
                     support.checkExpression(((Node)yyVals[0+yyTop]));
@@ -1746,7 +1745,7 @@ case 195:
                 }
   break;
 case 196:
-					// line 796 "Ruby19Parser.y"
+					// line 795 "Ruby19Parser.y"
   {
                     support.checkExpression(((Node)yyVals[-2+yyTop]));
                     support.checkExpression(((Node)yyVals[0+yyTop]));
@@ -1756,55 +1755,55 @@ case 196:
                 }
   break;
 case 197:
-					// line 803 "Ruby19Parser.y"
+					// line 802 "Ruby19Parser.y"
   {
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "+", ((Node)yyVals[0+yyTop]), getPosition(null));
                 }
   break;
 case 198:
-					// line 806 "Ruby19Parser.y"
+					// line 805 "Ruby19Parser.y"
   {
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "-", ((Node)yyVals[0+yyTop]), getPosition(null));
                 }
   break;
 case 199:
-					// line 809 "Ruby19Parser.y"
+					// line 808 "Ruby19Parser.y"
   {
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "*", ((Node)yyVals[0+yyTop]), getPosition(null));
                 }
   break;
 case 200:
-					// line 812 "Ruby19Parser.y"
+					// line 811 "Ruby19Parser.y"
   {
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "/", ((Node)yyVals[0+yyTop]), getPosition(null));
                 }
   break;
 case 201:
-					// line 815 "Ruby19Parser.y"
+					// line 814 "Ruby19Parser.y"
   {
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "%", ((Node)yyVals[0+yyTop]), getPosition(null));
                 }
   break;
 case 202:
-					// line 818 "Ruby19Parser.y"
+					// line 817 "Ruby19Parser.y"
   {
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "**", ((Node)yyVals[0+yyTop]), getPosition(null));
                 }
   break;
 case 203:
-					// line 821 "Ruby19Parser.y"
+					// line 820 "Ruby19Parser.y"
   {
                     yyVal = support.getOperatorCallNode(support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "**", ((Node)yyVals[0+yyTop]), getPosition(null)), "-@");
                 }
   break;
 case 204:
-					// line 824 "Ruby19Parser.y"
+					// line 823 "Ruby19Parser.y"
   {
                     yyVal = support.getOperatorCallNode(support.getOperatorCallNode(((FloatNode)yyVals[-2+yyTop]), "**", ((Node)yyVals[0+yyTop]), getPosition(null)), "-@");
                 }
   break;
 case 205:
-					// line 827 "Ruby19Parser.y"
+					// line 826 "Ruby19Parser.y"
   {
                     if (support.isLiteral(((Node)yyVals[0+yyTop]))) {
                         yyVal = ((Node)yyVals[0+yyTop]);
@@ -1814,79 +1813,79 @@ case 205:
                 }
   break;
 case 206:
-					// line 834 "Ruby19Parser.y"
+					// line 833 "Ruby19Parser.y"
   {
                     yyVal = support.getOperatorCallNode(((Node)yyVals[0+yyTop]), "-@");
                 }
   break;
 case 207:
-					// line 837 "Ruby19Parser.y"
+					// line 836 "Ruby19Parser.y"
   {
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "|", ((Node)yyVals[0+yyTop]), getPosition(null));
                 }
   break;
 case 208:
-					// line 840 "Ruby19Parser.y"
+					// line 839 "Ruby19Parser.y"
   {
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "^", ((Node)yyVals[0+yyTop]), getPosition(null));
                 }
   break;
 case 209:
-					// line 843 "Ruby19Parser.y"
+					// line 842 "Ruby19Parser.y"
   {
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "&", ((Node)yyVals[0+yyTop]), getPosition(null));
                 }
   break;
 case 210:
-					// line 846 "Ruby19Parser.y"
+					// line 845 "Ruby19Parser.y"
   {
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "<=>", ((Node)yyVals[0+yyTop]), getPosition(null));
                 }
   break;
 case 211:
-					// line 849 "Ruby19Parser.y"
+					// line 848 "Ruby19Parser.y"
   {
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), ">", ((Node)yyVals[0+yyTop]), getPosition(null));
                 }
   break;
 case 212:
-					// line 852 "Ruby19Parser.y"
+					// line 851 "Ruby19Parser.y"
   {
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), ">=", ((Node)yyVals[0+yyTop]), getPosition(null));
                 }
   break;
 case 213:
-					// line 855 "Ruby19Parser.y"
+					// line 854 "Ruby19Parser.y"
   {
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "<", ((Node)yyVals[0+yyTop]), getPosition(null));
                 }
   break;
 case 214:
-					// line 858 "Ruby19Parser.y"
+					// line 857 "Ruby19Parser.y"
   {
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "<=", ((Node)yyVals[0+yyTop]), getPosition(null));
                 }
   break;
 case 215:
-					// line 861 "Ruby19Parser.y"
+					// line 860 "Ruby19Parser.y"
   {
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "==", ((Node)yyVals[0+yyTop]), getPosition(null));
                 }
   break;
 case 216:
-					// line 864 "Ruby19Parser.y"
+					// line 863 "Ruby19Parser.y"
   {
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "===", ((Node)yyVals[0+yyTop]), getPosition(null));
                 }
   break;
 case 217:
-					// line 867 "Ruby19Parser.y"
+					// line 866 "Ruby19Parser.y"
   {
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "!=", ((Node)yyVals[0+yyTop]), getPosition(null));
                 }
   break;
 case 218:
-					// line 870 "Ruby19Parser.y"
+					// line 869 "Ruby19Parser.y"
   {
                     yyVal = support.getMatchNode(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
                   /* ENEBO
@@ -1898,162 +1897,163 @@ case 218:
                 }
   break;
 case 219:
-					// line 879 "Ruby19Parser.y"
+					// line 878 "Ruby19Parser.y"
   {
                     yyVal = new NotNode(support.union(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop])), support.getMatchNode(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop])));
                 }
   break;
 case 220:
-					// line 882 "Ruby19Parser.y"
+					// line 881 "Ruby19Parser.y"
   {
                     yyVal = new NotNode(support.union(((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])));
                 }
   break;
 case 221:
-					// line 885 "Ruby19Parser.y"
+					// line 884 "Ruby19Parser.y"
   {
                     yyVal = support.getOperatorCallNode(((Node)yyVals[0+yyTop]), "~");
                 }
   break;
 case 222:
-					// line 888 "Ruby19Parser.y"
+					// line 887 "Ruby19Parser.y"
   {
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "<<", ((Node)yyVals[0+yyTop]), getPosition(null));
                 }
   break;
 case 223:
-					// line 891 "Ruby19Parser.y"
+					// line 890 "Ruby19Parser.y"
   {
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), ">>", ((Node)yyVals[0+yyTop]), getPosition(null));
                 }
   break;
 case 224:
-					// line 894 "Ruby19Parser.y"
+					// line 893 "Ruby19Parser.y"
   {
                     yyVal = support.newAndNode(getPosition(((Token)yyVals[-1+yyTop])), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
                 }
   break;
 case 225:
-					// line 897 "Ruby19Parser.y"
+					// line 896 "Ruby19Parser.y"
   {
                     yyVal = support.newOrNode(getPosition(((Token)yyVals[-1+yyTop])), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
                 }
   break;
 case 226:
-					// line 900 "Ruby19Parser.y"
+					// line 899 "Ruby19Parser.y"
   {
                     /* ENEBO: arg surrounded by in_defined set/unset*/
                     yyVal = new DefinedNode(getPosition(((Token)yyVals[-2+yyTop])), ((Node)yyVals[0+yyTop]));
                 }
   break;
 case 227:
-					// line 904 "Ruby19Parser.y"
+					// line 903 "Ruby19Parser.y"
   {
                     yyVal = new IfNode(getPosition(((Node)yyVals[-5+yyTop])), support.getConditionNode(((Node)yyVals[-5+yyTop])), ((Node)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
                 }
   break;
 case 228:
-					// line 907 "Ruby19Parser.y"
+					// line 906 "Ruby19Parser.y"
   {
                     yyVal = ((Node)yyVals[0+yyTop]);
                 }
   break;
 case 229:
-					// line 911 "Ruby19Parser.y"
+					// line 910 "Ruby19Parser.y"
   {
                     support.checkExpression(((Node)yyVals[0+yyTop]));
                     yyVal = ((Node)yyVals[0+yyTop]) != null ? ((Node)yyVals[0+yyTop]) : NilImplicitNode.NIL;
                 }
   break;
 case 231:
-					// line 917 "Ruby19Parser.y"
+					// line 916 "Ruby19Parser.y"
   {
                     yyVal = ((Node)yyVals[-1+yyTop]);
                 }
   break;
 case 232:
-					// line 920 "Ruby19Parser.y"
+					// line 919 "Ruby19Parser.y"
   {
                     yyVal = support.arg_append(((Node)yyVals[-3+yyTop]), new HashNode(getPosition(null), ((ListNode)yyVals[-1+yyTop])));
                 }
   break;
 case 233:
-					// line 923 "Ruby19Parser.y"
+					// line 922 "Ruby19Parser.y"
   {
                     yyVal = support.newArrayNode(getPosition(((ListNode)yyVals[-1+yyTop])), new HashNode(getPosition(null), ((ListNode)yyVals[-1+yyTop])));
                 }
   break;
 case 234:
-					// line 927 "Ruby19Parser.y"
+					// line 926 "Ruby19Parser.y"
   {
                     yyVal = ((Node)yyVals[-1+yyTop]);
                     if (yyVal != null) ((Node)yyVal).setPosition(support.union(((Token)yyVals[-2+yyTop]), ((Token)yyVals[0+yyTop])));
                 }
   break;
 case 239:
-					// line 936 "Ruby19Parser.y"
+					// line 935 "Ruby19Parser.y"
   {
                     yyVal = support.newArrayNode(getPosition(((Node)yyVals[0+yyTop])), ((Node)yyVals[0+yyTop]));
                 }
   break;
 case 240:
-					// line 939 "Ruby19Parser.y"
+					// line 938 "Ruby19Parser.y"
   {
                     yyVal = support.arg_blk_pass(((Node)yyVals[-1+yyTop]), ((BlockPassNode)yyVals[0+yyTop]));
                 }
   break;
 case 241:
-					// line 942 "Ruby19Parser.y"
+					// line 941 "Ruby19Parser.y"
   {
                     yyVal = support.newArrayNode(getPosition(((ListNode)yyVals[-1+yyTop])), new HashNode(getPosition(null), ((ListNode)yyVals[-1+yyTop])));
                     yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
                 }
   break;
 case 242:
-					// line 946 "Ruby19Parser.y"
+					// line 945 "Ruby19Parser.y"
   {
                     yyVal = support.arg_append(((Node)yyVals[-3+yyTop]), new HashNode(getPosition(null), ((ListNode)yyVals[-1+yyTop])));
                     yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
                 }
   break;
 case 243:
-					// line 950 "Ruby19Parser.y"
+					// line 949 "Ruby19Parser.y"
   {}
   break;
 case 244:
-					// line 952 "Ruby19Parser.y"
+					// line 951 "Ruby19Parser.y"
   {
                     yyVal = new Long(lexer.getCmdArgumentState().begin());
                 }
   break;
 case 245:
-					// line 954 "Ruby19Parser.y"
+					// line 953 "Ruby19Parser.y"
   {
                     lexer.getCmdArgumentState().reset(((Long)yyVals[-1+yyTop]).longValue());
                     yyVal = ((Node)yyVals[0+yyTop]);
                 }
   break;
 case 246:
-					// line 959 "Ruby19Parser.y"
+					// line 958 "Ruby19Parser.y"
   {
                     yyVal = new BlockPassNode(support.union(((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop])), ((Node)yyVals[0+yyTop]));
                 }
   break;
 case 247:
-					// line 963 "Ruby19Parser.y"
+					// line 962 "Ruby19Parser.y"
   {
                     yyVal = ((BlockPassNode)yyVals[0+yyTop]);
                 }
   break;
 case 249:
-					// line 968 "Ruby19Parser.y"
+					// line 967 "Ruby19Parser.y"
   {
                     yyVal = support.newArrayNode(getPosition2(((Node)yyVals[0+yyTop])), ((Node)yyVals[0+yyTop]));
                 }
   break;
 case 250:
-					// line 971 "Ruby19Parser.y"
+					// line 970 "Ruby19Parser.y"
   {
+/* Newline this*/
                     yyVal = support.newSplatNode(support.union(((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop])), ((Node)yyVals[0+yyTop]));
                 }
   break;
@@ -2152,13 +2152,13 @@ case 268:
 case 269:
 					// line 1045 "Ruby19Parser.y"
   {
-                    yyVal = new Colon2Node(support.union(((Node)yyVals[-2+yyTop]), ((Token)yyVals[0+yyTop])), ((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
+                    yyVal = support.new_colon2(support.union(((Node)yyVals[-2+yyTop]), ((Token)yyVals[0+yyTop])), ((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
                 }
   break;
 case 270:
 					// line 1048 "Ruby19Parser.y"
   {
-                    yyVal = new Colon3Node(support.union(((Token)yyVals[-1+yyTop]), ((Token)yyVals[0+yyTop])), (String) ((Token)yyVals[0+yyTop]).getValue());
+                    yyVal = support.new_colon3(support.union(((Token)yyVals[-1+yyTop]), ((Token)yyVals[0+yyTop])), (String) ((Token)yyVals[0+yyTop]).getValue());
                 }
   break;
 case 271:

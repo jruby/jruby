@@ -78,6 +78,8 @@ import org.jruby.ast.CallTwoArgNode;
 import org.jruby.ast.ClassVarAsgnNode;
 import org.jruby.ast.ClassVarDeclNode;
 import org.jruby.ast.ClassVarNode;
+import org.jruby.ast.Colon2Node;
+import org.jruby.ast.Colon3Node;
 import org.jruby.ast.ConstDeclNode;
 import org.jruby.ast.ConstNode;
 import org.jruby.ast.DAsgnNode;
@@ -944,7 +946,15 @@ public class ParserSupport {
                 return new CallManyArgsNode(union(receiver, args), receiver, (String) name.getValue(), args);
         }
     }
-    
+
+    public Colon2Node new_colon2(ISourcePosition position, Node leftNode, String name) {
+        return new Colon2Node(position, leftNode, name);
+    }
+
+    public Colon3Node new_colon3(ISourcePosition position, String name) {
+        return new Colon3Node(position, name);
+    }
+
     private Node new_fcall_noargs(Token operation, IterNode iter) {
         if (iter != null) return new FCallNoArgBlockNode(operation.getPosition(), (String) operation.getValue(), iter);
         return new FCallNoArgNode(operation.getPosition(), (String) operation.getValue());
