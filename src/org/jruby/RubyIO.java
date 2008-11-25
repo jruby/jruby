@@ -54,6 +54,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -94,7 +95,14 @@ public class RubyIO extends RubyObject {
     protected List<RubyThread> blockingThreads;
     
     public void registerDescriptor(ChannelDescriptor descriptor) {
-        getRuntime().getDescriptors().put(new Integer(descriptor.getFileno()), new WeakReference<ChannelDescriptor>(descriptor));
+        Map<Integer, WeakReference<ChannelDescriptor>> map = getRuntime().getDescriptors();
+        
+        map.put(new Integer(descriptor.getFileno()), new WeakReference<ChannelDescriptor>(descriptor));
+
+        // Clean up any dead descriptor entries which may have went away
+        for (Map.Entry<Integer, WeakReference<ChannelDescriptor>> entry : map.entrySet()) {
+            if (entry.getValue().get() == null) map.remove(entry.getKey());
+        }
     }
     
     public void unregisterDescriptor(int aFileno) {
