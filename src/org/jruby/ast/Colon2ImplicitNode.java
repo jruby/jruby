@@ -12,11 +12,8 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2001-2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2001-2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
- * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004-2006 Thomas E Enebo <enebo@acm.org>
- * 
+ * Copyright (C) 2008 Thomas E Enebo <enebo@acm.org>
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -31,63 +28,48 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import java.util.List;
-
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
-import org.jruby.ast.types.INameNode;
-import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
-import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/** 
- * Represents a '::' constant access or method call (Java::JavaClass).
+/**
+ * Represents a bare class declaration (e.g. class Foo/module Foo).  This is slightly misnamed
+ * since it contains no double colons (::), but our cname production needs to be a common type.
+ * In JRuby 2, we will rename this.
  */
-public abstract class Colon2Node extends Colon3Node implements INameNode {
-    protected final Node leftNode;
-
-    public Colon2Node(ISourcePosition position, Node leftNode, String name) {
-        super(position, NodeType.COLON2NODE, name);
-        this.leftNode = leftNode;
-    }
-    
-    /**
-     * Accept for the visitor pattern.
-     * @param iVisitor the visitor
-     **/
-    @Override
-    public Instruction accept(NodeVisitor iVisitor) {
-        return iVisitor.visitColon2Node(this);
+public class Colon2ImplicitNode extends Colon2Node {
+    public Colon2ImplicitNode(ISourcePosition position, String name) {
+        super(position, null, name);
     }
 
-    /**
-     * Gets the leftNode.
-     * @return Returns a Node
-     */
-    public Node getLeftNode() {
-        return leftNode;
-    }
-
-    @Override
-    public List<Node> childNodes() {
-        return Node.createList(leftNode);
-    }
-    
-    @Override
-    public String toString() {
-        String result = "Colon2Node [";
-        if (leftNode != null) result += leftNode;
-        result += getName();
-        return result + "]";
-    }
-
-    /** Get parent module/class that this module represents */
+   /** 
+    * Get parent module/class that this module represents
+    */
     @Override
     public RubyModule getEnclosingModule(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return RuntimeHelpers.prepareClassNamespace(context, leftNode.interpret(runtime, context, self, aBlock));
+        return context.getCurrentScope().getStaticScope().getModule();
     }
- }
+
+    /**
+     * This type of node will never get interpreted since it only gets created via class/module
+     * declaration time.  Those node types interact with this node in a different way.
+     */
+    @Override
+    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        assert false: "interpret cannot ever happen for Colon2ImplicitNode";
+        return null;
+    }
+
+    /**
+     * This type of node will never get created as part of a defined? call since it will then
+     * appear to be a ConstNode.
+     */
+    @Override
+    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        assert false: "definition should not ever happen for Colon2ImplicitNode";
+        return null;
+    }
+}
