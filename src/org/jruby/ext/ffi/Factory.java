@@ -131,7 +131,7 @@ public abstract class Factory {
             FFIProvider provider = newProvider(runtime);
             module.defineConstant("InvokerFactory", provider);
             module.defineConstant("CallbackFactory", provider);
-            module.defineConstant("LastError", provider);
+            ffi.defineConstant("LastError", provider);
             RubyModule nativeType = module.defineModuleUnder("NativeType");
             for (NativeType type : NativeType.values()) {
                 nativeType.defineConstant(type.name(), runtime.newFixnum(type.ordinal()));
