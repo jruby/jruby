@@ -127,6 +127,8 @@ import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.io.ChannelDescriptor;
 
 import com.kenai.constantine.Constant;
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -2834,8 +2836,52 @@ public final class Ruby {
         return objectSpace;
     }
 
-    public Map<Integer, WeakReference<ChannelDescriptor>> getDescriptors() {
+    private class WeakDescriptorReference extends WeakReference<ChannelDescriptor> {
+        private int fileno;
+
+        public WeakDescriptorReference(ChannelDescriptor descriptor, ReferenceQueue<ChannelDescriptor> queue) {
+            super(descriptor, queue);
+            this.fileno = descriptor.getFileno();
+        }
+
+        public int getFileno() {
+            return fileno;
+        }
+    }
+
+    public Map<Integer, WeakDescriptorReference> getDescriptors() {
         return descriptors;
+    }
+
+    private void cleanDescriptors() {
+        Reference<? extends ChannelDescriptor> reference;
+        while ((reference = descriptorQueue.poll()) != null) {
+            int fileno = ((WeakDescriptorReference)reference).getFileno();
+            descriptors.remove(fileno);
+        }
+    }
+
+    public void registerDescriptor(ChannelDescriptor descriptor) {
+        cleanDescriptors();
+        
+        int fileno = descriptor.getFileno();
+        descriptors.put(fileno, new WeakDescriptorReference(descriptor, descriptorQueue));
+    }
+
+    public void unregisterDescriptor(int aFileno) {
+        cleanDescriptors();
+        
+        descriptors.remove(new Integer(aFileno));
+    }
+
+    public ChannelDescriptor getDescriptorByFileno(int aFileno) {
+        cleanDescriptors();
+        
+        Reference<ChannelDescriptor> reference = descriptors.get(new Integer(aFileno));
+        if (reference == null) {
+            return null;
+        }
+        return reference.get();
     }
 
     public long incrementRandomSeedSequence() {
@@ -2981,7 +3027,8 @@ public final class Ruby {
     private ObjectSpace objectSpace = new ObjectSpace();
 
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
-    private Map<Integer, WeakReference<ChannelDescriptor>> descriptors = new ConcurrentHashMap<Integer, WeakReference<ChannelDescriptor>>();
+    private Map<Integer, WeakDescriptorReference> descriptors = new ConcurrentHashMap<Integer, WeakDescriptorReference>();
+    private ReferenceQueue<ChannelDescriptor> descriptorQueue = new ReferenceQueue<ChannelDescriptor>();
     private long randomSeed = 0;
     private long randomSeedSequence = 0;
     private Random random = new Random();

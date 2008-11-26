@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.Channel;
@@ -95,26 +96,15 @@ public class RubyIO extends RubyObject {
     protected List<RubyThread> blockingThreads;
     
     public void registerDescriptor(ChannelDescriptor descriptor) {
-        Map<Integer, WeakReference<ChannelDescriptor>> map = getRuntime().getDescriptors();
-        
-        map.put(new Integer(descriptor.getFileno()), new WeakReference<ChannelDescriptor>(descriptor));
-
-        // Clean up any dead descriptor entries which may have went away
-        for (Map.Entry<Integer, WeakReference<ChannelDescriptor>> entry : map.entrySet()) {
-            if (entry.getValue().get() == null) map.remove(entry.getKey());
-        }
+        getRuntime().registerDescriptor(descriptor);
     }
     
     public void unregisterDescriptor(int aFileno) {
-        getRuntime().getDescriptors().remove(new Integer(aFileno));
+        getRuntime().unregisterDescriptor(aFileno);
     }
     
     public ChannelDescriptor getDescriptorByFileno(int aFileno) {
-        Reference<ChannelDescriptor> reference = getRuntime().getDescriptors().get(new Integer(aFileno));
-        if (reference == null) {
-            return null;
-        }
-        return reference.get();
+        return getRuntime().getDescriptorByFileno(aFileno);
     }
     
     // FIXME can't use static; would interfere with other runtimes in the same JVM
