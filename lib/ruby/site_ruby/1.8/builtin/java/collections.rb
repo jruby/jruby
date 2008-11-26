@@ -12,6 +12,16 @@ module java::util::Map
     val
   end
 end
+
+class java::lang.Iterable
+  include Enumerable
+  def each(&block)
+    iter = iterator
+    while iter.hasNext
+      block.call(iter.next)
+    end
+  end
+end
   
 module java::lang::Comparable
   include Comparable
