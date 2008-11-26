@@ -9,7 +9,7 @@ module FFI
       @fixed = Array.new
       @type_map = type_map
       arg_types.each_with_index do |type, i|
-        @fixed << type unless type == FFI::NativeType::VARARGS
+        @fixed << FFI.find_type(type, @type_map) unless type == FFI::NativeType::VARARGS
       end
     end
     def call(*args, &block)
@@ -25,6 +25,24 @@ module FFI
         i += 2
       end
       invoke(param_types, param_values, &block)
+    end
+    def attach(mod, mname)
+      #
+      # Attach the invoker to this module as 'mname'.
+      #
+      invoker = self
+      params = "*args"
+      call = "call"
+      mod.module_eval <<-code
+      @@#{mname} = invoker
+      def self.#{mname}(#{params})
+        @@#{mname}.#{call}(#{params})
+      end
+      def #{mname}(#{params})
+        @@#{mname}.#{call}(#{params})
+      end
+      code
+      invoker
     end
   end
 end

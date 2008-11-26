@@ -86,7 +86,7 @@ public final class JNAProvider extends FFIProvider {
      * @param returnType The return type of the native function.
      * @return A new <tt>FunctionInvoker</tt> to invoke the native function.
      */
-    private FunctionInvoker getFunctionInvoker(NativeType returnType) {
+    static FunctionInvoker getFunctionInvoker(NativeType returnType) {
         switch (returnType) {
             case VOID:
                 return VoidInvoker.INSTANCE;
@@ -130,7 +130,7 @@ public final class JNAProvider extends FFIProvider {
      * @param type The native type to convert to.
      * @return A new <tt>Marshaller</tt>
      */
-    private static final Marshaller getMarshaller(NativeParam type, int convention) {
+    static final Marshaller getMarshaller(NativeParam type, int convention) {
         if (type instanceof NativeType) {
             return getMarshaller((NativeType) type);
         } else if (type instanceof org.jruby.ext.ffi.Callback) {
@@ -145,7 +145,7 @@ public final class JNAProvider extends FFIProvider {
      * @param type The native type to convert to.
      * @return A new <tt>Marshaller</tt>
      */
-    private static final Marshaller getMarshaller(NativeType type) {
+    static final Marshaller getMarshaller(NativeType type) {
         switch (type) {
             case INT8:
                 return Signed8Marshaller.INSTANCE;
@@ -315,7 +315,7 @@ public final class JNAProvider extends FFIProvider {
     /**
      * Converts a ruby Fixnum into an 8 bit native integer.
      */
-    private static final class Signed8Marshaller implements Marshaller {
+    static final class Signed8Marshaller implements Marshaller {
         public final Object marshal(Invocation invocation, IRubyObject parameter) {
             return Byte.valueOf(Util.int8Value(parameter));
         }
@@ -325,7 +325,7 @@ public final class JNAProvider extends FFIProvider {
     /**
      * Converts a ruby Fixnum into an 8 bit native unsigned integer.
      */
-    private static final class Unsigned8Marshaller implements Marshaller {
+    static final class Unsigned8Marshaller implements Marshaller {
         public final Object marshal(Invocation invocation, IRubyObject parameter) {
             return Byte.valueOf((byte) Util.uint8Value(parameter));
         }
@@ -335,7 +335,7 @@ public final class JNAProvider extends FFIProvider {
     /**
      * Converts a ruby Fixnum into a 16 bit native signed integer.
      */
-    private static final class Signed16Marshaller implements Marshaller {
+    static final class Signed16Marshaller implements Marshaller {
         public final Object marshal(Invocation invocation, IRubyObject parameter) {
             return Short.valueOf(Util.int16Value(parameter));
         }
@@ -345,7 +345,7 @@ public final class JNAProvider extends FFIProvider {
     /**
      * Converts a ruby Fixnum into a 16 bit native unsigned integer.
      */
-    private static final class Unsigned16Marshaller implements Marshaller {
+    static final class Unsigned16Marshaller implements Marshaller {
         public final Object marshal(Invocation invocation, IRubyObject parameter) {
             return Short.valueOf((short) Util.uint16Value(parameter));
         }
@@ -355,7 +355,7 @@ public final class JNAProvider extends FFIProvider {
     /**
      * Converts a ruby Fixnum into a 32 bit native signed integer.
      */
-    private static final class Signed32Marshaller implements Marshaller {
+    static final class Signed32Marshaller implements Marshaller {
         public final Object marshal(Invocation invocation, IRubyObject parameter) {
             return Integer.valueOf(Util.int32Value(parameter));
         }
@@ -365,7 +365,7 @@ public final class JNAProvider extends FFIProvider {
     /**
      * Converts a ruby Fixnum into a 32 bit native unsigned integer.
      */
-    private static final class Unsigned32Marshaller implements Marshaller {
+    static final class Unsigned32Marshaller implements Marshaller {
         public final Object marshal(Invocation invocation, IRubyObject parameter) {
             return Integer.valueOf((int) Util.uint32Value(parameter));
         }
@@ -375,7 +375,7 @@ public final class JNAProvider extends FFIProvider {
     /**
      * Converts a ruby Fixnum into a 64 bit native signed integer.
      */
-    private static final class Signed64Marshaller implements Marshaller {
+    static final class Signed64Marshaller implements Marshaller {
         public final Object marshal(Invocation invocation, IRubyObject parameter) {
             return Long.valueOf(Util.int64Value(parameter));
         }
@@ -385,7 +385,7 @@ public final class JNAProvider extends FFIProvider {
     /**
      * Converts a ruby Fixnum into a 64 bit native unsigned integer.
      */
-    private static final class Unsigned64Marshaller implements Marshaller {
+    static final class Unsigned64Marshaller implements Marshaller {
         public final Object marshal(Invocation invocation, IRubyObject parameter) {
             return Long.valueOf(Util.uint64Value(parameter));
         }
@@ -395,7 +395,7 @@ public final class JNAProvider extends FFIProvider {
     /**
      * Converts a ruby Float into a 32 bit native float.
      */
-    private static final class Float32Marshaller implements Marshaller {
+    static final class Float32Marshaller implements Marshaller {
         public final Object marshal(Invocation invocation, IRubyObject parameter) {
             return Float.valueOf(Util.floatValue(parameter));
         }
@@ -405,7 +405,7 @@ public final class JNAProvider extends FFIProvider {
     /**
      * Converts a ruby Float into a 64 bit native float.
      */
-    private static final class Float64Marshaller implements Marshaller {
+    static final class Float64Marshaller implements Marshaller {
         public final Object marshal(Invocation invocation, IRubyObject parameter) {
             return Double.valueOf(Util.doubleValue(parameter));
         }
@@ -415,7 +415,7 @@ public final class JNAProvider extends FFIProvider {
     /**
      * Converts a ruby MemoryPointer into a native pointer.
      */
-    private static final class PointerMarshaller implements Marshaller {
+    static final class PointerMarshaller implements Marshaller {
         public final Object marshal(Invocation invocation, IRubyObject parameter) {
             if (parameter instanceof JNAMemory) {
                 return (((JNAMemory) parameter).getNativeMemory());

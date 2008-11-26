@@ -54,6 +54,10 @@ public class JNAFactory extends org.jruby.ext.ffi.Factory {
             if (module.fastGetClass(JNABuffer.BUFFER_RUBY_CLASS) == null) {
                 JNABuffer.createBufferClass(runtime);
             }
+            RubyModule ffi = runtime.defineModule("FFI");
+            if (ffi.fastGetClass("VariadicInvoker") == null) {
+                JNAVariadicInvoker.createVariadicInvokerClass(runtime);
+            }
         }
     }
     protected FFIProvider newProvider(Ruby runtime) {
