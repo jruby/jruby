@@ -38,12 +38,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.anno.FrameField.LASTLINE;
 import static org.jruby.util.StringSupport.CODERANGE_7BIT;
 import static org.jruby.util.StringSupport.CODERANGE_BROKEN;
 import static org.jruby.util.StringSupport.CODERANGE_MASK;
 import static org.jruby.util.StringSupport.CODERANGE_VALID;
+import static org.jruby.util.StringSupport.codeLength;
+import static org.jruby.util.StringSupport.codePoint;
 import static org.jruby.util.StringSupport.strLengthWithCodeRange;
 import static org.jruby.util.StringSupport.unpackCodeRange;
 import static org.jruby.util.StringSupport.unpackLength;
@@ -3465,13 +3468,61 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /**
      * rb_str_each_byte
      */
-    @JRubyMethod(name = "each_byte", frame = true)
+    @JRubyMethod(name = "each_byte", frame = true, compat = CompatVersion.RUBY1_8)
     public RubyString each_byte(ThreadContext context, Block block) {
         Ruby runtime = getRuntime();
         // Check the length every iteration, since
         // the block can modify this string.
         for (int i = 0; i < value.length(); i++) {
             block.yield(context, runtime.newFixnum(value.get(i) & 0xFF));
+        }
+        return this;
+    }
+
+    @JRubyMethod(name = "each_byte", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject each_byte19(ThreadContext context, Block block) {
+        return block.isGiven() ? each_byte(context, block) : enumeratorize(context.getRuntime(), this, "each_byte");
+    }
+
+    /** rb_str_each_codepoint
+     * 
+     */
+    @JRubyMethod(name = "each_char", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject each_char(ThreadContext context, Block block) {
+        if (!block.isGiven()) return enumeratorize(context.getRuntime(), this, "each_char");
+
+        byte bytes[] = value.bytes;
+        int p = value.begin;
+        int end = p + value.realSize;
+        Encoding enc = value.encoding;
+
+        while (p < end) {
+            int n = StringSupport.length(enc, bytes, p, end);
+            block.yield(context, substr(p, n)); // TODO: 1.9 version of substr.
+            p += n;
+        }
+        return this;
+    }
+
+    /** rb_str_each_codepoint
+     * 
+     */
+    @JRubyMethod(name = "each_codepoint", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject each_codepoint(ThreadContext context, Block block) {
+        if (singleByteOptimizable()) return each_byte19(context, block);
+        if (!block.isGiven()) return enumeratorize(context.getRuntime(), this, "each_codepoint");
+
+        Ruby runtime = context.getRuntime();
+        byte bytes[] = value.bytes;
+        int p = value.begin;
+        int end = p + value.realSize;
+        Encoding enc = value.encoding;
+
+        while (p < end) {
+            int c = codePoint(runtime, enc, bytes, p, end);
+            int n = codeLength(runtime, enc, c);
+            block.yield(context, runtime.newFixnum(c));
+            p += n;
         }
         return this;
     }

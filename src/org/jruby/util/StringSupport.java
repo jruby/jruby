@@ -29,6 +29,7 @@ import static org.jcodings.Encoding.CHAR_INVALID;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jruby.Ruby;
 import org.jruby.RubyObject;
 
 public final class StringSupport {
@@ -203,4 +204,16 @@ public final class StringSupport {
         return (int)(cr >>> 31);
     }
 
+    public static int codePoint(Ruby runtime, Encoding enc, byte[]bytes, int p, int end) {
+        if (p >= end) throw runtime.newArgumentError("empty string");
+        int cl = preciseLength(enc, bytes, p, end);
+        if (cl <= 0) throw runtime.newArgumentError("invalid byte sequence in " + enc.getName()); 
+        return enc.mbcToCode(bytes, p, end); 
+    }
+
+    public static int codeLength(Ruby runtime, Encoding enc, int c) {
+        int n = enc.codeToMbcLength(c);
+        if (n == 0) throw runtime.newArgumentError("invalid codepoint " + String.format("0x%x in ", c) + enc.getName());
+        return n;
+    }
 }
