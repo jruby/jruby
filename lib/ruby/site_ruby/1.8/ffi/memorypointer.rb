@@ -1,4 +1,5 @@
 require 'ffi/pointer'
+require 'ffi/types'
 
 module JRuby
   module FFI
@@ -29,7 +30,7 @@ module JRuby
         if type.kind_of? Fixnum
           size = type
         elsif type.kind_of? Symbol
-          size = JRuby::FFI.type_size(type)
+          size = ::FFI.type_size(type)
         else
           size = type.size
         end

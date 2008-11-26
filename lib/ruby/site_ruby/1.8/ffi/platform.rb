@@ -12,6 +12,7 @@ module JRuby
 end
 module FFI
   module Platform
+    CONF_DIR = JRuby::FFI::Platform::CONF_DIR
     ADDRESS_SIZE = JRuby::FFI::Platform::ADDRESS_SIZE
     LONG_SIZE = JRuby::FFI::Platform::LONG_SIZE
     NAME = JRuby::FFI::Platform::NAME
@@ -30,6 +31,9 @@ module FFI
     end
     def self.bsd?
       JRuby::FFI::Platform::IS_BSD
+    end
+    def self.linux?
+      JRuby::FFI::Platform::IS_LINUX
     end
   end
 end

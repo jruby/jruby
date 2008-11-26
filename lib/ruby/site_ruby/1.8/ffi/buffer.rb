@@ -6,8 +6,8 @@ module JRuby
         size = if type.kind_of? Fixnum
           type
         elsif type.kind_of? Symbol
-          JRuby::FFI.type_size(type)
-        elsif type.kind_of? JRuby::FFI::BaseStruct
+          ::FFI.type_size(type)
+        elsif type.kind_of? FFI::Struct
           type.size
         else
           raise ArgumentError, "Invalid size type"
