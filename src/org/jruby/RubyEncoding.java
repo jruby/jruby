@@ -27,6 +27,8 @@ package org.jruby;
 
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB.Entry;
+import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash.HashEntryIterator;
 import org.jruby.anno.JRubyClass;
@@ -38,6 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 @JRubyClass(name="Encoding")
 public class RubyEncoding extends RubyObject {
@@ -87,13 +90,50 @@ public class RubyEncoding extends RubyObject {
         return encoding;
     }
 
-    public static final Encoding areCompatible(Ruby runtime, IRubyObject obj1, IRubyObject obj2) {
+    public static final Encoding areCompatible(IRubyObject obj1, IRubyObject obj2) {
         if (obj1 instanceof EncodingCapable && obj2 instanceof EncodingCapable) {
             Encoding enc1 = ((EncodingCapable)obj1).getEncoding();
-            if (obj2 instanceof RubyString && ((RubyString)obj2).getByteList().realSize == 0) return enc1; 
             Encoding enc2 = ((EncodingCapable)obj2).getEncoding();
+            if (enc1 == enc2) return enc1;
+
+            if (obj2 instanceof RubyString && ((RubyString)obj2).getByteList().realSize == 0) return enc1; 
             if (obj1 instanceof RubyString && ((RubyString)obj1).getByteList().realSize == 0) return enc2;
-            if (!enc1.isAsciiCompatible() && !enc2.isAsciiCompatible()) return null;
+
+            if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
+
+            if (!(obj2 instanceof RubyString) && enc2 instanceof USASCIIEncoding) return enc1;
+            if (!(obj1 instanceof RubyString) && enc1 instanceof USASCIIEncoding) return enc2;
+
+            if(!(obj1 instanceof RubyString)) {
+                IRubyObject objTmp = obj1;
+                obj1 = obj2;
+                obj1 = objTmp;
+
+                Encoding encTmp = enc1;
+                enc1 = enc2;
+                enc2 = encTmp;
+            }
+            
+            if (obj1 instanceof RubyString) {
+                int cr1 = ((RubyString)obj1).getCodeRange();
+
+                if (obj2 instanceof RubyString) {
+                    int cr2 = ((RubyString)obj2).getCodeRange();
+
+                    if (cr1 != cr2) {
+                        /* may need to handle ENC_CODERANGE_BROKEN */
+                        if (cr1 == StringSupport.CODERANGE_7BIT) return enc2;
+                        if (cr2 == StringSupport.CODERANGE_7BIT) return enc1;
+                    }
+                    if (cr2 == StringSupport.CODERANGE_7BIT) {
+                        if (enc1 instanceof ASCIIEncoding) return enc2;
+                        return enc1;
+                    }
+                    
+                }
+                if (cr1 == StringSupport.CODERANGE_7BIT) return enc2;
+                return null;
+            }
         }
         return null;
     }
