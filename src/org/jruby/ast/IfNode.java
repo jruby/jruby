@@ -104,7 +104,8 @@ public class IfNode extends Node {
         
         // TODO: put these nil guards into tree (bigger than I want to do right now)
 
-        if (result.isTrue()) {
+        // FIXME: JRUBY-3188 ends up with condition returning null...quick fix until I can dig into it
+        if (result != null && result.isTrue()) {
             return thenBody == null ? runtime.getNil() : thenBody.interpret(runtime, context, self, aBlock);
         } else {
             return elseBody == null ? runtime.getNil() : elseBody.interpret(runtime, context, self, aBlock);
