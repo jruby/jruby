@@ -3484,7 +3484,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return block.isGiven() ? each_byte(context, block) : enumeratorize(context.getRuntime(), this, "each_byte");
     }
 
-    /** rb_str_each_codepoint
+    /** rb_str_each_char
      * 
      */
     @JRubyMethod(name = "each_char", frame = true, compat = CompatVersion.RUBY1_9)
