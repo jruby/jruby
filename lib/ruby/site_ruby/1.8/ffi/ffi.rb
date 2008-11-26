@@ -58,6 +58,7 @@ require 'ffi/memorypointer'
 require 'ffi/buffer'
 require 'ffi/struct'
 require 'ffi/io'
+require 'ffi/variadic'
 
 module FFI
   NativeType = JRuby::FFI::NativeType
@@ -84,14 +85,15 @@ module FFI
 
     TypeDefs[add] = code
   end
-  def self.find_type(name)
-    code = TypeDefs[name]
+  def self.find_type(name, type_map = nil)
+    type_map = TypeDefs if type_map.nil?
+    code = type_map[name]
     code = name if !code && name.kind_of?(Integer)
     code = name if !code && name.kind_of?(JRuby::FFI::Callback)
     raise TypeError, "Unable to resolve type '#{name}'" unless code
     return code
   end
-  
+
   # Converts a char
   add_typedef(NativeType::INT8, :char)
 
@@ -165,6 +167,7 @@ module FFI
   add_typedef(NativeType::BUFFER_IN, :buffer_in)
   add_typedef(NativeType::BUFFER_OUT, :buffer_out)
   add_typedef(NativeType::BUFFER_INOUT, :buffer_inout)
+  add_typedef(NativeType::VARARGS, :varargs)
 
   # Use for a C struct with a char [] embedded inside.
   add_typedef(NativeType::CHAR_ARRAY, :char_array)
@@ -207,31 +210,41 @@ module JRuby::FFI
     TypeDefs[add] = code
   end
 
-  def self.find_type(name)
-    code = TypeDefs[name] || FFI::TypeDefs[name]
+  def self.find_type(name, type_map = nil)
+    type_map = TypeDefs if type_map.nil?
+    code = type_map[name] || FFI::TypeDefs[name]
     code = name if !code && name.kind_of?(Integer)
     code = name if !code && name.kind_of?(JRuby::FFI::Callback)
     raise FFI::TypeError, "Unable to resolve type '#{name}'" unless code
     return code
   end
-
-  def self.create_invoker(lib, name, args, ret, convention = :default)
+  def self.map_library_name(lib)
     # Mangle the library name to reflect the native library naming conventions
+    lib = Platform::LIBC if Platform::IS_LINUX && lib == 'c'
     if lib && File.basename(lib) == lib
       ext = ".#{Platform::LIBSUFFIX}"
       lib = Platform::LIBPREFIX + lib unless lib =~ /^#{Platform::LIBPREFIX}/
       lib += ext unless lib =~ /#{ext}/
-    elsif lib.nil?
+    end
+    lib
+  end
+  def self.create_invoker(lib, name, args, ret, options = { :convention => :default })
+    lib = if lib
+      map_library_name(lib)
+    elsif lib
       # Ugly hack to simulate the effect of dlopen(NULL, x) - not quite correct
       lib = JRuby::FFI::Platform::LIBC
     end
 
     # Current artificial limitation based on JFFI limit
     raise FFI::SignatureError, 'FFI functions may take max 32 arguments!' if args.size > 32
-
-    invoker = InvokerFactory.createInvoker(lib, name, find_type(ret),
-      args.map { |e| find_type(e) }, convention.to_s)
-    raise FFI::NotFoundError.new(name, lib) unless invoker
+    args = args.map {|e| find_type(e) }
+    invoker = if args.length > 0 && args[args.length - 1] == FFI::NativeType::VARARGS
+      FFI::VariadicInvoker.new(lib, name, args, find_type(ret), options)
+    else
+      InvokerFactory.createInvoker(lib, name, find_type(ret), args, options[:convention].to_s)
+    end
+    raise NotFoundError.new(name, lib) unless invoker
     return invoker
   end
 
@@ -427,10 +440,13 @@ module FFI::Library
         end
       end
     }
+    options = Hash.new
+    options[:convention] = convention
+    options[:type_map] = @ffi_typedefs if defined?(@ffi_typedefs)
     # Try to locate the function in any of the libraries
     invoker = libraries.collect do |lib|
       begin
-        FFI.create_invoker lib, cname.to_s, arg_types, ret_type, convention
+        FFI.create_invoker lib, cname.to_s, arg_types, ret_type, options
       rescue FFI::NotFoundError => ex
         nil
       end
@@ -448,6 +464,27 @@ module FFI::Library
   def callback(name, args, ret)
     @ffi_callbacks = Hash.new unless defined?(@ffi_callbacks)
     @ffi_callbacks[name] = JRuby::FFI::CallbackFactory.createCallback(FFI.find_type(ret), args.map { |e| FFI.find_type(e) })
+  end
+  def typedef(current, add)
+    @ffi_typedefs = Hash.new unless defined?(@ffi_typedefs)
+    if current.kind_of? Integer
+      code = current
+    else
+      code = @ffi_typedefs[current] || FFI.find_type(current)
+    end
+
+    @ffi_typedefs[add] = code
+  end
+  def find_type(name)
+    code = if defined?(@ffi_typedefs)
+      @ffi_typedefs[name]
+    end
+    code = name if !code && name.kind_of?(FFI::CallbackInfo)
+    if code.nil? || code.kind_of?(Symbol)
+      FFI.find_type(name)
+    else
+      code
+    end
   end
 end
 
