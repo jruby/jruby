@@ -13,8 +13,9 @@ module java::util::Map
   end
 end
 
-class java::lang.Iterable
+module java::lang::Iterable
   include Enumerable
+
   def each(&block)
     iter = iterator
     while iter.hasNext
