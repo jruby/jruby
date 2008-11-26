@@ -200,15 +200,16 @@ public final class StringSupport {
         return strLengthWithCodeRange(bytes.encoding, bytes.bytes, bytes.begin, bytes.begin + bytes.realSize);
     }
 
-    static long pack(int len, int cr) {
-        return ((long)cr << 31) | len;
+    // arg cannot be negative
+    static long pack(int result, int arg) {
+        return ((long)arg << 31) | result;
     }
 
-    public static int unpackLength(long len) {
+    public static int unpackResult(long len) {
         return (int)len & 0x7fffffff;
     }
 
-    public static int unpackCodeRange(long cr) {
+    public static int unpackArg(long cr) {
         return (int)(cr >>> 31);
     }
 
@@ -223,5 +224,25 @@ public final class StringSupport {
         int n = enc.codeToMbcLength(c);
         if (n == 0) throw runtime.newArgumentError("invalid codepoint " + String.format("0x%x in ", c) + enc.getName());
         return n;
+    }
+
+    public long getAscii(Encoding enc, byte[]bytes, int p, int end) {
+        return getAscii(enc, bytes, p, end, 0);
+    }
+
+    public long getAscii(Encoding enc, byte[]bytes, int p, int end, int len) {
+        if (p >= end) return pack(-1, len);
+
+        if (enc.isAsciiCompatible()) {
+            int c = bytes[p] & 0xff;
+            if (!Encoding.isAscii(c)) pack(-1, len);
+            return pack(c, len == 0 ? 0 : 1);
+        } else {
+            int cl = preciseLength(enc, bytes, p, end);
+            if (cl <= 0) return pack(-1, len);
+            int c = enc.mbcToCode(bytes, p, end);
+            if (!Encoding.isAscii(c)) return pack(-1, len);
+            return pack(c, len == 0 ? 0 : cl);
+        }
     }
 }

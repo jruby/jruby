@@ -48,8 +48,8 @@ import static org.jruby.util.StringSupport.CODERANGE_VALID;
 import static org.jruby.util.StringSupport.codeLength;
 import static org.jruby.util.StringSupport.codePoint;
 import static org.jruby.util.StringSupport.strLengthWithCodeRange;
-import static org.jruby.util.StringSupport.unpackCodeRange;
-import static org.jruby.util.StringSupport.unpackLength;
+import static org.jruby.util.StringSupport.unpackArg;
+import static org.jruby.util.StringSupport.unpackResult;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Locale;
@@ -199,9 +199,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private int strLength(ByteList bytes) {
         long lencr = strLengthWithCodeRange(value);
-        int cr = unpackCodeRange(lencr);
+        int cr = unpackArg(lencr);
         if (cr != 0) setCodeRange(cr);
-        return unpackLength(lencr);
+        return unpackResult(lencr);
     }
 
     /** short circuit for String key comparison
