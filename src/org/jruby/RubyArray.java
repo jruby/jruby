@@ -376,7 +376,7 @@ public class RubyArray extends RubyObject implements List {
         for (i = from; i + Ruby.NIL_PREFILLED_ARRAY_SIZE < to; i += Ruby.NIL_PREFILLED_ARRAY_SIZE) {
             System.arraycopy(nils, 0, arr, i, Ruby.NIL_PREFILLED_ARRAY_SIZE);
         }
-        System.arraycopy(nils, 0, arr, from, to - i);
+        System.arraycopy(nils, 0, arr, i, to - i);
     }
 
     private static void fillNil(IRubyObject[]arr, Ruby runtime) {
