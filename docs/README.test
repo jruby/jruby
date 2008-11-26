@@ -12,24 +12,19 @@
    one-per-line in test/jruby_index (and other test/*_index files).
    Note: some are commented out.
 
-   d) 'Rubyspecs', fetched directly from Rubinius project. The specs
+   d) 'Rubyspecs', fetched directly from Rubyspec project. The specs
    are written in rspec format and aim to test conformance of JRuby
    against the Ruby specification.
 
-2. If you'd like to contribute new tests, we'd prefer you write them in
-Test::Unit and add to the test/test_unit_index file.
+2. If you'd like to contribute new tests, we'd prefer you write them via the
+rubyspecs project.  If the tests are very specific to JRuby (like Java
+Integration) we prefer writing rspecs under out specs directory.
 
-Also, you may consider contributing conformance tests to 'rubyspecs',
-which are currently part of Rubinius project.
-
-3. Naming conventions: testCamelCased.rb files are currently for
-minirunit-based tests; test_under_scored.rb for Test::Unit tests.
-
-4. We're also interested in running tests for other ruby software suites; if
+3. We're also interested in running tests for other ruby software suites; if
 you want to grab your favorite ruby software and run its own tests under JRuby
 and report to the mailing list at dev@jruby.codehaus.org, that would be great.
 
-5. Please file any and all patches in JIRA:
+4. Please file any and all patches in JIRA:
 http://jira.codehaus.org/browse/JRUBY
 
 == Running Tests
@@ -43,5 +38,9 @@ The three test suites should be run in order.
 To run rubyspecs, type
 
   ant spec
+
+A slightly shorter run we run frequently is:
+
+  ant spec-short
 
 The rubyspecs will be fetched over the net, and then executed.
