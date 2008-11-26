@@ -150,39 +150,47 @@ public final class StringSupport {
     }
 
     public static long strLengthWithCodeRange(Encoding enc, byte[]bytes, int p, int end) {
-        int c, cr = 0;
-
         if (enc.isFixedWidth()) {
             return (end - p + enc.minLength() - 1) / enc.minLength();
         } else if (enc.isAsciiCompatible()) {
-            c = 0;
-            while (p < end) {
-                if (Encoding.isAscii(bytes[p])) {
-                    int q = searchNonAscii(bytes, p, end);
-                    if (q == -1) return pack(c + (end - p), cr == 0 ? CODERANGE_7BIT : cr);
-                    c += q - p;
-                    p = q;
-                }
-                int cl = preciseLength(enc, bytes, p, end);
-                if (cl > 0) {
-                    cr |= CODERANGE_VALID; 
-                    p += cl;
-                } else {
-                    cr = CODERANGE_BROKEN;
-                    p++;
-                }
-                c++;
-            }
+            return strLengthWithCodeRangeAsciiCompatible(enc, bytes, p, end);
         } else {
-            for (c = 0; p < end; c++) {
-                int cl = preciseLength(enc, bytes, p, end);
-                if (cl > 0) {
-                    cr |= CODERANGE_VALID; 
-                    p += cl;
-                } else {
-                    cr = CODERANGE_BROKEN;
-                    p++;
-                }
+            return strLengthWithCodeRangeNonAsciiCompatible(enc, bytes, p, end);
+        }
+    }
+
+    private static long strLengthWithCodeRangeAsciiCompatible(Encoding enc, byte[]bytes, int p, int end) {
+        int cr = 0, c = 0;
+        while (p < end) {
+            if (Encoding.isAscii(bytes[p])) {
+                int q = searchNonAscii(bytes, p, end);
+                if (q == -1) return pack(c + (end - p), cr == 0 ? CODERANGE_7BIT : cr);
+                c += q - p;
+                p = q;
+            }
+            int cl = preciseLength(enc, bytes, p, end);
+            if (cl > 0) {
+                cr |= CODERANGE_VALID; 
+                p += cl;
+            } else {
+                cr = CODERANGE_BROKEN;
+                p++;
+            }
+            c++;
+        }
+        return pack(c, cr == 0 ? CODERANGE_7BIT : cr);
+    }
+
+    private static long strLengthWithCodeRangeNonAsciiCompatible(Encoding enc, byte[]bytes, int p, int end) {
+        int cr = 0, c = 0;
+        for (c = 0; p < end; c++) {
+            int cl = preciseLength(enc, bytes, p, end);
+            if (cl > 0) {
+                cr |= CODERANGE_VALID; 
+                p += cl;
+            } else {
+                cr = CODERANGE_BROKEN;
+                p++;
             }
         }
         return pack(c, cr == 0 ? CODERANGE_7BIT : cr);
@@ -193,7 +201,7 @@ public final class StringSupport {
     }
 
     static long pack(int len, int cr) {
-        return ((long)len << 31) | cr;
+        return ((long)cr << 31) | len;
     }
 
     public static int unpackLength(long len) {
