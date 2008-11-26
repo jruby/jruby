@@ -179,6 +179,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return getCodeRange() == CODERANGE_7BIT || value.encoding.isSingleByte();
     }
 
+    final Encoding checkEncoding(RubyString other) {
+        Encoding enc = RubyEncoding.areCompatible(this, other);
+        if (enc == null) throw getRuntime().newArgumentError("incompatible character encodings: " + 
+                                value.encoding + " and " + other.value.encoding);
+        return enc;
+    }
+
     private int strLength(Encoding enc) {
         if (singleByteOptimizable()) return value.realSize;
         value.encoding = enc;

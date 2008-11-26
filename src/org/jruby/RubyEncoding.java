@@ -113,33 +113,45 @@ public class RubyEncoding extends RubyObject {
                 enc1 = enc2;
                 enc2 = encTmp;
             }
-            
+
             if (obj1 instanceof RubyString) {
                 int cr1 = ((RubyString)obj1).getCodeRange();
-
                 if (obj2 instanceof RubyString) {
                     int cr2 = ((RubyString)obj2).getCodeRange();
-
-                    if (cr1 != cr2) {
-                        /* may need to handle ENC_CODERANGE_BROKEN */
-                        if (cr1 == StringSupport.CODERANGE_7BIT) return enc2;
-                        if (cr2 == StringSupport.CODERANGE_7BIT) return enc1;
-                    }
-                    if (cr2 == StringSupport.CODERANGE_7BIT) {
-                        if (enc1 instanceof ASCIIEncoding) return enc2;
-                        return enc1;
-                    }
-                    
+                    return areCompatible(enc1, cr1, enc2, cr2);
                 }
                 if (cr1 == StringSupport.CODERANGE_7BIT) return enc2;
-                return null;
             }
         }
         return null;
     }
 
-    public static final Encoding areCompatible(Encoding enc1, Encoding enc2) {
-        return enc1 == enc2 ? enc1 : null;
+    public static Encoding areCompatible(RubyString str1, RubyString str2) { 
+        Encoding enc1 = str1.getEncoding();
+        Encoding enc2 = str2.getEncoding();
+
+        if (enc1 == enc2) return enc1;
+
+        if (str2.getByteList().realSize == 0) return enc1;
+        if (str1.getByteList().realSize == 0) return enc2;
+
+        if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
+
+        return areCompatible(enc1, str1.getCodeRange(), enc2, str2.getCodeRange());
+    }
+
+    private static Encoding areCompatible(Encoding enc1, int cr1, Encoding enc2, int cr2) {
+        if (cr1 != cr2) {
+            /* may need to handle ENC_CODERANGE_BROKEN */
+            if (cr1 == StringSupport.CODERANGE_7BIT) return enc2;
+            if (cr2 == StringSupport.CODERANGE_7BIT) return enc1;
+        }
+        if (cr2 == StringSupport.CODERANGE_7BIT) {
+            if (enc1 instanceof ASCIIEncoding) return enc2;
+            return enc1;
+        }
+        if (cr1 == StringSupport.CODERANGE_7BIT) return enc2;
+        return null;
     }
 
     @JRubyMethod(name = "list", meta = true)
