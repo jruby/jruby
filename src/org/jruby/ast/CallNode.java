@@ -148,7 +148,7 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
     
     @Override
     public String toString() {
-        return "CallNode: " + getName() + " @ " + getPosition();
+        return "" + getClass().getName() + ": '" + getName() + "' @ " + getPosition();
     }
     
     @Override

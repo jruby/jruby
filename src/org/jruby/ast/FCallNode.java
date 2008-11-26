@@ -126,7 +126,7 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
 
     @Override
     public String toString() {
-        return "FCallNode: " + getName();
+        return "" + getClass().getName() + ": '" + getName() + "' @ " + getPosition();
     }
     
     @Override
