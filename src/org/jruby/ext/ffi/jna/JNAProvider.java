@@ -93,7 +93,9 @@ public final class JNAProvider extends FFIProvider {
             case POINTER:
                 return PointerInvoker.INSTANCE;
             case INT8:
+                return Signed8Invoker.INSTANCE;
             case INT16:
+                return Signed16Invoker.INSTANCE;
             case INT32:
                 return Signed32Invoker.INSTANCE;
             case UINT8:
@@ -201,7 +203,19 @@ public final class JNAProvider extends FFIProvider {
         public static final FunctionInvoker INSTANCE = new VoidInvoker();
     }
     /**
-     * Invokes the native function with an unsigned 32 bit integer return value.
+     * Invokes the native function with n signed 8 bit integer return value.
+     * Returns a Fixnum to ruby.
+     */
+    private static final class Signed8Invoker implements FunctionInvoker {
+        public final IRubyObject invoke(Ruby runtime, Function function, Object[] args) {
+            int value = function.invokeInt(args) & 0xff;
+            return runtime.newFixnum(value < 0x80 ? value : -0x80 + (value - 0x80));
+        }
+        public static final FunctionInvoker INSTANCE = new Signed8Invoker();
+    }
+
+    /**
+     * Invokes the native function with an unsigned 8 bit integer return value.
      * Returns a Fixnum to ruby.
      */
     private static final class Unsigned8Invoker implements FunctionInvoker {
@@ -210,7 +224,19 @@ public final class JNAProvider extends FFIProvider {
         }
         public static final FunctionInvoker INSTANCE = new Unsigned8Invoker();
     }
-    
+
+    /**
+     * Invokes the native function with n signed 8 bit integer return value.
+     * Returns a Fixnum to ruby.
+     */
+    private static final class Signed16Invoker implements FunctionInvoker {
+        public final IRubyObject invoke(Ruby runtime, Function function, Object[] args) {
+            int value = function.invokeInt(args) & 0xffff;
+            return runtime.newFixnum(value < 0x8000 ? value : -0x8000 + (value - 0x8000));
+        }
+        public static final FunctionInvoker INSTANCE = new Signed16Invoker();
+    }
+
     /**
      * Invokes the native function with an unsigned 32 bit integer return value.
      * Returns a Fixnum to ruby.
