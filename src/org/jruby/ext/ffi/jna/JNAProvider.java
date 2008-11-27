@@ -485,7 +485,7 @@ public final class JNAProvider extends FFIProvider {
         public final Object marshal(Invocation invocation, IRubyObject parameter) {
             // Ruby strings are UTF-8, so should be able to just copy directly
             RubyString s = parameter.asString();
-            if (s.isTaint()) {
+            if (invocation.getThreadContext().getRuntime().getSafeLevel() > 0 && s.isTaint()) {
                 throw invocation.getThreadContext().getRuntime().newSecurityError("Unsafe string parameter");
             }
             ByteList bl = s.getByteList();
