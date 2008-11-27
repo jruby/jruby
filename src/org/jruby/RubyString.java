@@ -2645,7 +2645,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         int end = matcher.getEnd();
         if (matcher.getBegin() == end) {
             if (value.realSize > end) {
-                return end + regex.getEncoding().length(value.bytes, begin + end, range);
+                return end + enc.length(value.bytes, begin + end, range);
             } else {
                 return end + 1;
             }
