@@ -526,7 +526,11 @@ public class JavaUtil {
              	return new BigDecimal(double_value);
          	}
         }
+
         try {
+            if (isDuckTypeConvertable(rubyObject.getClass(), javaClass)) {
+                return convertProcToInterface(context, (RubyObject) rubyObject, javaClass);
+            }
             return ((JavaObject) rubyObject).getValue();
         } catch (ClassCastException ex) {
             if (rubyObject.getRuntime().getDebug().isTrue()) ex.printStackTrace();

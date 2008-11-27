@@ -7,6 +7,8 @@ import "java_integration.fixtures.UsesDescendantOfSingleMethodInterface"
 import "java_integration.fixtures.BeanLikeInterface"
 import "java_integration.fixtures.BeanLikeInterfaceHandler"
 import "java_integration.fixtures.ConstantHoldingInterface"
+import "java_integration.fixtures.ReturnsInterface"
+import "java_integration.fixtures.ReturnsInterfaceConsumer"
 
 describe "Single-method Java interfaces implemented in Ruby" do
   before :all do
@@ -477,5 +479,31 @@ describe "A ruby module used as a carrier for Java interfaces" do
     
     SingleMethodInterface::Caller.call(obj).should == "bar"
     blih.value.should == 1
+  end
+end
+
+describe "Coercion of normal ruby objects" do
+  it "should allow an object passed to a java method to be coerced to the interface" do
+    ri = mock "returns interface"
+    consumer = ReturnsInterfaceConsumer.new
+    consumer.set_returns_interface ri
+    ri.should be_kind_of(ReturnsInterface)
+  end
+
+  it "should allow an object passed to a java constructor to be coerced to the interface" do
+    ri = mock "returns interface"
+    ReturnsInterfaceConsumer.new(ri)
+    ri.should be_kind_of(ReturnsInterface)
+  end
+
+  it "should allow an object to be coerced as a return type of a java method" do
+    ri = mock "returns interface"
+    value = mock "return value runnable"
+    ri.stub!(:getRunnable).and_return value
+
+    consumer = ReturnsInterfaceConsumer.new(ri)
+    runnable = consumer.getRunnable
+    runnable.should == value
+    value.should be_kind_of(Java::JavaLang::Runnable)
   end
 end
