@@ -2597,7 +2597,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 end = positionEnd(regex, matcher, begin, range);
                 match = rubyRegex.updateBackRef(context, this, frame, matcher);
                 match.use();
-                block.yield(context, populateCaptures(rubyRegex, matcher, range));
+                block.yield(context, populateCapturesForScan(rubyRegex, matcher, range));
                 modifyCheck(bytes, size);
             }
         }
@@ -2619,7 +2619,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         } else {
             while (matcher.search(begin + end, range, Option.NONE) >= 0) {
                 end = positionEnd(regex, matcher, begin, range);
-                ary.append(populateCaptures(rubyRegex, matcher, range));
+                ary.append(populateCapturesForScan(rubyRegex, matcher, range));
             }
         }
 
@@ -2645,7 +2645,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
     }
 
-    private IRubyObject populateCaptures(RubyRegexp regex, Matcher matcher, int range) {
+    private IRubyObject populateCapturesForScan(RubyRegexp regex, Matcher matcher, int range) {
         Region region = matcher.getRegion();
         RubyArray result = getRuntime().newArray(region.numRegs);
         for (int i=1; i<region.numRegs; i++) {
