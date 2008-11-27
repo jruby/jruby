@@ -239,7 +239,7 @@ public class JavaInterfaceTemplate {
             // we've already done the above priming logic, just add another interface
             // to the list of intentions unless we're past the point of no return or
             // already intend to implement the given interface
-            if (!(javaInterfaces.isFrozen() || ((RubyArray)javaInterfaces).includes(context, javaClass))) {
+            if (!(javaInterfaces.isFrozen() || ((RubyArray)javaInterfaces).includes(context, javaClassObj))) {
                 ((RubyArray)javaInterfaces).append(javaClassObj);
             }
         }

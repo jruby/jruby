@@ -108,6 +108,21 @@ describe "Single-method Java interfaces implemented in Ruby" do
     c.send :include, java.util.Map
     UsesSingleMethodInterface.toString(c.new)
   end
+
+  it "should allow including the same interface twice" do
+    c = Class.new do
+      include SingleMethodInterface
+      include SingleMethodInterface
+
+      def initialize(val)
+        @value = val
+      end
+      def callIt
+        @value
+      end
+    end
+    UsesSingleMethodInterface.callIt(c.new(1)).should == 1
+  end
 end
 
 describe "Single-method Java interfaces" do
