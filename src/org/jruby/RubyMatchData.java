@@ -422,15 +422,10 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject pre_match(ThreadContext context) {
         check();
         RubyString ss;
-        
-        if (regs == null) {
-            if (begin == -1) return context.getRuntime().getNil();
-            ss = str.makeShared(context.getRuntime(), 0, begin);
-        } else {
-            if (regs.beg[0] == -1) return context.getRuntime().getNil();
-            ss = str.makeShared(context.getRuntime(), 0, regs.beg[0]);
-        }
-        
+
+        if (begin == -1) return context.getRuntime().getNil();
+        ss = str.makeShared(context.getRuntime(), 0, begin);
+
         if (isTaint()) ss.setTaint(true);
         return ss;
     }
