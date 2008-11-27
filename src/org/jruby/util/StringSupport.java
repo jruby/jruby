@@ -70,24 +70,31 @@ public final class StringSupport {
         if (enc == ASCIIEncoding.INSTANCE) {
             return searchNonAscii(bytes, p, p + len) != -1 ? CR_VALID : CR_7BIT;
         }
-
-        int end = p + len;
         if (enc.isAsciiCompatible()) {
-            p = searchNonAscii(bytes, p, end);
-            if (p == -1) return CR_7BIT;
-            
-            while (p < end) {
-                int cl = preciseLength(enc, bytes, p, end);
-                if (cl <= 0) return CR_BROKEN;
-                p += cl;
-                if (p < end) {
-                    p = searchNonAscii(bytes, p, end);
-                    if (p == -1) return CR_VALID;
-                }
-            }
-            return p > end ? CR_BROKEN : CR_VALID;
+            return codeRangeScanAsciiCompatible(enc, bytes, p, len);
         }
+        return codeRangeScanNonAsciiCompatible(enc, bytes, p, len);
+    }
+
+    private static int codeRangeScanAsciiCompatible(Encoding enc, byte[]bytes, int p, int len) {
+        int end = p + len;
+        p = searchNonAscii(bytes, p, end);
+        if (p == -1) return CR_7BIT;
         
+        while (p < end) {
+            int cl = preciseLength(enc, bytes, p, end);
+            if (cl <= 0) return CR_BROKEN;
+            p += cl;
+            if (p < end) {
+                p = searchNonAscii(bytes, p, end);
+                if (p == -1) return CR_VALID;
+            }
+        }
+        return p > end ? CR_BROKEN : CR_VALID;
+    }
+    
+    private static int codeRangeScanNonAsciiCompatible(Encoding enc, byte[]bytes, int p, int len) {
+        int end = p + len;
         while (p < end) {        
             int cl = preciseLength(enc, bytes, p, end);
             if (cl <= 0) return CR_BROKEN;
@@ -252,5 +259,42 @@ public final class StringSupport {
             if (!Encoding.isAscii(c)) return pack(-1, len);
             return pack(c, len == 0 ? 0 : cl);
         }
+    }
+
+    public static int nth(Encoding enc, byte[]bytes, int p, int end, int n) {
+        if (enc.isSingleByte()) {
+            p += n;
+        } else if (enc.isFixedWidth()) {
+            p += n * enc.maxLength();             
+        } else if (enc.isAsciiCompatible()) {
+            p = nthAsciiCompatible(enc, bytes, p, end, n);
+        } else {
+            p = nthNonAsciiCompatible(enc, bytes, p, end, n);
+        }
+        return p > end ? end : p;
+    }
+
+    private static int nthAsciiCompatible(Encoding enc, byte[]bytes, int p, int end, int n) {
+        while (p < end && n > 0) {
+            int end2 = p + n;
+            if (end < end2) return end;
+            if (Encoding.isAscii(bytes[p])) {
+                int p2 = searchNonAscii(bytes, p, end2);
+                if (p2 == -1) return end2;
+                n -= p2 - p;
+                p = p2;
+            }
+            int cl = length(enc, bytes, p, end);
+            p += cl;
+            n--;
+        }
+        return n != 0 ? end : p;
+    }
+
+    private static int nthNonAsciiCompatible(Encoding enc, byte[]bytes, int p, int end, int n) {
+        while (p < end && n-- != 0) {
+            p += length(enc, bytes, p, end);
+        }
+        return p;
     }
 }
