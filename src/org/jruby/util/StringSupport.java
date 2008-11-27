@@ -33,11 +33,11 @@ import org.jruby.Ruby;
 import org.jruby.RubyObject;
 
 public final class StringSupport {
-    public static final int CODERANGE_MASK      = RubyObject.USER0_F | RubyObject.USER1_F;  
-    public static final int CODERANGE_UNKNOWN   = 0;
-    public static final int CODERANGE_7BIT      = RubyObject.USER0_F; 
-    public static final int CODERANGE_VALID     = RubyObject.USER1_F;
-    public static final int CODERANGE_BROKEN    = RubyObject.USER0_F | RubyObject.USER1_F;
+    public static final int CR_MASK      = RubyObject.USER0_F | RubyObject.USER1_F;  
+    public static final int CR_UNKNOWN   = 0;
+    public static final int CR_7BIT      = RubyObject.USER0_F; 
+    public static final int CR_VALID     = RubyObject.USER1_F;
+    public static final int CR_BROKEN    = RubyObject.USER0_F | RubyObject.USER1_F;
 
     // rb_enc_mbclen
     public static int length(Encoding enc, byte[]bytes, int p, int end) {
@@ -64,62 +64,62 @@ public final class StringSupport {
     
     public static int codeRangeScan(Encoding enc, byte[]bytes, int p, int len) {
         if (enc == ASCIIEncoding.INSTANCE) {
-            return searchNonAscii(bytes, p, p + len) != -1 ? CODERANGE_VALID : CODERANGE_7BIT;
+            return searchNonAscii(bytes, p, p + len) != -1 ? CR_VALID : CR_7BIT;
         }
 
         int end = p + len;
         if (enc.isAsciiCompatible()) {
             p = searchNonAscii(bytes, p, end);
-            if (p == -1) return CODERANGE_7BIT;
+            if (p == -1) return CR_7BIT;
             
             while (p < end) {
                 int cl = preciseLength(enc, bytes, p, end);
-                if (cl <= 0) return CODERANGE_BROKEN;
+                if (cl <= 0) return CR_BROKEN;
                 p += cl;
                 if (p < end) {
                     p = searchNonAscii(bytes, p, end);
-                    if (p == -1) return CODERANGE_VALID;
+                    if (p == -1) return CR_VALID;
                 }
             }
-            return p > end ? CODERANGE_BROKEN : CODERANGE_VALID;
+            return p > end ? CR_BROKEN : CR_VALID;
         }
         
         while (p < end) {        
             int cl = preciseLength(enc, bytes, p, end);
-            if (cl <= 0) return CODERANGE_BROKEN;
+            if (cl <= 0) return CR_BROKEN;
             p += cl;
         }
-        return p > end ? CODERANGE_BROKEN : CODERANGE_VALID;
+        return p > end ? CR_BROKEN : CR_VALID;
     }
     
     public static long codeRangeScanRestartable(Encoding enc, byte[]bytes, int s, int end, int cr) { 
-        if (cr == CODERANGE_BROKEN) return pack(end - s, cr);
+        if (cr == CR_BROKEN) return pack(end - s, cr);
         int p = s;
         
         if (enc == ASCIIEncoding.INSTANCE) {
-            return pack(end - s, searchNonAscii(bytes, p, end) == -1 && cr != CODERANGE_VALID ? CODERANGE_7BIT : CODERANGE_VALID);
+            return pack(end - s, searchNonAscii(bytes, p, end) == -1 && cr != CR_VALID ? CR_7BIT : CR_VALID);
         } else if (enc.isAsciiCompatible()) {
             p = searchNonAscii(bytes, p, end);
-            if (p == -1) return pack(end - s, cr != CODERANGE_VALID ? CODERANGE_7BIT : cr);
+            if (p == -1) return pack(end - s, cr != CR_VALID ? CR_7BIT : cr);
 
             while (p < end) {
                 int cl = preciseLength(enc, bytes, p, end);
-                if (cl <= 0) return pack(p - s, cl == CHAR_INVALID ? CODERANGE_BROKEN : CODERANGE_UNKNOWN);
+                if (cl <= 0) return pack(p - s, cl == CHAR_INVALID ? CR_BROKEN : CR_UNKNOWN);
                 p += cl;
 
                 if (p < end) {
                     p = searchNonAscii(bytes, p, end);
-                    if (p == -1) return pack(end - s, CODERANGE_VALID);
+                    if (p == -1) return pack(end - s, CR_VALID);
                 }
             }
         } else {
             while (p < end) {
                 int cl = preciseLength(enc, bytes, p, end);
-                if (cl <= 0) return pack(p - s, cl == CHAR_INVALID ? CODERANGE_BROKEN: CODERANGE_UNKNOWN);
+                if (cl <= 0) return pack(p - s, cl == CHAR_INVALID ? CR_BROKEN: CR_UNKNOWN);
                 p += cl;
             }
         }
-        return pack(p - s, p > end ? CODERANGE_BROKEN : CODERANGE_VALID);
+        return pack(p - s, p > end ? CR_BROKEN : CR_VALID);
     }
 
     public static int strLength(Encoding enc, byte[]bytes, int p, int end) {
@@ -164,21 +164,21 @@ public final class StringSupport {
         while (p < end) {
             if (Encoding.isAscii(bytes[p])) {
                 int q = searchNonAscii(bytes, p, end);
-                if (q == -1) return pack(c + (end - p), cr == 0 ? CODERANGE_7BIT : cr);
+                if (q == -1) return pack(c + (end - p), cr == 0 ? CR_7BIT : cr);
                 c += q - p;
                 p = q;
             }
             int cl = preciseLength(enc, bytes, p, end);
             if (cl > 0) {
-                cr |= CODERANGE_VALID; 
+                cr |= CR_VALID; 
                 p += cl;
             } else {
-                cr = CODERANGE_BROKEN;
+                cr = CR_BROKEN;
                 p++;
             }
             c++;
         }
-        return pack(c, cr == 0 ? CODERANGE_7BIT : cr);
+        return pack(c, cr == 0 ? CR_7BIT : cr);
     }
 
     private static long strLengthWithCodeRangeNonAsciiCompatible(Encoding enc, byte[]bytes, int p, int end) {
@@ -186,14 +186,14 @@ public final class StringSupport {
         for (c = 0; p < end; c++) {
             int cl = preciseLength(enc, bytes, p, end);
             if (cl > 0) {
-                cr |= CODERANGE_VALID; 
+                cr |= CR_VALID; 
                 p += cl;
             } else {
-                cr = CODERANGE_BROKEN;
+                cr = CR_BROKEN;
                 p++;
             }
         }
-        return pack(c, cr == 0 ? CODERANGE_7BIT : cr);
+        return pack(c, cr == 0 ? CR_7BIT : cr);
     }
 
     public static long strLengthWithCodeRange(ByteList bytes) { 

@@ -41,10 +41,11 @@ package org.jruby;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.anno.FrameField.LASTLINE;
-import static org.jruby.util.StringSupport.CODERANGE_7BIT;
-import static org.jruby.util.StringSupport.CODERANGE_BROKEN;
-import static org.jruby.util.StringSupport.CODERANGE_MASK;
-import static org.jruby.util.StringSupport.CODERANGE_VALID;
+import static org.jruby.util.StringSupport.CR_7BIT;
+import static org.jruby.util.StringSupport.CR_BROKEN;
+import static org.jruby.util.StringSupport.CR_MASK;
+import static org.jruby.util.StringSupport.CR_UNKNOWN;
+import static org.jruby.util.StringSupport.CR_VALID;
 import static org.jruby.util.StringSupport.codeLength;
 import static org.jruby.util.StringSupport.codePoint;
 import static org.jruby.util.StringSupport.strLengthWithCodeRange;
@@ -81,6 +82,7 @@ import org.jruby.util.Numeric;
 import org.jruby.util.Pack;
 import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
+import org.jruby.util.TypeConverter;
 import org.jruby.util.string.JavaCrypt;
 
 /**
@@ -152,31 +154,31 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     public final int getCodeRange() {
-        return flags & CODERANGE_MASK;
+        return flags & CR_MASK;
     }
 
     public final void setCodeRange(int codeRange) {
-        flags |= codeRange & CODERANGE_MASK;
+        flags |= codeRange & CR_MASK;
     }
 
     public final void clearCodeRange() {
-        flags &= ~CODERANGE_MASK;
+        flags &= ~CR_MASK;
     }
     
     public final boolean isCodeRangeAsciiOnly() {
-        return getCodeRange() == CODERANGE_7BIT;
+        return getCodeRange() == CR_7BIT;
     }
 
     public final boolean isCodeRangeValid() {
-        return (flags & CODERANGE_VALID) != 0;
+        return (flags & CR_VALID) != 0;
     }
 
     public final boolean isCodeRangeBroken() {
-        return (flags & CODERANGE_BROKEN) != 0;
+        return (flags & CR_BROKEN) != 0;
     }
 
     private final boolean singleByteOptimizable() {
-        return getCodeRange() == CODERANGE_7BIT || value.encoding.isSingleByte();
+        return getCodeRange() == CR_7BIT || value.encoding.isSingleByte();
     }
 
     final Encoding checkEncoding(RubyString other) {
@@ -1298,26 +1300,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return str;
     }
 
-    /** rb_str_sub
-     *
-     */
-    @JRubyMethod(name = "sub", frame = true)
-    public IRubyObject sub(ThreadContext context, IRubyObject arg0, Block block) {
-        RubyString str = strDup(context.getRuntime());
-        str.sub_bang(context, arg0, block);
-        return str;
-    }
-
-    /** rb_str_sub
-     *
-     */
-    @JRubyMethod(name = "sub", frame = true)
-    public IRubyObject sub(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        RubyString str = strDup(context.getRuntime());
-        str.sub_bang(context, arg0, arg1, block);
-        return str;
-    }
-
     /**
      * Variable-arity version for compatibility. Not bound to Ruby.
      * @deprecated Use the versions with one or two arguments.
@@ -1334,10 +1316,27 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
     }
 
+    /** rb_str_sub
+     *
+     */
+    @JRubyMethod(name = "sub", frame = true, compat = CompatVersion.RUBY1_8)
+    public IRubyObject sub(ThreadContext context, IRubyObject arg0, Block block) {
+        RubyString str = strDup(context.getRuntime());
+        str.sub_bang(context, arg0, block);
+        return str;
+    }
+
+    @JRubyMethod(name = "sub", frame = true, compat = CompatVersion.RUBY1_8)
+    public IRubyObject sub(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        RubyString str = strDup(context.getRuntime());
+        str.sub_bang(context, arg0, arg1, block);
+        return str;
+    }
+
     /** rb_str_sub_bang
      *
      */
-    @JRubyMethod(name = "sub!", frame = true, reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "sub!", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject sub_bang(ThreadContext context, IRubyObject arg0, Block block) {
         if (block.isGiven()) {
             return subBangIter(context, getPattern(arg0, true), block);
@@ -1349,7 +1348,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_sub_bang
      *
      */
-    @JRubyMethod(name = "sub!", frame = true, reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "sub!", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject sub_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         return subBangNoIter(context, getPattern(arg0, true), arg1.convertToString());
     }
@@ -1365,13 +1364,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             int size = value.realSize;
             RubyMatchData match = rubyRegex.updateBackRef(context, this, frame, matcher);
             match.use();
-            final RubyString repl;
-            if (regex.numberOfCaptures() == 0) {
-                repl = objAsString(context, block.yield(context, substr(matcher.getBegin(), matcher.getEnd() - matcher.getBegin())));
-            } else {
-                Region region = matcher.getRegion();
-                repl = objAsString(context, block.yield(context, substr(region.beg[0], region.end[0] - region.beg[0])));
-            }
+            RubyString repl = objAsString(context, block.yield(context, substr(matcher.getBegin(), matcher.getEnd() - matcher.getBegin())));
             modifyCheck(bytes, size);
             frozenCheck();
             frame.setBackRef(match);            
@@ -1398,16 +1391,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private IRubyObject subBangCommon(ThreadContext context, Regex regex, Matcher matcher, RubyString repl, boolean tainted) {
-        final int beg;
-        final int plen;
-        if (regex.numberOfCaptures() == 0) {
-            beg = matcher.getBegin();
-            plen = matcher.getEnd() - beg;
-        } else {
-            Region region = matcher.getRegion();
-            beg = region.beg[0];
-            plen = region.end[0] - beg;
-        }
+        final int beg = matcher.getBegin();
+        final int plen = matcher.getEnd() - beg;
 
         ByteList replValue = repl.value;
         if (replValue.realSize > plen) {
@@ -1427,6 +1412,145 @@ public class RubyString extends RubyObject implements EncodingCapable {
         value.realSize += replValue.realSize - plen;
         if (tainted) setTaint(true);
         return this;
+    }
+
+    /** rb_str_sub
+    *
+    */
+    @JRubyMethod(name = "sub", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject sub19(ThreadContext context, IRubyObject arg0, Block block) {
+        RubyString str = strDup(context.getRuntime());
+        str.sub_bang19(context, arg0, block);
+        return str;
+    }
+
+    @JRubyMethod(name = "sub", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject sub19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        RubyString str = strDup(context.getRuntime());
+        str.sub_bang19(context, arg0, arg1, block);
+        return str;
+    }
+
+    @JRubyMethod(name = "sub!", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
+    public IRubyObject sub_bang19(ThreadContext context, IRubyObject arg0, Block block) {
+        if (block.isGiven()) {
+            return subBangIter19(context, getPattern(arg0, true), null, block);
+        } else {
+            throw context.getRuntime().newArgumentError("wrong number of arguments (1 for 2)");
+        }
+    }
+
+    @JRubyMethod(name = "sub!", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
+    public IRubyObject sub_bang19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        IRubyObject hash = TypeConverter.convertToTypeWithCheck(arg1, context.getRuntime().getHash(), "to_hash");
+        RubyRegexp regexp = getPattern(arg0, true);
+        if (hash.isNil()) {
+            return subBangNoIter19(context, regexp, arg1.convertToString());
+        } else {
+            return subBangIter19(context, regexp, (RubyHash)hash, block);
+        }
+    }
+
+    private IRubyObject subBangIter19(ThreadContext context, RubyRegexp rubyRegex, IRubyObject hash, Block block) {
+        Regex regex = rubyRegex.getPattern();
+        int range = value.begin + value.realSize;
+        Matcher matcher = regex.matcher(value.bytes, value.begin, range);
+
+        Frame frame = context.getPreviousFrame();
+        if (matcher.search(value.begin, range, Option.NONE) >= 0) {
+            byte[] bytes = value.bytes;
+            int size = value.realSize;
+            RubyMatchData match = rubyRegex.updateBackRef(context, this, frame, matcher);
+            match.use();
+
+            final RubyString repl;
+            final boolean tainted;
+            IRubyObject subStr = substr(matcher.getBegin(), matcher.getEnd() - matcher.getBegin()); // TODO: 1.9 substr
+            if (hash == null) {
+                tainted = false;
+                repl = objAsString(context, block.yield(context, subStr));
+            } else {
+                tainted = hash.isTaint();
+                repl = objAsString(context, ((RubyHash)hash).fastARef(subStr)); 
+            }
+
+            modifyCheck(bytes, size);
+            frozenCheck();
+            frame.setBackRef(match);            
+            return subBangCommon19(context, regex, matcher, repl, tainted);
+        } else {
+            return frame.setBackRef(context.getRuntime().getNil());
+        }
+    }
+
+    private IRubyObject subBangNoIter19(ThreadContext context, RubyRegexp rubyRegex, RubyString repl) {
+        boolean tained = repl.isTaint();
+        Regex regex = rubyRegex.getPattern();
+        int range = value.begin + value.realSize;
+        Matcher matcher = regex.matcher(value.bytes, value.begin, range);
+
+        Frame frame = context.getPreviousFrame();
+        if (matcher.search(value.begin, range, Option.NONE) >= 0) {
+            repl = rubyRegex.regsub(repl, this, matcher);
+            rubyRegex.updateBackRef(context, this, frame, matcher);
+            return subBangCommon19(context, regex, matcher, repl, tained);
+        } else {
+            return frame.setBackRef(context.getRuntime().getNil());
+        }
+    }
+
+    private IRubyObject subBangCommon19(ThreadContext context, Regex regex, Matcher matcher, RubyString repl, boolean tainted) {
+        final int beg = matcher.getBegin();       
+        final int end = matcher.getEnd();
+
+        Encoding enc = RubyEncoding.areCompatible(this, repl);
+        if (enc == null) enc = subBangVerifyEncoding(context, repl, beg, end);
+
+        final int plen = end - beg;
+        ByteList replValue = repl.value;
+        if (replValue.realSize > plen) {
+            modify(value.realSize + replValue.realSize - plen);
+        } else {
+            modify();
+        }
+
+        associateEncoding(enc);
+        if (repl.isTaint()) tainted = true;
+
+        int cr = getCodeRange();
+        if (cr > CR_UNKNOWN && cr < CR_BROKEN) {
+            int cr2 = repl.getCodeRange();
+            if (cr2 == CR_BROKEN || (cr == CR_VALID && cr2 == CR_7BIT)) {
+                cr = CR_UNKNOWN;
+            } else {
+                cr = cr2;
+            }
+        }
+
+        if (replValue.realSize != plen) {
+            int src = value.begin + beg + plen;
+            int dst = value.begin + beg + replValue.realSize;
+            int length = value.realSize - beg - plen;
+            System.arraycopy(value.bytes, src, value.bytes, dst, length);
+        }
+        System.arraycopy(replValue.bytes, replValue.begin, value.bytes, value.begin + beg, replValue.realSize);
+        value.realSize += replValue.realSize - plen;
+        setCodeRange(cr);
+        if (tainted) setTaint(true);
+        return this;
+    }
+
+    private Encoding subBangVerifyEncoding(ThreadContext context, RubyString repl, int beg, int end) {
+        byte[]bytes = value.bytes;
+        int p = value.begin;
+        int len = value.realSize;
+        Encoding strEnc = value.encoding;
+        if (StringSupport.codeRangeScan(strEnc, bytes, p, beg) != CR_7BIT ||
+            StringSupport.codeRangeScan(strEnc, bytes, p + end, len - end) != CR_7BIT) {
+            throw context.getRuntime().newArgumentError(
+                    "incompatible character encodings " + strEnc.getName() + " and " + repl.value.encoding);
+        }
+        return repl.value.encoding;        
     }
 
     /**
@@ -1452,10 +1576,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public IRubyObject gsub(ThreadContext context, IRubyObject arg0, Block block) {
         return gsub(context, arg0, block, false);
     }
-    
-    /** rb_str_gsub
-     *
-     */
+
     @JRubyMethod(name = "gsub", frame = true, reads = BACKREF, writes = BACKREF)
     public IRubyObject gsub(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         return gsub(context, arg0, arg1, block, false);
@@ -1617,6 +1738,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             return destStr;
         }
     }
+    
 
     /**
      * Variable-arity version for compatibility. Not bound to Ruby.

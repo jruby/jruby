@@ -120,7 +120,7 @@ public class RubyEncoding extends RubyObject {
                     int cr2 = ((RubyString)obj2).getCodeRange();
                     return areCompatible(enc1, cr1, enc2, cr2);
                 }
-                if (cr1 == StringSupport.CODERANGE_7BIT) return enc2;
+                if (cr1 == StringSupport.CR_7BIT) return enc2;
             }
         }
         return null;
@@ -143,14 +143,14 @@ public class RubyEncoding extends RubyObject {
     private static Encoding areCompatible(Encoding enc1, int cr1, Encoding enc2, int cr2) {
         if (cr1 != cr2) {
             /* may need to handle ENC_CODERANGE_BROKEN */
-            if (cr1 == StringSupport.CODERANGE_7BIT) return enc2;
-            if (cr2 == StringSupport.CODERANGE_7BIT) return enc1;
+            if (cr1 == StringSupport.CR_7BIT) return enc2;
+            if (cr2 == StringSupport.CR_7BIT) return enc1;
         }
-        if (cr2 == StringSupport.CODERANGE_7BIT) {
+        if (cr2 == StringSupport.CR_7BIT) {
             if (enc1 instanceof ASCIIEncoding) return enc2;
             return enc1;
         }
-        if (cr1 == StringSupport.CODERANGE_7BIT) return enc2;
+        if (cr1 == StringSupport.CR_7BIT) return enc2;
         return null;
     }
 
