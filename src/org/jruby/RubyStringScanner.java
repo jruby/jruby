@@ -498,9 +498,10 @@ public class RubyStringScanner extends RubyObject {
     private IRubyObject inspect1() {
         if (pos == 0) return RubyString.newEmptyString(getRuntime());
         if (pos > INSPECT_LENGTH) {
-            return RubyString.newStringNoCopy(getRuntime(), "...".getBytes()).append(str.substr(pos - INSPECT_LENGTH, INSPECT_LENGTH)).inspect();
+            return RubyString.newStringNoCopy(getRuntime(), "...".getBytes()).
+            append(str.substr(getRuntime(), pos - INSPECT_LENGTH, INSPECT_LENGTH)).inspect();
         } else {
-            return str.substr(0, pos).inspect();
+            return str.substr(getRuntime(), 0, pos).inspect();
         }
     }
     
@@ -508,9 +509,9 @@ public class RubyStringScanner extends RubyObject {
         if (pos >= str.getByteList().realSize) return RubyString.newEmptyString(getRuntime());
         int len = str.getByteList().realSize - pos;
         if (len > INSPECT_LENGTH) {
-            return ((RubyString)str.substr(pos, INSPECT_LENGTH)).cat("...".getBytes()).inspect();
+            return ((RubyString)str.substr(getRuntime(), pos, INSPECT_LENGTH)).cat("...".getBytes()).inspect();
         } else {
-            return str.substr(pos, len).inspect();
+            return str.substr(getRuntime(), pos, len).inspect();
         }
     }
 
