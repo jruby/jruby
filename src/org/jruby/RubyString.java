@@ -1650,16 +1650,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
         RubyMatchData match = null;
         while (beg >= 0) {
             final RubyString val;
-            final int begz;
-            final int endz;
-            if (regex.numberOfCaptures() == 0) {
-                begz = matcher.getBegin();
-                endz = matcher.getEnd();
-            } else {
-                Region region = matcher.getRegion();
-                begz = region.beg[0];
-                endz = region.end[0];
-            }
+            int begz = matcher.getBegin();
+            int endz = matcher.getEnd();
 
             if (repl == null) { // block given
                 byte[] bytes = value.bytes;
