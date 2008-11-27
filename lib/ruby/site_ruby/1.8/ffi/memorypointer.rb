@@ -72,3 +72,9 @@ module JRuby
     end
   end
 end
+#
+# FIXME: remove this once everything is converted over to FFI::
+#
+module FFI
+  MemoryPointer = JRuby::FFI::MemoryPointer
+end

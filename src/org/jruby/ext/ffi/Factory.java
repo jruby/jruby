@@ -110,6 +110,9 @@ public abstract class Factory {
             if (ffi.fastGetClass("Pointer") == null) {
                 Pointer.createPointerClass(runtime);
             }
+            if (ffi.fastGetClass("AutoPointer") == null) {
+                AutoPointer.createAutoPointerClass(runtime);
+            }
             if (module.fastGetClass(AbstractMemoryPointer.className) == null) {
                 AbstractMemoryPointer.createMemoryPointerClass(runtime);
             }

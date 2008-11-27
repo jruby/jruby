@@ -106,6 +106,15 @@ abstract public class AbstractMemory extends RubyObject {
     }
 
     /**
+     * Gets the size of the memory area.
+     *
+     * @return The size of the memory area.
+     */
+    protected final long getSize() {
+        return this.size;
+    }
+
+    /**
      * Calculates a hash code for the pointer.
      *
      * @return A RubyFixnum containing the hash code.
