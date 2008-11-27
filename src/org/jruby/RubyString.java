@@ -2586,16 +2586,15 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private IRubyObject scanIter(ThreadContext context, RubyRegexp rubyRegex, Matcher matcher, Encoding enc, Block block, int begin, int range) {
-        Regex regex = rubyRegex.getPattern();
         byte[]bytes = value.bytes;
         int size = value.realSize;
         RubyMatchData match = null;
         Frame frame = context.getPreviousFrame();
 
         int end = 0;
-        if (regex.numberOfCaptures() == 0) {
+        if (rubyRegex.getPattern().numberOfCaptures() == 0) {
             while (matcher.search(begin + end, range, Option.NONE) >= 0) {
-                end = positionEnd(regex, matcher, enc, begin, range);
+                end = positionEnd(matcher, enc, begin, range);
                 match = rubyRegex.updateBackRef(context, this, frame, matcher);
                 match.use();
                 block.yield(context, substr(matcher.getBegin(), matcher.getEnd() - matcher.getBegin()).infectBy(rubyRegex));
@@ -2603,7 +2602,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             }
         } else {
             while (matcher.search(begin + end, range, Option.NONE) >= 0) {
-                end = positionEnd(regex, matcher, enc, begin, range);
+                end = positionEnd(matcher, enc, begin, range);
                 match = rubyRegex.updateBackRef(context, this, frame, matcher);
                 match.use();
                 block.yield(context, populateCapturesForScan(rubyRegex, matcher, range));
@@ -2615,19 +2614,18 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private IRubyObject scanNoIter(ThreadContext context, RubyRegexp rubyRegex, Matcher matcher, Encoding enc, int begin, int range) {
-        Regex regex = rubyRegex.getPattern();
         Ruby runtime = context.getRuntime();
         RubyArray ary = runtime.newArray();
 
         int end = 0;
-        if (regex.numberOfCaptures() == 0) {
+        if (rubyRegex.getPattern().numberOfCaptures() == 0) {
             while (matcher.search(begin + end, range, Option.NONE) >= 0) {
-                end = positionEnd(regex, matcher, enc, begin, range);
+                end = positionEnd(matcher, enc, begin, range);
                 ary.append(substr(matcher.getBegin(), matcher.getEnd() - matcher.getBegin()).infectBy(rubyRegex));
             }
         } else {
             while (matcher.search(begin + end, range, Option.NONE) >= 0) {
-                end = positionEnd(regex, matcher, enc, begin, range);
+                end = positionEnd(matcher, enc, begin, range);
                 ary.append(populateCapturesForScan(rubyRegex, matcher, range));
             }
         }
@@ -2641,7 +2639,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return ary;
     }
 
-    private int positionEnd(Regex regex, Matcher matcher, Encoding enc, int begin, int range) {
+    private int positionEnd(Matcher matcher, Encoding enc, int begin, int range) {
         int end = matcher.getEnd();
         if (matcher.getBegin() == end) {
             if (value.realSize > end) {
