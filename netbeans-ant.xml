@@ -86,6 +86,7 @@
         <pathelement path="${jruby.classes.dir}"/>
         <path refid="build.classpath"/>
       </classpath>      
+      <sourcepath path="${src.dir}"/>
     </nbjpdastart>
     <java classname="org.jruby.Main" maxmemory="${jruby.launch.memory}" fork="true">
       <classpath>        
