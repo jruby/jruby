@@ -1338,11 +1338,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "sub!", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject sub_bang(ThreadContext context, IRubyObject arg0, Block block) {
-        if (block.isGiven()) {
-            return subBangIter(context, getPattern(arg0, true), block);
-        } else {
-            throw context.getRuntime().newArgumentError("wrong number of arguments (1 for 2)");
-        }
+        if (block.isGiven()) return subBangIter(context, getPattern(arg0, true), block);
+        throw context.getRuntime().newArgumentError(1, 2);
     }
 
     /** rb_str_sub_bang
@@ -1433,11 +1430,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "sub!", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
     public IRubyObject sub_bang19(ThreadContext context, IRubyObject arg0, Block block) {
-        if (block.isGiven()) {
-            return subBangIter19(context, getPattern(arg0, true), null, block);
-        } else {
-            throw context.getRuntime().newArgumentError("wrong number of arguments (1 for 2)");
-        }
+        if (block.isGiven()) return subBangIter19(context, getPattern(arg0, true), null, block);
+        throw context.getRuntime().newArgumentError(1, 2);
     }
 
     @JRubyMethod(name = "sub!", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
