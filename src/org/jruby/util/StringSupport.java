@@ -61,7 +61,11 @@ public final class StringSupport {
         }
         return -1;
     }
-    
+
+    public static int searchNonAscii(ByteList bytes) { 
+        return searchNonAscii(bytes.bytes, bytes.begin, bytes.begin + bytes.realSize);
+    }
+
     public static int codeRangeScan(Encoding enc, byte[]bytes, int p, int len) {
         if (enc == ASCIIEncoding.INSTANCE) {
             return searchNonAscii(bytes, p, p + len) != -1 ? CR_VALID : CR_7BIT;
@@ -91,7 +95,11 @@ public final class StringSupport {
         }
         return p > end ? CR_BROKEN : CR_VALID;
     }
-    
+
+    public static int codeRangeScan(Encoding enc, ByteList bytes) {
+        return codeRangeScan(enc, bytes.bytes, bytes.begin, bytes.realSize);
+    }
+
     public static long codeRangeScanRestartable(Encoding enc, byte[]bytes, int s, int end, int cr) { 
         if (cr == CR_BROKEN) return pack(end - s, cr);
         int p = s;

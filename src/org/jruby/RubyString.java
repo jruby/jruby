@@ -48,6 +48,8 @@ import static org.jruby.util.StringSupport.CR_UNKNOWN;
 import static org.jruby.util.StringSupport.CR_VALID;
 import static org.jruby.util.StringSupport.codeLength;
 import static org.jruby.util.StringSupport.codePoint;
+import static org.jruby.util.StringSupport.codeRangeScan;
+import static org.jruby.util.StringSupport.searchNonAscii;
 import static org.jruby.util.StringSupport.strLengthWithCodeRange;
 import static org.jruby.util.StringSupport.unpackArg;
 import static org.jruby.util.StringSupport.unpackResult;
@@ -175,6 +177,38 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     public final boolean isCodeRangeBroken() {
         return (flags & CR_BROKEN) != 0;
+    }
+
+    private void copyCodeRangeForSubstr(RubyString from) {
+        Encoding enc = value.encoding = from.value.encoding;
+        int fromCr = from.getCodeRange();
+        if (fromCr == CR_7BIT) {
+            setCodeRange(fromCr);
+        } else if (fromCr == CR_VALID) {
+            if (!enc.isAsciiCompatible() || searchNonAscii(value) != -1) {
+                setCodeRange(CR_VALID);
+            } else {
+                setCodeRange(CR_7BIT);
+            }
+        } else{ 
+            if (value.realSize == 0) {
+                setCodeRange(!enc.isAsciiCompatible() ? CR_VALID : CR_7BIT);
+            }
+        }
+    }
+    
+    private void copyCodeRange(RubyString from) {
+        value.encoding = from.value.encoding;
+        setCodeRange(from.getCodeRange());
+    }
+    
+    private int scanForCodeRange() {
+        int cr = getCodeRange();
+        if (cr == CR_UNKNOWN) {
+            cr = codeRangeScan(value.encoding, value);
+            setCodeRange(cr);
+        }
+        return cr;
     }
 
     private final boolean singleByteOptimizable() {
@@ -484,6 +518,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         value.invalidate();
     }
 
+    public final void modify19() {
+        modify();
+        clearCodeRange();
+    }
+
     /** rb_str_modify (with length bytes ensured)
      * 
      */    
@@ -502,6 +541,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
 
         value.invalidate();
+    }
+    
+    public final void modify19(int length) {
+        modify(length);
+        clearCodeRange();
     }
     
     private final void view(ByteList bytes) {
@@ -1503,9 +1547,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
         final int plen = end - beg;
         ByteList replValue = repl.value;
         if (replValue.realSize > plen) {
-            modify(value.realSize + replValue.realSize - plen);
+            modify19(value.realSize + replValue.realSize - plen);
         } else {
-            modify();
+            modify19();
         }
 
         associateEncoding(enc);
@@ -1539,8 +1583,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
         int p = value.begin;
         int len = value.realSize;
         Encoding strEnc = value.encoding;
-        if (StringSupport.codeRangeScan(strEnc, bytes, p, beg) != CR_7BIT ||
-            StringSupport.codeRangeScan(strEnc, bytes, p + end, len - end) != CR_7BIT) {
+        if (codeRangeScan(strEnc, bytes, p, beg) != CR_7BIT ||
+            codeRangeScan(strEnc, bytes, p + end, len - end) != CR_7BIT) {
             throw context.getRuntime().newArgumentError(
                     "incompatible character encodings " + strEnc + " and " + repl.value.encoding);
         }
@@ -3720,13 +3764,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "valid_encoding?", compat = CompatVersion.RUBY1_9)
     public IRubyObject valid_encoding_p(ThreadContext context) {
         Ruby runtime = context.getRuntime();
-        return isCodeRangeBroken() ? runtime.getFalse() : runtime.getTrue();
+        return scanForCodeRange() == CR_BROKEN ? runtime.getFalse() : runtime.getTrue();
     }
-    
+
     @JRubyMethod(name = "ascii_only?", compat = CompatVersion.RUBY1_9)
     public IRubyObject ascii_only_p(ThreadContext context) {
         Ruby runtime = context.getRuntime();
-        return isCodeRangeAsciiOnly() ? runtime.getFalse() : runtime.getTrue();
+        return scanForCodeRange() == CR_7BIT ? runtime.getFalse() : runtime.getTrue();
     }
 
     /**
