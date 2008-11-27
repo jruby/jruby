@@ -2381,17 +2381,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return split(context, context.getRuntime().getNil());
     }
 
-    /** rb_str_split_m
-     *
-     */
     @JRubyMethod(writes = BACKREF)
     public RubyArray split(ThreadContext context, IRubyObject arg0) {
         return splitCommon(arg0, false, 0, 0, context);
     }
 
-    /** rb_str_split_m
-     *
-     */
     @JRubyMethod(writes = BACKREF)
     public RubyArray split(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         final int lim = RubyNumeric.fix2int(arg1);
@@ -2440,12 +2434,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         RubyArray result = runtime.newArray();
         final Encoding enc = regex.getEncoding();
 
-        final int beg;
-        if (regex.numberOfCaptures() == 0) { // shorter path, no captures defined, no region will be returned
-            beg = regexSplitNG(result, matcher, enc, limit, lim, i, runtime);
-        } else {
-            beg = regexSplit(result, matcher, enc, limit, lim, i, runtime);
-        }
+        int beg = regexSplit(runtime, result, matcher, enc, limit, lim, i, regex.numberOfCaptures() != 0);
 
         // only this case affects backrefs 
         context.getCurrentFrame().setBackRef(runtime.getNil());
@@ -2457,57 +2446,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 result.append(substr(beg, value.realSize - beg));
             }
         }
-
         return result;
     }
 
-    private int regexSplit(RubyArray result, Matcher matcher, Encoding enc, boolean limit, int lim, int i, Ruby runtime) {
-        byte[]bytes = value.bytes;
-        int begin = value.begin;
-        int start = begin;
-        int range = begin + value.realSize;
-        int end, beg = 0;
-        boolean lastNull = false;
-
-        while ((end = matcher.search(start, range, Option.NONE)) >= 0) {
-            final Region region = matcher.getRegion();
-            if (start == end + begin && region.beg[0] == region.end[0]) {
-                if (value.realSize == 0) {                        
-                    result.append(newEmptyString(runtime, getMetaClass()));
-                    break;
-                } else if (lastNull) {
-                    result.append(substr(beg, enc.length(bytes, begin + beg, range)));
-                    beg = start - begin;
-                } else {
-                    if (start == range) {
-                        start++;
-                    } else {
-                        start += enc.length(bytes, start, range);
-                    }
-                    lastNull = true;
-                    continue;
-                }                    
-            } else {
-                result.append(substr(beg, end - beg));
-                beg = start = region.end[0];
-                start += begin;
-            }
-            lastNull = false;
-            
-            for (int idx=1; idx<region.numRegs; idx++) {
-                if (region.beg[idx] == -1) continue;
-                if (region.beg[idx] == region.end[idx]) {
-                    result.append(newEmptyString(runtime, getMetaClass()));
-                } else {
-                    result.append(substr(region.beg[idx], region.end[idx] - region.beg[idx]));
-                }
-            }
-            if (limit && lim <= ++i) break;
-        }
-        return beg;
-    }
-
-    private int regexSplitNG(RubyArray result, Matcher matcher, Encoding enc, boolean limit, int lim, int i, Ruby runtime) {
+    private int regexSplit(Ruby runtime, RubyArray result, Matcher matcher, Encoding enc, boolean limit, int lim, int i, boolean captures) {
         byte[]bytes = value.bytes;
         int begin = value.begin;
         int start = begin;
@@ -2538,9 +2480,24 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 start = begin + matcher.getEnd();
             }
             lastNull = false;
+
+            if (captures) populateCapturesForSplit(runtime, result, matcher);
+
             if (limit && lim <= ++i) break;
         }
         return beg;
+    }
+
+    private void populateCapturesForSplit(Ruby runtime, RubyArray result, Matcher matcher) {
+        Region region = matcher.getRegion();
+        for (int i = 1; i < region.numRegs; i++) {
+            if (region.beg[i] == -1) continue;
+            if (region.beg[i] == region.end[i]) {
+                result.append(newEmptyString(runtime, getMetaClass()));
+            } else {
+                result.append(substr(region.beg[i], region.end[i] - region.beg[i]));
+            }
+        }
     }
 
     private RubyArray awkSplit(boolean limit, int lim, int i) {
