@@ -2623,7 +2623,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (regex.numberOfCaptures() == 0) {
             while (matcher.search(begin + end, range, Option.NONE) >= 0) {
                 end = positionEnd(regex, matcher, enc, begin, range);
-                ary.append(substr(matcher.getBegin(), matcher.getEnd() - matcher.getBegin())).infectBy(rubyRegex);
+                ary.append(substr(matcher.getBegin(), matcher.getEnd() - matcher.getBegin()).infectBy(rubyRegex));
             }
         } else {
             while (matcher.search(begin + end, range, Option.NONE) >= 0) {
