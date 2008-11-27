@@ -29,7 +29,7 @@ module FFI
     #
     def self.new(ptr, proc=nil)
       raise ArgumentError, "Invalid pointer" if ptr.nil? || !ptr.kind_of?(Pointer) \
-        #|| ptr.kind_of?(MemoryPointer) || ptr.kind_of?(AutoPointer)
+        || ptr.kind_of?(MemoryPointer) || ptr.kind_of?(AutoPointer)
       free = if proc and proc.is_a? Method
         finalize(ptr, self.method_to_proc(proc))
       elsif proc and proc.is_a? Proc

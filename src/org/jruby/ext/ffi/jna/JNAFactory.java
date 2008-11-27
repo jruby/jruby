@@ -48,6 +48,9 @@ public class JNAFactory extends org.jruby.ext.ffi.Factory {
         // Hook up the MemoryPointer class if its not already there
         //
         synchronized (module) {
+            if (module.fastGetClass(JNABasePointer.JNA_POINTER_NAME) == null) {
+                JNABasePointer.createJNAPointerClass(runtime);
+            }
             if (module.fastGetClass(JNAMemoryPointer.MEMORY_POINTER_NAME) == null) {
                 JNAMemoryPointer.createMemoryPointerClass(runtime);
             }
