@@ -87,6 +87,7 @@ public class RubyThread extends RubyObject {
     private final ThreadService threadService;
     private volatile boolean isStopped = false;
     private volatile boolean isDead = false;
+    private volatile boolean isWoken = false;
     public final Object stopLock = new Object();
     
     private volatile boolean killed = false;
@@ -545,7 +546,8 @@ public class RubyThread extends RubyObject {
     @JRubyMethod(name = "wakeup")
     public RubyThread wakeup() {
     	synchronized (stopLock) {
-    		stopLock.notifyAll();
+            isWoken = true;
+            stopLock.notifyAll();
     	}
     	
     	return this;
@@ -666,9 +668,15 @@ public class RubyThread extends RubyObject {
     	
     	return this;
     }
-    
-    public void sleep(long millis) throws InterruptedException {
+
+    /**
+     * We can never be sure if a wait will finish because of a Java "spurious wakeup".  So if we
+     * explicitly wakeup and we wait less than requested amount we will return false.  We will
+     * return true if we sleep right amount or less than right amount via spurious wakeup.
+     */
+    public boolean sleep(long millis) throws InterruptedException {
         assert this == getRuntime().getCurrentContext().getThread();
+
         synchronized (stopLock) {
             pollThreadEvents();
             try {
@@ -677,8 +685,14 @@ public class RubyThread extends RubyObject {
             } finally {
                 isStopped = false;
                 pollThreadEvents();
+                if (isWoken) {
+                    isWoken = false;
+                    return false;
+                }
             }
         }
+
+        return true;
     }
 
     @JRubyMethod(name = "status")

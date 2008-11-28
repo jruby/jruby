@@ -649,11 +649,13 @@ public class RubyKernel {
         long startTime = System.currentTimeMillis();
         
         RubyThread rubyThread = context.getThread();
-        
+
+        // Spurious wakeup-loop
         do {
             long loopStartTime = System.currentTimeMillis();
             try {
-                rubyThread.sleep(milliseconds);
+                // We break if we know this sleep was explicitly woken up/interrupted
+                if (!rubyThread.sleep(milliseconds)) break;
             } catch (InterruptedException iExcptn) {
             }
             milliseconds -= (System.currentTimeMillis() - loopStartTime);
