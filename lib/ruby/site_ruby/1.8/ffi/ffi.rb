@@ -64,6 +64,7 @@ require 'ffi/io'
 require 'ffi/variadic'
 require 'ffi/errno'
 require 'ffi/rbx'
+require 'ffi/managedstruct'
 
 module FFI
 
