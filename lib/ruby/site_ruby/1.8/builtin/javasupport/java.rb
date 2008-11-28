@@ -43,7 +43,11 @@ module JavaPackageModuleTemplate
       JavaUtilities.get_proxy_or_package_under_package self, sym
     end
     private :method_missing
-    
+
+    def package_name
+      # strip off trailing .
+      @package_name[0..-2]
+    end
   end
 end
 # pull in the default package
