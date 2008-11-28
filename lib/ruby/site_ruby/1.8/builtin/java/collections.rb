@@ -16,10 +16,17 @@ end
 module java::lang::Iterable
   include Enumerable
 
-  def each(&block)
+  def each
+    iter = iterator
+    yield(iter.next) while iter.hasNext
+  end
+
+  def each_with_index
+    index = 0
     iter = iterator
     while iter.hasNext
-      block.call(iter.next)
+      yield(iter.next, index)
+      index += 1
     end
   end
 end
