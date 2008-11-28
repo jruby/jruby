@@ -485,9 +485,7 @@ public class RubyModule extends RubyObject {
         RubyModule module = (RubyModule) arg;
 
         // Make sure the module we include does not already exist
-        if (isSame(module)) {
-            return;
-        }
+        checkForCyclicInclude(module);
 
         infectBy(module);
 
