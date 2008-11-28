@@ -238,6 +238,14 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
+    static final ByteList[] SINGLE_CHAR_BYTELISTS;
+    static {
+        SINGLE_CHAR_BYTELISTS = new ByteList[256];
+        for (int i = 0; i < 256; i++) {
+            SINGLE_CHAR_BYTELISTS[i] = new ByteList(new byte[]{(byte)i}, false);
+        }
+    }
+
     /** int_chr
      * 
      */
@@ -246,7 +254,7 @@ public abstract class RubyInteger extends RubyNumeric {
         if (getLongValue() < 0 || getLongValue() > 0xff) {
             throw getRuntime().newRangeError(this.toString() + " out of char range");
         }
-        return RubyString.newString(getRuntime(), new ByteList(new byte[]{(byte)getLongValue()}, false)); 
+        return RubyString.newString(getRuntime(), SINGLE_CHAR_BYTELISTS[(int)getLongValue()]);
     }
 
     /** int_to_i
