@@ -28,7 +28,6 @@
 
 package org.jruby.ext.ffi.jna;
 
-import com.sun.jna.CallbackProxy;
 import org.jruby.ext.ffi.*;
 import com.sun.jna.Function;
 import com.sun.jna.Memory;
@@ -37,9 +36,7 @@ import com.sun.jna.NativeLibrary;
 import com.sun.jna.Pointer;
 import java.nio.ByteBuffer;
 import org.jruby.Ruby;
-import org.jruby.RubyProc;
 import org.jruby.RubyString;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
@@ -105,8 +102,9 @@ public final class JNAProvider extends FFIProvider {
             case UINT32:
                 return Unsigned32Invoker.INSTANCE;
             case INT64:
-            case UINT64:
                 return Signed64Invoker.INSTANCE;
+            case UINT64:
+                return Unsigned64Invoker.INSTANCE;
             case LONG:
                 return Platform.getPlatform().addressSize() == 32
                         ? Signed32Invoker.INSTANCE
@@ -278,6 +276,17 @@ public final class JNAProvider extends FFIProvider {
             return runtime.newFixnum(function.invokeLong(args));
         }
         public static final FunctionInvoker INSTANCE = new Signed64Invoker();
+    }
+
+    /**
+     * Invokes the native function with a 64 bit unsigned integer return value.
+     * Returns a ruby Fixnum or Bignum.
+     */
+    private static final class Unsigned64Invoker implements FunctionInvoker {
+        public final IRubyObject invoke(Ruby runtime, Function function, Object[] args) {
+            return Util.newUnsigned64(runtime, function.invokeLong(args));
+        }
+        public static final FunctionInvoker INSTANCE = new Unsigned64Invoker();
     }
     
     /**

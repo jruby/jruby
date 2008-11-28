@@ -28,8 +28,10 @@
 
 package org.jruby.ext.ffi;
 
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import org.jruby.Ruby;
+import org.jruby.RubyBignum;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.javasupport.JavaObject;
@@ -94,11 +96,9 @@ public final class Util {
         return longValue(parameter);
     }
     public static final long uint64Value(IRubyObject parameter) {
-        final long value = longValue(parameter);
-        if (value < 0) {
-            throw parameter.getRuntime().newRangeError("Value "
-                    + value + " outside unsigned long long range");
-        }
+        final long value = parameter instanceof RubyBignum
+                ? ((RubyBignum) parameter).getValue().longValue()
+                :longValue(parameter);
         return value;
     }
     public static final float floatValue(IRubyObject parameter) {
@@ -147,8 +147,11 @@ public final class Util {
     public static final IRubyObject newUnsigned32(Ruby runtime, int value) {
         return runtime.newFixnum(value < 0 ? (long)((value & 0x7FFFFFFFL) + 0x80000000L) : value);
     }
+    private static final BigInteger UINT64_BASE = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE);
     public static final IRubyObject newUnsigned64(Ruby runtime, long value) {
-        return runtime.newFixnum(value);
+        return value < 0
+                    ? RubyBignum.newBignum(runtime, BigInteger.valueOf(value & 0x7fffffffffffffffL).add(UINT64_BASE))
+                    : runtime.newFixnum(value);
     }
     public static final <T> T convertParameter(IRubyObject parameter, Class<T> paramClass) {
         return paramClass.cast(parameter instanceof JavaObject
