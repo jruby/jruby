@@ -557,7 +557,13 @@ public class LoadService {
         // attempt to load the found library
         RubyString loadNameRubyString = RubyString.newString(runtime, state.loadName);
         try {
-            addLoadedFeature(loadNameRubyString);
+            synchronized (loadedFeaturesInternal) {
+                if (loadedFeaturesInternal.contains(loadNameRubyString)) {
+                    return false;
+                } else {
+                    addLoadedFeature(loadNameRubyString);
+                }
+            }
             
             // otherwise load the library we've found
             state.library.load(runtime, false);
