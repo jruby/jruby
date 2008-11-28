@@ -134,18 +134,22 @@ public abstract class StaticScope implements Serializable {
         // If we could not find the constant from cref..then try getting from inheritence hierarchy
         return result == null ? cref.getConstantNoConstMissing(internedName) : result;
     }
-    
+
     private IRubyObject getConstantInner(Ruby runtime, String internedName, RubyModule object) {
-        if (cref == object) return null;
-        
         IRubyObject result = cref.fastFetchConstant(internedName);
 
         if (result != null) {
             if (result == RubyObject.UNDEF) return getUndefConstant(runtime, internedName, object);
             return result;
         }
-        
-        return previousCRefScope == null ? null : previousCRefScope.getConstantInner(runtime, internedName, object);
+
+        return previousCRefScope == null ? null : previousCRefScope.getConstantInnerNoObject(runtime, internedName, object);
+    }
+    
+    private IRubyObject getConstantInnerNoObject(Ruby runtime, String internedName, RubyModule object) {
+        if (cref == object) return null;
+
+        return getConstantInner(runtime, internedName, object);
     }
 
     /* Try and unload the autoload specified from internedName */

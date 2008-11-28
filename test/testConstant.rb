@@ -267,3 +267,16 @@ module JRuby3091B3
 end
 
 test_equal(1, JRuby3091B3.const)
+
+module JRuby3117
+  class ::Object
+    def jruby3117
+      JRuby3117Const
+    end
+  end
+  JRuby3117Const = 1
+end
+
+test_no_exception {
+  test_equal(1, jruby3117)
+}
