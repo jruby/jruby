@@ -154,8 +154,7 @@ public class JavaInterfaceTemplate {
                 clazz.addMethod("__jcreate!", new JavaMethodNoBlock(clazz, Visibility.PRIVATE) {
                     @Override
                     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-                        IRubyObject javaInterfaces = RuntimeHelpers.invoke(context, self.getMetaClass(), "java_interfaces");
-                        return jcreateProxy(self, javaInterfaces, args);
+                        return jcreateProxy(self, args);
                     }
                 });
                 
@@ -164,8 +163,7 @@ public class JavaInterfaceTemplate {
                 clazz.addMethod("__jcreate_meta!", new JavaMethodNoBlock(clazz, Visibility.PRIVATE) {
                     @Override
                     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-                        IRubyObject javaInterfaces = RuntimeHelpers.invoke(context, self.getSingletonClass(), "java_interfaces");
-                        IRubyObject result = jcreateProxy(self, javaInterfaces, args);
+                        IRubyObject result = jcreateProxy(self, args);
                         return result;
                     }
                 });
@@ -245,14 +243,24 @@ public class JavaInterfaceTemplate {
         }
     }
 
-    private static IRubyObject jcreateProxy(IRubyObject self, IRubyObject interfaces, IRubyObject[] args) {
-        if (!interfaces.isFrozen()) interfaces.setFrozen(true);
+    private static IRubyObject jcreateProxy(IRubyObject self, IRubyObject[] args) {
+        RubyClass current = self.getMetaClass();
+        RubyArray interfaces2 = self.getRuntime().newArray();
 
-        if (interfaces.isNil()) {
-            interfaces = self.getRuntime().newArray();
+        // walk all superclasses aggregating interfaces
+        while (current != null) {
+            IRubyObject maybeInterfaces = current.getInstanceVariables().getInstanceVariable("@java_interfaces");
+            if (maybeInterfaces instanceof RubyArray) {
+                RubyArray moreInterfaces = (RubyArray)maybeInterfaces;
+                if (!moreInterfaces.isFrozen()) moreInterfaces.setFrozen(true);
+
+                interfaces2 = (RubyArray)interfaces2.op_or(moreInterfaces);
+            }
+            current = current.getSuperClass();
         }
 
-        IRubyObject newObject = Java.new_proxy_instance2(self, self, interfaces, Block.NULL_BLOCK);
+        // construct the new interface impl and set it into the object
+        IRubyObject newObject = Java.new_proxy_instance2(self, self, interfaces2, Block.NULL_BLOCK);
         return Java.JavaUtilities.set_java_object(self, self, newObject);
     }
 

@@ -507,3 +507,15 @@ describe "Coercion of normal ruby objects" do
     value.should be_kind_of(Java::JavaLang::Runnable)
   end
 end
+
+describe "A child extending a Ruby class that includes Java interfaces" do
+  it "should implement all those interfaces" do
+    sup = Class.new { include BeanLikeInterface }
+    child = Class.new(sup) { def value; 1; end }
+
+    obj = child.new
+    blih = BeanLikeInterfaceHandler.new(obj)
+
+    blih.value.should == 1
+  end
+end
