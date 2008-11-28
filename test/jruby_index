@@ -52,6 +52,7 @@ test_launching_by_shell_script
 test_marshal_gemspec
 test_method_missing
 test_methods
+test_no_stack_trace_stomp
 test_pack
 test_primitive_to_java
 test_process

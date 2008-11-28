@@ -140,6 +140,10 @@ public class RubyException extends RubyObject {
         }
     }
     
+    public StackTraceElement[] getBacktraceFrames() {
+        return backtraceFrames;
+    }
+    
     public static final int RAW = 0;
     public static final int RAW_FILTERED = 1;
     public static final int RUBY_FRAMED = 2;
