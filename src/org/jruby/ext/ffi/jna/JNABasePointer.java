@@ -31,23 +31,26 @@ public class JNABasePointer extends AbstractMemoryPointer implements JNAMemory {
 
         return result;
     }
-
-    public JNABasePointer(Ruby runtime, RubyClass klass) {
-        super(runtime, klass, JNAMemoryIO.wrap(Pointer.NULL), 0, 0);
-    }
-    JNABasePointer(Ruby runtime, RubyClass klass, MemoryIO io, long offset, long size) {
-        super(runtime, klass, io, offset, size);
+    
+    JNABasePointer(Ruby runtime, MemoryIO io, long offset, long size) {
+        this(runtime, FFIProvider.getModule(runtime).fastGetClass(JNA_POINTER_NAME),
+                io, offset, size);
     }
     JNABasePointer(Ruby runtime, Pointer value) {
         this(runtime, JNAMemoryIO.wrap(value), 0, Long.MAX_VALUE);
     }
-    JNABasePointer(Ruby runtime, JNABasePointer ptr, long offset) {
-        this(runtime, ptr.io, ptr.offset + offset,
+    JNABasePointer(Ruby runtime, RubyClass klass, MemoryIO io, long offset, long size) {
+        super(runtime, klass, io, offset, size);
+    }
+    JNABasePointer(Ruby runtime, IRubyObject klass, Pointer value) {
+        this(runtime, klass, JNAMemoryIO.wrap(value), 0, Long.MAX_VALUE);
+    }
+    JNABasePointer(Ruby runtime, IRubyObject klass, JNABasePointer ptr, long offset) {
+        this(runtime, klass, ptr.io, ptr.offset + offset,
                 ptr.size == Long.MAX_VALUE ? Long.MAX_VALUE : ptr.size - offset);
     }
-    JNABasePointer(Ruby runtime, MemoryIO io, long offset, long size) {
-        super(runtime, FFIProvider.getModule(runtime).fastGetClass(JNA_POINTER_NAME),
-                io, offset, size);
+    JNABasePointer(Ruby runtime, IRubyObject klass, MemoryIO io, long offset, long size) {
+        super(runtime, (RubyClass) klass, io, offset, size);
     }
 
     @Override
@@ -80,8 +83,9 @@ public class JNABasePointer extends AbstractMemoryPointer implements JNAMemory {
     }
     @JRubyMethod(name = "+", required = 1)
     public IRubyObject op_plus(ThreadContext context, IRubyObject value) {
-        return new JNABasePointer(context.getRuntime(), this,
-                RubyNumeric.fix2long(value));
+        return new JNABasePointer(context.getRuntime(),
+                FFIProvider.getModule(context.getRuntime()).fastGetClass(JNA_POINTER_NAME),
+                this, RubyNumeric.fix2long(value));
     }
 
     @JRubyMethod(name = "put_pointer", required = 2)

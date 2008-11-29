@@ -64,29 +64,28 @@ public class JNABuffer extends AbstractBuffer implements JNAMemory {
         super(runtime, klass, JNAMemoryIO.wrap(Pointer.NULL), 0, 0);
     }
     
-    private JNABuffer(Ruby runtime, JNABuffer ptr, long offset) {
-        this(runtime, ptr.io, ptr.offset + offset, 
+    private JNABuffer(Ruby runtime, IRubyObject klass, JNABuffer ptr, long offset) {
+        this(runtime, klass, ptr.io, ptr.offset + offset,
                 ptr.size == Long.MAX_VALUE ? Long.MAX_VALUE : ptr.size - offset);
     }
-    private JNABuffer(Ruby runtime, MemoryIO io, long offset, long size) {
-        super(runtime, FFIProvider.getModule(runtime).fastGetClass(BUFFER_RUBY_CLASS),
-                io, offset, size);
+    private JNABuffer(Ruby runtime, IRubyObject klass, MemoryIO io, long offset, long size) {
+        super(runtime, (RubyClass) klass, io, offset, size);
     }
-    private static JNABuffer allocate(ThreadContext context, IRubyObject sizeArg, boolean clear) {
+    private static JNABuffer allocate(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, boolean clear) {
         int size = Util.int32Value(sizeArg);
         JNAMemoryIO io = size > 0 ? JNAMemoryIO.allocateDirect(size) : JNAMemoryIO.NULL;
         if (clear && size > 0) {
             io.setMemory(0, size, (byte) 0);
         }
-        return new JNABuffer(context.getRuntime(), io, 0, size);
+        return new JNABuffer(context.getRuntime(), recv, io, 0, size);
     }
     @JRubyMethod(name = { "alloc_inout", "__alloc_inout", "__alloc_heap_inout", "__alloc_direct_inout" }, meta = true)
     public static JNABuffer allocateDirect(ThreadContext context, IRubyObject recv, IRubyObject sizeArg) {
-        return allocate(context, sizeArg, CLEAR_DEFAULT);
+        return allocate(context, recv, sizeArg, CLEAR_DEFAULT);
     }
     @JRubyMethod(name = { "alloc_inout", "__alloc_inout", "__alloc_heap_inout", "__alloc_direct_inout" }, meta = true)
     public static JNABuffer allocateDirect(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject clearArg) {
-        return allocate(context, sizeArg, clearArg.isTrue());
+        return allocate(context, recv, sizeArg, clearArg.isTrue());
     }
     @JRubyMethod(name = { "alloc_in", "__alloc_in", "__alloc_heap_in", "__alloc_direct_in" }, meta = true)
     public static JNABuffer allocateInput(ThreadContext context, IRubyObject recv, IRubyObject arg) {
@@ -97,30 +96,31 @@ public class JNABuffer extends AbstractBuffer implements JNAMemory {
             final JNAMemoryIO io = JNAMemoryIO.allocateDirect(size);
             io.put(0, bl.unsafeBytes(), bl.begin(), bl.length());
             io.putByte(bl.length(), (byte) 0);
-            return new JNABuffer(context.getRuntime(), io, 0, size);
+            return new JNABuffer(context.getRuntime(), recv, io, 0, size);
         } else {
-            return allocate(context, arg, CLEAR_DEFAULT);
+            return allocate(context, recv, arg, CLEAR_DEFAULT);
         }
     }
     @JRubyMethod(name = { "alloc_in", "__alloc_in", "__alloc_heap_in", "__alloc_direct_in" }, meta = true)
     public static JNABuffer allocateInput(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject clearArg) {
-        return allocate(context, sizeArg, clearArg.isTrue());
+        return allocate(context, recv, sizeArg, clearArg.isTrue());
     }
     @JRubyMethod(name = { "alloc_out", "__alloc_out", "__alloc_heap_out", "__alloc_direct_out" }, meta = true)
     public static JNABuffer allocateOutput(ThreadContext context, IRubyObject recv, IRubyObject sizeArg) {
-        return allocate(context, sizeArg, CLEAR_DEFAULT);
+        return allocate(context, recv, sizeArg, CLEAR_DEFAULT);
     }
     @JRubyMethod(name = { "alloc_out", "__alloc_out", "__alloc_heap_out", "__alloc_direct_out" }, meta = true)
     public static JNABuffer allocateOutput(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject clearArg) {
-        return allocate(context, sizeArg, clearArg.isTrue());
+        return allocate(context, recv, sizeArg, clearArg.isTrue());
     }
     public Object getNativeMemory() {
         return ((JNAMemoryIO) getMemoryIO()).slice(offset).getMemory();
     }
     @JRubyMethod(name = "+", required = 1)
     public IRubyObject op_plus(ThreadContext context, IRubyObject value) {
-        return new JNABuffer(context.getRuntime(), this,
-                RubyNumeric.fix2long(value));
+        return new JNABuffer(context.getRuntime(),
+                FFIProvider.getModule(context.getRuntime()).fastGetClass(BUFFER_RUBY_CLASS),
+                this, RubyNumeric.fix2long(value));
     }
     @JRubyMethod(name = "put_pointer", required = 2)
     public IRubyObject put_pointer(ThreadContext context, IRubyObject offset, IRubyObject value) {
@@ -137,7 +137,7 @@ public class JNABuffer extends AbstractBuffer implements JNAMemory {
     }
     
     protected AbstractMemoryPointer getPointer(Ruby runtime, long offset) {
-        return new JNAMemoryPointer(runtime,
+        return new JNABasePointer(runtime,
                 getMemoryIO().getMemoryIO(this.offset + offset), 0, Long.MAX_VALUE);
     }
 }

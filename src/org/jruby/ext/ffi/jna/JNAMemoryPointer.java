@@ -30,11 +30,9 @@ package org.jruby.ext.ffi.jna;
 
 import org.jruby.ext.ffi.*;
 import com.sun.jna.Pointer;
-import com.sun.jna.ptr.PointerByReference;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -59,26 +57,15 @@ public class JNAMemoryPointer extends JNABasePointer implements JNAMemory {
         return result;
     }
     
-    public JNAMemoryPointer(Ruby runtime, RubyClass klass) {
-        super(runtime, klass);
-    }
-    JNAMemoryPointer(Ruby runtime, Pointer value) {
-        this(runtime, JNAMemoryIO.wrap(value), 0, Long.MAX_VALUE);
-    }
-    private JNAMemoryPointer(Ruby runtime, JNAMemoryPointer ptr, long offset) {
-        this(runtime, ptr.io, ptr.offset + offset, 
-                ptr.size == Long.MAX_VALUE ? Long.MAX_VALUE : ptr.size - offset);
-    }
-    JNAMemoryPointer(Ruby runtime, MemoryIO io, long offset, long size) {
-        super(runtime, FFIProvider.getModule(runtime).fastGetClass(MEMORY_POINTER_NAME),
-                io, offset, size);
+    private JNAMemoryPointer(Ruby runtime, IRubyObject klass, MemoryIO io, long offset, long size) {
+        super(runtime, (RubyClass) klass, io, offset, size);
     }
     
     @JRubyMethod(name = { "allocate", "allocate_direct", "allocateDirect" }, meta = true)
     public static JNAMemoryPointer allocateDirect(ThreadContext context, IRubyObject recv, IRubyObject sizeArg) {
         int size = Util.int32Value(sizeArg);
         JNAMemoryIO io = size > 0 ? JNAMemoryIO.allocateDirect(size) : JNAMemoryIO.NULL;
-        return new JNAMemoryPointer(context.getRuntime(), io, 0, size);
+        return new JNAMemoryPointer(context.getRuntime(), recv, io, 0, size);
     }
     @JRubyMethod(name = { "allocate", "allocate_direct", "allocateDirect" }, meta = true)
     public static JNAMemoryPointer allocateDirect(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject clearArg) {
@@ -87,7 +74,7 @@ public class JNAMemoryPointer extends JNABasePointer implements JNAMemory {
         if (clearArg.isTrue()) {
             io.setMemory(0, size, (byte) 0);
         }
-        return new JNAMemoryPointer(context.getRuntime(), io, 0, size);
+        return new JNAMemoryPointer(context.getRuntime(), recv, io, 0, size);
     }
 
     @Override

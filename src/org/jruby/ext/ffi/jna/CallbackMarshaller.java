@@ -262,7 +262,7 @@ final class CallbackMarshaller implements Marshaller {
             case FLOAT64:
                 return runtime.newFloat((Double) value);
             case POINTER:
-                return new JNAMemoryPointer(runtime, (Pointer) value);
+                return new JNABasePointer(runtime, (Pointer) value);
             default:
                 throw new IllegalArgumentException("Invalid type " + type);
         }
