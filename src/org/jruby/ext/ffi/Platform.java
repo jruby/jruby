@@ -32,6 +32,9 @@ import java.util.HashMap;
 import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -117,8 +120,32 @@ public abstract class Platform {
         platform.defineConstant("BYTE_ORDER", runtime.newFixnum(BYTE_ORDER));
         platform.defineConstant("BIG_ENDIAN", runtime.newFixnum(BIG_ENDIAN));
         platform.defineConstant("LITTLE_ENDIAN", runtime.newFixnum(LITTLE_ENDIAN));
+        platform.defineAnnotatedMethods(Platform.class);
     }
-    
+    @JRubyMethod(name = "windows?", module=true)
+    public static IRubyObject windows_p(ThreadContext context, IRubyObject recv) {
+        return context.getRuntime().newBoolean(IS_WINDOWS);
+    }
+    @JRubyMethod(name = "mac?", module=true)
+    public static IRubyObject mac_p(ThreadContext context, IRubyObject recv) {
+        return context.getRuntime().newBoolean(IS_MAC);
+    }
+    @JRubyMethod(name = "unix?", module=true)
+    public static IRubyObject unix_p(ThreadContext context, IRubyObject recv) {
+        return context.getRuntime().newBoolean(IS_BSD || IS_LINUX || IS_SOLARIS);
+    }
+    @JRubyMethod(name = "bsd?", module=true)
+    public static IRubyObject bsd_p(ThreadContext context, IRubyObject recv) {
+        return context.getRuntime().newBoolean(IS_BSD);
+    }
+    @JRubyMethod(name = "linux?", module=true)
+    public static IRubyObject linux_p(ThreadContext context, IRubyObject recv) {
+        return context.getRuntime().newBoolean(IS_LINUX);
+    }
+    @JRubyMethod(name = "solaris?", module=true)
+    public static IRubyObject solaris_p(ThreadContext context, IRubyObject recv) {
+        return context.getRuntime().newBoolean(IS_SOLARIS);
+    }
     /**
      * An extension over <code>System.getProperty</code> method.
      * Handles security restrictions, and returns the default
