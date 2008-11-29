@@ -75,7 +75,7 @@ public abstract class Factory {
             if (!RubyInstanceConfig.nativeEnabled) {
                 throw runtime.newLoadError("Native API access is disabled");
             }
-            RubyModule ffi = runtime.defineModuleUnder("FFI", runtime.defineModule("JRuby"));
+            RubyModule ffi = runtime.defineModule("FFI");
             Factory factory = Factory.getInstance();
             factory.init(runtime, ffi);
         }
@@ -95,9 +95,8 @@ public abstract class Factory {
      * 
      * @param module the module to register the classes under
      */
-    public void init(Ruby runtime, RubyModule module) {
-        RubyModule ffi = runtime.defineModule("FFI");
-        synchronized (module) {
+    public void init(Ruby runtime, RubyModule ffi) {
+        synchronized (ffi) {
             if (ffi.fastGetClass(FFIProvider.CLASS_NAME) == null) {
                 FFIProvider.createProviderClass(runtime, ffi);
             }
@@ -132,8 +131,7 @@ public abstract class Factory {
                 FileDescriptorIO.createFileDescriptorIOClass(runtime, ffi);
             }
             FFIProvider provider = newProvider(runtime);
-            module.defineConstant("InvokerFactory", provider);
-            module.defineConstant("CallbackFactory", provider);
+            ffi.defineConstant("InvokerFactory", provider);
             ffi.defineConstant("LastError", provider);
             RubyModule nativeType = ffi.defineModuleUnder("NativeType");
             for (NativeType type : NativeType.values()) {

@@ -89,7 +89,7 @@ module FFI
     end
     lib
   end
-  InvokerFactory = JRuby::FFI::InvokerFactory
+
   def self.create_invoker(lib, name, args, ret, options = { :convention => :default })
     lib = if lib
       map_library_name(lib)

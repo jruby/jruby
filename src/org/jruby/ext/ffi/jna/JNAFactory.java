@@ -42,13 +42,12 @@ public class JNAFactory extends org.jruby.ext.ffi.Factory {
     private final JNAPlatform platform = new JNAPlatform();
     
     @Override
-    public void init(Ruby runtime, RubyModule module) {
-        super.init(runtime, module);
+    public void init(Ruby runtime, RubyModule ffi) {
+        super.init(runtime, ffi);
         //
         // Hook up the MemoryPointer class if its not already there
         //
-        synchronized (module) {
-            RubyModule ffi = runtime.defineModule("FFI");
+        synchronized (ffi) {
             if (ffi.fastGetClass(JNABasePointer.JNA_POINTER_NAME) == null) {
                 JNABasePointer.createJNAPointerClass(runtime, ffi);
             }
