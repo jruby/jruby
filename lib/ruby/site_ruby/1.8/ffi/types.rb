@@ -1,6 +1,5 @@
 module FFI
   TypeDefs = Hash.new
-  NativeType = JRuby::FFI::NativeType
   def self.add_typedef(current, add)
     if current.kind_of? Integer
       code = current
