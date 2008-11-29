@@ -10,7 +10,7 @@ module Posix
   extend FFI::Library
   attach_function :stat, [ :string, :pointer ], :int
 end
-class Stat < JRuby::FFI::Struct
+class Stat < FFI::Struct
   layout \
     :st_dev => :int,        # device inode resides on (dev_t)
     :st_ino => :int,        # inode's number (ino_t)

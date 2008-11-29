@@ -11,7 +11,7 @@ module Posix
     if self._chmod(path, mode) != 0
     end
   end
-  if JRuby::FFI::Platform::IS_WINDOWS
+  if FFI::Platform.windows?
     attach_function :_chmod, :_chmod, [ :string, :int ], :int
   else
     attach_function :_chmod, :chmod, [ :string, :int ], :int
