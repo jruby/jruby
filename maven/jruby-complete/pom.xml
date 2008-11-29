@@ -87,6 +87,12 @@
       <version>1.0.1</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>org.jruby.extras</groupId>
+      <artifactId>constantine</artifactId>
+      <version>0.4</version>
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
 
   <build>
