@@ -22,14 +22,10 @@ esac
 # Figure out the OS and cpu the same as JNA would, so the library path can be set
 #
 case "`uname -m`" in
-  i[34567]86) JNA_CPU="i386";;
-  i86pc) JNA_CPU="x86";;
-  amd64|x86_64) JNA_CPU=amd64;;
-esac
-JNA_OS="`uname -s | tr '[A-Z]' '[a-z]'`"
-case "$JNA_OS" in
-  darwin) JNA_PATH="darwin";;
-  *) JNA_PATH="${OS}-${JNA_CPU}";;
+  i[34567]86) JNA_CPU=i386; JNA_ALT_CPU=amd64;;
+  i86pc) JNA_CPU="x86"; JNA_ALT_CPU=amd64;;
+  amd64|x86_64) JNA_CPU=amd64; JNA_ALT_CPU=i386;;
+  sparc*) JNA_CPU=sparc; JNA_ALT_CPU=sparcv9;;
 esac
 
 # ----- Verify and Set Required Environment Variables -------------------------
@@ -208,7 +204,12 @@ ruby_args=("${ruby_args[@]}" "$@")
 set -- "${ruby_args[@]}"
 
 JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_STACK"
-JAVA_OPTS="$JAVA_OPTS -Djna.boot.library.path=$JRUBY_HOME/lib/native/$JNA_PATH"
+JNA_OS="`uname -s | tr '[A-Z]' '[a-z]'`"
+case "$JNA_OS" in
+darwin) JNA_PATH="$JRUBY_HOME/lib/native/darwin";;
+  *) JNA_PATH="$JRUBY_HOME/lib/native/${JNA_OS}-${JNA_CPU}:$JRUBY_HOME/lib/native/${JNA_OS}-${JNA_ALT_CPU}";;
+esac
+JAVA_OPTS="$JAVA_OPTS -Djna.boot.library.path=$JNA_PATH"
 
 if $cygwin; then
   JRUBY_HOME=`cygpath --mixed "$JRUBY_HOME"`
