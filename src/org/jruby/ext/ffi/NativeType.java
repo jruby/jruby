@@ -68,6 +68,6 @@ public enum NativeType implements NativeParam {
         if (type < 0 || type >= values.length) {
             return NativeType.VOID;
         }
-        return NativeType.values()[type];
+        return values[type];
     }
 }
