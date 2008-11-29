@@ -98,38 +98,38 @@ public abstract class Factory {
     public void init(Ruby runtime, RubyModule module) {
         RubyModule ffi = runtime.defineModule("FFI");
         synchronized (module) {
-            if (module.fastGetClass(FFIProvider.CLASS_NAME) == null) {
-                FFIProvider.createProviderClass(runtime);
+            if (ffi.fastGetClass(FFIProvider.CLASS_NAME) == null) {
+                FFIProvider.createProviderClass(runtime, ffi);
             }
-            if (module.fastGetClass(Invoker.CLASS_NAME) == null) {
-                Invoker.createInvokerClass(runtime);
+            if (ffi.fastGetClass(Invoker.CLASS_NAME) == null) {
+                Invoker.createInvokerClass(runtime, ffi);
             }
-            if (module.fastGetClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS) == null) {
-                AbstractMemory.createAbstractMemoryClass(runtime);
+            if (ffi.fastGetClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS) == null) {
+                AbstractMemory.createAbstractMemoryClass(runtime, ffi);
             }
             if (ffi.fastGetClass("Pointer") == null) {
-                Pointer.createPointerClass(runtime);
+                Pointer.createPointerClass(runtime, ffi);
             }
             if (ffi.fastGetClass("AutoPointer") == null) {
-                AutoPointer.createAutoPointerClass(runtime);
+                AutoPointer.createAutoPointerClass(runtime, ffi);
             }
-            if (module.fastGetClass(AbstractMemoryPointer.className) == null) {
-                AbstractMemoryPointer.createMemoryPointerClass(runtime);
+            if (ffi.fastGetClass(AbstractMemoryPointer.className) == null) {
+                AbstractMemoryPointer.createMemoryPointerClass(runtime, ffi);
             }
-            if (module.fastGetClass(AbstractBuffer.ABSTRACT_BUFFER_RUBY_CLASS) == null) {
-                AbstractBuffer.createBufferClass(runtime);
+            if (ffi.fastGetClass(AbstractBuffer.ABSTRACT_BUFFER_RUBY_CLASS) == null) {
+                AbstractBuffer.createBufferClass(runtime, ffi);
             }
-            if (module.fastGetClass(Callback.CLASS_NAME) == null) {
-                Callback.createCallbackClass(runtime);
+            if (ffi.fastGetClass(Callback.CLASS_NAME) == null) {
+                Callback.createCallbackClass(runtime, ffi);
             }
-            if (module.fastGetClass(StructLayout.CLASS_NAME) == null) {
-                StructLayout.createStructLayoutClass(runtime);
+            if (ffi.fastGetClass(StructLayout.CLASS_NAME) == null) {
+                StructLayout.createStructLayoutClass(runtime, ffi);
             }
-            if (module.fastGetClass(StructLayoutBuilder.CLASS_NAME) == null) {
-                StructLayoutBuilder.createStructLayoutBuilderClass(runtime);
+            if (ffi.fastGetClass(StructLayoutBuilder.CLASS_NAME) == null) {
+                StructLayoutBuilder.createStructLayoutBuilderClass(runtime, ffi);
             }
-            if (module.fastGetClass(FileDescriptorIO.CLASS_NAME) == null) {
-                FileDescriptorIO.createFileDescriptorIOClass(runtime);
+            if (ffi.fastGetClass(FileDescriptorIO.CLASS_NAME) == null) {
+                FileDescriptorIO.createFileDescriptorIOClass(runtime, ffi);
             }
             FFIProvider provider = newProvider(runtime);
             module.defineConstant("InvokerFactory", provider);
@@ -139,7 +139,7 @@ public abstract class Factory {
             for (NativeType type : NativeType.values()) {
                 nativeType.defineConstant(type.name(), runtime.newFixnum(type.ordinal()));
             }
-            Platform.getPlatform().init(runtime, module);
+            Platform.getPlatform().init(runtime, ffi);
         }
     }
     

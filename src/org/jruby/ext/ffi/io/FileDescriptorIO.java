@@ -75,10 +75,9 @@ public class FileDescriptorIO extends RubyIO {
         openFile.setMode(modes.getOpenFileFlags());
         openFile.getMainStream().setSync(true);
     }
-    public static RubyClass createFileDescriptorIOClass(Ruby runtime) {
-        RubyModule parent = FFIProvider.getModule(runtime);
+    public static RubyClass createFileDescriptorIOClass(Ruby runtime, RubyModule module) {
         RubyClass result = runtime.defineClassUnder(CLASS_NAME, runtime.fastGetClass("IO"),
-                Allocator.INSTANCE, parent);
+                Allocator.INSTANCE, module);
         result.defineAnnotatedMethods(FileDescriptorIO.class);
         result.defineAnnotatedConstants(FileDescriptorIO.class);
 

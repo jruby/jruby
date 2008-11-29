@@ -10,4 +10,4 @@ class Module
 end
 
 # Define MemoryPointer globally for rubinius FFI backward compatibility
-MemoryPointer = JRuby::FFI::MemoryPointer
+MemoryPointer = FFI::MemoryPointer

@@ -47,7 +47,7 @@ import org.jruby.util.ByteList;
  * A abstract memory object that defines operations common to both pointers and
  * memory buffers
  */
-@JRubyClass(name=AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS, parent="Object")
+@JRubyClass(name="FFI::" + AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS, parent="Object")
 abstract public class AbstractMemory extends RubyObject {
     public final static String ABSTRACT_MEMORY_RUBY_CLASS = "AbstractMemory";
 
@@ -58,8 +58,7 @@ abstract public class AbstractMemory extends RubyObject {
     /** The Memory I/O object */
     protected final MemoryIO io;
     
-    public static RubyClass createAbstractMemoryClass(Ruby runtime) {
-        RubyModule module = FFIProvider.getModule(runtime);
+    public static RubyClass createAbstractMemoryClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder(ABSTRACT_MEMORY_RUBY_CLASS,
                 runtime.getObject(),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);

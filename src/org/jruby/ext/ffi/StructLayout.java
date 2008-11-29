@@ -70,10 +70,9 @@ public final class StructLayout extends RubyObject {
      * @param runtime The JRuby runtime to register the new class in.
      * @return The new class
      */
-    public static RubyClass createStructLayoutClass(Ruby runtime) {
-        RubyModule parent = FFIProvider.getModule(runtime);
+    public static RubyClass createStructLayoutClass(Ruby runtime, RubyModule module) {
         RubyClass result = runtime.defineClassUnder(CLASS_NAME, runtime.getObject(),
-                Allocator.INSTANCE, parent);
+                Allocator.INSTANCE, module);
         result.defineAnnotatedMethods(StructLayout.class);
         result.defineAnnotatedConstants(StructLayout.class);
 

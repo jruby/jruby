@@ -50,8 +50,7 @@ public class JNABuffer extends AbstractBuffer implements JNAMemory {
     public static final String BUFFER_RUBY_CLASS = "Buffer";
     private static final boolean CLEAR_DEFAULT = true;
     
-    public static RubyClass createBufferClass(Ruby runtime) {
-        RubyModule module = FFIProvider.getModule(runtime);
+    public static RubyClass createBufferClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder(BUFFER_RUBY_CLASS,
                 module.getClass(AbstractBuffer.ABSTRACT_BUFFER_RUBY_CLASS),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);

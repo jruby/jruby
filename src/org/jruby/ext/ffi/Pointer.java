@@ -18,8 +18,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 @JRubyClass(name="FFI::Pointer", parent=AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS)
 public abstract class Pointer extends AbstractMemory {
-    public static RubyClass createPointerClass(Ruby runtime) {
-        RubyModule module = runtime.getModule("FFI");
+    public static RubyClass createPointerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder("Pointer",
                 FFIProvider.getModule(runtime).getClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);

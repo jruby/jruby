@@ -51,8 +51,7 @@ public class Callback extends RubyObject implements NativeParam {
     protected final NativeType[] parameterTypes;
     protected final NativeType returnType;
     
-    public static RubyClass createCallbackClass(Ruby runtime) {
-        RubyModule module = FFIProvider.getModule(runtime);
+    public static RubyClass createCallbackClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder(CLASS_NAME,
                 runtime.getObject(), 
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);

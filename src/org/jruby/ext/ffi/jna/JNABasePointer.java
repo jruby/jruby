@@ -22,8 +22,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class JNABasePointer extends AbstractMemoryPointer implements JNAMemory {
     public static final String JNA_POINTER_NAME = "JNAPointer";
 
-    public static RubyClass createJNAPointerClass(Ruby runtime) {
-        RubyModule module = FFIProvider.getModule(runtime);
+    public static RubyClass createJNAPointerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder(JNA_POINTER_NAME,
                 module.getClass(AbstractMemoryPointer.className),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);

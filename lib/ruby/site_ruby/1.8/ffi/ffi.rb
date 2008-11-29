@@ -95,7 +95,7 @@ module FFI
       map_library_name(lib)
     else
       # Ugly hack to simulate the effect of dlopen(NULL, x) - not quite correct
-      JRuby::FFI::Platform::LIBC
+      FFI::Platform::LIBC
     end
 
     # Current artificial limitation based on JFFI limit

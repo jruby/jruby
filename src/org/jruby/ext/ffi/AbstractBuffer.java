@@ -41,8 +41,7 @@ import org.jruby.runtime.ObjectAllocator;
 abstract public class AbstractBuffer extends AbstractMemory {
     public final static String ABSTRACT_BUFFER_RUBY_CLASS = "AbstractBuffer";
 
-    public static RubyClass createBufferClass(Ruby runtime) {
-        RubyModule module = FFIProvider.getModule(runtime);
+    public static RubyClass createBufferClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder(ABSTRACT_BUFFER_RUBY_CLASS,
                 module.getClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);

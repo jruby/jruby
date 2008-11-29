@@ -43,19 +43,17 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * Base class for all FFI providers
  */
-@JRubyClass(name = FFIProvider.MODULE_NAME + "::" + FFIProvider.CLASS_NAME, parent = "Object")
+@JRubyClass(name = "FFI::FFIProvider", parent = "Object")
 public abstract class FFIProvider extends RubyObject {
     
     /**
      * The name of the module to place all the classes/methods under.
      */
-    public static final String MODULE_NAME = "JRuby::FFI";
+    public static final String MODULE_NAME = "FFI";
     public static final String CLASS_NAME = "Provider";
     
-    public static RubyClass createProviderClass(Ruby runtime) {
-        RubyModule module = FFIProvider.getModule(runtime);
-        RubyClass result = module.defineClassUnder(CLASS_NAME,
-                runtime.getObject(), 
+    public static RubyClass createProviderClass(Ruby runtime, RubyModule module) {
+        RubyClass result = module.defineClassUnder(CLASS_NAME, runtime.getObject(),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         result.defineAnnotatedMethods(FFIProvider.class);
         result.defineAnnotatedConstants(FFIProvider.class);
@@ -71,7 +69,7 @@ public abstract class FFIProvider extends RubyObject {
     }
     
     public static RubyModule getModule(Ruby runtime) {
-        return (RubyModule) runtime.fastGetModule("JRuby").fastGetConstantAt("FFI");
+        return (RubyModule) runtime.fastGetModule("FFI");
     }
     
     @JRubyMethod(name = { "create_invoker", "createInvoker" }, required = 5)

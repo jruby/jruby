@@ -73,10 +73,9 @@ public final class StructLayoutBuilder extends RubyObject {
         }
         private static final ObjectAllocator INSTANCE = new Allocator();
     }
-    public static RubyClass createStructLayoutBuilderClass(Ruby runtime) {
-        RubyModule parent = FFIProvider.getModule(runtime);
+    public static RubyClass createStructLayoutBuilderClass(Ruby runtime, RubyModule module) {
         RubyClass result = runtime.defineClassUnder(CLASS_NAME, runtime.getObject(),
-                Allocator.INSTANCE, parent);
+                Allocator.INSTANCE, module);
         result.defineAnnotatedMethods(StructLayoutBuilder.class);
         result.defineAnnotatedConstants(StructLayoutBuilder.class);
 

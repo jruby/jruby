@@ -48,18 +48,18 @@ public class JNAFactory extends org.jruby.ext.ffi.Factory {
         // Hook up the MemoryPointer class if its not already there
         //
         synchronized (module) {
-            if (module.fastGetClass(JNABasePointer.JNA_POINTER_NAME) == null) {
-                JNABasePointer.createJNAPointerClass(runtime);
-            }
-            if (module.fastGetClass(JNAMemoryPointer.MEMORY_POINTER_NAME) == null) {
-                JNAMemoryPointer.createMemoryPointerClass(runtime);
-            }
-            if (module.fastGetClass(JNABuffer.BUFFER_RUBY_CLASS) == null) {
-                JNABuffer.createBufferClass(runtime);
-            }
             RubyModule ffi = runtime.defineModule("FFI");
+            if (ffi.fastGetClass(JNABasePointer.JNA_POINTER_NAME) == null) {
+                JNABasePointer.createJNAPointerClass(runtime, ffi);
+            }
+            if (ffi.fastGetClass(JNAMemoryPointer.MEMORY_POINTER_NAME) == null) {
+                JNAMemoryPointer.createMemoryPointerClass(runtime, ffi);
+            }
+            if (ffi.fastGetClass(JNABuffer.BUFFER_RUBY_CLASS) == null) {
+                JNABuffer.createBufferClass(runtime, ffi);
+            }
             if (ffi.fastGetClass("VariadicInvoker") == null) {
-                JNAVariadicInvoker.createVariadicInvokerClass(runtime);
+                JNAVariadicInvoker.createVariadicInvokerClass(runtime, ffi);
             }
         }
     }

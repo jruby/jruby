@@ -14,7 +14,7 @@ module FFI
     type_map = TypeDefs if type_map.nil?
     code = type_map[name]
     code = name if !code && name.kind_of?(Integer)
-    code = name if !code && name.kind_of?(JRuby::FFI::Callback)
+    code = name if !code && name.kind_of?(FFI::Callback)
     raise TypeError, "Unable to resolve type '#{name}'" unless code
     return code
   end
@@ -136,7 +136,7 @@ module FFI
 
   # Load all the platform dependent types
   begin
-    File.open(File.join(JRuby::FFI::Platform::CONF_DIR, 'types.conf'), "r") do |f|
+    File.open(File.join(FFI::Platform::CONF_DIR, 'types.conf'), "r") do |f|
       prefix = "rbx.platform.typedef."
       f.each_line { |line|
         if line.index(prefix) == 0

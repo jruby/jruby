@@ -19,8 +19,7 @@ public class AutoPointer extends Pointer {
     private final Pointer pointer;
     private final PointerHolder holder;
 
-    public static RubyClass createAutoPointerClass(Ruby runtime) {
-        RubyModule module = runtime.defineModule("FFI");
+    public static RubyClass createAutoPointerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder(CLASS_NAME,
                 module.getClass("Pointer"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);

@@ -74,7 +74,7 @@ module FFI::Library
     code = if defined?(@ffi_typedefs)
       @ffi_typedefs[name]
     end
-    code = name if !code && name.kind_of?(JRuby::FFI::Callback)
+    code = name if !code && name.kind_of?(FFI::Callback)
     if code.nil? || code.kind_of?(Symbol)
       FFI.find_type(name)
     else

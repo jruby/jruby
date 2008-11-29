@@ -49,8 +49,7 @@ public class JNAVariadicInvoker extends RubyObject {
     private final Function function;
     private final FunctionInvoker functionInvoker;
 
-    public static RubyClass createVariadicInvokerClass(Ruby runtime) {
-        RubyModule module = runtime.defineModule("FFI");
+    public static RubyClass createVariadicInvokerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder("VariadicInvoker",
                 runtime.getObject(),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);

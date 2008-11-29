@@ -56,10 +56,9 @@ public abstract class AbstractMemoryPointer extends Pointer {
     private static final Map<AbstractMemoryPointer, Object> pointerSet
             = new ConcurrentHashMap();
     
-    public static RubyClass createMemoryPointerClass(Ruby runtime) {
-        RubyModule module = FFIProvider.getModule(runtime);
-        RubyClass result = module.defineClassUnder(className, 
-                runtime.getModule("FFI").getClass("Pointer"),
+    public static RubyClass createMemoryPointerClass(Ruby runtime, RubyModule module) {
+        RubyClass result = module.defineClassUnder(className,
+                module.getClass("Pointer"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         
         result.defineAnnotatedMethods(AbstractMemoryPointer.class);
