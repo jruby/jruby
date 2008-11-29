@@ -96,22 +96,6 @@ public abstract class FFIProvider extends RubyObject {
         }
     }
     
-    @JRubyMethod(name = { "create_callback", "createCallback" })
-    public IRubyObject createCallback(ThreadContext context, IRubyObject returnType, IRubyObject _paramTypes)
-    {
-        RubyArray paramTypes = (RubyArray) _paramTypes;
-        NativeType[] nativeParamTypes = new NativeType[paramTypes.size()];
-        for (int i = 0; i < paramTypes.size(); ++i) {
-            nativeParamTypes[i] = NativeType.valueOf(Util.int32Value((IRubyObject) paramTypes.entry(i)));
-        }
-        try {
-            return createCallback(context.getRuntime(), 
-                    NativeType.valueOf(Util.int32Value(returnType)), nativeParamTypes);
-        } catch (UnsatisfiedLinkError ex) {
-            return context.getRuntime().getNil();
-        }
-    }
-    
     @JRubyMethod(name = { "error", "last_error" })
     public IRubyObject getLastError(ThreadContext context)
     {
@@ -136,18 +120,7 @@ public abstract class FFIProvider extends RubyObject {
      */
     public abstract Invoker createInvoker(Ruby runtime, String libraryName, String functionName, NativeType returnType,
             NativeParam[] parameterTypes, String convention);
-    
-    /**
-     * Creates a new Callback.
-     * 
-     * @param returnType The return type of the function.
-     * @param parameterTypes The parameter types the function takes.
-     * @return a new <tt>Invoker</tt> instance.
-     */
-    public abstract Callback createCallback(Ruby runtime, NativeType returnType,
-            NativeType[] parameterTypes);
-    
-    
+
     /**
      * Gets the last native error code.
      * <p>

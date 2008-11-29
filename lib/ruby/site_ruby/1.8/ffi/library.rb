@@ -58,7 +58,7 @@ module FFI::Library
 
   def callback(name, args, ret)
     @ffi_callbacks = Hash.new unless defined?(@ffi_callbacks)
-    @ffi_callbacks[name] = JRuby::FFI::CallbackFactory.createCallback(find_type(ret), args.map { |e| find_type(e) })
+    @ffi_callbacks[name] = FFI::CallbackInfo.new(find_type(ret), args.map { |e| find_type(e) })
   end
   def typedef(current, add)
     @ffi_typedefs = Hash.new unless defined?(@ffi_typedefs)
@@ -74,7 +74,7 @@ module FFI::Library
     code = if defined?(@ffi_typedefs)
       @ffi_typedefs[name]
     end
-    code = name if !code && name.kind_of?(FFI::Callback)
+    code = name if !code && name.kind_of?(FFI::CallbackInfo)
     if code.nil? || code.kind_of?(Symbol)
       FFI.find_type(name)
     else

@@ -38,8 +38,8 @@ import java.util.WeakHashMap;
 import org.jruby.Ruby;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
-import org.jruby.RubyString;
-import org.jruby.ext.ffi.Callback;
+import org.jruby.ext.ffi.CallbackInfo;
+import org.jruby.ext.ffi.NativeParam;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.Util;
 import org.jruby.runtime.Block;
@@ -51,23 +51,23 @@ import org.jruby.runtime.builtin.IRubyObject;
 final class CallbackMarshaller implements Marshaller {
     private static final Map<Object, com.sun.jna.Callback> callbackMap = 
             Collections.synchronizedMap(new WeakHashMap<Object, com.sun.jna.Callback>());
-    private final Callback callback;
+    private final CallbackInfo cbInfo;
     private final Class[] paramTypes;
     private final Class returnType;
     private final int convention;
     
-    public CallbackMarshaller(Callback cb, int convention) {
-        this.callback = cb;
+    public CallbackMarshaller(CallbackInfo cbInfo, int convention) {
+        this.cbInfo = cbInfo;
         this.convention = convention;
-        NativeType[] nativeParams = cb.getParameterTypes();
+        NativeParam[] nativeParams = cbInfo.getParameterTypes();
         paramTypes = new Class[nativeParams.length];
         for (int i = 0; i < nativeParams.length; ++i) {
             paramTypes[i] = classFor(nativeParams[i]);
             if (paramTypes[i] == null) {
-                throw cb.getRuntime().newArgumentError("Invalid callback parameter type: " + nativeParams[i]);
+                throw cbInfo.getRuntime().newArgumentError("Invalid callback parameter type: " + nativeParams[i]);
             }
         }
-        switch (cb.getReturnType()) {
+        switch (cbInfo.getReturnType()) {
             case INT8:
             case UINT8:
             case INT16:
@@ -82,16 +82,16 @@ final class CallbackMarshaller implements Marshaller {
             case FLOAT64:
             case POINTER:
             case VOID:
-                this.returnType = classFor(cb.getReturnType());
+                this.returnType = classFor(cbInfo.getReturnType());
                 break;
             default:
-               throw cb.getRuntime().newArgumentError("Invalid callback return type: " + cb.getReturnType()); 
+               throw cbInfo.getRuntime().newArgumentError("Invalid callback return type: " + cbInfo.getReturnType());
                 
         }        
     }
 
-    private static final Class classFor(NativeType type) {
-        switch (type) {
+    private static final Class classFor(NativeParam type) {
+        switch ((NativeType) type) {
             case VOID:
                 return void.class;
             case INT8:
@@ -147,7 +147,7 @@ final class CallbackMarshaller implements Marshaller {
             if (recv == null) {
                 return 0L;
             }
-            NativeType[] nativeParams = callback.getParameterTypes();
+            NativeParam[] nativeParams = cbInfo.getParameterTypes();
             IRubyObject[] params = new IRubyObject[nativeParams.length];
             for (int i = 0; i < params.length; ++i) {
                 params[i] = fromNative(runtime, nativeParams[i], args[i]);
@@ -162,7 +162,7 @@ final class CallbackMarshaller implements Marshaller {
             } catch (Throwable t) {
                 return Long.valueOf(0);
             }
-            return toNative(runtime, callback.getReturnType(), retVal);
+            return toNative(runtime, cbInfo.getReturnType(), retVal);
         }
 
         public Class[] getParameterTypes() {
@@ -207,8 +207,8 @@ final class CallbackMarshaller implements Marshaller {
         }
         return 0;
     }
-    private static final Object toNative(Ruby runtime, NativeType type, IRubyObject value) {
-        switch (type) {
+    private static final Object toNative(Ruby runtime, NativeParam type, IRubyObject value) {
+        switch ((NativeType) type) {
             case VOID:
                 return Long.valueOf(0);
             case INT8:
@@ -236,9 +236,9 @@ final class CallbackMarshaller implements Marshaller {
                 return Long.valueOf(0);
         }
     }
-    private static final IRubyObject fromNative(Ruby runtime, NativeType type,
+    private static final IRubyObject fromNative(Ruby runtime, NativeParam type,
             Object value) {
-        switch (type) {
+        switch ((NativeType) type) {
             case VOID:
                 return runtime.getNil();
             case INT8:

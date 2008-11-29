@@ -119,8 +119,8 @@ public abstract class Factory {
             if (ffi.fastGetClass(AbstractBuffer.ABSTRACT_BUFFER_RUBY_CLASS) == null) {
                 AbstractBuffer.createBufferClass(runtime, ffi);
             }
-            if (ffi.fastGetClass(Callback.CLASS_NAME) == null) {
-                Callback.createCallbackClass(runtime, ffi);
+            if (ffi.fastGetClass(CallbackInfo.CLASS_NAME) == null) {
+                CallbackInfo.createCallbackInfoClass(runtime, ffi);
             }
             if (ffi.fastGetClass(StructLayout.CLASS_NAME) == null) {
                 StructLayout.createStructLayoutClass(runtime, ffi);

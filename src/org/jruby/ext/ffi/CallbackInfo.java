@@ -29,46 +29,66 @@
 package org.jruby.ext.ffi;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Defines a C callback's parameters and return type.
  */
-@JRubyClass(name = FFIProvider.MODULE_NAME + "::" + Callback.CLASS_NAME, parent = "Object")
-public class Callback extends RubyObject implements NativeParam {
-    public static final String CLASS_NAME = "Callback";
+@JRubyClass(name = "FFI::CallbackInfo", parent = "Object")
+public class CallbackInfo extends RubyObject implements NativeParam {
+    public static final String CLASS_NAME = "CallbackInfo";
     
     /**
      * The arity of this function.
      */
     protected final Arity arity;
 
-    protected final NativeType[] parameterTypes;
+    protected final NativeParam[] parameterTypes;
     protected final NativeType returnType;
     
-    public static RubyClass createCallbackClass(Ruby runtime, RubyModule module) {
+    public static RubyClass createCallbackInfoClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder(CLASS_NAME,
-                runtime.getObject(), 
+                runtime.getObject(),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        result.defineAnnotatedMethods(Callback.class);
-        result.defineAnnotatedConstants(Callback.class);
+        result.defineAnnotatedMethods(CallbackInfo.class);
+        result.defineAnnotatedConstants(CallbackInfo.class);
 
         return result;
     }
+    
     /**
-     * Creates a new <tt>Invoker</tt> instance.
+     * Creates a new <tt>CallbackInfo</tt> instance.
      * @param arity
      */
-    public Callback(Ruby runtime, NativeType returnType, NativeType[] paramTypes) {
-        super(runtime, FFIProvider.getModule(runtime).fastGetClass(CLASS_NAME));
+    public CallbackInfo(Ruby runtime, RubyClass klazz, NativeType returnType, NativeParam[] paramTypes) {
+        super(runtime, klazz);
         this.arity = Arity.fixed(paramTypes.length);
         this.parameterTypes = paramTypes;
         this.returnType = returnType;
+    }
+    @JRubyMethod(name = "new", meta = true)
+    public static final IRubyObject newCallbackInfo(ThreadContext context, IRubyObject self, IRubyObject returnType, IRubyObject _paramTypes)
+    {
+        RubyArray paramTypes = (RubyArray) _paramTypes;
+        NativeParam[] nativeParamTypes = new NativeParam[paramTypes.size()];
+        for (int i = 0; i < paramTypes.size(); ++i) {
+            nativeParamTypes[i] = NativeType.valueOf(Util.int32Value((IRubyObject) paramTypes.entry(i)));
+        }
+        try {
+            return new CallbackInfo(context.getRuntime(), (RubyClass) self,
+                    NativeType.valueOf(Util.int32Value(returnType)), nativeParamTypes);
+        } catch (UnsatisfiedLinkError ex) {
+            return context.getRuntime().getNil();
+        }
     }
     /**
      * Returns the {@link org.jruby.runtime.Arity} of this function.
@@ -82,7 +102,7 @@ public class Callback extends RubyObject implements NativeParam {
     public final NativeType getReturnType() {
         return returnType;
     }
-    public final NativeType[] getParameterTypes() {
+    public final NativeParam[] getParameterTypes() {
         return parameterTypes;
     }
 }

@@ -62,12 +62,6 @@ public final class JNAProvider extends FFIProvider {
 
         return new JNAInvoker(runtime, function, functionInvoker, marshallers);
     }
-
-    @Override
-    public Callback createCallback(Ruby runtime, NativeType returnType,
-            NativeType[] parameterTypes) {
-        return new Callback(runtime, returnType, parameterTypes);
-    }
     
     public int getLastError() {
         return Native.getLastError();
@@ -133,8 +127,8 @@ public final class JNAProvider extends FFIProvider {
     static final Marshaller getMarshaller(NativeParam type, int convention) {
         if (type instanceof NativeType) {
             return getMarshaller((NativeType) type);
-        } else if (type instanceof org.jruby.ext.ffi.Callback) {
-            return new CallbackMarshaller((org.jruby.ext.ffi.Callback) type, convention);
+        } else if (type instanceof org.jruby.ext.ffi.CallbackInfo) {
+            return new CallbackMarshaller((org.jruby.ext.ffi.CallbackInfo) type, convention);
         } else {
             return null;
         }        
