@@ -65,18 +65,20 @@ module FFI
   class Struct < FFI::BaseStruct
     def self.hash_layout(spec)
         builder = FFI::StructLayoutBuilder.new
+        mod = enclosing_module
         spec[0].each do |name,type|
-          builder.add_field(name, FFI.find_type(type))
+          builder.add_field(name, find_type(type, mod))
         end
         builder.build
     end
     def self.array_layout(spec)
       builder = FFI::StructLayoutBuilder.new
+      mod = enclosing_module
       i = 0
       while i < spec.size
         name, type = spec[i, 2]
         i += 2
-        code = FFI.find_type(type)
+        code = find_type(type, mod)
         # If the next param is a Integer, it specifies the offset
         if spec[i].kind_of?(Integer)
           offset = spec[i]
@@ -122,6 +124,17 @@ module FFI
       @size = cspec.size if @size < cspec.size
     
       return cspec
+    end
+    private
+    def self.enclosing_module
+      begin
+        Object.const_get(self.name.split("::")[0..-2].join("::"))
+      rescue Exception
+        nil
+      end
+    end
+    def self.find_type(type, mod = nil)
+      return mod ? mod.find_type(type) : FFI.find_type(type)
     end
   end
 end
