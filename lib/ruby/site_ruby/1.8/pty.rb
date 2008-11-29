@@ -3,15 +3,15 @@ require 'ffi'
 module PTY
   private
   module LibUtil
-    extend JRuby::FFI::Library
+    extend FFI::Library
     # forkpty(3) is in libutil on linux, libc on MacOS/BSD
-    if JRuby::FFI::Platform::IS_LINUX
+    if FFI::Platform.linux?
       ffi_lib 'libutil'
     end
     attach_function :forkpty, [ :buffer_out, :buffer_out, :buffer_in, :buffer_in ], :pid_t
   end
   module LibC
-    extend JRuby::FFI::Library
+    extend FFI::Library
     attach_function :close, [ :int ], :int
     attach_function :strerror, [ :int ], :string
     attach_function :execv, [ :string, :buffer_in ], :int
@@ -20,7 +20,7 @@ module PTY
     attach_function :dup, [ :int ], :int
     attach_function :_exit, [ :int ], :void
   end
-  Buffer = JRuby::FFI::Buffer
+  Buffer = FFI::Buffer
   def self.build_args(args)
     cmd = args.shift
     cmd_args = args.map do |arg|

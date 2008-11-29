@@ -2,7 +2,7 @@ require 'benchmark'
 require 'ffi'
 require 'etc'
 
-require File.join(JRuby::FFI::Platform::CONF_DIR, "etc")
+require File.join(FFI::Platform::CONF_DIR, "etc")
 Passwd = Platform::Etc::Passwd
 
 iter = 100000
