@@ -1,1 +1,0 @@
-fails(JRUBY-2834):ARGF.lineno returns the current line number on each file

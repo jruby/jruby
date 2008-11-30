@@ -1,1 +1,0 @@
-fails(JRUBY-2834):ARGF.close reads one line from the first file, closes it and read the next one

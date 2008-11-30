@@ -1,4 +1,0 @@
-fails(JRUBY-2834):ARGF.readline reads one line of a file
-fails(JRUBY-2834):ARGF.readline reads all lines of a file
-fails(JRUBY-2834):ARGF.readline reads all lines of stdin
-fails(JRUBY-2834):ARGF.readline reads all lines of two files

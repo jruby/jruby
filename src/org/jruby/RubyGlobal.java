@@ -20,6 +20,7 @@
  * Copyright (C) 2006 Tim Azzopardi <tim@tigerfive.com>
  * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * Copyright (C) 2006 Michael Studman <codehaus@michaelstudman.com>
+ * Copyright (C) 2008 Joseph LaFata <joe@quibb.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -382,7 +383,7 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject set(IRubyObject value) {
-            RubyArgsFile.setCurrentLineNumber(runtime.getGlobalVariables().get("$<"),RubyNumeric.fix2int(value));
+            RubyArgsFile.setCurrentLineNumber(runtime.getGlobalVariables().get("$<"), value);
             return super.set(value);
         }
     }

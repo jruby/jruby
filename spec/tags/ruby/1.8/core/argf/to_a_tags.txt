@@ -1,2 +1,0 @@
-fails(JRUBY-2834):ARGF.to_a reads all lines of all files
-fails(JRUBY-2834):ARGF.to_a returns nil when end of stream reached

@@ -1,1 +1,0 @@
-fails(JRUBY-2834):ARGF.rewind goes back to beginning of current file
