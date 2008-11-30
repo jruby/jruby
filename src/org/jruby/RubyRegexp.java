@@ -547,6 +547,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         return re;
     }
 
+    @JRubyMethod(name = "try_convert", meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject try_convert(ThreadContext context, IRubyObject recv, IRubyObject args) {
+        return TypeConverter.convertToTypeWithCheck(args, context.getRuntime().getRegexp(), "to_regexp");
+    }
+
     @JRubyMethod(name = "options")
     public IRubyObject options() {
         return getRuntime().newFixnum(getOptions());
