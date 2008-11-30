@@ -2170,7 +2170,7 @@ public class RubyIO extends RubyObject {
             myOpenFile.checkReadable(runtime);
             myOpenFile.setReadBuffered();
 
-            return readAll(getRuntime().getNil());
+            return readAll(context.getRuntime().getNil());
         } catch (PipeException ex) {
             throw getRuntime().newErrnoEPIPEError();
         } catch (InvalidValueException ex) {

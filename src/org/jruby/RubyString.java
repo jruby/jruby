@@ -3501,72 +3501,60 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_each_line
      *
      */
-    @JRubyMethod(name = {"each_line", "each"}, required = 0, optional = 1, frame = true)
-    public IRubyObject each_line(ThreadContext context, IRubyObject[] args, Block block) {
-        byte newline;
-        int p = value.begin;
-        int pend = p + value.realSize;
-        int s;
-        int ptr = p;
-        int len = value.realSize;
-        int rslen;
-        IRubyObject line;
-        
+    @JRubyMethod(name = {"each_line", "each"}, frame = true)
+    public IRubyObject each_line(ThreadContext context, Block block) {
+        return each_lineCommon(context, context.getRuntime().getGlobalVariables().get("$/"), block);
+    }
 
-        IRubyObject _rsep;
-        if (args.length == 0) {
-            _rsep = getRuntime().getGlobalVariables().get("$/");
-        } else {
-            _rsep = args[0];
-        }
+    @JRubyMethod(name = {"each_line", "each"}, frame = true)
+    public IRubyObject each_line(ThreadContext context, IRubyObject arg, Block block) {
+        return each_lineCommon(context, arg, block);
+    }
 
-        if(_rsep.isNil()) {
+    public IRubyObject each_lineCommon(ThreadContext context, IRubyObject sep, Block block) {        
+        Ruby runtime = context.getRuntime();
+
+        if (sep.isNil()) {
             block.yield(context, this);
             return this;
         }
-        
-        RubyString rsep = stringValue(_rsep);
-        ByteList rsepValue = rsep.value;
-        byte[] strBytes = value.bytes;
 
-        rslen = rsepValue.realSize;
-        
-        if(rslen == 0) {
+        RubyString rsep = sep.convertToString();
+        ByteList rsepValue = rsep.value;
+        int rslen = rsepValue.realSize;
+
+        final byte newline;
+        if (rslen == 0) {
             newline = '\n';
         } else {
-            newline = rsepValue.bytes[rsepValue.begin + rslen-1];
+            newline = rsepValue.bytes[rsepValue.begin + rslen - 1];
         }
 
-        s = p;
-        p+=rslen;
+        int p = value.begin;
+        int end = p + value.realSize;
+        int ptr = p;
+        int len = value.realSize;
 
-        for(; p < pend; p++) {
-            if(rslen == 0 && strBytes[p] == '\n') {
-                if(strBytes[++p] != '\n') {
-                    continue;
-                }
-                while(p < pend && strBytes[p] == '\n') {
-                    p++;
-                }
+        int s = p;
+        p += rslen;
+        byte[] strBytes = value.bytes;
+        for (; p < end; p++) {
+            if (rslen == 0 && strBytes[p] == '\n') {
+                if (strBytes[++p] != '\n') continue;
+                while(p < end && strBytes[p] == '\n') p++;
             }
-            if(ptr<p && strBytes[p-1] == newline &&
+            if (ptr < p && strBytes[p - 1] == newline &&
                (rslen <= 1 || 
-                ByteList.memcmp(rsepValue.bytes, rsepValue.begin, rslen, strBytes, p-rslen, rslen) == 0)) {
-                line = RubyString.newStringShared(getRuntime(), getMetaClass(), this.value.makeShared(s-ptr, p-s));
-                line.infectBy(this);
-                block.yield(context, line);
-                modifyCheck(strBytes,len);
+                ByteList.memcmp(rsepValue.bytes, rsepValue.begin, rslen, strBytes, p - rslen, rslen) == 0)) {
+                block.yield(context, makeShared(runtime, s - ptr, p - s).infectBy(this));
+                modifyCheck(strBytes, len);
                 s = p;
             }
         }
 
-        if(s != pend) {
-            if(p > pend) {
-                p = pend;
-            }
-            line = RubyString.newStringShared(getRuntime(), getMetaClass(), this.value.makeShared(s-ptr, p-s));
-            line.infectBy(this);
-            block.yield(context, line);
+        if (s != end) {
+            if (p > end) p = end;
+            block.yield(context, makeShared(runtime, s - ptr, p - s).infectBy(this));
         }
 
         return this;
