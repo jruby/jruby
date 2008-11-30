@@ -70,26 +70,25 @@ import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.TypeConverter;
 
-/**
- *
- */
 @JRubyClass(name="Regexp")
 public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, EncodingCapable {
     private KCode kcode;
     private Regex pattern;
     private ByteList str;
 
-    private static final int REGEXP_LITERAL_F =     1 << 11;
-    private static final int REGEXP_KCODE_DEFAULT = 1 << 12;
+    private static final int REGEXP_LITERAL_F     = USER1_F;
+    private static final int REGEXP_KCODE_DEFAULT = USER2_F;
+    private static final int REGEXP_KCODE_FIXED   = USER3_F;
+    private static final int REGEXP_ENCODING_NONE = USER4_F;
 
     public void setLiteral() {
         flags |= REGEXP_LITERAL_F;
     }
-    
+
     public void clearLiteral() {
         flags &= ~REGEXP_LITERAL_F;
     }
-    
+
     public boolean isLiteral() {
         return (flags & REGEXP_LITERAL_F) != 0;
     }
@@ -97,13 +96,37 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     public void setKCodeDefault() {
         flags |= REGEXP_KCODE_DEFAULT;
     }
-    
+
     public void clearKCodeDefault() {
         flags &= ~REGEXP_KCODE_DEFAULT;
     }
-    
+
     public boolean isKCodeDefault() {
         return (flags & REGEXP_KCODE_DEFAULT) != 0;
+    }
+
+    public void setKCodeFixed() {
+        flags |= REGEXP_KCODE_FIXED;
+    }
+
+    public void clearKCodeFixed() {
+        flags &= ~REGEXP_KCODE_FIXED;
+    }
+
+    public boolean isKCodeFixed() {
+        return (flags & REGEXP_KCODE_FIXED) != 0;
+    }
+
+    public void setEncodingNone() {
+        flags |= REGEXP_ENCODING_NONE;
+    }
+
+    public void clearEncodingNone() {
+        flags &= ~REGEXP_ENCODING_NONE;
+    }
+
+    public boolean isEncodingNone() {
+        return (flags & REGEXP_ENCODING_NONE) != 0;
     }
 
     public KCode getKCode() {
@@ -1205,6 +1228,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     @JRubyMethod(name = "encoding", compat = CompatVersion.RUBY1_9)
     public IRubyObject encoding(ThreadContext context) {
         return context.getRuntime().getEncodingService().getEncoding(pattern.getEncoding());
+    }
+    
+    @JRubyMethod(name = "fixed_encoding?", compat = CompatVersion.RUBY1_9)
+    public IRubyObject fixed_encoding_p(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        return isKCodeFixed() ? runtime.getTrue() : runtime.getFalse();
     }
 
     public static RubyRegexp unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
