@@ -1,1 +1,0 @@
-fails(JRUBY-3149):Float#to_s returns a string representation of self, possibly Nan, -Infinity, +Infinity

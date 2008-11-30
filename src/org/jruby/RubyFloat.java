@@ -21,6 +21,7 @@
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
+ * Copyright (C) 2008 Joseph LaFata <joe@quibb.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -192,7 +193,7 @@ public class RubyFloat extends RubyNumeric {
             while(v2.charAt(ix) == '0' && v2.charAt(ix-1) != '.') {
                 ix--;
             }
-            if(ix > 15 || "0.0".equals(v2.substring(0,ix+1))) {
+            if(ix > 16 || (v2.charAt(0) != '-' && ix > 15) || "0.0".equals(v2.substring(0,ix+1))) {
                 val = val.replaceFirst("E(\\d)","e+$1").replaceFirst("E-","e-");
             } else {
                 val = v2.substring(0,ix+1);
