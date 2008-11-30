@@ -130,12 +130,16 @@ import org.jruby.lexer.yacc.Token;
 import org.jruby.util.ByteList;
 
 public class DefaultRubyParser implements RubyParser {
-    private ParserSupport support;
-    private RubyYaccLexer lexer;
-    private IRubyWarnings warnings;
+    protected ParserSupport support;
+    protected RubyYaccLexer lexer;
+    protected IRubyWarnings warnings;
 
     public DefaultRubyParser() {
-        support = new ParserSupport();
+        this(new ParserSupport());
+    }
+
+    public DefaultRubyParser(ParserSupport support) {
+        this.support = support;
         lexer = new RubyYaccLexer();
         lexer.setParserSupport(support);
     }

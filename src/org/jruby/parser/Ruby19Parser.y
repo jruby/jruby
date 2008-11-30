@@ -123,12 +123,16 @@ import org.jruby.lexer.yacc.Token;
 import org.jruby.util.ByteList;
 
 public class Ruby19Parser implements RubyParser {
-    private ParserSupport19 support;
-    private RubyYaccLexer lexer;
-    private IRubyWarnings warnings;
+    protected ParserSupport19 support;
+    protected RubyYaccLexer lexer;
+    protected IRubyWarnings warnings;
 
     public Ruby19Parser() {
-        support = new ParserSupport19();
+        this(new ParserSupport19());
+    }
+
+    public Ruby19Parser(ParserSupport19 support) {
+        this.support = support;
         lexer = new RubyYaccLexer(false);
         lexer.setParserSupport(support);
     }
