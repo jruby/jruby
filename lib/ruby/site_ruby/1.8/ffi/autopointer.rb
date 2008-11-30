@@ -49,7 +49,7 @@ module FFI
       #  references to the underlying object, which would prevent GC
       #  from running.
       #
-      lambda { proc.call(ptr) }
+      Proc.new { |*args| proc.call(ptr) }
     end
     def self.method_to_proc method
       #  again, can't call this inline as it causes a memory leak.
