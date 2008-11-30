@@ -150,6 +150,16 @@ public class Readline {
         return line;
     }
 
+    @JRubyMethod(name = "readline", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject s_readline(IRubyObject recv, IRubyObject prompt) throws IOException {
+        return s_readline(recv, prompt, recv.getRuntime().getFalse());
+    }
+
+    @JRubyMethod(name = "readline", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject s_readline(IRubyObject recv) throws IOException {
+        return s_readline(recv, RubyString.newEmptyString(recv.getRuntime()), recv.getRuntime().getFalse());
+    }
+
     @JRubyMethod(name = "completion_append_character=", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject s_set_completion_append_character(IRubyObject recv, IRubyObject achar) throws Exception {
         return recv.getRuntime().getNil();
