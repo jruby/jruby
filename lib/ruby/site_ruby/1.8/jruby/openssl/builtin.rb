@@ -1,11 +1,27 @@
 # this will load the gem and library only if it's available
 require 'jruby/openssl/gem'
 
-unless defined?(OpenSSL::OPENSSL_VERSION)
+unless defined?(OpenSSL)
   module OpenSSL
     VERSION = "1.0.0"
     OPENSSL_VERSION = "OpenSSL 0.9.8b 04 May 2006 (JRuby fake)"
+    OPENSSL_DUMMY = true
 
+    class OpenSSLError < StandardError; end
+    # These require the gem, so we present an error if they're accessed
+    %w[
+    ASN1
+    BN
+    Cipher
+    Config
+    Netscape
+    PKCS7
+    PKey
+    Random
+    SSL
+    X509
+    ].each {|c| autoload c, "jruby/openssl/autoloads/#{c.downcase}"}
+    
     def self.determine_version
       require 'java'
       java.security.MessageDigest.getInstance("SHA224", PROVIDER);
