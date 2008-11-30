@@ -39,8 +39,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.UTF8Encoding;
-import org.jcodings.unicode.UnicodeEncoding;
+import org.jcodings.specific.NonStrictUTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
@@ -1680,7 +1679,7 @@ public class Pack {
                     }
                     break;
                 case 'U' :
-                    UTF8Encoding enc = UTF8Encoding.INSTANCE;
+                    NonStrictUTF8Encoding enc = NonStrictUTF8Encoding.INSTANCE;
                     byte[] packedBytes = new byte[enc.maxLength() * occurrences];
                     int index = 0;
                     
@@ -1693,8 +1692,7 @@ public class Pack {
                         int code = from == runtime.getNil() ? 0 : RubyNumeric.num2int(from);
 
                         if (code < 0) {
-                            throw runtime.newRangeError(
-                                    "pack(U): value out of range");
+                            throw runtime.newRangeError("pack(U): value out of range");
                         }
 
                         int length = enc.codeToMbc(code, packedBytes, index);
