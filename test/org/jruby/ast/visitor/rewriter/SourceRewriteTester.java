@@ -44,6 +44,7 @@ import junit.framework.TestSuite;
 import org.jruby.CompatVersion;
 import org.jruby.parser.Parser;
 import org.jruby.parser.ParserConfiguration;
+import org.jruby.util.KCode;
 
 public class SourceRewriteTester extends TestSuite {
 	
@@ -62,7 +63,7 @@ public class SourceRewriteTester extends TestSuite {
         
         StringWriter outputWriter = new StringWriter();
         ReWriteVisitor visitor = new ReWriteVisitor(outputWriter, original);
-        ParserConfiguration configuration = new ParserConfiguration(0, true, false, CompatVersion.RUBY1_8);
+        ParserConfiguration configuration = new ParserConfiguration(KCode.NONE, 0, true, false, CompatVersion.RUBY1_8);
         new Parser(null).parseRewriter("", new ByteArrayInputStream(original.getBytes()), configuration).accept(visitor); 
 		visitor.flushStream();
 		return outputWriter.getBuffer().toString();

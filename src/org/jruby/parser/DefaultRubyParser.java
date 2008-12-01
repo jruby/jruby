@@ -3338,6 +3338,7 @@ case 495:
         
         lexer.reset();
         lexer.setSource(source);
+        lexer.setEncoding(configuration.getKCode().getEncoding());
         try {
 	    //yyparse(lexer, new jay.yydebug.yyAnim("JRuby", 9));
 	    //yyparse(lexer, new jay.yydebug.yyDebugAdapter());
@@ -3376,4 +3377,4 @@ case 495:
 	return lexer.getPosition(null, inclusive);
     }
 }
-					// line 7706 "-"
+					// line 7707 "-"

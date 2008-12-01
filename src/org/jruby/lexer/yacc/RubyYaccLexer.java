@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.HashMap;
 
+import org.jcodings.Encoding;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BignumNode;
 import org.jruby.ast.CommentNode;
@@ -107,6 +108,8 @@ public class RubyYaccLexer {
         map.put("while", Keyword.WHILE);
         map.put("alias", Keyword.ALIAS);
     }
+
+    private Encoding encoding;
 
     private int getFloatToken(String number) {
         double d;
@@ -348,6 +351,10 @@ public class RubyYaccLexer {
         }
     }
 
+    public void setEncoding(Encoding encoding) {
+        this.encoding = encoding;
+    }
+
     /**
      * Allow the parser to set the source for its lexer.
      * 
@@ -443,11 +450,25 @@ public class RubyYaccLexer {
     }
     
     /**
+     * This is a valid character for an identifier?
+     *
      * @param c is character to be compared
      * @return whether c is an identifier or not
+     *
+     * mri: is_identchar
      */
-    public static final boolean isIdentifierChar(int c) {
-        return Character.isLetterOrDigit(c) || c == '_';
+    protected boolean isIdentifierChar(int c) {
+        return Character.isLetterOrDigit(c) || c == '_' || isMultiByteChar(c);
+    }
+
+    /**
+     * Is this a multibyte character from a multibyte encoding?
+     *
+     * @param c
+     * @return whether c is an multibyte char or not
+     */
+    protected boolean isMultiByteChar(int c) {
+        return encoding.codeToMbcLength(c) != 1;
     }
     
     /**

@@ -33,6 +33,7 @@ package org.jruby.parser;
 import org.jruby.CompatVersion;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
+import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 
 public class ParserConfiguration {
@@ -50,19 +51,19 @@ public class ParserConfiguration {
     private boolean isDubyExtensionsEnabled = SafePropertyAccessor.getBoolean("jruby.duby.enabled", false);
 
     private CompatVersion version;
+
+    private KCode kCode;
     
-    public ParserConfiguration(int lineNumber, boolean inlineSource, CompatVersion version) {
-        this(lineNumber, false, inlineSource, version);
+    public ParserConfiguration(KCode kCode, int lineNumber, boolean inlineSource, CompatVersion version) {
+        this(kCode, lineNumber, false, inlineSource, version);
     }
     
-    public ParserConfiguration(int lineNumber, boolean extraPositionInformation, boolean inlineSource, CompatVersion version) {
-        this.inlineSource = inlineSource;
-        this.lineNumber = lineNumber;
-        this.extraPositionInformation = extraPositionInformation;
-        this.version = version;
+    public ParserConfiguration(KCode kCode, int lineNumber, boolean extraPositionInformation, boolean inlineSource, CompatVersion version) {
+        this(kCode, lineNumber, extraPositionInformation, inlineSource, true, version);
     }
 
-    public ParserConfiguration(int lineNumber, boolean extraPositionInformation, boolean inlineSource, boolean isFileParse, CompatVersion version) {
+    public ParserConfiguration(KCode kCode, int lineNumber, boolean extraPositionInformation, boolean inlineSource, boolean isFileParse, CompatVersion version) {
+        this.kCode = kCode;
         this.inlineSource = inlineSource;
         this.lineNumber = lineNumber;
         this.extraPositionInformation = extraPositionInformation;
@@ -102,6 +103,10 @@ public class ParserConfiguration {
      */
     public boolean isEvalParse() {
         return isEvalParse;
+    }
+
+    public KCode getKCode() {
+        return kCode;
     }
     
     public int getLineNumber() {
