@@ -80,7 +80,12 @@ public class JNAVariadicInvoker extends RubyObject {
     @JRubyMethod(name = { "__new" }, meta = true, required = 4)
     public static JNAVariadicInvoker newInvoker(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         int conv = "stdcall".equals(args[3].toString()) ? Function.ALT_CONVENTION : Function.C_CONVENTION;
-        Function function = NativeLibrary.getInstance(args[0].toString()).getFunction(args[1].toString(), conv);
+        Function function;
+        try {
+            function = NativeLibrary.getInstance(args[0].toString()).getFunction(args[1].toString(), conv);
+        } catch (UnsatisfiedLinkError ex) {
+            throw context.getRuntime().newLoadError(ex.getMessage());
+        }
         FunctionInvoker functionInvoker = JNAProvider.getFunctionInvoker(NativeType.valueOf(Util.int32Value(args[2])));
         return new JNAVariadicInvoker(recv.getRuntime(), function, functionInvoker);
     }
