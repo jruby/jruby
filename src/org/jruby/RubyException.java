@@ -60,7 +60,7 @@ import org.jruby.util.SafePropertyAccessor;
  */
 @JRubyClass(name="Exception")
 public class RubyException extends RubyObject {
-    private StackTraceElement[] backtraceFrames;
+    private ThreadContext.RubyStackTraceElement[] backtraceFrames;
     private StackTraceElement[] javaStackTrace;
     private IRubyObject backtrace;
     public IRubyObject message;
@@ -130,7 +130,7 @@ public class RubyException extends RubyObject {
         return new RubyException(runtime, excptnClass, msg);
     }
     
-    public void setBacktraceFrames(StackTraceElement[] backtraceFrames) {
+    public void setBacktraceFrames(ThreadContext.RubyStackTraceElement[] backtraceFrames) {
         this.backtraceFrames = backtraceFrames;
         if (TRACE_TYPE == RAW ||
                 TRACE_TYPE == RAW_FILTERED ||
@@ -140,7 +140,7 @@ public class RubyException extends RubyObject {
         }
     }
     
-    public StackTraceElement[] getBacktraceFrames() {
+    public ThreadContext.RubyStackTraceElement[] getBacktraceFrames() {
         return backtraceFrames;
     }
     
@@ -184,9 +184,9 @@ public class RubyException extends RubyObject {
         case RUBY_COMPILED:
             backtrace = ThreadContext.createRubyCompiledBacktrace(getRuntime(), javaStackTrace);
             break;
-        case RUBY_HYBRID:
-            backtrace = ThreadContext.createRubyHybridBacktrace(getRuntime(), backtraceFrames, javaStackTrace, getRuntime().getDebug().isTrue());
-            break;
+//        case RUBY_HYBRID:
+//            backtrace = ThreadContext.createRubyHybridBacktrace(getRuntime(), backtraceFrames, javaStackTrace, getRuntime().getDebug().isTrue());
+//            break;
         }
     }
 
