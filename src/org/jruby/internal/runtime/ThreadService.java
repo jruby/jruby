@@ -161,8 +161,12 @@ public class ThreadService {
         localContext.set(new SoftReference(context));
         getCurrentContext().setThread(thread);
         // This requires register to be called from within the registree thread
-        rubyThreadMap.put(Thread.currentThread(), thread);
+        associateThread(Thread.currentThread(), thread);
         return context;
+    }
+
+    public synchronized void associateThread(Thread javaThread, RubyThread rubyThread) {
+        rubyThreadMap.put(javaThread, rubyThread);
     }
     
     public synchronized void unregisterThread(RubyThread thread) {

@@ -190,16 +190,24 @@ public class RubyThread extends RubyObject {
         RubyRunnable runnable = new RubyRunnable(this, args, block);
         if (RubyInstanceConfig.POOLING_ENABLED) {
             threadImpl = new FutureThread(this, runnable);
+
+            // set to default thread group
+            runtime.getDefaultThreadGroup().addDirectly(this);
+
+            threadImpl.start();
         } else {
             Thread thread = new Thread(runnable);
             thread.setDaemon(true);
             threadImpl = new NativeThread(this, thread);
+
+            // set to default thread group
+            runtime.getDefaultThreadGroup().addDirectly(this);
+
+            threadImpl.start();
+
+            // JRUBY-2380, associate thread early so it shows up in Thread.list right away, in case it doesn't run immediately
+            runtime.getThreadService().associateThread(thread, this);
         }
-        
-        // set to default thread group
-        runtime.getDefaultThreadGroup().addDirectly(this);
-        
-        threadImpl.start();
         
         // We yield here to hopefully permit the target thread to schedule
         // MRI immediately schedules it, so this is close but not exact
