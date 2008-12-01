@@ -29,6 +29,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -634,15 +636,43 @@ public class RubyProcess {
                 IRubyObject.NULL_ARRAY,
                 CallBlock.newCallClosure(recv, (RubyModule)recv, Arity.NO_ARGUMENTS, callback, context));
     }
+
+    private static ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
     
     @JRubyMethod(name = "times", frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject times(IRubyObject recv, Block unusedBlock) {
+        boolean gotTime = false;
+        double userTime = 0;
+        double systemTime = 0;
+        double realTime = 0;
+        
+        try {
+            if (threadBean != null && threadBean.isThreadCpuTimeSupported() && threadBean.isThreadCpuTimeEnabled()) {
+                long[] threads = threadBean.getAllThreadIds();
+                for (long id : threads) {
+                    long uTime = threadBean.getThreadUserTime(id);
+                    long sTime = threadBean.getThreadCpuTime(id) - uTime;
+                    if (uTime != -1) userTime += uTime / 1000000000.0;
+                    if (sTime >= 0) systemTime += sTime / 1000000000.0;
+                }
+                gotTime = true;
+            }
+        } catch (UnsupportedOperationException uoe) {
+            // could not get time from mbean, allow fallback to old way below
+        }
+
         Ruby runtime = recv.getRuntime();
-        double currentTime = System.currentTimeMillis() / 1000.0;
-        double startTime = runtime.getStartTime() / 1000.0;
+
+        if (!gotTime) {
+            double currentTime = System.currentTimeMillis() / 1000.0;
+            double startTime = runtime.getStartTime() / 1000.0;
+            systemTime = 0;
+            userTime = currentTime - startTime;
+        }
+        
         RubyFloat zero = runtime.newFloat(0.0);
         return RubyStruct.newStruct(runtime.getTmsStruct(), 
-                new IRubyObject[] { runtime.newFloat(currentTime - startTime), zero, zero, zero }, 
+                new IRubyObject[] { runtime.newFloat(userTime), runtime.newFloat(systemTime), zero, zero },
                 Block.NULL_BLOCK);
     }
 
