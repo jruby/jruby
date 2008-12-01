@@ -126,21 +126,7 @@ public class RubyEncoding extends RubyObject {
         return null;
     }
 
-    public static Encoding areCompatible(RubyString str1, RubyString str2) { 
-        Encoding enc1 = str1.getEncoding();
-        Encoding enc2 = str2.getEncoding();
-
-        if (enc1 == enc2) return enc1;
-
-        if (str2.getByteList().realSize == 0) return enc1;
-        if (str1.getByteList().realSize == 0) return enc2;
-
-        if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
-
-        return areCompatible(enc1, str1.scanForCodeRange(), enc2, str2.scanForCodeRange());
-    }
-
-    private static Encoding areCompatible(Encoding enc1, int cr1, Encoding enc2, int cr2) {
+    static Encoding areCompatible(Encoding enc1, int cr1, Encoding enc2, int cr2) {
         if (cr1 != cr2) {
             /* may need to handle ENC_CODERANGE_BROKEN */
             if (cr1 == StringSupport.CR_7BIT) return enc2;
