@@ -56,6 +56,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
+import org.jruby.javasupport.JavaEmbedUtils;
 
 /**
  * @author <a href="mailto:mental@rydia.net">MenTaLguY</a>
@@ -154,7 +155,7 @@ public class JRubyApplet extends Applet {
     public static class RubyMethods {
         @JRubyMethod
         public static IRubyObject on_start(IRubyObject recv, Block block) {
-            JRubyApplet applet = (JRubyApplet)recv.dataGetStruct();
+            JRubyApplet applet = (JRubyApplet) JavaEmbedUtils.rubyToJava(recv.getRuntime(), recv, recv.getJavaClass());
             synchronized (applet) {
                 applet.startProc = blockToProc(applet.runtime, block);
             }
@@ -163,7 +164,7 @@ public class JRubyApplet extends Applet {
 
         @JRubyMethod
         public static IRubyObject on_stop(IRubyObject recv, Block block) {
-            JRubyApplet applet = (JRubyApplet)recv.dataGetStruct();
+            JRubyApplet applet = (JRubyApplet) JavaEmbedUtils.rubyToJava(recv.getRuntime(), recv, recv.getJavaClass());
             synchronized (applet) {
                 applet.stopProc = blockToProc(applet.runtime, block);
             }
@@ -172,7 +173,7 @@ public class JRubyApplet extends Applet {
 
         @JRubyMethod
         public static IRubyObject on_destroy(IRubyObject recv, Block block) {
-            JRubyApplet applet = (JRubyApplet)recv.dataGetStruct();
+            JRubyApplet applet = (JRubyApplet) JavaEmbedUtils.rubyToJava(recv.getRuntime(), recv, recv.getJavaClass());
             synchronized (applet) {
                 applet.destroyProc = blockToProc(applet.runtime, block);
             }
@@ -181,7 +182,7 @@ public class JRubyApplet extends Applet {
 
         @JRubyMethod
         public static IRubyObject on_paint(IRubyObject recv, Block block) {
-            JRubyApplet applet = (JRubyApplet)recv.dataGetStruct();
+            JRubyApplet applet = (JRubyApplet) JavaEmbedUtils.rubyToJava(recv.getRuntime(), recv, recv.getJavaClass());
             synchronized (applet) {
                 applet.paintProc = blockToProc(applet.runtime, block);
                 applet.repaint();
@@ -363,8 +364,7 @@ public class JRubyApplet extends Applet {
         public PrintStream getOutputStream() { return System.out; }
         public PrintStream getErrorStream() { return System.err; }
         public void attach(Ruby runtime, Applet applet) {
-            final IRubyObject wrappedApplet = JavaUtil.convertJavaToUsableRubyObject(runtime, applet);
-            wrappedApplet.dataWrapStruct(applet);
+            final IRubyObject wrappedApplet = JavaEmbedUtils.javaToRuby(runtime, applet);
             runtime.defineGlobalConstant("JRUBY_APPLET", wrappedApplet);
             wrappedApplet.getMetaClass().defineAnnotatedMethods(RubyMethods.class);
         }
