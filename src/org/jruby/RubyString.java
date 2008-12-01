@@ -233,6 +233,20 @@ public class RubyString extends RubyObject implements EncodingCapable {
                                 value.encoding + " and " + other.value.encoding);
         return enc;
     }
+    
+    private boolean isComparableWith(RubyString other) {
+        ByteList otherValue = other.value;
+        if (value.realSize == 0 || 
+            otherValue.realSize == 0 || 
+            value.encoding == otherValue.encoding) return true;
+
+        int cr1 = scanForCodeRange();
+        int cr2 = other.scanForCodeRange();
+
+        if (cr1 == CR_7BIT && (cr2 == CR_7BIT || otherValue.encoding.isAsciiCompatible())) return true;
+        if (cr2 == CR_7BIT && value.encoding.isAsciiCompatible()) return true;
+        return false;
+    }
 
     private int strLength(Encoding enc) {
         if (singleByteOptimizable()) return value.realSize;
