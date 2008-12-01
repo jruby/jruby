@@ -208,13 +208,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
             }
         }
     }
-    
+
     private void copyCodeRange(RubyString from) {
         value.encoding = from.value.encoding;
         setCodeRange(from.getCodeRange());
     }
-    
-    private int scanForCodeRange() {
+
+    final int scanForCodeRange() {
         int cr = getCodeRange();
         if (cr == CR_UNKNOWN) {
             cr = codeRangeScan(value.encoding, value);
@@ -732,15 +732,27 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "+", required = 1)
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
         RubyString str = other.convertToString();
-        
-        ByteList result = new ByteList(value.realSize + str.value.realSize);
-        result.realSize = value.realSize + str.value.realSize;
-        System.arraycopy(value.bytes, value.begin, result.bytes, 0, value.realSize);
-        System.arraycopy(str.value.bytes, str.value.begin, result.bytes, value.realSize, str.value.realSize);
-      
-        RubyString resultStr = newString(context.getRuntime(), result);
+        RubyString resultStr = newString(context.getRuntime(), addByteLists(value, str.value));
         if (isTaint() || str.isTaint()) resultStr.setTaint(true);
         return resultStr;
+    }
+
+    @JRubyMethod(name = "+", required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_plus19(ThreadContext context, IRubyObject other) {
+        RubyString str = other.convertToString();
+        Encoding enc = checkEncoding(str);
+        RubyString resultStr = newStringNoCopy(context.getRuntime(), addByteLists(value, str.value),
+                                    enc, codeRangeAnd(getCodeRange(), str.getCodeRange()));
+        if (isTaint() || str.isTaint()) resultStr.setTaint(true);
+        return resultStr;
+    }
+
+    private ByteList addByteLists(ByteList value1, ByteList value2) {
+        ByteList result = new ByteList(value1.realSize + value2.realSize);
+        result.realSize = value1.realSize + value2.realSize;
+        System.arraycopy(value1.bytes, value1.begin, result.bytes, 0, value1.realSize);
+        System.arraycopy(value2.bytes, value2.begin, result.bytes, value1.realSize, value2.realSize);
+        return result;
     }
 
     @JRubyMethod(name = "*", required = 1)

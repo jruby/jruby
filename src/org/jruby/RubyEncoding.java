@@ -115,9 +115,9 @@ public class RubyEncoding extends RubyObject {
             }
 
             if (obj1 instanceof RubyString) {
-                int cr1 = ((RubyString)obj1).getCodeRange();
+                int cr1 = ((RubyString)obj1).scanForCodeRange();
                 if (obj2 instanceof RubyString) {
-                    int cr2 = ((RubyString)obj2).getCodeRange();
+                    int cr2 = ((RubyString)obj2).scanForCodeRange();
                     return areCompatible(enc1, cr1, enc2, cr2);
                 }
                 if (cr1 == StringSupport.CR_7BIT) return enc2;
@@ -137,7 +137,7 @@ public class RubyEncoding extends RubyObject {
 
         if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
 
-        return areCompatible(enc1, str1.getCodeRange(), enc2, str2.getCodeRange());
+        return areCompatible(enc1, str1.scanForCodeRange(), enc2, str2.scanForCodeRange());
     }
 
     private static Encoding areCompatible(Encoding enc1, int cr1, Encoding enc2, int cr2) {
