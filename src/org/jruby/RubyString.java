@@ -227,13 +227,27 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return getCodeRange() == CR_7BIT || value.encoding.isSingleByte();
     }
 
+    private Encoding isCompatibleWith(RubyString other) { 
+        Encoding enc1 = value.encoding;;
+        Encoding enc2 = other.value.encoding;
+
+        if (enc1 == enc2) return enc1;
+
+        if (other.getByteList().realSize == 0) return enc1;
+        if (getByteList().realSize == 0) return enc2;
+
+        if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
+
+        return RubyEncoding.areCompatible(enc1, scanForCodeRange(), enc2, other.scanForCodeRange());
+    }
+
     final Encoding checkEncoding(RubyString other) {
-        Encoding enc = RubyEncoding.areCompatible(this, other);
+        Encoding enc = isCompatibleWith(other);
         if (enc == null) throw getRuntime().newArgumentError("incompatible character encodings: " + 
                                 value.encoding + " and " + other.value.encoding);
         return enc;
     }
-    
+
     private boolean isComparableWith(RubyString other) {
         ByteList otherValue = other.value;
         if (value.realSize == 0 || 
