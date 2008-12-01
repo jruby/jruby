@@ -179,6 +179,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return (flags & CR_BROKEN) != 0;
     }
 
+    static int codeRangeAnd(int cr1, int cr2) {
+        if (cr1 == CR_7BIT) return cr2;
+        if (cr1 == CR_VALID) return cr2 == CR_7BIT ? CR_VALID : cr2;
+        return CR_UNKNOWN;
+    }
+
     private void copyCodeRangeForSubstr(RubyString from) {
         Encoding enc = value.encoding = from.value.encoding;
         int fromCr = from.getCodeRange();
