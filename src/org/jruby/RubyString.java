@@ -144,6 +144,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
     }
 
+    public final void setEncodingAndCodeRange(Encoding enc, int cr) {
+        value.encoding = enc;
+        setCodeRange(cr);
+    }
+
     public final Encoding toEncoding(Ruby runtime) {
         if (!value.encoding.isAsciiCompatible()) {
             throw runtime.newArgumentError("invalid name encoding (non ASCII)");
