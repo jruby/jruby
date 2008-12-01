@@ -172,13 +172,13 @@ public class RubyEncoding extends RubyObject {
         while (i.hasNext()) {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e = 
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
-            result.append(RubyString.newStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
+            result.append(RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
         }
         i = service.getAliases().entryIterator();        
         while (i.hasNext()) {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e = 
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
-            result.append(RubyString.newStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
+            result.append(RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
         }
         return result;
     }
@@ -196,8 +196,8 @@ public class RubyEncoding extends RubyObject {
         while (i.hasNext()) {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e = 
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
-            IRubyObject alias = RubyString.newStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context);
-            IRubyObject name = RubyString.newStringShared(runtime, 
+            IRubyObject alias = RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context);
+            IRubyObject name = RubyString.newUsAsciiStringShared(runtime, 
                                 ((RubyEncoding)list[e.value.getIndex()]).name).freeze(context);
             result.fastASet(alias, name);
         }
@@ -230,20 +230,19 @@ public class RubyEncoding extends RubyObject {
     @JRubyMethod(name = {"to_s", "name"})
     public IRubyObject to_s(ThreadContext context) {
         // TODO: rb_usascii_str_new2
-        return RubyString.newStringShared(context.getRuntime(), name);
+        return RubyString.newUsAsciiStringShared(context.getRuntime(), name);
     }
 
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
-        // TODO: rb_usascii_str_new2
         ByteList bytes = new ByteList();
         bytes.append("#<Encoding:".getBytes());
         bytes.append(name);
         if (isDummy) bytes.append(" (dummy)".getBytes());
         bytes.append('>');
-        return RubyString.newString(context.getRuntime(), bytes);
+        return RubyString.newUsAsciiStringNoCopy(context.getRuntime(), bytes);
     }
-    
+
     @SuppressWarnings("unchecked")
     @JRubyMethod(name = "names")
     public IRubyObject names(ThreadContext context) {
@@ -258,7 +257,7 @@ public class RubyEncoding extends RubyObject {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e = 
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
             if (e.value == entry) {
-                result.append(RubyString.newStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
+                result.append(RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
             }
         }
         i = service.getAliases().entryIterator();        
@@ -266,7 +265,7 @@ public class RubyEncoding extends RubyObject {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e = 
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
             if (e.value == entry) {
-                result.append(RubyString.newStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
+                result.append(RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
             }
         }
         return result;

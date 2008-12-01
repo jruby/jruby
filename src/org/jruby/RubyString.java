@@ -64,6 +64,7 @@ import org.joni.Region;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB.Entry;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
@@ -289,6 +290,17 @@ public class RubyString extends RubyObject implements EncodingCapable {
         assert value != null;
         this.value = value;
     }
+    
+    protected RubyString(Ruby runtime, RubyClass rubyClass, ByteList value, Encoding enc, int cr) {
+        this(runtime, rubyClass, value);
+        value.encoding = enc;
+        flags |= cr;
+    }
+    
+    protected RubyString(Ruby runtime, RubyClass rubyClass, ByteList value, Encoding enc) {
+        this(runtime, rubyClass, value);
+        value.encoding = enc;
+    }
 
     // Deprecated String construction routines
     /** Create a new String which uses the same Ruby runtime and the same
@@ -432,6 +444,30 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     public static RubyString newEmptyString(Ruby runtime, Encoding enc) {
         return newEmptyString(runtime, runtime.getString(), enc);
+    }
+
+    public static RubyString newStringNoCopy(Ruby runtime, RubyClass clazz, ByteList bytes, Encoding enc, int cr) {
+        return new RubyString(runtime, clazz, bytes, enc, cr);
+    }
+
+    public static RubyString newStringNoCopy(Ruby runtime, ByteList bytes, Encoding enc, int cr) {
+        return newStringNoCopy(runtime, runtime.getString(), bytes, enc, cr);
+    }
+
+    public static RubyString newUsAsciiStringNoCopy(Ruby runtime, ByteList bytes) {
+        return newStringNoCopy(runtime, bytes, USASCIIEncoding.INSTANCE, CR_7BIT);
+    }
+
+    public static RubyString newUsAsciiStringShared(Ruby runtime, ByteList bytes) {
+        RubyString str = newStringNoCopy(runtime, bytes, USASCIIEncoding.INSTANCE, CR_7BIT);
+        str.shareLevel = SHARE_LEVEL_BYTELIST;
+        return str;
+    }
+    
+    public static RubyString newUsAsciiStringShared(Ruby runtime, byte[] bytes, int start, int length) {
+        byte[] copy = new byte[length];
+        System.arraycopy(bytes, start, copy, 0, length);
+        return newUsAsciiStringShared(runtime, new ByteList(copy, false));
     }
 
     @Override
