@@ -42,7 +42,7 @@ module FFI::Library
     invoker = libraries.collect do |lib|
       begin
         FFI.create_invoker lib, cname.to_s, arg_types, find_type(ret_type), options
-      rescue FFI::NotFoundError => ex
+      rescue LoadError => ex
         nil
       end
     end.compact.shift
