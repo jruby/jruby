@@ -729,7 +729,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return value.equal(((RubyString)other).value) ? runtime.getTrue() : runtime.getFalse();
     }
 
-    @JRubyMethod(name = "+", required = 1)
+    @JRubyMethod(name = "+", required = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
         RubyString str = other.convertToString();
         RubyString resultStr = newString(context.getRuntime(), addByteLists(value, str.value));
@@ -755,26 +755,41 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return result;
     }
 
-    @JRubyMethod(name = "*", required = 1)
+    @JRubyMethod(name = "*", required = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_mul(ThreadContext context, IRubyObject other) {
-        RubyInteger otherInteger = (RubyInteger) other.convertToInteger();
-        long len = otherInteger.getLongValue();
+        return multiplyByteList(context, other);
+    }
 
+    @JRubyMethod(name = "*", required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_mul19(ThreadContext context, IRubyObject other) {
+        RubyString result = multiplyByteList(context, other);
+        result.copyCodeRangeForSubstr(this);
+        return result;
+    }
+
+    private RubyString multiplyByteList(ThreadContext context, IRubyObject arg) {
+        int len = RubyNumeric.num2int(arg);
         if (len < 0) throw context.getRuntime().newArgumentError("negative argument");
 
         // we limit to int because ByteBuffer can only allocate int sizes
-        if (len > 0 && Integer.MAX_VALUE / len < value.length()) {
+        if (len > 0 && Integer.MAX_VALUE / len < value.realSize) {
             throw context.getRuntime().newArgumentError("argument too big");
         }
-        ByteList newBytes = new ByteList(value.length() * (int)len);
 
-        for (int i = 0; i < len; i++) {
-            newBytes.append(value);
+        ByteList bytes = new ByteList(len *= value.realSize);
+        if (len > 0) {
+            bytes.realSize = len;
+            int n = value.realSize;
+            System.arraycopy(value.bytes, value.begin, bytes.bytes, 0, n);
+            while (n <= len >> 1) {
+                System.arraycopy(bytes.bytes, 0, bytes.bytes, n, n);
+                n <<= 1;
+            }
+            System.arraycopy(bytes.bytes, 0, bytes.bytes, n, len - n);
         }
-
-        RubyString newString = new RubyString(context.getRuntime(), getMetaClass(), newBytes);
-        newString.setTaint(isTaint());
-        return newString;
+        RubyString result = new RubyString(context.getRuntime(), getMetaClass(), bytes);
+        result.setTaint(isTaint());
+        return result;
     }
 
     @JRubyMethod(name = "%", required = 1)
