@@ -31,6 +31,7 @@ module JRuby
           ARGV.unshift "install"
           load Config::CONFIG['bindir'] + "/gem"
         end
+        generate_bat_stubs
       end
 
       def generate_bat_stubs
