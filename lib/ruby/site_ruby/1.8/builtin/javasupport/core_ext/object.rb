@@ -5,7 +5,13 @@ class Object
     alias_method :java_package_method_added, :method_added
 
     def method_added(name)
-      result = java_package_method_added(name)
+      # If someone added a new method_added since we aliased original, then 
+      # lets defer to that.  Otherwise run one we aliased.
+      if self.class.superclass.instance_method(:method_added) != method(:java_package_method_added)
+        result = super 
+      else
+        result = java_package_method_added(name)
+      end
       JavaPackageModuleTemplate.__block__(name) if self == Object
       result
     end
