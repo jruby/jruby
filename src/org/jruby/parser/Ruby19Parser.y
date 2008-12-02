@@ -2025,6 +2025,7 @@ none_block_pass : /* none */ {
         
         lexer.reset();
         lexer.setSource(source);
+        lexer.setEncoding(configuration.getKCode().getEncoding());
         try {
    //yyparse(lexer, new jay.yydebug.yyAnim("JRuby", 9));
     //yyparse(lexer, new jay.yydebug.yyDebugAdapter());
