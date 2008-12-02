@@ -712,6 +712,8 @@ public class JavaClass extends JavaObject {
             Method method = methods[i];
             String name = method.getName();
             if (Modifier.isStatic(method.getModifiers())) {
+                installStaticMethods(staticCallbacks, javaClass, method, name + "$method");
+                
                 AssignedName assignedName = staticNames.get(name);
                 if (assignedName == null) {
                     staticNames.put(name, new AssignedName(name, Priority.METHOD));
@@ -723,13 +725,11 @@ public class JavaClass extends JavaObject {
                         staticNames.put(name, new AssignedName(name, Priority.METHOD));
                     }
                 }
-                StaticMethodInvokerInstaller invoker = (StaticMethodInvokerInstaller) staticCallbacks.get(name);
-                if (invoker == null) {
-                    invoker = new StaticMethodInvokerInstaller(name);
-                    staticCallbacks.put(name, invoker);
-                }
-                invoker.addMethod(method, javaClass);
+                installStaticMethods(staticCallbacks, javaClass, method, name);
             } else {
+                // Install direct java methods with mangled name so 'send' can call them directly.
+                installInstanceMethods(instanceCallbacks, javaClass, method, name + "$method");
+
                 AssignedName assignedName = instanceNames.get(name);
                 if (assignedName == null) {
                     instanceNames.put(name, new AssignedName(name, Priority.METHOD));
@@ -741,14 +741,27 @@ public class JavaClass extends JavaObject {
                         instanceNames.put(name, new AssignedName(name, Priority.METHOD));
                     }
                 }
-                InstanceMethodInvokerInstaller invoker = (InstanceMethodInvokerInstaller) instanceCallbacks.get(name);
-                if (invoker == null) {
-                    invoker = new InstanceMethodInvokerInstaller(name);
-                    instanceCallbacks.put(name, invoker);
-                }
-                invoker.addMethod(method, javaClass);
+                installInstanceMethods(instanceCallbacks, javaClass, method, name);
             }
         }
+    }
+
+    private void installInstanceMethods(Map<String, NamedInstaller> methodCallbacks, Class<?> javaClass, Method method, String name) {
+        MethodInstaller invoker = (MethodInstaller) methodCallbacks.get(name);
+        if (invoker == null) {
+            invoker = new InstanceMethodInvokerInstaller(name);
+            methodCallbacks.put(name, invoker);
+        }
+        invoker.addMethod(method, javaClass);
+    }
+
+    private void installStaticMethods(Map<String, NamedInstaller> methodCallbacks, Class<?> javaClass, Method method, String name) {
+        MethodInstaller invoker = (MethodInstaller) methodCallbacks.get(name);
+        if (invoker == null) {
+            invoker = new StaticMethodInvokerInstaller(name);
+            methodCallbacks.put(name, invoker);
+        }
+        invoker.addMethod(method, javaClass);
     }
     
     // old (quasi-deprecated) interface class

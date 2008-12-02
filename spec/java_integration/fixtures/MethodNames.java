@@ -16,6 +16,7 @@ public class MethodNames {
     public static boolean isSecond1(Object something) {return false;}
     public static boolean hasThird1() {return false;}
     public static boolean hasFourth1(Object something) {return false;}
+    public static String inspect() { return "foo"; }
     
     public void lowercase2() {}
     public void camelCase2() {}
