@@ -150,9 +150,8 @@ describe "Java instance method names" do
   end
 
   it "should be able to access Java methods of core Ruby Methods via $method" do
-    obj = MethodNames.new
-    obj.send("initialize$method").should == "foo"
-    MethodNames.send("inspect$method").should == "foo"
+    MethodNames.new.initialize__method.should == "foo"
+    MethodNames.inspect__method.should == "foo"
   end
 end
 

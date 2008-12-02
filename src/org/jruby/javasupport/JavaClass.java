@@ -86,6 +86,8 @@ import org.jruby.util.IdUtil;
 
 @JRubyClass(name="Java::JavaClass", parent="Java::JavaObject")
 public class JavaClass extends JavaObject {
+    public static final String METHOD_MANGLE = "__method";
+
     /**
      * Assigned names only override based priority of an assigned type, the type must be less than
      * or equal to the assigned type. For example, field name (FIELD) in a subclass will override
@@ -712,7 +714,8 @@ public class JavaClass extends JavaObject {
             Method method = methods[i];
             String name = method.getName();
             if (Modifier.isStatic(method.getModifiers())) {
-                installStaticMethods(staticCallbacks, javaClass, method, name + "$method");
+                // Install direct java methods with mangled name so 'send' can call them directly.
+                installStaticMethods(staticCallbacks, javaClass, method, name + METHOD_MANGLE);
                 
                 AssignedName assignedName = staticNames.get(name);
                 if (assignedName == null) {
@@ -728,7 +731,7 @@ public class JavaClass extends JavaObject {
                 installStaticMethods(staticCallbacks, javaClass, method, name);
             } else {
                 // Install direct java methods with mangled name so 'send' can call them directly.
-                installInstanceMethods(instanceCallbacks, javaClass, method, name + "$method");
+                installInstanceMethods(instanceCallbacks, javaClass, method, name + METHOD_MANGLE);
 
                 AssignedName assignedName = instanceNames.get(name);
                 if (assignedName == null) {
