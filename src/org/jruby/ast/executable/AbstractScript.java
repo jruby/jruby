@@ -135,10 +135,6 @@ public abstract class AbstractScript implements Script {
         return value;
     }
 
-    public void invalidate(int index) {
-        constants[index] = null;
-    }
-
     public CallSite[] callSites;
     public RubySymbol[] symbols;
     public RubyFixnum[] fixnums;

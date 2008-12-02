@@ -561,6 +561,7 @@ public class ASTInspector {
                 // we set scope-aware to true to force heap-based locals
                 setFlag(SCOPE_AWARE);
             }
+            integrate(untilInspector);
             break;
         case VALIASNODE:
             break;
