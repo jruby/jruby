@@ -141,7 +141,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   end
 
   # JRUBY-2693
-  def test_dash_little_r_provides_prorgam_name_to_loaded_library
+  def test_dash_little_r_provides_program_name_to_loaded_library
     with_temp_script(%q{puts $0; puts $PROGRAM_NAME}) do |s|
       assert_equal(
         "#{s.path}\n#{s.path}\n#{s.path}\n#{s.path}\n",

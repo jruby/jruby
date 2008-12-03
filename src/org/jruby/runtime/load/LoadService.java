@@ -381,12 +381,7 @@ public class LoadService {
         }
         
         public void trySearch(SearchState state) {
-            if (Ruby.isSecurityRestricted()) {
-                // search in CWD only in if no security restrictions
-                state.library = findLibraryWithoutCWD(state, state.searchFile, state.suffixType);
-            } else {
-                state.library = findLibraryWithCWD(state, state.searchFile, state.suffixType);
-            }
+            state.library = findLibraryWithoutCWD(state, state.searchFile, state.suffixType);
         }
     }
 
@@ -620,13 +615,6 @@ public class LoadService {
         return null;
     }
 
-    private Library findLibraryWithCWD(SearchState state, String baseName, SuffixType suffixType) {
-        Library library = findLibraryWithoutCWD(state, baseName, suffixType);
-        if (library == null) library = createLibrary(state, tryResourceFromCWD(state, baseName, suffixType));
-
-        return library;
-    }
-
     private Library findLibraryWithoutCWD(SearchState state, String baseName, SuffixType suffixType) {
         Library library = null;
         
@@ -741,28 +729,49 @@ public class LoadService {
     
     private LoadServiceResource tryResourceFromLoadPathOrURL(SearchState state, String baseName, SuffixType suffixType) {
         LoadServiceResource foundResource = null;
-        
-        // only search load path if URL does not start with .
-        if (baseName.charAt(0) == '.') return null;
+
+        // if it's a ./ baseName, use CWD logic
+        if (baseName.startsWith("./")) {
+            foundResource = tryResourceFromCWD(state, baseName, suffixType);
+
+            if (foundResource != null) return foundResource;
+        }
+
+        // if given path is absolute, just try it as-is (with extensions) and no load path
+        if (new File(baseName).isAbsolute()) {
+            for (String suffix : suffixType.getSuffixes()) {
+                String namePlusSuffix = baseName + suffix;
+                foundResource = tryResourceAsIs(namePlusSuffix);
+
+                if (foundResource != null) return foundResource;
+            }
+
+            return null;
+        }
         
         Outer: for (Iterator pathIter = loadPath.getList().iterator(); pathIter.hasNext();) {
             // TODO this is really ineffient, and potentially a problem everytime anyone require's something.
             // we should try to make LoadPath a special array object.
             String loadPathEntry = ((IRubyObject)pathIter.next()).toString();
 
-            for (String suffix : suffixType.getSuffixes()) {
-                String namePlusSuffix = baseName + suffix;
+            if (loadPathEntry.equals(".")) {
+                foundResource = tryResourceFromCWD(state, baseName, suffixType);
 
-                if (loadPathLooksLikeJarURL(loadPathEntry)) {
-                    foundResource = tryResourceFromJarURLWithLoadPath(namePlusSuffix, loadPathEntry);
-                } else {
-                    if (foundResource == null) foundResource = tryResourceAsIs(namePlusSuffix);
-                    if (foundResource == null) foundResource = tryResourceFromLoadPath(namePlusSuffix, loadPathEntry);
-                }
+                if (foundResource != null) break Outer;
+            } else {
+                for (String suffix : suffixType.getSuffixes()) {
+                    String namePlusSuffix = baseName + suffix;
 
-                if (foundResource != null) {
-                    state.loadName = namePlusSuffix;
-                    break Outer; // end suffix iteration
+                    if (loadPathLooksLikeJarURL(loadPathEntry)) {
+                        foundResource = tryResourceFromJarURLWithLoadPath(namePlusSuffix, loadPathEntry);
+                    } else {
+                        foundResource = tryResourceFromLoadPath(namePlusSuffix, loadPathEntry);
+                    }
+
+                    if (foundResource != null) {
+                        state.loadName = namePlusSuffix;
+                        break Outer; // end suffix iteration
+                    }
                 }
             }
         }

@@ -1,4 +1,6 @@
 require 'test/unit'
+require 'rbconfig'
+
 
 def load_behavior_block(&block)
   eval("__FILE__", block.binding)
@@ -44,6 +46,28 @@ class TestLoad < Test::Unit::TestCase
     require 'test/jar_with_ruby_files'
     require 'hello_from_jar'
     assert "hi", $hello
+  end
+
+  def call_extern_load_foo_bar(classpath = nil)
+    cmd = ""
+    # FIX plain windows
+    cmd += "CLASSPATH=#{classpath}" if classpath 
+    cmd += "unset CLASSPATH &&" unless classpath
+    cmd += " #{Config::CONFIG['bindir']}/#{Config::CONFIG['RUBY_INSTALL_NAME']} -e "
+    cmd += "'"+'begin load "./test/foo.bar.rb"; rescue Exception => e; print "FAIL"; else print "OK"; end'+"'"
+    `#{cmd}`
+  end
+
+  def test_load_relative_with_classpath
+    assert_equal call_extern_load_foo_bar(File.join('test', 'jar_with_ruby_files.jar')), 'OK'
+  end
+
+  def test_load_relative_with_classpath_ends_colon
+    assert_equal call_extern_load_foo_bar(File.join('test', 'jar_with_ruby_files.jar') + ':'), 'OK'
+  end
+
+  def test_load_relative_without_classpath
+    assert_equal call_extern_load_foo_bar(), 'OK'
   end
 
   def test_require_with_non_existent_jar_1
