@@ -68,6 +68,7 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
+import org.jruby.util.Qsort;
 
 /**
  * The implementation of the built-in class Array in Ruby.
@@ -2848,9 +2849,9 @@ public class RubyArray extends RubyObject implements List {
             flags |= TMPLOCK_ARR_F;
             try {
                 if (block.isGiven()) {
-                    Arrays.sort(values, 0, realLength, new BlockComparator(block));
+                    Qsort.sort(values, 0, realLength, new BlockComparator(block));
                 } else {
-                    Arrays.sort(values, 0, realLength, new DefaultComparator());
+                    Qsort.sort(values, 0, realLength, new DefaultComparator());
                 }
             } finally {
                 flags &= ~TMPLOCK_ARR_F;
