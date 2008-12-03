@@ -97,7 +97,7 @@ module YAML
       else
         emitter.reset( opts )
       end
-    out.emit( oid, &e ).to_s
+    out.emit( oid, &e )
   end
   
   module JvYAML
@@ -111,7 +111,7 @@ module YAML
       def map(type_id, style = nil)
         map = Map.new(type_id, {}, style)
         yield map
-        map
+        map.to_s
       end
 
       def seq(type_id, style = nil)
