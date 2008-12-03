@@ -62,8 +62,6 @@ import org.jruby.RubyTime;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.proxies.JavaProxy;
-import org.jruby.javasupport.proxy.InternalJavaProxy;
-import org.jruby.javasupport.proxy.JavaProxyInvocationHandler;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -744,15 +742,6 @@ public class JavaUtil {
         // if it's already IRubyObject, don't re-wrap (JRUBY-2480)
         if (object instanceof IRubyObject) {
             return (IRubyObject)object;
-        }
-        
-        if (object instanceof InternalJavaProxy) {
-            InternalJavaProxy internalJavaProxy = (InternalJavaProxy) object;
-            IRubyObject orig = internalJavaProxy.___getInvocationHandler().getOrig();
-
-            if (orig != null) {
-                return orig;
-            }
         }
         
         JavaConverter converter = JAVA_CONVERTERS.get(object.getClass());

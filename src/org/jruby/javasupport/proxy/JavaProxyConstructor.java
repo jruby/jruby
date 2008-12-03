@@ -171,6 +171,10 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         }
 
         JavaProxyInvocationHandler handler = new JavaProxyInvocationHandler() {
+            public IRubyObject getOrig() {
+                return self;
+            }
+
             public Object invoke(Object proxy, JavaProxyMethod m, Object[] nargs) throws Throwable {
                 String name = m.getName();
                 DynamicMethod method = self.getMetaClass().searchMethod(name);
@@ -207,6 +211,10 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         final RubyModule javaUtilities = runtime.getJavaSupport().getJavaUtilitiesModule();
 
         JavaProxyInvocationHandler handler = new JavaProxyInvocationHandler() {
+            public IRubyObject getOrig() {
+                return self;
+            }
+
             public Object invoke(Object proxy, JavaProxyMethod m, Object[] nargs) throws Throwable {
                 String name = m.getName();
                 DynamicMethod method = self.getMetaClass().searchMethod(name);
@@ -266,6 +274,9 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         final IRubyObject recv = this;
 
         JavaProxyInvocationHandler handler = new JavaProxyInvocationHandler() {
+            public IRubyObject getOrig() {
+                return null;
+            }
 
             public Object invoke(Object proxy, JavaProxyMethod method,
                     Object[] nargs) throws Throwable {

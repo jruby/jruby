@@ -30,8 +30,12 @@ package org.jruby.javasupport.proxy;
 
 import java.lang.reflect.InvocationHandler;
 
+import org.jruby.runtime.builtin.IRubyObject;
+
 public interface JavaProxyInvocationHandler {
 
+    IRubyObject getOrig();
+    
     /**
      * Similar to java.lang.reflect.InvocationHandler
      * 
