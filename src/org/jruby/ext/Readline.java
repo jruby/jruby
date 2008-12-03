@@ -13,6 +13,7 @@
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
  * Copyright (C) 2006 Damian Steer <pldms@mac.com>
+ * Copyright (C) 2008 Joseph LaFata <joe@quibb.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -29,6 +30,8 @@
 package org.jruby.ext;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
 import java.util.Collections;
@@ -47,6 +50,7 @@ import jline.Completor;
 import jline.FileNameCompletor;
 import jline.CandidateListCompletionHandler;
 import jline.History;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -66,16 +70,62 @@ public class Readline {
         }
     }
 
+    public static class ReadlineHistory extends History {
+        ArrayList historyList = null;
+        Field index = null;
+
+        public ReadlineHistory() {
+            try {
+                Field list = History.class.getDeclaredField("history");
+                list.setAccessible(true);
+                historyList = (ArrayList) list.get(this);
+                index = History.class.getDeclaredField("currentIndex");
+                index.setAccessible(true);
+            } catch (NoSuchFieldException ex) {
+                ex.printStackTrace();
+            } catch (SecurityException ex) {
+                ex.printStackTrace();
+            } catch (IllegalArgumentException ex) {
+                ex.printStackTrace();
+            } catch (IllegalAccessException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        public void setCurrentIndex(int i) {
+            try {
+                index.setInt(this, i);
+            } catch (IllegalArgumentException ex) {
+                ex.printStackTrace();
+            } catch (IllegalAccessException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        public void set(int i, String s) {
+            historyList.set(i, s);
+        }
+
+        public String pop() {
+            return remove(historyList.size() - 1);
+        }
+
+        public String remove(int i) {
+            setCurrentIndex(historyList.size() - 2);
+            return (String)historyList.remove(i);
+        }
+    }
+
     public static class ConsoleHolder {
 
         public ConsoleReader readline;
         public Completor currentCompletor;
-        public History history;
+        public ReadlineHistory history;
     }
 
     public static void createReadline(Ruby runtime) throws IOException {
         ConsoleHolder holder = new ConsoleHolder();
-        holder.history = new History();
+        holder.history = new ReadlineHistory();
         holder.currentCompletor = null;
 
         RubyModule mReadline = runtime.defineModule("Readline");
@@ -190,12 +240,11 @@ public class Readline {
         public static IRubyObject s_pop(IRubyObject recv) throws Exception {
             Ruby runtime = recv.getRuntime();
             ConsoleHolder holder = getHolder(runtime);
-            List histList = holder.history.getHistoryList();
-
-            // TODO: Not fully implemented. We just return the last value,
-            // without really popping it.
-            String current = (String)histList.get(histList.size() - 1);
-            return runtime.newString(current);
+            if(holder.history.size() == 0)
+                return runtime.getNil();
+            RubyString output = runtime.newString((String)holder.history.pop());
+            output.taint(runtime.getCurrentContext());
+            return output;
         }
 
         @JRubyMethod(name = "to_a")
@@ -218,10 +267,12 @@ public class Readline {
             Ruby runtime = recv.getRuntime();
             ConsoleHolder holder = getHolder(runtime);
             int i = (int) index.convertToInteger().getLongValue();
+            if(i < 0)
+                i += holder.history.size();
             try {
-                // TODO: MRI behavior is more complicated than that,
-                // there is some magic when dealing with negative indexes.
-                return runtime.newString((String) holder.history.getHistoryList().get(i));
+                RubyString output = runtime.newString((String) holder.history.getHistoryList().get(i));
+                output.taint(runtime.getCurrentContext());
+                return output;
             } catch (IndexOutOfBoundsException ioobe) {
                 throw runtime.newIndexError("invalid history index: " + i);
             }
@@ -229,12 +280,34 @@ public class Readline {
 
         @JRubyMethod(name = "[]=")
         public static IRubyObject s_hist_set(IRubyObject recv, IRubyObject index, IRubyObject val) {
-            throw recv.getRuntime().newNotImplementedError("the []=() function is unimplemented on this machine");
+            Ruby runtime = recv.getRuntime();
+            ConsoleHolder holder = getHolder(runtime);
+            int i = (int) index.convertToInteger().getLongValue();
+            if(i < 0)
+                i += holder.history.size();
+            try {
+                holder.history.set(i, val.asJavaString());
+            } catch (IndexOutOfBoundsException ioobe) {
+                throw runtime.newIndexError("invalid history index: " + i);
+        }
+            return runtime.getNil();
         }
 
         @JRubyMethod(name = "shift")
         public static IRubyObject s_hist_shift(IRubyObject recv) {
-            throw recv.getRuntime().newNotImplementedError("the shift function is unimplemented on this machine");
+            Ruby runtime = recv.getRuntime();
+            ConsoleHolder holder = getHolder(recv.getRuntime());
+
+            if(holder.history.size() == 0)
+                return runtime.getNil();
+
+            try {
+                RubyString output = runtime.newString(holder.history.remove(0));
+                output.taint(runtime.getCurrentContext());
+                return output;
+            } catch (IndexOutOfBoundsException ioobe) {
+                throw runtime.newIndexError("history shift error");
+        }
         }
 
         @JRubyMethod(name = {"length", "size"})
@@ -251,14 +324,28 @@ public class Readline {
 
         @JRubyMethod(name = "delete_at")
         public static IRubyObject s_hist_delete_at(IRubyObject recv, IRubyObject index) {
-            throw recv.getRuntime().newNotImplementedError("the delete_at function is unimplemented on this machine");
+            Ruby runtime = recv.getRuntime();
+            ConsoleHolder holder = getHolder(recv.getRuntime());
+            int i = RubyNumeric.num2int(index);
+            if(i < 0)
+                i += holder.history.size();
+            
+            try {
+                RubyString output = runtime.newString(holder.history.remove(i));
+                output.taint(runtime.getCurrentContext());
+                return output;
+            } catch (IndexOutOfBoundsException ioobe) {
+                throw runtime.newIndexError("invalid history index: " + i);
+        }
         }
 
         @JRubyMethod(name = "each")
         public static IRubyObject s_hist_each(IRubyObject recv, Block block) {
             ConsoleHolder holder = getHolder(recv.getRuntime());
             for (Iterator i = holder.history.getHistoryList().iterator(); i.hasNext();) {
-                block.yield(recv.getRuntime().getCurrentContext(), recv.getRuntime().newString((String) i.next()));
+                RubyString output = recv.getRuntime().newString((String) i.next());
+                output.taint(recv.getRuntime().getCurrentContext());
+                block.yield(recv.getRuntime().getCurrentContext(), output);
             }
             return recv;
         }

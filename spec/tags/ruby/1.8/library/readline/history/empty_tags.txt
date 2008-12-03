@@ -1,1 +1,0 @@
-fails(JRUBY-2602):Readline::HISTORY.empty? returns true when the history is empty

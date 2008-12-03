@@ -1,1 +1,0 @@
-fails(JRUBY-2602):Readline::HISTORY.size returns the size of the history

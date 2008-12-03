@@ -1,5 +1,0 @@
-fails(JRUBY-2602):Readline::HISTORY.[] returns the history item at the passed index + 1
-fails(JRUBY-2602):Readline::HISTORY.[] returns tainted objects
-fails(JRUBY-2602):Readline::HISTORY.[] returns the first item for negative values when there is no item at the passed index
-fails(JRUBY-2602):Readline::HISTORY.[] raises an IndexError when there is no item at the passed index
-fails(JRUBY-2602):Readline::HISTORY.[] returns the history item at the passed index
