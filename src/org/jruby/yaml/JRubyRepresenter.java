@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.HashMap;
 
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyHash;
@@ -42,6 +43,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.javasupport.JavaEmbedUtils;
 
+import org.jruby.runtime.ThreadContext;
 import org.jvyamlb.SafeRepresenterImpl;
 import org.jvyamlb.Serializer;
 import org.jvyamlb.Representer;
@@ -60,6 +62,7 @@ public class JRubyRepresenter extends SafeRepresenterImpl {
         super(serializer,opts);
     }
 
+    @Override
     protected YAMLNodeCreator getNodeCreatorFor(final Object data) {
         if(data instanceof YAMLNodeCreator) {
             return (YAMLNodeCreator)data;
@@ -112,6 +115,7 @@ public class JRubyRepresenter extends SafeRepresenterImpl {
         return new MappingNode(tag,value,flowStyle);
     }
 
+    @Override
     protected boolean ignoreAliases(final Object data) {
         return (data instanceof IRubyObject && ((IRubyObject)data).isNil()) || super.ignoreAliases(data);
     }
@@ -130,26 +134,29 @@ public class JRubyRepresenter extends SafeRepresenterImpl {
         }
 
         public Node toYamlNode(final Representer representer) throws IOException {
-            if(data.getMetaClass().searchMethod("to_yaml") == data.getRuntime().getObjectToYamlMethod() ||
+            Ruby runtime = data.getRuntime();
+            ThreadContext context = runtime.getCurrentContext();
+
+            if(data.getMetaClass().searchMethod("to_yaml") == runtime.getObjectToYamlMethod() ||
                data.getMetaClass().searchMethod("to_yaml").isUndefined() // In this case, hope that it works out correctly when calling to_yaml_node. Rails does this.
                ) {
                 // to_yaml have not been overridden
-                Object val = data.callMethod(data.getRuntime().getCurrentContext(), "to_yaml_node", JavaEmbedUtils.javaToRuby(data.getRuntime(),representer));
+                Object val = data.callMethod(context, "to_yaml_node", JavaEmbedUtils.javaToRuby(runtime, representer));
                 if(val instanceof Node) {
                     return (Node)val;
                 } else if(val instanceof IRubyObject) {
-                    return (Node)JavaEmbedUtils.rubyToJava(data.getRuntime(),(IRubyObject)val,Node.class);
+                    return (Node)JavaEmbedUtils.rubyToJava((IRubyObject) val);
                 }
             } else {
-                IRubyObject val = data.callMethod(data.getRuntime().getCurrentContext(), "to_yaml", JavaEmbedUtils.javaToRuby(data.getRuntime(),representer));
+                IRubyObject val = data.callMethod(context, "to_yaml", JavaEmbedUtils.javaToRuby(runtime, representer));
 
                 if(!outClass.isInstance(val)) {
-                    throw val.getRuntime().newTypeError("wrong argument type " + val.getMetaClass().getRealClass() + " (expected YAML::JvYAML::Node)");
+                    throw runtime.newTypeError("wrong argument type " + val.getMetaClass().getRealClass() + " (expected YAML::JvYAML::Node)");
                 }
 
-                IRubyObject value = val.callMethod(data.getRuntime().getCurrentContext(),"value");
-                IRubyObject style = val.callMethod(data.getRuntime().getCurrentContext(),"style");
-                IRubyObject type_id = val.callMethod(data.getRuntime().getCurrentContext(),"type_id");
+                IRubyObject value = val.callMethod(context, "value");
+                IRubyObject style = val.callMethod(context, "style");
+                IRubyObject type_id = val.callMethod(context, "type_id");
                 String s = null;
                 if(!style.isNil()) {
                     s = style.toString();

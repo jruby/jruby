@@ -14,7 +14,7 @@
  * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004-2006 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2008 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
@@ -42,8 +42,7 @@ import org.apache.bsf.BSFManager;
 import org.apache.bsf.util.BSFEngineImpl;
 import org.apache.bsf.util.BSFFunctions;
 import org.jruby.Ruby;
-import org.jruby.ast.Node;
-import org.jruby.evaluator.ASTInterpreter;
+import org.jruby.RubyRuntimeAdapter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.Java;
@@ -57,38 +56,30 @@ import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/** An implementation of a JRuby BSF implementation.
- *
- * @author  jpetersen
+/** 
+ * An implementation of a JRuby BSF implementation.
  */
 public class JRubyEngine extends BSFEngineImpl {
     private Ruby runtime;
+    private RubyRuntimeAdapter evaler = JavaEmbedUtils.newRuntimeAdapter();
 
+    @Override
     public Object apply(String file, int line, int col, Object funcBody, Vector paramNames, Vector args) {
         ThreadContext context = runtime.getCurrentContext();
         try {
-            // add a new method conext
+            // Construct local variables based on parameter names passed in
             String[] names = new String[paramNames.size()];
             paramNames.toArray(names);
-
             context.preBsfApply(names);
-            
-            // FIXME: This is broken.  We are assigning BSF globals as local vars in the top-level
-            // scope.  This may be ok, but we are overwriting $~ and $_.  Leaving for now.
-            DynamicScope scope = context.getCurrentScope();
 
-            // set global variables
+            // Populate values for the parameter names
+            DynamicScope scope = context.getCurrentScope();
             for (int i = 0, size = args.size(); i < size; i++) {
                 scope.setValue(i, JavaEmbedUtils.javaToRuby(runtime, args.get(i)), 0);
             }
 
-        	// See eval todo about why this is commented out
-            //runtime.setPosition(file, line);
-
-            Node node = runtime.parseEval(file, funcBody.toString(), null, 0);
-            IRubyObject result = node.interpret(runtime, context, runtime.getTopSelf(), Block.NULL_BLOCK);
-            return JavaEmbedUtils.rubyToJava(runtime, result, Object.class);
-        } catch (StackOverflowError sfe) {
+            return JavaEmbedUtils.rubyToJava(evaler.parse(runtime, funcBody.toString(), file, line).run());
+        } catch (StackOverflowError e) {
             throw runtime.newSystemStackError("stack level too deep");
         } finally {
             context.postBsfApply();
@@ -97,26 +88,17 @@ public class JRubyEngine extends BSFEngineImpl {
 
     public Object eval(String file, int line, int col, Object expr) throws BSFException {
         try {
-        	// TODO: [JRUBY-24] This next line never would have worked correctly as a LexerSource
-        	// would have thrown a parsing error with a name of "<script>" and a line
-        	// value of whatever line in the string it is in.  Find real way of returning
-        	// what is expected.
-            //runtime.setPosition(file, line);
-            IRubyObject result = runtime.evalScriptlet(expr.toString());
-            return JavaEmbedUtils.rubyToJava(runtime, result, Object.class);
+            return JavaEmbedUtils.rubyToJava(evaler.parse(runtime, expr.toString(), file, line).run());
         } catch (Exception excptn) {
-            excptn.printStackTrace();
             throw new BSFException(BSFException.REASON_EXECUTION_ERROR, "Exception", excptn);
         }
     }
 
+    @Override
     public void exec(String file, int line, int col, Object expr) throws BSFException {
         try {
-        	// See eval todo about why this is commented out
-            //runtime.setPosition(file, line);
-            runtime.evalScriptlet(expr.toString());
+            evaler.parse(runtime, expr.toString(), file, line).run();
         } catch (Exception excptn) {
-            excptn.printStackTrace();
             throw new BSFException(BSFException.REASON_EXECUTION_ERROR, "Exception", excptn);
         }
     }
@@ -125,12 +107,11 @@ public class JRubyEngine extends BSFEngineImpl {
         try {
         	return JavaEmbedUtils.invokeMethod(runtime, recv, method, args, Object.class);
         } catch (Exception excptn) {
-            excptn.printStackTrace();
-            printException(runtime, excptn);
             throw new BSFException(BSFException.REASON_EXECUTION_ERROR, excptn.getMessage(), excptn);
         }
     }
 
+    @Override
     public void initialize(BSFManager manager, String language, Vector someDeclaredBeans) throws BSFException {
         super.initialize(manager, language, someDeclaredBeans);
 
@@ -150,12 +131,14 @@ public class JRubyEngine extends BSFEngineImpl {
     	return Arrays.asList(manager.getClassPath().split(System.getProperty("path.separator")));
     }
 
+    @Override
     public void declareBean(BSFDeclaredBean bean) throws BSFException {
         runtime.getGlobalVariables().define(
             GlobalVariable.variableName(bean.name),
             new BeanGlobalVariable(runtime, bean));
     }
 
+    @Override
     public void undeclareBean(BSFDeclaredBean bean) throws BSFException {
         runtime.getGlobalVariables().set(GlobalVariable.variableName(bean.name), runtime.getNil());
     }
@@ -229,6 +212,7 @@ public class JRubyEngine extends BSFEngineImpl {
     /**
      * @see org.apache.bsf.BSFEngine#terminate()
      */
+    @Override
     public void terminate() {
     	JavaEmbedUtils.terminate(runtime);
         runtime = null;

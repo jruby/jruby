@@ -575,7 +575,7 @@ public final class Ruby {
         }
     }
     
-    private IRubyObject runInterpreter(Node scriptNode) {
+    public IRubyObject runInterpreter(Node scriptNode) {
         ThreadContext context = getCurrentContext();
         
         assert scriptNode != null : "scriptNode is not null";
@@ -1959,10 +1959,14 @@ public final class Ruby {
     public void defineReadonlyVariable(String name, IRubyObject value) {
         globalVariables.defineReadonly(name, new ValueAccessor(value));
     }
+
+    public Node parseFile(InputStream in, String file, DynamicScope scope, int lineNumber) {
+        if (parserStats != null) parserStats.addLoadParse();
+        return parser.parse(file, in, scope, new ParserConfiguration(getKCode(), lineNumber, false, false, true, config.getCompatVersion()));
+    }
     
     public Node parseFile(InputStream in, String file, DynamicScope scope) {
-        if (parserStats != null) parserStats.addLoadParse();
-        return parser.parse(file, in, scope, new ParserConfiguration(getKCode(), 0, false, false, true, config.getCompatVersion()));
+        return parseFile(in, file, scope, 0);
     }
 
     public Node parseInline(InputStream in, String file, DynamicScope scope) {

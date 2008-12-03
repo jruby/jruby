@@ -155,7 +155,7 @@ public class JRubyApplet extends Applet {
     public static class RubyMethods {
         @JRubyMethod
         public static IRubyObject on_start(IRubyObject recv, Block block) {
-            JRubyApplet applet = (JRubyApplet) JavaEmbedUtils.rubyToJava(recv.getRuntime(), recv, recv.getJavaClass());
+            JRubyApplet applet = (JRubyApplet) JavaEmbedUtils.rubyToJava(recv);
             synchronized (applet) {
                 applet.startProc = blockToProc(applet.runtime, block);
             }
@@ -164,7 +164,7 @@ public class JRubyApplet extends Applet {
 
         @JRubyMethod
         public static IRubyObject on_stop(IRubyObject recv, Block block) {
-            JRubyApplet applet = (JRubyApplet) JavaEmbedUtils.rubyToJava(recv.getRuntime(), recv, recv.getJavaClass());
+            JRubyApplet applet = (JRubyApplet) JavaEmbedUtils.rubyToJava(recv);
             synchronized (applet) {
                 applet.stopProc = blockToProc(applet.runtime, block);
             }
@@ -173,7 +173,7 @@ public class JRubyApplet extends Applet {
 
         @JRubyMethod
         public static IRubyObject on_destroy(IRubyObject recv, Block block) {
-            JRubyApplet applet = (JRubyApplet) JavaEmbedUtils.rubyToJava(recv.getRuntime(), recv, recv.getJavaClass());
+            JRubyApplet applet = (JRubyApplet) JavaEmbedUtils.rubyToJava(recv);
             synchronized (applet) {
                 applet.destroyProc = blockToProc(applet.runtime, block);
             }
@@ -182,7 +182,7 @@ public class JRubyApplet extends Applet {
 
         @JRubyMethod
         public static IRubyObject on_paint(IRubyObject recv, Block block) {
-            JRubyApplet applet = (JRubyApplet) JavaEmbedUtils.rubyToJava(recv.getRuntime(), recv, recv.getJavaClass());
+            JRubyApplet applet = (JRubyApplet) JavaEmbedUtils.rubyToJava(recv);
             synchronized (applet) {
                 applet.paintProc = blockToProc(applet.runtime, block);
                 applet.repaint();
@@ -244,12 +244,11 @@ public class JRubyApplet extends Applet {
         if (proc == null) {
             return;
         }
-        final Ruby runtime = this.runtime;
+        final Ruby ruby = this.runtime;
         try {
             safeInvokeAndWait(new Runnable() {
                 public void run() {
-                    ThreadContext context = runtime.getCurrentContext();
-                    proc.call(context, args);
+                    proc.call(ruby.getCurrentContext(), args);
                 }
             });
         } catch (InterruptedException e) {
@@ -267,6 +266,7 @@ public class JRubyApplet extends Applet {
         return backgroundColor;
     }
 
+    @Override
     public synchronized boolean isDoubleBuffered() {
         return doubleBuffered;
     }
@@ -294,7 +294,7 @@ public class JRubyApplet extends Applet {
             invokeCallback(destroyProc, new IRubyObject[] {});
         } finally {
             facade.destroy();
-            final Ruby runtime = this.runtime;
+            final Ruby ruby = this.runtime;
             this.runtime = null;
             startProc = null;
             stopProc = null;
@@ -302,7 +302,7 @@ public class JRubyApplet extends Applet {
             paintProc = null;
             priorGraphics = null;
             wrappedGraphics = null;
-            runtime.tearDown();
+            ruby.tearDown();
             super.destroy();
         }
     }

@@ -28,6 +28,7 @@ package org.jruby.javasupport;
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 
+import java.io.InputStream;
 import java.util.List;
 
 import org.jruby.Ruby;
@@ -38,6 +39,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObjectAdapter;
 import org.jruby.RubyRuntimeAdapter;
 import org.jruby.RubyString;
+import org.jruby.ast.Node;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -48,6 +50,13 @@ import org.jruby.util.ClassCache;
  * used between BSF and JSR 223.  People who are embedding JRuby 'raw' should use these
  * as well.  If at a later date, we discover a flaw or change how we do things, this
  * utility class should provide some insulation.
+ *
+ * Example:
+ * Ruby runtime = JavaEmbedUtils.initialize(new ArrayList());
+ * RubyRuntimeAdapter evaler = JavaEmbedUtils.newRuntimeAdapter();
+ * IRubyObject rubyObject = evaler.parse(runtime, expr.toString(), file, line).run());
+ * SomeClassOrInterface javaObject = (SomeClassOrInterface) JavaEmbedUtils.rubyToJava(rubyObject);
+ * runtime.terminate();
  */
 public class JavaEmbedUtils {
     /**
@@ -154,10 +163,70 @@ public class JavaEmbedUtils {
 
     public static RubyRuntimeAdapter newRuntimeAdapter() {
         return new RubyRuntimeAdapter() {
+            /**
+             * Evaluate a script and return the last value in the script.
+             * @param runtime to invoke the script under
+             * @param script to be evaluated
+             * @return the last value of the script
+             */
             public IRubyObject eval(Ruby runtime, String script) {
                 return runtime.evalScriptlet(script);
             }
+
+            /**
+             * Parse the script and return an object which can be run().  This allows the script
+             * to be parsed once and evaluated many times.
+             * @param runtime to parse the script under
+             * @param script to be parsed
+             * @param filename the filename to display for parse errors and backtraces
+             * @param lineNumber the linenumber to display for parse errors and backtraces
+             * @return an object which can be run
+             */
+            public EvalUnit parse(Ruby runtime, String script, String filename, int lineNumber) {
+                return new InterpretedEvalUnit(runtime, runtime.parseEval(script, filename, null, lineNumber));
+            }
+
+            /**
+             * Parse the script and return an object which can be run().  This allows the script
+             * to be parsed once and evaluated many times.
+             * @param runtime to parse the script under
+             * @param in the script as an inputstream to be parsed
+             * @param filename the filename to display for parse errors and backtraces
+             * @param lineNumber the linenumber to display for parse errors and backtraces
+             * @return an object which can be run
+             */
+            public EvalUnit parse(Ruby runtime, InputStream in, String filename, int lineNumber) {
+                return new InterpretedEvalUnit(runtime, runtime.parseFile(in, filename, null, lineNumber));
+            }
         };
+    }
+
+    /**
+     * All implementers can be run and will return the last value in the evaluation unit.
+     */
+    public static interface EvalUnit {
+        /**
+         * @return results of executing this evaluation unit.
+         */
+        public IRubyObject run();
+    }
+
+    /**
+     * An evaluation unit which is based on running JRuby's interpreter (as opposed to the
+     * compiler).
+     */
+    public static class InterpretedEvalUnit implements EvalUnit {
+        private Ruby runtime;
+        private Node node;
+
+        protected InterpretedEvalUnit(Ruby runtime, Node node) {
+            this.runtime = runtime;
+            this.node = node;
+        }
+
+        public IRubyObject run() {
+            return runtime.runInterpreter(node);
+        }
     }
 
     /**
@@ -199,10 +268,20 @@ public class JavaEmbedUtils {
 
     /**
      * Convert a Ruby object to a Java object.
-     * 
      */
     public static Object rubyToJava(Ruby runtime, IRubyObject value, Class type) {
         return JavaUtil.convertArgument(runtime, Java.ruby_to_java(runtime.getObject(), value, Block.NULL_BLOCK), type);
+    }
+
+    /**
+     * Convert the Ruby object to a Java Object.
+     * @param value to be converted
+     * @return the converted object
+     */
+    public static Object rubyToJava(IRubyObject value) {
+        Ruby runtime = value.getRuntime();
+
+        return JavaUtil.convertArgument(runtime, Java.ruby_to_java(runtime.getObject(), value, Block.NULL_BLOCK), Object.class);
     }
 
     /**
