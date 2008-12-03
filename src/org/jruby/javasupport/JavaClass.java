@@ -81,6 +81,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.util.ByteList;
+import org.jruby.util.CodegenUtils;
 import org.jruby.util.IdUtil;
 
 
@@ -1711,20 +1712,29 @@ public class JavaClass extends JavaObject {
     }
     
     private static Method[] getMethods(Class<?> javaClass) {
-        ArrayList<Method> list = new ArrayList<Method>();
-        
+        HashMap<String, Method> nameMethods = new HashMap<String, Method>();
+
+        // we all all superclasses, but avoid adding superclass methods with same name+signature as subclass methods
+        // see JRUBY-3130
         for (Class c = javaClass; c != null; c = c.getSuperclass()) {
             try {
                 for (Method m : c.getDeclaredMethods()) {
                     int modifiers = m.getModifiers();
                     if (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) {
-                        list.add(m);
+                        String namePlusSig = m.getName() + CodegenUtils.sigParams(m.getParameterTypes());
+                        if (nameMethods.containsKey(namePlusSig)) continue;
+                        nameMethods.put(namePlusSig, m);
                     }
                 }
             } catch (SecurityException e) {
             }
         }
 
-        return list.toArray(new Method[list.size()]);
+        ArrayList<Method> list2 = new ArrayList<Method>();
+        for (Map.Entry<String, Method> entry : nameMethods.entrySet()) {
+            list2.add(entry.getValue());
+        }
+        
+        return list2.toArray(new Method[list2.size()]);
     }
 }

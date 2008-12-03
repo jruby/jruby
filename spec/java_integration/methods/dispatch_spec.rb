@@ -1,6 +1,7 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
 import "java_integration.fixtures.CoreTypeMethods"
+import "java_integration.fixtures.StaticMethodSelection"
 
 describe "Non-overloaded static Java methods" do
   it "should raise ArgumentError when called with incorrect arity" do
@@ -56,6 +57,18 @@ describe "An overloaded Java static method" do
       end.should raise_error(ArgumentError)
     end
   end
+end
+
+describe "The return value of an overridden Java static method" do
+  before(:each) do
+    @return_value = StaticMethodSelection.produce
+  end
+  it "should not be nil" do
+    @return_value.should_not be_nil
+  end
+  it "should be of the correct type" do
+    @return_value.should be_an_instance_of(StaticMethodSelection)
+  end 
 end
 
 describe "An overloaded Java instance method" do
