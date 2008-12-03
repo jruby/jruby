@@ -4,14 +4,14 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>shared</artifactId>
-    <version>1.1.6-SNAPSHOT</version>
+    <version>1.1.6RC1</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.jruby</groupId>
   <artifactId>jruby-complete</artifactId>
   <packaging>jar</packaging>
-  <version>1.1.6-SNAPSHOT</version>
+  <version>1.1.6RC1</version>
   <name>JRuby Complete</name>
 
   <dependencies>
@@ -24,7 +24,7 @@
     <dependency>
       <groupId>org.jruby.joni</groupId>
       <artifactId>joni</artifactId>
-      <version>1.1.1</version>
+      <version>1.1.2</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
