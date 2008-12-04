@@ -18,7 +18,7 @@ module JavaPackageModuleTemplate
   
     # blank-slate logic relocated from org.jruby.javasupport.Java
     instance_methods.each do |meth|
-      unless meth =~ @@keep
+      unless meth.to_s =~ @@keep
         # keep aliased methods for those we'll undef, for use by IRB and other utilities
         unless method_defined?(method_alias = :"__#{meth}__")
           alias_method method_alias, meth

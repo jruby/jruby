@@ -1071,8 +1071,17 @@ public class RubyObject extends RubyBasicObject {
      *     a.singleton_methods         #=> ["two", "one", "three"]
      */
     // TODO: This is almost RubyModule#instance_methods on the metaClass.  Perhaps refactor.
-    @JRubyMethod(name = "singleton_methods", optional = 1)
+    @JRubyMethod(name = "singleton_methods", optional = 1, compat = CompatVersion.RUBY1_8)
     public RubyArray singleton_methods(ThreadContext context, IRubyObject[] args) {
+        return singletonMethods(context, args, false);
+    }
+
+    @JRubyMethod(name = "singleton_methods", optional = 1, compat = CompatVersion.RUBY1_9)
+    public RubyArray singleton_methods19(ThreadContext context, IRubyObject[] args) {
+        return singletonMethods(context, args, true);
+    }
+
+    public RubyArray singletonMethods(ThreadContext context, IRubyObject[] args, boolean asSymbols) {
         boolean all = true;
         if(args.length == 1) {
             all = args[0].isTrue();
@@ -1080,7 +1089,11 @@ public class RubyObject extends RubyBasicObject {
 
         RubyArray singletonMethods;
         if (getMetaClass().isSingleton()) {
-            singletonMethods = getMetaClass().instance_methods(new IRubyObject[] {context.getRuntime().getFalse()});
+            if (asSymbols) {
+                singletonMethods = getMetaClass().instance_methods19(new IRubyObject[]{context.getRuntime().getFalse()});
+            } else {
+                singletonMethods = getMetaClass().instance_methods(new IRubyObject[]{context.getRuntime().getFalse()});
+            }
             if (all) {
                 RubyClass superClass = getMetaClass().getSuperClass();
                 while (superClass.isIncluded()) {

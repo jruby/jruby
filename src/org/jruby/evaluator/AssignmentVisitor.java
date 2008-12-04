@@ -51,6 +51,38 @@ public class AssignmentVisitor {
         return node.assign(runtime, context, self, value, block, checkArity);
     }
 
+    public static IRubyObject multiAssign(Ruby runtime, ThreadContext context, IRubyObject self, MultipleAsgn19Node node, RubyArray value, boolean checkArity) {
+        // Assign the values.
+        int valueLen = value.getLength();
+        int varLen = node.getPre() == null ? 0 : node.getPre().size();
+
+        int j = 0;
+        for (; j < valueLen && j < varLen; j++) {
+            node.getPre().get(j).assign(runtime, context, self, value.eltInternal(j), Block.NULL_BLOCK, checkArity);
+        }
+
+        if (checkArity && j < varLen) {
+            throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
+        }
+
+        Node restArgument = node.getRest();
+        if (restArgument != null) {
+            if (varLen < valueLen) {
+                restArgument.assign(runtime, context, self, value.subseqLight(varLen, valueLen), Block.NULL_BLOCK, checkArity);
+            } else {
+                restArgument.assign(runtime, context, self, RubyArray.newArrayLight(runtime, 0), Block.NULL_BLOCK, checkArity);
+            }
+        } else if (checkArity && valueLen < varLen) {
+            throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
+        }
+
+        while (j < varLen) {
+            node.getPre().get(j++).assign(runtime, context, self, runtime.getNil(), Block.NULL_BLOCK, checkArity);
+        }
+
+        return value;
+    }
+
     public static IRubyObject multiAssign(Ruby runtime, ThreadContext context, IRubyObject self, MultipleAsgnNode node, RubyArray value, boolean checkArity) {
         // Assign the values.
         int valueLen = value.getLength();
@@ -88,7 +120,7 @@ public class AssignmentVisitor {
     public static IRubyObject multiAssign(Ruby runtime, ThreadContext context, IRubyObject self, MultipleAsgn19Node node, RubyArray value) {
         // Assign the values.
         int valueLen = value.getLength();
-        int postCount = node.getPreCount();
+        int postCount = node.getPostCount();
         int preCount = node.getPreCount();
         ListNode pre = node.getPre();
         ListNode post = node.getPost();
