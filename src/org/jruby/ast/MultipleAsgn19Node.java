@@ -114,7 +114,6 @@ public class MultipleAsgn19Node extends AssignableNode {
             value = ArgsUtil.convertToRubyArray(runtime, value, pre != null);
         }
 
-//        return AssignmentVisitor.multiAssign(runtime, context, self, this, (RubyArray) value, checkArity);
-        return null;
+        return AssignmentVisitor.multiAssign(runtime, context, self, this, (RubyArray) value, checkArity);
     }
 }
