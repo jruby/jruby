@@ -2075,7 +2075,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         return value.lastIndexOf(sub.value, pos);
     }
-    
+
+    @Deprecated
+    public IRubyObject substr(int beg, int len) {
+        return substr(getRuntime(), beg, len);
+    }
+
     /* rb_str_substr */
     public IRubyObject substr(Ruby runtime, int beg, int len) {    
         int length = value.length();
