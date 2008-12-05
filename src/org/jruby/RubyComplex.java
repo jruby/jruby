@@ -57,6 +57,7 @@ import static org.jruby.util.Numeric.f_zero_p;
 import static org.jruby.util.Numeric.k_exact_p;
 import static org.jruby.util.Numeric.k_inexact_p;
 
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
@@ -817,10 +818,11 @@ public class RubyComplex extends RubyNumeric {
         RubyString str = f_to_s(context, real).convertToString();
         str.cat(impos ? (byte)'+' : (byte)'-');
         str.cat(f_to_s(context, f_abs(context, image)).convertToString().getByteList());
+        if (!lastCharDigit(str)) str.cat((byte)'*');
         str.cat((byte)'i');
         return str;
     }
-    
+
     /** nucomp_inspect
      * 
      */
@@ -832,9 +834,15 @@ public class RubyComplex extends RubyNumeric {
         str.cat(f_inspect(context, real).convertToString().getByteList());
         str.cat(impos ? (byte)'+' : (byte)'-');
         str.cat(f_inspect(context, f_abs(context, image)).convertToString().getByteList());
+        if (!lastCharDigit(str)) str.cat((byte)'*');
         str.cat((byte)'i');
         str.cat((byte)')');
         return str;
+    }
+
+    private static boolean lastCharDigit(RubyString str) {
+        ByteList bytes = str.getByteList();
+        return ASCIIEncoding.INSTANCE.isDigit(bytes.bytes[bytes.begin + bytes.realSize - 1]);
     }
 
     /** nucomp_marshal_dump
