@@ -27,6 +27,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime;
 
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import org.jruby.RubyThread;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -35,7 +37,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author cnutter
  */
 public class NativeThread implements ThreadLike {
-    private Thread nativeThread;
+    private Reference<Thread> nativeThread;
     public RubyThread rubyThread;
     
     public NativeThread(RubyThread rubyThread, IRubyObject[] args, Block block) {
@@ -44,42 +46,53 @@ public class NativeThread implements ThreadLike {
     
     public NativeThread(RubyThread rubyThread, Thread nativeThread) {
         this.rubyThread = rubyThread;
-        this.nativeThread = nativeThread;
+        this.nativeThread = new WeakReference<Thread>(nativeThread);
     }
     
     public void start() {
-        nativeThread.start();
+        Thread thread = nativeThread.get();
+        if (thread != null) thread.start();
     }
     
     public void interrupt() {
-        nativeThread.interrupt();
+        Thread thread = nativeThread.get();
+        if (thread != null) thread.interrupt();
     }
     
     public boolean isAlive() {
-        return nativeThread.isAlive();
+        Thread thread = nativeThread.get();
+        if (thread != null) return thread.isAlive();
+        return false;
     }
     
     public void join() throws InterruptedException {
-        nativeThread.join();
+        Thread thread = nativeThread.get();
+        if (thread != null) thread.join();
     }
     
     public void join(long timeoutMillis) throws InterruptedException {
-        nativeThread.join(timeoutMillis);
+        Thread thread = nativeThread.get();
+        if (thread != null) thread.join(timeoutMillis);
     }
     
     public int getPriority() {
-        return nativeThread.getPriority();
+        Thread thread = nativeThread.get();
+        if (thread != null) return thread.getPriority();
+        return 0;
     }
     
     public void setPriority(int priority) {
-        nativeThread.setPriority(priority);
+        Thread thread = nativeThread.get();
+        if (thread != null) thread.setPriority(priority);
     }
     
     public boolean isCurrent() {
-        return Thread.currentThread() == nativeThread;
+        return nativeThread.get() == Thread.currentThread();
     }
     
     public boolean isInterrupted() {
-        return nativeThread.isInterrupted();
+        Thread thread = this.nativeThread.get();
+        if (thread != null) thread.isInterrupted();
+        return false;
     }
 }

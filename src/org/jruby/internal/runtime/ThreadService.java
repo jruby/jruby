@@ -151,6 +151,10 @@ public class ThreadService {
             return rubyThreads;
         }
     }
+
+    public Map getRubyThreadMap() {
+        return rubyThreadMap;
+    }
     
     public ThreadGroup getRubyThreadGroup() {
     	return rubyThreadGroup;
