@@ -121,7 +121,14 @@ public class CaseNode extends Node {
             ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
         assert whenIsArray(whenNode);
 
-        for (Node expression: ((ArrayNode) whenNode.getExpressionNodes()).childNodes()) {
+        Node expressionNodes = whenNode.getExpressionNodes();
+        List<Node> childNodes;
+        if (expressionNodes instanceof SplatNode) {
+          childNodes = ((SplatNode) expressionNodes).childNodes();
+        } else {
+          childNodes = ((ArrayNode) expressionNodes).childNodes();
+        }
+        for (Node expression: childNodes) {
             ISourcePosition position = expression.getPosition();
             context.setFileAndLine(position.getFile(), position.getStartLine());
 
