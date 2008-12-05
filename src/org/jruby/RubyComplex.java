@@ -794,7 +794,8 @@ public class RubyComplex extends RubyNumeric {
      */
     private static boolean signbit(ThreadContext context, IRubyObject x) {
         if (x instanceof RubyFloat) {
-            return Double.doubleToLongBits(((RubyFloat)x).getDoubleValue()) < 0;
+            double value = ((RubyFloat)x).getDoubleValue();
+            return !Double.isNaN(value) && Double.doubleToLongBits(value) < 0;
         }
         return f_negative_p(context, x);
     }
