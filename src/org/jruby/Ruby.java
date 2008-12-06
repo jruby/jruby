@@ -196,6 +196,7 @@ public final class Ruby {
      */
     private Ruby(RubyInstanceConfig config) {
         this.config             = config;
+        this.is1_9               = config.getCompatVersion() == CompatVersion.RUBY1_9;
         this.threadService      = new ThreadService(this);
         if(config.isSamplingEnabled()) {
             org.jruby.util.SimpleSampler.registerThreadContext(threadService.getCurrentContext());
@@ -2967,6 +2968,10 @@ public final class Ruby {
         return config;
     }
 
+    public boolean is1_9() {
+        return is1_9;
+    }
+
     /** GET_VM_STATE_VERSION */
     public long getGlobalState() {
         synchronized(this) {
@@ -3105,6 +3110,7 @@ public final class Ruby {
     private long startTime = System.currentTimeMillis();
 
     private final RubyInstanceConfig config;
+    private final boolean is1_9;
 
     private final InputStream in;
     private final PrintStream out;

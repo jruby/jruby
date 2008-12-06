@@ -250,14 +250,16 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private boolean isComparableWith(RubyString other) {
         ByteList otherValue = other.value;
-        if (value.realSize == 0 || 
-            otherValue.realSize == 0 || 
-            value.encoding == otherValue.encoding) return true;
+        if (value.encoding == otherValue.encoding || 
+            value.realSize == 0 || otherValue.realSize == 0) return true;
+        return isComparableViaCodeRangeWith(other);
+    }
 
+    private boolean isComparableViaCodeRangeWith(RubyString other) {
         int cr1 = scanForCodeRange();
         int cr2 = other.scanForCodeRange();
 
-        if (cr1 == CR_7BIT && (cr2 == CR_7BIT || otherValue.encoding.isAsciiCompatible())) return true;
+        if (cr1 == CR_7BIT && (cr2 == CR_7BIT || other.value.encoding.isAsciiCompatible())) return true;
         if (cr2 == CR_7BIT && value.encoding.isAsciiCompatible()) return true;
         return false;
     }
@@ -285,14 +287,18 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @Override
     public final boolean eql(IRubyObject other) {
-        if (otherIsString(other)) return eqlString(other);
-        return super.eql(other);
+        Ruby runtime = getRuntime();
+        if (other.getMetaClass() != runtime.getString()) super.eql(other);
+        return runtime.is1_9() ? eql19(runtime, other) : eql18(runtime, other);
     }
-    private final boolean otherIsString(IRubyObject other) {
-        return other.getMetaClass() == getRuntime().getString();
-    }
-    private final boolean eqlString(IRubyObject other) {
+
+    private boolean eql18(Ruby runtime, IRubyObject other) {
         return value.equal(((RubyString)other).value);
+    }
+
+    private boolean eql19(Ruby runtime, IRubyObject other) {
+        RubyString otherString = (RubyString)other;
+        return isComparableWith(otherString) && value.equal(((RubyString)other).value);
     }
 
     public RubyString(Ruby runtime, RubyClass rubyClass, CharSequence value) {
