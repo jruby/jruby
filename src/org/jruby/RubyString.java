@@ -758,22 +758,35 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return runtime.getNil();        
     }
         
-    /**
+    /** rb_str_equal
      * 
      */
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "==", compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.getRuntime();
-        
         if (this == other) return runtime.getTrue();
-        
-        if (!(other instanceof RubyString)) {
-            if (!other.respondsTo("to_str")) return runtime.getFalse();
-
-            return other.callMethod(context, "==", this).isTrue() ? runtime.getTrue() : runtime.getFalse();
+        if (other instanceof RubyString) {
+            return value.equal(((RubyString)other).value) ? runtime.getTrue() : runtime.getFalse();    
         }
-        return value.equal(((RubyString)other).value) ? runtime.getTrue() : runtime.getFalse();
+        return op_equalCommon(context, other);
+    }
+
+    @JRubyMethod(name = "==", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_equal19(ThreadContext context, IRubyObject other) {
+        Ruby runtime = context.getRuntime();
+        if (this == other) return runtime.getTrue();
+        if (other instanceof RubyString) {
+            RubyString otherString = (RubyString)other;
+            return isComparableWith(otherString) && value.equal(otherString.value) ? runtime.getTrue() : runtime.getFalse();    
+        }
+        return op_equalCommon(context, other);
+    }
+
+    private IRubyObject op_equalCommon(ThreadContext context, IRubyObject other) {
+        Ruby runtime = context.getRuntime();
+        if (!other.respondsTo("to_str")) return runtime.getFalse();
+        return other.callMethod(context, "==", this).isTrue() ? runtime.getTrue() : runtime.getFalse();
     }
 
     @JRubyMethod(name = "+", required = 1, compat = CompatVersion.RUBY1_8)
