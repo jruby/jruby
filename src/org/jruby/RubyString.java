@@ -288,7 +288,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @Override
     public final boolean eql(IRubyObject other) {
         Ruby runtime = getRuntime();
-        if (other.getMetaClass() != runtime.getString()) super.eql(other);
+        if (other.getMetaClass() != runtime.getString()) return super.eql(other);
         return runtime.is1_9() ? eql19(runtime, other) : eql18(runtime, other);
     }
 
@@ -732,17 +732,22 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (other instanceof RubyString) {
             return context.getRuntime().newFixnum(op_cmp((RubyString)other));
         }
+        return op_cmpCommon(context, other);
+    }
 
+    private IRubyObject op_cmpCommon(ThreadContext context, IRubyObject other) {
+        Ruby runtime = context.getRuntime();
         // deal with case when "other" is not a string
         if (other.respondsTo("to_str") && other.respondsTo("<=>")) {
             IRubyObject result = other.callMethod(context, "<=>", this);
-
-            if (result instanceof RubyNumeric) {
-                return ((RubyNumeric) result).op_uminus(context);
+            if (result.isNil()) return result;
+            if (result instanceof RubyFixnum) {
+                return RubyFixnum.newFixnum(runtime, -((RubyFixnum)result).getLongValue());
+            } else {
+                return RubyFixnum.zero(runtime).callMethod(context, "-", result);
             }
         }
-
-        return context.getRuntime().getNil();
+        return runtime.getNil();        
     }
         
     /**
