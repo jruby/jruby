@@ -727,10 +727,18 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     /* rb_str_cmp_m */
-    @JRubyMethod(name = "<=>", required = 1)
+    @JRubyMethod(name = "<=>", compat = CompatVersion.RUBY1_8)
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyString) {
             return context.getRuntime().newFixnum(op_cmp((RubyString)other));
+        }
+        return op_cmpCommon(context, other);
+    }
+
+    @JRubyMethod(name = "<=>", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_cmp19(ThreadContext context, IRubyObject other) {
+        if (other instanceof RubyString) {
+            return context.getRuntime().newFixnum(op_cmp19((RubyString)other));
         }
         return op_cmpCommon(context, other);
     }
@@ -890,8 +898,16 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_cmp
      *
      */
-    public int op_cmp(RubyString other) {
+    public final int op_cmp(RubyString other) {
         return value.cmp(other.value);
+    }
+
+    public final int op_cmp19(RubyString other) {
+        int ret = value.cmp(other.value);
+        if (ret == 0 && !isComparableWith(other)) {
+            return value.encoding.getIndex() > other.value.encoding.getIndex() ? 1 : -1;
+        }
+        return ret;
     }
 
     /** rb_to_id
