@@ -40,7 +40,6 @@ package org.jruby;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.BACKREF;
-import static org.jruby.anno.FrameField.LASTLINE;
 import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.CR_BROKEN;
 import static org.jruby.util.StringSupport.CR_MASK;
@@ -57,14 +56,15 @@ import static org.jruby.util.StringSupport.unpackResult;
 import java.io.UnsupportedEncodingException;
 import java.util.Locale;
 
+import org.jcodings.Encoding;
+import org.jcodings.EncodingDB.Entry;
+import org.jcodings.ascii.AsciiTables;
+import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
 import org.joni.Region;
-import org.jcodings.Encoding;
-import org.jcodings.EncodingDB.Entry;
-import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
@@ -1115,14 +1115,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
         
         int c = buf[s] & 0xff;
         if (ASCII.isLower(c)) {
-            buf[s] = (byte)ASCIIEncoding.asciiToUpper(c);
+            buf[s] = AsciiTables.ToUpperCaseTable[c];
             modify = true;
         }
         
         while (++s < send) {
             c = (char)(buf[s] & 0xff);
             if (ASCII.isUpper(c)) {
-                buf[s] = (byte)ASCIIEncoding.asciiToLower(c);
+                buf[s] = AsciiTables.ToLowerCaseTable[c];
                 modify = true;
             }
         }
@@ -1226,7 +1226,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         while (s < send) {
             int c = buf[s] & 0xff;
             if (ASCII.isLower(c)) {
-                buf[s] = (byte)ASCIIEncoding.asciiToUpper(c);
+                buf[s] = AsciiTables.ToUpperCaseTable[c];
                 modify = true;
             }
             s++;
@@ -1266,7 +1266,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         while (s < send) {
             int c = buf[s] & 0xff;
             if (ASCII.isUpper(c)) {
-                buf[s] = (byte)ASCIIEncoding.asciiToLower(c);
+                buf[s] = AsciiTables.ToLowerCaseTable[c];
                 modify = true;
             }
             s++;
@@ -1306,10 +1306,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
         while (s < send) {
             int c = buf[s] & 0xff;
             if (ASCII.isUpper(c)) {
-                buf[s] = (byte)ASCIIEncoding.asciiToLower(c);
+                buf[s] = AsciiTables.ToLowerCaseTable[c];
                 modify = true;
             } else if (ASCII.isLower(c)) {
-                buf[s] = (byte)ASCIIEncoding.asciiToUpper(c);
+                buf[s] = AsciiTables.ToUpperCaseTable[c];
                 modify = true;
             }
             s++;
