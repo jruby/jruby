@@ -459,7 +459,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "detect", frame = true, compat = CompatVersion.RUBY1_9)
     public static IRubyObject detect19(ThreadContext context, IRubyObject self, IRubyObject ifnone, final Block block) {
-        return block.isGiven() ? detect(context, self, ifnone, block) : enumeratorize(context.getRuntime(), self, "detect");
+        return block.isGiven() ? detect(context, self, ifnone, block) : enumeratorize(context.getRuntime(), self, "detect", ifnone);
     }
 
     @JRubyMethod(name = "find", frame = true, compat = CompatVersion.RUBY1_9)
@@ -469,7 +469,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "find", frame = true, compat = CompatVersion.RUBY1_9)
     public static IRubyObject find19(ThreadContext context, IRubyObject self, IRubyObject ifnone, final Block block) {
-        return block.isGiven() ? detect(context, self, ifnone, block) : enumeratorize(context.getRuntime(), self, "find");
+        return block.isGiven() ? detect(context, self, ifnone, block) : enumeratorize(context.getRuntime(), self, "find", ifnone);
     }
     
     @JRubyMethod(name = "find_index", frame = true, compat = CompatVersion.RUBY1_9)
