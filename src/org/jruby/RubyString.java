@@ -1120,7 +1120,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
         
         while (++s < send) {
-            c = (char)(buf[s] & 0xff);
+            c = buf[s] & 0xff;
             if (ASCII.isUpper(c)) {
                 buf[s] = AsciiTables.ToLowerCaseTable[c];
                 modify = true;
