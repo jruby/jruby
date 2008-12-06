@@ -36,6 +36,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * Implementation of Ruby's Enumerator module.
@@ -71,6 +72,7 @@ public class RubyEnumerator extends RubyObject {
         final RubyClass enmr;
         if (runtime.getInstanceConfig().getCompatVersion() == CompatVersion.RUBY1_9) {
             enmr = runtime.defineClass("Enumerator", runtime.getObject(), ENUMERATOR_ALLOCATOR);
+            enmr.defineAnnotatedMethod(RubyEnumerator.class, "inspect19");
         } else {
             enmr = enm.defineClassUnder("Enumerator", runtime.getObject(), ENUMERATOR_ALLOCATOR);
         }
@@ -200,5 +202,52 @@ public class RubyEnumerator extends RubyObject {
     public static IRubyObject enum_cons(ThreadContext context, IRubyObject self, IRubyObject arg) {
         IRubyObject enumerator = self.getRuntime().getEnumerator();
         return RuntimeHelpers.invoke(context, enumerator, "new", self, self.getRuntime().fastNewSymbol("each_cons"), arg);
+    }
+
+    @JRubyMethod(name = "inspect", compat = CompatVersion.RUBY1_9)
+    public IRubyObject inspect19(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        if (runtime.isInspecting(this)) return inspect(context, true);
+
+        try {
+            runtime.registerInspecting(this);
+            return inspect(context, false);
+        } finally {
+            runtime.unregisterInspecting(this);
+        }
+    }
+
+    private IRubyObject inspect(ThreadContext context, boolean recurse) {
+        Ruby runtime = context.getRuntime();
+        ByteList bytes = new ByteList();
+        bytes.append((byte)'#').append((byte)'<');
+        bytes.append(getMetaClass().getName().getBytes());
+        bytes.append((byte)':').append((byte)' ');
+
+        if (recurse) {
+            bytes.append("...>".getBytes());
+            return RubyString.newStringNoCopy(runtime, bytes).taint(context);
+        } else {
+            boolean tainted = isTaint();
+            bytes.append(RubyObject.inspect(context, object).getByteList());
+            bytes.append((byte)':');
+            bytes.append(method.asString().getByteList());
+            if (methodArgs.length > 0) {
+                bytes.append((byte)'(');
+                for (int i= 0; i < methodArgs.length; i++) {
+                    bytes.append(RubyObject.inspect(context, methodArgs[i]).getByteList());
+                    if (i < methodArgs.length - 1) {
+                        bytes.append((byte)',').append((byte)' ');
+                    } else {
+                        bytes.append((byte)')');
+                    }
+                    if (methodArgs[i].isTaint()) tainted = true;
+                }
+            }
+            bytes.append((byte)'>');
+            RubyString result = RubyString.newStringNoCopy(runtime, bytes);
+            if (tainted) result.setTaint(true);
+            return result;
+        }
     }
 }
