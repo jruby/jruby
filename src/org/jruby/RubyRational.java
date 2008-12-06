@@ -33,6 +33,7 @@ import static org.jruby.util.Numeric.f_expt;
 import static org.jruby.util.Numeric.f_floor;
 import static org.jruby.util.Numeric.f_gcd;
 import static org.jruby.util.Numeric.f_idiv;
+import static org.jruby.util.Numeric.f_inspect;
 import static org.jruby.util.Numeric.f_integer_p;
 import static org.jruby.util.Numeric.f_mul;
 import static org.jruby.util.Numeric.f_negate;
@@ -43,6 +44,7 @@ import static org.jruby.util.Numeric.f_sub;
 import static org.jruby.util.Numeric.f_to_f;
 import static org.jruby.util.Numeric.f_to_i;
 import static org.jruby.util.Numeric.f_to_r;
+import static org.jruby.util.Numeric.f_to_s;
 import static org.jruby.util.Numeric.f_truncate;
 import static org.jruby.util.Numeric.f_xor;
 import static org.jruby.util.Numeric.f_zero_p;
@@ -841,7 +843,11 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
-        return RuntimeHelpers.invoke(context, context.getRuntime().getKernel(), "format", context.getRuntime().newString("%d/%d"), num, den);
+        RubyString str = context.getRuntime().newString();
+        str.append(f_to_s(context, num));
+        str.cat((byte)'/');
+        str.append(f_to_s(context, den));
+        return str;
     }
 
     /** nurat_inspect
@@ -849,7 +855,13 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
-        return RuntimeHelpers.invoke(context, context.getRuntime().getKernel(), "format", context.getRuntime().newString("(%d/%d)"), num, den);
+        RubyString str = context.getRuntime().newString();
+        str.cat((byte)'(');
+        str.append(f_inspect(context, num));
+        str.cat((byte)'/');
+        str.append(f_inspect(context, den));
+        str.cat((byte)')');
+        return str;
     }
 
     /** nurat_marshal_dump
