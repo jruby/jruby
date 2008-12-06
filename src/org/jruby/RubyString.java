@@ -1098,9 +1098,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         int s = value.begin;
         int send = s + value.realSize;
         byte[]buf = value.bytes;
-        
-        
-        
         boolean modify = false;
         
         int c = buf[s] & 0xff;
@@ -1121,39 +1118,51 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return context.getRuntime().getNil();
     }
 
-    @JRubyMethod(name = ">=")
+    @JRubyMethod(name = ">=", compat = CompatVersion.RUBY1_8)
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyString) {
-            return context.getRuntime().newBoolean(op_cmp((RubyString) other) >= 0);
-        }
-
+        if (other instanceof RubyString) return context.getRuntime().newBoolean(op_cmp((RubyString) other) >= 0);
         return RubyComparable.op_ge(context, this, other);
     }
 
-    @JRubyMethod(name = ">")
-    public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyString) {
-            return context.getRuntime().newBoolean(op_cmp((RubyString) other) > 0);
-        }
+    @JRubyMethod(name = ">=", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_ge19(ThreadContext context, IRubyObject other) {
+        if (other instanceof RubyString) return context.getRuntime().newBoolean(op_cmp19((RubyString) other) >= 0);
+        return RubyComparable.op_ge(context, this, other);
+    }
 
+    @JRubyMethod(name = ">", compat = CompatVersion.RUBY1_8)
+    public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
+        if (other instanceof RubyString) return context.getRuntime().newBoolean(op_cmp((RubyString) other) > 0);
         return RubyComparable.op_gt(context, this, other);
     }
 
-    @JRubyMethod(name = "<=")
-    public IRubyObject op_le(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyString) {
-            return context.getRuntime().newBoolean(op_cmp((RubyString) other) <= 0);
-        }
+    @JRubyMethod(name = ">", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_gt19(ThreadContext context, IRubyObject other) {
+        if (other instanceof RubyString) return context.getRuntime().newBoolean(op_cmp19((RubyString) other) > 0);
+        return RubyComparable.op_gt(context, this, other);
+    }
 
+    @JRubyMethod(name = "<=", compat = CompatVersion.RUBY1_8)
+    public IRubyObject op_le(ThreadContext context, IRubyObject other) {
+        if (other instanceof RubyString) return context.getRuntime().newBoolean(op_cmp((RubyString) other) <= 0);
         return RubyComparable.op_le(context, this, other);
     }
 
-    @JRubyMethod(name = "<")
-    public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyString) {
-            return context.getRuntime().newBoolean(op_cmp((RubyString) other) < 0);
-        }
+    @JRubyMethod(name = "<=", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_le19(ThreadContext context, IRubyObject other) {
+        if (other instanceof RubyString) return context.getRuntime().newBoolean(op_cmp19((RubyString) other) <= 0);
+        return RubyComparable.op_le(context, this, other);
+    }
 
+    @JRubyMethod(name = "<", compat = CompatVersion.RUBY1_8)
+    public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
+        if (other instanceof RubyString) return context.getRuntime().newBoolean(op_cmp((RubyString) other) < 0);
+        return RubyComparable.op_lt(context, this, other);
+    }
+
+    @JRubyMethod(name = "<", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_lt19(ThreadContext context, IRubyObject other) {
+        if (other instanceof RubyString) return context.getRuntime().newBoolean(op_cmp19((RubyString) other) < 0);
         return RubyComparable.op_lt(context, this, other);
     }
 
