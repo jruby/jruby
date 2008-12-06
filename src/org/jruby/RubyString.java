@@ -682,30 +682,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return ByteList.plain(string);
     }
 
-    public static boolean isDigit(int c) {
-        return c >= '0' && c <= '9';
-    }
-
-    public static boolean isUpper(int c) {
-        return c >= 'A' && c <= 'Z';
-    }
-
-    public static boolean isLower(int c) {
-        return c >= 'a' && c <= 'z';
-    }
-
-    public static boolean isLetter(int c) {
-        return isUpper(c) || isLower(c);
-    }
-
-    public static boolean isAlnum(int c) {
-        return isUpper(c) || isLower(c) || isDigit(c);
-    }
-
-    public static boolean isPrint(int c) {
-        return c >= 0x20 && c <= 0x7E;
-    }
-
     @Override
     public RubyString asString() {
         return this;
@@ -1383,13 +1359,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 }
             } 
             
-            if (isAlnum(c)) {
+            if (ASCII.isAlnum(c)) {
                 sb.append((char)c);
             } else if (c == '\"' || c == '\\') {
                 sb.append('\\').append((char)c);
             } else if (c == '#' && isEVStr(i, length)) {
                 sb.append('\\').append((char)c);
-            } else if (isPrint(c)) {
+            } else if (ASCII.isPrint(c)) {
                 sb.append((char)c);
             } else if (c == '\n') {
                 sb.append('\\').append('n');
@@ -2401,16 +2377,16 @@ public class RubyString extends RubyObject implements EncodingCapable {
         int n = 0;
         for (int i = value.length() - 1; i >= 0; i--) {
             c = value.get(i) & 0xFF;
-            if (isAlnum(c)) {
+            if (ASCII.isAlnum(c)) {
                 alnumSeen = true;
-                if ((isDigit(c) && c < '9') || (isLower(c) && c < 'z') || (isUpper(c) && c < 'Z')) {
+                if ((ASCII.isDigit(c) && c < '9') || (ASCII.isLower(c) && c < 'z') || (ASCII.isUpper(c) && c < 'Z')) {
                     value.set(i, (byte)(c + 1));
                     pos = -1;
                     break;
                 }
                 pos = i;
-                n = isDigit(c) ? '1' : (isLower(c) ? 'a' : 'A');
-                value.set(i, (byte)(isDigit(c) ? '0' : (isLower(c) ? 'a' : 'A')));
+                n = ASCII.isDigit(c) ? '1' : (ASCII.isLower(c) ? 'a' : 'A');
+                value.set(i, (byte)(ASCII.isDigit(c) ? '0' : (ASCII.isLower(c) ? 'a' : 'A')));
             }
         }
         if (!alnumSeen) {
