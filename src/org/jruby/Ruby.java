@@ -3104,11 +3104,11 @@ public final class Ruby {
 
     private long startTime = System.currentTimeMillis();
 
-    private RubyInstanceConfig config;
+    private final RubyInstanceConfig config;
 
-    private InputStream in;
-    private PrintStream out;
-    private PrintStream err;
+    private final InputStream in;
+    private final PrintStream out;
+    private final PrintStream err;
 
     // Java support
     private JavaSupport javaSupport;
