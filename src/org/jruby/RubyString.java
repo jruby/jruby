@@ -1179,11 +1179,21 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return RubyComparable.op_lt(context, this, other);
     }
 
-    @JRubyMethod(name = "eql?")
+    @JRubyMethod(name = "eql?", compat = CompatVersion.RUBY1_8)
     public IRubyObject str_eql_p(ThreadContext context, IRubyObject other) {
-        if (!(other instanceof RubyString)) return context.getRuntime().getFalse();
-        RubyString otherString = (RubyString)other;
-        return value.equal(otherString.value) ? context.getRuntime().getTrue() : context.getRuntime().getFalse();
+        Ruby runtime = context.getRuntime();
+        if (other instanceof RubyString && value.equal(((RubyString)other).value)) return runtime.getTrue();
+        return runtime.getFalse();
+    }
+
+    @JRubyMethod(name = "eql?", compat = CompatVersion.RUBY1_9)
+    public IRubyObject str_eql_p19(ThreadContext context, IRubyObject other) {
+        Ruby runtime = context.getRuntime();
+        if (other instanceof RubyString) {
+            RubyString otherString = (RubyString)other;
+            if (isComparableWith(otherString) && value.equal(otherString.value)) return runtime.getTrue();
+        }
+        return runtime.getFalse();
     }
 
     /** rb_str_upcase
