@@ -3554,11 +3554,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private IRubyObject singleByteRStrip(Ruby runtime, Encoding enc, byte[]bytes, int s, int end) {
-        int endp = end - 1;
-        while (endp >= s && bytes[endp] == 0 || enc.isSpace(bytes[endp] & 0xff)) endp--;
+        int endp = end;
+        while (endp >= s && bytes[endp - 1] == 0) endp--;
+        while (endp >= s && enc.isSpace(bytes[endp - 1] & 0xff)) endp--;
 
-        if (endp < end - 1) {
-            view(0, endp - s + 1);
+        if (endp < end) {
+            view(0, endp - s);
             return this;
         }
         return runtime.getNil();
@@ -3579,7 +3580,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return runtime.getNil();
     }
 
-    /** rb_str_strip
+    /** rb_str_strip / rb_str_strip_bang
      *
      */
     @JRubyMethod
@@ -3589,7 +3590,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return str;
     }
 
-    /** rb_str_strip_bang
+    /** 
      */
     @JRubyMethod(name = "strip!")
     public IRubyObject strip_bang(ThreadContext context) {
@@ -3600,6 +3601,30 @@ public class RubyString extends RubyObject implements EncodingCapable {
             return l;
         }
         return this;
+    }
+
+    private IRubyObject singleByteStrip(Ruby runtime, Encoding enc, byte[]bytes, int s, int end) {
+        int p = s;
+        while (p < end && enc.isSpace(bytes[p] & 0xff)) p++;
+        int endp = end;
+        while (endp >= s && bytes[endp - 1] == 0 || enc.isSpace(bytes[endp - 1] & 0xff)) endp--;
+
+        if (p > s || endp < end) {
+            view(p - s, endp - s);
+            return this;
+        }
+        return runtime.getNil();
+    }
+
+    private IRubyObject multiByteStrip(Ruby runtime, Encoding enc, byte[]bytes, int s, int end) {
+        int p = s;
+        int c;
+        while (p < end && enc.isSpace(c = codePoint(runtime, enc, bytes, p, end))) p += codeLength(runtime, enc, c);
+        if (p > s) {
+            view(p - s, end - p);
+            return this;
+        }
+        return runtime.getNil();
     }
 
     /** rb_str_count
