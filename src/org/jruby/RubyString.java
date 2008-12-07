@@ -1303,11 +1303,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     bytes[s] = AsciiTables.ToUpperCaseTable[c];
                     modify = true;
                 }
-                s++;                
+                s++;
             } else {
                 c = codePoint(runtime, enc, bytes, s, end);
                 if (enc.isLower(c)) {
-                    enc.codeToMbc(c, bytes, s);
+                    enc.codeToMbc(toUpper(enc, c), bytes, s);
                     modify = true;
                 }
                 s += codeLength(runtime, enc, c);
@@ -1316,45 +1316,93 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return modify ? this : runtime.getNil();        
     }
 
-    /** rb_str_downcase
+    /** rb_str_downcase / rb_str_downcase_bang
      *
      */
-    @JRubyMethod
+    @JRubyMethod(name = "downcase", compat = CompatVersion.RUBY1_8)
     public RubyString downcase(ThreadContext context) {
         RubyString str = strDup(context.getRuntime());
         str.downcase_bang(context);
         return str;
     }
 
-    /** rb_str_downcase_bang
-     *
-     */
-    @JRubyMethod(name = "downcase!")
+    @JRubyMethod(name = "downcase!", compat = CompatVersion.RUBY1_8)
     public IRubyObject downcase_bang(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
         if (value.realSize == 0) {
             modifyCheck();
             return context.getRuntime().getNil();
         }
-        
+
         modify();
-        
+        return singleByteDowncase(runtime, value.bytes, value.begin, value.begin + value.realSize);
+    }
+
+    @JRubyMethod(name = "downcase", compat = CompatVersion.RUBY1_9)
+    public RubyString downcase19(ThreadContext context) {
+        RubyString str = strDup(context.getRuntime());
+        str.downcase_bang19(context);
+        return str;
+    }
+
+    @JRubyMethod(name = "downcase!", compat = CompatVersion.RUBY1_9)
+    public IRubyObject downcase_bang19(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        Encoding enc = checkDummyEncoding();
+
+        if (value.realSize == 0) {
+            modifyCheck();
+            return runtime.getNil();
+        }
+
+        modifyAndKeepCodeRange();
+
         int s = value.begin;
-        int send = s + value.realSize;
-        byte []buf = value.bytes;
-        
+        int end = s + value.realSize;
+        byte[]bytes = value.bytes;
+
+        if (singleByteOptimizable(enc)) {
+            return singleByteDowncase(runtime, bytes, s, end);
+        } else {
+            return multiByteDowncase(runtime, enc, bytes, s, end);
+        }
+    }
+
+    private IRubyObject singleByteDowncase(Ruby runtime, byte[]bytes, int s, int end) {
         boolean modify = false;
-        while (s < send) {
-            int c = buf[s] & 0xff;
+        while (s < end) {
+            int c = bytes[s] & 0xff;
             if (ASCII.isUpper(c)) {
-                buf[s] = AsciiTables.ToLowerCaseTable[c];
+                bytes[s] = AsciiTables.ToLowerCaseTable[c];
                 modify = true;
             }
             s++;
         }
-        
-        if (modify) return this;
-        return context.getRuntime().getNil();
+        return modify ? this : runtime.getNil();
     }
+
+    private IRubyObject multiByteDowncase(Ruby runtime, Encoding enc, byte[]bytes, int s, int end) {
+        boolean modify = false;
+        int c;
+        while (s < end) {
+            if (enc.isAsciiCompatible() && Encoding.isAscii(c = bytes[s] & 0xff)) {
+                if (ASCII.isUpper(c)) {
+                    bytes[s] = AsciiTables.ToLowerCaseTable[c];
+                    modify = true;
+                }
+                s++;
+            } else {
+                c = codePoint(runtime, enc, bytes, s, end);
+                if (enc.isUpper(c)) {
+                    enc.codeToMbc(toLower(enc, c), bytes, s);
+                    modify = true;
+                }
+                s += codeLength(runtime, enc, c);
+            }
+        }
+        return modify ? this : runtime.getNil();        
+    }
+
 
     /** rb_str_swapcase
      *
