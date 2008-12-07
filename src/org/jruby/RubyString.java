@@ -225,8 +225,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return cr;
     }
 
-    private final boolean singleByteOptimizable() {
+    private boolean singleByteOptimizable() {
         return getCodeRange() == CR_7BIT || value.encoding.isSingleByte();
+    }
+
+    private boolean singleByteOptimizable(Encoding enc) {
+        return getCodeRange() == CR_7BIT || enc.isSingleByte();
     }
 
     private Encoding isCompatibleWith(RubyString other) { 
@@ -1226,44 +1230,90 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return runtime.getFalse();
     }
 
-    /** rb_str_upcase
+    /** rb_str_upcase / rb_str_upcase_bang
      *
      */
-    @JRubyMethod
+    @JRubyMethod(name = "upcase", compat = CompatVersion.RUBY1_8)
     public RubyString upcase(ThreadContext context) {
         RubyString str = strDup(context.getRuntime());
         str.upcase_bang(context);
         return str;
     }
 
-    /** rb_str_upcase_bang
-     *
-     */
-    @JRubyMethod(name = "upcase!")
+    @JRubyMethod(name = "upcase!", compat = CompatVersion.RUBY1_8)
     public IRubyObject upcase_bang(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
         if (value.realSize == 0) {
             modifyCheck();
-            return context.getRuntime().getNil();
+            return runtime.getNil();
+        }
+        modify();
+        return singleByteUpcase(runtime, value.bytes, value.begin, value.begin + value.realSize); 
+    }
+
+    @JRubyMethod(name = "upcase", compat = CompatVersion.RUBY1_9)
+    public RubyString upcase19(ThreadContext context) {
+        RubyString str = strDup(context.getRuntime());
+        str.upcase_bang19(context);
+        return str;
+    }
+
+    @JRubyMethod(name = "upcase!", compat = CompatVersion.RUBY1_9)
+    public IRubyObject upcase_bang19(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        Encoding enc = checkDummyEncoding();
+
+        if (value.realSize == 0) {
+            modifyCheck();
+            return runtime.getNil();
         }
 
-        modify();
+        modifyAndKeepCodeRange();
 
         int s = value.begin;
-        int send = s + value.realSize;
-        byte []buf = value.bytes;
+        int end = s + value.realSize;
+        byte[]bytes = value.bytes;
 
+        if (singleByteOptimizable(enc)) {
+            return singleByteUpcase(runtime, bytes, s, end);
+        } else {
+            return multiByteUpcase(runtime, enc, bytes, s, end);
+        }
+    }
+
+    private IRubyObject singleByteUpcase(Ruby runtime, byte[]bytes, int s, int end) {
         boolean modify = false;
-        while (s < send) {
-            int c = buf[s] & 0xff;
+        while (s < end) {
+            int c = bytes[s] & 0xff;
             if (ASCII.isLower(c)) {
-                buf[s] = AsciiTables.ToUpperCaseTable[c];
+                bytes[s] = AsciiTables.ToUpperCaseTable[c];
                 modify = true;
             }
             s++;
         }
+        return modify ? this : runtime.getNil();
+    }
 
-        if (modify) return this;
-        return context.getRuntime().getNil();        
+    private IRubyObject multiByteUpcase(Ruby runtime, Encoding enc, byte[]bytes, int s, int end) {
+        boolean modify = false;
+        int c;
+        while (s < end) {
+            if (enc.isAsciiCompatible() && Encoding.isAscii(c = bytes[s] & 0xff)) {
+                if (ASCII.isLower(c)) {
+                    bytes[s] = AsciiTables.ToUpperCaseTable[c];
+                    modify = true;
+                }
+                s++;                
+            } else {
+                c = codePoint(runtime, enc, bytes, s, end);
+                if (enc.isLower(c)) {
+                    enc.codeToMbc(c, bytes, s);
+                    modify = true;
+                }
+                s += codeLength(runtime, enc, c);
+            }
+        }
+        return modify ? this : runtime.getNil();        
     }
 
     /** rb_str_downcase
