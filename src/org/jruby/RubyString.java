@@ -562,9 +562,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
         shareLevel = SHARE_LEVEL_BYTELIST;
         RubyString dup = new RubyString(runtime, clazz, value);
         dup.shareLevel = SHARE_LEVEL_BYTELIST;
-        dup.flags |= flags & CR_MASK;
+        dup.flags |= flags & (CR_MASK | TAINTED_F);
 
-        dup.infectBy(this);
         return dup;
     }
 
@@ -3626,7 +3625,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private IRubyObject singleByteStrip(Ruby runtime, Encoding enc, byte[]bytes, int s, int end) {
         int p = s;
-        while (p < end && enc.isSpace(bytes[p] & 0xff)) p++;
+        while (p < end && ASCII.isSpace(bytes[p] & 0xff)) p++;
         int endp = end;
         while (endp >= p && bytes[endp - 1] == 0) endp--;
         while (endp >= p && enc.isSpace(bytes[endp - 1] & 0xff)) endp--;
