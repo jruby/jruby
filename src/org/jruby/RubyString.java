@@ -3503,32 +3503,80 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return runtime.getNil();
     }
 
-    /** rb_str_rstrip
+    /** rb_str_rstrip / rb_str_rstrip_bang
      *  
      */
-    @JRubyMethod
+    @JRubyMethod(name = "rstrip", compat = CompatVersion.RUBY1_8)
     public IRubyObject rstrip(ThreadContext context) {
         RubyString str = strDup(context.getRuntime());
-        str.rstrip_bang();
+        str.rstrip_bang(context);
         return str;
     }
 
-    /** rb_str_rstrip_bang
-     */ 
-    @JRubyMethod(name = "rstrip!")
-    public IRubyObject rstrip_bang() {
-        if (value.realSize == 0) return getRuntime().getNil();
-        int i=value.realSize - 1;
+    @JRubyMethod(name = "rstrip!", compat = CompatVersion.RUBY1_8)
+    public IRubyObject rstrip_bang(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        if (value.realSize == 0) {
+            modifyCheck();
+            return runtime.getNil();
+        }
+        return singleByteRStrip(runtime, ASCII, value.bytes, value.begin, value.begin + value.realSize);
+    }
 
-        while (i >= 0 && value.bytes[value.begin+i] == 0) i--;
-        while (i >= 0 && ASCII.isSpace(value.bytes[value.begin + i] & 0xff)) i--;
+    @JRubyMethod(name = "rstrip", compat = CompatVersion.RUBY1_9)
+    public IRubyObject rstrip19(ThreadContext context) {
+        RubyString str = strDup(context.getRuntime());
+        str.rstrip_bang19(context);
+        return str;
+    }
 
-        if (i < value.realSize - 1) {
-            view(0, i + 1);
-            return this;
+    @JRubyMethod(name = "rstrip!", compat = CompatVersion.RUBY1_9)
+    public IRubyObject rstrip_bang19(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        if (value.realSize == 0) {
+            modifyCheck();
+            return runtime.getNil();
         }
 
-        return getRuntime().getNil();
+        Encoding enc = value.encoding;
+        int s = value.begin;
+        int end = s + value.realSize;
+        byte[]bytes = value.bytes;
+
+        final IRubyObject result;
+        if (singleByteOptimizable(enc)) {
+            result = singleByteRStrip(runtime, enc, bytes, s, end);
+        } else {
+            result = multiByteRStrip(runtime, enc, bytes, s, end);
+        }
+        keepCodeRange();
+        return result;
+    }
+
+    private IRubyObject singleByteRStrip(Ruby runtime, Encoding enc, byte[]bytes, int s, int end) {
+        int endp = end - 1;
+        while (endp >= s && bytes[endp] == 0 || enc.isSpace(bytes[endp] & 0xff)) endp--;
+
+        if (endp < end - 1) {
+            view(0, endp - s + 1);
+            return this;
+        }
+        return runtime.getNil();
+    }
+
+    private IRubyObject multiByteRStrip(Ruby runtime, Encoding enc, byte[]bytes, int s, int end) {
+        int endp = end;
+        int prev;
+        while ((prev = enc.prevCharHead(bytes, s, endp, end)) != -1) {
+            if (!enc.isSpace(codePoint(runtime, enc, bytes, prev, end))) break;
+            endp = prev;
+        }
+
+        if (prev < end) {
+            view(0, prev - s + 1);
+            return this;
+        }
+        return runtime.getNil();
     }
 
     /** rb_str_strip
@@ -3546,7 +3594,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "strip!")
     public IRubyObject strip_bang(ThreadContext context) {
         IRubyObject l = lstrip_bang(context);
-        IRubyObject r = rstrip_bang();
+        IRubyObject r = rstrip_bang(context);
 
         if(l.isNil() && r.isNil()) {
             return l;
