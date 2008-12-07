@@ -541,12 +541,12 @@ public class RubyKernel {
 
     @JRubyMethod(name = "chomp!", frame = true, module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
     public static IRubyObject chomp_bang(ThreadContext context, IRubyObject recv) {
-        return getLastlineString(context, context.getRuntime()).chomp_bang();
+        return getLastlineString(context, context.getRuntime()).chomp_bang(context);
     }
 
     @JRubyMethod(name = "chomp!", frame = true, module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
     public static IRubyObject chomp_bang(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
-        return getLastlineString(context, context.getRuntime()).chomp_bang(arg0);
+        return getLastlineString(context, context.getRuntime()).chomp_bang(context, arg0);
     }
 
     /**
@@ -570,7 +570,7 @@ public class RubyKernel {
         RubyString str = getLastlineString(context, context.getRuntime());
         RubyString dup = (RubyString) str.dup();
 
-        if (dup.chomp_bang().isNil()) {
+        if (dup.chomp_bang(context).isNil()) {
             return str;
         } 
 
@@ -583,7 +583,7 @@ public class RubyKernel {
         RubyString str = getLastlineString(context, context.getRuntime());
         RubyString dup = (RubyString) str.dup();
 
-        if (dup.chomp_bang(arg0).isNil()) {
+        if (dup.chomp_bang(context, arg0).isNil()) {
             return str;
         } 
 
