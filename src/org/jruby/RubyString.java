@@ -2560,42 +2560,44 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = {"succ!", "next!"})
     public IRubyObject succ_bang() {
-        if (value.length() == 0) {
+        if (value.realSize == 0) {
             modifyCheck();
             return this;
         }
 
         modify();
-        
+
         boolean alnumSeen = false;
-        int pos = -1;
-        int c = 0;
-        int n = 0;
-        for (int i = value.length() - 1; i >= 0; i--) {
-            c = value.get(i) & 0xFF;
+        int pos = -1, n = 0;
+        int p = value.begin;
+        int end = p + value.realSize;
+        byte[]bytes = value.bytes;
+        
+        for (int i = end - 1; i >= p; i--) {
+            int c = bytes[i] & 0xff;
             if (ASCII.isAlnum(c)) {
                 alnumSeen = true;
                 if ((ASCII.isDigit(c) && c < '9') || (ASCII.isLower(c) && c < 'z') || (ASCII.isUpper(c) && c < 'Z')) {
-                    value.set(i, (byte)(c + 1));
+                    bytes[i] = (byte)(c + 1);
                     pos = -1;
                     break;
                 }
                 pos = i;
                 n = ASCII.isDigit(c) ? '1' : (ASCII.isLower(c) ? 'a' : 'A');
-                value.set(i, (byte)(ASCII.isDigit(c) ? '0' : (ASCII.isLower(c) ? 'a' : 'A')));
+                bytes[i] = ASCII.isDigit(c) ? (byte)'0' : ASCII.isLower(c) ? (byte)'a' : (byte)'A';
             }
         }
         if (!alnumSeen) {
-            for (int i = value.length() - 1; i >= 0; i--) {
-                c = value.get(i) & 0xFF;
+            for (int i = end - 1; i >= p; i--) {
+                int c = bytes[i] & 0xff;
                 if (c < 0xff) {
-                    value.set(i, (byte)(c + 1));
+                    bytes[i] = (byte)(c + 1);
                     pos = -1;
                     break;
                 }
                 pos = i;
                 n = '\u0001';
-                value.set(i, 0);
+                bytes[i] = 0;
             }
         }
         if (pos > -1) {
