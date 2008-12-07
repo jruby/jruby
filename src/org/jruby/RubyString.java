@@ -1404,47 +1404,87 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
 
-    /** rb_str_swapcase
+    /** rb_str_swapcase / rb_str_swapcase_bang
      *
      */
-    @JRubyMethod
+    @JRubyMethod(name = "swapcase", compat = CompatVersion.RUBY1_8)
     public RubyString swapcase(ThreadContext context) {
         RubyString str = strDup(context.getRuntime());
         str.swapcase_bang(context);
         return str;
     }
 
-    /** rb_str_swapcase_bang
-     *
-     */
-    @JRubyMethod(name = "swapcase!")
+    @JRubyMethod(name = "swapcase!", compat = CompatVersion.RUBY1_8)
     public IRubyObject swapcase_bang(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
         if (value.realSize == 0) {
             modifyCheck();
-            return context.getRuntime().getNil();        
+            return runtime.getNil();        
         }
-        
         modify();
-        
+        return singleByteSwapcase(runtime, value.bytes, value.begin, value.begin + value.realSize);
+    }
+
+    @JRubyMethod(name = "swapcase", compat = CompatVersion.RUBY1_9)
+    public RubyString swapcase19(ThreadContext context) {
+        RubyString str = strDup(context.getRuntime());
+        str.swapcase_bang19(context);
+        return str;
+    }
+
+    @JRubyMethod(name = "swapcase!", compat = CompatVersion.RUBY1_9)
+    public IRubyObject swapcase_bang19(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        Encoding enc = checkDummyEncoding();
+        if (value.realSize == 0) {
+            modifyCheck();
+            return runtime.getNil();        
+        }
+        modifyAndKeepCodeRange();
+
         int s = value.begin;
-        int send = s + value.realSize;
-        byte[]buf = value.bytes;
-        
+        int end = s + value.realSize;
+        byte[]bytes = value.bytes;
+
+        if (singleByteOptimizable(enc)) {
+            return singleByteSwapcase(runtime, bytes, s, end);
+        } else {
+            return multiByteSwapcase(runtime, enc, bytes, s, end);
+        }
+    }
+
+    private IRubyObject singleByteSwapcase(Ruby runtime, byte[]bytes, int s, int end) {
         boolean modify = false;
-        while (s < send) {
-            int c = buf[s] & 0xff;
+        while (s < end) {
+            int c = bytes[s] & 0xff;
             if (ASCII.isUpper(c)) {
-                buf[s] = AsciiTables.ToLowerCaseTable[c];
+                bytes[s] = AsciiTables.ToLowerCaseTable[c];
                 modify = true;
             } else if (ASCII.isLower(c)) {
-                buf[s] = AsciiTables.ToUpperCaseTable[c];
+                bytes[s] = AsciiTables.ToUpperCaseTable[c];
                 modify = true;
             }
             s++;
         }
 
-        if (modify) return this;
-        return context.getRuntime().getNil();
+        return modify ? this : runtime.getNil();
+    }
+
+    private IRubyObject multiByteSwapcase(Ruby runtime, Encoding enc, byte[]bytes, int s, int end) {
+        boolean modify = false;
+        while (s < end) {
+            int c = codePoint(runtime, enc, bytes, s, end);
+            if (enc.isUpper(c)) {
+                enc.codeToMbc(toLower(enc, c), bytes, s);
+                modify = true;
+            } else if (enc.isLower(c)) {
+                enc.codeToMbc(toUpper(enc, c), bytes, s);
+                modify = true;
+            }
+            s += codeLength(runtime, enc, c);
+        }
+
+        return modify ? this : runtime.getNil();
     }
 
     /** rb_str_dump
