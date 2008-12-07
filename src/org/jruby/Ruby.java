@@ -2802,6 +2802,14 @@ public final class Ruby {
         return newRaiseException(getFloatDomainError(), message);
     }
 
+    public RaiseException newEncodingError(String message){
+        return newRaiseException(getEncodingError(), message);
+    }
+
+    public RaiseException newEncodingCompatibilityError(String message){
+        return newRaiseException(getEncodingCompatibilityError(), message);
+    }
+
     /**
      * @param exceptionClass
      * @param message

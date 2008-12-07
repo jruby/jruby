@@ -28,6 +28,7 @@ package org.jruby.util;
 import static org.jcodings.Encoding.CHAR_INVALID;
 
 import org.jcodings.Encoding;
+import org.jcodings.ascii.AsciiTables;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
@@ -296,5 +297,13 @@ public final class StringSupport {
             p += length(enc, bytes, p, end);
         }
         return p;
+    }
+
+    public static int toLower(Encoding enc, int c) {
+        return Encoding.isAscii(c) ? AsciiTables.ToLowerCaseTable[c] : c;
+    }
+
+    public static int toUpper(Encoding enc, int c) {
+        return Encoding.isAscii(c) ? AsciiTables.ToUpperCaseTable[c] : c;
     }
 }

@@ -50,6 +50,8 @@ import static org.jruby.util.StringSupport.codePoint;
 import static org.jruby.util.StringSupport.codeRangeScan;
 import static org.jruby.util.StringSupport.searchNonAscii;
 import static org.jruby.util.StringSupport.strLengthWithCodeRange;
+import static org.jruby.util.StringSupport.toLower;
+import static org.jruby.util.StringSupport.toUpper;
 import static org.jruby.util.StringSupport.unpackArg;
 import static org.jruby.util.StringSupport.unpackResult;
 
@@ -245,6 +247,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Encoding enc = isCompatibleWith(other);
         if (enc == null) throw getRuntime().newArgumentError("incompatible character encodings: " + 
                                 value.encoding + " and " + other.value.encoding);
+        return enc;
+    }
+
+    private Encoding checkDummyEncoding() {
+        Encoding enc = value.encoding;
+        if (enc.isDummy()) throw getRuntime().newEncodingCompatibilityError(
+                "incompatible encoding with this operation: " + enc);
         return enc;
     }
 
@@ -604,6 +613,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         clearCodeRange();
     }
 
+    private void modifyAndKeepCodeRange() {
+        modify();
+        if (getCodeRange() == CR_BROKEN) clearCodeRange();
+    }
+    
     /** rb_str_modify (with length bytes ensured)
      * 
      */    
@@ -1062,49 +1076,89 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return getPattern(pattern, false).callMethod(context, "match", this);
     }
 
-    /** rb_str_capitalize
+    /** rb_str_capitalize / rb_str_capitalize_bang
      *
      */
-    @JRubyMethod
+    @JRubyMethod(name = "capitalize", compat = CompatVersion.RUBY1_8)
     public IRubyObject capitalize(ThreadContext context) {
         RubyString str = strDup(context.getRuntime());
         str.capitalize_bang(context);
         return str;
     }
 
-    /** rb_str_capitalize_bang
-     *
-     */
-    @JRubyMethod(name = "capitalize!")
-    public IRubyObject capitalize_bang(ThreadContext context) {        
+    @JRubyMethod(name = "capitalize!", compat = CompatVersion.RUBY1_8)
+    public IRubyObject capitalize_bang(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
         if (value.realSize == 0) {
             modifyCheck();
-            return context.getRuntime().getNil();
+            return runtime.getNil();
         }
-        
+
         modify();
-        
+
         int s = value.begin;
-        int send = s + value.realSize;
-        byte[]buf = value.bytes;
+        int end = s + value.realSize;
+        byte[]bytes = value.bytes;
         boolean modify = false;
         
-        int c = buf[s] & 0xff;
+        int c = bytes[s] & 0xff;
         if (ASCII.isLower(c)) {
-            buf[s] = AsciiTables.ToUpperCaseTable[c];
+            bytes[s] = AsciiTables.ToUpperCaseTable[c];
             modify = true;
         }
-        
-        while (++s < send) {
-            c = buf[s] & 0xff;
+
+        while (++s < end) {
+            c = bytes[s] & 0xff;
             if (ASCII.isUpper(c)) {
-                buf[s] = AsciiTables.ToLowerCaseTable[c];
+                bytes[s] = AsciiTables.ToLowerCaseTable[c];
                 modify = true;
             }
         }
-        
-        if (modify) return this;
-        return context.getRuntime().getNil();
+
+        return modify ? this : runtime.getNil();
+    }
+
+    @JRubyMethod(name = "capitalize", compat = CompatVersion.RUBY1_9)
+    public IRubyObject capitalize19(ThreadContext context) {
+        RubyString str = strDup(context.getRuntime());
+        str.capitalize_bang19(context);
+        return str;
+    }
+
+    @JRubyMethod(name = "capitalize!", compat = CompatVersion.RUBY1_9)
+    public IRubyObject capitalize_bang19(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        Encoding enc = checkDummyEncoding();
+
+        if (value.realSize == 0) {
+            modifyCheck();
+            return runtime.getNil();
+        }
+
+        modifyAndKeepCodeRange();
+
+        int s = value.begin;
+        int end = s + value.realSize;
+        byte[]bytes = value.bytes;
+        boolean modify = false;
+
+        int c = codePoint(runtime, enc, bytes, s, end);
+        if (enc.isLower(c)) {
+            enc.codeToMbc(toUpper(enc, c), bytes, s);
+            modify = true;
+        }
+
+        s += codeLength(runtime, enc, c);
+        while (s < end) {
+            c = codePoint(runtime, enc, bytes, s, end);
+            if (enc.isUpper(c)) {
+                enc.codeToMbc(toLower(enc, c), bytes, s);
+                modify = true;
+            }
+            s += codeLength(runtime, enc, c);
+        }
+
+        return modify ? this : runtime.getNil();
     }
 
     @JRubyMethod(name = ">=", compat = CompatVersion.RUBY1_8)
