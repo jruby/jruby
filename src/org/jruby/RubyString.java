@@ -3633,12 +3633,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
     private IRubyObject singleByteStrip(Ruby runtime, Encoding enc, byte[]bytes, int s, int end) {
         int p = s;
         while (p < end && ASCII.isSpace(bytes[p] & 0xff)) p++;
-        int endp = end;
-        while (endp >= p && bytes[endp - 1] == 0) endp--;
-        while (endp >= p && enc.isSpace(bytes[endp - 1] & 0xff)) endp--;
+        int endp = end - 1;
+        while (endp >= p && bytes[endp] == 0) endp--;
+        while (endp >= p && enc.isSpace(bytes[endp] & 0xff)) endp--;
 
-        if (p > s || endp < end) {
-            view(p - s, endp - p);
+        if (p > s || endp < end - 1) {
+            view(p - s, endp - p + 1);
             return this;
         }
         return runtime.getNil();
