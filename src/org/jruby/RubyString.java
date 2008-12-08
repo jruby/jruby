@@ -3544,13 +3544,25 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return result;
     }
 
-    private IRubyObject singleByteRStrip(Ruby runtime, Encoding enc, byte[]bytes, int s, int end) {
+    private IRubyObject singleByteRStrip2(Ruby runtime, Encoding enc, byte[]bytes, int s, int end) {
         int endp = end;
         while (endp >= s && bytes[endp - 1] == 0) endp--;
         while (endp >= s && enc.isSpace(bytes[endp - 1] & 0xff)) endp--;
 
         if (endp < end) {
             view(0, endp - s);
+            return this;
+        }
+        return runtime.getNil();
+    }
+
+    private IRubyObject singleByteRStrip(Ruby runtime, Encoding enc, byte[]bytes, int s, int end) {
+        int endp = end - 1;
+        while (endp >= s && bytes[endp] == 0) endp--;
+        while (endp >= s && enc.isSpace(bytes[endp] & 0xff)) endp--;
+
+        if (endp < end - 1) {
+            view(0, endp - s + 1);
             return this;
         }
         return runtime.getNil();
