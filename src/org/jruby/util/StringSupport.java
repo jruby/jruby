@@ -242,11 +242,11 @@ public final class StringSupport {
         return n;
     }
 
-    public long getAscii(Encoding enc, byte[]bytes, int p, int end) {
+    public static long getAscii(Encoding enc, byte[]bytes, int p, int end) {
         return getAscii(enc, bytes, p, end, 0);
     }
 
-    public long getAscii(Encoding enc, byte[]bytes, int p, int end, int len) {
+    public static long getAscii(Encoding enc, byte[]bytes, int p, int end, int len) {
         if (p >= end) return pack(-1, len);
 
         if (enc.isAsciiCompatible()) {
@@ -260,6 +260,12 @@ public final class StringSupport {
             if (!Encoding.isAscii(c)) return pack(-1, len);
             return pack(c, len == 0 ? 0 : cl);
         }
+    }
+
+    public static int preciseCodePoint(Encoding enc, byte[]bytes, int p, int end) {
+        int l = preciseLength(enc, bytes, p, end);
+        if (l > 0) enc.mbcToCode(bytes, p, end);
+        return -1;
     }
 
     public static int nth(Encoding enc, byte[]bytes, int p, int end, int n) {

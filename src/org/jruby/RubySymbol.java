@@ -234,7 +234,7 @@ public class RubySymbol extends RubyObject {
     public IRubyObject casecmp(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.getRuntime();
         if (other instanceof RubySymbol) {
-            return newShared(runtime).casecmp(((RubySymbol) other).newShared(runtime));
+            return newShared(runtime).casecmp(context, ((RubySymbol) other).newShared(runtime));
         }
         return runtime.getNil();
     }

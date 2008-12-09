@@ -1049,14 +1049,67 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject arg0) {
         replace(arg0);
-
         return this;
     }
 
-    @JRubyMethod
-    public IRubyObject casecmp(IRubyObject other) {
-        int compare = value.caseInsensitiveCmp(stringValue(other).value);
-        return RubyFixnum.newFixnum(getRuntime(), compare);
+    @JRubyMethod(name = "casecmp", compat = CompatVersion.RUBY1_8)
+    public IRubyObject casecmp(ThreadContext context, IRubyObject other) {
+        return RubyFixnum.newFixnum(context.getRuntime(), value.caseInsensitiveCmp(other.convertToString().value));
+    }
+
+    @JRubyMethod(name = "casecmp", compat = CompatVersion.RUBY1_9)
+    public IRubyObject casecmp19(ThreadContext context, IRubyObject other) {
+        Ruby runtime = context.getRuntime();
+        RubyString otherStr = other.convertToString();
+        Encoding enc = checkEncoding(otherStr);
+        if (enc == null) return runtime.getNil();
+        
+        if (singleByteOptimizable() && otherStr.singleByteOptimizable()) {
+            return RubyFixnum.newFixnum(runtime, value.caseInsensitiveCmp(otherStr.value));
+        } else {
+            return multiByteCasecmp(runtime, enc, value, otherStr.value);
+        }
+    }
+
+    private IRubyObject multiByteCasecmp(Ruby runtime, Encoding enc, ByteList value, ByteList otherValue) {
+        byte[]bytes = value.bytes;
+        int p = value.begin;
+        int end = p + value.realSize;
+
+        byte[]obytes = otherValue.bytes;
+        int op = otherValue.begin;
+        int oend = op + otherValue.realSize;
+
+        while (p < end && op < oend) {
+            final int c, oc;
+            if (enc.isAsciiCompatible()) {
+                c = bytes[p] & 0xff;
+                oc = obytes[op] & 0xff;
+            } else {
+                c = StringSupport.preciseCodePoint(enc, bytes, p, end);
+                oc = StringSupport.preciseCodePoint(enc, obytes, op, oend);                
+            }
+
+            int cl, ocl;
+            if (Encoding.isAscii(c) && Encoding.isAscii(oc)) {
+                if (AsciiTables.ToUpperCaseTable[c] != AsciiTables.ToUpperCaseTable[oc]) {
+                    return c < oc ? RubyFixnum.minus_one(runtime) : RubyFixnum.one(runtime); 
+                }
+                cl = ocl = 1;
+            } else {
+                cl = StringSupport.length(enc, bytes, p, end);
+                ocl = StringSupport.length(enc, obytes, op, oend);
+                // TODO: opt for 2 and 3 ?
+                int ret = ByteList.memcmp(bytes, p, obytes, op, cl < ocl ? cl : ocl);
+                if (ret != 0) return ret < 0 ? RubyFixnum.minus_one(runtime) : RubyFixnum.one(runtime);
+                if (cl != ocl) return cl < ocl ? RubyFixnum.minus_one(runtime) : RubyFixnum.one(runtime);
+            }
+
+            p += cl;
+            op += ocl;
+        }
+        if (end - p == oend - op) return RubyFixnum.zero(runtime);
+        return end - p > oend - op ? RubyFixnum.one(runtime) : RubyFixnum.minus_one(runtime);
     }
 
     /** rb_str_match
