@@ -3546,8 +3546,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private IRubyObject singleByteRStrip2(Ruby runtime, Encoding enc, byte[]bytes, int s, int end) {
         int endp = end;
-        while (endp >= s && bytes[endp - 1] == 0) endp--;
-        while (endp >= s && enc.isSpace(bytes[endp - 1] & 0xff)) endp--;
+        while (endp - 1 >= s && bytes[endp - 1] == 0) endp--;
+        while (endp - 1 >= s && enc.isSpace(bytes[endp - 1] & 0xff)) endp--;
 
         if (endp < end) {
             view(0, endp - s);
@@ -3666,9 +3666,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
      *
      */
     @JRubyMethod(name = "count", required = 1, rest = true)
-    public IRubyObject count(IRubyObject[] args) {
-        if (args.length < 1) throw getRuntime().newArgumentError("wrong number of arguments");
-        if (value.realSize == 0) return getRuntime().newFixnum(0);
+    public IRubyObject count(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+        if (args.length < 1) throw runtime.newArgumentError("wrong number of arguments");
+        if (value.realSize == 0) return runtime.newFixnum(0);
 
         boolean[]table = new boolean[TRANS_SIZE];
         boolean init = true;
@@ -3680,12 +3681,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         int s = value.begin;
         int send = s + value.realSize;
-        byte[]buf = value.bytes;
+        byte[]bytes = value.bytes;
         int i = 0;
 
-        while (s < send) if (table[buf[s++] & 0xff]) i++;
+        while (s < send) if (table[bytes[s++] & 0xff]) i++;
 
-        return getRuntime().newFixnum(i);
+        return runtime.newFixnum(i);
     }
 
     /** rb_str_delete
