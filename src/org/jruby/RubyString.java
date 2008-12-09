@@ -3669,7 +3669,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public IRubyObject count(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
         if (args.length < 1) throw runtime.newArgumentError("wrong number of arguments");
-        if (value.realSize == 0) return runtime.newFixnum(0);
+        if (value.realSize == 0) return RubyFixnum.zero(runtime);
 
         boolean[]table = new boolean[TRANS_SIZE];
         boolean init = true;
@@ -3695,7 +3695,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "delete", required = 1, rest = true)
     public IRubyObject delete(ThreadContext context, IRubyObject[] args) {
         RubyString str = strDup(context.getRuntime());
-        str.delete_bang(args);
+        str.delete_bang(context, args);
         return str;
     }
 
@@ -3703,8 +3703,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
      *
      */
     @JRubyMethod(name = "delete!", required = 1, rest = true)
-    public IRubyObject delete_bang(IRubyObject[] args) {
-        if (args.length < 1) throw getRuntime().newArgumentError("wrong number of arguments");
+    public IRubyObject delete_bang(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+        if (args.length < 1) throw runtime.newArgumentError("wrong number of arguments");
         
         boolean[]squeeze = new boolean[TRANS_SIZE];
 
@@ -3717,25 +3718,24 @@ public class RubyString extends RubyObject implements EncodingCapable {
         
         modify();
         
-        if (value.realSize == 0) return getRuntime().getNil();
+        if (value.realSize == 0) return runtime.getNil();
         int s = value.begin;
         int t = s;
         int send = s + value.realSize;
-        byte[]buf = value.bytes;
+        byte[]bytes = value.bytes;
         boolean modify = false;
         
         while (s < send) {
-            if (squeeze[buf[s] & 0xff]) {
+            if (squeeze[bytes[s] & 0xff]) {
                 modify = true;
             } else {
-                buf[t++] = buf[s];
+                bytes[t++] = bytes[s];
             }
             s++;
         }
         value.realSize = t - value.begin;
-        
-        if (modify) return this;
-        return getRuntime().getNil();
+
+        return modify ? this : runtime.getNil();
     }
 
     /** rb_str_squeeze
@@ -3744,7 +3744,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "squeeze", rest = true)
     public IRubyObject squeeze(ThreadContext context, IRubyObject[] args) {
         RubyString str = strDup(context.getRuntime());
-        str.squeeze_bang(args);
+        str.squeeze_bang(context, args);
         return str;
     }
 
@@ -3752,10 +3752,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
      *
      */
     @JRubyMethod(name = "squeeze!", rest = true)
-    public IRubyObject squeeze_bang(IRubyObject[] args) {
+    public IRubyObject squeeze_bang(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
         if (value.realSize == 0) {
             modifyCheck();
-            return getRuntime().getNil();
+            return runtime.getNil();
         }
 
         final boolean squeeze[] = new boolean[TRANS_SIZE];
@@ -3776,12 +3777,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
         int s = value.begin;
         int t = s;
         int send = s + value.realSize;
-        byte[]buf = value.bytes;
+        byte[]bytes = value.bytes;
         int save = -1;
 
         while (s < send) {
-            int c = buf[s++] & 0xff;
-            if (c != save || !squeeze[c]) buf[t++] = (byte)(save = c);
+            int c = bytes[s++] & 0xff;
+            if (c != save || !squeeze[c]) bytes[t++] = (byte)(save = c);
         }
 
         if (t - value.begin != value.realSize) { // modified
@@ -3789,7 +3790,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             return this;
         }
 
-        return getRuntime().getNil();
+        return runtime.getNil();
     }
 
     /** rb_str_tr
@@ -3798,16 +3799,16 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod
     public IRubyObject tr(ThreadContext context, IRubyObject src, IRubyObject repl) {
         RubyString str = strDup(context.getRuntime());
-        str.tr_trans(src, repl, false);
+        str.tr_trans(context, src, repl, false);
         return str;
     }
-    
+
     /** rb_str_tr_bang
     *
     */
     @JRubyMethod(name = "tr!")
-    public IRubyObject tr_bang(IRubyObject src, IRubyObject repl) {
-        return tr_trans(src, repl, false);
+    public IRubyObject tr_bang(ThreadContext context, IRubyObject src, IRubyObject repl) {
+        return tr_trans(context, src, repl, false);
     }    
     
     private static final class TR {
@@ -3848,12 +3849,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** tr_trans
     *
     */    
-    private final IRubyObject tr_trans(IRubyObject src, IRubyObject repl, boolean sflag) {
-        if (value.realSize == 0) return getRuntime().getNil();
+    private final IRubyObject tr_trans(ThreadContext context, IRubyObject src, IRubyObject repl, boolean sflag) {
+        Ruby runtime = context.getRuntime();
+        if (value.realSize == 0) return runtime.getNil();
         
         ByteList replList = repl.convertToString().value;
         
-        if (replList.realSize == 0) return delete_bang(new IRubyObject[]{src});
+        if (replList.realSize == 0) return delete_bang(context, new IRubyObject[]{src});
 
         ByteList srcList = src.convertToString().value;
         
@@ -3932,9 +3934,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 s++;
             }
         }
-        
-        if (modify) return this;
-        return getRuntime().getNil();
+
+        return modify ? this : runtime.getNil();
     }
 
     /** trnext
@@ -3975,7 +3976,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod
     public IRubyObject tr_s(ThreadContext context, IRubyObject src, IRubyObject repl) {
         RubyString str = strDup(context.getRuntime());
-        str.tr_trans(src, repl, true);
+        str.tr_trans(context, src, repl, true);
         return str;
     }
 
@@ -3983,8 +3984,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
      *
      */
     @JRubyMethod(name = "tr_s!")
-    public IRubyObject tr_s_bang(IRubyObject src, IRubyObject repl) {
-        return tr_trans(src, repl, true);
+    public IRubyObject tr_s_bang(ThreadContext context, IRubyObject src, IRubyObject repl) {
+        return tr_trans(context, src, repl, true);
     }
 
     /** rb_str_each_line
