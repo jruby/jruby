@@ -506,18 +506,43 @@ public class RubySymbol extends RubyObject {
 
         public RubySymbol getSymbol(String name) {
             int hash = name.hashCode();
-            SymbolEntry[] table;
-            for (SymbolEntry e = (table = symbolTable)[hash & (table.length - 1)]; e != null; e = e.next) {
-                if (hash == e.hash && name.equals(e.name)) {
-                    return e.symbol;
-                }
+            SymbolEntry[] table = symbolTable;
+            SymbolEntry e = getEntryFromTable(table, hash);
+            for (; e != null; e = e.next) {
+                if (isSymbolMatch(name, hash, e)) return e.symbol;
             }
+            return createSymbol(name, hash, table);
+        }
+        
+        public RubySymbol fastGetSymbol(String internedName) {
+            //            assert internedName == internedName.intern() : internedName + " is not interned";
+            SymbolEntry[] table = symbolTable;
+            SymbolEntry e = getEntryFromTable(symbolTable, internedName.hashCode());
+            for (; e != null; e = e.next) {
+                if (isSymbolMatch(internedName, e)) return e.symbol;
+            }
+            return fastCreateSymbol(internedName, table);
+        }
+
+        private static SymbolEntry getEntryFromTable(SymbolEntry[] table, int hash) {
+            return table[hash & (table.length - 1)];
+        }
+
+        private static boolean isSymbolMatch(String name, int hash, SymbolEntry entry) {
+            return hash == entry.hash && name.equals(entry.name);
+        }
+
+        private static boolean isSymbolMatch(String internedName, SymbolEntry entry) {
+            return internedName == entry.name;
+        }
+
+        private RubySymbol createSymbol(String name, int hash, SymbolEntry[] table) {
             ReentrantLock lock;
             (lock = tableLock).lock();
             try {
                 int potentialNewSize;
                 if ((potentialNewSize = size + 1) > threshold) {
-                    table = rehash(); 
+                    table = rehash();
                 } else {
                     table = symbolTable;
                 }
@@ -539,15 +564,8 @@ public class RubySymbol extends RubyObject {
                 lock.unlock();
             }
         }
-        
-        public RubySymbol fastGetSymbol(String internedName) {
-            //            assert internedName == internedName.intern() : internedName + " is not interned";
-            SymbolEntry[] table;
-            for (SymbolEntry e = (table = symbolTable)[internedName.hashCode() & (table.length - 1)]; e != null; e = e.next) {
-                if (internedName == e.name) {
-                    return e.symbol;
-                }
-            }
+
+        private RubySymbol fastCreateSymbol(String internedName, SymbolEntry[] table) {
             ReentrantLock lock;
             (lock = tableLock).lock();
             try {
