@@ -4117,7 +4117,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return this;
     }
 
-    @JRubyMethod(name = "each_byte", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"each_byte", "bytes"}, frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject each_byte19(ThreadContext context, Block block) {
         return block.isGiven() ? each_byte(context, block) : enumeratorize(context.getRuntime(), this, "each_byte");
     }
@@ -4125,7 +4125,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_each_char
      * 
      */
-    @JRubyMethod(name = "each_char", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"each_char", "chars"}, frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject each_char(ThreadContext context, Block block) {
         if (!block.isGiven()) return enumeratorize(context.getRuntime(), this, "each_char");
 
@@ -4145,7 +4145,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_each_codepoint
      * 
      */
-    @JRubyMethod(name = "each_codepoint", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"each_codepoint", "codepoints"}, frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject each_codepoint(ThreadContext context, Block block) {
         if (singleByteOptimizable()) return each_byte19(context, block);
         if (!block.isGiven()) return enumeratorize(context.getRuntime(), this, "each_codepoint");
