@@ -312,4 +312,11 @@ public final class StringSupport {
     public static int toUpper(Encoding enc, int c) {
         return Encoding.isAscii(c) ? AsciiTables.ToUpperCaseTable[c] : c;
     }
+    
+    public static int caseCmp(byte[]bytes1, int p1, byte[]bytes2, int p2, int len) {
+        int i = -1;
+        for (; ++i < len && bytes1[p1 + i] == bytes2[p2 + i];);
+        if (i < len) return (bytes1[p1 + i] & 0xff) > (bytes2[p2 + i] & 0xff) ? 1 : -1;
+        return 0;        
+    }
 }
