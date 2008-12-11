@@ -988,7 +988,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return this;
     }
 
-    @JRubyMethod(name = "reverse")
+    @JRubyMethod(name = "reverse", compat = CompatVersion.RUBY1_8)
     public IRubyObject reverse(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         if (value.realSize <= 1) return strDup(context.getRuntime());
@@ -1003,6 +1003,41 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
 
         return new RubyString(runtime, getMetaClass(), new ByteList(obytes, false)).infectBy(this);
+    }
+
+    @JRubyMethod(name = "reverse", compat = CompatVersion.RUBY1_9)
+    public IRubyObject reverse19(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        if (value.realSize <= 1) return strDup(context.getRuntime());
+
+        byte[]bytes = value.bytes;
+        int p = value.begin;
+        int len = value.realSize;
+        byte[]obytes = new byte[len];
+
+        boolean single = true;
+        Encoding enc = value.encoding;
+        if (singleByteOptimizable(enc)) {
+            for (int i = 0; i < len; i++) {
+                obytes[i] = bytes[p + len - i - 1];
+            }
+        } else {
+            int end = p + len;
+            int op = len;
+            while (p < end) {
+                int cl = StringSupport.length(enc, bytes, p, end);
+                if (cl > 1 || (bytes[p] & 0x80) != 0) single = false;
+                op -= cl;
+                System.arraycopy(bytes, p, obytes, op, cl);
+                p += cl;
+            }
+        }
+
+        RubyString result = new RubyString(runtime, getMetaClass(), new ByteList(obytes, false));
+
+        if (getCodeRange() == CR_UNKNOWN) setCodeRange(single ? CR_7BIT : CR_VALID);
+        result.copyCodeRangeForSubstr(this);
+        return result.infectBy(this);
     }
 
     @JRubyMethod(name = "reverse!")
