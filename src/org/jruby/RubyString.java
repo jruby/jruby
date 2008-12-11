@@ -2710,22 +2710,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return context.getRuntime().newBoolean(value.indexOf(str) != -1);
     }
 
-    /**
-     * Variable-arity version for compatibility. Not bound as a Ruby method.
-     * @deprecated Use the versions with zero or one args.
-     */
-    public IRubyObject to_i(IRubyObject[] args) {
-        switch (args.length) {
-        case 0:
-            return to_i();
-        case 1:
-            return to_i(args[0]);
-        default:
-            Arity.raiseArgumentError(getRuntime(), args.length, 0, 1);
-            return null; // not reached
-        }
-    }
-
     @JRubyMethod(name = "getbyte", compat = CompatVersion.RUBY1_9)
     public IRubyObject getbyte(ThreadContext context, IRubyObject index) {
         Ruby runtime = context.getRuntime();
@@ -2745,6 +2729,22 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (i < 0) i += value.realSize;
         value.bytes[i] = (byte)b;
         return val;
+    }
+
+    /**
+     * Variable-arity version for compatibility. Not bound as a Ruby method.
+     * @deprecated Use the versions with zero or one args.
+     */
+    public IRubyObject to_i(IRubyObject[] args) {
+        switch (args.length) {
+        case 0:
+            return to_i();
+        case 1:
+            return to_i(args[0]);
+        default:
+            Arity.raiseArgumentError(getRuntime(), args.length, 0, 1);
+            return null; // not reached
+        }
     }
 
     /** rb_str_to_i
@@ -3124,12 +3124,28 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public IRubyObject start_with_p(ThreadContext context, IRubyObject[]args) {
         for (int i = 0; i < args.length; i++) {
             IRubyObject tmp = args[i].checkStringType();
-            if (!tmp.isNil()) {
-                RubyString otherString = (RubyString)tmp;
-                checkEncoding(otherString);
-                if (value.realSize < otherString.value.realSize) continue;
-                if (value.startsWith(otherString.value)) return context.getRuntime().getTrue();
-            }
+            if (tmp.isNil()) continue;
+            RubyString otherString = (RubyString)tmp;
+            checkEncoding(otherString);
+            if (value.realSize < otherString.value.realSize) continue;
+            if (value.startsWith(otherString.value)) return context.getRuntime().getTrue();
+        }
+        return context.getRuntime().getFalse();
+    }
+
+    @JRubyMethod(name = "end_with?", rest = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject end_with_p(ThreadContext context, IRubyObject[]args) {
+        for (int i = 0; i < args.length; i++) {
+            IRubyObject tmp = args[i].checkStringType();
+            if (tmp.isNil()) continue;
+            RubyString otherString = (RubyString)tmp;
+            Encoding enc = checkEncoding(otherString);
+            if (value.realSize < otherString.value.realSize) continue;
+            int p = value.begin;
+            int end = p + value.realSize;
+            int s = end - otherString.value.realSize;
+            if (enc.leftAdjustCharHead(value.bytes, p, s, end) != s) continue;
+            if (value.endsWith(otherString.value)) return context.getRuntime().getTrue();
         }
         return context.getRuntime().getFalse();
     }
