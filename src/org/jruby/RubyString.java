@@ -968,7 +968,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         value.realSize++;
         return this;
     }
-    
+
     /** rb_str_replace_m
      *
      */
@@ -989,33 +989,36 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     @JRubyMethod(name = "reverse")
-    public RubyString reverse(ThreadContext context) {
-        if (value.length() <= 1) return strDup(context.getRuntime());
+    public IRubyObject reverse(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        if (value.realSize <= 1) return strDup(context.getRuntime());
 
-        ByteList buf = new ByteList(value.length()+2);
-        buf.realSize = value.length();
-        int src = value.length() - 1;
-        int dst = 0;
-        
-        while (src >= 0) buf.set(dst++, value.get(src--));
+        byte[]bytes = value.bytes;
+        int p = value.begin;
+        int len = value.realSize;
+        byte[]obytes = new byte[len];
 
-        RubyString rev = new RubyString(context.getRuntime(), getMetaClass(), buf);
-        rev.infectBy(this);
-        return rev;
+        for (int i = 0; i < len; i++) {
+            obytes[i] = bytes[p + len - i - 1];
+        }
+
+        return new RubyString(runtime, getMetaClass(), new ByteList(obytes, false)).infectBy(this);
     }
 
     @JRubyMethod(name = "reverse!")
     public RubyString reverse_bang() {
-        if (value.length() > 1) {
+        if (value.realSize > 1) {
             modify();
-            for (int i = 0; i < (value.length() / 2); i++) {
-                byte b = (byte) value.get(i);
-                
-                value.set(i, value.get(value.length() - i - 1));
-                value.set(value.length() - i - 1, b);
+            byte[]bytes = value.bytes;
+            int p = value.begin;
+            int len = value.realSize;
+            for (int i = 0; i < len >> 1; i++) {
+                byte b = bytes[p + i];
+                bytes[i] = bytes[p + len - i - 1];
+                bytes[p + len - i - 1] = b;
             }
         }
-        
+
         return this;
     }
 
