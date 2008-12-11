@@ -4184,27 +4184,47 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return intern();
     }
 
-    @JRubyMethod(name = "sum", optional = 1)
-    public RubyInteger sum(IRubyObject[] args) {
-        if (args.length > 1) {
-            throw getRuntime().newArgumentError("wrong number of arguments (" + args.length + " for 1)");
-        }
-        
-        long bitSize = 16;
-        if (args.length == 1) {
-            long bitSizeArg = ((RubyInteger) args[0].convertToInteger()).getLongValue();
-            if (bitSizeArg > 0) {
-                bitSize = bitSizeArg;
-            }
-        }
-
-        long result = 0;
-        for (int i = 0; i < value.length(); i++) {
-            result += value.get(i) & 0xFF;
-        }
-        return getRuntime().newFixnum(bitSize == 0 ? result : result % (long) Math.pow(2, bitSize));
+    @JRubyMethod(name = "sum")
+    public IRubyObject sum(ThreadContext context) {
+        return sumCommon(context, 16);
     }
-    
+
+    @JRubyMethod(name = "sum")
+    public IRubyObject sum(ThreadContext context, IRubyObject arg) {
+        return sumCommon(context, RubyNumeric.num2long(arg));
+    }
+
+    public IRubyObject sumCommon(ThreadContext context, long bits) {
+        Ruby runtime = context.getRuntime();
+
+        byte[]bytes = value.bytes;
+        int p = value.begin;
+        int len = value.realSize;
+        int end = p + len; 
+
+        if (bits >= 8 * 8) { // long size * bits in byte
+            IRubyObject one = RubyFixnum.one(runtime);
+            IRubyObject sum = RubyFixnum.zero(runtime);
+            while (p < end) {
+                modifyCheck(bytes, len);
+                sum = sum.callMethod(context, "+", RubyFixnum.newFixnum(runtime, bytes[p++] & 0xff));
+            }
+            if (bits != 0) {
+                IRubyObject mod = one.callMethod(context, "<<", RubyFixnum.newFixnum(runtime, bits));
+                sum = sum.callMethod(context, "&", mod.callMethod(context, "-", one));
+            }
+            return sum;
+        } else {
+            long sum = 0;
+            while (p < end) {
+                modifyCheck(bytes, len);
+                sum += bytes[p++] & 0xff;
+            }
+            if (bits != 0) sum &= (1L << bits) - 1L;
+            return RubyFixnum.newFixnum(runtime, sum);
+        }
+    }
+
     /** string_to_c
      * 
      */
