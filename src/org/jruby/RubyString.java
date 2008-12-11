@@ -4220,8 +4220,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 modifyCheck(bytes, len);
                 sum += bytes[p++] & 0xff;
             }
-            if (bits != 0) sum &= (1L << bits) - 1L;
-            return RubyFixnum.newFixnum(runtime, sum);
+            return RubyFixnum.newFixnum(runtime, bits == 0 ? sum : sum & (1L << bits) - 1L);
         }
     }
 
