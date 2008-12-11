@@ -1017,6 +1017,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         boolean single = true;
         Encoding enc = value.encoding;
+        // this really needs to be inlined here
         if (singleByteOptimizable(enc)) {
             for (int i = 0; i < len; i++) {
                 obytes[i] = bytes[p + len - i - 1];
@@ -1040,8 +1041,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return result.infectBy(this);
     }
 
-    @JRubyMethod(name = "reverse!")
-    public RubyString reverse_bang() {
+    @JRubyMethod(name = "reverse!", compat = CompatVersion.RUBY1_8)
+    public RubyString reverse_bang(ThreadContext context) {
         if (value.realSize > 1) {
             modify();
             byte[]bytes = value.bytes;
@@ -1054,6 +1055,40 @@ public class RubyString extends RubyObject implements EncodingCapable {
             }
         }
 
+        return this;
+    }
+
+    @JRubyMethod(name = "reverse!", compat = CompatVersion.RUBY1_9)
+    public RubyString reverse_bang19(ThreadContext context) {
+        if (value.realSize > 1) {
+            modify();
+            byte[]bytes = value.bytes;
+            int p = value.begin;
+            int len = value.realSize;
+            
+            Encoding enc = value.encoding;
+            // this really needs to be inlined here
+            if (singleByteOptimizable(enc)) {
+                for (int i = 0; i < len >> 1; i++) {
+                    byte b = bytes[p + i];
+                    bytes[i] = bytes[p + len - i - 1];
+                    bytes[p + len - i - 1] = b;
+                }
+            } else {
+                int end = p + len;
+                int op = len;
+                byte[]obytes = new byte[len];
+                boolean single = true;
+                while (p < end) {
+                    int cl = StringSupport.length(enc, bytes, p, end);
+                    if (cl > 1 || (bytes[p] & 0x80) != 0) single = false;
+                    op -= cl;
+                    System.arraycopy(bytes, p, obytes, op, cl);
+                    p += cl;
+                }
+                if (getCodeRange() == CR_UNKNOWN) setCodeRange(single ? CR_7BIT : CR_VALID);
+            }
+        }
         return this;
     }
 
