@@ -2726,6 +2726,27 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
     }
 
+    @JRubyMethod(name = "getbyte", compat = CompatVersion.RUBY1_9)
+    public IRubyObject getbyte(ThreadContext context, IRubyObject index) {
+        Ruby runtime = context.getRuntime();
+        int i = RubyNumeric.num2int(index);
+        if (i < 0) i += value.realSize;
+        if (i < 0 || i >= value.realSize) return runtime.getNil();
+        return RubyFixnum.newFixnum(runtime, value.bytes[value.begin + i] & 0xff);
+    }
+
+    @JRubyMethod(name = "setbyte", compat = CompatVersion.RUBY1_9)
+    public IRubyObject setbyte(ThreadContext context, IRubyObject index, IRubyObject val) {
+        Ruby runtime = context.getRuntime();
+        int i = RubyNumeric.num2int(index);
+        int b = RubyNumeric.num2int(val);
+
+        if (i < -value.realSize || i >= value.realSize) throw runtime.newIndexError("index " + i + "out of string");
+        if (i < 0) i += value.realSize;
+        value.bytes[i] = (byte)b;
+        return val;
+    }
+
     /** rb_str_to_i
      *
      */
