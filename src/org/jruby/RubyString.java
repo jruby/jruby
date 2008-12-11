@@ -1086,6 +1086,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     System.arraycopy(bytes, p, obytes, op, cl);
                     p += cl;
                 }
+                value.bytes = obytes;
                 if (getCodeRange() == CR_UNKNOWN) setCodeRange(single ? CR_7BIT : CR_VALID);
             }
         }
