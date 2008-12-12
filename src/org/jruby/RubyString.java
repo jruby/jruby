@@ -63,6 +63,7 @@ import org.jcodings.EncodingDB.Entry;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.util.IntHash;
 import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
@@ -3863,11 +3864,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (value.realSize == 0) return RubyFixnum.zero(runtime);
 
         boolean[]table = new boolean[TRANS_SIZE];
-        boolean init = true;
-        for (int i=0; i<args.length; i++) {
-            RubyString s = args[i].convertToString();
-            s.setup_table(table, init);
-            init = false;
+        args[0].convertToString().setupTable(table, true);
+        for (int i=1; i<args.length; i++) {
+            args[i].convertToString().setupTable(table, false);;
         }
 
         int s = value.begin;
@@ -3897,18 +3896,16 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public IRubyObject delete_bang(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
         if (args.length < 1) throw runtime.newArgumentError("wrong number of arguments");
-        
+
         boolean[]squeeze = new boolean[TRANS_SIZE];
 
-        boolean init = true;
-        for (int i=0; i<args.length; i++) {
-            RubyString s = args[i].convertToString();
-            s.setup_table(squeeze, init);
-            init = false;
+        args[0].convertToString().setupTable(squeeze, true);
+        for (int i=1; i<args.length; i++) {
+            args[i].convertToString().setupTable(squeeze, false);
         }
-        
+
         modify();
-        
+
         if (value.realSize == 0) return runtime.getNil();
         int s = value.begin;
         int t = s;
@@ -3955,11 +3952,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (args.length == 0) {
             for (int i=0; i<TRANS_SIZE; i++) squeeze[i] = true;
         } else {
-            boolean init = true;
-            for (int i=0; i<args.length; i++) {
-                RubyString s = args[i].convertToString();
-                s.setup_table(squeeze, init);
-                init = false;
+            args[0].convertToString().setupTable(squeeze, true);
+            for (int i=1; i<args.length; i++) {
+                args[i].convertToString().setupTable(squeeze, false);
             }
         }
 
@@ -3990,7 +3985,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod
     public IRubyObject tr(ThreadContext context, IRubyObject src, IRubyObject repl) {
         RubyString str = strDup(context.getRuntime());
-        str.tr_trans(context, src, repl, false);
+        str.trTrans(context, src, repl, false);
         return str;
     }
 
@@ -3999,81 +3994,109 @@ public class RubyString extends RubyObject implements EncodingCapable {
     */
     @JRubyMethod(name = "tr!")
     public IRubyObject tr_bang(ThreadContext context, IRubyObject src, IRubyObject repl) {
-        return tr_trans(context, src, repl, false);
+        return trTrans(context, src, repl, false);
     }    
-    
+
     private static final class TR {
-        int gen, now, max;
-        int p, pend;
+        TR(ByteList bytes) {
+            p = bytes.begin;
+            pend = bytes.realSize + p;
+            buf = bytes.bytes;
+            now = max = 0;
+            gen = false;
+        }
+
+        int p, pend, now, max;
+        boolean gen;
         byte[]buf;
     }
 
     private static final int TRANS_SIZE = 256;
-    
+
     /** tr_setup_table
      * 
      */
-    private final void setup_table(boolean[]table, boolean init) {
-        final boolean[]buf = new boolean[TRANS_SIZE];
-        final TR tr = new TR();
-        int c;
-
+    private final void setupTable(boolean[]table, boolean init) {
+        final TR tr = new TR(value);
         boolean cflag = false;
-
-        tr.p = value.begin;
-        tr.pend = value.begin + value.realSize;
-        tr.buf = value.bytes;
-        tr.gen = tr.now = tr.max = 0;
-
         if (value.realSize > 1 && value.bytes[value.begin] == '^') {
             cflag = true;
             tr.p++;
         }
-        
+
         if (init) for (int i=0; i<TRANS_SIZE; i++) table[i] = true;
-        
+
+        final boolean[]buf = new boolean[TRANS_SIZE];
         for (int i=0; i<TRANS_SIZE; i++) buf[i] = cflag;
+
+        int c;
         while ((c = trnext(tr)) >= 0) buf[c & 0xff] = !cflag;
         for (int i=0; i<TRANS_SIZE; i++) table[i] = table[i] && buf[i];
     }
-    
+
+    private final void setupTable(Ruby runtime, boolean[]table, boolean init, Encoding enc) {
+        final TR tr = new TR(value);
+        boolean cflag = false;
+        if (value.realSize > 1) {
+            if (enc.isAsciiCompatible()) {
+                if ((value.bytes[value.begin] & 0xff) == '^') {
+                    cflag = true;
+                    tr.p++;
+                }
+            } else {
+                int l = StringSupport.preciseLength(enc, tr.buf, tr.p, tr.pend);
+                if (enc.mbcToCode(tr.buf, tr.p, tr.pend) == '^') {
+                    cflag = true;
+                    tr.p += l;
+                }
+            }
+        }
+
+        if (init) for (int i=0; i<TRANS_SIZE; i++) table[i] = true;
+
+        final boolean[]buf = new boolean[TRANS_SIZE];
+        int c;
+        IntHash<IRubyObject> hash = null;
+        while ((c = trnext(tr)) >= 0) {
+            if (c < TRANS_SIZE) {
+                buf[c & 0xff] = !cflag;
+            } else {
+                if (hash == null) {
+                    hash = new IntHash<IRubyObject>();
+                    if (cflag) {
+                        // TODO
+                    } else {
+                        // TODO
+                    }
+                }
+                if (hash != null || hash.get(c) != null) hash.put(c, NEVER);
+            }
+        }
+
+        for (int i=0; i<TRANS_SIZE; i++) buf[i] = cflag;
+    }
+
     /** tr_trans
     *
     */    
-    private final IRubyObject tr_trans(ThreadContext context, IRubyObject src, IRubyObject repl, boolean sflag) {
+    private final IRubyObject trTrans(ThreadContext context, IRubyObject src, IRubyObject repl, boolean sflag) {
         Ruby runtime = context.getRuntime();
         if (value.realSize == 0) return runtime.getNil();
-        
+
         ByteList replList = repl.convertToString().value;
-        
         if (replList.realSize == 0) return delete_bang(context, new IRubyObject[]{src});
 
         ByteList srcList = src.convertToString().value;
-        
-        final TR trsrc = new TR();
-        final TR trrepl = new TR();
-        
+        final TR trsrc = new TR(srcList);
         boolean cflag = false;
-        boolean modify = false;
-        
-        trsrc.p = srcList.begin;
-        trsrc.pend = srcList.begin + srcList.realSize;
-        trsrc.buf = srcList.bytes;
         if (srcList.realSize >= 2 && srcList.bytes[srcList.begin] == '^') {
             cflag = true;
             trsrc.p++;
         }       
-        
-        trrepl.p = replList.begin;
-        trrepl.pend = replList.begin + replList.realSize;
-        trrepl.buf = replList.bytes;
-        
-        trsrc.gen = trrepl.gen = 0;
-        trsrc.now = trrepl.now = 0;
-        trsrc.max = trrepl.max = 0;
-        
+
         int c;
         final int[]trans = new int[TRANS_SIZE];
+        final TR trrepl = new TR(replList);
         if (cflag) {
             for (int i=0; i<TRANS_SIZE; i++) trans[i] = 1;
             while ((c = trnext(trsrc)) >= 0) trans[c & 0xff] = -1;
@@ -4089,13 +4112,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 trans[c & 0xff] = r;
             }
         }
-        
+
         modify();
-        
+
         int s = value.begin;
         int send = s + value.realSize;
         byte sbuf[] = value.bytes;
-        
+        boolean modify = false;
         if (sflag) {
             int t = s;
             int c0, last = -1;
@@ -4111,7 +4134,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     sbuf[t++] = (byte)c0;
                 }
             }
-            
+
             if (value.realSize > (t - value.begin)) {
                 value.realSize = t - value.begin;
                 modify = true;
@@ -4136,7 +4159,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         byte [] buf = t.buf;
         
         for (;;) {
-            if (t.gen == 0) {
+            if (!t.gen) {
                 if (t.p == t.pend) return -1;
                 if (t.p < t.pend -1 && buf[t.p] == '\\') t.p++;
                 t.now = buf[t.p++];
@@ -4147,7 +4170,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                             t.p++;
                             continue;
                         }
-                        t.gen = 1;
+                        t.gen = true;
                         t.max = (int)buf[t.p++] & 0xFF;
                     }
                 }
@@ -4155,7 +4178,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             } else if (++t.now < t.max) {
                 return t.now & 0xff;
             } else {
-                t.gen = 0;
+                t.gen = false;
                 return t.max & 0xff;
             }
         }
@@ -4167,7 +4190,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod
     public IRubyObject tr_s(ThreadContext context, IRubyObject src, IRubyObject repl) {
         RubyString str = strDup(context.getRuntime());
-        str.tr_trans(context, src, repl, true);
+        str.trTrans(context, src, repl, true);
         return str;
     }
 
@@ -4176,7 +4199,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "tr_s!")
     public IRubyObject tr_s_bang(ThreadContext context, IRubyObject src, IRubyObject repl) {
-        return tr_trans(context, src, repl, true);
+        return trTrans(context, src, repl, true);
     }
 
     /** rb_str_each_line
