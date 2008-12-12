@@ -4076,6 +4076,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
         for (int i=0; i<TRANS_SIZE; i++) buf[i] = cflag;
     }
 
+    private boolean trFind(int c, boolean[]table, IntHash<IRubyObject> del, IntHash<IRubyObject> noDel) {
+        return c < TRANS_SIZE ? table[c] : ((del != null && del.get(c) != null) && (noDel == null || noDel.get(c) == null));
+    }
+
     /** tr_trans
     *
     */    
