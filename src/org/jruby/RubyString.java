@@ -4016,7 +4016,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** tr_setup_table
      * 
      */
-    private final void setupTable(boolean[]table, boolean init) {
+    private void setupTable(boolean[]table, boolean init) {
         final TR tr = new TR(value);
         boolean cflag = false;
         if (value.realSize > 1 && value.bytes[value.begin] == '^') {
@@ -4030,11 +4030,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         for (int i=0; i<TRANS_SIZE; i++) buf[i] = cflag;
 
         int c;
-        while ((c = trnext(tr)) >= 0) buf[c & 0xff] = !cflag;
+        while ((c = trNext(tr)) >= 0) buf[c & 0xff] = !cflag;
         for (int i=0; i<TRANS_SIZE; i++) table[i] = table[i] && buf[i];
     }
 
-    private final void setupTable(Ruby runtime, boolean[]table, boolean init, Encoding enc) {
+    private void setupTable(Ruby runtime, boolean[]table, boolean init, Encoding enc) {
         final TR tr = new TR(value);
         boolean cflag = false;
         if (value.realSize > 1) {
@@ -4057,7 +4057,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         final boolean[]buf = new boolean[TRANS_SIZE];
         int c;
         IntHash<IRubyObject> hash = null;
-        while ((c = trnext(tr)) >= 0) {
+        while ((c = trNext(tr)) >= 0) {
             if (c < TRANS_SIZE) {
                 buf[c & 0xff] = !cflag;
             } else {
@@ -4079,7 +4079,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** tr_trans
     *
     */    
-    private final IRubyObject trTrans(ThreadContext context, IRubyObject src, IRubyObject repl, boolean sflag) {
+    private IRubyObject trTrans(ThreadContext context, IRubyObject src, IRubyObject repl, boolean sflag) {
         Ruby runtime = context.getRuntime();
         if (value.realSize == 0) return runtime.getNil();
 
@@ -4099,15 +4099,15 @@ public class RubyString extends RubyObject implements EncodingCapable {
         final TR trrepl = new TR(replList);
         if (cflag) {
             for (int i=0; i<TRANS_SIZE; i++) trans[i] = 1;
-            while ((c = trnext(trsrc)) >= 0) trans[c & 0xff] = -1;
-            while ((c = trnext(trrepl)) >= 0); 
+            while ((c = trNext(trsrc)) >= 0) trans[c & 0xff] = -1;
+            while ((c = trNext(trrepl)) >= 0); 
             for (int i=0; i<TRANS_SIZE; i++) {
                 if (trans[i] >= 0) trans[i] = trrepl.now;
             }
         } else {
             for (int i=0; i<TRANS_SIZE; i++) trans[i] = -1;
-            while ((c = trnext(trsrc)) >= 0) {
-                int r = trnext(trrepl);
+            while ((c = trNext(trsrc)) >= 0) {
+                int r = trNext(trrepl);
                 if (r == -1) r = trrepl.now;
                 trans[c & 0xff] = r;
             }
@@ -4155,8 +4155,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** trnext
     *
     */    
-    private final int trnext(TR t) {
-        byte [] buf = t.buf;
+    private int trNext(TR t) {
+        byte[]buf = t.buf;
         
         for (;;) {
             if (!t.gen) {
