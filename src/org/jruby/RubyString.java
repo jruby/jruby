@@ -1027,10 +1027,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
             int op = len;
             while (p < end) {
                 int cl = StringSupport.length(enc, bytes, p, end);
-                if (cl > 1 || (bytes[p] & 0x80) != 0) single = false;
-                op -= cl;
-                System.arraycopy(bytes, p, obytes, op, cl);
-                p += cl;
+                if (cl > 1 || (bytes[p] & 0x80) != 0) {
+                    single = false;
+                    op -= cl;
+                    System.arraycopy(bytes, p, obytes, op, cl);
+                    p += cl;
+                } else {
+                    obytes[--op] = bytes[p++];
+                }
             }
         }
 
@@ -1081,10 +1085,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 boolean single = true;
                 while (p < end) {
                     int cl = StringSupport.length(enc, bytes, p, end);
-                    if (cl > 1 || (bytes[p] & 0x80) != 0) single = false;
-                    op -= cl;
-                    System.arraycopy(bytes, p, obytes, op, cl);
-                    p += cl;
+                    if (cl > 1 || (bytes[p] & 0x80) != 0) {
+                        single = false;
+                        op -= cl;
+                        System.arraycopy(bytes, p, obytes, op, cl);
+                        p += cl;
+                    } else {
+                        obytes[--op] = bytes[p++];
+                    }
                 }
                 value.bytes = obytes;
                 if (getCodeRange() == CR_UNKNOWN) setCodeRange(single ? CR_7BIT : CR_VALID);
@@ -4009,14 +4017,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
         final boolean[]buf = new boolean[TRANS_SIZE];
         final TR tr = new TR();
         int c;
-        
+
         boolean cflag = false;
-        
+
         tr.p = value.begin;
         tr.pend = value.begin + value.realSize;
         tr.buf = value.bytes;
         tr.gen = tr.now = tr.max = 0;
-        
+
         if (value.realSize > 1 && value.bytes[value.begin] == '^') {
             cflag = true;
             tr.p++;
