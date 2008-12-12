@@ -999,8 +999,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
         int len = value.realSize;
         byte[]obytes = new byte[len];
 
-        for (int i = 0; i < len; i++) {
+        for (int i = 0; i <= len >> 1; i++) {
             obytes[i] = bytes[p + len - i - 1];
+            obytes[len - i - 1] = bytes[p + i];
         }
 
         return new RubyString(runtime, getMetaClass(), new ByteList(obytes, false)).infectBy(this);
@@ -1020,8 +1021,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Encoding enc = value.encoding;
         // this really needs to be inlined here
         if (singleByteOptimizable(enc)) {
-            for (int i = 0; i < len; i++) {
+            for (int i = 0; i <= len >> 1; i++) {
                 obytes[i] = bytes[p + len - i - 1];
+                obytes[len - i - 1] = bytes[p + i];
             }
         } else {
             int end = p + len;
@@ -1055,7 +1057,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             int len = value.realSize;
             for (int i = 0; i < len >> 1; i++) {
                 byte b = bytes[p + i];
-                bytes[i] = bytes[p + len - i - 1];
+                bytes[p + i] = bytes[p + len - i - 1];
                 bytes[p + len - i - 1] = b;
             }
         }
@@ -1076,7 +1078,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             if (singleByteOptimizable(enc)) {
                 for (int i = 0; i < len >> 1; i++) {
                     byte b = bytes[p + i];
-                    bytes[i] = bytes[p + len - i - 1];
+                    bytes[p + i] = bytes[p + len - i - 1];
                     bytes[p + len - i - 1] = b;
                 }
             } else {
