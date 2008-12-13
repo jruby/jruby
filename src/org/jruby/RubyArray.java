@@ -49,12 +49,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Random;
-import java.util.Stack;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.ext.posix.POSIXHandler.WARNING_ID;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -223,7 +221,6 @@ public class RubyArray extends RubyObject implements List {
     private volatile IRubyObject[] values;
 
     private static final int TMPLOCK_ARR_F = 1 << 9;
-    private static final int TMPLOCK_OR_FROZEN_ARR_F = TMPLOCK_ARR_F | FROZEN_F;
 
     private volatile boolean isShared = false;
     private int begin = 0;
@@ -464,11 +461,16 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_modify_check
      *
      */
-    private final void modifyCheck() {
-        if ((flags & TMPLOCK_OR_FROZEN_ARR_F) != 0) {
-            if ((flags & FROZEN_F) != 0) throw getRuntime().newFrozenError("array");           
-            if ((flags & TMPLOCK_ARR_F) != 0) throw getRuntime().newTypeError("can't modify array during iteration");
-        }
+    private static final int MODIFY_CHECK_MASK  = TMPLOCK_ARR_F | FROZEN_F | TAINTED_F;
+    private static final int MODIFY_CHECK_GUARD = TMPLOCK_ARR_F | FROZEN_F; // TAINTED_F off 
+
+    private void modifyCheck() {
+        if ((flags & MODIFY_CHECK_MASK) != MODIFY_CHECK_GUARD) modifyExactCheck();
+    }
+
+    private void modifyExactCheck() {
+        if ((flags & FROZEN_F) != 0) throw getRuntime().newFrozenError("array");           
+        if ((flags & TMPLOCK_ARR_F) != 0) throw getRuntime().newTypeError("can't modify array during iteration");
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
             throw getRuntime().newSecurityError("Insecure: can't modify array");
         }
