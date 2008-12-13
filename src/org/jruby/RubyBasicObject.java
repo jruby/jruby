@@ -1610,6 +1610,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public class Finalizer implements Finalizable {
         private long id;
+        private IRubyObject firstFinalizer;
         private List<IRubyObject> finalizers;
         private AtomicBoolean finalized;
 
@@ -1619,28 +1620,35 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
 
         public void addFinalizer(IRubyObject finalizer) {
-            if (finalizers == null) {
-                finalizers = new ArrayList<IRubyObject>();
+            if (firstFinalizer == null) {
+                firstFinalizer = finalizer;
+            } else {
+                if (finalizers == null) finalizers = new ArrayList<IRubyObject>(4);
+                finalizers.add(finalizer);
             }
-            finalizers.add(finalizer);
         }
 
         public void removeFinalizers() {
+            firstFinalizer = null;
             finalizers = null;
         }
 
         @Override
         public void finalize() {
             if (finalized.compareAndSet(false, true)) {
+                if (firstFinalizer != null) callFinalizer(firstFinalizer);
                 if (finalizers != null) {
                     for (int i = 0; i < finalizers.size(); i++) {
-                        IRubyObject finalizer = finalizers.get(i);
-                        RuntimeHelpers.invoke(
-                                finalizer.getRuntime().getCurrentContext(),
-                                finalizer, "call", RubyBasicObject.this.id());
+                        callFinalizer(finalizers.get(i));
                     }
                 }
             }
+        }
+        
+        private void callFinalizer(IRubyObject finalizer) {
+            RuntimeHelpers.invoke(
+                    finalizer.getRuntime().getCurrentContext(),
+                    finalizer, "call", RubyBasicObject.this.id());
         }
     }
 }
