@@ -37,6 +37,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import static org.jruby.anno.FrameField.VISIBILITY;
+import static org.jruby.runtime.Visibility.MODULE_FUNCTION;
+import static org.jruby.runtime.Visibility.PRIVATE;
+import static org.jruby.runtime.Visibility.PROTECTED;
+import static org.jruby.runtime.Visibility.PUBLIC;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -51,43 +57,42 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.anno.TypePopulator;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.compiler.ASTInspector;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.FullFunctionCallbackMethod;
-import org.jruby.internal.runtime.methods.SimpleCallbackMethod;
+import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.internal.runtime.methods.MethodMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
+import org.jruby.internal.runtime.methods.SimpleCallbackMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
-import static org.jruby.runtime.Visibility.*;
-import static org.jruby.anno.FrameField.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.InstanceVariableTable;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callback.Callback;
+import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.IdUtil;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.MethodFactory;
-import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.util.collections.WeakHashSet;
 
 /**
@@ -2404,7 +2409,7 @@ public class RubyModule extends RubyObject {
         RubyModule module = this;
         
         do {
-            if ((value = module.variableTableFastFetch(internedName)) != null) return value; 
+            if ((value = (IRubyObject)module.variableTableFastFetch(internedName)) != null) return value; 
         } while ((module = module.getSuperClass()) != null);
 
         throw getRuntime().newNameError("uninitialized class variable " + internedName + " in " + getName(), internedName);
@@ -2752,51 +2757,49 @@ public class RubyModule extends RubyObject {
 
     public IRubyObject fastFetchClassVariable(String internedName) {
         assert IdUtil.isClassVariable(internedName);
-        return variableTableFastFetch(internedName);
+        return (IRubyObject)variableTableFastFetch(internedName);
     }
 
     public IRubyObject storeClassVariable(String name, IRubyObject value) {
         assert IdUtil.isClassVariable(name) && value != null;
         ensureClassVariablesSettable();
-        return variableTableStore(name, value);
+        return (IRubyObject)variableTableStore(name, value);
     }
 
     public IRubyObject fastStoreClassVariable(String internedName, IRubyObject value) {
         assert IdUtil.isClassVariable(internedName) && value != null;
         ensureClassVariablesSettable();
-        return variableTableFastStore(internedName, value);
+        return (IRubyObject)variableTableFastStore(internedName, value);
     }
 
     public IRubyObject deleteClassVariable(String name) {
         assert IdUtil.isClassVariable(name);
         ensureClassVariablesSettable();
-        return variableTableRemove(name);
+        return (IRubyObject)variableTableRemove(name);
     }
 
     public List<Variable<IRubyObject>> getClassVariableList() {
-        ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
-        VariableTableEntry[] table = variableTableGetTable();
-        IRubyObject readValue;
-        for (int i = table.length; --i >= 0; ) {
-            for (VariableTableEntry e = table[i]; e != null; e = e.next) {
-                if (IdUtil.isClassVariable(e.name)) {
-                    if ((readValue = e.value) == null) readValue = variableTableReadLocked(e);
-                    list.add(new VariableEntry<IRubyObject>(e.name, readValue));
+        final ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
+        if (variables != null) {
+            variables.visit(new InstanceVariableTable.TryLockVisitor(this) {
+                public void visit(String name, Object value) {
+                    list.add(new VariableEntry<IRubyObject>(name, (IRubyObject)value));
                 }
-            }
+            });
         }
         return list;
     }
 
     public List<String> getClassVariableNameList() {
-        ArrayList<String> list = new ArrayList<String>();
-        VariableTableEntry[] table = variableTableGetTable();
-        for (int i = table.length; --i >= 0; ) {
-            for (VariableTableEntry e = table[i]; e != null; e = e.next) {
-                if (IdUtil.isClassVariable(e.name)) {
-                    list.add(e.name);
+        final ArrayList<String> list = new ArrayList<String>();
+        if (variables != null) {
+            variables.visit(new InstanceVariableTable.Visitor() {
+                public void visit(String name, Object value) {
+                    if (IdUtil.isClassVariable(name)) {
+                        list.add(name);
+                    }
                 }
-            }
+            });
         }
         return list;
     }

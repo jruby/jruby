@@ -169,28 +169,23 @@ public final class IncludedModuleWrapper extends RubyClass {
     }
 
     @Override
-    protected IRubyObject variableTableFastFetch(String internedName) {
+    protected Object variableTableFastFetch(String internedName) {
         return delegate.variableTableFastFetch(internedName);
     }
 
     @Override
-    protected IRubyObject variableTableStore(String name, IRubyObject value) {
+    protected Object variableTableStore(String name, Object value) {
         return delegate.variableTableStore(name, value);
     }
 
     @Override
-    protected IRubyObject variableTableFastStore(String internedName, IRubyObject value) {
+    protected Object variableTableFastStore(String internedName, Object value) {
         return delegate.variableTableFastStore(internedName, value);
     }
 
     @Override
-    protected IRubyObject variableTableRemove(String name) {
+    protected Object variableTableRemove(String name) {
         return delegate.variableTableRemove(name);
-    }
-
-    @Override
-    protected VariableTableEntry[] variableTableGetTable() {
-        return delegate.variableTableGetTable();
     }
 
     @Override
@@ -201,11 +196,6 @@ public final class IncludedModuleWrapper extends RubyClass {
     @Override
     protected void variableTableSync(List<Variable<IRubyObject>> vars) {
         delegate.variableTableSync(vars);
-    }
-
-    @Override
-    protected IRubyObject variableTableReadLocked(VariableTableEntry entry) {
-        return delegate.variableTableReadLocked(entry);
     }
 
     /**

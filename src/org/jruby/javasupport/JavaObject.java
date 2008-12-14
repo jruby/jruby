@@ -58,7 +58,7 @@ public class JavaObject extends RubyObject {
 
     protected JavaObject(Ruby runtime, RubyClass rubyClass, Object value) {
         super(runtime, rubyClass);
-        this.dataStruct = value;
+        dataWrapStruct(value);
     }
 
     protected JavaObject(Ruby runtime, Object value) {
@@ -77,11 +77,12 @@ public class JavaObject extends RubyObject {
     }
 
     public Class<?> getJavaClass() {
+        Object dataStruct = dataGetStruct();
         return dataStruct != null ? dataStruct.getClass() : Void.TYPE;
     }
 
     public Object getValue() {
-        return dataStruct;
+        return dataGetStruct();
     }
 
     public static RubyClass createJavaObjectClass(Ruby runtime, RubyModule javaModule) {
@@ -105,10 +106,11 @@ public class JavaObject extends RubyObject {
 
     public boolean equals(Object other) {
         return other instanceof JavaObject &&
-                this.dataStruct == ((JavaObject) other).dataStruct;
+                this.dataGetStruct() == ((JavaObject) other).dataGetStruct();
     }
 
     public int hashCode() {
+        Object dataStruct = dataGetStruct();
         if (dataStruct != null) {
             return dataStruct.hashCode();
         }
@@ -122,6 +124,7 @@ public class JavaObject extends RubyObject {
 
     @JRubyMethod
     public IRubyObject to_s() {
+        Object dataStruct = dataGetStruct();
         if (dataStruct != null) {
             String stringValue = dataStruct.toString();
             if (stringValue != null) {

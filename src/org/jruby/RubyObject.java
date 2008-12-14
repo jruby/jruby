@@ -42,22 +42,21 @@ package org.jruby;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.List;
 
+import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.builtin.Variable;
 import org.jruby.util.IdUtil;
-import java.util.List;
-import org.jruby.anno.JRubyClass;
-import org.jruby.anno.JRubyMethod;
-import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.runtime.ClassIndex;
 
 /**
  * RubyObject is the only implementation of the
@@ -1503,7 +1502,7 @@ public class RubyObject extends RubyBasicObject {
     @JRubyMethod(name = "instance_variable_set", required = 2)
     public IRubyObject instance_variable_set(IRubyObject name, IRubyObject value) {
         ensureInstanceVariablesSettable();
-        return variableTableStore(validateInstanceVariable(name.asJavaString()), value);
+        return (IRubyObject)variableTableStore(validateInstanceVariable(name.asJavaString()), value);
     }
 
     /** rb_obj_remove_instance_variable
@@ -1532,7 +1531,7 @@ public class RubyObject extends RubyBasicObject {
     public IRubyObject remove_instance_variable(ThreadContext context, IRubyObject name, Block block) {
         ensureInstanceVariablesSettable();
         IRubyObject value;
-        if ((value = variableTableRemove(validateInstanceVariable(name.asJavaString()))) != null) {
+        if ((value = (IRubyObject)variableTableRemove(validateInstanceVariable(name.asJavaString()))) != null) {
             return value;
         }
         throw context.getRuntime().newNameError("instance variable " + name.asJavaString() + " not defined", name.asJavaString());

@@ -611,9 +611,9 @@ public class RubyRange extends RubyObject {
 
             unmarshalStream.defaultVariablesUnmarshal(range);
             
-            range.begin = range.removeInternalVariable("begin");
-            range.end = range.removeInternalVariable("end");
-            range.isExclusive = range.removeInternalVariable("excl").isTrue();
+            range.begin = (IRubyObject)range.removeInternalVariable("begin");
+            range.end = (IRubyObject)range.removeInternalVariable("end");
+            range.isExclusive = ((IRubyObject)range.removeInternalVariable("excl")).isTrue();
 
             return range;
         }

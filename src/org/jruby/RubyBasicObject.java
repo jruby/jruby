@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -42,6 +43,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.InstanceVariableTable;
 import org.jruby.runtime.builtin.InstanceVariables;
 import org.jruby.runtime.builtin.InternalVariables;
 import org.jruby.runtime.builtin.Variable;
@@ -61,16 +63,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     protected int flags; // zeroed by jvm
 
-    // The dataStruct is a place where custom information can be
-    // contained for core implementations that doesn't necessarily
-    // want to go to the trouble of creating a subclass of
-    // RubyObject. The OpenSSL implementation uses this heavily to
-    // save holder objects containing Java cryptography objects.
-    // Java integration uses this to store the Java object ref.
-    protected transient Object dataStruct;
-
-    private transient Finalizer finalizer;
-
     /**
      * The variableTable contains variables for an object, defined as:
      * <ul>
@@ -80,11 +72,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * </ul>
      *
      * Constants are stored separately, see {@link RubyModule}.
-     *
      */
-    protected transient volatile VariableTableEntry[] variableTable;
-    protected transient int variableTableSize;
-    protected transient int variableTableThreshold;
+    protected transient volatile InstanceVariableTable variables;
 
     /**
      * The error message used when some one tries to modify an
@@ -780,14 +769,25 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @see org.jruby.runtime.builtin.IRubyObject#dataWrapStruct()
      */
     public synchronized void dataWrapStruct(Object obj) {
-        this.dataStruct = obj;
+        if (obj == null) {
+            removeInternalVariable("__wrap_struct__");
+        } else {
+            fastSetInternalVariable("__wrap_struct__", obj);
+        }
     }
 
+    // The dataStruct is a place where custom information can be
+    // contained for core implementations that doesn't necessarily
+    // want to go to the trouble of creating a subclass of
+    // RubyObject. The OpenSSL implementation uses this heavily to
+    // save holder objects containing Java cryptography objects.
+    // Java integration uses this to store the Java object ref.
+    //protected transient Object dataStruct;
     /**
      * @see org.jruby.runtime.builtin.IRubyObject#dataGetStruct()
      */
     public synchronized Object dataGetStruct() {
-        return dataStruct;
+        return fastGetInternalVariable("__wrap_struct__");
     }
 
     /** rb_obj_id
@@ -909,25 +909,27 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * Adds the specified object as a finalizer for this object.
      */
-    public void addFinalizer(IRubyObject finalizer) {
-        if (this.finalizer == null) {
-            this.finalizer = new Finalizer(getRuntime().getObjectSpace().idOf(this));
-            getRuntime().addFinalizer(this.finalizer);
+    public void addFinalizer(IRubyObject f) {
+        Finalizer finalizer = (Finalizer)fastGetInternalVariable("__finalizer__");
+        if (finalizer == null) {
+            finalizer = new Finalizer(getRuntime().getObjectSpace().idOf(this));
+            fastSetInternalVariable("__finalizer__", finalizer);
+            getRuntime().addFinalizer(finalizer);
         }
-        this.finalizer.addFinalizer(finalizer);
+        finalizer.addFinalizer(f);
     }
 
     /**
      * Remove all the finalizers for this object.
      */
     public void removeFinalizers() {
+        Finalizer finalizer = (Finalizer)fastGetInternalVariable("__finalizer__");
         if (finalizer != null) {
             finalizer.removeFinalizers();
-            finalizer = null;
-            getRuntime().removeFinalizer(this.finalizer);
+            removeInternalVariable("__finalizer__");
+            getRuntime().removeFinalizer(finalizer);
         }
     }
-
 
     //
     // COMMON VARIABLE METHODS
@@ -960,14 +962,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     // TODO: must override in RubyModule to pick up constants
     public List<Variable<IRubyObject>> getVariableList() {
-        VariableTableEntry[] table = variableTableGetTable();
-        ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
-        IRubyObject readValue;
-        for (int i = table.length; --i >= 0; ) {
-            for (VariableTableEntry e = table[i]; e != null; e = e.next) {
-                if ((readValue = e.value) == null) readValue = variableTableReadLocked(e);
-                list.add(new VariableEntry<IRubyObject>(e.name, readValue));
-            }
+        final ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
+        if (variables != null) {
+            variables.visit(new InstanceVariableTable.TryLockVisitor(this) {
+                public void visit(String name, Object value) {
+                    list.add(new VariableEntry<IRubyObject>(name, (IRubyObject)value));
+                }
+            });
         }
         return list;
     }
@@ -977,14 +978,15 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
    // TODO: must override in RubyModule to pick up constants
    public List<String> getVariableNameList() {
-        VariableTableEntry[] table = variableTableGetTable();
-        ArrayList<String> list = new ArrayList<String>();
-        for (int i = table.length; --i >= 0; ) {
-            for (VariableTableEntry e = table[i]; e != null; e = e.next) {
-                list.add(e.name);
-            }
-        }
-        return list;
+       final ArrayList<String> list = new ArrayList<String>();
+       if (variables != null) {
+           variables.visit(new InstanceVariableTable.Visitor() {
+               public void visit(String name, Object value) {
+                   list.add(name);
+               }
+           });
+       }
+       return list;
     }
 
     /**
@@ -1007,57 +1009,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return name.length() > 0 && ((c = name.charAt(0)) == '@' || (c <= 'Z' && c >= 'A'));
     }
 
-    //
-    // VARIABLE TABLE METHODS, ETC.
-    //
-
-    protected static final int VARIABLE_TABLE_DEFAULT_CAPACITY = 8; // MUST be power of 2!
-    protected static final int VARIABLE_TABLE_MAXIMUM_CAPACITY = 1 << 30;
-    protected static final float VARIABLE_TABLE_LOAD_FACTOR = 0.75f;
-    protected static final VariableTableEntry[] VARIABLE_TABLE_EMPTY_TABLE = new VariableTableEntry[0];
-
-    /**
-     * Every entry in the variable map is represented by an instance
-     * of this class.
-     */
-    protected static final class VariableTableEntry {
-        final int hash;
-        final String name;
-        volatile IRubyObject value;
-        final VariableTableEntry next;
-
-        VariableTableEntry(int hash, String name, IRubyObject value, VariableTableEntry next) {
-            assert name == name.intern() : name + " is not interned";
-            this.hash = hash;
-            this.name = name;
-            this.value = value;
-            this.next = next;
-        }
-    }
-
-    /**
-     * Reads the value of the specified entry, locked on the current
-     * object.
-     */
-    protected synchronized IRubyObject variableTableReadLocked(VariableTableEntry entry) {
-        return entry.value;
-    }
-
     /**
      * Checks if the variable table contains a variable of the
      * specified name.
      */
     protected boolean variableTableContains(String name) {
-        VariableTableEntry[] table;
-        if ((table = variableTable) != null) {
-            int hash = name.hashCode();
-            for (VariableTableEntry e = table[hash & (table.length - 1)]; e != null; e = e.next) {
-                if (hash == e.hash && name.equals(e.name)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return variables == null ? false : variables.contains(name);
     }
 
     /**
@@ -1066,16 +1023,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * an interned Java String.
      */
     protected boolean variableTableFastContains(String internedName) {
-        assert internedName == internedName.intern() : internedName + " not interned";
-        VariableTableEntry[] table;
-        if ((table = variableTable) != null) {
-            for (VariableTableEntry e = table[internedName.hashCode() & (table.length - 1)]; e != null; e = e.next) {
-                if (internedName == e.name) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return variables == null ? false : variables.fastContains(internedName);
     }
 
     /**
@@ -1084,18 +1032,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @return the object or null if not found
      */
     protected IRubyObject variableTableFetch(String name) {
-        VariableTableEntry[] table;
-        IRubyObject readValue;
-        if ((table = variableTable) != null) {
-            int hash = name.hashCode();
-            for (VariableTableEntry e = table[hash & (table.length - 1)]; e != null; e = e.next) {
-                if (hash == e.hash && name.equals(e.name)) {
-                    if ((readValue = e.value) != null) return readValue;
-                    return variableTableReadLocked(e);
-                }
-            }
-        }
-        return null;
+        return variables == null ? null : (IRubyObject)variables.fetch(name);
     }
 
     /**
@@ -1104,52 +1041,20 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * @return the object or null if not found
      */
-    protected IRubyObject variableTableFastFetch(String internedName) {
-        VariableTableEntry[] table;
-        IRubyObject readValue;
-        if ((table = variableTable) != null) {
-            for (VariableTableEntry e = table[internedName.hashCode() & (table.length - 1)]; e != null; e = e.next) {
-                if (internedName == e.name) {
-                    if ((readValue = e.value) != null) return readValue;
-                    return variableTableReadLocked(e);
-                }
-            }
-        }
-        return null;
+    protected Object variableTableFastFetch(String internedName) {
+        return variables == null ? null : variables.fastFetch(internedName);
     }
 
     /**
      * Store a value in the variable store under the specific name.
      */
-    protected IRubyObject variableTableStore(String name, IRubyObject value) {
-        int hash = name.hashCode();
+    protected Object variableTableStore(String name, Object value) {
         synchronized(this) {
-            VariableTableEntry[] table;
-            VariableTableEntry e;
-            if ((table = variableTable) == null) {
-                table =  new VariableTableEntry[VARIABLE_TABLE_DEFAULT_CAPACITY];
-                e = new VariableTableEntry(hash, name.intern(), value, null);
-                table[hash & (VARIABLE_TABLE_DEFAULT_CAPACITY - 1)] = e;
-                variableTableThreshold = (int)(VARIABLE_TABLE_DEFAULT_CAPACITY * VARIABLE_TABLE_LOAD_FACTOR);
-                variableTableSize = 1;
-                variableTable = table;
-                return value;
+            if (variables == null) {
+                variables = new InstanceVariableTable(name.intern(), value);
+            } else {
+                variables.store(name, value);
             }
-            int potentialNewSize;
-            if ((potentialNewSize = variableTableSize + 1) > variableTableThreshold) {
-                table = variableTableRehash();
-            }
-            int index;
-            for (e = table[index = hash & (table.length - 1)]; e != null; e = e.next) {
-                if (hash == e.hash && name.equals(e.name)) {
-                    e.value = value;
-                    return value;
-                }
-            }
-            e = new VariableTableEntry(hash, name.intern(), value, table[index]);
-            table[index] = e;
-            variableTableSize = potentialNewSize;
-            variableTable = table; // write-volatile
         }
         return value;
     }
@@ -1158,38 +1063,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Will store the value under the specified name, where the name
      * needs to be an interned Java String.
      */
-    protected IRubyObject variableTableFastStore(String internedName, IRubyObject value) {
+    protected Object variableTableFastStore(String internedName, Object value) {
         if (IdUtil.isConstant(internedName)) new Exception().printStackTrace();
-
         assert internedName == internedName.intern() : internedName + " not interned";
-        int hash = internedName.hashCode();
+
         synchronized(this) {
-            VariableTableEntry[] table;
-            VariableTableEntry e;
-            if ((table = variableTable) == null) {
-                table =  new VariableTableEntry[VARIABLE_TABLE_DEFAULT_CAPACITY];
-                e = new VariableTableEntry(hash, internedName, value, null);
-                table[hash & (VARIABLE_TABLE_DEFAULT_CAPACITY - 1)] = e;
-                variableTableThreshold = (int)(VARIABLE_TABLE_DEFAULT_CAPACITY * VARIABLE_TABLE_LOAD_FACTOR);
-                variableTableSize = 1;
-                variableTable = table;
-                return value;
+            if (variables == null) {
+                variables = new InstanceVariableTable(internedName, value);
+            } else {
+                variables.fastStore(internedName, value);
             }
-            int potentialNewSize;
-            if ((potentialNewSize = variableTableSize + 1) > variableTableThreshold) {
-                table = variableTableRehash();
-            }
-            int index;
-            for (e = table[index = hash & (table.length - 1)]; e != null; e = e.next) {
-                if (internedName == e.name) {
-                    e.value = value;
-                    return value;
-                }
-            }
-            e = new VariableTableEntry(hash, internedName, value, table[index]);
-            table[index] = e;
-            variableTableSize = potentialNewSize;
-            variableTable = table; // write-volatile
         }
         return value;
     }
@@ -1198,54 +1081,17 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Removes the entry with the specified name from the variable
      * table, and returning the removed value.
      */
-    protected IRubyObject variableTableRemove(String name) {
+    protected Object variableTableRemove(String name) {
         synchronized(this) {
-            VariableTableEntry[] table;
-            if ((table = variableTable) != null) {
-                int hash = name.hashCode();
-                int index = hash & (table.length - 1);
-                VariableTableEntry first = table[index];
-                VariableTableEntry e;
-                for (e = first; e != null; e = e.next) {
-                    if (hash == e.hash && name.equals(e.name)) {
-                        IRubyObject oldValue = e.value;
-                        // All entries following removed node can stay
-                        // in list, but all preceding ones need to be
-                        // cloned.
-                        VariableTableEntry newFirst = e.next;
-                        for (VariableTableEntry p = first; p != e; p = p.next) {
-                            newFirst = new VariableTableEntry(p.hash, p.name, p.value, newFirst);
-                        }
-                        table[index] = newFirst;
-                        variableTableSize--;
-                        variableTable = table; // write-volatile
-                        return oldValue;
-                    }
-                }
-            }
+            return variables == null ? null : variables.remove(name);
         }
-        return null;
-    }
-
-    /**
-     * Get the actual table used to save variable entries.
-     */
-    protected VariableTableEntry[] variableTableGetTable() {
-        VariableTableEntry[] table;
-        if ((table = variableTable) != null) {
-            return table;
-        }
-        return VARIABLE_TABLE_EMPTY_TABLE;
     }
 
     /**
      * Get the size of the variable table.
      */
     protected int variableTableGetSize() {
-        if (variableTable != null) {
-            return variableTableSize;
-        }
-        return 0;
+        return variables == null ? 0 : variables.getSize(); 
     }
 
     /**
@@ -1254,91 +1100,17 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     protected void variableTableSync(List<Variable<IRubyObject>> vars) {
         synchronized(this) {
-            variableTableSize = 0;
-            variableTableThreshold = (int)(VARIABLE_TABLE_DEFAULT_CAPACITY * VARIABLE_TABLE_LOAD_FACTOR);
-            variableTable =  new VariableTableEntry[VARIABLE_TABLE_DEFAULT_CAPACITY];
-            for (Variable<IRubyObject> var : vars) {
-                variableTableStore(var.getName(), var.getValue());
-            }
+            variables = new InstanceVariableTable(vars);
         }
-    }
-
-    /**
-     * Rehashes the variable table. Must be called from a synchronized
-     * block.
-     */
-    // MUST be called from synchronized/locked block!
-    // should only be called by variableTableStore/variableTableFastStore
-    protected final VariableTableEntry[] variableTableRehash() {
-        VariableTableEntry[] oldTable = variableTable;
-        int oldCapacity;
-        if ((oldCapacity = oldTable.length) >= VARIABLE_TABLE_MAXIMUM_CAPACITY) {
-            return oldTable;
-        }
-
-        int newCapacity = oldCapacity << 1;
-        VariableTableEntry[] newTable = new VariableTableEntry[newCapacity];
-        variableTableThreshold = (int)(newCapacity * VARIABLE_TABLE_LOAD_FACTOR);
-        int sizeMask = newCapacity - 1;
-        VariableTableEntry e;
-        for (int i = oldCapacity; --i >= 0; ) {
-            // We need to guarantee that any existing reads of old Map can
-            //  proceed. So we cannot yet null out each bin.
-            e = oldTable[i];
-
-            if (e != null) {
-                VariableTableEntry next = e.next;
-                int idx = e.hash & sizeMask;
-
-                //  Single node on list
-                if (next == null)
-                    newTable[idx] = e;
-
-                else {
-                    // Reuse trailing consecutive sequence at same slot
-                    VariableTableEntry lastRun = e;
-                    int lastIdx = idx;
-                    for (VariableTableEntry last = next;
-                         last != null;
-                         last = last.next) {
-                        int k = last.hash & sizeMask;
-                        if (k != lastIdx) {
-                            lastIdx = k;
-                            lastRun = last;
-                        }
-                    }
-                    newTable[lastIdx] = lastRun;
-
-                    // Clone all remaining nodes
-                    for (VariableTableEntry p = e; p != lastRun; p = p.next) {
-                        int k = p.hash & sizeMask;
-                        VariableTableEntry m = new VariableTableEntry(p.hash, p.name, p.value, newTable[k]);
-                        newTable[k] = m;
-                    }
-                }
-            }
-        }
-        variableTable = newTable;
-        return newTable;
     }
 
     /**
      * Method to help ease transition to new variables implementation.
      * Will likely be deprecated in the near future.
      */
-    @SuppressWarnings("unchecked")
     protected Map variableTableGetMap() {
         HashMap map = new HashMap();
-        VariableTableEntry[] table;
-        IRubyObject readValue;
-        if ((table = variableTable) != null) {
-            for (int i = table.length; --i >= 0; ) {
-                for (VariableTableEntry e = table[i]; e != null; e = e.next) {
-                    if ((readValue = e.value) == null) readValue = variableTableReadLocked(e);
-                    map.put(e.name, readValue);
-                }
-            }
-        }
+        if (variables != null) variables.getMap(this, map);
         return map;
     }
 
@@ -1346,21 +1118,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Method to help ease transition to new variables implementation.
      * Will likely be deprecated in the near future.
      */
-    @SuppressWarnings("unchecked")
     protected Map variableTableGetMap(Map map) {
-        VariableTableEntry[] table;
-        IRubyObject readValue;
-        if ((table = variableTable) != null) {
-            for (int i = table.length; --i >= 0; ) {
-                for (VariableTableEntry e = table[i]; e != null; e = e.next) {
-                    if ((readValue = e.value) == null) readValue = variableTableReadLocked(e);
-                    map.put(e.name, readValue);
-                }
-            }
-        }
+        if (variables != null) variables.getMap(this, map);
         return map;
     }
-
 
     //
     // INTERNAL VARIABLE METHODS
@@ -1402,7 +1163,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * @see org.jruby.runtime.builtin.InternalVariables#fastGetInternalVariable
      */
-    public IRubyObject fastGetInternalVariable(String internedName) {
+    public Object fastGetInternalVariable(String internedName) {
         assert !isRubyVariable(internedName);
         return variableTableFastFetch(internedName);
     }
@@ -1410,7 +1171,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * @see org.jruby.runtime.builtin.InternalVariables#setInternalVariable
      */
-    public void setInternalVariable(String name, IRubyObject value) {
+    public void setInternalVariable(String name, Object value) {
         assert !isRubyVariable(name);
         variableTableStore(name, value);
     }
@@ -1418,7 +1179,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * @see org.jruby.runtime.builtin.InternalVariables#fastSetInternalVariable
      */
-    public void fastSetInternalVariable(String internedName, IRubyObject value) {
+    public void fastSetInternalVariable(String internedName, Object value) {
         assert !isRubyVariable(internedName);
         variableTableFastStore(internedName, value);
     }
@@ -1426,7 +1187,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * @see org.jruby.runtime.builtin.InternalVariables#removeInternalVariable
      */
-    public IRubyObject removeInternalVariable(String name) {
+    public Object removeInternalVariable(String name) {
         assert !isRubyVariable(name);
         return variableTableRemove(name);
     }
@@ -1442,17 +1203,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * @see org.jruby.runtime.builtin.InternalVariables#getInternalVariableList
      */
-    public List<Variable<IRubyObject>> getInternalVariableList() {
-        VariableTableEntry[] table = variableTableGetTable();
-        ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
-        IRubyObject readValue;
-        for (int i = table.length; --i >= 0; ) {
-            for (VariableTableEntry e = table[i]; e != null; e = e.next) {
-                if (!isRubyVariable(e.name)) {
-                    if ((readValue = e.value) == null) readValue = variableTableReadLocked(e);
-                    list.add(new VariableEntry<IRubyObject>(e.name, readValue));
+    public List<Variable<Object>> getInternalVariableList() {
+        final ArrayList<Variable<Object>> list = new ArrayList<Variable<Object>>();
+        if (variables != null) {
+            variables.visit(new InstanceVariableTable.TryLockVisitor(this) {
+                public void visit(String name, Object value) {
+                    if (!isRubyVariable(name)) {
+                        list.add(new VariableEntry<Object>(name, value));
+                    }
                 }
-            }
+            });
         }
         return list;
     }
@@ -1499,7 +1259,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public IRubyObject fastGetInstanceVariable(String internedName) {
         assert IdUtil.isInstanceVariable(internedName);
-        return variableTableFastFetch(internedName);
+        return (IRubyObject)variableTableFastFetch(internedName);
     }
 
     /** rb_iv_set / rb_ivar_set
@@ -1509,7 +1269,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public IRubyObject setInstanceVariable(String name, IRubyObject value) {
         assert IdUtil.isInstanceVariable(name) && value != null;
         ensureInstanceVariablesSettable();
-        return variableTableStore(name, value);
+        return (IRubyObject)variableTableStore(name, value);
     }
 
     /**
@@ -1518,7 +1278,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public IRubyObject fastSetInstanceVariable(String internedName, IRubyObject value) {
         assert IdUtil.isInstanceVariable(internedName) && value != null;
         ensureInstanceVariablesSettable();
-        return variableTableFastStore(internedName, value);
+        return (IRubyObject)variableTableFastStore(internedName, value);
      }
 
     /**
@@ -1527,23 +1287,22 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public IRubyObject removeInstanceVariable(String name) {
         assert IdUtil.isInstanceVariable(name);
         ensureInstanceVariablesSettable();
-        return variableTableRemove(name);
+        return (IRubyObject)variableTableRemove(name);
     }
 
     /**
      * @see org.jruby.runtime.builtin.InstanceVariables#getInstanceVariableList
      */
     public List<Variable<IRubyObject>> getInstanceVariableList() {
-        VariableTableEntry[] table = variableTableGetTable();
-        ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
-        IRubyObject readValue;
-        for (int i = table.length; --i >= 0; ) {
-            for (VariableTableEntry e = table[i]; e != null; e = e.next) {
-                if (IdUtil.isInstanceVariable(e.name)) {
-                    if ((readValue = e.value) == null) readValue = variableTableReadLocked(e);
-                    list.add(new VariableEntry<IRubyObject>(e.name, readValue));
+        final ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
+        if (variables != null) {
+            variables.visit(new InstanceVariableTable.TryLockVisitor(this) {
+                public void visit(String name, Object value) {
+                    if (IdUtil.isInstanceVariable(name)) {
+                        list.add(new VariableEntry<IRubyObject>(name, (IRubyObject)value));
+                    }                    
                 }
-            }
+            });
         }
         return list;
     }
@@ -1552,14 +1311,15 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @see org.jruby.runtime.builtin.InstanceVariables#getInstanceVariableNameList
      */
     public List<String> getInstanceVariableNameList() {
-        VariableTableEntry[] table = variableTableGetTable();
-        ArrayList<String> list = new ArrayList<String>();
-        for (int i = table.length; --i >= 0; ) {
-            for (VariableTableEntry e = table[i]; e != null; e = e.next) {
-                if (IdUtil.isInstanceVariable(e.name)) {
-                    list.add(e.name);
+        final ArrayList<String> list = new ArrayList<String>();
+        if (variables != null) {
+            variables.visit(new InstanceVariableTable.Visitor() {
+                public void visit(String name, Object value) {
+                    if (IdUtil.isInstanceVariable(name)) {
+                        list.add(name);
+                    }
                 }
-            }
+            });
         }
         return list;
     }
@@ -1567,14 +1327,15 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * @see org.jruby.runtime.builtin.InstanceVariables#getInstanceVariableNameList
      */
-    public void copyInstanceVariablesInto(InstanceVariables other) {
-        VariableTableEntry[] table = variableTableGetTable();
-        for (int i = table.length; --i >= 0; ) {
-            for (VariableTableEntry e = table[i]; e != null; e = e.next) {
-                if (IdUtil.isInstanceVariable(e.name)) {
-                    other.setInstanceVariable(e.name, e.value);
+    public void copyInstanceVariablesInto(final InstanceVariables other) {
+        if (variables != null) {
+            variables.visit(new InstanceVariableTable.Visitor() {
+                public void visit(String name, Object value) {
+                    if (IdUtil.isInstanceVariable(name)) { 
+                        other.setInstanceVariable(name, (IRubyObject)value);
+                    }
                 }
-            }
+            });
         }
     }
 

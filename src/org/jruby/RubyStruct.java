@@ -101,7 +101,7 @@ public class RubyStruct extends RubyObject {
         IRubyObject variable;
 
         while (type != null && type != structClass) {
-            if ((variable = type.fastGetInternalVariable(internedName)) != null) {
+            if ((variable = (IRubyObject)type.fastGetInternalVariable(internedName)) != null) {
                 return variable;
             }
 

@@ -109,8 +109,8 @@ public class RubyException extends RubyObject {
             unmarshalStream.registerLinkTarget(exc);
             unmarshalStream.defaultVariablesUnmarshal(exc);
             
-            exc.message = exc.removeInternalVariable("mesg");
-            exc.set_backtrace(exc.removeInternalVariable("bt"));
+            exc.message = (IRubyObject)exc.removeInternalVariable("mesg");
+            exc.set_backtrace((IRubyObject)exc.removeInternalVariable("bt"));
             
             return exc;
         }

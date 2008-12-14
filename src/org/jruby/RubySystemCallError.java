@@ -152,9 +152,9 @@ public class RubySystemCallError extends RubyException {
             unmarshalStream.registerLinkTarget(exc);
             unmarshalStream.defaultVariablesUnmarshal(exc);
             
-            exc.message = exc.removeInternalVariable("mesg");
-            exc.errno = exc.removeInternalVariable("errno");
-            exc.set_backtrace(exc.removeInternalVariable("bt"));
+            exc.message = (IRubyObject)exc.removeInternalVariable("mesg");
+            exc.errno = (IRubyObject)exc.removeInternalVariable("errno");
+            exc.set_backtrace((IRubyObject)exc.removeInternalVariable("bt"));
             
             return exc;
         }

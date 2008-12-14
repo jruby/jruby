@@ -40,7 +40,7 @@ public interface InternalVariables {
      * @param name the name of an internal variable
      * @return the named internal variable if present, else null
      */
-    IRubyObject getInternalVariable(String name);
+    Object getInternalVariable(String name);
     
     /**
      * Returns the named internal variable if present, else null.  Use only
@@ -50,7 +50,7 @@ public interface InternalVariables {
      * @param internedName the interned name of an internal variable
      * @return he named internal variable if present, else null
      */
-    IRubyObject fastGetInternalVariable(String internedName);
+    Object fastGetInternalVariable(String internedName);
 
     /**
      * Sets the named internal variable to the specified value.  Use only
@@ -59,7 +59,7 @@ public interface InternalVariables {
      * @param name the name of an internal variable
      * @param value the value to be set
      */
-    void setInternalVariable(String name, IRubyObject value);
+    void setInternalVariable(String name, Object value);
     
     /**
      * Sets the named internal variable to the specified value.  Use only
@@ -69,7 +69,7 @@ public interface InternalVariables {
      * @param internedName the interned name of an internal variable
      * @param value the value to be set
      */
-    void fastSetInternalVariable(String internedName, IRubyObject value);
+    void fastSetInternalVariable(String internedName, Object value);
 
     /**
      * Removes the named internal variable, if present, returning its
@@ -78,10 +78,10 @@ public interface InternalVariables {
      * @param name the name of the variable to remove
      * @return the value of the remove variable, if present; else null
      */
-    IRubyObject removeInternalVariable(String name);
+    Object removeInternalVariable(String name);
 
     /**
      * @return only internal variables (NOT ivar/cvar/constant)
      */
-    List<Variable<IRubyObject>> getInternalVariableList();
+    List<Variable<Object>> getInternalVariableList();
 }

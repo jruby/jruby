@@ -73,7 +73,7 @@ public class RubyLocalJumpError extends RubyException {
 
     @JRubyMethod(name = "reason")
     public IRubyObject reason() {
-        return fastGetInternalVariable("reason");
+        return (IRubyObject)fastGetInternalVariable("reason");
     }
     
     public Reason getReason() {
@@ -82,6 +82,6 @@ public class RubyLocalJumpError extends RubyException {
     
     @JRubyMethod(name = "exit_value")
     public IRubyObject exit_value() {
-        return fastGetInternalVariable("exit_value");
+        return (IRubyObject)fastGetInternalVariable("exit_value");
     }
 }

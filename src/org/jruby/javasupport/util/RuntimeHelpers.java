@@ -1261,7 +1261,6 @@ public class RuntimeHelpers {
     
     public static IRubyObject getInstanceVariable(IRubyObject self, Ruby runtime, String internedName) {
         IRubyObject result;
-        
         if ((result = self.getInstanceVariables().fastGetInstanceVariable(internedName)) == null) {
             runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED, "instance variable " + internedName + " not initialized");
             return runtime.getNil();
