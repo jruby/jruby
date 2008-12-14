@@ -15,8 +15,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class CachingCallSite extends CallSite {
     protected volatile CacheEntry cache = CacheEntry.NULL_CACHE;
-    private int misses = 0;
-    private static final int MAX_MISSES = 50;
     public static volatile int totalCallSites;
     public static volatile int failedCallSites;
 
@@ -34,14 +32,18 @@ public abstract class CachingCallSite extends CallSite {
         return cacheAndCall(caller, selfType, args, context, self);
     }
 
+    private IRubyObject callBlock(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) {
+        RubyClass selfType = pollAndGetClass(context, self);
+        CacheEntry myCache = cache;
+        if (myCache.typeOk(selfType)) {
+            return myCache.method.call(context, self, selfType, methodName, args, block);
+        }
+        return cacheAndCall(caller, selfType, block, args, context, self);
+    }
+
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) {
         try {
-            RubyClass selfType = pollAndGetClass(context, self);
-            CacheEntry myCache = cache;
-            if (myCache.typeOk(selfType)) {
-                return myCache.method.call(context, self, selfType, methodName, args, block);
-            }
-            return cacheAndCall(caller, selfType, block, args, context, self);
+            return callBlock(context, caller, self, args, block);
         } catch (JumpException.BreakJump bj) {
             return handleBreakJump(context, bj);
         } catch (JumpException.RetryJump rj) {
@@ -51,12 +53,7 @@ public abstract class CachingCallSite extends CallSite {
 
     public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) {
         try {
-            RubyClass selfType = pollAndGetClass(context, self);
-            CacheEntry myCache = cache;
-            if (myCache.typeOk(selfType)) {
-                return myCache.method.call(context, self, selfType, methodName, args, block);
-            }
-            return cacheAndCall(caller, selfType, block, args, context, self);
+            return callBlock(context, caller, self, args, block);
         } catch (JumpException.BreakJump bj) {
             return handleBreakJump(context, bj);
         } catch (JumpException.RetryJump rj) {
@@ -75,14 +72,18 @@ public abstract class CachingCallSite extends CallSite {
         return cacheAndCall(caller, selfType, context, self);
     }
 
+    private IRubyObject callBlock(ThreadContext context, IRubyObject caller, IRubyObject self, Block block) {
+        RubyClass selfType = pollAndGetClass(context, self);
+        CacheEntry myCache = cache;
+        if (myCache.typeOk(selfType)) {
+            return myCache.method.call(context, self, selfType, methodName, block);
+        }
+        return cacheAndCall(caller, selfType, block, context, self);
+    }
+
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, Block block) {
         try {
-            RubyClass selfType = pollAndGetClass(context, self);
-            CacheEntry myCache = cache;
-            if (myCache.typeOk(selfType)) {
-                return myCache.method.call(context, self, selfType, methodName, block);
-            }
-            return cacheAndCall(caller, selfType, block, context, self);
+            return callBlock(context, caller, self, block);
         } catch (JumpException.BreakJump bj) {
             return handleBreakJump(context, bj);
         } catch (JumpException.RetryJump rj) {
@@ -92,12 +93,7 @@ public abstract class CachingCallSite extends CallSite {
 
     public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, Block block) {
         try {
-            RubyClass selfType = pollAndGetClass(context, self);
-            CacheEntry myCache = cache;
-            if (myCache.typeOk(selfType)) {
-                return myCache.method.call(context, self, selfType, methodName, block);
-            }
-            return cacheAndCall(caller, selfType, block, context, self);
+            return callBlock(context, caller, self, block);
         } catch (JumpException.BreakJump bj) {
             return handleBreakJump(context, bj);
         } catch (JumpException.RetryJump rj) {
@@ -116,14 +112,18 @@ public abstract class CachingCallSite extends CallSite {
         return cacheAndCall(caller, selfType, context, self, arg1);
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, Block block) {
+    private IRubyObject callBlock(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, Block block) {
         RubyClass selfType = pollAndGetClass(context, self);
+        CacheEntry myCache = cache;
+        if (myCache.typeOk(selfType)) {
+            return myCache.method.call(context, self, selfType, methodName, arg1, block);
+        }
+        return cacheAndCall(caller, selfType, block, context, self, arg1);
+    }
+
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, Block block) {
         try {
-            CacheEntry myCache = cache;
-            if (myCache.typeOk(selfType)) {
-                return myCache.method.call(context, self, selfType, methodName, arg1, block);
-            }
-            return cacheAndCall(caller, selfType, block, context, self, arg1);
+            return callBlock(context, caller, self, arg1, block);
         } catch (JumpException.BreakJump bj) {
             return handleBreakJump(context, bj);
         } catch (JumpException.RetryJump rj) {
@@ -133,12 +133,7 @@ public abstract class CachingCallSite extends CallSite {
 
     public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, Block block) {
         try {
-            RubyClass selfType = pollAndGetClass(context, self);
-            CacheEntry myCache = cache;
-            if (myCache.typeOk(selfType)) {
-                return myCache.method.call(context, self, selfType, methodName, arg1, block);
-            }
-            return cacheAndCall(caller, selfType, block, context, self, arg1);
+            return callBlock(context, caller, self, arg1, block);
         } catch (JumpException.BreakJump bj) {
             return handleBreakJump(context, bj);
         } catch (JumpException.RetryJump rj) {
@@ -157,14 +152,18 @@ public abstract class CachingCallSite extends CallSite {
         return cacheAndCall(caller, selfType, context, self, arg1, arg2);
     }
 
+    private IRubyObject callBlock(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
+        RubyClass selfType = pollAndGetClass(context, self);
+        CacheEntry myCache = cache;
+        if (myCache.typeOk(selfType)) {
+            return myCache.method.call(context, self, selfType, methodName, arg1, arg2, block);
+        }
+        return cacheAndCall(caller, selfType, block, context, self, arg1, arg2);
+    }
+
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
         try {
-            RubyClass selfType = pollAndGetClass(context, self);
-            CacheEntry myCache = cache;
-            if (myCache.typeOk(selfType)) {
-                return myCache.method.call(context, self, selfType, methodName, arg1, arg2, block);
-            }
-            return cacheAndCall(caller, selfType, block, context, self, arg1, arg2);
+            return callBlock(context, caller, self, arg1, arg2, block);
         } catch (JumpException.BreakJump bj) {
             return handleBreakJump(context, bj);
         } catch (JumpException.RetryJump rj) {
@@ -174,12 +173,7 @@ public abstract class CachingCallSite extends CallSite {
 
     public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
         try {
-            RubyClass selfType = pollAndGetClass(context, self);
-            CacheEntry myCache = cache;
-            if (myCache.typeOk(selfType)) {
-                return myCache.method.call(context, self, selfType, methodName, arg1, arg2, block);
-            }
-            return cacheAndCall(caller, selfType, block, context, self, arg1, arg2);
+            return callBlock(context, caller, self, arg1, arg2, block);
         } catch (JumpException.BreakJump bj) {
             return handleBreakJump(context, bj);
         } catch (JumpException.RetryJump rj) {
@@ -198,14 +192,18 @@ public abstract class CachingCallSite extends CallSite {
         return cacheAndCall(caller, selfType, context, self, arg1, arg2, arg3);
     }
 
+    private IRubyObject callBlock(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+        RubyClass selfType = pollAndGetClass(context, self);
+        CacheEntry myCache = cache;
+        if (myCache.typeOk(selfType)) {
+            return myCache.method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
+        }
+        return cacheAndCall(caller, selfType, block, context, self, arg1, arg2, arg3);
+    }
+
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
         try {
-            RubyClass selfType = pollAndGetClass(context, self);
-            CacheEntry myCache = cache;
-            if (myCache.typeOk(selfType)) {
-                return myCache.method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
-            }
-            return cacheAndCall(caller, selfType, block, context, self, arg1, arg2, arg3);
+            return callBlock(context, caller, self, arg1, arg2, arg3, block);
         } catch (JumpException.BreakJump bj) {
             return handleBreakJump(context, bj);
         } catch (JumpException.RetryJump rj) {
@@ -215,12 +213,7 @@ public abstract class CachingCallSite extends CallSite {
 
     public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
         try {
-            RubyClass selfType = pollAndGetClass(context, self);
-            CacheEntry myCache = cache;
-            if (myCache.typeOk(selfType)) {
-                return myCache.method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
-            }
-            return cacheAndCall(caller, selfType, block, context, self, arg1, arg2, arg3);
+            return callBlock(context, caller, self, arg1, arg2, arg3, block);
         } catch (JumpException.BreakJump bj) {
             return handleBreakJump(context, bj);
         } catch (JumpException.RetryJump rj) {
@@ -229,7 +222,7 @@ public abstract class CachingCallSite extends CallSite {
             block.escape();
         }
     }
-
+    
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block, IRubyObject[] args, ThreadContext context, IRubyObject self) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
@@ -372,20 +365,20 @@ public abstract class CachingCallSite extends CallSite {
 
     protected abstract boolean methodMissing(DynamicMethod method, IRubyObject caller);
 
-    private RubyClass pollAndGetClass(ThreadContext context, IRubyObject self) {
+    private static RubyClass pollAndGetClass(ThreadContext context, IRubyObject self) {
         context.callThreadPoll();
         RubyClass selfType = self.getMetaClass();
         return selfType;
     }
 
-    private IRubyObject handleBreakJump(ThreadContext context, BreakJump bj) throws BreakJump {
+    private static IRubyObject handleBreakJump(ThreadContext context, BreakJump bj) throws BreakJump {
         if (context.getFrameJumpTarget() == bj.getTarget()) {
             return (IRubyObject) bj.getValue();
         }
         throw bj;
     }
 
-    private RaiseException retryJumpError(ThreadContext context) {
+    private static RaiseException retryJumpError(ThreadContext context) {
         return context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.RETRY, context.getRuntime().getNil(), "retry outside of rescue not supported");
     }
 }
