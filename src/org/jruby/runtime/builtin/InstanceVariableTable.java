@@ -14,7 +14,6 @@ public final class InstanceVariableTable {
     private static final int DEFAULT_CAPACITY = 8; // MUST be power of 2!
     private static final int MAXIMUM_CAPACITY = 1 << 30;
     private static final float LOAD_FACTOR = 0.75f;
-    public static final VariableTableEntry[] EMPTY_TABLE = new VariableTableEntry[0];
 
     public static abstract class Visitor {
         public abstract void visit(String name, Object value);
