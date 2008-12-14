@@ -169,8 +169,7 @@ public class RubiniusRunner implements Runnable {
         
         scope.setVariables(new String[method.locals]);
         
-        context.setFile(method.file);
-        context.setLine(-1);
+        context.setFileAndLine(method.file, -1);
         context.preScopedBody(DynamicScope.newDynamicScope(scope,null));
         RubiniusMachine.INSTANCE.exec(context, runtime.getObject(), method.code, method.literals, new IRubyObject[0]);
     }

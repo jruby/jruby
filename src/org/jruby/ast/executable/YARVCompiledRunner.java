@@ -42,7 +42,6 @@ import org.jruby.RubyArray;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
-import org.jruby.parser.EvalStaticScope;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
@@ -84,8 +83,7 @@ public class YARVCompiledRunner {
     public IRubyObject run() {
         ThreadContext context = runtime.getCurrentContext();
         StaticScope scope = new LocalStaticScope(null, iseq.locals);
-        context.setFile(iseq.filename);
-        context.setLine(-1);
+        context.setFileAndLine(iseq.filename, -1);
         return ym.exec(context, scope, iseq.body);
     }
 
