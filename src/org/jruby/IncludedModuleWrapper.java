@@ -38,6 +38,7 @@ import java.util.Map;
 
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.InstanceVariableTable;
 import org.jruby.runtime.builtin.Variable;
 
 /**
@@ -152,6 +153,10 @@ public final class IncludedModuleWrapper extends RubyClass {
     //
     // VARIABLE TABLE METHODS - pass to delegate
     //
+    @Override
+    public InstanceVariableTable getVariables() {
+        return delegate.getVariables();
+    }
 
     @Override
     protected boolean variableTableContains(String name) {

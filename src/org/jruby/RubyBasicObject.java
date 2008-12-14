@@ -935,6 +935,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     // COMMON VARIABLE METHODS
     //
 
+    public InstanceVariableTable getVariables() {
+        return variables;
+    }
+
     /**
      * Returns true if object has any variables, defined as:
      * <ul>
@@ -963,6 +967,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     // TODO: must override in RubyModule to pick up constants
     public List<Variable<IRubyObject>> getVariableList() {
         final ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
+        InstanceVariableTable variables = getVariables();
         if (variables != null) {
             variables.visit(new InstanceVariableTable.TryLockVisitor(this) {
                 public void visit(String name, Object value) {
@@ -979,6 +984,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
    // TODO: must override in RubyModule to pick up constants
    public List<String> getVariableNameList() {
        final ArrayList<String> list = new ArrayList<String>();
+       InstanceVariableTable variables = getVariables();
        if (variables != null) {
            variables.visit(new InstanceVariableTable.Visitor() {
                public void visit(String name, Object value) {
@@ -1066,7 +1072,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     protected Object variableTableFastStore(String internedName, Object value) {
         if (IdUtil.isConstant(internedName)) new Exception().printStackTrace();
         assert internedName == internedName.intern() : internedName + " not interned";
-
         synchronized(this) {
             if (variables == null) {
                 variables = new InstanceVariableTable(internedName, value);
@@ -1205,6 +1210,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public List<Variable<Object>> getInternalVariableList() {
         final ArrayList<Variable<Object>> list = new ArrayList<Variable<Object>>();
+        InstanceVariableTable variables = getVariables();
         if (variables != null) {
             variables.visit(new InstanceVariableTable.TryLockVisitor(this) {
                 public void visit(String name, Object value) {
@@ -1295,6 +1301,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public List<Variable<IRubyObject>> getInstanceVariableList() {
         final ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
+        InstanceVariableTable variables = getVariables();
         if (variables != null) {
             variables.visit(new InstanceVariableTable.TryLockVisitor(this) {
                 public void visit(String name, Object value) {
@@ -1312,6 +1319,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public List<String> getInstanceVariableNameList() {
         final ArrayList<String> list = new ArrayList<String>();
+        InstanceVariableTable variables = getVariables();
         if (variables != null) {
             variables.visit(new InstanceVariableTable.Visitor() {
                 public void visit(String name, Object value) {
@@ -1328,6 +1336,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @see org.jruby.runtime.builtin.InstanceVariables#getInstanceVariableNameList
      */
     public void copyInstanceVariablesInto(final InstanceVariables other) {
+        InstanceVariableTable variables = getVariables();
         if (variables != null) {
             variables.visit(new InstanceVariableTable.Visitor() {
                 public void visit(String name, Object value) {

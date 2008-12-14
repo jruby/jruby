@@ -2780,6 +2780,7 @@ public class RubyModule extends RubyObject {
 
     public List<Variable<IRubyObject>> getClassVariableList() {
         final ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
+        InstanceVariableTable variables = getVariables();
         if (variables != null) {
             variables.visit(new InstanceVariableTable.TryLockVisitor(this) {
                 public void visit(String name, Object value) {
@@ -2792,6 +2793,7 @@ public class RubyModule extends RubyObject {
 
     public List<String> getClassVariableNameList() {
         final ArrayList<String> list = new ArrayList<String>();
+        InstanceVariableTable variables = getVariables();
         if (variables != null) {
             variables.visit(new InstanceVariableTable.Visitor() {
                 public void visit(String name, Object value) {
