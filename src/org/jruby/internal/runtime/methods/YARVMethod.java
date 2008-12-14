@@ -102,8 +102,7 @@ public class YARVMethod extends DynamicMethod implements JumpTarget {
     }
 
     private void prepareArguments(ThreadContext context, Ruby runtime, IRubyObject[] args) {
-        context.setFile(iseq.filename);
-        context.setLine(-1);
+        context.setFileAndLine(iseq.filename, -1);
 
         int expectedArgsCount = iseq.args_argc;
         int restArg = iseq.args_rest;
@@ -175,6 +174,7 @@ public class YARVMethod extends DynamicMethod implements JumpTarget {
         runtime.callEventHooks(context, RubyEvent.CALL, context.getFile(), context.getLine(), name, getImplementationClass());
     }
     
+    @Override
     public Arity getArity() {
         return this.arity;
     }
