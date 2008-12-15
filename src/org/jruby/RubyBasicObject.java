@@ -1070,7 +1070,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * needs to be an interned Java String.
      */
     protected Object variableTableFastStore(String internedName, Object value) {
-        if (IdUtil.isConstant(internedName)) new Exception().printStackTrace();
         assert internedName == internedName.intern() : internedName + " not interned";
         synchronized(this) {
             if (variables == null) {
