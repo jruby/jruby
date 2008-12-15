@@ -51,6 +51,7 @@ import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException.ReturnJump;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.internal.runtime.methods.DefaultMethod;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.libraries.FiberLibrary.Fiber;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.LocalStaticScope;
@@ -376,8 +377,7 @@ public final class ThreadContext {
     
     private void popFrame() {
         Frame frame = frameStack[frameIndex--];
-        setFile(frame.getFile());
-        setLine(frame.getLine());
+        setFileAndLine(frame);
         
         frame.clear();
     }
@@ -472,6 +472,11 @@ public final class ThreadContext {
     public void setFileAndLine(Frame frame) {
         this.file = frame.getFile();
         this.line = frame.getLine();
+    }
+
+    public void setFileAndLine(ISourcePosition position) {
+        this.file = position.getFile();
+        this.line = position.getStartLine();
     }
     
     public Visibility getCurrentVisibility() {

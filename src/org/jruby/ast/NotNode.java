@@ -77,8 +77,6 @@ public class NotNode extends Node {
 
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject result = conditionNode.interpret(runtime,context, self, aBlock);
-        
-        return result.isTrue() ? runtime.getFalse() : runtime.getTrue();
+        return runtime.newBoolean(!conditionNode.interpret(runtime,context, self, aBlock).isTrue());
     }
 }

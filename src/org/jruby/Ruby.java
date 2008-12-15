@@ -272,12 +272,10 @@ public final class Ruby {
         String oldFile = context.getFile();
         int oldLine = context.getLine();
         try {
-            context.setFile(node.getPosition().getFile());
-            context.setLine(node.getPosition().getStartLine());
+            context.setFileAndLine(node.getPosition());
             return runNormally(node, false);
         } finally {
-            context.setFile(oldFile);
-            context.setLine(oldLine);
+            context.setFileAndLine(oldFile, oldLine);
         }
     }
     
@@ -331,8 +329,7 @@ public final class Ruby {
             String oldFile = context.getFile();
             int oldLine = context.getLine();
             try {
-                context.setFile(scriptNode.getPosition().getFile());
-                context.setLine(scriptNode.getPosition().getStartLine());
+                context.setFileAndLine(scriptNode.getPosition());
 
                 if (config.isAssumePrinting() || config.isAssumeLoop()) {
                     runWithGetsLoop(scriptNode, config.isAssumePrinting(), config.isProcessLineEnds(),
@@ -341,8 +338,7 @@ public final class Ruby {
                     runNormally(scriptNode, config.isYARVCompileEnabled());
                 }
             } finally {
-                context.setFile(oldFile);
-                context.setLine(oldLine);
+                context.setFileAndLine(oldFile, oldLine);
             }
         }
     }
@@ -2475,7 +2471,7 @@ public final class Ruby {
     }
 
     public RubyBoolean newBoolean(boolean value) {
-        return RubyBoolean.newBoolean(this, value);
+        return value ? trueObject : falseObject;
     }
 
     public RubyFileStat newFileStat(String filename, boolean lstat) {
