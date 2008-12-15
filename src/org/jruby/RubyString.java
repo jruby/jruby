@@ -3859,25 +3859,39 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_count
      *
      */
+    @JRubyMethod(name = "count")
+    public IRubyObject count(ThreadContext context) {
+        throw context.getRuntime().newArgumentError("wrong number of arguments");
+    }
+
+    @JRubyMethod(name = "count")
+    public IRubyObject count(ThreadContext context, IRubyObject arg) {
+        final boolean[]table = new boolean[TRANS_SIZE];
+        arg.convertToString().setupTable(table, true);
+        return countCommon(context.getRuntime(), table);
+    }
+
     @JRubyMethod(name = "count", required = 1, rest = true)
     public IRubyObject count(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
-        if (args.length < 1) throw runtime.newArgumentError("wrong number of arguments");
         if (value.realSize == 0) return RubyFixnum.zero(runtime);
 
-        boolean[]table = new boolean[TRANS_SIZE];
+        final boolean[]table = new boolean[TRANS_SIZE];
         args[0].convertToString().setupTable(table, true);
-        for (int i=1; i<args.length; i++) {
+        for (int i = 1; i<args.length; i++) {
             args[i].convertToString().setupTable(table, false);;
         }
 
-        int s = value.begin;
-        int send = s + value.realSize;
-        byte[]bytes = value.bytes;
+        return countCommon(runtime, table);
+    }
+
+    private IRubyObject countCommon(Ruby runtime, boolean[]table) {
         int i = 0;
+        byte[]bytes = value.bytes;
+        int p = value.begin;
+        int end = p + value.realSize;
 
-        while (s < send) if (table[bytes[s++] & 0xff]) i++;
-
+        while (p < end) if (table[bytes[p++] & 0xff]) i++;
         return runtime.newFixnum(i);
     }
 
