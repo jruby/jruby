@@ -3210,17 +3210,31 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return result;
     }
 
+    @JRubyMethod(name = "start_with?", compat = CompatVersion.RUBY1_9)
+    public IRubyObject start_with_p(ThreadContext context) {
+        return context.getRuntime().getFalse();
+    }
+
+    @JRubyMethod(name = "start_with?", compat = CompatVersion.RUBY1_9)
+    public IRubyObject start_with_p(ThreadContext context, IRubyObject arg) {
+        return start_with_pCommon(arg) ? context.getRuntime().getTrue() : context.getRuntime().getFalse();
+    }
+
     @JRubyMethod(name = "start_with?", rest = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject start_with_p(ThreadContext context, IRubyObject[]args) {
         for (int i = 0; i < args.length; i++) {
-            IRubyObject tmp = args[i].checkStringType();
-            if (tmp.isNil()) continue;
-            RubyString otherString = (RubyString)tmp;
-            checkEncoding(otherString);
-            if (value.realSize < otherString.value.realSize) continue;
-            if (value.startsWith(otherString.value)) return context.getRuntime().getTrue();
+            if (start_with_pCommon(args[i])) return context.getRuntime().getTrue();
         }
         return context.getRuntime().getFalse();
+    }
+
+    private boolean start_with_pCommon(IRubyObject arg) {
+        IRubyObject tmp = arg.checkStringType();
+        if (tmp.isNil()) return false;
+        RubyString otherString = (RubyString)tmp;
+        checkEncoding(otherString);
+        if (value.realSize < otherString.value.realSize) return false;
+        return value.startsWith(otherString.value);
     }
 
     @JRubyMethod(name = "end_with?", rest = true, compat = CompatVersion.RUBY1_9)
