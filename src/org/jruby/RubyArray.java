@@ -1595,75 +1595,67 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_join
      *
      */
-    public RubyString join(ThreadContext context, IRubyObject sep) {
+    @JRubyMethod(name = "join")
+    public IRubyObject join(ThreadContext context, IRubyObject sep) {
         final Ruby runtime = context.getRuntime();
-
-        if (realLength == 0) return RubyString.newEmptyString(getRuntime());
+        if (realLength == 0) return RubyString.newEmptyString(runtime);
 
         boolean taint = isTaint() || sep.isTaint();
 
-        long len = 1;
+        int len = 1;
         for (int i = begin; i < begin + realLength; i++) {            
             IRubyObject value;
             try {
                 value = values[i];
             } catch (ArrayIndexOutOfBoundsException e) {
                 concurrentModification();
-                return runtime.newString("");
+                return RubyString.newEmptyString(runtime);
             }
             IRubyObject tmp = value.checkStringType();
             len += tmp.isNil() ? 10 : ((RubyString) tmp).getByteList().length();
         }
 
-        RubyString strSep = null;
+        ByteList sepBytes = null;
         if (!sep.isNil()) {
-            sep = strSep = sep.convertToString();
-            len += strSep.getByteList().length() * (realLength - 1);
+            sepBytes = sep.convertToString().getByteList();
+            len += sepBytes.realSize * (realLength - 1);
         }
 
-        ByteList buf = new ByteList((int)len);
-        for (int i = begin; i < begin + realLength; i++) {
+        ByteList buf = new ByteList(len);
+        for (int i = 0; i < realLength; i++) {
             IRubyObject tmp;
             try {
-                tmp = values[i];
+                tmp = values[begin + i];
             } catch (ArrayIndexOutOfBoundsException e) {
                 concurrentModification();
-                return runtime.newString("");
+                return RubyString.newEmptyString(runtime);
             }
-            if (tmp instanceof RubyString) {
-                // do nothing
-            } else if (tmp instanceof RubyArray) {
-                if (runtime.isInspecting(tmp)) {
-                    tmp = runtime.newString("[...]");
+            if (!(tmp instanceof RubyString)) {
+                if (tmp instanceof RubyArray) {
+                    if (runtime.isInspecting(tmp)) {
+                        tmp = runtime.newString("[...]");
+                    } else {
+                        tmp = inspectJoin(context, (RubyArray)tmp, sep);
+                    }
                 } else {
-                    tmp = inspectJoin(context, (RubyArray)tmp, sep);
+                    tmp = RubyString.objAsString(context, tmp);
                 }
-            } else {
-                tmp = RubyString.objAsString(context, tmp);
             }
 
-            if (i > begin && !sep.isNil()) buf.append(strSep.getByteList());
+            if (i > 0 && sepBytes != null) buf.append(sepBytes);
 
             buf.append(tmp.asString().getByteList());
             if (tmp.isTaint()) taint = true;
         }
 
         RubyString result = runtime.newString(buf); 
-
         if (taint) result.setTaint(true);
-
         return result;
     }
 
-    /** rb_ary_join_m
-     *
-     */
-    @JRubyMethod(name = "join", optional = 1)
-    public RubyString join_m(ThreadContext context, IRubyObject[] args) {
-        int argc = args.length;
-        IRubyObject sep = (argc == 1) ? args[0] : context.getRuntime().getGlobalVariables().get("$,");
-        
-        return join(context, sep);
+    @JRubyMethod(name = "join")
+    public IRubyObject join(ThreadContext context) {
+        return join(context, context.getRuntime().getGlobalVariables().get("$,"));
     }
 
     /** rb_ary_to_a
