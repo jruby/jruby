@@ -375,25 +375,31 @@ public final class InstanceVariableTable {
         return hashStore(name, value);
     }
 
+    private Object packedInsert(Object[]table, int index, String internedName, Object value) {
+        assert internedName == internedName.intern() : internedName + " is not interned";
+        if (index == MAX_PACKED) {
+            unpack();
+            return hashStore(internedName, value);
+        }
+
+        table[index] = internedName;
+        table[index + MAX_PACKED] = value;
+        vTableSize++;
+        return value;
+    }
+
     private Object packedStore(String name, Object value) {
         Object[]table = packedVTable;
+        int hash = name.hashCode();
         int i = 0;
         for (i = 0; i < vTableSize; i++) {
-            if (table[i].equals(name)) {
+            String n = (String)table[i];
+            if (n.hashCode() == hash && name.equals(n)) {
                 table[i + MAX_PACKED] = value;
                 return value;
             }
         }
-
-        if (i == MAX_PACKED) {
-            unpack();
-            return hashStore(name, value);
-        }
-
-        table[i] = name.intern();
-        table[i + MAX_PACKED] = value;
-        vTableSize++;
-        return value;
+        return packedInsert(table, i, name.intern(), value);
     }
 
     private Object hashStore(String name, Object value) {
@@ -433,18 +439,7 @@ public final class InstanceVariableTable {
                 return value;
             }
         }
-
-        if (i == MAX_PACKED) {
-            unpack();
-            return fastHashStore(internedName, value);
-        }
-
-        assert internedName == internedName.intern() : internedName + " is not interned";
-        table[i] = internedName;
-        table[i + MAX_PACKED] = value;
-        vTableSize++;
-
-        return value;
+        return packedInsert(table, i, internedName, value);
     }
 
     private Object fastHashStore(String internedName, Object value) {
@@ -477,9 +472,11 @@ public final class InstanceVariableTable {
 
     private Object packedRemove(String name) {
         Object[]table = packedVTable;
+        int hash = name.hashCode();
         int i = 0;
         for (i = 0; i < vTableSize; i++) {
-            if (table[i].equals(name)) {
+            String n = (String)table[i];
+            if (n.hashCode() == hash && name.equals(n)) {
                 Object value = table[i + MAX_PACKED];
                 for (int j = i; j < vTableSize - 1; j++) {
                     table[j] = table[j + 1];
@@ -580,8 +577,10 @@ public final class InstanceVariableTable {
 
     private boolean packedContains(String name) {
         Object[]table = packedVTable;
+        int hash = name.hashCode();
         for (int i = 0; i < vTableSize; i++) {
-            if (table[i].equals(name)) return true;
+            String n = (String)table[i];
+            if (n.hashCode() == hash && name.equals(n)) return true;
         }
         return false;
     }
@@ -636,8 +635,10 @@ public final class InstanceVariableTable {
 
     private Object packedFetch(String name) {
         Object[]table = packedVTable;
+        int hash = name.hashCode();
         for (int i = 0; i < vTableSize; i++) {
-            if (table[i].equals(name)) return table[i + MAX_PACKED];
+            String n = (String)table[i];
+            if (n.hashCode() == hash && name.equals(n)) return table[i + MAX_PACKED];
         }
         return null;
     }
