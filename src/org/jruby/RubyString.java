@@ -3895,9 +3895,21 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return runtime.newFixnum(i);
     }
 
-    /** rb_str_delete
+    /** rb_str_delete / rb_str_delete_bang
      *
      */
+    @JRubyMethod(name = "delete")
+    public IRubyObject delete(ThreadContext context) {
+        throw context.getRuntime().newArgumentError("wrong number of arguments");
+    }
+
+    @JRubyMethod(name = "delete")
+    public IRubyObject delete(ThreadContext context, IRubyObject arg) {
+        RubyString str = strDup(context.getRuntime());
+        str.delete_bang(context, arg);
+        return str;
+    }
+
     @JRubyMethod(name = "delete", required = 1, rest = true)
     public IRubyObject delete(ThreadContext context, IRubyObject[] args) {
         RubyString str = strDup(context.getRuntime());
@@ -3905,14 +3917,24 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return str;
     }
 
-    /** rb_str_delete_bang
-     *
-     */
+    @JRubyMethod(name = "delete!")
+    public IRubyObject delete_bang(ThreadContext context) {
+        throw context.getRuntime().newArgumentError("wrong number of arguments");
+    }
+
+    @JRubyMethod(name = "delete!")
+    public IRubyObject delete_bang(ThreadContext context, IRubyObject arg) {
+        Ruby runtime = context.getRuntime();
+        if (value.realSize == 0) return runtime.getNil();
+        final boolean[]squeeze = new boolean[TRANS_SIZE];
+        arg.convertToString().setupTable(squeeze, true);
+        return delete_bangCommon(runtime, squeeze);
+    }
+
     @JRubyMethod(name = "delete!", required = 1, rest = true)
     public IRubyObject delete_bang(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
-        if (args.length < 1) throw runtime.newArgumentError("wrong number of arguments");
-
+        if (value.realSize == 0) return runtime.getNil();
         boolean[]squeeze = new boolean[TRANS_SIZE];
 
         args[0].convertToString().setupTable(squeeze, true);
@@ -3920,15 +3942,18 @@ public class RubyString extends RubyObject implements EncodingCapable {
             args[i].convertToString().setupTable(squeeze, false);
         }
 
+        return delete_bangCommon(runtime, squeeze);
+    }
+
+    private IRubyObject delete_bangCommon(Ruby runtime, boolean[]squeeze) {
         modify();
 
-        if (value.realSize == 0) return runtime.getNil();
         int s = value.begin;
         int t = s;
         int send = s + value.realSize;
         byte[]bytes = value.bytes;
         boolean modify = false;
-        
+
         while (s < send) {
             if (squeeze[bytes[s] & 0xff]) {
                 modify = true;
@@ -3939,7 +3964,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
         value.realSize = t - value.begin;
 
-        return modify ? this : runtime.getNil();
+        return modify ? this : runtime.getNil();        
     }
 
     /** rb_str_squeeze
