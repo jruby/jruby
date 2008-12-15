@@ -705,16 +705,16 @@ class ERB
   # setup of an ERB _compiler_ object.
   #
   def set_eoutvar(compiler, eoutvar = '_erbout')
-    compiler.put_cmd = "#{eoutvar}.concat"
-    compiler.insert_cmd = "#{eoutvar}.concat"
+    compiler.put_cmd = "#{eoutvar} << "
+    compiler.insert_cmd = "#{eoutvar} << "
 
     cmd = []
-    cmd.push "#{eoutvar} = ''"
+    cmd.push "#{eoutvar} = []"
     
     compiler.pre_cmd = cmd
 
     cmd = []
-    cmd.push(eoutvar)
+    cmd.push("#{eoutvar}.join('')")
 
     compiler.post_cmd = cmd
   end
