@@ -27,7 +27,7 @@ class Object
       # FIXME: When I changed this user const_set instead of eval below Comparator got lost
       # which means I am missing something.
       constant = include_class.java_class.to_s.split(".").last
-      if (respond_to?(:class_eval, true))
+      if (Module === self)
         return class_eval("#{constant} = #{include_class.java_class}", __FILE__, __LINE__)
       else
         return eval("#{constant} = #{include_class.java_class}", binding, __FILE__, __LINE__)
@@ -67,7 +67,7 @@ class Object
 
       # FIXME: When I changed this user const_set instead of eval below Comparator got lost
       # which means I am missing something.
-      if (respond_to?(:class_eval, true))
+      if (Module === self)
         class_eval("#{constant} = JavaUtilities.get_proxy_class(\"#{full_class_name}\")", __FILE__, __LINE__)
       else
         eval("#{constant} = JavaUtilities.get_proxy_class(\"#{full_class_name}\")", binding, __FILE__, __LINE__)
