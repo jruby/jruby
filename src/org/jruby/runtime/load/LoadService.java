@@ -734,7 +734,10 @@ public class LoadService {
         if (baseName.startsWith("./")) {
             foundResource = tryResourceFromCWD(state, baseName, suffixType);
 
-            if (foundResource != null) return foundResource;
+            if (foundResource != null) {
+                state.loadName = foundResource.getName();
+                return foundResource;
+            }
         }
 
         // if given path is absolute, just try it as-is (with extensions) and no load path
@@ -743,7 +746,10 @@ public class LoadService {
                 String namePlusSuffix = baseName + suffix;
                 foundResource = tryResourceAsIs(namePlusSuffix);
 
-                if (foundResource != null) return foundResource;
+                if (foundResource != null) {
+                    state.loadName = namePlusSuffix;
+                    return foundResource;
+                }
             }
 
             return null;
@@ -757,7 +763,10 @@ public class LoadService {
             if (loadPathEntry.equals(".")) {
                 foundResource = tryResourceFromCWD(state, baseName, suffixType);
 
-                if (foundResource != null) break Outer;
+                if (foundResource != null) {
+                    state.loadName = foundResource.getName();
+                    break Outer;
+                }
             } else {
                 for (String suffix : suffixType.getSuffixes()) {
                     String namePlusSuffix = baseName + suffix;
