@@ -7,7 +7,8 @@ import java.util.Map;
 import org.jruby.RubyModule;
 
 public final class InstanceVariableTable {
-    public static final boolean USE_PACKED = true;
+    private static final boolean USE_PACKED_FIELDS = true;
+    private static final boolean USE_PACKED_ARRAY = !USE_PACKED_FIELDS;    
     private static final int MAX_PACKED = 5;
 
     // TODO: make it 16 now ?
@@ -19,12 +20,11 @@ public final class InstanceVariableTable {
         public abstract void visit(String name, Object value);
     }
 
-    public static abstract class TryLockVisitor {
+    public static abstract class TryLockVisitor extends Visitor {
         private Object object;
         public TryLockVisitor(Object object) {
             this.object = object;
         }
-        public abstract void visit(String name, Object value);
     }
 
     /**
@@ -46,6 +46,143 @@ public final class InstanceVariableTable {
         }
     }
 
+    private final class PackedFields {
+        String name1, name2, name3, name4, name5;
+        Object value1, value2, value3, value4, value5;
+
+        PackedFields() {}
+        PackedFields(String internedName, Object value) {
+            name1 = internedName;
+            value1 = value;
+        }
+
+        Object fastStore(String internedName, Object value) {
+            assert internedName == internedName.intern() : internedName + " is not interned";
+            if (internedName == name1) return value1 = value;
+            if (internedName == name2) return value2 = value;
+            if (internedName == name3) return value3 = value;
+            if (internedName == name4) return value4 = value;
+            if (internedName == name5) return value5 = value;
+            return insert(internedName, value);
+        }
+
+        Object store(String name, Object value) {
+            int hash = name.hashCode();
+            if (name1 != null && name1.hashCode() == hash && name.equals(name1)) return value1 = value;
+            if (name2 != null && name2.hashCode() == hash && name.equals(name2)) return value2 = value;
+            if (name3 != null && name3.hashCode() == hash && name.equals(name3)) return value3 = value;
+            if (name4 != null && name4.hashCode() == hash && name.equals(name4)) return value4 = value;
+            if (name5 != null && name5.hashCode() == hash && name.equals(name5)) return value5 = value;
+            return insert(name.intern(), value);
+        }
+
+        void unpack() {
+            VariableTableEntry[]table =  new VariableTableEntry[DEFAULT_CAPACITY];
+            unpackOne(table, name1, value1);
+            unpackOne(table, name2, value2);
+            unpackOne(table, name3, value3);
+            unpackOne(table, name4, value4);
+            unpackOne(table, name5, value5);
+            packedVFields = null;
+            vTableThreshold = (int)(DEFAULT_CAPACITY * LOAD_FACTOR);
+            vTable = table;
+        }
+
+        void unpackOne(VariableTableEntry[]table, String name, Object value) {
+            int index;
+            int hash = name.hashCode();
+
+            VariableTableEntry e;
+            for (e = table[index = hash & (table.length - 1)]; e != null; e = e.next); 
+            e = new VariableTableEntry(hash, name, value, table[index]);
+            table[index] = e;
+        }
+
+        Object insert(String internedName, Object value) {
+            switch (vTableSize) {
+            case 0: name1 = internedName; value1 = value; break;
+            case 1: name2 = internedName; value2 = value; break;
+            case 2: name3 = internedName; value3 = value; break;
+            case 3: name4 = internedName; value4 = value; break;
+            case 4: name5 = internedName; value5 = value; break;
+            case 5:
+                unpack();
+                return fastHashStore(internedName, value);
+            }
+            vTableSize++;
+            return value;
+        }
+
+        boolean contains(String name) {
+            int hash = name.hashCode();
+            return 
+                name1 != null && name1.hashCode() == hash && name.equals(name1) || 
+                name2 != null && name2.hashCode() == hash && name.equals(name2) ||
+                name3 != null && name3.hashCode() == hash && name.equals(name3) ||
+                name4 != null && name4.hashCode() == hash && name.equals(name4) ||
+                name5 != null && name5.hashCode() == hash && name.equals(name5);
+        }
+
+        boolean fastContains(String name) {
+            return 
+                name == name1 ||
+                name == name2 ||
+                name == name3 ||
+                name == name4 ||
+                name == name5;
+        }
+        
+        Object fetch(String name) {
+            int hash = name.hashCode();
+            if (name1 != null && name1.hashCode() == hash && name.equals(name1)) return value1;
+            if (name2 != null && name2.hashCode() == hash && name.equals(name2)) return value2;
+            if (name3 != null && name3.hashCode() == hash && name.equals(name3)) return value3;
+            if (name4 != null && name4.hashCode() == hash && name.equals(name4)) return value4;
+            if (name5 != null && name5.hashCode() == hash && name.equals(name5)) return value5;
+            return null;
+        }
+        
+        Object fastFetch(String name) {
+            if (name == name1) return value1;
+            if (name == name2) return value2;
+            if (name == name3) return value3;
+            if (name == name4) return value4;
+            if (name == name5) return value5;
+            return null;
+        }
+        
+        Object remove(String name) {
+            int hash = name.hashCode();
+            if (name1 != null && name1.hashCode() == hash && name.equals(name1)) return remove(1, value1);
+            if (name2 != null && name2.hashCode() == hash && name.equals(name2)) return remove(2, value2);
+            if (name3 != null && name3.hashCode() == hash && name.equals(name3)) return remove(3, value3);
+            if (name4 != null && name4.hashCode() == hash && name.equals(name4)) return remove(4, value4);
+            if (name5 != null && name5.hashCode() == hash && name.equals(name5)) return remove(5, value5);
+            return null;
+        }
+
+        Object remove(int num, Object value) {
+            switch (num) {
+            case 1: name1 = name2; value1 = value2;
+            case 2: name2 = name3; value2 = value3;
+            case 3: name3 = name4; value3 = value4;
+            case 4: name4 = name5; value4 = value5;
+            case 5: name5 = null; value5 = null;
+            }
+            vTableSize--;
+            return value;
+
+        }
+        
+        void visit(Visitor visitor) {
+            if (name1 != null) visitor.visit(name1, value1);
+            if (name2 != null) visitor.visit(name2, value2);
+            if (name3 != null) visitor.visit(name3, value3);
+            if (name4 != null) visitor.visit(name4, value4);
+            if (name5 != null) visitor.visit(name5, value5);
+        }
+    }
+
     /**
      * The variableTable contains variables for an object, defined as:
      * <ul>
@@ -59,16 +196,19 @@ public final class InstanceVariableTable {
      */
     private VariableTableEntry[] vTable;
     private Object[] packedVTable;
+    private PackedFields packedVFields;
     private int vTableSize;
     private int vTableThreshold;
 
     public InstanceVariableTable(String name, Object value) {
-        if (USE_PACKED) {
+        if (USE_PACKED_ARRAY) {
             // prefill ?
             packedVTable = new Object[MAX_PACKED * 2];
             assert name == name.intern() : name + " is not interned";
             packedVTable[0] = name;
             packedVTable[MAX_PACKED] = value;
+        } else if (USE_PACKED_FIELDS) { 
+            packedVFields = new PackedFields(name, value);
         } else {
             vTable = new VariableTableEntry[DEFAULT_CAPACITY];
             int hash = name.hashCode();
@@ -80,33 +220,7 @@ public final class InstanceVariableTable {
     }
 
     public InstanceVariableTable(List<Variable<IRubyObject>> vars) {
-        if (USE_PACKED) {
-            if (vars.size() > MAX_PACKED) {
-                vTableThreshold = (int)(DEFAULT_CAPACITY * LOAD_FACTOR);
-                vTable =  new VariableTableEntry[DEFAULT_CAPACITY];
-                for (Variable<IRubyObject> var : vars) {
-                    store(var.getName(), var.getValue());
-                }
-            } else {
-                // prefill ?
-                packedVTable = new Object[MAX_PACKED * 2];
-                int i = 0;
-                for (Variable<IRubyObject> var : vars) {
-                    String name = var.getName();
-                    assert name == name.intern() : name + " is not interned";
-                    packedVTable[i] = name;
-                    packedVTable[i + MAX_PACKED] = var.getValue();
-                    i++;
-                }
-                vTableSize = vars.size();
-            }
-        } else {
-            vTableThreshold = (int)(DEFAULT_CAPACITY * LOAD_FACTOR);
-            vTable =  new VariableTableEntry[DEFAULT_CAPACITY];
-            for (Variable<IRubyObject> var : vars) {
-                store(var.getName(), var.getValue());
-            }
-        }
+        sync(vars);
     }
 
     public int getSize() {
@@ -120,9 +234,9 @@ public final class InstanceVariableTable {
     public Object[] getPackageTable() {
         return packedVTable;
     }
-    
+
     public void visit(Visitor visitor) {
-        if (USE_PACKED) {
+        if (USE_PACKED_ARRAY) {
             Object[]table = packedVTable; 
             if (table != null) {
                 for (int i = 0; i < vTableSize; i++) {
@@ -130,7 +244,13 @@ public final class InstanceVariableTable {
                 }
                 return;
             }
+        } else if (USE_PACKED_FIELDS) {
+            if (packedVFields != null) {
+                packedVFields.visit(visitor);
+                return;
+            }
         }
+
         VariableTableEntry[] table = vTable;
         for (int i = table.length; --i >= 0; ) {
             for (VariableTableEntry e = table[i]; e != null; e = e.next) {
@@ -140,7 +260,7 @@ public final class InstanceVariableTable {
     }
 
     public void visit(TryLockVisitor visitor) {
-        if (USE_PACKED) {
+        if (USE_PACKED_ARRAY) {
             Object[]table = packedVTable; 
             if (table != null) {
                 for (int i = 0; i < vTableSize; i++) {
@@ -148,7 +268,13 @@ public final class InstanceVariableTable {
                 }
                 return;
             }
+        } else if (USE_PACKED_FIELDS) {
+            if (packedVFields != null) {
+                packedVFields.visit(visitor);
+                return;
+            }
         }
+
         VariableTableEntry[] table = vTable;
         for (int i = table.length; --i >= 0; ) {
             for (VariableTableEntry e = table[i]; e != null; e = e.next) {
@@ -241,8 +367,10 @@ public final class InstanceVariableTable {
     }
 
     public Object store(String name, Object value) {
-        if (USE_PACKED) {
+        if (USE_PACKED_ARRAY) {
             if (packedVTable != null) return packedStore(name, value); 
+        } else if (USE_PACKED_FIELDS) {
+            if (packedVFields != null) return packedVFields.store(name, value);
         }
         return hashStore(name, value);
     }
@@ -288,8 +416,10 @@ public final class InstanceVariableTable {
     }
 
     public Object fastStore(String internedName, Object value) {
-        if (USE_PACKED) {
+        if (USE_PACKED_ARRAY) {
             if (packedVTable != null) return fastPackedStore(internedName, value); 
+        } else if (USE_PACKED_FIELDS) {
+            if (packedVFields != null) return packedVFields.fastStore(internedName, value);
         }
         return fastHashStore(internedName, value);
     }
@@ -337,8 +467,10 @@ public final class InstanceVariableTable {
     }
     
     public Object remove(String name) {
-        if (USE_PACKED) {
+        if (USE_PACKED_ARRAY) {
             if (packedVTable != null) return packedRemove(name);
+        } else if (USE_PACKED_FIELDS) {
+            if (packedVFields != null) return packedVFields.remove(name);
         }
         return hashRemove(name);
     }
@@ -385,11 +517,33 @@ public final class InstanceVariableTable {
     }
 
     public void sync(List<Variable<IRubyObject>> vars) {
-        vTableSize = 0;
-        vTableThreshold = (int)(DEFAULT_CAPACITY * LOAD_FACTOR);
-        vTable =  new VariableTableEntry[DEFAULT_CAPACITY];
-        for (Variable<IRubyObject> var : vars) {
-            store(var.getName(), var.getValue());
+        if (vars.size() <= MAX_PACKED && (USE_PACKED_ARRAY || USE_PACKED_FIELDS)) {
+            if (USE_PACKED_ARRAY) {
+                // prefill ?
+                packedVTable = new Object[MAX_PACKED * 2];
+                int i = 0;
+                for (Variable<IRubyObject> var : vars) {
+                    String name = var.getName();
+                    assert name == name.intern() : name + " is not interned";
+                    packedVTable[i] = name;
+                    packedVTable[i + MAX_PACKED] = var.getValue();
+                    i++;
+                }
+                vTableSize = vars.size();                    
+            } else if (USE_PACKED_FIELDS) {
+                packedVFields = new PackedFields();
+                for (Variable<IRubyObject> var : vars) {
+                    String name = var.getName();
+                    assert name == name.intern() : name + " is not interned";
+                    packedVFields.insert(name, var.getValue());
+                }
+            }
+        } else {
+            vTableThreshold = (int)(DEFAULT_CAPACITY * LOAD_FACTOR);
+            vTable =  new VariableTableEntry[DEFAULT_CAPACITY];
+            for (Variable<IRubyObject> var : vars) {
+                store(var.getName(), var.getValue());
+            }
         }
     }
 
@@ -416,8 +570,10 @@ public final class InstanceVariableTable {
     }
 
     public boolean contains(String name) {
-        if (USE_PACKED) {
+        if (USE_PACKED_ARRAY) {
             if (packedVTable != null) return packedContains(name);
+        } else if (USE_PACKED_FIELDS) {
+            if (packedVFields != null) return packedVFields.contains(name);
         }
         return hashContains(name);
     }
@@ -442,8 +598,10 @@ public final class InstanceVariableTable {
     }
 
     public boolean fastContains(String name) {
-        if (USE_PACKED) {
+        if (USE_PACKED_ARRAY) {
             if (packedVTable != null) return fastPackedContains(name);
+        } else if (USE_PACKED_FIELDS) {
+            if (packedVFields != null) return packedVFields.fastContains(name);
         }
         return fastHashContains(name);
     }
@@ -468,8 +626,10 @@ public final class InstanceVariableTable {
     }
 
     public Object fetch(String name) {
-        if (USE_PACKED) {
+        if (USE_PACKED_ARRAY) {
             if (packedVTable != null) return packedFetch(name);
+        } else if (USE_PACKED_FIELDS) {
+            if (packedVFields != null) return packedVFields.fetch(name);
         }
         return hashFetch(name);
     }
@@ -496,8 +656,10 @@ public final class InstanceVariableTable {
     }
 
     public Object fastFetch(String name) {
-        if (USE_PACKED) {
+        if (USE_PACKED_ARRAY) {
             if (packedVTable != null) return fastPackedFetch(name);
+        } else if (USE_PACKED_FIELDS) {
+            if (packedVFields != null) return packedVFields.fastFetch(name);
         }
         return fastHashFetch(name);
     }
