@@ -147,7 +147,7 @@ public class ParserSupport19 extends ParserSupport {
         String name = (String) identifier.getValue();
 
         if (getCurrentScope().isDefined(name) > 0) {
-            warnings.warning(ID.STATEMENT_NOT_REACHED, identifier.getPosition(), "shadowing outer local variable - " + name);
+            if (warnings.isVerbose()) warnings.warning(ID.STATEMENT_NOT_REACHED, identifier.getPosition(), "shadowing outer local variable - " + name);
         }
     }
 

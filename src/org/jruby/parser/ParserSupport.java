@@ -556,7 +556,7 @@ public class ParserSupport {
     }
 
     public void warningUnlessEOption(ID id, Node node, String message) {
-        if (!configuration.isInlineSource()) {
+        if (warnings.isVerbose() && !configuration.isInlineSource()) {
             warnings.warning(id, node.getPosition(), message);
         }
     }
@@ -567,7 +567,7 @@ public class ParserSupport {
      * @return true if an expression, false otherwise
      */
     public void checkExpression(Node node) {
-        if (!isExpression(node)) {
+        if (warnings.isVerbose() && !isExpression(node)) {
             warnings.warning(ID.VOID_VALUE_EXPRESSION, node.getPosition(), "void value expression");
         }
     }
