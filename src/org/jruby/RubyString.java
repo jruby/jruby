@@ -4269,27 +4269,56 @@ public class RubyString extends RubyObject implements EncodingCapable {
             if (!t.gen) {
                 if (t.p == t.pend) return -1;
                 if (t.p < t.pend -1 && buf[t.p] == '\\') t.p++;
-                t.now = buf[t.p++];
+                t.now = buf[t.p++] & 0xff;
                 if (t.p < t.pend - 1 && buf[t.p] == '-') {
                     t.p++;
                     if (t.p < t.pend) {
-                        if (t.now > ((int)buf[t.p] & 0xFF)) {
+                        if (t.now > (buf[t.p] & 0xff)) {
                             t.p++;
                             continue;
                         }
                         t.gen = true;
-                        t.max = (int)buf[t.p++] & 0xFF;
+                        t.max = buf[t.p++] & 0xff;
                     }
                 }
-                return t.now & 0xff;
+                return t.now;
             } else if (++t.now < t.max) {
-                return t.now & 0xff;
+                return t.now;
             } else {
                 t.gen = false;
-                return t.max & 0xff;
+                return t.max;
             }
         }
-    }    
+    }
+
+    private int trNext(TR t, Ruby runtime, Encoding enc) {
+        byte[]buf = t.buf;
+        
+        for (;;) {
+            if (!t.gen) {
+                if (t.p == t.pend) return -1;
+                if (t.p < t.pend -1 && buf[t.p] == '\\') t.p++;
+                t.now = codePoint(runtime, enc, buf, t.p, t.pend);
+                t.p += codeLength(runtime, enc, t.now);
+                if (t.p < t.pend - 1 && buf[t.p] == '-') {
+                    t.p++;
+                    if (t.p < t.pend) {
+                        int c = codePoint(runtime, enc, buf, t.p, t.pend);
+                        t.p += codeLength(runtime, enc, c);
+                        if (t.now > c) continue;
+                        t.gen = true;
+                        t.max = c;
+                    }
+                }
+                return t.now;
+            } else if (++t.now < t.max) {
+                return t.now;
+            } else {
+                t.gen = false;
+                return t.max;
+            }
+        }
+    }
 
     /** rb_str_tr_s
      *
