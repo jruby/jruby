@@ -1892,11 +1892,21 @@ public final class Ruby {
         return verbose;
     }
 
+    public boolean isVerbose() {
+        return isVerbose;
+    }
+
+    public boolean warningsEnabled() {
+        return warningsEnabled;
+    }
+
     /** Setter for property isVerbose.
      * @param verbose New value of property isVerbose.
      */
     public void setVerbose(IRubyObject verbose) {
         this.verbose = verbose;
+        isVerbose = verbose.isTrue();
+        warningsEnabled = !verbose.isNil();
     }
 
     /** Getter for property isDebug.
@@ -2719,7 +2729,7 @@ public final class Ruby {
     }
 
     public RaiseException newNameError(String message, String name, Throwable origException, boolean printWhenVerbose) {
-        if (printWhenVerbose && origException != null && this.getVerbose().isTrue()) {
+        if (printWhenVerbose && origException != null && this.isVerbose()) {
             origException.printStackTrace(getErrorStream());
         }
         return new RaiseException(new RubyNameError(
@@ -3068,6 +3078,7 @@ public final class Ruby {
     public final RubyFixnum[] fixnumCache = new RubyFixnum[256];
 
     private IRubyObject verbose;
+    private boolean isVerbose, warningsEnabled;
     private IRubyObject debug;
     
     private RubyThreadGroup defaultThreadGroup;

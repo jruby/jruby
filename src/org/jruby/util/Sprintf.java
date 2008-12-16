@@ -1313,7 +1313,7 @@ public class Sprintf {
         if ((args.numbered == 0) && args.unnumbered < args.length) {
             if (args.runtime.getDebug().isTrue()) {
                 args.raiseArgumentError("too many arguments for format string");
-            } else if (args.runtime.getVerbose().isTrue()) {
+            } else if (args.runtime.isVerbose()) {
                 args.warn(ID.TOO_MANY_ARGUMENTS, "too many arguments for format string");
             }
         }

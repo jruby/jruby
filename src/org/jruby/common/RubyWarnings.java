@@ -53,8 +53,8 @@ public class RubyWarnings implements IRubyWarnings {
      * Prints a warning, unless $VERBOSE is nil.
      */
     public void warn(ID id, String fileName, int lineNumber, String message, Object... data) {
-        if (runtime.getVerbose().isNil()) return;
-    	
+        if (!runtime.warningsEnabled()) return; // TODO make an assert here
+
         StringBuilder buffer = new StringBuilder(100);
 
         buffer.append(fileName).append(':').append(lineNumber + 1).append(' ');
@@ -64,18 +64,16 @@ public class RubyWarnings implements IRubyWarnings {
     }
 
     public boolean isVerbose() {
-        return runtime.getVerbose().isTrue();
+        return runtime.isVerbose();
     }
 
     public void warn(ID id, String message, Object... data) {
         ThreadContext context = runtime.getCurrentContext();
-        
         warn(id, context.getFile(), context.getLine(), message, data);
     }
 
     public void warning(ID id, String message, Object... data) {
         ThreadContext context = runtime.getCurrentContext();
-
         warning(id, context.getFile(), context.getLine(), message, data);
     }
     

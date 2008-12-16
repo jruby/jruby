@@ -91,7 +91,7 @@ public class ClassVarDeclNode extends AssignableNode implements INameNode {
     
     @Override
     public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {        
-        if (runtime.getVerbose().isTrue() && context.getRubyClass().isSingleton()) {
+        if (runtime.isVerbose() && context.getRubyClass().isSingleton()) {
             runtime.getWarnings().warn(ID.DECLARING_SCLASS_VARIABLE, getPosition(), "Declaring singleton class variable.");
         }
         
