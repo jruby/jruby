@@ -1028,7 +1028,7 @@ primary       : literal
               | tLPAREN_ARG expr { 
                   lexer.setState(LexState.EXPR_ENDARG); 
               } opt_nl tRPAREN {
-		  warnings.warning(ID.GROUPED_EXPRESSION, getPosition($1), "(...) interpreted as grouped expression");
+		 if (warnings.isVerbose()) warnings.warning(ID.GROUPED_EXPRESSION, getPosition($1), "(...) interpreted as grouped expression");
                   $$ = $2;
 	      }
               | tLPAREN compstmt tRPAREN {

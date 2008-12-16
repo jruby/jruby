@@ -2150,7 +2150,7 @@ case 275:
 case 276:
 					// line 1030 "DefaultRubyParser.y"
   {
-		  warnings.warning(ID.GROUPED_EXPRESSION, getPosition(((Token)yyVals[-4+yyTop])), "(...) interpreted as grouped expression");
+		 if (warnings.isVerbose()) warnings.warning(ID.GROUPED_EXPRESSION, getPosition(((Token)yyVals[-4+yyTop])), "(...) interpreted as grouped expression");
                   yyVal = ((Node)yyVals[-3+yyTop]);
 	      }
   break;
