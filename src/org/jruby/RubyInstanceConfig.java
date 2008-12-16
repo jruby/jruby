@@ -42,6 +42,8 @@ import java.util.Map;
 
 import java.util.Set;
 import org.jruby.ast.executable.Script;
+import org.jruby.compiler.ASTCompiler;
+import org.jruby.compiler.ASTCompiler19;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.load.LoadService;
@@ -1221,6 +1223,14 @@ public class RubyInstanceConfig {
     
     public Set getExcludedMethods() {
         return excludedMethods;
+    }
+
+    public ASTCompiler newCompiler() {
+        if (compatVersion == CompatVersion.RUBY1_8) {
+            return new ASTCompiler();
+        } else {
+            return new ASTCompiler19();
+        }
     }
     
 }

@@ -67,26 +67,28 @@ public class Interpreted19Block  extends BlockBody {
         return new Block(body, binding);
     }
 
-    public Interpreted19Block(LambdaNode lambda) {
-        super(-1); // We override that the logic which uses this
-        this.arity = lambda.getArgs().getArity();
-        this.args = lambda.getArgs();
-        this.body = lambda.getBody() == null ? NilImplicitNode.NIL : lambda.getBody();
-        this.scope = lambda.getScope();
-    }
-
     public Interpreted19Block(IterNode iter) {
         super(-1); // We override that the logic which uses this
-        ArgsNode argsNode = (ArgsNode) iter.getVarNode();
 
-        if (argsNode == null) {
-            System.out.println("ITER HAS NO ARGS: " + iter);
+        if (iter instanceof LambdaNode) {
+            LambdaNode lambda = (LambdaNode)iter;
+            
+            this.arity = lambda.getArgs().getArity();
+            this.args = lambda.getArgs();
+            this.body = lambda.getBody() == null ? NilImplicitNode.NIL : lambda.getBody();
+            this.scope = lambda.getScope();
+        } else {
+            ArgsNode argsNode = (ArgsNode) iter.getVarNode();
+
+            if (argsNode == null) {
+                System.out.println("ITER HAS NO ARGS: " + iter);
+            }
+
+            this.arity = argsNode.getArity();
+            this.args = argsNode;
+            this.body = iter.getBodyNode() == null ? NilImplicitNode.NIL : iter.getBodyNode();
+            this.scope = iter.getScope();
         }
-
-        this.arity = argsNode.getArity();
-        this.args = argsNode;
-        this.body = iter.getBodyNode() == null ? NilImplicitNode.NIL : iter.getBodyNode();
-        this.scope = iter.getScope();
     }
 
     protected Frame pre(ThreadContext context, RubyModule klass, Binding binding) {

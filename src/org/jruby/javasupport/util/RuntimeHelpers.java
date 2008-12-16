@@ -1272,4 +1272,8 @@ public class RuntimeHelpers {
     public static IRubyObject setInstanceVariable(IRubyObject value, IRubyObject self, String name) {
         return self.getInstanceVariables().fastSetInstanceVariable(name, value);
     }
+
+    public static RubyProc newLiteralLambda(ThreadContext context, Block block, IRubyObject self) {
+        return RubyProc.newProc(context.getRuntime(), block, Block.Type.LAMBDA);
+    }
 }

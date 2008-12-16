@@ -35,7 +35,6 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.Interpreted19Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -43,30 +42,17 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * Stubby lambda node (1.9 only)
  */
-public class LambdaNode extends Node {
-    private ArgsNode args;
-    private Node body;
-    private StaticScope scope;
-    private BlockBody blockBody;
-    
+public class LambdaNode extends IterNode {
     public LambdaNode(ISourcePosition position, ArgsNode args, Node body, StaticScope scope) {
-        super(position, NodeType.LAMBDANODE);
-        this.args = args;
-        this.body = body;
-        this.scope = scope;
-        this.blockBody = new Interpreted19Block(this);
+        super(position, args, body, scope, NodeType.LAMBDANODE);
     }
 
     public ArgsNode getArgs() {
-        return args;
+        return (ArgsNode)getVarNode();
     }
 
     public Node getBody() {
-        return body;
-    }
-
-    public StaticScope getScope() {
-        return scope;
+        return getBodyNode();
     }
 
     @Override
@@ -76,11 +62,11 @@ public class LambdaNode extends Node {
 
     @Override
     public List<Node> childNodes() {
-        return Node.createList(args, body);
+        return Node.createList(getArgs(), getBody());
     }
 
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return RubyProc.newProc(runtime, Interpreted19Block.newInterpretedClosure(context, blockBody, self), Block.Type.LAMBDA);
+        return RubyProc.newProc(runtime, Interpreted19Block.newInterpretedClosure(context, getBlockBody(), self), Block.Type.LAMBDA);
     }
 }

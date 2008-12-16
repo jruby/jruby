@@ -185,6 +185,11 @@ public interface BodyCompiler {
      * @param isExclusive Whether the range is exclusive or not (inclusive)
      */
     public void createNewRange(boolean isExclusive);
+
+    /**
+     * Create a new literal lambda. The stack should contain a reference to the closure object.
+     */
+    public void createNewLambda(CompilerCallback closure);
     
     /**
      * Perform a boolean branch operation based on the Ruby "true" value of the top value

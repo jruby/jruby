@@ -72,7 +72,11 @@ public class IterNode extends Node {
     }
 
     public IterNode(ISourcePosition position, ArgsNode args, Node body, StaticScope scope) {
-        super(position, NodeType.ITERNODE);
+        this(position, args, body, scope, NodeType.ITERNODE);
+    }
+
+    public IterNode(ISourcePosition position, ArgsNode args, Node body, StaticScope scope, NodeType nodeType) {
+        super(position, nodeType);
 
         this.varNode = args;
         this.bodyNode = body;

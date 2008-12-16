@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.CallNode;
@@ -171,6 +172,8 @@ public final class Arity implements Serializable {
             return Arity.singleArgument();
         } else if (node instanceof ArrayNode) {
             return Arity.singleArgument();
+        } else if (node instanceof ArgsNode) {
+            return ((ArgsNode)node).getArity();
         }
 
         throw new Error("unexpected type " + node.getClass() + " at " + node.getPosition());

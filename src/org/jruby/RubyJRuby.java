@@ -217,7 +217,7 @@ public class RubyJRuby {
         inspector.inspect(node);
             
         StandardASMCompiler asmCompiler = new StandardASMCompiler(classname, filename);
-        ASTCompiler compiler = new ASTCompiler();
+        ASTCompiler compiler = recv.getRuntime().getInstanceConfig().newCompiler();
         compiler.compileRoot(node, asmCompiler, inspector);
         byte[] bts = asmCompiler.getClassByteArray();
 

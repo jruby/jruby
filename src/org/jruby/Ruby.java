@@ -485,7 +485,7 @@ public final class Ruby {
             inspector.inspect(node);
 
             StandardASMCompiler asmCompiler = new StandardASMCompiler(classname, filename);
-            ASTCompiler compiler = new ASTCompiler();
+            ASTCompiler compiler = config.newCompiler();
             if (config.isShowBytecode()) {
                 compiler.compileRoot(node, asmCompiler, inspector, false, false);
                 asmCompiler.dumpClass(System.out);

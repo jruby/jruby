@@ -51,8 +51,6 @@ import org.jruby.util.JavaNameMangler;
 public class JITCompiler implements JITCompilerMBean {
     public static final boolean USE_CACHE = true;
     
-    private SoftReference<Ruby> ruby;
-    
     private AtomicLong compiledCount = new AtomicLong(0);
     private AtomicLong successCount = new AtomicLong(0);
     private AtomicLong failCount = new AtomicLong(0);
@@ -64,8 +62,6 @@ public class JITCompiler implements JITCompilerMBean {
     private AtomicLong largestCodeSize = new AtomicLong(0);
     
     public JITCompiler(Ruby ruby) {
-        this.ruby = new SoftReference<Ruby>(ruby);
-        
         ruby.getBeanManager().register(this);
     }
 
@@ -88,7 +84,7 @@ public class JITCompiler implements JITCompilerMBean {
     }
 
     private DynamicMethod jitIsEnabled(final DefaultMethod method, final ThreadContext context, final String name) {
-        RubyInstanceConfig instanceConfig = ruby.get().getInstanceConfig();
+        RubyInstanceConfig instanceConfig = context.getRuntime().getInstanceConfig();
         
         if (method.incrementCallCount() >= instanceConfig.getJitThreshold()) {
             return jitThresholdReached(method, instanceConfig, context, name);
@@ -117,7 +113,7 @@ public class JITCompiler implements JITCompilerMBean {
                 return null;
             }
 
-            JITClassGenerator generator = new JITClassGenerator(name, method, context);
+            JITClassGenerator generator = new JITClassGenerator(name, context.getRuntime(), method, context);
 
             String key = SexpMaker.create(name, method.getArgsNode(), method.getBodyNode());
 
@@ -137,7 +133,7 @@ public class JITCompiler implements JITCompilerMBean {
             Script jitCompiledScript = sourceClass.newInstance();
 
             // add to the jitted methods set
-            Set<Script> jittedMethods = ruby.get().getJittedMethods();
+            Set<Script> jittedMethods = context.getRuntime().getJittedMethods();
             jittedMethods.add(jitCompiledScript);
 
             // logEvery n methods based on configuration
@@ -174,8 +170,9 @@ public class JITCompiler implements JITCompilerMBean {
         
         private byte[] bytecode;
         private String name;
+        private Ruby ruby;
         
-        public JITClassGenerator(String name, DefaultMethod method, ThreadContext context) {
+        public JITClassGenerator(String name, Ruby ruby, DefaultMethod method, ThreadContext context) {
             this.method = method;
             String packageName = "ruby/jit/" + JavaNameMangler.mangleFilenameForClasspath(method.getPosition().getFile());
             String cleanName = packageName + "/" + JavaNameMangler.mangleStringForCleanJavaIdentifier(name);
@@ -185,6 +182,7 @@ public class JITCompiler implements JITCompilerMBean {
             staticScope = method.getStaticScope();
             asmCompiler = new StandardASMCompiler(cleanName + 
                     method.hashCode() + "_" + context.hashCode(), filename);
+            this.ruby = ruby;
         }
         
         @SuppressWarnings("unchecked")
@@ -195,7 +193,7 @@ public class JITCompiler implements JITCompilerMBean {
             long start = System.nanoTime();
             
             asmCompiler.startScript(staticScope);
-            final ASTCompiler compiler = new ASTCompiler();
+            final ASTCompiler compiler = ruby.getInstanceConfig().newCompiler();
 
             CompilerCallback args = new CompilerCallback() {
                 public void call(BodyCompiler context) {
@@ -245,11 +243,11 @@ public class JITCompiler implements JITCompilerMBean {
             bytecode = asmCompiler.getClassByteArray();
             name = CodegenUtils.c(asmCompiler.getClassname());
             
-            if (bytecode.length > ruby.get().getInstanceConfig().getJitMaxSize()) {
+            if (bytecode.length > ruby.getInstanceConfig().getJitMaxSize()) {
                 bytecode = null;
                 throw new NotCompilableException(
                         "JITed method size exceeds configured max of " +
-                        ruby.get().getInstanceConfig().getJitMaxSize());
+                        ruby.getInstanceConfig().getJitMaxSize());
             }
             
             compiledCount.incrementAndGet();

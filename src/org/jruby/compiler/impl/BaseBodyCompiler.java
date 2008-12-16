@@ -21,6 +21,7 @@ import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
+import org.jruby.RubyProc;
 import org.jruby.RubyRange;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
@@ -514,6 +515,14 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         } else {
             method.invokestatic(p(RubyRange.class), "newInclusiveRange", sig(RubyRange.class, params(Ruby.class, ThreadContext.class, IRubyObject.class, IRubyObject.class)));
         }
+    }
+
+    public void createNewLambda(CompilerCallback closure) {
+        loadThreadContext();
+        closure.call(this);
+        loadSelf();
+
+        invokeUtilityMethod("newLiteralLambda", sig(RubyProc.class, ThreadContext.class, Block.class, IRubyObject.class));
     }
 
     /**
