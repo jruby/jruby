@@ -48,6 +48,7 @@ import org.jruby.ast.CallNode;
 import org.jruby.ast.CaseNode;
 import org.jruby.ast.Colon2Node;
 import org.jruby.ast.ConstNode;
+import org.jruby.ast.DefinedNode;
 import org.jruby.ast.DotNode;
 import org.jruby.ast.EvStrNode;
 import org.jruby.ast.FlipNode;
@@ -70,6 +71,7 @@ import org.jruby.ast.Node;
 import org.jruby.ast.NotNode;
 import org.jruby.ast.OpAsgnAndNode;
 import org.jruby.ast.OpAsgnNode;
+import org.jruby.ast.OpAsgnOrNode;
 import org.jruby.ast.OpElementAsgnNode;
 import org.jruby.ast.OrNode;
 import org.jruby.ast.PostExeNode;
@@ -327,7 +329,36 @@ public class ASTInspector {
             setFlag(FRAME_VISIBILITY);
             break;
         case DEFINEDNODE:
-            disable();
+            switch (((DefinedNode)node).getExpressionNode().nodeId) {
+            case CLASSVARASGNNODE:
+            case CLASSVARDECLNODE:
+            case CONSTDECLNODE:
+            case DASGNNODE:
+            case GLOBALASGNNODE:
+            case LOCALASGNNODE:
+            case MULTIPLEASGNNODE:
+            case OPASGNNODE:
+            case OPELEMENTASGNNODE:
+            case DVARNODE:
+            case FALSENODE:
+            case TRUENODE:
+            case LOCALVARNODE:
+            case INSTVARNODE:
+            case BACKREFNODE:
+            case SELFNODE:
+            case VCALLNODE:
+            case YIELDNODE:
+            case GLOBALVARNODE:
+            case CONSTNODE:
+            case FCALLNODE:
+            case CLASSVARNODE:
+                // ok, we have fast paths
+                inspect(((DefinedNode)node).getExpressionNode());
+                break;
+            default:
+                // long, slow way causes disabling
+                disable();
+            }
             break;
         case DOTNODE:
             DotNode dotNode = (DotNode)node;
@@ -460,7 +491,36 @@ public class ASTInspector {
             inspect(opAsgnNode.getValueNode());
             break;
         case OPASGNORNODE:
-            disable(); // Depends on defined
+            switch (((OpAsgnOrNode)node).getFirstNode().nodeId) {
+            case CLASSVARASGNNODE:
+            case CLASSVARDECLNODE:
+            case CONSTDECLNODE:
+            case DASGNNODE:
+            case GLOBALASGNNODE:
+            case LOCALASGNNODE:
+            case MULTIPLEASGNNODE:
+            case OPASGNNODE:
+            case OPELEMENTASGNNODE:
+            case DVARNODE:
+            case FALSENODE:
+            case TRUENODE:
+            case LOCALVARNODE:
+            case INSTVARNODE:
+            case BACKREFNODE:
+            case SELFNODE:
+            case VCALLNODE:
+            case YIELDNODE:
+            case GLOBALVARNODE:
+            case CONSTNODE:
+            case FCALLNODE:
+            case CLASSVARNODE:
+                // ok, we have fast paths
+                inspect(((OpAsgnOrNode)node).getSecondNode());
+                break;
+            default:
+                // long, slow way causes disabling for defined
+                disable();
+            }
             break;
         case OPELEMENTASGNNODE:
             OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode)node;

@@ -1181,20 +1181,48 @@ public class ASTCompiler {
     }
 
     public void compileGetDefinitionBase(final Node node, BodyCompiler context) {
-        BranchCallback reg = new BranchCallback() {
+        switch (node.nodeId) {
+        case CLASSVARASGNNODE:
+        case CLASSVARDECLNODE:
+        case CONSTDECLNODE:
+        case DASGNNODE:
+        case GLOBALASGNNODE:
+        case LOCALASGNNODE:
+        case MULTIPLEASGNNODE:
+        case OPASGNNODE:
+        case OPELEMENTASGNNODE:
+        case DVARNODE:
+        case FALSENODE:
+        case TRUENODE:
+        case LOCALVARNODE:
+        case INSTVARNODE:
+        case BACKREFNODE:
+        case SELFNODE:
+        case VCALLNODE:
+        case YIELDNODE:
+        case GLOBALVARNODE:
+        case CONSTNODE:
+        case FCALLNODE:
+        case CLASSVARNODE:
+            // these are all simple cases that don't require the heavier defined logic
+            compileGetDefinition(node, context);
+            break;
+        default:
+            BranchCallback reg = new BranchCallback() {
 
-                    public void branch(BodyCompiler context) {
-                        context.inDefined();
-                        compileGetDefinition(node, context);
-                    }
-                };
-        BranchCallback out = new BranchCallback() {
+                        public void branch(BodyCompiler context) {
+                            context.inDefined();
+                            compileGetDefinition(node, context);
+                        }
+                    };
+            BranchCallback out = new BranchCallback() {
 
-                    public void branch(BodyCompiler context) {
-                        context.outDefined();
-                    }
-                };
-        context.protect(reg, out, String.class);
+                        public void branch(BodyCompiler context) {
+                            context.outDefined();
+                        }
+                    };
+            context.protect(reg, out, String.class);
+        }
     }
 
     public void compileDefined(final Node node, BodyCompiler context) {
