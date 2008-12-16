@@ -76,7 +76,7 @@ public class LambdaNode extends Node {
 
     @Override
     public List<Node> childNodes() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return Node.createList(args, body);
     }
 
     @Override
