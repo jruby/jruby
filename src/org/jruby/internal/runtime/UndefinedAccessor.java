@@ -59,7 +59,9 @@ public class UndefinedAccessor implements IAccessor {
      * @see org.jruby.runtime.IAccessor#getValue()
      */
     public IRubyObject getValue() {
-        runtime.getWarnings().warning(ID.ACCESSOR_NOT_INITIALIZED, "global variable `" + name + "' not initialized", name);
+        if (runtime.isVerbose()) {
+            runtime.getWarnings().warning(ID.ACCESSOR_NOT_INITIALIZED, "global variable `" + name + "' not initialized", name);
+        }
         return runtime.getNil();
     }
 

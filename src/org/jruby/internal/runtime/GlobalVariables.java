@@ -108,10 +108,11 @@ public class GlobalVariables {
 	    assert name.startsWith("$");
 	
 	    GlobalVariable variable = (GlobalVariable)globalVariables.get(name);
-	    if (variable != null) {
-	        return variable.getAccessor().getValue();
+	    if (variable != null) return variable.getAccessor().getValue();
+
+	    if (runtime.isVerbose()) {
+	        runtime.getWarnings().warning(ID.GLOBAL_NOT_INITIALIZED, "global variable `" + name + "' not initialized", name);
 	    }
-		runtime.getWarnings().warning(ID.GLOBAL_NOT_INITIALIZED, "global variable `" + name + "' not initialized", name);
 		return runtime.getNil();
 	}
 

@@ -72,6 +72,9 @@ public class RubyWarnings implements IRubyWarnings {
         warn(id, context.getFile(), context.getLine(), message, data);
     }
 
+    /** warning methods, their contract is that consumer must explicitly check for runtime.siVerbose()
+     *  before calling them
+     */
     public void warning(ID id, String message, Object... data) {
         ThreadContext context = runtime.getCurrentContext();
         warning(id, context.getFile(), context.getLine(), message, data);
@@ -88,6 +91,7 @@ public class RubyWarnings implements IRubyWarnings {
      * Prints a warning, only in verbose mode.
      */
     public void warning(ID id, String fileName, int lineNumber, String message, Object... data) {
-        if (isVerbose()) warn(id, fileName, lineNumber, message, data);
+        // assert isVerbose(); enable when parser/lexer is synced 
+        warn(id, fileName, lineNumber, message, data);
     }
 }

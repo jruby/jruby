@@ -94,7 +94,7 @@ public class InstVarNode extends Node implements IArityNode, INameNode {
    
         if (variable != null) return variable;
         
-        warnAboutUninitializedIvar(runtime);
+        if (runtime.isVerbose()) warnAboutUninitializedIvar(runtime);
         return runtime.getNil();        
     }
     

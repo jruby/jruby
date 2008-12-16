@@ -129,7 +129,7 @@ public class Sprintf {
         }
         
         final void warning(ID id, String message) {
-            runtime.getWarnings().warning(id, message);
+            if (runtime.isVerbose()) runtime.getWarnings().warning(id, message);
         }
         
         final IRubyObject next() {
@@ -693,7 +693,7 @@ public class Sprintf {
                         }
                     } else if (negative) {
                         if (base == 10) {
-                            warning(ID.NEGATIVE_NUMBER_FOR_U, args,"negative number for %u specifier");
+                            warning(ID.NEGATIVE_NUMBER_FOR_U, args, "negative number for %u specifier");
                             leadChar = '.';
                             len += 2;
                         } else {

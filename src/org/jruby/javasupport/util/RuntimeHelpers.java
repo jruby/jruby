@@ -1258,17 +1258,18 @@ public class RuntimeHelpers {
     public static IRubyObject setGlobalVariable(IRubyObject value, Ruby runtime, String name) {
         return runtime.getGlobalVariables().set(name, value);
     }
-    
+
     public static IRubyObject getInstanceVariable(IRubyObject self, Ruby runtime, String internedName) {
-        IRubyObject result;
-        if ((result = self.getInstanceVariables().fastGetInstanceVariable(internedName)) == null) {
-            runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED, "instance variable " + internedName + " not initialized");
-            return runtime.getNil();
-        }
-        
-        return result;
+        IRubyObject result = self.getInstanceVariables().fastGetInstanceVariable(internedName);
+        if (result != null) return result;
+        if (runtime.isVerbose()) warnAboutUninitializedIvar(runtime, internedName);
+        return runtime.getNil();
     }
-    
+
+    private static void warnAboutUninitializedIvar(Ruby runtime, String internedName) {
+        runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED, "instance variable " + internedName + " not initialized");
+    }
+
     public static IRubyObject setInstanceVariable(IRubyObject value, IRubyObject self, String name) {
         return self.getInstanceVariables().fastSetInstanceVariable(name, value);
     }
