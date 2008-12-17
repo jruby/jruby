@@ -1,5 +1,7 @@
 package java_integration.fixtures;
 
+import java.math.BigInteger;
+
 public class CoreTypeMethods {
     public static String getString() {
         return "foo";
@@ -48,6 +50,10 @@ public class CoreTypeMethods {
     public static void getVoid() {
         return;
     }
+
+    public static BigInteger getBigInteger() {
+        return new BigInteger("1234567890123456789012345678901234567890");
+    }
     
     public static String setString(String s) {
         return s;
@@ -91,6 +97,10 @@ public class CoreTypeMethods {
     
     public static String setNull(Object nil) {
         return String.valueOf(nil);
+    }
+
+    public static String setBigInteger(BigInteger bi) {
+        return String.valueOf(bi);
     }
 
     public static String setByteObj(Byte b) {
@@ -168,6 +178,10 @@ public class CoreTypeMethods {
     public static String getType(boolean b) {
         return "boolean";
     }
+
+    public static String getType(BigInteger b) {
+        return "BigInteger";
+    }
     
     public String getTypeInstance(byte b) {
         return "byte";
@@ -207,6 +221,10 @@ public class CoreTypeMethods {
 
     public String getTypeInstance(boolean b) {
         return "boolean";
+    }
+
+    public String getTypeInstance(BigInteger b) {
+        return "BigInteger";
     }
     
     public static String getObjectType(Object obj) {

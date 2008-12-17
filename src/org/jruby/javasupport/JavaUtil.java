@@ -941,6 +941,9 @@ public class JavaUtil {
     }
         
     public static Object coerceBignumToType(RubyBignum bignum, Class target) {
+        if (target == BigInteger.class) {
+            return bignum.getValue();
+        }
         return coerceNumericToType(bignum, target);
     }
     

@@ -1,5 +1,7 @@
 package java_integration.fixtures;
 
+import java.math.BigInteger;
+
 public class JavaFields {
     public static String stringStaticField = "foo";
     public static byte byteStaticField = (byte)1;
@@ -12,6 +14,8 @@ public class JavaFields {
     public static boolean trueStaticField = true;
     public static boolean falseStaticField = false;
     public static Object nullStaticField = null;
+    public static BigInteger bigIntegerStaticField =
+            new BigInteger("1234567890123456789012345678901234567890");
     
     public static Byte byteObjStaticField = Byte.valueOf(byteStaticField);
     public static Short shortObjStaticField = Short.valueOf(shortStaticField);
@@ -34,6 +38,8 @@ public class JavaFields {
     public boolean trueField = true;
     public boolean falseField = false;
     public Object nullField = null;
+    public BigInteger bigIntegerField =
+            new BigInteger("1234567890123456789012345678901234567890");
     
     public Byte byteObjField = Byte.valueOf(byteField);
     public Short shortObjField = Short.valueOf(shortField);

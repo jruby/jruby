@@ -39,6 +39,8 @@ describe "Java String and primitive-typed methods" do
     CoreTypeMethods.getNull.should == nil
     
     CoreTypeMethods.getVoid.should == nil
+
+    CoreTypeMethods.getBigInteger.should == 1234567890123456789012345678901234567890
   end
   
   it "should be coerced from Ruby types when passing parameters" do
@@ -64,6 +66,9 @@ describe "Java String and primitive-typed methods" do
     
     CoreTypeMethods.setBooleanTrue(true).should == "true"
     CoreTypeMethods.setBooleanFalse(false).should == "false"
+
+    CoreTypeMethods.setBigInteger(1234567890123456789012345678901234567890).should ==
+      "1234567890123456789012345678901234567890"
 
     CoreTypeMethods.setByteObj(1).should == "1"
     CoreTypeMethods.setShortObj(1).should == "1"
@@ -156,6 +161,10 @@ describe "Java String and primitive-typed fields" do
     
     JavaFields.nullStaticField.should be_kind_of(NilClass)
     JavaFields.nullStaticField.should == nil
+
+    JavaFields.bigIntegerStaticField.should be_kind_of(Bignum)
+    JavaFields.bigIntegerStaticField.should ==
+      1234567890123456789012345678901234567890
     
     # instance
     jf = JavaFields.new
@@ -185,6 +194,10 @@ describe "Java String and primitive-typed fields" do
     
     jf.nullField.should be_kind_of(NilClass)
     jf.nullField.should == nil
+
+    jf.bigIntegerField.should be_kind_of(Bignum)
+    jf.bigIntegerField.should ==
+      1234567890123456789012345678901234567890
   end
 end
 
