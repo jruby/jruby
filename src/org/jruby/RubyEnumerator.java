@@ -275,13 +275,13 @@ public class RubyEnumerator extends RubyObject {
             return runtime.getNil();        
         }
 
-        @JRubyMethod(name = "enum_slice", required = 1)
+        @JRubyMethod(name = "enum_slice", required = 1, compat = CompatVersion.RUBY1_8)
         public static IRubyObject enum_slice(ThreadContext context, IRubyObject self, IRubyObject arg) {
             IRubyObject enumerator = self.getRuntime().getEnumerator();
             return RuntimeHelpers.invoke(context, enumerator, "new", self, self.getRuntime().fastNewSymbol("each_slice"), arg);
         }
 
-        @JRubyMethod(name = "enum_cons", required = 1)
+        @JRubyMethod(name = "enum_cons", required = 1, compat = CompatVersion.RUBY1_8)
         public static IRubyObject enum_cons(ThreadContext context, IRubyObject self, IRubyObject arg) {
             IRubyObject enumerator = self.getRuntime().getEnumerator();
             return RuntimeHelpers.invoke(context, enumerator, "new", self, self.getRuntime().fastNewSymbol("each_cons"), arg);
