@@ -52,7 +52,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -60,9 +59,7 @@ import org.jruby.runtime.load.Library;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.ChannelDescriptor;
-import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.InvalidValueException;
-import org.jruby.util.io.OpenFile;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
