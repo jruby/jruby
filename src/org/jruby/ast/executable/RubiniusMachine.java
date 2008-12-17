@@ -201,7 +201,7 @@ public class RubiniusMachine {
             case RubiniusInstructions.META_SEND_OP_LT: {
                 IRubyObject t1 = stack[stackTop--];
                 IRubyObject t2 = stack[stackTop--];
-                if((t1 instanceof RubyFixnum) && (t1 instanceof RubyFixnum)) {
+                if((t1 instanceof RubyFixnum) && (t2 instanceof RubyFixnum)) {
                     stack[++stackTop] = (((RubyFixnum)t1).getLongValue() < ((RubyFixnum)t2).getLongValue()) ? runtime.getTrue() : runtime.getFalse();
                 } else {
                     stack[++stackTop] = t1.callMethod(context, "<", t2);
@@ -212,7 +212,7 @@ public class RubiniusMachine {
             case RubiniusInstructions.META_SEND_OP_GT: {
                 IRubyObject t1 = stack[stackTop--];
                 IRubyObject t2 = stack[stackTop--];
-                if((t1 instanceof RubyFixnum) && (t1 instanceof RubyFixnum)) {
+                if((t1 instanceof RubyFixnum) && (t2 instanceof RubyFixnum)) {
                     stack[++stackTop] = (((RubyFixnum)t1).getLongValue() > ((RubyFixnum)t1).getLongValue()) ? runtime.getTrue() : runtime.getFalse();
                 } else {
                     stack[++stackTop] = t1.callMethod(context, ">", t2);
