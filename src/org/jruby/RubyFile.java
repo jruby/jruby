@@ -1491,27 +1491,17 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newFixnum(oldMask);
     }
 
-    /**
-     * This method does NOT set atime, only mtime, since Java doesn't support anything else.
-     */
     @JRubyMethod(required = 2, rest = true, meta = true)
     public static IRubyObject utime(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
-        
-        // Ignore access_time argument since Java does not support it.
-        
-        long mtime;
-        if (args[1] instanceof RubyTime) {
-            mtime = ((RubyTime) args[1]).getJavaDate().getTime();
-        } else if (args[1] instanceof RubyNumeric) {
-            mtime = RubyNumeric.num2long(args[1]);
-        } else if (args[1] == runtime.getNil()) {
-            mtime = System.currentTimeMillis();
-        } else {
-            RubyTime time = (RubyTime) TypeConverter.convertToType(args[1], runtime.getTime(),"to_time", true);
-            mtime = time.getJavaDate().getTime();
+        long[] atimeval = null;
+        long[] mtimeval = null;
+
+        if (args[0] != runtime.getNil() || args[1] != runtime.getNil()) {
+            atimeval = extractTimeval(runtime, args[0]);
+            mtimeval = extractTimeval(runtime, args[1]);
         }
-        
+
         for (int i = 2, j = args.length; i < j; i++) {
             RubyString filename = RubyString.stringValue(args[i]);
             runtime.checkSafeString(filename);
@@ -1521,8 +1511,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             if (!fileToTouch.exists()) {
                 throw runtime.newErrnoENOENTError(" No such file or directory - \"" + filename + "\"");
             }
-            
-            fileToTouch.setLastModified(mtime);
+
+            runtime.getPosix().utimes(fileToTouch.getAbsolutePath(), atimeval, mtimeval);
         }
         
         return runtime.newFixnum(args.length - 2);
@@ -1550,6 +1540,34 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
         
         return runtime.newFixnum(args.length);
+    }
+
+    /**
+     * Extract a timeval (an array of 2 longs: seconds and microseconds from epoch) from
+     * an IRubyObject.
+     */
+    private static long[] extractTimeval(Ruby runtime, IRubyObject value) {
+        long[] timeval = new long[2];
+
+        if (value instanceof RubyFloat) {
+            timeval[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(value) : RubyNumeric.num2long(value);
+            double fraction = ((RubyFloat) value).getDoubleValue() % 1.0;
+            timeval[1] = (long)(fraction * 1e6 + 0.5);
+        } else if (value instanceof RubyNumeric) {
+            timeval[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(value) : RubyNumeric.num2long(value);
+            timeval[1] = 0;
+        } else {
+            RubyTime time;
+            if (value instanceof RubyTime) {
+                time = ((RubyTime) value);
+            } else {
+                time = (RubyTime) TypeConverter.convertToType(value, runtime.getTime(), "to_time", true);
+            }
+            timeval[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(time.to_i()) : RubyNumeric.num2long(time.to_i());
+            timeval[1] = Platform.IS_32_BIT ? RubyNumeric.num2int(time.usec()) : RubyNumeric.num2long(time.usec());
+        }
+
+        return timeval;
     }
 
     // Fast path since JNA stat is about 10x slower than this

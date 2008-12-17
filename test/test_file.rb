@@ -516,27 +516,34 @@ class TestFile < Test::Unit::TestCase
     File.utime(time, time, filename)
     # File mtime resolution may not be sub-second on all platforms (e.g., windows)
     # allow for some slop
+    assert((time.to_i - File.atime(filename).to_i).abs < 5)
     assert((time.to_i - File.mtime(filename).to_i).abs < 5)
     File.unlink(filename)
   end
   
-  def test_file_utime_nil_mtime
+  def test_file_utime_nil
     filename = '__test__file'
     File.open(filename, 'w') {|f| }
     time = File.mtime(filename)
     sleep 2
     File.utime(nil, nil, filename)
+    assert((File.atime(filename).to_i - time.to_i) >= 2)
     assert((File.mtime(filename).to_i - time.to_i) >= 2)
     File.unlink(filename)
   end
   
-  def test_file_utime_bad_mtime_raises_typeerror
+  def test_file_utime_bad_time_raises_typeerror
     args = [ [], {}, '4000' ]
     filename = '__test__file'
     File.open(filename, 'w') {|f| }
     args.each do |arg|
+      assert_raises(TypeError) {  File.utime(arg, nil, filename) }
+      assert_raises(TypeError) {  File.utime(nil, arg, filename) }
       assert_raises(TypeError) {  File.utime(arg, arg, filename) }
     end
+    time = Time.now
+    assert_raises(TypeError) {  File.utime(time, nil, filename) }
+    assert_raises(TypeError) {  File.utime(nil, time, filename) }
     File.unlink(filename)
   end
   
