@@ -352,7 +352,7 @@ public class RubyArray extends RubyObject implements List {
         IRubyObject[] reallocated = new IRubyObject[newLength];
         try {
             if (newLength > valuesLength) {
-                fillNil(reallocated, values.length, newLength, getRuntime());
+                fillNil(reallocated, valuesLength, newLength, getRuntime());
                 System.arraycopy(values, begin, reallocated, 0, valuesLength); // elements and trailing nils
             } else {
                 System.arraycopy(values, begin, reallocated, 0, newLength); // ???
