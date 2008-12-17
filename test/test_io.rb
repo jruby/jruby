@@ -439,6 +439,12 @@ class TestIO < Test::Unit::TestCase
     }
   end
 
+  def test_read_ignores_blocks
+    a = true
+    File.read(@devnull) { a = false }
+    assert(a)
+  end
+
   #JRUBY-2145
   if (!WINDOWS)
     def test_copy_dev_null

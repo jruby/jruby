@@ -40,9 +40,6 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.ref.Reference;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
@@ -55,7 +52,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -2783,21 +2779,21 @@ public class RubyIO extends RubyObject {
        }
    }
    
-    public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+    public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         switch (args.length) {
         case 0: throw context.getRuntime().newArgumentError(0, 1);
-        case 1: return read(context, recv, args[0], block);
-        case 2: return read(context, recv, args[0], args[1], block);
-        case 3: return read(context, recv, args[0], args[1], args[2], block);
+        case 1: return read(context, recv, args[0],Block.NULL_BLOCK);
+        case 2: return read(context, recv, args[0], args[1]);
+        case 3: return read(context, recv, args[0], args[1], args[2]);
         default: throw context.getRuntime().newArgumentError(args.length, 3);
         }
    }
    
     @JRubyMethod(name = "read", meta = true)
-    public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
+    public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block unusedBlock) {
        IRubyObject[] fileArguments = new IRubyObject[] {arg0};
-       RubyIO file = (RubyIO) RubyKernel.open(context, recv, fileArguments, block);
-       
+       RubyIO file = (RubyIO) RubyKernel.open(context, recv, fileArguments, Block.NULL_BLOCK);
+
        try {
            return file.read(context);
        } finally {
@@ -2806,9 +2802,9 @@ public class RubyIO extends RubyObject {
    }
    
     @JRubyMethod(name = "read", meta = true)
-    public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
+    public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
        IRubyObject[] fileArguments = new IRubyObject[] {arg0};
-       RubyIO file = (RubyIO) RubyKernel.open(context, recv, fileArguments, block);
+       RubyIO file = (RubyIO) RubyKernel.open(context, recv, fileArguments, Block.NULL_BLOCK);
        
         try {
             if (!arg1.isNil()) {
@@ -2822,9 +2818,9 @@ public class RubyIO extends RubyObject {
    }
    
     @JRubyMethod(name = "read", meta = true)
-    public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+    public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         IRubyObject[] fileArguments = new IRubyObject[]{arg0};
-        RubyIO file = (RubyIO) RubyKernel.open(context, recv, fileArguments, block);
+        RubyIO file = (RubyIO) RubyKernel.open(context, recv, fileArguments, Block.NULL_BLOCK);
 
         if (!arg2.isNil()) {
             file.seek(context, arg2);
@@ -2842,12 +2838,12 @@ public class RubyIO extends RubyObject {
     }
    
     @JRubyMethod(name = "readlines", required = 1, optional = 1, meta = true)
-    public static RubyArray readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+    public static RubyArray readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         int count = args.length;
 
         IRubyObject[] fileArguments = new IRubyObject[]{ args[0].convertToString() };
         IRubyObject[] separatorArguments = count >= 2 ? new IRubyObject[]{args[1]} : IRubyObject.NULL_ARRAY;
-        RubyIO file = (RubyIO) RubyKernel.open(context, recv, fileArguments, block);
+        RubyIO file = (RubyIO) RubyKernel.open(context, recv, fileArguments, Block.NULL_BLOCK);
         try {
             return file.readlines(context, separatorArguments);
         } finally {
