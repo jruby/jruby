@@ -589,8 +589,8 @@ public class RubyZlib {
         @JRubyClass(name="Zlib::GzipFile::LengthError", parent="Zlib::GzipFile::Error")
         public static class LengthError extends Error {}
 
-        private static IRubyObject wrap(ThreadContext context, RubyGzipFile instance, 
-                IRubyObject io, Block block) throws IOException {
+        private static IRubyObject wrapBlock(ThreadContext context, RubyGzipFile instance, 
+                Block block) throws IOException {
             if (block.isGiven()) {
                 try {
                     block.yield(context, instance);
@@ -601,7 +601,7 @@ public class RubyZlib {
                 }
             }
             
-            return io;
+            return instance;
         }
         
         @JRubyMethod(name = "wrap", required = 1, frame = true, meta = true)
@@ -616,7 +616,7 @@ public class RubyZlib {
                 instance = RubyGzipReader.newInstance(recv, new IRubyObject[] { io }, block);
             }
 
-            return wrap(context, instance, io, block);
+            return wrapBlock(context, instance, block);
         }
         
         protected static final ObjectAllocator GZIPFILE_ALLOCATOR = new ObjectAllocator() {
@@ -741,9 +741,8 @@ public class RubyZlib {
         public static IRubyObject open(final ThreadContext context, IRubyObject recv, IRubyObject filename, Block block) throws IOException {
             Ruby runtime = recv.getRuntime();
             IRubyObject io = RuntimeHelpers.invoke(context, runtime.getFile(), "open", filename, runtime.newString("rb"));
-            RubyGzipFile instance = newInstance(recv, new IRubyObject[]{io}, Block.NULL_BLOCK);
-
-            return RubyGzipFile.wrap(context, instance, io, block);
+            RubyGzipReader gzio = newInstance(recv, new IRubyObject[]{io}, block);
+            return RubyGzipFile.wrapBlock(context, gzio, block);
         }
 
         public RubyGzipReader(Ruby runtime, RubyClass type) {
@@ -802,6 +801,11 @@ public class RubyZlib {
             while (ce != -1 && sep.indexOf(ce) == -1) {
                 result.append((byte)ce);
                 ce = io.read();
+            }
+            // io.available() only returns 0 after EOF is encountered
+            // so we need to differentiate between the empty string and EOF
+            if (0 == result.length() && -1 == ce) {
+              return getRuntime().getNil();
             }
             line++;
             result.append(sep);
@@ -881,7 +885,7 @@ public class RubyZlib {
         }
 
         private boolean isEof() throws IOException {
-            return ((GZIPInputStream)io).available() != 1;
+            return ((GZIPInputStream)io).available() == 0;
         }
 
         @JRubyMethod(name = "close")
@@ -920,12 +924,16 @@ public class RubyZlib {
             if (args.length > 0 && !args[0].isNil()) {
                 sep = args[0].convertToString().getByteList();
             }
-
-            while (!isEof()) {
-                block.yield(context, internalSepGets(sep));
+            for (IRubyObject result = internalSepGets(sep); !result.isNil(); result = internalSepGets(sep)) {
+                block.yield(context, result);
             }
             
             return getRuntime().getNil();
+        }
+
+        @JRubyMethod(name = "each_line", optional = 1, frame = true)
+        public IRubyObject each_line(ThreadContext context, IRubyObject[] args, Block block) throws IOException {
+          return each(context, args, block);
         }
     
         @JRubyMethod(name = "ungetc", required = 1)
@@ -940,12 +948,12 @@ public class RubyZlib {
             if (args.length != 0 && args[0].isNil()) {
                 array.add(read(new IRubyObject[0]));
             } else {
-                ByteList seperator = ((RubyString)getRuntime().getGlobalVariables().get("$/")).getByteList();
+                ByteList sep = ((RubyString)getRuntime().getGlobalVariables().get("$/")).getByteList();
                 if (args.length > 0) {
-                    seperator = args[0].convertToString().getByteList();
+                    sep = args[0].convertToString().getByteList();
                 }
-                while (!isEof()) {
-                    array.add(internalSepGets(seperator));
+                for (IRubyObject result = internalSepGets(sep); !result.isNil(); result = internalSepGets(sep)) {
+                    array.add(result);
                 }
             }
             return getRuntime().newArray(array);
@@ -993,9 +1001,8 @@ public class RubyZlib {
             }
 
             IRubyObject io = RuntimeHelpers.invoke(context, runtime.getFile(), "open", args[0], runtime.newString("wb"));
-            RubyGzipFile instance = newGzipWriter(recv, new IRubyObject[]{io, level, strategy}, Block.NULL_BLOCK);
-            
-            return RubyGzipFile.wrap(context, instance, io, block);
+            RubyGzipWriter gzio = newGzipWriter(recv, new IRubyObject[]{io, level, strategy}, block);
+            return RubyGzipFile.wrapBlock(context, gzio, block);
         }
 
         public RubyGzipWriter(Ruby runtime, RubyClass type) {

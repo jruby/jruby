@@ -44,14 +44,29 @@ class TestZlib < Test::Unit::TestCase
 
   def test_gzip_reader_writer
     @filename = "____temp_zlib_file";
+    
     Zlib::GzipWriter.open(@filename) { |z| z.puts 'HEH' }
-    Zlib::GzipReader.open(@filename) { |z| assert_equal("HEH\n", z.gets) }
+    Zlib::GzipReader.open(@filename) do |z|
+      assert_equal("HEH\n", z.gets)
+      assert_nil z.getc
+      assert z.eof?
+    end
+    File.unlink(@filename)
+    
+    Zlib::GzipWriter.open(@filename) { |z| z.write "HEH\n" }
+    Zlib::GzipReader.open(@filename) do |z|
+      assert_equal("HEH\n", z.gets)
+      assert_nil z.getc
+      assert z.eof?
+    end
+    File.unlink(@filename)
+    
 
     z = Zlib::GzipWriter.open(@filename)
     z.puts 'HOH'
     z.puts 'foo|bar'
     z.close
-
+    
     z = Zlib::GzipReader.open(@filename)
     assert_equal("HOH\n", z.gets)
     assert_equal("foo|", z.gets("|"))
@@ -111,6 +126,46 @@ class TestZlib < Test::Unit::TestCase
 
     gin = Zlib::GzipReader.new(content)
     assert_equal("hello\n", gin.gets)
+    assert_equal("world\n", gin.gets)
+    assert_nil gin.gets
+    assert gin.eof?
     gin.close
+  end
+  
+  def test_each_line_no_block
+    @filename = "____temp_zlib_file";
+    Zlib::GzipWriter.open(@filename) { |io| io.write "hello\nworld\n" }
+    lines = []
+    z = Zlib::GzipReader.open(@filename)
+    z.each_line do |line|
+      lines << line
+    end
+    z.close
+    
+    assert_equal(2, lines.size, lines.inspect)
+    assert_equal("hello\n", lines.first)
+    assert_equal("world\n", lines.last)
+  end
+  
+  def test_each_line_block
+    @filename = "____temp_zlib_file";
+    Zlib::GzipWriter.open(@filename) { |io| io.write "hello\nworld\n" }
+    lines = []
+    Zlib::GzipReader.open(@filename) do |z|
+      z.each_line do |line|
+        lines << line
+      end
+    end
+    assert_equal(2, lines.size, lines.inspect)
+  end
+  
+  def test_empty_line
+    @filename = "____temp_zlib_file";
+    Zlib::GzipWriter.open(@filename) { |io| io.write "hello\nworld\n\ngoodbye\n" }
+    lines = nil
+    Zlib::GzipReader.open(@filename) do |z|
+      lines = z.readlines
+    end
+    assert_equal(4, lines.size, lines.inspect)
   end
 end
