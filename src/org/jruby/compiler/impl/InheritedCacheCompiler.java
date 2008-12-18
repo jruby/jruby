@@ -172,31 +172,33 @@ public class InheritedCacheCompiler implements CacheCompiler {
 
         // generate bytelists initialization code
         size = inheritedByteListCount;
-        // getter method to reduce bytecode at load point
-        SkinnyMethodAdapter getter = new SkinnyMethodAdapter(
-                scriptCompiler.getClassVisitor().visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC, "getByteList", sig(ByteList.class, int.class), null, null));
-        getter.start();
-        getter.getstatic(scriptCompiler.getClassname(), "byteLists", ci(ByteList[].class));
-        getter.iload(0);
-        getter.aaload();
-        getter.areturn();
-        getter.end();
-        // construction and population of the array in clinit
-        SkinnyMethodAdapter clinitMethod = scriptCompiler.getClassInitMethod();
-        scriptCompiler.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC, "byteLists", ci(ByteList[].class), null, null);
-        clinitMethod.ldc(size);
-        clinitMethod.anewarray(p(ByteList.class));
-        clinitMethod.putstatic(scriptCompiler.getClassname(), "byteLists", ci(ByteList[].class));
+        if (inheritedByteListCount > 0) {
+            // getter method to reduce bytecode at load point
+            SkinnyMethodAdapter getter = new SkinnyMethodAdapter(
+                    scriptCompiler.getClassVisitor().visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC, "getByteList", sig(ByteList.class, int.class), null, null));
+            getter.start();
+            getter.getstatic(scriptCompiler.getClassname(), "byteLists", ci(ByteList[].class));
+            getter.iload(0);
+            getter.aaload();
+            getter.areturn();
+            getter.end();
+            // construction and population of the array in clinit
+            SkinnyMethodAdapter clinitMethod = scriptCompiler.getClassInitMethod();
+            scriptCompiler.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC, "byteLists", ci(ByteList[].class), null, null);
+            clinitMethod.ldc(size);
+            clinitMethod.anewarray(p(ByteList.class));
+            clinitMethod.putstatic(scriptCompiler.getClassname(), "byteLists", ci(ByteList[].class));
 
-        for (Map.Entry<String, Integer> entry : byteListIndices.entrySet()) {
-            int index = entry.getValue();
-            ByteList byteList = byteListValues.get(entry.getKey());
+            for (Map.Entry<String, Integer> entry : byteListIndices.entrySet()) {
+                int index = entry.getValue();
+                ByteList byteList = byteListValues.get(entry.getKey());
 
-            clinitMethod.getstatic(scriptCompiler.getClassname(), "byteLists", ci(ByteList[].class));
-            clinitMethod.ldc(index);
-            clinitMethod.ldc(byteList.toString());
-            clinitMethod.invokestatic(p(ByteList.class), "create", sig(ByteList.class, CharSequence.class));
-            clinitMethod.arraystore();
+                clinitMethod.getstatic(scriptCompiler.getClassname(), "byteLists", ci(ByteList[].class));
+                clinitMethod.ldc(index);
+                clinitMethod.ldc(byteList.toString());
+                clinitMethod.invokestatic(p(ByteList.class), "create", sig(ByteList.class, CharSequence.class));
+                clinitMethod.arraystore();
+            }
         }
     }
 

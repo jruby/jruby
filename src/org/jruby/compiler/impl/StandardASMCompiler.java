@@ -442,6 +442,17 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         return methodCompiler;
     }
 
+    public BodyCompiler startRoot(String rubyName, String javaName, StaticScope scope, ASTInspector inspector) {
+        RootScopedBodyCompiler methodCompiler = new ScriptBodyCompiler(this, rubyName, javaName, inspector, scope);
+
+        methodCompiler.beginMethod(null, scope);
+
+        // Emite a nop, to mark the end of the method preamble
+        methodCompiler.method.nop();
+
+        return methodCompiler;
+    }
+
     public int getMethodIndex() {
         return methodIndex;
     }

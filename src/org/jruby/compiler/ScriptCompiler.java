@@ -64,4 +64,16 @@ public interface ScriptCompiler {
      * endMethod once compilation for this method is completed.
      */
     public BodyCompiler startMethod(String rubyName, String javaName, CompilerCallback argsHandler, StaticScope scope, ASTInspector inspector);
+
+    /**
+     * Begin compilation for a the root of a script. This differs from method compilation
+     * in that it doesn't do specific-arity logic, nor does it require argument processing.
+     *
+     * @param javaName The outward user-readable name of the method. A unique name will be generated based on this.
+     * @param arity The arity of the method's argument list
+     * @param localVarCount The number of local variables that will be used by the method.
+     * @return An Object that represents the method within this compiler. Used in calls to
+     * endMethod once compilation for this method is completed.
+     */
+    public BodyCompiler startRoot(String rubyName, String javaName, StaticScope scope, ASTInspector inspector);
 }

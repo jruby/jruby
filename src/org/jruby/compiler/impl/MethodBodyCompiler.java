@@ -18,8 +18,8 @@ import static org.objectweb.asm.Opcodes.*;
  * MethodBodyCompiler is the base compiler for all method bodies.
  */
 public class MethodBodyCompiler extends RootScopedBodyCompiler {
-    private boolean specificArity;
-    private String rubyName;
+    protected boolean specificArity;
+    protected String rubyName;
 
     public MethodBodyCompiler(StandardASMCompiler scriptCompiler, String rubyName, String javaName, ASTInspector inspector, StaticScope scope) {
         super(scriptCompiler, javaName, inspector, scope);
