@@ -3888,19 +3888,19 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_count
      *
      */
-    @JRubyMethod(name = "count")
+    @JRubyMethod(name = "count", compat = CompatVersion.RUBY1_8)
     public IRubyObject count(ThreadContext context) {
         throw context.getRuntime().newArgumentError("wrong number of arguments");
     }
 
-    @JRubyMethod(name = "count")
+    @JRubyMethod(name = "count", compat = CompatVersion.RUBY1_8)
     public IRubyObject count(ThreadContext context, IRubyObject arg) {
         final boolean[]table = new boolean[TRANS_SIZE];
         arg.convertToString().trSetupTable(table, true);
         return countCommon(context.getRuntime(), table);
     }
 
-    @JRubyMethod(name = "count", required = 1, rest = true)
+    @JRubyMethod(name = "count", required = 1, rest = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject count(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
         if (value.realSize == 0) return RubyFixnum.zero(runtime);
@@ -3921,6 +3921,63 @@ public class RubyString extends RubyObject implements EncodingCapable {
         int end = p + value.realSize;
 
         while (p < end) if (table[bytes[p++] & 0xff]) i++;
+        return runtime.newFixnum(i);
+    }
+
+    @JRubyMethod(name = "count", compat = CompatVersion.RUBY1_9)
+    public IRubyObject count19(ThreadContext context) {
+        throw context.getRuntime().newArgumentError("wrong number of arguments");
+    }
+
+    @JRubyMethod(name = "count", compat = CompatVersion.RUBY1_9)
+    public IRubyObject count19(ThreadContext context, IRubyObject arg) {
+        Ruby runtime = context.getRuntime();
+        if (value.realSize == 0) return RubyFixnum.zero(runtime);
+
+        RubyString otherStr = arg.convertToString();
+        Encoding enc = checkEncoding(otherStr);
+        final boolean[]table = new boolean[TRANS_SIZE];
+        TrTables tables = otherStr.trSetupTable(context.getRuntime(), table, null, true, enc);
+        return countCommon19(runtime, table, tables, enc);
+    }
+
+    @JRubyMethod(name = "count", required = 1, rest = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject count19(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+        if (value.realSize == 0) return RubyFixnum.zero(runtime);
+
+        RubyString otherStr = args[0].convertToString();
+        Encoding enc = checkEncoding(otherStr);
+        final boolean[]table = new boolean[TRANS_SIZE];
+        TrTables tables = otherStr.trSetupTable(runtime, table, null, true, enc);
+        for (int i = 1; i<args.length; i++) {
+            otherStr = args[i].convertToString();
+            enc = checkEncoding(otherStr);
+            tables = otherStr.trSetupTable(runtime, table, tables, false, enc);
+        }
+
+        return countCommon19(runtime, table, tables, enc);
+    }
+
+    private IRubyObject countCommon19(Ruby runtime, boolean[]table, TrTables tables, Encoding enc) {
+        int i = 0;
+        byte[]bytes = value.bytes;
+        int p = value.begin;
+        int end = p + value.realSize;
+
+        int c;
+        while (p < end) {
+            if (enc.isAsciiCompatible() && Encoding.isAscii(c = bytes[p] & 0xff)) {
+                if (table[c]) i++;
+                p++;
+            } else {
+                c = codePoint(runtime, enc, bytes, p, end);
+                int cl = codeLength(runtime, enc, c);
+                if (trFind(c, table, tables)) i++;
+                p += cl;
+            }
+        }
+
         return runtime.newFixnum(i);
     }
 
