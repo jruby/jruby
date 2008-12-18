@@ -27,16 +27,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.load;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import org.jruby.Ruby;
 import org.jruby.ast.executable.Script;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.JRubyClassLoader;
-import org.objectweb.asm.ClassReader;
 
 public class JavaCompiledScript implements Library {
     private final LoadServiceResource resource;
@@ -46,56 +41,17 @@ public class JavaCompiledScript implements Library {
     }
 
     public void load(Ruby runtime, boolean wrap) {
-        InputStream in = null;
         try {
-            in = new BufferedInputStream(resource.getURL().openStream());
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            byte[] buf = new byte[8196];
-            int read = 0;
-            while ((read = in.read(buf)) != -1) {
-                baos.write(buf, 0, read);
+            Script script = CompiledScriptLoader.loadScriptFromFile(runtime, resource.getURL().openStream(), resource.getName());
+            if (script == null) {
+                // we're depending on the side effect of the load, which loads the class but does not turn it into a script
+                // I don't like it, but until we restructure the code a bit more, we'll need to quietly let it by here.
+                return;
             }
-            buf = baos.toByteArray();
-            JRubyClassLoader jcl = runtime.getJRubyClassLoader();
-            ClassReader cr = new ClassReader(buf);
-            String className = cr.getClassName().replace('/', '.');
-
-            Class clazz = null;
-            try {
-                clazz = jcl.loadClass(className);
-            } catch (ClassNotFoundException cnfe) {
-                clazz = jcl.defineClass(className, buf);
-            }
-            
-            // if it's a compiled JRuby script, instantiate and run it
-            if (Script.class.isAssignableFrom(clazz)) {
-                Script script = (Script)clazz.newInstance();
-                script.setFilename(resource.getName());
-                script.load(runtime.getCurrentContext(), runtime.getTopSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
-            }
+            script.setFilename(resource.getName());
+            script.load(runtime.getCurrentContext(), runtime.getTopSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
-        } catch (InstantiationException ie) {
-            if (runtime.getDebug().isTrue()) {
-                ie.printStackTrace();
-            }
-            throw runtime.newLoadError("Error loading compiled script '" + resource.getName() + "': " + ie);
-        } catch (IllegalAccessException iae) {
-            if (runtime.getDebug().isTrue()) {
-                iae.printStackTrace();
-            }
-            throw runtime.newLoadError("Error loading compiled script '" + resource.getName() + "': " + iae);
-        } catch (LinkageError le) {
-            if (runtime.getDebug().isTrue()) {
-                le.printStackTrace();
-            }
-            throw runtime.newLoadError("Linkage error loading compiled script; you may need to recompile '" + resource.getName() + "': " + le);
-        } finally {
-            try {
-                in.close();
-            } catch (IOException ioe) {
-                throw runtime.newIOErrorFromException(ioe);
-            }
         }
     }
 }

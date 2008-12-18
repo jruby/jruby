@@ -129,6 +129,8 @@ import org.jruby.util.io.ChannelDescriptor;
 import com.kenai.constantine.Constant;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
+import org.jruby.exceptions.MainExitException;
+import org.jruby.runtime.load.CompiledScriptLoader;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -315,6 +317,16 @@ public final class Ruby {
             getGlobalVariables().set("$" + entry.getKey().toString(), varvalue);
         }
 
+        if (filename.endsWith(".class")) {
+            // we are presumably running a precompiled class; load directly
+            Script script = CompiledScriptLoader.loadScriptFromFile(this, inputStream, filename);
+            if (script == null) {
+                throw new MainExitException(1, "error: .class file specified is not a compiled JRuby script");
+            }
+            script.setFilename(filename);
+            runScript(script);
+            return;
+        }
         
         if(config.isYARVEnabled()) {
             if (config.isShowBytecode()) System.err.print("error: bytecode printing only works with JVM bytecode");
