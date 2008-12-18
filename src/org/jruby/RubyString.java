@@ -244,8 +244,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         if (enc1 == enc2) return enc1;
 
-        if (other.getByteList().realSize == 0) return enc1;
-        if (getByteList().realSize == 0) return enc2;
+        if (other.value.realSize == 0) return enc1;
+        if (value.realSize == 0) return enc2;
 
         if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
 
@@ -881,6 +881,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @Override
     public int hashCode() {
+        // TODO: encoding should affect hashCode
         return value.hashCode();
     }
 
@@ -4194,28 +4195,28 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (replList.realSize == 0) return delete_bang(context, new IRubyObject[]{src});
 
         ByteList srcList = src.convertToString().value;
-        final TR trsrc = new TR(srcList);
+        final TR trSrc = new TR(srcList);
         boolean cflag = false;
         if (srcList.realSize >= 2 && srcList.bytes[srcList.begin] == '^') {
             cflag = true;
-            trsrc.p++;
+            trSrc.p++;
         }       
 
         int c;
         final int[]trans = new int[TRANS_SIZE];
-        final TR trrepl = new TR(replList);
+        final TR trRepl = new TR(replList);
         if (cflag) {
             for (int i=0; i<TRANS_SIZE; i++) trans[i] = 1;
-            while ((c = trNext(trsrc)) >= 0) trans[c & 0xff] = -1;
-            while ((c = trNext(trrepl)) >= 0); 
+            while ((c = trNext(trSrc)) >= 0) trans[c & 0xff] = -1;
+            while ((c = trNext(trRepl)) >= 0); 
             for (int i=0; i<TRANS_SIZE; i++) {
-                if (trans[i] >= 0) trans[i] = trrepl.now;
+                if (trans[i] >= 0) trans[i] = trRepl.now;
             }
         } else {
             for (int i=0; i<TRANS_SIZE; i++) trans[i] = -1;
-            while ((c = trNext(trsrc)) >= 0) {
-                int r = trNext(trrepl);
-                if (r == -1) r = trrepl.now;
+            while ((c = trNext(trSrc)) >= 0) {
+                int r = trNext(trRepl);
+                if (r == -1) r = trRepl.now;
                 trans[c & 0xff] = r;
             }
         }
@@ -4224,21 +4225,21 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         int s = value.begin;
         int send = s + value.realSize;
-        byte sbuf[] = value.bytes;
+        byte sbytes[] = value.bytes;
         boolean modify = false;
         if (sflag) {
             int t = s;
-            int c0, last = -1;
+            int last = -1;
             while (s < send) {
-                c0 = sbuf[s++];
+                int c0 = sbytes[s++];
                 if ((c = trans[c0 & 0xff]) >= 0) {
                     if (last == c) continue;
                     last = c;
-                    sbuf[t++] = (byte)(c & 0xff);
+                    sbytes[t++] = (byte)(c & 0xff);
                     modify = true;
                 } else {
                     last = -1;
-                    sbuf[t++] = (byte)c0;
+                    sbytes[t++] = (byte)c0;
                 }
             }
 
@@ -4248,8 +4249,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
             }
         } else {
             while (s < send) {
-                if ((c = trans[sbuf[s] & 0xff]) >= 0) {
-                    sbuf[s] = (byte)(c & 0xff);
+                if ((c = trans[sbytes[s] & 0xff]) >= 0) {
+                    sbytes[s] = (byte)(c & 0xff);
                     modify = true;
                 }
                 s++;
@@ -4257,6 +4258,188 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
 
         return modify ? this : runtime.getNil();
+    }
+    
+    private IRubyObject trTrans19(ThreadContext context, IRubyObject src, IRubyObject repl, boolean sflag) {
+        Ruby runtime = context.getRuntime();
+        if (value.realSize == 0) return runtime.getNil();
+
+        RubyString replStr = repl.convertToString();
+        ByteList replList = replStr.value;
+        if (replList.realSize == 0) return delete_bang(context, new IRubyObject[]{src}); // TODO call 1.9 version
+
+        RubyString srcStr = src.convertToString();
+        ByteList srcList = srcStr.value;
+        Encoding enc = checkEncoding(srcStr);
+        enc = checkEncoding(replStr) == enc ? enc : srcStr.checkEncoding(replStr);
+
+        int cr = getCodeRange();
+
+        final TR trSrc = new TR(srcList);
+        boolean cflag = false;
+        if (value.realSize > 1) { 
+            if (enc.isAsciiCompatible()) {
+                if ((trSrc.buf[trSrc.p] & 0xff) == '^' && trSrc.p + 1 < trSrc.pend) {
+                    cflag = true;
+                    trSrc.p++;
+                }
+            } else {
+                int cl = StringSupport.preciseLength(enc, trSrc.buf, trSrc.p, trSrc.pend);
+                if (enc.mbcToCode(trSrc.buf, trSrc.p, trSrc.pend) == '^' && trSrc.p + cl < trSrc.pend) {
+                    cflag = true;
+                    trSrc.p += cl;
+                }
+            }            
+        }
+
+        boolean singlebyte = true;
+        int c;
+        final int[]trans = new int[TRANS_SIZE];
+        IntHash<Integer> hash = null;
+        final TR trRepl = new TR(replList);
+
+        if (cflag) {
+            for (int i=0; i<TRANS_SIZE; i++) trans[i] = 1;
+            
+            while ((c = trNext(trSrc, runtime, enc)) >= 0) {
+                if (c < TRANS_SIZE) {
+                    trans[c & 0xff] = -1;
+                } else {
+                    if (hash == null) hash = new IntHash<Integer>();
+                    hash.put(c, 1); // QTRUE
+                }
+            }
+            while ((c = trNext(trRepl, runtime, enc)) >= 0);  /* retrieve last replacer */;
+            int last = trRepl.now;
+            for (int i=0; i<TRANS_SIZE; i++) {
+                if (trans[i] >= 0) trans[i] = last;
+            }
+        } else {
+            for (int i=0; i<TRANS_SIZE; i++) trans[i] = -1;
+            
+            while ((c = trNext(trSrc, runtime, enc)) >= 0) {
+                int r = trNext(trRepl, runtime, enc);
+                if (r == -1) r = trRepl.now;
+                if (c < TRANS_SIZE) {
+                    trans[c & 0xff] = r;
+                    if (r > TRANS_SIZE) singlebyte = false;
+                } else {
+                    if (hash == null) hash = new IntHash<Integer>();
+                    hash.put(c, r);
+                }
+            }
+        }
+
+        modifyAndKeepCodeRange();
+        int s = value.begin;
+        int send = s + value.realSize;
+        byte sbytes[] = value.bytes;
+        int max = value.realSize;
+        boolean modify = false;
+
+        int last = -1;
+        int clen, tlen, c0;
+
+        if (sflag) {
+            int save = -1;
+            byte[]buf = new byte[max];
+            int t = 0;
+            while (s < send) {
+                c0 = c = codePoint(runtime, enc, sbytes, s, send);
+                tlen = clen = codeLength(runtime, enc, c);
+                s += clen;
+                c = trCode(c, trans, hash, cflag, last);
+
+                if (c != -1) {
+                    if (save == c) continue;
+                    save = c;
+                    tlen = codeLength(runtime, enc, c);
+                    modify = true;
+                } else {
+                    save = -1;
+                    c = c0;
+                }
+
+                while (t + tlen >= max) {
+                    max <<= 1;
+                    byte[]tbuf = new byte[max];
+                    System.arraycopy(buf, 0, tbuf, 0, buf.length);
+                    buf = tbuf;
+                }
+                enc.codeToMbc(c, buf, t);
+                t += tlen;
+            }
+            value.bytes = buf;
+            value.realSize = t;
+        } else if (enc.isSingleByte() || (singlebyte && hash == null)) {
+            while (s < send) {
+                c = sbytes[s] & 0xff;
+                if (trans[c] != -1) {
+                    if (!cflag) {
+                        c = trans[c];
+                        sbytes[s] = (byte)c;
+                    } else {
+                        sbytes[s] = (byte)last;
+                    }
+                    modify = true;
+                }
+                s++;
+            }
+        } else {
+            max += max >> 1;
+            byte[]buf = new byte[max];
+            int t = 0;
+
+            while (s < send) {
+                c0 = c = codePoint(runtime, enc, sbytes, s, send);
+                tlen = clen = codeLength(runtime, enc, c);
+                c = trCode(c, trans, hash, cflag, last);
+
+                if (c != -1) {
+                    tlen = codeLength(runtime, enc, c);
+                } else {
+                    c = c0;
+                }
+                modify = true;
+
+                while (t + tlen >= max) {
+                    max <<= 1;
+                    byte[]tbuf = new byte[max];
+                    System.arraycopy(buf, 0, tbuf, 0, buf.length);
+                    buf = tbuf;
+                }
+
+                // TODO: 1.9 does that too, but comparing s and t is almost certainly wrong 
+                if (s != t) enc.codeToMbc(c, buf, t);
+                s += clen;
+                t += tlen;
+            }
+            value.bytes = buf;
+            value.realSize = t;
+        }
+
+        if (modify) {
+            cr = codeRangeAnd(cr, replStr.getCodeRange());
+            if (cr != CR_BROKEN) setCodeRange(cr);
+            associateEncoding(enc);
+            return this;
+        }
+        return runtime.getNil();
+    }
+
+    private int trCode(int c, int[]trans, IntHash<Integer> hash, boolean cflag, int last) {
+        if (c < TRANS_SIZE) {
+            return trans[c];
+        } else if (hash != null) {
+            Integer tmp = hash.get(c);
+            if (tmp == null) {
+                return cflag ? last : -1;
+            } else {
+                return cflag ? -1 : tmp;
+            }
+        } else {
+            return -1;
+        }
     }
 
     /** trnext
