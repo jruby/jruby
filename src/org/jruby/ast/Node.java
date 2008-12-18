@@ -39,7 +39,6 @@ import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
 import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
@@ -116,7 +115,7 @@ public abstract class Node implements ISourcePositionHolder {
         this.position = position;
     }
     
-    public abstract Instruction accept(NodeVisitor visitor);
+    public abstract Object accept(NodeVisitor visitor);
     public abstract List<Node> childNodes();
 
     protected static List<Node> createList(Node... nodes) {

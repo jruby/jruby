@@ -37,12 +37,10 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 
 /**
  * A regexp which contains some expressions which will need to be evaluated everytime the regexp 
@@ -73,7 +71,7 @@ public class DRegexpNode extends ListNode implements ILiteralNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public Instruction accept(NodeVisitor iVisitor) {
+    public Object accept(NodeVisitor iVisitor) {
         return iVisitor.visitDRegxNode(this);
     }
 

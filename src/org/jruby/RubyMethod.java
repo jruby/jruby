@@ -37,6 +37,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.MethodBlock;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -155,8 +156,14 @@ public class RubyMethod extends RubyObject {
     public IRubyObject to_proc(ThreadContext context, Block unusedBlock) {
         Ruby runtime = context.getRuntime();
         CallbackFactory f = runtime.callbackFactory(RubyMethod.class);
-        Block block = MethodBlock.createMethodBlock(context, context.getCurrentScope(), 
-                f.getBlockMethod("bmcall"), this, runtime.getTopSelf());
+        DynamicScope currentScope = context.getCurrentScope();
+        MethodBlock mb = new MethodBlock(this, currentScope.getStaticScope()) {
+            @Override
+            public IRubyObject callback(IRubyObject value, IRubyObject method, IRubyObject self, Block block) {
+                return bmcall(value, method, self, block);
+            }
+        };
+        Block block = MethodBlock.createMethodBlock(context, runtime.getTopSelf(), context.getCurrentScope(), mb);
         
         while (true) {
             try {

@@ -37,7 +37,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyRegexp;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -59,7 +58,7 @@ public class RegexpNode extends Node implements ILiteralNode {
         this.options = options;
     }
 
-    public Instruction accept(NodeVisitor iVisitor) {
+    public Object accept(NodeVisitor iVisitor) {
         return iVisitor.visitRegexpNode(this);
     }
 

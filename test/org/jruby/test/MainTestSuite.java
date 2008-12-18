@@ -43,7 +43,6 @@ import org.jruby.javasupport.TestJava;
 import org.jruby.javasupport.TestJavaClass;
 import org.jruby.javasupport.test.JavaSupportTestSuite;
 import org.jruby.runtime.EventHookTest;
-import org.jruby.runtime.callback.TestReflectionCallback;
 import org.jruby.util.JRubyThreadContextTest;
 import org.jruby.util.PlatformTest;
 import org.jruby.util.ShellLauncherTest;
@@ -73,7 +72,6 @@ public class MainTestSuite extends TestSuite {
         suite.addTest(JavaSupportTestSuite.suite());
         suite.addTestSuite(TestCommandlineParser.class);
         suite.addTestSuite(TestRubyException.class);
-        suite.addTestSuite(TestReflectionCallback.class);
         suite.addTestSuite(TestAdoptedThreading.class);
         suite.addTestSuite(TestRubyArray.class);
         suite.addTestSuite(YARVMachineTest.class);

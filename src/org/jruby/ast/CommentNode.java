@@ -31,7 +31,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
@@ -51,7 +50,7 @@ public class CommentNode extends Node {
         this.content = content;
     }
 
-    public Instruction accept(NodeVisitor visitor) {
+    public Object accept(NodeVisitor visitor) {
         return null;
     }
     

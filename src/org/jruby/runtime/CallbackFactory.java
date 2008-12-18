@@ -32,11 +32,8 @@
 package org.jruby.runtime;
 
 import org.jruby.Ruby;
-import org.jruby.RubyClass;
-import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.callback.ReflectionCallbackFactory;
 import org.jruby.runtime.callback.InvocationCallbackFactory;
-import org.jruby.runtime.callback.DumpingInvocationCallbackFactory;
 import org.jruby.util.SafePropertyAccessor;
 
 /**
@@ -49,204 +46,21 @@ public abstract class CallbackFactory {
 
     public static final Class[] NULL_CLASS_ARRAY = new Class[0];
 
-    /**
-     * gets an instance method with no arguments.
-     * @param method name of the method
-     * @return a CallBack object corresponding to the appropriate method
-     * @deprecated Callbacks are inefficient; use MethodFactory.
-     **/
-    public abstract Callback getMethod(String method);
-
-    /**
-     * gets a fast instance method with no arguments.
-     * @param method name of the method
-     * @return a CallBack object corresponding to the appropriate method
-     * @deprecated Callbacks are inefficient; use MethodFactory.
-     **/
-    public abstract Callback getFastMethod(String method);
-
-    /**
-     * gets an instance method with 1 argument.
-     * @param method name of the method
-     * @param arg1 the class of the only argument for this method
-     * @return a CallBack object corresponding to the appropriate method
-     * @deprecated Callbacks are inefficient; use MethodFactory.
-     **/
-    public abstract Callback getMethod(String method, Class arg1);
-
-    /**
-     * gets a fast instance method with 1 argument.
-     * @param method name of the method
-     * @param arg1 the class of the only argument for this method
-     * @return a CallBack object corresponding to the appropriate method
-     * @deprecated Callbacks are inefficient; use MethodFactory.
-     **/
-    public abstract Callback getFastMethod(String method, Class arg1);
-
-    /**
-     * gets an instance method with two arguments.
-     * @param method name of the method
-     * @param arg1 the java class of the first argument for this method
-     * @param arg2 the java class of the second argument for this method
-     * @return a CallBack object corresponding to the appropriate method
-     * @deprecated Callbacks are inefficient; use MethodFactory.
-     **/
-    public abstract Callback getMethod(String method, Class arg1, Class arg2);
-
-    /**
-     * gets a fast instance method with two arguments.
-     * @param method name of the method
-     * @param arg1 the java class of the first argument for this method
-     * @param arg2 the java class of the second argument for this method
-     * @return a CallBack object corresponding to the appropriate method
-     * @deprecated Callbacks are inefficient; use MethodFactory.
-     **/
-    public abstract Callback getFastMethod(String method, Class arg1, Class arg2);
-
-    /**
-     * gets an instance method with two arguments.
-     * @param method name of the method
-     * @param arg1 the java class of the first argument for this method
-     * @param arg2 the java class of the second argument for this method
-     * @param arg3 the java class of the second argument for this method
-     * @return a CallBack object corresponding to the appropriate method
-     * @deprecated Callbacks are inefficient; use MethodFactory.
-     **/
-    public abstract Callback getMethod(String method, Class arg1, Class arg2, Class arg3);
-
-    /**
-     * gets a fast instance method with two arguments.
-     * @param method name of the method
-     * @param arg1 the java class of the first argument for this method
-     * @param arg2 the java class of the second argument for this method
-     * @param arg3 the java class of the second argument for this method
-     * @return a CallBack object corresponding to the appropriate method
-     * @deprecated Callbacks are inefficient; use MethodFactory.
-     **/
-    public abstract Callback getFastMethod(String method, Class arg1, Class arg2, Class arg3);
-
-    /**
-     * gets a singleton (class) method without arguments.
-     * @param method name of the method
-     * @return a CallBack object corresponding to the appropriate method
-     * @deprecated Callbacks are inefficient; use MethodFactory.
-     **/
-    public abstract Callback getSingletonMethod(String method);
-
-    /**
-     * gets a fast singleton (class) method without arguments.
-     * @param method name of the method
-     * @return a CallBack object corresponding to the appropriate method
-     * @deprecated Callbacks are inefficient; use MethodFactory.
-     */
-    public abstract Callback getFastSingletonMethod(String method);
-
-    /**
-     * gets a singleton (class) method with 1 argument.
-     * @param method name of the method
-     * @param arg1 the class of the only argument for this method
-     * @return a CallBack object corresponding to the appropriate method
-     * @deprecated Callbacks are inefficient; use MethodFactory.
-     **/
-    public abstract Callback getSingletonMethod(String method, Class arg1);
-
-    /**
-     * gets a fast singleton (class) method with 1 argument.
-     * @param method name of the method
-     * @param arg1 the class of the only argument for this method
-     * @return a CallBack object corresponding to the appropriate method
-     * @deprecated Callbacks are inefficient; use MethodFactory.
-     **/
-    public abstract Callback getFastSingletonMethod(String method, Class arg1);
-
-    /**
-     * gets a singleton (class) method with 2 arguments.
-     * @param method name of the method
-     * @return a CallBack object corresponding to the appropriate method
-     * @deprecated Callbacks are inefficient; use MethodFactory.
-     **/
-    public abstract Callback getSingletonMethod(String method, Class arg1, Class arg2);
-
-    /**
-     * gets a fast singleton (class) method with 2 arguments.
-     * @param method name of the method
-     * @return a CallBack object corresponding to the appropriate method
-     * @deprecated Callbacks are inefficient; use MethodFactory.
-     **/
-    public abstract Callback getFastSingletonMethod(String method, Class arg1, Class arg2);
-
-    /**
-     * gets a singleton (class) method with 3 arguments.
-     * @param method name of the method
-     * @return a CallBack object corresponding to the appropriate method
-     * @deprecated Callbacks are inefficient; use MethodFactory.
-     **/
-    public abstract Callback getSingletonMethod(String method, Class arg1, Class arg2, Class arg3);
-
-    /**
-     * gets a fast singleton (class) method with 3 arguments.
-     * @param method name of the method
-     * @return a CallBack object corresponding to the appropriate method
-     * @deprecated Callbacks are inefficient; use MethodFactory.
-     **/
-    public abstract Callback getFastSingletonMethod(String method, Class arg1, Class arg2, Class arg3);
-
-    public abstract Callback getBlockMethod(String method);
-
     public abstract CompiledBlockCallback getBlockCallback(String method, Object scriptObject);
 
-    /**
-     * gets a singleton (class) method with no mandatory argument and some optional arguments.
-     * @param method name of the method
-     * @return a CallBack object corresponding to the appropriate method
-     * @deprecated Callbacks are inefficient; use MethodFactory.
-     **/
-    public abstract Callback getOptSingletonMethod(String method);
-
-
-    /**
-     * gets a fast singleton (class) method with no mandatory argument and some optional arguments.
-     * @param method name of the method
-     * @return a CallBack object corresponding to the appropriate method
-     * @deprecated Callbacks are inefficient; use MethodFactory.
-     **/
-    public abstract Callback getFastOptSingletonMethod(String method);
-
-    /**
-     * gets an instance method with no mandatory argument and some optional arguments.
-     * @param method name of the method
-     * @return a CallBack object corresponding to the appropriate method
-     * @deprecated Callbacks are inefficient; use MethodFactory.
-     **/
-    public abstract Callback getOptMethod(String method);
-
-    /**
-     * gets a fast instance method with no mandatory argument and some optional arguments.
-     * @param method name of the method
-     * @return a CallBack object corresponding to the appropriate method
-     * @deprecated Callbacks are inefficient; use MethodFactory.
-     **/
-    public abstract Callback getFastOptMethod(String method);
-
     private static final boolean reflection;
-    private static final boolean dumping;
     
 
     static {
         boolean reflection_ = false;
-        boolean dumping_ = false;
         if (Ruby.isSecurityRestricted()) {
             reflection_ = true;
         } else {
             if (SafePropertyAccessor.getProperty("jruby.reflection") != null && SafePropertyAccessor.getBoolean("jruby.reflection")) {
                 reflection_ = true;
             }
-            if (SafePropertyAccessor.getProperty("jruby.dump_invocations") != null) {
-                dumping_ = true;
-            }
         }
         reflection = reflection_;
-        dumping = dumping_;
     }
 
     public static CallbackFactory createFactory(Ruby runtime, Class type) {
@@ -257,8 +71,6 @@ public abstract class CallbackFactory {
     public static CallbackFactory createFactory(Ruby runtime, Class type, ClassLoader classLoader) {
         if (reflection) {
             return new ReflectionCallbackFactory(type);
-        } else if (dumping) {
-            return new DumpingInvocationCallbackFactory(runtime, type, classLoader);
         } else {
             // FIXME: No, I don't like it.
             return new InvocationCallbackFactory(runtime, type, classLoader);

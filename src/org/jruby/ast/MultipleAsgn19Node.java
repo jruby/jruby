@@ -34,7 +34,6 @@ import org.jruby.RubyArray;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.AssignmentVisitor;
-import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -63,7 +62,7 @@ public class MultipleAsgn19Node extends AssignableNode {
         }
     }
 
-    public Instruction accept(NodeVisitor iVisitor) {
+    public Object accept(NodeVisitor iVisitor) {
         return iVisitor.visitMultipleAsgnNode(this);
     }
 

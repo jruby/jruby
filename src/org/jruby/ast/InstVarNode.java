@@ -39,7 +39,6 @@ import org.jruby.ast.types.IArityNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -61,7 +60,7 @@ public class InstVarNode extends Node implements IArityNode, INameNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public Instruction accept(NodeVisitor iVisitor) {
+    public Object accept(NodeVisitor iVisitor) {
         return iVisitor.visitInstVarNode(this);
     }
 

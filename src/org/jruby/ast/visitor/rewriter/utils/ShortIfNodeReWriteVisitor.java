@@ -30,7 +30,6 @@ package org.jruby.ast.visitor.rewriter.utils;
 
 import org.jruby.ast.NewlineNode;
 import org.jruby.ast.visitor.rewriter.ReWriteVisitor;
-import org.jruby.evaluator.Instruction;
 
 public class ShortIfNodeReWriteVisitor extends ReWriteVisitor {
 	
@@ -42,7 +41,7 @@ public class ShortIfNodeReWriteVisitor extends ReWriteVisitor {
 		print("; ");
 	}
 	
-	public Instruction visitNewlineNode(NewlineNode iVisited) {
+	public Object visitNewlineNode(NewlineNode iVisited) {
 		if (config.getSource().charAt(getEndOffset(iVisited) - 1) == ')') {
 			print('(');
 			visitNode(iVisited.getNextNode());

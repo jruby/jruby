@@ -35,7 +35,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /** 
@@ -54,7 +53,7 @@ public class StarNode extends Node {
     /**
      * @see Node#accept(NodeVisitor)
      */
-    public Instruction accept(NodeVisitor visitor) {
+    public Object accept(NodeVisitor visitor) {
     	return null; // never visited, should be fine
     }
     

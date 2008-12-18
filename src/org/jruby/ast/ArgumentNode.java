@@ -32,7 +32,6 @@ import java.util.List;
 
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
@@ -52,7 +51,7 @@ public class ArgumentNode extends Node implements INameNode {
         this.identifier = identifier;
     }
     
-    public Instruction accept(NodeVisitor visitor) {
+    public Object accept(NodeVisitor visitor) {
         throw new RuntimeException("ArgumentNode should never be evaluated");
     }
     

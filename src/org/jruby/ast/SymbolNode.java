@@ -40,7 +40,6 @@ import org.jruby.RubySymbol;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -58,7 +57,7 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode {
 	    this.name = name;
     }
 
-    public Instruction accept(NodeVisitor iVisitor) {
+    public Object accept(NodeVisitor iVisitor) {
         return iVisitor.visitSymbolNode(this);
     }
 

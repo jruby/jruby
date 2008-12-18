@@ -35,7 +35,6 @@ import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
@@ -56,7 +55,7 @@ public class ArgsCatNode extends Node {
         this.secondNode = secondNode;
     }
 
-    public Instruction accept(NodeVisitor visitor) {
+    public Object accept(NodeVisitor visitor) {
         return visitor.visitArgsCatNode(this);
     }
     

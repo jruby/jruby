@@ -40,7 +40,6 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.evaluator.ASTInterpreter;
-import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -62,7 +61,7 @@ public class ClassVarDeclNode extends AssignableNode implements INameNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public Instruction accept(NodeVisitor iVisitor) {
+    public Object accept(NodeVisitor iVisitor) {
         return iVisitor.visitClassVarDeclNode(this);
     }
 

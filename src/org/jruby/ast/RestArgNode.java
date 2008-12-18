@@ -30,7 +30,6 @@ package org.jruby.ast;
 
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /*
@@ -47,7 +46,7 @@ public class RestArgNode extends ArgumentNode implements INameNode {
     }
 
     @Override
-    public Instruction accept(NodeVisitor iVisitor) {
+    public Object accept(NodeVisitor iVisitor) {
         return iVisitor.visitRestArgNode(this);
     }
 

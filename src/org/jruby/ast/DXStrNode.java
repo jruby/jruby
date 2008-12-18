@@ -35,12 +35,10 @@ import org.jruby.Ruby;
 import org.jruby.RubyString;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 
 /**
  * Dynamic backquote string. Backquote strings are eXecuted using the shell, hence the X 
@@ -61,7 +59,7 @@ public class DXStrNode extends ListNode implements ILiteralNode {
      * @param iVisitor the visitor
      **/
     @Override
-    public Instruction accept(NodeVisitor iVisitor) {
+    public Object accept(NodeVisitor iVisitor) {
         return iVisitor.visitDXStrNode(this);
     }
     

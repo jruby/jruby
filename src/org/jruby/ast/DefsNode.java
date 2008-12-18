@@ -41,7 +41,6 @@ import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedMethod;
@@ -70,7 +69,7 @@ public class DefsNode extends MethodDefNode implements INameNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public Instruction accept(NodeVisitor iVisitor) {
+    public Object accept(NodeVisitor iVisitor) {
         return iVisitor.visitDefsNode(this);
     }
 

@@ -33,7 +33,6 @@ package org.jruby.ast;
 
 import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.SharedScopeBlock;
@@ -53,7 +52,7 @@ public class PostExeNode extends IterNode {
      * @param iVisitor the visitor
      **/
     @Override
-    public Instruction accept(NodeVisitor iVisitor) {
+    public Object accept(NodeVisitor iVisitor) {
         return iVisitor.visitPostExeNode(this);
     }
     

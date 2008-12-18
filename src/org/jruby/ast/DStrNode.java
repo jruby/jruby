@@ -36,7 +36,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyString;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -56,7 +55,7 @@ public class DStrNode extends ListNode implements ILiteralNode {
      * @param iVisitor the visitor
      **/
     @Override
-    public Instruction accept(NodeVisitor iVisitor) {
+    public Object accept(NodeVisitor iVisitor) {
         return iVisitor.visitDStrNode(this);
     }
     

@@ -42,7 +42,6 @@ import java.util.Map;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.environment.OSEnvironmentReaderExcepton;
 import org.jruby.environment.OSEnvironment;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaUtil;
@@ -249,15 +248,9 @@ public class RubyGlobal {
     }
 
     private static void defineGlobalEnvConstants(Ruby runtime) {
-
     	Map environmentVariableMap = null;
     	OSEnvironment environment = new OSEnvironment();
-    	try {
-    		environmentVariableMap = environment.getEnvironmentVariableMap(runtime);
-    	} catch (OSEnvironmentReaderExcepton e) {
-    		// If the environment variables are not accessible shouldn't terminate 
-    		runtime.getWarnings().warn(ID.MISCELLANEOUS, e.getMessage());
-    	}
+        environmentVariableMap = environment.getEnvironmentVariableMap(runtime);
 		
     	if (environmentVariableMap == null) {
             // if the environment variables can't be obtained, define an empty ENV
@@ -273,7 +266,6 @@ public class RubyGlobal {
         Map systemProps = environment.getSystemPropertiesMap(runtime);
         runtime.defineGlobalConstant("ENV_JAVA", new StringOnlyRubyHash(
                 runtime, systemProps, runtime.getNil()));
-        
     }
 
     private static class NonEffectiveGlobalVariable extends GlobalVariable {

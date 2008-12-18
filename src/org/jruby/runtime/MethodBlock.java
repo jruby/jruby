@@ -41,34 +41,32 @@ import org.jruby.runtime.callback.Callback;
 /**
  *  Internal live representation of a block ({...} or do ... end).
  */
-public class MethodBlock extends BlockBody {
-    
+public abstract class MethodBlock extends BlockBody {
     private final RubyMethod method;
-    private final Callback callback;
     
     private final Arity arity;
      
     // This is a dummy scope; we should find a way to make that more explicit
     private final StaticScope staticScope;
 
-    public static Block createMethodBlock(ThreadContext context, DynamicScope dynamicScope, Callback callback, RubyMethod method, IRubyObject self) {
+    public static Block createMethodBlock(ThreadContext context, IRubyObject self, DynamicScope dynamicScope, MethodBlock body) {
         Binding binding = new Binding(self,
                                context.getCurrentFrame().duplicate(),
                          context.getCurrentFrame().getVisibility(),
                          context.getRubyClass(),
                          dynamicScope);
-        BlockBody body = new MethodBlock(callback, method, dynamicScope.getStaticScope());
         
         return new Block(body, binding);
     }
 
-    public MethodBlock(Callback callback, RubyMethod method, StaticScope staticScope) {
+    public MethodBlock(RubyMethod method, StaticScope staticScope) {
         super(BlockBody.SINGLE_RESTARG);
-        this.callback = callback;
         this.method = method;
         this.arity = Arity.createArity((int) method.arity().getLongValue());
         this.staticScope = staticScope;
     }
+
+    public abstract IRubyObject callback(IRubyObject value, IRubyObject method, IRubyObject self, Block block);
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
@@ -110,7 +108,7 @@ public class MethodBlock extends BlockBody {
             // This while loop is for restarting the block call in case a 'redo' fires.
             while (true) {
                 try {
-                    return callback.execute(value, new IRubyObject[] { method, self }, Block.NULL_BLOCK);
+                    return callback(value, method, self, Block.NULL_BLOCK);
                 } catch (JumpException.RedoJump rj) {
                     context.pollThreadEvents();
                     // do nothing, allow loop to redo

@@ -29,7 +29,6 @@ package org.jruby.ast;
 
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 /**
  *
@@ -54,7 +53,7 @@ public class ArgAuxillaryNode extends Node {
     }
 
     @Override
-    public Instruction accept(NodeVisitor visitor) {
+    public Object accept(NodeVisitor visitor) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 

@@ -33,7 +33,6 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -53,7 +52,7 @@ public class ArgsPushNode extends Node {
         this.secondNode = secondNode;
     }
 
-    public Instruction accept(NodeVisitor visitor) {
+    public Object accept(NodeVisitor visitor) {
         return visitor.visitArgsPushNode(this);
     }
     

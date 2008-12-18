@@ -30,7 +30,6 @@ package org.jruby.ast.visitor.rewriter.utils;
 
 import org.jruby.ast.StrNode;
 import org.jruby.ast.visitor.rewriter.ReWriteVisitor;
-import org.jruby.evaluator.Instruction;
 
 public class HereDocReWriteVisitor extends ReWriteVisitor {
 	
@@ -38,7 +37,7 @@ public class HereDocReWriteVisitor extends ReWriteVisitor {
 		super(config);
 	}
 	
-	public Instruction visitStrNode(StrNode iVisited) {
+	public Object visitStrNode(StrNode iVisited) {
 		print(iVisited.getValue().toString());
 		return null;
 	}

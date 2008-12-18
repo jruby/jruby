@@ -38,7 +38,6 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -61,7 +60,7 @@ public class GlobalAsgnNode extends AssignableNode implements INameNode {
      * accepts the visitor 
      * @param iVisitor the visitor to accept
      **/
-    public Instruction accept(NodeVisitor iVisitor) {
+    public Object accept(NodeVisitor iVisitor) {
         return iVisitor.visitGlobalAsgnNode(this);
     }
     /**

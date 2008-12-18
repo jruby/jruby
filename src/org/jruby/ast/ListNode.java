@@ -32,7 +32,6 @@ package org.jruby.ast;
 import java.util.ArrayList;
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
@@ -146,7 +145,7 @@ public class ListNode extends Node {
         return list;
     }
     
-    public Instruction accept(NodeVisitor visitor) {
+    public Object accept(NodeVisitor visitor) {
         throw new RuntimeException("Base class ListNode should never be evaluated");
     }
     

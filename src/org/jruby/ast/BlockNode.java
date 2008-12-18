@@ -35,7 +35,6 @@ package org.jruby.ast;
 
 import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -55,7 +54,7 @@ public class BlockNode extends ListNode {
      * @param iVisitor the visitor to accept
      **/
     @Override
-    public Instruction accept(NodeVisitor iVisitor) {
+    public Object accept(NodeVisitor iVisitor) {
         return iVisitor.visitBlockNode(this);
     }
     

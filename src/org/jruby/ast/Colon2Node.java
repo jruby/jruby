@@ -37,7 +37,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
@@ -60,7 +59,7 @@ public abstract class Colon2Node extends Colon3Node implements INameNode {
      * @param iVisitor the visitor
      **/
     @Override
-    public Instruction accept(NodeVisitor iVisitor) {
+    public Object accept(NodeVisitor iVisitor) {
         return iVisitor.visitColon2Node(this);
     }
 

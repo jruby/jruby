@@ -37,7 +37,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyLocalJumpError;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
-import org.jruby.evaluator.Instruction;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -84,7 +83,7 @@ public class WhileNode extends Node {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public Instruction accept(NodeVisitor iVisitor) {
+    public Object accept(NodeVisitor iVisitor) {
         return iVisitor.visitWhileNode(this);
     }
     

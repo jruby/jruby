@@ -36,7 +36,6 @@ import org.jruby.RubyClass;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
-import org.jruby.evaluator.Instruction;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -79,7 +78,7 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
      * Accept for the visitor pattern.
      * @param visitor the visitor
      **/
-    public Instruction accept(NodeVisitor visitor) {
+    public Object accept(NodeVisitor visitor) {
         return visitor.visitAttrAssignNode(this);
     }
 
