@@ -1,6 +1,7 @@
 package org.jruby.management;
 
 import java.lang.management.ManagementFactory;
+import java.security.AccessControlException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.management.InstanceAlreadyExistsException;
@@ -77,6 +78,9 @@ public class BeanManager {
             Logger.getLogger(BeanManager.class.getName()).log(Level.SEVERE, null, ex);
         } catch (NullPointerException ex) {
             Logger.getLogger(BeanManager.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (AccessControlException ex) {
+            // ignore...bean doesn't get registered
+            // TODO: Why does that bother me?
         }
     }
 

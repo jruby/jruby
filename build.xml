@@ -206,15 +206,20 @@
     </java>
   </target>
 
-  <target name="jar-jruby" depends="generate-method-classes, generate-unsafe" unless="jar-up-to-date">
-      <!-- TODO: Unfortunate dependency on ruby executable, and ruby might
-           not be present on user's side, so we ignore errors caused by that. -->
-      <exec executable="ruby" dir="${basedir}" failifexecutionfails="false" resultproperty="snapshot.result" errorproperty="snapshot.error">
+  <target name="_update_scm_revision_">
+      <java classname="org.jruby.Main" resultproperty="snapshot.result" errorproperty="snapshot.error" failonerror="false">
+        <classpath refid="build.classpath"/>
+        <classpath path="${jruby.classes.dir}"/>
+        <sysproperty key="jruby.home" value="${jruby.home}"/>
         <arg value="tool/snapshot.rb"/>
         <arg value="${jruby.classes.dir}/org/jruby/jruby.properties"/>
-      </exec>
+      </java>
+  </target>
 
-      <jar destfile="${lib.dir}/jruby.jar" compress="false">
+  <target name="jar-jruby" depends="generate-method-classes, generate-unsafe" unless="jar-up-to-date">
+      <antcall target="_update_scm_revision_"/>
+
+      <jar destfile="${lib.dir}/jruby.jar" compress="true" index="true">
         <fileset dir="${jruby.classes.dir}"/>
         <zipfileset src="${build.lib.dir}/asm-3.0.jar"/>
         <zipfileset src="${build.lib.dir}/asm-commons-3.0.jar"/>
@@ -239,12 +244,7 @@
   </target>
 
   <target name="jar-jruby-dist" depends="generate-method-classes, generate-unsafe" unless="jar-up-to-date">
-      <!-- TODO: Unfortunate dependency on ruby executable, and ruby might
-           not be present on user's side, so we ignore errors caused by that. -->
-      <exec executable="ruby" dir="${basedir}" failifexecutionfails="false" >
-        <arg value="tool/snapshot.rb"/>
-        <arg value="${jruby.classes.dir}/org/jruby/jruby.properties"/>
-      </exec>
+      <antcall target="_update_scm_revision_"/>
 
       <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0rc8.jar"/>
       <jarjar destfile="${lib.dir}/jruby.jar" compress="true">
