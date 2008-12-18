@@ -4088,28 +4088,28 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_squeeze / rb_str_squeeze_bang
      *
      */
-    @JRubyMethod(name = "squeeze")
+    @JRubyMethod(name = "squeeze", compat = CompatVersion.RUBY1_8)
     public IRubyObject squeeze(ThreadContext context) {
         RubyString str = strDup(context.getRuntime());
         str.squeeze_bang(context);
         return str;
     }
 
-    @JRubyMethod(name = "squeeze")
+    @JRubyMethod(name = "squeeze", compat = CompatVersion.RUBY1_8)
     public IRubyObject squeeze(ThreadContext context, IRubyObject arg) {
         RubyString str = strDup(context.getRuntime());
         str.squeeze_bang(context, arg);
         return str;
     }
 
-    @JRubyMethod(name = "squeeze", rest = true)
+    @JRubyMethod(name = "squeeze", rest = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject squeeze(ThreadContext context, IRubyObject[] args) {
         RubyString str = strDup(context.getRuntime());
         str.squeeze_bang(context, args);
         return str;
     }
 
-    @JRubyMethod(name = "squeeze!")
+    @JRubyMethod(name = "squeeze!", compat = CompatVersion.RUBY1_8)
     public IRubyObject squeeze_bang(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         if (value.realSize == 0) {
@@ -4118,10 +4118,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
         final boolean squeeze[] = new boolean[TRANS_SIZE];
         for (int i=0; i<TRANS_SIZE; i++) squeeze[i] = true;
+        modify();
         return squeezeCommon(runtime, squeeze);
     }
 
-    @JRubyMethod(name = "squeeze!")
+    @JRubyMethod(name = "squeeze!", compat = CompatVersion.RUBY1_8)
     public IRubyObject squeeze_bang(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.getRuntime();
         if (value.realSize == 0) {
@@ -4130,10 +4131,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
         final boolean squeeze[] = new boolean[TRANS_SIZE];
         arg.convertToString().trSetupTable(squeeze, true);
+        modify();
         return squeezeCommon(runtime, squeeze);
     }
 
-    @JRubyMethod(name = "squeeze!", rest = true)
+    @JRubyMethod(name = "squeeze!", rest = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject squeeze_bang(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
         if (value.realSize == 0) {
@@ -4147,12 +4149,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
             args[i].convertToString().trSetupTable(squeeze, false);
         }
 
+        modify();
         return squeezeCommon(runtime, squeeze);
     }
 
     private IRubyObject squeezeCommon(Ruby runtime, boolean squeeze[]) {
-        modify();
-
         int s = value.begin;
         int t = s;
         int send = s + value.realSize;
@@ -4170,6 +4171,128 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
 
         return runtime.getNil();        
+    }
+
+    @JRubyMethod(name = "squeeze", compat = CompatVersion.RUBY1_9)
+    public IRubyObject squeeze19(ThreadContext context) {
+        RubyString str = strDup(context.getRuntime());
+        str.squeeze_bang19(context);
+        return str;
+    }
+
+    @JRubyMethod(name = "squeeze", compat = CompatVersion.RUBY1_9)
+    public IRubyObject squeeze19(ThreadContext context, IRubyObject arg) {
+        RubyString str = strDup(context.getRuntime());
+        str.squeeze_bang19(context, arg);
+        return str;
+    }
+
+    @JRubyMethod(name = "squeeze", rest = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject squeeze19(ThreadContext context, IRubyObject[] args) {
+        RubyString str = strDup(context.getRuntime());
+        str.squeeze_bang19(context, args);
+        return str;
+    }
+
+    @JRubyMethod(name = "squeeze!", compat = CompatVersion.RUBY1_9)
+    public IRubyObject squeeze_bang19(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        if (value.realSize == 0) {
+            modifyCheck();
+            return runtime.getNil();
+        }
+        final boolean squeeze[] = new boolean[TRANS_SIZE];
+        for (int i=0; i<TRANS_SIZE; i++) squeeze[i] = true;
+
+        modifyAndKeepCodeRange();
+        if (singleByteOptimizable()) {
+            return squeezeCommon(runtime, squeeze); // 1.8
+        } else {
+            return squeezeCommon19(runtime, squeeze, null, value.encoding, false);
+        }
+    }
+
+    @JRubyMethod(name = "squeeze!", compat = CompatVersion.RUBY1_9)
+    public IRubyObject squeeze_bang19(ThreadContext context, IRubyObject arg) {
+        Ruby runtime = context.getRuntime();
+        if (value.realSize == 0) {
+            modifyCheck();
+            return runtime.getNil();
+        }
+
+        RubyString otherStr = arg.convertToString();
+        final boolean squeeze[] = new boolean[TRANS_SIZE];
+
+        TrTables tables = otherStr.trSetupTable(runtime, squeeze, null, true, checkEncoding(otherStr));
+
+        modifyAndKeepCodeRange();
+        if (singleByteOptimizable() && otherStr.singleByteOptimizable()) {
+            return squeezeCommon(runtime, squeeze); // 1.8
+        } else {
+            return squeezeCommon19(runtime, squeeze, tables, value.encoding, true);
+        }
+        
+    }
+
+    @JRubyMethod(name = "squeeze!", rest = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject squeeze_bang19(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+        if (value.realSize == 0) {
+            modifyCheck();
+            return runtime.getNil();
+        }
+
+        RubyString otherStr = args[0].convertToString();
+        Encoding enc = checkEncoding(otherStr);
+        final boolean squeeze[] = new boolean[TRANS_SIZE];
+        TrTables tables = otherStr.trSetupTable(runtime, squeeze, null, true, enc);
+
+        boolean singlebyte = singleByteOptimizable() && otherStr.singleByteOptimizable();
+        for (int i=1; i<args.length; i++) {
+            otherStr = args[i].convertToString();
+            enc = checkEncoding(otherStr);
+            singlebyte = singlebyte && otherStr.singleByteOptimizable();
+            tables = otherStr.trSetupTable(runtime, squeeze, tables, false, enc);
+        }
+
+        modifyAndKeepCodeRange();
+        if (singlebyte) {
+            return squeezeCommon(runtime, squeeze); // 1.8
+        } else {
+            return squeezeCommon19(runtime, squeeze, tables, enc, true);
+        }
+    }
+
+    private IRubyObject squeezeCommon19(Ruby runtime, boolean squeeze[], TrTables tables, Encoding enc, boolean isArg) {
+        int s = value.begin;
+        int t = s;
+        int send = s + value.realSize;
+        byte[]bytes = value.bytes;
+        int save = -1;
+        int c;
+
+        while (s < send) {
+            if (enc.isAsciiCompatible() && Encoding.isAscii(c = bytes[s] & 0xff)) {
+                if (c != save || (isArg && !squeeze[c])) bytes[t++] = (byte)(save = c);
+                s++;
+            } else {
+                c = codePoint(runtime, enc, bytes, s, send);
+                int cl = codeLength(runtime, enc, c);
+                if (c != save || (isArg && !trFind(c, squeeze, tables))) {
+                    if (t != s) enc.codeToMbc(c, bytes, t);
+                    save = c;
+                    t += cl;
+                }
+                s += cl;
+            }
+        }
+
+        if (t - value.begin != value.realSize) { // modified
+            value.realSize = t - value.begin; 
+            return this;
+        }
+
+        return runtime.getNil();   
     }
 
     /** rb_str_tr / rb_str_tr_bang
