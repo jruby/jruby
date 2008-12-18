@@ -4425,7 +4425,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (value.realSize == 0) return runtime.getNil();
 
         ByteList replList = repl.convertToString().value;
-        if (replList.realSize == 0) return delete_bang(context, new IRubyObject[]{src});
+        if (replList.realSize == 0) return delete_bang(context, src);
 
         ByteList srcList = src.convertToString().value;
         final TR trSrc = new TR(srcList);
@@ -4499,7 +4499,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         RubyString replStr = repl.convertToString();
         ByteList replList = replStr.value;
-        if (replList.realSize == 0) return delete_bang(context, new IRubyObject[]{src}); // TODO call 1.9 version
+        if (replList.realSize == 0) return delete_bang19(context, src);
 
         RubyString srcStr = src.convertToString();
         ByteList srcList = srcStr.value;
