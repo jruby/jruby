@@ -3896,7 +3896,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "count")
     public IRubyObject count(ThreadContext context, IRubyObject arg) {
         final boolean[]table = new boolean[TRANS_SIZE];
-        arg.convertToString().setupTable(table, true);
+        arg.convertToString().trSetupTable(table, true);
         return countCommon(context.getRuntime(), table);
     }
 
@@ -3906,9 +3906,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (value.realSize == 0) return RubyFixnum.zero(runtime);
 
         final boolean[]table = new boolean[TRANS_SIZE];
-        args[0].convertToString().setupTable(table, true);
+        args[0].convertToString().trSetupTable(table, true);
         for (int i = 1; i<args.length; i++) {
-            args[i].convertToString().setupTable(table, false);;
+            args[i].convertToString().trSetupTable(table, false);;
         }
 
         return countCommon(runtime, table);
@@ -3956,7 +3956,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Ruby runtime = context.getRuntime();
         if (value.realSize == 0) return runtime.getNil();
         final boolean[]squeeze = new boolean[TRANS_SIZE];
-        arg.convertToString().setupTable(squeeze, true);
+        arg.convertToString().trSetupTable(squeeze, true);
         return delete_bangCommon(runtime, squeeze);
     }
 
@@ -3966,9 +3966,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (value.realSize == 0) return runtime.getNil();
         boolean[]squeeze = new boolean[TRANS_SIZE];
 
-        args[0].convertToString().setupTable(squeeze, true);
+        args[0].convertToString().trSetupTable(squeeze, true);
         for (int i=1; i<args.length; i++) {
-            args[i].convertToString().setupTable(squeeze, false);
+            args[i].convertToString().trSetupTable(squeeze, false);
         }
 
         return delete_bangCommon(runtime, squeeze);
@@ -4040,7 +4040,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             return runtime.getNil();
         }
         final boolean squeeze[] = new boolean[TRANS_SIZE];
-        arg.convertToString().setupTable(squeeze, true);
+        arg.convertToString().trSetupTable(squeeze, true);
         return squeezeCommon(runtime, squeeze);
     }
 
@@ -4053,9 +4053,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
 
         final boolean squeeze[] = new boolean[TRANS_SIZE];
-        args[0].convertToString().setupTable(squeeze, true);
+        args[0].convertToString().trSetupTable(squeeze, true);
         for (int i=1; i<args.length; i++) {
-            args[i].convertToString().setupTable(squeeze, false);
+            args[i].convertToString().trSetupTable(squeeze, false);
         }
 
         return squeezeCommon(runtime, squeeze);
@@ -4129,7 +4129,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** tr_setup_table
      * 
      */
-    private void setupTable(boolean[]table, boolean init) {
+    private void trSetupTable(boolean[]table, boolean init) {
         final TR tr = new TR(value);
         boolean cflag = false;
         if (value.realSize > 1 && value.bytes[value.begin] == '^') {
@@ -4147,7 +4147,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         for (int i=0; i<TRANS_SIZE; i++) table[i] = table[i] && buf[i];
     }
 
-    private void setupTable(Ruby runtime, boolean[]table, boolean init, Encoding enc) {
+    private static final class TrTables {
+        private IntHash<IRubyObject> del, noDel;
+    }
+
+    private void trSetupTable(Ruby runtime, boolean[]table, TrTables tables, boolean init, Encoding enc) {
         final TR tr = new TR(value);
         boolean cflag = false;
         if (value.realSize > 1) {
@@ -4168,29 +4172,35 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (init) for (int i=0; i<TRANS_SIZE; i++) table[i] = true;
 
         final boolean[]buf = new boolean[TRANS_SIZE];
+        for (int i=0; i<TRANS_SIZE; i++) buf[i] = cflag;
+
         int c;
-        IntHash<IRubyObject> hash = null;
-        while ((c = trNext(tr)) >= 0) {
+        IntHash<IRubyObject> hash = null, phash = null;
+        while ((c = trNext(tr, runtime, enc)) >= 0) {
             if (c < TRANS_SIZE) {
                 buf[c & 0xff] = !cflag;
             } else {
                 if (hash == null) {
                     hash = new IntHash<IRubyObject>();
                     if (cflag) {
-                        // TODO
+                        phash = tables.noDel;
+                        tables.noDel = hash;
                     } else {
-                        // TODO
+                        phash  = tables.del;
+                        tables.del = hash;
                     }
                 }
-                if (hash != null || hash.get(c) != null) hash.put(c, NEVER);
+                if (phash == null || phash.get(c) != null) hash.put(c, NEVER);
             }
         }
 
-        for (int i=0; i<TRANS_SIZE; i++) buf[i] = cflag;
+        for (int i=0; i<TRANS_SIZE; i++) table[i] = table[i] && buf[i];
+        
     }
 
-    private boolean trFind(int c, boolean[]table, IntHash<IRubyObject> del, IntHash<IRubyObject> noDel) {
-        return c < TRANS_SIZE ? table[c] : ((del != null && del.get(c) != null) && (noDel == null || noDel.get(c) == null));
+    private boolean trFind(int c, boolean[]table, TrTables tables) {
+        return c < TRANS_SIZE ? table[c] : ((tables.del != null && tables.del.get(c) != null) &&
+                                           (tables.noDel == null || tables.noDel.get(c) == null));
     }
 
     /** tr_trans
