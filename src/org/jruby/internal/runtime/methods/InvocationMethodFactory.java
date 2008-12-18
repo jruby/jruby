@@ -159,6 +159,12 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      * handle for each call.
      */
     private boolean seenUndefinedClasses = false;
+
+    /**
+     * Whether we've informed the user that we've seen undefined methods; this
+     * is to avoid a flood of repetitive information.
+     */
+    private boolean haveWarnedUser = false;
     
     /**
      * Construct a new InvocationMethodFactory using the specified classloader
@@ -201,7 +207,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         Class scriptClass = scriptObject.getClass();
         String mname = scriptClass.getName() + "Invoker" + method + arity;
         synchronized (classLoader) {
-            Class generatedClass = tryClass(mname);
+            Class generatedClass = tryClass(mname, scriptClass);
 
             try {
                 if (generatedClass == null) {
@@ -542,7 +548,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         String generatedClassPath = generatedClassName.replace('.', '/');
         
         synchronized (classLoader) {
-            Class c = tryClass(generatedClassName);
+            Class c = tryClass(generatedClassName, desc1.getDeclaringClass());
 
             DescriptorInfo info = new DescriptorInfo(descs);
             if (DEBUG) out.println(" min: " + info.getMin() + ", max: " + info.getMax() + ", hasBlock: " + info.isBlock() + ", rest: " + info.isRest());
@@ -713,7 +719,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         String generatedClassPath = generatedClassName.replace('.', '/');
         
         synchronized (classLoader) {
-            Class c = tryClass(generatedClassName);
+            Class c = tryClass(generatedClassName, desc.getDeclaringClass());
 
             if (c == null) {
                 int specificArity = -1;
@@ -782,7 +788,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         String generatedClassPath = typePath + "Invoker";
         
         synchronized (classLoader) {
-            Class c = tryClass(generatedClassName);
+            Class c = tryClass(generatedClassName, type);
 
             try {
                 ArrayList<Method> annotatedMethods = new ArrayList();
@@ -1246,7 +1252,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             }
         }
     }
-    private Class tryClass(String name) {
+    private Class tryClass(String name, Class targetClass) {
         try {
             Class c = null;
             if (classLoader == null) {
@@ -1255,9 +1261,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 c = classLoader.loadClass(name);
             }
             
-            if (c != null && seenUndefinedClasses) {
-                System.err.println("WARNING: while creating new bindings, found an existing binding; likely a collision: " + name);
-                Thread.dumpStack();
+            if (c != null && seenUndefinedClasses && !haveWarnedUser) {
+                haveWarnedUser = true;
+                System.err.println("WARNING: while creating new bindings for " + targetClass + ",\n" +
+                        "found an existing binding; you may want to run a clean build.");
             }
             
             return c;
