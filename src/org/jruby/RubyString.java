@@ -1159,7 +1159,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public IRubyObject casecmp19(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.getRuntime();
         RubyString otherStr = other.convertToString();
-        Encoding enc = checkEncoding(otherStr);
+        Encoding enc = isCompatibleWith(otherStr);
         if (enc == null) return runtime.getNil();
         
         if (singleByteOptimizable() && otherStr.singleByteOptimizable()) {
