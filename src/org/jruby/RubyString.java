@@ -974,20 +974,27 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_replace_m
      *
      */
-    @JRubyMethod(name = {"replace", "initialize_copy"}, required = 1)
-    public RubyString replace(IRubyObject other) {
+    @JRubyMethod(name = {"replace", "initialize_copy"}, required = 1, compat = CompatVersion.RUBY1_8)
+    public IRubyObject replace(IRubyObject other) {
         if (this == other) return this;
-
-        modifyCheck();
-
-        RubyString otherStr =  stringValue(other);
-
-        otherStr.shareLevel = shareLevel = SHARE_LEVEL_BYTELIST;
-
-        value = otherStr.value;
-
-        infectBy(other);
+        replaceCommon(other);
         return this;
+    }
+
+    @JRubyMethod(name = {"replace", "initialize_copy"}, required = 1, compat = CompatVersion.RUBY1_9)
+    public RubyString replace19(IRubyObject other) {
+        if (this == other) return this;
+        setCodeRange(replaceCommon(other).getCodeRange());
+        return this;
+    }
+
+    private RubyString replaceCommon(IRubyObject other) {
+        modifyCheck();
+        RubyString otherStr =  other.convertToString();
+        otherStr.shareLevel = shareLevel = SHARE_LEVEL_BYTELIST;
+        value = otherStr.value;
+        infectBy(other);
+        return otherStr;
     }
 
     @JRubyMethod(name = "reverse", compat = CompatVersion.RUBY1_8)
