@@ -4511,22 +4511,31 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
     }
 
-    /** rb_str_tr_s
+    /** rb_str_tr_s / rb_str_tr_s_bang
      *
      */
-    @JRubyMethod
+    @JRubyMethod(name ="tr_s", compat = CompatVersion.RUBY1_8)
     public IRubyObject tr_s(ThreadContext context, IRubyObject src, IRubyObject repl) {
         RubyString str = strDup(context.getRuntime());
         str.trTrans(context, src, repl, true);
         return str;
     }
 
-    /** rb_str_tr_s_bang
-     *
-     */
-    @JRubyMethod(name = "tr_s!")
+    @JRubyMethod(name = "tr_s!", compat = CompatVersion.RUBY1_8)
     public IRubyObject tr_s_bang(ThreadContext context, IRubyObject src, IRubyObject repl) {
         return trTrans(context, src, repl, true);
+    }
+
+    @JRubyMethod(name ="tr_s", compat = CompatVersion.RUBY1_9)
+    public IRubyObject tr_s19(ThreadContext context, IRubyObject src, IRubyObject repl) {
+        RubyString str = strDup(context.getRuntime());
+        str.trTrans19(context, src, repl, true);
+        return str;
+    }
+
+    @JRubyMethod(name = "tr_s!", compat = CompatVersion.RUBY1_9)
+    public IRubyObject tr_s_bang19(ThreadContext context, IRubyObject src, IRubyObject repl) {
+        return trTrans19(context, src, repl, true);
     }
 
     /** rb_str_each_line
