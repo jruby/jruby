@@ -148,22 +148,6 @@ public abstract class MethodFactory {
      * @return A method handle for the target object.
      */
     public abstract DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc);
-    
-    /**
-     * Add all annotated methods on the target Java class to the specified
-     * Ruby class using the semantics of getAnnotatedMethod, calling back to
-     * the specified callback for each method to allow the caller to bind
-     * each method.
-     * 
-     * @param implementationClass The target class or module on which the method
-     * will be bound.
-     * @param containingClass The Java class containined annotated methods to
-     * be bound.
-     * @param callback A callback provided by the caller which handles binding
-     * each method.
-     */
-    @Deprecated
-    public abstract void defineIndexedAnnotatedMethods(RubyModule implementationClass, Class containingClass, MethodDefiningCallback callback);
 
     /**
      * Use the reflection-based factory.

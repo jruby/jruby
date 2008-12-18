@@ -662,12 +662,6 @@ public class RubyModule extends RubyObject {
         
         populator.populate(this, clazz);
     }
-
-    @Deprecated
-    private void defineAnnotatedMethodsIndexed(Class clazz) {
-        MethodFactory methodFactory = MethodFactory.createFactory(getRuntime().getJRubyClassLoader());
-        methodFactory.defineIndexedAnnotatedMethods(this, clazz, methodDefiningCallback);
-    }
     
     private static MethodFactory.MethodDefiningCallback methodDefiningCallback = new MethodFactory.MethodDefiningCallback() {
         public void define(RubyModule module, JavaMethodDescriptor desc, DynamicMethod dynamicMethod) {

@@ -812,23 +812,23 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         context.preMethodBacktraceAndScope(name, implementationClass, staticScope);
     }
     
-    protected final void postFrameAndScope(ThreadContext context) {
+    protected final static void postFrameAndScope(ThreadContext context) {
         context.postMethodFrameAndScope();
     }
     
-    protected final void postFrameOnly(ThreadContext context) {
+    protected final static void postFrameOnly(ThreadContext context) {
         context.postMethodFrameOnly();
     }
     
-    protected final void postScopeOnly(ThreadContext context) {
+    protected final static void postScopeOnly(ThreadContext context) {
         context.postMethodScopeOnly();
     }
     
-    protected final void postBacktraceOnly(ThreadContext context) {
+    protected final static void postBacktraceOnly(ThreadContext context) {
         context.postMethodBacktraceOnly();
     }
     
-    protected final void postBacktraceAndScope(ThreadContext context) {
+    protected final static void postBacktraceAndScope(ThreadContext context) {
         context.postMethodBacktraceAndScope();
     }
     
@@ -847,16 +847,6 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
 
     public Arity getArity() {
         return arity;
-    }
-    
-    @Deprecated
-    public void setArgumentTypes(Class[] argumentTypes) {
-        this.argumentTypes = argumentTypes;
-    }
-    
-    @Deprecated
-    public Class[] getArgumentTypes() {
-        return argumentTypes;   
     }
     
     public void setJavaName(String javaName) {

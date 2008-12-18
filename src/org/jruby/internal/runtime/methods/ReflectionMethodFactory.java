@@ -126,22 +126,4 @@ public class ReflectionMethodFactory extends MethodFactory {
         }
     }
 
-    /**
-     * Use reflection to generate a set of method handles based on all annotated
-     * methods in the target class.
-     * 
-     * @see org.jruby.internal.runtime.methods.MethodFactory#defineIndexedAnnotatedMethods
-     */
-    @Override @Deprecated
-    public void defineIndexedAnnotatedMethods(RubyModule implementationClass, Class type, MethodDefiningCallback callback) {
-        Method[] methods = type.getDeclaredMethods();
-        for (Method method : methods) {
-            JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
-
-            if (jrubyMethod == null) continue;
-            
-            callback.define(implementationClass, new JavaMethodDescriptor(method), getAnnotatedMethod(implementationClass, new JavaMethodDescriptor(method)));
-        }
-    }
-
 }

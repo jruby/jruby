@@ -31,10 +31,6 @@ package org.jruby.internal.runtime.methods;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
@@ -45,7 +41,6 @@ import org.objectweb.asm.Opcodes;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
-import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.exceptions.JumpException;
@@ -151,7 +146,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     public static final int BLOCK_INDEX = 6;
 
     /** The classloader to use for code loading */
-    protected JRubyClassLoader classLoader;
+    protected final JRubyClassLoader classLoader;
     
     /**
      * Whether this factory has seen undefined methods already. This is used to
@@ -774,175 +769,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     }
 
     /**
-     * Use code generation to generate a set of method handles based on all
-     * annotated methods in the target class.
-     * 
-     * @see org.jruby.internal.runtime.methods.MethodFactory#defineIndexedAnnotatedMethods
-     */
-    @Deprecated
-    public void defineIndexedAnnotatedMethods(RubyModule implementationClass, Class type, MethodDefiningCallback callback) {
-        String typePath = p(type);
-        String superClass = p(JavaMethod.class);
-        
-        String generatedClassName = type.getName() + "Invoker";
-        String generatedClassPath = typePath + "Invoker";
-        
-        synchronized (classLoader) {
-            Class c = tryClass(generatedClassName, type);
-
-            try {
-                ArrayList<Method> annotatedMethods = new ArrayList();
-                Method[] methods = type.getDeclaredMethods();
-                for (Method method : methods) {
-                    JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
-
-                    if (jrubyMethod == null) continue;
-
-                    annotatedMethods.add(method);
-                }
-                // To ensure the method cases are generated the same way every time, we make a second sorted list
-                ArrayList<Method> sortedMethods = new ArrayList(annotatedMethods);
-                Collections.sort(sortedMethods, new Comparator<Method>() {
-                    public int compare(Method a, Method b) {
-                        return a.getName().compareTo(b.getName());
-                    }
-                });
-                // But when binding the methods, we want to use the order from the original class, so we save the indices
-                HashMap<Method,Integer> indexMap = new HashMap();
-                for (int index = 0; index < sortedMethods.size(); index++) {
-                    indexMap.put(sortedMethods.get(index), index);
-                }
-
-                if (c == null) {
-                    ClassWriter cw = createIndexedJavaMethodCtor(generatedClassPath, superClass);
-                    SkinnyMethodAdapter mv = null;
-
-                    mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG_BLOCK, null, null));
-                    mv.visitCode();
-                    Label line = new Label();
-                    mv.visitLineNumber(0, line);
-
-                    Label defaultCase = new Label();
-                    Label[] cases = new Label[sortedMethods.size()];
-                    for (int i = 0; i < cases.length; i++) cases[i] = new Label();
-
-                    // load method index
-                    mv.aload(THIS_INDEX);
-                    mv.getfield(generatedClassPath, "methodIndex", ci(int.class));
-
-                    mv.tableswitch(0, cases.length - 1, defaultCase, cases);
-
-                    for (int i = 0; i < sortedMethods.size(); i++) {
-                        mv.label(cases[i]);
-                        String callName = getAnnotatedMethodForIndex(cw, sortedMethods.get(i), i, superClass);
-
-                        // invoke call#_method for method
-                        mv.aload(THIS_INDEX);
-                        mv.aload(THREADCONTEXT_INDEX);
-                        mv.aload(RECEIVER_INDEX);
-                        mv.aload(CLASS_INDEX);
-                        mv.aload(NAME_INDEX);
-                        mv.aload(ARGS_INDEX);
-                        mv.aload(BLOCK_INDEX);
-
-                        mv.invokevirtual(generatedClassPath, callName, COMPILED_CALL_SIG_BLOCK);
-                        mv.areturn();
-                    }
-
-                    // if we fall off the switch, error.
-                    mv.label(defaultCase);
-                    mv.aload(THREADCONTEXT_INDEX);
-                    mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-                    mv.ldc("Error: fell off switched invoker for class: " + implementationClass.getBaseName());
-                    mv.invokevirtual(p(Ruby.class), "newRuntimeError", sig(RaiseException.class, String.class));
-                    mv.athrow();
-
-                    c = endCall(cw, mv, generatedClassName);
-                }
-
-                for (int i = 0; i < annotatedMethods.size(); i++) {
-                    Method method = annotatedMethods.get(i);
-                    JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
-
-                    if (jrubyMethod.frame()) {
-                        for (String name : jrubyMethod.name()) {
-                            ASTInspector.FRAME_AWARE_METHODS.add(name);
-                        }
-                    }
-
-                    int index = indexMap.get(method);
-                    JavaMethod ic = (JavaMethod)c.getConstructor(new Class[]{RubyModule.class, Visibility.class, int.class}).newInstance(new Object[]{implementationClass, jrubyMethod.visibility(), index});
-
-                    ic.setArity(Arity.fromAnnotation(jrubyMethod));
-                    ic.setJavaName(method.getName());
-                    ic.setSingleton(Modifier.isStatic(method.getModifiers()));
-                    ic.setCallConfig(CallConfiguration.getCallConfigByAnno(jrubyMethod));
-
-                    callback.define(implementationClass, new JavaMethodDescriptor(method), ic);
-                }
-            } catch(Exception e) {
-                e.printStackTrace();
-                throw implementationClass.getRuntime().newLoadError(e.getMessage());
-            }
-        }
-    }
-
-    /**
-     * Emit code to check the arity of a call to a Ruby-based method.
-     * 
-     * @param jrubyMethod The annotation of the called method
-     * @param method The code generator for the handle being created
-     */
-    private void checkArity(SkinnyMethodAdapter method, StaticScope scope) {
-        Label arityError = new Label();
-        Label noArityError = new Label();
-
-        if (scope.getRestArg() >= 0) {
-            if (scope.getRequiredArgs() > 0) {
-                // just confirm minimum args provided
-                method.aload(ARGS_INDEX);
-                method.arraylength();
-                method.ldc(scope.getRequiredArgs());
-                method.if_icmplt(arityError);
-            }
-        } else if (scope.getOptionalArgs() > 0) {
-            if (scope.getRequiredArgs() > 0) {
-                // confirm minimum args provided
-                method.aload(ARGS_INDEX);
-                method.arraylength();
-                method.ldc(scope.getRequiredArgs());
-                method.if_icmplt(arityError);
-            }
-
-            // confirm maximum not greater than optional
-            method.aload(ARGS_INDEX);
-            method.arraylength();
-            method.ldc(scope.getRequiredArgs() + scope.getOptionalArgs());
-            method.if_icmpgt(arityError);
-        } else {
-            // just confirm args length == required
-            method.aload(ARGS_INDEX);
-            method.arraylength();
-            method.ldc(scope.getRequiredArgs());
-            method.if_icmpne(arityError);
-        }
-
-        method.go_to(noArityError);
-
-        // Raise an error if arity does not match requirements
-        method.label(arityError);
-        method.aload(THREADCONTEXT_INDEX);
-        method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-        method.aload(ARGS_INDEX);
-        method.ldc(scope.getRequiredArgs());
-        method.ldc(scope.getRequiredArgs() + scope.getOptionalArgs());
-        method.invokestatic(p(Arity.class), "checkArgumentCount", sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
-        method.pop();
-
-        method.label(noArityError);
-    }
-
-    /**
      * Emit code to check the arity of a call to a Java-based method.
      * 
      * @param jrubyMethod The annotation of the called method
@@ -1040,42 +866,21 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         return cw;
     }
 
-    @Deprecated
-    private ClassWriter createIndexedJavaMethodCtor(String namePath, String sup) throws Exception {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-        cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, sup, null);
-        cw.visitSource(namePath.replace('.', '/') + ".gen", null);
-        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", JAVA_INDEXED_SUPER_SIG, null, null);
-        mv.visitCode();
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitVarInsn(ALOAD, 1);
-        mv.visitVarInsn(ALOAD, 2);
-        mv.visitVarInsn(ILOAD, 3);
-        mv.visitMethodInsn(INVOKESPECIAL, sup, "<init>", JAVA_INDEXED_SUPER_SIG);
-        Label line = new Label();
-        mv.visitLineNumber(0, line);
-        mv.visitInsn(RETURN);
-        mv.visitMaxs(0,0);
-        mv.visitEnd();
-        return cw;
-    }
-
     private void invokeCallConfigPost(SkinnyMethodAdapter mv, String superClass, CallConfiguration callConfig) {
         if (callConfig != CallConfiguration.NO_FRAME_NO_SCOPE) {
-            mv.aload(0);
             mv.aload(1);
             if (callConfig == CallConfiguration.FRAME_AND_SCOPE) {
-                mv.invokevirtual(superClass, "postFrameAndScope", sig(void.class, params(ThreadContext.class)));
+                mv.invokestatic(superClass, "postFrameAndScope", sig(void.class, params(ThreadContext.class)));
             } else if (callConfig == CallConfiguration.FRAME_AND_DUMMY_SCOPE) {
-                mv.invokevirtual(superClass, "postFrameAndScope", sig(void.class, params(ThreadContext.class)));
+                mv.invokestatic(superClass, "postFrameAndScope", sig(void.class, params(ThreadContext.class)));
             } else if (callConfig == CallConfiguration.FRAME_ONLY) {
-                mv.invokevirtual(superClass, "postFrameOnly", sig(void.class, params(ThreadContext.class)));
+                mv.invokestatic(superClass, "postFrameOnly", sig(void.class, params(ThreadContext.class)));
             } else if (callConfig == CallConfiguration.SCOPE_ONLY) {
-                mv.invokevirtual(superClass, "postScopeOnly", sig(void.class, params(ThreadContext.class)));
+                mv.invokestatic(superClass, "postScopeOnly", sig(void.class, params(ThreadContext.class)));
             } else if (callConfig == CallConfiguration.BACKTRACE_ONLY) {
-                mv.invokevirtual(superClass, "postBacktraceOnly", sig(void.class, params(ThreadContext.class)));
+                mv.invokestatic(superClass, "postBacktraceOnly", sig(void.class, params(ThreadContext.class)));
             } else if (callConfig == CallConfiguration.BACKTRACE_AND_SCOPE) {
-                mv.invokevirtual(superClass, "postBacktraceAndScope", sig(void.class, params(ThreadContext.class)));
+                mv.invokestatic(superClass, "postBacktraceAndScope", sig(void.class, params(ThreadContext.class)));
             }
         }
     }
