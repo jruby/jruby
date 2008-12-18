@@ -4083,22 +4083,31 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return runtime.getNil();        
     }
 
-    /** rb_str_tr
+    /** rb_str_tr / rb_str_tr_bang
      *
      */
-    @JRubyMethod
+    @JRubyMethod(name = "tr", compat = CompatVersion.RUBY1_8)
     public IRubyObject tr(ThreadContext context, IRubyObject src, IRubyObject repl) {
         RubyString str = strDup(context.getRuntime());
         str.trTrans(context, src, repl, false);
         return str;
     }
 
-    /** rb_str_tr_bang
-    *
-    */
-    @JRubyMethod(name = "tr!")
+    @JRubyMethod(name = "tr!", compat = CompatVersion.RUBY1_8)
     public IRubyObject tr_bang(ThreadContext context, IRubyObject src, IRubyObject repl) {
         return trTrans(context, src, repl, false);
+    }    
+
+    @JRubyMethod(name = "tr", compat = CompatVersion.RUBY1_9)
+    public IRubyObject tr19(ThreadContext context, IRubyObject src, IRubyObject repl) {
+        RubyString str = strDup(context.getRuntime());
+        str.trTrans19(context, src, repl, false);
+        return str;
+    }
+
+    @JRubyMethod(name = "tr!")
+    public IRubyObject tr_bang19(ThreadContext context, IRubyObject src, IRubyObject repl) {
+        return trTrans19(context, src, repl, false);
     }    
 
     private static final class TR {
@@ -4409,8 +4418,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     buf = tbuf;
                 }
 
-                // TODO: 1.9 does that too, but comparing s and t is almost certainly wrong 
-                if (s != t) enc.codeToMbc(c, buf, t);
+                enc.codeToMbc(c, buf, t);
                 s += clen;
                 t += tlen;
             }
