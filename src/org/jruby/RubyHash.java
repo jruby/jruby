@@ -109,6 +109,7 @@ public class RubyHash extends RubyObject implements Map {
         runtime.setHash(hashc);
         hashc.index = ClassIndex.HASH;
         hashc.kindOf = new RubyModule.KindOf() {
+            @Override
             public boolean isKindOf(IRubyObject obj, RubyModule type) {
                 return obj instanceof RubyHash;
             }
@@ -127,6 +128,7 @@ public class RubyHash extends RubyObject implements Map {
         }
     };
 
+    @Override
     public int getNativeTypeIndex() {
         return ClassIndex.HASH;
     }
@@ -321,6 +323,7 @@ public class RubyHash extends RubyObject implements Map {
             return oldValue;
         }
 
+        @Override
         public boolean equals(Object other){
             if(!(other instanceof RubyHashEntry)) return false;
             RubyHashEntry otherEntry = (RubyHashEntry)other;
@@ -330,6 +333,7 @@ public class RubyHash extends RubyObject implements Map {
             return false;
         }
 
+        @Override
         public int hashCode(){
             return key.hashCode() ^ value.hashCode();
         }
@@ -687,6 +691,7 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
     @JRubyMethod(name = "to_a")
+    @Override
     public RubyArray to_a() {
         final Ruby runtime = getRuntime();
         final RubyArray result = RubyArray.newArray(runtime, size);
@@ -753,6 +758,7 @@ public class RubyHash extends RubyObject implements Map {
         return this;
     }
 
+    @Override
     public RubyHash convertToHash() {
         return this;
     }
@@ -783,7 +789,7 @@ public class RubyHash extends RubyObject implements Map {
                 RubyString realKey = (RubyString)key;
                 
                 if (!realKey.isFrozen()) {
-                    realKey = realKey.strDup(context.getRuntime(), realKey.getMetaClass().getRealClass());;
+                    realKey = realKey.strDup(context.getRuntime(), realKey.getMetaClass().getRealClass());
                     realKey.setFrozen(true);
                 }
                 
@@ -1514,6 +1520,7 @@ public class RubyHash extends RubyObject implements Map {
         return result;
     }
 
+    @Override
     public Class getJavaClass() {
         return Map.class;
     }
@@ -1562,6 +1569,7 @@ public class RubyHash extends RubyObject implements Map {
         rb_clear();
     }
 
+    @Override
     public boolean equals(Object other) {
         if (!(other instanceof RubyHash)) return false;
         if (this == other) return true;
@@ -1603,10 +1611,12 @@ public class RubyHash extends RubyObject implements Map {
             return new BaseIterator(view);
         }
 
+        @Override
         public boolean contains(Object o) {
             return view.contains(RubyHash.this, o);
         }
 
+        @Override
         public void clear() {
             RubyHash.this.clear();
         }
@@ -1615,6 +1625,7 @@ public class RubyHash extends RubyObject implements Map {
             return RubyHash.this.size;
         }
 
+        @Override
         public boolean remove(Object o) {
             return view.remove(RubyHash.this, o);
         }
@@ -1631,10 +1642,12 @@ public class RubyHash extends RubyObject implements Map {
             return new BaseIterator(view);
         }
 
+        @Override
         public boolean contains(Object o) {
             return view.contains(RubyHash.this, o);
         }
 
+        @Override
         public void clear() {
             RubyHash.this.clear();
         }
@@ -1643,6 +1656,7 @@ public class RubyHash extends RubyObject implements Map {
             return RubyHash.this.size;
         }
 
+        @Override
         public boolean remove(Object o) {
             return view.remove(RubyHash.this, o);
         }
@@ -1814,6 +1828,7 @@ public class RubyHash extends RubyObject implements Map {
             return entry.setValue(JavaUtil.convertJavaToRuby(runtime, o));
         }
 
+        @Override
         public boolean equals(Object o) {
             if (!(o instanceof ConvertingEntry)) {
                 return false;
@@ -1821,6 +1836,8 @@ public class RubyHash extends RubyObject implements Map {
             ConvertingEntry other = (ConvertingEntry)o;
             return entry.equals(other.entry);
         }
+        
+        @Override
         public int hashCode() {
             return entry.hashCode();
         }
