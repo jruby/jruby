@@ -63,6 +63,7 @@ import org.jcodings.EncodingDB.Entry;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.IntHash;
 import org.joni.Matcher;
 import org.joni.Option;
@@ -1645,11 +1646,140 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_dump
      *
      */
-    @JRubyMethod
+    @JRubyMethod(name = "dump", compat = CompatVersion.RUBY1_8)
     public IRubyObject dump() {
-        RubyString s = new RubyString(getRuntime(), getMetaClass(), inspectIntoByteList(true));
-        s.infectBy(this);
-        return s;
+        return commonDump(false);
+    }
+
+    @JRubyMethod(name = "dump", compat = CompatVersion.RUBY1_9)
+    public IRubyObject dump19() {
+        return commonDump(true);
+    }
+
+    private IRubyObject commonDump(boolean is1_9) {
+        Ruby runtime = getRuntime();
+
+        Encoding enc = value.encoding;
+
+        int p = value.begin;
+        int end = p + value.realSize;
+        byte[]bytes = value.bytes;
+        
+        int len = 2;
+        while (p < end) {
+            int c = bytes[p++] & 0xff;
+
+            switch (c) {
+            case '"':case '\\':case '\n':case '\r':case '\t':case '\f':
+            case '\013': case '\010': case '\007': case '\033':
+                len += 2;
+                break;
+            case '#':
+                len += isEVStr(bytes, p, end) ? 2 : 1;
+                break;
+            default:
+                if (ASCII.isPrint(c)) {
+                    len++;
+                } else {
+                    if (is1_9 && enc instanceof UTF8Encoding) {
+                        int n = StringSupport.preciseLength(enc, bytes, p - 1, end) - 1;
+                        if (n > 0) {
+                            int cc = codePoint(runtime, enc, bytes, p - 1, end);
+                            len += Sprintf.sprintf(runtime, "%x", cc).length() + 4;
+                            p += n;
+                            break;
+                        }
+                    }
+                    len += 4;
+                }
+                break;
+            }
+        }
+
+        if (is1_9 && !enc.isAsciiCompatible()) {
+            len += ".force_encoding(\"".length() + enc.getName().length + "\")".length();
+        }
+
+        byte out[] = new byte[len];
+        int q = 0;
+        p = value.begin;
+        end = p + value.realSize;
+
+        out[q++] = '"';
+        while (p < end) {
+            int c = bytes[p++] & 0xff;
+            if (c == '"' || c == '\\') {
+                out[q++] = '\\';
+                out[q++] = (byte)c;
+            } else if (c == '#') {
+                if (isEVStr(bytes, p, end)) out[q++] = '\\';
+                out[q++] = '#';
+            } else if (!is1_9 && ASCII.isPrint(c)) {
+                out[q++] = (byte)c;
+            } else if (c == '\n') {
+                out[q++] = '\\';
+                out[q++] = 'n';
+            } else if (c == '\r') {
+                out[q++] = '\\';
+                out[q++] = 'r';
+            } else if (c == '\t') {
+                out[q++] = '\\';
+                out[q++] = 't';
+            } else if (c == '\f') {
+                out[q++] = '\\';
+                out[q++] = 'f';
+            } else if (c == '\013') {
+                out[q++] = '\\';
+                out[q++] = 'v';
+            } else if (c == '\010') {
+                out[q++] = '\\';
+                out[q++] = 'b';
+            } else if (c == '\007') {
+                out[q++] = '\\';
+                out[q++] = 'a';
+            } else if (c == '\033') {
+                out[q++] = '\\';
+                out[q++] = 'e';
+            } else if (is1_9 && ASCII.isPrint(c)) {
+                out[q++] = (byte)c;
+            } else {
+                out[q++] = '\\';
+                if (is1_9) {
+                    if (enc instanceof UTF8Encoding) {
+                        int n = StringSupport.preciseLength(enc, bytes, p - 1, end) - 1;
+                        if (n > 0) {
+                            int cc = codePoint(runtime, enc, bytes, p - 1, end);
+                            p += n;
+                            ByteList buf = (ByteList)Sprintf.sprintf(runtime, "u{%x}", cc);
+                            System.arraycopy(buf.bytes, buf.begin, out, q, buf.realSize);
+                            q += buf.realSize;
+                            continue;
+                        }
+                    }
+                    ByteList buf = (ByteList)Sprintf.sprintf(runtime, "x%02X", c);
+                    System.arraycopy(buf.bytes, buf.begin, out, q, buf.realSize);
+                    q += buf.realSize;
+                } else {
+                    ByteList buf = (ByteList)Sprintf.sprintf(runtime, "%03o", c);
+                    System.arraycopy(buf.bytes, buf.begin, out, q, buf.realSize);
+                    q += buf.realSize;
+                }
+            }
+        }
+        out[q++] = '"';
+
+        final RubyString result = new RubyString(runtime, getMetaClass(), new ByteList(out, false));
+        if (is1_9) {
+            if (!enc.isAsciiCompatible()) {
+                result.cat(".force_encoding(\"".getBytes());
+                result.cat(enc.getName());
+                result.cat((byte)'"').cat((byte)')');
+                enc = ASCII;
+            }
+            result.associateEncoding(enc);
+            result.setCodeRange(CR_7BIT);
+        }
+        return result.infectBy(this);
     }
 
     @JRubyMethod
@@ -1683,7 +1813,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         s.infectBy(this);
         return s;
     }
-    
+
     private ByteList inspectIntoByteList(boolean ignoreKCode) {
         Ruby runtime = getRuntime();
         Encoding enc = runtime.getKCode().getEncoding();
@@ -1739,6 +1869,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return sb;
     }
     
+
     private boolean isEVStr(int i, int length) {
         if (i+1 >= length) return false;
         int c = value.get(i+1) & 0xFF;
@@ -1746,6 +1877,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return c == '$' || c == '@' || c == '{';
     }
 
+    private boolean isEVStr(byte[]bytes, int p, int end) {
+        if (p < end) {
+            int c = bytes[p] & 0xff;
+            return c == '$' || c == '@' || c == '{'; 
+        }
+        return false;
+    }
+    
     /** rb_str_length
      *
      */
