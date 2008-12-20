@@ -1946,10 +1946,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
             if (is1_9) {
                 n = StringSupport.preciseLength(enc, bytes, p, end);
-                if (n <= 0) {
+                if (n <= 0) { // Illegal combination
                     p++;
                     n = 1;
-                    escapeCodePointCat(runtime, bytes, n, p);
+                    result.escapeCodePointCat(runtime, bytes, p, n);
                     continue;
                 }
                 c = codePoint(runtime, enc, bytes, p, end);
