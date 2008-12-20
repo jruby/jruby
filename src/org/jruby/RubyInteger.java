@@ -254,7 +254,7 @@ public abstract class RubyInteger extends RubyNumeric {
         if (getLongValue() < 0 || getLongValue() > 0xff) {
             throw getRuntime().newRangeError(this.toString() + " out of char range");
         }
-        return RubyString.newString(getRuntime(), SINGLE_CHAR_BYTELISTS[(int)getLongValue()]);
+        return RubyString.newStringShared(getRuntime(), SINGLE_CHAR_BYTELISTS[(int)getLongValue()]);
     }
 
     /** int_to_i
