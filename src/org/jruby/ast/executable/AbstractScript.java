@@ -8,6 +8,7 @@ package org.jruby.ast.executable;
 import java.util.Arrays;
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyRegexp;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -69,6 +70,12 @@ public abstract class AbstractScript implements Script {
         return fixnum;
     }
 
+    public final RubyRegexp getRegexp(Ruby runtime, int index, String pattern, int options) {
+        RubyRegexp regexp = regexps[index];
+        if (regexp == null) return regexps[index] = RubyRegexp.newRegexp(runtime, pattern, options);
+        return regexp;
+    }
+
     public final void initCallSites(int size) {
         callSites = new CallSite[size];
     }
@@ -79,6 +86,10 @@ public abstract class AbstractScript implements Script {
 
     public final void initFixnums(int size) {
         fixnums = new RubyFixnum[size];
+    }
+
+    public final void initRegexps(int size) {
+        regexps = new RubyRegexp[size];
     }
 
     public final void initConstants(int size) {
@@ -138,6 +149,7 @@ public abstract class AbstractScript implements Script {
     public CallSite[] callSites;
     public RubySymbol[] symbols;
     public RubyFixnum[] fixnums;
+    public RubyRegexp[] regexps;
     public String filename;
     public IRubyObject[] constants;
     public int[] constantGenerations;

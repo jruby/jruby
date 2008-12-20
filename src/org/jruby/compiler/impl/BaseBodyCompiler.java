@@ -985,30 +985,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void createNewRegexp(final ByteList value, final int options) {
-        String regexpField = script.getNewConstant(ci(RubyRegexp.class), "lit_reg_");
-
-        // in current method, load the field to see if we've created a Pattern yet
-        method.aload(StandardASMCompiler.THIS);
-        method.getfield(script.getClassname(), regexpField, ci(RubyRegexp.class));
-
-        Label alreadyCreated = new Label();
-        method.ifnonnull(alreadyCreated); //[]
-
-        // load string, for Regexp#source and Regexp#inspect
-        String regexpString = value.toString();
-
-        loadRuntime(); //[R]
-        method.ldc(regexpString); //[R, rS]
-        method.pushInt(options); //[R, rS, opts]
-
-        method.invokestatic(p(RubyRegexp.class), "newRegexp", sig(RubyRegexp.class, params(Ruby.class, String.class, Integer.TYPE))); //[reg]
-
-        method.aload(StandardASMCompiler.THIS); //[reg, T]
-        method.swap(); //[T, reg]
-        method.putfield(script.getClassname(), regexpField, ci(RubyRegexp.class)); //[]
-        method.label(alreadyCreated);
-        method.aload(StandardASMCompiler.THIS); //[T]
-        method.getfield(script.getClassname(), regexpField, ci(RubyRegexp.class));
+        script.getCacheCompiler().cacheRegexp(this, value.toString(), options);
     }
 
     public void createNewRegexp(CompilerCallback createStringCallback, final int options) {

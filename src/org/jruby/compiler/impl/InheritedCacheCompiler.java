@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyRegexp;
 import org.jruby.RubySymbol;
 import org.jruby.ast.NodeType;
 import org.jruby.compiler.ASTInspector;
@@ -43,6 +44,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
     Map<String, ByteList> byteListValues = new HashMap<String, ByteList>();
     Map<BigInteger, String> bigIntegers = new HashMap<BigInteger, String>();
     int inheritedSymbolCount = 0;
+    int inheritedRegexpCount = 0;
     int inheritedFixnumCount = 0;
     int inheritedConstantCount = 0;
     int inheritedByteListCount = 0;
@@ -72,6 +74,17 @@ public class InheritedCacheCompiler implements CacheCompiler {
         method.method.invokevirtual(scriptCompiler.getClassname(), "getSymbol", sig(RubySymbol.class, Ruby.class, int.class, String.class));
 
         inheritedSymbolCount++;
+    }
+
+    public void cacheRegexp(BaseBodyCompiler method, String pattern, int options) {
+        method.loadThis();
+        method.loadRuntime();
+        method.method.pushInt(inheritedRegexpCount);
+        method.method.ldc(pattern);
+        method.method.ldc(options);
+        method.method.invokevirtual(scriptCompiler.getClassname(), "getRegexp", sig(RubyRegexp.class, Ruby.class, int.class, String.class, int.class));
+
+        inheritedRegexpCount++;
     }
     
     public void cacheFixnum(BaseBodyCompiler method, long value) {
@@ -168,6 +181,14 @@ public class InheritedCacheCompiler implements CacheCompiler {
             initMethod.aload(0);
             initMethod.pushInt(size);
             initMethod.invokevirtual(scriptCompiler.getClassname(), "initConstants", sig(void.class, params(int.class)));
+        }
+
+        // generate regexps initialization code
+        size = inheritedRegexpCount;
+        if (size != 0) {
+            initMethod.aload(0);
+            initMethod.pushInt(size);
+            initMethod.invokevirtual(scriptCompiler.getClassname(), "initRegexps", sig(void.class, params(int.class)));
         }
 
         // generate bytelists initialization code

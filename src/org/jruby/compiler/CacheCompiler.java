@@ -26,6 +26,8 @@ public interface CacheCompiler {
     public void cacheFixnum(BaseBodyCompiler method, long value);
     
     public void cacheBigInteger(BaseBodyCompiler method, BigInteger bigint);
+
+    public void cacheRegexp(BaseBodyCompiler method, String pattern, int options);
     
     public void cacheClosure(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector);
     
