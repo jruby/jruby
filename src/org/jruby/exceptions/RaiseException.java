@@ -167,10 +167,12 @@ public class RaiseException extends JumpException {
         return newTrace;
     }
 
+    @Override
     public void printStackTrace() {
         printStackTrace(System.err);
     }
     
+    @Override
     public void printStackTrace(PrintStream ps) {
         StackTraceElement[] trace = getStackTrace();
         int externalIndex = 0;
@@ -186,7 +188,9 @@ public class RaiseException extends JumpException {
             String firstLine = backtrace.callMethod(runtime.getCurrentContext(), "first").convertToString().toString();
             ps.print(firstLine + ": ");
         }
-        ps.println(exception.message.convertToString() + " (" + exception.getMetaClass().toString() + ")");
+
+        IRubyObject message = exception.message;
+        ps.println((message.isNil() ? "" : message.convertToString()) + " (" + exception.getMetaClass().toString() + ")");
         exception.printBacktrace(ps);
         ps.println("\t...internal jruby stack elided...");
         for (int i = externalIndex; i < trace.length; i++) {
@@ -194,6 +198,7 @@ public class RaiseException extends JumpException {
         }
     }
     
+    @Override
     public void printStackTrace(PrintWriter pw) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         printStackTrace(new PrintStream(baos));
