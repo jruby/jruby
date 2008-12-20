@@ -3184,29 +3184,35 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_oct
      *
      */
-    @JRubyMethod(name = "oct")
+    @JRubyMethod(name = "oct", compat = CompatVersion.RUBY1_8)
     public IRubyObject oct(ThreadContext context) {
         if (isEmpty()) return context.getRuntime().newFixnum(0);
 
         int base = 8;
-
         int ix = value.begin;
-
-        while(ix < value.begin+value.realSize && ASCII.isSpace(value.bytes[ix] & 0xff)) {
+        while (ix < value.begin + value.realSize && ASCII.isSpace(value.bytes[ix] & 0xff)) {
             ix++;
         }
 
-        int pos = (value.bytes[ix] == '-' || value.bytes[ix] == '+') ? ix+1 : ix;
-        if((pos+1) < value.begin+value.realSize && value.bytes[pos] == '0') {
-            if(value.bytes[pos+1] == 'x' || value.bytes[pos+1] == 'X') {
+        int pos = (value.bytes[ix] == '-' || value.bytes[ix] == '+') ? ix + 1 : ix;
+        if (pos + 1 < value.begin+value.realSize && value.bytes[pos] == '0') {
+            if (value.bytes[pos+1] == 'x' || value.bytes[pos+1] == 'X') {
                 base = 16;
-            } else if(value.bytes[pos+1] == 'b' || value.bytes[pos+1] == 'B') {
+            } else if (value.bytes[pos+1] == 'b' || value.bytes[pos+1] == 'B') {
                 base = 2;
-            } else if(value.bytes[pos+1] == 'd' || value.bytes[pos+1] == 'D') {
+            } else if (value.bytes[pos+1] == 'd' || value.bytes[pos+1] == 'D') {
                 base = 10;
             }
         }
         return RubyNumeric.str2inum(context.getRuntime(), this, base);
+    }
+
+    @JRubyMethod(name = "oct", compat = CompatVersion.RUBY1_9)
+    public IRubyObject oct19(ThreadContext context) {
+        if (!value.encoding.isAsciiCompatible()) {
+            throw context.getRuntime().newEncodingCompatibilityError("ASCII incompatible encoding: " + value.encoding);
+        }
+        return oct(context);
     }
 
     /** rb_str_hex
