@@ -1093,6 +1093,15 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return otherStr;
     }
 
+    @JRubyMethod(name = "clear", compat = CompatVersion.RUBY1_9)
+    public RubyString clear() {
+        Encoding enc = value.encoding;
+        value = getEmptyByteList(enc);
+        shareLevel = SHARE_LEVEL_NONE;
+        setCodeRange(enc.isAsciiCompatible() ? CR_7BIT : CR_VALID);
+        return this;
+    }
+
     @JRubyMethod(name = "reverse", compat = CompatVersion.RUBY1_8)
     public IRubyObject reverse(ThreadContext context) {
         Ruby runtime = context.getRuntime();
