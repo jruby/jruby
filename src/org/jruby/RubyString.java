@@ -1080,7 +1080,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = {"replace", "initialize_copy"}, required = 1, compat = CompatVersion.RUBY1_9)
     public RubyString replace19(IRubyObject other) {
         if (this == other) return this;
-        setCodeRange(replaceCommon(other).getCodeRange());
+        setCodeRange(replaceCommon(other).getCodeRange()); // encoding doesn't have to be copied.
         return this;
     }
 
@@ -3212,9 +3212,17 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_hex
      *
      */
-    @JRubyMethod(name = "hex")
+    @JRubyMethod(name = "hex", compat = CompatVersion.RUBY1_8)
     public IRubyObject hex(ThreadContext context) {
         return RubyNumeric.str2inum(context.getRuntime(), this, 16);
+    }
+
+    @JRubyMethod(name = "hex", compat = CompatVersion.RUBY1_9)
+    public IRubyObject hex19(ThreadContext context) {
+        if (!value.encoding.isAsciiCompatible()) {
+            throw context.getRuntime().newEncodingCompatibilityError("ASCII incompatible encoding: " + value.encoding);
+        }
+        return hex(context);
     }
 
     /** rb_str_to_f
