@@ -15,6 +15,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 /**
  * @author kscott
@@ -279,33 +280,41 @@ public class RubyStringScanner extends RubyObject {
         end = pos - lastPos;
         regs = null;
     }
-    
-    @JRubyMethod(name = "getch")
+
+    @JRubyMethod(name = "getch", compat = CompatVersion.RUBY1_8)
     public IRubyObject getch(ThreadContext context) {
+        return getchCommon(context, false);
+    }
+
+    @JRubyMethod(name = "getch", compat = CompatVersion.RUBY1_9)
+    public IRubyObject getch19(ThreadContext context) {
+        return getchCommon(context, true);
+    }
+
+    public IRubyObject getchCommon(ThreadContext context, boolean is1_9) {
         check();
         clearMatched();
-        
+
         Ruby runtime = context.getRuntime();
         ByteList value = str.getByteList();
-        
-        if (pos >= value.realSize) return runtime.getNil();
 
-        Encoding enc = runtime.getKCode().getEncoding();
-        
+        if (pos >= value.realSize) return runtime.getNil();
         int len;
-        if (enc.isSingleByte()) {
-            len = 1;
+        if (is1_9) {
+            Encoding enc = str.getEncoding();
+            len = enc.isSingleByte() ? 1 : StringSupport.length(enc, value.bytes, value.begin + pos, value.begin + value.realSize);
         } else {
-            len = enc.length(value.bytes, value.begin + pos, value.begin + value.realSize);
+            Encoding enc = runtime.getKCode().getEncoding();
+            len = enc.isSingleByte() ? 1 : enc.length(value.bytes, value.begin + pos, value.begin + value.realSize);
         }
-        
+
         if (pos + len > value.realSize) len = value.realSize - pos;
         lastPos = pos;
         pos += len;
-        
+
         setMatched();
         adjustRegisters();
-        
+
         return extractRange(runtime, lastPos + beg, lastPos + end);
     }
     
