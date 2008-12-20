@@ -5279,6 +5279,15 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return intern();
     }
 
+    @JRubyMethod(name = "ord", compat = CompatVersion.RUBY1_9)
+    public IRubyObject ord(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        return RubyFixnum.newFixnum(runtime, codePoint(runtime, value.encoding, 
+                                                                value.bytes,
+                                                                value.begin, 
+                                                                value.begin + value.realSize));
+    }
+
     @JRubyMethod(name = "sum")
     public IRubyObject sum(ThreadContext context) {
         return sumCommon(context, 16);
