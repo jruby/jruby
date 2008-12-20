@@ -1097,7 +1097,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public RubyString clear() {
         Encoding enc = value.encoding;
         value = getEmptyByteList(enc);
-        shareLevel = SHARE_LEVEL_NONE;
+        shareLevel = SHARE_LEVEL_BYTELIST;
         setCodeRange(enc.isAsciiCompatible() ? CR_7BIT : CR_VALID);
         return this;
     }
