@@ -43,6 +43,9 @@ public class InheritedCacheCompiler implements CacheCompiler {
     Map<String, Integer> byteListIndices = new HashMap<String, Integer>();
     Map<String, ByteList> byteListValues = new HashMap<String, ByteList>();
     Map<BigInteger, String> bigIntegers = new HashMap<BigInteger, String>();
+    Map<String, Integer> symbolIndices = new HashMap<String, Integer>();
+    Map<String, Integer> regexpIndices = new HashMap<String, Integer>();
+    Map<Long, Integer> fixnumIndices = new HashMap<Long, Integer>();
     int inheritedSymbolCount = 0;
     int inheritedRegexpCount = 0;
     int inheritedFixnumCount = 0;
@@ -67,24 +70,34 @@ public class InheritedCacheCompiler implements CacheCompiler {
     }
     
     public void cacheSymbol(BaseBodyCompiler method, String symbol) {
+        Integer index = symbolIndices.get(symbol);
+        if (index == null) {
+            index = new Integer(inheritedSymbolCount++);
+            symbolIndices.put(symbol, index);
+        }
+
         method.loadThis();
         method.loadRuntime();
-        method.method.pushInt(inheritedSymbolCount);
+        method.method.ldc(index.intValue());
         method.method.ldc(symbol);
         method.method.invokevirtual(scriptCompiler.getClassname(), "getSymbol", sig(RubySymbol.class, Ruby.class, int.class, String.class));
-
-        inheritedSymbolCount++;
     }
 
     public void cacheRegexp(BaseBodyCompiler method, String pattern, int options) {
+        // TODO: Yeah, I know this is a little weird, but how likely is it to ever conflict with something real?
+        String cache = pattern + "__OPTIONS__=" + options;
+        Integer index = regexpIndices.get(cache);
+        if (index == null) {
+            index = new Integer(inheritedRegexpCount++);
+            regexpIndices.put(cache, index);
+        }
+
         method.loadThis();
         method.loadRuntime();
-        method.method.pushInt(inheritedRegexpCount);
+        method.method.pushInt(index.intValue());
         method.method.ldc(pattern);
         method.method.ldc(options);
         method.method.invokevirtual(scriptCompiler.getClassname(), "getRegexp", sig(RubyRegexp.class, Ruby.class, int.class, String.class, int.class));
-
-        inheritedRegexpCount++;
     }
     
     public void cacheFixnum(BaseBodyCompiler method, long value) {
@@ -116,9 +129,15 @@ public class InheritedCacheCompiler implements CacheCompiler {
                 throw new RuntimeException("wtf?");
             }
         } else {
+            Integer index = fixnumIndices.get(value);
+            if (index == null) {
+                index = new Integer(inheritedFixnumCount++);
+                fixnumIndices.put(value, index);
+            }
+            
             method.loadThis();
             method.loadRuntime();
-            method.method.pushInt(inheritedFixnumCount);
+            method.method.pushInt(index.intValue());
             if (value <= Integer.MAX_VALUE && value >= Integer.MIN_VALUE) {
                 method.method.pushInt((int)value);
                 method.method.invokevirtual(scriptCompiler.getClassname(), "getFixnum", sig(RubyFixnum.class, Ruby.class, int.class, int.class));
@@ -126,8 +145,6 @@ public class InheritedCacheCompiler implements CacheCompiler {
                 method.method.ldc(value);
                 method.method.invokevirtual(scriptCompiler.getClassname(), "getFixnum", sig(RubyFixnum.class, Ruby.class, int.class, long.class));
             }
-
-            inheritedFixnumCount++;
         }
     }
 
