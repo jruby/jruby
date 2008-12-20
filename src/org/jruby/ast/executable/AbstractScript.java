@@ -143,6 +143,8 @@ public abstract class AbstractScript implements Script {
 
         if (value != null) constantGenerations[index] = newGeneration;
 
+        int[] foo = null;
+        
         return value;
     }
 

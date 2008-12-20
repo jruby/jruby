@@ -44,7 +44,6 @@ public class InheritedCacheCompiler implements CacheCompiler {
     Map<String, ByteList> byteListValues = new HashMap<String, ByteList>();
     Map<BigInteger, String> bigIntegers = new HashMap<BigInteger, String>();
     Map<String, Integer> symbolIndices = new HashMap<String, Integer>();
-    Map<String, Integer> regexpIndices = new HashMap<String, Integer>();
     Map<Long, Integer> fixnumIndices = new HashMap<Long, Integer>();
     int inheritedSymbolCount = 0;
     int inheritedRegexpCount = 0;
@@ -84,17 +83,9 @@ public class InheritedCacheCompiler implements CacheCompiler {
     }
 
     public void cacheRegexp(BaseBodyCompiler method, String pattern, int options) {
-        // TODO: Yeah, I know this is a little weird, but how likely is it to ever conflict with something real?
-        String cache = pattern + "__OPTIONS__=" + options;
-        Integer index = regexpIndices.get(cache);
-        if (index == null) {
-            index = new Integer(inheritedRegexpCount++);
-            regexpIndices.put(cache, index);
-        }
-
         method.loadThis();
         method.loadRuntime();
-        method.method.pushInt(index.intValue());
+        method.method.pushInt(inheritedRegexpCount++);
         method.method.ldc(pattern);
         method.method.ldc(options);
         method.method.invokevirtual(scriptCompiler.getClassname(), "getRegexp", sig(RubyRegexp.class, Ruby.class, int.class, String.class, int.class));
@@ -150,7 +141,6 @@ public class InheritedCacheCompiler implements CacheCompiler {
 
     public void finish() {
         SkinnyMethodAdapter initMethod = scriptCompiler.getInitMethod();
-        initMethod.aload(StandardASMCompiler.THIS);
 
         // generate call sites initialization code
         int size = callSiteList.size();

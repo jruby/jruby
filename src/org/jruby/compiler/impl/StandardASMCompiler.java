@@ -211,7 +211,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         topLevelScope = scope;
 
         beginInit();
-        beginClassInit();
         
         cacheCompiler = new InheritedCacheCompiler(this);
 
@@ -415,8 +414,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     }
 
     private void endClassInit() {
-        clinitMethod.voidreturn();
-        clinitMethod.end();
+        if (clinitMethod != null) {
+            clinitMethod.voidreturn();
+            clinitMethod.end();
+        }
     }
     
     public SkinnyMethodAdapter getInitMethod() {
@@ -424,6 +425,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     }
     
     public SkinnyMethodAdapter getClassInitMethod() {
+        // lazily create class init only if necessary
+        if (clinitMethod == null) {
+            beginClassInit();
+        }
         return clinitMethod;
     }
     
@@ -443,7 +448,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     }
 
     public BodyCompiler startRoot(String rubyName, String javaName, StaticScope scope, ASTInspector inspector) {
-        RootScopedBodyCompiler methodCompiler = new ScriptBodyCompiler(this, rubyName, javaName, inspector, scope);
+        RootScopedBodyCompiler methodCompiler = new MethodBodyCompiler(this, rubyName, javaName, inspector, scope);
 
         methodCompiler.beginMethod(null, scope);
 

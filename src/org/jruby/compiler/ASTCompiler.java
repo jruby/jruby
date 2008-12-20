@@ -131,6 +131,7 @@ import org.jruby.ast.VAliasNode;
 import org.jruby.ast.WhenNode;
 import org.jruby.ast.XStrNode;
 import org.jruby.ast.ZSuperNode;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.BlockBody;
 import org.jruby.util.IdUtil;
 
@@ -3059,11 +3060,15 @@ public class ASTCompiler {
 
     public void compileRoot(Node node, ScriptCompiler context, ASTInspector inspector, boolean load, boolean main) {
         RootNode rootNode = (RootNode) node;
+        StaticScope staticScope = rootNode.getStaticScope();
 
-        context.startScript(rootNode.getStaticScope());
+        context.startScript(staticScope);
+
+        // force static scope to claim restarg at 0, so it only implements the [] version of __file__
+        staticScope.setRestArg(0);
 
         // create method for toplevel of script
-        BodyCompiler methodCompiler = context.startMethod("__file__", "__file__", null, rootNode.getStaticScope(), inspector);
+        BodyCompiler methodCompiler = context.startRoot("__file__", "__file__", staticScope, inspector);
 
         Node nextNode = rootNode.getBodyNode();
         if (nextNode != null) {
