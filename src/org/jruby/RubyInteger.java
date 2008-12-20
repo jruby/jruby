@@ -38,6 +38,7 @@ import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.util.Numeric.f_gcd;
 import static org.jruby.util.Numeric.f_lcm;
 
+import org.jcodings.Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
@@ -46,6 +47,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 /** Implementation of the Integer class.
  *
@@ -249,12 +251,39 @@ public abstract class RubyInteger extends RubyNumeric {
     /** int_chr
      * 
      */
-    @JRubyMethod(name = "chr")
-    public RubyString chr() {
-        if (getLongValue() < 0 || getLongValue() > 0xff) {
-            throw getRuntime().newRangeError(this.toString() + " out of char range");
+    @JRubyMethod(name = "chr", compat = CompatVersion.RUBY1_8)
+    public RubyString chr(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        long value = getLongValue();
+        if (value < 0 || value > 0xff) throw runtime.newRangeError(this.toString() + " out of char range");
+        return RubyString.newStringShared(runtime, SINGLE_CHAR_BYTELISTS[(int)value]);
+    }
+
+    @JRubyMethod(name = "chr", compat = CompatVersion.RUBY1_9)
+    public RubyString chr19(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        long value = getLongValue();
+        if (value < 0 || value > 0xff) throw runtime.newRangeError(this.toString() + " out of char range");
+        if (value < 0x80) {
+            return RubyString.newUsAsciiStringShared(runtime, SINGLE_CHAR_BYTELISTS[(int)value]);
+        } else {
+            return RubyString.newStringShared(runtime, SINGLE_CHAR_BYTELISTS[(int)value]);
         }
-        return RubyString.newStringShared(getRuntime(), SINGLE_CHAR_BYTELISTS[(int)getLongValue()]);
+    }
+
+    @JRubyMethod(name = "chr", compat = CompatVersion.RUBY1_9)
+    public RubyString chr19(ThreadContext context, IRubyObject arg) {
+        Ruby runtime = context.getRuntime();
+        long value = getLongValue();
+        Encoding enc = arg.convertToString().toEncoding(runtime);
+        int n;
+        if (value < 0 || (n = StringSupport.codeLength(runtime, enc, (int)value)) <= 0) {
+            throw runtime.newRangeError(this.toString() + " out of char range");
+        }
+        ByteList bytes = new ByteList(n);
+        enc.codeToMbc((int)value, bytes.bytes, 0);
+        bytes.realSize = n;
+        return RubyString.newStringNoCopy(runtime, bytes, enc, 0);
     }
 
     /** int_to_i
