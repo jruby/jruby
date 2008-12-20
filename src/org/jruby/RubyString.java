@@ -954,6 +954,16 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return this;
     }
 
+    public final RubyString cat(RubyString str) {
+        ByteList strValue = str.value;
+        modify(value.realSize + strValue.realSize);
+        int strCr = str.getCodeRange();
+        strCr = cat(strValue.bytes, strValue.begin, strValue.realSize, strValue.encoding, strCr, strCr);
+        infectBy(str);
+        str.setCodeRange(strCr);
+        return this;
+    }
+
     public final RubyString cat(ByteList str) {
         modify(value.realSize + str.realSize);
         System.arraycopy(str.bytes, str.begin, value.bytes, value.begin + value.realSize, str.realSize);
@@ -2051,16 +2061,48 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return cat(stringValue(other).value);
     }
 
+    public RubyString append19(IRubyObject other) {
+        RubyString otherStr = other.convertToString();
+        ByteList otherValue = otherStr.value;
+
+        if (otherValue.realSize > 0) {
+            Encoding enc = checkEncoding(otherStr);
+            int cr = getCodeRange();
+            int otherCr = otherStr.getCodeRange();
+            if (otherCr > cr) cr = otherCr;
+            cat(otherValue);
+            associateEncoding(enc);
+            setCodeRange(cr);
+            infectBy(other);
+            return this;
+        }
+        return cat(otherStr); // rb_str_buf_append
+    }
+
     /** rb_str_concat
      *
      */
-    @JRubyMethod(name = {"concat", "<<"})
+    @JRubyMethod(name = {"concat", "<<"}, compat = CompatVersion.RUBY1_8)
     public RubyString concat(IRubyObject other) {
         if (other instanceof RubyFixnum) {
             long value = ((RubyFixnum) other).getLongValue();
             if (value >= 0 && value < 256) return cat((byte) value);
         }
         return append(other);
+    }
+
+    @JRubyMethod(name = {"concat", "<<"}, compat = CompatVersion.RUBY1_9)
+    public RubyString concat19(ThreadContext context, IRubyObject other) {
+        if (other instanceof RubyFixnum) {
+            Encoding enc = value.encoding;
+            int c = RubyNumeric.num2int(other);
+            int cl = codeLength(context.getRuntime(), enc, c);
+            modify(value.realSize + cl);
+            enc.codeToMbc(c, value.bytes, value.begin + value.realSize);
+            value.realSize += cl;
+            return this;
+        }
+        return append19(other);
     }
 
     /** rb_str_crypt
