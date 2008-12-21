@@ -255,7 +255,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     final Encoding checkEncoding(RubyString other) {
         Encoding enc = isCompatibleWith(other);
-        if (enc == null) throw getRuntime().newArgumentError("incompatible character encodings: " + 
+        if (enc == null) throw getRuntime().newEncodingCompatibilityError("incompatible character encodings: " + 
                                 value.encoding + " and " + other.value.encoding);
         return enc;
     }
@@ -284,9 +284,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private int strLength(Encoding enc) {
-        if (singleByteOptimizable()) return value.realSize;
-        value.encoding = enc;
-        return strLength(value);
+        if (singleByteOptimizable(enc)) return value.realSize;
+        return strLength(value, enc);
     }
 
     private int strLength() {
@@ -295,7 +294,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private int strLength(ByteList bytes) {
-        long lencr = strLengthWithCodeRange(value);
+        return strLength(bytes, bytes.encoding);
+    }
+
+    private int strLength(ByteList bytes, Encoding enc) {
+        long lencr = strLengthWithCodeRange(bytes, enc);
         int cr = unpackArg(lencr);
         if (cr != 0) setCodeRange(cr);
         return unpackResult(lencr);
@@ -3678,6 +3681,93 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return new RubyString(runtime, getMetaClass(), res).infectBy(this);
     }
 
+    private IRubyObject justify19(IRubyObject arg0, int jflag) {
+        Ruby runtime = getRuntime();
+        RubyString result = justifyCommon(runtime, SPACE_BYTELIST, 
+                                                   1,
+                                                   true,
+                                                   value.encoding, RubyFixnum.num2int(arg0), jflag);
+        if (getCodeRange() != CR_BROKEN) result.setCodeRange(getCodeRange());
+        return result;
+    }
+
+    private IRubyObject justify19(IRubyObject arg0, IRubyObject arg1, int jflag) {
+        Ruby runtime = getRuntime();
+        RubyString padStr = arg1.convertToString();
+        ByteList pad = padStr.value;
+        Encoding enc = checkEncoding(padStr);
+        int padCharLen = padStr.strLength(enc);
+        if (pad.realSize == 0 || padCharLen == 0) throw runtime.newArgumentError("zero width padding");
+        RubyString result = justifyCommon(runtime, pad, 
+                                                   padCharLen, 
+                                                   padStr.singleByteOptimizable(), 
+                                                   enc, RubyFixnum.num2int(arg0), jflag);
+        result.infectBy(padStr);
+        int cr = codeRangeAnd(getCodeRange(), padStr.getCodeRange());
+        if (cr != CR_BROKEN) result.setCodeRange(cr);
+        return result;
+    }
+
+    private RubyString justifyCommon(Ruby runtime, ByteList pad, int padCharLen, boolean padSinglebyte, Encoding enc, int width, int jflag) {
+        int len = strLength(enc);
+        if (width < 0 || len >= width) return strDup(runtime);
+        int n = width - len;
+
+        int llen = (jflag == 'l') ? 0 : ((jflag == 'r') ? n : n / 2);
+        int rlen = n - llen;
+
+        int padP = pad.begin;
+        int padLen = pad.realSize;
+        byte padBytes[] = pad.bytes;
+
+        ByteList res = new ByteList(value.realSize + n * padLen / padCharLen + 2);
+
+        int p = res.begin;
+        byte bytes[] = res.bytes;
+
+        while (llen > 0) {
+            if (padLen <= 1) { 
+                bytes[p++] = padBytes[padP];
+            } else if (llen > padCharLen) {
+                System.arraycopy(padBytes, padP, bytes, p, padLen);
+                p += padLen;
+                llen -= padCharLen;
+            } else {
+                int padPP = padSinglebyte ? padP + llen : StringSupport.nth(enc, padBytes, padP, padP + padLen, llen);
+                n = padPP - padP;
+                System.arraycopy(padBytes, padP, bytes, p, n);
+                p += n;
+                break;
+            }
+        }
+
+        System.arraycopy(value.bytes, value.begin, bytes, p, value.realSize);
+        p += value.realSize;
+
+        while (rlen > 0) {
+            if (padLen <= 1) { 
+                bytes[p++] = padBytes[padP];
+            } else if (rlen > padCharLen) {
+                System.arraycopy(padBytes, padP, bytes, p, padLen);
+                p += padLen;
+                rlen -= padCharLen;
+            } else {
+                int padPP = padSinglebyte ? padP + rlen : StringSupport.nth(enc, padBytes, padP, padP + padLen, rlen);
+                n = padPP - padP;
+                System.arraycopy(padBytes, padP, bytes, p, n);
+                p += n;
+                break;
+            }
+        }
+        
+        res.realSize = p;
+
+        RubyString result = new RubyString(runtime, getMetaClass(), res);
+        result.infectBy(this);
+        result.associateEncoding(enc);
+        return result;
+    }
+
     /**
      * Variable-arity version for compatibility. Not bound to Ruby.
      * @deprecated use the one or two argument versions.
@@ -3697,14 +3787,24 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_ljust
      *
      */
-    @JRubyMethod
+    @JRubyMethod(name = "ljust", compat = CompatVersion.RUBY1_8)
     public IRubyObject ljust(IRubyObject arg0) {
         return justify(arg0, 'l');
     }
 
-    @JRubyMethod
+    @JRubyMethod(name = "ljust", compat = CompatVersion.RUBY1_8)
     public IRubyObject ljust(IRubyObject arg0, IRubyObject arg1) {
         return justify(arg0, arg1, 'l');
+    }
+
+    @JRubyMethod(name = "ljust", compat = CompatVersion.RUBY1_9)
+    public IRubyObject ljust19(IRubyObject arg0) {
+        return justify19(arg0, 'l');
+    }
+
+    @JRubyMethod(name = "ljust", compat = CompatVersion.RUBY1_9)
+    public IRubyObject ljust19(IRubyObject arg0, IRubyObject arg1) {
+        return justify19(arg0, arg1, 'l');
     }
 
     /**
@@ -3726,14 +3826,24 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_rjust
      *
      */
-    @JRubyMethod
+    @JRubyMethod(name = "rjust", compat = CompatVersion.RUBY1_8)
     public IRubyObject rjust(IRubyObject arg0) {
         return justify(arg0, 'r');
     }
 
-    @JRubyMethod
+    @JRubyMethod(name = "rjust", compat = CompatVersion.RUBY1_8)
     public IRubyObject rjust(IRubyObject arg0, IRubyObject arg1) {
         return justify(arg0, arg1, 'r');
+    }
+
+    @JRubyMethod(name = "rjust", compat = CompatVersion.RUBY1_9)
+    public IRubyObject rjust19(IRubyObject arg0) {
+        return justify19(arg0, 'r');
+    }
+
+    @JRubyMethod(name = "rjust", compat = CompatVersion.RUBY1_9)
+    public IRubyObject rjust19(IRubyObject arg0, IRubyObject arg1) {
+        return justify19(arg0, arg1, 'r');
     }
 
     /**
@@ -3755,14 +3865,24 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_center
      *
      */
-    @JRubyMethod
+    @JRubyMethod(name = "center", compat = CompatVersion.RUBY1_8)
     public IRubyObject center(IRubyObject arg0) {
         return justify(arg0, 'c');
     }
 
-    @JRubyMethod
+    @JRubyMethod(name = "center", compat = CompatVersion.RUBY1_8)
     public IRubyObject center(IRubyObject arg0, IRubyObject arg1) {
         return justify(arg0, arg1, 'c');
+    }
+
+    @JRubyMethod(name = "center", compat = CompatVersion.RUBY1_9)
+    public IRubyObject center19(IRubyObject arg0) {
+        return justify19(arg0, 'c');
+    }
+
+    @JRubyMethod(name = "center", compat = CompatVersion.RUBY1_9)
+    public IRubyObject center19(IRubyObject arg0, IRubyObject arg1) {
+        return justify19(arg0, arg1, 'c');
     }
 
     @JRubyMethod(name = "chop")

@@ -216,6 +216,10 @@ public final class StringSupport {
         return strLengthWithCodeRange(bytes.encoding, bytes.bytes, bytes.begin, bytes.begin + bytes.realSize);
     }
 
+    public static long strLengthWithCodeRange(ByteList bytes, Encoding enc) { 
+        return strLengthWithCodeRange(enc, bytes.bytes, bytes.begin, bytes.begin + bytes.realSize);
+    }
+
     // arg cannot be negative
     static long pack(int result, int arg) {
         return ((long)arg << 31) | result;
