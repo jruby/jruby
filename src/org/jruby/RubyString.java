@@ -1338,9 +1338,15 @@ public class RubyString extends RubyObject implements EncodingCapable {
      *
      * @param pattern Regexp or String
      */
-    @JRubyMethod
+    @JRubyMethod(name = "match", compat = CompatVersion.RUBY1_8)
     public IRubyObject match(ThreadContext context, IRubyObject pattern) {
         return getPattern(pattern, false).callMethod(context, "match", this);
+    }
+
+    @JRubyMethod(name = "match", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject match19(ThreadContext context, IRubyObject pattern, Block block) {
+        IRubyObject result = getPattern(pattern, false).callMethod(context, "match", this);
+        return block.isGiven() ? block.yield(context, result) : result;
     }
 
     /** rb_str_capitalize / rb_str_capitalize_bang
