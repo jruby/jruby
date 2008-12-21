@@ -3611,101 +3611,71 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private static final ByteList SPACE_BYTELIST = new ByteList(ByteList.plain(" "));
 
-    private final IRubyObject justify(IRubyObject arg0, char jflag) {
+    private IRubyObject justify(IRubyObject arg0, int jflag) {
         Ruby runtime = getRuntime();
-        
-        int width = RubyFixnum.num2int(arg0);
-        
-        int f, flen = 0;
-        byte[]fbuf;
-        
-        IRubyObject pad;
-
-        f = SPACE_BYTELIST.begin;
-        flen = SPACE_BYTELIST.realSize;
-        fbuf = SPACE_BYTELIST.bytes;
-        pad = runtime.getNil();
-        
-        return justifyCommon(width, jflag, flen, fbuf, f, runtime, pad);
-    }
-    
-    private final IRubyObject justify(IRubyObject arg0, IRubyObject arg1, char jflag) {
-        Ruby runtime = getRuntime();
-        
-        int width = RubyFixnum.num2int(arg0);
-        
-        int f, flen = 0;
-        byte[]fbuf;
-        
-        IRubyObject pad;
-
-        pad = arg1.convertToString();
-        ByteList fList = ((RubyString)pad).value;
-        f = fList.begin;
-        flen = fList.realSize;
-
-        if (flen == 0) throw runtime.newArgumentError("zero width padding");
-
-        fbuf = fList.bytes;
-        
-        return justifyCommon(width, jflag, flen, fbuf, f, runtime, pad);
+        return justifyCommon(runtime, SPACE_BYTELIST, RubyFixnum.num2int(arg0), jflag);
     }
 
-    private IRubyObject justifyCommon(int width, char jflag, int flen, byte[] fbuf, int f, Ruby runtime, IRubyObject pad) {
+    private IRubyObject justify(IRubyObject arg0, IRubyObject arg1, int jflag) {
+        Ruby runtime = getRuntime();
+        ByteList pad = arg1.convertToString().value;
+        if (pad.realSize == 0) throw runtime.newArgumentError("zero width padding");
+        return justifyCommon(runtime, pad, RubyFixnum.num2int(arg0), jflag).infectBy(arg1);
+    }
+
+    private IRubyObject justifyCommon(Ruby runtime, ByteList pad, int width, int jflag) {
         if (width < 0 || value.realSize >= width) return strDup(runtime);
 
         ByteList res = new ByteList(width);
         res.realSize = width;
 
+        int padP = pad.begin;
+        int padLen = pad.realSize; 
+        byte padBytes[] = pad.bytes;
+
         int p = res.begin;
-        int pend;
-        byte[] pbuf = res.bytes;
+        byte bytes[] = res.bytes;
 
         if (jflag != 'l') {
             int n = width - value.realSize;
-            pend = p + ((jflag == 'r') ? n : n / 2);
-            if (flen <= 1) {
-                while (p < pend) {
-                    pbuf[p++] = fbuf[f];
+            int end = p + ((jflag == 'r') ? n : n / 2);
+            if (padLen <= 1) {
+                while (p < end) {
+                    bytes[p++] = padBytes[padP];
                 }
             } else {
-                int q = f;
-                while (p + flen <= pend) {
-                    System.arraycopy(fbuf, f, pbuf, p, flen);
-                    p += flen;
+                int q = padP;
+                while (p + padLen <= end) {
+                    System.arraycopy(padBytes, padP, bytes, p, padLen);
+                    p += padLen;
                 }
-                while (p < pend) {
-                    pbuf[p++] = fbuf[q++];
+                while (p < end) {
+                    bytes[p++] = padBytes[q++];
                 }
             }
         }
 
-        System.arraycopy(value.bytes, value.begin, pbuf, p, value.realSize);
+        System.arraycopy(value.bytes, value.begin, bytes, p, value.realSize);
 
         if (jflag != 'r') {
             p += value.realSize;
-            pend = res.begin + width;
-            if (flen <= 1) {
-                while (p < pend) {
-                    pbuf[p++] = fbuf[f];
+            int end = res.begin + width;
+            if (padLen <= 1) {
+                while (p < end) {
+                    bytes[p++] = padBytes[padP];
                 }
             } else {
-                while (p + flen <= pend) {
-                    System.arraycopy(fbuf, f, pbuf, p, flen);
-                    p += flen;
+                while (p + padLen <= end) {
+                    System.arraycopy(padBytes, padP, bytes, p, padLen);
+                    p += padLen;
                 }
-                while (p < pend) {
-                    pbuf[p++] = fbuf[f++];
+                while (p < end) {
+                    bytes[p++] = padBytes[padP++];
                 }
             }
         }
 
-        RubyString resStr = new RubyString(runtime, getMetaClass(), res);
-        resStr.infectBy(this);
-        if (flen > 0) {
-            resStr.infectBy(pad);
-        }
-        return resStr;
+        return new RubyString(runtime, getMetaClass(), res).infectBy(this);
     }
 
     /**
@@ -3732,9 +3702,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return justify(arg0, 'l');
     }
 
-    /** rb_str_ljust
-     *
-     */
     @JRubyMethod
     public IRubyObject ljust(IRubyObject arg0, IRubyObject arg1) {
         return justify(arg0, arg1, 'l');
@@ -3764,9 +3731,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return justify(arg0, 'r');
     }
 
-    /** rb_str_rjust
-     *
-     */
     @JRubyMethod
     public IRubyObject rjust(IRubyObject arg0, IRubyObject arg1) {
         return justify(arg0, arg1, 'r');
@@ -3796,9 +3760,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return justify(arg0, 'c');
     }
 
-    /** rb_str_center
-     *
-     */
     @JRubyMethod
     public IRubyObject center(IRubyObject arg0, IRubyObject arg1) {
         return justify(arg0, arg1, 'c');
