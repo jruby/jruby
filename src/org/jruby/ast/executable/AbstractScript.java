@@ -10,7 +10,9 @@ import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyRegexp;
 import org.jruby.RubySymbol;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
@@ -52,6 +54,26 @@ public abstract class AbstractScript implements Script {
         return callSites[index];
     }
 
+    /**
+     * descriptor format is
+     *
+     * closure_method_name,arity,varname1;varname2;varname3,has_multi_args_head,arg_type,light
+     * 
+     * @param context
+     * @param index
+     * @param descriptor
+     * @return
+     */
+    public final BlockBody getBlockBody(ThreadContext context, int index, String descriptor) {
+        BlockBody body = blockBodies[index];
+        
+        if (body == null) {
+            return createBlockBody(context, index, descriptor);
+        }
+
+        return body;
+    }
+
     public final RubySymbol getSymbol(Ruby runtime, int index, String name) {
         RubySymbol symbol = symbols[index];
         if (symbol == null) return symbols[index] = runtime.newSymbol(name);
@@ -78,6 +100,10 @@ public abstract class AbstractScript implements Script {
 
     public final void initCallSites(int size) {
         callSites = new CallSite[size];
+    }
+
+    public final void initBlockBodies(int size) {
+        blockBodies = new BlockBody[size];
     }
 
     public final void initSymbols(int size) {
@@ -142,13 +168,33 @@ public abstract class AbstractScript implements Script {
         constants[index] = value;
 
         if (value != null) constantGenerations[index] = newGeneration;
-
-        int[] foo = null;
         
         return value;
     }
 
+    private BlockBody createBlockBody(ThreadContext context, int index, String descriptor) throws NumberFormatException {
+        String[] firstSplit = descriptor.split(",");
+        String[] secondSplit = firstSplit[2].split(";");
+
+        // FIXME: Big fat hack here, because scope names are expected to be interned strings by the parser
+        for (int i = 0; i < secondSplit.length; i++) {
+            secondSplit[i] = secondSplit[i].intern();
+        }
+
+        BlockBody body = RuntimeHelpers.createCompiledBlockBody(
+                context,
+                this,
+                firstSplit[0],
+                Integer.parseInt(firstSplit[1]),
+                secondSplit,
+                Boolean.valueOf(firstSplit[3]),
+                Integer.parseInt(firstSplit[4]),
+                Boolean.valueOf(firstSplit[5]));
+        return blockBodies[index] = body;
+    }
+
     public CallSite[] callSites;
+    public BlockBody[] blockBodies;
     public RubySymbol[] symbols;
     public RubyFixnum[] fixnums;
     public RubyRegexp[] regexps;

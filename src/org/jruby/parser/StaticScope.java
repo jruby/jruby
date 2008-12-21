@@ -86,10 +86,18 @@ public abstract class StaticScope implements Serializable {
     
     protected StaticScope(StaticScope enclosingScope, String[] names) {
         assert names != null : "names is not null";
+        assert namesAreInterned(names);
         
         this.enclosingScope = enclosingScope;
         this.variableNames = names;
         this.variableCaptured = new boolean[variableNames.length];
+    }
+
+    private static boolean namesAreInterned(String[] names) {
+        for (String name : names) {
+            if (name != name.intern()) return false;
+        }
+        return true;
     }
     
     public int addVariable(String name) {

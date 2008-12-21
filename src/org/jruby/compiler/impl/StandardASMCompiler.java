@@ -496,13 +496,14 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         return getNewConstant(type, name_prefix, null);
     }
 
+    public synchronized String getNewConstantName() {
+        return "_" + constants++;
+    }
+
     public String getNewConstant(String type, String name_prefix, Object init) {
         ClassVisitor cv = getClassVisitor();
 
-        String realName;
-        synchronized (this) {
-            realName = "_" + constants++;
-        }
+        String realName = getNewConstantName();
 
         // declare the field
         cv.visitField(ACC_PRIVATE, realName, type, null, null).visitEnd();

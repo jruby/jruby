@@ -50,6 +50,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
     int inheritedFixnumCount = 0;
     int inheritedConstantCount = 0;
     int inheritedByteListCount = 0;
+    int inheritedBlockBodyCount = 0;
     
     public InheritedCacheCompiler(StandardASMCompiler scriptCompiler) {
         this.scriptCompiler = scriptCompiler;
@@ -198,6 +199,14 @@ public class InheritedCacheCompiler implements CacheCompiler {
             initMethod.invokevirtual(scriptCompiler.getClassname(), "initRegexps", sig(void.class, params(int.class)));
         }
 
+        // generate block bodies initialization code
+        size = inheritedBlockBodyCount;
+        if (size != 0) {
+            initMethod.aload(0);
+            initMethod.pushInt(size);
+            initMethod.invokevirtual(scriptCompiler.getClassname(), "initBlockBodies", sig(void.class, params(int.class)));
+        }
+
         // generate bytelists initialization code
         size = inheritedByteListCount;
         if (inheritedByteListCount > 0) {
@@ -271,55 +280,28 @@ public class InheritedCacheCompiler implements CacheCompiler {
     }
 
     public void cacheClosure(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector) {
-        String closureFieldName = scriptCompiler.getNewConstant(ci(BlockBody.class), "closure");
-
-        String closureMethodName = "getClosure_" + closureFieldName;
-
-        ClassVisitor cv = scriptCompiler.getClassVisitor();
-
-        {
-            SkinnyMethodAdapter closureGetter = new SkinnyMethodAdapter(
-                    cv.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_SYNTHETIC, closureMethodName,
-                            sig(BlockBody.class, ThreadContext.class), null, null));
-
-            closureGetter.aload(0);
-            closureGetter.getfield(scriptCompiler.getClassname(), closureFieldName, ci(BlockBody.class));
-            closureGetter.dup();
-            Label alreadyCreated = new Label();
-            closureGetter.ifnonnull(alreadyCreated);
-
-            // no callback, construct and cache it
-            closureGetter.pop();
-            closureGetter.aload(0); // [this]
-
-            // create callbackloadThreadContext();
-            closureGetter.aload(1);
-            closureGetter.aload(0);
-            closureGetter.ldc(closureMethod); // [this, runtime, this, str]
-            closureGetter.pushInt(arity);
-            StandardASMCompiler.buildStaticScopeNames(closureGetter, scope);
-            closureGetter.ldc(Boolean.valueOf(hasMultipleArgsHead));
-            closureGetter.pushInt(BlockBody.asArgumentType(argsNodeId));
-            // if there's a sub-closure or there's scope-aware methods, it can't be "light"
-            closureGetter.ldc(!(inspector.hasClosure() || inspector.hasScopeAwareMethods()));
-            closureGetter.invokestatic(p(RuntimeHelpers.class), "createCompiledBlockBody",
-                    sig(BlockBody.class, ThreadContext.class, Object.class, String.class, int.class,
-                    String[].class, boolean.class, int.class, boolean.class));
-
-            closureGetter.putfield(scriptCompiler.getClassname(), closureFieldName, ci(BlockBody.class)); // []
-            closureGetter.aload(0); // [this]
-            closureGetter.getfield(scriptCompiler.getClassname(), closureFieldName, ci(BlockBody.class)); // [callback]
-
-            closureGetter.label(alreadyCreated);
-            closureGetter.areturn();
-
-            closureGetter.end();
-        }
-
         method.loadThis();
         method.loadThreadContext();
-        method.method.invokevirtual(scriptCompiler.getClassname(), closureMethodName,
-                sig(BlockBody.class, ThreadContext.class));
+        method.method.pushInt(inheritedBlockBodyCount++);
+
+        // build scope names string
+        StringBuffer scopeNames = new StringBuffer();
+        for (int i = 0; i < scope.getVariables().length; i++) {
+            if (i != 0) scopeNames.append(';');
+            scopeNames.append(scope.getVariables()[i]);
+        }
+
+        // build descriptor string
+        String descriptor =
+                closureMethod + ',' +
+                arity + ',' +
+                scopeNames + ',' +
+                hasMultipleArgsHead + ',' +
+                BlockBody.asArgumentType(argsNodeId) + ',' +
+                !(inspector.hasClosure() || inspector.hasScopeAwareMethods());
+        
+        method.method.ldc(descriptor);
+        method.method.invokevirtual(scriptCompiler.getClassname(), "getBlockBody", sig(BlockBody.class, ThreadContext.class, int.class, String.class));
     }
 
     public void cacheClosureOld(BaseBodyCompiler method, String closureMethod) {
