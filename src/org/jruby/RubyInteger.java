@@ -271,14 +271,6 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
-    /** int_ord
-     * 
-     */
-    @JRubyMethod(name = "ord", compat = CompatVersion.RUBY1_9)
-    public IRubyObject ord(ThreadContext context) {
-        return this;
-    }
-
     @JRubyMethod(name = "chr", compat = CompatVersion.RUBY1_9)
     public RubyString chr19(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.getRuntime();
@@ -292,6 +284,14 @@ public abstract class RubyInteger extends RubyNumeric {
         enc.codeToMbc((int)value, bytes.bytes, 0);
         bytes.realSize = n;
         return RubyString.newStringNoCopy(runtime, bytes, enc, 0);
+    }
+
+    /** int_ord
+     * 
+     */
+    @JRubyMethod(name = "ord", compat = CompatVersion.RUBY1_9)
+    public IRubyObject ord(ThreadContext context) {
+        return this;
     }
 
     /** int_to_i
