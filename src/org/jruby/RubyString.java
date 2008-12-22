@@ -61,6 +61,7 @@ import java.util.Locale;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB.Entry;
 import org.jcodings.ascii.AsciiTables;
+import org.jcodings.constants.CharacterType;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -91,6 +92,8 @@ import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.string.JavaCrypt;
+
+import sun.misc.Unsafe;
 
 /**
  * Implementation of Ruby String class
@@ -3030,14 +3033,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return result;
     }
 
-    @JRubyMethod(name = {"succ", "next"})
+    @JRubyMethod(name = {"succ", "next"}, compat = CompatVersion.RUBY1_8)
     public IRubyObject succ(ThreadContext context) {
         RubyString str = strDup(context.getRuntime());
         str.succ_bang();
         return str;
     }
 
-    @JRubyMethod(name = {"succ!", "next!"})
+    @JRubyMethod(name = {"succ!", "next!"}, compat = CompatVersion.RUBY1_8)
     public IRubyObject succ_bang() {
         if (value.realSize == 0) {
             modifyCheck();
@@ -3086,6 +3089,186 @@ public class RubyString extends RubyObject implements EncodingCapable {
             // zzz -> aaaa and non-alnum byte values should be "\377" -> "\001\000"
             value.insert(pos, (byte) n);
         }
+        return this;
+    }
+
+    private static enum NeighborChar {NOT_CHAR, FOUND, WRAPPED}
+
+    private static NeighborChar succChar(Encoding enc, byte[]bytes, int p, int len) {
+        while (true) {
+            int i = len - 1;
+            for (; i >= 0 && bytes[p + i] == (byte)0xff; i--) bytes[p + i] = 0;
+            if (i < 0) return NeighborChar.WRAPPED;
+            bytes[p + i] = (byte)((bytes[p + i] & 0xff) + 1);
+            int cl = StringSupport.preciseLength(enc, bytes, p, p + len);
+            if (cl > 0) {
+                if (cl == len) {
+                    return NeighborChar.FOUND;
+                } else {
+                    for (int j = p + cl; j < p + len - cl; j++) bytes[j] = (byte)0xff;
+                }
+            }
+            if (cl == -1 && i < len - 1) {
+                int len2 = len - 1;
+                for (; len2 > 0; len2--) {
+                    if (StringSupport.preciseLength(enc, bytes, p, p + len2) != -1) break;
+                }
+                for (int j = p + len2 + 1; j < p + len - (len2 + 1); j++) bytes[j] = (byte)0xff;
+            }
+        }
+    }
+    
+    private static NeighborChar predChar(Encoding enc, byte[]bytes, int p, int len) {
+        while (true) {
+            int i = len - 1;
+            for (; i >= 0 && bytes[p + i] == 0; i--) bytes[p + i] = (byte)0xff;
+            if (i < 0) return NeighborChar.WRAPPED;
+            bytes[p + i] = (byte)((bytes[p + i] & 0xff) - 1);
+            int cl = StringSupport.preciseLength(enc, bytes, p, p + len);
+            if (cl > 0) {
+                if (cl == len) {
+                    return NeighborChar.FOUND;
+                } else {
+                    for (int j = p + cl; j < p + len - cl; j++) bytes[j] = 0;
+                }
+            }
+            if (cl == -1 && i < len - 1) {
+                int len2 = len - 1;
+                for (; len2 > 0; len2--) {
+                    if (StringSupport.preciseLength(enc, bytes, p, p + len2) != -1) break;
+                }
+                for (int j = p + len2 + 1; j < p + len - (len2 + 1); j++) bytes[j] = 0;
+            }
+        }
+    }
+
+    private static NeighborChar succAlnumChar(Encoding enc, byte[]bytes, int p, int len, byte[]carry, int carryP) {
+        byte save[] = new byte[org.jcodings.Config.ENC_CODE_TO_MBC_MAXLEN];
+        int c = enc.mbcToCode(bytes, p, p + len);
+
+        final int cType;
+        if (enc.isDigit(c)) {
+            cType = CharacterType.DIGIT;
+        } else if (enc.isAlpha(c)) {
+            cType = CharacterType.ALPHA;
+        } else {
+            return NeighborChar.NOT_CHAR;
+        }
+
+        System.arraycopy(bytes, p, save, 0, len);
+        NeighborChar ret = succChar(enc, bytes, p, len);
+        if (ret == NeighborChar.FOUND) {
+            c = enc.mbcToCode(bytes, p, p + len);
+            if (enc.isCodeCType(c, cType)) return NeighborChar.FOUND;
+        }
+
+        System.arraycopy(save, 0, bytes, p, len);
+        int range = 1;
+
+        while (true) {
+            System.arraycopy(bytes, p, save, 0, len);
+            ret = predChar(enc, bytes, p, len);
+            if (ret == NeighborChar.FOUND) {
+                c = enc.mbcToCode(bytes, p, p + len);
+                if (!enc.isCodeCType(c, cType)) {
+                    System.arraycopy(save, 0, bytes, p, len);
+                    break;
+                }
+            } else {
+                System.arraycopy(save, 0, bytes, p, len);
+                break;
+            }
+            range++;
+        }
+
+        if (range == 1) return NeighborChar.NOT_CHAR;
+
+        if (cType != CharacterType.DIGIT) {
+            System.arraycopy(bytes, p, carry, carryP, len);
+            return NeighborChar.WRAPPED;
+        }
+
+        System.arraycopy(bytes, p, carry, carryP, len);
+        succChar(enc, carry, carryP, len);
+        return NeighborChar.WRAPPED;
+    }
+
+    @JRubyMethod(name = {"succ", "next"}, compat = CompatVersion.RUBY1_9)
+    public IRubyObject succ19(ThreadContext context) {
+        RubyString str = strDup(context.getRuntime());
+        str.succ_bang19();
+        return str;
+    }
+
+    @JRubyMethod(name = {"succ!", "next!"}, compat = CompatVersion.RUBY1_9)
+    public IRubyObject succ_bang19() {
+        if (value.realSize == 0) {
+            modifyCheck();
+            return this;
+        }
+
+        modify();
+
+        byte carry[] = new byte[org.jcodings.Config.ENC_CODE_TO_MBC_MAXLEN];
+        int carryP = 0;
+        carry[0] = 1;
+        int carryLen = 1;
+
+        ByteList oldValue = value;
+        value = new ByteList(oldValue);
+        value.encoding = oldValue.encoding;
+        Encoding enc = oldValue.encoding;
+        int p = value.begin;
+        int end = p + value.realSize;
+        int s = end;
+        byte[]bytes = value.bytes;
+
+        NeighborChar neighbor = NeighborChar.FOUND;
+        int lastAlnum = -1;
+        boolean alnumSeen = false;
+        while ((s = enc.prevCharHead(bytes, p, s, end)) != -1) {
+            if (neighbor == NeighborChar.NOT_CHAR && lastAlnum != -1) {
+                if (ASCII.isAlpha(bytes[lastAlnum] & 0xff) ?
+                        ASCII.isDigit(bytes[s] & 0xff) :
+                        ASCII.isDigit(bytes[lastAlnum] & 0xff) ?
+                                ASCII.isAlpha(bytes[s] & 0xff) : false) {
+                    s = lastAlnum;
+                    break;
+                }
+            }
+
+            int cl = StringSupport.preciseLength(enc, bytes, s, end);
+            if (cl <= 0) continue;
+            switch (neighbor = succAlnumChar(enc, bytes, s, cl, carry, 0)) {
+            case NOT_CHAR: continue;
+            case FOUND:    return this;
+            case WRAPPED:  lastAlnum = s;
+            }
+            alnumSeen = true;
+            carryP = s - p;
+            carryLen = cl;
+        }
+
+        if (!alnumSeen) {
+            s = end;
+            while ((s = enc.prevCharHead(bytes, p, s, end)) != -1) {
+                int cl = StringSupport.preciseLength(enc, bytes, s, end);
+                if (cl <= 0) continue;
+                neighbor = succChar(enc, bytes, s, cl);
+                if (neighbor == NeighborChar.FOUND) return this;
+                if (StringSupport.preciseLength(enc, bytes, s, s + 1) != cl) succChar(enc, bytes, s, cl); /* wrapped to \0...\0.  search next valid char. */
+                if (!enc.isAsciiCompatible()) {
+                    System.arraycopy(bytes, s, carry, 0, cl);
+                    carryLen = cl;
+                }
+                carryP = s - p;
+            }
+        }
+        value.ensure(value.begin + value.realSize + carryLen);
+        s = value.begin + carryP;
+        System.arraycopy(value.bytes, s, value.bytes, s + carryLen, value.realSize - carryP);
+        System.arraycopy(carry, 0, value.bytes, s, carryLen);
+        value.realSize += carryLen;
         return this;
     }
 
