@@ -271,6 +271,14 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
+    /** int_ord
+     * 
+     */
+    @JRubyMethod(name = "ord", compat = CompatVersion.RUBY1_9)
+    public IRubyObject ord(ThreadContext context) {
+        return this;
+    }
+
     @JRubyMethod(name = "chr", compat = CompatVersion.RUBY1_9)
     public RubyString chr19(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.getRuntime();
