@@ -346,22 +346,27 @@ public class RubyString extends RubyObject implements EncodingCapable {
         assert value != null;
         this.value = value;
     }
-    
+
     public RubyString(Ruby runtime, RubyClass rubyClass, ByteList value, boolean objectSpace) {
         super(runtime, rubyClass, objectSpace);
         assert value != null;
         this.value = value;
     }
-    
+
     protected RubyString(Ruby runtime, RubyClass rubyClass, ByteList value, Encoding enc, int cr) {
         this(runtime, rubyClass, value);
         value.encoding = enc;
         flags |= cr;
     }
-    
+
     protected RubyString(Ruby runtime, RubyClass rubyClass, ByteList value, Encoding enc) {
         this(runtime, rubyClass, value);
         value.encoding = enc;
+    }
+
+    protected RubyString(Ruby runtime, RubyClass rubyClass, ByteList value, int cr) {
+        this(runtime, rubyClass, value);
+        flags |= cr;
     }
 
     // Deprecated String construction routines
@@ -499,7 +504,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     public static RubyString newEmptyString(Ruby runtime, RubyClass metaClass, Encoding enc) {
-        RubyString empty = new RubyString(runtime, metaClass, getEmptyByteList(enc));
+        RubyString empty = new RubyString(runtime, metaClass, getEmptyByteList(enc), CR_7BIT);
         empty.shareLevel = SHARE_LEVEL_BYTELIST;
         return empty;
     }
