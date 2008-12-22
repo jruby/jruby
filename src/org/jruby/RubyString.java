@@ -200,8 +200,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return CR_UNKNOWN;
     }
 
-    private void copyCodeRangeForSubstr(RubyString from) {
-        Encoding enc = value.encoding = from.value.encoding;
+    private void copyCodeRangeForSubstr(RubyString from, Encoding enc) {
         int fromCr = from.getCodeRange();
         if (fromCr == CR_7BIT) {
             setCodeRange(fromCr);
@@ -583,17 +582,35 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return dup;
     }
 
+    /* rb_str_subseq */
     public final RubyString makeShared(Ruby runtime, int index, int len) {
         if (len == 0) {
-            RubyString s = newEmptyString(runtime, getMetaClass());
-            s.infectBy(this);
-            return s;
+            RubyString empty = newEmptyString(runtime, getMetaClass());
+            empty.infectBy(this);
+            return empty;
         }
 
         if (shareLevel == SHARE_LEVEL_NONE) shareLevel = SHARE_LEVEL_BUFFER;
         RubyString shared = new RubyString(runtime, getMetaClass(), value.makeShared(index, len));
         shared.shareLevel = SHARE_LEVEL_BUFFER;
 
+        shared.infectBy(this);
+        return shared;
+    }
+
+    public final RubyString makeShared19(Ruby runtime, int index, int len) {
+        Encoding enc = value.encoding;
+        if (len == 0) {
+            RubyString empty = newEmptyString(runtime, getMetaClass(), enc);
+            empty.infectBy(this);
+            return empty;
+        }
+
+        if (shareLevel == SHARE_LEVEL_NONE) shareLevel = SHARE_LEVEL_BUFFER;
+        RubyString shared = new RubyString(runtime, getMetaClass(), value.makeShared(index, len));
+        shared.shareLevel = SHARE_LEVEL_BUFFER;
+
+        shared.copyCodeRangeForSubstr(this, enc); // no need to assign encoding, same bytelist shared
         shared.infectBy(this);
         return shared;
     }
@@ -842,7 +859,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "*", required = 1, compat = CompatVersion.RUBY1_9)
     public IRubyObject op_mul19(ThreadContext context, IRubyObject other) {
         RubyString result = multiplyByteList(context, other);
-        result.copyCodeRangeForSubstr(this);
+        result.copyCodeRangeForSubstr(this, result.value.encoding = value.encoding);
         return result;
     }
 
@@ -1171,7 +1188,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         RubyString result = new RubyString(runtime, getMetaClass(), new ByteList(obytes, false));
 
         if (getCodeRange() == CR_UNKNOWN) setCodeRange(single ? CR_7BIT : CR_VALID);
-        result.copyCodeRangeForSubstr(this);
+        result.copyCodeRangeForSubstr(this, result.value.encoding = value.encoding);
         return result.infectBy(this);
     }
 
@@ -2798,12 +2815,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     @Deprecated
-    public IRubyObject substr(int beg, int len) {
+    public final IRubyObject substr(int beg, int len) {
         return substr(getRuntime(), beg, len);
     }
 
     /* rb_str_substr */
-    public IRubyObject substr(Ruby runtime, int beg, int len) {    
+    public final IRubyObject substr(Ruby runtime, int beg, int len) {    
         int length = value.length();
         if (len < 0 || beg > length) return runtime.getNil();
 
@@ -2814,6 +2831,72 @@ public class RubyString extends RubyObject implements EncodingCapable {
         
         int end = Math.min(length, beg + len);
         return makeShared(runtime, beg, end - beg);
+    }
+
+    public final IRubyObject substr19(Ruby runtime, int beg, int len) {
+        if (len < 0) return runtime.getNil();
+        int length = value.realSize;
+        if (length == 0) len = 0; 
+        
+        int p;
+        Encoding enc = value.encoding;
+        if (singleByteOptimizable(enc)) {
+            if (beg > length) return runtime.getNil();
+            if (beg < 0) {
+                beg += length;
+                if (beg < 0) return runtime.getNil();
+            }
+            if (beg + len > length) len = length - beg;
+            if (len <= 0) {
+                len = 0;
+                p = 0;
+            } else {
+                p = value.begin + beg;
+            }
+            return makeShared19(runtime, p, len);
+        } else {
+            int s = value.begin;
+            int end = s + length;
+            byte[]bytes = value.bytes;
+            if (beg < 0) {
+                if (len > -beg) len = -beg;
+                if (-beg * enc.maxLength() < length >>> 3) {
+                    beg = -beg;
+                    int e = end;
+                    while (beg-- > len && (e = enc.prevCharHead(bytes, s, e, e)) != -1); // nothing
+                    p = e;
+                    if (p == -1) return runtime.getNil();
+                    while (len-- > 0 && (p = enc.prevCharHead(bytes, s, p, e)) != -1); // nothing
+                    if (p == -1) return runtime.getNil();
+                    len = e - p;
+                    return makeShared19(runtime, p, len);
+                } else {
+                    beg += StringSupport.strLength(enc, bytes, s, end);
+                    if (beg < 0) return runtime.getNil();
+                }
+            } else if (beg > 0 && beg > StringSupport.strLength(enc, bytes, s, end)) {
+                return runtime.getNil();
+            }
+            if (len == 0) {
+                p = 0;
+            } else if (enc.isFixedWidth()) {
+                int w = enc.maxLength();
+                p = s + beg * w;
+                if (p > end) {
+                    p = end;
+                    len = 0;
+                } else if (len * w > end - p) {
+                    len = end - p;
+                } else {
+                    len *= w;
+                }
+            } else if ((p = StringSupport.nth(enc, bytes, s, end, beg)) == end) {
+                len = 0;
+            } else {
+                len = StringSupport.offset(enc, bytes, p, end, len); 
+            }
+            return makeShared19(runtime, p, len);
+        }
     }
 
     /* rb_str_replace */
