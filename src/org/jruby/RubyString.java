@@ -3198,29 +3198,37 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = {"succ", "next"}, compat = CompatVersion.RUBY1_9)
     public IRubyObject succ19(ThreadContext context) {
-        RubyString str = strDup(context.getRuntime());
-        str.succ_bang19();
-        return str;
+        Ruby runtime = context.getRuntime();
+        final RubyString str;
+        if (value.realSize > 0) {
+            str = new RubyString(runtime, getMetaClass(), succCommon19(value));
+            // TODO: rescan code range ?
+        } else {
+            str = newEmptyString(runtime, value.encoding);
+        }
+        return str.infectBy(this);
     }
 
     @JRubyMethod(name = {"succ!", "next!"}, compat = CompatVersion.RUBY1_9)
     public IRubyObject succ_bang19() {
-        if (value.realSize == 0) {
-            modifyCheck();
-            return this;
+        modifyCheck();
+        if (value.realSize > 0) {
+            value = succCommon19(value);
+            shareLevel = SHARE_LEVEL_NONE;
+            // TODO: rescan code range ?
         }
+        return this;
+    }
 
-        modify();
-
+    private ByteList succCommon19(ByteList original) {
         byte carry[] = new byte[org.jcodings.Config.ENC_CODE_TO_MBC_MAXLEN];
         int carryP = 0;
         carry[0] = 1;
         int carryLen = 1;
 
-        ByteList oldValue = value;
-        value = new ByteList(oldValue);
-        value.encoding = oldValue.encoding;
-        Encoding enc = oldValue.encoding;
+        ByteList value = new ByteList(original);
+        value.encoding = original.encoding;
+        Encoding enc = original.encoding;
         int p = value.begin;
         int end = p + value.realSize;
         int s = end;
@@ -3244,7 +3252,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             if (cl <= 0) continue;
             switch (neighbor = succAlnumChar(enc, bytes, s, cl, carry, 0)) {
             case NOT_CHAR: continue;
-            case FOUND:    return this;
+            case FOUND:    return value;
             case WRAPPED:  lastAlnum = s;
             }
             alnumSeen = true;
@@ -3258,7 +3266,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 int cl = StringSupport.preciseLength(enc, bytes, s, end);
                 if (cl <= 0) continue;
                 neighbor = succChar(enc, bytes, s, cl);
-                if (neighbor == NeighborChar.FOUND) return this;
+                if (neighbor == NeighborChar.FOUND) return value;
                 if (StringSupport.preciseLength(enc, bytes, s, s + 1) != cl) succChar(enc, bytes, s, cl); /* wrapped to \0...\0.  search next valid char. */
                 if (!enc.isAsciiCompatible()) {
                     System.arraycopy(bytes, s, carry, 0, cl);
@@ -3272,7 +3280,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         System.arraycopy(value.bytes, s, value.bytes, s + carryLen, value.realSize - carryP);
         System.arraycopy(carry, 0, value.bytes, s, carryLen);
         value.realSize += carryLen;
-        return this;
+        return value;
     }
 
     /** rb_str_upto_m
