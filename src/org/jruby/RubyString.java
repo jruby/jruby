@@ -3431,6 +3431,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return context.getRuntime().newBoolean(value.indexOf(str) != -1);
     }
 
+    @JRubyMethod(name = "chr", compat = CompatVersion.RUBY1_9)
+    public IRubyObject chr(ThreadContext context) {
+        return substr19(context.getRuntime(), 0, 1);
+    }
+
     @JRubyMethod(name = "getbyte", compat = CompatVersion.RUBY1_9)
     public IRubyObject getbyte(ThreadContext context, IRubyObject index) {
         Ruby runtime = context.getRuntime();
