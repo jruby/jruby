@@ -483,27 +483,38 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** Encoding aware String construction routines for 1.9
      * 
      */
-    private static final ByteList EMPTY_BYTELISTS[] = new ByteList[4];
-    static ByteList getEmptyByteList(Encoding enc) {
+    private static final class EmptyByteListHolder {
+        final ByteList bytes;
+        final int cr;
+        EmptyByteListHolder(Encoding enc) {
+            this.bytes = new ByteList(ByteList.NULL_ARRAY, enc);
+            this.cr = bytes.encoding.isAsciiCompatible() ? CR_7BIT : CR_VALID;
+        }
+    }
+
+    private static final EmptyByteListHolder EMPTY_BYTELISTS[] = new EmptyByteListHolder[4];
+
+    static EmptyByteListHolder getEmptyByteList(Encoding enc) {
         int index = enc.getIndex();
-        ByteList bytes;
+        EmptyByteListHolder bytes;
         if (index < EMPTY_BYTELISTS.length && (bytes = EMPTY_BYTELISTS[index]) != null) {
             return bytes;
         }
         return prepareEmptyByteList(enc);
     }
 
-    private static ByteList prepareEmptyByteList(Encoding enc) {
+    private static EmptyByteListHolder prepareEmptyByteList(Encoding enc) {
         int index = enc.getIndex();
         if (index >= EMPTY_BYTELISTS.length) {
-            ByteList tmp[] = new ByteList[index + 4];
+            EmptyByteListHolder tmp[] = new EmptyByteListHolder[index + 4];
             System.arraycopy(EMPTY_BYTELISTS,0, tmp, 0, EMPTY_BYTELISTS.length);
         }
-        return EMPTY_BYTELISTS[index] = new ByteList(ByteList.NULL_ARRAY, enc);
+        return EMPTY_BYTELISTS[index] = new EmptyByteListHolder(enc);
     }
 
     public static RubyString newEmptyString(Ruby runtime, RubyClass metaClass, Encoding enc) {
-        RubyString empty = new RubyString(runtime, metaClass, getEmptyByteList(enc), CR_7BIT);
+        EmptyByteListHolder holder = getEmptyByteList(enc);
+        RubyString empty = new RubyString(runtime, metaClass, holder.bytes, holder.cr);
         empty.shareLevel = SHARE_LEVEL_BYTELIST;
         return empty;
     }
@@ -1127,9 +1138,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "clear", compat = CompatVersion.RUBY1_9)
     public RubyString clear() {
         Encoding enc = value.encoding;
-        value = getEmptyByteList(enc);
+
+        EmptyByteListHolder holder = getEmptyByteList(enc); 
+        value = holder.bytes;
         shareLevel = SHARE_LEVEL_BYTELIST;
-        setCodeRange(enc.isAsciiCompatible() ? CR_7BIT : CR_VALID);
+        setCodeRange(holder.cr);
         return this;
     }
 
