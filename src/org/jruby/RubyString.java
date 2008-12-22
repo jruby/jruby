@@ -305,6 +305,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return unpackResult(lencr);
     }
 
+    private int subLength(int pos) {
+        if (singleByteOptimizable() || pos < 0) return pos;
+        return StringSupport.strLength(value.encoding, value.bytes, value.begin, value.begin + pos);
+    }
+
     /** short circuit for String key comparison
      * 
      */
