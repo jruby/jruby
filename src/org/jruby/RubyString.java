@@ -93,8 +93,6 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.string.JavaCrypt;
 
-import sun.misc.Unsafe;
-
 /**
  * Implementation of Ruby String class
  * 
