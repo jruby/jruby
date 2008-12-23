@@ -2773,6 +2773,13 @@ public final class Ruby {
         return newRaiseException(getSystemStackError(), message);
     }
 
+    public RaiseException newSystemStackError(String message, StackOverflowError soe) {
+        if (getDebug().isTrue()) {
+            soe.printStackTrace(getInstanceConfig().getError());
+        }
+        return newRaiseException(getSystemStackError(), message);
+    }
+
     public RaiseException newSystemExit(int status) {
         return new RaiseException(RubySystemExit.newInstance(this, status));
     }

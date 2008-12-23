@@ -68,8 +68,8 @@ public class ASTInterpreter {
         
         try {
             return node.interpret(runtime, context, self, block);
-        } catch (StackOverflowError sfe) {
-            throw runtime.newSystemStackError("stack level too deep");
+        } catch (StackOverflowError soe) {
+            throw runtime.newSystemStackError("stack level too deep", soe);
         }
     }
     
@@ -124,8 +124,8 @@ public class ASTInterpreter {
             throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "unexpected break");
         } catch (JumpException.RedoJump rj) {
             throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.REDO, (IRubyObject)rj.getValue(), "unexpected redo");
-        } catch (StackOverflowError sfe) {
-            throw runtime.newSystemStackError("stack level too deep");            
+        } catch (StackOverflowError soe) {
+            throw runtime.newSystemStackError("stack level too deep", soe);
         } finally {
             context.postEvalWithBinding(binding, lastFrame);
 
@@ -177,8 +177,8 @@ public class ASTInterpreter {
             return node.interpret(runtime, context, self, Block.NULL_BLOCK);
         } catch (JumpException.BreakJump bj) {
             throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "unexpected break");
-        } catch (StackOverflowError sfe) {
-            throw runtime.newSystemStackError("stack level too deep");
+        } catch (StackOverflowError soe) {
+            throw runtime.newSystemStackError("stack level too deep", soe);
         } finally {
             // restore position
             context.setFile(savedFile);

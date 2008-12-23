@@ -203,8 +203,8 @@ public class InterpretedBlock extends BlockBody {
             } catch (JumpException.RedoJump rj) {
                 context.pollThreadEvents();
                 // do nothing, allow loop to redo
-            } catch (StackOverflowError sfe) {
-                throw context.getRuntime().newSystemStackError("stack level too deep");
+            } catch (StackOverflowError soe) {
+                throw context.getRuntime().newSystemStackError("stack level too deep", soe);
             }
         }
     }
