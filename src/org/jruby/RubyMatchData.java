@@ -421,13 +421,8 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(name = "pre_match")
     public IRubyObject pre_match(ThreadContext context) {
         check();
-        RubyString ss;
-
         if (begin == -1) return context.getRuntime().getNil();
-        ss = str.makeShared(context.getRuntime(), 0, begin);
-
-        if (isTaint()) ss.setTaint(true);
-        return ss;
+        return str.makeShared(context.getRuntime(), 0, begin).infectBy(this);
     }
 
     /** match_post_match
@@ -436,13 +431,8 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(name = "post_match")
     public IRubyObject post_match(ThreadContext context) {
         check();
-        RubyString ss;
-
         if (begin == -1) return context.getRuntime().getNil();
-        ss = str.makeShared(context.getRuntime(), end, str.getByteList().length() - end);
-
-        if(isTaint()) ss.setTaint(true);
-        return ss;
+        return str.makeShared(context.getRuntime(), end, str.getByteList().length() - end).infectBy(this);
     }
 
     /** match_to_s
