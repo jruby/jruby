@@ -768,7 +768,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
         StandardASMCompiler.buildStaticScopeNames(method, scope);
 
-        script.getCacheCompiler().cacheClosureOld(this, closureMethodName);
+        script.getCacheCompiler().cacheSpecialClosure(this, closureMethodName);
 
         invokeUtilityMethod("runBeginBlock", sig(IRubyObject.class,
                 params(ThreadContext.class, IRubyObject.class, String[].class, CompiledBlockCallback.class)));
@@ -790,7 +790,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         loadSelf();
         method.pushInt(arity);
 
-        script.getCacheCompiler().cacheClosureOld(this, closureMethodName);
+        script.getCacheCompiler().cacheSpecialClosure(this, closureMethodName);
 
         method.ldc(Boolean.valueOf(hasMultipleArgsHead));
         method.ldc(BlockBody.asArgumentType(argsNodeId));
@@ -815,7 +815,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         loadSelf();
         method.iconst_0();
 
-        script.getCacheCompiler().cacheClosureOld(this, closureMethodName);
+        script.getCacheCompiler().cacheSpecialClosure(this, closureMethodName);
 
         method.iconst_0(); // false
         method.iconst_0(); // zero

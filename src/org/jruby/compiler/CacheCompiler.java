@@ -31,7 +31,7 @@ public interface CacheCompiler {
     
     public void cacheClosure(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector);
     
-    public void cacheClosureOld(BaseBodyCompiler method, String closureMethod);
+    public void cacheSpecialClosure(BaseBodyCompiler method, String closureMethod);
 
     public void cacheConstant(BaseBodyCompiler method, String constantName);
 

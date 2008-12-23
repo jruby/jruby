@@ -13,6 +13,7 @@ import org.jruby.RubySymbol;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
+import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
@@ -74,6 +75,16 @@ public abstract class AbstractScript implements Script {
         return body;
     }
 
+    public final CompiledBlockCallback getBlockCallback(Ruby runtime, int index, String method) {
+        CompiledBlockCallback callback = blockCallbacks[index];
+
+        if (callback == null) {
+            return createCompiledBlockCallback(runtime, index, method);
+        }
+
+        return callback;
+    }
+
     public final RubySymbol getSymbol(Ruby runtime, int index, String name) {
         RubySymbol symbol = symbols[index];
         if (symbol == null) return symbols[index] = runtime.newSymbol(name);
@@ -104,6 +115,10 @@ public abstract class AbstractScript implements Script {
 
     public final void initBlockBodies(int size) {
         blockBodies = new BlockBody[size];
+    }
+
+    public final void initBlockCallbacks(int size) {
+        blockCallbacks = new CompiledBlockCallback[size];
     }
 
     public final void initSymbols(int size) {
@@ -199,8 +214,14 @@ public abstract class AbstractScript implements Script {
         return blockBodies[index] = body;
     }
 
+    private CompiledBlockCallback createCompiledBlockCallback(Ruby runtime, int index, String method) {
+        CompiledBlockCallback callback = RuntimeHelpers.createBlockCallback(runtime, this, method);
+        return blockCallbacks[index] = callback;
+    }
+
     public CallSite[] callSites;
     public BlockBody[] blockBodies;
+    public CompiledBlockCallback[] blockCallbacks;
     public RubySymbol[] symbols;
     public RubyFixnum[] fixnums;
     public RubyRegexp[] regexps;

@@ -17,7 +17,6 @@ import org.jruby.RubySymbol;
 import org.jruby.ast.NodeType;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.CacheCompiler;
-import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
@@ -26,8 +25,6 @@ import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import static org.jruby.util.CodegenUtils.*;
 
@@ -51,6 +48,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
     int inheritedConstantCount = 0;
     int inheritedByteListCount = 0;
     int inheritedBlockBodyCount = 0;
+    int inheritedBlockCallbackCount = 0;
     
     public InheritedCacheCompiler(StandardASMCompiler scriptCompiler) {
         this.scriptCompiler = scriptCompiler;
@@ -207,6 +205,14 @@ public class InheritedCacheCompiler implements CacheCompiler {
             initMethod.invokevirtual(scriptCompiler.getClassname(), "initBlockBodies", sig(void.class, params(int.class)));
         }
 
+        // generate block bodies initialization code
+        size = inheritedBlockCallbackCount;
+        if (size != 0) {
+            initMethod.aload(0);
+            initMethod.pushInt(size);
+            initMethod.invokevirtual(scriptCompiler.getClassname(), "initBlockCallbacks", sig(void.class, params(int.class)));
+        }
+
         // generate bytelists initialization code
         size = inheritedByteListCount;
         if (inheritedByteListCount > 0) {
@@ -304,45 +310,12 @@ public class InheritedCacheCompiler implements CacheCompiler {
         method.method.invokevirtual(scriptCompiler.getClassname(), "getBlockBody", sig(BlockBody.class, ThreadContext.class, int.class, String.class));
     }
 
-    public void cacheClosureOld(BaseBodyCompiler method, String closureMethod) {
-        String closureFieldName = scriptCompiler.getNewConstant(ci(CompiledBlockCallback.class), "closure");
-
-        String closureMethodName = "getClosure_" + closureFieldName;
-
-        ClassVisitor cv = scriptCompiler.getClassVisitor();
-
-        {
-            SkinnyMethodAdapter closureGetter = new SkinnyMethodAdapter(
-                    cv.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_SYNTHETIC, closureMethodName,
-                            sig(CompiledBlockCallback.class, Ruby.class), null, null));
-
-            closureGetter.aload(0);
-            closureGetter.getfield(scriptCompiler.getClassname(), closureFieldName, ci(CompiledBlockCallback.class));
-            closureGetter.dup();
-            Label alreadyCreated = new Label();
-            closureGetter.ifnonnull(alreadyCreated);
-
-            // no callback, construct and cache it
-            closureGetter.pop();
-            closureGetter.aload(0); // [this]
-            closureGetter.aload(1); // [this, runtime]
-            closureGetter.aload(0); // [this, runtime, this]
-            closureGetter.ldc(closureMethod); // [this, runtime, this, str]
-            closureGetter.invokestatic(p(RuntimeHelpers.class), "createBlockCallback",
-                    sig(CompiledBlockCallback.class, Ruby.class, Object.class, String.class)); // [this, callback]
-            closureGetter.putfield(scriptCompiler.getClassname(), closureFieldName, ci(CompiledBlockCallback.class)); // []
-            closureGetter.aload(0); // [this]
-            closureGetter.getfield(scriptCompiler.getClassname(), closureFieldName, ci(CompiledBlockCallback.class)); // [callback]
-
-            closureGetter.label(alreadyCreated);
-            closureGetter.areturn();
-
-            closureGetter.end();
-        }
-
+    public void cacheSpecialClosure(BaseBodyCompiler method, String closureMethod) {
         method.loadThis();
         method.loadRuntime();
-        method.method.invokevirtual(scriptCompiler.getClassname(), closureMethodName,
-                sig(CompiledBlockCallback.class, params(Ruby.class)));
+        method.method.pushInt(inheritedBlockCallbackCount++);
+        method.method.ldc(closureMethod);
+
+        method.method.invokevirtual(scriptCompiler.getClassname(), "getBlockCallback", sig(CompiledBlockCallback.class, Ruby.class, int.class, String.class));
     }
 }
