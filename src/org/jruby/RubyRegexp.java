@@ -1088,14 +1088,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     public static IRubyObject match_pre(IRubyObject match) {
         if (match.isNil()) return match;
         RubyMatchData m = (RubyMatchData)match;
-        
-        int beg = m.regs == null ? m.begin : m.regs.beg[0];
-        
-        if (beg == -1) match.getRuntime().getNil(); 
-
-        RubyString str = m.str.makeShared(match.getRuntime(), 0, beg);
-        str.infectBy(match);
-        return str;
+        if (m.begin == -1) match.getRuntime().getNil(); 
+        return m.str.makeShared(match.getRuntime(), 0,  m.begin).infectBy(match);
     }
 
     /** rb_reg_match_post
@@ -1104,19 +1098,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     public static IRubyObject match_post(IRubyObject match) {
         if (match.isNil()) return match;
         RubyMatchData m = (RubyMatchData)match;
-
-        int end;
-        if (m.regs == null) {
-            if (m.begin == -1) return match.getRuntime().getNil();
-            end = m.end;
-        } else {
-            if (m.regs.beg[0] == -1) return match.getRuntime().getNil();
-            end = m.regs.end[0];
-        }
-        
-        RubyString str = m.str.makeShared(match.getRuntime(), end, m.str.getByteList().realSize - end);
-        str.infectBy(match);
-        return str;
+        if (m.begin == -1) return match.getRuntime().getNil();
+        return m.str.makeShared(match.getRuntime(), m.end, m.str.getByteList().realSize - m.end).infectBy(match);
     }
 
     /** rb_reg_match_last
