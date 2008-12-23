@@ -5607,16 +5607,32 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return this;
     }
 
-    @JRubyMethod(name = {"each_line", "lines"}, frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "each_line", frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject each_line19(ThreadContext context, Block block) {
-        if (!block.isGiven()) return enumeratorize(context.getRuntime(), this, "each_line");
-        return each_lineCommon19(context, context.getRuntime().getGlobalVariables().get("$/"), block);
+        return block.isGiven() ? each_lineCommon19(context, block) : 
+            enumeratorize(context.getRuntime(), this, "each_line");
     }
 
-    @JRubyMethod(name = {"each_line", "lines"}, frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "lines", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject lines(ThreadContext context, Block block) {
+        return block.isGiven() ? each_lineCommon19(context, block) : 
+            enumeratorize(context.getRuntime(), this, "lines");
+    }
+
+    @JRubyMethod(name = "each_line", frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject each_line19(ThreadContext context, IRubyObject arg, Block block) {
-        if (!block.isGiven()) return enumeratorize(context.getRuntime(), this, "each_line", arg);
-        return each_lineCommon19(context, arg, block);
+        return block.isGiven() ? each_lineCommon19(context, arg, block) : 
+            enumeratorize(context.getRuntime(), this, "each_line", arg);
+    }
+
+    @JRubyMethod(name = "lines", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject lines(ThreadContext context, IRubyObject arg, Block block) {
+        return block.isGiven() ? each_lineCommon19(context, arg, block) : 
+            enumeratorize(context.getRuntime(), this, "lines", arg);
+    }
+
+    private IRubyObject each_lineCommon19(ThreadContext context, Block block) {
+        return each_lineCommon19(context, context.getRuntime().getGlobalVariables().get("$/"), block);
     }
 
     private IRubyObject each_lineCommon19(ThreadContext context, IRubyObject sep, Block block) {        
