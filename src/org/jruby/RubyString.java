@@ -5561,41 +5561,40 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     public IRubyObject each_lineCommon(ThreadContext context, IRubyObject sep, Block block) {        
         Ruby runtime = context.getRuntime();
-
         if (sep.isNil()) {
             block.yield(context, this);
             return this;
         }
 
-        RubyString rsep = sep.convertToString();
-        ByteList rsepValue = rsep.value;
-        int rslen = rsepValue.realSize;
+        RubyString sepStr = sep.convertToString();
+        ByteList sepValue = sepStr.value;
+        int rslen = sepValue.realSize;
 
         final byte newline;
         if (rslen == 0) {
             newline = '\n';
         } else {
-            newline = rsepValue.bytes[rsepValue.begin + rslen - 1];
+            newline = sepValue.bytes[sepValue.begin + rslen - 1];
         }
 
         int p = value.begin;
         int end = p + value.realSize;
-        int ptr = p;
+        int ptr = p, s = p;
         int len = value.realSize;
+        byte[] bytes = value.bytes;
 
-        int s = p;
         p += rslen;
-        byte[] strBytes = value.bytes;
+
         for (; p < end; p++) {
-            if (rslen == 0 && strBytes[p] == '\n') {
-                if (strBytes[++p] != '\n') continue;
-                while(p < end && strBytes[p] == '\n') p++;
+            if (rslen == 0 && bytes[p] == '\n') {
+                if (bytes[++p] != '\n') continue;
+                while(p < end && bytes[p] == '\n') p++;
             }
-            if (ptr < p && strBytes[p - 1] == newline &&
+            if (ptr < p && bytes[p - 1] == newline &&
                (rslen <= 1 || 
-                ByteList.memcmp(rsepValue.bytes, rsepValue.begin, rslen, strBytes, p - rslen, rslen) == 0)) {
+                ByteList.memcmp(sepValue.bytes, sepValue.begin, rslen, bytes, p - rslen, rslen) == 0)) {
                 block.yield(context, makeShared(runtime, s - ptr, p - s).infectBy(this));
-                modifyCheck(strBytes, len);
+                modifyCheck(bytes, len);
                 s = p;
             }
         }
@@ -5605,6 +5604,85 @@ public class RubyString extends RubyObject implements EncodingCapable {
             block.yield(context, makeShared(runtime, s - ptr, p - s).infectBy(this));
         }
 
+        return this;
+    }
+
+    @JRubyMethod(name = {"each_line", "lines"}, frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject each_line19(ThreadContext context, Block block) {
+        if (!block.isGiven()) return enumeratorize(context.getRuntime(), this, "each_line");
+        return each_lineCommon19(context, context.getRuntime().getGlobalVariables().get("$/"), block);
+    }
+
+    @JRubyMethod(name = {"each_line", "lines"}, frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject each_line19(ThreadContext context, IRubyObject arg, Block block) {
+        if (!block.isGiven()) return enumeratorize(context.getRuntime(), this, "each_line", arg);
+        return each_lineCommon19(context, arg, block);
+    }
+
+    private IRubyObject each_lineCommon19(ThreadContext context, IRubyObject sep, Block block) {        
+        Ruby runtime = context.getRuntime();
+        if (sep.isNil()) {
+            block.yield(context, this);
+            return this;
+        }
+
+        int p = value.begin;
+        int s = p;
+        int len = value.realSize;
+        int end = p + len;
+        byte[]bytes = value.bytes;
+
+        final Encoding enc;
+        RubyString sepStr = sep.convertToString();
+        if (sepStr == runtime.getGlobalVariables().getDefaultSeparator()) {
+            enc = value.encoding;
+            while (p < end) {
+                if (bytes[p] == (byte)'\n') {
+                    int p0 = enc.leftAdjustCharHead(bytes, s, p, end);
+                    if (enc.isNewLine(bytes, p0, end)) {
+                        p = p0 + StringSupport.length(enc, bytes, p0, end);
+                        block.yield(context, makeShared19(runtime, s, p - s).infectBy(this));
+                        modifyCheck(bytes, len);
+                        s = p++;
+                    }
+                }
+                p++;
+            }
+        } else {
+            enc = checkEncoding(sepStr);
+            ByteList sepValue = sepStr.value;
+            final int newLine;
+            int rslen = sepValue.realSize;
+            if (rslen == 0) {
+                newLine = '\n';
+            } else {
+                newLine = codePoint(runtime, enc, sepValue.bytes, sepValue.begin, sepValue.begin + sepValue.realSize);
+            }
+
+            while (p < end) {
+                int c = codePoint(runtime, enc, bytes, p, end);
+                again: do {
+                    int n = codeLength(runtime, enc, c);
+                    if (rslen == 0 && c == newLine) {
+                        p += n;
+                        if (p < end && (c = codePoint(runtime, enc, bytes, p, end)) != newLine) continue again;
+                        while (p < end && codePoint(runtime, enc, bytes, p, end) == newLine) p += n;
+                        p -= n;
+                    }
+                    if (c == newLine && (rslen <= 1 ||
+                            ByteList.memcmp(sepValue.bytes, sepValue.begin, rslen, bytes, p, rslen) == 0)) {
+                        block.yield(context, makeShared19(runtime, s, p - s + (rslen != 0 ? rslen : n)).infectBy(this));
+                        modifyCheck(bytes, len);
+                        s = p + (rslen != 0 ? rslen : n);
+                    }
+                    p += n;
+                } while (false);
+            }
+        }
+
+        if (s != end) {
+            block.yield(context, makeShared19(runtime, s, end - s).infectBy(this));
+        }
         return this;
     }
 
