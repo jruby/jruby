@@ -5622,9 +5622,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return this;
     }
 
-    @JRubyMethod(name = {"each_byte", "bytes"}, frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "each_byte", frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject each_byte19(ThreadContext context, Block block) {
         return block.isGiven() ? each_byte(context, block) : enumeratorize(context.getRuntime(), this, "each_byte");
+    }
+
+    @JRubyMethod(name = "bytes", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject bytes(ThreadContext context, Block block) {
+        return block.isGiven() ? each_byte(context, block) : enumeratorize(context.getRuntime(), this, "bytes");
     }
 
     /** rb_str_each_char
