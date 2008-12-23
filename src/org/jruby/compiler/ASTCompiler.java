@@ -2633,35 +2633,85 @@ public class ASTCompiler {
     public void compileOpAsgnOr(Node node, BodyCompiler context) {
         final OpAsgnOrNode orNode = (OpAsgnOrNode) node;
 
-        compileGetDefinitionBase(orNode.getFirstNode(), context);
+        if (needsDefinitionCheck(orNode.getFirstNode())) {
+            compileGetDefinitionBase(orNode.getFirstNode(), context);
 
-        context.isNull(new BranchCallback() {
+            context.isNull(new BranchCallback() {
 
-                    public void branch(BodyCompiler context) {
-                        compile(orNode.getSecondNode(), context);
-                    }
-                }, new BranchCallback() {
+                        public void branch(BodyCompiler context) {
+                            compile(orNode.getSecondNode(), context);
+                        }
+                    }, new BranchCallback() {
 
-                    public void branch(BodyCompiler context) {
-                        compile(orNode.getFirstNode(), context);
-                        context.duplicateCurrentValue();
-                        context.performBooleanBranch(new BranchCallback() {
+                        public void branch(BodyCompiler context) {
+                            compile(orNode.getFirstNode(), context);
+                            context.duplicateCurrentValue();
+                            context.performBooleanBranch(new BranchCallback() {
 
-                                    public void branch(BodyCompiler context) {
-                                    //Do nothing
-                                    }
-                                },
-                                new BranchCallback() {
+                                        public void branch(BodyCompiler context) {
+                                        //Do nothing
+                                        }
+                                    },
+                                    new BranchCallback() {
 
-                                    public void branch(BodyCompiler context) {
-                                        context.consumeCurrentValue();
-                                        compile(orNode.getSecondNode(), context);
-                                    }
-                                });
-                    }
-                });
+                                        public void branch(BodyCompiler context) {
+                                            context.consumeCurrentValue();
+                                            compile(orNode.getSecondNode(), context);
+                                        }
+                                    });
+                        }
+                    });
+        } else {
+            compile(orNode.getFirstNode(), context);
+            context.duplicateCurrentValue();
+            context.performBooleanBranch(new BranchCallback() {
+                public void branch(BodyCompiler context) {
+                //Do nothing
+                }
+            },
+            new BranchCallback() {
+                public void branch(BodyCompiler context) {
+                    context.consumeCurrentValue();
+                    compile(orNode.getSecondNode(), context);
+                }
+            });
+
+        }
 
         context.pollThreadEvents();
+    }
+
+    /**
+     * Check whether the given node is considered always "defined" or whether it
+     * has some form of definition check.
+     *
+     * @param node Then node to check
+     * @return Whether the type of node represents a possibly undefined construct
+     */
+    private boolean needsDefinitionCheck(Node node) {
+        switch (node.nodeId) {
+        case CLASSVARASGNNODE:
+        case CLASSVARDECLNODE:
+        case CONSTDECLNODE:
+        case DASGNNODE:
+        case GLOBALASGNNODE:
+        case LOCALASGNNODE:
+        case MULTIPLEASGNNODE:
+        case OPASGNNODE:
+        case OPELEMENTASGNNODE:
+        case DVARNODE:
+        case FALSENODE:
+        case TRUENODE:
+        case LOCALVARNODE:
+        case MATCH2NODE:
+        case MATCH3NODE:
+        case NILNODE:
+        case SELFNODE:
+            // all these types are immediately considered "defined"
+            return false;
+        default:
+            return true;
+        }
     }
 
     public void compileOpAsgn(Node node, BodyCompiler context) {
