@@ -5613,7 +5613,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "each_byte", frame = true, compat = CompatVersion.RUBY1_8)
     public RubyString each_byte(ThreadContext context, Block block) {
-        Ruby runtime = getRuntime();
+        Ruby runtime = context.getRuntime();
         // Check the length every iteration, since
         // the block can modify this string.
         for (int i = 0; i < value.length(); i++) {
@@ -5646,7 +5646,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private IRubyObject each_charCommon(ThreadContext context, Block block) {
-
         byte bytes[] = value.bytes;
         int p = value.begin;
         int end = p + value.realSize;
@@ -5665,11 +5664,19 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_each_codepoint
      * 
      */
-    @JRubyMethod(name = {"each_codepoint", "codepoints"}, frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "each_codepoint", frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject each_codepoint(ThreadContext context, Block block) {
-        if (singleByteOptimizable()) return each_byte19(context, block);
         if (!block.isGiven()) return enumeratorize(context.getRuntime(), this, "each_codepoint");
+        return singleByteOptimizable() ? each_byte(context, block) : each_codepointCommon(context, block);
+    }
 
+    @JRubyMethod(name = "codepoints", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject codepoints(ThreadContext context, Block block) {
+        if (!block.isGiven()) return enumeratorize(context.getRuntime(), this, "codepoints");
+        return singleByteOptimizable() ? each_byte(context, block) : each_codepointCommon(context, block);
+    }
+
+    private IRubyObject each_codepointCommon(ThreadContext context, Block block) {
         Ruby runtime = context.getRuntime();
         byte bytes[] = value.bytes;
         int p = value.begin;
