@@ -5630,9 +5630,17 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_each_char
      * 
      */
-    @JRubyMethod(name = {"each_char", "chars"}, frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "each_char", frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject each_char(ThreadContext context, Block block) {
-        if (!block.isGiven()) return enumeratorize(context.getRuntime(), this, "each_char");
+        return block.isGiven() ? each_charCommon(context, block) : enumeratorize(context.getRuntime(), this, "each_char");
+    }
+
+    @JRubyMethod(name = "chars", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject chars(ThreadContext context, Block block) {
+        return block.isGiven() ? each_charCommon(context, block) : enumeratorize(context.getRuntime(), this, "chars");
+    }
+
+    private IRubyObject each_charCommon(ThreadContext context, Block block) {
 
         byte bytes[] = value.bytes;
         int p = value.begin;
