@@ -115,12 +115,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private ByteList value;
 
-    private static ObjectAllocator STRING_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return RubyString.newEmptyString(runtime, klass);
-        }
-    };
-
     public static RubyClass createStringClass(Ruby runtime) {
         RubyClass stringClass = runtime.defineClass("String", runtime.getObject(), STRING_ALLOCATOR);
         runtime.setString(stringClass);
@@ -131,13 +125,19 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     return obj instanceof RubyString;
                 }
             };
-            
+
         stringClass.includeModule(runtime.getComparable());
-        stringClass.includeModule(runtime.getEnumerable());
+        if (!runtime.is1_9()) stringClass.includeModule(runtime.getEnumerable());
         stringClass.defineAnnotatedMethods(RubyString.class);
-        
+
         return stringClass;
     }
+
+    private static ObjectAllocator STRING_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return RubyString.newEmptyString(runtime, klass);
+        }
+    };
 
     public Encoding getEncoding() {
         return value.encoding;
@@ -5549,12 +5549,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_each_line
      *
      */
-    @JRubyMethod(name = {"each_line", "each"}, frame = true)
+    @JRubyMethod(name = {"each_line", "each"}, frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject each_line(ThreadContext context, Block block) {
         return each_lineCommon(context, context.getRuntime().getGlobalVariables().get("$/"), block);
     }
 
-    @JRubyMethod(name = {"each_line", "each"}, frame = true)
+    @JRubyMethod(name = {"each_line", "each"}, frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject each_line(ThreadContext context, IRubyObject arg, Block block) {
         return each_lineCommon(context, arg, block);
     }
