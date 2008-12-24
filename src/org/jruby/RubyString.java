@@ -5646,23 +5646,23 @@ public class RubyString extends RubyObject implements EncodingCapable {
             return this;
         }
 
-        int p = value.begin;
+        ByteList val = value.shallowDup();
+        int p = val.begin;
         int s = p;
-        int len = value.realSize;
+        int len = val.realSize;
         int end = p + len;
-        byte[]bytes = value.bytes;
+        byte[]bytes = val.bytes;
 
         final Encoding enc;
         RubyString sepStr = sep.convertToString();
         if (sepStr == runtime.getGlobalVariables().getDefaultSeparator()) {
-            enc = value.encoding;
+            enc = val.encoding;
             while (p < end) {
                 if (bytes[p] == (byte)'\n') {
                     int p0 = enc.leftAdjustCharHead(bytes, s, p, end);
                     if (enc.isNewLine(bytes, p0, end)) {
                         p = p0 + StringSupport.length(enc, bytes, p0, end);
-                        block.yield(context, makeShared19(runtime, s, p - s).infectBy(this));
-                        modifyCheck(bytes, len);
+                        block.yield(context, makeShared19(runtime, val, s, p - s).infectBy(this));
                         s = p++;
                     }
                 }
@@ -5691,8 +5691,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     }
                     if (c == newLine && (rslen <= 1 ||
                             ByteList.memcmp(sepValue.bytes, sepValue.begin, rslen, bytes, p, rslen) == 0)) {
-                        block.yield(context, makeShared19(runtime, s, p - s + (rslen != 0 ? rslen : n)).infectBy(this));
-                        modifyCheck(bytes, len);
+                        block.yield(context, makeShared19(runtime, val, s, p - s + (rslen != 0 ? rslen : n)).infectBy(this));
                         s = p + (rslen != 0 ? rslen : n);
                     }
                     p += n;
@@ -5701,7 +5700,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
 
         if (s != end) {
-            block.yield(context, makeShared19(runtime, s, end - s).infectBy(this));
+            block.yield(context, makeShared19(runtime, val, s, end - s).infectBy(this));
         }
         return this;
     }
