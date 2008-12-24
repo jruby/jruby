@@ -610,6 +610,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     public final RubyString makeShared19(Ruby runtime, int index, int len) {
+        return makeShared19(runtime, value, index, len);
+    }
+
+    private RubyString makeShared19(Ruby runtime, ByteList value, int index, int len) {
         Encoding enc = value.encoding;
         if (len == 0) {
             RubyString empty = newEmptyString(runtime, getMetaClass(), enc);
