@@ -5750,10 +5750,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Encoding enc = value.encoding;
 
         Ruby runtime = context.getRuntime();
-        RubyString dup = strDup(runtime);
+        ByteList val = value.shallowDup();
         while (p < end) {
             int n = StringSupport.length(enc, bytes, p, end);
-            block.yield(context, dup.makeShared19(runtime, p, n));
+            block.yield(context, makeShared19(runtime, val, p, n));
             p += n;
         }
         return this;
