@@ -4321,30 +4321,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
     }
 
-    /** rb_str_chop
-     * 
-     */
-    @JRubyMethod
-    public RubyString chomp(ThreadContext context) {
-        RubyString str = strDup(context.getRuntime());
-        str.chomp_bang(context);
-        return str;
-    }
-
-    /** rb_str_chop
-     * 
-     */
-    @JRubyMethod
-    public RubyString chomp(ThreadContext context, IRubyObject arg0) {
-        RubyString str = strDup(context.getRuntime());
-        str.chomp_bang(context, arg0);
-        return str;
-    }
-
-    /**
-     * Variable-arity version for compatibility. Not bound to Ruby.
-     * @deprecated Use the zero or one argument versions.
-     */
     public IRubyObject chomp_bang(IRubyObject[] args) {
         switch (args.length) {
         case 0:
@@ -4355,6 +4331,23 @@ public class RubyString extends RubyObject implements EncodingCapable {
             Arity.raiseArgumentError(getRuntime(), args.length, 0, 1);
             return null; // not reached
         }
+    }
+
+    /** rb_str_chop
+     * 
+     */
+    @JRubyMethod
+    public RubyString chomp(ThreadContext context) {
+        RubyString str = strDup(context.getRuntime());
+        str.chomp_bang(context);
+        return str;
+    }
+
+    @JRubyMethod
+    public RubyString chomp(ThreadContext context, IRubyObject arg0) {
+        RubyString str = strDup(context.getRuntime());
+        str.chomp_bang(context, arg0);
+        return str;
     }
 
     /**
@@ -4371,55 +4364,25 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "chomp!")
     public IRubyObject chomp_bang(ThreadContext context) {
         Ruby runtime = context.getRuntime();
-        int len = value.realSize;
-        if (len == 0) return runtime.getNil();
-        
+        if (value.realSize == 0) return runtime.getNil();
 
-        IRubyObject rsObj = getRuntime().getGlobalVariables().get("$/");
+        IRubyObject rsObj = runtime.getGlobalVariables().get("$/");
 
-        if (rsObj == runtime.getGlobalVariables().getDefaultSeparator()) {
-            int len2 = value.realSize;
-            int p = value.begin;
-            byte[]bytes = value.bytes;
-            if (bytes[p + len - 1] == (byte)'\n') {
-                len2--;
-                if (len2 > 0 && bytes[p + len2 - 1] == (byte)'\r') len2--;
-                view(0, len2);
-            } else if (bytes[p + len - 1] == (byte)'\r') {
-                len2--;
-                view(0, len2);
-            } else {
-                modifyCheck();
-                return runtime.getNil();
-            }
-            return this;                
-        }
-        
-        return chompBangCommon(context, rsObj);
+        if (rsObj == runtime.getGlobalVariables().getDefaultSeparator()) return smartChopBangCommon(runtime);
+        return chompBangCommon(runtime, rsObj);
     }
 
-    /**
-     * rb_str_chomp_bang
-     *
-     * In the common case, removes CR and LF characters in various ways depending on the value of
-     *   the optional args[0].
-     * If args.length==0 removes one instance of CR, CRLF or LF from the end of the string.
-     * If args.length>0 and args[0] is "\n" then same behaviour as args.length==0 .
-     * If args.length>0 and args[0] is "" then removes trailing multiple LF or CRLF (but no CRs at
-     *   all(!)).
-     * @param args See method description.
-     */
     @JRubyMethod(name = "chomp!")
     public IRubyObject chomp_bang(ThreadContext context, IRubyObject arg0) {
-        return chompBangCommon(context, arg0);
+        Ruby runtime = context.getRuntime();
+        if (value.realSize == 0) return runtime.getNil();
+        return chompBangCommon(runtime, arg0);
     }
 
-    private IRubyObject chompBangCommon(ThreadContext context, IRubyObject rsObj) {
-        Ruby runtime = context.getRuntime();
-        if (rsObj.isNil() || value.realSize == 0) return runtime.getNil();
+    private IRubyObject chompBangCommon(Ruby runtime, IRubyObject rsObj) {
+        if (rsObj.isNil()) return rsObj;
 
         RubyString rs = rsObj.convertToString();
-
         int len = value.realSize;
         int p = value.begin;
         byte[] bytes = value.bytes;
@@ -4428,9 +4391,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (rslen == 0) {
             while (len > 0 && bytes[p + len - 1] == (byte)'\n') {
                 len--;
-                if (len > 0 && bytes[p + len - 1] == (byte)'\r') {
-                    len--;
-                }
+                if (len > 0 && bytes[p + len - 1] == (byte)'\r') len--;
             }
             if (len < value.realSize) {
                 view(0, len);
@@ -4442,29 +4403,31 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (rslen > len) return runtime.getNil();
         byte newline = rs.value.bytes[rslen - 1];
 
-        if (rslen == 1 && newline == (byte)'\n') {
-            int len2 = value.realSize;
-            if (bytes[p + len - 1] == (byte)'\n') {
-                len2--;
-                if (len2 > 0 && bytes[p + len2 - 1] == (byte)'\r') {
-                    len2--;
-                }
-                view(0, len2);
-            } else if (bytes[p + len - 1] == (byte) '\r') {
-                len2--;
-                view(0, len2);
-            } else {
-                modifyCheck();
-                return runtime.getNil();
-            }
-            return this;
-        }
+        if (rslen == 1 && newline == (byte)'\n') return smartChopBangCommon(runtime);
 
         if (bytes[p + len - 1] == newline && rslen <= 1 || value.endsWith(rs.value)) {
             view(0, value.realSize - rslen);
             return this;
         }
         return runtime.getNil();
+    }
+    
+    private IRubyObject smartChopBangCommon(Ruby runtime) {
+        int len = value.realSize;
+        int p = value.begin;
+        byte[]bytes = value.bytes;
+        if (bytes[p + len - 1] == (byte)'\n') {
+            len--;
+            if (len > 0 && bytes[p + len - 1] == (byte)'\r') len--;
+            view(0, len);
+        } else if (bytes[p + len - 1] == (byte)'\r') {
+            len--;
+            view(0, len);
+        } else {
+            modifyCheck();
+            return runtime.getNil();
+        }
+        return this; 
     }
 
     /** rb_str_lstrip / rb_str_lstrip_bang
