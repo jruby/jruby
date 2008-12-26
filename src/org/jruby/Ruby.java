@@ -1018,12 +1018,17 @@ public final class Ruby {
         falseObject = new RubyBoolean(this, false);
         trueObject = new RubyBoolean(this, true);
 
+        if (profile.allowClass("Data")) {
+            defineClass("Data", objectClass, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        }
+
         RubyComparable.createComparable(this);
         RubyEnumerable.createEnumerableModule(this);
         RubyString.createStringClass(this);
 
         if (config.getCompatVersion() == CompatVersion.RUBY1_9) {
             RubyEncoding.createEncodingClass(this);
+            RubyConverter.createConverterClass(this);
             encodingService = new EncodingService(this);
         }
 
@@ -1137,9 +1142,6 @@ public final class Ruby {
         }
         if (profile.allowClass("UnboundMethod")) {
             RubyUnboundMethod.defineUnboundMethodClass(this);
-        }
-        if (profile.allowClass("Data")) {
-            defineClass("Data", objectClass, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         }
         if (!isSecurityRestricted()) {
             // Signal uses sun.misc.* classes, this is not allowed
@@ -1467,6 +1469,13 @@ public final class Ruby {
     }
     void setEncoding(RubyClass encodingClass) {
         this.encodingClass = encodingClass;
+    }
+
+    public RubyClass getConverter() {
+        return converterClass;
+    }
+    void setConverter(RubyClass converterClass) {
+        this.converterClass = converterClass;
     }
 
     public RubyClass getSymbol() {
@@ -3112,7 +3121,7 @@ public final class Ruby {
            basicObjectClass, objectClass, moduleClass, classClass, nilClass, trueClass,
             falseClass, numericClass, floatClass, integerClass, fixnumClass,
             complexClass, rationalClass, enumeratorClass,
-            arrayClass, hashClass, rangeClass, stringClass, encodingClass, symbolClass,
+            arrayClass, hashClass, rangeClass, stringClass, encodingClass, converterClass, symbolClass,
             procClass, bindingClass, methodClass, unboundMethodClass,
             matchDataClass, regexpClass, timeClass, bignumClass, dirClass,
             fileClass, fileStatClass, ioClass, threadClass, threadGroupClass,
