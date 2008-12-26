@@ -4336,14 +4336,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_chop
      * 
      */
-    @JRubyMethod
+    @JRubyMethod(name = "chomp", compat = CompatVersion.RUBY1_8)
     public RubyString chomp(ThreadContext context) {
         RubyString str = strDup(context.getRuntime());
         str.chomp_bang(context);
         return str;
     }
 
-    @JRubyMethod
+    @JRubyMethod(name = "chomp", compat = CompatVersion.RUBY1_8)
     public RubyString chomp(ThreadContext context, IRubyObject arg0) {
         RubyString str = strDup(context.getRuntime());
         str.chomp_bang(context, arg0);
@@ -4361,7 +4361,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      *   all(!)).
      * @param args See method description.
      */
-    @JRubyMethod(name = "chomp!")
+    @JRubyMethod(name = "chomp!", compat = CompatVersion.RUBY1_8)
     public IRubyObject chomp_bang(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         if (value.realSize == 0) return runtime.getNil();
@@ -4372,7 +4372,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return chompBangCommon(runtime, rsObj);
     }
 
-    @JRubyMethod(name = "chomp!")
+    @JRubyMethod(name = "chomp!", compat = CompatVersion.RUBY1_8)
     public IRubyObject chomp_bang(ThreadContext context, IRubyObject arg0) {
         Ruby runtime = context.getRuntime();
         if (value.realSize == 0) return runtime.getNil();
@@ -4383,11 +4383,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (rsObj.isNil()) return rsObj;
 
         RubyString rs = rsObj.convertToString();
-        int len = value.realSize;
         int p = value.begin;
+        int len = value.realSize;
         byte[] bytes = value.bytes;
-        int rslen = rs.value.realSize;
 
+        int rslen = rs.value.realSize;
         if (rslen == 0) {
             while (len > 0 && bytes[p + len - 1] == (byte)'\n') {
                 len--;
@@ -4402,7 +4402,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         if (rslen > len) return runtime.getNil();
         byte newline = rs.value.bytes[rslen - 1];
-
         if (rslen == 1 && newline == (byte)'\n') return smartChopBangCommon(runtime);
 
         if (bytes[p + len - 1] == newline && rslen <= 1 || value.endsWith(rs.value)) {
@@ -4428,6 +4427,117 @@ public class RubyString extends RubyObject implements EncodingCapable {
             return runtime.getNil();
         }
         return this; 
+    }
+
+    @JRubyMethod(name = "chomp", compat = CompatVersion.RUBY1_9)
+    public RubyString chomp19(ThreadContext context) {
+        RubyString str = strDup(context.getRuntime());
+        str.chomp_bang19(context);
+        return str;
+    }
+
+    @JRubyMethod(name = "chomp", compat = CompatVersion.RUBY1_9)
+    public RubyString chomp19(ThreadContext context, IRubyObject arg0) {
+        RubyString str = strDup(context.getRuntime());
+        str.chomp_bang19(context, arg0);
+        return str;
+    }
+
+    @JRubyMethod(name = "chomp!", compat = CompatVersion.RUBY1_9)
+    public IRubyObject chomp_bang19(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        if (value.realSize == 0) return runtime.getNil();
+
+        IRubyObject rsObj = runtime.getGlobalVariables().get("$/");
+
+        if (rsObj == runtime.getGlobalVariables().getDefaultSeparator()) return smartChopBangCommon19(runtime);
+        return chompBangCommon19(runtime, rsObj);
+    }
+
+    @JRubyMethod(name = "chomp!", compat = CompatVersion.RUBY1_9)
+    public IRubyObject chomp_bang19(ThreadContext context, IRubyObject arg0) {
+        Ruby runtime = context.getRuntime();
+        if (value.realSize == 0) return runtime.getNil();
+        return chompBangCommon19(runtime, arg0);
+    }
+    
+    private IRubyObject chompBangCommon19(Ruby runtime, IRubyObject rsObj) {
+        if (rsObj.isNil()) return rsObj;
+
+        RubyString rs = rsObj.convertToString();
+        int p = value.begin;
+        int len = value.realSize;
+        int end = p + len;  
+        byte[] bytes = value.bytes;
+
+        int rslen = rs.value.realSize;
+        if (rslen == 0) {
+            while (len > 0 && bytes[p + len - 1] == (byte)'\n') {
+                len--;
+                if (len > 0 && bytes[p + len - 1] == (byte)'\r') len--;
+            }
+            if (len < value.realSize) {
+                keepCodeRange();
+                view(0, len);
+                return this;
+            }
+            return runtime.getNil();
+        }
+
+        if (rslen > len) return runtime.getNil();
+        byte newline = rs.value.bytes[rslen - 1];
+        if (rslen == 1 && newline == (byte)'\n') return smartChopBangCommon19(runtime);
+
+        Encoding enc = checkEncoding(rs);
+        if (rs.scanForCodeRange() == CR_BROKEN) return runtime.getNil();
+
+        int pp = end - rslen; 
+        if (bytes[p + len - 1] == newline && rslen <= 1 || value.endsWith(rs.value)) {
+            if (enc.leftAdjustCharHead(bytes, p, pp, end) != pp) return runtime.getNil();
+            keepCodeRange();
+            view(0, value.realSize - rslen);
+            return this;
+        }
+        return runtime.getNil();
+    }
+    
+    private IRubyObject smartChopBangCommon19(Ruby runtime) {
+        final int p = value.begin;
+        int len = value.realSize;
+        int end = p + len;
+        byte bytes[] = value.bytes;
+        Encoding enc = value.encoding;
+
+        keepCodeRange();
+        if (enc.minLength() > 1) {
+            int pp = enc.leftAdjustCharHead(bytes, p, end - enc.minLength(), end);
+            if (enc.isNewLine(bytes, pp, end)) end = pp;
+            pp = end - enc.minLength();
+            if (pp >= p) {
+                pp = enc.leftAdjustCharHead(bytes, p, pp, end);
+                if (StringSupport.preciseLength(enc, bytes, pp, end) > 0 && 
+                        enc.mbcToCode(bytes, pp, end) == '\r') end = pp;
+            }
+            if (end == p + value.realSize) {
+                modifyCheck();
+                return runtime.getNil();
+            }
+            len = end - p;
+            view(0, len);
+        } else {
+            if (bytes[p + len - 1] == (byte)'\n') {
+                len--;
+                if (len > 0 && bytes[p + len - 1] == (byte)'\r') len--;
+                view(0, len);
+            } else if (bytes[p + len - 1] == (byte)'\r') {
+                len--;
+                view(0, len);
+            } else {
+                modifyCheck();
+                return runtime.getNil();
+            }
+        }
+        return this;
     }
 
     /** rb_str_lstrip / rb_str_lstrip_bang
