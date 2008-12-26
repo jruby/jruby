@@ -4245,27 +4245,28 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return justify19(arg0, arg1, 'c');
     }
 
-    @JRubyMethod(name = "chop")
-    public IRubyObject chop(ThreadContext context) {
-        RubyString str = strDup(context.getRuntime());
-        str.chop_bang();
-        return str;
-    }
-
-    /** rb_str_chop_bang
+    /** rb_str_chop / rb_str_chop_bang
      * 
      */
-    @JRubyMethod(name = "chop!")
-    public IRubyObject chop_bang() {
-        int end = value.realSize - 1;
-        if (end < 0) return getRuntime().getNil(); 
+    @JRubyMethod(name = "chop")
+    public IRubyObject chop(ThreadContext context) {
+        if (value.realSize == 0) return newEmptyString(context.getRuntime()).infectBy(this);
+        return makeShared(context.getRuntime(), 0, choppedLength());
+    }
 
+    @JRubyMethod(name = "chop!")
+    public IRubyObject chop_bang(ThreadContext context) {
+        if (value.realSize == 0) return context.getRuntime().getNil();
+        view(0, choppedLength());
+        return this;
+    }
+
+    private int choppedLength() {
+        int end = value.realSize - 1;
         if ((value.bytes[value.begin + end]) == '\n') {
             if (end > 0 && (value.bytes[value.begin + end - 1]) == '\r') end--;
         }
-
-        view(0, end);
-        return this;
+        return end;
     }
 
     /**

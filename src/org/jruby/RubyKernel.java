@@ -515,7 +515,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "chop!", frame = true, module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
     public static IRubyObject chop_bang(ThreadContext context, IRubyObject recv, Block block) {
-        return getLastlineString(context, context.getRuntime()).chop_bang();
+        return getLastlineString(context, context.getRuntime()).chop_bang(context);
     }
 
     @JRubyMethod(name = "chop", frame = true, module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
@@ -524,7 +524,7 @@ public class RubyKernel {
 
         if (str.getByteList().realSize > 0) {
             str = (RubyString) str.dup();
-            str.chop_bang();
+            str.chop_bang(context);
             context.getPreviousFrame().setLastLine(str);
         }
 
