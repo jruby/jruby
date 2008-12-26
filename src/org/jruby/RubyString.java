@@ -3391,7 +3391,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_upto_m
      *
      */
-    @JRubyMethod(name = "upto", required = 1, frame = true)
+    @JRubyMethod(name = "upto", frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject upto(ThreadContext context, IRubyObject str, Block block) {
         return upto(context, str, false, block);
     }
@@ -3414,6 +3414,56 @@ public class RubyString extends RubyObject implements EncodingCapable {
             if (current.value.realSize > end.value.realSize || current.value.realSize == 0) break;
         }
 
+        return this;
+    }
+
+    @JRubyMethod(name = "upto", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject upto19(ThreadContext context, IRubyObject end, Block block) {
+        Ruby runtime = context.getRuntime();
+        return block.isGiven() ? upto19Common(context, end, false, block) : enumeratorize(runtime, this, "upto", end);
+    }
+
+    @JRubyMethod(name = "upto", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject upto19(ThreadContext context, IRubyObject end, IRubyObject excl, Block block) {
+        Ruby runtime = context.getRuntime();
+        return block.isGiven() ? upto19Common(context, end, excl.isTrue(), block) : 
+            enumeratorize(runtime, this, "upto", new IRubyObject[]{end, excl});
+    }
+
+    private IRubyObject upto19Common(ThreadContext context, IRubyObject arg, boolean excl, Block block) {
+        Ruby runtime = context.getRuntime();
+        RubyString end = arg.convertToString();
+        Encoding enc = checkEncoding(end);
+
+        if (value.realSize == 1 && end.value.realSize == 1 &&
+            scanForCodeRange() == CR_7BIT && end.scanForCodeRange() == CR_7BIT) {
+            byte c = value.bytes[value.begin]; 
+            byte e = end.value.bytes[end.value.begin];
+            if (c > e || (excl && c == e)) return this;
+            while (true) {
+                RubyString s = new RubyString(runtime, runtime.getString(), RubyInteger.SINGLE_CHAR_BYTELISTS[c & 0xff],
+                                                                            enc, CR_7BIT);
+                s.shareLevel = SHARE_LEVEL_BYTELIST;
+                block.yield(context, s); 
+
+                if (!excl && c == e) break;
+                c++;
+                if (excl && c == e) break;
+            }
+        } else {
+            int n = op_cmp19(end);
+            if (n > 0 || (excl && n == 0)) return this;
+
+            IRubyObject afterEnd = end.callMethod(context, "succ");
+            RubyString current = this;
+            while (!current.op_equal19(context, afterEnd).isTrue()) {
+                block.yield(context, current);
+                if (!excl && current.op_equal19(context, end).isTrue()) break;
+                current = current.callMethod(context, "succ").convertToString();
+                if (excl && current.op_equal19(context, end).isTrue()) break;
+                if (current.value.realSize > end.value.realSize || current.value.realSize == 0) break;
+            }
+        }
         return this;
     }
 
