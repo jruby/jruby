@@ -4248,13 +4248,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_chop / rb_str_chop_bang
      * 
      */
-    @JRubyMethod(name = "chop")
+    @JRubyMethod(name = "chop", compat = CompatVersion.RUBY1_8)
     public IRubyObject chop(ThreadContext context) {
         if (value.realSize == 0) return newEmptyString(context.getRuntime()).infectBy(this);
         return makeShared(context.getRuntime(), 0, choppedLength());
     }
 
-    @JRubyMethod(name = "chop!")
+    @JRubyMethod(name = "chop!", compat = CompatVersion.RUBY1_8)
     public IRubyObject chop_bang(ThreadContext context) {
         if (value.realSize == 0) return context.getRuntime().getNil();
         view(0, choppedLength());
@@ -4267,6 +4267,39 @@ public class RubyString extends RubyObject implements EncodingCapable {
             if (end > 0 && (value.bytes[value.begin + end - 1]) == '\r') end--;
         }
         return end;
+    }
+
+    @JRubyMethod(name = "chop", compat = CompatVersion.RUBY1_9)
+    public IRubyObject chop19(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        if (value.realSize == 0) return newEmptyString(runtime, value.encoding).infectBy(this);
+        return makeShared19(runtime, 0, choppedLength19(runtime));
+    }
+
+    @JRubyMethod(name = "chop!", compat = CompatVersion.RUBY1_9)
+    public IRubyObject chop_bang19(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        if (value.realSize == 0) return runtime.getNil();
+        keepCodeRange();
+        view(0, choppedLength19(runtime));
+        return this;
+    }
+
+    private int choppedLength19(Ruby runtime) {
+        int p = value.begin;
+        int end = p + value.realSize;
+
+        if (p > end) return 0;
+        byte bytes[] = value.bytes;
+        Encoding enc = value.encoding;
+
+        int s = enc.prevCharHead(bytes, p, end, end);
+        if (s == -1) return 0;
+        if (s > p && codePoint(runtime, enc, bytes, s, end) == '\n') {
+            int s2 = enc.prevCharHead(bytes, p, s, end);
+            if (s2 != -1 && codePoint(runtime, enc, bytes, s2, end) == '\r') s = s2;
+        }
+        return s - p;
     }
 
     /**
