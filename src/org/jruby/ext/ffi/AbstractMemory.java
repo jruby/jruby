@@ -380,7 +380,18 @@ abstract public class AbstractMemory extends RubyObject {
         checkBounds(context, offset, 8);
         return RubyFixnum.newFixnum(context.getRuntime(), getMemoryIO().getLong(getOffset(offset)));
     }
-    
+
+    /**
+     * Reads a 64 bit integer value from the memory address.
+     *
+     * @param offset The offset from the base pointer address to read the value.
+     * @return The value read from the address.
+     */
+    @JRubyMethod(name = { "get_uint64", "get_ulong_long" }, required = 1)
+    public IRubyObject get_uint64(ThreadContext context, IRubyObject offset) {
+        checkBounds(context, offset, 8);
+        return Util.newUnsigned64(context.getRuntime(), getMemoryIO().getLong(getOffset(offset)));
+    }
     /**
      * Writes a C long integer value to the memory area.
      *
