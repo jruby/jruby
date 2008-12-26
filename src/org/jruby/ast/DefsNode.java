@@ -43,6 +43,7 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.DynamicMethodFactory;
 import org.jruby.internal.runtime.methods.InterpretedMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
@@ -120,14 +121,9 @@ public class DefsNode extends MethodDefNode implements INameNode {
         // Make a nil node if no body.  Notice this is not part of AST.
         Node body = bodyNode == null ? new NilNode(getPosition()) : bodyNode;
         
-        DynamicMethod newMethod;
-        if (runtime.getInstanceConfig().getCompileMode() == CompileMode.OFF || runtime.getInstanceConfig().getCompatVersion() == CompatVersion.RUBY1_9) {
-            newMethod = new InterpretedMethod(rubyClass, name, scope, body, argsNode,
-                    Visibility.PUBLIC, getPosition());
-        } else  {
-            newMethod = new DefaultMethod(rubyClass, scope, body, argsNode,
-                    Visibility.PUBLIC, getPosition());
-        }
+        DynamicMethod newMethod = DynamicMethodFactory.newInterpretedMethod(
+                runtime, rubyClass, name, scope, body, argsNode,
+                Visibility.PUBLIC, getPosition());
    
         rubyClass.addMethod(name, newMethod);
         receiver.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));

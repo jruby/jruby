@@ -265,6 +265,7 @@ public class RubyInstanceConfig {
             compatVersion = CompatVersion.RUBY1_8;
         } else if (compatString.equalsIgnoreCase("RUBY1_9")) {
             compatVersion = CompatVersion.RUBY1_9;
+            compileMode = compileMode.OFF;
         } else {
             System.err.println("Compatibility version `" + compatString + "' invalid; use RUBY1_8 or RUBY1_9. Using RUBY1_8.");
             compatVersion = CompatVersion.RUBY1_8;

@@ -44,6 +44,7 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.DynamicMethodFactory;
 import org.jruby.internal.runtime.methods.InterpretedMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -106,12 +107,9 @@ public class DefnNode extends MethodDefNode implements INameNode {
         // Make a nil node if no body.  Notice this is not part of AST.
         Node body = bodyNode == null ? new NilNode(getPosition()) : bodyNode;
 
-        DynamicMethod newMethod;
-        if (runtime.getInstanceConfig().getCompileMode() == CompileMode.OFF || runtime.getInstanceConfig().getCompatVersion() == CompatVersion.RUBY1_9) {
-            newMethod = new InterpretedMethod(containingClass, name, scope, body, argsNode, visibility, getPosition());
-        } else {
-            newMethod = new DefaultMethod(containingClass, scope, body, argsNode, visibility, getPosition());
-        }
+        DynamicMethod newMethod = DynamicMethodFactory.newInterpretedMethod(
+                runtime, containingClass, name, scope, body, argsNode,
+                visibility, getPosition());
    
         containingClass.addMethod(name, newMethod);
    

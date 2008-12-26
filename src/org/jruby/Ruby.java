@@ -462,7 +462,7 @@ public final class Ruby {
         if (yarvCompile) {
             runner = tryCompileYarv(scriptNode);
         // FIXME: Once 1.9 compilation is supported this should be removed
-        } else if (compile && getInstanceConfig().getCompatVersion() != CompatVersion.RUBY1_9) {
+        } else if (compile) {
             script = tryCompile(scriptNode);
             if (forceCompile && script == null) {
                 return getNil();

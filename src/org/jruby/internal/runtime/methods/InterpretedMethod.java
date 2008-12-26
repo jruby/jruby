@@ -37,7 +37,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -257,28 +256,16 @@ public class InterpretedMethod extends DynamicMethod implements JumpTarget, Meth
         }
     }
 
-    private void pre(ThreadContext context, String name, IRubyObject self, Block block, Ruby runtime) {
+    protected void pre(ThreadContext context, String name, IRubyObject self, Block block, Ruby runtime) {
         context.preMethodFrameAndScope(getImplementationClass(), name, self, block, staticScope);
-
-        if (runtime.hasEventHooks()) traceCall(context, runtime, name);
     }
 
-    private void post(Ruby runtime, ThreadContext context, String name) {
-        if (runtime.hasEventHooks()) traceReturn(context, runtime, name);
-
+    protected void post(Ruby runtime, ThreadContext context, String name) {
         context.postMethodFrameAndScope();
     }
 
     public ISourcePosition getPosition() {
         return position;
-    }
-
-    private void traceReturn(ThreadContext context, Ruby runtime, String name) {
-        runtime.callEventHooks(context, RubyEvent.RETURN, context.getFile(), context.getLine(), name, getImplementationClass());
-    }
-    
-    private void traceCall(ThreadContext context, Ruby runtime, String name) {
-        runtime.callEventHooks(context, RubyEvent.CALL, position.getFile(), position.getStartLine(), name, getImplementationClass());
     }
 
     @Override
