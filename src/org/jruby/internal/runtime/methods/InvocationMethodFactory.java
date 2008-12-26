@@ -261,6 +261,52 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                         mv.invokevirtual(mnamePath, "call", signature);
                         mv.areturn();
                         mv.end();
+
+                        switch (scope.getRequiredArgs()) {
+                        case 0:
+                            signature = COMPILED_CALL_SIG_ZERO;
+                            break;
+                        case 1:
+                            signature = COMPILED_CALL_SIG_ONE;
+                            break;
+                        case 2:
+                            signature = COMPILED_CALL_SIG_TWO;
+                            break;
+                        case 3:
+                            signature = COMPILED_CALL_SIG_THREE;
+                            break;
+                        }
+                        mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", signature, null, null));
+                        mv.start();
+
+                        mv.aload(0);
+                        mv.aload(1);
+                        mv.aload(2);
+                        mv.aload(3);
+                        mv.aload(4);
+                        for (int i = 1; i <= scope.getRequiredArgs(); i++) {
+                            mv.aload(4 + i);
+                        }
+                        mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
+
+                        switch (scope.getRequiredArgs()) {
+                        case 0:
+                            signature = COMPILED_CALL_SIG_ZERO_BLOCK;
+                            break;
+                        case 1:
+                            signature = COMPILED_CALL_SIG_ONE_BLOCK;
+                            break;
+                        case 2:
+                            signature = COMPILED_CALL_SIG_TWO_BLOCK;
+                            break;
+                        case 3:
+                            signature = COMPILED_CALL_SIG_THREE_BLOCK;
+                            break;
+                        }
+
+                        mv.invokevirtual(mnamePath, "call", signature);
+                        mv.areturn();
+                        mv.end();
                         
                         mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", signature, null, null));
                     }
