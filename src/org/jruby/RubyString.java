@@ -4250,7 +4250,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "chop", compat = CompatVersion.RUBY1_8)
     public IRubyObject chop(ThreadContext context) {
-        if (value.realSize == 0) return newEmptyString(context.getRuntime()).infectBy(this);
+        if (value.realSize == 0) return newEmptyString(context.getRuntime(), getMetaClass()).infectBy(this);
         return makeShared(context.getRuntime(), 0, choppedLength());
     }
 
@@ -4272,7 +4272,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "chop", compat = CompatVersion.RUBY1_9)
     public IRubyObject chop19(ThreadContext context) {
         Ruby runtime = context.getRuntime();
-        if (value.realSize == 0) return newEmptyString(runtime, value.encoding).infectBy(this);
+        if (value.realSize == 0) return newEmptyString(runtime, getMetaClass(), value.encoding).infectBy(this);
         return makeShared19(runtime, 0, choppedLength19(runtime));
     }
 
