@@ -179,12 +179,6 @@ public class ThreadService {
         localContext.set(null);
     }
     
-    private RubyThread getRubyThreadFromThread(Thread activeThread) {
-        RubyThread rubyThread = rubyThreadMap.get(activeThread);
-        
-        return rubyThread;
-    }
-    
     public void setCritical(boolean critical) {
         if (criticalLock.isHeldByCurrentThread()) {
             if (critical) {
@@ -203,6 +197,10 @@ public class ThreadService {
     
     public boolean getCritical() {
         return criticalLock.isHeldByCurrentThread();
+    }
+
+    public ReentrantLock getCriticalLock() {
+        return criticalLock;
     }
     
     public void waitForCritical() {

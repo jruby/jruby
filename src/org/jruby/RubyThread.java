@@ -85,6 +85,7 @@ public class RubyThread extends RubyObject {
     private RubyThreadGroup threadGroup;
 
     private final ThreadService threadService;
+    private final ReentrantLock criticalLock;
     private volatile boolean isStopped = false;
     private volatile boolean isDead = false;
     private volatile boolean isWoken = false;
@@ -100,6 +101,7 @@ public class RubyThread extends RubyObject {
     protected RubyThread(Ruby runtime, RubyClass type) {
         super(runtime, type);
         this.threadService = runtime.getThreadService();
+        this.criticalLock = threadService.getCriticalLock();
         finalResult = runtime.getNil();
     }
     
@@ -247,10 +249,14 @@ public class RubyThread extends RubyObject {
     
     public void pollThreadEvents(ThreadContext context) {
         // check for criticalization *before* locking ourselves
-        threadService.waitForCritical();
-
+        if (criticalLock.isLocked()) waitForCritical(criticalLock);
         if (killed) throwThreadKill();
         if (receivedException != null) receivedAnException(context);
+    }
+
+    private static void waitForCritical(ReentrantLock criticalLock) {
+        criticalLock.lock();
+        criticalLock.unlock();
     }
     
     private void throwThreadKill() {
