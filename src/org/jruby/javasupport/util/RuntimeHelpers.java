@@ -804,7 +804,19 @@ public class RuntimeHelpers {
     }
     
     public static RubyArray createSubarray(IRubyObject[] input, Ruby runtime, int start) {
-        return RubyArray.newArrayNoCopy(runtime, input, start);
+        if (start >= input.length) {
+            return RubyArray.newEmptyArray(runtime);
+        } else {
+            return RubyArray.newArrayNoCopy(runtime, input, start);
+        }
+    }
+
+    public static IRubyObject elementOrNull(IRubyObject[] input, int element) {
+        if (element >= input.length) {
+            return null;
+        } else {
+            return input[element];
+        }
     }
     
     public static RubyBoolean isWhenTriggered(IRubyObject expression, IRubyObject expressionsObject, ThreadContext context) {

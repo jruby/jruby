@@ -57,7 +57,19 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
     public void beginMethod(CompilerCallback argsCallback, StaticScope scope) {
         // fill in all vars with nil so compiler is happy about future accesses
         if (scope.getNumberOfVariables() > 0) {
-            for (int i = 0; i < scope.getNumberOfVariables(); i++) {
+            // if we don't have opt args, start after args (they will be assigned later)
+            // this is for crap like def foo(a = (b = true; 1)) which numbers b before a
+            int start;
+            if (scope.getOptionalArgs() > 0) {
+                // we have opt args, must assign nil starting immediately after last req arg
+                start = scope.getRequiredArgs();
+            } else {
+                // no opt args, start after all normal args
+                start =
+                        scope.getRequiredArgs() +
+                        (scope.getRestArg() >= 0 ? 1 : 0);
+            }
+            for (int i = start; i < scope.getNumberOfVariables(); i++) {
                 methodCompiler.loadNil();
                 assignLocalVariable(i, false);
             }

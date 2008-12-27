@@ -122,60 +122,37 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
     }
 
     public void checkMethodArity(int requiredArgs, int optArgs, int restArg) {
-        // check arity
-        Label arityError = new Label();
-        Label noArityError = new Label();
-
         if (specificArity) {
             // do nothing; arity check is done before call
-            // FIXME: arity check is not yet done before call :)
         } else {
             boolean needsError = false;
             if (restArg != -1) {
                 if (requiredArgs > 0) {
                     needsError = true;
                     // just confirm minimum args provided
+                    methodCompiler.loadRuntime();
                     method.aload(argsIndex);
-                    method.arraylength();
                     method.pushInt(requiredArgs);
-                    method.if_icmplt(arityError);
+                    method.pushInt(-1);
                 }
             } else if (optArgs > 0) {
                 needsError = true;
-                if (requiredArgs > 0) {
-                    // confirm minimum args provided
-                    method.aload(argsIndex);
-                    method.arraylength();
-                    method.pushInt(requiredArgs);
-                    method.if_icmplt(arityError);
-                }
-
-                // confirm maximum not greater than optional
-                method.aload(argsIndex);
-                method.arraylength();
-                method.pushInt(requiredArgs + optArgs);
-                method.if_icmpgt(arityError);
-            } else {
-                needsError = true;
-                // just confirm args length == required
-                method.aload(argsIndex);
-                method.arraylength();
-                method.pushInt(requiredArgs);
-                method.if_icmpne(arityError);
-            }
-
-            if (needsError) {
-                method.go_to(noArityError);
-
-                method.label(arityError);
                 methodCompiler.loadRuntime();
                 method.aload(argsIndex);
                 method.pushInt(requiredArgs);
                 method.pushInt(requiredArgs + optArgs);
+            } else {
+                needsError = true;
+                // just confirm args length == required
+                methodCompiler.loadRuntime();
+                method.aload(argsIndex);
+                method.pushInt(requiredArgs);
+                method.pushInt(requiredArgs);
+            }
+
+            if (needsError) {
                 method.invokestatic(p(Arity.class), "checkArgumentCount", sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
                 method.pop();
-
-                method.label(noArityError);
             }
         }
     }
@@ -195,89 +172,58 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
             for (; currentArgElement < scope.getRequiredArgs(); currentArgElement++) {
                 method.aload(argsIndex + currentArgElement);
                 requiredAssignment.nextValue(methodCompiler, requiredArgs, currentArgElement);
-
-                // normal assignment leaves the value; pop it.
-                method.pop();
             }
         } else {
             if (requiredArgsCount > 0 || optArgsCount > 0 || restAssignment != null) {
-                // load arguments array
-                method.aload(argsIndex);
-
-                // NOTE: This assumes arity has already been confirmed, and does not re-check
-
                 // first, iterate over all required args
                 int currentArgElement = 0;
                 for (; currentArgElement < requiredArgsCount; currentArgElement++) {
                     // extract item from array
-                    method.dup(); // dup the original array
+                    method.aload(argsIndex);
                     method.pushInt(currentArgElement); // index for the item
                     method.arrayload();
                     requiredAssignment.nextValue(methodCompiler, requiredArgs, currentArgElement);
-
-                    // normal assignment leaves the value; pop it.
-                    method.pop();
                 }
 
-                // next, iterate over all optional args, until no more arguments
-                for (int optArgElement = 0; optArgElement < optArgsCount; currentArgElement++, optArgElement++) {
-                    Label noMoreArrayElements = new Label();
-                    Label doneWithElement = new Label();
+                if (optArgsCount > 0) {
+                    // prepare labels for opt logic
+                    Label doneWithOpt = new Label();
+                    Label[] optLabels = new Label[optArgsCount];
+                    for (int i = 0; i < optLabels.length; i ++) optLabels[i] = new Label();
 
-                    // confirm we're not past the end of the array
-                    method.dup(); // dup the original array
-                    method.arraylength();
-                    method.pushInt(currentArgElement);
-                    method.if_icmple(noMoreArrayElements); // if length <= start, end loop
+                    // next, iterate over all optional args, until no more arguments
+                    for (int optArgElement = 0; optArgElement < optArgsCount; currentArgElement++, optArgElement++) {
+                        method.aload(argsIndex);
+                        method.pushInt(currentArgElement); // index for the item
+                        methodCompiler.invokeUtilityMethod("elementOrNull", sig(IRubyObject.class, IRubyObject[].class, int.class));
+                        method.dup();
+                        method.ifnull(optLabels[optArgElement]);
 
-                    // extract item from array
-                    method.dup(); // dup the original array
-                    method.pushInt(currentArgElement); // index for the item
-                    method.arrayload();
-                    optGivenAssignment.nextValue(methodCompiler, optArgs, optArgElement);
-                    method.go_to(doneWithElement);
+                        optGivenAssignment.nextValue(methodCompiler, optArgs, optArgElement);
+                    }
+                    method.go_to(doneWithOpt);
 
-                    // otherwise no items left available, use the code for default
-                    method.label(noMoreArrayElements);
-                    optNotGivenAssignment.nextValue(methodCompiler, optArgs, optArgElement);
+                    // now logic for each optional value
+                    for (int optArgElement = 0; optArgElement < optArgsCount; optArgElement++) {
+                        // otherwise no items left available, use the code for default
+                        method.label(optLabels[optArgElement]);
+                        optNotGivenAssignment.nextValue(methodCompiler, optArgs, optArgElement);
+                    }
 
-                    // end of this element
-                    method.label(doneWithElement);
-                    // normal assignment leaves the value; pop it.
+                    // pop extra failed value from first cycle and we're done
                     method.pop();
+                    method.label(doneWithOpt);
                 }
 
                 // if there's args left and we want them, assign to rest arg
                 if (restAssignment != null) {
-                    Label emptyArray = new Label();
-                    Label readyForArgs = new Label();
-
-                    // confirm we're not past the end of the array
-                    method.dup(); // dup the original array
-                    method.arraylength();
-                    method.pushInt(currentArgElement);
-                    method.if_icmple(emptyArray); // if length <= start, end loop
-
-                    // assign remaining elements as an array for rest args
-                    method.dup(); // dup the original array object
+                    // assign remaining elements as an array for rest args (or empty array)
+                    method.aload(argsIndex);
                     methodCompiler.loadRuntime();
                     method.pushInt(currentArgElement);
                     methodCompiler.invokeUtilityMethod("createSubarray", sig(RubyArray.class, IRubyObject[].class, Ruby.class, int.class));
-                    method.go_to(readyForArgs);
-
-                    // create empty array
-                    method.label(emptyArray);
-                    methodCompiler.createEmptyArray();
-
-                    // assign rest args
-                    method.label(readyForArgs);
                     restAssignment.call(methodCompiler);
-                    //consume leftover assigned value
-                    method.pop();
                 }
-
-                // done with arguments array
-                method.pop();
             }
         }
         
@@ -288,7 +234,6 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
 
             methodCompiler.invokeUtilityMethod("processBlockArgument", sig(IRubyObject.class, params(Ruby.class, Block.class)));
             blockAssignment.call(methodCompiler);
-            method.pop();
         }
     }
         

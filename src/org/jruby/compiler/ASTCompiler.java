@@ -1815,7 +1815,7 @@ public class ASTCompiler {
 
                         public void nextValue(BodyCompiler context, Object object, int index) {
                             // FIXME: Somehow I'd feel better if this could get the appropriate var index from the ArgumentNode
-                            context.getVariableCompiler().assignLocalVariable(index,true);
+                            context.getVariableCompiler().assignLocalVariable(index, false);
                         }
                     };
         }
@@ -1827,6 +1827,7 @@ public class ASTCompiler {
                             Node optArg = ((ListNode) object).get(index);
 
                             compileAssignment(optArg, context);
+                            context.consumeCurrentValue();
                         }
                     };
             optionalNotGiven = new ArrayCallback() {
@@ -1835,6 +1836,7 @@ public class ASTCompiler {
                             Node optArg = ((ListNode) object).get(index);
 
                             compile(optArg, context);
+                            context.consumeCurrentValue();
                         }
                     };
         }
@@ -1843,7 +1845,7 @@ public class ASTCompiler {
             restAssignment = new CompilerCallback() {
 
                         public void call(BodyCompiler context) {
-                            context.getVariableCompiler().assignLocalVariable(argsNode.getRestArg(),true);
+                            context.getVariableCompiler().assignLocalVariable(argsNode.getRestArg(), false);
                         }
                     };
         }
@@ -1852,7 +1854,7 @@ public class ASTCompiler {
             blockAssignment = new CompilerCallback() {
 
                         public void call(BodyCompiler context) {
-                            context.getVariableCompiler().assignLocalVariable(argsNode.getBlock().getCount(),true);
+                            context.getVariableCompiler().assignLocalVariable(argsNode.getBlock().getCount(), false);
                         }
                     };
         }

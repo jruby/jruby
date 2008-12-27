@@ -1,7 +1,7 @@
 require 'benchmark'
 
 def bench_method_dispatch(bm)
-  bm.report "control: 100x x100 local var access" do
+  bm.report "control: 10m local var access" do
     a = 5; 
     i = 0;
     while i < 100000
@@ -19,7 +19,7 @@ def bench_method_dispatch(bm)
     end
   end
 
-  bm.report "core class: 100x x100 Fixnum#to_i" do
+  bm.report "core: 10m Fixnum#to_i" do
     a = 5; 
     i = 0;
     while i < 100000
@@ -66,8 +66,28 @@ def bench_method_dispatch(bm)
   class << self
     define_method(:bar) { }
   end
+
+  class << self
+    define_method(:bar1) {|a| }
+  end
+
+  class << self
+    define_method(:bar2) {|a,b| }
+  end
+
+  class << self
+    define_method(:bars) {|*a| }
+  end
+
+  def optfix(opts = 1)
+    self
+  end
+
+  def optary(opts = [])
+    self
+  end
   
-  def baz(opts = { })
+  def opthash(opts = { })
     self
   end
 
@@ -75,7 +95,7 @@ def bench_method_dispatch(bm)
     self
   end
 
-  $bm.report "ruby method: 100k x100 self.foo" do
+  $bm.report "ruby: 10m def foo() with foo()" do
     a = []; 
     i = 0;
     while i < 100000
@@ -93,7 +113,7 @@ def bench_method_dispatch(bm)
     end
   end
 
-  $bm.report "ruby method: 100k x100 self.foos" do
+  $bm.report "ruby: 10m def foo(*a) with foo()" do
     a = []; 
     i = 0;
     while i < 100000
@@ -111,7 +131,7 @@ def bench_method_dispatch(bm)
     end
   end
 
-  $bm.report "ruby method: 100k x100 self.foos(1)" do
+  $bm.report "ruby: 10m def foo(*a) with foo(nil)" do
     a = []; 
     i = 0;
     while i < 100000
@@ -125,121 +145,121 @@ def bench_method_dispatch(bm)
       foos(nil); foos(nil); foos(nil); foos(nil); foos(nil); foos(nil); foos(nil); foos(nil); foos(nil); foos(nil); 
       foos(nil); foos(nil); foos(nil); foos(nil); foos(nil); foos(nil); foos(nil); foos(nil); foos(nil); foos(nil); 
       foos(nil); foos(nil); foos(nil); foos(nil); foos(nil); foos(nil); foos(nil); foos(nil); foos(nil); foos(nil); 
+      i += 1;
+    end
+  end
+
+  $bm.report "ruby: 10m def foo(*a) with foo(nil*4)" do
+    a = []; 
+    i = 0;
+    while i < 100000
+      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
+      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
+      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
+      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
+      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
+      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
+      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
+      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
+      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
+      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
+      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
+      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
+      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
+      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
+      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
+      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
+      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
+      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
+      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
+      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
+      i += 1;
+    end
+  end
+
+  $bm.report "ruby: 10m def foo(a)" do
+    a = []; 
+    i = 0;
+    while i < 100000
+      foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); 
+      foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); 
+      foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); 
+      foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); 
+      foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); 
+      foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); 
+      foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); 
+      foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); 
+      foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); 
+      foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); 
+      i += 1;
+    end
+  end
+
+  $bm.report "ruby: 10m def foo(a,b)" do
+    a = []; 
+    i = 0;
+    while i < 100000
+      foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); 
+      foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); 
+      foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); 
+      foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); 
+      foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); 
+      foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); 
+      foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); 
+      foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); 
+      foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); 
+      foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); 
+      i += 1;
+    end
+  end
+
+  $bm.report "ruby: 10m def foo(a,b,c)" do
+    a = []; 
+    i = 0;
+    while i < 100000
+      foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); 
+      foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); 
+      foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); 
+      foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); 
+      foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); 
+      foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); 
+      foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); 
+      foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); 
+      foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); 
+      foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); 
+      i += 1;
+    end
+  end
+
+  $bm.report "ruby: 10m def foo(a,b,c,d)" do
+    a = []; 
+    i = 0;
+    while i < 100000
+      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
+      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
+      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
+      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
+      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
+      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
+      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
+      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
+      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
+      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
+      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
+      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
+      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
+      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
+      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
+      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
+      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
+      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
+      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
+      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
       i += 1;
     end
   end
   
-  $bm.report "ruby method: 100k x100 self.foos(4)" do
-    a = []; 
-    i = 0;
-    while i < 100000
-      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
-      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
-      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
-      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
-      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
-      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
-      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
-      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
-      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
-      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
-      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
-      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
-      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
-      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
-      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
-      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
-      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
-      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
-      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
-      foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); foos(nil, nil, nil, nil); 
-      i += 1;
-    end
-  end
-
-  $bm.report "ruby method: 100k x100 self.foo1" do
-    a = []; 
-    i = 0;
-    while i < 100000
-      foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); 
-      foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); 
-      foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); 
-      foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); 
-      foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); 
-      foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); 
-      foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); 
-      foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); 
-      foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); 
-      foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); foo1(nil); 
-      i += 1;
-    end
-  end
-
-  $bm.report "ruby method: 100k x100 self.foo2" do
-    a = []; 
-    i = 0;
-    while i < 100000
-      foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); 
-      foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); 
-      foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); 
-      foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); 
-      foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); 
-      foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); 
-      foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); 
-      foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); 
-      foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); 
-      foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); foo2(nil, nil); 
-      i += 1;
-    end
-  end
-  
-  $bm.report "ruby method: 100k x100 self.foo3" do
-    a = []; 
-    i = 0;
-    while i < 100000
-      foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); 
-      foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); 
-      foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); 
-      foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); 
-      foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); 
-      foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); 
-      foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); 
-      foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); 
-      foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); 
-      foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); foo3(nil, nil, nil); 
-      i += 1;
-    end
-  end
-  
-  $bm.report "ruby method: 100k x100 self.foo4" do
-    a = []; 
-    i = 0;
-    while i < 100000
-      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
-      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
-      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
-      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
-      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
-      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
-      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
-      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
-      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
-      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
-      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
-      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
-      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
-      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
-      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
-      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
-      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
-      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
-      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
-      foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); foo4(nil, nil, nil, nil); 
-      i += 1;
-    end
-  end
-  
-  $bm.report "__send__ method: 100k x100 self.foo" do
+  $bm.report "ruby: 10m def foo() with __send__" do
     a = []; 
     i = 0;
     while i < 100000
@@ -257,43 +277,115 @@ def bench_method_dispatch(bm)
     end
   end
 
-  $bm.report "ruby method(opt): 100k x100 self.baz" do
-    a = []; 
+  $bm.report "ruby: 10m def opt(a=1) with opt()" do
+    a = [];
     i = 0;
     while i < 100000
-      baz; baz; baz; baz; baz; baz; baz; baz; baz; baz; 
-      baz; baz; baz; baz; baz; baz; baz; baz; baz; baz; 
-      baz; baz; baz; baz; baz; baz; baz; baz; baz; baz; 
-      baz; baz; baz; baz; baz; baz; baz; baz; baz; baz; 
-      baz; baz; baz; baz; baz; baz; baz; baz; baz; baz; 
-      baz; baz; baz; baz; baz; baz; baz; baz; baz; baz; 
-      baz; baz; baz; baz; baz; baz; baz; baz; baz; baz; 
-      baz; baz; baz; baz; baz; baz; baz; baz; baz; baz; 
-      baz; baz; baz; baz; baz; baz; baz; baz; baz; baz; 
-      baz; baz; baz; baz; baz; baz; baz; baz; baz; baz; 
+      optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix;
+      optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix;
+      optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix;
+      optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix;
+      optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix;
+      optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix;
+      optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix;
+      optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix;
+      optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix;
+      optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix; optfix;
       i += 1;
     end
   end
 
-  $bm.report "ruby method(no opt): 100k x100 self.baz" do
-    a = []; 
+  $bm.report "ruby: 10m def opt(a=1) with opt(nil)" do
+    a = [];
     i = 0;
     while i < 100000
-      baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); 
-      baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); 
-      baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); 
-      baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); 
-      baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); 
-      baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); 
-      baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); 
-      baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); 
-      baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); 
-      baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); baz(nil); 
+      optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil);
+      optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil);
+      optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil);
+      optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil);
+      optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil);
+      optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil);
+      optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil);
+      optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil);
+      optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil);
+      optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil); optfix(nil);
       i += 1;
     end
   end
 
-  $bm.report "ruby method(block): 100k x100 self.quux" do
+  $bm.report "ruby: 10m def opt(a=[]) with opt()" do
+    a = [];
+    i = 0;
+    while i < 100000
+      optary; optary; optary; optary; optary; optary; optary; optary; optary; optary;
+      optary; optary; optary; optary; optary; optary; optary; optary; optary; optary;
+      optary; optary; optary; optary; optary; optary; optary; optary; optary; optary;
+      optary; optary; optary; optary; optary; optary; optary; optary; optary; optary;
+      optary; optary; optary; optary; optary; optary; optary; optary; optary; optary;
+      optary; optary; optary; optary; optary; optary; optary; optary; optary; optary;
+      optary; optary; optary; optary; optary; optary; optary; optary; optary; optary;
+      optary; optary; optary; optary; optary; optary; optary; optary; optary; optary;
+      optary; optary; optary; optary; optary; optary; optary; optary; optary; optary;
+      optary; optary; optary; optary; optary; optary; optary; optary; optary; optary;
+      i += 1;
+    end
+  end
+
+  $bm.report "ruby: 10m def opt(a=[]) with opt(nil)" do
+    a = [];
+    i = 0;
+    while i < 100000
+      optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil);
+      optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil);
+      optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil);
+      optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil);
+      optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil);
+      optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil);
+      optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil);
+      optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil);
+      optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil);
+      optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil); optary(nil);
+      i += 1;
+    end
+  end
+
+  $bm.report "ruby: 10m def opt(a={}) with opt()" do
+    a = []; 
+    i = 0;
+    while i < 100000
+      opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash;
+      opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash;
+      opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash;
+      opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash;
+      opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash;
+      opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash;
+      opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash;
+      opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash;
+      opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash;
+      opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash; opthash;
+      i += 1;
+    end
+  end
+
+  $bm.report "ruby: 10m def opt(a={}) with opt(nil)" do
+    a = []; 
+    i = 0;
+    while i < 100000
+      opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil);
+      opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil);
+      opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil);
+      opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil);
+      opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil);
+      opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil);
+      opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil);
+      opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil);
+      opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil);
+      opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil); opthash(nil);
+      i += 1;
+    end
+  end
+
+  $bm.report "ruby: 10m def quux(&b) with quux()" do
     a = []; 
     i = 0;
     while i < 100000
@@ -311,7 +403,7 @@ def bench_method_dispatch(bm)
     end
   end
 
-  $bm.report "ruby method(block{}): 10k x100 self.quux" do
+  $bm.report "ruby: 10m def quux(&b) with quux(){}" do
     a = []; 
     i = 0;
     while i < 10_000
@@ -329,7 +421,7 @@ def bench_method_dispatch(bm)
     end
   end
   
-  $bm.report "define_method method: 100k x100 calls" do
+  $bm.report "ruby: 10m define_method :bar {}" do
     a = 0
     while a < 100000
       bar; bar; bar; bar; bar; bar; bar; bar; bar; bar
@@ -342,6 +434,57 @@ def bench_method_dispatch(bm)
       bar; bar; bar; bar; bar; bar; bar; bar; bar; bar
       bar; bar; bar; bar; bar; bar; bar; bar; bar; bar
       bar; bar; bar; bar; bar; bar; bar; bar; bar; bar
+      a += 1
+    end
+  end
+
+  $bm.report "ruby: 10m define_method :bar {|a|}" do
+    a = 0
+    while a < 100000
+      bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1)
+      bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1)
+      bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1)
+      bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1)
+      bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1)
+      bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1)
+      bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1)
+      bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1)
+      bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1)
+      bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1); bar1(1)
+      a += 1
+    end
+  end
+
+  $bm.report "ruby: 10m define_method :bar {|a,b|}" do
+    a = 0
+    while a < 100000
+      bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2)
+      bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2)
+      bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2)
+      bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2)
+      bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2)
+      bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2)
+      bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2)
+      bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2)
+      bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2)
+      bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2); bar2(1,2)
+      a += 1
+    end
+  end
+
+  $bm.report "ruby: 10m define_method :bar {|*a|}" do
+    a = 0
+    while a < 100000
+      bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3)
+      bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3)
+      bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3)
+      bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3)
+      bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3)
+      bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3)
+      bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3)
+      bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3)
+      bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3)
+      bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3); bars(1,2,3)
       a += 1
     end
   end
