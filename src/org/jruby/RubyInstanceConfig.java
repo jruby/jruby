@@ -412,8 +412,6 @@ public class RubyInstanceConfig {
                 .append("       Set compilation mode. JIT is default; FORCE compiles all, OFF disables\n")
                 .append("    jruby.compile.fastest=true|false\n")
                 .append("       (EXPERIMENTAL) Turn on all experimental compiler optimizations\n")
-                .append("    jruby.compile.boxed=true|false\n")
-                .append("       (EXPERIMENTAL) Use boxed variables; this can speed up some methods. Default is false\n")
                 .append("    jruby.compile.frameless=true|false\n")
                 .append("       (EXPERIMENTAL) Turn on frameless compilation where possible\n")
                 .append("    jruby.compile.positionless=true|false\n")
