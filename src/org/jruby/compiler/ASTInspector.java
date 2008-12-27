@@ -64,6 +64,7 @@ import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.Match2Node;
 import org.jruby.ast.Match3Node;
 import org.jruby.ast.MatchNode;
+import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NewlineNode;
 import org.jruby.ast.NextNode;
@@ -73,6 +74,7 @@ import org.jruby.ast.OpAsgnAndNode;
 import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OpAsgnOrNode;
 import org.jruby.ast.OpElementAsgnNode;
+import org.jruby.ast.OptArgNode;
 import org.jruby.ast.OrNode;
 import org.jruby.ast.PostExeNode;
 import org.jruby.ast.PreExeNode;
@@ -430,6 +432,9 @@ public class ASTInspector {
         case ITERNODE:
             setFlag(CLOSURE);
             break;
+        case LAMBDANODE:
+            setFlag(CLOSURE);
+            break;
         case LOCALASGNNODE:
             LocalAsgnNode localAsgnNode = (LocalAsgnNode)node;
             if (PRAGMAS.contains(localAsgnNode.getName())) {
@@ -460,6 +465,13 @@ public class ASTInspector {
             break;
         case MODULENODE:
             setFlag(CLASS);
+            break;
+        case MULTIPLEASGN19NODE:
+            MultipleAsgn19Node multipleAsgn19Node = (MultipleAsgn19Node)node;
+            inspect(multipleAsgn19Node.getPre());
+            inspect(multipleAsgn19Node.getPost());
+            inspect(multipleAsgn19Node.getRest());
+            inspect(multipleAsgn19Node.getValueNode());
             break;
         case MULTIPLEASGNNODE:
             MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode)node;
@@ -528,6 +540,9 @@ public class ASTInspector {
             inspect(opElementAsgnNode.getArgsNode());
             inspect(opElementAsgnNode.getReceiverNode());
             inspect(opElementAsgnNode.getValueNode());
+            break;
+        case OPTARGNODE:
+            inspect(((OptArgNode)node).getValue());
             break;
         case ORNODE:
             OrNode orNode = (OrNode)node;

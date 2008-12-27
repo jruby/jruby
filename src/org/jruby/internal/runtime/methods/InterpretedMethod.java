@@ -31,6 +31,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.Node;
+import org.jruby.compiler.ASTInspector;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -50,6 +51,7 @@ public class InterpretedMethod extends DynamicMethod implements JumpTarget, Meth
     private ArgsNode argsNode;
     private ISourcePosition position;
     private String name;
+    private boolean needsScope;
 
     public InterpretedMethod(RubyModule implementationClass, String name, StaticScope staticScope, Node body,
             ArgsNode argsNode, Visibility visibility, ISourcePosition position) {
@@ -58,6 +60,17 @@ public class InterpretedMethod extends DynamicMethod implements JumpTarget, Meth
         this.staticScope = staticScope;
         this.argsNode = argsNode;
         this.position = position;
+
+        ASTInspector inspector = new ASTInspector();
+        inspector.inspect(body);
+        inspector.inspect(argsNode);
+
+        if (inspector.hasClosure() || inspector.hasScopeAwareMethods() || staticScope.getNumberOfVariables() != 0) {
+            // must have scope
+            needsScope = true;
+        } else {
+            needsScope = false;
+        }
 		
         assert argsNode != null;
     }
@@ -257,7 +270,11 @@ public class InterpretedMethod extends DynamicMethod implements JumpTarget, Meth
     }
 
     protected void pre(ThreadContext context, String name, IRubyObject self, Block block, Ruby runtime) {
-        context.preMethodFrameAndScope(getImplementationClass(), name, self, block, staticScope);
+        if (needsScope) {
+            context.preMethodFrameAndScope(getImplementationClass(), name, self, block, staticScope);
+        } else {
+            context.preMethodFrameAndDummyScope(getImplementationClass(), name, self, block, staticScope);
+        }
     }
 
     protected void post(Ruby runtime, ThreadContext context, String name) {

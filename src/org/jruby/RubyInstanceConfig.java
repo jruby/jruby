@@ -924,6 +924,9 @@ public class RubyInstanceConfig {
                     } else if (argument.equals("--compat")) {
                         characterIndex = argument.length();
                         compatVersion = CompatVersion.getVersionFromString(grabValue(getArgumentError("--compat must be RUBY1_8 or RUBY1_9")));
+                        if (compatVersion == CompatVersion.RUBY1_9) {
+                            compileMode = compileMode.OFF;
+                        }
                         if (compatVersion == null) {
                             compatVersion = CompatVersion.RUBY1_8;
                         }

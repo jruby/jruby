@@ -34,6 +34,7 @@ import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
+import org.jruby.compiler.ASTInspector;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -66,6 +67,7 @@ public class DefaultMethod extends DynamicMethod implements JumpTarget, MethodAr
     private CallConfiguration jitCallConfig;
     private ISourcePosition position;
     private boolean noArgHack;
+    private boolean needsScope;
     
     public DefaultMethod(RubyModule implementationClass, StaticScope staticScope, Node body,
             ArgsNode argsNode, Visibility visibility, ISourcePosition position) {
@@ -80,6 +82,17 @@ public class DefaultMethod extends DynamicMethod implements JumpTarget, MethodAr
         this.position = position;
 
         noArgHack = argsNode.getBlock() == null && requiredArgsCount == 0 && maxArgsCount == 0;
+
+        ASTInspector inspector = new ASTInspector();
+        inspector.inspect(body);
+        inspector.inspect(argsNode);
+
+        if (inspector.hasClosure() || inspector.hasScopeAwareMethods() || staticScope.getNumberOfVariables() != 0) {
+            // must have scope
+            needsScope = true;
+        } else {
+            needsScope = false;
+        }
 
         assert argsNode != null;
     }
@@ -394,7 +407,11 @@ public class DefaultMethod extends DynamicMethod implements JumpTarget, MethodAr
     }
 
     private void preInterpret(ThreadContext context, String name, IRubyObject self, Block block, Ruby runtime, IRubyObject[] args) {
-        context.preMethodFrameAndScope(getImplementationClass(), name, self, block, staticScope);
+        if (needsScope) {
+            context.preMethodFrameAndScope(getImplementationClass(), name, self, block, staticScope);
+        } else {
+            context.preMethodFrameAndDummyScope(getImplementationClass(), name, self, block, staticScope);
+        }
         
         checkArgCount(runtime, args.length);
         if (!noArgHack) interpretArgs(runtime, args, context, self, block);
