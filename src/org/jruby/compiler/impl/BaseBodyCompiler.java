@@ -419,13 +419,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void createNewArray(Object[] sourceArray, ArrayCallback callback, boolean lightweight) {
         loadRuntime();
 
-        createObjectArray(sourceArray, callback);
-
-        if (lightweight) {
-            method.invokestatic(p(RubyArray.class), "newArrayNoCopyLight", sig(RubyArray.class, params(Ruby.class, IRubyObject[].class)));
-        } else {
-            method.invokestatic(p(RubyArray.class), "newArrayNoCopy", sig(RubyArray.class, params(Ruby.class, IRubyObject[].class)));
-        }
+        buildRubyArray(sourceArray, callback, lightweight);
     }
 
     public void createEmptyArray() {
@@ -471,6 +465,37 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                 callback.nextValue(this, sourceArray, i);
 
                 method.arraystore();
+            }
+        }
+    }
+
+    private void buildRubyArray(Object[] sourceArray, ArrayCallback callback, boolean light) {
+        if (sourceArray.length == 0) {
+            method.invokestatic(p(RubyArray.class), "newEmptyArray", sig(RubyArray.class, Ruby.class));
+        } else if (sourceArray.length <= RuntimeHelpers.MAX_SPECIFIC_ARITY_OBJECT_ARRAY) {
+            // if we have a specific-arity helper to construct an array for us, use that
+            for (int i = 0; i < sourceArray.length; i++) {
+                callback.nextValue(this, sourceArray, i);
+            }
+            invokeUtilityMethod("constructRubyArray", sig(RubyArray.class, params(Ruby.class, IRubyObject.class, sourceArray.length)));
+        } else {
+            // brute force construction inline
+            method.pushInt(sourceArray.length);
+            method.anewarray(p(IRubyObject.class));
+
+            for (int i = 0; i < sourceArray.length; i++) {
+                method.dup();
+                method.pushInt(i);
+
+                callback.nextValue(this, sourceArray, i);
+
+                method.arraystore();
+            }
+            
+            if (light) {
+                method.invokestatic(p(RubyArray.class), "newArrayNoCopyLight", sig(RubyArray.class, Ruby.class, IRubyObject[].class));
+            } else {
+                method.invokestatic(p(RubyArray.class), "newArrayNoCopy", sig(RubyArray.class, Ruby.class, IRubyObject[].class));
             }
         }
     }

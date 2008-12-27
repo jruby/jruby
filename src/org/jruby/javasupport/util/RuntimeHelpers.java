@@ -879,6 +879,26 @@ public class RuntimeHelpers {
     public static IRubyObject[] constructObjectArray(IRubyObject one, IRubyObject two, IRubyObject three, IRubyObject four, IRubyObject five) {
         return new IRubyObject[] {one, two, three, four, five};
     }
+
+    public static RubyArray constructRubyArray(Ruby runtime, IRubyObject one) {
+        return RubyArray.newArrayLight(runtime, one);
+    }
+
+    public static RubyArray constructRubyArray(Ruby runtime, IRubyObject one, IRubyObject two) {
+        return RubyArray.newArrayLight(runtime, one, two);
+    }
+
+    public static RubyArray constructRubyArray(Ruby runtime, IRubyObject one, IRubyObject two, IRubyObject three) {
+        return RubyArray.newArrayLight(runtime, one, two, three);
+    }
+
+    public static RubyArray constructRubyArray(Ruby runtime, IRubyObject one, IRubyObject two, IRubyObject three, IRubyObject four) {
+        return RubyArray.newArrayLight(runtime, one, two, three, four);
+    }
+
+    public static RubyArray constructRubyArray(Ruby runtime, IRubyObject one, IRubyObject two, IRubyObject three, IRubyObject four, IRubyObject five) {
+        return RubyArray.newArrayLight(runtime, one, two, three, four, five);
+    }
     
     public static String[] constructStringArray(String one) {
         return new String[] {one};

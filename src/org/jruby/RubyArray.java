@@ -134,7 +134,20 @@ public class RubyArray extends RubyObject implements List {
         RuntimeHelpers.fillNil(array.values, 0, array.values.length, runtime);
         return array;
     }
+    
     public static final RubyArray newArrayLight(final Ruby runtime, final long len) {
+        RubyArray array = new RubyArray(runtime, len, false);
+        RuntimeHelpers.fillNil(array.values, 0, array.values.length, runtime);
+        return array;
+    }
+    
+    public static final RubyArray newArray(final Ruby runtime, final int len) {
+        RubyArray array = new RubyArray(runtime, len);
+        RuntimeHelpers.fillNil(array.values, 0, array.values.length, runtime);
+        return array;
+    }
+
+    public static final RubyArray newArrayLight(final Ruby runtime, final int len) {
         RubyArray array = new RubyArray(runtime, len, false);
         RuntimeHelpers.fillNil(array.values, 0, array.values.length, runtime);
         return array;

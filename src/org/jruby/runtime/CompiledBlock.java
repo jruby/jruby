@@ -190,8 +190,7 @@ public class CompiledBlock extends BlockBody {
     
     private IRubyObject defaultArgLogic(Ruby ruby, IRubyObject value) {
         if (value == null) {
-            ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (0 for 1)");
-            return ruby.getNil();
+            return warnMultiReturnNil(ruby);
         }
         return value;
     }
@@ -213,5 +212,10 @@ public class CompiledBlock extends BlockBody {
     @Override
     public Arity arity() {
         return arity;
+    }
+
+    private IRubyObject warnMultiReturnNil(Ruby ruby) {
+        ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (0 for 1)");
+        return ruby.getNil();
     }
 }
