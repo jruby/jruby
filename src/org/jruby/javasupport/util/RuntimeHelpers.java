@@ -1277,4 +1277,18 @@ public class RuntimeHelpers {
     public static RubyProc newLiteralLambda(ThreadContext context, Block block, IRubyObject self) {
         return RubyProc.newProc(context.getRuntime(), block, Block.Type.LAMBDA);
     }
+
+    public static void fillNil(IRubyObject[]arr, int from, int to, Ruby runtime) {
+        IRubyObject nils[] = runtime.getNilPrefilledArray();
+        int i;
+
+        for (i = from; i + Ruby.NIL_PREFILLED_ARRAY_SIZE < to; i += Ruby.NIL_PREFILLED_ARRAY_SIZE) {
+            System.arraycopy(nils, 0, arr, i, Ruby.NIL_PREFILLED_ARRAY_SIZE);
+        }
+        System.arraycopy(nils, 0, arr, i, to - i);
+    }
+
+    public static void fillNil(IRubyObject[]arr, Ruby runtime) {
+        fillNil(arr, 0, arr.length, runtime);
+    }
 }

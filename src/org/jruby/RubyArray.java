@@ -54,6 +54,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
@@ -130,12 +131,12 @@ public class RubyArray extends RubyObject implements List {
      */
     public static final RubyArray newArray(final Ruby runtime, final long len) {
         RubyArray array = new RubyArray(runtime, len);
-        fillNil(array.values, 0, array.values.length, runtime);
+        RuntimeHelpers.fillNil(array.values, 0, array.values.length, runtime);
         return array;
     }
     public static final RubyArray newArrayLight(final Ruby runtime, final long len) {
         RubyArray array = new RubyArray(runtime, len, false);
-        fillNil(array.values, 0, array.values.length, runtime);
+        RuntimeHelpers.fillNil(array.values, 0, array.values.length, runtime);
         return array;
     }
 
@@ -343,7 +344,7 @@ public class RubyArray extends RubyObject implements List {
 
     private void alloc(int length) {
         final IRubyObject[] newValues = new IRubyObject[length];
-        fillNil(newValues, getRuntime());
+        RuntimeHelpers.fillNil(newValues, getRuntime());
         values = newValues;
         begin = 0;
     }
@@ -352,7 +353,7 @@ public class RubyArray extends RubyObject implements List {
         IRubyObject[] reallocated = new IRubyObject[newLength];
         try {
             if (newLength > valuesLength) {
-                fillNil(reallocated, valuesLength, newLength, getRuntime());
+                RuntimeHelpers.fillNil(reallocated, valuesLength, newLength, getRuntime());
                 System.arraycopy(values, begin, reallocated, 0, valuesLength); // elements and trailing nils
             } else {
                 System.arraycopy(values, begin, reallocated, 0, newLength); // ???
@@ -368,20 +369,6 @@ public class RubyArray extends RubyObject implements List {
         for (int i=from; i<to; i++) {
             arr[i] = with;
         }
-    }
-
-    private static void fillNil(IRubyObject[]arr, int from, int to, Ruby runtime) {
-        IRubyObject nils[] = runtime.getNilPrefilledArray();
-        int i;
-        
-        for (i = from; i + Ruby.NIL_PREFILLED_ARRAY_SIZE < to; i += Ruby.NIL_PREFILLED_ARRAY_SIZE) {
-            System.arraycopy(nils, 0, arr, i, Ruby.NIL_PREFILLED_ARRAY_SIZE);
-        }
-        System.arraycopy(nils, 0, arr, i, to - i);
-    }
-
-    private static void fillNil(IRubyObject[]arr, Ruby runtime) {
-        fillNil(arr, 0, arr.length, runtime);
     }
 
     private final void checkLength(long length) {
@@ -584,7 +571,7 @@ public class RubyArray extends RubyObject implements List {
         } else {
             try {
                 if (arg1 == null) {
-                    fillNil(values, begin, begin + ilen, runtime);
+                    RuntimeHelpers.fillNil(values, begin, begin + ilen, runtime);
                 } else {
                     fill(values, begin, begin + ilen, arg1);
                 }
@@ -854,7 +841,7 @@ public class RubyArray extends RubyObject implements List {
         if (beg >= realLength) {
             len = beg + rlen;
             if (len >= valuesLength) spliceRealloc((int)len, valuesLength);
-            fillNil(values, begin + realLength, begin + ((int)beg), getRuntime());
+            RuntimeHelpers.fillNil(values, begin + realLength, begin + ((int)beg), getRuntime());
             realLength = (int) len;
         } else {
             if (beg + len > realLength) len = realLength - beg;
@@ -892,7 +879,7 @@ public class RubyArray extends RubyObject implements List {
         if (beg >= realLength) {
             int len = (int)beg + 1;
             if (len >= valuesLength) spliceRealloc((int)len, valuesLength);
-            fillNil(values, begin + realLength, begin + ((int)beg), getRuntime());
+            RuntimeHelpers.fillNil(values, begin + realLength, begin + ((int)beg), getRuntime());
             realLength = (int) len;
         } else {
             int len = beg > realLength ? realLength - (int)beg : 0;
@@ -923,7 +910,7 @@ public class RubyArray extends RubyObject implements List {
         System.arraycopy(values, begin, vals, 0, realLength);
         
         // only fill if there actually will remain trailing storage
-        if (len > length) fillNil(vals, length, len, getRuntime());
+        if (len > length) RuntimeHelpers.fillNil(vals, length, len, getRuntime());
         begin = 0;
         values = vals;
     }
@@ -1042,7 +1029,7 @@ public class RubyArray extends RubyObject implements List {
             result.append(entry(RubyNumeric.num2long(args[i])));
         }
 
-        fillNil(result.values, result.realLength, result.values.length, getRuntime());
+        RuntimeHelpers.fillNil(result.values, result.realLength, result.values.length, getRuntime());
         return result;
     }
 
@@ -1234,7 +1221,7 @@ public class RubyArray extends RubyObject implements List {
                 IRubyObject[]vals = new IRubyObject[newLength];
                 try {
                     System.arraycopy(values, begin, vals, 1, realLength);
-                    fillNil(vals, realLength + 1, newLength, getRuntime());
+                    RuntimeHelpers.fillNil(vals, realLength + 1, newLength, getRuntime());
                 } catch (ArrayIndexOutOfBoundsException e) {
                     concurrentModification();
                 }
@@ -1810,7 +1797,7 @@ public class RubyArray extends RubyObject implements List {
         } else {
             try {
                 begin = 0;
-                fillNil(values, 0, realLength, getRuntime());
+                RuntimeHelpers.fillNil(values, 0, realLength, getRuntime());
             } catch (ArrayIndexOutOfBoundsException e) {
                 concurrentModification();
             }
@@ -2147,7 +2134,7 @@ public class RubyArray extends RubyObject implements List {
             if (block.yield(context, values[begin + i]).isTrue()) result.append(elt(i));
         }
 
-        fillNil(result.values, result.realLength, result.values.length, runtime);
+        RuntimeHelpers.fillNil(result.values, result.realLength, result.values.length, runtime);
         return result;
     }
 
@@ -2184,7 +2171,7 @@ public class RubyArray extends RubyObject implements List {
         final IRubyObject[] values = this.values;
         if (realLength > i2) {
             try {
-                fillNil(values, begin + i2, begin + realLength, context.getRuntime());
+                RuntimeHelpers.fillNil(values, begin + i2, begin + realLength, context.getRuntime());
             } catch (ArrayIndexOutOfBoundsException e) {
                 concurrentModification();
             }
@@ -2260,7 +2247,7 @@ public class RubyArray extends RubyObject implements List {
 
         if (i2 < realLength) {
             try {
-                fillNil(values, begin + i2, begin + realLength, context.getRuntime());
+                RuntimeHelpers.fillNil(values, begin + i2, begin + realLength, context.getRuntime());
             } catch (ArrayIndexOutOfBoundsException e) {
                 concurrentModification();
             }
@@ -2744,7 +2731,7 @@ public class RubyArray extends RubyObject implements List {
             if (hash.fastARef(values[i]) != null) continue;
             ary3.append(elt(i - begin));
         }
-        fillNil(ary3.values, ary3.realLength, ary3.values.length, getRuntime());
+        RuntimeHelpers.fillNil(ary3.values, ary3.realLength, ary3.values.length, getRuntime());
 
         return ary3;
     }
@@ -2762,7 +2749,7 @@ public class RubyArray extends RubyObject implements List {
             IRubyObject v = elt(i);
             if (hash.fastDelete(v)) ary3.append(v);
         }
-        fillNil(ary3.values, ary3.realLength, ary3.values.length, getRuntime());
+        RuntimeHelpers.fillNil(ary3.values, ary3.realLength, ary3.values.length, getRuntime());
 
         return ary3;
     }
@@ -2785,7 +2772,7 @@ public class RubyArray extends RubyObject implements List {
             IRubyObject v = ary2.elt(i);
             if (set.fastDelete(v)) ary3.append(v);
         }
-        fillNil(ary3.values, ary3.realLength, ary3.values.length, getRuntime());
+        RuntimeHelpers.fillNil(ary3.values, ary3.realLength, ary3.values.length, getRuntime());
 
         return ary3;
     }

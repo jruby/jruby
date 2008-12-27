@@ -308,7 +308,7 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
         tempVariableIndex--;
     }
 
-    protected void assignHeapLocal(CompilerCallback value, int depth, int index) {
+    protected void assignHeapLocal(CompilerCallback value, int depth, int index, boolean expr) {
         switch (index) {
         case 0:
             unwrapParentScopes(depth);
@@ -337,9 +337,14 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
             method.pushInt(depth);
             method.invokevirtual(p(DynamicScope.class), "setValue", sig(IRubyObject.class, params(Integer.TYPE, IRubyObject.class, Integer.TYPE)));
         }
+
+        if (!expr) {
+            // not an expression, don't want result; pop it
+            method.pop();
+        }
     }
 
-    protected void assignHeapLocal(int depth, int index) {
+    protected void assignHeapLocal(int depth, int index, boolean expr) {
         
         switch (index) {
         case 0:
@@ -368,6 +373,11 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
             method.pushInt(index);
             method.pushInt(depth);
             method.invokevirtual(p(DynamicScope.class), "setValue", sig(IRubyObject.class, params(IRubyObject.class, Integer.TYPE, Integer.TYPE)));
+        }
+
+        if (!expr) {
+            // not an expression, don't want result; pop it
+            method.pop();
         }
     }
 

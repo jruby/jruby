@@ -1720,13 +1720,13 @@ public class ASTCompiler {
             }
         };
         
-        context.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth(), value);
+        context.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth(), value,true);
     }
 
     public void compileDAsgnAssignment(Node node, BodyCompiler context) {
         DAsgnNode dasgnNode = (DAsgnNode) node;
 
-        context.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth());
+        context.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth(),true);
     }
 
     public void compileDefn(Node node, BodyCompiler context) {
@@ -1815,7 +1815,7 @@ public class ASTCompiler {
 
                         public void nextValue(BodyCompiler context, Object object, int index) {
                             // FIXME: Somehow I'd feel better if this could get the appropriate var index from the ArgumentNode
-                            context.getVariableCompiler().assignLocalVariable(index);
+                            context.getVariableCompiler().assignLocalVariable(index,true);
                         }
                     };
         }
@@ -1843,7 +1843,7 @@ public class ASTCompiler {
             restAssignment = new CompilerCallback() {
 
                         public void call(BodyCompiler context) {
-                            context.getVariableCompiler().assignLocalVariable(argsNode.getRestArg());
+                            context.getVariableCompiler().assignLocalVariable(argsNode.getRestArg(),true);
                         }
                     };
         }
@@ -1852,7 +1852,7 @@ public class ASTCompiler {
             blockAssignment = new CompilerCallback() {
 
                         public void call(BodyCompiler context) {
-                            context.getVariableCompiler().assignLocalVariable(argsNode.getBlock().getCount());
+                            context.getVariableCompiler().assignLocalVariable(argsNode.getBlock().getCount(),true);
                         }
                     };
         }
@@ -2057,7 +2057,7 @@ public class ASTCompiler {
 
                         public void branch(BodyCompiler context) {
                             context.loadFalse();
-                            context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth());
+                            context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(),true);
                             context.consumeCurrentValue();
                         }
                     }, new BranchCallback() {
@@ -2072,7 +2072,7 @@ public class ASTCompiler {
                 public void branch(BodyCompiler context) {
                     compile(flipNode.getBeginNode(), context);
                     becomeTrueOrFalse(context);
-                    context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth());
+                    context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(),true);
                 }
             });
         } else {
@@ -2084,7 +2084,7 @@ public class ASTCompiler {
 
                         public void branch(BodyCompiler context) {
                             context.loadFalse();
-                            context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth());
+                            context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(),true);
                             context.consumeCurrentValue();
                         }
                     }, new BranchCallback() {
@@ -2103,7 +2103,7 @@ public class ASTCompiler {
                         public void branch(BodyCompiler context) {
                             compile(flipNode.getEndNode(), context);
                             flipTrueOrFalse(context);
-                            context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth());
+                            context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(),true);
                             context.consumeCurrentValue();
                             context.loadTrue();
                         }
@@ -2411,7 +2411,7 @@ public class ASTCompiler {
                 }
             };
 
-            context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth(), value);
+            context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth(), value,true);
         }
     }
 
@@ -2419,7 +2419,7 @@ public class ASTCompiler {
         // "assignment" means the value is already on the stack
         LocalAsgnNode localAsgnNode = (LocalAsgnNode) node;
 
-        context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth());
+        context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth(),true);
     }
 
     public void compileLocalVar(Node node, BodyCompiler context) {

@@ -57,11 +57,10 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
     public void beginMethod(CompilerCallback argsCallback, StaticScope scope) {
         // fill in all vars with nil so compiler is happy about future accesses
         if (scope.getNumberOfVariables() > 0) {
-            methodCompiler.loadNil();
             for (int i = 0; i < scope.getNumberOfVariables(); i++) {
-                assignLocalVariable(i);
+                methodCompiler.loadNil();
+                assignLocalVariable(i, false);
             }
-            method.pop();
 
             // temp locals must start after last real local
             tempVariableIndex += scope.getNumberOfVariables();
@@ -91,11 +90,10 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
         method.astore(methodCompiler.getDynamicScopeIndex());
         
         if (scope != null) {
-            methodCompiler.loadNil();
             for (int i = 0; i < scope.getNumberOfVariables(); i++) {
-                assignLocalVariable(i);
+                methodCompiler.loadNil();
+                assignLocalVariable(i, false);
             }
-            method.pop();
             
             // temp locals must start after last real local
             tempVariableIndex += scope.getNumberOfVariables();
@@ -109,30 +107,32 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
         }
     }
 
-    public void assignLocalVariable(int index) {
-        method.dup();
+    public void assignLocalVariable(int index, boolean expr) {
+        if (expr) {
+            method.dup();
+        }
 
         method.astore(baseVariableIndex + index);
     }
 
-    public void assignLocalVariable(int index, CompilerCallback value) {
+    private void assignLocalVariable(int index, CompilerCallback value, boolean expr) {
         value.call(methodCompiler);
-        assignLocalVariable(index);
+        assignLocalVariable(index, expr);
     }
 
-    public void assignLocalVariable(int index, int depth) {
+    public void assignLocalVariable(int index, int depth,boolean expr) {
         if (depth == 0) {
-            assignLocalVariable(index);
+            assignLocalVariable(index, expr);
         } else {
-            assignHeapLocal(depth, index);
+            assignHeapLocal(depth, index, expr);
         }
     }
 
-    public void assignLocalVariable(int index, int depth, CompilerCallback value) {
+    public void assignLocalVariable(int index, int depth, CompilerCallback value,boolean expr) {
         if (depth == 0) {
-            assignLocalVariable(index, value);
+            assignLocalVariable(index, value, expr);
         } else {
-            assignHeapLocal(value, depth, index);
+            assignHeapLocal(value, depth, index, expr);
         }
     }
 

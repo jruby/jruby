@@ -28,6 +28,7 @@
 package org.jruby.compiler.impl;
 
 import java.util.Arrays;
+import org.jruby.Ruby;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -55,15 +56,15 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
         if (scope.getNumberOfVariables() > 0) {
             methodCompiler.loadThreadContext();
             methodCompiler.invokeThreadContext("getCurrentScope", sig(DynamicScope.class));
-            method.dup();
             method.astore(methodCompiler.getDynamicScopeIndex());
+            method.aload(methodCompiler.getDynamicScopeIndex());
             method.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
             method.astore(methodCompiler.getVarsArrayIndex());
 
             // fill local vars with nil, to avoid checking every access.
             method.aload(methodCompiler.getVarsArrayIndex());
-            methodCompiler.loadNil();
-            method.invokestatic(p(Arrays.class), "fill", sig(Void.TYPE, params(Object[].class, Object.class)));
+            methodCompiler.loadRuntime();
+            methodCompiler.invokeUtilityMethod("fillNil", sig(void.class, IRubyObject[].class, Ruby.class));
         }
 
         if (argsCallback != null) {
@@ -100,8 +101,8 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
 
         // fill local vars with nil, to avoid checking every access.
         method.aload(methodCompiler.getVarsArrayIndex());
-        methodCompiler.loadNil();
-        method.invokestatic(p(Arrays.class), "fill", sig(Void.TYPE, params(Object[].class, Object.class)));
+        methodCompiler.loadRuntime();
+        methodCompiler.invokeUtilityMethod("fillNil", sig(void.class, IRubyObject[].class, Ruby.class));
     }
 
     public void beginClosure(CompilerCallback argsCallback, StaticScope scope) {
@@ -116,38 +117,35 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             switch (scope.getNumberOfVariables()) {
             case 1:
                 methodCompiler.loadNil();
-                assignLocalVariable(0);
-                method.pop();
+                assignLocalVariable(0, false);
                 break;
             case 2:
                 methodCompiler.loadNil();
-                assignLocalVariable(0);
-                assignLocalVariable(1);
-                method.pop();
+                assignLocalVariable(0,true);
+                assignLocalVariable(1,false);
                 break;
             case 3:
                 methodCompiler.loadNil();
-                assignLocalVariable(0);
-                assignLocalVariable(1);
-                assignLocalVariable(2);
-                method.pop();
+                assignLocalVariable(0,true);
+                assignLocalVariable(1,true);
+                assignLocalVariable(2,false);
                 break;
             case 4:
                 methodCompiler.loadNil();
-                assignLocalVariable(0);
-                assignLocalVariable(1);
-                assignLocalVariable(2);
-                assignLocalVariable(3);
-                method.pop();
+                assignLocalVariable(0,true);
+                assignLocalVariable(1,true);
+                assignLocalVariable(2,true);
+                assignLocalVariable(3,false);
                 break;
             default:
                 method.aload(methodCompiler.getVarsArrayIndex());
                 methodCompiler.loadNil();
-                assignLocalVariable(0);
-                assignLocalVariable(1);
-                assignLocalVariable(2);
-                assignLocalVariable(3);
-                method.invokestatic(p(Arrays.class), "fill", sig(Void.TYPE, params(Object[].class, Object.class)));
+                assignLocalVariable(0,true);
+                assignLocalVariable(1,true);
+                assignLocalVariable(2,true);
+                assignLocalVariable(3,false);
+                methodCompiler.loadRuntime();
+                methodCompiler.invokeUtilityMethod("fillNil", sig(void.class, IRubyObject[].class, Ruby.class));
             }
         }
         
@@ -159,7 +157,7 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
         }
     }
 
-    public void assignLocalVariable(int index) {
+    public void assignLocalVariable(int index,boolean expr) {
         switch (index) {
         case 0:
             method.aload(methodCompiler.getDynamicScopeIndex());
@@ -182,16 +180,23 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             method.invokevirtual(p(DynamicScope.class), "setValueThreeDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
             break;
         default:
-            method.dup();
+            if (expr) method.dup();
             method.aload(methodCompiler.getVarsArrayIndex());
             method.swap();
             method.pushInt(index);
             method.swap();
             method.arraystore();
+            return;
+        }
+
+        // for specific-index cases, clean up non-expression values
+        if (!expr) {
+            // not an expression, don't want result; pop it
+            method.pop();
         }
     }
 
-    public void assignLocalVariable(int index, CompilerCallback value) {
+    public void assignLocalVariable(int index, CompilerCallback value, boolean expr) {
         switch (index) {
         case 0:
             method.aload(methodCompiler.getDynamicScopeIndex());
@@ -217,27 +222,33 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             method.aload(methodCompiler.getVarsArrayIndex());
             method.pushInt(index);
             value.call(methodCompiler);
-            method.dup_x2();
+            if (expr) method.dup_x2();
             method.arraystore();
         }
+
+        // for specific-index cases, clean up non-expression values
+        if (!expr) {
+            // not an expression, don't want result; pop it
+            method.pop();
+        }
     }
 
-    public void assignLocalVariable(int index, int depth) {
+    public void assignLocalVariable(int index, int depth,boolean expr) {
         if (depth == 0) {
-            assignLocalVariable(index);
+            assignLocalVariable(index, expr);
             return;
         }
 
-        assignHeapLocal(depth, index);
+        assignHeapLocal(depth, index, expr);
     }
 
-    public void assignLocalVariable(int index, int depth, CompilerCallback value) {
+    public void assignLocalVariable(int index, int depth, CompilerCallback value,boolean expr) {
         if (depth == 0) {
-            assignLocalVariable(index, value);
+            assignLocalVariable(index, value, expr);
             return;
         }
 
-        assignHeapLocal(value, depth, index);
+        assignHeapLocal(value, depth, index, expr);
     }
 
     public void retrieveLocalVariable(int index) {

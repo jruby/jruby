@@ -43,7 +43,9 @@ public interface VariableCompiler {
     public void beginMethod(CompilerCallback argsCallback, StaticScope scope);
     public void beginClass(CompilerCallback bodyPrep, StaticScope scope);
     public void beginClosure(CompilerCallback argsCallback, StaticScope scope);
-    public void assignLocalVariable(int index);
+    public void assignLocalVariable(int index, boolean expr);
+    public void assignLocalVariable(int index, int depth, boolean expr);
+    public void assignLocalVariable(int index, int depth, CompilerCallback value, boolean expr);
     public void retrieveLocalVariable(int index);
     public void assignLastLine();
     public void assignLastLine(CompilerCallback value);
@@ -51,8 +53,6 @@ public interface VariableCompiler {
     public void assignBackRef();
     public void assignBackRef(CompilerCallback value);
     public void retrieveBackRef();
-    public void assignLocalVariable(int index, int depth);
-    public void assignLocalVariable(int index, int depth, CompilerCallback value);
     public void retrieveLocalVariable(int index, int depth);
     public void checkMethodArity(int requiredArgs, int optArgs, int restArg);
     public void assignMethodArguments(

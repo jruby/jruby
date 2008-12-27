@@ -29,11 +29,7 @@ public class ChildScopedBodyCompiler extends BaseBodyCompiler {
         if (inspector == null) {
             variableCompiler = new HeapBasedVariableCompiler(this, method, scope, false, StandardASMCompiler.ARGS_INDEX, getFirstTempIndex());
         } else if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
-            if (RubyInstanceConfig.BOXED_COMPILE_ENABLED && !inspector.hasScopeAwareMethods()) {
-                variableCompiler = new BoxedVariableCompiler(this, method, scope, false, StandardASMCompiler.ARGS_INDEX, getFirstTempIndex());
-            } else {
-                variableCompiler = new HeapBasedVariableCompiler(this, method, scope, false, StandardASMCompiler.ARGS_INDEX, getFirstTempIndex());
-            }
+            variableCompiler = new HeapBasedVariableCompiler(this, method, scope, false, StandardASMCompiler.ARGS_INDEX, getFirstTempIndex());
         } else {
             variableCompiler = new StackBasedVariableCompiler(this, method, scope, false, StandardASMCompiler.ARGS_INDEX, getFirstTempIndex());
         }
@@ -85,11 +81,14 @@ public class ChildScopedBodyCompiler extends BaseBodyCompiler {
         method.areturn();
         method.label(scopeEnd);
 
-        // handle redos by restarting the block
-        method.pop();
-        method.go_to(scopeStart);
+        // we only need full-on redo exception handling if there's logic that might produce it
+        if (inspector == null || inspector.hasScopeAwareMethods()) {
+            // handle redos by restarting the block
+            method.pop();
+            method.go_to(scopeStart);
 
-        method.trycatch(scopeStart, scopeEnd, scopeEnd, p(JumpException.RedoJump.class));
+            method.trycatch(scopeStart, scopeEnd, scopeEnd, p(JumpException.RedoJump.class));
+        }
 
         // method is done, declare all variables
         variableCompiler.declareLocals(scope, scopeStart, scopeEnd);
