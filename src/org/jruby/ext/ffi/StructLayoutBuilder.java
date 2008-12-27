@@ -325,8 +325,8 @@ public final class StructLayoutBuilder extends RubyObject {
             super(offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
-            if (value instanceof AbstractMemoryPointer) {
-                getMemoryIO(ptr).putMemoryIO(offset, ((AbstractMemoryPointer) value).getMemoryIO());
+            if (value instanceof Pointer) {
+                getMemoryIO(ptr).putMemoryIO(offset, ((Pointer) value).getMemoryIO());
             } else if (Platform.getPlatform().addressSize() == 32) {
                 getMemoryIO(ptr).putInt(offset, Util.int32Value(value));
             } else if (Platform.getPlatform().addressSize() == 64) {
