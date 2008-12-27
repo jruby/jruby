@@ -1054,8 +1054,9 @@ public class RubyKernel {
 
     @JRubyMethod(name = "loop", frame = true, module = true, visibility = PRIVATE)
     public static IRubyObject loop(ThreadContext context, IRubyObject recv, Block block) {
+        IRubyObject nil = context.getRuntime().getNil();
         while (true) {
-            block.yield(context, context.getRuntime().getNil());
+            block.yield(context, nil);
 
             context.pollThreadEvents();
         }

@@ -50,7 +50,7 @@ public abstract class DynamicScope {
     }
     
     public static DynamicScope newDummyScope(StaticScope staticScope, DynamicScope parent) {
-        return new ManyVarsDynamicScope(staticScope, parent);
+        return new NoVarsDynamicScope(staticScope, parent);
     }
 
     /**

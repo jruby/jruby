@@ -73,6 +73,8 @@ public final class ArgsUtil {
     }
     
     public static RubyArray convertToRubyArrayWithCoerce(Ruby runtime, IRubyObject value) {
+        if (value instanceof RubyArray) return ((RubyArray)value);
+        
         IRubyObject newValue = TypeConverter.convertToType(value, runtime.getArray(), "to_ary", false);
 
         if (newValue.isNil()) {

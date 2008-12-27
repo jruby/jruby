@@ -49,6 +49,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.ObjectAllocator;
@@ -380,8 +381,15 @@ public class RubyRange extends RubyObject {
             long lim = ((RubyFixnum) end).getLongValue();
             if (!isExclusive) lim++;
 
-            for (long i = ((RubyFixnum) begin).getLongValue(); i < lim; i++) {
-                block.yield(context, RubyFixnum.newFixnum(runtime, i));
+            if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
+                final IRubyObject nil = runtime.getNil();
+                for (long i = ((RubyFixnum) begin).getLongValue(); i < lim; i++) {
+                    block.yield(context, nil);
+                }
+            } else {
+                for (long i = ((RubyFixnum) begin).getLongValue(); i < lim; i++) {
+                    block.yield(context, RubyFixnum.newFixnum(runtime, i));
+                }
             }
         } else if (begin instanceof RubyString) {
             ((RubyString) begin).upto(context, end, isExclusive, block);
