@@ -33,6 +33,7 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyModule;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -72,17 +73,6 @@ public class Binding {
         this.visibility = frame.getVisibility();
         this.klass = bindingClass;
         this.dynamicScope = dynamicScope;
-    }
-
-    public Binding cloneBinding() {
-        // We clone dynamic scope because this will be a new instance of a block.  Any previously
-        // captured instances of this block may still be around and we do not want to start
-        // overwriting those values when we create a new one.
-        // ENEBO: Once we make self, lastClass, and lastMethod immutable we can remove duplicate
-        Binding newBlock = new Binding(self, frame.duplicate(), visibility, klass, 
-                dynamicScope.cloneScope());
-
-        return newBlock;
     }
 
     public Visibility getVisibility() {
@@ -126,14 +116,5 @@ public class Binding {
      */
     public RubyModule getKlass() {
         return klass;
-    }
-    
-    /**
-     * Is the current block a real yield'able block instead a null one
-     * 
-     * @return true if this is a valid block or false otherwise
-     */
-    public boolean isGiven() {
-        return true;
     }
 }

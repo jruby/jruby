@@ -217,7 +217,7 @@ public class Interpreted19Block  extends BlockBody {
         // ENEBO: Once we make self, lastClass, and lastMethod immutable we can remove duplicate
         binding = new Binding(
                 binding.getSelf(),
-                binding.getFrame().duplicate(),
+                binding.getFrame(),
                 binding.getVisibility(),
                 binding.getKlass(),
                 binding.getDynamicScope());

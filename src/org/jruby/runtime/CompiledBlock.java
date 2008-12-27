@@ -201,7 +201,7 @@ public class CompiledBlock extends BlockBody {
 
     public Block cloneBlock(Binding binding) {
         binding = new Binding(binding.getSelf(),
-                binding.getFrame().duplicate(),
+                binding.getFrame(),
                 binding.getVisibility(),
                 binding.getKlass(),
                 binding.getDynamicScope());

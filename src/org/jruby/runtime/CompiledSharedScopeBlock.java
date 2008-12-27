@@ -39,7 +39,7 @@ public class CompiledSharedScopeBlock extends CompiledBlockLight {
     public static Block newCompiledSharedScopeClosure(ThreadContext context, IRubyObject self, Arity arity, DynamicScope dynamicScope,
             CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
         Binding binding = new Binding(self,
-             context.getCurrentFrame().duplicate(),
+             context.getCurrentFrame(),
                 Visibility.PUBLIC,
                 context.getRubyClass(),
                 dynamicScope);

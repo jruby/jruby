@@ -89,7 +89,7 @@ public class CallBlock extends BlockBody {
     }
 
     public Block cloneBlock(Binding binding) {
-        binding = new Binding(binding.getSelf(), binding.getFrame().duplicate(),
+        binding = new Binding(binding.getSelf(), binding.getFrame(),
                 Visibility.PUBLIC,
                 binding.getKlass(),
                 binding.getDynamicScope());
