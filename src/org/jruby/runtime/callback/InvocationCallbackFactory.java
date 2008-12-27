@@ -33,6 +33,7 @@ import java.security.ProtectionDomain;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
 import org.objectweb.asm.ClassWriter;
@@ -144,15 +145,18 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         return cw;
     }
 
-    private ClassWriter createBlockCtor(String namePath) throws Exception {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, p(AbstractCompiledBlockCallback.class), null);
-        cw.visitField(ACC_PRIVATE | ACC_FINAL, "$scriptObject", ci(Object.class), null, null);
+    private ClassWriter createBlockCtor(String namePath, Class fieldClass) throws Exception {
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+        cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, p(AbstractCompiledBlockCallback.class), null);
+        cw.visitField(ACC_PRIVATE | ACC_FINAL, "$scriptObject", ci(fieldClass), null, null);
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", sig(Void.TYPE, params(Object.class)), null, null));
         mv.start();
         mv.aload(0);
+        mv.invokespecial(p(AbstractCompiledBlockCallback.class), "<init>", sig(void.class));
+        mv.aload(0);
         mv.aload(1);
-        mv.invokespecial(p(AbstractCompiledBlockCallback.class), "<init>", sig(void.class, Object.class));
+        mv.checkcast(p(fieldClass));
+        mv.putfield(namePath, "$scriptObject", ci(fieldClass));
         mv.voidreturn();
         mv.end();
         
@@ -534,11 +538,10 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
             Class c = tryClass(mname);
             try {
                 if (c == null) {
-                    ClassWriter cw = createBlockCtor(mnamePath);
+                    ClassWriter cw = createBlockCtor(mnamePath, typeClass);
                     SkinnyMethodAdapter mv = startBlockCall(cw);
                     mv.aload(0);
-                    mv.getfield(p(AbstractCompiledBlockCallback.class), "$scriptObject", ci(Object.class));
-                    mv.checkcast(p(typeClass));
+                    mv.getfield(mnamePath, "$scriptObject", ci(typeClass));
                     mv.aload(1);
                     mv.aload(2);
                     mv.aload(3);
