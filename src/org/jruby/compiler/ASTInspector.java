@@ -402,6 +402,7 @@ public class ASTInspector {
             } else if (globalAsgnNode.getName().equals("$~")) {
                 setFlag(BACKREF);
             }
+            inspect(globalAsgnNode.getValueNode());
             break;
         case GLOBALVARNODE:
             if (((GlobalVarNode)node).getName().equals("$_")) {
