@@ -1241,11 +1241,35 @@ public class RuntimeHelpers {
         return rubyClass;
     }
     
-    public static IRubyObject arrayEntryOrNil(RubyArray array, IRubyObject nil, int index) {
+    public static IRubyObject arrayEntryOrNil(RubyArray array, int index) {
         if (index < array.getLength()) {
-            return array.entry(index);
+            return array.eltInternal(index);
         } else {
-            return nil;
+            return array.getRuntime().getNil();
+        }
+    }
+
+    public static IRubyObject arrayEntryOrNilZero(RubyArray array) {
+        if (0 < array.getLength()) {
+            return array.eltInternal(0);
+        } else {
+            return array.getRuntime().getNil();
+        }
+    }
+
+    public static IRubyObject arrayEntryOrNilOne(RubyArray array) {
+        if (1 < array.getLength()) {
+            return array.eltInternal(1);
+        } else {
+            return array.getRuntime().getNil();
+        }
+    }
+
+    public static IRubyObject arrayEntryOrNilTwo(RubyArray array) {
+        if (2 < array.getLength()) {
+            return array.eltInternal(2);
+        } else {
+            return array.getRuntime().getNil();
         }
     }
     

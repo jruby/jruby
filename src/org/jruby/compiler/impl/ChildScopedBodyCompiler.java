@@ -41,11 +41,11 @@ public class ChildScopedBodyCompiler extends BaseBodyCompiler {
         // set up a local IRuby variable
         method.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
         invokeThreadContext("getRuntime", sig(Ruby.class));
-        method.dup();
         method.astore(getRuntimeIndex());
 
         // grab nil for local variables
-        invokeIRuby("getNil", sig(IRubyObject.class));
+        method.aload(getRuntimeIndex());
+        invokeRuby("getNil", sig(IRubyObject.class));
         method.astore(getNilIndex());
 
         variableCompiler.beginClosure(args, scope);

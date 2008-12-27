@@ -59,7 +59,7 @@ public class MethodBodyCompiler extends RootScopedBodyCompiler {
         method.astore(getRuntimeIndex());
 
         // grab nil for local variables
-        invokeIRuby("getNil", sig(IRubyObject.class));
+        invokeRuby("getNil", sig(IRubyObject.class));
         method.astore(getNilIndex());
 
         variableCompiler.beginMethod(args, scope);

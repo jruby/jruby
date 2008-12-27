@@ -213,13 +213,13 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
         method.ldc(symbol);
 
-        invokeIRuby("newSymbol", sig(RubySymbol.class, params(String.class)));
+        invokeRuby("newSymbol", sig(RubySymbol.class, params(String.class)));
     }
 
     public void loadObject() {
         loadRuntime();
 
-        invokeIRuby("getObject", sig(RubyClass.class, params()));
+        invokeRuby("getObject", sig(RubyClass.class, params()));
     }
 
     /**
@@ -234,7 +234,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.invokevirtual(StandardASMCompiler.THREADCONTEXT, methodName, signature);
     }
 
-    public void invokeIRuby(String methodName, String signature) {
+    public void invokeRuby(String methodName, String signature) {
         method.invokevirtual(StandardASMCompiler.RUBY, methodName, signature);
     }
 
@@ -288,7 +288,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void assignConstantInObject(String name) {
         // load Object under value
         loadRuntime();
-        invokeIRuby("getObject", sig(RubyClass.class, params()));
+        invokeRuby("getObject", sig(RubyClass.class, params()));
         method.swap();
 
         assignConstantInModule(name);
@@ -363,7 +363,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         loadRuntime();
         method.ldc(new Double(value));
 
-        invokeIRuby("newFloat", sig(RubyFloat.class, params(Double.TYPE)));
+        invokeRuby("newFloat", sig(RubyFloat.class, params(Double.TYPE)));
     }
 
     public void createNewFixnum(long value) {
@@ -378,7 +378,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void createNewString(ArrayCallback callback, int count) {
         loadRuntime();
-        invokeIRuby("newString", sig(RubyString.class, params()));
+        invokeRuby("newString", sig(RubyString.class, params()));
         for (int i = 0; i < count; i++) {
             callback.nextValue(this, null, i);
             method.invokevirtual(p(RubyString.class), "append", sig(RubyString.class, params(IRubyObject.class)));
@@ -389,7 +389,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         loadRuntime();
         createNewString(callback, count);
         toJavaString();
-        invokeIRuby("newSymbol", sig(RubySymbol.class, params(String.class)));
+        invokeRuby("newSymbol", sig(RubySymbol.class, params(String.class)));
     }
 
     public void createNewString(ByteList value) {
@@ -397,7 +397,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         loadRuntime();
         script.getCacheCompiler().cacheByteList(this, value);
 
-        invokeIRuby("newStringShared", sig(RubyString.class, params(ByteList.class)));
+        invokeRuby("newStringShared", sig(RubyString.class, params(ByteList.class)));
     }
 
     public void createNewSymbol(String name) {
@@ -431,7 +431,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void createEmptyArray() {
         loadRuntime();
 
-        invokeIRuby("newArray", sig(RubyArray.class, params()));
+        invokeRuby("newArray", sig(RubyArray.class, params()));
     }
 
     public void createObjectArray(Object[] sourceArray, ArrayCallback callback) {
@@ -851,13 +851,13 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void loadFalse() {
         // TODO: cache?
         loadRuntime();
-        invokeIRuby("getFalse", sig(RubyBoolean.class));
+        invokeRuby("getFalse", sig(RubyBoolean.class));
     }
 
     public void loadTrue() {
         // TODO: cache?
         loadRuntime();
-        invokeIRuby("getTrue", sig(RubyBoolean.class));
+        invokeRuby("getTrue", sig(RubyBoolean.class));
     }
 
     public void loadCurrentModule() {
@@ -933,24 +933,41 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         invokeUtilityMethod("ensureMultipleAssignableRubyArray", sig(RubyArray.class, params(IRubyObject.class, Ruby.class, boolean.class)));
     }
 
-    public void forEachInValueArray(int start, int count, Object source, ArrayCallback callback, ArrayCallback nilCallback, CompilerCallback argsCallback) {
-        // FIXME: This could probably be made more efficient
-        for (; start < count; start++) {
-            method.dup(); // dup the original array object
-            loadNil();
-            method.pushInt(start);
-            invokeUtilityMethod("arrayEntryOrNil", sig(IRubyObject.class, RubyArray.class, IRubyObject.class, int.class));
-            callback.nextValue(this, source, start);
-            method.pop();
-        }
+    public void forEachInValueArray(int start, int count, Object source, ArrayCallback callback, CompilerCallback argsCallback) {
+        if (start < count || argsCallback != null) {
+            int tempLocal = getVariableCompiler().grabTempLocal();
+            getVariableCompiler().setTempLocal(tempLocal);
+            
+            for (; start < count; start++) {
+                getVariableCompiler().getTempLocal(tempLocal);
+                switch (start) {
+                case 0:
+                    invokeUtilityMethod("arrayEntryOrNilZero", sig(IRubyObject.class, RubyArray.class));
+                    break;
+                case 1:
+                    invokeUtilityMethod("arrayEntryOrNilOne", sig(IRubyObject.class, RubyArray.class));
+                    break;
+                case 2:
+                    invokeUtilityMethod("arrayEntryOrNilTwo", sig(IRubyObject.class, RubyArray.class));
+                    break;
+                default:
+                    method.pushInt(start);
+                    invokeUtilityMethod("arrayEntryOrNil", sig(IRubyObject.class, RubyArray.class, int.class));
+                    break;
+                }
+                callback.nextValue(this, source, start);
+            }
 
-        if (argsCallback != null) {
-            method.dup(); // dup the original array object
-            loadRuntime();
-            method.pushInt(start);
-            invokeUtilityMethod("subarrayOrEmpty", sig(RubyArray.class, RubyArray.class, Ruby.class, int.class));
-            argsCallback.call(this);
-            method.pop();
+            if (argsCallback != null) {
+                getVariableCompiler().getTempLocal(tempLocal);
+                loadRuntime();
+                method.pushInt(start);
+                invokeUtilityMethod("subarrayOrEmpty", sig(RubyArray.class, RubyArray.class, Ruby.class, int.class));
+                argsCallback.call(this);
+            }
+
+            getVariableCompiler().getTempLocal(tempLocal);
+            getVariableCompiler().releaseTempLocal();
         }
     }
 
@@ -1521,7 +1538,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void isGlobalDefined(String name, BranchCallback trueBranch, BranchCallback falseBranch) {
         loadRuntime();
-        invokeIRuby("getGlobalVariables", sig(GlobalVariables.class));
+        invokeRuby("getGlobalVariables", sig(GlobalVariables.class));
         method.ldc(name);
         method.invokevirtual(p(GlobalVariables.class), "isDefined", sig(boolean.class, params(String.class)));
         Label falseLabel = new Label();
@@ -1791,7 +1808,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void aliasGlobal(String newName, String oldName) {
         loadRuntime();
-        invokeIRuby("getGlobalVariables", sig(GlobalVariables.class));
+        invokeRuby("getGlobalVariables", sig(GlobalVariables.class));
         method.ldc(newName);
         method.ldc(oldName);
         method.invokevirtual(p(GlobalVariables.class), "alias", sig(Void.TYPE, params(String.class, String.class)));
@@ -1808,7 +1825,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.pop();
         loadRuntime();
         method.ldc("No class to undef method '" + name + "'.");
-        invokeIRuby("newTypeError", sig(RaiseException.class, params(String.class)));
+        invokeRuby("newTypeError", sig(RaiseException.class, params(String.class)));
         method.athrow();
 
         method.label(notNull);
@@ -2070,7 +2087,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void loadClass(String name) {
         loadRuntime();
         method.ldc(name);
-        invokeIRuby("getClass", sig(RubyClass.class, String.class));
+        invokeRuby("getClass", sig(RubyClass.class, String.class));
     }
 
     public void unwrapRaiseException() {

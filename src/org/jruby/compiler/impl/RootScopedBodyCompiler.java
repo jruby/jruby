@@ -47,15 +47,14 @@ public abstract class RootScopedBodyCompiler extends BaseBodyCompiler {
     public void beginMethod(CompilerCallback args, StaticScope scope) {
         method.start();
 
-        // set up a local IRuby variable
+        // set up a local Ruby variable
         method.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
         invokeThreadContext("getRuntime", sig(Ruby.class));
-        method.dup();
         method.astore(getRuntimeIndex());
 
-
         // grab nil for local variables
-        invokeIRuby("getNil", sig(IRubyObject.class));
+        method.aload(getRuntimeIndex());
+        invokeRuby("getNil", sig(IRubyObject.class));
         method.astore(getNilIndex());
 
         variableCompiler.beginMethod(args, scope);

@@ -54,7 +54,7 @@ public class ASTCompiler19 extends ASTCompiler {
     }
 
     @Override
-    public void compileAssignment(Node node, BodyCompiler context) {
+    public void compileAssignment(Node node, BodyCompiler context,boolean expr) {
         switch (node.nodeId) {
             case ARGSNODE:
                 if (((ArgsNode)node).getArity().getValue() != 0) {
@@ -62,7 +62,7 @@ public class ASTCompiler19 extends ASTCompiler {
                 }
                 break;
             default:
-                super.compileAssignment(node, context);
+                super.compileAssignment(node, context,true);
         }
     }
 

@@ -524,34 +524,44 @@ public class ASTCompiler {
         }
     }
 
-    public void compileAssignment(Node node, BodyCompiler context) {
+    public void compileAssignment(Node node, BodyCompiler context, boolean expr) {
         switch (node.nodeId) {
             case ATTRASSIGNNODE:
                 compileAttrAssignAssignment(node, context);
+                if (!expr) context.consumeCurrentValue();
                 break;
             case DASGNNODE:
-                compileDAsgnAssignment(node, context);
+                DAsgnNode dasgnNode = (DAsgnNode)node;
+                context.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth(), expr);
                 break;
             case CLASSVARASGNNODE:
                 compileClassVarAsgnAssignment(node, context);
+                if (!expr) context.consumeCurrentValue();
                 break;
             case CLASSVARDECLNODE:
                 compileClassVarDeclAssignment(node, context);
+                if (!expr) context.consumeCurrentValue();
                 break;
             case CONSTDECLNODE:
                 compileConstDeclAssignment(node, context);
+                if (!expr) context.consumeCurrentValue();
                 break;
             case GLOBALASGNNODE:
                 compileGlobalAsgnAssignment(node, context);
+                if (!expr) context.consumeCurrentValue();
                 break;
             case INSTASGNNODE:
                 compileInstAsgnAssignment(node, context);
+                if (!expr) context.consumeCurrentValue();
                 break;
             case LOCALASGNNODE:
+                LocalAsgnNode localAsgnNode = (LocalAsgnNode)node;
                 compileLocalAsgnAssignment(node, context);
+                context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth(), expr);
                 break;
             case MULTIPLEASGNNODE:
                 compileMultipleAsgnAssignment(node, context);
+                if (!expr) context.consumeCurrentValue();
                 break;
             case ZEROARGNODE:
                 throw new NotCompilableException("Shouldn't get here; zeroarg does not do assignment: " + node);
@@ -1826,7 +1836,7 @@ public class ASTCompiler {
                         public void nextValue(BodyCompiler context, Object object, int index) {
                             Node optArg = ((ListNode) object).get(index);
 
-                            compileAssignment(optArg, context);
+                            compileAssignment(optArg, context,true);
                             context.consumeCurrentValue();
                         }
                     };
@@ -2194,7 +2204,7 @@ public class ASTCompiler {
 
                     public void call(BodyCompiler context) {
                         if (forNode.getVarNode() != null) {
-                            compileAssignment(forNode.getVarNode(), context);
+                            compileAssignment(forNode.getVarNode(), context, false);
                         }
                     }
                 };
@@ -2375,7 +2385,7 @@ public class ASTCompiler {
 
                     public void call(BodyCompiler context) {
                         if (iterNode.getVarNode() != null) {
-                            compileAssignment(iterNode.getVarNode(), context);
+                            compileAssignment(iterNode.getVarNode(), context, false);
                         }
                     }
                 };
@@ -2513,21 +2523,7 @@ public class ASTCompiler {
                         Node assignNode = headNode.get(index);
 
                         // perform assignment for the next node
-                        compileAssignment(assignNode, context);
-                    }
-                };
-
-        // head items for which we've run out of assignable elements
-        ArrayCallback headNilCallback = new ArrayCallback() {
-
-                    public void nextValue(BodyCompiler context, Object sourceArray,
-                            int index) {
-                        ListNode headNode = (ListNode) sourceArray;
-                        Node assignNode = headNode.get(index);
-
-                        // perform assignment for the next node
-                        context.loadNil();
-                        compileAssignment(assignNode, context);
+                        compileAssignment(assignNode, context, false);
                     }
                 };
 
@@ -2539,7 +2535,7 @@ public class ASTCompiler {
                         // done processing args
                         } else {
                             // assign to appropriate variable
-                            compileAssignment(argsNode, context);
+                            compileAssignment(argsNode, context, false);
                         }
                     }
                 };
@@ -2553,16 +2549,16 @@ public class ASTCompiler {
                 } else {
                     context.ensureMultipleAssignableRubyArray(multipleAsgnNode.getHeadNode() != null);
 
-                    context.forEachInValueArray(0, 0, null, null, null, argsCallback);
+                    context.forEachInValueArray(0, 0, null, null, argsCallback);
                 }
             }
         } else {
             context.ensureMultipleAssignableRubyArray(multipleAsgnNode.getHeadNode() != null);
             
             if (multipleAsgnNode.getArgsNode() == null) {
-                context.forEachInValueArray(0, multipleAsgnNode.getHeadNode().size(), multipleAsgnNode.getHeadNode(), headAssignCallback, headNilCallback, null);
+                context.forEachInValueArray(0, multipleAsgnNode.getHeadNode().size(), multipleAsgnNode.getHeadNode(), headAssignCallback, null);
             } else {
-                context.forEachInValueArray(0, multipleAsgnNode.getHeadNode().size(), multipleAsgnNode.getHeadNode(), headAssignCallback, headNilCallback, argsCallback);
+                context.forEachInValueArray(0, multipleAsgnNode.getHeadNode().size(), multipleAsgnNode.getHeadNode(), headAssignCallback, argsCallback);
             }
         }
     }

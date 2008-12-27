@@ -25,7 +25,7 @@ public class ASMClassBodyCompiler extends RootScopedBodyCompiler {
         method.astore(getRuntimeIndex());
 
         // grab nil for local variables
-        invokeIRuby("getNil", sig(IRubyObject.class));
+        invokeRuby("getNil", sig(IRubyObject.class));
         method.astore(getNilIndex());
 
         variableCompiler.beginClass(bodyPrep, scope);

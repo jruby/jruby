@@ -153,7 +153,6 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             // load args[0] which will be the IRubyObject representing block args
             method.aload(argsIndex);
             argsCallback.call(methodCompiler);
-            method.pop(); // clear remaining value on the stack
         }
     }
 

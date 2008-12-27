@@ -428,7 +428,7 @@ public interface BodyCompiler {
      * Each call to callback will have a value from the input array on the stack; once the items are exhausted,
      * the code in nilCallback will be invoked *with no value on the stack*.
      */
-    public void forEachInValueArray(int count, int start, Object source, ArrayCallback callback, ArrayCallback nilCallback, CompilerCallback argsCallback);
+    public void forEachInValueArray(int count, int start, Object source, ArrayCallback callback, CompilerCallback argsCallback);
     
     /**
      * Ensures that the present value is an IRubyObject[] by wrapping it with one if it is not.
