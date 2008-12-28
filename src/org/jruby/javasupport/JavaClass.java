@@ -247,7 +247,7 @@ public class JavaClass extends JavaObject {
         // called only by initializing thread; no synchronization required
         void addMethod(Method method, Class<?> javaClass) {
             if (methods == null) {
-                methods = new ArrayList<Method>();
+                methods = new ArrayList<Method>(4);
             }
             if (!Ruby.isSecurityRestricted()) {
                 method.setAccessible(true);
@@ -259,7 +259,7 @@ public class JavaClass extends JavaObject {
         // called only by initializing thread; no synchronization required
         void addAlias(String alias) {
             if (aliases == null) {
-                aliases = new ArrayList<String>();
+                aliases = new ArrayList<String>(4);
             }
             if (!aliases.contains(alias))
                 aliases.add(alias);
@@ -283,7 +283,7 @@ public class JavaClass extends JavaObject {
         // called only by initializing thread; no synchronization required
         void addConstructor(Constructor ctor, Class<?> javaClass) {
             if (constructors == null) {
-                constructors = new ArrayList<Constructor>();
+                constructors = new ArrayList<Constructor>(4);
             }
             if (!Ruby.isSecurityRestricted()) {
                 ctor.setAccessible(true);
@@ -624,31 +624,36 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private void installClassConstructors(final RubyClass proxy) {
+    private synchronized void installClassConstructors(final RubyClass proxy) {
         if (constructorInstaller != null) {
             constructorInstaller.install(proxy);
+            constructorInstaller = null;
         }
     }
 
-    private void installClassFields(final RubyClass proxy) {
+    private synchronized void installClassFields(final RubyClass proxy) {
         for (ConstantField field : constantFields) {
             field.install(proxy);
         }
+        constantFields = null;
     }
 
-    private void installClassMethods(final RubyClass proxy) {
+    private synchronized void installClassMethods(final RubyClass proxy) {
         for (NamedInstaller installer : staticInstallers.values()) {
             if (installer.type == NamedInstaller.STATIC_METHOD && installer.hasLocalMethod()) {
                 assignAliases((MethodInstaller) installer, staticAssignedNames);
             }
             installer.install(proxy);            
         }
+        staticInstallers = null;
+        
         for (NamedInstaller installer : instanceInstallers.values()) {
             if (installer.type == NamedInstaller.INSTANCE_METHOD && installer.hasLocalMethod()) {
                 assignAliases((MethodInstaller) installer, instanceAssignedNames);
             }
             installer.install(proxy);
         }
+        instanceInstallers = null;
     }
 
     private void setupClassConstructors(Class<?> javaClass) {
