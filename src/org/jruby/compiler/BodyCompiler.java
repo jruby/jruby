@@ -284,7 +284,7 @@ public interface BodyCompiler {
      * @param arity The arity of the block's argument list
      * @param body The callback which will generate the closure's body
      */
-    public void createNewForLoop(int arity, CompilerCallback body, CompilerCallback args, boolean hasMultipleArgsHead, NodeType argsNodeId);
+    public void createNewForLoop(int arity, CompilerCallback body, CompilerCallback args, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector);
     
     /**
      * Define a new method with the given name, arity, local variable count, and body callback.

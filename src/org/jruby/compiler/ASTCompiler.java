@@ -2218,14 +2218,21 @@ public class ASTCompiler {
         if (forNode.getVarNode() != null) {
             argsNodeId = forNode.getVarNode().getNodeType();
         }
+        
+        ASTInspector inspector = new ASTInspector();
+        inspector.inspect(forNode.getBodyNode());
+        inspector.inspect(forNode.getVarNode());
+
+        // force heap-scope behavior, since it uses parent's scope
+        inspector.setFlag(ASTInspector.CLOSURE);
 
         if (argsNodeId == null) {
             // no args, do not pass args processor
             context.createNewForLoop(Arity.procArityOf(forNode.getVarNode()).getValue(),
-                    closureBody, null, hasMultipleArgsHead, argsNodeId);
+                    closureBody, null, hasMultipleArgsHead, argsNodeId, inspector);
         } else {
             context.createNewForLoop(Arity.procArityOf(forNode.getVarNode()).getValue(),
-                    closureBody, closureArgs, hasMultipleArgsHead, argsNodeId);
+                    closureBody, closureArgs, hasMultipleArgsHead, argsNodeId, inspector);
         }
     }
 
@@ -2400,6 +2407,7 @@ public class ASTCompiler {
         ASTInspector inspector = new ASTInspector();
         inspector.inspect(iterNode.getBodyNode());
         inspector.inspect(iterNode.getVarNode());
+        
         if (argsNodeId == null) {
             // no args, do not pass args processor
             context.createNewClosure(iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
