@@ -34,6 +34,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ext.ffi.FFIProvider;
 import org.jruby.ext.ffi.MemoryIO;
+import org.jruby.ext.ffi.Pointer;
 
 /**
  * An implementation of FFI for JNA
@@ -52,9 +53,6 @@ public class JNAFactory extends org.jruby.ext.ffi.Factory {
             }
             if (ffi.fastGetClass(JNAMemoryPointer.MEMORY_POINTER_NAME) == null) {
                 JNAMemoryPointer.createMemoryPointerClass(runtime, ffi);
-            }
-            if (ffi.fastGetClass(JNABuffer.BUFFER_RUBY_CLASS) == null) {
-                JNABuffer.createBufferClass(runtime, ffi);
             }
             if (ffi.fastGetClass("VariadicInvoker") == null) {
                 JNAVariadicInvoker.createVariadicInvokerClass(runtime, ffi);
@@ -82,5 +80,10 @@ public class JNAFactory extends org.jruby.ext.ffi.Factory {
     @Override
     public MemoryIO allocateHeapMemory(int size, boolean clear) {
         return new HeapMemoryIO(size);
+    }
+
+    @Override
+    public Pointer newPointer(Ruby runtime, MemoryIO io) {
+        return new JNABasePointer(runtime, io, 0, Long.MAX_VALUE);
     }
 }

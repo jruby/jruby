@@ -448,6 +448,9 @@ public final class JNAProvider extends FFIProvider {
         public final Object marshal(Invocation invocation, IRubyObject parameter) {
             if (parameter instanceof JNAMemory) {
                 return (((JNAMemory) parameter).getNativeMemory());
+            } else if (parameter instanceof Buffer) {
+                ArrayMemoryIO io = (ArrayMemoryIO) ((Buffer) parameter).getMemoryIO();
+                return ByteBuffer.wrap(io.array(), io.arrayOffset(), io.arrayLength());
             } else if (parameter.isNil()) {
                 return Pointer.NULL;
             } else if (parameter instanceof RubyString) {
@@ -536,6 +539,9 @@ public final class JNAProvider extends FFIProvider {
         public final Object marshal(Invocation invocation, IRubyObject parameter) {
             if (parameter instanceof JNAMemory) {
                 return (((JNAMemory) parameter).getNativeMemory());
+            } else if (parameter instanceof Buffer) {
+                ArrayMemoryIO io = (ArrayMemoryIO) ((Buffer) parameter).getMemoryIO();
+                return ByteBuffer.wrap(io.array(), io.arrayOffset(), io.arrayLength());
             } else if (parameter.isNil()) {
                 return Pointer.NULL;
             } else if (parameter instanceof RubyString) {

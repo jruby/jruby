@@ -80,7 +80,7 @@ abstract public class AbstractMemory extends RubyObject {
      *
      * @return A memory accessor.
      */
-    protected final MemoryIO getMemoryIO() {
+    public final MemoryIO getMemoryIO() {
         return io;
     }
 

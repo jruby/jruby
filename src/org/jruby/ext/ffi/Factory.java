@@ -106,6 +106,9 @@ public abstract class Factory {
             if (ffi.fastGetClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS) == null) {
                 AbstractMemory.createAbstractMemoryClass(runtime, ffi);
             }
+            if (ffi.fastGetClass("Buffer") == null) {
+                Buffer.createBufferClass(runtime, ffi);
+            }
             if (ffi.fastGetClass("Pointer") == null) {
                 Pointer.createPointerClass(runtime, ffi);
             }
@@ -114,9 +117,6 @@ public abstract class Factory {
             }
             if (ffi.fastGetClass(AbstractMemoryPointer.className) == null) {
                 AbstractMemoryPointer.createMemoryPointerClass(runtime, ffi);
-            }
-            if (ffi.fastGetClass(AbstractBuffer.ABSTRACT_BUFFER_RUBY_CLASS) == null) {
-                AbstractBuffer.createBufferClass(runtime, ffi);
             }
             if (ffi.fastGetClass(CallbackInfo.CLASS_NAME) == null) {
                 CallbackInfo.createCallbackInfoClass(runtime, ffi);
@@ -166,4 +166,13 @@ public abstract class Factory {
      * @return A new <tt>MemoryIO</tt>.
      */
     public abstract MemoryIO allocateHeapMemory(int size, boolean clear);
+
+    /**
+     * Creates a new FFI {@link Pointer} instance.
+     *
+     * @param runtime
+     * @param io
+     * @return
+     */
+    public abstract Pointer newPointer(Ruby runtime, MemoryIO io);
 }
