@@ -51,8 +51,8 @@ public class TraceableInterpretedMethod extends InterpretedMethod {
 
     public TraceableInterpretedMethod(RubyModule implementationClass, String name, StaticScope staticScope, Node body,
             ArgsNode argsNode, Visibility visibility, ISourcePosition position) {
-        super(implementationClass, name, staticScope, body,
-            argsNode, visibility, position);
+        super(implementationClass, staticScope, body, argsNode,
+            visibility, position);
         this.body = body;
         this.staticScope = staticScope;
         this.argsNode = argsNode;

@@ -48,8 +48,8 @@ public class DynamicMethodFactory {
                 return new TraceableInterpretedMethod(container, name, scope, body, argsNode,
                         visibility, position);
             } else {
-                return new InterpretedMethod(container, name, scope, body, argsNode,
-                        visibility, position);
+                return new InterpretedMethod(container, scope, body, argsNode, visibility,
+                        position);
             }
         } else  {
             return new DefaultMethod(container, scope, body, argsNode,

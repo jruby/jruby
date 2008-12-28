@@ -146,9 +146,7 @@ public class JITCompiler implements JITCompilerMBean {
 
             if (instanceConfig.isJitLogging()) log(method, name, "done jitting");
 
-            method.setJITCallConfig(generator.callConfig());
-            method.setJITCompiledScript(jitCompiledScript);
-            method.setCallCount(-1);
+            method.switchToJitted(jitCompiledScript, generator.callConfig());
             return null;
         } catch (Throwable t) {
             t.printStackTrace();

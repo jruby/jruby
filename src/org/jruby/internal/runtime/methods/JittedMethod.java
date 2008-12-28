@@ -11,8 +11,8 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2008 Thomas E Enebo <enebo@acm.org>
- * 
+ * Copyright (C) 2004-2008 Thomas E Enebo <enebo@acm.org>
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -29,9 +29,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
-import org.jruby.ast.ArgsNode;
-import org.jruby.ast.Node;
-import org.jruby.compiler.ASTInspector;
+import org.jruby.ast.executable.Script;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -43,62 +41,40 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
+ * This is the mixed-mode method type.  It will call out to JIT compiler to see if the compiler
+ * wants to JIT or not.  If the JIT compiler does JIT this it will return the new method
+ * to be executed here instead of executing the interpreted version of this method.  The next
+ * invocation of the method will end up causing the runtime to load and execute the newly JIT'd
+ * method.
  *
  */
-public class InterpretedMethod extends DynamicMethod implements JumpTarget, MethodArgs {
-    private StaticScope staticScope;
-    private Node body;
-    private ArgsNode argsNode;
-    private ISourcePosition position;
-    private boolean noArgHack;
-    private boolean needsScope;
-
-    public InterpretedMethod(RubyModule implementationClass, StaticScope staticScope, Node body,
-            ArgsNode argsNode, Visibility visibility, ISourcePosition position) {
-        super(implementationClass, visibility, CallConfiguration.FRAME_AND_SCOPE);
-        this.body = body;
-        this.staticScope = staticScope;
-        this.argsNode = argsNode;
+public class JittedMethod extends DynamicMethod implements JumpTarget {
+    private final StaticScope staticScope;
+    private final Script jitCompiledScript;
+    private final ISourcePosition position;
+    private final Arity arity;
+    
+    public JittedMethod(RubyModule implementationClass, StaticScope staticScope, Script jitCompiledScript,
+            CallConfiguration jitCallConfig, Visibility visibility, Arity arity, ISourcePosition position) {
+        super(implementationClass, visibility, jitCallConfig);
         this.position = position;
+        this.jitCompiledScript = jitCompiledScript;
+        this.staticScope = staticScope;
+        this.arity = arity;
+    }
 
-        ASTInspector inspector = new ASTInspector();
-        inspector.inspect(body);
-        inspector.inspect(argsNode);
-
-        if (inspector.hasClosure() || inspector.hasScopeAwareMethods() || staticScope.getNumberOfVariables() != 0) {
-            // must have scope
-            needsScope = true;
-        } else {
-            needsScope = false;
-        }
-		
-        assert argsNode != null;
-    }
-    
-    public Node getBodyNode() {
-        return body;
-    }
-    
-    public ArgsNode getArgsNode() {
-        return argsNode;
-    }
-    
     public StaticScope getStaticScope() {
         return staticScope;
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        assert args != null;
-        
         Ruby runtime = context.getRuntime();
-
+        
         try {
-            pre(context, name, self, block, runtime);
-            argsNode.checkArgCount(runtime, args.length);
-            argsNode.prepare(context, runtime, self, args, block);
+            pre(context, self, name, block, args.length);
 
-            return body.interpret(runtime, context, self, block);
+            return jitCompiledScript.__file__(context, self, args, block);
         } catch (JumpException.ReturnJump rj) {
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
@@ -110,7 +86,19 @@ public class InterpretedMethod extends DynamicMethod implements JumpTarget, Meth
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-        return call(context, self, clazz, name, args, Block.NULL_BLOCK);
+        Ruby runtime = context.getRuntime();
+
+        try {
+            pre(context, self, name, Block.NULL_BLOCK, args.length);
+
+            return jitCompiledScript.__file__(context, self, args, Block.NULL_BLOCK);
+        } catch (JumpException.ReturnJump rj) {
+            return handleReturn(context, rj);
+        } catch (JumpException.RedoJump rj) {
+            return handleRedo(runtime);
+        } finally {
+            post(runtime,context, name);
+        }
     }
 
     @Override
@@ -118,11 +106,9 @@ public class InterpretedMethod extends DynamicMethod implements JumpTarget, Meth
         Ruby runtime = context.getRuntime();
 
         try {
-            pre(context, name, self, Block.NULL_BLOCK, runtime);
-            argsNode.checkArgCount(runtime, 0);
-            argsNode.prepare(context, runtime, self, Block.NULL_BLOCK);
+            pre(context, self, name, Block.NULL_BLOCK, 0);
 
-            return body.interpret(runtime, context, self, Block.NULL_BLOCK);
+            return jitCompiledScript.__file__(context, self, Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
@@ -137,11 +123,9 @@ public class InterpretedMethod extends DynamicMethod implements JumpTarget, Meth
         Ruby runtime = context.getRuntime();
 
         try {
-            pre(context, name, self, block, runtime);
-            argsNode.checkArgCount(runtime, 0);
-            argsNode.prepare(context, runtime, self, block);
+            pre(context, self, name, block, 0);
 
-            return body.interpret(runtime, context, self, block);
+            return jitCompiledScript.__file__(context, self, block);
         } catch (JumpException.ReturnJump rj) {
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
@@ -156,11 +140,9 @@ public class InterpretedMethod extends DynamicMethod implements JumpTarget, Meth
         Ruby runtime = context.getRuntime();
 
         try {
-            pre(context, name, self, Block.NULL_BLOCK, runtime);
-            argsNode.checkArgCount(runtime, 1);
-            argsNode.prepare(context, runtime, self, arg0, Block.NULL_BLOCK);
+            pre(context, self, name, Block.NULL_BLOCK, 1);
 
-            return body.interpret(runtime, context, self, Block.NULL_BLOCK);
+            return jitCompiledScript.__file__(context, self, arg0, Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
@@ -175,11 +157,9 @@ public class InterpretedMethod extends DynamicMethod implements JumpTarget, Meth
         Ruby runtime = context.getRuntime();
 
         try {
-            pre(context, name, self, block, runtime);
-            argsNode.checkArgCount(runtime, 1);
-            argsNode.prepare(context, runtime, self, arg0, block);
+            pre(context, self, name, block, 1);
 
-            return body.interpret(runtime, context, self, block);
+            return jitCompiledScript.__file__(context, self, arg0, block);
         } catch (JumpException.ReturnJump rj) {
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
@@ -194,11 +174,9 @@ public class InterpretedMethod extends DynamicMethod implements JumpTarget, Meth
         Ruby runtime = context.getRuntime();
 
         try {
-            pre(context, name, self, Block.NULL_BLOCK, runtime);
-            argsNode.checkArgCount(runtime, 2);
-            argsNode.prepare(context, runtime, self, arg0, arg1, Block.NULL_BLOCK);
+            pre(context, self, name, Block.NULL_BLOCK, 2);
 
-            return body.interpret(runtime, context, self, Block.NULL_BLOCK);
+            return jitCompiledScript.__file__(context, self, arg0, arg1, Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
@@ -213,11 +191,9 @@ public class InterpretedMethod extends DynamicMethod implements JumpTarget, Meth
         Ruby runtime = context.getRuntime();
 
         try {
-            pre(context, name, self, block, runtime);
-            argsNode.checkArgCount(runtime, 2);
-            argsNode.prepare(context, runtime, self, arg0, arg1, block);
+            pre(context, self, name, block, 2);
 
-            return body.interpret(runtime, context, self, block);
+            return jitCompiledScript.__file__(context, self, arg0, arg1, block);
         } catch (JumpException.ReturnJump rj) {
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
@@ -232,11 +208,9 @@ public class InterpretedMethod extends DynamicMethod implements JumpTarget, Meth
         Ruby runtime = context.getRuntime();
 
         try {
-            pre(context, name, self, Block.NULL_BLOCK, runtime);
-            argsNode.checkArgCount(runtime, 3);
-            argsNode.prepare(context, runtime, self, arg0, arg1, arg2, Block.NULL_BLOCK);
+            pre(context, self, name, Block.NULL_BLOCK, 3);
 
-            return body.interpret(runtime, context, self, Block.NULL_BLOCK);
+            return jitCompiledScript.__file__(context, self, arg0, arg1, arg2, Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
@@ -251,12 +225,9 @@ public class InterpretedMethod extends DynamicMethod implements JumpTarget, Meth
         Ruby runtime = context.getRuntime();
 
         try {
-            pre(context, name, self, block, runtime);
-            argsNode.checkArgCount(runtime, 3);
+            pre(context, self, name, block, 3);
 
-            if (!noArgHack) argsNode.prepare(context, runtime, self, arg0, arg1, arg2, block);
-
-            return body.interpret(runtime, context, self, block);
+            return jitCompiledScript.__file__(context, self, arg0, arg1, arg2, block);
         } catch (JumpException.ReturnJump rj) {
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
@@ -266,16 +237,14 @@ public class InterpretedMethod extends DynamicMethod implements JumpTarget, Meth
         }
     }
 
-    protected void pre(ThreadContext context, String name, IRubyObject self, Block block, Ruby runtime) {
-        if (needsScope) {
-            context.preMethodFrameAndScope(getImplementationClass(), name, self, block, staticScope);
-        } else {
-            context.preMethodFrameAndDummyScope(getImplementationClass(), name, self, block, staticScope);
-        }
+    protected void pre(ThreadContext context, IRubyObject self, String name, Block block, int argsLength) {
+        callConfig.pre(context, self, getImplementationClass(), name, block, staticScope, this);
+
+        getArity().checkArity(context.getRuntime(), argsLength);
     }
 
     protected void post(Ruby runtime, ThreadContext context, String name) {
-        context.postMethodFrameAndScope();
+        callConfig.post(context);
     }
 
     public ISourcePosition getPosition() {
@@ -284,10 +253,12 @@ public class InterpretedMethod extends DynamicMethod implements JumpTarget, Meth
 
     @Override
     public Arity getArity() {
-        return argsNode.getArity();
+        return arity;
     }
-    
+
     public DynamicMethod dup() {
-        return new InterpretedMethod(getImplementationClass(), staticScope, body, argsNode, getVisibility(), position);
+        return new JittedMethod(getImplementationClass(), staticScope, jitCompiledScript, callConfig, getVisibility(), arity, position);
     }
+
+
 }
