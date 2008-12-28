@@ -37,7 +37,8 @@ public class JNABasePointer extends AbstractMemoryPointer implements JNAMemory {
                 io, offset, size);
     }
     JNABasePointer(Ruby runtime, Pointer value) {
-        this(runtime, JNAMemoryIO.wrap(value), 0, Long.MAX_VALUE);
+        this(runtime, value != null ? JNAMemoryIO.wrap(value) : new NullMemoryIO(runtime),
+                0, Long.MAX_VALUE);
     }
     JNABasePointer(Ruby runtime, RubyClass klass, MemoryIO io, long offset, long size) {
         super(runtime, klass, io, offset, size);
@@ -61,10 +62,12 @@ public class JNABasePointer extends AbstractMemoryPointer implements JNAMemory {
         return RubyString.newString(context.getRuntime(), "Pointer [address=" + hex + "]");
     }
     Pointer getAddress() {
-        return ((JNAMemoryIO) getMemoryIO()).getAddress();
+        return getMemoryIO() instanceof NullMemoryIO
+                ? Pointer.NULL : ((JNAMemoryIO) getMemoryIO()).getAddress();
     }
     public Object getNativeMemory() {
-        return ((JNAMemoryIO) getMemoryIO()).slice(offset).getMemory();
+        return getMemoryIO() instanceof NullMemoryIO
+                ? Pointer.NULL : ((JNAMemoryIO) getMemoryIO()).slice(offset).getMemory();
     }
     static final long ptr2long(Pointer ptr) {
         return new PointerByReference(ptr).getPointer().getInt(0);
