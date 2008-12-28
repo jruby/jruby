@@ -182,17 +182,19 @@ public class RubyModule extends RubyObject {
     // If it is null, then it an anonymous class.
     protected String classId;
 
+    private static final Map<String, IRubyObject> DUMMY_CONSTANTS = Collections.unmodifiableMap(new HashMap(0));
 
-    // CONSTANT TABLE
-    
-    // Lock used for variableTable/constantTable writes. The RubyObject variableTable
-    // write methods are overridden here to use this lock rather than Java
-    // synchronization for faster concurrent writes for modules/classes.
-    protected final ReentrantLock variableWriteLock = new ReentrantLock();
+    private volatile Map<String, IRubyObject> constants;
+    private final Map<String, DynamicMethod> methods = new ConcurrentHashMap<String, DynamicMethod>(4, 0.9f, 1);
+    private final Map<String, CacheEntry> cachedMethods = new ConcurrentHashMap<String, CacheEntry>(4, 0.75f, 1);
 
-    private final Map<String, IRubyObject> constants = new ConcurrentHashMap<String, IRubyObject>();
-    private final Map<String, DynamicMethod> methods = new ConcurrentHashMap<String, DynamicMethod>(12, 0.75f, 1);
-    private final Map<String, CacheEntry> cachedMethods = new ConcurrentHashMap<String, CacheEntry>(12, 0.75f, 1);
+    public Map<String, IRubyObject> getConstantMap() {
+        return constants == null ? DUMMY_CONSTANTS : constants;
+    }
+
+    public synchronized Map<String, IRubyObject> getConstantMapForWrite() {
+        return constants == null ? constants = new ConcurrentHashMap<String, IRubyObject>(4, 0.9f, 1) : constants;
+    }
     
     protected static class Generation {
         public volatile int hash;
@@ -1451,7 +1453,9 @@ public class RubyModule extends RubyObject {
     }
 
     public void syncConstants(RubyModule other) {
-        constants.putAll(other.constants);
+        if (other.getConstantMap() != DUMMY_CONSTANTS) {
+            getConstantMapForWrite().putAll(other.getConstantMap());
+        }
     }
 
     /** rb_mod_included_modules
@@ -2884,14 +2888,14 @@ public class RubyModule extends RubyObject {
 
     @Deprecated
     public List<String> getStoredConstantNameList() {
-        return new ArrayList<String>(constants.keySet());
+        return new ArrayList<String>(getConstantMap().keySet());
     }
 
     /**
      * @return a list of constant names that exists at time this was called
      */
     public Collection<String> getConstantNames() {
-        return constants.keySet();
+        return getConstantMap().keySet();
     }
 
     protected static final String ERR_INSECURE_SET_CONSTANT  = "Insecure: can't modify constant";
@@ -2912,32 +2916,32 @@ public class RubyModule extends RubyObject {
     }
 
     protected boolean constantTableContains(String name) {
-        return constants.containsKey(name);
+        return getConstantMap().containsKey(name);
     }
     
     protected boolean constantTableFastContains(String internedName) {
-        return constants.containsKey(internedName);
+        return getConstantMap().containsKey(internedName);
     }
     
     protected IRubyObject constantTableFetch(String name) {
-        return constants.get(name);
+        return getConstantMap().get(name);
     }
     
     protected IRubyObject constantTableFastFetch(String internedName) {
-        return constants.get(internedName);
+        return getConstantMap().get(internedName);
     }
     
     protected IRubyObject constantTableStore(String name, IRubyObject value) {
-        constants.put(name, value);
+        getConstantMapForWrite().put(name, value);
         return value;
     }
     
     protected IRubyObject constantTableFastStore(String internedName, IRubyObject value) {
-        constants.put(internedName, value);
+        getConstantMapForWrite().put(internedName, value);
         return value;
     }
         
     protected IRubyObject constantTableRemove(String name) {
-        return constants.remove(name);
+        return getConstantMapForWrite().remove(name);
     }
 }
