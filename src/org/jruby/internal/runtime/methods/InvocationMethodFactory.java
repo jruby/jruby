@@ -262,6 +262,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                         mv.areturn();
                         mv.end();
 
+                        // Define a second version that doesn't take a block, so we have unique code paths for both cases.
                         switch (scope.getRequiredArgs()) {
                         case 0:
                             signature = COMPILED_CALL_SIG_ZERO;
