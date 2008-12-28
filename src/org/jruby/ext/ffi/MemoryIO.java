@@ -106,7 +106,15 @@ public interface MemoryIO {
      * @return The double value read from <tt>offset</tt>
      */
     public double getDouble(long offset);
-    
+
+     /**
+     * Reads a pointer value at the specified offset within the memory area.
+     *
+     * @param offset The offset within the memory area to read the value.
+     * @return A <tt>long</tt> value that represents the address.
+     */
+    public long getAddress(long offset);
+
     /**
      * Reads a pointer value at the specified offset within the memory area, and
      * wraps it in an abstract memory accessor.
@@ -180,6 +188,14 @@ public interface MemoryIO {
      * @param value The pointer value to write to the memory location.
      */
     public void putMemoryIO(long offset, MemoryIO value);
+
+    /**
+     * Writes a pointer value to the memory area at the specified offset.
+     *
+     * @param offset The offset within the memory area to write the value.
+     * @param value The pointer value to write to the memory location.
+     */
+    public void putAddress(long offset, long value);
     
     /**
      * Reads an array of bytes from the memory area at the specified offset.

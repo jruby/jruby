@@ -134,7 +134,16 @@ public abstract class JNAMemoryIO implements MemoryIO {
     public void putMemoryIO(long offset, MemoryIO value) {
         putPointer(offset, ((JNAMemoryIO) value).getAddress());
     }
-    
+    public long getAddress(long offset) {
+        return Pointer.SIZE == 4 ? getInt(offset) : getLong(offset);
+    }
+    public void putAddress(long offset, long value) {
+        if (Pointer.SIZE == 4) {
+            putInt(offset, (int) value);
+        } else {
+            putLong(offset, value);
+        }
+    }
     /**
      * A <tt>MemoryIO</tt> accessor that wraps a native pointer.
      */
@@ -393,7 +402,7 @@ public abstract class JNAMemoryIO implements MemoryIO {
         public double getDouble(long offset) {
             return buffer.getDouble((int) offset);
         }
-
+        
         public void putByte(long offset, byte value) {
             buffer.put((int) offset, value);
         }
@@ -425,7 +434,7 @@ public abstract class JNAMemoryIO implements MemoryIO {
         public void putDouble(long offset, double value) {
             buffer.putDouble((int) offset, value);
         }
-
+        
         public void get(long offset, byte[] dst, int off, int len) {
             slice(buffer, (int) offset, len).get(dst, off, len);
         }
