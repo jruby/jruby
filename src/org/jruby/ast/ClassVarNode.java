@@ -51,8 +51,12 @@ public class ClassVarNode extends Node implements INameNode {
     private String name;
 
     public ClassVarNode(ISourcePosition position, String name) {
-        super(position, NodeType.CLASSVARNODE);
+        super(position);
         this.name = name;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.CLASSVARNODE;
     }
 
     /**

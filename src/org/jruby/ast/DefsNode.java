@@ -33,18 +33,14 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.DynamicMethodFactory;
-import org.jruby.internal.runtime.methods.InterpretedMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -59,11 +55,15 @@ public class DefsNode extends MethodDefNode implements INameNode {
     private final Node receiverNode;
     public DefsNode(ISourcePosition position, Node receiverNode, ArgumentNode nameNode, ArgsNode argsNode, 
             StaticScope scope, Node bodyNode) {
-        super(position, nameNode, argsNode, scope, bodyNode, NodeType.DEFSNODE);
+        super(position, nameNode, argsNode, scope, bodyNode);
         
         assert receiverNode != null : "receiverNode is not null";
         
         this.receiverNode = receiverNode;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.DEFSNODE;
     }
 
     /**

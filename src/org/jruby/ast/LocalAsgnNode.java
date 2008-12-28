@@ -55,7 +55,7 @@ public class LocalAsgnNode extends AssignableNode implements INameNode {
     private final int location;
 
     public LocalAsgnNode(ISourcePosition position, String name, int location, Node valueNode) {
-        super(position, NodeType.LOCALASGNNODE, valueNode);
+        super(position, valueNode);
         this.name = name;
         // in order to make pragma's noops we set location to a special value
         if (ASTInspector.PRAGMAS.contains(name)) {
@@ -63,6 +63,10 @@ public class LocalAsgnNode extends AssignableNode implements INameNode {
         } else {
             this.location = location;
         }
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.LOCALASGNNODE;
     }
     
     /**

@@ -46,13 +46,17 @@ public class Match2Node extends Node {
     private final Node valueNode;
 
     public Match2Node(ISourcePosition position, Node receiverNode, Node valueNode) {
-        super(position, NodeType.MATCH2NODE);
+        super(position);
         
         assert receiverNode != null : "receiverNode is not null";
         assert valueNode != null : "valueNode is not null";
 
         this.receiverNode = receiverNode;
         this.valueNode = valueNode;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.MATCH2NODE;
     }
 
     /**

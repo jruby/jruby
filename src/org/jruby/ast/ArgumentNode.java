@@ -40,15 +40,15 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class ArgumentNode extends Node implements INameNode {
     private String identifier;
-    
-    public ArgumentNode(ISourcePosition position, String identifier) {
-        this(position, NodeType.ARGUMENTNODE, identifier);
-    }
 
-    protected ArgumentNode(ISourcePosition position, NodeType type, String identifier) {
-        super(position, type);
+    public ArgumentNode(ISourcePosition position, String identifier) {
+        super(position);
 
         this.identifier = identifier;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.ARGUMENTNODE;
     }
     
     public Object accept(NodeVisitor visitor) {

@@ -47,7 +47,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class SelfNode extends Node implements INameNode {
     public SelfNode(ISourcePosition position) {
-        super(position, NodeType.SELFNODE);
+        super(position);
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.SELFNODE;
     }
 
     /**

@@ -45,11 +45,15 @@ public class MatchNode extends Node {
     private final Node regexpNode;
 
     public MatchNode(ISourcePosition position, Node regexpNode) {
-        super(position, NodeType.MATCHNODE);
+        super(position);
         
         assert regexpNode != null : "regexpNode is not null";
         
         this.regexpNode = regexpNode;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.MATCHNODE;
     }
 
     /**

@@ -43,11 +43,15 @@ public class SValueNode extends Node {
     private final Node node;
     
     public SValueNode(ISourcePosition position, Node node) {
-        super(position, NodeType.SVALUENODE);
+        super(position);
         
         assert node != null : "node is not null";
         
         this.node = node;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.SVALUENODE;
     }
 
     public Object accept(NodeVisitor visitor) {

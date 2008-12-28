@@ -154,9 +154,9 @@ public abstract class BlockBody implements JumpTarget {
     
     public static NodeType getArgumentTypeWackyHack(IterNode iterNode) {
         NodeType argsNodeId = null;
-        if (iterNode.getVarNode() != null && iterNode.getVarNode().nodeId != NodeType.ZEROARGNODE) {
+        if (iterNode.getVarNode() != null && iterNode.getVarNode().getNodeType() != NodeType.ZEROARGNODE) {
             // if we have multiple asgn with just *args, need a special type for that
-            argsNodeId = iterNode.getVarNode().nodeId;
+            argsNodeId = iterNode.getVarNode().getNodeType();
             if (argsNodeId == NodeType.MULTIPLEASGNNODE) {
                 MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode)iterNode.getVarNode();
                 if (multipleAsgnNode.getHeadNode() == null && multipleAsgnNode.getArgsNode() != null) {

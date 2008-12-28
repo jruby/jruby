@@ -42,8 +42,8 @@ public abstract class MethodDefNode extends Node implements INameNode {
 	protected final Node bodyNode;
 
 	public MethodDefNode(ISourcePosition position, ArgumentNode nameNode, ArgsNode argsNode, 
-	        StaticScope scope, Node bodyNode, NodeType id) {
-            super(position, id);
+	        StaticScope scope, Node bodyNode) {
+            super(position);
             
             // TODO: Adding implicit nils caused multiple problems in compiler -- revist after landing
             //assert bodyNode != null : "bodyNode is not null";

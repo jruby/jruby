@@ -51,9 +51,13 @@ public class MultipleAsgnNode extends AssignableNode {
     private final Node argsNode;
     
     public MultipleAsgnNode(ISourcePosition position, ListNode headNode, Node argsNode) {
-        super(position, NodeType.MULTIPLEASGNNODE);
+        super(position);
         this.headNode = headNode;
         this.argsNode = argsNode;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.MULTIPLEASGNNODE;
     }
     
     /**
@@ -98,7 +102,7 @@ public class MultipleAsgnNode extends AssignableNode {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        switch (getValueNode().nodeId) {
+        switch (getValueNode().getNodeType()) {
         case ARRAYNODE: {
             ArrayNode iVisited2 = (ArrayNode) getValueNode();
             return ASTInterpreter.multipleAsgnArrayNode(runtime, context, this, iVisited2, self, aBlock);

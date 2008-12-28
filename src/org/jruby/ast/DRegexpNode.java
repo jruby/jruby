@@ -61,10 +61,14 @@ public class DRegexpNode extends ListNode implements ILiteralNode {
     }
 
     public DRegexpNode(ISourcePosition position, int options, boolean once) {
-        super(position, NodeType.DREGEXPNODE);
+        super(position);
 
         this.options = options;
         this.once = once;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.DREGEXPNODE;
     }
 
     /**

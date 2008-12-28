@@ -50,8 +50,12 @@ public class XStrNode extends Node implements ILiteralNode {
     private final ByteList value;
 
     public XStrNode(ISourcePosition position, ByteList value) {
-        super(position, NodeType.XSTRNODE);
+        super(position);
         this.value = (value == null ? ByteList.create("") : value);
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.XSTRNODE;
     }
 
     /**

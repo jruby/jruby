@@ -48,8 +48,12 @@ public class UndefNode extends Node {
     private String name;
 
     public UndefNode(ISourcePosition position, String name) {
-        super(position, NodeType.UNDEFNODE);
+        super(position);
         this.name = name;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.UNDEFNODE;
     }
     
     /**

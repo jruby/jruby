@@ -49,13 +49,17 @@ public class RescueBodyNode extends Node {
     private final RescueBodyNode optRescueNode;
 
     public RescueBodyNode(ISourcePosition position, Node exceptionNodes, Node bodyNode, RescueBodyNode optRescueNode) {
-        super(position, NodeType.RESCUEBODYNODE);
+        super(position);
         
        assert bodyNode != null : "bodyNode is not null";
         
         this.exceptionNodes = exceptionNodes;
         this.bodyNode = bodyNode;
         this.optRescueNode = optRescueNode;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.RESCUEBODYNODE;
     }
 
     /**

@@ -49,7 +49,11 @@ import org.jruby.runtime.Arity;
  */
 public class ZeroArgNode extends Node implements IArityNode {
     public ZeroArgNode(ISourcePosition position) {
-        super(position, NodeType.ZEROARGNODE);
+        super(position);
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.ZEROARGNODE;
     }
 
     /**

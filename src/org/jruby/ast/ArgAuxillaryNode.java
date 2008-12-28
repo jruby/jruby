@@ -39,9 +39,13 @@ public class ArgAuxillaryNode extends Node {
     private int offset;
 
     public ArgAuxillaryNode(ISourcePosition position, String name, int offset) {
-        super(position, NodeType.ARGAUXILIARYNODE);
+        super(position);
         this.name = name;
         this.offset = offset;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.ARGAUXILIARYNODE;
     }
 
     public int getOffset() {

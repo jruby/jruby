@@ -69,7 +69,7 @@ public class WhileNode extends Node {
 
     public WhileNode(ISourcePosition position, Node conditionNode, Node bodyNode,
             boolean evalAtStart) {
-        super(position, NodeType.WHILENODE);
+        super(position);
         
         assert conditionNode != null : "conditionNode is not null";
         assert bodyNode != null : "bodyNode is not null";
@@ -77,6 +77,10 @@ public class WhileNode extends Node {
         this.conditionNode = conditionNode;
         this.bodyNode = bodyNode;
         this.evaluateAtStart = evalAtStart;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.WHILENODE;
     }
     
     /**

@@ -44,12 +44,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 public abstract class AssignableNode extends Node implements IArityNode {
     private Node valueNode;
     
-    public AssignableNode(ISourcePosition position, NodeType id) {
-        super(position, id);
+    public AssignableNode(ISourcePosition position) {
+        super(position);
     }
     
-    public AssignableNode(ISourcePosition position, NodeType id, Node valueNode) {
-        super(position, id);
+    public AssignableNode(ISourcePosition position, Node valueNode) {
+        super(position);
         
         assert valueNode != null : "valueNode is not null";
         

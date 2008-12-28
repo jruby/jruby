@@ -57,11 +57,15 @@ public class NewlineNode extends Node {
     private final Node nextNode;
 
     public NewlineNode(ISourcePosition position, Node nextNode) {
-        super(position, NodeType.NEWLINENODE);
+        super(position);
 
         assert nextNode != null : "nextNode is not null";
         
         this.nextNode = nextNode;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.NEWLINENODE;
     }
 
     /**

@@ -99,7 +99,7 @@ public class AssignmentVisitor {
 
         Node argsNode = node.getArgsNode();
         if (argsNode != null) {
-            if (argsNode.nodeId == NodeType.STARNODE) {
+            if (argsNode.getNodeType() == NodeType.STARNODE) {
                 // no check for '*'
             } else if (varLen < valueLen) {
                 argsNode.assign(runtime, context, self, value.subseqLight(varLen, valueLen), Block.NULL_BLOCK, checkArity);
@@ -132,7 +132,7 @@ public class AssignmentVisitor {
 
         Node rest = node.getRest();
         if (rest != null) {
-            if (rest.nodeId == NodeType.STARNODE) {
+            if (rest.getNodeType() == NodeType.STARNODE) {
                 // no check for '*'
             } else if (preCount + postCount < valueLen) {
                 rest.assign(runtime, context, self, value.subseqLight(preCount, valueLen - preCount - postCount), Block.NULL_BLOCK, false);

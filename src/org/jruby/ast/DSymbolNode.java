@@ -47,7 +47,7 @@ public class DSymbolNode extends ListNode {
      * @param node to be copied
      */
     public DSymbolNode(ISourcePosition position, DStrNode node) {
-        super(position, NodeType.DSYMBOLNODE);
+        super(position);
         
         assert node != null : "node is not null";
         
@@ -55,7 +55,11 @@ public class DSymbolNode extends ListNode {
     }
     
     public DSymbolNode(ISourcePosition position) {
-        super(position, NodeType.DSYMBOLNODE);
+        super(position);
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.DSYMBOLNODE;
     }
 
     @Override

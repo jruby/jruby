@@ -45,7 +45,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class RetryNode extends Node {
     public RetryNode(ISourcePosition position) {
-        super(position, NodeType.RETRYNODE);
+        super(position);
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.RETRYNODE;
     }
 
     /**

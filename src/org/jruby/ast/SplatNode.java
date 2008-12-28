@@ -43,11 +43,15 @@ public class SplatNode extends Node {
     private final Node node;
 
     public SplatNode(ISourcePosition position, Node node) {
-        super(position, NodeType.SPLATNODE);
+        super(position);
         
         assert node != null : "node is not null";
         
         this.node = node;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.SPLATNODE;
     }
 
     public Object accept(NodeVisitor visitor) {

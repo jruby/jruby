@@ -51,9 +51,13 @@ public class VCallNode extends Node implements INameNode {
     public final CallSite callAdapter;
 
     public VCallNode(ISourcePosition position, String name) {
-        super(position, NodeType.VCALLNODE);
+        super(position);
 
         this.callAdapter = MethodIndex.getVariableCallSite(name);
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.VCALLNODE;
     }
     
     /**

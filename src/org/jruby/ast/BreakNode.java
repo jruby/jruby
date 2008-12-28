@@ -48,11 +48,15 @@ public class BreakNode extends Node {
     private final Node valueNode;
     
     public BreakNode(ISourcePosition position, Node valueNode) {
-        super(position, NodeType.BREAKNODE);
+        super(position);
         
         assert valueNode != null : "valueNode is not null";
         
         this.valueNode = valueNode;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.BREAKNODE;
     }
 
     /**

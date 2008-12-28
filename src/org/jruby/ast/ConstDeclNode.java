@@ -53,10 +53,14 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
 
     // TODO: Split this into two sub-classes so that name and constNode can be specified seperately.
     public ConstDeclNode(ISourcePosition position, String name, INameNode constNode, Node valueNode) {
-        super(position, NodeType.CONSTDECLNODE, valueNode);
+        super(position, valueNode);
         
         this.name = name;        
         this.constNode = constNode;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.CONSTDECLNODE;
     }
 
     /**
@@ -94,7 +98,7 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
         
         if (constNode == null) {
             return context.setConstantInCurrent(name, result);
-        } else if (((Node)constNode).nodeId == NodeType.COLON2NODE) {
+        } else if (((Node)constNode).getNodeType() == NodeType.COLON2NODE) {
             Node leftNode = ((Colon2Node) constNode).getLeftNode();
             
             assert leftNode != null : "leftNode is not null";

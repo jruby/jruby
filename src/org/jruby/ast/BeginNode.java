@@ -47,11 +47,15 @@ public class BeginNode extends Node {
     private final Node bodyNode;
 
     public BeginNode(ISourcePosition position, Node bodyNode) {
-        super(position, NodeType.BEGINNODE);
+        super(position);
         
         assert bodyNode != null : "bodyNode is not null";
         
         this.bodyNode = bodyNode;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.BEGINNODE;
     }
 
     /**

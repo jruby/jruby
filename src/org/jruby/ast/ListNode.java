@@ -49,21 +49,21 @@ public class ListNode extends Node {
      * @param id type of listnode
      * @param firstNode first element of the list
      */
-    public ListNode(ISourcePosition position, NodeType id, Node firstNode) {
-        this(position, id);
+    public ListNode(ISourcePosition position, Node firstNode) {
+        this(position);
         
         list = new ArrayList<Node>(4);
         list.add(firstNode);
     }
     
-    public ListNode(ISourcePosition position, NodeType id) {
-        super(position, id);
+    public ListNode(ISourcePosition position) {
+        super(position);
         
         list = new ArrayList<Node>(0);
     }
 
-    public ListNode(ISourcePosition position) {
-        this(position, NodeType.LISTNODE);
+    public NodeType getNodeType() {
+        return NodeType.LISTNODE;
     }
     
     public ListNode add(Node node) {

@@ -46,7 +46,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class RedoNode extends Node {
     public RedoNode(ISourcePosition position) {
-        super(position, NodeType.REDONODE);
+        super(position);
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.REDONODE;
     }
 
     /**

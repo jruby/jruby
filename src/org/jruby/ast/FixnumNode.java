@@ -50,12 +50,16 @@ public class FixnumNode extends Node implements ILiteralNode {
     private RubyFixnum fixnum;
 
     public FixnumNode(ISourcePosition position, long value) {
-        super(position, NodeType.FIXNUMNODE);
+        super(position);
         this.value = value;
     }
 
     public Object accept(NodeVisitor iVisitor) {
         return iVisitor.visitFixnumNode(this);
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.FIXNUMNODE;
     }
 
     /**

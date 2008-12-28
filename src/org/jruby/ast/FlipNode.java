@@ -55,7 +55,7 @@ public class FlipNode extends Node {
     private final int location;
     
     public FlipNode(ISourcePosition position, Node beginNode, Node endNode, boolean exclusive, int location) {
-        super(position, NodeType.FLIPNODE);
+        super(position);
         
         assert beginNode != null : "beginNode is not null";
         assert endNode != null : "endNode is not null";
@@ -64,6 +64,10 @@ public class FlipNode extends Node {
         this.endNode = endNode;
         this.exclusive = exclusive;
         this.location = location;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.FLIPNODE;
     }
 
     /**

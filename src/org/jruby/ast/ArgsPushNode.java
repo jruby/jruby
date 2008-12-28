@@ -43,13 +43,17 @@ public class ArgsPushNode extends Node {
     private Node secondNode;
     
     public ArgsPushNode(ISourcePosition position, Node firstNode, Node secondNode) {
-        super(position, NodeType.ARGSPUSHNODE);
+        super(position);
         
         assert firstNode != null : "ArgsPushNode.first == null";
         assert secondNode != null : "ArgsPushNode.second == null";
         
         this.firstNode = firstNode;
         this.secondNode = secondNode;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.ARGSPUSHNODE;
     }
 
     public Object accept(NodeVisitor visitor) {

@@ -48,7 +48,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class ZArrayNode extends Node implements ILiteralNode {
     public ZArrayNode(ISourcePosition position) {
-        super(position, NodeType.ZARRAYNODE);
+        super(position);
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.ZARRAYNODE;
     }
 
     /**

@@ -47,7 +47,11 @@ import org.jruby.util.ByteList;
  */
 public class DStrNode extends ListNode implements ILiteralNode {
     public DStrNode(ISourcePosition position) {
-        super(position, NodeType.DSTRNODE);
+        super(position);
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.DSTRNODE;
     }
 
     /**

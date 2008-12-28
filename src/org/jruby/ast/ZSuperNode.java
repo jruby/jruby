@@ -52,7 +52,11 @@ public class ZSuperNode extends Node implements IArityNode, BlockAcceptingNode {
     private Node iterNode;
 
     public ZSuperNode(ISourcePosition position) {
-        super(position, NodeType.ZSUPERNODE);
+        super(position);
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.ZSUPERNODE;
     }
 
     /**

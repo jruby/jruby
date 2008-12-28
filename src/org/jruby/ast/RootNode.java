@@ -53,13 +53,17 @@ public class RootNode extends Node {
     private Node bodyNode;
 
     public RootNode(ISourcePosition position, DynamicScope scope, Node bodyNode) {
-        super(position, NodeType.ROOTNODE);
+        super(position);
         
         assert bodyNode != null : "bodyNode is not null";
         
         this.scope = scope;
         this.staticScope = scope.getStaticScope();
         this.bodyNode = bodyNode;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.ROOTNODE;
     }
     
     /**

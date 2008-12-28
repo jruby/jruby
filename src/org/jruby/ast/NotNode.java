@@ -47,11 +47,15 @@ public class NotNode extends Node {
     private final Node conditionNode;
 
     public NotNode(ISourcePosition position, Node conditionNode) {
-        super(position, NodeType.NOTNODE);
+        super(position);
         
         assert conditionNode != null : "conditionNode is not null";
         
         this.conditionNode = conditionNode;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.NOTNODE;
     }
 
     /**

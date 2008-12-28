@@ -52,7 +52,7 @@ public class ModuleNode extends Node implements IScopingNode {
     private final Node bodyNode;
 
     public ModuleNode(ISourcePosition position, Colon3Node cpath, StaticScope scope, Node bodyNode) {
-        super(position, NodeType.MODULENODE);
+        super(position);
 
         assert cpath != null : "cpath is not null";
         assert scope != null : "scope is not null";
@@ -61,6 +61,10 @@ public class ModuleNode extends Node implements IScopingNode {
         this.cpath = cpath;
         this.scope = scope;
         this.bodyNode = bodyNode;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.MODULENODE;
     }
 
     /**

@@ -53,8 +53,12 @@ public class BlockPassNode extends Node {
     private Node argsNode;
 
     public BlockPassNode(ISourcePosition position, Node bodyNode) {
-        super(position, NodeType.BLOCKPASSNODE);
+        super(position);
         this.bodyNode = bodyNode;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.BLOCKPASSNODE;
     }
 
     /**

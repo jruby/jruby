@@ -46,13 +46,17 @@ public class OpAsgnAndNode extends Node implements BinaryOperatorNode {
     private final Node secondNode;
 
     public OpAsgnAndNode(ISourcePosition position, Node headNode, Node valueNode) {
-        super(position, NodeType.OPASGNANDNODE);
+        super(position);
         
         assert headNode != null : "headNode is not null";
         assert valueNode != null : "valueNode is not null";
         
         firstNode = headNode;
         secondNode = valueNode;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.OPASGNANDNODE;
     }
 
     /**

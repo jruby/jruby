@@ -50,9 +50,13 @@ public class GlobalAsgnNode extends AssignableNode implements INameNode {
     private String name;
 
     public GlobalAsgnNode(ISourcePosition position, String name, Node valueNode) {
-        super(position, NodeType.GLOBALASGNNODE, valueNode);
+        super(position, valueNode);
 
         this.name = name;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.GLOBALASGNNODE;
     }
     
     /**

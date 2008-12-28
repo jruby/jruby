@@ -48,11 +48,15 @@ public class DefinedNode extends Node {
     private final Node expressionNode;
 
     public DefinedNode(ISourcePosition position, Node expressionNode) {
-        super(position, NodeType.DEFINEDNODE);
+        super(position);
         
         assert expressionNode != null : "expressionNode is not null";
         
         this.expressionNode = expressionNode;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.DEFINEDNODE;
     }
 
     /**

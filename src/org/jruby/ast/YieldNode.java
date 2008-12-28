@@ -48,7 +48,7 @@ public class YieldNode extends Node {
     private final boolean checkState;
 
     public YieldNode(ISourcePosition position, Node argsNode, boolean checkState) {
-        super(position, NodeType.YIELDNODE);
+        super(position);
         
         // block.yield depends on null to represent empty and nil to represent nil - [nil] vs []
         //assert argsNode != null : "argsNode is not null";
@@ -59,6 +59,10 @@ public class YieldNode extends Node {
             ((ArrayNode)argsNode).setLightweight(true);
         }
         this.checkState = checkState;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.YIELDNODE;
     }
 
     /**

@@ -48,13 +48,17 @@ public class AndNode extends Node implements BinaryOperatorNode {
     private final Node secondNode;
 
     public AndNode(ISourcePosition position, Node firstNode, Node secondNode) {
-        super(position, NodeType.ANDNODE);
+        super(position);
         
         assert firstNode != null : "AndNode.first == null";
         assert secondNode != null : "AndNode.second == null";
         
         this.firstNode = firstNode;
         this.secondNode = secondNode;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.ANDNODE;
     }
 
     public Object accept(NodeVisitor iVisitor) {

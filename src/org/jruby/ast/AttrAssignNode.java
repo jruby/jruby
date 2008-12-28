@@ -59,7 +59,7 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
     public CallSite normalCallAdapter;
 
     public AttrAssignNode(ISourcePosition position, Node receiverNode, String name, Node argsNode) {
-        super(position, NodeType.ATTRASSIGNNODE);
+        super(position);
         
         assert receiverNode != null : "receiverNode is not null";
         // TODO: At least ParserSupport.attrset passes argsNode as null.  ImplicitNil is wrong magic for 
@@ -72,6 +72,10 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
         setArgsInternal(argsNode);
         this.normalCallAdapter = MethodIndex.getCallSite(name);
         this.variableCallAdapter = MethodIndex.getVariableCallSite(name);
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.ATTRASSIGNNODE;
     }
 
     /**

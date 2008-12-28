@@ -49,13 +49,17 @@ public class ArrayNode extends ListNode implements ILiteralNode {
     private boolean lightweight = false;
     
     public ArrayNode(ISourcePosition position, Node firstNode) {
-        super(position, NodeType.ARRAYNODE, firstNode);
+        super(position, firstNode);
         
         assert firstNode != null : "ArrayNode.first == null";
     }
 
     public ArrayNode(ISourcePosition position) {
-        super(position, NodeType.ARRAYNODE);
+        super(position);
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.ARRAYNODE;
     }
 
     /**

@@ -55,14 +55,9 @@ public class IterNode extends Node {
     // What static scoping relationship exists when it comes into being.
     private StaticScope scope;
     private BlockBody blockBody;
-
-    public IterNode(ISourcePosition position, Node varNode, StaticScope scope, Node bodyNode) {
-        this(position, varNode, scope, bodyNode, NodeType.ITERNODE);
-    }
     
-    public IterNode(ISourcePosition position, Node varNode, StaticScope scope, Node bodyNode, 
-            NodeType id) {
-        super(position, id);
+    public IterNode(ISourcePosition position, Node varNode, StaticScope scope, Node bodyNode) {
+        super(position);
         this.varNode = varNode;
         this.scope = scope;
         this.bodyNode = bodyNode;
@@ -71,16 +66,16 @@ public class IterNode extends Node {
     }
 
     public IterNode(ISourcePosition position, ArgsNode args, Node body, StaticScope scope) {
-        this(position, args, body, scope, NodeType.ITERNODE);
-    }
-
-    public IterNode(ISourcePosition position, ArgsNode args, Node body, StaticScope scope, NodeType nodeType) {
-        super(position, nodeType);
+        super(position);
 
         this.varNode = args;
         this.bodyNode = body;
         this.scope = scope;
         this.blockBody = new Interpreted19Block(this);
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.ITERNODE;
     }
 
     /**

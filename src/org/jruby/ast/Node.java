@@ -50,58 +50,16 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * Base class for all Nodes in the AST
  */
-public abstract class Node implements ISourcePositionHolder {
-    // For nodes which are added to the AST which are not proper syntactical elements.
-    public static final ISourcePosition INVALID_POSITION = new ISourcePosition() {
-        public String getFile() {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        public int getStartLine() {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        public int getEndLine() {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        public void adjustStartOffset(int relativeValue) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        public int getStartOffset() {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        public int getEndOffset() {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        public ISourcePosition union(ISourcePosition position) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        public Collection<CommentNode> getComments() {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        public void setComments(Collection<CommentNode> comments) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        
-    };
-    
+public abstract class Node implements ISourcePositionHolder {    
     // We define an actual list to get around bug in java integration (1387115)
     static final List<Node> EMPTY_LIST = new ArrayList<Node>();
     public static final List<CommentNode> EMPTY_COMMENT_LIST = new ArrayList<CommentNode>();
     
-    public final NodeType nodeId;
     private ISourcePosition position;
 
-    public Node(ISourcePosition position, NodeType id) {
+    public Node(ISourcePosition position) {
         assert position != null;
         this.position = position;
-        this.nodeId = id;
     }
 
     /**
@@ -224,4 +182,9 @@ public abstract class Node implements ISourcePositionHolder {
 
         return null;
     }
+
+    /**
+     * @return the nodeId
+     */
+    public abstract NodeType getNodeType();
 }

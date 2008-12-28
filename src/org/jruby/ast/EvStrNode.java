@@ -51,8 +51,12 @@ public class EvStrNode extends Node {
     private final Node body;
 
     public EvStrNode(ISourcePosition position, Node body) {
-        super(position, NodeType.EVSTRNODE);
+        super(position);
         this.body = body;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.EVSTRNODE;
     }
 
     /**

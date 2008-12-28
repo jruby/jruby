@@ -61,7 +61,7 @@ public class OpElementAsgnNode extends Node {
     public final CallSite elementAsgnAdapter;
 
     public OpElementAsgnNode(ISourcePosition position, Node receiverNode, String operatorName, Node argsNode, Node valueNode) {
-        super(position, NodeType.OPELEMENTASGNNODE);
+        super(position);
         
         assert receiverNode != null : "receiverNode is not null";
         assert valueNode != null : "valueNode is not null";
@@ -75,6 +75,10 @@ public class OpElementAsgnNode extends Node {
         callAdapter = MethodIndex.getCallSite(operatorName);
         elementAdapter = MethodIndex.getFunctionalCallSite("[]");
         elementAsgnAdapter = MethodIndex.getFunctionalCallSite("[]=");
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.OPELEMENTASGNNODE;
     }
     
     /**

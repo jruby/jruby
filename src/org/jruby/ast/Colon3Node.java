@@ -49,15 +49,14 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class Colon3Node extends Node implements INameNode {
     protected String name;
-
+    
     public Colon3Node(ISourcePosition position, String name) {
-        super(position, NodeType.COLON3NODE);
+        super(position);
         this.name = name;
     }
-    
-    public Colon3Node(ISourcePosition position, NodeType id, String name) {
-        super(position, id);
-        this.name = name;
+
+    public NodeType getNodeType() {
+        return NodeType.COLON3NODE;
     }
     
     /**

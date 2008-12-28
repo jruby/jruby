@@ -43,8 +43,12 @@ public class OptArgNode extends Node {
     private Node value;
 
     public OptArgNode(ISourcePosition position, Node value) {
-        super(position, NodeType.OPTARGNODE);
+        super(position);
         this.value = value;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.OPTARGNODE;
     }
 
     public Node getValue() {

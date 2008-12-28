@@ -85,7 +85,7 @@ public class ArgsNode extends Node {
      **/
     public ArgsNode(ISourcePosition position, ListNode pre, ListNode optionalArguments,
             RestArgNode rest, ListNode post, BlockArgNode blockArgNode) {
-        super(position, NodeType.ARGSNODE);
+        super(position);
 
         this.pre = pre;
         this.preCount = pre == null ? 0 : pre.size();
@@ -100,6 +100,10 @@ public class ArgsNode extends Node {
         this.hasOptArgs = getOptArgs() != null;
         this.maxArgsCount = getRestArg() >= 0 ? -1 : getRequiredArgsCount() + getOptionalArgsCount();
         this.arity = calculateArity();
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.ARGSNODE;
     }
 
     protected Arity calculateArity() {

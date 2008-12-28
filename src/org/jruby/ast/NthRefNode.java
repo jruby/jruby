@@ -49,8 +49,12 @@ public class NthRefNode extends Node {
     private final int matchNumber;
 
     public NthRefNode(ISourcePosition position, int matchNumber) {
-        super(position, NodeType.NTHREFNODE);
+        super(position);
         this.matchNumber = matchNumber;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.NTHREFNODE;
     }
 
     /**

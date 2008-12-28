@@ -48,11 +48,15 @@ public class ReturnNode extends Node {
     private Object target;
 
     public ReturnNode(ISourcePosition position, Node valueNode) {
-        super(position, NodeType.RETURNNODE);
+        super(position);
         
         assert valueNode != null : "valueNode is not null";
         
         this.valueNode = valueNode;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.RETURNNODE;
     }
 
     /**

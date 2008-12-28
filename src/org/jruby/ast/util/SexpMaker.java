@@ -108,7 +108,7 @@ public class SexpMaker {
     }
     
     private void leafInfo(Node node) {
-        switch (node.nodeId) {
+        switch (node.getNodeType()) {
         case ALIASNODE: aliasNode((AliasNode) node); break;
         case ANDNODE: nothing(node); break;
         case ARGSCATNODE: nothing(node); break;

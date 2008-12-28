@@ -53,7 +53,7 @@ public class DotNode extends Node {
 
     public DotNode(ISourcePosition position, Node beginNode, Node endNode, boolean exclusive, 
             boolean isLiteral) {
-        super(position, NodeType.DOTNODE);
+        super(position);
         
         assert beginNode != null : "beginNode is not null";
         assert endNode != null : "endNode is not null";
@@ -62,6 +62,10 @@ public class DotNode extends Node {
         this.endNode = endNode;
         this.exclusive = exclusive;
         this.isLiteral = isLiteral;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.DOTNODE;
     }
 
     /**

@@ -53,8 +53,12 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode {
     private RubySymbol symbol;
 
     public SymbolNode(ISourcePosition position, String name) {
-	    super(position, NodeType.SYMBOLNODE);
+	    super(position);
 	    this.name = name;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.SYMBOLNODE;
     }
 
     public Object accept(NodeVisitor iVisitor) {

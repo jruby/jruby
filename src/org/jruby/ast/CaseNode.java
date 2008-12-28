@@ -57,7 +57,7 @@ public class CaseNode extends Node {
     private final Node caseBody;
     
     public CaseNode(ISourcePosition position, Node caseNode, Node caseBody) {
-        super(position, NodeType.CASENODE);
+        super(position);
         
         assert caseBody != null : "caseBody is not null";
         // TODO: Rewriter and compiler assume case when empty expression.  In MRI this is just
@@ -66,6 +66,10 @@ public class CaseNode extends Node {
         
         this.caseNode = caseNode;
         this.caseBody = caseBody;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.CASENODE;
     }
 
  	/**

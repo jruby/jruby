@@ -45,9 +45,13 @@ public class CommentNode extends Node {
     String content;
 
     public CommentNode(ISourcePosition position, String content) {
-        super(position, NodeType.COMMENTNODE);
+        super(position);
 
         this.content = content;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.COMMENTNODE;
     }
 
     public Object accept(NodeVisitor visitor) {

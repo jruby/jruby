@@ -50,7 +50,7 @@ public class IfNode extends Node {
     private final Node elseBody;
 
     public IfNode(ISourcePosition position, Node condition, Node thenBody, Node elseBody) {
-        super(position, NodeType.IFNODE);
+        super(position);
         
         assert condition != null : "condition is not null";
 //        assert thenBody != null : "thenBody is not null";
@@ -59,6 +59,10 @@ public class IfNode extends Node {
         this.condition = condition;
         this.thenBody = thenBody;
         this.elseBody = elseBody;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.IFNODE;
     }
 
     /**

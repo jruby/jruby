@@ -43,7 +43,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class LambdaNode extends IterNode {
     public LambdaNode(ISourcePosition position, ArgsNode args, Node body, StaticScope scope) {
-        super(position, args, body, scope, NodeType.LAMBDANODE);
+        super(position, args, body, scope);
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.LAMBDANODE;
     }
 
     public ArgsNode getArgs() {

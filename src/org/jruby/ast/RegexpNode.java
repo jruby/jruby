@@ -52,10 +52,14 @@ public class RegexpNode extends Node implements ILiteralNode {
     private final int options;
 
     public RegexpNode(ISourcePosition position, ByteList value, int options) {
-        super(position, NodeType.REGEXPNODE);
+        super(position);
 
         this.value = value;
         this.options = options;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.REGEXPNODE;
     }
 
     public Object accept(NodeVisitor iVisitor) {

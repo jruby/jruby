@@ -101,4 +101,43 @@ public interface ISourcePosition {
      */
     public Collection<CommentNode> getComments();
     public void setComments(Collection<CommentNode> comments);
+
+    /** For nodes which are added to the AST which are not proper syntactical elements. */
+    public static final ISourcePosition INVALID_POSITION = new ISourcePosition() {
+        public String getFile() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public int getStartLine() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public int getEndLine() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public void adjustStartOffset(int relativeValue) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public int getStartOffset() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public int getEndOffset() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public ISourcePosition union(ISourcePosition position) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public Collection<CommentNode> getComments() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public void setComments(Collection<CommentNode> comments) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+    };
 }

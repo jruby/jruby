@@ -47,7 +47,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class TrueNode extends Node implements INameNode {
     public TrueNode(ISourcePosition position) {
-        super(position, NodeType.TRUENODE);
+        super(position);
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.TRUENODE;
     }
 
     /**

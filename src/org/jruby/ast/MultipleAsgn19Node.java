@@ -50,7 +50,7 @@ public class MultipleAsgn19Node extends AssignableNode {
     private final Arity arity;
 
     public MultipleAsgn19Node(ISourcePosition position, ListNode pre, Node rest, ListNode post) {
-        super(position, NodeType.MULTIPLEASGN19NODE);
+        super(position);
         this.pre = pre;
         this.rest = rest;
         this.post = post;
@@ -60,6 +60,10 @@ public class MultipleAsgn19Node extends AssignableNode {
         } else {
             arity = Arity.fixed(getPreCount() + getPostCount());
         }
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.MULTIPLEASGN19NODE;
     }
 
     public Object accept(NodeVisitor iVisitor) {

@@ -53,9 +53,13 @@ public class LocalVarNode extends Node implements INameNode {
     private final int location;
 
     public LocalVarNode(ISourcePosition position, int location, String name) {
-        super(position, NodeType.LOCALVARNODE);
+        super(position);
         this.location = location;
         this.name = name;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.LOCALVARNODE;
     }
 
     /**

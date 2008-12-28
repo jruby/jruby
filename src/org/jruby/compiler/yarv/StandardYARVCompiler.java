@@ -294,7 +294,7 @@ public class StandardYARVCompiler {
         debugs("[compile step 1 (traverse each node)]");
         
         /* KRI switched to making newline a flag of a node rather than a whole node */
-        while (node.nodeId == NodeType.NEWLINENODE) {
+        while (node.getNodeType() == NodeType.NEWLINENODE) {
             node = ((NewlineNode) node).getNextNode();
         }
         
@@ -333,7 +333,7 @@ public class StandardYARVCompiler {
         LinkAnchor args = null;
 
         compileLoop: while(true) {
-            switch(node.nodeId) {
+            switch(node.getNodeType()) {
             case BLOCKNODE:
                 List l = ((BlockNode)node).childNodes();
                 int sz = l.size();
@@ -444,7 +444,7 @@ public class StandardYARVCompiler {
                 recv = DECL_ANCHOR();
                 args = DECL_ANCHOR();
 
-                if (node.nodeId == NodeType.CALLNODE) {
+                if (node.getNodeType() == NodeType.CALLNODE) {
                     COMPILE(recv, "recv", ((CallNode)node).getReceiverNode());
                 } else {
                     ADD_CALL_RECEIVER(recv, nd_line(node));
@@ -462,7 +462,7 @@ public class StandardYARVCompiler {
                 ADD_SEQ(ret, recv);
                 ADD_SEQ(ret, args);
 
-                switch(node.nodeId) {
+                switch(node.getNodeType()) {
                 case VCALLNODE:
                     flags |= YARVInstructions.VCALL_FLAG;
                     /* VCALL is funcall, so fall through */
@@ -579,7 +579,7 @@ public class StandardYARVCompiler {
     }
 
     private int compile_branch_condition(LinkAnchor ret, Node cond, Label then_label, Label else_label) {
-        switch(cond.nodeId) {
+        switch(cond.getNodeType()) {
         case NOTNODE:
             compile_branch_condition(ret, ((NotNode)cond).getConditionNode(), else_label, then_label);
             break;
@@ -633,7 +633,7 @@ public class StandardYARVCompiler {
             List l = new ArrayList();
             for(Iterator iter = c.iterator(); iter.hasNext();) {
                 node = (Node)iter.next();
-                switch(node.nodeId) {
+                switch(node.getNodeType()) {
                 case FIXNUMNODE:
                     l.add(((FixnumNode)node).getFixnum(runtime));
                     break;
@@ -667,7 +667,7 @@ public class StandardYARVCompiler {
                 argn = blockPassNode.getArgsNode();
             }
 
-            switch(argn.nodeId) {
+            switch(argn.getNodeType()) {
             case SPLATNODE:
                 break;
             case ARGSCATNODE:

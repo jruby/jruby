@@ -46,13 +46,17 @@ public class ArgsCatNode extends Node {
     private final Node secondNode;
 
     public ArgsCatNode(ISourcePosition position, Node firstNode, Node secondNode) {
-        super(position, NodeType.ARGSCATNODE);
+        super(position);
         
         assert firstNode != null : "ArgsCatNode.first == null";
         assert secondNode != null : "ArgsCatNode.second == null";
 
         this.firstNode = firstNode;
         this.secondNode = secondNode;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.ARGSCATNODE;
     }
 
     public Object accept(NodeVisitor visitor) {

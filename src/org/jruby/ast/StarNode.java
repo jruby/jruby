@@ -47,7 +47,11 @@ public class StarNode extends Node {
      * Constructor for StarNode.
      */
     public StarNode(ISourcePosition position) {
-        super(position, NodeType.STARNODE);
+        super(position);
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.STARNODE;
     }
 
     /**

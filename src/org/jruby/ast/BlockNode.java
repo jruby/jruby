@@ -45,7 +45,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class BlockNode extends ListNode {
     public BlockNode(ISourcePosition position) {
-        super(position, NodeType.BLOCKNODE);
+        super(position);
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.BLOCKNODE;
     }
 
     /**

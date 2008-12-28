@@ -44,7 +44,7 @@ public class ASTCompiler19 extends ASTCompiler {
             context.loadNil();
             return;
         }
-        switch (node.nodeId) {
+        switch (node.getNodeType()) {
             case LAMBDANODE:
                 compileLambda(node, context);
                 break;
@@ -55,7 +55,7 @@ public class ASTCompiler19 extends ASTCompiler {
 
     @Override
     public void compileAssignment(Node node, BodyCompiler context,boolean expr) {
-        switch (node.nodeId) {
+        switch (node.getNodeType()) {
             case ARGSNODE:
                 if (((ArgsNode)node).getArity().getValue() != 0) {
                     throw new NotCompilableException("Can't compile args arity > 0 yet (1.9): " + node);

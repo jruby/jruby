@@ -70,7 +70,7 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
     
     public CallNode(ISourcePosition position, Node receiverNode, String name, Node argsNode, 
             Node iterNode) {
-        super(position, NodeType.CALLNODE);
+        super(position);
         
         assert receiverNode != null : "receiverNode is not null";
         
@@ -78,6 +78,10 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
         setArgsNode(argsNode);
         this.iterNode = iterNode;
         this.callAdapter = MethodIndex.getCallSite(name);
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.CALLNODE;
     }
     
     /**

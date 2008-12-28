@@ -54,7 +54,7 @@ public class ClassNode extends Node implements IScopingNode {
     private final Node superNode;
     
     public ClassNode(ISourcePosition position, Colon3Node cpath, StaticScope scope, Node bodyNode, Node superNode) {
-        super(position, NodeType.CLASSNODE);
+        super(position);
         
         assert cpath != null : "cpath is not null";
         assert scope != null : "scope is not null";
@@ -64,6 +64,10 @@ public class ClassNode extends Node implements IScopingNode {
         this.scope = scope;
         this.bodyNode = bodyNode;
         this.superNode = superNode;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.CLASSNODE;
     }
 
     /**

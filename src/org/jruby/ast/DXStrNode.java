@@ -46,12 +46,16 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class DXStrNode extends ListNode implements ILiteralNode {
     public DXStrNode(ISourcePosition position, DStrNode node) {
-        super(position, NodeType.DXSTRNODE);
+        super(position);
         addAll(node);
     }
     
     public DXStrNode(ISourcePosition position) {
-        super(position, NodeType.DXSTRNODE);
+        super(position);
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.DXSTRNODE;
     }
 
     /**

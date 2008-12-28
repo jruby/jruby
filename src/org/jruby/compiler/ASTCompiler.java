@@ -147,7 +147,7 @@ public class ASTCompiler {
             context.loadNil();
             return;
         }
-        switch (node.nodeId) {
+        switch (node.getNodeType()) {
             case ALIASNODE:
                 compileAlias(node, context);
                 break;
@@ -425,7 +425,7 @@ public class ASTCompiler {
     }
 
     public void compileArguments(Node node, BodyCompiler context) {
-        switch (node.nodeId) {
+        switch (node.getNodeType()) {
             case ARGSCATNODE:
                 compileArgsCatArguments(node, context);
                 break;
@@ -465,7 +465,7 @@ public class ASTCompiler {
         private Node node;
         
         public SpecificArityArguments(Node node) {
-            if (node.nodeId == NodeType.ARRAYNODE && ((ArrayNode)node).isLightweight()) {
+            if (node.getNodeType() == NodeType.ARRAYNODE && ((ArrayNode)node).isLightweight()) {
                 // only arrays that are "lightweight" are being used as args arrays
                 this.arity = ((ArrayNode)node).size();
             } else {
@@ -480,7 +480,7 @@ public class ASTCompiler {
         }
         
         public void call(BodyCompiler context) {
-            if (node.nodeId == NodeType.ARRAYNODE) {
+            if (node.getNodeType() == NodeType.ARRAYNODE) {
                 ArrayNode arrayNode = (ArrayNode)node;
                 if (arrayNode.isLightweight()) {
                     // explode array, it's an internal "args" array
@@ -502,10 +502,10 @@ public class ASTCompiler {
             return null;
         }
         // unwrap newline nodes to get their actual type
-        while (node.nodeId == NodeType.NEWLINENODE) {
+        while (node.getNodeType() == NodeType.NEWLINENODE) {
             node = ((NewlineNode)node).getNextNode();
         }
-        switch (node.nodeId) {
+        switch (node.getNodeType()) {
             case ARGSCATNODE:
             case ARGSPUSHNODE:
             case SPLATNODE:
@@ -525,7 +525,7 @@ public class ASTCompiler {
     }
 
     public void compileAssignment(Node node, BodyCompiler context, boolean expr) {
-        switch (node.nodeId) {
+        switch (node.getNodeType()) {
             case ATTRASSIGNNODE:
                 compileAttrAssignAssignment(node, context);
                 if (!expr) context.consumeCurrentValue();
@@ -1114,7 +1114,7 @@ public class ASTCompiler {
             compile(constDeclNode.getValueNode(), context);
 
             context.assignConstantInCurrent(constDeclNode.getName());
-        } else if (constNode.nodeId == NodeType.COLON2NODE) {
+        } else if (constNode.getNodeType() == NodeType.COLON2NODE) {
             compile(((Colon2Node) constNode).getLeftNode(), context);
             compile(constDeclNode.getValueNode(), context);
 
@@ -1133,7 +1133,7 @@ public class ASTCompiler {
 
         if (constNode == null) {
             context.assignConstantInCurrent(constDeclNode.getName());
-        } else if (constNode.nodeId == NodeType.COLON2NODE) {
+        } else if (constNode.getNodeType() == NodeType.COLON2NODE) {
             compile(((Colon2Node) constNode).getLeftNode(), context);
             context.swapValues();
             context.assignConstantInModule(constDeclNode.getName());
@@ -1192,7 +1192,7 @@ public class ASTCompiler {
     }
 
     public void compileGetDefinitionBase(final Node node, BodyCompiler context) {
-        switch (node.nodeId) {
+        switch (node.getNodeType()) {
         case CLASSVARASGNNODE:
         case CLASSVARDECLNODE:
         case CONSTDECLNODE:
@@ -1271,7 +1271,7 @@ public class ASTCompiler {
     }
 
     public void compileGetDefinition(final Node node, BodyCompiler context) {
-        switch (node.nodeId) {
+        switch (node.getNodeType()) {
             case CLASSVARASGNNODE:
             case CLASSVARDECLNODE:
             case CONSTDECLNODE:
@@ -2024,7 +2024,7 @@ public class ASTCompiler {
             return null;
         }
 
-        switch (node.nodeId) {
+        switch (node.getNodeType()) {
             case ITERNODE:
                 final IterNode iterNode = (IterNode) node;
 
@@ -2216,7 +2216,7 @@ public class ASTCompiler {
 
         NodeType argsNodeId = null;
         if (forNode.getVarNode() != null) {
-            argsNodeId = forNode.getVarNode().nodeId;
+            argsNodeId = forNode.getVarNode().getNodeType();
         }
 
         if (argsNodeId == null) {
@@ -2687,7 +2687,7 @@ public class ASTCompiler {
      * @return Whether the type of node represents a possibly undefined construct
      */
     private boolean needsDefinitionCheck(Node node) {
-        switch (node.nodeId) {
+        switch (node.getNodeType()) {
         case CLASSVARASGNNODE:
         case CLASSVARDECLNODE:
         case CONSTDECLNODE:
@@ -2799,7 +2799,7 @@ public class ASTCompiler {
         }
         
         public int getArity() {
-            switch (node.nodeId) {
+            switch (node.getNodeType()) {
             case ARGSCATNODE:
             case ARGSPUSHNODE:
             case SPLATNODE:
@@ -3120,7 +3120,7 @@ public class ASTCompiler {
 
         Node nextNode = rootNode.getBodyNode();
         if (nextNode != null) {
-            if (nextNode.nodeId == NodeType.BLOCKNODE) {
+            if (nextNode.getNodeType() == NodeType.BLOCKNODE) {
                 // it's a multiple-statement body, iterate over all elements in turn and chain if it get too long
                 BlockNode blockNode = (BlockNode) nextNode;
 
@@ -3395,7 +3395,7 @@ public class ASTCompiler {
      * @param node 
      */
     public static void confirmNodeIsSafe(Node node) {
-        switch (node.nodeId) {
+        switch (node.getNodeType()) {
             case ARGSNODE:
                 ArgsNode argsNode = (ArgsNode) node;
                 // FIXME: We can't compile cases like def(a=(b=1)) because the variables

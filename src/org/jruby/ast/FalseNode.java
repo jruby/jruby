@@ -47,7 +47,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class FalseNode extends Node implements INameNode {
     public FalseNode(ISourcePosition position) {
-        super(position, NodeType.FALSENODE);
+        super(position);
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.FALSENODE;
     }
 
     /**

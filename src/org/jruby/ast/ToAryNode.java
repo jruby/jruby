@@ -43,9 +43,13 @@ public class ToAryNode extends Node {
     private final Node node;
 
     public ToAryNode(ISourcePosition position, Node node) {
-        super(position, NodeType.TOARYNODE);
+        super(position);
 
         this.node = node;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.TOARYNODE;
     }
 
     public Object accept(NodeVisitor visitor) {

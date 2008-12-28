@@ -53,9 +53,13 @@ public class DVarNode extends Node implements INameNode {
     private int location;
 
     public DVarNode(ISourcePosition position, int location, String name) {
-        super(position, NodeType.DVARNODE);
+        super(position);
         this.location = location;
         this.name = name;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.DVARNODE;
     }
     
     /**

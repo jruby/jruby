@@ -47,7 +47,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class NilNode extends Node implements INameNode {
     public NilNode(ISourcePosition position) {
-        super(position, NodeType.NILNODE);
+        super(position);
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.NILNODE;
     }
 
     /**

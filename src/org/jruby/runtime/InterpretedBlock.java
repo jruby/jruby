@@ -223,7 +223,7 @@ public class InterpretedBlock extends BlockBody {
     private void setupBlockArgs(ThreadContext context, Node varNode, IRubyObject value, IRubyObject self) {
         Ruby runtime = context.getRuntime();
         
-        switch (varNode.nodeId) {
+        switch (varNode.getNodeType()) {
         case ZEROARGNODE:
             break;
         case MULTIPLEASGNNODE:
@@ -237,7 +237,7 @@ public class InterpretedBlock extends BlockBody {
     private void setupBlockArg(ThreadContext context, Node varNode, IRubyObject value, IRubyObject self) {
         Ruby runtime = context.getRuntime();
         
-        switch (varNode.nodeId) {
+        switch (varNode.getNodeType()) {
         case ZEROARGNODE:
             return;
         case MULTIPLEASGNNODE:

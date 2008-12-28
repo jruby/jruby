@@ -49,8 +49,12 @@ public class FloatNode extends Node implements ILiteralNode {
     private double value;
     
     public FloatNode(ISourcePosition position, double value) {
-        super(position, NodeType.FLOATNODE);
+        super(position);
         this.value = value;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.FLOATNODE;
     }
 
     public Object accept(NodeVisitor iVisitor) {

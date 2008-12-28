@@ -40,9 +40,13 @@ public class RestArgNode extends ArgumentNode implements INameNode {
     protected int index;
 
     public RestArgNode(ISourcePosition position, String name, int index) {
-        super(position, NodeType.RESTARG, name);
+        super(position, name);
 
         this.index = index;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.RESTARG;
     }
 
     @Override

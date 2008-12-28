@@ -230,7 +230,7 @@ public class ParserSupport {
      * @return an AST node representing this new variable
      */
     public Node gettable2(Node node) {
-        switch (node.nodeId) {
+        switch (node.getNodeType()) {
         case DASGNNODE: // LOCALVAR
         case LOCALASGNNODE:
             return currentScope.declare(node.getPosition(), ((INameNode) node).getName());
@@ -536,7 +536,7 @@ public class ParserSupport {
         breakLoop: do {
             if (node == null) return false;
 
-            switch (node.nodeId) {
+            switch (node.getNodeType()) {
             case NEWLINENODE:
                 node = ((NewlineNode) node).getNextNode();
                 continue breakLoop;
@@ -588,7 +588,7 @@ public class ParserSupport {
         do {
             if (node == null) return true;
             
-            switch (node.nodeId) {
+            switch (node.getNodeType()) {
             case BEGINNODE:
                 node = ((BeginNode) node).getBodyNode();
                 break;
@@ -643,7 +643,7 @@ public class ParserSupport {
         uselessLoop: do {
             if (node == null) return;
             
-            switch (node.nodeId) {
+            switch (node.getNodeType()) {
             case NEWLINENODE:
                 node = ((NewlineNode) node).getNextNode();
                 continue uselessLoop;
@@ -737,7 +737,7 @@ public class ParserSupport {
         Node rightNode = null;
 
         // FIXME: DSTR,EVSTR,STR: warning "string literal in condition"
-        switch(node.nodeId) {
+        switch(node.getNodeType()) {
         case DREGEXPNODE: {
             ISourcePosition position = node.getPosition();
 

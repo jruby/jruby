@@ -54,7 +54,7 @@ public class OpAsgnNode extends Node {
     public final CallSite variableAsgnCallAdapter;
 
     public OpAsgnNode(ISourcePosition position, Node receiverNode, Node valueNode, String variableName, String operatorName) {
-        super(position, NodeType.OPASGNNODE);
+        super(position);
         
         assert receiverNode != null : "receiverNode is not null";
         assert valueNode != null : "valueNode is not null";
@@ -64,6 +64,10 @@ public class OpAsgnNode extends Node {
         this.variableCallAdapter = MethodIndex.getCallSite(variableName);
         this.operatorCallAdapter = MethodIndex.getCallSite(operatorName);
         this.variableAsgnCallAdapter = MethodIndex.getCallSite((variableName + "=").intern());
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.OPASGNNODE;
     }
 
     /**

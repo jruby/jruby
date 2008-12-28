@@ -34,18 +34,14 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.CompatVersion;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.RubyModule;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.DynamicMethodFactory;
-import org.jruby.internal.runtime.methods.InterpretedMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
@@ -60,7 +56,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class DefnNode extends MethodDefNode implements INameNode {
     public DefnNode(ISourcePosition position, ArgumentNode nameNode, ArgsNode argsNode, 
             StaticScope scope, Node bodyNode) {
-        super(position, nameNode, argsNode, scope, bodyNode, NodeType.DEFNNODE);
+        super(position, nameNode, argsNode, scope, bodyNode);
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.DEFNNODE;
     }
 
     public Object accept(NodeVisitor iVisitor) {

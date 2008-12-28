@@ -48,11 +48,15 @@ public class NextNode extends Node {
     private final Node valueNode;
 
     public NextNode(ISourcePosition position, Node valueNode) {
-        super(position, NodeType.NEXTNODE);
+        super(position);
         
         assert valueNode != null : "valueNode is not null";
         
         this.valueNode = valueNode;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.NEXTNODE;
     }
     
     /**

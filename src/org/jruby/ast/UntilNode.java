@@ -57,8 +57,12 @@ public class UntilNode extends Node {
         this(position, conditionNode, bodyNode, true);
     }
 
+    public NodeType getNodeType() {
+        return NodeType.UNTILNODE;
+    }
+
     public UntilNode(ISourcePosition position, Node conditionNode, Node bodyNode, boolean evaluateAtStart) {
-        super(position, NodeType.UNTILNODE);
+        super(position);
         
         assert conditionNode != null : "conditionNode is not null";
         assert bodyNode != null : "bodyNode is not null";

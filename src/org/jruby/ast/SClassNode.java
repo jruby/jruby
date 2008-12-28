@@ -60,7 +60,7 @@ public class SClassNode extends Node {
     private final Node bodyNode;
 
     public SClassNode(ISourcePosition position, Node recvNode, StaticScope scope, Node bodyNode) {
-        super(position, NodeType.SCLASSNODE);
+        super(position);
         
         assert scope != null : "scope is not null";
         assert recvNode != null : "receiverNode is not null";
@@ -68,6 +68,10 @@ public class SClassNode extends Node {
         this.receiverNode = recvNode;
         this.scope = scope;
         this.bodyNode = bodyNode;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.SCLASSNODE;
     }
 
     /**

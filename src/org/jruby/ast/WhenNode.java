@@ -54,13 +54,17 @@ public class WhenNode extends Node {
     public final CallSite eqq = MethodIndex.getFunctionalCallSite("===");
 
     public WhenNode(ISourcePosition position, Node expressionNodes, Node bodyNode, Node nextCase) {
-        super(position, NodeType.WHENNODE);
+        super(position);
         this.expressionNodes = expressionNodes;
 
         assert bodyNode != null : "bodyNode is not null";
         
         this.bodyNode = bodyNode;
         this.nextCase = nextCase;
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.WHENNODE;
     }
 
     /**

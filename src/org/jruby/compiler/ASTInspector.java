@@ -198,7 +198,7 @@ public class ASTInspector {
 
         if (node == null) return;
         
-        switch (node.nodeId) {
+        switch (node.getNodeType()) {
         case ALIASNODE:
             setFlag(METHOD);
             break;
@@ -331,7 +331,7 @@ public class ASTInspector {
             setFlag(FRAME_VISIBILITY);
             break;
         case DEFINEDNODE:
-            switch (((DefinedNode)node).getExpressionNode().nodeId) {
+            switch (((DefinedNode)node).getExpressionNode().getNodeType()) {
             case CLASSVARASGNNODE:
             case CLASSVARDECLNODE:
             case CONSTDECLNODE:
@@ -504,7 +504,7 @@ public class ASTInspector {
             inspect(opAsgnNode.getValueNode());
             break;
         case OPASGNORNODE:
-            switch (((OpAsgnOrNode)node).getFirstNode().nodeId) {
+            switch (((OpAsgnOrNode)node).getFirstNode().getNodeType()) {
             case CLASSVARASGNNODE:
             case CLASSVARDECLNODE:
             case CONSTDECLNODE:

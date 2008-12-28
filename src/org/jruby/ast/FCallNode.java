@@ -60,10 +60,14 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
     }
     
     protected FCallNode(ISourcePosition position, String name, Node argsNode, Node iterNode) {
-        super(position, NodeType.FCALLNODE);
+        super(position);
         setArgsNode(argsNode);
         this.iterNode = iterNode;
         this.callAdapter = MethodIndex.getFunctionalCallSite(name);
+    }
+
+    public NodeType getNodeType() {
+        return NodeType.FCALLNODE;
     }
     
     /**
