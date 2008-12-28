@@ -196,7 +196,7 @@ public class RubyProc extends RubyObject implements JumpTarget {
         assert args != null;
         
         Ruby runtime = getRuntime();
-        Block newBlock = block.cloneBlock();
+        Block newBlock = block;//.cloneBlock();
         JumpTarget jumpTarget = newBlock.getBinding().getFrame().getJumpTarget();
         
         try {
