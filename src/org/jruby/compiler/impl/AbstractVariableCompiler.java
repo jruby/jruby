@@ -151,8 +151,7 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
             }
 
             if (needsError) {
-                method.invokestatic(p(Arity.class), "checkArgumentCount", sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
-                method.pop();
+                method.invokestatic(p(Arity.class), "raiseArgumentError", sig(void.class, Ruby.class, IRubyObject[].class, int.class, int.class));
             }
         }
     }

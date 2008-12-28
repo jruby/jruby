@@ -243,6 +243,10 @@ public final class Arity implements Serializable {
         return checkArgumentCount(runtime, args.length, min, max);
     }
 
+    public static void raiseArgumentError(Ruby runtime, IRubyObject[] args, int min, int max) {
+        raiseArgumentError(runtime, args.length, min, max);
+    }
+
     public static int checkArgumentCount(Ruby runtime, int length, int min, int max) {
         int expected = 0;
         if (length < min) {
