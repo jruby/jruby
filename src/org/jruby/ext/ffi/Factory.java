@@ -154,13 +154,6 @@ public abstract class Factory {
     public abstract <T> T loadLibrary(String libraryName, Class<T> libraryClass);
 
     /**
-     * Gets the platform info for this <tt>FFIProvider</tt>.
-     *
-     * @return A platform information instance.
-     */
-    public abstract Platform getPlatform();
-
-    /**
      * Wraps a {@link java.nio.ByteChannel} around a native file descriptor
      */
     public abstract ByteChannel newByteChannel(int fd);

@@ -33,13 +33,11 @@ import java.nio.channels.ByteChannel;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ext.ffi.FFIProvider;
-import org.jruby.ext.ffi.Platform;
 
 /**
  * An implementation of FFI for JNA
  */
 public class JNAFactory extends org.jruby.ext.ffi.Factory {
-    private final JNAPlatform platform = new JNAPlatform();
     
     @Override
     public void init(Ruby runtime, RubyModule ffi) {
@@ -76,10 +74,6 @@ public class JNAFactory extends org.jruby.ext.ffi.Factory {
         }
     }
 
-    @Override
-    public Platform getPlatform() {
-        return platform;
-    }
     public ByteChannel newByteChannel(int fd) {
         return new FileDescriptorByteChannel(fd);
     }

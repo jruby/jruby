@@ -39,10 +39,32 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *
  */
-public abstract class Platform {
+public class Platform {
+    public enum OS {
+        DARWIN,
+        FREEBSD,
+        LINUX,
+        MAC,
+        NETBSD,
+        OPENBSD,
+        SUNOS,
+        WINDOWS,
 
+        UNKNOWN;
+    }
+    public enum ARCH {
+        I386,
+        X86_64,
+        PPC,
+        SPARC,
+        SPARCV9,
+        UNKNOWN;
+    }
+    private static final class SingletonHolder {
+        private static final Platform INSTANCE = new Platform();
+    }
     public static final Platform getPlatform() {
-        return Factory.getInstance().getPlatform();
+        return SingletonHolder.INSTANCE;
     }
     private static final String DARWIN = "darwin";
     private static final String WINDOWS = "windows";
@@ -97,7 +119,16 @@ public abstract class Platform {
     public static final int BIG_ENDIAN = 4321;
     public static final int LITTLE_ENDIAN = 1234;
     public static final int BYTE_ORDER = ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN) ? BIG_ENDIAN : LITTLE_ENDIAN;
+
+
+    private final int addressSize, longSize;
     protected Platform() {
+        final int dataModel = Integer.getInteger("sun.arch.data.model");
+        if (dataModel != 32 && dataModel != 64) {
+            throw new IllegalArgumentException("Unsupported data model");
+        }
+        addressSize = dataModel;
+        longSize = IS_WINDOWS ? 32 : addressSize; // Windows is LLP64
     }
 
     public void init(Ruby runtime, RubyModule ffi) {
@@ -162,7 +193,11 @@ public abstract class Platform {
             return defValue;
         }
     }
-    public abstract int addressSize();
+    public int addressSize() {
+        return addressSize;
+    }
 
-    public abstract int longSize();
+    public int longSize() {
+        return longSize;
+    }
 }
