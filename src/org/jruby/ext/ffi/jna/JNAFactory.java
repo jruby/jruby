@@ -33,6 +33,7 @@ import java.nio.channels.ByteChannel;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ext.ffi.FFIProvider;
+import org.jruby.ext.ffi.MemoryIO;
 
 /**
  * An implementation of FFI for JNA
@@ -78,5 +79,8 @@ public class JNAFactory extends org.jruby.ext.ffi.Factory {
         return new FileDescriptorByteChannel(fd);
     }
 
-    
+    @Override
+    public MemoryIO allocateHeapMemory(int size, boolean clear) {
+        return new HeapMemoryIO(size);
+    }
 }

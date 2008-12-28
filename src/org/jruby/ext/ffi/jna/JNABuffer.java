@@ -30,6 +30,7 @@ package org.jruby.ext.ffi.jna;
 
 import org.jruby.ext.ffi.*;
 import com.sun.jna.Pointer;
+import java.nio.ByteBuffer;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -73,10 +74,7 @@ public class JNABuffer extends AbstractBuffer implements JNAMemory {
     }
     private static JNABuffer allocate(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, boolean clear) {
         int size = Util.int32Value(sizeArg);
-        JNAMemoryIO io = size > 0 ? JNAMemoryIO.allocateDirect(size) : JNAMemoryIO.NULL;
-        if (clear && size > 0) {
-            io.setMemory(0, size, (byte) 0);
-        }
+        MemoryIO io = new HeapMemoryIO(size);
         return new JNABuffer(context.getRuntime(), recv, io, 0, size);
     }
     @JRubyMethod(name = { "alloc_inout", "__alloc_inout", "__alloc_heap_inout", "__alloc_direct_inout" }, meta = true)
@@ -93,7 +91,7 @@ public class JNABuffer extends AbstractBuffer implements JNAMemory {
             final RubyString s = (RubyString) arg;
             final int size = Util.int32Value(s.length());
             final ByteList bl = s.getByteList();
-            final JNAMemoryIO io = JNAMemoryIO.allocateDirect(size);
+            final MemoryIO io = new HeapMemoryIO(size);
             io.put(0, bl.unsafeBytes(), bl.begin(), bl.length());
             io.putByte(bl.length(), (byte) 0);
             return new JNABuffer(context.getRuntime(), recv, io, 0, size);
@@ -114,7 +112,8 @@ public class JNABuffer extends AbstractBuffer implements JNAMemory {
         return allocate(context, recv, sizeArg, clearArg.isTrue());
     }
     public Object getNativeMemory() {
-        return ((JNAMemoryIO) getMemoryIO()).slice(offset).getMemory();
+        HeapMemoryIO heapIO = (HeapMemoryIO) getMemoryIO();
+        return ByteBuffer.wrap(heapIO.array(), heapIO.arrayOffset(), heapIO.arrayLength());
     }
     @JRubyMethod(name = "+", required = 1)
     public IRubyObject op_plus(ThreadContext context, IRubyObject value) {
@@ -124,15 +123,13 @@ public class JNABuffer extends AbstractBuffer implements JNAMemory {
     }
     @JRubyMethod(name = "put_pointer", required = 2)
     public IRubyObject put_pointer(ThreadContext context, IRubyObject offset, IRubyObject value) {
-        Pointer ptr;
-        if (value instanceof JNAMemoryPointer) {
-            ptr = ((JNAMemoryPointer) value).getAddress();
+        if (value instanceof JNABasePointer) {
+            ((HeapMemoryIO) getMemoryIO()).putPointer(getOffset(offset), ((JNABasePointer) value).getAddress());
         } else if (value.isNil()) {
-            ptr = Pointer.NULL;
+            getMemoryIO().putAddress(getOffset(offset), 0L);
         } else {
             throw context.getRuntime().newArgumentError("Cannot convert argument to pointer");
         }
-        ((JNAMemoryIO) getMemoryIO()).putPointer(getOffset(offset), ptr);
         return this;
     }
     
