@@ -2505,7 +2505,6 @@ public class ASTCompiler {
     public void compileMultipleAsgn(Node node, BodyCompiler context) {
         MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode) node;
 
-        // FIXME: This is a little less efficient than it could be, since in the interpreter we avoid objectspace for these arrays
         compile(multipleAsgnNode.getValueNode(), context);
 
         compileMultipleAsgnAssignment(node, context);
@@ -2532,7 +2531,8 @@ public class ASTCompiler {
                     public void call(BodyCompiler context) {
                         Node argsNode = multipleAsgnNode.getArgsNode();
                         if (argsNode instanceof StarNode) {
-                        // done processing args
+                            // done processing args
+                            context.consumeCurrentValue();
                         } else {
                             // assign to appropriate variable
                             compileAssignment(argsNode, context, false);
