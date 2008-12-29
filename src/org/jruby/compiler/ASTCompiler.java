@@ -134,290 +134,292 @@ import org.jruby.ast.ZSuperNode;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.BlockBody;
 import org.jruby.util.IdUtil;
+import org.jruby.util.SafePropertyAccessor;
 
 /**
  *
  * @author headius
  */
 public class ASTCompiler {
+    public static final boolean PEEPHOLE_OPTZ = SafePropertyAccessor.getBoolean("jruby.peephole.optz", true);
     private boolean isAtRoot = true;
     
-    public void compile(Node node, BodyCompiler context) {
+    public void compile(Node node, BodyCompiler context, boolean expr) {
         if (node == null) {
             context.loadNil();
             return;
         }
         switch (node.getNodeType()) {
             case ALIASNODE:
-                compileAlias(node, context);
+                compileAlias(node, context, expr);
                 break;
             case ANDNODE:
-                compileAnd(node, context);
+                compileAnd(node, context, expr);
                 break;
             case ARGSCATNODE:
-                compileArgsCat(node, context);
+                compileArgsCat(node, context, expr);
                 break;
             case ARGSPUSHNODE:
-                compileArgsPush(node, context);
+                compileArgsPush(node, context, expr);
                 break;
             case ARRAYNODE:
-                compileArray(node, context);
+                compileArray(node, context, expr);
                 break;
             case ATTRASSIGNNODE:
-                compileAttrAssign(node, context);
+                compileAttrAssign(node, context, expr);
                 break;
             case BACKREFNODE:
-                compileBackref(node, context);
+                compileBackref(node, context, expr);
                 break;
             case BEGINNODE:
-                compileBegin(node, context);
+                compileBegin(node, context, expr);
                 break;
             case BIGNUMNODE:
-                compileBignum(node, context);
+                compileBignum(node, context, expr);
                 break;
             case BLOCKNODE:
-                compileBlock(node, context);
+                compileBlock(node, context, expr);
                 break;
             case BREAKNODE:
-                compileBreak(node, context);
+                compileBreak(node, context, expr);
                 break;
             case CALLNODE:
-                compileCall(node, context);
+                compileCall(node, context, expr);
                 break;
             case CASENODE:
-                compileCase(node, context);
+                compileCase(node, context, expr);
                 break;
             case CLASSNODE:
-                compileClass(node, context);
+                compileClass(node, context, expr);
                 break;
             case CLASSVARNODE:
-                compileClassVar(node, context);
+                compileClassVar(node, context, expr);
                 break;
             case CLASSVARASGNNODE:
-                compileClassVarAsgn(node, context);
+                compileClassVarAsgn(node, context, expr);
                 break;
             case CLASSVARDECLNODE:
-                compileClassVarDecl(node, context);
+                compileClassVarDecl(node, context, expr);
                 break;
             case COLON2NODE:
-                compileColon2(node, context);
+                compileColon2(node, context, expr);
                 break;
             case COLON3NODE:
-                compileColon3(node, context);
+                compileColon3(node, context, expr);
                 break;
             case CONSTDECLNODE:
-                compileConstDecl(node, context);
+                compileConstDecl(node, context, expr);
                 break;
             case CONSTNODE:
-                compileConst(node, context);
+                compileConst(node, context, expr);
                 break;
             case DASGNNODE:
-                compileDAsgn(node, context);
+                compileDAsgn(node, context, expr);
                 break;
             case DEFINEDNODE:
-                compileDefined(node, context);
+                compileDefined(node, context, expr);
                 break;
             case DEFNNODE:
-                compileDefn(node, context);
+                compileDefn(node, context, expr);
                 break;
             case DEFSNODE:
-                compileDefs(node, context);
+                compileDefs(node, context, expr);
                 break;
             case DOTNODE:
-                compileDot(node, context);
+                compileDot(node, context, expr);
                 break;
             case DREGEXPNODE:
-                compileDRegexp(node, context);
+                compileDRegexp(node, context, expr);
                 break;
             case DSTRNODE:
-                compileDStr(node, context);
+                compileDStr(node, context, expr);
                 break;
             case DSYMBOLNODE:
-                compileDSymbol(node, context);
+                compileDSymbol(node, context, expr);
                 break;
             case DVARNODE:
-                compileDVar(node, context);
+                compileDVar(node, context, expr);
                 break;
             case DXSTRNODE:
-                compileDXStr(node, context);
+                compileDXStr(node, context, expr);
                 break;
             case ENSURENODE:
-                compileEnsureNode(node, context);
+                compileEnsureNode(node, context, expr);
                 break;
             case EVSTRNODE:
-                compileEvStr(node, context);
+                compileEvStr(node, context, expr);
                 break;
             case FALSENODE:
-                compileFalse(node, context);
+                compileFalse(node, context, expr);
                 break;
             case FCALLNODE:
-                compileFCall(node, context);
+                compileFCall(node, context, expr);
                 break;
             case FIXNUMNODE:
-                compileFixnum(node, context);
+                compileFixnum(node, context, expr);
                 break;
             case FLIPNODE:
-                compileFlip(node, context);
+                compileFlip(node, context, expr);
                 break;
             case FLOATNODE:
-                compileFloat(node, context);
+                compileFloat(node, context, expr);
                 break;
             case FORNODE:
-                compileFor(node, context);
+                compileFor(node, context, expr);
                 break;
             case GLOBALASGNNODE:
-                compileGlobalAsgn(node, context);
+                compileGlobalAsgn(node, context, expr);
                 break;
             case GLOBALVARNODE:
-                compileGlobalVar(node, context);
+                compileGlobalVar(node, context, expr);
                 break;
             case HASHNODE:
-                compileHash(node, context);
+                compileHash(node, context, expr);
                 break;
             case IFNODE:
-                compileIf(node, context);
+                compileIf(node, context, expr);
                 break;
             case INSTASGNNODE:
-                compileInstAsgn(node, context);
+                compileInstAsgn(node, context, expr);
                 break;
             case INSTVARNODE:
-                compileInstVar(node, context);
+                compileInstVar(node, context, expr);
                 break;
             case ITERNODE:
                 compileIter(node, context);
                 break;
             case LOCALASGNNODE:
-                compileLocalAsgn(node, context);
+                compileLocalAsgn(node, context, expr);
                 break;
             case LOCALVARNODE:
-                compileLocalVar(node, context);
+                compileLocalVar(node, context, expr);
                 break;
             case MATCH2NODE:
-                compileMatch2(node, context);
+                compileMatch2(node, context, expr);
                 break;
             case MATCH3NODE:
-                compileMatch3(node, context);
+                compileMatch3(node, context, expr);
                 break;
             case MATCHNODE:
-                compileMatch(node, context);
+                compileMatch(node, context, expr);
                 break;
             case MODULENODE:
-                compileModule(node, context);
+                compileModule(node, context, expr);
                 break;
             case MULTIPLEASGNNODE:
-                compileMultipleAsgn(node, context);
+                compileMultipleAsgn(node, context, expr);
                 break;
             case NEWLINENODE:
-                compileNewline(node, context);
+                compileNewline(node, context, expr);
                 break;
             case NEXTNODE:
-                compileNext(node, context);
+                compileNext(node, context, expr);
                 break;
             case NTHREFNODE:
-                compileNthRef(node, context);
+                compileNthRef(node, context, expr);
                 break;
             case NILNODE:
-                compileNil(node, context);
+                compileNil(node, context, expr);
                 break;
             case NOTNODE:
-                compileNot(node, context);
+                compileNot(node, context, expr);
                 break;
             case OPASGNANDNODE:
-                compileOpAsgnAnd(node, context);
+                compileOpAsgnAnd(node, context, expr);
                 break;
             case OPASGNNODE:
-                compileOpAsgn(node, context);
+                compileOpAsgn(node, context, expr);
                 break;
             case OPASGNORNODE:
-                compileOpAsgnOr(node, context);
+                compileOpAsgnOr(node, context, expr);
                 break;
             case OPELEMENTASGNNODE:
-                compileOpElementAsgn(node, context);
+                compileOpElementAsgn(node, context, expr);
                 break;
             case ORNODE:
-                compileOr(node, context);
+                compileOr(node, context, expr);
                 break;
             case POSTEXENODE:
-                compilePostExe(node, context);
+                compilePostExe(node, context, expr);
                 break;
             case PREEXENODE:
-                compilePreExe(node, context);
+                compilePreExe(node, context, expr);
                 break;
             case REDONODE:
-                compileRedo(node, context);
+                compileRedo(node, context, expr);
                 break;
             case REGEXPNODE:
-                compileRegexp(node, context);
+                compileRegexp(node, context, expr);
                 break;
             case RESCUEBODYNODE:
                 throw new NotCompilableException("rescue body is handled by rescue compilation at: " + node.getPosition());
             case RESCUENODE:
-                compileRescue(node, context);
+                compileRescue(node, context, expr);
                 break;
             case RETRYNODE:
-                compileRetry(node, context);
+                compileRetry(node, context, expr);
                 break;
             case RETURNNODE:
-                compileReturn(node, context);
+                compileReturn(node, context, expr);
                 break;
             case ROOTNODE:
                 throw new NotCompilableException("Use compileRoot(); Root node at: " + node.getPosition());
             case SCLASSNODE:
-                compileSClass(node, context);
+                compileSClass(node, context, expr);
                 break;
             case SELFNODE:
-                compileSelf(node, context);
+                compileSelf(node, context, expr);
                 break;
             case SPLATNODE:
-                compileSplat(node, context);
+                compileSplat(node, context, expr);
                 break;
             case STRNODE:
-                compileStr(node, context);
+                compileStr(node, context, expr);
                 break;
             case SUPERNODE:
-                compileSuper(node, context);
+                compileSuper(node, context, expr);
                 break;
             case SVALUENODE:
-                compileSValue(node, context);
+                compileSValue(node, context, expr);
                 break;
             case SYMBOLNODE:
-                compileSymbol(node, context);
+                compileSymbol(node, context, expr);
                 break;
             case TOARYNODE:
-                compileToAry(node, context);
+                compileToAry(node, context, expr);
                 break;
             case TRUENODE:
-                compileTrue(node, context);
+                compileTrue(node, context, expr);
                 break;
             case UNDEFNODE:
-                compileUndef(node, context);
+                compileUndef(node, context, expr);
                 break;
             case UNTILNODE:
-                compileUntil(node, context);
+                compileUntil(node, context, expr);
                 break;
             case VALIASNODE:
-                compileVAlias(node, context);
+                compileVAlias(node, context, expr);
                 break;
             case VCALLNODE:
-                compileVCall(node, context);
+                compileVCall(node, context, expr);
                 break;
             case WHILENODE:
-                compileWhile(node, context);
+                compileWhile(node, context, expr);
                 break;
             case WHENNODE:
                 assert false : "When nodes are handled by case node compilation.";
                 break;
             case XSTRNODE:
-                compileXStr(node, context);
+                compileXStr(node, context, expr);
                 break;
             case YIELDNODE:
-                compileYield(node, context);
+                compileYield(node, context, expr);
                 break;
             case ZARRAYNODE:
-                compileZArray(node, context);
+                compileZArray(node, context, expr);
                 break;
             case ZSUPERNODE:
-                compileZSuper(node, context);
+                compileZSuper(node, context, expr);
                 break;
             default:
                 assert false : "Unknown node encountered in compiler: " + node;
@@ -427,19 +429,19 @@ public class ASTCompiler {
     public void compileArguments(Node node, BodyCompiler context) {
         switch (node.getNodeType()) {
             case ARGSCATNODE:
-                compileArgsCatArguments(node, context);
+                compileArgsCatArguments(node, context, true);
                 break;
             case ARGSPUSHNODE:
-                compileArgsPushArguments(node, context);
+                compileArgsPushArguments(node, context, true);
                 break;
             case ARRAYNODE:
-                compileArrayArguments(node, context);
+                compileArrayArguments(node, context, true);
                 break;
             case SPLATNODE:
-                compileSplatArguments(node, context);
+                compileSplatArguments(node, context, true);
                 break;
             default:
-                compile(node, context);
+                compile(node, context, true);
                 context.convertToJavaArray();
         }
     }
@@ -485,14 +487,14 @@ public class ASTCompiler {
                 if (arrayNode.isLightweight()) {
                     // explode array, it's an internal "args" array
                     for (Node n : arrayNode.childNodes()) {
-                        compile(n, context);
+                        compile(n, context,true);
                     }
                 } else {
                     // use array as-is, it's a literal array
-                    compile(arrayNode, context);
+                    compile(arrayNode, context,true);
                 }
             } else {
-                compile(node, context);
+                compile(node, context,true);
             }
         }
     }
@@ -527,40 +529,33 @@ public class ASTCompiler {
     public void compileAssignment(Node node, BodyCompiler context, boolean expr) {
         switch (node.getNodeType()) {
             case ATTRASSIGNNODE:
-                compileAttrAssignAssignment(node, context);
-                if (!expr) context.consumeCurrentValue();
+                compileAttrAssignAssignment(node, context, expr);
                 break;
             case DASGNNODE:
                 DAsgnNode dasgnNode = (DAsgnNode)node;
                 context.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth(), expr);
                 break;
             case CLASSVARASGNNODE:
-                compileClassVarAsgnAssignment(node, context);
-                if (!expr) context.consumeCurrentValue();
+                compileClassVarAsgnAssignment(node, context, expr);
                 break;
             case CLASSVARDECLNODE:
-                compileClassVarDeclAssignment(node, context);
-                if (!expr) context.consumeCurrentValue();
+                compileClassVarDeclAssignment(node, context, expr);
                 break;
             case CONSTDECLNODE:
-                compileConstDeclAssignment(node, context);
-                if (!expr) context.consumeCurrentValue();
+                compileConstDeclAssignment(node, context, expr);
                 break;
             case GLOBALASGNNODE:
-                compileGlobalAsgnAssignment(node, context);
-                if (!expr) context.consumeCurrentValue();
+                compileGlobalAsgnAssignment(node, context, expr);
                 break;
             case INSTASGNNODE:
-                compileInstAsgnAssignment(node, context);
-                if (!expr) context.consumeCurrentValue();
+                compileInstAsgnAssignment(node, context, expr);
                 break;
             case LOCALASGNNODE:
                 LocalAsgnNode localAsgnNode = (LocalAsgnNode)node;
                 context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth(), expr);
                 break;
             case MULTIPLEASGNNODE:
-                compileMultipleAsgnAssignment(node, context);
-                if (!expr) context.consumeCurrentValue();
+                compileMultipleAsgnAssignment(node, context, expr);
                 break;
             case ZEROARGNODE:
                 throw new NotCompilableException("Shouldn't get here; zeroarg does not do assignment: " + node);
@@ -573,125 +568,139 @@ public class ASTCompiler {
         return new YARVNodesCompiler();
     }
 
-    public void compileAlias(Node node, BodyCompiler context) {
+    public void compileAlias(Node node, BodyCompiler context, boolean expr) {
         final AliasNode alias = (AliasNode) node;
 
         context.defineAlias(alias.getNewName(), alias.getOldName());
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileAnd(Node node, BodyCompiler context) {
+    public void compileAnd(Node node, BodyCompiler context, final boolean expr) {
         final AndNode andNode = (AndNode) node;
 
-        compile(andNode.getFirstNode(), context);
+        compile(andNode.getFirstNode(), context, true);
 
         BranchCallback longCallback = new BranchCallback() {
 
                     public void branch(BodyCompiler context) {
-                        compile(andNode.getSecondNode(), context);
+                        compile(andNode.getSecondNode(), context, true);
                     }
                 };
 
         context.performLogicalAnd(longCallback);
     }
 
-    public void compileArray(Node node, BodyCompiler context) {
+    public void compileArray(Node node, BodyCompiler context, boolean expr) {
         ArrayNode arrayNode = (ArrayNode) node;
 
         ArrayCallback callback = new ArrayCallback() {
 
                     public void nextValue(BodyCompiler context, Object sourceArray, int index) {
                         Node node = (Node) ((Object[]) sourceArray)[index];
-                        compile(node, context);
+                        compile(node, context,true);
                     }
                 };
 
         context.createNewArray(arrayNode.childNodes().toArray(), callback, arrayNode.isLightweight());
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileArgsCat(Node node, BodyCompiler context) {
+    public void compileArgsCat(Node node, BodyCompiler context, boolean expr) {
         ArgsCatNode argsCatNode = (ArgsCatNode) node;
 
-        compile(argsCatNode.getFirstNode(), context);
+        compile(argsCatNode.getFirstNode(), context,true);
         context.ensureRubyArray();
-        compile(argsCatNode.getSecondNode(), context);
+        compile(argsCatNode.getSecondNode(), context,true);
         context.splatCurrentValue();
         context.concatArrays();
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileArgsPush(Node node, BodyCompiler context) {
+    public void compileArgsPush(Node node, BodyCompiler context, boolean expr) {
         ArgsPushNode argsPush = (ArgsPushNode) node;
 
-        compile(argsPush.getFirstNode(), context);
-        compile(argsPush.getSecondNode(), context);
+        compile(argsPush.getFirstNode(), context,true);
+        compile(argsPush.getSecondNode(), context,true);
         context.concatArrays();
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    private void compileAttrAssign(Node node, BodyCompiler context) {
+    private void compileAttrAssign(Node node, BodyCompiler context, boolean expr) {
         final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
 
         CompilerCallback receiverCallback = new CompilerCallback() {
             public void call(BodyCompiler context) {
-                compile(attrAssignNode.getReceiverNode(), context);
+                compile(attrAssignNode.getReceiverNode(), context,true);
             }
         };
         
         ArgumentsCallback argsCallback = getArgsCallback(attrAssignNode.getArgsNode());
 
         context.getInvocationCompiler().invokeAttrAssign(attrAssignNode.getName(), receiverCallback, argsCallback);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileAttrAssignAssignment(Node node, BodyCompiler context) {
+    public void compileAttrAssignAssignment(Node node, BodyCompiler context, boolean expr) {
         final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
 
         CompilerCallback receiverCallback = new CompilerCallback() {
             public void call(BodyCompiler context) {
-                compile(attrAssignNode.getReceiverNode(), context);
+                compile(attrAssignNode.getReceiverNode(), context,true);
             }
         };
         ArgumentsCallback argsCallback = getArgsCallback(attrAssignNode.getArgsNode());
 
         context.getInvocationCompiler().invokeAttrAssignMasgn(attrAssignNode.getName(), receiverCallback, argsCallback);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileBackref(Node node, BodyCompiler context) {
+    public void compileBackref(Node node, BodyCompiler context, boolean expr) {
         BackRefNode iVisited = (BackRefNode) node;
 
         context.performBackref(iVisited.getType());
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileBegin(Node node, BodyCompiler context) {
+    public void compileBegin(Node node, BodyCompiler context, boolean expr) {
         BeginNode beginNode = (BeginNode) node;
 
-        compile(beginNode.getBodyNode(), context);
+        compile(beginNode.getBodyNode(), context, expr);
     }
 
-    public void compileBignum(Node node, BodyCompiler context) {
-        context.createNewBignum(((BignumNode) node).getValue());
+    public void compileBignum(Node node, BodyCompiler context, boolean expr) {
+        if (PEEPHOLE_OPTZ) {
+            if (expr) context.createNewBignum(((BignumNode) node).getValue());
+        } else {
+            context.createNewBignum(((BignumNode) node).getValue());
+            if (!expr) context.consumeCurrentValue();
+        }
     }
 
-    public void compileBlock(Node node, BodyCompiler context) {
+    public void compileBlock(Node node, BodyCompiler context, boolean expr) {
         BlockNode blockNode = (BlockNode) node;
 
         for (Iterator<Node> iter = blockNode.childNodes().iterator(); iter.hasNext();) {
             Node n = iter.next();
 
-            compile(n, context);
-
-            if (iter.hasNext()) {
-                // clear result from previous line
-                context.consumeCurrentValue();
-            }
+            compile(n, context, iter.hasNext() ? false : expr);
         }
     }
 
-    public void compileBreak(Node node, BodyCompiler context) {
+    public void compileBreak(Node node, BodyCompiler context, boolean expr) {
         final BreakNode breakNode = (BreakNode) node;
 
         CompilerCallback valueCallback = new CompilerCallback() {
 
                     public void call(BodyCompiler context) {
                         if (breakNode.getValueNode() != null) {
-                            compile(breakNode.getValueNode(), context);
+                            compile(breakNode.getValueNode(), context, true);
                         } else {
                             context.loadNil();
                         }
@@ -699,29 +708,35 @@ public class ASTCompiler {
                 };
 
         context.issueBreakEvent(valueCallback);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileCall(Node node, BodyCompiler context) {
+    public void compileCall(Node node, BodyCompiler context, boolean expr) {
         final CallNode callNode = (CallNode) node;
 
         CompilerCallback receiverCallback = new CompilerCallback() {
             public void call(BodyCompiler context) {
-                compile(callNode.getReceiverNode(), context);
+                compile(callNode.getReceiverNode(), context, true);
             }
         };
 
         ArgumentsCallback argsCallback = getArgsCallback(callNode.getArgsNode());
         CompilerCallback closureArg = getBlock(callNode.getIterNode());
 
-        context.getInvocationCompiler().invokeDynamic(callNode.getName(), receiverCallback, argsCallback, CallType.NORMAL, closureArg, callNode.getIterNode() instanceof IterNode);
+        context.getInvocationCompiler().invokeDynamic(
+                callNode.getName(), receiverCallback, argsCallback,
+                CallType.NORMAL, closureArg, callNode.getIterNode() instanceof IterNode);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileCase(Node node, BodyCompiler context) {
+    public void compileCase(Node node, BodyCompiler context, boolean expr) {
         CaseNode caseNode = (CaseNode) node;
 
         boolean hasCase = false;
         if (caseNode.getCaseNode() != null) {
-            compile(caseNode.getCaseNode(), context);
+            compile(caseNode.getCaseNode(), context, true);
             hasCase = true;
         }
 
@@ -742,6 +757,9 @@ public class ASTCompiler {
         } else {
             compileWhen(firstWhenNode, context, hasCase);
         }
+
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
     private boolean caseIsAllIntRangedFixnums(CaseNode caseNode) {
@@ -812,7 +830,7 @@ public class ASTCompiler {
             public void nextValue(BodyCompiler context, Object array, int index) {
                 Node[] bodies = (Node[])array;
                 if (bodies[index] != null) {
-                    compile(bodies[index], context);
+                    compile(bodies[index], context,true);
                 } else {
                     context.loadNil();
                 }
@@ -825,7 +843,7 @@ public class ASTCompiler {
                 if (finalElse == null) {
                     context.loadNil();
                 } else {
-                    compile(finalElse, context);
+                    compile(finalElse, context,true);
                 }
             }
         };
@@ -863,7 +881,7 @@ public class ASTCompiler {
                 // case value provided and we're going into "else"; consume it.
                 context.consumeCurrentValue();
             }
-            compile(node, context);
+            compile(node, context,true);
             return;
         }
 
@@ -879,7 +897,7 @@ public class ASTCompiler {
             }
 
             // evaluate the when argument
-            compile(whenNode.getExpressionNodes(), context);
+            compile(whenNode.getExpressionNodes(), context,true);
 
             final WhenNode currentWhen = whenNode;
 
@@ -899,7 +917,7 @@ public class ASTCompiler {
                             }
 
                             if (currentWhen.getBodyNode() != null) {
-                                compile(currentWhen.getBodyNode(), context);
+                                compile(currentWhen.getBodyNode(), context,true);
                             } else {
                                 context.loadNil();
                             }
@@ -938,7 +956,7 @@ public class ASTCompiler {
             } else {
                 context.loadNull();
             }
-            compile(((WhenNode) tag).getExpressionNodes(), context);
+            compile(((WhenNode) tag).getExpressionNodes(), context,true);
             context.checkWhenWithSplat();
         } else {
             if (hasCase) {
@@ -946,7 +964,7 @@ public class ASTCompiler {
             }
 
             // evaluate the when argument
-            compile(tag, context);
+            compile(tag, context,true);
 
             if (hasCase) {
                 // we have a case value, call === on the condition value passing the case value
@@ -965,7 +983,7 @@ public class ASTCompiler {
                         }
 
                         if (whenNode.getBodyNode() != null) {
-                            compile(whenNode.getBodyNode(), context);
+                            compile(whenNode.getBodyNode(), context,true);
                         } else {
                             context.loadNil();
                         }
@@ -983,7 +1001,7 @@ public class ASTCompiler {
         context.performBooleanBranch(trueBranch, falseBranch);
     }
 
-    public void compileClass(Node node, BodyCompiler context) {
+    public void compileClass(Node node, BodyCompiler context, boolean expr) {
         final ClassNode classNode = (ClassNode) node;
 
         final Node superNode = classNode.getSuperNode();
@@ -993,7 +1011,7 @@ public class ASTCompiler {
         CompilerCallback superCallback = new CompilerCallback() {
 
                     public void call(BodyCompiler context) {
-                        compile(superNode, context);
+                        compile(superNode, context, true);
                     }
                 };
         if (superNode == null) {
@@ -1006,7 +1024,7 @@ public class ASTCompiler {
                         boolean oldIsAtRoot = isAtRoot;
                         isAtRoot = false;
                         if (classNode.getBodyNode() != null) {
-                            compile(classNode.getBodyNode(), context);
+                            compile(classNode.getBodyNode(), context, true);
                         } else {
                             context.loadNil();
                         }
@@ -1020,7 +1038,7 @@ public class ASTCompiler {
                         if (cpathNode instanceof Colon2Node) {
                             Node leftNode = ((Colon2Node) cpathNode).getLeftNode();
                             if (leftNode != null) {
-                                compile(leftNode, context);
+                                compile(leftNode, context, true);
                             } else {
                                 context.loadNil();
                             }
@@ -1033,15 +1051,17 @@ public class ASTCompiler {
                 };
 
         context.defineClass(classNode.getCPath().getName(), classNode.getScope(), superCallback, pathCallback, bodyCallback, null);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileSClass(Node node, BodyCompiler context) {
+    public void compileSClass(Node node, BodyCompiler context, boolean expr) {
         final SClassNode sclassNode = (SClassNode) node;
 
         CompilerCallback receiverCallback = new CompilerCallback() {
 
                     public void call(BodyCompiler context) {
-                        compile(sclassNode.getReceiverNode(), context);
+                        compile(sclassNode.getReceiverNode(), context, true);
                     }
                 };
 
@@ -1051,7 +1071,7 @@ public class ASTCompiler {
                         boolean oldIsAtRoot = isAtRoot;
                         isAtRoot = false;
                         if (sclassNode.getBodyNode() != null) {
-                            compile(sclassNode.getBodyNode(), context);
+                            compile(sclassNode.getBodyNode(), context, true);
                         } else {
                             context.loadNil();
                         }
@@ -1060,72 +1080,89 @@ public class ASTCompiler {
                 };
 
         context.defineClass("SCLASS", sclassNode.getScope(), null, null, bodyCallback, receiverCallback);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileClassVar(Node node, BodyCompiler context) {
+    public void compileClassVar(Node node, BodyCompiler context, boolean expr) {
         ClassVarNode classVarNode = (ClassVarNode) node;
 
-        context.retrieveClassVariable(classVarNode.getName());
+        if (PEEPHOLE_OPTZ) {
+            if (expr) context.retrieveClassVariable(classVarNode.getName());
+        } else {
+            context.retrieveClassVariable(classVarNode.getName());
+            if (!expr) context.consumeCurrentValue();
+        }
     }
 
-    public void compileClassVarAsgn(Node node, BodyCompiler context) {
+    public void compileClassVarAsgn(Node node, BodyCompiler context, boolean expr) {
         final ClassVarAsgnNode classVarAsgnNode = (ClassVarAsgnNode) node;
 
         CompilerCallback value = new CompilerCallback() {
             public void call(BodyCompiler context) {
-                compile(classVarAsgnNode.getValueNode(), context);
+                compile(classVarAsgnNode.getValueNode(), context, true);
             }
         };
 
         context.assignClassVariable(classVarAsgnNode.getName(), value);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileClassVarAsgnAssignment(Node node, BodyCompiler context) {
+    public void compileClassVarAsgnAssignment(Node node, BodyCompiler context, boolean expr) {
         ClassVarAsgnNode classVarAsgnNode = (ClassVarAsgnNode) node;
 
         context.assignClassVariable(classVarAsgnNode.getName());
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileClassVarDecl(Node node, BodyCompiler context) {
+    public void compileClassVarDecl(Node node, BodyCompiler context, boolean expr) {
         final ClassVarDeclNode classVarDeclNode = (ClassVarDeclNode) node;
 
         CompilerCallback value = new CompilerCallback() {
             public void call(BodyCompiler context) {
-                compile(classVarDeclNode.getValueNode(), context);
+                compile(classVarDeclNode.getValueNode(), context, true);
             }
         };
         
         context.declareClassVariable(classVarDeclNode.getName(), value);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileClassVarDeclAssignment(Node node, BodyCompiler context) {
+    public void compileClassVarDeclAssignment(Node node, BodyCompiler context, boolean expr) {
         ClassVarDeclNode classVarDeclNode = (ClassVarDeclNode) node;
 
         context.declareClassVariable(classVarDeclNode.getName());
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileConstDecl(Node node, BodyCompiler context) {
+    public void compileConstDecl(Node node, BodyCompiler context, boolean expr) {
         // TODO: callback for value would be more efficient, but unlikely to be a big cost (constants are rarely assigned)
         ConstDeclNode constDeclNode = (ConstDeclNode) node;
         Node constNode = constDeclNode.getConstNode();
 
         if (constNode == null) {
-            compile(constDeclNode.getValueNode(), context);
+            compile(constDeclNode.getValueNode(), context,true);
 
             context.assignConstantInCurrent(constDeclNode.getName());
         } else if (constNode.getNodeType() == NodeType.COLON2NODE) {
-            compile(((Colon2Node) constNode).getLeftNode(), context);
-            compile(constDeclNode.getValueNode(), context);
+            compile(((Colon2Node) constNode).getLeftNode(), context,true);
+            compile(constDeclNode.getValueNode(), context,true);
 
             context.assignConstantInModule(constDeclNode.getName());
         } else {// colon3, assign in Object
-            compile(constDeclNode.getValueNode(), context);
+            compile(constDeclNode.getValueNode(), context,true);
 
             context.assignConstantInObject(constDeclNode.getName());
         }
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileConstDeclAssignment(Node node, BodyCompiler context) {
+    public void compileConstDeclAssignment(Node node, BodyCompiler context, boolean expr) {
         // TODO: callback for value would be more efficient, but unlikely to be a big cost (constants are rarely assigned)
         ConstDeclNode constDeclNode = (ConstDeclNode) node;
         Node constNode = constDeclNode.getConstNode();
@@ -1133,21 +1170,26 @@ public class ASTCompiler {
         if (constNode == null) {
             context.assignConstantInCurrent(constDeclNode.getName());
         } else if (constNode.getNodeType() == NodeType.COLON2NODE) {
-            compile(((Colon2Node) constNode).getLeftNode(), context);
+            compile(((Colon2Node) constNode).getLeftNode(), context,true);
             context.swapValues();
             context.assignConstantInModule(constDeclNode.getName());
         } else {// colon3, assign in Object
             context.assignConstantInObject(constDeclNode.getName());
         }
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileConst(Node node, BodyCompiler context) {
+    public void compileConst(Node node, BodyCompiler context, boolean expr) {
         ConstNode constNode = (ConstNode) node;
 
         context.retrieveConstant(constNode.getName());
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
+        // XXX: const lookup can trigger const_missing; is that enough to warrant it always being executed?
     }
 
-    public void compileColon2(Node node, BodyCompiler context) {
+    public void compileColon2(Node node, BodyCompiler context, boolean expr) {
         final Colon2Node iVisited = (Colon2Node) node;
         Node leftNode = iVisited.getLeftNode();
         final String name = iVisited.getName();
@@ -1159,7 +1201,7 @@ public class ASTCompiler {
             final CompilerCallback receiverCallback = new CompilerCallback() {
 
                         public void call(BodyCompiler context) {
-                            compile(iVisited.getLeftNode(), context);
+                            compile(iVisited.getLeftNode(), context,true);
                         }
                     };
 
@@ -1180,14 +1222,19 @@ public class ASTCompiler {
 
             context.branchIfModule(receiverCallback, moduleCallback, notModuleCallback, IdUtil.isConstant(name));
         }
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileColon3(Node node, BodyCompiler context) {
+    public void compileColon3(Node node, BodyCompiler context, boolean expr) {
         Colon3Node iVisited = (Colon3Node) node;
         String name = iVisited.getName();
 
         context.loadObject();
         context.retrieveConstantFromModule(name);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
+        // XXX: const lookup can trigger const_missing; is that enough to warrant it always being executed?
     }
 
     public void compileGetDefinitionBase(final Node node, BodyCompiler context) {
@@ -1235,9 +1282,17 @@ public class ASTCompiler {
         }
     }
 
-    public void compileDefined(final Node node, BodyCompiler context) {
-        compileGetDefinitionBase(((DefinedNode) node).getExpressionNode(), context);
-        context.stringOrNil();
+    public void compileDefined(final Node node, BodyCompiler context, boolean expr) {
+        if (PEEPHOLE_OPTZ) {
+            if (expr) {
+                compileGetDefinitionBase(((DefinedNode) node).getExpressionNode(), context);
+                context.stringOrNil();
+            }
+        } else {
+            compileGetDefinitionBase(((DefinedNode) node).getExpressionNode(), context);
+            context.stringOrNil();
+            if (!expr) context.consumeCurrentValue();
+        }
     }
 
     public void compileGetArgumentDefinition(final Node node, BodyCompiler context, String type) {
@@ -1438,7 +1493,7 @@ public class ASTCompiler {
                                 public void branch(BodyCompiler context) {
                                     if (iVisited instanceof Colon2Node) {
                                         final Node leftNode = ((Colon2Node) iVisited).getLeftNode();
-                                        compile(leftNode, context);
+                                        compile(leftNode, context,true);
                                     } else {
                                         context.loadObject();
                                     }
@@ -1476,7 +1531,7 @@ public class ASTCompiler {
                     context.rescue(new BranchCallback() {
 
                                 public void branch(BodyCompiler context) {
-                                    compile(iVisited.getReceiverNode(), context); //[IRubyObject]
+                                    compile(iVisited.getReceiverNode(), context,true); //[IRubyObject]
                                     context.duplicateCurrentValue(); //[IRubyObject, IRubyObject]
                                     context.metaclass(); //[IRubyObject, RubyClass]
                                     context.duplicateCurrentValue(); //[IRubyObject, RubyClass, RubyClass]
@@ -1653,7 +1708,7 @@ public class ASTCompiler {
                     context.rescue(new BranchCallback() {
 
                                 public void branch(BodyCompiler context) {
-                                    compile(iVisited.getReceiverNode(), context); //[IRubyObject]
+                                    compile(iVisited.getReceiverNode(), context,true); //[IRubyObject]
                                     context.duplicateCurrentValue(); //[IRubyObject, IRubyObject]
                                     context.metaclass(); //[IRubyObject, RubyClass]
                                     context.duplicateCurrentValue(); //[IRubyObject, RubyClass, RubyClass]
@@ -1704,7 +1759,7 @@ public class ASTCompiler {
                 context.rescue(new BranchCallback() {
 
                             public void branch(BodyCompiler context) {
-                                compile(node, context);
+                                compile(node, context,true);
                                 context.consumeCurrentValue();
                                 context.pushNull();
                             }
@@ -1720,25 +1775,25 @@ public class ASTCompiler {
         }
     }
 
-    public void compileDAsgn(Node node, BodyCompiler context) {
+    public void compileDAsgn(Node node, BodyCompiler context, boolean expr) {
         final DAsgnNode dasgnNode = (DAsgnNode) node;
 
         CompilerCallback value = new CompilerCallback() {
             public void call(BodyCompiler context) {
-                compile(dasgnNode.getValueNode(), context);
+                compile(dasgnNode.getValueNode(), context, true);
             }
         };
         
-        context.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth(), value,true);
+        context.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth(), value, expr);
     }
 
-    public void compileDAsgnAssignment(Node node, BodyCompiler context) {
+    public void compileDAsgnAssignment(Node node, BodyCompiler context, boolean expr) {
         DAsgnNode dasgnNode = (DAsgnNode) node;
 
-        context.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth(),true);
+        context.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth(), expr);
     }
 
-    public void compileDefn(Node node, BodyCompiler context) {
+    public void compileDefn(Node node, BodyCompiler context, boolean expr) {
         final DefnNode defnNode = (DefnNode) node;
         final ArgsNode argsNode = defnNode.getArgsNode();
 
@@ -1746,7 +1801,7 @@ public class ASTCompiler {
 
                     public void call(BodyCompiler context) {
                         if (defnNode.getBodyNode() != null) {
-                            compile(defnNode.getBodyNode(), context);
+                            compile(defnNode.getBodyNode(), context, true);
                         } else {
                             context.loadNil();
                         }
@@ -1756,7 +1811,7 @@ public class ASTCompiler {
         CompilerCallback args = new CompilerCallback() {
 
                     public void call(BodyCompiler context) {
-                        compileArgs(argsNode, context);
+                        compileArgs(argsNode, context, true);
                     }
                 };
 
@@ -1767,16 +1822,18 @@ public class ASTCompiler {
         inspector.inspect(defnNode.getBodyNode());
 
         context.defineNewMethod(defnNode.getName(), defnNode.getArgsNode().getArity().getValue(), defnNode.getScope(), body, args, null, inspector, isAtRoot);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileDefs(Node node, BodyCompiler context) {
+    public void compileDefs(Node node, BodyCompiler context, boolean expr) {
         final DefsNode defsNode = (DefsNode) node;
         final ArgsNode argsNode = defsNode.getArgsNode();
 
         CompilerCallback receiver = new CompilerCallback() {
 
                     public void call(BodyCompiler context) {
-                        compile(defsNode.getReceiverNode(), context);
+                        compile(defsNode.getReceiverNode(), context, true);
                     }
                 };
 
@@ -1784,7 +1841,7 @@ public class ASTCompiler {
 
                     public void call(BodyCompiler context) {
                         if (defsNode.getBodyNode() != null) {
-                            compile(defsNode.getBodyNode(), context);
+                            compile(defsNode.getBodyNode(), context, true);
                         } else {
                             context.loadNil();
                         }
@@ -1794,7 +1851,7 @@ public class ASTCompiler {
         CompilerCallback args = new CompilerCallback() {
 
                     public void call(BodyCompiler context) {
-                        compileArgs(argsNode, context);
+                        compileArgs(argsNode, context, true);
                     }
                 };
 
@@ -1804,9 +1861,11 @@ public class ASTCompiler {
         inspector.inspect(defsNode.getBodyNode());
 
         context.defineNewMethod(defsNode.getName(), defsNode.getArgsNode().getArity().getValue(), defsNode.getScope(), body, args, receiver, inspector, false);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileArgs(Node node, BodyCompiler context) {
+    public void compileArgs(Node node, BodyCompiler context, boolean expr) {
         final ArgsNode argsNode = (ArgsNode) node;
 
         final int required = argsNode.getRequiredArgsCount();
@@ -1844,7 +1903,7 @@ public class ASTCompiler {
                         public void nextValue(BodyCompiler context, Object object, int index) {
                             Node optArg = ((ListNode) object).get(index);
 
-                            compile(optArg, context);
+                            compile(optArg, context,true);
                             context.consumeCurrentValue();
                         }
                     };
@@ -1878,18 +1937,26 @@ public class ASTCompiler {
                 optionalNotGiven,
                 restAssignment,
                 blockAssignment);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileDot(Node node, BodyCompiler context) {
+    public void compileDot(Node node, BodyCompiler context, boolean expr) {
         DotNode dotNode = (DotNode) node;
 
-        compile(dotNode.getBeginNode(), context);
-        compile(dotNode.getEndNode(), context);
+        boolean doit = expr || !PEEPHOLE_OPTZ;
+        boolean popit = !PEEPHOLE_OPTZ && !expr;
 
-        context.createNewRange(dotNode.isExclusive());
+        if (doit) {
+            compile(dotNode.getBeginNode(), context,true);
+            compile(dotNode.getEndNode(), context,true);
+
+            context.createNewRange(dotNode.isExclusive());
+        }
+        if (popit) context.consumeCurrentValue();
     }
 
-    public void compileDRegexp(Node node, BodyCompiler context) {
+    public void compileDRegexp(Node node, BodyCompiler context, boolean expr) {
         final DRegexpNode dregexpNode = (DRegexpNode) node;
 
         CompilerCallback createStringCallback = new CompilerCallback() {
@@ -1899,7 +1966,7 @@ public class ASTCompiler {
 
                                     public void nextValue(BodyCompiler context, Object sourceArray,
                                             int index) {
-                                        compile(dregexpNode.get(index), context);
+                                        compile(dregexpNode.get(index), context,true);
                                     }
                                 };
                         context.createNewString(dstrCallback, dregexpNode.size());
@@ -1907,48 +1974,59 @@ public class ASTCompiler {
                 };
 
         context.createNewRegexp(createStringCallback, dregexpNode.getOptions());
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileDStr(Node node, BodyCompiler context) {
+    public void compileDStr(Node node, BodyCompiler context, boolean expr) {
         final DStrNode dstrNode = (DStrNode) node;
 
         ArrayCallback dstrCallback = new ArrayCallback() {
 
                     public void nextValue(BodyCompiler context, Object sourceArray,
                             int index) {
-                        compile(dstrNode.get(index), context);
+                        compile(dstrNode.get(index), context,true);
                     }
                 };
         context.createNewString(dstrCallback, dstrNode.size());
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileDSymbol(Node node, BodyCompiler context) {
+    public void compileDSymbol(Node node, BodyCompiler context, boolean expr) {
         final DSymbolNode dsymbolNode = (DSymbolNode) node;
 
         ArrayCallback dstrCallback = new ArrayCallback() {
 
                     public void nextValue(BodyCompiler context, Object sourceArray,
                             int index) {
-                        compile(dsymbolNode.get(index), context);
+                        compile(dsymbolNode.get(index), context,true);
                     }
                 };
         context.createNewSymbol(dstrCallback, dsymbolNode.size());
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileDVar(Node node, BodyCompiler context) {
+    public void compileDVar(Node node, BodyCompiler context, boolean expr) {
         DVarNode dvarNode = (DVarNode) node;
 
-        context.getVariableCompiler().retrieveLocalVariable(dvarNode.getIndex(), dvarNode.getDepth());
+        if (PEEPHOLE_OPTZ) {
+            if (expr) context.getVariableCompiler().retrieveLocalVariable(dvarNode.getIndex(), dvarNode.getDepth());
+        } else {
+            context.getVariableCompiler().retrieveLocalVariable(dvarNode.getIndex(), dvarNode.getDepth());
+            if (!expr) context.consumeCurrentValue();
+        }
     }
 
-    public void compileDXStr(Node node, BodyCompiler context) {
+    public void compileDXStr(Node node, BodyCompiler context, boolean expr) {
         final DXStrNode dxstrNode = (DXStrNode) node;
 
         final ArrayCallback dstrCallback = new ArrayCallback() {
 
                     public void nextValue(BodyCompiler context, Object sourceArray,
                             int index) {
-                        compile(dxstrNode.get(index), context);
+                        compile(dxstrNode.get(index), context,true);
                     }
                 };
 
@@ -1963,9 +2041,11 @@ public class ASTCompiler {
                 };
 
         context.getInvocationCompiler().invokeDynamic("`", null, argsCallback, CallType.FUNCTIONAL, null, false);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileEnsureNode(Node node, BodyCompiler context) {
+    public void compileEnsureNode(Node node, BodyCompiler context, boolean expr) {
         final EnsureNode ensureNode = (EnsureNode) node;
 
         if (ensureNode.getEnsureNode() != null) {
@@ -1973,7 +2053,7 @@ public class ASTCompiler {
 
                         public void branch(BodyCompiler context) {
                             if (ensureNode.getBodyNode() != null) {
-                                compile(ensureNode.getBodyNode(), context);
+                                compile(ensureNode.getBodyNode(), context,true);
                             } else {
                                 context.loadNil();
                             }
@@ -1982,33 +2062,44 @@ public class ASTCompiler {
                     new BranchCallback() {
 
                         public void branch(BodyCompiler context) {
-                            compile(ensureNode.getEnsureNode(), context);
+                            compile(ensureNode.getEnsureNode(), context,true);
                             context.consumeCurrentValue();
                         }
                     });
         } else {
             if (ensureNode.getBodyNode() != null) {
-                compile(ensureNode.getBodyNode(), context);
+                compile(ensureNode.getBodyNode(), context,true);
             } else {
                 context.loadNil();
             }
         }
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileEvStr(Node node, BodyCompiler context) {
+    public void compileEvStr(Node node, BodyCompiler context, boolean expr) {
         final EvStrNode evStrNode = (EvStrNode) node;
 
-        compile(evStrNode.getBody(), context);
+        compile(evStrNode.getBody(), context,true);
         context.asString();
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileFalse(Node node, BodyCompiler context) {
-        context.loadFalse();
-
-        context.pollThreadEvents();
+    public void compileFalse(Node node, BodyCompiler context, boolean expr) {
+        if (PEEPHOLE_OPTZ) {
+            if (expr) {
+                context.loadFalse();
+                context.pollThreadEvents();
+            }
+        } else {
+            context.loadFalse();
+            context.pollThreadEvents();
+            if (!expr) context.consumeCurrentValue();
+        }
     }
 
-    public void compileFCall(Node node, BodyCompiler context) {
+    public void compileFCall(Node node, BodyCompiler context, boolean expr) {
         final FCallNode fcallNode = (FCallNode) node;
 
         ArgumentsCallback argsCallback = getArgsCallback(fcallNode.getArgsNode());
@@ -2016,6 +2107,8 @@ public class ASTCompiler {
         CompilerCallback closureArg = getBlock(fcallNode.getIterNode());
 
         context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, closureArg, fcallNode.getIterNode() instanceof IterNode);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
     private CompilerCallback getBlock(Node node) {
@@ -2030,7 +2123,7 @@ public class ASTCompiler {
                 return new CompilerCallback() {
 
                             public void call(BodyCompiler context) {
-                                compile(iterNode, context);
+                                compile(iterNode, context,true);
                             }
                         };
             case BLOCKPASSNODE:
@@ -2039,7 +2132,7 @@ public class ASTCompiler {
                 return new CompilerCallback() {
 
                             public void call(BodyCompiler context) {
-                                compile(blockPassNode.getBodyNode(), context);
+                                compile(blockPassNode.getBodyNode(), context,true);
                                 context.unwrapPassedBlock();
                             }
                         };
@@ -2048,13 +2141,18 @@ public class ASTCompiler {
         }
     }
 
-    public void compileFixnum(Node node, BodyCompiler context) {
+    public void compileFixnum(Node node, BodyCompiler context, boolean expr) {
         FixnumNode fixnumNode = (FixnumNode) node;
 
-        context.createNewFixnum(fixnumNode.getValue());
+        if (PEEPHOLE_OPTZ) {
+            if (expr) context.createNewFixnum(fixnumNode.getValue());
+        } else {
+            context.createNewFixnum(fixnumNode.getValue());
+            if (!expr) context.consumeCurrentValue();
+        }
     }
 
-    public void compileFlip(Node node, BodyCompiler context) {
+    public void compileFlip(Node node, BodyCompiler context, boolean expr) {
         final FlipNode flipNode = (FlipNode) node;
 
         context.getVariableCompiler().retrieveLocalVariable(flipNode.getIndex(), flipNode.getDepth());
@@ -2063,7 +2161,7 @@ public class ASTCompiler {
             context.performBooleanBranch(new BranchCallback() {
 
                 public void branch(BodyCompiler context) {
-                    compile(flipNode.getEndNode(), context);
+                    compile(flipNode.getEndNode(), context,true);
                     context.performBooleanBranch(new BranchCallback() {
 
                         public void branch(BodyCompiler context) {
@@ -2081,7 +2179,7 @@ public class ASTCompiler {
             }, new BranchCallback() {
 
                 public void branch(BodyCompiler context) {
-                    compile(flipNode.getBeginNode(), context);
+                    compile(flipNode.getBeginNode(), context,true);
                     becomeTrueOrFalse(context);
                     context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(),true);
                 }
@@ -2090,7 +2188,7 @@ public class ASTCompiler {
             context.performBooleanBranch(new BranchCallback() {
 
                 public void branch(BodyCompiler context) {
-                    compile(flipNode.getEndNode(), context);
+                    compile(flipNode.getEndNode(), context,true);
                     context.performBooleanBranch(new BranchCallback() {
 
                         public void branch(BodyCompiler context) {
@@ -2108,11 +2206,11 @@ public class ASTCompiler {
             }, new BranchCallback() {
 
                 public void branch(BodyCompiler context) {
-                    compile(flipNode.getBeginNode(), context);
+                    compile(flipNode.getBeginNode(), context,true);
                     context.performBooleanBranch(new BranchCallback() {
 
                         public void branch(BodyCompiler context) {
-                            compile(flipNode.getEndNode(), context);
+                            compile(flipNode.getEndNode(), context,true);
                             flipTrueOrFalse(context);
                             context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(),true);
                             context.consumeCurrentValue();
@@ -2127,6 +2225,8 @@ public class ASTCompiler {
                 }
             });
         }
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
     private void becomeTrueOrFalse(BodyCompiler context) {
@@ -2157,19 +2257,24 @@ public class ASTCompiler {
                 });
     }
 
-    public void compileFloat(Node node, BodyCompiler context) {
+    public void compileFloat(Node node, BodyCompiler context, boolean expr) {
         FloatNode floatNode = (FloatNode) node;
 
-        context.createNewFloat(floatNode.getValue());
+        if (PEEPHOLE_OPTZ) {
+            if (expr) context.createNewFloat(floatNode.getValue());
+        } else {
+            context.createNewFloat(floatNode.getValue());
+            if (!expr) context.consumeCurrentValue();
+        }
     }
 
-    public void compileFor(Node node, BodyCompiler context) {
+    public void compileFor(Node node, BodyCompiler context, boolean expr) {
         final ForNode forNode = (ForNode) node;
 
         CompilerCallback receiverCallback = new CompilerCallback() {
 
                     public void call(BodyCompiler context) {
-                        compile(forNode.getIterNode(), context);
+                        compile(forNode.getIterNode(), context, true);
                     }
                 };
 
@@ -2181,6 +2286,8 @@ public class ASTCompiler {
                 };
 
         context.getInvocationCompiler().invokeDynamic("each", receiverCallback, null, CallType.NORMAL, closureArg, true);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
     public void compileForIter(Node node, BodyCompiler context) {
@@ -2191,7 +2298,7 @@ public class ASTCompiler {
 
                     public void call(BodyCompiler context) {
                         if (forNode.getBodyNode() != null) {
-                            compile(forNode.getBodyNode(), context);
+                            compile(forNode.getBodyNode(), context,true);
                         } else {
                             context.loadNil();
                         }
@@ -2235,68 +2342,83 @@ public class ASTCompiler {
         }
     }
 
-    public void compileGlobalAsgn(Node node, BodyCompiler context) {
+    public void compileGlobalAsgn(Node node, BodyCompiler context, boolean expr) {
         final GlobalAsgnNode globalAsgnNode = (GlobalAsgnNode) node;
 
         CompilerCallback value = new CompilerCallback() {
             public void call(BodyCompiler context) {
-                compile(globalAsgnNode.getValueNode(), context);
+                compile(globalAsgnNode.getValueNode(), context, true);
             }
         };
 
         if (globalAsgnNode.getName().length() == 2) {
             switch (globalAsgnNode.getName().charAt(1)) {
-                case '_':
-                    context.getVariableCompiler().assignLastLine(value);
-                    return;
-                case '~':
-                    context.getVariableCompiler().assignBackRef(value);
-                    return;
-                default:
-                // fall off the end, handle it as a normal global
+            case '_':
+                context.getVariableCompiler().assignLastLine(value);
+                break;
+            case '~':
+                context.getVariableCompiler().assignBackRef(value);
+                break;
+            default:
+                context.assignGlobalVariable(globalAsgnNode.getName(), value);
             }
+        } else {
+            context.assignGlobalVariable(globalAsgnNode.getName(), value);
         }
 
-        context.assignGlobalVariable(globalAsgnNode.getName(), value);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileGlobalAsgnAssignment(Node node, BodyCompiler context) {
+    public void compileGlobalAsgnAssignment(Node node, BodyCompiler context, boolean expr) {
         GlobalAsgnNode globalAsgnNode = (GlobalAsgnNode) node;
 
         if (globalAsgnNode.getName().length() == 2) {
             switch (globalAsgnNode.getName().charAt(1)) {
-                case '_':
-                    context.getVariableCompiler().assignLastLine();
-                    return;
-                case '~':
-                    context.getVariableCompiler().assignBackRef();
-                    return;
-                default:
-                // fall off the end, handle it as a normal global
+            case '_':
+                context.getVariableCompiler().assignLastLine();
+                break;
+            case '~':
+                context.getVariableCompiler().assignBackRef();
+                break;
+            default:
+                context.assignGlobalVariable(globalAsgnNode.getName());
             }
+        } else {
+            context.assignGlobalVariable(globalAsgnNode.getName());
         }
-
-        context.assignGlobalVariable(globalAsgnNode.getName());
+        
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileGlobalVar(Node node, BodyCompiler context) {
+    public void compileGlobalVar(Node node, BodyCompiler context, boolean expr) {
         GlobalVarNode globalVarNode = (GlobalVarNode) node;
 
-        if (globalVarNode.getName().length() == 2) {
-            switch (globalVarNode.getName().charAt(1)) {
+        boolean doit = expr || !PEEPHOLE_OPTZ;
+        boolean popit = !PEEPHOLE_OPTZ && !expr;
+        
+        if (doit) {
+            if (globalVarNode.getName().length() == 2) {
+                switch (globalVarNode.getName().charAt(1)) {
                 case '_':
                     context.getVariableCompiler().retrieveLastLine();
-                    return;
+                    break;
                 case '~':
                     context.getVariableCompiler().retrieveBackRef();
-                    return;
+                    break;
+                default:
+                    context.retrieveGlobalVariable(globalVarNode.getName());
+                }
+            } else {
+                context.retrieveGlobalVariable(globalVarNode.getName());
             }
         }
-
-        context.retrieveGlobalVariable(globalVarNode.getName());
+        
+        if (popit) context.consumeCurrentValue();
     }
 
-    public void compileHash(Node node, BodyCompiler context) {
+    public void compileHash(Node node, BodyCompiler context, boolean expr) {
         HashNode hashNode = (HashNode) node;
 
         if (hashNode.getListNode() == null || hashNode.getListNode().size() == 0) {
@@ -2310,26 +2432,28 @@ public class ASTCompiler {
                             int index) {
                         ListNode listNode = (ListNode) sourceArray;
                         int keyIndex = index * 2;
-                        compile(listNode.get(keyIndex), context);
-                        compile(listNode.get(keyIndex + 1), context);
+                        compile(listNode.get(keyIndex), context,true);
+                        compile(listNode.get(keyIndex + 1), context,true);
                     }
                 };
 
         context.createNewHash(hashNode.getListNode(), hashCallback, hashNode.getListNode().size() / 2);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileIf(Node node, BodyCompiler context) {
+    public void compileIf(Node node, BodyCompiler context, final boolean expr) {
         final IfNode ifNode = (IfNode) node;
 
-        compile(ifNode.getCondition(), context);
+        compile(ifNode.getCondition(), context,true);
 
         BranchCallback trueCallback = new BranchCallback() {
 
                     public void branch(BodyCompiler context) {
                         if (ifNode.getThenBody() != null) {
-                            compile(ifNode.getThenBody(), context);
+                            compile(ifNode.getThenBody(), context, expr);
                         } else {
-                            context.loadNil();
+                            if (expr) context.loadNil();
                         }
                     }
                 };
@@ -2338,9 +2462,9 @@ public class ASTCompiler {
 
                     public void branch(BodyCompiler context) {
                         if (ifNode.getElseBody() != null) {
-                            compile(ifNode.getElseBody(), context);
+                            compile(ifNode.getElseBody(), context, expr);
                         } else {
-                            context.loadNil();
+                            if (expr) context.loadNil();
                         }
                     }
                 };
@@ -2348,27 +2472,36 @@ public class ASTCompiler {
         context.performBooleanBranch(trueCallback, falseCallback);
     }
 
-    public void compileInstAsgn(Node node, BodyCompiler context) {
+    public void compileInstAsgn(Node node, BodyCompiler context, boolean expr) {
         final InstAsgnNode instAsgnNode = (InstAsgnNode) node;
 
         CompilerCallback value = new CompilerCallback() {
             public void call(BodyCompiler context) {
-                compile(instAsgnNode.getValueNode(), context);
+                compile(instAsgnNode.getValueNode(), context, true);
             }
         };
 
         context.assignInstanceVariable(instAsgnNode.getName(), value);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileInstAsgnAssignment(Node node, BodyCompiler context) {
+    public void compileInstAsgnAssignment(Node node, BodyCompiler context, boolean expr) {
         InstAsgnNode instAsgnNode = (InstAsgnNode) node;
         context.assignInstanceVariable(instAsgnNode.getName());
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileInstVar(Node node, BodyCompiler context) {
+    public void compileInstVar(Node node, BodyCompiler context, boolean expr) {
         InstVarNode instVarNode = (InstVarNode) node;
 
-        context.retrieveInstanceVariable(instVarNode.getName());
+        if (PEEPHOLE_OPTZ) {
+            if (expr) context.retrieveInstanceVariable(instVarNode.getName());
+        } else {
+            context.retrieveInstanceVariable(instVarNode.getName());
+            if (!expr) context.consumeCurrentValue();
+        }
     }
 
     public void compileIter(Node node, BodyCompiler context) {
@@ -2379,7 +2512,7 @@ public class ASTCompiler {
 
                     public void call(BodyCompiler context) {
                         if (iterNode.getBodyNode() != null) {
-                            compile(iterNode.getBodyNode(), context);
+                            compile(iterNode.getBodyNode(), context, true);
                         } else {
                             context.loadNil();
                         }
@@ -2417,63 +2550,74 @@ public class ASTCompiler {
         }
     }
 
-    public void compileLocalAsgn(Node node, BodyCompiler context) {
+    public void compileLocalAsgn(Node node, BodyCompiler context, boolean expr) {
         final LocalAsgnNode localAsgnNode = (LocalAsgnNode) node;
 
-        // just push null for pragmas
+        // just push nil for pragmas
         if (ASTInspector.PRAGMAS.contains(localAsgnNode.getName())) {
-            context.loadNull();
+            if (expr) context.loadNil();
         } else {
             CompilerCallback value = new CompilerCallback() {
                 public void call(BodyCompiler context) {
-                    compile(localAsgnNode.getValueNode(), context);
+                    compile(localAsgnNode.getValueNode(), context,true);
                 }
             };
 
-            context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth(), value,true);
+            context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth(), value, expr);
         }
     }
 
-    public void compileLocalAsgnAssignment(Node node, BodyCompiler context) {
+    public void compileLocalAsgnAssignment(Node node, BodyCompiler context, boolean expr) {
         // "assignment" means the value is already on the stack
         LocalAsgnNode localAsgnNode = (LocalAsgnNode) node;
 
-        context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth(), true);
+        context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth(), expr);
     }
 
-    public void compileLocalVar(Node node, BodyCompiler context) {
+    public void compileLocalVar(Node node, BodyCompiler context, boolean expr) {
         LocalVarNode localVarNode = (LocalVarNode) node;
 
-        context.getVariableCompiler().retrieveLocalVariable(localVarNode.getIndex(), localVarNode.getDepth());
+        if (PEEPHOLE_OPTZ) {
+            if (expr) context.getVariableCompiler().retrieveLocalVariable(localVarNode.getIndex(), localVarNode.getDepth());
+        } else {
+            context.getVariableCompiler().retrieveLocalVariable(localVarNode.getIndex(), localVarNode.getDepth());
+            if (!expr) context.consumeCurrentValue();
+        }
     }
 
-    public void compileMatch(Node node, BodyCompiler context) {
+    public void compileMatch(Node node, BodyCompiler context, boolean expr) {
         MatchNode matchNode = (MatchNode) node;
 
-        compile(matchNode.getRegexpNode(), context);
+        compile(matchNode.getRegexpNode(), context,true);
 
         context.match();
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileMatch2(Node node, BodyCompiler context) {
+    public void compileMatch2(Node node, BodyCompiler context, boolean expr) {
         Match2Node matchNode = (Match2Node) node;
 
-        compile(matchNode.getReceiverNode(), context);
-        compile(matchNode.getValueNode(), context);
+        compile(matchNode.getReceiverNode(), context,true);
+        compile(matchNode.getValueNode(), context,true);
 
         context.match2();
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileMatch3(Node node, BodyCompiler context) {
+    public void compileMatch3(Node node, BodyCompiler context, boolean expr) {
         Match3Node matchNode = (Match3Node) node;
 
-        compile(matchNode.getReceiverNode(), context);
-        compile(matchNode.getValueNode(), context);
+        compile(matchNode.getReceiverNode(), context,true);
+        compile(matchNode.getValueNode(), context,true);
 
         context.match3();
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileModule(Node node, BodyCompiler context) {
+    public void compileModule(Node node, BodyCompiler context, boolean expr) {
         final ModuleNode moduleNode = (ModuleNode) node;
 
         final Node cpathNode = moduleNode.getCPath();
@@ -2482,7 +2626,7 @@ public class ASTCompiler {
 
                     public void call(BodyCompiler context) {
                         if (moduleNode.getBodyNode() != null) {
-                            compile(moduleNode.getBodyNode(), context);
+                            compile(moduleNode.getBodyNode(), context,true);
                         }
                         context.loadNil();
                     }
@@ -2494,7 +2638,7 @@ public class ASTCompiler {
                         if (cpathNode instanceof Colon2Node) {
                             Node leftNode = ((Colon2Node) cpathNode).getLeftNode();
                             if (leftNode != null) {
-                                compile(leftNode, context);
+                                compile(leftNode, context,true);
                             } else {
                                 context.loadNil();
                             }
@@ -2507,17 +2651,19 @@ public class ASTCompiler {
                 };
 
         context.defineModule(moduleNode.getCPath().getName(), moduleNode.getScope(), pathCallback, bodyCallback);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileMultipleAsgn(Node node, BodyCompiler context) {
+    public void compileMultipleAsgn(Node node, BodyCompiler context, boolean expr) {
         MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode) node;
 
-        compile(multipleAsgnNode.getValueNode(), context);
+        compile(multipleAsgnNode.getValueNode(), context,true);
 
-        compileMultipleAsgnAssignment(node, context);
+        compileMultipleAsgnAssignment(node, context, expr);
     }
 
-    public void compileMultipleAsgnAssignment(Node node, BodyCompiler context) {
+    public void compileMultipleAsgnAssignment(Node node, BodyCompiler context, boolean expr) {
         final MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode) node;
 
         // normal items at the "head" of the masgn
@@ -2568,9 +2714,11 @@ public class ASTCompiler {
                 context.forEachInValueArray(0, multipleAsgnNode.getHeadNode().size(), multipleAsgnNode.getHeadNode(), headAssignCallback, argsCallback);
             }
         }
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileNewline(Node node, BodyCompiler context) {
+    public void compileNewline(Node node, BodyCompiler context, boolean expr) {
         // TODO: add trace call?
         context.lineNumber(node.getPosition());
 
@@ -2578,17 +2726,17 @@ public class ASTCompiler {
 
         NewlineNode newlineNode = (NewlineNode) node;
 
-        compile(newlineNode.getNextNode(), context);
+        compile(newlineNode.getNextNode(), context, expr);
     }
 
-    public void compileNext(Node node, BodyCompiler context) {
+    public void compileNext(Node node, BodyCompiler context, boolean expr) {
         final NextNode nextNode = (NextNode) node;
 
         CompilerCallback valueCallback = new CompilerCallback() {
 
                     public void call(BodyCompiler context) {
                         if (nextNode.getValueNode() != null) {
-                            compile(nextNode.getValueNode(), context);
+                            compile(nextNode.getValueNode(), context,true);
                         } else {
                             context.loadNil();
                         }
@@ -2597,45 +2745,63 @@ public class ASTCompiler {
 
         context.pollThreadEvents();
         context.issueNextEvent(valueCallback);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileNthRef(Node node, BodyCompiler context) {
+    public void compileNthRef(Node node, BodyCompiler context, boolean expr) {
         NthRefNode nthRefNode = (NthRefNode) node;
 
-        context.nthRef(nthRefNode.getMatchNumber());
+        if (PEEPHOLE_OPTZ) {
+            if (expr) context.nthRef(nthRefNode.getMatchNumber());
+        } else {
+            context.nthRef(nthRefNode.getMatchNumber());
+            if (!expr) context.consumeCurrentValue();
+        }
     }
 
-    public void compileNil(Node node, BodyCompiler context) {
-        context.loadNil();
-
-        context.pollThreadEvents();
+    public void compileNil(Node node, BodyCompiler context, boolean expr) {
+        if (PEEPHOLE_OPTZ) {
+            if (expr) {
+                context.loadNil();
+                context.pollThreadEvents();
+            }
+        } else {
+            context.loadNil();
+            context.pollThreadEvents();
+            if (!expr) context.consumeCurrentValue();
+        }
     }
 
-    public void compileNot(Node node, BodyCompiler context) {
+    public void compileNot(Node node, BodyCompiler context, boolean expr) {
         NotNode notNode = (NotNode) node;
 
-        compile(notNode.getConditionNode(), context);
+        compile(notNode.getConditionNode(), context, true);
 
         context.negateCurrentValue();
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileOpAsgnAnd(Node node, BodyCompiler context) {
+    public void compileOpAsgnAnd(Node node, BodyCompiler context, boolean expr) {
         final BinaryOperatorNode andNode = (BinaryOperatorNode) node;
 
-        compile(andNode.getFirstNode(), context);
+        compile(andNode.getFirstNode(), context,true);
 
         BranchCallback longCallback = new BranchCallback() {
 
                     public void branch(BodyCompiler context) {
-                        compile(andNode.getSecondNode(), context);
+                        compile(andNode.getSecondNode(), context,true);
                     }
                 };
 
         context.performLogicalAnd(longCallback);
         context.pollThreadEvents();
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileOpAsgnOr(Node node, BodyCompiler context) {
+    public void compileOpAsgnOr(Node node, BodyCompiler context, boolean expr) {
         final OpAsgnOrNode orNode = (OpAsgnOrNode) node;
 
         if (needsDefinitionCheck(orNode.getFirstNode())) {
@@ -2644,12 +2810,12 @@ public class ASTCompiler {
             context.isNull(new BranchCallback() {
 
                         public void branch(BodyCompiler context) {
-                            compile(orNode.getSecondNode(), context);
+                            compile(orNode.getSecondNode(), context,true);
                         }
                     }, new BranchCallback() {
 
                         public void branch(BodyCompiler context) {
-                            compile(orNode.getFirstNode(), context);
+                            compile(orNode.getFirstNode(), context,true);
                             context.duplicateCurrentValue();
                             context.performBooleanBranch(new BranchCallback() {
 
@@ -2661,13 +2827,13 @@ public class ASTCompiler {
 
                                         public void branch(BodyCompiler context) {
                                             context.consumeCurrentValue();
-                                            compile(orNode.getSecondNode(), context);
+                                            compile(orNode.getSecondNode(), context,true);
                                         }
                                     });
                         }
                     });
         } else {
-            compile(orNode.getFirstNode(), context);
+            compile(orNode.getFirstNode(), context,true);
             context.duplicateCurrentValue();
             context.performBooleanBranch(new BranchCallback() {
                 public void branch(BodyCompiler context) {
@@ -2677,13 +2843,15 @@ public class ASTCompiler {
             new BranchCallback() {
                 public void branch(BodyCompiler context) {
                     context.consumeCurrentValue();
-                    compile(orNode.getSecondNode(), context);
+                    compile(orNode.getSecondNode(), context,true);
                 }
             });
 
         }
 
         context.pollThreadEvents();
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
     /**
@@ -2719,56 +2887,62 @@ public class ASTCompiler {
         }
     }
 
-    public void compileOpAsgn(Node node, BodyCompiler context) {
+    public void compileOpAsgn(Node node, BodyCompiler context, boolean expr) {
         final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
 
         if (opAsgnNode.getOperatorName().equals("||")) {
-            compileOpAsgnWithOr(opAsgnNode, context);
+            compileOpAsgnWithOr(opAsgnNode, context, true);
         } else if (opAsgnNode.getOperatorName().equals("&&")) {
-            compileOpAsgnWithAnd(opAsgnNode, context);
+            compileOpAsgnWithAnd(opAsgnNode, context, true);
         } else {
-            compileOpAsgnWithMethod(opAsgnNode, context);
+            compileOpAsgnWithMethod(opAsgnNode, context, true);
         }
 
         context.pollThreadEvents();
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileOpAsgnWithOr(Node node, BodyCompiler context) {
+    public void compileOpAsgnWithOr(Node node, BodyCompiler context, boolean expr) {
         final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
 
         final CompilerCallback receiverCallback = new CompilerCallback() {
 
             public void call(BodyCompiler context) {
-                compile(opAsgnNode.getReceiverNode(), context); // [recv]
+                compile(opAsgnNode.getReceiverNode(), context, true); // [recv]
             }
         };
         
         ArgumentsCallback argsCallback = getArgsCallback(opAsgnNode.getValueNode());
         
         context.getInvocationCompiler().invokeOpAsgnWithOr(opAsgnNode.getVariableName(), opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileOpAsgnWithAnd(Node node, BodyCompiler context) {
+    public void compileOpAsgnWithAnd(Node node, BodyCompiler context, boolean expr) {
         final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
 
         final CompilerCallback receiverCallback = new CompilerCallback() {
 
             public void call(BodyCompiler context) {
-                compile(opAsgnNode.getReceiverNode(), context); // [recv]
+                compile(opAsgnNode.getReceiverNode(), context, true); // [recv]
             }
         };
         
         ArgumentsCallback argsCallback = getArgsCallback(opAsgnNode.getValueNode());
         
         context.getInvocationCompiler().invokeOpAsgnWithAnd(opAsgnNode.getVariableName(), opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileOpAsgnWithMethod(Node node, BodyCompiler context) {
+    public void compileOpAsgnWithMethod(Node node, BodyCompiler context, boolean expr) {
         final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
 
         final CompilerCallback receiverCallback = new CompilerCallback() {
                     public void call(BodyCompiler context) {
-                        compile(opAsgnNode.getReceiverNode(), context); // [recv]
+                        compile(opAsgnNode.getReceiverNode(), context, true); // [recv]
                     }
                 };
 
@@ -2779,22 +2953,24 @@ public class ASTCompiler {
             }
 
             public void call(BodyCompiler context) {
-                compile(opAsgnNode.getValueNode(), context);
+                compile(opAsgnNode.getValueNode(), context, true);
             }
         };
         
         context.getInvocationCompiler().invokeOpAsgnWithMethod(opAsgnNode.getOperatorName(), opAsgnNode.getVariableName(), opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileOpElementAsgn(Node node, BodyCompiler context) {
+    public void compileOpElementAsgn(Node node, BodyCompiler context, boolean expr) {
         final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
         
         if (opElementAsgnNode.getOperatorName() == "||") {
-            compileOpElementAsgnWithOr(node, context);
+            compileOpElementAsgnWithOr(node, context, expr);
         } else if (opElementAsgnNode.getOperatorName() == "&&") {
-            compileOpElementAsgnWithAnd(node, context);
+            compileOpElementAsgnWithAnd(node, context, expr);
         } else {
-            compileOpElementAsgnWithMethod(node, context);
+            compileOpElementAsgnWithMethod(node, context, expr);
         }
     }
     
@@ -2828,7 +3004,7 @@ public class ASTCompiler {
         public void call(BodyCompiler context) {
             if (getArity() == 1) {
                 // if arity 1, just compile the one element to save us the array cost
-                compile(((ArrayNode)node).get(0), context);
+                compile(((ArrayNode)node).get(0), context,true);
             } else {
                 // compile into array
                 compileArguments(node, context);
@@ -2836,12 +3012,12 @@ public class ASTCompiler {
         }
     };
 
-    public void compileOpElementAsgnWithOr(Node node, BodyCompiler context) {
+    public void compileOpElementAsgnWithOr(Node node, BodyCompiler context, boolean expr) {
         final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
 
         CompilerCallback receiverCallback = new CompilerCallback() {
             public void call(BodyCompiler context) {
-                compile(opElementAsgnNode.getReceiverNode(), context);
+                compile(opElementAsgnNode.getReceiverNode(), context, true);
             }
         };
 
@@ -2849,19 +3025,21 @@ public class ASTCompiler {
 
         CompilerCallback valueCallback = new CompilerCallback() {
             public void call(BodyCompiler context) {
-                compile(opElementAsgnNode.getValueNode(), context);
+                compile(opElementAsgnNode.getValueNode(), context, true);
             }
         };
 
         context.getInvocationCompiler().opElementAsgnWithOr(receiverCallback, argsCallback, valueCallback);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileOpElementAsgnWithAnd(Node node, BodyCompiler context) {
+    public void compileOpElementAsgnWithAnd(Node node, BodyCompiler context, boolean expr) {
         final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
 
         CompilerCallback receiverCallback = new CompilerCallback() {
             public void call(BodyCompiler context) {
-                compile(opElementAsgnNode.getReceiverNode(), context);
+                compile(opElementAsgnNode.getReceiverNode(), context, true);
             }
         };
 
@@ -2869,19 +3047,21 @@ public class ASTCompiler {
 
         CompilerCallback valueCallback = new CompilerCallback() {
             public void call(BodyCompiler context) {
-                compile(opElementAsgnNode.getValueNode(), context);
+                compile(opElementAsgnNode.getValueNode(), context, true);
             }
         };
 
         context.getInvocationCompiler().opElementAsgnWithAnd(receiverCallback, argsCallback, valueCallback);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileOpElementAsgnWithMethod(Node node, BodyCompiler context) {
+    public void compileOpElementAsgnWithMethod(Node node, BodyCompiler context, boolean expr) {
         final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
 
         CompilerCallback receiverCallback = new CompilerCallback() {
             public void call(BodyCompiler context) {
-                compile(opElementAsgnNode.getReceiverNode(), context);
+                compile(opElementAsgnNode.getReceiverNode(), context,true);
             }
         };
 
@@ -2889,29 +3069,33 @@ public class ASTCompiler {
 
         CompilerCallback valueCallback = new CompilerCallback() {
             public void call(BodyCompiler context) {
-                compile(opElementAsgnNode.getValueNode(), context);
+                compile(opElementAsgnNode.getValueNode(), context,true);
             }
         };
 
         context.getInvocationCompiler().opElementAsgnWithMethod(receiverCallback, argsCallback, valueCallback, opElementAsgnNode.getOperatorName());
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileOr(Node node, BodyCompiler context) {
+    public void compileOr(Node node, BodyCompiler context, boolean expr) {
         final OrNode orNode = (OrNode) node;
 
-        compile(orNode.getFirstNode(), context);
+        compile(orNode.getFirstNode(), context,true);
 
         BranchCallback longCallback = new BranchCallback() {
 
                     public void branch(BodyCompiler context) {
-                        compile(orNode.getSecondNode(), context);
+                        compile(orNode.getSecondNode(), context, true);
                     }
                 };
 
         context.performLogicalOr(longCallback);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compilePostExe(Node node, BodyCompiler context) {
+    public void compilePostExe(Node node, BodyCompiler context, boolean expr) {
         final PostExeNode postExeNode = (PostExeNode) node;
 
         // create the closure class and instantiate it
@@ -2919,16 +3103,18 @@ public class ASTCompiler {
 
                     public void call(BodyCompiler context) {
                         if (postExeNode.getBodyNode() != null) {
-                            compile(postExeNode.getBodyNode(), context);
+                            compile(postExeNode.getBodyNode(), context, true);
                         } else {
                             context.loadNil();
                         }
                     }
                 };
         context.createNewEndBlock(closureBody);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compilePreExe(Node node, BodyCompiler context) {
+    public void compilePreExe(Node node, BodyCompiler context, boolean expr) {
         final PreExeNode preExeNode = (PreExeNode) node;
 
         // create the closure class and instantiate it
@@ -2936,42 +3122,51 @@ public class ASTCompiler {
 
                     public void call(BodyCompiler context) {
                         if (preExeNode.getBodyNode() != null) {
-                            compile(preExeNode.getBodyNode(), context);
+                            compile(preExeNode.getBodyNode(), context,true);
                         } else {
                             context.loadNil();
                         }
                     }
                 };
         context.runBeginBlock(preExeNode.getScope(), closureBody);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileRedo(Node node, BodyCompiler context) {
+    public void compileRedo(Node node, BodyCompiler context, boolean expr) {
         //RedoNode redoNode = (RedoNode)node;
 
         context.issueRedoEvent();
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileRegexp(Node node, BodyCompiler context) {
+    public void compileRegexp(Node node, BodyCompiler context, boolean expr) {
         RegexpNode reNode = (RegexpNode) node;
 
-        context.createNewRegexp(reNode.getValue(), reNode.getOptions());
+        if (PEEPHOLE_OPTZ) {
+            if (expr) context.createNewRegexp(reNode.getValue(), reNode.getOptions());
+        } else {
+            context.createNewRegexp(reNode.getValue(), reNode.getOptions());
+            if (!expr) context.consumeCurrentValue();
+        }
     }
 
-    public void compileRescue(Node node, BodyCompiler context) {
+    public void compileRescue(Node node, BodyCompiler context, boolean expr) {
         final RescueNode rescueNode = (RescueNode) node;
 
         BranchCallback body = new BranchCallback() {
 
                     public void branch(BodyCompiler context) {
                         if (rescueNode.getBodyNode() != null) {
-                            compile(rescueNode.getBodyNode(), context);
+                            compile(rescueNode.getBodyNode(), context, true);
                         } else {
                             context.loadNil();
                         }
 
                         if (rescueNode.getElseNode() != null) {
                             context.consumeCurrentValue();
-                            compile(rescueNode.getElseNode(), context);
+                            compile(rescueNode.getElseNode(), context, true);
                         }
                     }
                 };
@@ -2991,6 +3186,8 @@ public class ASTCompiler {
                 };
 
         context.performRescue(body, rubyHandler, javaHandler);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
     public void compileRescueBody(Node node, BodyCompiler context) {
@@ -3014,7 +3211,7 @@ public class ASTCompiler {
                     context.storeExceptionInErrorInfo();
 
                     BodyCompiler nestedBody = context.outline("rescue_line_" + rescueBodyNode.getPosition().getStartLine());
-                    compile(rescueBodyNode.getBodyNode(), nestedBody);
+                    compile(rescueBodyNode.getBodyNode(), nestedBody,true);
                     nestedBody.endBody();
 
                     // FIXME: this should reset to what it was before
@@ -3063,7 +3260,7 @@ public class ASTCompiler {
 
                         // proceed with normal exception-handling logic
                         BodyCompiler nestedBody = context.outline("java_rescue_line_" + rescueBodyNode.getPosition().getStartLine());
-                        compile(rescueBodyNode.getBodyNode(), nestedBody);
+                        compile(rescueBodyNode.getBodyNode(), nestedBody,true);
                         nestedBody.endBody();
 
                         // FIXME: this should reset to what it was before
@@ -3091,22 +3288,26 @@ public class ASTCompiler {
         }
     }
 
-    public void compileRetry(Node node, BodyCompiler context) {
+    public void compileRetry(Node node, BodyCompiler context, boolean expr) {
         context.pollThreadEvents();
 
         context.issueRetryEvent();
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileReturn(Node node, BodyCompiler context) {
+    public void compileReturn(Node node, BodyCompiler context, boolean expr) {
         ReturnNode returnNode = (ReturnNode) node;
 
         if (returnNode.getValueNode() != null) {
-            compile(returnNode.getValueNode(), context);
+            compile(returnNode.getValueNode(), context,true);
         } else {
             context.loadNil();
         }
 
         context.performReturn();
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
     public void compileRoot(Node node, ScriptCompiler context, ASTInspector inspector) {
@@ -3135,16 +3336,11 @@ public class ASTCompiler {
                     if ((i + 1) % RubyInstanceConfig.CHAINED_COMPILE_LINE_COUNT == 0) {
                         methodCompiler = methodCompiler.chainToMethod("__file__from_line_" + (i + 1));
                     }
-                    compile(blockNode.get(i), methodCompiler);
-
-                    if (i + 1 < blockNode.size()) {
-                        // clear result from previous line
-                        methodCompiler.consumeCurrentValue();
-                    }
+                    compile(blockNode.get(i), methodCompiler, i + 1 >= blockNode.size());
                 }
             } else {
                 // single-statement body, just compile it
-                compile(nextNode, methodCompiler);
+                compile(nextNode, methodCompiler,true);
             }
         } else {
             methodCompiler.loadNil();
@@ -3155,29 +3351,42 @@ public class ASTCompiler {
         context.endScript(load, main);
     }
 
-    public void compileSelf(Node node, BodyCompiler context) {
-        context.retrieveSelf();
-    }
-
-    public void compileSplat(Node node, BodyCompiler context) {
-        SplatNode splatNode = (SplatNode) node;
-
-        compile(splatNode.getValue(), context);
-
-        context.splatCurrentValue();
-    }
-
-    public void compileStr(Node node, BodyCompiler context) {
-        StrNode strNode = (StrNode) node;
-
-        if (strNode instanceof FileNode) {
-            context.loadFilename();
+    public void compileSelf(Node node, BodyCompiler context, boolean expr) {
+        if (PEEPHOLE_OPTZ) {
+            if (expr) context.retrieveSelf();
         } else {
-            context.createNewString(strNode.getValue());
+            context.retrieveSelf();
+            if (!expr) context.consumeCurrentValue();
         }
     }
 
-    public void compileSuper(Node node, BodyCompiler context) {
+    public void compileSplat(Node node, BodyCompiler context, boolean expr) {
+        SplatNode splatNode = (SplatNode) node;
+
+        compile(splatNode.getValue(), context, true);
+
+        context.splatCurrentValue();
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
+    }
+
+    public void compileStr(Node node, BodyCompiler context, boolean expr) {
+        StrNode strNode = (StrNode) node;
+
+        boolean doit = expr || !PEEPHOLE_OPTZ;
+        boolean popit = !PEEPHOLE_OPTZ && !expr;
+
+        if (doit) {
+            if (strNode instanceof FileNode) {
+                context.loadFilename();
+            } else {
+                context.createNewString(strNode.getValue());
+            }
+        }
+        if (popit) context.consumeCurrentValue();
+    }
+
+    public void compileSuper(Node node, BodyCompiler context, boolean expr) {
         final SuperNode superNode = (SuperNode) node;
 
         CompilerCallback argsCallback = new CompilerCallback() {
@@ -3204,45 +3413,62 @@ public class ASTCompiler {
                 context.getInvocationCompiler().invokeSuper(null, closureArg);
             }
         }
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileSValue(Node node, BodyCompiler context) {
+    public void compileSValue(Node node, BodyCompiler context, boolean expr) {
         SValueNode svalueNode = (SValueNode) node;
 
-        compile(svalueNode.getValue(), context);
+        compile(svalueNode.getValue(), context,true);
 
         context.singlifySplattedValue();
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileSymbol(Node node, BodyCompiler context) {
+    public void compileSymbol(Node node, BodyCompiler context, boolean expr) {
         context.createNewSymbol(((SymbolNode) node).getName());
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }    
     
-    public void compileToAry(Node node, BodyCompiler context) {
+    public void compileToAry(Node node, BodyCompiler context, boolean expr) {
         ToAryNode toAryNode = (ToAryNode) node;
 
-        compile(toAryNode.getValue(), context);
+        compile(toAryNode.getValue(), context,true);
 
         context.aryToAry();
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileTrue(Node node, BodyCompiler context) {
-        context.loadTrue();
-
-        context.pollThreadEvents();
+    public void compileTrue(Node node, BodyCompiler context, boolean expr) {
+        if (PEEPHOLE_OPTZ) {
+            if (expr) {
+                context.loadTrue();
+                context.pollThreadEvents();
+            }
+        } else {
+            context.loadTrue();
+            context.pollThreadEvents();
+            if (!expr) context.consumeCurrentValue();
+        }
     }
 
-    public void compileUndef(Node node, BodyCompiler context) {
+    public void compileUndef(Node node, BodyCompiler context, boolean expr) {
         context.undefMethod(((UndefNode) node).getName());
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileUntil(Node node, BodyCompiler context) {
+    public void compileUntil(Node node, BodyCompiler context, boolean expr) {
         final UntilNode untilNode = (UntilNode) node;
 
         BranchCallback condition = new BranchCallback() {
 
             public void branch(BodyCompiler context) {
-                compile(untilNode.getConditionNode(), context);
+                compile(untilNode.getConditionNode(), context, true);
                 context.negateCurrentValue();
             }
         };
@@ -3250,11 +3476,9 @@ public class ASTCompiler {
         BranchCallback body = new BranchCallback() {
 
             public void branch(BodyCompiler context) {
-                if (untilNode.getBodyNode() == null) {
-                    context.loadNil();
-                    return;
+                if (untilNode.getBodyNode() != null) {
+                    compile(untilNode.getBodyNode(), context, true);
                 }
-                compile(untilNode.getBodyNode(), context);
             }
         };
 
@@ -3265,37 +3489,41 @@ public class ASTCompiler {
         }
 
         context.pollThreadEvents();
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileVAlias(Node node, BodyCompiler context) {
+    public void compileVAlias(Node node, BodyCompiler context, boolean expr) {
         VAliasNode valiasNode = (VAliasNode) node;
 
         context.aliasGlobal(valiasNode.getNewName(), valiasNode.getOldName());
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileVCall(Node node, BodyCompiler context) {
+    public void compileVCall(Node node, BodyCompiler context, boolean expr) {
         VCallNode vcallNode = (VCallNode) node;
         
         context.getInvocationCompiler().invokeDynamic(vcallNode.getName(), null, null, CallType.VARIABLE, null, false);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileWhile(Node node, BodyCompiler context) {
+    public void compileWhile(Node node, BodyCompiler context, boolean expr) {
         final WhileNode whileNode = (WhileNode) node;
 
         BranchCallback condition = new BranchCallback() {
 
             public void branch(BodyCompiler context) {
-                compile(whileNode.getConditionNode(), context);
+                compile(whileNode.getConditionNode(), context, true);
             }
         };
 
         BranchCallback body = new BranchCallback() {
 
             public void branch(BodyCompiler context) {
-                if (whileNode.getBodyNode() == null) {
-                    context.loadNil();
-                } else {
-                    compile(whileNode.getBodyNode(), context);
+                if (whileNode.getBodyNode() != null) {
+                    compile(whileNode.getBodyNode(), context, true);
                 }
             }
         };
@@ -3307,9 +3535,11 @@ public class ASTCompiler {
         }
 
         context.pollThreadEvents();
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileXStr(Node node, BodyCompiler context) {
+    public void compileXStr(Node node, BodyCompiler context, boolean expr) {
         final XStrNode xstrNode = (XStrNode) node;
 
         ArgumentsCallback argsCallback = new ArgumentsCallback() {
@@ -3322,107 +3552,91 @@ public class ASTCompiler {
             }
         };
         context.getInvocationCompiler().invokeDynamic("`", null, argsCallback, CallType.FUNCTIONAL, null, false);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileYield(Node node, BodyCompiler context) {
+    public void compileYield(Node node, BodyCompiler context, boolean expr) {
         final YieldNode yieldNode = (YieldNode) node;
 
         CompilerCallback argsCallback = null;
         if (yieldNode.getArgsNode() != null) {
             argsCallback = new CompilerCallback() {
                 public void call(BodyCompiler context) {
-                    compile(yieldNode.getArgsNode(), context);
+                    compile(yieldNode.getArgsNode(), context,true);
                 }
             };
         }
 
         context.getInvocationCompiler().yield(argsCallback, yieldNode.getCheckState());
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileZArray(Node node, BodyCompiler context) {
+    public void compileZArray(Node node, BodyCompiler context, boolean expr) {
         context.createEmptyArray();
     }
 
-    public void compileZSuper(Node node, BodyCompiler context) {
+    public void compileZSuper(Node node, BodyCompiler context, boolean expr) {
         ZSuperNode zsuperNode = (ZSuperNode) node;
 
         CompilerCallback closure = getBlock(zsuperNode.getIterNode());
 
         context.callZSuper(closure);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileArgsCatArguments(Node node, BodyCompiler context) {
+    public void compileArgsCatArguments(Node node, BodyCompiler context, boolean expr) {
         ArgsCatNode argsCatNode = (ArgsCatNode) node;
 
         compileArguments(argsCatNode.getFirstNode(), context);
         // arguments compilers always create IRubyObject[], but we want to use RubyArray.concat here;
         // FIXME: as a result, this is NOT efficient, since it creates and then later unwraps an array
         context.createNewArray(true);
-        compile(argsCatNode.getSecondNode(), context);
+        compile(argsCatNode.getSecondNode(), context,true);
         context.splatCurrentValue();
         context.concatArrays();
         context.convertToJavaArray();
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileArgsPushArguments(Node node, BodyCompiler context) {
+    public void compileArgsPushArguments(Node node, BodyCompiler context, boolean expr) {
         ArgsPushNode argsPushNode = (ArgsPushNode) node;
-        compile(argsPushNode.getFirstNode(), context);
-        compile(argsPushNode.getSecondNode(), context);
+        compile(argsPushNode.getFirstNode(), context,true);
+        compile(argsPushNode.getSecondNode(), context,true);
         context.appendToArray();
         context.convertToJavaArray();
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
-    public void compileArrayArguments(Node node, BodyCompiler context) {
+    public void compileArrayArguments(Node node, BodyCompiler context, boolean expr) {
         ArrayNode arrayNode = (ArrayNode) node;
 
         ArrayCallback callback = new ArrayCallback() {
 
                     public void nextValue(BodyCompiler context, Object sourceArray, int index) {
                         Node node = (Node) ((Object[]) sourceArray)[index];
-                        compile(node, context);
+                        compile(node, context,true);
                     }
                 };
 
         context.setLinePosition(arrayNode.getPosition());
         context.createObjectArray(arrayNode.childNodes().toArray(), callback);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     // leave as a normal array
     }
 
-    public void compileSplatArguments(Node node, BodyCompiler context) {
+    public void compileSplatArguments(Node node, BodyCompiler context, boolean expr) {
         SplatNode splatNode = (SplatNode) node;
 
-        compile(splatNode.getValue(), context);
+        compile(splatNode.getValue(), context,true);
         context.splatCurrentValue();
         context.convertToJavaArray();
-    }
-
-    /**
-     * Check whether the target node can safely be compiled.
-     * 
-     * @param node 
-     */
-    public static void confirmNodeIsSafe(Node node) {
-        switch (node.getNodeType()) {
-            case ARGSNODE:
-                ArgsNode argsNode = (ArgsNode) node;
-                // FIXME: We can't compile cases like def(a=(b=1)) because the variables
-            // in the arg list get ordered differently than you might expect (b comes first)
-            // So the code below searches through all opt args, ensuring none of them skip
-            // indicies. A skipped index means there's a hidden local var/arg like b above
-            // and so we shouldn't try to compile.
-                if (argsNode.getOptArgs() != null && argsNode.getOptArgs().size() > 0) {
-                    int index = argsNode.getRequiredArgsCount() - 1;
-
-                    for (int i = 0; i < argsNode.getOptArgs().size(); i++) {
-                        int newIndex = ((LocalAsgnNode) argsNode.getOptArgs().get(i)).getIndex();
-
-                        if (newIndex - index != 1) {
-                            throw new NotCompilableException("Can't compile def with optional args that assign other variables at: " + node.getPosition());
-                        }
-                        index = newIndex;
-                    }
-                }
-                break;
-        }
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 }

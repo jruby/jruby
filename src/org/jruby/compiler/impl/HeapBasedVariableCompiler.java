@@ -162,21 +162,25 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             method.aload(methodCompiler.getDynamicScopeIndex());
             method.swap();
             method.invokevirtual(p(DynamicScope.class), "setValueZeroDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
+            if (!expr) method.pop();
             break;
         case 1:
             method.aload(methodCompiler.getDynamicScopeIndex());
             method.swap();
             method.invokevirtual(p(DynamicScope.class), "setValueOneDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
+            if (!expr) method.pop();
             break;
         case 2:
             method.aload(methodCompiler.getDynamicScopeIndex());
             method.swap();
             method.invokevirtual(p(DynamicScope.class), "setValueTwoDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
+            if (!expr) method.pop();
             break;
         case 3:
             method.aload(methodCompiler.getDynamicScopeIndex());
             method.swap();
             method.invokevirtual(p(DynamicScope.class), "setValueThreeDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
+            if (!expr) method.pop();
             break;
         default:
             if (expr) method.dup();
@@ -185,14 +189,10 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             method.pushInt(index);
             method.swap();
             method.arraystore();
-            return;
+            break;
         }
 
         // for specific-index cases, clean up non-expression values
-        if (!expr) {
-            // not an expression, don't want result; pop it
-            method.pop();
-        }
     }
 
     public void assignLocalVariable(int index, CompilerCallback value, boolean expr) {
@@ -201,21 +201,25 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             method.aload(methodCompiler.getDynamicScopeIndex());
             value.call(methodCompiler);
             method.invokevirtual(p(DynamicScope.class), "setValueZeroDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
+            if (!expr) method.pop();
             break;
         case 1:
             method.aload(methodCompiler.getDynamicScopeIndex());
             value.call(methodCompiler);
             method.invokevirtual(p(DynamicScope.class), "setValueOneDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
+            if (!expr) method.pop();
             break;
         case 2:
             method.aload(methodCompiler.getDynamicScopeIndex());
             value.call(methodCompiler);
             method.invokevirtual(p(DynamicScope.class), "setValueTwoDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
+            if (!expr) method.pop();
             break;
         case 3:
             method.aload(methodCompiler.getDynamicScopeIndex());
             value.call(methodCompiler);
             method.invokevirtual(p(DynamicScope.class), "setValueThreeDepthZero", sig(IRubyObject.class, params(IRubyObject.class)));
+            if (!expr) method.pop();
             break;
         default:
             method.aload(methodCompiler.getVarsArrayIndex());
@@ -223,12 +227,7 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             value.call(methodCompiler);
             if (expr) method.dup_x2();
             method.arraystore();
-        }
-
-        // for specific-index cases, clean up non-expression values
-        if (!expr) {
-            // not an expression, don't want result; pop it
-            method.pop();
+            break;
         }
     }
 

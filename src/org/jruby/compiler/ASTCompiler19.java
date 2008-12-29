@@ -39,22 +39,22 @@ import org.jruby.ast.LambdaNode;
  */
 public class ASTCompiler19 extends ASTCompiler {
     @Override
-    public void compile(Node node, BodyCompiler context) {
+    public void compile(Node node, BodyCompiler context, boolean expr) {
         if (node == null) {
             context.loadNil();
             return;
         }
         switch (node.getNodeType()) {
             case LAMBDANODE:
-                compileLambda(node, context);
+                compileLambda(node, context, expr);
                 break;
             default:
-                super.compile(node, context);
+                super.compile(node, context, expr);
         }
     }
 
     @Override
-    public void compileAssignment(Node node, BodyCompiler context,boolean expr) {
+    public void compileAssignment(Node node, BodyCompiler context, boolean expr) {
         switch (node.getNodeType()) {
             case ARGSNODE:
                 if (((ArgsNode)node).getArity().getValue() != 0) {
@@ -62,17 +62,24 @@ public class ASTCompiler19 extends ASTCompiler {
                 }
                 break;
             default:
-                super.compileAssignment(node, context,true);
+                super.compileAssignment(node, context, expr);
         }
     }
 
-    public void compileLambda(Node node, BodyCompiler context) {
+    public void compileLambda(Node node, BodyCompiler context, boolean expr) {
         final LambdaNode lambdaNode = (LambdaNode)node;
-        
-        context.createNewLambda(new CompilerCallback() {
-            public void call(BodyCompiler context) {
-                compileIter(lambdaNode, context);
-            }
-        });
+
+        boolean doit = expr || !PEEPHOLE_OPTZ;
+        boolean popit = !PEEPHOLE_OPTZ && !expr;
+
+        if (doit) {
+            context.createNewLambda(new CompilerCallback() {
+                public void call(BodyCompiler context) {
+                    compileIter(lambdaNode, context);
+                }
+            });
+        }
+
+        if (popit) context.consumeCurrentValue();
     }
 }

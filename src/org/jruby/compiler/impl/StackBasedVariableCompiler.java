@@ -132,7 +132,7 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
         }
     }
 
-    public void assignLocalVariable(int index, int depth, CompilerCallback value,boolean expr) {
+    public void assignLocalVariable(int index, int depth, CompilerCallback value, boolean expr) {
         if (depth == 0) {
             assignLocalVariable(index, value, expr);
         } else {

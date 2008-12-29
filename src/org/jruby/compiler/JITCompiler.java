@@ -195,7 +195,7 @@ public class JITCompiler implements JITCompilerMBean {
 
             CompilerCallback args = new CompilerCallback() {
                 public void call(BodyCompiler context) {
-                    compiler.compileArgs(argsNode, context);
+                    compiler.compileArgs(argsNode, context, true);
                 }
             };
 
@@ -208,7 +208,7 @@ public class JITCompiler implements JITCompilerMBean {
             if (bodyNode != null) {
                 // we have a body, do a full-on method
                 methodCompiler = asmCompiler.startMethod("__file__", "__file__", args, staticScope, inspector);
-                compiler.compile(bodyNode, methodCompiler);
+                compiler.compile(bodyNode, methodCompiler,true);
             } else {
                 // If we don't have a body, check for required or opt args
                 // if opt args, they could have side effects
