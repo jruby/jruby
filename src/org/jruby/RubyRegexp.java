@@ -236,7 +236,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     }
 
     private void check() {
-        if (pattern == null || str == null) throw getRuntime().newTypeError("uninitialized Regexp");
+        if (pattern == null) throw getRuntime().newTypeError("uninitialized Regexp");
     }
 
     @JRubyMethod(name = "hash")
