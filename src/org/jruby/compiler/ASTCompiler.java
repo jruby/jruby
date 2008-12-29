@@ -556,7 +556,6 @@ public class ASTCompiler {
                 break;
             case LOCALASGNNODE:
                 LocalAsgnNode localAsgnNode = (LocalAsgnNode)node;
-                compileLocalAsgnAssignment(node, context);
                 context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth(), expr);
                 break;
             case MULTIPLEASGNNODE:
@@ -2439,7 +2438,7 @@ public class ASTCompiler {
         // "assignment" means the value is already on the stack
         LocalAsgnNode localAsgnNode = (LocalAsgnNode) node;
 
-        context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth(),true);
+        context.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth(), true);
     }
 
     public void compileLocalVar(Node node, BodyCompiler context) {
@@ -3121,7 +3120,7 @@ public class ASTCompiler {
         context.startScript(staticScope);
 
         // force static scope to claim restarg at 0, so it only implements the [] version of __file__
-        staticScope.setRestArg(0);
+        staticScope.setRestArg(-2);
 
         // create method for toplevel of script
         BodyCompiler methodCompiler = context.startRoot("__file__", "__file__", staticScope, inspector);
