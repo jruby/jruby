@@ -232,6 +232,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     }
     
     public Regex getPattern() {
+        check();
         return pattern;
     }
 
