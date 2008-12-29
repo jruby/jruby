@@ -55,6 +55,19 @@ public abstract class AbstractScript implements Script {
         return callSites[index];
     }
 
+    public static final int NUMBERED_CALLSITE_COUNT = 10;
+
+    public final CallSite getCallSite0() {return callSites[0];}
+    public final CallSite getCallSite1() {return callSites[1];}
+    public final CallSite getCallSite2() {return callSites[2];}
+    public final CallSite getCallSite3() {return callSites[3];}
+    public final CallSite getCallSite4() {return callSites[4];}
+    public final CallSite getCallSite5() {return callSites[5];}
+    public final CallSite getCallSite6() {return callSites[6];}
+    public final CallSite getCallSite7() {return callSites[7];}
+    public final CallSite getCallSite8() {return callSites[8];}
+    public final CallSite getCallSite9() {return callSites[9];}
+
     /**
      * descriptor format is
      *
@@ -75,6 +88,19 @@ public abstract class AbstractScript implements Script {
         return body;
     }
 
+    public static final int NUMBERED_BLOCKBODY_COUNT = 10;
+
+    public final BlockBody getBlockBody0(ThreadContext context, String descriptor) {return getBlockBody(context, 0, descriptor);}
+    public final BlockBody getBlockBody1(ThreadContext context, String descriptor) {return getBlockBody(context, 1, descriptor);}
+    public final BlockBody getBlockBody2(ThreadContext context, String descriptor) {return getBlockBody(context, 2, descriptor);}
+    public final BlockBody getBlockBody3(ThreadContext context, String descriptor) {return getBlockBody(context, 3, descriptor);}
+    public final BlockBody getBlockBody4(ThreadContext context, String descriptor) {return getBlockBody(context, 4, descriptor);}
+    public final BlockBody getBlockBody5(ThreadContext context, String descriptor) {return getBlockBody(context, 5, descriptor);}
+    public final BlockBody getBlockBody6(ThreadContext context, String descriptor) {return getBlockBody(context, 6, descriptor);}
+    public final BlockBody getBlockBody7(ThreadContext context, String descriptor) {return getBlockBody(context, 7, descriptor);}
+    public final BlockBody getBlockBody8(ThreadContext context, String descriptor) {return getBlockBody(context, 8, descriptor);}
+    public final BlockBody getBlockBody9(ThreadContext context, String descriptor) {return getBlockBody(context, 9, descriptor);}
+
     public final CompiledBlockCallback getBlockCallback(Ruby runtime, int index, String method) {
         CompiledBlockCallback callback = blockCallbacks[index];
 
@@ -85,17 +111,56 @@ public abstract class AbstractScript implements Script {
         return callback;
     }
 
+    public static final int NUMBERED_BLOCKCALLBACK_COUNT = 10;
+
+    public final CompiledBlockCallback getBlockCallback0(Ruby runtime, String method) {return getBlockCallback(runtime, 0, method);}
+    public final CompiledBlockCallback getBlockCallback1(Ruby runtime, String method) {return getBlockCallback(runtime, 1, method);}
+    public final CompiledBlockCallback getBlockCallback2(Ruby runtime, String method) {return getBlockCallback(runtime, 2, method);}
+    public final CompiledBlockCallback getBlockCallback3(Ruby runtime, String method) {return getBlockCallback(runtime, 3, method);}
+    public final CompiledBlockCallback getBlockCallback4(Ruby runtime, String method) {return getBlockCallback(runtime, 4, method);}
+    public final CompiledBlockCallback getBlockCallback5(Ruby runtime, String method) {return getBlockCallback(runtime, 5, method);}
+    public final CompiledBlockCallback getBlockCallback6(Ruby runtime, String method) {return getBlockCallback(runtime, 6, method);}
+    public final CompiledBlockCallback getBlockCallback7(Ruby runtime, String method) {return getBlockCallback(runtime, 7, method);}
+    public final CompiledBlockCallback getBlockCallback8(Ruby runtime, String method) {return getBlockCallback(runtime, 8, method);}
+    public final CompiledBlockCallback getBlockCallback9(Ruby runtime, String method) {return getBlockCallback(runtime, 9, method);}
+
     public final RubySymbol getSymbol(Ruby runtime, int index, String name) {
         RubySymbol symbol = symbols[index];
         if (symbol == null) return symbols[index] = runtime.newSymbol(name);
         return symbol;
     }
 
+    public static final int NUMBERED_SYMBOL_COUNT = 10;
+
+    public final RubySymbol getSymbol0(Ruby runtime, String name) {return getSymbol(runtime, 0, name);}
+    public final RubySymbol getSymbol1(Ruby runtime, String name) {return getSymbol(runtime, 1, name);}
+    public final RubySymbol getSymbol2(Ruby runtime, String name) {return getSymbol(runtime, 2, name);}
+    public final RubySymbol getSymbol3(Ruby runtime, String name) {return getSymbol(runtime, 3, name);}
+    public final RubySymbol getSymbol4(Ruby runtime, String name) {return getSymbol(runtime, 4, name);}
+    public final RubySymbol getSymbol5(Ruby runtime, String name) {return getSymbol(runtime, 5, name);}
+    public final RubySymbol getSymbol6(Ruby runtime, String name) {return getSymbol(runtime, 6, name);}
+    public final RubySymbol getSymbol7(Ruby runtime, String name) {return getSymbol(runtime, 7, name);}
+    public final RubySymbol getSymbol8(Ruby runtime, String name) {return getSymbol(runtime, 8, name);}
+    public final RubySymbol getSymbol9(Ruby runtime, String name) {return getSymbol(runtime, 9, name);}
+
     public final RubyFixnum getFixnum(Ruby runtime, int index, int value) {
         RubyFixnum fixnum = fixnums[index];
         if (fixnum == null) return fixnums[index] = RubyFixnum.newFixnum(runtime, value);
         return fixnum;
     }
+
+    public static final int NUMBERED_FIXNUM_COUNT = 10;
+
+    public final RubyFixnum getFixnum0(Ruby runtime, int value) {return getFixnum(runtime, 0, value);}
+    public final RubyFixnum getFixnum1(Ruby runtime, int value) {return getFixnum(runtime, 1, value);}
+    public final RubyFixnum getFixnum2(Ruby runtime, int value) {return getFixnum(runtime, 2, value);}
+    public final RubyFixnum getFixnum3(Ruby runtime, int value) {return getFixnum(runtime, 3, value);}
+    public final RubyFixnum getFixnum4(Ruby runtime, int value) {return getFixnum(runtime, 4, value);}
+    public final RubyFixnum getFixnum5(Ruby runtime, int value) {return getFixnum(runtime, 5, value);}
+    public final RubyFixnum getFixnum6(Ruby runtime, int value) {return getFixnum(runtime, 6, value);}
+    public final RubyFixnum getFixnum7(Ruby runtime, int value) {return getFixnum(runtime, 7, value);}
+    public final RubyFixnum getFixnum8(Ruby runtime, int value) {return getFixnum(runtime, 8, value);}
+    public final RubyFixnum getFixnum9(Ruby runtime, int value) {return getFixnum(runtime, 9, value);}
 
     public final RubyFixnum getFixnum(Ruby runtime, int index, long value) {
         RubyFixnum fixnum = fixnums[index];
@@ -108,6 +173,19 @@ public abstract class AbstractScript implements Script {
         if (regexp == null) return regexps[index] = RubyRegexp.newRegexp(runtime, pattern, options);
         return regexp;
     }
+
+    public static final int NUMBERED_REGEXP_COUNT = 10;
+
+    public final RubyRegexp getRegexp0(Ruby runtime, String name, int options) {return getRegexp(runtime, 0, name, options);}
+    public final RubyRegexp getRegexp1(Ruby runtime, String name, int options) {return getRegexp(runtime, 1, name, options);}
+    public final RubyRegexp getRegexp2(Ruby runtime, String name, int options) {return getRegexp(runtime, 2, name, options);}
+    public final RubyRegexp getRegexp3(Ruby runtime, String name, int options) {return getRegexp(runtime, 3, name, options);}
+    public final RubyRegexp getRegexp4(Ruby runtime, String name, int options) {return getRegexp(runtime, 4, name, options);}
+    public final RubyRegexp getRegexp5(Ruby runtime, String name, int options) {return getRegexp(runtime, 5, name, options);}
+    public final RubyRegexp getRegexp6(Ruby runtime, String name, int options) {return getRegexp(runtime, 6, name, options);}
+    public final RubyRegexp getRegexp7(Ruby runtime, String name, int options) {return getRegexp(runtime, 7, name, options);}
+    public final RubyRegexp getRegexp8(Ruby runtime, String name, int options) {return getRegexp(runtime, 8, name, options);}
+    public final RubyRegexp getRegexp9(Ruby runtime, String name, int options) {return getRegexp(runtime, 9, name, options);}
 
     public final void initCallSites(int size) {
         callSites = new CallSite[size];
@@ -165,6 +243,19 @@ public abstract class AbstractScript implements Script {
         return value != null ? value :
             context.getRubyClass().callMethod(context, "const_missing", context.getRuntime().fastNewSymbol(name));
     }
+
+    public static final int NUMBERED_CONSTANT_COUNT = 10;
+
+    public final IRubyObject getConstant0(ThreadContext context, String name) {return getConstant(context, name, 0);}
+    public final IRubyObject getConstant1(ThreadContext context, String name) {return getConstant(context, name, 1);}
+    public final IRubyObject getConstant2(ThreadContext context, String name) {return getConstant(context, name, 2);}
+    public final IRubyObject getConstant3(ThreadContext context, String name) {return getConstant(context, name, 3);}
+    public final IRubyObject getConstant4(ThreadContext context, String name) {return getConstant(context, name, 4);}
+    public final IRubyObject getConstant5(ThreadContext context, String name) {return getConstant(context, name, 5);}
+    public final IRubyObject getConstant6(ThreadContext context, String name) {return getConstant(context, name, 6);}
+    public final IRubyObject getConstant7(ThreadContext context, String name) {return getConstant(context, name, 7);}
+    public final IRubyObject getConstant8(ThreadContext context, String name) {return getConstant(context, name, 8);}
+    public final IRubyObject getConstant9(ThreadContext context, String name) {return getConstant(context, name, 9);}
 
     public IRubyObject getValue(ThreadContext context, String name, int index) {
         IRubyObject value = constants[index]; // Store to temp so it does null out on us mid-stream
