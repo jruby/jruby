@@ -48,6 +48,8 @@ import java.util.Locale;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -534,6 +536,24 @@ public class RubyFloat extends RubyNumeric {
         if (f < 0.0) f = Math.ceil(f);
 
         return dbl2num(getRuntime(), f);
+    }
+
+    /** flo_numerator
+     * 
+     */
+    @JRubyMethod(name = "numerator", compat = CompatVersion.RUBY1_9)
+    public IRubyObject numerator(ThreadContext context) {
+        if (Double.isInfinite(value) || Double.isNaN(value)) return this;
+        return super.numerator(context);
+    }
+
+    /** flo_denominator
+     * 
+     */
+    @JRubyMethod(name = "denominator", compat = CompatVersion.RUBY1_9)
+    public IRubyObject denominator(ThreadContext context) {
+        if (Double.isInfinite(value) || Double.isNaN(value)) return RubyFixnum.one(context.getRuntime());
+        return super.denominator(context);
     }
 
     /** float_to_r, float_decode
