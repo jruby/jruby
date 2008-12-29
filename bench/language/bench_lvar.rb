@@ -206,25 +206,25 @@ def ten
 end
 
 def bench_lvar(bm)
-  bm.report 'near closure, 1000k x100 gets' do one end
+  bm.report 'near closure, 1m x100 gets' do one end
 
-  bm.report 'near closure, 1000k x100 gets and sets' do two end
+  bm.report 'near closure, 1m x100 gets and sets' do two end
 
-  bm.report 'in closure, 1000k x100 gets' do three end
+  bm.report 'in closure, 1m x100 gets' do three end
 
-  bm.report 'in closure, 1000k x100 gets and sets' do four end
+  bm.report 'in closure, 1m x100 gets and sets' do four end
 
-  bm.report 'near closure, 5 vars, 1000k * x100 gets' do five end
+  bm.report 'near closure, 5 vars, 1m * x100 gets' do five end
 
-  bm.report 'near closure, 5 vars, 1000k * x100 gets and sets' do six end
+  bm.report 'near closure, 5 vars, 1m * x100 gets and sets' do six end
 
-  bm.report 'in closure, 5 vars, 1000k x100 gets' do seven end
+  bm.report 'in closure, 5 vars, 1m x100 gets' do seven end
 
   bm.report 'in closure, 5 vars, 1M x100 gets and sets' do eight end
   
-  bm.report 'normal heapless, 1000k x 100 gets' do nine end
+  bm.report 'normal heapless, 1m x 100 gets' do nine end
   
-  bm.report 'normal heapless, 1000k x 100 gets and sets' do ten end
+  bm.report 'normal heapless, 1m x 100 gets and sets' do ten end
 end
 
 if $0 == __FILE__
