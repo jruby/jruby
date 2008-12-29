@@ -952,7 +952,7 @@ public class RubyRational extends RubyNumeric {
         RubyArray a = str_to_r_internal(context, recv);
         if (a.eltInternal(0).isNil() || a.eltInternal(1).convertToString().getByteList().length() > 0) {
             IRubyObject s = recv.callMethod(context, "inspect");
-            throw context.getRuntime().newArgumentError("invalid value for Rational: " + s.convertToString());
+            throw context.getRuntime().newArgumentError("invalid value for convert(): " + s.convertToString());
         }
         return a.eltInternal(0);
     }    
