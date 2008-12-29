@@ -2361,7 +2361,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
             final RubyString repl;
             final boolean tainted;
-            IRubyObject subStr = substr(context.getRuntime(), matcher.getBegin(), matcher.getEnd() - matcher.getBegin()); // TODO: 1.9 substr
+            IRubyObject subStr = makeShared19(context.getRuntime(), matcher.getBegin(), matcher.getEnd() - matcher.getBegin());
             if (hash == null) {
                 tainted = false;
                 repl = objAsString(context, block.yield(context, subStr));
