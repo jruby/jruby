@@ -48,6 +48,7 @@ import org.joni.Region;
 import org.joni.Syntax;
 import org.joni.WarnCallback;
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.joni.exception.JOniException;
 
 import static org.jruby.anno.FrameField.*;
@@ -68,6 +69,7 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
+import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 
 @JRubyClass(name="Regexp")
@@ -230,10 +232,41 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     public int getNativeTypeIndex() {
         return ClassIndex.REGEXP;
     }
-    
-    public Regex getPattern() {
+
+    final Regex getPattern() {
         check();
         return pattern;
+    }
+
+    private void encodingMatchError(Encoding strEnc) {
+        throw getRuntime().newEncodingCompatibilityError("incompatible encoding regexp match (" +
+                pattern.getEncoding() + " regexp with " + strEnc + " string)");
+    }
+
+    private Encoding checkEncoding(RubyString str, boolean warn) {
+        if (str.scanForCodeRange() == StringSupport.CR_BROKEN) {
+            throw getRuntime().newArgumentError("invalid byte sequence in " + str.getEncoding());
+        }
+        check();
+        Encoding enc = str.getEncoding();
+        if (!enc.isAsciiCompatible()) {
+            if (enc != pattern.getEncoding()) encodingMatchError(enc);
+        } else if (isKCodeFixed()) {
+            if (enc != pattern.getEncoding() && 
+               (!pattern.getEncoding().isAsciiCompatible() ||
+               str.scanForCodeRange() != StringSupport.CR_7BIT)) encodingMatchError(enc);
+        }
+        if (warn && isEncodingNone() && enc != ASCIIEncoding.INSTANCE && str.scanForCodeRange() != StringSupport.CR_7BIT) {
+            getRuntime().getWarnings().warn(ID.REGEXP_MATCH_AGAINST_STRING, "regexp match /.../n against to " + enc + " string");
+        }
+        return enc;
+    }
+
+    final Regex getPattern(RubyString str) {
+        check();
+        Encoding enc = checkEncoding(str, true);
+        if (enc == pattern.getEncoding()) return pattern;
+        return null; // TODO: preprocess
     }
 
     private void check() {
