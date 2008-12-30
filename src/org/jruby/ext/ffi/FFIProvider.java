@@ -88,7 +88,8 @@ public abstract class FFIProvider extends RubyObject {
             }
         }
         try {
-            return createInvoker(context.getRuntime(), args[0].toString(), 
+            return createInvoker(context.getRuntime(), 
+                    args[0].isNil() ? null : args[0].toString(), 
                     args[1].toString(), NativeType.valueOf(Util.int32Value(args[2])), 
                     nativeParamTypes, args[4].toString());
         } catch (UnsatisfiedLinkError ex) {

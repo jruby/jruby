@@ -53,6 +53,9 @@ public final class JNAProvider extends FFIProvider {
     public final Invoker createInvoker(Ruby runtime, String libraryName, String functionName,
             NativeType returnType, NativeParam[] parameterTypes, String convention) {
         int conv = "stdcall".equals(convention) ? Function.ALT_CONVENTION : Function.C_CONVENTION;
+        if (libraryName == null) {
+            libraryName = Platform.LIBC;
+        }
         Function function = NativeLibrary.getInstance(libraryName).getFunction(functionName, conv);
         FunctionInvoker functionInvoker = getFunctionInvoker(returnType);
         Marshaller[] marshallers = new Marshaller[parameterTypes.length];

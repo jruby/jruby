@@ -91,12 +91,7 @@ module FFI
   end
 
   def self.create_invoker(lib, name, args, ret, options = { :convention => :default })
-    lib = if lib
-      map_library_name(lib)
-    else
-      # Ugly hack to simulate the effect of dlopen(NULL, x) - not quite correct
-      FFI::Platform::LIBC
-    end
+    lib = map_library_name(lib) if lib
 
     # Current artificial limitation based on JFFI limit
     raise FFI::SignatureError, 'FFI functions may take max 32 arguments!' if args.size > 32
