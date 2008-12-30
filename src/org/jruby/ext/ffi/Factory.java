@@ -46,17 +46,17 @@ public abstract class Factory {
         private static final Factory INSTANCE = getInstance();
 
         private static final Factory getInstance() {
-            final boolean useJNA = Boolean.getBoolean("jruby.ffi.usejna");
-            String prefix = FFIProvider.class.getPackage().getName();
+            final String providerName = System.getProperty("ffi.provider");
             Factory factory = null;
-            if (!useJNA) {
+            if (providerName != null) {
                 try {
-                    factory = (Factory) Class.forName(prefix + ".jffi.JFFIFactory", true, Ruby.getClassLoader()).newInstance();
+                    factory = (Factory) Class.forName(providerName, true, Ruby.getClassLoader()).newInstance();
                 } catch (Throwable ex) {
                 }
             }
             if (factory == null) {
                 try {
+                    String prefix = FFIProvider.class.getPackage().getName();
                     factory = (Factory) Class.forName(prefix + ".jna.JNAFactory", true, Ruby.getClassLoader()).newInstance();
                 } catch (Throwable ex) {
                     throw new RuntimeException("Could not load FFI provider", ex);
