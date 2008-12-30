@@ -35,6 +35,7 @@ import static org.jruby.util.Numeric.f_gcd;
 import static org.jruby.util.Numeric.f_idiv;
 import static org.jruby.util.Numeric.f_inspect;
 import static org.jruby.util.Numeric.f_integer_p;
+import static org.jruby.util.Numeric.f_lt_p;
 import static org.jruby.util.Numeric.f_mul;
 import static org.jruby.util.Numeric.f_negate;
 import static org.jruby.util.Numeric.f_negative_p;
@@ -57,7 +58,6 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings;
-import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Frame;
@@ -722,6 +722,18 @@ public class RubyRational extends RubyNumeric {
         return f_negate(context, this);
     }
 
+    private IRubyObject op_roundCommonPre(ThreadContext context, IRubyObject n) {
+        Ruby runtime = context.getRuntime();
+        if (!(n instanceof RubyInteger)) throw runtime.newTypeError("not an integer");
+        return f_expt(context, RubyFixnum.newFixnum(runtime, 10), n);
+    }
+
+    private IRubyObject op_roundCommonPost(ThreadContext context, IRubyObject s, IRubyObject n, IRubyObject b) {
+        s = f_div(context, newRationalBang(context, getMetaClass(), s), b);
+        if (f_lt_p(context, n, RubyFixnum.one(context.getRuntime())).isTrue()) s = f_to_i(context, s);
+        return s;
+    }
+
     /** nurat_floor
      * 
      */
@@ -730,12 +742,24 @@ public class RubyRational extends RubyNumeric {
         return f_idiv(context, num, den);
     }
 
+    @JRubyMethod(name = "floor")
+    public IRubyObject op_floor(ThreadContext context, IRubyObject n) {
+        IRubyObject b = op_roundCommonPre(context, n);
+        return op_roundCommonPost(context, ((RubyRational)f_mul(context, this, b)).op_floor(context), n, b);
+    }
+
     /** nurat_ceil
      * 
      */
     @JRubyMethod(name = "ceil")
     public IRubyObject op_ceil(ThreadContext context) {
         return f_negate(context, f_idiv(context, f_negate(context, num), den));
+    }
+
+    @JRubyMethod(name = "ceil")
+    public IRubyObject op_ceil(ThreadContext context, IRubyObject n) {
+        IRubyObject b = op_roundCommonPre(context, n);
+        return op_roundCommonPost(context, ((RubyRational)f_mul(context, this, b)).op_ceil(context), n, b);
     }
 
     /** nurat_truncate
@@ -749,22 +773,35 @@ public class RubyRational extends RubyNumeric {
         return f_idiv(context, num, den);
     }
 
+    @JRubyMethod(name = "truncate")
+    public IRubyObject op_truncate(ThreadContext context, IRubyObject n) {
+        IRubyObject b = op_roundCommonPre(context, n);
+        return op_roundCommonPost(context, ((RubyRational)f_mul(context, this, b)).op_truncate(context), n, b);
+    }
+
     /** nurat_round
      * 
      */
     @JRubyMethod(name = "round")
     public IRubyObject op_round(ThreadContext context) {
+        IRubyObject num = this.num;
+        boolean neg = f_negative_p(context, num);
+        if (neg) num = f_negate(context, num);
+
+        IRubyObject den = this.den;
         IRubyObject two = RubyFixnum.two(context.getRuntime());
-        if (f_negative_p(context, num)) {
-            IRubyObject tnum = f_negate(context, num);
-            tnum = f_add(context, f_mul(context, tnum, two), den);
-            IRubyObject tden = f_mul(context, den, two);
-            return f_negate(context, f_idiv(context, tnum, tden)); 
-        } else {
-            IRubyObject tnum = f_add(context, f_mul(context, num, two), den);
-            IRubyObject tden = f_mul(context, den, two);
-            return f_idiv(context, tnum, tden);
-        }
+        num = f_add(context, f_mul(context, num, two), den);
+        den = f_mul(context, den, two);
+        num = f_idiv(context, num, den);
+
+        if (neg) num = f_negate(context, num);
+        return num;
+    }
+
+    @JRubyMethod(name = "round")
+    public IRubyObject op_round(ThreadContext context, IRubyObject n) {
+        IRubyObject b = op_roundCommonPre(context, n);
+        return op_roundCommonPost(context, ((RubyRational)f_mul(context, this, b)).op_round(context), n, b);
     }
 
     /** nurat_to_f
@@ -801,7 +838,7 @@ public class RubyRational extends RubyNumeric {
         }
 
         long e = ne - de;
-        
+
         if (e > 1023 || e < -1022) {
             runtime.getWarnings().warn(IRubyWarnings.ID.FLOAT_OUT_OF_RANGE, "out of Float range", getMetaClass());
             return runtime.newFloat(e > 0 ? Double.MAX_VALUE : 0);
@@ -809,9 +846,7 @@ public class RubyRational extends RubyNumeric {
 
         double f = RubyNumeric.num2dbl(num) / RubyNumeric.num2dbl(den); 
 
-        if (minus) {
-            f = -f;
-        }
+        if (minus) f = -f;
 
         f = ldexp(f, e);
 
