@@ -2347,7 +2347,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
     }
 
-    private IRubyObject subBangIter19(ThreadContext context, RubyRegexp rubyRegex, IRubyObject hash, Block block) {
+    private IRubyObject subBangIter19(ThreadContext context, RubyRegexp rubyRegex, RubyHash hash, Block block) {
         Regex regex = rubyRegex.getPattern();
         int range = value.begin + value.realSize;
         Matcher matcher = regex.matcher(value.bytes, value.begin, range);
@@ -2367,7 +2367,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 repl = objAsString(context, block.yield(context, subStr));
             } else {
                 tainted = hash.isTaint();
-                repl = objAsString(context, ((RubyHash)hash).fastARef(subStr)); 
+                repl = objAsString(context, hash.fastARef(subStr)); 
             }
 
             modifyCheck(bytes, size);
