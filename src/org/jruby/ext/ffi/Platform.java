@@ -218,7 +218,7 @@ public class Platform {
         //
         // A specific version was requested - use as is for search
         //
-        if (libPattern.matcher(libName).matches()) {
+        if (libPattern.matcher(libName).find()) {
             return libName;
         }
         return System.mapLibraryName(libName);
