@@ -2658,9 +2658,57 @@ public class ASTCompiler {
     public void compileMultipleAsgn(Node node, BodyCompiler context, boolean expr) {
         MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode) node;
 
-        compile(multipleAsgnNode.getValueNode(), context,true);
+        if (expr) {
+            // need the array, use unoptz version
+            compileUnoptimizedMultipleAsgn(multipleAsgnNode, context, expr);
+        } else {
+            // try optz version
+            compileOptimizedMultipleAsgn(multipleAsgnNode, context, expr);
+        }
+    }
 
-        compileMultipleAsgnAssignment(node, context, expr);
+    private void compileOptimizedMultipleAsgn(MultipleAsgnNode multipleAsgnNode, BodyCompiler context, boolean expr) {
+        // expect value to be an array of nodes
+        if (multipleAsgnNode.getValueNode() instanceof ArrayNode) {
+            // head must not be null and there must be no "args" (like *arg)
+            if (multipleAsgnNode.getHeadNode() != null && multipleAsgnNode.getArgsNode() == null) {
+                // sizes must match
+                if (multipleAsgnNode.getHeadNode().size() == ((ArrayNode)multipleAsgnNode.getValueNode()).size()) {
+                    // "head" must have no non-trivial assigns (array groupings, basically)
+                    boolean normalAssigns = true;
+                    for (Node asgn : multipleAsgnNode.getHeadNode().childNodes()) {
+                        if (asgn instanceof ListNode) {
+                            normalAssigns = false;
+                            break;
+                        }
+                    }
+                    
+                    if (normalAssigns) {
+                        // only supports dual assignment right now
+                        if (multipleAsgnNode.getHeadNode().size() == 2) {
+                            ArrayNode values = (ArrayNode)multipleAsgnNode.getValueNode();
+                            for (Node value : values.childNodes()) {
+                                compile(value, context, true);
+                            }
+                            context.swapValues();
+                            for (Node asgn : multipleAsgnNode.getHeadNode().childNodes()) {
+                                compileAssignment(asgn, context, false);
+                            }
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        // if we get here, no optz cases work; fall back on unoptz.
+        compileUnoptimizedMultipleAsgn(multipleAsgnNode, context, expr);
+    }
+
+    private void compileUnoptimizedMultipleAsgn(MultipleAsgnNode multipleAsgnNode, BodyCompiler context, boolean expr) {
+        compile(multipleAsgnNode.getValueNode(), context, true);
+
+        compileMultipleAsgnAssignment(multipleAsgnNode, context, expr);
     }
 
     public void compileMultipleAsgnAssignment(Node node, BodyCompiler context, boolean expr) {
