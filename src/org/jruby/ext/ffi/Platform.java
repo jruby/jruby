@@ -30,6 +30,7 @@ package org.jruby.ext.ffi;
 import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
@@ -102,7 +103,9 @@ public class Platform {
     }
     public static final String ARCH = getArchitecture();
     public static final String OS = getOperatingSystem();
-
+    private static final String MACOS_LIBREGEX = "lib.*\\.(dylib|jnilib)$";
+    private static final String WIN32_LIBREGEX = ".*\\.dll$";
+    private static final String UNIX_LIBREGEX = "lib.*\\.so.*$";
    
     public static final boolean IS_WINDOWS = OS.equals(WINDOWS);
     
@@ -122,6 +125,7 @@ public class Platform {
 
 
     private final int addressSize, longSize;
+    private final Pattern libPattern;
     protected Platform() {
         final int dataModel = Integer.getInteger("sun.arch.data.model");
         if (dataModel != 32 && dataModel != 64) {
@@ -129,6 +133,15 @@ public class Platform {
         }
         addressSize = dataModel;
         longSize = IS_WINDOWS ? 32 : addressSize; // Windows is LLP64
+        String libpattern = null;
+        if (IS_WINDOWS) {
+            libpattern = WIN32_LIBREGEX;
+        } else if (IS_MAC) {
+            libpattern = MACOS_LIBREGEX;
+        } else {
+            libpattern = UNIX_LIBREGEX;
+        }
+        libPattern = Pattern.compile(libpattern);
     }
 
     public void init(Ruby runtime, RubyModule ffi) {
@@ -199,5 +212,15 @@ public class Platform {
 
     public int longSize() {
         return longSize;
+    }
+
+    public String mapLibraryName(String libName) {
+        //
+        // A specific version was requested - use as is for search
+        //
+        if (libPattern.matcher(libName).matches()) {
+            return libName;
+        }
+        return System.mapLibraryName(libName);
     }
 }
