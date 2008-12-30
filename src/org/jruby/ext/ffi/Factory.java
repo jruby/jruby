@@ -30,6 +30,8 @@ package org.jruby.ext.ffi;
 
 import java.io.IOException;
 import java.nio.channels.ByteChannel;
+import java.util.ArrayList;
+import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
@@ -48,19 +50,23 @@ public abstract class Factory {
         private static final Factory getInstance() {
             final String providerName = System.getProperty("ffi.provider");
             Factory factory = null;
+            List<String> providerNames = new ArrayList<String>();
             if (providerName != null) {
+                providerNames.add(providerName);
+            }
+            final String prefix = FFIProvider.class.getPackage().getName();
+            providerNames.add(prefix + ".jffi.Factory");
+            providerNames.add(prefix + ".jna.JNAFactory");
+            for (String className : providerNames) {
                 try {
-                    factory = (Factory) Class.forName(providerName, true, Ruby.getClassLoader()).newInstance();
+                    factory = (Factory) Class.forName(className, true, Ruby.getClassLoader()).newInstance();
+                    break;
                 } catch (Throwable ex) {
                 }
             }
+
             if (factory == null) {
-                try {
-                    String prefix = FFIProvider.class.getPackage().getName();
-                    factory = (Factory) Class.forName(prefix + ".jna.JNAFactory", true, Ruby.getClassLoader()).newInstance();
-                } catch (Throwable ex) {
-                    throw new RuntimeException("Could not load FFI provider", ex);
-                }
+                throw new RuntimeException("Could not load FFI provider");
             }
             return factory;
         }
