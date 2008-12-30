@@ -1028,6 +1028,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return cat((byte)ch);
     }
 
+    public final RubyString cat(int code, Encoding enc) {
+        int n = codeLength(getRuntime(), enc, code);
+        modify(value.realSize + n);
+        enc.codeToMbc(code, value.bytes, value.begin + value.realSize);
+        value.realSize += n;
+        return this;
+    }
+
     public final int cat(byte[]bytes, int p, int len, Encoding enc, int cr, int cr2) {
         modify(value.realSize + len);
         int toCr = getCodeRange();
