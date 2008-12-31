@@ -1,7 +1,7 @@
 require 'ffi'
 
 module FFI
-  class BaseStruct
+  class Struct
     Buffer = FFI::Buffer
     attr_reader :pointer
 
@@ -57,12 +57,7 @@ module FFI
     def to_ptr
       @pointer
     end
-  end
-end
 
-
-module FFI
-  class Struct < FFI::BaseStruct
     def self.hash_layout(spec)
         builder = FFI::StructLayoutBuilder.new
         mod = enclosing_module
