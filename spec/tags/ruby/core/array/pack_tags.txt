@@ -3,6 +3,7 @@ fails(JRUBY-2826):Array#pack with format 'w' raises an ArgumentError if the coun
 fails(JRUBY-2826):Array#pack with format 'w' calls to_int on non-integer values before packing
 fails(JRUBY-2826):Array#pack with format 'w' raises TypeError on nil and non-numeric arguments
 fails(JRUBY-2826):Array#pack with format 'w' checks whether the pack argument responds to #to_int
+fails(JRUBY-2826):Array#pack just ignores unknown format
 fails(JRUBY-3274):Array#pack returns a tainted string when a pack argument is tainted
 fails(JRUBY-3274):Array#pack with format 'H' fills the rest bytes with 0 if pack argument has insufficient length
 fails(JRUBY-3274):Array#pack with format 'H' fills low-nibble of the last byte with 0 when count is odd even if pack argument has insufficient length
