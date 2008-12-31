@@ -28,43 +28,6 @@ describe "MemoryPointer#read_array_of_long" do
     l[1].should == 5678
   end
 end
-describe "MemoryPointer#autorelease" do
-  System = Java::java.lang.System
-  def wait_gc(ref, timeout = 5000)
-    System.gc
-    (timeout / 100).times do
-      java.lang.Thread.sleep(100)
-      return false if ref.get.nil?
-    end
-    true
-  end
-  it "does not free memory when autorelease=false" do
-    ptr = MemoryPointer.new(1)
-    ptr.autorelease = false
-    ref = Java::java.lang.ref.WeakReference.new(ptr)
-    ptr = nil
-    System.gc
-    java.lang.Thread.sleep(1000)
-    ref.get.should_not be_nil
-  end
-  it "freed when autorelease=true" do
-    ptr = MemoryPointer.new(1)
-    ptr.autorelease = true
-    ref = Java::java.lang.ref.WeakReference.new(ptr)
-    ptr = nil
-    wait_gc(ref)
-    ref.get.should be_nil
-  end
-  it "freed via explicit free() call when autorelease=false" do
-    ptr = MemoryPointer.new(1)
-    ptr.autorelease = false
-    ref = Java::java.lang.ref.WeakReference.new(ptr)
-    ptr.free
-    ptr = nil
-    wait_gc(ref)
-    ref.get.should be_nil
-  end
-end
 describe "MemoryPointer argument" do
   module Ptr
     extend FFI::Library
