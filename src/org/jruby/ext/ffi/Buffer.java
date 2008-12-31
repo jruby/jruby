@@ -36,7 +36,10 @@ public final class Buffer extends AbstractMemory {
     public Buffer(Ruby runtime, RubyClass klass) {
         super(runtime, klass, factory.allocateHeapMemory(0, CLEAR_DEFAULT), 0, 0);
     }
-
+    Buffer(Ruby runtime, int size) {
+        super(runtime, FFIProvider.getModule(runtime).fastGetClass("Buffer"),
+            factory.allocateHeapMemory(size, CLEAR_DEFAULT), 0, size);
+    }
     private Buffer(Ruby runtime, IRubyObject klass, Buffer ptr, long offset) {
         super(runtime, (RubyClass) klass, ptr.io, ptr.offset + offset, ptr.size - offset);
     }

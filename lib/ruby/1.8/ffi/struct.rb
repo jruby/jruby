@@ -3,17 +3,7 @@ require 'ffi'
 module FFI
   class Struct
     Buffer = FFI::Buffer
-    attr_reader :pointer
-
-    def initialize(pointer = nil, *spec)
-      @cspec = self.class.layout(*spec)
-
-      if pointer then
-        @pointer = pointer
-      else
-        @pointer = MemoryPointer.new size
-      end
-    end
+    
     def self.alloc_inout(clear = true)
       self.new(Buffer.__alloc_inout(@size, clear))
     end
@@ -38,24 +28,18 @@ module FFI
     def size
       self.class.size
     end
-    def [](field)
-      @cspec.get(@pointer, field)
-    end
-    def []=(field, val)
-      @cspec.put(@pointer, field, val)
-    end
     def members
-      @cspec.members
+      self.class.members
     end
     def values
-      @cspec.members.map { |m| self[m] }
+      members.map { |m| self[m] }
     end
     def clear
-      @pointer.clear
+      pointer.clear
       self
     end
     def to_ptr
-      @pointer
+      pointer
     end
 
     def self.hash_layout(spec)
