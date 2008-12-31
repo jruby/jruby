@@ -93,6 +93,12 @@
       <version>0.4</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>org.jruby.extras</groupId>
+      <artifactId>jffi</artifactId>
+      <version>0.1.1</version>
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
 
   <build>
