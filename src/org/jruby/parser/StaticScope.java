@@ -155,7 +155,7 @@ public abstract class StaticScope implements Serializable {
     }
     
     private IRubyObject getConstantInnerNoObject(Ruby runtime, String internedName, RubyModule object) {
-        if (cref == object) return null;
+        if (previousCRefScope == null) return null;
 
         return getConstantInner(runtime, internedName, object);
     }

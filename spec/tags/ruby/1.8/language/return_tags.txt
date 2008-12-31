@@ -1,1 +1,0 @@
-fails(JRUBY-2760):Return from within a block raises a LocalJumpError if there is no lexicaly enclosing method

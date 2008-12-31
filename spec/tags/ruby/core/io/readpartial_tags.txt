@@ -1,0 +1,3 @@
+fails(JRUBY-3276):IO#readpartial discards the existing buffer content upon successful read
+fails(JRUBY-3276):IO#readpartial discards the existing buffer content upon error
+fails(JRUBY-3276):IO#readpartial raises IOError if the stream is closed
