@@ -350,4 +350,26 @@ public final class StringSupport {
         }
         return i;
     }
+
+    static int scanOct(byte[]bytes, int p, int end, int len) {
+        return scanOct(bytes, p, end, len, ASCIIEncoding.INSTANCE);
+    }
+
+    static int scanOct(byte[]bytes, int p, int end, int len, Encoding enc) {
+        int v = 0;
+        int c;
+        while (len-- > 0 && p < end && enc.isDigit(c = bytes[p++] & 0xff) && c < '8') {
+            v = (v << 3) + Encoding.digitVal(c);
+        }
+        return v;
+    }
+
+    static int octLength(int hex) {
+        int i = 0;
+        while (hex > 0) {
+            i++;
+            hex >>>= 3;
+        }
+        return i;
+    }
 }
