@@ -328,4 +328,26 @@ public final class StringSupport {
         if (i < len) return (bytes1[p1 + i] & 0xff) > (bytes2[p2 + i] & 0xff) ? 1 : -1;
         return 0;        
     }
+
+    static int scanHex(byte[]bytes, int p, int end, int len) {
+        return scanHex(bytes, p, end, len, ASCIIEncoding.INSTANCE);
+    }
+
+    static int scanHex(byte[]bytes, int p, int end, int len, Encoding enc) {
+        int v = 0;
+        int c;
+        while (len-- > 0 && p < end && enc.isXDigit(c = bytes[p++] & 0xff)) {
+            v = (v << 4) + enc.xdigitVal(c);
+        }
+        return v;
+    }
+
+    static int hexLength(int hex) {
+        int i = 0;
+        while (hex > 0) {
+            i++;
+            hex >>>= 4;
+        }
+        return i;
+    }
 }
