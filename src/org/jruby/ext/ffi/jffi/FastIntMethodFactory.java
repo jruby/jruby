@@ -7,6 +7,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.ext.ffi.NativeParam;
 import org.jruby.ext.ffi.NativeType;
+import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Util;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
@@ -42,10 +43,10 @@ private static final class SingletonHolder {
                 return true;
             case POINTER:
             case STRING:
-                return com.kenai.jffi.Platform.getPlatform().addressSize() == 32;
+                return Platform.getPlatform().addressSize() == 32;
             case LONG:
             case ULONG:
-                return com.kenai.jffi.Platform.getPlatform().longSize() == 32;
+                return Platform.getPlatform().longSize() == 32;
             default:
                 return false;
         }
@@ -63,7 +64,7 @@ private static final class SingletonHolder {
                     return true;
                 case LONG:
                 case ULONG:
-                    return com.kenai.jffi.Platform.getPlatform().longSize() == 32;
+                    return Platform.getPlatform().longSize() == 32;
 //                case POINTER:
 //                case BUFFER_IN:
 //                case BUFFER_OUT:
@@ -105,12 +106,12 @@ private static final class SingletonHolder {
             case UINT32: return Unsigned32ParameterConverter.INSTANCE;
             case FLOAT32: return Float32ParameterConverter.INSTANCE;
             case LONG:
-                if (com.kenai.jffi.Platform.getPlatform().longSize() == 32) {
+                if (Platform.getPlatform().longSize() == 32) {
                     return Signed32ParameterConverter.INSTANCE;
                 }
                 throw new IllegalArgumentException("Long is too big for int parameter");
             case ULONG:
-                if (com.kenai.jffi.Platform.getPlatform().longSize() == 32) {
+                if (Platform.getPlatform().longSize() == 32) {
                     return Unsigned32ParameterConverter.INSTANCE;
                 }
                 throw new IllegalArgumentException("Long is too big for int parameter");
@@ -118,12 +119,12 @@ private static final class SingletonHolder {
             case BUFFER_IN:
             case BUFFER_OUT:
             case BUFFER_INOUT:
-                if (com.kenai.jffi.Platform.getPlatform().addressSize() == 32) {
+                if (Platform.getPlatform().addressSize() == 32) {
                     return PointerParameterConverter.INSTANCE;
                 }
                 throw new IllegalArgumentException("Pointer is too big for int parameter");
             case STRING:
-                if (com.kenai.jffi.Platform.getPlatform().addressSize() == 32) {
+                if (Platform.getPlatform().addressSize() == 32) {
                     return StringParameterConverter.INSTANCE;
                 }
                 throw new IllegalArgumentException("String is too big for int parameter");
@@ -142,22 +143,22 @@ private static final class SingletonHolder {
             case UINT32: return Unsigned32ResultConverter.INSTANCE;
             case FLOAT32: return Float32ResultConverter.INSTANCE;
             case LONG:
-                if (com.kenai.jffi.Platform.getPlatform().longSize() == 32) {
+                if (Platform.getPlatform().longSize() == 32) {
                     return Signed32ResultConverter.INSTANCE;
                 }
                 throw new IllegalArgumentException("Long is too big for int parameter");
             case ULONG:
-                if (com.kenai.jffi.Platform.getPlatform().longSize() == 32) {
+                if (Platform.getPlatform().longSize() == 32) {
                     return Unsigned32ResultConverter.INSTANCE;
                 }
                 throw new IllegalArgumentException("Long is too big for int parameter");
             case POINTER:
-                if (com.kenai.jffi.Platform.getPlatform().addressSize() == 32) {
+                if (Platform.getPlatform().addressSize() == 32) {
                     return PointerResultConverter.INSTANCE;
                 }
                 throw new IllegalArgumentException("Pointer is too big for int parameter");
             case STRING:
-                if (com.kenai.jffi.Platform.getPlatform().addressSize() == 32) {
+                if (Platform.getPlatform().addressSize() == 32) {
                     return StringResultConverter.INSTANCE;
                 }
                 throw new IllegalArgumentException("Long is too big for int parameter");
