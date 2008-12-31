@@ -69,12 +69,12 @@ public class Struct extends RubyObject {
     }
 
     static final int getStructSize(IRubyObject structClass) {
-        return RubyNumeric.fix2int(((RubyClass) structClass).getClassVar("@size"));
+        return RubyNumeric.fix2int(((RubyClass) structClass).fastGetClassVar("@size"));
     }
     static final StructLayout getStructLayout(ThreadContext context, IRubyObject structClass) {
         RubyClass klass = (RubyClass) structClass;
-        return klass.hasClassVariable("@layout")
-                ? (StructLayout) klass.getClassVar("@layout")
+        return klass.fastIsClassVarDefined("@layout")
+                ? (StructLayout) klass.fastGetClassVar("@layout")
                 : new StructLayout(context.getRuntime());
     }
     private static final Struct newStruct(ThreadContext context, IRubyObject klass, StructLayout layout, IRubyObject ptr) {
