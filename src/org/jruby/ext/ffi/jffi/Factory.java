@@ -11,6 +11,9 @@ import org.jruby.ext.ffi.Pointer;
 public class Factory extends org.jruby.ext.ffi.Factory {
 
     public Factory() {
+        if (!com.kenai.jffi.Platform.getPlatform().isSupported()) {
+            throw new UnsatisfiedLinkError("JFFI backend not available");
+        }
     }
 
     @Override
