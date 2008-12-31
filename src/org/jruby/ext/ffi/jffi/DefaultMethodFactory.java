@@ -90,13 +90,13 @@ public final class DefaultMethodFactory {
             case UINT64:
                 return Unsigned64Invoker.INSTANCE;
             case LONG:
-                return Platform.getPlatform().addressSize() == 32
+                return Platform.getPlatform().longSize() == 32
                         ? Signed32Invoker.INSTANCE
                         : Signed64Invoker.INSTANCE;
             case ULONG:
-                return Platform.getPlatform().addressSize() == 32
+                return Platform.getPlatform().longSize() == 32
                         ? Unsigned32Invoker.INSTANCE
-                        : Signed64Invoker.INSTANCE;
+                        : Unsigned64Invoker.INSTANCE;
             case FLOAT32:
                 return Float32Invoker.INSTANCE;
             case FLOAT64:
@@ -153,7 +153,7 @@ public final class DefaultMethodFactory {
             case ULONG:
                 return Platform.getPlatform().longSize() == 32
                         ? Signed32Marshaller.INSTANCE
-                        : Signed64Marshaller.INSTANCE;
+                        : Unsigned64Marshaller.INSTANCE;
             case FLOAT32:
                 return Float32Marshaller.INSTANCE;
             case FLOAT64:
