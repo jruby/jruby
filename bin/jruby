@@ -209,7 +209,8 @@ case "$JNA_OS" in
 darwin) JNA_PATH="$JRUBY_HOME/lib/native/darwin";;
   *) JNA_PATH="$JRUBY_HOME/lib/native/${JNA_OS}-${JNA_CPU}:$JRUBY_HOME/lib/native/${JNA_OS}-${JNA_ALT_CPU}";;
 esac
-JAVA_OPTS="$JAVA_OPTS -Djna.boot.library.path=$JNA_PATH"
+#JAVA_OPTS="$JAVA_OPTS -Djna.boot.library.path=$JNA_PATH"
+JAVA_JNA="-Djna.boot.library.path=$JNA_PATH"
 
 if $cygwin; then
   JRUBY_HOME=`cygpath --mixed "$JRUBY_HOME"`
@@ -228,7 +229,7 @@ if [ "$VERIFY_JRUBY" != "" ]; then
       echo "Running with instrumented profiler"
   fi
 
-  $JAVA_CMD $PROFILE_ARGS $JAVA_OPTS "${java_args[@]}" -classpath "$JRUBY_CP$CP_DELIMETER$CP$CP_DELIMETER$CLASSPATH" \
+  $JAVA_CMD $PROFILE_ARGS $JAVA_OPTS "$JAVA_JNA" "${java_args[@]}" -classpath "$JRUBY_CP$CP_DELIMETER$CP$CP_DELIMETER$CLASSPATH" \
     "-Djruby.home=$JRUBY_HOME" \
     "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
     "-Djruby.shell=$JRUBY_SHELL" \
@@ -244,7 +245,7 @@ if [ "$VERIFY_JRUBY" != "" ]; then
 
   exit $JRUBY_STATUS
 else
-  exec "$JAVA_CMD" $JAVA_OPTS "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMETER$CLASSPATH" \
+  exec "$JAVA_CMD" $JAVA_OPTS "$JAVA_JNA" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMETER$CLASSPATH" \
     "-Djruby.home=$JRUBY_HOME" \
     "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
     "-Djruby.shell=$JRUBY_SHELL" \
