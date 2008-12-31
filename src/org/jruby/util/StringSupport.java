@@ -329,11 +329,11 @@ public final class StringSupport {
         return 0;        
     }
 
-    static int scanHex(byte[]bytes, int p, int end, int len) {
+    public static int scanHex(byte[]bytes, int p, int end, int len) {
         return scanHex(bytes, p, end, len, ASCIIEncoding.INSTANCE);
     }
 
-    static int scanHex(byte[]bytes, int p, int end, int len, Encoding enc) {
+    public static int scanHex(byte[]bytes, int p, int end, int len, Encoding enc) {
         int v = 0;
         int c;
         while (len-- > 0 && p < end && enc.isXDigit(c = bytes[p++] & 0xff)) {
@@ -342,7 +342,7 @@ public final class StringSupport {
         return v;
     }
 
-    static int hexLength(int hex) {
+    public static int hexLength(int hex) {
         int i = 0;
         while (hex > 0) {
             i++;
@@ -351,11 +351,11 @@ public final class StringSupport {
         return i;
     }
 
-    static int scanOct(byte[]bytes, int p, int end, int len) {
+    public static int scanOct(byte[]bytes, int p, int end, int len) {
         return scanOct(bytes, p, end, len, ASCIIEncoding.INSTANCE);
     }
 
-    static int scanOct(byte[]bytes, int p, int end, int len, Encoding enc) {
+    public static int scanOct(byte[]bytes, int p, int end, int len, Encoding enc) {
         int v = 0;
         int c;
         while (len-- > 0 && p < end && enc.isDigit(c = bytes[p++] & 0xff) && c < '8') {
@@ -364,7 +364,7 @@ public final class StringSupport {
         return v;
     }
 
-    static int octLength(int hex) {
+    public static int octLength(int hex) {
         int i = 0;
         while (hex > 0) {
             i++;
