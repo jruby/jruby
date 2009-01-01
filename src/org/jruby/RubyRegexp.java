@@ -1041,20 +1041,20 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     private void appendRegexpString(ByteList to, byte[]bytes, int start, int len) {
         int p = start;
         int end = p + len;
-        boolean need_escape = false;
+        boolean needEscape = false;
         Encoding enc = kcode.getEncoding();
         while (p < end) {
             if (bytes[p] == (byte)'/' || (!enc.isPrint(bytes[p] & 0xff) && enc.length(bytes, p, end) == 1)) {
-                need_escape = true;
+                needEscape = true;
                 break;
             }
             p += enc.length(bytes, p, end);
         }
-        if (!need_escape) {
+        if (!needEscape) {
             to.append(bytes, start, len);
         } else {
             p = start; 
-            while (p<end) {
+            while (p < end) {
                 if (bytes[p] == '\\') {
                     int n = enc.length(bytes, p + 1, end) + 1;
                     to.append(bytes, p, n);
@@ -1068,7 +1068,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
                     p += enc.length(bytes, p, end);
                     continue;
                 } else if (enc.isPrint(bytes[p] & 0xff)) {
-                    to.append(bytes,p,1);
+                    to.append(bytes, p, 1);
                 } else if (!enc.isSpace(bytes[p] & 0xff)) {
                     to.append(ByteList.create(Integer.toString(bytes[p] & 0377, 8)));
                 } else {
