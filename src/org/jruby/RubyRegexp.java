@@ -156,36 +156,38 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         regexpClass.index = ClassIndex.REGEXP;
         regexpClass.kindOf = new RubyModule.KindOf() {
             @Override
-                public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                    return obj instanceof RubyRegexp;
-                }
-            };
-        
+            public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                return obj instanceof RubyRegexp;
+            }
+        };
+
         regexpClass.defineConstant("IGNORECASE", runtime.newFixnum(RE_OPTION_IGNORECASE));
         regexpClass.defineConstant("EXTENDED", runtime.newFixnum(RE_OPTION_EXTENDED));
         regexpClass.defineConstant("MULTILINE", runtime.newFixnum(RE_OPTION_MULTILINE));
-        
+
         regexpClass.defineAnnotatedMethods(RubyRegexp.class);
 
         return regexpClass;
     }
-    
+
     private static ObjectAllocator REGEXP_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            RubyRegexp instance = new RubyRegexp(runtime, klass);
-            return instance;
+            return new RubyRegexp(runtime, klass);
         }
     };
 
+    @Override
+    public int getNativeTypeIndex() {
+        return ClassIndex.REGEXP;
+    }
+
     /** used by allocator
-     * 
      */
     private RubyRegexp(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
     }
 
     /** default constructor
-     * 
      */
     private RubyRegexp(Ruby runtime) {
         super(runtime, runtime.getRegexp());
@@ -202,11 +204,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         regexp.setLiteral();
         return regexp;
     }
-    
+
     public static RubyRegexp newRegexp(Ruby runtime, ByteList pattern, int options, boolean quote) {
-        RubyRegexp regexp = new RubyRegexp(runtime);
-        regexp.initialize(pattern, options, quote);
-        return regexp;
+        return new RubyRegexp(runtime).initializeCommon(pattern, options, quote);
     }
 
     // internal usage
@@ -222,15 +222,53 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         getRuntime().getWarnings().warn(ID.MISCELLANEOUS, message);
     }
 
-    @JRubyMethod(name = "kcode")
-    public IRubyObject kcode(ThreadContext context) {
-        return (!isKCodeDefault() && kcode != null) ? 
-            context.getRuntime().newString(kcode.name()) : context.getRuntime().getNil();
+    /** rb_get_kcode
+     */
+    private int getKcode() {
+        if (kcode == KCode.NONE) {
+            return 16;
+        } else if (kcode == KCode.EUC) {
+            return 32;
+        } else if (kcode == KCode.SJIS) {
+            return 48;
+        } else if (kcode == KCode.UTF8) {
+            return 64;
+        }
+        return 0;
     }
 
-    @Override
-    public int getNativeTypeIndex() {
-        return ClassIndex.REGEXP;
+    /** rb_set_kcode
+     */
+    private void setKCode(int options) {
+        clearKCodeDefault();
+        switch(options & ~0xf) {
+        case 0:
+        default:
+            setKCodeDefault();
+            kcode = getRuntime().getKCode();
+            break;
+        case 16:
+            kcode = KCode.NONE;
+            break;
+        case 32:
+            kcode = KCode.EUC;
+            break;
+        case 48:
+            kcode = KCode.SJIS;
+            break;
+        case 64:
+            kcode = KCode.UTF8;
+            break;
+        }        
+    }
+
+    /** rb_reg_options
+     */
+    private int getOptions() {
+        check();
+        int options = (pattern.getOptions() & (RE_OPTION_IGNORECASE|RE_OPTION_MULTILINE|RE_OPTION_EXTENDED));
+        if (!isKCodeDefault()) options |= getKcode();
+        return options;
     }
 
     final Regex getPattern() {
@@ -274,100 +312,206 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         if (pattern == null) throw getRuntime().newTypeError("uninitialized Regexp");
     }
 
-    @JRubyMethod(name = "hash")
-    @Override
-    public RubyFixnum hash() {
-        check();
-        int hashval = (int)pattern.getOptions();
-        int len = this.str.realSize;
-        int p = this.str.begin;
-        while (len-->0) {
-            hashval = hashval * 33 + str.bytes[p++];
-        }
-        hashval = hashval + (hashval>>5);
-        return getRuntime().newFixnum(hashval);
+    @JRubyMethod(name = {"new", "compile"}, required = 1, optional = 2, meta = true)
+    public static RubyRegexp newInstance(IRubyObject recv, IRubyObject[] args) {
+        RubyClass klass = (RubyClass)recv;
+
+        RubyRegexp re = (RubyRegexp) klass.allocate();
+        re.callInit(args, Block.NULL_BLOCK);
+        return re;
     }
 
-    @JRubyMethod(name = {"==", "eql?"}, required = 1)
-    @Override
-    public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        if (this == other) return context.getRuntime().getTrue();
-        if (!(other instanceof RubyRegexp)) return context.getRuntime().getFalse();
-        RubyRegexp otherRegex = (RubyRegexp)other;
-        
-        check();
-        otherRegex.check();
-        
-        return context.getRuntime().newBoolean(str.equal(otherRegex.str) && 
-                kcode == otherRegex.kcode && pattern.getOptions() == otherRegex.pattern.getOptions());
+    @JRubyMethod(name = "try_convert", meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject try_convert(ThreadContext context, IRubyObject recv, IRubyObject args) {
+        return TypeConverter.convertToTypeWithCheck(args, context.getRuntime().getRegexp(), "to_regexp");
     }
 
-    @JRubyMethod(name = "~", reads = {LASTLINE, BACKREF}, writes = BACKREF)
-    public IRubyObject op_match2(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
-        IRubyObject line = context.getCurrentFrame().getLastLine();
-        if (!(line instanceof RubyString)) {
-            context.getCurrentFrame().setBackRef(runtime.getNil());
-            return runtime.getNil();
-        }
-        int start = search(context, (RubyString)line, 0, false);
-        if (start < 0) {
-            return runtime.getNil();
-        } else {
-            return runtime.newFixnum(start);
-        }
-    }
-
-    /** rb_reg_eqq
+    /** rb_reg_s_quote
      * 
      */
-    @JRubyMethod(name = "===", required = 1, writes = BACKREF)
-    public IRubyObject eqq(ThreadContext context, IRubyObject str) {
-        Ruby runtime = context.getRuntime();        
-        if (!(str instanceof RubyString)) str = str.checkStringType();
-
-        if (str.isNil()) {
-            context.getCurrentFrame().setBackRef(runtime.getNil());
-            return runtime.getFalse();
+    @JRubyMethod(name = {"quote", "escape"}, required = 1, optional = 1, meta = true)
+    public static RubyString quote(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+        final KCode code;
+        if (args.length == 1 || args[1].isNil()) {
+            code = runtime.getKCode();
+        } else {
+            code = KCode.create(runtime, args[1].toString());
         }
-        int start = search(context, (RubyString)str, 0, false);
-        return (start < 0) ? runtime.getFalse() : runtime.getTrue();
+
+        RubyString src = args[0].convertToString();
+        RubyString dst = RubyString.newString(runtime, quote(src.getByteList(), code));
+        dst.infectBy(src);
+        return dst;
     }
 
-    private static final int REGEX_QUOTED = 1;
-    private void initialize(ByteList bytes, int options, boolean quote) {
-        if (!isTaint() && getRuntime().getSafeLevel() >= 4) throw getRuntime().newSecurityError("Insecure: can't modify regexp");
-        checkFrozen();
-        if (isLiteral()) throw getRuntime().newSecurityError("can't modify literal regexp");
-
-        setKCode(options);
-
-        Map<ByteList, Regex> cache = getPatternCache();
-        Regex pat = cache.get(bytes);
-
-        if (pat != null &&
-            pat.getEncoding() == kcode.getEncoding() &&
-            pat.getOptions() == (options & 0xf) &&
-            ((pat.getUserOptions() & REGEX_QUOTED) != 0) == quote) { // cache hit
-            pattern = pat;
-        } else {
-            if (quote) {
-                ByteList quoted = quote(bytes, getRuntime().getKCode());
-                makeRegexp(quoted, quoted.begin, quoted.realSize, options & 0xf, kcode.getEncoding());
-                pattern.setUserOptions(REGEX_QUOTED);
-            } else {
-                makeRegexp(bytes, bytes.begin, bytes.realSize, options & 0xf, kcode.getEncoding());
+    /** rb_reg_quote
+     *
+     */
+    public static ByteList quote(ByteList str, KCode kcode) {
+        ByteList bs = str;
+        int s = bs.begin;
+        int send = s + bs.length();
+        Encoding enc = kcode.getEncoding();
+        meta_found: do {
+            for(; s < send; s++) {
+                int c = bs.bytes[s] & 0xff;
+                int l = enc.length(bs.bytes, s, send);
+                if (l != 1) {
+                    int n = l;
+                    while (n-- > 0 && s < send) {
+                        s++;
+                    }
+                    s--;
+                    continue;
+                }
+                switch (c) {
+                case '[': case ']': case '{': case '}':
+                case '(': case ')': case '|': case '-':
+                case '*': case '.': case '\\':
+                case '?': case '+': case '^': case '$':
+                case ' ': case '#':
+                case '\t': case '\f': case '\n': case '\r':
+                    break meta_found;
+                }
             }
-            cache.put(bytes, pattern);
-        }
+            return bs;
+        } while (false);
+        ByteList b1 = new ByteList(send * 2);
+        System.arraycopy(bs.bytes, bs.begin, b1.bytes, b1.begin, s - bs.begin);
+        int tix = s - bs.begin;
 
-        str = bytes;
+        for(; s < send; s++) {
+            int c = bs.bytes[s] & 0xff;
+            int l = enc.length(bs.bytes, s, send);
+            if (l != 1) {
+                int n = l;
+                while (n-- > 0 && s < send) {
+                    b1.bytes[tix++] = bs.bytes[s++];
+                }
+                s--;
+                continue;
+            }
+
+            switch(c) {
+            case '[': case ']': case '{': case '}':
+            case '(': case ')': case '|': case '-':
+            case '*': case '.': case '\\':
+            case '?': case '+': case '^': case '$':
+            case '#':
+                b1.bytes[tix++] = '\\';
+                break;
+            case ' ':
+                b1.bytes[tix++] = '\\';
+                b1.bytes[tix++] = ' ';
+                continue;
+            case '\t':
+                b1.bytes[tix++] = '\\';
+                b1.bytes[tix++] = 't';
+                continue;
+            case '\n':
+                b1.bytes[tix++] = '\\';
+                b1.bytes[tix++] = 'n';
+                continue;
+            case '\r':
+                b1.bytes[tix++] = '\\';
+                b1.bytes[tix++] = 'r';
+                continue;
+            case '\f':
+                b1.bytes[tix++] = '\\';
+                b1.bytes[tix++] = 'f';
+                continue;
+            }
+            b1.bytes[tix++] = (byte)c;
+        }
+        b1.realSize = tix;
+        return b1;
+    }
+
+    /** rb_reg_s_last_match / match_getter
+    *
+    */
+    @JRubyMethod(name = "last_match", meta = true, reads = BACKREF)
+    public static IRubyObject last_match_s(ThreadContext context, IRubyObject recv) {
+        IRubyObject match = context.getCurrentFrame().getBackRef();
+        if (match instanceof RubyMatchData) ((RubyMatchData)match).use();
+        return match;
+    }
+
+    /** rb_reg_s_last_match
+    *
+    */
+    @JRubyMethod(name = "last_match", meta = true, reads = BACKREF)
+    public static IRubyObject last_match_s(ThreadContext context, IRubyObject recv, IRubyObject nth) {
+        IRubyObject match = context.getCurrentFrame().getBackRef();
+        if (match.isNil()) return match;
+        return nth_match(((RubyMatchData)match).backrefNumber(nth), match);
+    }
+
+    /** rb_reg_s_union
+    *
+    */
+    @JRubyMethod(name = "union", rest = true, meta = true)
+    public static IRubyObject union(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+        if (args.length == 0) {
+            return newRegexp(runtime, ByteList.create("(?!)"), 0, false);
+        } else if (args.length == 1) {
+            IRubyObject v = TypeConverter.convertToTypeWithCheck(args[0], runtime.getRegexp(), "to_regexp");
+            if (!v.isNil()) {
+                return v;
+            } else {
+                // newInstance here
+                return newRegexp(runtime, quote(context, recv, args).getByteList(), 0, false);
+            }
+        } else {
+            KCode kcode = null;
+            IRubyObject kcode_re = runtime.getNil();
+            RubyString source = runtime.newString();
+            IRubyObject[] _args = new IRubyObject[3];
+
+            for (int i = 0; i < args.length; i++) {
+                if (0 < i) source.cat((byte)'|');
+                IRubyObject v = TypeConverter.convertToTypeWithCheck(args[i], runtime.getRegexp(), "to_regexp");
+                if (!v.isNil()) {
+                    if (!((RubyRegexp)v).isKCodeDefault()) {
+                        if (kcode == null) {
+                            kcode_re = v;
+                            kcode = ((RubyRegexp)v).kcode;
+                        } else if (((RubyRegexp)v).kcode != kcode) {
+                            IRubyObject str1 = kcode_re.inspect();
+                            IRubyObject str2 = v.inspect();
+                            throw runtime.newArgumentError("mixed kcode " + str1 + " and " + str2);
+                        }
+                    }
+                    v = ((RubyRegexp)v).to_s();
+                } else {
+                    v = quote(context, recv, new IRubyObject[]{args[i]});
+                }
+                source.append(v);
+            }
+
+            _args[0] = source;
+            _args[1] = runtime.getNil();
+            if (kcode == null) {
+                _args[2] = runtime.getNil();
+            } else if (kcode == KCode.NONE) {
+                _args[2] = runtime.newString("n");
+            } else if (kcode == KCode.EUC) {
+                _args[2] = runtime.newString("e");
+            } else if (kcode == KCode.SJIS) {
+                _args[2] = runtime.newString("s");
+            } else if (kcode == KCode.UTF8) {
+                _args[2] = runtime.newString("u");
+            }
+            return recv.callMethod(context, "new", _args);
+        }
     }
 
     private void makeRegexp(ByteList bytes, int start, int len, int flags, Encoding enc) {
         try {
             pattern = new Regex(bytes.bytes, start, start + len, flags, enc, Syntax.DEFAULT, this);
-        } catch(Exception e) {
+        } catch (Exception e) {
             raiseRegexpError(bytes.bytes, start, len, e.getMessage(), flags);
         }
     }
@@ -457,137 +601,170 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         RubyRegexp regexp = (RubyRegexp)re;
         regexp.check();
 
-        initialize(regexp.str, regexp.getOptions(), false);
-        return this;
+        return initializeCommon(regexp.str, regexp.getOptions(), false);
     }
 
-    /** rb_set_kcode
-     */
-    private int getKcode() {
-        if (kcode == KCode.NONE) {
-            return 16;
-        } else if (kcode == KCode.EUC) {
-            return 32;
-        } else if (kcode == KCode.SJIS) {
-            return 48;
-        } else if (kcode == KCode.UTF8) {
-            return 64;
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
+    public IRubyObject initialize_m(IRubyObject arg) {
+        if (arg instanceof RubyRegexp) return initializeByRegexp((RubyRegexp)arg);
+        return initializeCommon(arg.convertToString().getByteList(), 0, false);
+    }
+
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
+    public IRubyObject initialize_m(IRubyObject arg0, IRubyObject arg1) {
+        if (arg0 instanceof RubyRegexp) {
+            getRuntime().getWarnings().warn(ID.REGEXP_IGNORED_FLAGS, "flags ignored");            
+            return initializeByRegexp((RubyRegexp)arg0);
         }
-        return 0;
+        
+        int options = arg1 instanceof RubyFixnum ? RubyNumeric.fix2int(arg1) : arg1.isTrue() ? RE_OPTION_IGNORECASE : 0;
+        return initializeCommon(arg0.convertToString().getByteList(), options, false);
     }
 
-    /**
-     */
-    private void setKCode(int options) {
-        clearKCodeDefault();
-        switch(options & ~0xf) {
-        case 0:
-        default:
-            setKCodeDefault();
-            kcode = getRuntime().getKCode();
-            break;
-        case 16:
-            kcode = KCode.NONE;
-            break;
-        case 32:
-            kcode = KCode.EUC;
-            break;
-        case 48:
-            kcode = KCode.SJIS;
-            break;
-        case 64:
-            kcode = KCode.UTF8;
-            break;
-        }        
-    }
-
-    /** rb_reg_options
-     */
-    private int getOptions() {
-        check();
-        int options = (int)(pattern.getOptions() & (RE_OPTION_IGNORECASE|RE_OPTION_MULTILINE|RE_OPTION_EXTENDED));
-        if (!isKCodeDefault()) {
-            options |= getKcode();
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
+    public IRubyObject initialize_m(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        if (arg0 instanceof RubyRegexp) {
+            getRuntime().getWarnings().warn(ID.REGEXP_IGNORED_FLAGS, "flags and encoding ignored");            
+            return initializeByRegexp((RubyRegexp)arg0);
         }
-        return options;
+        int options = arg1 instanceof RubyFixnum ? RubyNumeric.fix2int(arg1) : arg1.isTrue() ? RE_OPTION_IGNORECASE : 0;
+        
+        if (!arg2.isNil()) {
+            ByteList kcodeBytes = arg2.convertToString().getByteList();
+            char first = kcodeBytes.length() > 0 ? kcodeBytes.charAt(0) : 0;
+            options &= ~0x70;
+            switch (first) {
+            case 'n': case 'N':
+                options |= 16;
+                break;
+            case 'e': case 'E':
+                options |= 32;
+                break;
+            case 's': case 'S':
+                options |= 48;
+                break;
+            case 'u': case 'U':
+                options |= 64;
+                break;
+            default:
+                break;
+            }
+        }
+        return initializeCommon(arg0.convertToString().getByteList(), options, false);
     }
 
-    /** rb_reg_initialize_m
-     */
-    @JRubyMethod(name = "initialize", optional = 3, visibility = Visibility.PRIVATE)
-    public IRubyObject initialize_m(IRubyObject[] args) {
-        ByteList bytes;
-        int regexFlags = 0;
+    private IRubyObject initializeByRegexp(RubyRegexp regexp) {
+        regexp.check();
 
-        if (args[0] instanceof RubyRegexp) {
-            if (args.length > 1) {
-                getRuntime().getWarnings().warn(ID.REGEXP_IGNORED_FLAGS, "flags" + (args.length == 3 ? " and encoding" : "") + " ignored");
+        int options = regexp.pattern.getOptions() & 0xf;
+        if (!regexp.isKCodeDefault() && regexp.kcode != null && regexp.kcode != KCode.NIL) {
+            if (regexp.kcode == KCode.NONE) {
+                options |= 16;
+            } else if (regexp.kcode == KCode.EUC) {
+                options |= 32;
+            } else if (regexp.kcode == KCode.SJIS) {
+                options |= 48;
+            } else if (regexp.kcode == KCode.UTF8) {
+                options |= 64;
             }
-            RubyRegexp regexp = (RubyRegexp)args[0];
-            regexp.check();
+        }
+        return initializeCommon(regexp.str, options, false);
+    }
 
-            regexFlags = (int)regexp.pattern.getOptions() & 0xF;
-            if (!regexp.isKCodeDefault() && regexp.kcode != null && regexp.kcode != KCode.NIL) {
-                if (regexp.kcode == KCode.NONE) {
-                    regexFlags |= 16;
-                } else if (regexp.kcode == KCode.EUC) {
-                    regexFlags |= 32;
-                } else if (regexp.kcode == KCode.SJIS) {
-                    regexFlags |= 48;
-                } else if (regexp.kcode == KCode.UTF8) {
-                    regexFlags |= 64;
-                }                
-            }
-            bytes = regexp.str;
+    private static final int REGEX_QUOTED = 1;
+    private RubyRegexp initializeCommon(ByteList bytes, int options, boolean quote) {
+        if (!isTaint() && getRuntime().getSafeLevel() >= 4) throw getRuntime().newSecurityError("Insecure: can't modify regexp");
+        checkFrozen();
+        if (isLiteral()) throw getRuntime().newSecurityError("can't modify literal regexp");
+
+        setKCode(options);
+
+        Map<ByteList, Regex> cache = getPatternCache();
+        Regex pat = cache.get(bytes);
+
+        if (pat != null &&
+            pat.getEncoding() == kcode.getEncoding() &&
+            pat.getOptions() == (options & 0xf) &&
+            ((pat.getUserOptions() & REGEX_QUOTED) != 0) == quote) { // cache hit
+            pattern = pat;
         } else {
-            if (args.length >= 2) {
-                if (args[1] instanceof RubyFixnum) {
-                    regexFlags = RubyNumeric.fix2int(args[1]);
-                } else if (args[1].isTrue()) {
-                    regexFlags = RE_OPTION_IGNORECASE;
-                }
+            if (quote) {
+                ByteList quoted = quote(bytes, getRuntime().getKCode());
+                makeRegexp(quoted, quoted.begin, quoted.realSize, options & 0xf, kcode.getEncoding());
+                pattern.setUserOptions(REGEX_QUOTED);
+            } else {
+                makeRegexp(bytes, bytes.begin, bytes.realSize, options & 0xf, kcode.getEncoding());
             }
-            if (args.length == 3 && !args[2].isNil()) {
-                ByteList kcodeBytes = args[2].convertToString().getByteList();
-                char first = kcodeBytes.length() > 0 ? kcodeBytes.charAt(0) : 0;
-                regexFlags &= ~0x70;
-                switch (first) {
-                case 'n': case 'N':
-                    regexFlags |= 16;
-                    break;
-                case 'e': case 'E':
-                    regexFlags |= 32;
-                    break;
-                case 's': case 'S':
-                    regexFlags |= 48;
-                    break;
-                case 'u': case 'U':
-                    regexFlags |= 64;
-                    break;
-                default:
-                    break;
-                }
-            }
-            bytes = args[0].convertToString().getByteList();
+            cache.put(bytes, pattern);
         }
-        initialize(bytes, regexFlags, false);
 
+        str = bytes;
         return this;
     }
 
-    @JRubyMethod(name = {"new", "compile"}, required = 1, optional = 2, meta = true)
-    public static RubyRegexp newInstance(IRubyObject recv, IRubyObject[] args) {
-        RubyClass klass = (RubyClass)recv;
-        
-        RubyRegexp re = (RubyRegexp) klass.allocate();
-        re.callInit(args, Block.NULL_BLOCK);
-        
-        return re;
+    @JRubyMethod(name = "kcode")
+    public IRubyObject kcode(ThreadContext context) {
+        return (!isKCodeDefault() && kcode != null) ? 
+            context.getRuntime().newString(kcode.name()) : context.getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "try_convert", meta = true, compat = CompatVersion.RUBY1_9)
-    public static IRubyObject try_convert(ThreadContext context, IRubyObject recv, IRubyObject args) {
-        return TypeConverter.convertToTypeWithCheck(args, context.getRuntime().getRegexp(), "to_regexp");
+    @JRubyMethod(name = "hash")
+    @Override
+    public RubyFixnum hash() {
+        check();
+        int hashval = pattern.getOptions();
+        int len = this.str.realSize;
+        int p = this.str.begin;
+        while (len-- > 0) {
+            hashval = hashval * 33 + str.bytes[p++];
+        }
+        return getRuntime().newFixnum(hashval + (hashval >> 5));
+    }
+
+    @JRubyMethod(name = {"==", "eql?"}, required = 1)
+    @Override
+    public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
+        if (this == other) return context.getRuntime().getTrue();
+        if (!(other instanceof RubyRegexp)) return context.getRuntime().getFalse();
+        RubyRegexp otherRegex = (RubyRegexp)other;
+        
+        check();
+        otherRegex.check();
+        
+        return context.getRuntime().newBoolean(str.equal(otherRegex.str) && 
+                kcode == otherRegex.kcode && pattern.getOptions() == otherRegex.pattern.getOptions());
+    }
+
+    @JRubyMethod(name = "~", reads = {LASTLINE, BACKREF}, writes = BACKREF)
+    public IRubyObject op_match2(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        IRubyObject line = context.getCurrentFrame().getLastLine();
+        if (!(line instanceof RubyString)) {
+            context.getCurrentFrame().setBackRef(runtime.getNil());
+            return runtime.getNil();
+        }
+        int start = search(context, (RubyString)line, 0, false);
+        if (start < 0) {
+            return runtime.getNil();
+        } else {
+            return runtime.newFixnum(start);
+        }
+    }
+
+    /** rb_reg_eqq
+     * 
+     */
+    @JRubyMethod(name = "===", required = 1, writes = BACKREF)
+    public IRubyObject eqq(ThreadContext context, IRubyObject str) {
+        Ruby runtime = context.getRuntime();        
+        if (!(str instanceof RubyString)) str = str.checkStringType();
+
+        if (str.isNil()) {
+            context.getCurrentFrame().setBackRef(runtime.getNil());
+            return runtime.getFalse();
+        }
+        int start = search(context, (RubyString)str, 0, false);
+        return (start < 0) ? runtime.getFalse() : runtime.getTrue();
     }
 
     @JRubyMethod(name = "options")
@@ -685,7 +862,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         return result;
     }
 
-
     public RubyString regsub(RubyString str, RubyString src, Matcher matcher) {
         Region regs = matcher.getRegion();
         int mbeg = matcher.getBegin();
@@ -767,7 +943,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
 
         if (p < e) {
             if (val == null) {
-                val = RubyString.newString(getRuntime(), bs.makeShared(p, e-p));
+                val = RubyString.newString(getRuntime(), bs.makeShared(p, e - p));
             } else {
                 val.cat(bs.bytes, bs.begin + p, e - p);
             }
@@ -786,7 +962,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     @JRubyMethod(name = "casefold?")
     public IRubyObject casefold_p(ThreadContext context) {
         check();
-        
         return context.getRuntime().newBoolean((pattern.getOptions() & RE_OPTION_IGNORECASE) != 0);
     }
 
@@ -798,9 +973,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         Ruby runtime = getRuntime();
         check();
         RubyString str = RubyString.newStringShared(runtime, this.str);
-        if (isTaint()) {
-            str.taint(runtime.getCurrentContext());
-        }
+        if (isTaint()) str.taint(runtime.getCurrentContext());
         return str;
     }
 
@@ -881,7 +1054,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
                 }
 
                 if (err) {
-                    options = (int)pattern.getOptions();
+                    options = pattern.getOptions();
                     ptr = str.begin;
                     len = str.realSize;
                 }
@@ -945,110 +1118,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         }
     }
 
-    /** rb_reg_s_quote
-     * 
-     */
-    @JRubyMethod(name = {"quote", "escape"}, required = 1, optional = 1, meta = true)
-    public static RubyString quote(IRubyObject recv, IRubyObject[] args) {
-        IRubyObject kcode = args.length == 2 ? args[1] : null;
-        IRubyObject str = args[0];
-        KCode code = recv.getRuntime().getKCode();
-
-        if (kcode != null && !kcode.isNil()) {
-            code = KCode.create(recv.getRuntime(), kcode.toString());
-        }
-        
-        RubyString src = str.convertToString();
-        RubyString dst = RubyString.newString(recv.getRuntime(), quote(src.getByteList(), code));
-        dst.infectBy(src);
-        return dst;
-    }
-
-    /** rb_reg_quote
-     *
-     */
-    public static ByteList quote(ByteList str, KCode kcode) {
-        ByteList bs = str;
-        int tix = 0;
-        int s = bs.begin;
-        int send = s + bs.length();
-        Encoding enc = kcode.getEncoding();
-        meta_found: do {
-            for(; s < send; s++) {
-                int c = bs.bytes[s] & 0xff;
-                int l = enc.length(bs.bytes, s, send);
-                if (l != 1) {
-                    int n = l;
-                    while (n-- > 0 && s < send) {
-                        s++;
-                    }
-                    s--;
-                    continue;
-                }
-                switch (c) {
-                case '[': case ']': case '{': case '}':
-                case '(': case ')': case '|': case '-':
-                case '*': case '.': case '\\':
-                case '?': case '+': case '^': case '$':
-                case ' ': case '#':
-                case '\t': case '\f': case '\n': case '\r':
-                    break meta_found;
-                }
-            }
-            return bs;
-        } while (false);
-        ByteList b1 = new ByteList(send*2);
-        System.arraycopy(bs.bytes,bs.begin,b1.bytes,b1.begin,s-bs.begin);
-        tix += (s-bs.begin);
-
-        for(; s<send; s++) {
-            int c = bs.bytes[s] & 0xff;
-            int l = enc.length(bs.bytes, s, send);
-            if (l != 1) {
-                int n = l;
-                while (n-- > 0 && s < send) {
-                    b1.bytes[tix++] = bs.bytes[s++];
-                }
-                s--;
-                continue;
-            }
-
-            switch(c) {
-            case '[': case ']': case '{': case '}':
-            case '(': case ')': case '|': case '-':
-            case '*': case '.': case '\\':
-            case '?': case '+': case '^': case '$':
-            case '#':
-                b1.bytes[tix++] = '\\';
-                break;
-            case ' ':
-                b1.bytes[tix++] = '\\';
-                b1.bytes[tix++] = ' ';
-                continue;
-            case '\t':
-                b1.bytes[tix++] = '\\';
-                b1.bytes[tix++] = 't';
-                 continue;
-            case '\n':
-                b1.bytes[tix++] = '\\';
-                b1.bytes[tix++] = 'n';
-                continue;
-            case '\r':
-                b1.bytes[tix++] = '\\';
-                b1.bytes[tix++] = 'r';
-                continue;
-            case '\f':
-                b1.bytes[tix++] = '\\';
-                b1.bytes[tix++] = 'f';
-                continue;
-            }
-            b1.bytes[tix++] = (byte)c;
-        }
-        b1.realSize = tix;
-        return b1;
-    }
-
-
     /** rb_reg_nth_match
      *
      */
@@ -1100,26 +1169,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         }
     }
 
-    /** rb_reg_s_last_match / match_getter
-    *
-    */
-    @JRubyMethod(name = "last_match", meta = true, reads = BACKREF)
-    public static IRubyObject last_match_s(ThreadContext context, IRubyObject recv) {
-        IRubyObject match = context.getCurrentFrame().getBackRef();
-        if (match instanceof RubyMatchData) ((RubyMatchData)match).use();
-        return match;
-    }
-
-    /** rb_reg_s_last_match
-    *
-    */
-    @JRubyMethod(name = "last_match", meta = true, reads = BACKREF)
-    public static IRubyObject last_match_s(ThreadContext context, IRubyObject recv, IRubyObject nth) {
-        IRubyObject match = context.getCurrentFrame().getBackRef();
-        if (match.isNil()) return match;
-        return nth_match(((RubyMatchData)match).backrefNumber(nth), match);
-    }
-
     /** rb_reg_match_pre
      *
      */
@@ -1154,67 +1203,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         if (i == 0) return match.getRuntime().getNil();
         
         return nth_match(i,match);
-    }
-
-    /** rb_reg_s_union
-     *
-     */
-    @JRubyMethod(name = "union", rest = true, meta = true)
-    public static IRubyObject union(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        if (args.length == 0) {
-            return newRegexp(recv.getRuntime(), ByteList.create("(?!)"), 0, false);
-        } else if (args.length == 1) {
-            IRubyObject v = TypeConverter.convertToTypeWithCheck(args[0], recv.getRuntime().getRegexp(), "to_regexp");
-            if (!v.isNil()) {
-                return v;
-            } else {
-                // newInstance here
-                return newRegexp(recv.getRuntime(), quote(recv,args).getByteList(), 0, false);
-            }
-        } else {
-            KCode kcode = null;
-            IRubyObject kcode_re = recv.getRuntime().getNil();
-            RubyString source = recv.getRuntime().newString();
-            IRubyObject[] _args = new IRubyObject[3];
-
-            for (int i = 0; i < args.length; i++) {
-                if (0 < i) {
-                    source.cat((byte)'|');
-                }
-                IRubyObject v = TypeConverter.convertToTypeWithCheck(args[i], recv.getRuntime().getRegexp(), "to_regexp");
-                if (!v.isNil()) {
-                    if (!((RubyRegexp)v).isKCodeDefault()) {
-                        if (kcode == null) {
-                            kcode_re = v;
-                            kcode = ((RubyRegexp)v).kcode;
-                        } else if (((RubyRegexp)v).kcode != kcode) {
-                            IRubyObject str1 = kcode_re.inspect();
-                            IRubyObject str2 = v.inspect();
-                            throw recv.getRuntime().newArgumentError("mixed kcode " + str1 + " and " + str2);
-                        }
-                    }
-                    v = ((RubyRegexp)v).to_s();
-                } else {
-                    v = quote(recv, new IRubyObject[]{args[i]});
-                }
-                source.append(v);
-            }
-
-            _args[0] = source;
-            _args[1] = recv.getRuntime().getNil();
-            if (kcode == null) {
-                _args[2] = recv.getRuntime().getNil();
-            } else if (kcode == KCode.NONE) {
-                _args[2] = recv.getRuntime().newString("n");
-            } else if (kcode == KCode.EUC) {
-                _args[2] = recv.getRuntime().newString("e");
-            } else if (kcode == KCode.SJIS) {
-                _args[2] = recv.getRuntime().newString("s");
-            } else if (kcode == KCode.UTF8) {
-                _args[2] = recv.getRuntime().newString("u");
-            }
-            return recv.callMethod(context, "new", _args);
-        }
     }
 
     /** rb_reg_names
