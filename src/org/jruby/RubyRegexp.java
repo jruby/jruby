@@ -428,6 +428,22 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         return b1;
     }
 
+    /**
+     * Variable arity version for compatibility. Not bound to a Ruby method.
+     * @deprecated Use the versions with zero, one, or two args.
+     */
+    public static IRubyObject last_match_s(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        switch (args.length) {
+        case 0:
+            return last_match_s(context, recv);
+        case 1:
+            return last_match_s(context, recv, args[0]);
+        default:
+            Arity.raiseArgumentError(context.getRuntime(), args.length, 0, 1);
+            return null; // not reached
+        }
+    }
+
     /** rb_reg_s_last_match / match_getter
     *
     */
@@ -522,69 +538,18 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     }
 
     // rb_reg_desc
-    private final StringBuilder regexpDescription(byte[] s, int start, int len, int flags) {
-        StringBuilder sb = new StringBuilder("/");
-        regexpString(sb, s, start, len);
-        sb.append("/");
+    private final ByteList regexpDescription(byte[] bytes, int start, int len, int flags) {
+        ByteList result = new ByteList();
+        result.append((byte)'/');
+        appendRegexpString(result, bytes, start, len);
+        result.append((byte)'/');
 
-        if ((flags & ReOptions.RE_OPTION_MULTILINE) != 0) sb.append("m");
-        if ((flags & ReOptions.RE_OPTION_IGNORECASE) != 0) sb.append("i");
-        if ((flags & ReOptions.RE_OPTION_EXTENDED) != 0) sb.append("x");
-
-        if (kcode != null && !isKCodeDefault()) {
-            sb.append(kcode.name().charAt(0));
-        }
-        return sb;
+        if ((flags & ReOptions.RE_OPTION_MULTILINE) != 0) result.append((byte)'m');
+        if ((flags & ReOptions.RE_OPTION_IGNORECASE) != 0) result.append((byte)'i');
+        if ((flags & ReOptions.RE_OPTION_EXTENDED) != 0) result.append((byte)'x');
+        if (kcode != null && !isKCodeDefault()) result.append((byte)kcode.name().charAt(0));
+        return result;
     }
-
-    // rb_reg_expr_str
-    private final void regexpString(StringBuilder sb, byte[] s, int start, int len) {
-        int p,pend;
-        boolean needEscape = false;
-        p = start;
-        pend = start + len;
-        Encoding enc = kcode.getEncoding();
-        while (p < pend) {
-            if (s[p] == '/' ||
-                    (!(' ' == s[p] ||
-                    (!Character.isWhitespace(s[p]) &&
-                    !Character.isISOControl(s[p]))) &&
-                    enc.length(s, p, pend) == 1)) {
-                needEscape = true;
-                break;
-            }
-            p += enc.length(s, p, pend);
-        }
-        if (!needEscape) {
-            sb.append(new ByteList(s, start, len, false).toString());
-        } else {
-            p = 0;
-            while (p < pend) {
-                if (s[p] == '\\') {
-                    int n = enc.length(s, p + 1, pend) + 1;
-                    sb.append(new ByteList(s, p, n, false).toString());
-                    p += n;
-                    continue;
-                } else if (s[p] == '/') {
-                    sb.append("\\/");
-                } else if (enc.length(s, p, pend) != 1) {
-                    sb.append(new ByteList(s, p, enc.length(s, p, pend), false).toString());
-                    p += enc.length(s, p, pend);
-                    continue;
-                } else if ((' ' == s[p] ||
-                        (!Character.isWhitespace(s[p]) &&
-                        !Character.isISOControl(s[p])))) {
-                    sb.append((char)(s[p] & 0xff));
-                } else if (!Character.isWhitespace((char)(s[p] & 0xff))) {
-                    sb.append('\\');
-                    sb.append(Integer.toString((int)(s[p] & 0377), 8));
-                } else {
-                    sb.append((char)(s[p] & 0xff));
-                }
-                p++;
-            }
-        }
-    }    
 
     /** rb_reg_init_copy
      */
@@ -712,13 +677,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     @Override
     public RubyFixnum hash() {
         check();
-        int hashval = pattern.getOptions();
-        int len = this.str.realSize;
-        int p = this.str.begin;
+        int hash = pattern.getOptions();
+        int len = str.realSize;
+        int p = str.begin;
+        byte[]bytes = str.bytes;
         while (len-- > 0) {
-            hashval = hashval * 33 + str.bytes[p++];
+            hash = hash * 33 + bytes[p++];
         }
-        return getRuntime().newFixnum(hashval + (hashval >> 5));
+        return getRuntime().newFixnum(hash + (hash >> 5));
     }
 
     @JRubyMethod(name = {"==", "eql?"}, required = 1)
@@ -744,11 +710,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
             return runtime.getNil();
         }
         int start = search(context, (RubyString)line, 0, false);
-        if (start < 0) {
-            return runtime.getNil();
-        } else {
-            return runtime.newFixnum(start);
-        }
+        if (start < 0) return runtime.getNil();
+
+        return runtime.newFixnum(start);
     }
 
     /** rb_reg_eqq
@@ -835,17 +799,16 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     @JRubyMethod(name = "=~", required = 1, reads = BACKREF, writes = BACKREF)
     @Override
     public IRubyObject op_match(ThreadContext context, IRubyObject str) {
-        int start;
+        Ruby runtime = context.getRuntime();
         if (str.isNil()) {
-            context.getCurrentFrame().setBackRef(context.getRuntime().getNil());
+            context.getCurrentFrame().setBackRef(runtime.getNil());
             return str;
         }
-        
-        start = search(context, str.convertToString(), 0, false);
 
-        if (start < 0) return context.getRuntime().getNil();
+        int start = search(context, str.convertToString(), 0, false);
+        if (start < 0) return runtime.getNil();
 
-        return RubyFixnum.newFixnum(context.getRuntime(), start);
+        return RubyFixnum.newFixnum(runtime, start);
     }
 
     /** rb_reg_match_m
@@ -864,34 +827,31 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
 
     public RubyString regsub(RubyString str, RubyString src, Matcher matcher) {
         Region regs = matcher.getRegion();
-        int mbeg = matcher.getBegin();
-        int mend = matcher.getEnd();
         
         int p, s;
         p = s = 0;
         int no = -1;
         ByteList bs = str.getByteList();
         ByteList srcbs = src.getByteList();
-        int e = bs.realSize;
-        RubyString val = null;
+        int end = bs.realSize;
+        ByteList val = null;
         Encoding enc = kcode.getEncoding();
 
-        int beg, end;
-        while (s < e) {
+        while (s < end) {
             int ss = s;
             int c = bs.charAt(s);
-            int l = enc.length(bs.bytes, bs.begin + s++, bs.begin + e);
+            int l = enc.length(bs.bytes, bs.begin + s++, bs.begin + end);
             if (l != 1) {
                 s += l - 1;
                 continue;
             }
-            if (c != '\\' || s == e) continue;
-            if (val == null) val = RubyString.newString(getRuntime(), new ByteList(ss - p));
+            if (c != '\\' || s == end) continue;
+            if (val == null) val = new ByteList(ss - p);
 
-            val.cat(bs.bytes, bs.begin + p, ss - p);
+            val.append(bs.bytes, bs.begin + p, ss - p);
             c = bs.charAt(s++);
             p = s;
-            
+
             switch (c) {
             case '0': case '1': case '2': case '3': case '4':
             case '5': case '6': case '7': case '8': case '9':
@@ -901,18 +861,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
                 no = 0;
                 break;
             case '`':
-                beg = regs == null ? mbeg : regs.beg[0];
-                val.cat(srcbs.bytes, srcbs.begin, beg);
+                val.append(srcbs.bytes, srcbs.begin, matcher.getBegin());
                 continue;
-
             case '\'':
-                end = regs == null ? mend : regs.end[0];
-                val.cat(srcbs.bytes, srcbs.begin + end, src.getByteList().realSize - end);
+                val.append(srcbs.bytes, srcbs.begin + matcher.getEnd(), srcbs.realSize - matcher.getEnd());
                 continue;
-
             case '+':
                 if (regs == null) {
-                    if (mbeg == -1) {
+                    if (matcher.getBegin() == -1) {
                         no = 0;
                         continue;
                     }
@@ -923,34 +879,33 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
                 }
                 break;
             case '\\':
-                val.cat(bs.bytes, s - 1, 1);
+                val.append(bs.bytes, s - 1, 1);
                 continue;
             default:
-                val.cat(bs.bytes, s - 2, 2);
+                val.append(bs.bytes, s - 2, 2);
                 continue;
             }
 
             if (regs != null) {
                 if (no >= 0) {
                     if (no >= regs.numRegs || regs.beg[no] == -1) continue;
-                    val.cat(srcbs.bytes, srcbs.begin + regs.beg[no], regs.end[no] - regs.beg[no]);
+                    val.append(srcbs.bytes, srcbs.begin + regs.beg[no], regs.end[no] - regs.beg[no]);
                 }
             } else {
-                if (no != 0 || mbeg == -1) continue;
-                val.cat(srcbs.bytes, srcbs.begin + mbeg, mend - mbeg);
+                if (no != 0 || matcher.getBegin() == -1) continue;
+                val.append(srcbs.bytes, srcbs.begin + matcher.getBegin(), matcher.getEnd() - matcher.getBegin());
             }
         }
 
-        if (p < e) {
+        if (p < end) {
             if (val == null) {
-                val = RubyString.newString(getRuntime(), bs.makeShared(p, e - p));
+                return RubyString.newString(getRuntime(), bs.makeShared(p, end - p));
             } else {
-                val.cat(bs.bytes, bs.begin + p, e - p);
+                val.append(bs.bytes, bs.begin + p, end - p);
             }
         }
         if (val == null) return str;
-
-        return val;
+        return RubyString.newString(getRuntime(), val);
     }
 
     final int adjustStartPos(RubyString str, int pos, boolean reverse) {
@@ -988,7 +943,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     @Override
     public IRubyObject inspect() {
         check();
-        return getRuntime().newString(ByteList.create(regexpDescription(str.bytes, str.begin, str.realSize, pattern.getOptions()).toString()));
+        return RubyString.newString(getRuntime(), regexpDescription(str.bytes, str.begin, str.realSize, pattern.getOptions()));
     }
 
     private final static int EMBEDDABLE = RE_OPTION_MULTILINE|RE_OPTION_IGNORECASE|RE_OPTION_EXTENDED;
@@ -996,57 +951,60 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     @JRubyMethod(name = "to_s")
     @Override
     public IRubyObject to_s() {
-        RubyString ss = getRuntime().newString("(?");
         check();
 
         int options = pattern.getOptions();
-        int ptr = str.begin;
+        int p = str.begin;
         int len = str.realSize;
         byte[] bytes = str.bytes;
+
+        ByteList result = new ByteList(len);
+        result.append((byte)'(').append((byte)'?');
+
         again: do {
-            if (len >= 4 && bytes[ptr] == '(' && bytes[ptr + 1] == '?') {
+            if (len >= 4 && bytes[p] == '(' && bytes[p + 1] == '?') {
                 boolean err = true;
-                ptr += 2;
+                p += 2;
                 if ((len -= 2) > 0) {
                     do {
-                        if (bytes[ptr] == 'm') {
+                        if (bytes[p] == 'm') {
                             options |= RE_OPTION_MULTILINE;
-                        } else if (bytes[ptr] == 'i') {
+                        } else if (bytes[p] == 'i') {
                             options |= RE_OPTION_IGNORECASE;
-                        } else if (bytes[ptr] == 'x') {
+                        } else if (bytes[p] == 'x') {
                             options |= RE_OPTION_EXTENDED;
                         } else {
                             break;
                         }
-                        ptr++;
+                        p++;
                     } while (--len > 0);
                 }
-                if (len > 1 && bytes[ptr] == '-') {
-                    ++ptr;
+                if (len > 1 && bytes[p] == '-') {
+                    ++p;
                     --len;
                     do {
-                        if (bytes[ptr] == 'm') {
+                        if (bytes[p] == 'm') {
                             options &= ~RE_OPTION_MULTILINE;
-                        } else if (bytes[ptr] == 'i') {
+                        } else if (bytes[p] == 'i') {
                             options &= ~RE_OPTION_IGNORECASE;
-                        } else if (bytes[ptr] == 'x') {
+                        } else if (bytes[p] == 'x') {
                             options &= ~RE_OPTION_EXTENDED;
                         } else {
                             break;
                         }
-                        ptr++;
+                        p++;
                     } while (--len > 0);
                 }
 
-                if (bytes[ptr] == ')') {
+                if (bytes[p] == ')') {
                     --len;
-                    ++ptr;
+                    ++p;
                     continue again;
                 }
 
-                if (bytes[ptr] == ':' && bytes[ptr + len - 1] == ')') {
+                if (bytes[p] == ':' && bytes[p + len - 1] == ')') {
                     try {
-                        new Regex(bytes, ++ptr, ptr + (len-=2) ,Option.DEFAULT, kcode.getEncoding(), Syntax.DEFAULT);
+                        new Regex(bytes, ++p, p + (len -= 2) ,Option.DEFAULT, kcode.getEncoding(), Syntax.DEFAULT);
                         err = false;
                     } catch (JOniException e) {
                         err = true;
@@ -1055,63 +1013,63 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
 
                 if (err) {
                     options = pattern.getOptions();
-                    ptr = str.begin;
+                    p = str.begin;
                     len = str.realSize;
                 }
             }
-            if ((options & RE_OPTION_MULTILINE) !=0 ) ss.cat((byte)'m');
-            if ((options & RE_OPTION_IGNORECASE) !=0 ) ss.cat((byte)'i');
-            if ((options & RE_OPTION_EXTENDED) !=0 ) ss.cat((byte)'x');
+            if ((options & RE_OPTION_MULTILINE) !=0 ) result.append((byte)'m');
+            if ((options & RE_OPTION_IGNORECASE) !=0 ) result.append((byte)'i');
+            if ((options & RE_OPTION_EXTENDED) !=0 ) result.append((byte)'x');
 
             if ((options & EMBEDDABLE) != EMBEDDABLE) {
-                ss.cat((byte)'-');
-                if ((options & RE_OPTION_MULTILINE) == 0) ss.cat((byte)'m');
-                if ((options & RE_OPTION_IGNORECASE) == 0) ss.cat((byte)'i');
-                if ((options & RE_OPTION_EXTENDED) == 0) ss.cat((byte)'x');
+                result.append((byte)'-');
+                if ((options & RE_OPTION_MULTILINE) == 0) result.append((byte)'m');
+                if ((options & RE_OPTION_IGNORECASE) == 0) result.append((byte)'i');
+                if ((options & RE_OPTION_EXTENDED) == 0) result.append((byte)'x');
             }
-            ss.cat((byte)':');
-            rb_reg_expr_str(ss, ptr, len);
-            ss.cat((byte)')');
-            ss.infectBy(this);
-            return ss;
+            result.append((byte)':');
+            appendRegexpString(result, bytes, p, len);
+            result.append((byte)')');
+            return RubyString.newString(getRuntime(), result).infectBy(this);
         } while (true);
     }
 
-    private final void rb_reg_expr_str(RubyString ss, int s, int len) {
-        int p = s;
-        int pend = p + len;
+    // rb_reg_expr_str
+    private void appendRegexpString(ByteList to, byte[]bytes, int start, int len) {
+        int p = start;
+        int end = p + len;
         boolean need_escape = false;
         Encoding enc = kcode.getEncoding();
-        while (p < pend) {
-            if (str.bytes[p] == '/' || (!enc.isPrint(str.bytes[p] & 0xff) && enc.length(str.bytes, p, pend) == 1)) {
+        while (p < end) {
+            if (bytes[p] == (byte)'/' || (!enc.isPrint(bytes[p] & 0xff) && enc.length(bytes, p, end) == 1)) {
                 need_escape = true;
                 break;
             }
-            p += enc.length(str.bytes, p, pend);
+            p += enc.length(bytes, p, end);
         }
         if (!need_escape) {
-            ss.cat(str.bytes, s, len);
+            to.append(bytes, start, len);
         } else {
-            p = s; 
-            while (p<pend) {
-                if (str.bytes[p] == '\\') {
-                    int n = enc.length(str.bytes, p + 1, pend) + 1;
-                    ss.cat(str.bytes, p, n);
+            p = start; 
+            while (p<end) {
+                if (bytes[p] == '\\') {
+                    int n = enc.length(bytes, p + 1, end) + 1;
+                    to.append(bytes, p, n);
                     p += n;
                     continue;
-                } else if (str.bytes[p] == '/') {
-                    ss.cat((byte)'\\');
-                    ss.cat(str.bytes, p, 1);
-                } else if (enc.length(str.bytes, p, pend) != 1) {
-                    ss.cat(str.bytes, p, enc.length(str.bytes, p, pend));
-                    p += enc.length(str.bytes, p, pend);
+                } else if (bytes[p] == '/') {
+                    to.append((byte)'\\');
+                    to.append(bytes, p, 1);
+                } else if (enc.length(bytes, p, end) != 1) {
+                    to.append(bytes, p, enc.length(bytes, p, end));
+                    p += enc.length(bytes, p, end);
                     continue;
-                } else if (enc.isPrint(str.bytes[p] & 0xff)) {
-                    ss.cat(str.bytes,p,1);
-                } else if (!enc.isSpace(str.bytes[p] & 0xff)) {
-                    ss.cat(ByteList.create(Integer.toString(str.bytes[p] & 0377, 8)));
+                } else if (enc.isPrint(bytes[p] & 0xff)) {
+                    to.append(bytes,p,1);
+                } else if (!enc.isSpace(bytes[p] & 0xff)) {
+                    to.append(ByteList.create(Integer.toString(bytes[p] & 0377, 8)));
                 } else {
-                    ss.cat(str.bytes, p, 1);
+                    to.append(bytes, p, 1);
                 }
                 p++;
             }
@@ -1151,22 +1109,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
      */
     public static IRubyObject last_match(IRubyObject match) {
         return nth_match(0, match);
-    }
-
-    /**
-     * Variable arity version for compatibility. Not bound to a Ruby method.
-     * @deprecated Use the versions with zero, one, or two args.
-     */
-    public static IRubyObject last_match_s(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        switch (args.length) {
-        case 0:
-            return last_match_s(context, recv);
-        case 1:
-            return last_match_s(context, recv, args[0]);
-        default:
-            Arity.raiseArgumentError(recv.getRuntime(), args.length, 0, 1);
-            return null; // not reached
-        }
     }
 
     /** rb_reg_match_pre
