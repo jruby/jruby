@@ -825,22 +825,25 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         return result;
     }
 
-    public RubyString regsub(RubyString str, RubyString src, Matcher matcher) {
+    public final RubyString regsub(RubyString str, RubyString src, Matcher matcher) {
         Region regs = matcher.getRegion();
         
-        int p, s;
-        p = s = 0;
         int no = -1;
         ByteList bs = str.getByteList();
+        int p = bs.begin;
+        int s = p;
+        int end = p + bs.realSize;
+        byte[]bytes = bs.bytes;
+
         ByteList srcbs = src.getByteList();
-        int end = bs.realSize;
+
         ByteList val = null;
         Encoding enc = kcode.getEncoding();
 
         while (s < end) {
             int ss = s;
-            int c = bs.charAt(s);
-            int l = enc.length(bs.bytes, bs.begin + s++, bs.begin + end);
+            int c = bytes[s] & 0xff;
+            int l = enc.length(bytes, s++, end);
             if (l != 1) {
                 s += l - 1;
                 continue;
@@ -848,8 +851,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
             if (c != '\\' || s == end) continue;
             if (val == null) val = new ByteList(ss - p);
 
-            val.append(bs.bytes, bs.begin + p, ss - p);
-            c = bs.charAt(s++);
+            val.append(bytes, p, ss - p);
+            c = bytes[s++] & 0xff;
             p = s;
 
             switch (c) {
@@ -873,16 +876,16 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
                         continue;
                     }
                 } else {
-                    no = regs.numRegs-1;
+                    no = regs.numRegs - 1;
                     while (regs.beg[no] == -1 && no > 0) no--;
                     if (no == 0) continue;
                 }
                 break;
             case '\\':
-                val.append(bs.bytes, s - 1, 1);
+                val.append(bytes, s - 1, 1);
                 continue;
             default:
-                val.append(bs.bytes, s - 2, 2);
+                val.append(bytes, s - 2, 2);
                 continue;
             }
 
@@ -899,9 +902,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
 
         if (p < end) {
             if (val == null) {
-                return RubyString.newString(getRuntime(), bs.makeShared(p, end - p));
+                return RubyString.newString(getRuntime(), bs.makeShared(p - bs.begin, end - p));
             } else {
-                val.append(bs.bytes, bs.begin + p, end - p);
+                val.append(bytes, p, end - p);
             }
         }
         if (val == null) return str;
