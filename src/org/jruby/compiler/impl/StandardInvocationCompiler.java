@@ -145,13 +145,9 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         // select appropriate call site
         method.dup(); // dup receiver
         methodCompiler.loadSelf(); // load self
-        method.if_acmpeq(variableCallType); // compare
-        
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, CallType.NORMAL);
-        method.go_to(readyForCall);
-        method.label(variableCallType);
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, CallType.VARIABLE);
-        method.label(readyForCall);
+        methodCompiler.invokeUtilityMethod("selectAttrAsgnCallSite", sig(CallSite.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class));
         
         String signature = null;
         switch (argsCallback.getArity()) {

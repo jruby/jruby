@@ -53,6 +53,10 @@ import org.jruby.util.TypeConverter;
  *
  */
 public class RuntimeHelpers {
+    public static CallSite selectAttrAsgnCallSite(IRubyObject receiver, IRubyObject self, CallSite normalSite, CallSite variableSite) {
+        if (receiver == self) return variableSite;
+        return normalSite;
+    }
     public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, ThreadContext context, IRubyObject caller, CallSite callSite) {
         callSite.call(context, caller, receiver, value);
         return value;
