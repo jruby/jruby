@@ -45,6 +45,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
     Map<Long, Integer> fixnumIndices = new HashMap<Long, Integer>();
     int inheritedSymbolCount = 0;
     int inheritedRegexpCount = 0;
+    int inheritedBigIntegerCount = 0;
     int inheritedFixnumCount = 0;
     int inheritedConstantCount = 0;
     int inheritedByteListCount = 0;
@@ -190,20 +191,17 @@ public class InheritedCacheCompiler implements CacheCompiler {
     }
 
     public void cacheBigInteger(BaseBodyCompiler method, BigInteger bigint) {
-        String fieldName = bigIntegers.get(bigint);
-        if (fieldName == null) {
-            SkinnyMethodAdapter clinitMethod = scriptCompiler.getClassInitMethod();
-            fieldName = scriptCompiler.getNewStaticConstant(ci(BigInteger.class), "bigInt");
-            bigIntegers.put(bigint, fieldName);
-
-            clinitMethod.newobj(p(BigInteger.class));
-            clinitMethod.dup();
-            clinitMethod.ldc(bigint.toString());
-            clinitMethod.invokespecial(p(BigInteger.class), "<init>", sig(void.class, String.class));
-            clinitMethod.putstatic(scriptCompiler.getClassname(), fieldName, ci(BigInteger.class));
+        method.loadThis();
+        method.loadRuntime();
+        int index = inheritedBigIntegerCount++;
+        if (index < AbstractScript.NUMBERED_BIGINTEGER_COUNT) {
+            method.method.ldc(bigint.toString(16));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getBigInteger" + index, sig(BigInteger.class, Ruby.class, String.class));
+        } else {
+            method.method.pushInt(index);
+            method.method.ldc(bigint.toString(16));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getBigInteger", sig(BigInteger.class, Ruby.class, int.class, String.class));
         }
-
-        method.method.getstatic(scriptCompiler.getClassname(), fieldName, ci(BigInteger.class));
     }
 
     public void cacheClosure(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector) {
@@ -311,6 +309,14 @@ public class InheritedCacheCompiler implements CacheCompiler {
             initMethod.aload(0);
             initMethod.pushInt(size);
             initMethod.invokevirtual(scriptCompiler.getClassname(), "initRegexps", sig(void.class, params(int.class)));
+        }
+
+        // generate regexps initialization code
+        size = inheritedBigIntegerCount;
+        if (size != 0) {
+            initMethod.aload(0);
+            initMethod.pushInt(size);
+            initMethod.invokevirtual(scriptCompiler.getClassname(), "initBigIntegers", sig(void.class, params(int.class)));
         }
 
         // generate block bodies initialization code

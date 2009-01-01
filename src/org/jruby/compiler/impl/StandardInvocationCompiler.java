@@ -136,9 +136,6 @@ public class StandardInvocationCompiler implements InvocationCompiler {
     }
 
     public void invokeAttrAssign(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
-        Label variableCallType = new Label();
-        Label readyForCall = new Label();
-        
         // receiver first, so we know which call site to use
         receiverCallback.call(methodCompiler);
         

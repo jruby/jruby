@@ -5,6 +5,7 @@
 
 package org.jruby.ast.executable;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
@@ -187,6 +188,25 @@ public abstract class AbstractScript implements Script {
     public final RubyRegexp getRegexp8(Ruby runtime, String name, int options) {return getRegexp(runtime, 8, name, options);}
     public final RubyRegexp getRegexp9(Ruby runtime, String name, int options) {return getRegexp(runtime, 9, name, options);}
 
+    public final BigInteger getBigInteger(Ruby runtime, int index, String pattern) {
+        BigInteger bigint = bigIntegers[index];
+        if (bigint == null) return bigIntegers[index] = new BigInteger(pattern, 16);
+        return bigint;
+    }
+
+    public static final int NUMBERED_BIGINTEGER_COUNT = 10;
+
+    public final BigInteger getBigInteger0(Ruby runtime, String name) {return getBigInteger(runtime, 0, name);}
+    public final BigInteger getBigInteger1(Ruby runtime, String name) {return getBigInteger(runtime, 1, name);}
+    public final BigInteger getBigInteger2(Ruby runtime, String name) {return getBigInteger(runtime, 2, name);}
+    public final BigInteger getBigInteger3(Ruby runtime, String name) {return getBigInteger(runtime, 3, name);}
+    public final BigInteger getBigInteger4(Ruby runtime, String name) {return getBigInteger(runtime, 4, name);}
+    public final BigInteger getBigInteger5(Ruby runtime, String name) {return getBigInteger(runtime, 5, name);}
+    public final BigInteger getBigInteger6(Ruby runtime, String name) {return getBigInteger(runtime, 6, name);}
+    public final BigInteger getBigInteger7(Ruby runtime, String name) {return getBigInteger(runtime, 7, name);}
+    public final BigInteger getBigInteger8(Ruby runtime, String name) {return getBigInteger(runtime, 8, name);}
+    public final BigInteger getBigInteger9(Ruby runtime, String name) {return getBigInteger(runtime, 9, name);}
+
     public final void initCallSites(int size) {
         callSites = new CallSite[size];
     }
@@ -209,6 +229,10 @@ public abstract class AbstractScript implements Script {
 
     public final void initRegexps(int size) {
         regexps = new RubyRegexp[size];
+    }
+
+    public final void initBigIntegers(int size) {
+        bigIntegers = new BigInteger[size];
     }
 
     public final void initConstants(int size) {
@@ -316,6 +340,7 @@ public abstract class AbstractScript implements Script {
     public RubySymbol[] symbols;
     public RubyFixnum[] fixnums;
     public RubyRegexp[] regexps;
+    public BigInteger[] bigIntegers;
     public String filename;
     public IRubyObject[] constants;
     public int[] constantGenerations;
