@@ -14,22 +14,13 @@ abstract class FastIntMethod extends DynamicMethod {
     protected final Arity arity;
     protected final Function function;
     protected final IntResultConverter resultConverter;
-    protected final boolean needsInvocationSession;
+
     public FastIntMethod(RubyModule implementationClass, Function function,
             IntResultConverter resultConverter, IntParameterConverter[] paramConverters) {
         super(implementationClass, Visibility.PUBLIC, CallConfiguration.NO_FRAME_NO_SCOPE);
         this.resultConverter = resultConverter;
         this.arity = Arity.fixed(paramConverters.length);
         this.function = function;
-
-        boolean needsInvocation = false;
-        for (IntParameterConverter c : paramConverters) {
-            if (c.needsInvocationSession()) {
-                needsInvocation = true;
-                break;
-            }
-        }
-        this.needsInvocationSession = needsInvocation;
     }
     @Override
     public final DynamicMethod dup() {

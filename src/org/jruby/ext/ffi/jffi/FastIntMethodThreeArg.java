@@ -18,20 +18,10 @@ final class FastIntMethodThreeArg extends FastIntMethod {
     }
     private final IRubyObject invoke(ThreadContext context, IRubyObject arg1, 
             IRubyObject arg2, IRubyObject arg3) {
-        int retval;
-        if (needsInvocationSession) {
-            Invocation invocation = new Invocation(context);
-            retval = invoker.invokeIIIrI(function,
-                    c1.intValue(invocation, context, arg1),
-                    c2.intValue(invocation, context, arg2),
-                    c3.intValue(invocation, context, arg3));
-            invocation.finish();
-        } else {
-            retval = invoker.invokeIIIrI(function,
+        int retval = invoker.invokeIIIrI(function,
                     c1.intValue(context, arg1),
                     c2.intValue(context, arg2),
                     c3.intValue(context, arg3));
-        }
         return resultConverter.fromNative(context, retval);
     }
     @Override

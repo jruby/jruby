@@ -12,10 +12,9 @@ import org.jruby.ext.ffi.Util;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 
 public class FastIntMethodFactory {
-private static final class SingletonHolder {
+    private static final class SingletonHolder {
         private static final FastIntMethodFactory INSTANCE = new FastIntMethodFactory();
     }
     private FastIntMethodFactory() {}
@@ -39,7 +38,6 @@ private static final class SingletonHolder {
             case UINT16:
             case INT32:
             case UINT32:
-//            case FLOAT32:
                 return true;
             case POINTER:
             case STRING:
@@ -65,12 +63,6 @@ private static final class SingletonHolder {
                 case LONG:
                 case ULONG:
                     return Platform.getPlatform().longSize() == 32;
-//                case POINTER:
-//                case BUFFER_IN:
-//                case BUFFER_OUT:
-//                case BUFFER_INOUT:
-//                case STRING:
-//                    return com.kenai.jffi.Platform.getPlatform().addressSize() == 32;
             }
         }
         return false;
@@ -115,19 +107,6 @@ private static final class SingletonHolder {
                     return Unsigned32ParameterConverter.INSTANCE;
                 }
                 throw new IllegalArgumentException("Long is too big for int parameter");
-            case POINTER:
-            case BUFFER_IN:
-            case BUFFER_OUT:
-            case BUFFER_INOUT:
-                if (Platform.getPlatform().addressSize() == 32) {
-                    return PointerParameterConverter.INSTANCE;
-                }
-                throw new IllegalArgumentException("Pointer is too big for int parameter");
-            case STRING:
-                if (Platform.getPlatform().addressSize() == 32) {
-                    return StringParameterConverter.INSTANCE;
-                }
-                throw new IllegalArgumentException("String is too big for int parameter");
             default:
                 throw new IllegalArgumentException("Unknown type " + type);
         }
@@ -215,9 +194,12 @@ private static final class SingletonHolder {
         }
     }
     static final class PointerResultConverter implements IntResultConverter {
+        static final long ADDRESS_MASK = Platform.getPlatform().addressSize() == 32
+                ? 0xffffffffL : 0xffffffffffffffffL;
         public static final IntResultConverter INSTANCE = new PointerResultConverter();
         public final IRubyObject fromNative(ThreadContext context, int value) {
-            return new BasePointer(context.getRuntime(), value);
+            return new BasePointer(context.getRuntime(),
+                    ((long) value) & PointerResultConverter.ADDRESS_MASK);
         }
     }
 
@@ -225,7 +207,7 @@ private static final class SingletonHolder {
         private static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
         public static final IntResultConverter INSTANCE = new StringResultConverter();
         public final IRubyObject fromNative(ThreadContext context, int value) {
-            long address = value;
+            long address = ((long) value) & PointerResultConverter.ADDRESS_MASK;
             if (address == 0) {
                 return context.getRuntime().getNil();
             }
@@ -243,12 +225,6 @@ private static final class SingletonHolder {
     }
     static abstract class BaseParameterConverter implements IntParameterConverter {
         static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
-        public boolean needsInvocationSession() {
-            return false;
-        }
-        public int intValue(Invocation invocation, ThreadContext context, IRubyObject obj) {
-            return intValue(context, obj);
-        }
     }
     static final class Signed8ParameterConverter extends BaseParameterConverter {
         public static final IntParameterConverter INSTANCE = new Signed8ParameterConverter();
@@ -290,53 +266,6 @@ private static final class SingletonHolder {
         public static final IntParameterConverter INSTANCE = new Float32ParameterConverter();
         public final int intValue(ThreadContext context, IRubyObject obj) {
             return Float.floatToRawIntBits((float) RubyNumeric.num2dbl(obj));
-        }
-    }
-    static final class PointerParameterConverter extends BaseParameterConverter {
-        public static final IntParameterConverter INSTANCE = new PointerParameterConverter();
-
-        @Override
-        public boolean needsInvocationSession() {
-            return true;
-        }
-
-        public final int intValue(ThreadContext context, IRubyObject obj) {
-            throw new RuntimeException("Cannot convert pointer without invocation session");
-        }
-        @Override
-        public final int intValue(Invocation invocation, ThreadContext context, IRubyObject obj) {
-            if (obj instanceof BasePointer) {
-                return (int) ((BasePointer) obj).getAddress();
-            } else if (obj.isNil()) {
-                return 0;
-            } else if (obj.respondsTo("to_ptr")) {
-                IRubyObject ptr = obj.callMethod(context, "to_ptr");
-                if (ptr instanceof BasePointer) {
-                    return (int) ((BasePointer) ptr).getAddress();
-                }
-            }
-            throw context.getRuntime().newArgumentError("Not a pointer");
-        }
-    }
-    static final class StringParameterConverter extends BaseParameterConverter {
-        public static final IntParameterConverter INSTANCE = new StringParameterConverter();
-
-        @Override
-        public boolean needsInvocationSession() {
-            return true;
-        }
-
-        public final int intValue(ThreadContext context, IRubyObject obj) {
-            throw new RuntimeException("Cannot convert string without invocation session");
-        }
-        @Override
-        public final int intValue(Invocation invocation, ThreadContext context, IRubyObject obj) {
-            ByteList bl = ((RubyString) obj).getByteList();
-            TempMemory m = new TempMemory(bl.length() + 1, false);
-            IO.putByteArray(m.address, bl.unsafeBytes(), bl.begin(), bl.length());
-            IO.putByte(m.address + bl.length(), (byte) 0);
-            invocation.addPostInvoke(m);
-            return (int) m.address;
         }
     }
 }
