@@ -40,6 +40,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 import org.jruby.util.Sprintf;
 
 /**
@@ -128,9 +129,9 @@ public class RubyNameError extends RubyException {
 
             Ruby runtime = getRuntime();
             RubyArray arr = runtime.newArray(method, runtime.newString(description));
-            RubyString msg = runtime.newString(Sprintf.sprintf(runtime.newString(format), arr).toString());
-            if (object.isTaint()) msg.setTaint(true);
-            return msg;
+            ByteList msgBytes = new ByteList(format.length() + description.length() + method.toString().length());
+            Sprintf.sprintf(msgBytes, format, arr);
+            return runtime.newString(msgBytes).infectBy(object);
         }
     }
 

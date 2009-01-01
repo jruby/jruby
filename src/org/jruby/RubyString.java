@@ -905,19 +905,18 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "%", required = 1)
     public IRubyObject op_format(ThreadContext context, IRubyObject arg) {
-        final RubyString s;
-
         IRubyObject tmp = arg.checkArrayType();
-        if (tmp.isNil()) {
-            tmp = arg;
-        }
+        if (tmp.isNil()) tmp = arg;
 
         // FIXME: Should we make this work with platform's locale,
         // or continue hardcoding US?
-        s = Sprintf.sprintf(context.getRuntime(), Locale.US, value, tmp);
+        ByteList out = new ByteList(value.realSize);
+        Sprintf.sprintf(out, Locale.US, value, tmp);
+        RubyString str = newString(context.getRuntime(), out);
 
-        s.infectBy(this);
-        return s;
+        str.infectBy(this);
+        str.infectBy(arg);
+        return str;
     }
 
     @JRubyMethod(name = "hash")
@@ -937,9 +936,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (this == other) return true;
 
         if (other instanceof RubyString) {
-            RubyString string = (RubyString) other;
-
-            if (string.value.equal(value)) return true;
+            if (((RubyString) other).value.equal(value)) return true;
         }
 
         return false;
@@ -1814,17 +1811,17 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "dump", compat = CompatVersion.RUBY1_8)
     public IRubyObject dump() {
-        return commonDump(false);
+        return dumpCommon(false);
     }
 
     @JRubyMethod(name = "dump", compat = CompatVersion.RUBY1_9)
     public IRubyObject dump19() {
-        return commonDump(true);
+        return dumpCommon(true);
     }
 
-    private IRubyObject commonDump(boolean is1_9) {
+    private IRubyObject dumpCommon(boolean is1_9) {
         Ruby runtime = getRuntime();
-
+        ByteList buf = null;
         Encoding enc = value.encoding;
 
         int p = value.begin;
@@ -1850,8 +1847,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     if (is1_9 && enc instanceof UTF8Encoding) {
                         int n = StringSupport.preciseLength(enc, bytes, p - 1, end) - 1;
                         if (n > 0) {
+                            if (buf == null) buf = new ByteList();
                             int cc = codePoint(runtime, enc, bytes, p - 1, end);
-                            len += Sprintf.sprintf(runtime, "%x", cc).length() + 4;
+                            Sprintf.sprintf(runtime, buf, "%x", cc);
+                            len += buf.realSize + 4;
+                            buf.realSize = 0;
                             p += n;
                             break;
                         }
@@ -1866,7 +1866,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
             len += ".force_encoding(\"".length() + enc.getName().length + "\")".length();
         }
 
-        byte out[] = new byte[len];
+        ByteList outBytes = new ByteList(len);
+        byte out[] = outBytes.bytes;
         int q = 0;
         p = value.begin;
         end = p + value.realSize;
@@ -1916,25 +1917,27 @@ public class RubyString extends RubyObject implements EncodingCapable {
                         if (n > 0) {
                             int cc = codePoint(runtime, enc, bytes, p - 1, end);
                             p += n;
-                            ByteList buf = (ByteList)Sprintf.sprintf(runtime, "u{%x}", cc);
-                            System.arraycopy(buf.bytes, buf.begin, out, q, buf.realSize);
-                            q += buf.realSize;
+                            outBytes.realSize = q;
+                            Sprintf.sprintf(runtime, outBytes, "u{%x}", cc);
+                            q = outBytes.realSize;
                             continue;
                         }
                     }
-                    ByteList buf = (ByteList)Sprintf.sprintf(runtime, "x%02X", c);
-                    System.arraycopy(buf.bytes, buf.begin, out, q, buf.realSize);
-                    q += buf.realSize;
+                    outBytes.realSize = q;
+                    Sprintf.sprintf(runtime, outBytes, "x%02X", c);
+                    q = outBytes.realSize;
                 } else {
-                    ByteList buf = (ByteList)Sprintf.sprintf(runtime, "%03o", c);
-                    System.arraycopy(buf.bytes, buf.begin, out, q, buf.realSize);
-                    q += buf.realSize;
+                    outBytes.realSize = q;
+                    Sprintf.sprintf(runtime, outBytes, "%03o", c);
+                    q = outBytes.realSize;
                 }
             }
         }
         out[q++] = '"';
+        outBytes.realSize = q;
+        assert out == outBytes.bytes; // must not reallocate
 
-        final RubyString result = new RubyString(runtime, getMetaClass(), new ByteList(out, false));
+        final RubyString result = new RubyString(runtime, getMetaClass(), outBytes);
         if (is1_9) {
             if (!enc.isAsciiCompatible()) {
                 result.cat(".force_encoding(\"".getBytes());
@@ -1989,8 +1992,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private void escapeCodePointCat(Ruby runtime, byte[]bytes, int p , int n) {
+        modify();
         for (int q = p - n; q < p; q++) {
-            cat((ByteList)Sprintf.sprintf(runtime, "\\x%02X", bytes[q] & 0377));
+            Sprintf.sprintf(runtime, value, "\\x%02X", bytes[q] & 0377);
         }
     }
 
@@ -2000,7 +2004,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         byte bytes[] = value.bytes;
         int p = value.begin;
         int end = p + value.realSize;
-
         RubyString result = new RubyString(runtime, runtime.getString(), new ByteList(end - p));
 
         final Encoding enc;
@@ -2077,7 +2080,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 //out.cat(bytes, p - n, n); // TODO: rb_enc_str_buf_cat
             } else {
                 if (!is1_9) {
-                    result.cat((ByteList)Sprintf.sprintf(runtime, "\\%03o", c & 0377));
+                    Sprintf.sprintf(runtime, result.value, "\\%03o", c & 0377);
                 } else {
                     result.escapeCodePointCat(runtime, bytes, p, n);
                 }

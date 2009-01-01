@@ -148,7 +148,7 @@ public class RubySymbol extends RubyObject {
     public RubyFixnum to_int() {
         if (getRuntime().isVerbose()) {
             getRuntime().getWarnings().warn(ID.SYMBOL_AS_INTEGER, "treating Symbol as an integer");
-	}
+        }
         return to_i();
     }
 
@@ -156,8 +156,18 @@ public class RubySymbol extends RubyObject {
     @Override
     public IRubyObject inspect() {
         Ruby runtime = getRuntime();
-        return runtime.newString(":" + 
-            (isSymbolName(symbol) ? symbol : RubyString.newStringShared(runtime, symbolBytes).dump().toString())); 
+
+        final ByteList bytes;
+        if (isSymbolName(symbol)) {
+            bytes = symbolBytes;
+        } else {
+            bytes = ((RubyString)RubyString.newString(runtime, symbolBytes).dump()).getByteList();
+        }
+        ByteList result = new ByteList(bytes.realSize + 1);
+        result.append((byte)':');
+        result.append(bytes);
+
+        return RubyString.newString(runtime, result);
     }
 
     @JRubyMethod(name = "to_s")
@@ -391,9 +401,7 @@ public class RubySymbol extends RubyObject {
     }
     
     private static boolean isSymbolName(String s) {
-        if (s == null || s.length() < 1) {
-            return false;
-        }
+        if (s == null || s.length() < 1) return false;
 
         int length = s.length();
 
@@ -431,9 +439,7 @@ public class RubySymbol extends RubyObject {
             return s.equals("[]") || s.equals("[]=");
         }
         
-        if (!isIdentStart(c)) {
-            return false;
-        }
+        if (!isIdentStart(c)) return false;
 
         boolean localID = (c >= 'a' && c <= 'z');
         int last = 1;
