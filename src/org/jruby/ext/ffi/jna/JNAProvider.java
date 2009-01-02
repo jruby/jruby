@@ -203,8 +203,7 @@ public final class JNAProvider extends FFIProvider {
      */
     private static final class Signed8Invoker implements FunctionInvoker {
         public final IRubyObject invoke(Ruby runtime, Function function, Object[] args) {
-            int value = function.invokeInt(args) & 0xff;
-            return runtime.newFixnum(value < 0x80 ? value : -0x80 + (value - 0x80));
+            return Util.newSigned8(runtime, function.invokeInt(args));
         }
         public static final FunctionInvoker INSTANCE = new Signed8Invoker();
     }
@@ -226,8 +225,7 @@ public final class JNAProvider extends FFIProvider {
      */
     private static final class Signed16Invoker implements FunctionInvoker {
         public final IRubyObject invoke(Ruby runtime, Function function, Object[] args) {
-            int value = function.invokeInt(args) & 0xffff;
-            return runtime.newFixnum(value < 0x8000 ? value : -0x8000 + (value - 0x8000));
+            return Util.newSigned16(runtime, function.invokeInt(args));
         }
         public static final FunctionInvoker INSTANCE = new Signed16Invoker();
     }
@@ -248,7 +246,7 @@ public final class JNAProvider extends FFIProvider {
      */
     private static final class Signed32Invoker implements FunctionInvoker {
         public final IRubyObject invoke(Ruby runtime, Function function, Object[] args) {   
-            return runtime.newFixnum(function.invokeInt(args));
+            return Util.newSigned32(runtime, function.invokeInt(args));
         }
         public static final FunctionInvoker INSTANCE = new Signed32Invoker();
     }
@@ -270,7 +268,7 @@ public final class JNAProvider extends FFIProvider {
      */
     private static final class Signed64Invoker implements FunctionInvoker {
         public final IRubyObject invoke(Ruby runtime, Function function, Object[] args) {
-            return runtime.newFixnum(function.invokeLong(args));
+            return Util.newSigned64(runtime, function.invokeLong(args));
         }
         public static final FunctionInvoker INSTANCE = new Signed64Invoker();
     }
