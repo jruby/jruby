@@ -35,6 +35,7 @@ import static org.jruby.util.CodegenUtils.*;
  */
 public class InheritedCacheCompiler implements CacheCompiler {
     protected StandardASMCompiler scriptCompiler;
+    int scopeCount = 0;
     int callSiteCount = 0;
     List<String> callSiteList = new ArrayList<String>();
     List<CallType> callTypeList = new ArrayList<CallType>();
@@ -54,6 +55,28 @@ public class InheritedCacheCompiler implements CacheCompiler {
     
     public InheritedCacheCompiler(StandardASMCompiler scriptCompiler) {
         this.scriptCompiler = scriptCompiler;
+    }
+
+    public void cacheStaticScope(BaseBodyCompiler method, StaticScope scope) {
+        StringBuffer scopeNames = new StringBuffer();
+        for (int i = 0; i < scope.getVariables().length; i++) {
+            if (i != 0) scopeNames.append(';');
+            scopeNames.append(scope.getVariables()[i]);
+        }
+
+        // retrieve scope from scopes array
+        method.loadThis();
+        method.loadThreadContext();
+        method.method.ldc(scopeNames.toString());
+        if (scopeCount < AbstractScript.NUMBERED_SCOPE_COUNT) {
+            // use numbered access method
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getScope" + scopeCount, sig(StaticScope.class, ThreadContext.class, String.class));
+        } else {
+            method.method.pushInt(scopeCount);
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getScope", sig(StaticScope.class, ThreadContext.class, String.class, int.class));
+        }
+
+        scopeCount++;
     }
     
     public void cacheCallSite(BaseBodyCompiler method, String name, CallType callType) {
@@ -277,6 +300,13 @@ public class InheritedCacheCompiler implements CacheCompiler {
                 }
             }
             initMethod.putfield(scriptCompiler.getClassname(), "callSites", ci(CallSite[].class));
+        }
+
+        size = scopeCount;
+        if (size != 0) {
+            initMethod.aload(0);
+            initMethod.pushInt(size);
+            initMethod.invokevirtual(scriptCompiler.getClassname(), "initScopes", sig(void.class, params(int.class)));
         }
 
         // generate symbols initialization code

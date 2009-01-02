@@ -1892,7 +1892,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             final CompilerCallback superCallback,
             final CompilerCallback pathCallback,
             final CompilerCallback bodyCallback,
-            final CompilerCallback receiverCallback) {
+            final CompilerCallback receiverCallback,
+            final ASTInspector inspector) {
         String classMethodName = null;
         if (receiverCallback == null) {
             String mangledName = JavaNameMangler.mangleStringForCleanJavaIdentifier(name);
@@ -1901,10 +1902,9 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             classMethodName = "sclass_" + script.getAndIncrementMethodIndex() + "$RUBY$__singleton__";
         }
 
-        final RootScopedBodyCompiler classBody = new ASMClassBodyCompiler(script, classMethodName, null, staticScope);
+        final RootScopedBodyCompiler classBody = new ClassBodyCompiler(script, classMethodName, inspector, staticScope);
 
         CompilerCallback bodyPrep = new CompilerCallback() {
-
             public void call(BodyCompiler context) {
                 if (receiverCallback == null) {
                     if (superCallback != null) {
@@ -1951,8 +1951,12 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                 classBody.method.swap();
 
                 // static scope
-                StandardASMCompiler.buildStaticScopeNames(classBody.method, staticScope);
-                classBody.invokeThreadContext("preCompiledClass", sig(Void.TYPE, params(RubyModule.class, String[].class)));
+                script.getCacheCompiler().cacheStaticScope(classBody, staticScope);
+                if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
+                    classBody.invokeThreadContext("preCompiledClass", sig(Void.TYPE, params(RubyModule.class, StaticScope.class)));
+                } else {
+                    classBody.invokeThreadContext("preCompiledClassDummyScope", sig(Void.TYPE, params(RubyModule.class, StaticScope.class)));
+                }
             }
         };
 
@@ -2001,11 +2005,11 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.invokevirtual(script.getClassname(), classMethodName, StandardASMCompiler.METHOD_SIGNATURES[0]);
     }
 
-    public void defineModule(final String name, final StaticScope staticScope, final CompilerCallback pathCallback, final CompilerCallback bodyCallback) {
+    public void defineModule(final String name, final StaticScope staticScope, final CompilerCallback pathCallback, final CompilerCallback bodyCallback, final ASTInspector inspector) {
         String mangledName = JavaNameMangler.mangleStringForCleanJavaIdentifier(name);
         String moduleMethodName = "module__" + script.getAndIncrementMethodIndex() + "$RUBY$" + mangledName;
 
-        final RootScopedBodyCompiler classBody = new ASMClassBodyCompiler(script, moduleMethodName, null, staticScope);
+        final RootScopedBodyCompiler classBody = new ClassBodyCompiler(script, moduleMethodName, inspector, staticScope);
 
         CompilerCallback bodyPrep = new CompilerCallback() {
 
@@ -2029,9 +2033,12 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                 classBody.method.swap();
 
                 // static scope
-                StandardASMCompiler.buildStaticScopeNames(classBody.method, staticScope);
-
-                classBody.invokeThreadContext("preCompiledClass", sig(Void.TYPE, params(RubyModule.class, String[].class)));
+                script.getCacheCompiler().cacheStaticScope(classBody, staticScope);
+                if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
+                    classBody.invokeThreadContext("preCompiledClass", sig(Void.TYPE, params(RubyModule.class, StaticScope.class)));
+                } else {
+                    classBody.invokeThreadContext("preCompiledClassDummyScope", sig(Void.TYPE, params(RubyModule.class, StaticScope.class)));
+                }
             }
         };
 

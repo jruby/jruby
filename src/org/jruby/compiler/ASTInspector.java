@@ -46,6 +46,7 @@ import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.BreakNode;
 import org.jruby.ast.CallNode;
 import org.jruby.ast.CaseNode;
+import org.jruby.ast.ClassNode;
 import org.jruby.ast.Colon2Node;
 import org.jruby.ast.ConstNode;
 import org.jruby.ast.DefinedNode;
@@ -64,6 +65,7 @@ import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.Match2Node;
 import org.jruby.ast.Match3Node;
 import org.jruby.ast.MatchNode;
+import org.jruby.ast.ModuleNode;
 import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NewlineNode;
@@ -80,6 +82,7 @@ import org.jruby.ast.PostExeNode;
 import org.jruby.ast.PreExeNode;
 import org.jruby.ast.ReturnNode;
 import org.jruby.ast.RootNode;
+import org.jruby.ast.SClassNode;
 import org.jruby.ast.SValueNode;
 import org.jruby.ast.SplatNode;
 import org.jruby.ast.SuperNode;
@@ -301,6 +304,9 @@ public class ASTInspector {
             break;
         case CLASSNODE:
             setFlag(CLASS);
+            ClassNode classNode = (ClassNode)node;
+            inspect(classNode.getCPath());
+            inspect(classNode.getSuperNode());
             break;
         case CLASSVARNODE:
             setFlag(CLASS_VAR);
@@ -466,6 +472,7 @@ public class ASTInspector {
             break;
         case MODULENODE:
             setFlag(CLASS);
+            inspect(((ModuleNode)node).getCPath());
             break;
         case MULTIPLEASGN19NODE:
             MultipleAsgn19Node multipleAsgn19Node = (MultipleAsgn19Node)node;
@@ -593,6 +600,8 @@ public class ASTInspector {
             break;
         case SCLASSNODE:
             setFlag(CLASS);
+            SClassNode sclassNode = (SClassNode)node;
+            inspect(sclassNode.getReceiverNode());
             break;
         case SCOPENODE:
             break;

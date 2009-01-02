@@ -35,5 +35,7 @@ public interface CacheCompiler {
 
     public void cacheConstant(BaseBodyCompiler method, String constantName);
 
+    public void cacheStaticScope(BaseBodyCompiler method, StaticScope scope);
+
     public void finish();
 }

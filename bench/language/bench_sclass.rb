@@ -1,12 +1,10 @@
 require 'benchmark'
 
 def bench_class_definition(bm)
-  bm.report("1m class Foo; end") {
-    class << self
-      1_000_000.times {
-        class Foo; end
-      }
-    end
+  bm.report("1m class << self; end") {
+    1_000_000.times {
+      class << self; end
+    }
   }
 end
 

@@ -9,8 +9,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.util.CodegenUtils.*;
 
-public class ASMClassBodyCompiler extends RootScopedBodyCompiler {
-    public ASMClassBodyCompiler(StandardASMCompiler scriptCompiler, String friendlyName, ASTInspector inspector, StaticScope scope) {
+public class ClassBodyCompiler extends RootScopedBodyCompiler {
+    public ClassBodyCompiler(StandardASMCompiler scriptCompiler, String friendlyName, ASTInspector inspector, StaticScope scope) {
         super(scriptCompiler, friendlyName, inspector, scope);
     }
 

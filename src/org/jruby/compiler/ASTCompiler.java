@@ -1050,7 +1050,10 @@ public class ASTCompiler {
                     }
                 };
 
-        context.defineClass(classNode.getCPath().getName(), classNode.getScope(), superCallback, pathCallback, bodyCallback, null);
+        ASTInspector inspector = new ASTInspector();
+        inspector.inspect(classNode.getBodyNode());
+
+        context.defineClass(classNode.getCPath().getName(), classNode.getScope(), superCallback, pathCallback, bodyCallback, null, inspector);
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
@@ -1079,7 +1082,10 @@ public class ASTCompiler {
                     }
                 };
 
-        context.defineClass("SCLASS", sclassNode.getScope(), null, null, bodyCallback, receiverCallback);
+        ASTInspector inspector = new ASTInspector();
+        inspector.inspect(sclassNode.getBodyNode());
+
+        context.defineClass("SCLASS", sclassNode.getScope(), null, null, bodyCallback, receiverCallback, inspector);
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
@@ -2650,7 +2656,10 @@ public class ASTCompiler {
                     }
                 };
 
-        context.defineModule(moduleNode.getCPath().getName(), moduleNode.getScope(), pathCallback, bodyCallback);
+        ASTInspector inspector = new ASTInspector();
+        inspector.inspect(moduleNode.getBodyNode());
+
+        context.defineModule(moduleNode.getCPath().getName(), moduleNode.getScope(), pathCallback, bodyCallback, inspector);
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }

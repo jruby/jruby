@@ -12,6 +12,8 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyRegexp;
 import org.jruby.RubySymbol;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.parser.LocalStaticScope;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CompiledBlockCallback;
@@ -51,6 +53,29 @@ public abstract class AbstractScript implements Script {
     public IRubyObject run(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
         return __file__(context, self, args, block);
     }
+
+    public final StaticScope getScope(ThreadContext context, String varNamesDescriptor, int index) {
+        StaticScope scope = scopes[index];
+        if (scope == null) {
+            String[] varNames = varNamesDescriptor.split(";");
+            for (int i = 0; i < varNames.length; i++) varNames[i] = varNames[i].intern();
+            scope = scopes[index] = new LocalStaticScope(context.getCurrentScope().getStaticScope(), varNames);
+        }
+        return scope;
+    }
+
+    public static final int NUMBERED_SCOPE_COUNT = 10;
+
+    public final StaticScope getScope0(ThreadContext context, String varNamesDescriptor) {return getScope(context, varNamesDescriptor, 0);}
+    public final StaticScope getScope1(ThreadContext context, String varNamesDescriptor) {return getScope(context, varNamesDescriptor, 1);}
+    public final StaticScope getScope2(ThreadContext context, String varNamesDescriptor) {return getScope(context, varNamesDescriptor, 2);}
+    public final StaticScope getScope3(ThreadContext context, String varNamesDescriptor) {return getScope(context, varNamesDescriptor, 3);}
+    public final StaticScope getScope4(ThreadContext context, String varNamesDescriptor) {return getScope(context, varNamesDescriptor, 4);}
+    public final StaticScope getScope5(ThreadContext context, String varNamesDescriptor) {return getScope(context, varNamesDescriptor, 5);}
+    public final StaticScope getScope6(ThreadContext context, String varNamesDescriptor) {return getScope(context, varNamesDescriptor, 6);}
+    public final StaticScope getScope7(ThreadContext context, String varNamesDescriptor) {return getScope(context, varNamesDescriptor, 7);}
+    public final StaticScope getScope8(ThreadContext context, String varNamesDescriptor) {return getScope(context, varNamesDescriptor, 8);}
+    public final StaticScope getScope9(ThreadContext context, String varNamesDescriptor) {return getScope(context, varNamesDescriptor, 9);}
 
     public final CallSite getCallSite(int index) {
         return callSites[index];
@@ -207,6 +232,10 @@ public abstract class AbstractScript implements Script {
     public final BigInteger getBigInteger8(Ruby runtime, String name) {return getBigInteger(runtime, 8, name);}
     public final BigInteger getBigInteger9(Ruby runtime, String name) {return getBigInteger(runtime, 9, name);}
 
+    public final void initScopes(int size) {
+        scopes = new StaticScope[size];
+    }
+
     public final void initCallSites(int size) {
         callSites = new CallSite[size];
     }
@@ -334,6 +363,7 @@ public abstract class AbstractScript implements Script {
         return blockCallbacks[index] = callback;
     }
 
+    public StaticScope[] scopes;
     public CallSite[] callSites;
     public BlockBody[] blockBodies;
     public CompiledBlockCallback[] blockCallbacks;
