@@ -223,21 +223,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         } else {
             sourceNoPath = sourcename;
         }
-        
-        StringBuffer smap = new StringBuffer();
-        smap.append("SMAP\n")
-                .append(sourceNoPath).append("\n")
-                .append("Ruby\n")
-                .append("*S Ruby\n")
-                .append("*F\n")
-                .append("+ 1 ").append(sourceNoPath).append("\n")
-                .append(sourcename).append("\n")
-                .append("*L\n")
-                .append("1#1,999999:1,1\n")
-                .append("*E\n");
 
         
-        classWriter.visitSource(sourceNoPath, smap.toString());
+        classWriter.visitSource(sourceNoPath, null);
     }
 
     public void endScript(boolean generateLoad, boolean generateMain) {
@@ -440,9 +428,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         
         methodCompiler.beginMethod(args, scope);
         
-        // Emite a nop, to mark the end of the method preamble
-        methodCompiler.method.nop();
-        
         return methodCompiler;
     }
 
@@ -450,9 +435,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         RootScopedBodyCompiler methodCompiler = new MethodBodyCompiler(this, rubyName, javaName, inspector, scope);
 
         methodCompiler.beginMethod(null, scope);
-
-        // Emite a nop, to mark the end of the method preamble
-        methodCompiler.method.nop();
 
         return methodCompiler;
     }
