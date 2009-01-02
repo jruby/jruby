@@ -150,11 +150,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     
     public void dumpClass(PrintStream out) {
         PrintWriter pw = new PrintWriter(out);
-        TraceClassVisitor tcv = new TraceClassVisitor(pw);
-        new ClassReader(classWriter.toByteArray()).accept(tcv, 0);
 
         try {
-            tcv.print(pw);
+            TraceClassVisitor tcv = new TraceClassVisitor(pw);
+            new ClassReader(classWriter.toByteArray()).accept(tcv, 0);
         } finally {
             pw.close();
         }
