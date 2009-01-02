@@ -470,8 +470,6 @@ public interface BodyCompiler {
     
     public void pollThreadEvents();
 
-    public void branchIfModule(CompilerCallback receiverCallback, BranchCallback moduleCallback, BranchCallback notModuleCallback, boolean mustBeModule);
-
     /**
      * Push the current back reference
      */

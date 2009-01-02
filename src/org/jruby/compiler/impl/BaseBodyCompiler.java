@@ -324,7 +324,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void retrieveConstantFromModule(String name) {
-        method.visitTypeInsn(CHECKCAST, p(RubyModule.class));
+        invokeUtilityMethod("checkIsModule", sig(RubyModule.class, IRubyObject.class));
         method.ldc(name);
         method.invokevirtual(p(RubyModule.class), "fastGetConstantFrom", sig(IRubyObject.class, params(String.class)));
     }
@@ -1154,12 +1154,6 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                 falseBranch.branch(context);
             }
         });
-    }
-
-    public void branchIfModule(CompilerCallback receiverCallback, BranchCallback moduleCallback, BranchCallback notModuleCallback, boolean mustBeModule) {
-        receiverCallback.call(this);
-        invokeUtilityMethod("checkIsModule", sig(RubyModule.class, IRubyObject.class));
-        isInstanceOf(RubyModule.class, moduleCallback, notModuleCallback);
     }
 
     public void backref() {

@@ -110,6 +110,8 @@ import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.CaseNode;
 import org.jruby.ast.ClassNode;
 import org.jruby.ast.ClassVarDeclNode;
+import org.jruby.ast.Colon2ConstNode;
+import org.jruby.ast.Colon2MethodNode;
 import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.DSymbolNode;
 import org.jruby.ast.DXStrNode;
@@ -1204,29 +1206,18 @@ public class ASTCompiler {
             context.loadObject();
             context.retrieveConstantFromModule(name);
         } else {
-            final CompilerCallback receiverCallback = new CompilerCallback() {
-
-                        public void call(BodyCompiler context) {
-                            compile(iVisited.getLeftNode(), context,true);
-                        }
-                    };
-
-            BranchCallback moduleCallback = new BranchCallback() {
-
-                        public void branch(BodyCompiler context) {
-                            receiverCallback.call(context);
-                            context.retrieveConstantFromModule(name);
-                        }
-                    };
-
-            BranchCallback notModuleCallback = new BranchCallback() {
-
-                        public void branch(BodyCompiler context) {
-                            context.getInvocationCompiler().invokeDynamic(name, receiverCallback, null, CallType.FUNCTIONAL, null, false);
-                        }
-                    };
-
-            context.branchIfModule(receiverCallback, moduleCallback, notModuleCallback, IdUtil.isConstant(name));
+            if (node instanceof Colon2ConstNode) {
+                compile(iVisited.getLeftNode(), context, true);
+                context.retrieveConstantFromModule(name);
+            } else if (node instanceof Colon2MethodNode) {
+                final CompilerCallback receiverCallback = new CompilerCallback() {
+                    public void call(BodyCompiler context) {
+                        compile(iVisited.getLeftNode(), context,true);
+                    }
+                };
+                
+                context.getInvocationCompiler().invokeDynamic(name, receiverCallback, null, CallType.FUNCTIONAL, null, false);
+            }
         }
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
@@ -1240,7 +1231,6 @@ public class ASTCompiler {
         context.retrieveConstantFromModule(name);
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
-        // XXX: const lookup can trigger const_missing; is that enough to warrant it always being executed?
     }
 
     public void compileGetDefinitionBase(final Node node, BodyCompiler context) {
