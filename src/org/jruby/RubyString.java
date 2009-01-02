@@ -5977,6 +5977,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = {"to_sym", "intern"}, compat = CompatVersion.RUBY1_9)
     public RubySymbol intern19() {
+        // TODO: symbol encoding.
         return getRuntime().newSymbol(toString());
     }
 

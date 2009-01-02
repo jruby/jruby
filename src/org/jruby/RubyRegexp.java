@@ -35,11 +35,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import static org.jruby.anno.FrameField.BACKREF;
+import static org.jruby.anno.FrameField.LASTLINE;
+
 import java.lang.ref.SoftReference;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
+import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.joni.Matcher;
 import org.joni.NameEntry;
 import org.joni.Option;
@@ -47,13 +52,9 @@ import org.joni.Regex;
 import org.joni.Region;
 import org.joni.Syntax;
 import org.joni.WarnCallback;
-import org.jcodings.Encoding;
-import org.jcodings.specific.ASCIIEncoding;
 import org.joni.exception.JOniException;
-
-import static org.jruby.anno.FrameField.*;
-import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.parser.ReOptions;
 import org.jruby.runtime.Arity;

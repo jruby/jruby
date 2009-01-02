@@ -36,17 +36,21 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import static org.jruby.util.StringSupport.codeLength;
+import static org.jruby.util.StringSupport.codePoint;
+
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.jruby.anno.JRubyMethod;
+import org.jcodings.Encoding;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
@@ -77,7 +81,7 @@ public class RubySymbol extends RubyObject {
 
         this.id = runtime.allocSymbolId();
     }
-    
+
     public static RubyClass createSymbolClass(Ruby runtime) {
         RubyClass symbolClass = runtime.defineClass("Symbol", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setSymbol(symbolClass);
@@ -152,7 +156,7 @@ public class RubySymbol extends RubyObject {
         return to_i();
     }
 
-    @JRubyMethod(name = "inspect")
+    @JRubyMethod(name = "inspect", compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject inspect() {
         Ruby runtime = getRuntime();
@@ -168,6 +172,26 @@ public class RubySymbol extends RubyObject {
         result.append(bytes);
 
         return RubyString.newString(runtime, result);
+    }
+
+    @JRubyMethod(name = "inspect", compat = CompatVersion.RUBY1_9)
+    public IRubyObject inspect19() {
+        Ruby runtime = getRuntime();
+        ByteList result = new ByteList(symbolBytes.realSize + 1);
+        result.encoding = symbolBytes.encoding;
+        result.append((byte)':');
+        result.append(symbolBytes);
+
+        RubyString str = RubyString.newString(runtime, result); 
+        if (isPrintable() && isSymbolName(symbol)) { // TODO: 1.9 rb_enc_symname_p
+            return str;
+        } else {
+            str = (RubyString)str.inspect19();
+            ByteList bytes = str.getByteList();
+            bytes.set(0, ':');
+            bytes.set(1, '"');
+            return str;
+        }
     }
 
     @JRubyMethod(name = "to_s")
@@ -399,7 +423,22 @@ public class RubySymbol extends RubyObject {
         }
         return true;
     }
-    
+
+    private boolean isPrintable() {
+        Ruby runtime = getRuntime();
+        int p = symbolBytes.begin;
+        int end = p + symbolBytes.realSize;
+        byte[]bytes = symbolBytes.bytes;
+        Encoding enc = symbolBytes.encoding;
+
+        while (p < end) {
+            int c = codePoint(runtime, enc, bytes, p, end);
+            if (!enc.isPrint(c)) return false;
+            p += codeLength(runtime, enc, c);
+        }
+        return true;
+    }
+
     private static boolean isSymbolName(String s) {
         if (s == null || s.length() < 1) return false;
 
