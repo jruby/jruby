@@ -911,11 +911,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
         // FIXME: Should we make this work with platform's locale,
         // or continue hardcoding US?
         ByteList out = new ByteList(value.realSize);
-        Sprintf.sprintf(out, Locale.US, value, tmp);
+        boolean tainted = Sprintf.sprintf(out, Locale.US, value, tmp);
         RubyString str = newString(context.getRuntime(), out);
 
-        str.infectBy(this);
-        str.infectBy(arg);
+        str.setTaint(tainted || isTaint());
         return str;
     }
 
