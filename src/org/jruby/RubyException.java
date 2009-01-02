@@ -312,4 +312,9 @@ public class RubyException extends RubyObject {
             
         return true;
     }
+
+    // rb_exc_new3
+    public static IRubyObject newException(ThreadContext context, RubyClass exceptionClass, IRubyObject message) {
+        return exceptionClass.callMethod(context, "new", message.convertToString());
+    }
 }
