@@ -596,17 +596,27 @@ public class ASTCompiler {
     public void compileArray(Node node, BodyCompiler context, boolean expr) {
         ArrayNode arrayNode = (ArrayNode) node;
 
-        ArrayCallback callback = new ArrayCallback() {
+        boolean doit = expr || !PEEPHOLE_OPTZ;
+        boolean popit = !PEEPHOLE_OPTZ && !expr;
+        
+        if (doit) {
+            ArrayCallback callback = new ArrayCallback() {
 
-                    public void nextValue(BodyCompiler context, Object sourceArray, int index) {
-                        Node node = (Node) ((Object[]) sourceArray)[index];
-                        compile(node, context,true);
-                    }
-                };
+                        public void nextValue(BodyCompiler context, Object sourceArray, int index) {
+                            Node node = (Node) ((Object[]) sourceArray)[index];
+                            compile(node, context, true);
+                        }
+                    };
 
-        context.createNewArray(arrayNode.childNodes().toArray(), callback, arrayNode.isLightweight());
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+            context.createNewArray(arrayNode.childNodes().toArray(), callback, arrayNode.isLightweight());
+
+            if (popit) context.consumeCurrentValue();
+        } else {
+            for (Iterator<Node> iter = arrayNode.childNodes().iterator(); iter.hasNext();) {
+                Node nextNode = iter.next();
+                compile(nextNode, context, false);
+            }
+        }
     }
 
     public void compileArgsCat(Node node, BodyCompiler context, boolean expr) {
@@ -1969,9 +1979,18 @@ public class ASTCompiler {
                     }
                 };
 
-        context.createNewRegexp(createStringCallback, dregexpNode.getOptions());
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        boolean doit = expr || !PEEPHOLE_OPTZ;
+        boolean popit = !PEEPHOLE_OPTZ && !expr;
+
+        if (doit) {
+            context.createNewRegexp(createStringCallback, dregexpNode.getOptions());
+            if (popit) context.consumeCurrentValue();
+        } else {
+            // not an expression, only compile the elements
+            for (Node nextNode : dregexpNode.childNodes()) {
+                compile(nextNode, context, false);
+            }
+        }
     }
 
     public void compileDStr(Node node, BodyCompiler context, boolean expr) {
@@ -1984,9 +2003,19 @@ public class ASTCompiler {
                         compile(dstrNode.get(index), context, true);
                     }
                 };
-        context.createNewString(dstrCallback, dstrNode.size());
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+
+        boolean doit = expr || !PEEPHOLE_OPTZ;
+        boolean popit = !PEEPHOLE_OPTZ && !expr;
+
+        if (doit) {
+            context.createNewString(dstrCallback, dstrNode.size());
+            if (popit) context.consumeCurrentValue();
+        } else {
+            // not an expression, only compile the elements
+            for (Node nextNode : dstrNode.childNodes()) {
+                compile(nextNode, context, false);
+            }
+        }
     }
 
     public void compileDSymbol(Node node, BodyCompiler context, boolean expr) {
@@ -1999,9 +2028,19 @@ public class ASTCompiler {
                         compile(dsymbolNode.get(index), context, true);
                     }
                 };
-        context.createNewSymbol(dstrCallback, dsymbolNode.size());
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+
+        boolean doit = expr || !PEEPHOLE_OPTZ;
+        boolean popit = !PEEPHOLE_OPTZ && !expr;
+
+        if (doit) {
+            context.createNewSymbol(dstrCallback, dsymbolNode.size());
+            if (popit) context.consumeCurrentValue();
+        } else {
+            // not an expression, only compile the elements
+            for (Node nextNode : dsymbolNode.childNodes()) {
+                compile(nextNode, context, false);
+            }
+        }
     }
 
     public void compileDVar(Node node, BodyCompiler context, boolean expr) {
@@ -2413,25 +2452,33 @@ public class ASTCompiler {
     public void compileHash(Node node, BodyCompiler context, boolean expr) {
         HashNode hashNode = (HashNode) node;
 
-        if (hashNode.getListNode() == null || hashNode.getListNode().size() == 0) {
-            context.createEmptyHash();
-            return;
+        boolean doit = expr || !PEEPHOLE_OPTZ;
+        boolean popit = !PEEPHOLE_OPTZ && !expr;
+
+        if (doit) {
+            if (hashNode.getListNode() == null || hashNode.getListNode().size() == 0) {
+                context.createEmptyHash();
+                return;
+            }
+
+            ArrayCallback hashCallback = new ArrayCallback() {
+
+                        public void nextValue(BodyCompiler context, Object sourceArray,
+                                int index) {
+                            ListNode listNode = (ListNode) sourceArray;
+                            int keyIndex = index * 2;
+                            compile(listNode.get(keyIndex), context, true);
+                            compile(listNode.get(keyIndex + 1), context, true);
+                        }
+                    };
+
+            context.createNewHash(hashNode.getListNode(), hashCallback, hashNode.getListNode().size() / 2);
+            if (popit) context.consumeCurrentValue();
+        } else {
+            for (Node nextNode : hashNode.getListNode().childNodes()) {
+                compile(nextNode, context, false);
+            }
         }
-
-        ArrayCallback hashCallback = new ArrayCallback() {
-
-                    public void nextValue(BodyCompiler context, Object sourceArray,
-                            int index) {
-                        ListNode listNode = (ListNode) sourceArray;
-                        int keyIndex = index * 2;
-                        compile(listNode.get(keyIndex), context,true);
-                        compile(listNode.get(keyIndex + 1), context,true);
-                    }
-                };
-
-        context.createNewHash(hashNode.getListNode(), hashCallback, hashNode.getListNode().size() / 2);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
     }
 
     public void compileIf(Node node, BodyCompiler context, final boolean expr) {
