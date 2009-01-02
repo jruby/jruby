@@ -707,14 +707,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     public IRubyObject op_match2(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         IRubyObject line = context.getCurrentFrame().getLastLine();
-        if (!(line instanceof RubyString)) {
-            context.getCurrentFrame().setBackRef(runtime.getNil());
-            return runtime.getNil();
+        if (line instanceof RubyString) {
+            int start = search(context, (RubyString)line, 0, false);
+            if (start < 0) return runtime.getNil();
+            return runtime.newFixnum(start);
         }
-        int start = search(context, (RubyString)line, 0, false);
-        if (start < 0) return runtime.getNil();
-
-        return runtime.newFixnum(start);
+        context.getCurrentFrame().setBackRef(runtime.getNil());
+        return runtime.getNil();
     }
 
     /** rb_reg_eqq
@@ -733,11 +732,38 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         return (start < 0) ? runtime.getFalse() : runtime.getTrue();
     }
 
-    @JRubyMethod(name = "options")
-    public IRubyObject options() {
-        return getRuntime().newFixnum(getOptions());
+    /** rb_reg_match
+     * 
+     */
+    @JRubyMethod(name = "=~", required = 1, reads = BACKREF, writes = BACKREF)
+    @Override
+    public IRubyObject op_match(ThreadContext context, IRubyObject str) {
+        Ruby runtime = context.getRuntime();
+        if (str.isNil()) {
+            context.getCurrentFrame().setBackRef(runtime.getNil());
+            return str;
+        }
+
+        int start = search(context, str.convertToString(), 0, false);
+        if (start < 0) return runtime.getNil();
+
+        return RubyFixnum.newFixnum(runtime, start);
     }
-    
+
+    /** rb_reg_match_m
+     * 
+     */
+    @JRubyMethod(name = "match", required = 1, reads = BACKREF)
+    public IRubyObject match_m(ThreadContext context, IRubyObject str) {
+        if (op_match(context, str).isNil()) return context.getRuntime().getNil();
+
+        IRubyObject result =  context.getCurrentFrame().getBackRef();
+        if (result instanceof RubyMatchData) {
+            ((RubyMatchData)result).use();
+        }
+        return result;
+    }
+
     /** rb_reg_search
      */
     public final int search(ThreadContext context, RubyString str, int pos, boolean reverse) {
@@ -749,7 +775,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
             frame.setBackRef(runtime.getNil());
             return -1;
         }
-
         return performSearch(reverse, pos, value, frame, runtime, context, str);
     }
 
@@ -795,128 +820,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         return match;
     }
 
-    /** rb_reg_match
-     * 
-     */
-    @JRubyMethod(name = "=~", required = 1, reads = BACKREF, writes = BACKREF)
-    @Override
-    public IRubyObject op_match(ThreadContext context, IRubyObject str) {
-        Ruby runtime = context.getRuntime();
-        if (str.isNil()) {
-            context.getCurrentFrame().setBackRef(runtime.getNil());
-            return str;
-        }
-
-        int start = search(context, str.convertToString(), 0, false);
-        if (start < 0) return runtime.getNil();
-
-        return RubyFixnum.newFixnum(runtime, start);
-    }
-
-    /** rb_reg_match_m
-     * 
-     */
-    @JRubyMethod(name = "match", required = 1, reads = BACKREF)
-    public IRubyObject match_m(ThreadContext context, IRubyObject str) {
-        if (op_match(context, str).isNil()) return context.getRuntime().getNil();
-
-        IRubyObject result =  context.getCurrentFrame().getBackRef();
-        if (result instanceof RubyMatchData) {
-            ((RubyMatchData)result).use();
-        }
-        return result;
-    }
-
-    public final RubyString regsub(RubyString str, RubyString src, Matcher matcher) {
-        Region regs = matcher.getRegion();
-        
-        int no = -1;
-        ByteList bs = str.getByteList();
-        int p = bs.begin;
-        int s = p;
-        int end = p + bs.realSize;
-        byte[]bytes = bs.bytes;
-
-        ByteList srcbs = src.getByteList();
-
-        ByteList val = null;
-        Encoding enc = kcode.getEncoding();
-
-        while (s < end) {
-            int ss = s;
-            int c = bytes[s] & 0xff;
-            int l = enc.length(bytes, s++, end);
-            if (l != 1) {
-                s += l - 1;
-                continue;
-            }
-            if (c != '\\' || s == end) continue;
-            if (val == null) val = new ByteList(ss - p);
-
-            val.append(bytes, p, ss - p);
-            c = bytes[s++] & 0xff;
-            p = s;
-
-            switch (c) {
-            case '0': case '1': case '2': case '3': case '4':
-            case '5': case '6': case '7': case '8': case '9':
-                no = c - '0';
-                break;
-            case '&':
-                no = 0;
-                break;
-            case '`':
-                val.append(srcbs.bytes, srcbs.begin, matcher.getBegin());
-                continue;
-            case '\'':
-                val.append(srcbs.bytes, srcbs.begin + matcher.getEnd(), srcbs.realSize - matcher.getEnd());
-                continue;
-            case '+':
-                if (regs == null) {
-                    if (matcher.getBegin() == -1) {
-                        no = 0;
-                        continue;
-                    }
-                } else {
-                    no = regs.numRegs - 1;
-                    while (regs.beg[no] == -1 && no > 0) no--;
-                    if (no == 0) continue;
-                }
-                break;
-            case '\\':
-                val.append(bytes, s - 1, 1);
-                continue;
-            default:
-                val.append(bytes, s - 2, 2);
-                continue;
-            }
-
-            if (regs != null) {
-                if (no >= 0) {
-                    if (no >= regs.numRegs || regs.beg[no] == -1) continue;
-                    val.append(srcbs.bytes, srcbs.begin + regs.beg[no], regs.end[no] - regs.beg[no]);
-                }
-            } else {
-                if (no != 0 || matcher.getBegin() == -1) continue;
-                val.append(srcbs.bytes, srcbs.begin + matcher.getBegin(), matcher.getEnd() - matcher.getBegin());
-            }
-        }
-
-        if (p < end) {
-            if (val == null) {
-                return RubyString.newString(getRuntime(), bs.makeShared(p - bs.begin, end - p));
-            } else {
-                val.append(bytes, p, end - p);
-            }
-        }
-        if (val == null) return str;
-        return RubyString.newString(getRuntime(), val);
-    }
-
-    final int adjustStartPos(RubyString str, int pos, boolean reverse) {
-        check();
-        ByteList value = str.getByteList();
-        return pattern.adjustStartPosition(value.bytes, value.begin, value.realSize, pos, reverse);
+    @JRubyMethod(name = "options")
+    public IRubyObject options() {
+        return getRuntime().newFixnum(getOptions());
     }
 
     @JRubyMethod(name = "casefold?")
@@ -1083,9 +989,54 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         }
     }
 
-    /** rb_reg_nth_match
-     *
+    /** rb_reg_names
+     * 
      */
+    @JRubyMethod(name = "names", compat = CompatVersion.RUBY1_9)
+    public IRubyObject names(ThreadContext context) {
+        if (pattern.numberOfNames() == 0) return getRuntime().newEmptyArray();
+
+        RubyArray ary = context.getRuntime().newArray(pattern.numberOfNames());
+        for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
+            NameEntry e = i.next();
+            ary.append(RubyString.newStringShared(getRuntime(), e.name, e.nameP, e.nameEnd - e.nameP));
+        }
+        return ary;
+    }
+
+    /** rb_reg_named_captures
+     * 
+     */
+    @JRubyMethod(name = "named_captures", compat = CompatVersion.RUBY1_9)
+    public IRubyObject named_captures(ThreadContext context) {
+        RubyHash hash = RubyHash.newHash(getRuntime());
+        if (pattern.numberOfNames() == 0) return hash;
+
+        for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
+            NameEntry e = i.next();
+            int[]backrefs = e.getBackRefs();
+            RubyArray ary = getRuntime().newArray(backrefs.length);
+
+            for (int backref : backrefs) ary.append(RubyFixnum.newFixnum(getRuntime(), backref));
+            hash.fastASet(RubyString.newStringShared(getRuntime(), e.name, e.nameP, e.nameEnd - e.nameP).freeze(context), ary);
+        }
+        return hash;
+    }
+
+    @JRubyMethod(name = "encoding", compat = CompatVersion.RUBY1_9)
+    public IRubyObject encoding(ThreadContext context) {
+        return context.getRuntime().getEncodingService().getEncoding(pattern.getEncoding());
+    }
+    
+    @JRubyMethod(name = "fixed_encoding?", compat = CompatVersion.RUBY1_9)
+    public IRubyObject fixed_encoding_p(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        return isKCodeFixed() ? runtime.getTrue() : runtime.getFalse();
+    }
+    
+    /** rb_reg_nth_match
+    *
+    */
     public static IRubyObject nth_match(int nth, IRubyObject match) {
         if (match.isNil()) return match;
         RubyMatchData m = (RubyMatchData)match;
@@ -1148,55 +1099,102 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         if (m.regs == null || m.regs.beg[0] == -1) return match.getRuntime().getNil();
 
         int i;
-        for (i=m.regs.numRegs-1; m.regs.beg[i]==-1 && i>0; i--);
+        for (i = m.regs.numRegs - 1; m.regs.beg[i] == -1 && i > 0; i--);
         if (i == 0) return match.getRuntime().getNil();
         
-        return nth_match(i,match);
+        return nth_match(i, match);
     }
 
-    /** rb_reg_names
-     * 
-     */
-    @JRubyMethod(name = "names", compat = CompatVersion.RUBY1_9)
-    public IRubyObject names(ThreadContext context) {
-        if (pattern.numberOfNames() == 0) return getRuntime().newEmptyArray();
+    public final RubyString regsub(RubyString str, RubyString src, Matcher matcher) {
+        Region regs = matcher.getRegion();
+        
+        int no = -1;
+        ByteList bs = str.getByteList();
+        int p = bs.begin;
+        int s = p;
+        int end = p + bs.realSize;
+        byte[]bytes = bs.bytes;
 
-        RubyArray ary = context.getRuntime().newArray(pattern.numberOfNames());
-        for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
-            NameEntry e = i.next();
-            ary.append(RubyString.newStringShared(getRuntime(), e.name, e.nameP, e.nameEnd - e.nameP));
+        ByteList srcbs = src.getByteList();
+
+        ByteList val = null;
+        Encoding enc = kcode.getEncoding();
+
+        while (s < end) {
+            int ss = s;
+            int c = bytes[s] & 0xff;
+            int l = enc.length(bytes, s++, end);
+            if (l != 1) {
+                s += l - 1;
+                continue;
+            }
+            if (c != '\\' || s == end) continue;
+            if (val == null) val = new ByteList(ss - p);
+
+            val.append(bytes, p, ss - p);
+            c = bytes[s++] & 0xff;
+            p = s;
+
+            switch (c) {
+            case '0': case '1': case '2': case '3': case '4':
+            case '5': case '6': case '7': case '8': case '9':
+                no = c - '0';
+                break;
+            case '&':
+                no = 0;
+                break;
+            case '`':
+                val.append(srcbs.bytes, srcbs.begin, matcher.getBegin());
+                continue;
+            case '\'':
+                val.append(srcbs.bytes, srcbs.begin + matcher.getEnd(), srcbs.realSize - matcher.getEnd());
+                continue;
+            case '+':
+                if (regs == null) {
+                    if (matcher.getBegin() == -1) {
+                        no = 0;
+                        continue;
+                    }
+                } else {
+                    no = regs.numRegs - 1;
+                    while (regs.beg[no] == -1 && no > 0) no--;
+                    if (no == 0) continue;
+                }
+                break;
+            case '\\':
+                val.append(bytes, s - 1, 1);
+                continue;
+            default:
+                val.append(bytes, s - 2, 2);
+                continue;
+            }
+
+            if (regs != null) {
+                if (no >= 0) {
+                    if (no >= regs.numRegs || regs.beg[no] == -1) continue;
+                    val.append(srcbs.bytes, srcbs.begin + regs.beg[no], regs.end[no] - regs.beg[no]);
+                }
+            } else {
+                if (no != 0 || matcher.getBegin() == -1) continue;
+                val.append(srcbs.bytes, srcbs.begin + matcher.getBegin(), matcher.getEnd() - matcher.getBegin());
+            }
         }
-        return ary;
-    }
 
-    /** rb_reg_named_captures
-     * 
-     */
-    @JRubyMethod(name = "named_captures", compat = CompatVersion.RUBY1_9)
-    public IRubyObject named_captures(ThreadContext context) {
-        RubyHash hash = RubyHash.newHash(getRuntime());
-        if (pattern.numberOfNames() == 0) return hash;
-
-        for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
-            NameEntry e = i.next();
-            int[]backrefs = e.getBackRefs();
-            RubyArray ary = getRuntime().newArray(backrefs.length);
-
-            for (int backref : backrefs) ary.append(RubyFixnum.newFixnum(getRuntime(), backref));
-            hash.fastASet(RubyString.newStringShared(getRuntime(), e.name, e.nameP, e.nameEnd - e.nameP).freeze(context), ary);
+        if (p < end) {
+            if (val == null) {
+                return RubyString.newString(getRuntime(), bs.makeShared(p - bs.begin, end - p));
+            } else {
+                val.append(bytes, p, end - p);
+            }
         }
-        return hash;
+        if (val == null) return str;
+        return RubyString.newString(getRuntime(), val);
     }
 
-    @JRubyMethod(name = "encoding", compat = CompatVersion.RUBY1_9)
-    public IRubyObject encoding(ThreadContext context) {
-        return context.getRuntime().getEncodingService().getEncoding(pattern.getEncoding());
-    }
-    
-    @JRubyMethod(name = "fixed_encoding?", compat = CompatVersion.RUBY1_9)
-    public IRubyObject fixed_encoding_p(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
-        return isKCodeFixed() ? runtime.getTrue() : runtime.getFalse();
+    final int adjustStartPos(RubyString str, int pos, boolean reverse) {
+        check();
+        ByteList value = str.getByteList();
+        return pattern.adjustStartPosition(value.bytes, value.begin, value.realSize, pos, reverse);
     }
 
     public static RubyRegexp unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
