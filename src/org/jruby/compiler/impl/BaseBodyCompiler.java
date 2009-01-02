@@ -1052,37 +1052,15 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void createNewRegexp(CompilerCallback createStringCallback, final int options) {
         boolean onceOnly = (options & ReOptions.RE_OPTION_ONCE) != 0;   // for regular expressions with the /o flag
-        Label alreadyCreated = null;
-        String regexpField = null;
 
-        // only alter the code if the /o flag was present
         if (onceOnly) {
-            regexpField = script.getNewConstant(ci(RubyRegexp.class), "lit_reg_");
-
-            // in current method, load the field to see if we've created a Pattern yet
-            method.aload(StandardASMCompiler.THIS);
-            method.getfield(script.getClassname(), regexpField, ci(RubyRegexp.class));
-
-            alreadyCreated = new Label();
-            method.ifnonnull(alreadyCreated);
-        }
-
-        loadRuntime();
-
-        createStringCallback.call(this);
-        method.invokevirtual(p(RubyString.class), "getByteList", sig(ByteList.class));
-        method.pushInt(options);
-
-        method.invokestatic(p(RubyRegexp.class), "newRegexp", sig(RubyRegexp.class, params(Ruby.class, ByteList.class, Integer.TYPE))); //[reg]
-
-        // only alter the code if the /o flag was present
-        if (onceOnly) {
-            method.aload(StandardASMCompiler.THIS);
-            method.swap();
-            method.putfield(script.getClassname(), regexpField, ci(RubyRegexp.class));
-            method.label(alreadyCreated);
-            method.aload(StandardASMCompiler.THIS);
-            method.getfield(script.getClassname(), regexpField, ci(RubyRegexp.class));
+            script.getCacheCompiler().cacheDRegexp(this, createStringCallback, options);
+        } else {
+            loadRuntime();
+            createStringCallback.call(this);
+            method.invokevirtual(p(RubyString.class), "getByteList", sig(ByteList.class));
+            method.pushInt(options);
+            method.invokestatic(p(RubyRegexp.class), "newRegexp", sig(RubyRegexp.class, params(Ruby.class, ByteList.class, Integer.TYPE))); //[reg]
         }
     }
 

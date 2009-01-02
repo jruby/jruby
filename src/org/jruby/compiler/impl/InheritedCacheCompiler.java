@@ -20,6 +20,7 @@ import org.jruby.ast.NodeType;
 import org.jruby.ast.executable.AbstractScript;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.CacheCompiler;
+import org.jruby.compiler.CompilerCallback;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
@@ -28,6 +29,7 @@ import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import static org.jruby.util.CodegenUtils.*;
 
@@ -131,6 +133,30 @@ public class InheritedCacheCompiler implements CacheCompiler {
             method.method.ldc(options);
             method.method.invokevirtual(scriptCompiler.getClassname(), "getRegexp", sig(RubyRegexp.class, Ruby.class, int.class, String.class, int.class));
         }
+    }
+
+    public void cacheDRegexp(BaseBodyCompiler method, CompilerCallback createStringCallback, int options) {
+        int index = inheritedRegexpCount++;
+        Label alreadyCompiled = new Label();
+
+        method.loadThis();
+        method.method.pushInt(index);
+        method.method.invokevirtual(scriptCompiler.getClassname(), "getRegexp", sig(RubyRegexp.class, int.class));
+
+        method.ifNotNull(alreadyCompiled);
+
+        method.loadThis();
+        method.loadRuntime();
+        method.method.pushInt(index);
+        createStringCallback.call(method);
+        method.method.invokevirtual(p(RubyString.class), "getByteList", sig(ByteList.class));
+        method.method.ldc(options);
+        method.method.invokevirtual(scriptCompiler.getClassname(), "cacheRegexp", sig(void.class, Ruby.class, int.class, ByteList.class, int.class));
+
+        method.method.label(alreadyCompiled);
+        method.loadThis();
+        method.method.pushInt(index);
+        method.method.invokevirtual(scriptCompiler.getClassname(), "getRegexp", sig(RubyRegexp.class, int.class));
     }
     
     public void cacheFixnum(BaseBodyCompiler method, long value) {
