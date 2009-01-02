@@ -2049,7 +2049,7 @@ public class ASTCompiler {
 
                         public void branch(BodyCompiler context) {
                             if (ensureNode.getBodyNode() != null) {
-                                compile(ensureNode.getBodyNode(), context,true);
+                                compile(ensureNode.getBodyNode(), context, true);
                             } else {
                                 context.loadNil();
                             }
@@ -2058,8 +2058,7 @@ public class ASTCompiler {
                     new BranchCallback() {
 
                         public void branch(BodyCompiler context) {
-                            compile(ensureNode.getEnsureNode(), context,true);
-                            context.consumeCurrentValue();
+                            compile(ensureNode.getEnsureNode(), context, false);
                         }
                     });
         } else {
