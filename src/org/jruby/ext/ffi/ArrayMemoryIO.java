@@ -282,17 +282,17 @@ public abstract class ArrayMemoryIO implements MemoryIO {
                     | (((long)array[offset + 7] & 0xff) << 56);
         }
         public final void putInt16(byte[] buffer, int offset, int value) {
-            buffer[offset] = (byte) value;
+            buffer[offset + 0] = (byte) (value >> 0);
             buffer[offset + 1] = (byte) (value >> 8);
         }
         public final void putInt32(byte[] buffer, int offset, int value) {
-            buffer[offset] = (byte) value;
+            buffer[offset + 0] = (byte) (value >> 0);
             buffer[offset + 1] = (byte) (value >> 8);
             buffer[offset + 2] = (byte) (value >> 16);
             buffer[offset + 3] = (byte) (value >> 24);
         }
         public final void putInt64(byte[] buffer, int offset, long value) {
-            buffer[offset] = (byte) value;
+            buffer[offset + 0] = (byte) (value >> 0);
             buffer[offset + 1] = (byte) (value >> 8);
             buffer[offset + 2] = (byte) (value >> 16);
             buffer[offset + 3] = (byte) (value >> 24);
@@ -346,7 +346,7 @@ public abstract class ArrayMemoryIO implements MemoryIO {
     }
     private static final class LE32ArrayIO extends LittleEndianArrayIO {
         public final long getAddress(byte[] buffer, int offset) {
-            return getInt32(buffer, offset) & 0xffffffffL;
+            return ((long) getInt32(buffer, offset)) & 0xffffffffL;
         }
         public final void putAddress(byte[] buffer, int offset, long value) {
             putInt32(buffer, offset, (int) value);
@@ -357,12 +357,12 @@ public abstract class ArrayMemoryIO implements MemoryIO {
             return getInt64(buffer, offset);
         }
         public final void putAddress(byte[] buffer, int offset, long value) {
-            putInt64(buffer, offset, (int) value);
+            putInt64(buffer, offset, value);
         }
     }
     private static final class BE32ArrayIO extends BigEndianArrayIO {
         public final long getAddress(byte[] buffer, int offset) {
-            return getInt32(buffer, offset);
+            return ((long) getInt32(buffer, offset)) & 0xffffffffL;
         }
         public final void putAddress(byte[] buffer, int offset, long value) {
             putInt32(buffer, offset, (int) value);
@@ -373,7 +373,7 @@ public abstract class ArrayMemoryIO implements MemoryIO {
             return getInt64(buffer, offset);
         }
         public final void putAddress(byte[] buffer, int offset, long value) {
-            putInt64(buffer, offset, (int) value);
+            putInt64(buffer, offset, value);
         }
     }
 }
