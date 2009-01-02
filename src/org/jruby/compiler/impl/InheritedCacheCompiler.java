@@ -14,6 +14,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
+import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ast.NodeType;
 import org.jruby.ast.executable.AbstractScript;
@@ -40,17 +41,16 @@ public class InheritedCacheCompiler implements CacheCompiler {
     int callSiteCount = 0;
     List<String> callSiteList = new ArrayList<String>();
     List<CallType> callTypeList = new ArrayList<CallType>();
-    Map<String, Integer> byteListIndices = new HashMap<String, Integer>();
-    Map<String, ByteList> byteListValues = new HashMap<String, ByteList>();
+    Map<String, Integer> stringIndices = new HashMap<String, Integer>();
     Map<BigInteger, String> bigIntegers = new HashMap<BigInteger, String>();
     Map<String, Integer> symbolIndices = new HashMap<String, Integer>();
     Map<Long, Integer> fixnumIndices = new HashMap<Long, Integer>();
     int inheritedSymbolCount = 0;
+    int inheritedStringCount = 0;
     int inheritedRegexpCount = 0;
     int inheritedBigIntegerCount = 0;
     int inheritedFixnumCount = 0;
     int inheritedConstantCount = 0;
-    int inheritedByteListCount = 0;
     int inheritedBlockBodyCount = 0;
     int inheritedBlockCallbackCount = 0;
     
@@ -217,17 +217,22 @@ public class InheritedCacheCompiler implements CacheCompiler {
         inheritedConstantCount++;
     }
 
-    public void cacheByteList(BaseBodyCompiler method, ByteList contents) {
+    public void cacheString(BaseBodyCompiler method, ByteList contents) {
         String asString = contents.toString();
-        Integer index = byteListIndices.get(asString);
+        Integer index = stringIndices.get(asString);
         if (index == null) {
-            index = new Integer(inheritedByteListCount++);
-            byteListIndices.put(asString, index);
-            byteListValues.put(asString, contents);
+            index = new Integer(inheritedStringCount++);
+            stringIndices.put(asString, index);
         }
 
-        method.method.ldc(index.intValue());
-        method.method.invokestatic(scriptCompiler.getClassname(), "getByteList", sig(ByteList.class, int.class));
+        method.loadThis();
+        method.loadRuntime();
+        if (index < AbstractScript.NUMBERED_STRING_COUNT) {
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getString" + index, sig(RubyString.class, Ruby.class));
+        } else {
+            method.method.ldc(index.intValue());
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getString", sig(RubyString.class, Ruby.class, int.class));
+        }
     }
 
     public void cacheBigInteger(BaseBodyCompiler method, BigInteger bigint) {
@@ -383,34 +388,20 @@ public class InheritedCacheCompiler implements CacheCompiler {
         }
 
         // generate bytelists initialization code
-        size = inheritedByteListCount;
-        if (inheritedByteListCount > 0) {
-            // getter method to reduce bytecode at load point
-            SkinnyMethodAdapter getter = new SkinnyMethodAdapter(
-                    scriptCompiler.getClassVisitor().visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC, "getByteList", sig(ByteList.class, int.class), null, null));
-            getter.start();
-            getter.getstatic(scriptCompiler.getClassname(), "byteLists", ci(ByteList[].class));
-            getter.iload(0);
-            getter.aaload();
-            getter.areturn();
-            getter.end();
-            // construction and population of the array in clinit
-            SkinnyMethodAdapter clinitMethod = scriptCompiler.getClassInitMethod();
-            scriptCompiler.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC, "byteLists", ci(ByteList[].class), null, null);
-            clinitMethod.ldc(size);
-            clinitMethod.anewarray(p(ByteList.class));
-            clinitMethod.putstatic(scriptCompiler.getClassname(), "byteLists", ci(ByteList[].class));
+        size = inheritedStringCount;
+        if (inheritedStringCount > 0) {
+            initMethod.aload(0);
+            initMethod.pushInt(size);
+            initMethod.invokevirtual(scriptCompiler.getClassname(), "initStrings", sig(ByteList[].class, params(int.class)));
 
-            for (Map.Entry<String, Integer> entry : byteListIndices.entrySet()) {
-                int index = entry.getValue();
-                ByteList byteList = byteListValues.get(entry.getKey());
-
-                clinitMethod.getstatic(scriptCompiler.getClassname(), "byteLists", ci(ByteList[].class));
-                clinitMethod.ldc(index);
-                clinitMethod.ldc(byteList.toString());
-                clinitMethod.invokestatic(p(ByteList.class), "create", sig(ByteList.class, CharSequence.class));
-                clinitMethod.arraystore();
+            for (Map.Entry<String, Integer> entry : stringIndices.entrySet()) {
+                initMethod.ldc(entry.getValue());
+                initMethod.ldc(entry.getKey());
+                initMethod.invokestatic(p(AbstractScript.class), "createByteList", sig(ByteList[].class, ByteList[].class, int.class, String.class));
             }
+            
+            initMethod.pop();
         }
+
     }
 }

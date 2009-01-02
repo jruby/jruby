@@ -93,6 +93,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     public static final int EXCEPTION_OFFSET = 5;
     public static final int PREVIOUS_EXCEPTION_OFFSET = 6;
     public static final int FIRST_TEMP_OFFSET = 7;
+
+    public static final int STARTING_DSTR_SIZE = 20;
     
     private String classname;
     private String sourcename;

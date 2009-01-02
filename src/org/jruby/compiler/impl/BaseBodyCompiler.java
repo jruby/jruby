@@ -35,7 +35,6 @@ import org.jruby.compiler.CompilerCallback;
 import org.jruby.compiler.InvocationCompiler;
 import org.jruby.compiler.BodyCompiler;
 import org.jruby.compiler.NotCompilableException;
-import org.jruby.compiler.ScriptCompiler;
 import org.jruby.compiler.VariableCompiler;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
@@ -402,7 +401,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void createNewString(ArrayCallback callback, int count) {
         loadRuntime();
-        invokeRuby("newString", sig(RubyString.class, params()));
+        method.ldc(StandardASMCompiler.STARTING_DSTR_SIZE);
+        method.invokestatic(p(RubyString.class), "newStringLight", sig(RubyString.class, Ruby.class, int.class));
         for (int i = 0; i < count; i++) {
             callback.nextValue(this, null, i);
             method.invokevirtual(p(RubyString.class), "append", sig(RubyString.class, params(IRubyObject.class)));
@@ -417,11 +417,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void createNewString(ByteList value) {
-        // FIXME: this is sub-optimal, storing string value in a java.lang.String again
-        loadRuntime();
-        script.getCacheCompiler().cacheByteList(this, value);
-
-        invokeRuby("newStringShared", sig(RubyString.class, params(ByteList.class)));
+        script.getCacheCompiler().cacheString(this, value);
     }
 
     public void createNewSymbol(String name) {

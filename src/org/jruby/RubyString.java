@@ -400,6 +400,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return new RubyString(runtime, runtime.getString(), bytes, false);
     }
 
+    public static RubyString newStringLight(Ruby runtime, int size) {
+        return new RubyString(runtime, runtime.getString(), new ByteList(size), false);
+    }
+
     // String construction routines by copying byte[] buffer   
     public static RubyString newString(Ruby runtime, CharSequence str) {
         return new RubyString(runtime, runtime.getString(), str);

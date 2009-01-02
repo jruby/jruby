@@ -11,6 +11,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
+import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.LocalStaticScope;
@@ -22,6 +23,7 @@ import org.jruby.runtime.CallSite;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  *
@@ -170,6 +172,28 @@ public abstract class AbstractScript implements Script {
     public final RubySymbol getSymbol8(Ruby runtime, String name) {return getSymbol(runtime, 8, name);}
     public final RubySymbol getSymbol9(Ruby runtime, String name) {return getSymbol(runtime, 9, name);}
 
+    public final RubyString getString(Ruby runtime, int index) {
+        return RubyString.newStringShared(runtime, byteLists[index]);
+    }
+
+    public static ByteList[] createByteList(ByteList[] byteLists, int index, String str) {
+        byteLists[index] = ByteList.create(str);
+        return byteLists;
+    }
+
+    public static final int NUMBERED_STRING_COUNT = 10;
+
+    public final RubyString getString0(Ruby runtime) {return getString(runtime, 0);}
+    public final RubyString getString1(Ruby runtime) {return getString(runtime, 1);}
+    public final RubyString getString2(Ruby runtime) {return getString(runtime, 2);}
+    public final RubyString getString3(Ruby runtime) {return getString(runtime, 3);}
+    public final RubyString getString4(Ruby runtime) {return getString(runtime, 4);}
+    public final RubyString getString5(Ruby runtime) {return getString(runtime, 5);}
+    public final RubyString getString6(Ruby runtime) {return getString(runtime, 6);}
+    public final RubyString getString7(Ruby runtime) {return getString(runtime, 7);}
+    public final RubyString getString8(Ruby runtime) {return getString(runtime, 8);}
+    public final RubyString getString9(Ruby runtime) {return getString(runtime, 9);}
+
     public final RubyFixnum getFixnum(Ruby runtime, int index, int value) {
         RubyFixnum fixnum = fixnums[index];
         if (fixnum == null) return fixnums[index] = RubyFixnum.newFixnum(runtime, value);
@@ -251,6 +275,10 @@ public abstract class AbstractScript implements Script {
 
     public final void initSymbols(int size) {
         symbols = new RubySymbol[size];
+    }
+
+    public final ByteList[] initStrings(int size) {
+        return byteLists = new ByteList[size];
     }
 
     public final void initFixnums(int size) {
@@ -418,6 +446,7 @@ public abstract class AbstractScript implements Script {
     public BlockBody[] blockBodies;
     public CompiledBlockCallback[] blockCallbacks;
     public RubySymbol[] symbols;
+    public ByteList[] byteLists;
     public RubyFixnum[] fixnums;
     public RubyRegexp[] regexps;
     public BigInteger[] bigIntegers;

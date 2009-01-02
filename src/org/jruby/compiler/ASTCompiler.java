@@ -1944,8 +1944,8 @@ public class ASTCompiler {
         boolean popit = !PEEPHOLE_OPTZ && !expr;
 
         if (doit) {
-            compile(dotNode.getBeginNode(), context,true);
-            compile(dotNode.getEndNode(), context,true);
+            compile(dotNode.getBeginNode(), context, true);
+            compile(dotNode.getEndNode(), context, true);
 
             context.createNewRange(dotNode.isExclusive());
         }
@@ -1962,7 +1962,7 @@ public class ASTCompiler {
 
                                     public void nextValue(BodyCompiler context, Object sourceArray,
                                             int index) {
-                                        compile(dregexpNode.get(index), context,true);
+                                        compile(dregexpNode.get(index), context, true);
                                     }
                                 };
                         context.createNewString(dstrCallback, dregexpNode.size());
@@ -1981,7 +1981,7 @@ public class ASTCompiler {
 
                     public void nextValue(BodyCompiler context, Object sourceArray,
                             int index) {
-                        compile(dstrNode.get(index), context,true);
+                        compile(dstrNode.get(index), context, true);
                     }
                 };
         context.createNewString(dstrCallback, dstrNode.size());
@@ -1996,7 +1996,7 @@ public class ASTCompiler {
 
                     public void nextValue(BodyCompiler context, Object sourceArray,
                             int index) {
-                        compile(dsymbolNode.get(index), context,true);
+                        compile(dsymbolNode.get(index), context, true);
                     }
                 };
         context.createNewSymbol(dstrCallback, dsymbolNode.size());
