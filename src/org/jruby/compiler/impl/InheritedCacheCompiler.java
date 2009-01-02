@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
 import org.jruby.RubySymbol;
 import org.jruby.ast.NodeType;
@@ -195,6 +196,22 @@ public class InheritedCacheCompiler implements CacheCompiler {
         } else {
             method.method.pushInt(inheritedConstantCount);
             method.method.invokevirtual(scriptCompiler.getClassname(), "getConstant", sig(IRubyObject.class, ThreadContext.class, String.class, int.class));
+        }
+
+        inheritedConstantCount++;
+    }
+
+    public void cacheConstantFrom(BaseBodyCompiler method, String constantName) {
+        // module is on top of stack
+        method.loadThis();
+        method.method.swap();
+        method.loadThreadContext();
+        method.method.ldc(constantName);
+        if (inheritedConstantCount < AbstractScript.NUMBERED_CONSTANT_COUNT) {
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getConstantFrom" + inheritedConstantCount, sig(IRubyObject.class, RubyModule.class, ThreadContext.class, String.class));
+        } else {
+            method.method.pushInt(inheritedConstantCount);
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getConstantFrom", sig(IRubyObject.class, RubyModule.class, ThreadContext.class, String.class, int.class));
         }
 
         inheritedConstantCount++;

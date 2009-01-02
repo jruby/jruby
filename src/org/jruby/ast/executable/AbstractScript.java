@@ -9,6 +9,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
 import org.jruby.RubySymbol;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -266,8 +267,10 @@ public abstract class AbstractScript implements Script {
 
     public final void initConstants(int size) {
         constants = new IRubyObject[size];
+        constantTargetHashes = new int[size];
         constantGenerations = new int[size];
         Arrays.fill(constantGenerations, -1);
+        Arrays.fill(constantTargetHashes, -1);
     }
 
     public static CallSite[] setCallSite(CallSite[] callSites, int index, String name) {
@@ -331,6 +334,53 @@ public abstract class AbstractScript implements Script {
         return value;
     }
 
+    public final IRubyObject getConstantFrom(RubyModule target, ThreadContext context, String name, int index) {
+        IRubyObject value = getValueFrom(target, context, name, index);
+
+        // We can callsite cache const_missing if we want
+        return value != null ? value : target.fastGetConstantFromConstMissing(name);
+    }
+
+    public static final int NUMBERED_CONSTANTFROM_COUNT = 10;
+
+    public final IRubyObject getConstantFrom0(RubyModule target, ThreadContext context, String name) {return getConstantFrom(target, context, name, 0);}
+    public final IRubyObject getConstantFrom1(RubyModule target, ThreadContext context, String name) {return getConstantFrom(target, context, name, 1);}
+    public final IRubyObject getConstantFrom2(RubyModule target, ThreadContext context, String name) {return getConstantFrom(target, context, name, 2);}
+    public final IRubyObject getConstantFrom3(RubyModule target, ThreadContext context, String name) {return getConstantFrom(target, context, name, 3);}
+    public final IRubyObject getConstantFrom4(RubyModule target, ThreadContext context, String name) {return getConstantFrom(target, context, name, 4);}
+    public final IRubyObject getConstantFrom5(RubyModule target, ThreadContext context, String name) {return getConstantFrom(target, context, name, 5);}
+    public final IRubyObject getConstantFrom6(RubyModule target, ThreadContext context, String name) {return getConstantFrom(target, context, name, 6);}
+    public final IRubyObject getConstantFrom7(RubyModule target, ThreadContext context, String name) {return getConstantFrom(target, context, name, 7);}
+    public final IRubyObject getConstantFrom8(RubyModule target, ThreadContext context, String name) {return getConstantFrom(target, context, name, 8);}
+    public final IRubyObject getConstantFrom9(RubyModule target, ThreadContext context, String name) {return getConstantFrom(target, context, name, 9);}
+
+    public IRubyObject getValueFrom(RubyModule target, ThreadContext context, String name, int index) {
+        IRubyObject value = constants[index]; // Store to temp so it does null out on us mid-stream
+
+        return isCachedFrom(target, context, value, index) ? value : reCacheFrom(target, context, name, index);
+    }
+
+    private boolean isCachedFrom(RubyModule target, ThreadContext context, IRubyObject value, int index) {
+        return
+                value != null &&
+                constantGenerations[index] == context.getRuntime().getConstantGeneration() &&
+                constantTargetHashes[index] == target.hashCode();
+    }
+
+    public IRubyObject reCacheFrom(RubyModule target, ThreadContext context, String name, int index) {
+        int newGeneration = context.getRuntime().getConstantGeneration();
+        IRubyObject value = target.fastGetConstantFromNoConstMissing(name);
+
+        constants[index] = value;
+
+        if (value != null) {
+            constantGenerations[index] = newGeneration;
+            constantTargetHashes[index] = target.hashCode();
+        }
+
+        return value;
+    }
+
     private BlockBody createBlockBody(ThreadContext context, int index, String descriptor) throws NumberFormatException {
         String[] firstSplit = descriptor.split(",");
         String[] secondSplit;
@@ -374,4 +424,5 @@ public abstract class AbstractScript implements Script {
     public String filename;
     public IRubyObject[] constants;
     public int[] constantGenerations;
+    public int[] constantTargetHashes;
 }

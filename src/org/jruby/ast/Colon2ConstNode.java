@@ -61,7 +61,7 @@ public class Colon2ConstNode extends Colon2Node {
         return
                 value != null &&
                 generation == context.getRuntime().getConstantGeneration() &&
-                hash == System.identityHashCode(target);
+                hash == target.hashCode();
     }
 
     public IRubyObject reCache(ThreadContext context, RubyModule target) {
@@ -72,7 +72,7 @@ public class Colon2ConstNode extends Colon2Node {
 
         if (value != null) {
             generation = newGeneration;
-            hash = System.identityHashCode(target);
+            hash = target.hashCode();
         }
 
         return value;

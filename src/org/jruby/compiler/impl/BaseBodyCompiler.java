@@ -325,8 +325,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void retrieveConstantFromModule(String name) {
         invokeUtilityMethod("checkIsModule", sig(RubyModule.class, IRubyObject.class));
-        method.ldc(name);
-        method.invokevirtual(p(RubyModule.class), "fastGetConstantFrom", sig(IRubyObject.class, params(String.class)));
+        script.getCacheCompiler().cacheConstantFrom(this, name);
     }
 
     public void retrieveClassVariable(String name) {
