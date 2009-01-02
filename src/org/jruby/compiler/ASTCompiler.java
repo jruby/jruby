@@ -2161,8 +2161,7 @@ public class ASTCompiler {
 
                         public void branch(BodyCompiler context) {
                             context.loadFalse();
-                            context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(),true);
-                            context.consumeCurrentValue();
+                            context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(), false);
                         }
                     }, new BranchCallback() {
 
@@ -2176,7 +2175,7 @@ public class ASTCompiler {
                 public void branch(BodyCompiler context) {
                     compile(flipNode.getBeginNode(), context,true);
                     becomeTrueOrFalse(context);
-                    context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(),true);
+                    context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(), true);
                 }
             });
         } else {
@@ -2188,8 +2187,7 @@ public class ASTCompiler {
 
                         public void branch(BodyCompiler context) {
                             context.loadFalse();
-                            context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(),true);
-                            context.consumeCurrentValue();
+                            context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(), false);
                         }
                     }, new BranchCallback() {
 
@@ -2207,8 +2205,7 @@ public class ASTCompiler {
                         public void branch(BodyCompiler context) {
                             compile(flipNode.getEndNode(), context,true);
                             flipTrueOrFalse(context);
-                            context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(),true);
-                            context.consumeCurrentValue();
+                            context.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(), false);
                             context.loadTrue();
                         }
                     }, new BranchCallback() {
