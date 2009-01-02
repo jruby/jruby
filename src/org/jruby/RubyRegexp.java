@@ -1191,10 +1191,31 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         return RubyString.newString(getRuntime(), val);
     }
 
+    final int adjustStartPos19(RubyString str, int pos, boolean reverse) {
+        return adjustStartPosInternal(str, checkEncoding(str, false), pos, reverse);
+    }
+
     final int adjustStartPos(RubyString str, int pos, boolean reverse) {
+        return adjustStartPosInternal(str, pattern.getEncoding(), pos, reverse);
+    }
+
+    private final int adjustStartPosInternal(RubyString str, Encoding enc, int pos, boolean reverse) {
         check();
+
         ByteList value = str.getByteList();
-        return pattern.adjustStartPosition(value.bytes, value.begin, value.realSize, pos, reverse);
+        int len = value.realSize;
+        int range = reverse ? -pos : len - pos;
+
+        if (pos > 0 && enc.maxLength() != 1 && pos < len) {
+            int start = value.begin;
+            if (range > 0) {
+                return enc.rightAdjustCharHead(value.bytes, start, start + pos, start + len) - start;
+            } else {
+                return enc.leftAdjustCharHead(value.bytes, start, start + pos, start + len) - start;
+            }
+        }
+
+        return pos;
     }
 
     public static RubyRegexp unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
