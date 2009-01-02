@@ -88,7 +88,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         this.scope = scope;
         this.inspector = inspector;
         this.methodName = methodName;
-        if (scope.getRestArg() >= 0 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() > 3) {
+        if (shouldUseBoxedArgs(scope)) {
             argParamCount = 1; // use IRubyObject[]
         } else {
             argParamCount = scope.getRequiredArgs(); // specific arity
@@ -111,6 +111,10 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         if (invocationCompiler == null) {
             invocationCompiler = new StandardInvocationCompiler(this, method);
         }
+    }
+
+    protected boolean shouldUseBoxedArgs(StaticScope scope) {
+        return scope.getRestArg() >= 0 || scope.getRestArg() == -2 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() > 3;
     }
 
     protected abstract String getSignature();

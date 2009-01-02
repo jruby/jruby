@@ -25,7 +25,7 @@ public abstract class RootScopedBodyCompiler extends BaseBodyCompiler {
     }
 
     protected String getSignature() {
-        if (scope.getRestArg() >= 0 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() > 3) {
+        if (shouldUseBoxedArgs(scope)) {
             specificArity = false;
             return StandardASMCompiler.METHOD_SIGNATURES[4];
         } else {
