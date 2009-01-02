@@ -1,7 +1,6 @@
 package org.jruby.compiler.impl;
 
 import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.exceptions.JumpException;

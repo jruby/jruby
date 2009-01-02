@@ -1,5 +1,12 @@
 require 'benchmark'
 
+def zero
+  a = 1
+  while a < 1_000_000
+    a += 1
+  end
+end
+
 def one
   a = 1
   # contained closure forces heap-based vars in compatibility mode
@@ -60,6 +67,8 @@ def five
 end
 
 def bench_masgn(bm)
+  bm.report 'control, 1m while loop' do one end
+
   bm.report 'near closure, 1m x10 a,a=a,a' do one end
 
   bm.report 'in closure, 1m x10 a,a=a,a' do two end
