@@ -69,6 +69,7 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
+import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 
@@ -1044,7 +1045,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         boolean needEscape = false;
         Encoding enc = kcode.getEncoding();
         while (p < end) {
-            if (bytes[p] == (byte)'/' || (!enc.isPrint(bytes[p] & 0xff) && enc.length(bytes, p, end) == 1)) {
+            int c = bytes[p] & 0xff;
+            if (c == '/' || (!enc.isPrint(c) && enc.length(bytes, p, end) == 1)) {
                 needEscape = true;
                 break;
             }
@@ -1055,22 +1057,23 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         } else {
             p = start; 
             while (p < end) {
-                if (bytes[p] == '\\') {
+                int c = bytes[p] & 0xff;
+                if (c == '\\') {
                     int n = enc.length(bytes, p + 1, end) + 1;
                     to.append(bytes, p, n);
                     p += n;
                     continue;
-                } else if (bytes[p] == '/') {
+                } else if (c == '/') {
                     to.append((byte)'\\');
                     to.append(bytes, p, 1);
                 } else if (enc.length(bytes, p, end) != 1) {
                     to.append(bytes, p, enc.length(bytes, p, end));
                     p += enc.length(bytes, p, end);
                     continue;
-                } else if (enc.isPrint(bytes[p] & 0xff)) {
+                } else if (enc.isPrint(c)) {
                     to.append(bytes, p, 1);
-                } else if (!enc.isSpace(bytes[p] & 0xff)) {
-                    to.append(ByteList.create(Integer.toString(bytes[p] & 0377, 8)));
+                } else if (!enc.isSpace(c)) {
+                    Sprintf.sprintf(getRuntime(), to, "\\x%02X", bytes[p] & 0377);
                 } else {
                     to.append(bytes, p, 1);
                 }
