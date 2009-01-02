@@ -45,10 +45,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  * The access to a Constant.
  */
 public class ConstNode extends Node implements INameNode {
-    public static volatile int failedCallSites;
-
     private String name;
-    private transient IRubyObject cachedValue = null;
+    private volatile transient IRubyObject cachedValue = null;
     private int generation = -1;
     
     public ConstNode(ISourcePosition position, String name) {

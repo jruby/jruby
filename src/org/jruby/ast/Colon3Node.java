@@ -49,6 +49,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class Colon3Node extends Node implements INameNode {
     protected String name;
+    private volatile transient IRubyObject cachedValue;
+    private volatile int generation;
     
     public Colon3Node(ISourcePosition position, String name) {
         super(position);
@@ -90,7 +92,10 @@ public class Colon3Node extends Node implements INameNode {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return runtime.getObject().fastGetConstantFrom(name);
+        IRubyObject value = getValue(context);
+
+        // We can callsite cache const_missing if we want
+        return value != null ? value : runtime.getObject().fastGetConstantFromConstMissing(name);
     }
     
     @Override
@@ -115,5 +120,27 @@ public class Colon3Node extends Node implements INameNode {
     
     private boolean hasMethod(IRubyObject left) {
         return left.getMetaClass().isMethodBound(name, true);
+    }
+
+    public IRubyObject getValue(ThreadContext context) {
+        IRubyObject value = cachedValue; // Store to temp so it does null out on us mid-stream
+
+        return isCached(context, value) ? value : reCache(context, name);
+    }
+
+    private boolean isCached(ThreadContext context, IRubyObject value) {
+        return value != null && generation == context.getRuntime().getConstantGeneration();
+    }
+
+    public IRubyObject reCache(ThreadContext context, String name) {
+        Ruby runtime = context.getRuntime();
+        int newGeneration = runtime.getConstantGeneration();
+        IRubyObject value = runtime.getObject().fastGetConstantFromNoConstMissing(name);
+
+        cachedValue = value;
+
+        if (value != null) generation = newGeneration;
+
+        return value;
     }
 }

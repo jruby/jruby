@@ -2531,6 +2531,12 @@ public class RubyModule extends RubyObject {
     }
     
     public IRubyObject fastGetConstantFrom(String internedName) {
+        IRubyObject value = fastGetConstantFromNoConstMissing(internedName);
+
+        return value != null ? value : fastGetConstantFromConstMissing(internedName);
+    }
+
+    public IRubyObject fastGetConstantFromNoConstMissing(String internedName) {
         assert internedName == internedName.intern() : internedName + " is not interned";
         assert IdUtil.isConstant(internedName);
         Ruby runtime = getRuntime();
@@ -2538,7 +2544,7 @@ public class RubyModule extends RubyObject {
         IRubyObject value;
 
         RubyModule p = this;
-        
+
         while (p != null) {
             if ((value = p.constantTableFastFetch(internedName)) != null) {
                 if (value == UNDEF) {
@@ -2556,6 +2562,12 @@ public class RubyModule extends RubyObject {
             }
             p = p.getSuperClass();
         }
+        return null;
+    }
+
+    public IRubyObject fastGetConstantFromConstMissing(String internedName) {
+        assert internedName == internedName.intern() : internedName + " is not interned";
+        assert IdUtil.isConstant(internedName);
 
         return callMethod(getRuntime().getCurrentContext(),
                 "const_missing", getRuntime().fastNewSymbol(internedName));
