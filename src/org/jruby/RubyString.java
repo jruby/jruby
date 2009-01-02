@@ -5959,7 +5959,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_intern
      *
      */
-    public RubySymbol intern() {
+    public RubySymbol to_sym() {
         String s = toString();
         if (s.length() == 0) {
             throw getRuntime().newArgumentError("interning empty string");
@@ -5970,9 +5970,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return getRuntime().newSymbol(s);
     }
 
-    @JRubyMethod(name = {"to_sym", "intern"})
-    public RubySymbol to_sym() {
-        return intern();
+    @JRubyMethod(name = {"to_sym", "intern"}, compat = CompatVersion.RUBY1_8)
+    public RubySymbol intern() {
+        return to_sym();
+    }
+
+    @JRubyMethod(name = {"to_sym", "intern"}, compat = CompatVersion.RUBY1_9)
+    public RubySymbol intern19() {
+        return getRuntime().newSymbol(toString());
     }
 
     @JRubyMethod(name = "ord", compat = CompatVersion.RUBY1_9)
