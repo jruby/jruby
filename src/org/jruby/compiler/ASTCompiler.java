@@ -2685,12 +2685,13 @@ public class ASTCompiler {
                     
                     if (normalAssigns) {
                         // only supports dual assignment right now
-                        if (multipleAsgnNode.getHeadNode().size() == 2) {
+                        int size = multipleAsgnNode.getHeadNode().size();
+                        if (size == 2 || size == 3 || size == 4) {
                             ArrayNode values = (ArrayNode)multipleAsgnNode.getValueNode();
                             for (Node value : values.childNodes()) {
                                 compile(value, context, true);
                             }
-                            context.swapValues();
+                            context.reverseValues(size);
                             for (Node asgn : multipleAsgnNode.getHeadNode().childNodes()) {
                                 compileAssignment(asgn, context, false);
                             }

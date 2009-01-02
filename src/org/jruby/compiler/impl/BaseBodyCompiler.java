@@ -258,6 +258,27 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.swap();
     }
 
+    public void reverseValues(int count) {
+        switch (count) {
+        case 2:
+            method.swap();
+            break;
+        case 3:
+            method.dup_x2();
+            method.pop();
+            method.swap();
+            break;
+        case 4:
+            method.swap();
+            method.dup2_x2();
+            method.pop2();
+            method.swap();
+            break;
+        default:
+            throw new NotCompilableException("can't reverse more than four values on the stack");
+        }
+    }
+
     public void retrieveSelf() {
         loadSelf();
     }

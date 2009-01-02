@@ -67,6 +67,13 @@ public interface BodyCompiler {
      * Swap the top and second values on the stack.
      */
     public void swapValues();
+
+    /**
+     * Reverse the top n values on the stack.
+     *
+     * @param n The number of values to reverse.
+     */
+    public void reverseValues(int n);
     
     /**
      * This method provides a way to specify a line number for the current piece of code
