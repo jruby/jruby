@@ -961,23 +961,23 @@ public class Pack {
                         int index = 0;
                         for(;;) {
                             if (!encode.hasRemaining()) break;
-                            byte c = safeGet(encode);
+                            int c = safeGet(encode);
                             if (c != '=') {
-                                lElem[index++] = c;
+                                lElem[index++] = (byte)c;
                             } else {
                                 if (!encode.hasRemaining()) break;
                                 encode.mark();
-                                byte c1 = safeGet(encode);
+                                int c1 = safeGet(encode);
                                 if (c1 == '\n') continue;
-                                int d1 = Character.digit((char)(c1 & 0xFF), 16);
+                                int d1 = Character.digit(c1, 16);
                                 if (d1 == -1) {
                                     encode.reset();
                                     break;
                                 }
                                 encode.mark();
                                 if (!encode.hasRemaining()) break;
-                                byte c2 = safeGet(encode);
-                                int d2 = Character.digit((char)(c2 & 0xFF), 16);
+                                int c2 = safeGet(encode);
+                                int d2 = Character.digit(c2, 16);
                                 if (d2 == -1) {
                                     encode.reset();
                                     break;
@@ -1104,8 +1104,8 @@ public class Pack {
         0x80000000,                 /* 7 */
     };
 
-    private static byte safeGet(ByteBuffer encode) {
-        return encode.hasRemaining() ? encode.get() : 0;
+    private static int safeGet(ByteBuffer encode) {
+        return encode.hasRemaining() ? encode.get() & 0xff : 0;
     }
 
     public static void decode(Ruby runtime, ByteBuffer encode, int occurrences,
