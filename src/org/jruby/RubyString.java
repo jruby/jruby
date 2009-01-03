@@ -5963,26 +5963,24 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_intern
      *
      */
-    public RubySymbol to_sym() {
-        String s = toString();
-        if (s.length() == 0) {
-            throw getRuntime().newArgumentError("interning empty string");
-        }
-        if (s.indexOf('\0') >= 0) {
-            throw getRuntime().newArgumentError("symbol string may not contain '\\0'");
-        }
-        return getRuntime().newSymbol(s);
+    private RubySymbol to_sym() {
+        RubySymbol symbol = getRuntime().getSymbolTable().getSymbol(value);
+        if (symbol.getBytes() == value) shareLevel = SHARE_LEVEL_BYTELIST;
+        return symbol;
     }
 
     @JRubyMethod(name = {"to_sym", "intern"}, compat = CompatVersion.RUBY1_8)
     public RubySymbol intern() {
+        if (value.realSize == 0) throw getRuntime().newArgumentError("interning empty string");
+        for (int i = 0; i < value.realSize; i++) {
+            if (value.bytes[value.begin + i] == 0) throw getRuntime().newArgumentError("symbol string may not contain '\\0'");
+        }
         return to_sym();
     }
 
     @JRubyMethod(name = {"to_sym", "intern"}, compat = CompatVersion.RUBY1_9)
     public RubySymbol intern19() {
-        // TODO: symbol encoding.
-        return getRuntime().newSymbol(toString());
+        return to_sym();
     }
 
     @JRubyMethod(name = "ord", compat = CompatVersion.RUBY1_9)

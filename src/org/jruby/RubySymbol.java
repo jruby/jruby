@@ -70,16 +70,19 @@ public class RubySymbol extends RubyObject {
      * @param internedSymbol the String value of the new Symbol. This <em>must</em>
      *                       have been previously interned
      */
-    private RubySymbol(Ruby runtime, String internedSymbol) {
+    private RubySymbol(Ruby runtime, String internedSymbol, ByteList symbolBytes) {
         super(runtime, runtime.getSymbol(), false, false);
         // symbol string *must* be interned
 
         //        assert internedSymbol == internedSymbol.intern() : internedSymbol + " is not interned";
 
         this.symbol = internedSymbol;
-        this.symbolBytes = ByteList.create(symbol);
-
+        this.symbolBytes = symbolBytes;
         this.id = runtime.allocSymbolId();
+    }
+
+    private RubySymbol(Ruby runtime, String internedSymbol) {
+        this(runtime, internedSymbol, ByteList.create(internedSymbol));
     }
 
     public static RubyClass createSymbolClass(Ruby runtime) {
@@ -112,7 +115,11 @@ public class RubySymbol extends RubyObject {
     public String asJavaString() {
         return symbol;
     }
-    
+
+    final ByteList getBytes() {
+        return symbolBytes;
+    }
+
     /** short circuit for Symbol key comparison
      * 
      */
@@ -513,7 +520,7 @@ public class RubySymbol extends RubyObject {
         return result;
     }
 
-    public static class SymbolTable {
+    public static final class SymbolTable {
         static final int DEFAULT_INITIAL_CAPACITY = 2048; // *must* be power of 2!
         static final int MAXIMUM_CAPACITY = 1 << 30;
         static final float DEFAULT_LOAD_FACTOR = 0.75f;
@@ -556,9 +563,20 @@ public class RubySymbol extends RubyObject {
             for (; e != null; e = e.next) {
                 if (isSymbolMatch(name, hash, e)) return e.symbol;
             }
-            return createSymbol(name, hash, table);
+            return createSymbol(name, ByteList.create(name), hash, table);
         }
-        
+
+        public RubySymbol getSymbol(ByteList bytes) {
+            String name = bytes.toString();
+            int hash = name.hashCode();
+            SymbolEntry[] table = symbolTable;
+            SymbolEntry e = getEntryFromTable(table, hash);
+            for (; e != null; e = e.next) {
+                if (isSymbolMatch(name, hash, e)) return e.symbol;
+            }
+            return createSymbol(name, bytes, hash, table);
+        }
+
         public RubySymbol fastGetSymbol(String internedName) {
             //            assert internedName == internedName.intern() : internedName + " is not interned";
             SymbolEntry[] table = symbolTable;
@@ -581,7 +599,7 @@ public class RubySymbol extends RubyObject {
             return internedName == entry.name;
         }
 
-        private RubySymbol createSymbol(String name, int hash, SymbolEntry[] table) {
+        private RubySymbol createSymbol(String name, ByteList value, int hash, SymbolEntry[] table) {
             ReentrantLock lock;
             (lock = tableLock).lock();
             try {
@@ -599,7 +617,7 @@ public class RubySymbol extends RubyObject {
                     }
                 }
                 String internedName;
-                RubySymbol symbol = new RubySymbol(runtime, internedName = name.intern());
+                RubySymbol symbol = new RubySymbol(runtime, internedName = name.intern(), value);
                 table[index] = new SymbolEntry(hash, internedName, symbol, table[index]);
                 size = potentialNewSize;
                 // write-volatile

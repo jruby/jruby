@@ -310,6 +310,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         return null; // TODO: preprocess
     }
 
+    private int readEscapedByte(byte[]bytes, int p, int end, byte[]to, int toP) {
+        return 0;
+    }
+
     private void check() {
         if (pattern == null) throw getRuntime().newTypeError("uninitialized Regexp");
     }
@@ -535,12 +539,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     }
 
     // rb_reg_raise
-    private final void raiseRegexpError(byte[] s, int start, int len, String err, int flags) {
+    private void raiseRegexpError(byte[] s, int start, int len, String err, int flags) {
         throw getRuntime().newRegexpError(err + ": " + regexpDescription(s, start, len, flags));
     }
 
     // rb_reg_desc
-    private final ByteList regexpDescription(byte[] bytes, int start, int len, int flags) {
+    private ByteList regexpDescription(byte[] bytes, int start, int len, int flags) {
         ByteList result = new ByteList();
         result.append((byte)'/');
         appendRegexpString(result, bytes, start, len);
