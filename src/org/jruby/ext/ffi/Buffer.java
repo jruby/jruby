@@ -4,9 +4,11 @@ package org.jruby.ext.ffi;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
@@ -57,36 +59,66 @@ public final class Buffer extends AbstractMemory {
         super(runtime, (RubyClass) klass, io, offset, size);
         this.inout = inout;
     }
-    
+
+    private static final int calculateSize(ThreadContext context, IRubyObject sizeArg) {
+        if (sizeArg instanceof RubyFixnum) {
+            return RubyFixnum.fix2int(sizeArg);
+        } else if (sizeArg instanceof RubySymbol) {
+            return RubyFixnum.fix2int(FFIProvider.getModule(context.getRuntime()).callMethod(context, "type_size", sizeArg));
+        } else if (sizeArg.respondsTo("size")) {
+            return RubyFixnum.fix2int(sizeArg.callMethod(context, "size"));
+        } else {
+            throw context.getRuntime().newArgumentError("Invalid size argument");
+        }
+    }
+    private static final int getCount(IRubyObject countArg) {
+        return countArg instanceof RubyFixnum ? RubyFixnum.fix2int(countArg) : 1;
+    }
     private static Buffer allocate(ThreadContext context, IRubyObject recv, 
-            IRubyObject sizeArg, boolean clear, int flags) {
-        final int size = Util.int32Value(sizeArg);
-        final MemoryIO io = factory.allocateHeapMemory(size, clear);
+            IRubyObject sizeArg, int count, int flags) {
+        final int size = calculateSize(context, sizeArg) * count;
+        final MemoryIO io = factory.allocateHeapMemory(size, true);
         return new Buffer(context.getRuntime(), recv, io, 0, size, flags);
     }
-    @JRubyMethod(name = { "__alloc_inout" }, meta = true)
+    @JRubyMethod(name = { "new", "alloc_inout", "__alloc_inout" }, meta = true)
     public static Buffer allocateInOut(ThreadContext context, IRubyObject recv, IRubyObject sizeArg) {
-        return allocate(context, recv, sizeArg, CLEAR_DEFAULT, IN | OUT);
+        return allocate(context, recv, sizeArg, 1, IN | OUT);
     }
-    @JRubyMethod(name = { "__alloc_inout" }, meta = true)
-    public static Buffer allocateInOut(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject clearArg) {
-        return allocate(context, recv, sizeArg, clearArg.isTrue(), IN | OUT);
+    @JRubyMethod(name = { "new", "alloc_inout", "__alloc_inout" }, meta = true)
+    public static Buffer allocateInOut(ThreadContext context, IRubyObject recv,
+            IRubyObject sizeArg, IRubyObject arg2) {
+        return allocate(context, recv, sizeArg, getCount(arg2), IN | OUT);
     }
-    @JRubyMethod(name = { "__alloc_in" }, meta = true)
+    @JRubyMethod(name = { "new", "alloc_inout", "__alloc_inout" }, meta = true)
+    public static Buffer allocateInOut(ThreadContext context, IRubyObject recv, 
+            IRubyObject sizeArg, IRubyObject countArg, IRubyObject clearArg) {
+        return allocate(context, recv, sizeArg, RubyFixnum.fix2int(countArg), IN | OUT);
+    }
+    @JRubyMethod(name = { "new_in", "alloc_in", "__alloc_in" }, meta = true)
     public static Buffer allocateInput(ThreadContext context, IRubyObject recv, IRubyObject arg) {       
-        return allocate(context, recv, arg, CLEAR_DEFAULT, IN);
+        return allocate(context, recv, arg, 1, IN);
     }
-    @JRubyMethod(name = { "__alloc_in" }, meta = true)
-    public static Buffer allocateInput(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject clearArg) {
-        return allocate(context, recv, sizeArg, clearArg.isTrue(), IN);
+    @JRubyMethod(name = { "new_in", "alloc_in", "__alloc_in" }, meta = true)
+    public static Buffer allocateInput(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject arg2) {
+        return allocate(context, recv, sizeArg, getCount(arg2), IN);
     }
-    @JRubyMethod(name = { "__alloc_out" }, meta = true)
+    @JRubyMethod(name = { "new_in", "alloc_in", "__alloc_in" }, meta = true)
+    public static Buffer allocateInput(ThreadContext context, IRubyObject recv,
+            IRubyObject sizeArg, IRubyObject countArg, IRubyObject clearArg) {
+        return allocate(context, recv, sizeArg, RubyFixnum.fix2int(countArg), IN);
+    }
+    @JRubyMethod(name = {  "new_out", "alloc_out", "__alloc_out" }, meta = true)
     public static Buffer allocateOutput(ThreadContext context, IRubyObject recv, IRubyObject sizeArg) {
-        return allocate(context, recv, sizeArg, CLEAR_DEFAULT, OUT);
+        return allocate(context, recv, sizeArg, 1, OUT);
     }
-    @JRubyMethod(name = { "__alloc_out" }, meta = true)
-    public static Buffer allocateOutput(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject clearArg) {
-        return allocate(context, recv, sizeArg, clearArg.isTrue(), OUT);
+    @JRubyMethod(name = {  "new_out", "alloc_out", "__alloc_out" }, meta = true)
+    public static Buffer allocateOutput(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject arg2) {
+        return allocate(context, recv, sizeArg, getCount(arg2), OUT);
+    }
+    @JRubyMethod(name = {  "new_out", "alloc_out", "__alloc_out" }, meta = true)
+    public static Buffer allocateOutput(ThreadContext context, IRubyObject recv,
+            IRubyObject sizeArg, IRubyObject countArg, IRubyObject clearArg) {
+        return allocate(context, recv, sizeArg, RubyFixnum.fix2int(countArg), OUT);
     }
 
     @JRubyMethod(name = "inspect")
