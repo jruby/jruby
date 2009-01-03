@@ -67,6 +67,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jcodings.Encoding;
 import org.joda.time.DateTimeZone;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.RubiniusRunner;
@@ -2060,6 +2061,22 @@ public final class Ruby {
         return loadService;
     }
 
+    public Encoding getDefaultInternalEncoding() {
+        return defaultInternalEncoding;
+    }
+
+    public void setDefaultInternalEncoding(Encoding defaultInternalEncoding) {
+        this.defaultInternalEncoding = defaultInternalEncoding;
+    }
+
+    public Encoding getDefaultExternalEncoding() {
+        return defaultExternalEncoding;
+    }
+
+    public void setDefaultExternalEncoding(Encoding defaultExternalEncoding) {
+        this.defaultExternalEncoding = defaultExternalEncoding;
+    }
+
     public EncodingService getEncodingService() {
         return encodingService;
     }
@@ -3195,7 +3212,10 @@ public final class Ruby {
     private Parser parser = new Parser(this);
 
     private LoadService loadService;
+
+    private Encoding defaultInternalEncoding, defaultExternalEncoding;
     private EncodingService encodingService;
+
     private GlobalVariables globalVariables = new GlobalVariables(this);
     private RubyWarnings warnings = new RubyWarnings(this);
 

@@ -14,13 +14,10 @@ import org.jruby.util.ByteList;
 
 public final class EncodingService {
     private final Ruby runtime;
-    
+
     private final CaseInsensitiveBytesHash<Entry> encodings;
     private final CaseInsensitiveBytesHash<Entry> aliases;
 
-    private Encoding defaultInternalEncoding;
-    private Encoding defaultExternalEncoding;
-    
     // for fast lookup: encoding entry => org.jruby.RubyEncoding
     private final IRubyObject[] encodingList;
     // for fast lookup: org.joni.encoding.Encoding => org.jruby.RubyEncoding
@@ -32,7 +29,7 @@ public final class EncodingService {
         // TODO: make it cross runtime safe by COW or eager copy
         encodings = EncodingDB.getEncodings();
         aliases = EncodingDB.getAliases();
-        
+
         encodingList = new IRubyObject[encodings.size()];
         defineEncodings();
         defineAliases();        
@@ -46,22 +43,6 @@ public final class EncodingService {
         return aliases;
     }
 
-    public Encoding getDefaultInternalEncoding() {
-        return defaultInternalEncoding;
-    }
-
-    public void setDefaultInternalEncoding(Encoding defaultInternalEncoding) {
-        this.defaultInternalEncoding = defaultInternalEncoding;
-    }
-
-    public Encoding getDefaultExternalEncoding() {
-        return defaultExternalEncoding;
-    }
-
-    public void setDefaultExternalEncoding(Encoding defaultExternalEncoding) {
-        this.defaultExternalEncoding = defaultExternalEncoding;
-    }
-
     public Entry findEncodingEntry(ByteList bytes) {
         return encodings.get(bytes.bytes, bytes.begin, bytes.begin + bytes.realSize);
     }
@@ -69,7 +50,7 @@ public final class EncodingService {
     public Entry findAliasEntry(ByteList bytes) {
         return aliases.get(bytes.bytes, bytes.begin, bytes.begin + bytes.realSize);
     }
-    
+
     public Entry findEncodingOrAliasEntry(ByteList bytes) {
         Entry e = findEncodingEntry(bytes);
         return e != null ? e : findAliasEntry(bytes);
