@@ -56,7 +56,6 @@ import org.joni.exception.JOniException;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.parser.ReOptions;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -571,12 +570,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         return description; 
     }
 
-    private void appendOptions(ByteList to, int options) {
-        if ((options & ReOptions.RE_OPTION_MULTILINE) != 0) to.append((byte)'m');
-        if ((options & ReOptions.RE_OPTION_IGNORECASE) != 0) to.append((byte)'i');
-        if ((options & ReOptions.RE_OPTION_EXTENDED) != 0) to.append((byte)'x');
-    }
-
     /** rb_reg_init_copy
      */
     @JRubyMethod(name = "initialize_copy", required = 1)
@@ -952,9 +945,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
                     len = str.realSize;
                 }
             }
-            if ((options & RE_OPTION_MULTILINE) !=0 ) result.append((byte)'m');
-            if ((options & RE_OPTION_IGNORECASE) !=0 ) result.append((byte)'i');
-            if ((options & RE_OPTION_EXTENDED) !=0 ) result.append((byte)'x');
+
+            appendOptions(result, options);
 
             if ((options & EMBEDDABLE) != EMBEDDABLE) {
                 result.append((byte)'-');
@@ -1011,6 +1003,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
                 p++;
             }
         }
+    }
+
+    // option_to_str
+    private void appendOptions(ByteList to, int options) {
+        if ((options & ReOptions.RE_OPTION_MULTILINE) != 0) to.append((byte)'m');
+        if ((options & ReOptions.RE_OPTION_IGNORECASE) != 0) to.append((byte)'i');
+        if ((options & ReOptions.RE_OPTION_EXTENDED) != 0) to.append((byte)'x');
     }
 
     /** rb_reg_names
