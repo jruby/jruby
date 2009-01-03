@@ -236,7 +236,7 @@ public final class StringSupport {
     public static int codePoint(Ruby runtime, Encoding enc, byte[]bytes, int p, int end) {
         if (p >= end) throw runtime.newArgumentError("empty string");
         int cl = preciseLength(enc, bytes, p, end);
-        if (cl <= 0) throw runtime.newArgumentError("invalid byte sequence in " + enc.getName()); 
+        if (cl <= 0) throw runtime.newArgumentError("invalid byte sequence in " + enc); 
         return enc.mbcToCode(bytes, p, end); 
     }
 
