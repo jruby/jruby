@@ -109,7 +109,7 @@ public final class JNAProvider extends FFIProvider {
             case ULONG:
                 return Platform.getPlatform().addressSize() == 32
                         ? Unsigned32Invoker.INSTANCE
-                        : Signed64Invoker.INSTANCE;
+                        : Unsigned64Invoker.INSTANCE;
             case FLOAT32:
                 return Float32Invoker.INSTANCE;
             case FLOAT64:
