@@ -56,6 +56,7 @@ import org.joni.exception.JOniException;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.parser.ReOptions;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -534,27 +535,46 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         try {
             pattern = new Regex(bytes.bytes, start, start + len, flags, enc, Syntax.DEFAULT, this);
         } catch (Exception e) {
-            raiseRegexpError(bytes.bytes, start, len, e.getMessage(), flags);
+            raiseRegexpError(bytes.bytes, start, len, flags, e.getMessage());
         }
     }
 
     // rb_reg_raise
-    private void raiseRegexpError(byte[] s, int start, int len, String err, int flags) {
+    private void raiseRegexpError(byte[] s, int start, int len, int flags, String err) {
         throw getRuntime().newRegexpError(err + ": " + regexpDescription(s, start, len, flags));
     }
 
     // rb_reg_desc
-    private ByteList regexpDescription(byte[] bytes, int start, int len, int flags) {
-        ByteList result = new ByteList();
-        result.append((byte)'/');
-        appendRegexpString(result, bytes, start, len);
-        result.append((byte)'/');
+    private ByteList regexpDescription(byte[] bytes, int start, int len, int options) {
+        ByteList description = new ByteList();
+        description.append((byte)'/');
+        appendRegexpString(description, bytes, start, len);
+        description.append((byte)'/');
+        appendOptions(description, options);
+        if (kcode != null && !isKCodeDefault()) description.append((byte)kcode.name().charAt(0));
+        return description;
+    }
 
-        if ((flags & ReOptions.RE_OPTION_MULTILINE) != 0) result.append((byte)'m');
-        if ((flags & ReOptions.RE_OPTION_IGNORECASE) != 0) result.append((byte)'i');
-        if ((flags & ReOptions.RE_OPTION_EXTENDED) != 0) result.append((byte)'x');
-        if (kcode != null && !isKCodeDefault()) result.append((byte)kcode.name().charAt(0));
-        return result;
+    // rb_enc_reg_raise
+    private void raiseRegexpError(byte[] s, int start, int len, Encoding enc, int flags, String err) {
+        // TODO: we loose encoding information here, fix it
+        throw getRuntime().newRegexpError(err + ": " + regexpDescription(s, start, len, flags, enc));
+    }
+    // rb_enc_reg_error_desc
+    private ByteList regexpDescription(byte[] s, int start, int len, int options, Encoding enc) {
+        ByteList description = new ByteList();
+        description.encoding = enc;
+        description.append((byte)'/');
+        appendRegexpString(description, s, start, len);
+        description.append((byte)'/');
+        appendOptions(description, options);
+        return description; 
+    }
+
+    private void appendOptions(ByteList to, int options) {
+        if ((options & ReOptions.RE_OPTION_MULTILINE) != 0) to.append((byte)'m');
+        if ((options & ReOptions.RE_OPTION_IGNORECASE) != 0) to.append((byte)'i');
+        if ((options & ReOptions.RE_OPTION_EXTENDED) != 0) to.append((byte)'x');
     }
 
     /** rb_reg_init_copy
