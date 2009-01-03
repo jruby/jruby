@@ -15,6 +15,7 @@ import org.jruby.ext.ffi.Buffer;
 import org.jruby.ext.ffi.NativeParam;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.Platform;
+import org.jruby.ext.ffi.Struct;
 import org.jruby.ext.ffi.Util;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
@@ -488,25 +489,38 @@ public final class DefaultMethodFactory {
         public boolean needsInvocationSession() {
             return false;
         }
+        private static final void addBufferParameter(InvocationBuffer buffer, IRubyObject parameter, int flags) {
+            ArrayMemoryIO memory = (ArrayMemoryIO) ((Buffer) parameter).getMemoryIO();
+                buffer.putArray(memory.array(), memory.arrayOffset(), memory.arrayLength(),
+                        flags & bufferFlags((Buffer) parameter));
+        }
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
             if (parameter instanceof Buffer) {
-                ArrayMemoryIO memory = (ArrayMemoryIO) ((Buffer) parameter).getMemoryIO();
-                buffer.putArray(memory.array(), memory.arrayOffset(), memory.arrayLength(), 
-                        flags & bufferFlags((Buffer) parameter));
+                addBufferParameter(buffer, parameter, flags);
+            } else if (parameter instanceof BasePointer) {
+                buffer.putAddress(((BasePointer) parameter).getAddress());
+            } else if (parameter instanceof Struct) {
+                IRubyObject memory = ((Struct) parameter).getMemory();
+                if (memory instanceof Buffer) {
+                    addBufferParameter(buffer, memory, flags);
+                } else if (memory instanceof BasePointer) {
+                    buffer.putAddress(((BasePointer) memory).getAddress());
+                } else if (memory == null || memory.isNil()) {
+                    buffer.putAddress(0L);
+                } else {
+                    throw context.getRuntime().newArgumentError("Invalid Struct memory");
+                }
+            } else if (parameter.isNil()) {
+                buffer.putAddress(0L);
             } else if (parameter instanceof RubyString) {
                 ByteList bl = ((RubyString) parameter).getByteList();
                 buffer.putArray(bl.unsafeBytes(), bl.begin(), bl.length(), flags | ObjectBuffer.ZERO_TERMINATE);
-            } else if (parameter instanceof BasePointer) {
-                buffer.putAddress(((BasePointer) parameter).getAddress());
-            } else if (parameter.isNil()) {
-                buffer.putAddress(0L);
             } else if (parameter.respondsTo("to_ptr")) {
                 IRubyObject ptr = parameter.callMethod(context, "to_ptr");
                 if (ptr instanceof BasePointer) {
                     buffer.putAddress(((BasePointer) ptr).getAddress());
                 } else if (ptr instanceof Buffer) {
-                    ArrayMemoryIO memory = (ArrayMemoryIO) ((Buffer) parameter).getMemoryIO();
-                    buffer.putArray(memory.array(), memory.arrayOffset(), memory.arrayLength(), flags);
+                    addBufferParameter(buffer, ptr, flags);
                 } else if (ptr.isNil()) {
                     buffer.putAddress(0L);
                 } else {

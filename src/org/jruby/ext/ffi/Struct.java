@@ -124,4 +124,8 @@ public class Struct extends RubyObject {
     public IRubyObject members(ThreadContext context) {
         return layout.members(context);
     }
+
+    public final IRubyObject getMemory() {
+        return memory;
+    }
 }
