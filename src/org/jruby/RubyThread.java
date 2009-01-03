@@ -95,6 +95,9 @@ public class RubyThread extends RubyObject {
     public Object killLock = new Object();
     
     public final ReentrantLock lock = new ReentrantLock();
+
+    // Error info is per-thread
+    private IRubyObject errorInfo;
     
     private static final boolean DEBUG = false;
 
@@ -103,6 +106,18 @@ public class RubyThread extends RubyObject {
         this.threadService = runtime.getThreadService();
         this.criticalLock = threadService.getCriticalLock();
         finalResult = runtime.getNil();
+
+        // init errorInfo to nil
+        errorInfo = runtime.getNil();
+    }
+
+    public IRubyObject getErrorInfo() {
+        return errorInfo;
+    }
+
+    public IRubyObject setErrorInfo(IRubyObject errorInfo) {
+        this.errorInfo = errorInfo;
+        return errorInfo;
     }
     
     /**
@@ -591,10 +606,13 @@ public class RubyThread extends RubyObject {
         return this.priority;
     }
 
-    @JRubyMethod(name = "raise", optional = 2, frame = true)
+    @JRubyMethod(name = "raise", optional = 3, frame = true)
     public IRubyObject raise(IRubyObject[] args, Block block) {
-        ensureNotCurrent();
         Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
+        if (this == context.getThread()) {
+            return RubyKernel.raise(context, runtime.getKernel(), args, block);
+        }
         
         if (DEBUG) System.out.println("thread " + Thread.currentThread() + " before raising");
         RubyThread currentThread = getRuntime().getCurrentContext().getThread();
@@ -632,7 +650,7 @@ public class RubyThread extends RubyObject {
 
     private IRubyObject prepareRaiseException(Ruby runtime, IRubyObject[] args, Block block) {
         if(args.length == 0) {
-            IRubyObject lastException = runtime.getGlobalVariables().get("$!");
+            IRubyObject lastException = errorInfo;
             if(lastException.isNil()) {
                 return new RaiseException(runtime, runtime.getRuntimeError(), "", false).getException();
             } 

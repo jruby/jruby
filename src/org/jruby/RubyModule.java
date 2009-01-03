@@ -1262,6 +1262,8 @@ public class RubyModule extends RubyObject {
                 // FIXME: Why was this using a FullFunctionCallbackMethod before that did callSuper?
                 addMethod(name, new WrapperMethod(this, method, visibility));
             }
+
+            invalidateCacheDescendants();
         }
     }
 

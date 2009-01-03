@@ -1,1 +1,0 @@
-fails(JRUBY-2364):The private keyword changes visiblity of previously called methods with same send/call site
