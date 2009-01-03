@@ -12,15 +12,20 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 
 
 @JRubyClass(name = "FFI::Buffer", parent = FFIProvider.MODULE_NAME + "::" + AbstractMemoryPointer.className)
 public final class Buffer extends AbstractMemory {
-    private static final Factory factory = Factory.getInstance();
+    /** Indicates that the Buffer is used for data copied IN to native memory */
+    public static final int IN = 0x1;
 
+    /** Indicates that the Buffer is used for data copied OUT from native memory */
+    public static final int OUT = 0x2;
+
+    private static final Factory factory = Factory.getInstance();
     private static final boolean CLEAR_DEFAULT = true;
 
+    private final int inout;
     public static RubyClass createBufferClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder("Buffer",
                 runtime.getObject(),
@@ -35,56 +40,53 @@ public final class Buffer extends AbstractMemory {
 
     public Buffer(Ruby runtime, RubyClass klass) {
         super(runtime, klass, factory.allocateHeapMemory(0, CLEAR_DEFAULT), 0, 0);
+        this.inout = IN | OUT;
     }
     Buffer(Ruby runtime, int size) {
-        super(runtime, FFIProvider.getModule(runtime).fastGetClass("Buffer"),
-            factory.allocateHeapMemory(size, CLEAR_DEFAULT), 0, size);
+        this(runtime, size, IN | OUT);
+    }
+    Buffer(Ruby runtime, int size, int flags) {
+        this(runtime, FFIProvider.getModule(runtime).fastGetClass("Buffer"),
+            factory.allocateHeapMemory(size, CLEAR_DEFAULT), 0, size, IN | OUT);
     }
     private Buffer(Ruby runtime, IRubyObject klass, Buffer ptr, long offset) {
         super(runtime, (RubyClass) klass, ptr.io, ptr.offset + offset, ptr.size - offset);
+        this.inout = ptr.inout;
     }
-    private Buffer(Ruby runtime, IRubyObject klass, MemoryIO io, long offset, long size) {
+    private Buffer(Ruby runtime, IRubyObject klass, MemoryIO io, long offset, long size, int inout) {
         super(runtime, (RubyClass) klass, io, offset, size);
+        this.inout = inout;
     }
     
-    private static Buffer allocate(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, boolean clear) {
+    private static Buffer allocate(ThreadContext context, IRubyObject recv, 
+            IRubyObject sizeArg, boolean clear, int flags) {
         final int size = Util.int32Value(sizeArg);
         final MemoryIO io = factory.allocateHeapMemory(size, clear);
-        return new Buffer(context.getRuntime(), recv, io, 0, size);
+        return new Buffer(context.getRuntime(), recv, io, 0, size, flags);
     }
-    @JRubyMethod(name = { "alloc_inout", "__alloc_inout", "__alloc_heap_inout", "__alloc_direct_inout" }, meta = true)
-    public static Buffer allocateDirect(ThreadContext context, IRubyObject recv, IRubyObject sizeArg) {
-        return allocate(context, recv, sizeArg, CLEAR_DEFAULT);
+    @JRubyMethod(name = { "__alloc_inout" }, meta = true)
+    public static Buffer allocateInOut(ThreadContext context, IRubyObject recv, IRubyObject sizeArg) {
+        return allocate(context, recv, sizeArg, CLEAR_DEFAULT, IN | OUT);
     }
-    @JRubyMethod(name = { "alloc_inout", "__alloc_inout", "__alloc_heap_inout", "__alloc_direct_inout" }, meta = true)
-    public static Buffer allocateDirect(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject clearArg) {
-        return allocate(context, recv, sizeArg, clearArg.isTrue());
+    @JRubyMethod(name = { "__alloc_inout" }, meta = true)
+    public static Buffer allocateInOut(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject clearArg) {
+        return allocate(context, recv, sizeArg, clearArg.isTrue(), IN | OUT);
     }
-    @JRubyMethod(name = { "alloc_in", "__alloc_in", "__alloc_heap_in", "__alloc_direct_in" }, meta = true)
-    public static Buffer allocateInput(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        if (arg instanceof RubyString) {
-            final RubyString s = (RubyString) arg;
-            final int size = Util.int32Value(s.length());
-            final ByteList bl = s.getByteList();
-            final MemoryIO io = factory.allocateHeapMemory(size, false);
-            io.put(0, bl.unsafeBytes(), bl.begin(), bl.length());
-            io.putByte(bl.length(), (byte) 0);
-            return new Buffer(context.getRuntime(), recv, io, 0, size);
-        } else {
-            return allocate(context, recv, arg, CLEAR_DEFAULT);
-        }
+    @JRubyMethod(name = { "__alloc_in" }, meta = true)
+    public static Buffer allocateInput(ThreadContext context, IRubyObject recv, IRubyObject arg) {       
+        return allocate(context, recv, arg, CLEAR_DEFAULT, IN);
     }
-    @JRubyMethod(name = { "alloc_in", "__alloc_in", "__alloc_heap_in", "__alloc_direct_in" }, meta = true)
+    @JRubyMethod(name = { "__alloc_in" }, meta = true)
     public static Buffer allocateInput(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject clearArg) {
-        return allocate(context, recv, sizeArg, clearArg.isTrue());
+        return allocate(context, recv, sizeArg, clearArg.isTrue(), IN);
     }
-    @JRubyMethod(name = { "alloc_out", "__alloc_out", "__alloc_heap_out", "__alloc_direct_out" }, meta = true)
+    @JRubyMethod(name = { "__alloc_out" }, meta = true)
     public static Buffer allocateOutput(ThreadContext context, IRubyObject recv, IRubyObject sizeArg) {
-        return allocate(context, recv, sizeArg, CLEAR_DEFAULT);
+        return allocate(context, recv, sizeArg, CLEAR_DEFAULT, OUT);
     }
-    @JRubyMethod(name = { "alloc_out", "__alloc_out", "__alloc_heap_out", "__alloc_direct_out" }, meta = true)
+    @JRubyMethod(name = { "__alloc_out" }, meta = true)
     public static Buffer allocateOutput(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject clearArg) {
-        return allocate(context, recv, sizeArg, clearArg.isTrue());
+        return allocate(context, recv, sizeArg, clearArg.isTrue(), OUT);
     }
 
     @JRubyMethod(name = "inspect")
@@ -114,5 +116,7 @@ public final class Buffer extends AbstractMemory {
     protected Pointer getPointer(Ruby runtime, long offset) {
         return factory.newPointer(runtime, getMemoryIO().getMemoryIO(this.offset + offset));
     }
-
+    public int getInOutFlags() {
+        return inout;
+    }
 }

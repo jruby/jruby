@@ -472,14 +472,18 @@ public final class DefaultMethodFactory {
      * Converts a ruby Buffer into a native address.
      */
     static final class BufferMarshaller extends BaseMarshaller {
-        static final ParameterMarshaller IN = new BufferMarshaller(ObjectBuffer.IN | ObjectBuffer.ZERO_TERMINATE);
+        static final ParameterMarshaller IN = new BufferMarshaller(ObjectBuffer.IN);
         static final ParameterMarshaller OUT = new BufferMarshaller(ObjectBuffer.OUT);
-        static final ParameterMarshaller INOUT = new BufferMarshaller(ObjectBuffer.IN | ObjectBuffer.OUT | ObjectBuffer.ZERO_TERMINATE);
+        static final ParameterMarshaller INOUT = new BufferMarshaller(ObjectBuffer.IN | ObjectBuffer.OUT);
         private final int flags;
         public BufferMarshaller(int flags) {
             this.flags = flags;
         }
-
+        private static final int bufferFlags(Buffer buffer) {
+            int f = buffer.getInOutFlags();
+            return ((f & Buffer.IN) != 0 ? ObjectBuffer.IN: 0)
+                    | ((f & Buffer.OUT) != 0 ? ObjectBuffer.OUT : 0);
+        }
         @Override
         public boolean needsInvocationSession() {
             return false;
@@ -487,7 +491,8 @@ public final class DefaultMethodFactory {
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
             if (parameter instanceof Buffer) {
                 ArrayMemoryIO memory = (ArrayMemoryIO) ((Buffer) parameter).getMemoryIO();
-                buffer.putArray(memory.array(), memory.arrayOffset(), memory.arrayLength(), flags);
+                buffer.putArray(memory.array(), memory.arrayOffset(), memory.arrayLength(), 
+                        flags & bufferFlags((Buffer) parameter));
             } else if (parameter instanceof RubyString) {
                 ByteList bl = ((RubyString) parameter).getByteList();
                 buffer.putArray(bl.unsafeBytes(), bl.begin(), bl.length(), flags | ObjectBuffer.ZERO_TERMINATE);
