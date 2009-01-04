@@ -78,7 +78,7 @@ import org.jruby.util.TypeConverter;
 public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, EncodingCapable {
     private KCode kcode;
     private Regex pattern;
-    private ByteList str;
+    private ByteList str = ByteList.EMPTY_BYTELIST;
 
     private static final int REGEXP_LITERAL_F     = USER1_F;
     private static final int REGEXP_KCODE_DEFAULT = USER2_F;
@@ -875,11 +875,17 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     /** rb_reg_inspect
      *
      */
-    @JRubyMethod(name = "inspect")
+    @JRubyMethod(name = "inspect", compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject inspect() {
         check();
         return RubyString.newString(getRuntime(), regexpDescription(str, pattern.getOptions()));
+    }
+
+    @JRubyMethod(name = "inspect", compat = CompatVersion.RUBY1_9)
+    public IRubyObject inspect19() {
+        if (pattern == null) return anyToString();
+        return RubyString.newString(getRuntime(), regexpDescription(str, pattern.getOptions(), str.encoding));
     }
 
     private final static int EMBEDDABLE = RE_OPTION_MULTILINE|RE_OPTION_IGNORECASE|RE_OPTION_EXTENDED;
@@ -1056,8 +1062,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
 
     @JRubyMethod(name = "encoding", compat = CompatVersion.RUBY1_9)
     public IRubyObject encoding(ThreadContext context) {
-        check();
-        return context.getRuntime().getEncodingService().getEncoding(pattern.getEncoding());
+        return context.getRuntime().getEncodingService().getEncoding(str.encoding);
     }
 
     @JRubyMethod(name = "fixed_encoding?", compat = CompatVersion.RUBY1_9)
