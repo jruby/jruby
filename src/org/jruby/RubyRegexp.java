@@ -531,22 +531,23 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     }
 
     private void makeRegexp(ByteList bytes, int flags, Encoding enc) {
-        int p = bytes.begin;
-        int end = p + bytes.realSize;
-
         try {
-            pattern = new Regex(bytes.bytes, p, end, flags, enc, Syntax.DEFAULT, this);
+            int p = bytes.begin;
+            pattern = new Regex(bytes.bytes, p, p + bytes.realSize, flags, enc, Syntax.DEFAULT, this);
         } catch (Exception e) {
-            raiseRegexpError(bytes.bytes, p, bytes.realSize, flags, e.getMessage());
+            raiseRegexpError(bytes, flags, e.getMessage());
         }
     }
 
     // rb_reg_raise
-    private void raiseRegexpError(byte[] s, int start, int len, int flags, String err) {
-        throw getRuntime().newRegexpError(err + ": " + regexpDescription(s, start, len, flags));
+    private void raiseRegexpError(ByteList bytes, int flags, String err) {
+        throw getRuntime().newRegexpError(err + ": " + regexpDescription(bytes, flags));
     }
 
     // rb_reg_desc
+    private ByteList regexpDescription(ByteList bytes, int options) {
+        return regexpDescription(bytes.bytes, bytes.begin, bytes.realSize, options);
+    }
     private ByteList regexpDescription(byte[] bytes, int start, int len, int options) {
         ByteList description = new ByteList();
         description.append((byte)'/');
@@ -558,11 +559,15 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     }
 
     // rb_enc_reg_raise
-    private void raiseRegexpError(byte[] s, int start, int len, Encoding enc, int flags, String err) {
+    private void raiseRegexpError(ByteList bytes, Encoding enc, int flags, String err) {
         // TODO: we loose encoding information here, fix it
-        throw getRuntime().newRegexpError(err + ": " + regexpDescription(s, start, len, flags, enc));
+        throw getRuntime().newRegexpError(err + ": " + regexpDescription(bytes, flags, enc));
     }
+
     // rb_enc_reg_error_desc
+    private ByteList regexpDescription(ByteList bytes, int options, Encoding enc) {
+        return regexpDescription(bytes.bytes, bytes.begin, bytes.realSize, options, enc);
+    }
     private ByteList regexpDescription(byte[] s, int start, int len, int options, Encoding enc) {
         ByteList description = new ByteList();
         description.encoding = enc;
@@ -874,7 +879,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     @Override
     public IRubyObject inspect() {
         check();
-        return RubyString.newString(getRuntime(), regexpDescription(str.bytes, str.begin, str.realSize, pattern.getOptions()));
+        return RubyString.newString(getRuntime(), regexpDescription(str, pattern.getOptions()));
     }
 
     private final static int EMBEDDABLE = RE_OPTION_MULTILINE|RE_OPTION_IGNORECASE|RE_OPTION_EXTENDED;
@@ -1054,13 +1059,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         check();
         return context.getRuntime().getEncodingService().getEncoding(pattern.getEncoding());
     }
-    
+
     @JRubyMethod(name = "fixed_encoding?", compat = CompatVersion.RUBY1_9)
     public IRubyObject fixed_encoding_p(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         return isKCodeFixed() ? runtime.getTrue() : runtime.getFalse();
     }
-    
+
     /** rb_reg_nth_match
     *
     */
