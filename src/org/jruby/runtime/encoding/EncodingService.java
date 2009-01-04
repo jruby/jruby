@@ -64,7 +64,7 @@ public final class EncodingService {
         Entry entry = findEncodingOrAliasEntry(name);
         Encoding enc = entry.getEncoding(); // load the encoding
         int index = enc.getIndex();
-        if (index > encodingIndex.length) {
+        if (index >= encodingIndex.length) {
             RubyEncoding tmp[] = new RubyEncoding[index + 4];
             System.arraycopy(encodingIndex, 0, tmp, 0, encodingIndex.length);
             encodingIndex = tmp;
