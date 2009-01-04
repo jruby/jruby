@@ -310,8 +310,92 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         return null; // TODO: preprocess
     }
 
-    private int readEscapedByte(byte[]bytes, int p, int end, byte[]to, int toP) {
+    private static enum ErrorMode {RAISE, PREPROCESS, DESC} 
+
+    private int raisePreprocessError(String err, ErrorMode mode) {
+        switch (mode) {
+        case RAISE:
+        case PREPROCESS:
+        case DESC:
+        }
         return 0;
+    }
+
+    private int readEscapedByte(byte[]bytes, int p, int end, byte[]to, int toP, ErrorMode mode) {
+        if (p == end || bytes[p++] == (byte)'\\') raisePreprocessError("too short escaped multibyte character", mode);
+
+        boolean metaPrefix = false, ctrlPrefix = false;
+        int code = 0;
+        while (true) {
+            if (p == end) raisePreprocessError("too short escape sequence", mode);
+
+            switch (bytes[p++]) {
+            case '\\': code = '\\'; break;
+            case 'n': code = '\n'; break;
+            case 't': code = '\t'; break;
+            case 'r': code = '\r'; break;
+            case 'f': code = '\f'; break;
+            case 'v': code = '\013'; break;
+            case 'a': code = '\007'; break;
+            case 'e': code = '\033'; break;
+
+            /* \OOO */
+            case '0': case '1': case '2': case '3':
+            case '4': case '5': case '6': case '7':
+                p--;
+                code = StringSupport.scanOct(bytes, p, end, end < p + 3 ? end - p : 3);
+                p += StringSupport.octLength(code);
+                break;
+
+            case 'x': /* \xHH */
+                code = StringSupport.scanHex(bytes, p, end, end < p + 2 ? end - p : 2);
+                int len = StringSupport.hexLength(code);
+                if (len < 1) raisePreprocessError("invalid hex escape", mode);
+                p += len;
+                break;
+
+            case 'M': /* \M-X, \M-\C-X, \M-\cX */
+                if (metaPrefix) raisePreprocessError("duplicate meta escape", mode);
+                metaPrefix = true;
+                if (p + 1 < end && bytes[p++] == (byte)'-' && (bytes[p] & 0x80) == 0) {
+                    if (bytes[p] == (byte)'\\') {
+                        p++;
+                        continue;
+                    } else {
+                        code = bytes[p++] & 0xff;
+                        break;
+                    }
+                }
+                raisePreprocessError("too short meta escape", mode);
+
+            case 'C': /* \C-X, \C-\M-X */
+                if (p == end || bytes[p++] != (byte)'-') raisePreprocessError("too short control escape", mode);
+
+            case 'c': /* \cX, \c\M-X */
+                if (ctrlPrefix) raisePreprocessError("duplicate control escape", mode);
+                ctrlPrefix = true;
+                if (p < end && (bytes[p] & 0x80) == 0) {
+                    if (bytes[p] == (byte)'\\') {
+                        p++;
+                        continue;
+                    } else {
+                        code = bytes[p++] & 0xff;
+                        break;
+                    }
+                }
+                raisePreprocessError("too short control escape", mode);
+            default:
+                raisePreprocessError("unexpected escape sequence", mode);
+            } // switch
+            
+            if (code < 0 || code > 0xff) raisePreprocessError("invalid escape code", mode);
+            
+            if (ctrlPrefix) code &= 0x1f;
+            if (metaPrefix) code |= 0x80;
+            
+            to[toP] = (byte)code;
+            return p;
+        } // while
     }
 
     private void check() {
