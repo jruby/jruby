@@ -45,6 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.joni.Matcher;
 import org.joni.NameEntry;
 import org.joni.Option;
@@ -70,6 +71,7 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
+import org.jruby.util.Pack;
 import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
@@ -321,7 +323,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         return 0;
     }
 
-    private int readEscapedByte(byte[]bytes, int p, int end, byte[]to, int toP, ErrorMode mode) {
+    private int readEscapedByte(byte[]to, int toP, byte[]bytes, int p, int end, ErrorMode mode) {
         if (p == end || bytes[p++] == (byte)'\\') raisePreprocessError("too short escaped multibyte character", mode);
 
         boolean metaPrefix = false, ctrlPrefix = false;
@@ -387,15 +389,173 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
             default:
                 raisePreprocessError("unexpected escape sequence", mode);
             } // switch
-            
+
             if (code < 0 || code > 0xff) raisePreprocessError("invalid escape code", mode);
-            
+
             if (ctrlPrefix) code &= 0x1f;
             if (metaPrefix) code |= 0x80;
-            
+
             to[toP] = (byte)code;
             return p;
         } // while
+    }
+
+    private int unescapeEscapedNonAscii(ByteList to, byte[]bytes, int p, int end, Encoding enc, Encoding[]encp, ErrorMode mode) {
+        byte[]chBuf = new byte[enc.maxLength()];
+        int chLen = 0;
+
+        p = readEscapedByte(chBuf, chLen++, bytes, p, end, mode);
+        while (chLen < enc.maxLength() && StringSupport.preciseLength(enc, chBuf, 0, chLen) < -1) { // MBCLEN_NEEDMORE_P
+            p = readEscapedByte(chBuf, chLen++, bytes, p, end, mode);
+        }
+
+        int cl = StringSupport.preciseLength(enc, chBuf, 0, chLen);
+        if (cl == -1) raisePreprocessError("invalid multibyte escape", mode); // MBCLEN_INVALID_P
+
+        if (chLen > 1 || (chBuf[0] & 0x80) != 0) {
+            to.append(chBuf, 0, chLen);
+
+            if (encp[0] == null) {
+                encp[0] = enc;
+            } else if (encp[0] != enc) {
+                raisePreprocessError("escaped non ASCII character in UTF-8 regexp", mode);
+            }
+        } else {
+            Sprintf.sprintf(getRuntime(), to, "\\x%02X", chBuf[0] & 0xff);
+        }
+        return p;
+    }
+
+    private void checkUnicodeRange(int code, ErrorMode mode) {
+        // Unicode is can be only 21 bits long, int is enough
+        if ((0xd800 <= code && code <= 0xdfff) /* Surrogates */ || 0x10ffff < code) {
+            raisePreprocessError("invalid Unicode range", mode);
+        }
+    }
+
+    private void appendUtf8(ByteList to, int code, Encoding[]enc, ErrorMode mode) {
+        checkUnicodeRange(code, mode);
+
+        if (code < 0x80) {
+            Sprintf.sprintf(getRuntime(), to, "\\x%02X", code);
+        } else {
+            to.ensure(to.realSize + 6);
+            to.realSize += Pack.utf8Decode(getRuntime(), to.bytes, to.begin, code);
+            if (enc[0] == null) {
+                enc[0] = UTF8Encoding.INSTANCE;
+            } else if (!(enc[0] instanceof UTF8Encoding)) { // do not load the class if not used
+                raisePreprocessError("UTF-8 character in non UTF-8 regexp", mode);
+            }
+        }
+    }
+    
+    private int unescapeUnicodeList(ByteList to, byte[]bytes, int p, int end, Encoding[]encp, ErrorMode mode) {
+        while (p < end && ASCIIEncoding.INSTANCE.isSpace(bytes[p] & 0xff)) p++;
+
+        boolean hasUnicode = false; 
+        while (true) {
+            int code = StringSupport.scanHex(bytes, p, end, end - p);
+            int len = StringSupport.hexLength(code);
+            if (len == 0) break;
+            if (len > 6) raisePreprocessError("invalid Unicode range", mode);
+            p += len;
+            appendUtf8(to, code, encp, mode);
+            hasUnicode = true;
+            while (p < end && ASCIIEncoding.INSTANCE.isSpace(bytes[p] & 0xff)) p++;
+        }
+
+        if (!hasUnicode) raisePreprocessError("invalid Unicode list", mode); 
+        return p;
+    }
+
+    private int unescapeUnicodeBmp(ByteList to, byte[]bytes, int p, int end, Encoding[]encp, ErrorMode mode) {
+        if (p + 4 > end) raisePreprocessError("invalid Unicode escape", mode);
+        int code = StringSupport.scanHex(bytes, p, end, 4);
+        int len = StringSupport.hexLength(code);
+        if (len != 4) raisePreprocessError("invalid Unicode escape", mode);
+        appendUtf8(to, code, encp, mode);
+        return p + 4;
+    }
+
+    private boolean unescapeNonAscii(ByteList to, byte[]bytes, int p, int end, Encoding enc, Encoding[]encp, ErrorMode mode) {
+        boolean hasProperty = false;
+
+        while (p < end) {
+            int cl = StringSupport.preciseLength(enc, bytes, p, end);
+            if (cl <= 0) raisePreprocessError("invalid multibyte character", mode);
+            if (cl > 1 || (bytes[p] & 0x80) != 0) {
+                to.append(bytes, p, cl);
+                p += cl;
+                if (encp[0] == null) {
+                    encp[0] = enc;
+                } else if (encp[0] != enc) {
+                    raisePreprocessError("non ASCII character in UTF-8 regexp", mode);
+                }
+                continue;
+            }
+            int c;
+            switch (c = bytes[p++] & 0xff) {
+            case '\\':
+                if (p == end) raisePreprocessError("too short escape sequence", mode);
+
+                switch (c = bytes[p++] & 0xff) {
+                case '1': case '2': case '3':
+                case '4': case '5': case '6': case '7': /* \O, \OO, \OOO or backref */
+                    if (StringSupport.scanOct(bytes, p - 1, end, end - (p - 1)) <= 0177) {
+                        to.append('\\').append(c);
+                        break;
+                    }
+
+                case '0': /* \0, \0O, \0OO */
+                case 'x': /* \xHH */
+                case 'c': /* \cX, \c\M-X */
+                case 'C': /* \C-X, \C-\M-X */
+                case 'M': /* \M-X, \M-\C-X, \M-\cX */
+                    p = unescapeEscapedNonAscii(to, bytes, p - 2, end, enc, encp, mode);
+                    break;
+
+                case 'u':
+                    if (p == end) raisePreprocessError("too short escape sequence", mode);
+                    if (bytes[p] == (byte)'{') { /* \\u{H HH HHH HHHH HHHHH HHHHHH ...} */
+                        p++;
+                        p = unescapeUnicodeList(to, bytes, p, end, encp, mode);
+                        if (p == end || bytes[p++] != (byte)'}') raisePreprocessError("invalid Unicode list", mode);
+                    } else { /* \\uHHHH */
+                        p = unescapeUnicodeBmp(to, bytes, p, end, encp, mode);
+                    }
+                    break;
+                case 'p': /* \p{Hiragana} */
+                    if (encp[0] == null) hasProperty = true;
+                    to.append('\\').append(c);
+                    break;
+
+                default:
+                    to.append('\\').append(c);
+                    break;
+                } // inner switch
+                break;
+
+            default:
+                to.append(c);
+            } // switch
+        } // while
+        return hasProperty;
+    }
+
+    private ByteList preprocess(byte[]bytes, int p, int end, Encoding enc, Encoding[]fixedEnc, ErrorMode mode) {
+        ByteList to = new ByteList(end - p);
+
+        if (enc.isAsciiCompatible()) {
+            fixedEnc[0] = null;
+        } else {
+            fixedEnc[0] = enc;
+            to.encoding = enc;
+        }
+
+        boolean hasProperty = unescapeNonAscii(to, bytes, p, end, enc, fixedEnc, mode);
+        if (hasProperty && fixedEnc[0] == null) fixedEnc[0] = enc;
+        if (fixedEnc[0] != null) to.encoding = fixedEnc[0];
+        return to;
     }
 
     private void check() {
