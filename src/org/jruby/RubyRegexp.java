@@ -530,11 +530,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         }
     }
 
-    private void makeRegexp(ByteList bytes, int start, int len, int flags, Encoding enc) {
+    private void makeRegexp(ByteList bytes, int flags, Encoding enc) {
+        int p = bytes.begin;
+        int end = p + bytes.realSize;
+
         try {
-            pattern = new Regex(bytes.bytes, start, start + len, flags, enc, Syntax.DEFAULT, this);
+            pattern = new Regex(bytes.bytes, p, end, flags, enc, Syntax.DEFAULT, this);
         } catch (Exception e) {
-            raiseRegexpError(bytes.bytes, start, len, flags, e.getMessage());
+            raiseRegexpError(bytes.bytes, p, bytes.realSize, flags, e.getMessage());
         }
     }
 
@@ -674,10 +677,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         } else {
             if (quote) {
                 ByteList quoted = quote(bytes, getRuntime().getKCode());
-                makeRegexp(quoted, quoted.begin, quoted.realSize, options & 0xf, kcode.getEncoding());
+                makeRegexp(quoted, options & 0xf, kcode.getEncoding());
                 pattern.setUserOptions(REGEX_QUOTED);
             } else {
-                makeRegexp(bytes, bytes.begin, bytes.realSize, options & 0xf, kcode.getEncoding());
+                makeRegexp(bytes, options & 0xf, kcode.getEncoding());
             }
             cache.put(bytes, pattern);
         }
@@ -932,7 +935,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
 
                 if (bytes[p] == ':' && bytes[p + len - 1] == ')') {
                     try {
-                        new Regex(bytes, ++p, p + (len -= 2) ,Option.DEFAULT, kcode.getEncoding(), Syntax.DEFAULT);
+                        new Regex(bytes, ++p, p + (len -= 2), Option.DEFAULT, kcode.getEncoding(), Syntax.DEFAULT);
                         err = false;
                     } catch (JOniException e) {
                         err = true;
@@ -1048,6 +1051,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
 
     @JRubyMethod(name = "encoding", compat = CompatVersion.RUBY1_9)
     public IRubyObject encoding(ThreadContext context) {
+        check();
         return context.getRuntime().getEncodingService().getEncoding(pattern.getEncoding());
     }
     
