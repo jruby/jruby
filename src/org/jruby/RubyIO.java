@@ -2008,63 +2008,55 @@ public class RubyIO extends RubyObject {
     
     @JRubyMethod(name = "read_nonblock", required = 1, optional = 1)
     public IRubyObject read_nonblock(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.getRuntime();
+        IRubyObject value = getPartial(context, args, true);
 
-        openFile.checkClosed(runtime);
+        if (value.isNil()) throw context.getRuntime().newEOFError();
 
-        if(!(openFile.getMainStream() instanceof ChannelStream)) {
-            // cryptic for the uninitiated...
-            throw runtime.newNotImplementedError("read_nonblock only works with Nio based handlers");
-        }
-        try {
-            int maxLength = RubyNumeric.fix2int(args[0]);
-            if (maxLength < 0) {
-                throw runtime.newArgumentError("negative length " + maxLength + " given");
-            }
-            ByteList buf = ((ChannelStream)openFile.getMainStream()).readnonblock(RubyNumeric.fix2int(args[0]));
-            IRubyObject strbuf = RubyString.newString(runtime, buf == null ? new ByteList(ByteList.NULL_ARRAY) : buf);
-            if(args.length > 1) {
-                args[1].callMethod(context, "<<", strbuf);
-                return args[1];
-            }
-
-            return strbuf;
-        } catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
-        } catch (EOFException e) {
-            return runtime.getNil();
-        } catch (IOException e) {
-            throw runtime.newIOError(e.getMessage());
-        }
+        return value;
     }
+
+
     
     @JRubyMethod(name = "readpartial", required = 1, optional = 1)
     public IRubyObject readpartial(ThreadContext context, IRubyObject[] args) {
+        IRubyObject value = getPartial(context, args, false);
+
+        if (value.isNil()) throw context.getRuntime().newEOFError();
+
+        return value;
+    }
+
+    private IRubyObject getPartial(ThreadContext context, IRubyObject[] args, boolean isNonblocking) {
         Ruby runtime = context.getRuntime();
 
+        // Length to read
+        int length = RubyNumeric.fix2int(args[0]);
+        if (length < 0) throw runtime.newArgumentError("negative length " + length + " given");
+
+        // String/Buffer to read it into
+        IRubyObject stringArg = args.length > 1 ? args[1] : RubyString.newEmptyString(runtime);
+        RubyString string = stringArg.isNil() ? RubyString.newEmptyString(runtime) : stringArg.convertToString();
+        
         openFile.checkClosed(runtime);
 
-        if(!(openFile.getMainStream() instanceof ChannelStream)) {
-            // cryptic for the uninitiated...
+        if (!(openFile.getMainStream() instanceof ChannelStream)) { // cryptic for the uninitiated...
             throw runtime.newNotImplementedError("readpartial only works with Nio based handlers");
         }
+        
         try {
-            int maxLength = RubyNumeric.fix2int(args[0]);
-            if (maxLength < 0) {
-                throw runtime.newArgumentError("negative length " + maxLength + " given");
-            }
-            ByteList buf = ((ChannelStream)openFile.getMainStream()).readpartial(RubyNumeric.fix2int(args[0]));
-            IRubyObject strbuf = RubyString.newString(runtime, buf == null ? new ByteList(ByteList.NULL_ARRAY) : buf);
-            if(args.length > 1) {
-                args[1].callMethod(context, "<<", strbuf);
-                return args[1];
-            }
+            ChannelStream stream = (ChannelStream) openFile.getMainStream();
+            ByteList buf = isNonblocking ? stream.readnonblock(length) : stream.readpartial(length);
+            boolean empty = buf == null || buf.length() == 0;
 
-            return strbuf;
+            string.view(empty ? ByteList.EMPTY_BYTELIST : buf);
+
+            if (stream.feof() && empty) return runtime.getNil();
+
+            return string;
         } catch (BadDescriptorException e) {
             throw runtime.newErrnoEBADFError();
         } catch (EOFException e) {
-            return runtime.getNil();
+            throw runtime.newEOFError(e.getMessage());
         } catch (IOException e) {
             throw runtime.newIOError(e.getMessage());
         }

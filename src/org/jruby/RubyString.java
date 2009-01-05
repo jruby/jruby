@@ -703,7 +703,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         clearCodeRange();
     }
     
-    private final void view(ByteList bytes) {
+    final void view(ByteList bytes) {
         modifyCheck();
 
         value = bytes;
