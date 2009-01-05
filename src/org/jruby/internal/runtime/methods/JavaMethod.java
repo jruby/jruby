@@ -56,6 +56,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args);
         
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -74,6 +75,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name);
         
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -81,6 +83,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             return call(context, self, clazz, name);
         }
         
+        @Override
         public Arity getArity() {return Arity.NO_ARGUMENTS;}
     }
     
@@ -95,8 +98,10 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name);
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg);
         
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -123,16 +128,21 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name);
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg);
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args);
         
         // anything over 1 arg dispatches via [] version
+        @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
             return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1});
         }
+        @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
             return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2});
         }
@@ -161,8 +171,10 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
 
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block);
 
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg, Block block);
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -189,16 +201,20 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
 
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block);
 
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg, Block block);
         
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block);
         
         // anything over 1 arg dispatches via [] version
+        @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
             return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1}, block);
         }
+        @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
             return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2}, block);
         }
@@ -215,10 +231,13 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name);
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg);
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1);
         
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -247,14 +266,19 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name);
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg);
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1);
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args);
         
+        @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
             return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2});
         }
@@ -284,10 +308,13 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
 
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block);
 
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg, Block block);
 
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block);
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -316,14 +343,18 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
 
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block);
 
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg, Block block);
 
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block);
 
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block);
 
+        @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
             return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2}, block);
         }
@@ -340,12 +371,16 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name);
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg);
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1);
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2);
         
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -376,14 +411,19 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name);
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg);
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1);
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2);
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args);
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -413,12 +453,16 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
 
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block);
 
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg, Block block);
 
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block);
 
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block);
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -449,12 +493,16 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
 
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block);
 
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg, Block block);
 
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block);
 
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block);
 
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block);
@@ -471,6 +519,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block);
         
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -478,6 +527,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             return call(context, self, clazz, name, block);
         }
         
+        @Override
         public Arity getArity() {return Arity.NO_ARGUMENTS;}
     }
     
@@ -492,6 +542,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg);
         
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -499,6 +550,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             return call(context, self, clazz, name, args[0]);
         }
         
+        @Override
         public Arity getArity() {return Arity.ONE_ARGUMENT;}
     }
     
@@ -513,8 +565,10 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg);
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1, IRubyObject arg2);
         
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -541,10 +595,13 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg);
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1, IRubyObject arg2);
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3);
         
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -573,6 +630,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg, Block block);
         
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -580,6 +638,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             return call(context, self, clazz, name, args[0], block);
         }
         
+        @Override
         public Arity getArity() {return Arity.ONE_ARGUMENT;}
     }
     
@@ -594,8 +653,10 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block);
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block);
         
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -622,10 +683,13 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block);
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block);
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block);
         
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -650,6 +714,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1, IRubyObject arg2);
         
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -657,6 +722,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             return call(context, self, clazz, name, args[0], args[1]);
         }
         
+        @Override
         public Arity getArity() {return Arity.TWO_ARGUMENTS;}
     }
     
@@ -671,8 +737,10 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1, IRubyObject arg2);
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3);
         
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -699,6 +767,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1, IRubyObject arg2, Block block);
         
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -706,6 +775,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             return call(context, self, clazz, name, args[0], args[1], block);
         }
         
+        @Override
         public Arity getArity() {return Arity.TWO_ARGUMENTS;}
     }
     
@@ -720,6 +790,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3);
         
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -727,6 +798,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             return call(context, self, clazz, name, args[0], args[1], args[2]);
         }
         
+        @Override
         public Arity getArity() {return Arity.THREE_ARGUMENTS;}
     }
     
@@ -741,6 +813,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             super(implementationClass, visibility, methodIndex);
         }
         
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block);
         
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -748,6 +821,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             return call(context, self, clazz, name, args[0], args[1], args[2], block);
         }
         
+        @Override
         public Arity getArity() {return Arity.THREE_ARGUMENTS;}
     }
 
@@ -865,6 +939,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         this.arityValue = arity.getValue();
     }
 
+    @Override
     public Arity getArity() {
         return arity;
     }
