@@ -26,7 +26,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyInstanceConfig.CompileMode;
@@ -40,8 +39,7 @@ import org.jruby.runtime.Visibility;
 public class DynamicMethodFactory {
     public static DynamicMethod newInterpretedMethod(
             Ruby runtime, RubyModule container, String name, StaticScope scope,
-            Node body, ArgsNode argsNode, Visibility visibility,
-            ISourcePosition position) {
+            Node body, ArgsNode argsNode, Visibility visibility, ISourcePosition position) {
 
         if (runtime.getInstanceConfig().getCompileMode() == CompileMode.OFF) {
             if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
@@ -52,8 +50,7 @@ public class DynamicMethodFactory {
                         position);
             }
         } else  {
-            return new DefaultMethod(container, scope, body, argsNode,
-                    visibility, position);
+            return new DefaultMethod(container, scope, body, argsNode, visibility, position);
         }
     }
 }
