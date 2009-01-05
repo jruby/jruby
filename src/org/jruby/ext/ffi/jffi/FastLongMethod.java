@@ -17,7 +17,7 @@ abstract class FastLongMethod extends DynamicMethod {
 
     public FastLongMethod(RubyModule implementationClass, Function function,
             LongResultConverter resultConverter, LongParameterConverter[] paramConverters) {
-        super(implementationClass, Visibility.PUBLIC, CallConfiguration.NO_FRAME_NO_SCOPE);
+        super(implementationClass, Visibility.PUBLIC, CallConfiguration.FrameNoneScopeNone);
         this.resultConverter = resultConverter;
         this.arity = Arity.fixed(paramConverters.length);
         this.function = function;
