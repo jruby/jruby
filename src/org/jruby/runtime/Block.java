@@ -32,7 +32,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -40,7 +39,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *  Internal live representation of a block ({...} or do ... end).
  */
-public class Block {
+public final class Block {
     public enum Type { NORMAL, PROC, LAMBDA, THREAD }
     
     /**
@@ -61,51 +60,16 @@ public class Block {
     /**
      * All Block variables should either refer to a real block or this NULL_BLOCK.
      */
-    public static final Block NULL_BLOCK = new Block() {
-        @Override
-        public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
-                RubyModule klass, boolean aValue) {
-            throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, (IRubyObject)value, "yield called out of block");
-        }
+    public static final Block NULL_BLOCK = new Block(BlockBody.NULL_BODY);
 
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject[] args) {
-            throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(args), "yield called out of block");
-        }
-
-        @Override
-        public IRubyObject yield(ThreadContext context, boolean aValue) {
-            throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, (IRubyObject)null, "yield called out of block");
-        }
-
-        @Override
-        public IRubyObject yield(ThreadContext context, IRubyObject value, boolean aValue) {
-            throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, (IRubyObject)value, "yield called out of block");
-        }
-
-        @Override
-        public IRubyObject yield(ThreadContext context, IRubyObject value) {
-            throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, (IRubyObject)value, "yield called out of block");
-        }
-        
-        @Override
-        public Block cloneBlock() {
-            return this;
-        }
-        
-        @Override
-        public BlockBody getBody() {
-            return BlockBody.NULL_BODY;
-        }
-    };
-    
-    protected Block() {
-        this(null, null);
-    }
-    
     public Block(BlockBody body, Binding binding) {
         this.body = body;
         this.binding = binding;
+    }
+
+    public Block(BlockBody body) {
+        this.body = body;
+        this.binding = null;
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {

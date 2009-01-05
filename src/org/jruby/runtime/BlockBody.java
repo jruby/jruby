@@ -33,6 +33,7 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyArray;
+import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyModule;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.MultipleAsgnNode;
@@ -172,17 +173,17 @@ public abstract class BlockBody implements JumpTarget {
     public static final BlockBody NULL_BODY = new BlockBody(ZERO_ARGS) {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Type type) {
-            return null;
+            throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(args), "yield called out of block");
         }
 
         @Override
         public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
-            return null;
+            throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, (IRubyObject)value, "yield called out of block");
         }
 
         @Override
         public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Type type) {
-            return null;
+            throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, (IRubyObject)value, "yield called out of block");
         }
         
         @Override
