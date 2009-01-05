@@ -64,6 +64,10 @@ public class JFFIInvoker extends org.jruby.ext.ffi.Invoker {
             && FastIntMethodFactory.getFactory().isFastIntMethod(returnType, parameterTypes)) {
             dm = FastIntMethodFactory.getFactory().createMethod(module,
                     function, returnType, parameterTypes);
+        } else if (convention == CallingConvention.DEFAULT
+            && FastLongMethodFactory.getFactory().isFastLongMethod(returnType, parameterTypes)) {
+            dm = FastLongMethodFactory.getFactory().createMethod(module,
+                    function, returnType, parameterTypes);
         } else {
             dm = DefaultMethodFactory.getFactory().createMethod(module,
                     function, returnType, parameterTypes, convention);
