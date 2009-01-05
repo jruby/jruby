@@ -440,7 +440,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
             Sprintf.sprintf(getRuntime(), to, "\\x%02X", code);
         } else {
             to.ensure(to.realSize + 6);
-            to.realSize += Pack.utf8Decode(getRuntime(), to.bytes, to.begin, code);
+            to.realSize += Pack.utf8Decode(getRuntime(), to.bytes, to.begin + to.realSize, code);
             if (enc[0] == null) {
                 enc[0] = UTF8Encoding.INSTANCE;
             } else if (!(enc[0] instanceof UTF8Encoding)) { // do not load the class if not used

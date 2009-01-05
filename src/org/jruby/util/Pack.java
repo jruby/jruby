@@ -39,7 +39,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.NonStrictUTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
@@ -1045,44 +1044,43 @@ public class Pack {
      *
      */
     public static int utf8Decode(Ruby runtime, byte[]to, int p, int code) {
-        long c = code & 0xffffffffL; // int is not enough for GB18030 and Mojikyo
-        if (c <= 0x7f) {
-            to[p] = (byte)c;
+        if (code <= 0x7f) {
+            to[p] = (byte)code;
             return 1;
         }
-        if (c <= 0x7ff) {
-            to[p + 0] = (byte)(((c >>> 6) & 0xff) | 0xc0);
-            to[p + 1] = (byte)((c & 0x3f) | 0x80);
+        if (code <= 0x7ff) {
+            to[p + 0] = (byte)(((code >>> 6) & 0xff) | 0xc0);
+            to[p + 1] = (byte)((code & 0x3f) | 0x80);
             return 2;
         }
-        if (c <= 0xffff) {
-            to[p + 0] = (byte)(((c >>> 12) & 0xff) | 0xe0);
-            to[p + 1] = (byte)(((c >>> 6) & 0x3f) | 0x80);
-            to[p + 2] = (byte)((c & 0x3f) | 0x80);
+        if (code <= 0xffff) {
+            to[p + 0] = (byte)(((code >>> 12) & 0xff) | 0xe0);
+            to[p + 1] = (byte)(((code >>> 6) & 0x3f) | 0x80);
+            to[p + 2] = (byte)((code & 0x3f) | 0x80);
             return 3;
         }
-        if (c <= 0x1fffff) {
-            to[p + 0] = (byte)(((c >>> 18) & 0xff) | 0xf0);
-            to[p + 1] = (byte)(((c >>> 12) & 0x3f) | 0x80);
-            to[p + 2] = (byte)(((c >>> 6) & 0x3f) | 0x80);
-            to[p + 3] = (byte)((c & 0x3f) | 0x80);
+        if (code <= 0x1fffff) {
+            to[p + 0] = (byte)(((code >>> 18) & 0xff) | 0xf0);
+            to[p + 1] = (byte)(((code >>> 12) & 0x3f) | 0x80);
+            to[p + 2] = (byte)(((code >>> 6) & 0x3f) | 0x80);
+            to[p + 3] = (byte)((code & 0x3f) | 0x80);
             return 4;
         }
-        if (c <= 0x3ffffff) {
-            to[p + 0] = (byte)(((c >>> 24) & 0xff) | 0xf8);
-            to[p + 1] = (byte)(((c >>> 18) & 0x3f) | 0x80);
-            to[p + 2] = (byte)(((c >>> 12) & 0x3f) | 0x80);
-            to[p + 3] = (byte)(((c >>> 6) & 0x3f) | 0x80);
-            to[p + 4] = (byte)((c & 0x3f) | 0x80);
+        if (code <= 0x3ffffff) {
+            to[p + 0] = (byte)(((code >>> 24) & 0xff) | 0xf8);
+            to[p + 1] = (byte)(((code >>> 18) & 0x3f) | 0x80);
+            to[p + 2] = (byte)(((code >>> 12) & 0x3f) | 0x80);
+            to[p + 3] = (byte)(((code >>> 6) & 0x3f) | 0x80);
+            to[p + 4] = (byte)((code & 0x3f) | 0x80);
             return 5;
         }
-        if (c <= 0x7fffffff) {
-            to[p + 0] = (byte)(((c >>> 30) & 0xff) | 0xfc);
-            to[p + 1] = (byte)(((c >>> 24) & 0x3f) | 0x80);
-            to[p + 2] = (byte)(((c >>> 18) & 0x3f) | 0x80);
-            to[p + 3] = (byte)(((c >>> 12) & 0x3f) | 0x80);
-            to[p + 4] = (byte)(((c >>> 6) & 0x3f) | 0x80);
-            to[p + 5] = (byte)((c & 0x3f) | 0x80);
+        if (code <= 0x7fffffff) {
+            to[p + 0] = (byte)(((code >>> 30) & 0xff) | 0xfc);
+            to[p + 1] = (byte)(((code >>> 24) & 0x3f) | 0x80);
+            to[p + 2] = (byte)(((code >>> 18) & 0x3f) | 0x80);
+            to[p + 3] = (byte)(((code >>> 12) & 0x3f) | 0x80);
+            to[p + 4] = (byte)(((code >>> 6) & 0x3f) | 0x80);
+            to[p + 5] = (byte)((code & 0x3f) | 0x80);
             return 6;
         }
         throw runtime.newRangeError("pack(U): value out of range");
@@ -1726,10 +1724,6 @@ public class Pack {
                     }
                     break;
                 case 'U' :
-                    NonStrictUTF8Encoding enc = NonStrictUTF8Encoding.INSTANCE;
-                    byte[] packedBytes = new byte[enc.maxLength() * occurrences];
-                    int index = 0;
-                    
                     while (occurrences-- > 0) {
                         if (listSize-- <= 0) {
                            throw runtime.newArgumentError(sTooFew);
@@ -1742,9 +1736,8 @@ public class Pack {
                             throw runtime.newRangeError("pack(U): value out of range");
                         }
 
-                        int length = enc.codeToMbc(code, packedBytes, index);
-                        result.append(packedBytes, index, length);
-                        index += length;
+                        result.ensure(result.realSize + 6);
+                        result.realSize += utf8Decode(runtime, result.bytes, result.begin + result.realSize, code);
                     }
                     break;
                 case 'w' :
