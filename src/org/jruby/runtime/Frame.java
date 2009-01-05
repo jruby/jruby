@@ -206,7 +206,6 @@ public final class Frame implements JumpTarget {
         this.block = block;
         this.visibility = Visibility.PUBLIC;
         this.isBindingFrame = false;
-        this.backrefAndLastline = null;
     }
 
     /**
@@ -227,7 +226,6 @@ public final class Frame implements JumpTarget {
         this.line = line;
         this.visibility = Visibility.PRIVATE;
         this.isBindingFrame = false;
-        this.backrefAndLastline = null;
     }
 
     /**
