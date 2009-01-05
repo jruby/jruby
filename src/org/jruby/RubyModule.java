@@ -65,9 +65,12 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.AliasMethod;
+import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.FullFunctionCallbackMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
+import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOne;
+import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.internal.runtime.methods.MethodMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.SimpleCallbackMethod;
@@ -1191,18 +1194,11 @@ public class RubyModule extends RubyObject {
         final String variableName = ("@" + internedName).intern();
         if (readable) {
             // FIXME: should visibility be set to current visibility?
-            addMethod(internedName, new JavaMethod(this, PUBLIC) {
-                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                    if (args.length != 0) Arity.raiseArgumentError(runtime, args.length, 0, 0);
-
+            addMethod(internedName, new JavaMethodZero(this, PUBLIC, CallConfiguration.FrameNoneScopeNone) {
+                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
                     IRubyObject variable = self.getInstanceVariables().fastGetInstanceVariable(variableName);
 
                     return variable == null ? runtime.getNil() : variable;
-                }
-
-                @Override
-                public Arity getArity() {
-                    return Arity.noArguments();
                 }
             });
             callMethod(context, "method_added", runtime.fastNewSymbol(internedName));
@@ -1210,17 +1206,9 @@ public class RubyModule extends RubyObject {
         if (writeable) {
             internedName = (internedName + "=").intern();
             // FIXME: should visibility be set to current visibility?
-            addMethod(internedName, new JavaMethod(this, PUBLIC) {
-                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                    // ENEBO: Can anyone get args to be anything but length 1?
-                    if (args.length != 1) Arity.raiseArgumentError(runtime, args.length, 1, 1);
-
-                    return self.getInstanceVariables().fastSetInstanceVariable(variableName, args[0]);
-                }
-
-                @Override
-                public Arity getArity() {
-                    return Arity.singleArgument();
+            addMethod(internedName, new JavaMethodOne(this, PUBLIC, CallConfiguration.FrameNoneScopeNone) {
+                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1) {
+                    return self.getInstanceVariables().fastSetInstanceVariable(variableName, arg1);
                 }
             });
             callMethod(context, "method_added", runtime.fastNewSymbol(internedName));

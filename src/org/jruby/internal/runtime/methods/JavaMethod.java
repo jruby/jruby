@@ -68,6 +68,9 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         public JavaMethodZero(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
+        public JavaMethodZero(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
+            super(implementationClass, visibility, callConfig);
+        }
         public JavaMethodZero(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
             super(implementationClass, visibility, callConfig, staticScope, arity);
         }
@@ -535,6 +538,9 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         public JavaMethodOne(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
+        public JavaMethodOne(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
+            super(implementationClass, visibility, callConfig);
+        }
         public JavaMethodOne(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, StaticScope staticScope, Arity arity) {
             super(implementationClass, visibility, callConfig, staticScope, arity);
         }
@@ -826,7 +832,11 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
     }
 
     public JavaMethod(RubyModule implementationClass, Visibility visibility) {
-        super(implementationClass, visibility, CallConfiguration.FrameFullScopeNone);
+        this(implementationClass, visibility, CallConfiguration.FrameFullScopeNone);
+    }
+
+    public JavaMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
+        super(implementationClass, visibility, callConfig);
         this.staticScope = null;
     }
 
