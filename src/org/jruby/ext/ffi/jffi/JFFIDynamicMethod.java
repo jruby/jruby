@@ -15,7 +15,7 @@ abstract class JFFIDynamicMethod extends DynamicMethod {
     protected final FunctionInvoker functionInvoker;
 
     public JFFIDynamicMethod(RubyModule implementationClass, Arity arity, Function function, FunctionInvoker functionInvoker) {
-        super(implementationClass, Visibility.PUBLIC, CallConfiguration.NO_FRAME_NO_SCOPE);
+        super(implementationClass, Visibility.PUBLIC, CallConfiguration.FrameNoneScopeNone);
         this.arity = arity;
         this.function = function;
         this.functionInvoker = functionInvoker;

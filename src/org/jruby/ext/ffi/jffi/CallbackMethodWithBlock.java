@@ -24,7 +24,7 @@ final class CallbackMethodWithBlock extends DynamicMethod {
     
     public CallbackMethodWithBlock(RubyModule implementationClass, Function function, 
             FunctionInvoker functionInvoker, ParameterMarshaller[] marshallers, int cbindex) {
-        super(implementationClass, Visibility.PUBLIC, CallConfiguration.FRAME_AND_SCOPE);
+        super(implementationClass, Visibility.PUBLIC, CallConfiguration.FrameFullScopeFull);
         this.function = function;
         this.functionInvoker = functionInvoker;
         this.marshallers = marshallers;

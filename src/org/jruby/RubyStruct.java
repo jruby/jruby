@@ -229,7 +229,7 @@ public class RubyStruct extends RubyObject {
             final String memberName = args[i].asJavaString();
             // if we are storing a name as well, index is one too high for values
             final int index = (name == null && !nilName) ? i : i - 1;
-            newStruct.addMethod(memberName, new DynamicMethod(newStruct, Visibility.PUBLIC, CallConfiguration.NO_FRAME_NO_SCOPE) {
+            newStruct.addMethod(memberName, new DynamicMethod(newStruct, Visibility.PUBLIC, CallConfiguration.FrameNoneScopeNone) {
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
                     Arity.checkArgumentCount(self.getRuntime(), args, 0, 0);
@@ -246,7 +246,7 @@ public class RubyStruct extends RubyObject {
                     return this;
                 }
             });
-            newStruct.addMethod(memberName + "=", new DynamicMethod(newStruct, Visibility.PUBLIC, CallConfiguration.NO_FRAME_NO_SCOPE) {
+            newStruct.addMethod(memberName + "=", new DynamicMethod(newStruct, Visibility.PUBLIC, CallConfiguration.FrameNoneScopeNone) {
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
                     Arity.checkArgumentCount(self.getRuntime(), args, 1, 1);

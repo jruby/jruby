@@ -32,6 +32,7 @@ package org.jruby.compiler;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsNode;
@@ -94,6 +95,7 @@ import org.jruby.ast.WhileNode;
 import org.jruby.ast.YieldNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.ast.types.INameNode;
+import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.util.SafePropertyAccessor;
 
 /**
@@ -156,6 +158,47 @@ public class ASTInspector {
     
     public void disable() {
         flags = 0xFFFFFFFF;
+    }
+
+    public CallConfiguration getCallConfig() {
+        if (hasFrameAwareMethods() || hasClosure() || !(noFrame() || RubyInstanceConfig.FRAMELESS_COMPILE_ENABLED)) {
+            // We're doing normal framed compilation or the method needs a frame
+            if (hasClosure() || hasScopeAwareMethods()) {
+                // The method also needs a scope, do both
+                return CallConfiguration.FrameFullScopeFull;
+            } else {
+                if (hasConstant() || hasMethod() || hasClass() || hasClassVar()) {
+                    // The method doesn't need a scope, but has static scope needs; use a dummy scope
+                    return CallConfiguration.FrameFullScopeDummy;
+                } else {
+                    // The method doesn't need a scope or static scope; frame only
+                    return CallConfiguration.FrameFullScopeNone;
+                }
+            }
+        } else {
+            if (hasClosure() || hasScopeAwareMethods()) {
+                // TODO: call config with scope but no frame
+                if (RubyInstanceConfig.FASTEST_COMPILE_ENABLED) {
+                    return CallConfiguration.FrameNoneScopeFull;
+                } else {
+                    return CallConfiguration.FrameBacktraceScopeFull;
+                }
+            } else {
+                if (hasConstant() || hasMethod() || hasClass() || hasClassVar()) {
+                    if (RubyInstanceConfig.FASTEST_COMPILE_ENABLED || noFrame()) {
+                        return CallConfiguration.FrameNoneScopeDummy;
+                    } else {
+                        return CallConfiguration.FrameBacktraceScopeDummy;
+                    }
+                } else {
+                    if (RubyInstanceConfig.FASTEST_COMPILE_ENABLED || noFrame()) {
+                        return CallConfiguration.FrameNoneScopeNone;
+                    } else {
+                        return CallConfiguration.FrameBacktraceScopeNone;
+                    }
+                }
+            }
+        }
     }
     
     public static final boolean ENABLED = SafePropertyAccessor.getProperty("jruby.astInspector.enabled", "true").equals("true");

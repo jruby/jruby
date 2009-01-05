@@ -752,7 +752,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
     }
 
     public JavaMethod(RubyModule implementationClass, Visibility visibility) {
-        super(implementationClass, visibility, CallConfiguration.FRAME_ONLY);
+        super(implementationClass, visibility, CallConfiguration.FrameFullScopeNone);
         this.staticScope = null;
     }
 
@@ -764,7 +764,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
     }
 
     public JavaMethod(RubyModule implementationClass, Visibility visibility, int methodIndex) {
-        super(implementationClass, visibility, CallConfiguration.FRAME_ONLY);
+        super(implementationClass, visibility, CallConfiguration.FrameFullScopeNone);
         this.staticScope = null;
     }
     
@@ -787,7 +787,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             return null;
         }
     }
-    
+
     protected final void preFrameAndScope(ThreadContext context, IRubyObject self, String name, Block block) {
         context.preMethodFrameAndScope(implementationClass, name, self, block, staticScope);
     }
@@ -803,14 +803,24 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
     protected final void preScopeOnly(ThreadContext context) {
         context.preMethodScopeOnly(implementationClass, staticScope);
     }
+
+    protected final void preNoFrameDummyScope(ThreadContext context) {
+        context.preMethodNoFrameAndDummyScope(implementationClass, staticScope);
+    }
     
     protected final void preBacktraceOnly(ThreadContext context, String name) {
         context.preMethodBacktraceOnly(name);
+    }
+
+    protected final void preBacktraceDummyScope(ThreadContext context, String name) {
+        context.preMethodBacktraceDummyScope(implementationClass, name, staticScope);
     }
     
     protected final void preBacktraceAndScope(ThreadContext context, String name) {
         context.preMethodBacktraceAndScope(name, implementationClass, staticScope);
     }
+
+    protected final void preNoop() {}
     
     protected final static void postFrameAndScope(ThreadContext context) {
         context.postMethodFrameAndScope();
@@ -823,14 +833,24 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
     protected final static void postScopeOnly(ThreadContext context) {
         context.postMethodScopeOnly();
     }
+
+    protected final static void postNoFrameDummyScope(ThreadContext context) {
+        context.postMethodScopeOnly();
+    }
     
     protected final static void postBacktraceOnly(ThreadContext context) {
         context.postMethodBacktraceOnly();
+    }
+
+    protected final static void postBacktraceDummyScope(ThreadContext context) {
+        context.postMethodBacktraceDummyScope();
     }
     
     protected final static void postBacktraceAndScope(ThreadContext context) {
         context.postMethodBacktraceAndScope();
     }
+
+    protected final static void postNoop(ThreadContext context) {}
     
     protected final void callTrace(ThreadContext context, String name) {
         context.trace(RubyEvent.C_CALL, name, getImplementationClass());

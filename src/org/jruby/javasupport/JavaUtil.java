@@ -851,7 +851,7 @@ public class JavaUtil {
             // no matter what method is called on the interface
             RubyClass singletonClass = rubyObject.getSingletonClass();
 
-            singletonClass.addMethod("method_missing", new DynamicMethod(singletonClass, Visibility.PUBLIC, CallConfiguration.NO_FRAME_NO_SCOPE) {
+            singletonClass.addMethod("method_missing", new DynamicMethod(singletonClass, Visibility.PUBLIC, CallConfiguration.FrameNoneScopeNone) {
 
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {

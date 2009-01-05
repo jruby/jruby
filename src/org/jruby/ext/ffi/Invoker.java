@@ -89,7 +89,7 @@ public abstract class Invoker extends RubyObject {
         return context.getRuntime().getNil();
     }
     protected DynamicMethod createDynamicMethod(RubyModule module) {
-        return new DynamicMethod(module, Visibility.PUBLIC, CallConfiguration.NO_FRAME_NO_SCOPE) {
+        return new DynamicMethod(module, Visibility.PUBLIC, CallConfiguration.FrameNoneScopeNone) {
 
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {

@@ -336,12 +336,14 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     Label catchReturnJump = new Label();
                     Label catchRedoJump = new Label();
 
-                    if (callConfig != CallConfiguration.FRAME_AND_DUMMY_SCOPE) {
+                    boolean heapScoped = callConfig.scoping() == Scoping.Full;
+                    
+                    if (heapScoped) {
                         mv.trycatch(tryBegin, tryEnd, catchReturnJump, p(JumpException.ReturnJump.class));
                     }
                     mv.trycatch(tryBegin, tryEnd, catchRedoJump, p(JumpException.RedoJump.class));
                     mv.trycatch(tryBegin, tryEnd, doFinally, null);
-                    if (callConfig != CallConfiguration.FRAME_AND_DUMMY_SCOPE) {
+                    if (heapScoped) {
                         mv.trycatch(catchReturnJump, doReturnFinally, doFinally, null);
                     }
                     mv.trycatch(catchRedoJump, doRedoFinally, doFinally, null);
@@ -376,7 +378,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     }
 
                     // return jump handling
-                    if (callConfig != CallConfiguration.FRAME_AND_DUMMY_SCOPE) {
+                    if (heapScoped) {
                         mv.label(catchReturnJump);
                         {
                             mv.aload(0);
@@ -913,56 +915,84 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         return cw;
     }
 
+    private void invokeCallConfigPre(SkinnyMethodAdapter mv, String superClass, int specificArity, boolean block, CallConfiguration callConfig) {
+        // invoke pre method stuff
+        if (callConfig.isNoop()) return;
+
+        prepareForPre(mv, specificArity, block, callConfig);
+        mv.invokevirtual(superClass, getPreMethod(callConfig), getPreSignature(callConfig));
+    }
+
     private void invokeCallConfigPost(SkinnyMethodAdapter mv, String superClass, CallConfiguration callConfig) {
-        if (callConfig != CallConfiguration.NO_FRAME_NO_SCOPE) {
-            mv.aload(1);
-            if (callConfig == CallConfiguration.FRAME_AND_SCOPE) {
-                mv.invokestatic(superClass, "postFrameAndScope", sig(void.class, params(ThreadContext.class)));
-            } else if (callConfig == CallConfiguration.FRAME_AND_DUMMY_SCOPE) {
-                mv.invokestatic(superClass, "postFrameAndScope", sig(void.class, params(ThreadContext.class)));
-            } else if (callConfig == CallConfiguration.FRAME_ONLY) {
-                mv.invokestatic(superClass, "postFrameOnly", sig(void.class, params(ThreadContext.class)));
-            } else if (callConfig == CallConfiguration.SCOPE_ONLY) {
-                mv.invokestatic(superClass, "postScopeOnly", sig(void.class, params(ThreadContext.class)));
-            } else if (callConfig == CallConfiguration.BACKTRACE_ONLY) {
-                mv.invokestatic(superClass, "postBacktraceOnly", sig(void.class, params(ThreadContext.class)));
-            } else if (callConfig == CallConfiguration.BACKTRACE_AND_SCOPE) {
-                mv.invokestatic(superClass, "postBacktraceAndScope", sig(void.class, params(ThreadContext.class)));
-            }
+        if (callConfig.isNoop()) return;
+
+        mv.aload(1);
+        mv.invokestatic(superClass, getPostMethod(callConfig), sig(void.class, params(ThreadContext.class)));
+    }
+
+    private void prepareForPre(SkinnyMethodAdapter mv, int specificArity, boolean block, CallConfiguration callConfig) {
+        if (callConfig.isNoop()) return;
+        
+        mv.aload(0);
+        mv.aload(THREADCONTEXT_INDEX); // tc
+        
+        switch (callConfig.framing()) {
+        case Full:
+            mv.aload(RECEIVER_INDEX); // self
+            mv.aload(NAME_INDEX); // name
+            loadBlockForPre(mv, specificArity, block);
+            break;
+        case Backtrace:
+            mv.aload(NAME_INDEX); // name
+            break;
+        case None:
+            break;
+        default: throw new RuntimeException("Unknown call configuration");
         }
     }
 
-    private void invokeCallConfigPre(SkinnyMethodAdapter mv, String superClass, int specificArity, boolean block, CallConfiguration callConfig) {
-        // invoke pre method stuff
-        if (callConfig != CallConfiguration.NO_FRAME_NO_SCOPE) {
-            mv.aload(0); 
-            mv.aload(THREADCONTEXT_INDEX); // tc
+    private String getPreMethod(CallConfiguration callConfig) {
+        switch (callConfig) {
+        case FrameFullScopeFull: return "preFrameAndScope";
+        case FrameFullScopeDummy: return "preFrameAndDummyScope";
+        case FrameFullScopeNone: return "preFrameOnly";
+        case FrameBacktraceScopeFull: return "preBacktraceAndScope";
+        case FrameBacktraceScopeDummy: return "preBacktraceDummyscope";
+        case FrameBacktraceScopeNone:  return "preBacktraceOnly";
+        case FrameNoneScopeFull: return "preScopeOnly";
+        case FrameNoneScopeDummy: return "preNoFrameDummyScope";
+        case FrameNoneScopeNone: return "preNoop";
+        default: throw new RuntimeException("Unknown call configuration");
+        }
+    }
 
+    private String getPreSignature(CallConfiguration callConfig) {
+        switch (callConfig) {
+        case FrameFullScopeFull: return sig(void.class, params(ThreadContext.class, IRubyObject.class, String.class, Block.class));
+        case FrameFullScopeDummy: return sig(void.class, params(ThreadContext.class, IRubyObject.class, String.class, Block.class));
+        case FrameFullScopeNone: return sig(void.class, params(ThreadContext.class, IRubyObject.class, String.class, Block.class));
+        case FrameBacktraceScopeFull: return sig(void.class, params(ThreadContext.class, String.class));
+        case FrameBacktraceScopeDummy: return sig(void.class, params(ThreadContext.class, String.class));
+        case FrameBacktraceScopeNone:  return sig(void.class, params(ThreadContext.class, String.class));
+        case FrameNoneScopeFull: return sig(void.class, params(ThreadContext.class));
+        case FrameNoneScopeDummy: return sig(void.class, params(ThreadContext.class));
+        case FrameNoneScopeNone: return sig(void.class);
+        default: throw new RuntimeException("Unknown call configuration");
+        }
+    }
 
-            if (callConfig == CallConfiguration.FRAME_AND_SCOPE) {
-                mv.aload(RECEIVER_INDEX); // self
-                mv.aload(NAME_INDEX); // name
-                loadBlockForPre(mv, specificArity, block);
-                mv.invokevirtual(superClass, "preFrameAndScope", sig(void.class, params(ThreadContext.class, IRubyObject.class, String.class, Block.class)));
-            } else if (callConfig == CallConfiguration.FRAME_AND_DUMMY_SCOPE) {
-                mv.aload(RECEIVER_INDEX); // self
-                mv.aload(NAME_INDEX); // name
-                loadBlockForPre(mv, specificArity, block);
-                mv.invokevirtual(superClass, "preFrameAndDummyScope", sig(void.class, params(ThreadContext.class, IRubyObject.class, String.class, Block.class)));
-            } else if (callConfig == CallConfiguration.FRAME_ONLY) {
-                mv.aload(RECEIVER_INDEX); // self
-                mv.aload(NAME_INDEX); // name
-                loadBlockForPre(mv, specificArity, block);
-                mv.invokevirtual(superClass, "preFrameOnly", sig(void.class, params(ThreadContext.class, IRubyObject.class, String.class, Block.class)));
-            } else if (callConfig == CallConfiguration.SCOPE_ONLY) {
-                mv.invokevirtual(superClass, "preScopeOnly", sig(void.class, params(ThreadContext.class)));
-            } else if (callConfig == CallConfiguration.BACKTRACE_ONLY) {
-                mv.aload(NAME_INDEX); // name
-                mv.invokevirtual(superClass, "preBacktraceOnly", sig(void.class, params(ThreadContext.class, String.class)));
-            } else if (callConfig == CallConfiguration.BACKTRACE_AND_SCOPE) {
-                mv.aload(NAME_INDEX); // name
-                mv.invokevirtual(superClass, "preBacktraceAndScope", sig(void.class, params(ThreadContext.class, String.class)));
-            }
+    public static String getPostMethod(CallConfiguration callConfig) {
+        switch (callConfig) {
+        case FrameFullScopeFull: return "postFrameAndScope";
+        case FrameFullScopeDummy: return "postFrameAndScope";
+        case FrameFullScopeNone: return "postFrameOnly";
+        case FrameBacktraceScopeFull: return "postBacktraceAndScope";
+        case FrameBacktraceScopeDummy: return "postBacktraceDummyscope";
+        case FrameBacktraceScopeNone:  return "postBacktraceOnly";
+        case FrameNoneScopeFull: return "postScopeOnly";
+        case FrameNoneScopeDummy: return "postNoFrameDummyScope";
+        case FrameNoneScopeNone: return "postNoop";
+        default: throw new RuntimeException("Unknown call configuration");
         }
     }
 

@@ -21,101 +21,96 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author headius
  */
-public abstract class CallConfiguration {
-    public static final CallConfiguration FRAME_AND_SCOPE = new CallConfiguration() {
-        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
+public enum CallConfiguration {
+    FrameFullScopeFull(Framing.Full, Scoping.Full) {
+        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
             context.preMethodFrameAndScope(implementer, name, self, block, scope);
         }
-        
-        public void post(ThreadContext context) {
+        void post(ThreadContext context) {
             context.postMethodFrameAndScope();
         }
-        
-        public String name() {
-            return "FRAME_AND_SCOPE";
-        }
-    };
-    public static final CallConfiguration FRAME_AND_DUMMY_SCOPE = new CallConfiguration() {
-        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
+    },
+    FrameFullScopeDummy(Framing.Full, Scoping.Dummy) {
+        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
             context.preMethodFrameAndDummyScope(implementer, name, self, block, scope);
         }
-        
-        public void post(ThreadContext context) {
+        void post(ThreadContext context) {
             context.postMethodFrameAndScope();
         }
-        
-        public String name() {
-            return "FRAME_AND_DUMMY_SCOPE";
-        }
-    };
-    public static final CallConfiguration FRAME_ONLY = new CallConfiguration() {
-        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
+    },
+    FrameFullScopeNone (Framing.Full, Scoping.None) {
+        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
             context.preMethodFrameOnly(implementer, name, self, block);
         }
-        
-        public void post(ThreadContext context) {
+        void post(ThreadContext context) {
             context.postMethodFrameOnly();
         }
-        
-        public String name() {
-            return "FRAME_ONLY";
-        }
-    };
-    public static final CallConfiguration SCOPE_ONLY = new CallConfiguration() {
-        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
-            context.preMethodScopeOnly(implementer, scope);
-        }
-        
-        public void post(ThreadContext context) {
-            context.postMethodScopeOnly();
-        }
-        
-        public String name() {
-            return "SCOPE_ONLY";
-        }
-    };
-    public static final CallConfiguration NO_FRAME_NO_SCOPE = new CallConfiguration() {
-        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
-        }
-        
-        public void post(ThreadContext context) {
-        }
-        
-        public String name() {
-            return "NO_FRAME_NO_SCOPE";
-        }
-        
-        @Override
-        public boolean isNoop() {
-            return true;
-        }
-    };
-    public static final CallConfiguration BACKTRACE_ONLY = new CallConfiguration() {
-        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
-            context.preMethodBacktraceOnly(name);
-        }
-        
-        public void post(ThreadContext context) {
-            context.postMethodBacktraceOnly();
-        }
-        
-        public String name() {
-            return "BACKTRACE_ONLY";
-        }
-    };
-    public static final CallConfiguration BACKTRACE_AND_SCOPE = new CallConfiguration() {
-        public void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
+    },
+    FrameBacktraceScopeFull (Framing.Backtrace, Scoping.Full) {
+        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
             context.preMethodBacktraceAndScope(name, implementer, scope);
         }
-        
-        public void post(ThreadContext context) {
+        void post(ThreadContext context) {
             context.postMethodBacktraceAndScope();
         }
-        
-        public String name() {
-            return "BACKTRACE_AND_SCOPE";
+    },
+    FrameBacktraceScopeDummy (Framing.Backtrace, Scoping.Dummy) {
+        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
+            context.preMethodBacktraceDummyScope(implementer, name, scope);
+        }
+        void post(ThreadContext context) {
+            context.postMethodBacktraceDummyScope();
+        }
+    },
+    FrameBacktraceScopeNone (Framing.Backtrace, Scoping.None) {
+        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
+            context.preMethodBacktraceOnly(name);
+        }
+        void post(ThreadContext context) {
+            context.postMethodBacktraceOnly();
+        }
+    },
+    FrameNoneScopeFull(Framing.None, Scoping.Full) {
+        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
+            context.preMethodScopeOnly(implementer, scope);
+        }
+        void post(ThreadContext context) {
+            context.postMethodScopeOnly();
+        }
+    },
+    FrameNoneScopeDummy(Framing.None, Scoping.Dummy) {
+        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
+            context.preMethodNoFrameAndDummyScope(implementer, scope);
+        }
+        void post(ThreadContext context) {
+            context.postMethodScopeOnly();
+        }
+    },
+    FrameNoneScopeNone(Framing.None, Scoping.None) {
+        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
+        }
+        void post(ThreadContext context) {
         }
     };
+
+    @Deprecated
+    public static final CallConfiguration FRAME_AND_SCOPE = FrameFullScopeFull;
+    @Deprecated
+    public static final CallConfiguration FRAME_AND_DUMMY_SCOPE = FrameFullScopeDummy;
+    @Deprecated
+    public static final CallConfiguration FRAME_ONLY = FrameFullScopeNone;
+    @Deprecated
+    public static final CallConfiguration BACKTRACE_AND_SCOPE = FrameBacktraceScopeFull;
+    @Deprecated
+    public static final CallConfiguration BACKTRACE_DUMMY_SCOPE = FrameBacktraceScopeNone;
+    @Deprecated
+    public static final CallConfiguration BACKTRACE_ONLY = FrameBacktraceScopeNone;
+    @Deprecated
+    public static final CallConfiguration SCOPE_ONLY = FrameNoneScopeFull;
+    @Deprecated
+    public static final CallConfiguration NO_FRAME_DUMMY_SCOPE = FrameNoneScopeDummy;
+    @Deprecated
+    public static final CallConfiguration NO_FRAME_NO_SCOPE = FrameNoneScopeNone;
     
     public static CallConfiguration getCallConfigByAnno(JRubyMethod anno) {
         return getCallConfig(anno.frame(), anno.scope(), anno.backtrace());
@@ -124,30 +119,35 @@ public abstract class CallConfiguration {
     public static CallConfiguration getCallConfig(boolean frame, boolean scope, boolean backtrace) {
         if (frame) {
             if (scope) {
-                return FRAME_AND_SCOPE;
+                return FrameFullScopeFull;
             } else {
-                return FRAME_ONLY;
+                return FrameFullScopeNone;
             }
         } else if (scope) {
             if (backtrace) {
-                return BACKTRACE_AND_SCOPE;
+                return FrameBacktraceScopeFull;
             } else {
-                return SCOPE_ONLY;
+                return FrameNoneScopeFull;
             }
         } else if (backtrace) {
-            return BACKTRACE_ONLY;
+            return FrameBacktraceScopeNone;
         } else {
-            return NO_FRAME_NO_SCOPE;
+            return FrameNoneScopeNone;
         }
     }
 
-    private CallConfiguration() {
+    private final Framing framing;
+    private final Scoping scoping;
+
+    CallConfiguration(Framing framing, Scoping scoping) {
+        this.framing = framing;
+        this.scoping = scoping;
     }
+
+    public final Framing framing() {return framing;}
+    public final Scoping scoping() {return scoping;}
     
-    public abstract void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget);
-    public abstract void post(ThreadContext context);
-    public abstract String name();
-    public boolean isNoop() {
-        return false;
-    }
+    abstract void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget);
+    abstract void post(ThreadContext context);
+    boolean isNoop() { return framing == Framing.None && scoping == Scoping.None; }
 }

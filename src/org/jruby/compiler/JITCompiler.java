@@ -220,7 +220,7 @@ public class JITCompiler implements JITCompilerMBean {
                 } else {
                     methodCompiler = asmCompiler.startMethod("__file__", "__file__", null, staticScope, inspector);
                     methodCompiler.loadNil();
-                    jitCallConfig = CallConfiguration.NO_FRAME_NO_SCOPE;
+                    jitCallConfig = CallConfiguration.FrameNoneScopeNone;
                 }
             }
             methodCompiler.endBody();
@@ -231,10 +231,10 @@ public class JITCompiler implements JITCompilerMBean {
                 // if we're not doing any of the operations that still need
                 // a scope, use the scopeless config
                 if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
-                    jitCallConfig = CallConfiguration.FRAME_AND_SCOPE;
+                    jitCallConfig = CallConfiguration.FrameFullScopeFull;
                 } else {
                     // switch to a slightly faster call config
-                    jitCallConfig = CallConfiguration.FRAME_AND_DUMMY_SCOPE;
+                    jitCallConfig = CallConfiguration.FrameFullScopeDummy;
                 }
             }
             

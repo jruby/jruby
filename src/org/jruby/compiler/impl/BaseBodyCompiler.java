@@ -2195,37 +2195,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.pushInt(scope.getRequiredArgs());
         method.pushInt(scope.getOptionalArgs());
         method.pushInt(scope.getRestArg());
-
-        if (inspector.hasFrameAwareMethods() || !(inspector.noFrame() || RubyInstanceConfig.FRAMELESS_COMPILE_ENABLED)) {
-            // We're doing normal framed compilation or the method needs a frame
-            if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
-                // The method also needs a scope, do both
-                method.getstatic(p(CallConfiguration.class), CallConfiguration.FRAME_AND_SCOPE.name(), ci(CallConfiguration.class));
-            } else {
-                if (inspector.hasConstant() || inspector.hasMethod() || inspector.hasClass() || inspector.hasClassVar()) {
-                    // The method doesn't need a scope, but has static scope needs; use a dummy scope
-                    method.getstatic(p(CallConfiguration.class), CallConfiguration.FRAME_AND_DUMMY_SCOPE.name(), ci(CallConfiguration.class));
-                } else {
-                    // The method doesn't need a scope or static scope; frame only
-                    method.getstatic(p(CallConfiguration.class), CallConfiguration.FRAME_ONLY.name(), ci(CallConfiguration.class));
-                }
-            }
-        } else {
-            if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
-                // TODO: call config with scope but no frame
-                if (RubyInstanceConfig.FASTEST_COMPILE_ENABLED) {
-                    method.getstatic(p(CallConfiguration.class), CallConfiguration.SCOPE_ONLY.name(), ci(CallConfiguration.class));
-                } else {
-                    method.getstatic(p(CallConfiguration.class), CallConfiguration.BACKTRACE_AND_SCOPE.name(), ci(CallConfiguration.class));
-                }
-            } else {
-                if (RubyInstanceConfig.FASTEST_COMPILE_ENABLED || inspector.noFrame()) {
-                    method.getstatic(p(CallConfiguration.class), CallConfiguration.NO_FRAME_NO_SCOPE.name(), ci(CallConfiguration.class));
-                } else {
-                    method.getstatic(p(CallConfiguration.class), CallConfiguration.BACKTRACE_ONLY.name(), ci(CallConfiguration.class));
-                }
-            }
-        }
+        method.getstatic(p(CallConfiguration.class), inspector.getCallConfig().name(), ci(CallConfiguration.class));
 
         if (receiver != null) {
             invokeUtilityMethod("defs", sig(IRubyObject.class,

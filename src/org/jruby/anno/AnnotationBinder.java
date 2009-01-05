@@ -16,8 +16,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.jruby.CompatVersion;
 
+import org.jruby.CompatVersion;
 import org.jruby.util.CodegenUtils;
 import static java.util.Collections.*;
 import static com.sun.mirror.util.DeclarationVisitors.*;
@@ -462,7 +462,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
             }
             return actualRequired;
         }
-
+    
         public static String getCallConfigNameByAnno(JRubyMethod anno) {
             return getCallConfigName(anno.frame(), anno.scope(), anno.backtrace());
         }
@@ -470,20 +470,20 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
         public static String getCallConfigName(boolean frame, boolean scope, boolean backtrace) {
             if (frame) {
                 if (scope) {
-                    return "FRAME_AND_SCOPE";
+                    return "FrameFullScopeFull";
                 } else {
-                    return "FRAME_ONLY";
+                    return "FrameFullScopeNone";
                 }
             } else if (scope) {
                 if (backtrace) {
-                    return "BACKTRACE_AND_SCOPE";
+                    return "FrameBacktraceScopeFull";
                 } else {
-                    return "SCOPE_ONLY";
+                    return "FrameNoneScopeFull";
                 }
             } else if (backtrace) {
-                return "BACKTRACE_ONLY";
+                return "FrameBacktraceScopeNone";
             } else {
-                return "NO_FRAME_NO_SCOPE";
+                return "FrameNoneScopeNone";
             }
         }
     }

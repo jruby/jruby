@@ -55,7 +55,7 @@ public class InterpretedMethod extends DynamicMethod implements JumpTarget, Meth
 
     public InterpretedMethod(RubyModule implementationClass, StaticScope staticScope, Node body,
             ArgsNode argsNode, Visibility visibility, ISourcePosition position) {
-        super(implementationClass, visibility, CallConfiguration.FRAME_AND_SCOPE);
+        super(implementationClass, visibility, CallConfiguration.FrameFullScopeFull);
         this.body = body;
         this.staticScope = staticScope;
         this.argsNode = argsNode;

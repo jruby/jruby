@@ -17,7 +17,7 @@ abstract class FastIntMethod extends DynamicMethod {
 
     public FastIntMethod(RubyModule implementationClass, Function function,
             IntResultConverter resultConverter, IntParameterConverter[] paramConverters) {
-        super(implementationClass, Visibility.PUBLIC, CallConfiguration.NO_FRAME_NO_SCOPE);
+        super(implementationClass, Visibility.PUBLIC, CallConfiguration.FrameNoneScopeNone);
         this.resultConverter = resultConverter;
         this.arity = Arity.fixed(paramConverters.length);
         this.function = function;

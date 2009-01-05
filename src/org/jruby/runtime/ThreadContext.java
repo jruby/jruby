@@ -1106,6 +1106,16 @@ public final class ThreadContext {
         pushScope(staticScope.getDummyScope());
         pushRubyClass(implementationClass);
     }
+
+    public void preMethodNoFrameAndDummyScope(RubyModule clazz, StaticScope staticScope) {
+        RubyModule implementationClass = staticScope.getModule();
+        // FIXME: This is currently only here because of some problems with IOOutputStream writing to a "bare" runtime without a proper scope
+        if (implementationClass == null) {
+            implementationClass = clazz;
+        }
+        pushScope(staticScope.getDummyScope());
+        pushRubyClass(implementationClass);
+    }
     
     public void postMethodFrameAndScope() {
         popRubyClass();
@@ -1151,9 +1161,26 @@ public final class ThreadContext {
     public void preMethodBacktraceOnly(String name) {
         pushBacktraceFrame(name);
     }
+
+    public void preMethodBacktraceDummyScope(RubyModule clazz, String name, StaticScope staticScope) {
+        pushBacktraceFrame(name);
+        RubyModule implementationClass = staticScope.getModule();
+        // FIXME: This is currently only here because of some problems with IOOutputStream writing to a "bare" runtime without a proper scope
+        if (implementationClass == null) {
+            implementationClass = clazz;
+        }
+        pushScope(staticScope.getDummyScope());
+        pushRubyClass(implementationClass);
+    }
     
     public void postMethodBacktraceOnly() {
         popFrame();
+    }
+
+    public void postMethodBacktraceDummyScope() {
+        popFrame();
+        popRubyClass();
+        popScope();
     }
     
     public void prepareTopLevel(RubyClass objectClass, IRubyObject topSelf) {
