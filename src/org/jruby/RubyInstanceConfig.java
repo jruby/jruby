@@ -173,23 +173,23 @@ public class RubyInstanceConfig {
 
     private String jrubyHome;
 
-    public static final boolean FASTEST_COMPILE_ENABLED
+    public static boolean FASTEST_COMPILE_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.compile.fastest");
-    public static final boolean FASTOPS_COMPILE_ENABLED
+    public static boolean FASTOPS_COMPILE_ENABLED
             = FASTEST_COMPILE_ENABLED
             || SafePropertyAccessor.getBoolean("jruby.compile.fastops");
-    public static final boolean FRAMELESS_COMPILE_ENABLED
+    public static boolean FRAMELESS_COMPILE_ENABLED
             = FASTEST_COMPILE_ENABLED
             || SafePropertyAccessor.getBoolean("jruby.compile.frameless");
-    public static final boolean POSITIONLESS_COMPILE_ENABLED
+    public static boolean POSITIONLESS_COMPILE_ENABLED
             = FASTEST_COMPILE_ENABLED
             || SafePropertyAccessor.getBoolean("jruby.compile.positionless");
-    public static final boolean THREADLESS_COMPILE_ENABLED
+    public static boolean THREADLESS_COMPILE_ENABLED
             = FASTEST_COMPILE_ENABLED
             || SafePropertyAccessor.getBoolean("jruby.compile.threadless");
-    public static final boolean FASTCASE_COMPILE_ENABLED =
+    public static boolean FASTCASE_COMPILE_ENABLED =
             SafePropertyAccessor.getBoolean("jruby.compile.fastcase");
-    public static final boolean LAZYHANDLES_COMPILE = SafePropertyAccessor.getBoolean("jruby.compile.lazyHandles", false);
+    public static boolean LAZYHANDLES_COMPILE = SafePropertyAccessor.getBoolean("jruby.compile.lazyHandles", false);
     public static final boolean FORK_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.fork.enabled");
     public static final boolean POOLING_ENABLED
@@ -952,6 +952,14 @@ public class RubyInstanceConfig {
                         break FOR;
                     } else if (argument.equals("--bytecode")) {
                         setShowBytecode(true);
+                        break FOR;
+                    } else if (argument.equals("--fast")) {
+                        compileMode = CompileMode.FORCE;
+                        FASTEST_COMPILE_ENABLED = true;
+                        FASTOPS_COMPILE_ENABLED = true;
+                        FRAMELESS_COMPILE_ENABLED = true;
+                        POSITIONLESS_COMPILE_ENABLED = true;
+                        FASTCASE_COMPILE_ENABLED = true;
                         break FOR;
                     } else {
                         if (argument.equals("--")) {
