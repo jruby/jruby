@@ -149,8 +149,10 @@ public class RubyException extends RubyObject {
     public static final int RUBY_FRAMED = 2;
     public static final int RUBY_COMPILED = 3;
     public static final int RUBY_HYBRID = 4;
+
+    public static final int RAW_FRAME_CROP_COUNT = 10;
     
-    public static final int TRACE_TYPE;
+    public static int TRACE_TYPE;
     
     static {
         String style = SafePropertyAccessor.getProperty("jruby.backtrace.style", "ruby_framed").toLowerCase();

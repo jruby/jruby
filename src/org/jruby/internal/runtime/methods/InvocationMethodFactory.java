@@ -208,7 +208,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 if (generatedClass == null) {
                     String typePath = p(scriptClass);
                     String mnamePath = typePath + "Invoker" + method + arity;
-                    ClassWriter cw = createCompiledCtor(mnamePath,sup);
+                    ClassWriter cw;
+                    int dotIndex = typePath.lastIndexOf('/');
+                    cw = createCompiledCtor(mnamePath, typePath.substring(dotIndex + 1) + "#" + method.substring(method.lastIndexOf('$') + 1), sup);
                     SkinnyMethodAdapter mv = null;
                     String signature = null;
                     boolean specificArity = false;
@@ -680,7 +682,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     break;
                 }
                 if (superClass == null) throw new RuntimeException("invalid multi combination");
-                ClassWriter cw = createJavaMethodCtor(generatedClassPath, superClass);
+                int dotIndex = desc1.declaringClassName.lastIndexOf('.');
+                ClassWriter cw = createJavaMethodCtor(generatedClassPath, desc1.declaringClassName.substring(dotIndex + 1) + "#" + desc1.name, superClass);
 
                 for (JavaMethodDescriptor desc: descs) {
                     int specificArity = -1;
@@ -783,7 +786,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                 String superClass = p(selectSuperClass(specificArity, block));
 
-                ClassWriter cw = createJavaMethodCtor(generatedClassPath, superClass);
+                int dotIndex = desc.declaringClassName.lastIndexOf('.');
+                ClassWriter cw = createJavaMethodCtor(generatedClassPath, desc.declaringClassName.substring(dotIndex + 1) + "#" + desc.name, superClass);
                 SkinnyMethodAdapter mv = null;
 
                 mv = beginMethod(cw, "call", specificArity, block);
@@ -881,10 +885,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    private ClassWriter createCompiledCtor(String namePath, String sup) throws Exception {
+    private ClassWriter createCompiledCtor(String namePath, String shortPath, String sup) throws Exception {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, sup, null);
-        cw.visitSource(namePath.replace('.', '/') + ".gen", null);
+        cw.visitSource(shortPath, null);
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);
@@ -897,7 +901,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         return cw;
     }
 
-    private ClassWriter createJavaMethodCtor(String namePath, String sup) throws Exception {
+    private ClassWriter createJavaMethodCtor(String namePath, String shortPath, String sup) throws Exception {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, sup, null);
         cw.visitSource(namePath.replace('.', '/') + ".gen", null);

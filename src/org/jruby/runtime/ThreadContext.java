@@ -42,6 +42,7 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyException;
 import org.jruby.RubyObject;
 import org.jruby.RubyKernel.CatchTarget;
 import org.jruby.RubyModule;
@@ -864,7 +865,7 @@ public final class ThreadContext {
     }
     
     private static String createRubyBacktraceString(StackTraceElement element) {
-        return element.getClassName() + ":" + element.getLineNumber() + ":in `" + element.getMethodName() + "'";
+        return element.getFileName() + ":" + element.getLineNumber() + ":in `" + element.getMethodName() + "'";
     }
     
     public static String createRawBacktraceStringFromThrowable(Throwable t) {
@@ -894,10 +895,15 @@ public final class ThreadContext {
     
     public static IRubyObject createRawBacktrace(Ruby runtime, StackTraceElement[] stackTrace, boolean filter) {
         RubyArray traceArray = RubyArray.newArray(runtime);
-        for (int i = 17; i < stackTrace.length; i++) {
+        for (int i = RubyException.RAW_FRAME_CROP_COUNT; i < stackTrace.length; i++) {
             StackTraceElement element = stackTrace[i];
             
-            if (filter && element.getClassName().startsWith("org.jruby")) continue;
+            if (filter) {
+                if (element.getClassName().startsWith("org.jruby") ||
+                        element.getLineNumber() < 0) {
+                    continue;
+                }
+            }
             RubyString str = RubyString.newString(runtime, createRubyBacktraceString(element));
             traceArray.append(str);
         }

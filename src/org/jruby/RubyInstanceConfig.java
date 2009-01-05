@@ -960,6 +960,7 @@ public class RubyInstanceConfig {
                         FRAMELESS_COMPILE_ENABLED = true;
                         POSITIONLESS_COMPILE_ENABLED = true;
                         FASTCASE_COMPILE_ENABLED = true;
+                        RubyException.TRACE_TYPE = RubyException.RAW;
                         break FOR;
                     } else {
                         if (argument.equals("--")) {
