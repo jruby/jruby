@@ -590,7 +590,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         }
 
         RubyString src = args[0].convertToString();
-        RubyString dst = RubyString.newString(runtime, quote(src.getByteList(), code));
+        RubyString dst = RubyString.newString(runtime, quote(src.getByteList(), code.getEncoding()));
         dst.infectBy(src);
         return dst;
     }
@@ -598,21 +598,18 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     /** rb_reg_quote
      *
      */
-    public static ByteList quote(ByteList str, KCode kcode) {
-        ByteList bs = str;
-        int s = bs.begin;
-        int send = s + bs.length();
-        Encoding enc = kcode.getEncoding();
-        meta_found: do {
-            for(; s < send; s++) {
-                int c = bs.bytes[s] & 0xff;
-                int l = enc.length(bs.bytes, s, send);
-                if (l != 1) {
-                    int n = l;
-                    while (n-- > 0 && s < send) {
-                        s++;
-                    }
-                    s--;
+    private static ByteList quote(ByteList bs, Encoding enc) {
+        int p = bs.begin;
+        int end = p + bs.realSize;
+        byte[]bytes = bs.bytes;
+
+        metaFound: do {
+            for(; p < end; p++) {
+                int c = bytes[p] & 0xff;
+                int cl = enc.length(bytes, p, end);
+                if (cl != 1) {
+                    while (cl-- > 0 && p < end) p++;
+                    p--;
                     continue;
                 }
                 switch (c) {
@@ -622,60 +619,43 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
                 case '?': case '+': case '^': case '$':
                 case ' ': case '#':
                 case '\t': case '\f': case '\n': case '\r':
-                    break meta_found;
+                    break metaFound;
                 }
             }
             return bs;
         } while (false);
-        ByteList b1 = new ByteList(send * 2);
-        System.arraycopy(bs.bytes, bs.begin, b1.bytes, b1.begin, s - bs.begin);
-        int tix = s - bs.begin;
 
-        for(; s < send; s++) {
-            int c = bs.bytes[s] & 0xff;
-            int l = enc.length(bs.bytes, s, send);
-            if (l != 1) {
-                int n = l;
-                while (n-- > 0 && s < send) {
-                    b1.bytes[tix++] = bs.bytes[s++];
-                }
-                s--;
+        ByteList result = new ByteList(end * 2);
+        byte[]obytes = result.bytes;
+        int op = p - bs.begin;
+        System.arraycopy(bytes, bs.begin, obytes, 0, op);
+
+        for(; p < end; p++) {
+            int c = bytes[p] & 0xff;
+            int cl = enc.length(bytes, p, end);
+            if (cl != 1) {
+                while (cl-- > 0 && p < end) obytes[op++] = bytes[p++];
+                p--;
                 continue;
             }
 
-            switch(c) {
+            switch (c) {
             case '[': case ']': case '{': case '}':
             case '(': case ')': case '|': case '-':
             case '*': case '.': case '\\':
             case '?': case '+': case '^': case '$':
-            case '#':
-                b1.bytes[tix++] = '\\';
-                break;
-            case ' ':
-                b1.bytes[tix++] = '\\';
-                b1.bytes[tix++] = ' ';
-                continue;
-            case '\t':
-                b1.bytes[tix++] = '\\';
-                b1.bytes[tix++] = 't';
-                continue;
-            case '\n':
-                b1.bytes[tix++] = '\\';
-                b1.bytes[tix++] = 'n';
-                continue;
-            case '\r':
-                b1.bytes[tix++] = '\\';
-                b1.bytes[tix++] = 'r';
-                continue;
-            case '\f':
-                b1.bytes[tix++] = '\\';
-                b1.bytes[tix++] = 'f';
-                continue;
+            case '#': obytes[op++] = '\\'; break;
+            case ' ': obytes[op++] = '\\'; obytes[op++] = ' '; continue;
+            case '\t':obytes[op++] = '\\'; obytes[op++] = 't'; continue;
+            case '\n':obytes[op++] = '\\'; obytes[op++] = 'n'; continue;
+            case '\r':obytes[op++] = '\\'; obytes[op++] = 'r'; continue;
+            case '\f':obytes[op++] = '\\'; obytes[op++] = 'f'; continue;
             }
-            b1.bytes[tix++] = (byte)c;
+            obytes[op++] = (byte)c;
         }
-        b1.realSize = tix;
-        return b1;
+
+        result.realSize = op;
+        return result;
     }
 
     /**
@@ -925,8 +905,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
             pattern = pat;
         } else {
             if (quote) {
-                ByteList quoted = quote(bytes, getRuntime().getKCode());
-                makeRegexp(quoted, options & 0xf, kcode.getEncoding());
+                makeRegexp(quote(bytes, getRuntime().getKCode().getEncoding()), options & 0xf, kcode.getEncoding());
                 pattern.setUserOptions(REGEX_QUOTED);
             } else {
                 makeRegexp(bytes, options & 0xf, kcode.getEncoding());
