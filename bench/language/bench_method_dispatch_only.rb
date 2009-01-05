@@ -5,7 +5,6 @@ def foo
 end
 
 def invoking
-  a = []; 
   i = 0;
   while i < 100000
     foo; foo; foo; foo; foo; foo; foo; foo; foo; foo;
