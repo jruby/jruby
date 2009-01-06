@@ -1,1 +1,0 @@
-fails(JRUBY-3275):ARGF.binmode returns self

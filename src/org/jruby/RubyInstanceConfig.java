@@ -12,6 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2007, 2008 Nick Sieger <nicksieger@gmail.com>
+ * Copyright (C) 2009 Joseph LaFata <joe@quibb.org>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -168,6 +169,7 @@ public class RubyInstanceConfig {
     private boolean shouldCheckSyntax = false;
     private String inputFieldSeparator = null;
     private boolean managementEnabled = true;
+    private String inPlaceBackupExtension = null;
 
     private int safeLevel = 0;
 
@@ -264,7 +266,7 @@ public class RubyInstanceConfig {
             compatVersion = CompatVersion.RUBY1_9;
             compileMode = compileMode.OFF;
         } else {
-            System.err.println("Compatibility version `" + compatString + "' invalid; use RUBY1_8 or RUBY1_9. Using RUBY1_8.");
+            error.println("Compatibility version `" + compatString + "' invalid; use RUBY1_8 or RUBY1_9. Using RUBY1_8.");
             compatVersion = CompatVersion.RUBY1_8;
         }
 
@@ -351,7 +353,7 @@ public class RubyInstanceConfig {
                 .append("  -d              set debugging flags (set $DEBUG to true)\n")
                 .append("  -e 'command'    one line of script. Several -e's allowed. Omit [programfile]\n")
                 .append("  -Fpattern       split() pattern for autosplit (-a)\n")
-                //.append("  -i[extension]   edit ARGV files in place (make backup if extension supplied)\n")
+                .append("  -i[extension]   edit ARGV files in place (make backup if extension supplied)\n")
                 .append("  -Idirectory     specify $LOAD_PATH directory (may be used more than once)\n")
                 .append("  -J[java option] pass an option on to the JVM (e.g. -J-Xmx512m)\n")
                 .append("                    use --properties to list JRuby properties\n")
@@ -791,9 +793,10 @@ public class RubyInstanceConfig {
                     shouldPrintUsage = true;
                     shouldRunInterpreter = false;
                     break;
-                // FIXME: -i flag not supported
-//                    case 'i' :
-//                        break;
+                case 'i' :
+                    inPlaceBackupExtension = grabOptionalValue();
+                    if(inPlaceBackupExtension == null) inPlaceBackupExtension = "";
+                    break FOR;
                 case 'I':
                     String s = grabValue(getArgumentError("-I must be followed by a directory name to add to lib path"));
                     String[] ls = s.split(java.io.File.pathSeparator);
@@ -1215,6 +1218,10 @@ public class RubyInstanceConfig {
 
     public ClassCache getClassCache() {
         return classCache;
+    }
+
+    public String getInPlaceBackupExtention() {
+        return inPlaceBackupExtension;
     }
 
     public void setClassCache(ClassCache classCache) {

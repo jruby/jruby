@@ -16,7 +16,7 @@
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2007 Ola Bini <ola@ologix.com>
- * Copyright (C) 2008 Joseph LaFata <joe@quibb.org>
+ * Copyright (C) 2008-2009 Joseph LaFata <joe@quibb.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -32,9 +32,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.File;
+import java.io.IOException;
 import static org.jruby.RubyEnumerator.enumeratorize;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.posix.FileStat;
+import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -53,8 +58,8 @@ public class RubyArgsFile {
         public boolean startedProcessing = false; 
 
         public boolean nextArgsFile(ThreadContext context) {
-
             RubyArray args = (RubyArray)runtime.getGlobalVariables().get("$*");
+
             if (args.getLength() == 0) {
                 if (!startedProcessing) { 
                     currentFile = runtime.getGlobalVariables().get("$stdin");
@@ -71,15 +76,22 @@ public class RubyArgsFile {
             IRubyObject arg = args.shift(context);
             RubyString filename = (RubyString)((RubyObject)arg).to_s();
             ByteList filenameBytes = filename.getByteList();
-            if(!filename.op_equal(context, (RubyString) runtime.getGlobalVariables().get("$FILENAME")).isTrue()) {
+            if (!filename.op_equal(context, (RubyString) runtime.getGlobalVariables().get("$FILENAME")).isTrue()) {
                 runtime.defineReadonlyVariable("$FILENAME", filename);
             }
 
             if (filenameBytes.length() == 1 && filenameBytes.get(0) == '-') {
                 currentFile = runtime.getGlobalVariables().get("$stdin");
             } else {
-                currentFile = RubyFile.open(context, runtime.getFile(), 
-                        new IRubyObject[] {filename.strDup(context.getRuntime())}, Block.NULL_BLOCK); 
+                currentFile = RubyFile.open(context, runtime.getFile(), new IRubyObject[]{filename}, Block.NULL_BLOCK);
+                String extension = runtime.getInstanceConfig().getInPlaceBackupExtention();
+                if (extension != null) {
+                    if (Platform.IS_WINDOWS) {
+                        inplaceEditWindows(context, filename.asJavaString(), extension);
+                    } else {
+                        inplaceEdit(context, filename.asJavaString(), extension);
+                    }
+                }
                 minLineNumber = currentLineNumber;
                 currentFile.callMethod(context, "lineno=", context.getRuntime().newFixnum(currentLineNumber));
             }
@@ -95,6 +107,54 @@ public class RubyArgsFile {
                 recv.dataWrapStruct(data);
             }
             return data;
+        }
+
+        private void createNewFile(File file) {
+            try {
+                file.createNewFile();
+            } catch (IOException ex) {
+                throw runtime.newIOErrorFromException(ex);
+            }
+        }
+
+        private void inplaceEditWindows(ThreadContext context, String filename, String extension) throws RaiseException {
+            File file = new File(filename);
+
+            if (!extension.equals("")) {
+                String backup = filename + extension;
+                File backupFile = new File(backup);
+
+                ((RubyIO) currentFile).close(); // we can't rename a file while it's open in windows
+                backupFile.delete();
+                file.renameTo(backupFile);
+                currentFile = (RubyIO) RubyFile.open(context, runtime.getFile(), //reopen
+                        new IRubyObject[]{runtime.newString(backup)}, Block.NULL_BLOCK);
+            } else {
+                throw runtime.newIOError("Windows doesn't support inplace editing without a backup");
+            }
+
+            createNewFile(file);
+
+            runtime.getGlobalVariables().set("$stdout", (RubyIO) RubyFile.open(context, runtime.getFile(),
+                    new IRubyObject[]{runtime.newString(filename), runtime.newString("w")}, Block.NULL_BLOCK));
+        }
+
+        private void inplaceEdit(ThreadContext context, String filename, String extension) throws RaiseException {
+            File file = new File(filename);
+            FileStat stat = runtime.getPosix().stat(filename);
+
+            if (!extension.equals("")) {
+                file.renameTo(new File(filename + extension));
+            } else {
+                file.delete();
+            }
+
+            createNewFile(file);
+
+            runtime.getPosix().chmod(filename, stat.mode());
+            runtime.getPosix().chown(filename, stat.uid(), stat.gid());
+            runtime.getGlobalVariables().set("$stdout", (RubyIO) RubyFile.open(context, runtime.getFile(),
+                    new IRubyObject[]{runtime.newString(filename), runtime.newString("w")}, Block.NULL_BLOCK));
         }
     }    
     
@@ -283,6 +343,8 @@ public class RubyArgsFile {
         if(data.currentFile == null && !data.nextArgsFile(context)) {
             return recv;
         }
+        if (!((RubyIO)data.currentFile).isClosed()) ((RubyIO)data.currentFile).close();
+
         data.currentFile = null;
         data.currentLineNumber = 0;
         return recv;
@@ -304,7 +366,8 @@ public class RubyArgsFile {
             throw context.getRuntime().newArgumentError("no stream");
         }
         
-        return ((RubyIO)data.currentFile).binmode();
+        ((RubyIO)data.currentFile).binmode();
+        return recv;
     }
 
     @JRubyMethod(name = "lineno")

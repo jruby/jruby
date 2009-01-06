@@ -1639,13 +1639,18 @@ public class RubyIO extends RubyObject {
         return this;
     }
     
-    /** Closes the IO.
-     * 
-     * @return The IO.
-     */
     @JRubyMethod(name = "closed?")
     public RubyBoolean closed_p(ThreadContext context) {
-        return context.getRuntime().newBoolean(openFile.getMainStream() == null && openFile.getPipeStream() == null);
+        return context.getRuntime().newBoolean(isClosed());
+    }
+
+    /**
+     * Is this IO closed
+     * 
+     * @return true if closed
+     */
+    public boolean isClosed() {
+        return openFile.getMainStream() == null && openFile.getPipeStream() == null;
     }
 
     /** 
