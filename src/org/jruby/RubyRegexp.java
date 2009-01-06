@@ -1314,7 +1314,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     @JRubyMethod(name = "encoding", compat = CompatVersion.RUBY1_9)
     public IRubyObject encoding(ThreadContext context) {
-        return context.getRuntime().getEncodingService().getEncoding(str.encoding);
+        return context.getRuntime().getEncodingService().getEncoding(pattern.getEncoding());
     }
 
     @JRubyMethod(name = "fixed_encoding?", compat = CompatVersion.RUBY1_9)
