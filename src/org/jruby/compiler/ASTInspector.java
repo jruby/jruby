@@ -122,6 +122,7 @@ public class ASTInspector {
     public static final int ZSUPER = 0x10000; // makes a zero-argument super call
     public static final int CONSTANT = 0x20000; // accesses or sets constants
     public static final int CLASS_VAR = 0x40000; // accesses or sets class variables
+    public static final int SUPER = 0x80000; // makes normal super call
     
     private int flags;
     
@@ -661,6 +662,7 @@ public class ASTInspector {
             SuperNode superNode = (SuperNode)node;
             inspect(superNode.getArgsNode());
             inspect(superNode.getIterNode());
+            setFlag(SUPER);
             break;
         case SVALUENODE:
             inspect(((SValueNode)node).getValue());
@@ -756,7 +758,7 @@ public class ASTInspector {
     public boolean hasFrameAwareMethods() {
         return getFlag(
                 FRAME_AWARE | FRAME_BLOCK | FRAME_CLASS | FRAME_NAME | FRAME_SELF | FRAME_VISIBILITY |
-                CLOSURE | EVAL | BACKREF | LASTLINE | ZSUPER);
+                CLOSURE | EVAL | BACKREF | LASTLINE | ZSUPER | SUPER);
     }
 
     public boolean hasScopeAwareMethods() {
