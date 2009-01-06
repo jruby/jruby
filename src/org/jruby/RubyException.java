@@ -290,7 +290,7 @@ public class RubyException extends RubyObject {
                     printStackTraceLine(errorStream, stackTraceLine);
                 }
 
-                if (!debug && i == RubyException.TRACE_HEAD && elements.length > RubyException.TRACE_MAX) {
+                if (!debug && TRACE_TYPE != RAW && i == RubyException.TRACE_HEAD && elements.length > RubyException.TRACE_MAX) {
                     int hiddenLevels = elements.length - RubyException.TRACE_HEAD - RubyException.TRACE_TAIL;
                             errorStream.print("\t ... " + hiddenLevels + " levels...\n");
                     i = elements.length - RubyException.TRACE_TAIL;
