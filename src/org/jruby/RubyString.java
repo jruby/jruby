@@ -1393,12 +1393,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "match", compat = CompatVersion.RUBY1_8)
     public IRubyObject match(ThreadContext context, IRubyObject pattern) {
-        return getPattern(pattern, false).callMethod(context, "match", this);
+        return getPattern(pattern).callMethod(context, "match", this);
     }
 
     @JRubyMethod(name = "match", frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject match19(ThreadContext context, IRubyObject pattern, Block block) {
-        IRubyObject result = getPattern(pattern, false).callMethod(context, "match", this);
+        IRubyObject result = getPattern(pattern).callMethod(context, "match", this);
         return block.isGiven() ? block.yield(context, result) : result;
     }
 
@@ -2253,7 +2253,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "sub!", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject sub_bang(ThreadContext context, IRubyObject arg0, Block block) {
-        if (block.isGiven()) return subBangIter(context, getPattern(arg0, true), block);
+        if (block.isGiven()) return subBangIter(context, getQuotedPattern(arg0), block);
         throw context.getRuntime().newArgumentError(1, 2);
     }
 
@@ -2262,7 +2262,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "sub!", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject sub_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return subBangNoIter(context, getPattern(arg0, true), arg1.convertToString());
+        return subBangNoIter(context, getQuotedPattern(arg0), arg1.convertToString());
     }
 
     private IRubyObject subBangIter(ThreadContext context, RubyRegexp rubyRegex, Block block) {
@@ -2346,14 +2346,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "sub!", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
     public IRubyObject sub_bang19(ThreadContext context, IRubyObject arg0, Block block) {
-        if (block.isGiven()) return subBangIter19(context, getPattern(arg0, true), null, block);
+        if (block.isGiven()) return subBangIter19(context, getQuotedPattern(arg0), null, block);
         throw context.getRuntime().newArgumentError(1, 2);
     }
 
     @JRubyMethod(name = "sub!", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
     public IRubyObject sub_bang19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         IRubyObject hash = TypeConverter.convertToTypeWithCheck(arg1, context.getRuntime().getHash(), "to_hash");
-        RubyRegexp regexp = getPattern(arg0, true);
+        RubyRegexp regexp = getQuotedPattern(arg0);
         if (hash.isNil()) {
             return subBangNoIter19(context, regexp, arg1.convertToString());
         } else {
@@ -2526,7 +2526,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private final IRubyObject gsub(ThreadContext context, IRubyObject arg0, Block block, final boolean bang) {
         if (block.isGiven()) {
-            return gsubCommon(context, bang, getPattern(arg0, true), block, null, false);
+            return gsubCommon(context, bang, getQuotedPattern(arg0), block, null, false);
         } else {
             throw context.getRuntime().newArgumentError("wrong number of arguments (1 for 2)");
         }
@@ -2534,7 +2534,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private final IRubyObject gsub(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block, final boolean bang) {
         RubyString repl = arg1.convertToString();
-        return gsubCommon(context, bang, getPattern(arg0, true), block, repl, repl.isTaint());
+        return gsubCommon(context, bang, getQuotedPattern(arg0), block, repl, repl.isTaint());
     }
 
     private IRubyObject gsubCommon(ThreadContext context, final boolean bang, RubyRegexp rubyRegex, Block block, RubyString repl, boolean tainted) {
@@ -3687,7 +3687,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     private RubyArray regexSplit(ThreadContext context, IRubyObject pat, boolean limit, int lim, int i) {
         Ruby runtime = context.getRuntime();
 
-        final Regex regex = getPattern(pat, true).getPattern();
+        final Regex regex = getQuotedPattern(pat).getPattern();
 
         int begin = value.begin;
         final Matcher matcher = regex.matcher(value.bytes, begin, begin + value.realSize);
@@ -3803,23 +3803,24 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return result;
     }
 
+    
+    private ByteList getBytesForPattern(IRubyObject obj) {
+        if (obj instanceof RubyString) return ((RubyString)obj).value;
+        IRubyObject val = obj.checkStringType();
+        if (val.isNil()) throw getRuntime().newTypeError("wrong argument type " + obj.getMetaClass() + " (expected Regexp)");
+        return ((RubyString)val).value;
+    }
     /** get_pat
      * 
      */
-    private final RubyRegexp getPattern(IRubyObject obj, boolean quote) {
-        if (obj instanceof RubyRegexp) {
-            return (RubyRegexp)obj;
-        } else if (!(obj instanceof RubyString)) {
-            IRubyObject val = obj.checkStringType();
-            if (val.isNil()) throw getRuntime().newTypeError("wrong argument type " + obj.getMetaClass() + " (expected Regexp)");
-            obj = val; 
-        }
+    private RubyRegexp getPattern(IRubyObject obj) {
+        if (obj instanceof RubyRegexp) return (RubyRegexp)obj;
+        return RubyRegexp.newRegexp(getRuntime(), getBytesForPattern(obj));
+    }
 
-        if (quote) {
-            return RubyRegexp.newQuotedRegexp(getRuntime(), ((RubyString)obj).value, 0);
-        } else {
-            return RubyRegexp.newRegexp(getRuntime(), ((RubyString)obj).value, 0);
-        }
+    private RubyRegexp getQuotedPattern(IRubyObject obj) {
+        if (obj instanceof RubyRegexp) return (RubyRegexp)obj;
+        return RubyRegexp.newQuotedRegexp(getRuntime(), getBytesForPattern(obj));
     }
 
     /** rb_str_scan
@@ -3836,7 +3837,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
     
     private IRubyObject scan(ThreadContext context, IRubyObject arg, Encoding enc, Block block) {
-        final RubyRegexp rubyRegex = getPattern(arg, true);
+        final RubyRegexp rubyRegex = getQuotedPattern(arg);
         final Regex regex = rubyRegex.getPattern();
 
         int begin = value.begin;

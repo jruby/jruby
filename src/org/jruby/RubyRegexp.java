@@ -259,11 +259,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         this.pattern = getRegexpFromCache(runtime, str, kcode.getEncoding(), options & 0xf);
     }
     
-    private RubyRegexp(Ruby runtime, ByteList str, int options, boolean _) {
+    // quoted
+    private RubyRegexp(Ruby runtime, ByteList str, boolean _) {
         this(runtime);
-        setKCode(runtime, options);
+        setKCodeDefault();
+        this.kcode = runtime.getKCode();
         this.str = str;
-        this.pattern = getQuotedRegexpFromCache(runtime, str, kcode.getEncoding(), options & 0xf);
+        this.pattern = getQuotedRegexpFromCache(runtime, str, kcode.getEncoding(), 0);
     }
 
     // used only by the compiler/interpreter (will set the literal flag)
@@ -276,8 +278,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return new RubyRegexp(runtime, pattern, options);
     }
 
-    public static RubyRegexp newQuotedRegexp(Ruby runtime, ByteList pattern, int options) {
-        return new RubyRegexp(runtime, pattern, options, true);
+    public static RubyRegexp newRegexp(Ruby runtime, ByteList pattern) {
+        return new RubyRegexp(runtime, pattern);
+    }
+
+    public static RubyRegexp newQuotedRegexp(Ruby runtime, ByteList pattern) {
+        return new RubyRegexp(runtime, pattern, true);
     }
 
     // internal usage (Complex/Rational)
