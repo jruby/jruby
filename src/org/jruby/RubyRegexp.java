@@ -83,7 +83,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     private static final int REGEXP_LITERAL_F     = USER1_F;
     private static final int REGEXP_KCODE_DEFAULT = USER2_F;
-    private static final int REGEXP_KCODE_FIXED   = USER3_F;
     private static final int REGEXP_ENCODING_NONE = USER4_F;
 
     public void setLiteral() {
@@ -108,18 +107,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     public boolean isKCodeDefault() {
         return (flags & REGEXP_KCODE_DEFAULT) != 0;
-    }
-
-    public void setKCodeFixed() {
-        flags |= REGEXP_KCODE_FIXED;
-    }
-
-    public void clearKCodeFixed() {
-        flags &= ~REGEXP_KCODE_FIXED;
-    }
-
-    public boolean isKCodeFixed() {
-        return (flags & REGEXP_KCODE_FIXED) != 0;
     }
 
     public void setEncodingNone() {
@@ -362,7 +349,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         Encoding enc = str.getEncoding();
         if (!enc.isAsciiCompatible()) {
             if (enc != pattern.getEncoding()) encodingMatchError(enc);
-        } else if (isKCodeFixed()) {
+        } else if (!isKCodeDefault()) {
             if (enc != pattern.getEncoding() && 
                (!pattern.getEncoding().isAsciiCompatible() ||
                str.scanForCodeRange() != StringSupport.CR_7BIT)) encodingMatchError(enc);
@@ -1333,7 +1320,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @JRubyMethod(name = "fixed_encoding?", compat = CompatVersion.RUBY1_9)
     public IRubyObject fixed_encoding_p(ThreadContext context) {
         Ruby runtime = context.getRuntime();
-        return isKCodeFixed() ? runtime.getTrue() : runtime.getFalse();
+        return isKCodeDefault() ? runtime.getFalse() : runtime.getTrue();
     }
 
     /** rb_reg_nth_match
