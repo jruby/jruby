@@ -564,6 +564,10 @@ public class RubyInstanceConfig {
         return compatVersion;
     }
 
+    public void setCompatVersion(CompatVersion compatVersion) {
+        this.compatVersion = compatVersion;
+    }
+
     public void setOutput(PrintStream newOutput) {
         output = newOutput;
     }
