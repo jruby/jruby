@@ -150,7 +150,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     private static final int REGEX_QUOTED = 1;
-    private static Regex getQuotedRegexpFromCache(Ruby runtime, ByteList bytes, Encoding enc, int options) {
+    static Regex getQuotedRegexpFromCache(Ruby runtime, ByteList bytes, Encoding enc, int options) {
         Map<ByteList, Regex> cache = getPatternCache();
         Regex regex = cache.get(bytes);
         if (regex != null && regex.getEncoding() == enc && 
@@ -163,7 +163,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return regex;
     }
 
-    private static Regex getRegexpFromCache(Ruby runtime, ByteList bytes, Encoding enc, int options) {
+    static Regex getRegexpFromCache(Ruby runtime, ByteList bytes, Encoding enc, int options) {
         Map<ByteList, Regex> cache = getPatternCache();
         Regex regex = cache.get(bytes);
         if (regex != null && regex.getEncoding() == enc &&
@@ -176,7 +176,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     private static final int REGEX_PREPROCESSED = 1;
-    private static Regex getPreprocessedRegexpFromCache(Ruby runtime, ByteList bytes, Encoding enc, int options, ErrorMode mode) {
+    static Regex getPreprocessedRegexpFromCache(Ruby runtime, ByteList bytes, Encoding enc, int options, ErrorMode mode) {
         Map<ByteList, Regex> cache = getPatternCache();
         Regex regex = cache.get(bytes);
         if (regex != null && regex.getEncoding() == enc &&

@@ -3687,7 +3687,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     private RubyArray regexSplit(ThreadContext context, IRubyObject pat, boolean limit, int lim, int i) {
         Ruby runtime = context.getRuntime();
 
-        final Regex regex = getQuotedPattern(pat).getPattern();
+        final Regex regex = getQuotedRegex(pat);
 
         int begin = value.begin;
         final Matcher matcher = regex.matcher(value.bytes, begin, begin + value.realSize);
@@ -3821,6 +3821,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
     private RubyRegexp getQuotedPattern(IRubyObject obj) {
         if (obj instanceof RubyRegexp) return (RubyRegexp)obj;
         return RubyRegexp.newQuotedRegexp(getRuntime(), getBytesForPattern(obj));
+    }
+
+    private Regex getQuotedRegex(IRubyObject obj) {
+        if (obj instanceof RubyRegexp) return ((RubyRegexp)obj).getPattern();
+        Ruby runtime = getRuntime();
+        return RubyRegexp.getQuotedRegexpFromCache(runtime, getBytesForPattern(obj), runtime.getKCode().getEncoding(), 0);
     }
 
     /** rb_str_scan
