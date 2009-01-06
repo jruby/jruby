@@ -27,7 +27,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.common;
 
+import org.joni.WarnCallback;
 import org.jruby.Ruby;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -35,11 +37,15 @@ import org.jruby.runtime.builtin.IRubyObject;
 /** 
  *
  */
-public class RubyWarnings implements IRubyWarnings {
+public class RubyWarnings implements IRubyWarnings, WarnCallback {
     private final Ruby runtime;
 
     public RubyWarnings(Ruby runtime) {
         this.runtime = runtime;
+    }
+
+    public void warn(String message) {
+        warn(ID.MISCELLANEOUS, message);
     }
 
     /**

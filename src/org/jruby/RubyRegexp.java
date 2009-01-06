@@ -52,7 +52,6 @@ import org.joni.Option;
 import org.joni.Regex;
 import org.joni.Region;
 import org.joni.Syntax;
-import org.joni.WarnCallback;
 import org.joni.exception.JOniException;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -77,7 +76,7 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 
 @JRubyClass(name="Regexp")
-public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, EncodingCapable {
+public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable {
     private KCode kcode;
     private Regex pattern;
     private ByteList str = ByteList.EMPTY_BYTELIST;
@@ -153,42 +152,55 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         return cache;
     }
 
-    private Regex makeRegexp(ByteList bytes, int flags, Encoding enc) {
+    private static Regex makeRegexp(Ruby runtime, ByteList bytes, int flags, Encoding enc) {
         try {
             int p = bytes.begin;
-            return new Regex(bytes.bytes, p, p + bytes.realSize, flags, enc, Syntax.DEFAULT, this);
+            return new Regex(bytes.bytes, p, p + bytes.realSize, flags, enc, Syntax.DEFAULT, runtime.getWarnings());
         } catch (Exception e) {
-            raiseRegexpError(bytes, flags, e.getMessage());
+            raiseRegexpError(runtime, bytes, enc, flags, e.getMessage());
             return null; // not reached
         }
     }
 
     private static final int REGEX_QUOTED = 1;
-    private Regex getQuotedRegexpFromCache(ByteList bytes, Encoding enc, int options) {
+    private static Regex getQuotedRegexpFromCache(Ruby runtime, ByteList bytes, Encoding enc, int options) {
         Map<ByteList, Regex> cache = getPatternCache();
         Regex regex = cache.get(bytes);
         if (regex != null && regex.getEncoding() == enc && 
             regex.getOptions() == options && ((regex.getUserOptions() & REGEX_QUOTED) != 0)) {
             return regex;
         }
-        regex = makeRegexp(quote(bytes, enc), options, enc);
+        regex = makeRegexp(runtime, quote(bytes, enc), options, enc);
         regex.setUserOptions(REGEX_QUOTED);
         cache.put(bytes, regex);
         return regex;
     }
 
-    private Regex getRegexpFromCache(ByteList bytes, Encoding enc, int options) {
+    private static Regex getRegexpFromCache(Ruby runtime, ByteList bytes, Encoding enc, int options) {
         Map<ByteList, Regex> cache = getPatternCache();
         Regex regex = cache.get(bytes);
         if (regex != null && regex.getEncoding() == enc &&
             regex.getOptions() == options && regex.getUserOptions() == 0) {
             return regex;
         }
-        regex = makeRegexp(bytes, options, enc);
+        regex = makeRegexp(runtime, bytes, options, enc);
         cache.put(bytes, regex);
         return regex;
     }
 
+    private static final int REGEX_PREPROCESSED = 1;
+    private static Regex getPreprocessedRegexpFromCache(Ruby runtime, ByteList bytes, Encoding enc, int options, ErrorMode mode) {
+        Map<ByteList, Regex> cache = getPatternCache();
+        Regex regex = cache.get(bytes);
+        if (regex != null && regex.getEncoding() == enc &&
+                regex.getOptions() == options && ((regex.getUserOptions() & REGEX_PREPROCESSED) != 0)) {
+            return regex;
+        }
+        regex = makeRegexp(runtime, bytes, options, enc);
+        cache.put(bytes, regex);
+        return regex;
+    }
+    
     public static RubyClass createRegexpClass(Ruby runtime) {
         RubyClass regexpClass = runtime.defineClass("Regexp", runtime.getObject(), REGEXP_ALLOCATOR);
         runtime.setRegexp(regexpClass);
@@ -232,13 +244,26 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         super(runtime, runtime.getRegexp());
     }
     
-    /** literal regexps
-     */
+    private RubyRegexp(Ruby runtime, ByteList str) {
+        this(runtime);
+        setKCodeDefault();
+        this.kcode = runtime.getKCode();
+        this.str = str;
+        this.pattern = getRegexpFromCache(runtime, str, kcode.getEncoding(), 0);
+    }
+
     private RubyRegexp(Ruby runtime, ByteList str, int options) {
         this(runtime);
+        setKCode(runtime, options);
         this.str = str;
-        setKCode(options);
-        setLiteral(); // ??
+        this.pattern = getRegexpFromCache(runtime, str, kcode.getEncoding(), options & 0xf);
+    }
+    
+    private RubyRegexp(Ruby runtime, ByteList str, int options, boolean _) {
+        this(runtime);
+        setKCode(runtime, options);
+        this.str = str;
+        this.pattern = getQuotedRegexpFromCache(runtime, str, kcode.getEncoding(), options & 0xf);
     }
 
     // used only by the compiler/interpreter (will set the literal flag)
@@ -248,15 +273,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
 
     // used only by the compiler/interpreter (will set the literal flag)
     public static RubyRegexp newRegexp(Ruby runtime, ByteList pattern, int options) {
-        RubyRegexp regexp = new RubyRegexp(runtime, pattern, options);
-        regexp.pattern = regexp.getRegexpFromCache(pattern, regexp.kcode.getEncoding(), options & 0xf);
-        return regexp;
+        return new RubyRegexp(runtime, pattern, options);
     }
 
     public static RubyRegexp newQuotedRegexp(Ruby runtime, ByteList pattern, int options) {
-        RubyRegexp regexp = new RubyRegexp(runtime, pattern, options);
-        regexp.pattern = regexp.getQuotedRegexpFromCache(pattern, regexp.kcode.getEncoding(), options & 0xf);
-        return regexp;
+        return new RubyRegexp(runtime, pattern, options, true);
     }
 
     // internal usage (Complex/Rational)
@@ -266,10 +287,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         regexp.str = ByteList.EMPTY_BYTELIST;
         regexp.kcode = KCode.NONE;
         return regexp;
-    }
-    
-    public void warn(String message) {
-        getRuntime().getWarnings().warn(ID.MISCELLANEOUS, message);
     }
 
     /** rb_get_kcode
@@ -289,13 +306,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
 
     /** rb_set_kcode
      */
-    private void setKCode(int options) {
+    private void setKCode(Ruby runtime, int options) {
         clearKCodeDefault();
-        switch(options & ~0xf) {
+        switch (options & ~0xf) {
         case 0:
         default:
             setKCodeDefault();
-            kcode = getRuntime().getKCode();
+            kcode = runtime.getKCode();
             break;
         case 16:
             kcode = KCode.NONE;
@@ -355,20 +372,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         check();
         Encoding enc = checkEncoding(s, true);
         if (enc == pattern.getEncoding()) return pattern;
-        Map<ByteList, Regex> cache = getPatternCache();
-        Regex pat = cache.get(pattern);
 
-        if (pat != null &&
-            pat.getEncoding() == kcode.getEncoding() &&
-            pat.getOptions() == (pattern.getOptions() & 0xf)) {
-            // cache hit
-        } else {
-            ByteList unescaped = preprocess(str.bytes, str.begin, str.begin + str.realSize, 
-                    enc, new Encoding[]{null}, ErrorMode.PREPROCESS);
-            pat = makeRegexp(unescaped, pattern.getOptions(), enc);
-            cache.put(str, pat);
-        }
-        return pat;
+        return getPreprocessedRegexpFromCache(getRuntime(), str, enc, pattern.getOptions(), ErrorMode.PREPROCESS);
      }
 
     private static enum ErrorMode {RAISE, PREPROCESS, DESC} 
@@ -601,8 +606,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         return hasProperty;
     }
 
-    private ByteList preprocess(byte[]bytes, int p, int end, Encoding enc, Encoding[]fixedEnc, ErrorMode mode) {
-        ByteList to = new ByteList(end - p);
+    private ByteList preprocess(ByteList str, Encoding enc, Encoding[]fixedEnc, ErrorMode mode) {
+        ByteList to = new ByteList(str.realSize);
 
         if (enc.isAsciiCompatible()) {
             fixedEnc[0] = null;
@@ -611,7 +616,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
             to.encoding = enc;
         }
 
-        boolean hasProperty = unescapeNonAscii(to, bytes, p, end, enc, fixedEnc, mode);
+        boolean hasProperty = unescapeNonAscii(to, str.bytes, str.begin, str.begin + str.realSize, enc, fixedEnc, mode);
         if (hasProperty && fixedEnc[0] == null) fixedEnc[0] = enc;
         if (fixedEnc[0] != null) to.encoding = fixedEnc[0];
         return to;
@@ -814,39 +819,39 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     }
 
     // rb_reg_raise
-    private void raiseRegexpError(ByteList bytes, int flags, String err) {
-        throw getRuntime().newRegexpError(err + ": " + regexpDescription(bytes, flags));
+    private static void raiseRegexpError(Ruby runtime, ByteList bytes, Encoding enc, int flags, String err) {
+        throw runtime.newRegexpError(err + ": " + regexpDescription(runtime, bytes, enc, flags));
     }
 
     // rb_reg_desc
-    private ByteList regexpDescription(ByteList bytes, int options) {
-        return regexpDescription(bytes.bytes, bytes.begin, bytes.realSize, options);
+    private static ByteList regexpDescription(Ruby runtime, ByteList bytes, Encoding enc, int options) {
+        return regexpDescription(runtime, bytes.bytes, bytes.begin, bytes.realSize, enc, options);
     }
-    private ByteList regexpDescription(byte[] bytes, int start, int len, int options) {
+    private static ByteList regexpDescription(Ruby runtime, byte[] bytes, int start, int len, Encoding enc, int options) {
         ByteList description = new ByteList();
         description.append((byte)'/');
-        appendRegexpString(description, bytes, start, len);
+        appendRegexpString(runtime, description, bytes, start, len, enc);
         description.append((byte)'/');
         appendOptions(description, options);
-        if (kcode != null && !isKCodeDefault()) description.append((byte)kcode.name().charAt(0));
+        // if (kcode != null && !isKCodeDefault()) description.append((byte)kcode.name().charAt(0));
         return description;
     }
 
     // rb_enc_reg_raise
-    private void raiseRegexpError(ByteList bytes, Encoding enc, int flags, String err) {
+    private static void raiseRegexpError19(Ruby runtime, ByteList bytes, Encoding enc, int flags, String err) {
         // TODO: we loose encoding information here, fix it
-        throw getRuntime().newRegexpError(err + ": " + regexpDescription(bytes, flags, enc));
+        throw runtime.newRegexpError(err + ": " + regexpDescription19(runtime, bytes, flags, enc));
     }
 
     // rb_enc_reg_error_desc
-    private ByteList regexpDescription(ByteList bytes, int options, Encoding enc) {
-        return regexpDescription(bytes.bytes, bytes.begin, bytes.realSize, options, enc);
+    private static ByteList regexpDescription19(Ruby runtime, ByteList bytes, int options, Encoding enc) {
+        return regexpDescription19(runtime, bytes.bytes, bytes.begin, bytes.realSize, options, enc);
     }
-    private ByteList regexpDescription(byte[] s, int start, int len, int options, Encoding enc) {
+    private static ByteList regexpDescription19(Ruby runtime, byte[] s, int start, int len, int options, Encoding enc) {
         ByteList description = new ByteList();
         description.encoding = enc;
         description.append((byte)'/');
-        appendRegexpString(description, s, start, len);
+        appendRegexpString(runtime, description, s, start, len, enc);
         description.append((byte)'/');
         appendOptions(description, options);
         return description; 
@@ -922,7 +927,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     private IRubyObject initializeByRegexp(RubyRegexp regexp) {
         regexp.check();
 
-        int options = regexp.pattern.getOptions() & 0xf;
+        int options = regexp.pattern.getOptions();
         if (!regexp.isKCodeDefault() && regexp.kcode != null && regexp.kcode != KCode.NIL) {
             if (regexp.kcode == KCode.NONE) {
                 options |= 16;
@@ -938,13 +943,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     }
 
     private RubyRegexp initializeCommon(ByteList bytes, int options) {
-        if (!isTaint() && getRuntime().getSafeLevel() >= 4) throw getRuntime().newSecurityError("Insecure: can't modify regexp");
+        Ruby runtime = getRuntime();        
+        if (!isTaint() && runtime.getSafeLevel() >= 4) throw runtime.newSecurityError("Insecure: can't modify regexp");
         checkFrozen();
-        if (isLiteral()) throw getRuntime().newSecurityError("can't modify literal regexp");
-
-        setKCode(options);
-
-        pattern = getRegexpFromCache(bytes, kcode.getEncoding(), options & 0xf);
+        if (isLiteral()) throw runtime.newSecurityError("can't modify literal regexp");
+        setKCode(runtime, options);
+        pattern = getRegexpFromCache(runtime, bytes, kcode.getEncoding(), options & 0xf);
         str = bytes;
         return this;
     }
@@ -1134,13 +1138,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     @Override
     public IRubyObject inspect() {
         check();
-        return RubyString.newString(getRuntime(), regexpDescription(str, pattern.getOptions()));
+        return RubyString.newString(getRuntime(), regexpDescription(getRuntime(), str, kcode.getEncoding(), pattern.getOptions()));
     }
 
     @JRubyMethod(name = "inspect", compat = CompatVersion.RUBY1_9)
     public IRubyObject inspect19() {
         if (pattern == null) return anyToString();
-        return RubyString.newString(getRuntime(), regexpDescription(str, pattern.getOptions(), str.encoding));
+        return RubyString.newString(getRuntime(), regexpDescription19(getRuntime(), str, pattern.getOptions(), str.encoding));
     }
 
     private final static int EMBEDDABLE = RE_OPTION_MULTILINE|RE_OPTION_IGNORECASE|RE_OPTION_EXTENDED;
@@ -1224,18 +1228,17 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
                 if ((options & RE_OPTION_EXTENDED) == 0) result.append((byte)'x');
             }
             result.append((byte)':');
-            appendRegexpString(result, bytes, p, len);
+            appendRegexpString(getRuntime(), result, bytes, p, len, kcode.getEncoding());
             result.append((byte)')');
             return RubyString.newString(getRuntime(), result).infectBy(this);
         } while (true);
     }
 
     // rb_reg_expr_str
-    private void appendRegexpString(ByteList to, byte[]bytes, int start, int len) {
+    private static void appendRegexpString(Ruby runtime, ByteList to, byte[]bytes, int start, int len, Encoding enc) {
         int p = start;
         int end = p + len;
         boolean needEscape = false;
-        Encoding enc = kcode.getEncoding();
         while (p < end) {
             int c = bytes[p] & 0xff;
             if (c == '/' || (!enc.isPrint(c) && enc.length(bytes, p, end) == 1)) {
@@ -1265,7 +1268,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
                 } else if (enc.isPrint(c)) {
                     to.append(bytes, p, 1);
                 } else if (!enc.isSpace(c)) {
-                    Sprintf.sprintf(getRuntime(), to, "\\x%02X", bytes[p] & 0377);
+                    Sprintf.sprintf(runtime, to, "\\x%02X", bytes[p] & 0377);
                 } else {
                     to.append(bytes, p, 1);
                 }
@@ -1275,7 +1278,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     }
 
     // option_to_str
-    private void appendOptions(ByteList to, int options) {
+    private static void appendOptions(ByteList to, int options) {
         if ((options & ReOptions.RE_OPTION_MULTILINE) != 0) to.append((byte)'m');
         if ((options & ReOptions.RE_OPTION_IGNORECASE) != 0) to.append((byte)'i');
         if ((options & ReOptions.RE_OPTION_EXTENDED) != 0) to.append((byte)'x');
