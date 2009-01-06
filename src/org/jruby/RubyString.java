@@ -3815,7 +3815,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
             obj = val; 
         }
 
-        return RubyRegexp.newRegexp(getRuntime(), ((RubyString)obj).value, 0, quote);
+        if (quote) {
+            return RubyRegexp.newQuotedRegexp(getRuntime(), ((RubyString)obj).value, 0);
+        } else {
+            return RubyRegexp.newRegexp(getRuntime(), ((RubyString)obj).value, 0);
+        }
     }
 
     /** rb_str_scan

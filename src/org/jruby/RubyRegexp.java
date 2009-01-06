@@ -143,6 +143,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         return pattern.getEncoding();
     }
 
+    static volatile SoftReference<Map<ByteList, Regex>> patternCache = new SoftReference<Map<ByteList, Regex>>(null);    
     private static Map<ByteList, Regex> getPatternCache() {
         Map<ByteList, Regex> cache = patternCache.get();
         if (cache == null) {
@@ -152,7 +153,41 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         return cache;
     }
 
-    static volatile SoftReference<Map<ByteList, Regex>> patternCache = new SoftReference<Map<ByteList, Regex>>(null);    
+    private Regex makeRegexp(ByteList bytes, int flags, Encoding enc) {
+        try {
+            int p = bytes.begin;
+            return new Regex(bytes.bytes, p, p + bytes.realSize, flags, enc, Syntax.DEFAULT, this);
+        } catch (Exception e) {
+            raiseRegexpError(bytes, flags, e.getMessage());
+            return null; // not reached
+        }
+    }
+
+    private static final int REGEX_QUOTED = 1;
+    private Regex getQuotedRegexpFromCache(ByteList bytes, Encoding enc, int options) {
+        Map<ByteList, Regex> cache = getPatternCache();
+        Regex regex = cache.get(bytes);
+        if (regex != null && regex.getEncoding() == enc && 
+            regex.getOptions() == options && ((regex.getUserOptions() & REGEX_QUOTED) != 0)) {
+            return regex;
+        }
+        regex = makeRegexp(quote(bytes, enc), options, enc);
+        regex.setUserOptions(REGEX_QUOTED);
+        cache.put(bytes, regex);
+        return regex;
+    }
+
+    private Regex getRegexpFromCache(ByteList bytes, Encoding enc, int options) {
+        Map<ByteList, Regex> cache = getPatternCache();
+        Regex regex = cache.get(bytes);
+        if (regex != null && regex.getEncoding() == enc &&
+            regex.getOptions() == options && regex.getUserOptions() == 0) {
+            return regex;
+        }
+        regex = makeRegexp(bytes, options, enc);
+        cache.put(bytes, regex);
+        return regex;
+    }
 
     public static RubyClass createRegexpClass(Ruby runtime) {
         RubyClass regexpClass = runtime.defineClass("Regexp", runtime.getObject(), REGEXP_ALLOCATOR);
@@ -196,6 +231,15 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     private RubyRegexp(Ruby runtime) {
         super(runtime, runtime.getRegexp());
     }
+    
+    /** literal regexps
+     */
+    private RubyRegexp(Ruby runtime, ByteList str, int options) {
+        this(runtime);
+        this.str = str;
+        setKCode(options);
+        setLiteral(); // ??
+    }
 
     // used only by the compiler/interpreter (will set the literal flag)
     public static RubyRegexp newRegexp(Ruby runtime, String pattern, int options) {
@@ -204,16 +248,18 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
 
     // used only by the compiler/interpreter (will set the literal flag)
     public static RubyRegexp newRegexp(Ruby runtime, ByteList pattern, int options) {
-        RubyRegexp regexp = newRegexp(runtime, pattern, options, false);
-        regexp.setLiteral();
+        RubyRegexp regexp = new RubyRegexp(runtime, pattern, options);
+        regexp.pattern = regexp.getRegexpFromCache(pattern, regexp.kcode.getEncoding(), options & 0xf);
         return regexp;
     }
 
-    public static RubyRegexp newRegexp(Ruby runtime, ByteList pattern, int options, boolean quote) {
-        return new RubyRegexp(runtime).initializeCommon(pattern, options, quote);
+    public static RubyRegexp newQuotedRegexp(Ruby runtime, ByteList pattern, int options) {
+        RubyRegexp regexp = new RubyRegexp(runtime, pattern, options);
+        regexp.pattern = regexp.getQuotedRegexpFromCache(pattern, regexp.kcode.getEncoding(), options & 0xf);
+        return regexp;
     }
 
-    // internal usage
+    // internal usage (Complex/Rational)
     static RubyRegexp newRegexp(Ruby runtime, Regex regex) {
         RubyRegexp regexp = new RubyRegexp(runtime);
         regexp.pattern = regex;
@@ -305,12 +351,25 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         return enc;
     }
 
-    final Regex getPattern(RubyString str) {
+    final Regex getPattern(RubyString s) {
         check();
-        Encoding enc = checkEncoding(str, true);
+        Encoding enc = checkEncoding(s, true);
         if (enc == pattern.getEncoding()) return pattern;
-        return null; // TODO: preprocess
-    }
+        Map<ByteList, Regex> cache = getPatternCache();
+        Regex pat = cache.get(pattern);
+
+        if (pat != null &&
+            pat.getEncoding() == kcode.getEncoding() &&
+            pat.getOptions() == (pattern.getOptions() & 0xf)) {
+            // cache hit
+        } else {
+            ByteList unescaped = preprocess(str.bytes, str.begin, str.begin + str.realSize, 
+                    enc, new Encoding[]{null}, ErrorMode.PREPROCESS);
+            pat = makeRegexp(unescaped, pattern.getOptions(), enc);
+            cache.put(str, pat);
+        }
+        return pat;
+     }
 
     private static enum ErrorMode {RAISE, PREPROCESS, DESC} 
 
@@ -701,14 +760,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     public static IRubyObject union(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
         if (args.length == 0) {
-            return newRegexp(runtime, ByteList.create("(?!)"), 0, false);
+            return newRegexp(runtime, ByteList.create("(?!)"), 0);
         } else if (args.length == 1) {
             IRubyObject v = TypeConverter.convertToTypeWithCheck(args[0], runtime.getRegexp(), "to_regexp");
             if (!v.isNil()) {
                 return v;
             } else {
                 // newInstance here
-                return newRegexp(runtime, quote(context, recv, args).getByteList(), 0, false);
+                return newRegexp(runtime, quote(context, recv, args).getByteList(), 0);
             }
         } else {
             KCode kcode = null;
@@ -751,15 +810,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
                 _args[2] = runtime.newString("u");
             }
             return recv.callMethod(context, "new", _args);
-        }
-    }
-
-    private void makeRegexp(ByteList bytes, int flags, Encoding enc) {
-        try {
-            int p = bytes.begin;
-            pattern = new Regex(bytes.bytes, p, p + bytes.realSize, flags, enc, Syntax.DEFAULT, this);
-        } catch (Exception e) {
-            raiseRegexpError(bytes, flags, e.getMessage());
         }
     }
 
@@ -817,13 +867,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         RubyRegexp regexp = (RubyRegexp)re;
         regexp.check();
 
-        return initializeCommon(regexp.str, regexp.getOptions(), false);
+        return initializeCommon(regexp.str, regexp.getOptions());
     }
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
     public IRubyObject initialize_m(IRubyObject arg) {
         if (arg instanceof RubyRegexp) return initializeByRegexp((RubyRegexp)arg);
-        return initializeCommon(arg.convertToString().getByteList(), 0, false);
+        return initializeCommon(arg.convertToString().getByteList(), 0);
     }
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
@@ -834,7 +884,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
         }
         
         int options = arg1 instanceof RubyFixnum ? RubyNumeric.fix2int(arg1) : arg1.isTrue() ? RE_OPTION_IGNORECASE : 0;
-        return initializeCommon(arg0.convertToString().getByteList(), options, false);
+        return initializeCommon(arg0.convertToString().getByteList(), options);
     }
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
@@ -866,7 +916,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
                 break;
             }
         }
-        return initializeCommon(arg0.convertToString().getByteList(), options, false);
+        return initializeCommon(arg0.convertToString().getByteList(), options);
     }
 
     private IRubyObject initializeByRegexp(RubyRegexp regexp) {
@@ -884,35 +934,17 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
                 options |= 64;
             }
         }
-        return initializeCommon(regexp.str, options, false);
+        return initializeCommon(regexp.str, options);
     }
 
-    private static final int REGEX_QUOTED = 1;
-    private RubyRegexp initializeCommon(ByteList bytes, int options, boolean quote) {
+    private RubyRegexp initializeCommon(ByteList bytes, int options) {
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) throw getRuntime().newSecurityError("Insecure: can't modify regexp");
         checkFrozen();
         if (isLiteral()) throw getRuntime().newSecurityError("can't modify literal regexp");
 
         setKCode(options);
 
-        Map<ByteList, Regex> cache = getPatternCache();
-        Regex pat = cache.get(bytes);
-
-        if (pat != null &&
-            pat.getEncoding() == kcode.getEncoding() &&
-            pat.getOptions() == (options & 0xf) &&
-            ((pat.getUserOptions() & REGEX_QUOTED) != 0) == quote) { // cache hit
-            pattern = pat;
-        } else {
-            if (quote) {
-                makeRegexp(quote(bytes, getRuntime().getKCode().getEncoding()), options & 0xf, kcode.getEncoding());
-                pattern.setUserOptions(REGEX_QUOTED);
-            } else {
-                makeRegexp(bytes, options & 0xf, kcode.getEncoding());
-            }
-            cache.put(bytes, pattern);
-        }
-
+        pattern = getRegexpFromCache(bytes, kcode.getEncoding(), options & 0xf);
         str = bytes;
         return this;
     }
@@ -1479,7 +1511,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, WarnCallback, E
     }
 
     public static RubyRegexp unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        RubyRegexp result = newRegexp(input.getRuntime(), input.unmarshalString(), input.unmarshalInt(), false);
+        RubyRegexp result = newRegexp(input.getRuntime(), input.unmarshalString(), input.unmarshalInt());
         input.registerLinkTarget(result);
         return result;
     }
