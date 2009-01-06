@@ -833,7 +833,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         appendRegexpString(runtime, description, bytes, start, len, enc);
         description.append((byte)'/');
         appendOptions(description, options);
-        // if (kcode != null && !isKCodeDefault()) description.append((byte)kcode.name().charAt(0));
         return description;
     }
 
@@ -1138,7 +1137,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @Override
     public IRubyObject inspect() {
         check();
-        return RubyString.newString(getRuntime(), regexpDescription(getRuntime(), str, kcode.getEncoding(), pattern.getOptions()));
+        ByteList result = regexpDescription(getRuntime(), str, kcode.getEncoding(), pattern.getOptions());
+        if (kcode != null && !isKCodeDefault()) result.append((byte)kcode.name().charAt(0));
+        return RubyString.newString(getRuntime(), result);
     }
 
     @JRubyMethod(name = "inspect", compat = CompatVersion.RUBY1_9)
