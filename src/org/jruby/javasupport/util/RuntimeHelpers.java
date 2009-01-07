@@ -728,16 +728,48 @@ public class RuntimeHelpers {
         System.arraycopy(add, 0, newArray, array.length, add.length);
         return newArray;
     }
-    
+
     public static IRubyObject isExceptionHandled(RubyException currentException, IRubyObject[] exceptions, Ruby runtime, ThreadContext context, IRubyObject self) {
         for (int i = 0; i < exceptions.length; i++) {
-            if (!runtime.getModule().isInstance(exceptions[i])) {
-                throw runtime.newTypeError("class or module required for rescue clause");
-            }
-            IRubyObject result = exceptions[i].callMethod(context, "===", currentException);
+            IRubyObject result = isExceptionHandled(currentException, exceptions[i], runtime, context, self);
             if (result.isTrue()) return result;
         }
         return runtime.getFalse();
+    }
+
+    public static IRubyObject isExceptionHandled(RubyException currentException, IRubyObject exception, Ruby runtime, ThreadContext context, IRubyObject self) {
+        if (!runtime.getModule().isInstance(exception)) {
+            throw runtime.newTypeError("class or module required for rescue clause");
+        }
+        IRubyObject result = invoke(context, exception, "===", currentException);
+        if (result.isTrue()) return result;
+        return runtime.getFalse();
+    }
+    
+    public static IRubyObject isExceptionHandled(RubyException currentException, IRubyObject exception0, IRubyObject exception1, Ruby runtime, ThreadContext context, IRubyObject self) {
+        IRubyObject result = isExceptionHandled(currentException, exception0, runtime, context, self);
+        if (result.isTrue()) return result;
+        return isExceptionHandled(currentException, exception1, runtime, context, self);
+    }
+
+    public static IRubyObject isExceptionHandled(RubyException currentException, IRubyObject exception0, IRubyObject exception1, IRubyObject exception2, Ruby runtime, ThreadContext context, IRubyObject self) {
+        IRubyObject result = isExceptionHandled(currentException, exception0, runtime, context, self);
+        if (result.isTrue()) return result;
+        return isExceptionHandled(currentException, exception1, exception2, runtime, context, self);
+    }
+
+    private static boolean checkJavaException(Exception currentException, IRubyObject exception) {
+        if (exception instanceof RubyClass) {
+            RubyClass rubyClass = (RubyClass)exception;
+            JavaClass javaClass = (JavaClass)rubyClass.fastGetInstanceVariable("@java_class");
+            if (javaClass != null) {
+                Class cls = javaClass.javaClass();
+                if (cls.isInstance(currentException)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
     
     public static IRubyObject isJavaExceptionHandled(Exception currentException, IRubyObject[] exceptions, Ruby runtime, ThreadContext context, IRubyObject self) {
@@ -745,16 +777,54 @@ public class RuntimeHelpers {
             return isExceptionHandled(((RaiseException)currentException).getException(), exceptions, runtime, context, self);
         } else {
             for (int i = 0; i < exceptions.length; i++) {
-                if (exceptions[i] instanceof RubyClass) {
-                    RubyClass rubyClass = (RubyClass)exceptions[i];
-                    JavaClass javaClass = (JavaClass)rubyClass.fastGetInstanceVariable("@java_class");
-                    if (javaClass != null) {
-                        Class cls = javaClass.javaClass();
-                        if (cls.isInstance(currentException)) {
-                            return runtime.getTrue();
-                        }
-                    }
+                if (checkJavaException(currentException, exceptions[0])) {
+                    return runtime.getTrue();
                 }
+            }
+
+            return runtime.getFalse();
+        }
+    }
+
+    public static IRubyObject isJavaExceptionHandled(Exception currentException, IRubyObject exception, Ruby runtime, ThreadContext context, IRubyObject self) {
+        if (currentException instanceof RaiseException) {
+            return isExceptionHandled(((RaiseException)currentException).getException(), exception, runtime, context, self);
+        } else {
+            if (checkJavaException(currentException, exception)) {
+                return runtime.getTrue();
+            }
+
+            return runtime.getFalse();
+        }
+    }
+
+    public static IRubyObject isJavaExceptionHandled(Exception currentException, IRubyObject exception0, IRubyObject exception1, Ruby runtime, ThreadContext context, IRubyObject self) {
+        if (currentException instanceof RaiseException) {
+            return isExceptionHandled(((RaiseException)currentException).getException(), exception0, exception1, runtime, context, self);
+        } else {
+            if (checkJavaException(currentException, exception0)) {
+                return runtime.getTrue();
+            }
+            if (checkJavaException(currentException, exception1)) {
+                return runtime.getTrue();
+            }
+
+            return runtime.getFalse();
+        }
+    }
+
+    public static IRubyObject isJavaExceptionHandled(Exception currentException, IRubyObject exception0, IRubyObject exception1, IRubyObject exception2, Ruby runtime, ThreadContext context, IRubyObject self) {
+        if (currentException instanceof RaiseException) {
+            return isExceptionHandled(((RaiseException)currentException).getException(), exception0, exception1, exception2, runtime, context, self);
+        } else {
+            if (checkJavaException(currentException, exception0)) {
+                return runtime.getTrue();
+            }
+            if (checkJavaException(currentException, exception1)) {
+                return runtime.getTrue();
+            }
+            if (checkJavaException(currentException, exception2)) {
+                return runtime.getTrue();
             }
 
             return runtime.getFalse();

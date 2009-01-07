@@ -135,7 +135,6 @@ import org.jruby.ast.XStrNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.BlockBody;
-import org.jruby.util.IdUtil;
 import org.jruby.util.SafePropertyAccessor;
 
 /**
@@ -3290,14 +3289,7 @@ public class ASTCompiler {
                     }
                 };
 
-        BranchCallback javaHandler = new BranchCallback() {
-
-                    public void branch(BodyCompiler context) {
-                        compileJavaRescueBody(rescueNode.getRescueNode(), context);
-                    }
-                };
-
-        context.performRescue(body, rubyHandler, javaHandler);
+        context.performRescue(body, rubyHandler);
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
@@ -3307,15 +3299,19 @@ public class ASTCompiler {
 
         context.loadException();
 
-        Node exceptionList = rescueBodyNode.getExceptionNodes();
-        if (exceptionList == null) {
-            context.loadClass("StandardError");
-            context.createObjectArray(1);
-        } else {
-            compileArguments(exceptionList, context);
-        }
+        final Node exceptionList = rescueBodyNode.getExceptionNodes();
+        ArgumentsCallback rescueArgs = getArgsCallback(exceptionList);
+        if (rescueArgs == null) rescueArgs = new ArgumentsCallback() {
+            public int getArity() {
+                return 1;
+            }
 
-        context.checkIsJavaExceptionHandled();
+            public void call(BodyCompiler context) {
+                context.loadClass("StandardError");
+            }
+        };
+        
+        context.checkIsExceptionHandled(rescueArgs);
 
         BranchCallback trueBranch = new BranchCallback() {
             public void branch(BodyCompiler context) {
@@ -3348,56 +3344,6 @@ public class ASTCompiler {
         };
 
         context.performBooleanBranch(trueBranch, falseBranch);
-    }
-
-    public void compileJavaRescueBody(Node node, BodyCompiler context) {
-        final RescueBodyNode rescueBodyNode = (RescueBodyNode) node;
-
-        Node exceptionList = rescueBodyNode.getExceptionNodes();
-        if (exceptionList == null) {
-            if (rescueBodyNode.getOptRescueNode() != null) {
-                compileJavaRescueBody(rescueBodyNode.getOptRescueNode(), context);
-            } else {
-                context.rethrowException();
-            }
-        } else {
-            context.loadException();
-            compileArguments(exceptionList, context);
-            context.checkIsJavaExceptionHandled();
-
-            BranchCallback trueBranch = new BranchCallback() {
-                public void branch(BodyCompiler context) {
-                    if (rescueBodyNode.getBodyNode() != null) {
-                        context.storeExceptionInErrorInfo();
-
-                        // proceed with normal exception-handling logic
-                        BodyCompiler nestedBody = context.outline("java_rescue_line_" + rescueBodyNode.getPosition().getStartLine());
-                        compile(rescueBodyNode.getBodyNode(), nestedBody,true);
-                        nestedBody.endBody();
-
-                        // FIXME: this should reset to what it was before
-                        context.clearErrorInfo();
-                    } else {
-                        // FIXME: this should reset to what it was before
-                        context.clearErrorInfo();
-                        // return nil from empty rescue
-                        context.loadNil();
-                    }
-                }
-            };
-
-            BranchCallback falseBranch = new BranchCallback() {
-                public void branch(BodyCompiler context) {
-                    if (rescueBodyNode.getOptRescueNode() != null) {
-                        compileJavaRescueBody(rescueBodyNode.getOptRescueNode(), context);
-                    } else {
-                        context.rethrowException();
-                    }
-                }
-            };
-
-            context.performBooleanBranch(trueBranch, falseBranch);
-        }
     }
 
     public void compileRetry(Node node, BodyCompiler context, boolean expr) {

@@ -33,6 +33,7 @@ import org.jruby.RubySymbol;
 import org.jruby.ast.NodeType;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.compiler.ASTInspector;
+import org.jruby.compiler.ArgumentsCallback;
 import org.jruby.compiler.ArrayCallback;
 import org.jruby.compiler.BranchCallback;
 import org.jruby.compiler.CompilerCallback;
@@ -1412,13 +1413,13 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.invokevirtual(script.getClassname(), mname, sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, Block.class}));
     }
 
-    public void performRescue(BranchCallback regularCode, BranchCallback rubyCatchCode, BranchCallback javaCatchCode) {
+    public void performRescue(BranchCallback regularCode, BranchCallback rubyCatchCode) {
         String mname = getNewRescueName();
         BaseBodyCompiler rescueMethod = outline(mname);
-        rescueMethod.performRescueInner(regularCode, rubyCatchCode, javaCatchCode);
+        rescueMethod.performRescueInner(regularCode, rubyCatchCode);
     }
 
-    public void performRescueInner(BranchCallback regularCode, BranchCallback rubyCatchCode, BranchCallback javaCatchCode) {
+    public void performRescueInner(BranchCallback regularCode, BranchCallback rubyCatchCode) {
         Label afterRubyCatchBody = new Label();
         Label catchRetry = new Label();
         Label catchJumps = new Label();
@@ -2091,20 +2092,26 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         invokeUtilityMethod("callZSuper", sig(IRubyObject.class, params(Ruby.class, ThreadContext.class, Block.class, IRubyObject.class)));
     }
 
-    public void checkIsExceptionHandled() {
-        // ruby exception and list of exception types is on the stack
+    public void checkIsExceptionHandled(ArgumentsCallback rescueArgs) {
+        // original exception is on stack
+        rescueArgs.call(this);
         loadRuntime();
         loadThreadContext();
         loadSelf();
-        invokeUtilityMethod("isExceptionHandled", sig(IRubyObject.class, RubyException.class, IRubyObject[].class, Ruby.class, ThreadContext.class, IRubyObject.class));
-    }
 
-    public void checkIsJavaExceptionHandled() {
-        // ruby exception and list of exception types is on the stack
-        loadRuntime();
-        loadThreadContext();
-        loadSelf();
-        invokeUtilityMethod("isJavaExceptionHandled", sig(IRubyObject.class, Exception.class, IRubyObject[].class, Ruby.class, ThreadContext.class, IRubyObject.class));
+        switch (rescueArgs.getArity()) {
+        case 1:
+            invokeUtilityMethod("isJavaExceptionHandled", sig(IRubyObject.class, Exception.class, IRubyObject.class, Ruby.class, ThreadContext.class, IRubyObject.class));
+            break;
+        case 2:
+            invokeUtilityMethod("isJavaExceptionHandled", sig(IRubyObject.class, Exception.class, IRubyObject.class, IRubyObject.class, Ruby.class, ThreadContext.class, IRubyObject.class));
+            break;
+        case 3:
+            invokeUtilityMethod("isJavaExceptionHandled", sig(IRubyObject.class, Exception.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Ruby.class, ThreadContext.class, IRubyObject.class));
+            break;
+        default:
+            invokeUtilityMethod("isJavaExceptionHandled", sig(IRubyObject.class, Exception.class, IRubyObject[].class, Ruby.class, ThreadContext.class, IRubyObject.class));
+        }
     }
 
     public void rethrowException() {

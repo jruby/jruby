@@ -486,7 +486,7 @@ public interface BodyCompiler {
      */
     public void protect(BranchCallback regularCode, BranchCallback protectedCode, Class ret);
     public void rescue(BranchCallback regularCode, Class exception, BranchCallback protectedCode, Class ret);
-    public void performRescue(BranchCallback regularCode, BranchCallback rubyCatchCode, BranchCallback javaCatchCode);
+    public void performRescue(BranchCallback regularCode, BranchCallback rubyCatchCode);
     public void performEnsure(BranchCallback regularCode, BranchCallback ensuredCode);
     public void inDefined();
     public void outDefined();
@@ -537,8 +537,7 @@ public interface BodyCompiler {
     public void performBackref(char type);
     public void callZSuper(CompilerCallback closure);
     public void appendToObjectArray();
-    public void checkIsExceptionHandled();
-    public void checkIsJavaExceptionHandled();
+    public void checkIsExceptionHandled(ArgumentsCallback rescueArgs);
     public void rethrowException();
     public void loadClass(String name);
     public void unwrapRaiseException();
