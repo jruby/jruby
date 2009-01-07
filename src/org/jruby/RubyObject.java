@@ -823,10 +823,10 @@ public class RubyObject extends RubyBasicObject {
      */
     @JRubyMethod(name = "freeze")
     public IRubyObject freeze(ThreadContext context) {
-        if ((flags & FROZEN_F) == 0) {
-            if (context.getRuntime().getSafeLevel() >= 4 && !isTaint()) {
-                throw context.getRuntime().newSecurityError("Insecure: can't freeze object");
-            }
+        Ruby runtime = context.getRuntime();
+        //if (!runtime.is1_9() && isImmediate()) return this;
+        if ((flags & FROZEN_F) == 0 && (runtime.is1_9() || !isImmediate())) {
+            if (runtime.getSafeLevel() >= 4 && !isTaint()) throw runtime .newSecurityError("Insecure: can't freeze object");
             flags |= FROZEN_F;
         }
         return this;

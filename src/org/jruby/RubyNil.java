@@ -181,11 +181,6 @@ public class RubyNil extends RubyObject {
         return this;
     }
 
-    @Override
-    public IRubyObject freeze(ThreadContext context) {
-        return this;
-    }
-
     /** nilclass_to_c
      * 
      */

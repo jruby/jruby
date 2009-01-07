@@ -843,11 +843,6 @@ public class RubyFixnum extends RubyInteger {
         return this;
     }
 
-    @Override
-    public IRubyObject freeze(ThreadContext context) {
-        return this;
-    }
-    
     // Piece of mri rb_to_id
     @Override
     public String asJavaString() {

@@ -243,11 +243,6 @@ public class RubySymbol extends RubyObject {
     }
 
     @Override
-    public IRubyObject freeze(ThreadContext context) {
-        return this;
-    }
-
-    @Override
     public IRubyObject taint(ThreadContext context) {
         return this;
     }

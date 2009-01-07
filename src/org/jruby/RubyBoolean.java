@@ -160,11 +160,6 @@ public class RubyBoolean extends RubyObject {
         return this;
     }
 
-    @Override
-    public IRubyObject freeze(ThreadContext context) {
-        return this;
-    }
-    
     public void marshalTo(MarshalStream output) throws java.io.IOException {
         output.write(isTrue() ? 'T' : 'F');
     }

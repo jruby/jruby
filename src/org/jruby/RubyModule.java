@@ -1551,7 +1551,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "freeze")
     @Override
-    public IRubyObject freeze(ThreadContext context) {
+    public final IRubyObject freeze(ThreadContext context) {
         to_s();
         return super.freeze(context);
     }
