@@ -42,7 +42,6 @@ import java.io.PrintStream;
 import static java.lang.System.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
