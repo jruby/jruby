@@ -273,8 +273,16 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return new RubyRegexp(runtime, pattern, true);
     }
 
+    static RubyRegexp newRegexp(Ruby runtime, ByteList str, Regex pattern) {
+        RubyRegexp regexp = new RubyRegexp(runtime);
+        regexp.str = str;
+        regexp.setKCode(runtime, pattern.getOptions());
+        regexp.pattern = pattern;
+        return regexp;
+    }
+    
     // internal usage (Complex/Rational)
-    static RubyRegexp newRegexp(Ruby runtime, Regex regex) {
+    static RubyRegexp newDummyRegexp(Ruby runtime, Regex regex) {
         RubyRegexp regexp = new RubyRegexp(runtime);
         regexp.pattern = regex;
         regexp.str = ByteList.EMPTY_BYTELIST;
@@ -1070,8 +1078,15 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
         return result;
     }
-    
+
     final RubyMatchData updateBackRef(ThreadContext context, RubyString str, Frame frame, Matcher matcher) {
+        RubyMatchData match = updateBackRefLazy(context, str, frame, matcher, pattern);
+        match.regexp = this;
+        match.infectBy(this);
+        return match;
+    }
+
+    static final RubyMatchData updateBackRefLazy(ThreadContext context, RubyString str, Frame frame, Matcher matcher, Regex regex) {
         Ruby runtime = context.getRuntime();
         IRubyObject backref = frame.getBackRef();
         final RubyMatchData match;
@@ -1085,13 +1100,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         match.regs = matcher.getRegion(); // lazy, null when no groups defined
         match.begin = matcher.getBegin();
         match.end = matcher.getEnd();
-
+        match.pattern = regex;
         match.str = (RubyString)str.strDup(runtime).freeze(context);
-        match.regexp = this;
 
         frame.setBackRef(match);
 
-        match.infectBy(this);
         match.infectBy(str);
         return match;
     }
@@ -1394,7 +1407,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return nth_match(i, match);
     }
 
-    public final RubyString regsub(RubyString str, RubyString src, Matcher matcher) {
+    static RubyString regsub(RubyString str, RubyString src, Matcher matcher, Encoding enc) {
         Region regs = matcher.getRegion();
         
         int no = -1;
@@ -1407,7 +1420,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         ByteList srcbs = src.getByteList();
 
         ByteList val = null;
-        Encoding enc = kcode.getEncoding();
 
         while (s < end) {
             int ss = s;
@@ -1471,13 +1483,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         if (p < end) {
             if (val == null) {
-                return RubyString.newString(getRuntime(), bs.makeShared(p - bs.begin, end - p));
+                return RubyString.newString(str.getRuntime(), bs.makeShared(p - bs.begin, end - p));
             } else {
                 val.append(bytes, p, end - p);
             }
         }
         if (val == null) return str;
-        return RubyString.newString(getRuntime(), val);
+        return RubyString.newString(str.getRuntime(), val);
     }
 
     final int adjustStartPos19(RubyString str, int pos, boolean reverse) {

@@ -930,7 +930,7 @@ public class RubyRational extends RubyNumeric {
         Ruby runtime = context.getRuntime();
         if (bytes.realSize == 0) return runtime.newArray(runtime.getNil(), recv);
 
-        IRubyObject m = RubyRegexp.newRegexp(runtime, Numeric.RationalPatterns.rat_pat).callMethod(context, "match", s);
+        IRubyObject m = RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.rat_pat).callMethod(context, "match", s);
         
         if (!m.isNil()) {
             IRubyObject si = m.callMethod(context, "[]", RubyFixnum.one(runtime));
@@ -938,11 +938,11 @@ public class RubyRational extends RubyNumeric {
             IRubyObject de = m.callMethod(context, "[]", RubyFixnum.three(runtime));
             IRubyObject re = m.callMethod(context, "post_match");
             
-            RubyArray a = nu.callMethod(context, "split", RubyRegexp.newRegexp(runtime, Numeric.RationalPatterns.an_e_pat)).convertToArray();
+            RubyArray a = nu.callMethod(context, "split", RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.an_e_pat)).convertToArray();
             IRubyObject ifp = a.eltInternal(0);
             IRubyObject exp = a.size() != 2 ? runtime.getNil() : a.eltInternal(1);
             
-            a = ifp.callMethod(context, "split", RubyRegexp.newRegexp(runtime, Numeric.RationalPatterns.a_dot_pat)).convertToArray();
+            a = ifp.callMethod(context, "split", RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.a_dot_pat)).convertToArray();
             IRubyObject ip = a.eltInternal(0);
             IRubyObject fp = a.size() != 2 ? runtime.getNil() : a.eltInternal(1);
             

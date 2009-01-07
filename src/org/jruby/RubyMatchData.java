@@ -54,11 +54,11 @@ import org.jruby.util.ByteList;
 @JRubyClass(name="MatchData")
 public class RubyMatchData extends RubyObject {
     Region regs;        // captures
-    int begin;          // begin and end are used when not groups defined
-    int end;
-    RubyString str;
+    int begin, end;     // begin and end are used when not groups defined
+    RubyString str;     // source string
+    Regex pattern;
     RubyRegexp regexp;
-    
+
     public static RubyClass createMatchDataClass(Ruby runtime) {
         RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getObject(), MATCH_DATA_ALLOCATOR);
         runtime.setMatchData(matchDataClass);
@@ -100,7 +100,11 @@ public class RubyMatchData extends RubyObject {
     }
 
     private void check() {
-        if (regexp == null) throw getRuntime().newTypeError("uninitialized Match");
+        if (str == null) throw getRuntime().newTypeError("uninitialized Match");
+    }
+
+    private void checkLazyRegexp() {
+        if (regexp == null) regexp = RubyRegexp.newRegexp(getRuntime(), ByteList.EMPTY_BYTELIST, pattern);
     }
 
     private RubyArray match_array(Ruby runtime, int start) {
@@ -140,7 +144,7 @@ public class RubyMatchData extends RubyObject {
 
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect() {
-        if (regexp == null) return anyToString();
+        if (str == null) return anyToString();
 
         RubyString result = getRuntime().newString();
         result.cat((byte)'#').cat((byte)'<');
@@ -148,7 +152,6 @@ public class RubyMatchData extends RubyObject {
 
         NameEntry[]names = new NameEntry[regs == null ? 1 : regs.numRegs];
 
-        Regex pattern = regexp.getPattern();
         if (pattern.numberOfNames() > 0) {
             for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
                 NameEntry e = i.next();
@@ -181,12 +184,14 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(name = "regexp", compat = CompatVersion.RUBY1_9)
     public IRubyObject regexp(ThreadContext context, Block block) {
         check();
+        checkLazyRegexp();
         return regexp;
     }
 
     @JRubyMethod(name = "names", compat = CompatVersion.RUBY1_9)
     public IRubyObject names(ThreadContext context, Block block) {
         check();
+        checkLazyRegexp();
         return regexp.names(context);
     }
 
@@ -236,7 +241,7 @@ public class RubyMatchData extends RubyObject {
     private int nameToBackrefNumber(RubyString str) {
         ByteList value = str.getByteList();
         try {
-            return regexp.getPattern().nameToBackrefNumber(value.bytes, value.begin, value.begin + value.realSize, regs);
+            return pattern.nameToBackrefNumber(value.bytes, value.begin, value.begin + value.realSize, regs);
         } catch (JOniException je) {
             throw getRuntime().newIndexError(je.getMessage());
         }

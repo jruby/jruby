@@ -911,7 +911,7 @@ public class RubyComplex extends RubyNumeric {
         IRubyObject sr, si, re;
         sr = si = re = runtime.getNil();
         boolean po = false;
-        IRubyObject m = RubyRegexp.newRegexp(runtime, Numeric.ComplexPatterns.comp_pat0).callMethod(context, "match", s);
+        IRubyObject m = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.comp_pat0).callMethod(context, "match", s);
 
         if (!m.isNil()) {
             sr = m.callMethod(context, "[]", RubyFixnum.one(runtime));
@@ -921,7 +921,7 @@ public class RubyComplex extends RubyNumeric {
         }
 
         if (m.isNil()) {
-            m = RubyRegexp.newRegexp(runtime, Numeric.ComplexPatterns.comp_pat1).callMethod(context, "match", s);
+            m = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.comp_pat1).callMethod(context, "match", s);
 
             if (!m.isNil()) {
                 sr = runtime.getNil();
@@ -936,7 +936,7 @@ public class RubyComplex extends RubyNumeric {
         }
 
         if (m.isNil()) {
-            m = RubyRegexp.newRegexp(runtime, Numeric.ComplexPatterns.comp_pat2).callMethod(context, "match", s);
+            m = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.comp_pat2).callMethod(context, "match", s);
             if (m.isNil()) return runtime.newArray(runtime.getNil(), recv);
             sr = m.callMethod(context, "[]", RubyFixnum.one(runtime));
             if (m.callMethod(context, "[]", RubyFixnum.two(runtime)).isNil()) {
