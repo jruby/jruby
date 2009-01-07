@@ -3798,24 +3798,19 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return result;
     }
 
-    
     private ByteList getBytesForPattern(IRubyObject obj) {
         if (obj instanceof RubyString) return ((RubyString)obj).value;
         IRubyObject val = obj.checkStringType();
         if (val.isNil()) throw getRuntime().newTypeError("wrong argument type " + obj.getMetaClass() + " (expected Regexp)");
         return ((RubyString)val).value;
     }
+
     /** get_pat
      * 
      */
     private RubyRegexp getPattern(IRubyObject obj) {
         if (obj instanceof RubyRegexp) return (RubyRegexp)obj;
         return RubyRegexp.newRegexp(getRuntime(), getBytesForPattern(obj));
-    }
-
-    private RubyRegexp getQuotedPattern(IRubyObject obj) {
-        if (obj instanceof RubyRegexp) return (RubyRegexp)obj;
-        return RubyRegexp.newQuotedRegexp(getRuntime(), getBytesForPattern(obj));
     }
 
     private Regex getQuotedRegex(IRubyObject obj) {

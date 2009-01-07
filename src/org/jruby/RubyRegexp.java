@@ -230,7 +230,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     private RubyRegexp(Ruby runtime) {
         super(runtime, runtime.getRegexp());
     }
-    
+
     private RubyRegexp(Ruby runtime, ByteList str) {
         this(runtime);
         setKCodeDefault();
@@ -245,15 +245,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         this.str = str;
         this.pattern = getRegexpFromCache(runtime, str, kcode.getEncoding(), options & 0xf);
     }
-    
-    // quoted
-    private RubyRegexp(Ruby runtime, ByteList str, boolean _) {
-        this(runtime);
-        setKCodeDefault();
-        this.kcode = runtime.getKCode();
-        this.str = str;
-        this.pattern = getQuotedRegexpFromCache(runtime, str, kcode.getEncoding(), 0);
-    }
 
     // used only by the compiler/interpreter (will set the literal flag)
     public static RubyRegexp newRegexp(Ruby runtime, String pattern, int options) {
@@ -267,10 +258,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     public static RubyRegexp newRegexp(Ruby runtime, ByteList pattern) {
         return new RubyRegexp(runtime, pattern);
-    }
-
-    public static RubyRegexp newQuotedRegexp(Ruby runtime, ByteList pattern) {
-        return new RubyRegexp(runtime, pattern, true);
     }
 
     static RubyRegexp newRegexp(Ruby runtime, ByteList str, Regex pattern) {
