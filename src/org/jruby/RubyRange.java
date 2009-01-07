@@ -549,12 +549,13 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(name = "max", frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject max(ThreadContext context, Block block) {
-        if (block.isGiven() || isExclusive && !(end instanceof RubyInteger)) {
+        if (block.isGiven() || isExclusive && !(end instanceof RubyNumeric)) {
             return RuntimeHelpers.invokeSuper(context, this, block);
         } else {
             int c = RubyComparable.cmpint(context, begin.callMethod(context, "<=>", end), begin, end);
             Ruby runtime = context.getRuntime();
             if (isExclusive) {
+                if (!(end instanceof RubyInteger)) throw runtime.newTypeError("cannot exclude non Integer end value");
                 if (c == 0) return runtime.getNil();
                 if (end instanceof RubyFixnum) return RubyFixnum.newFixnum(runtime, ((RubyFixnum)end).getLongValue() - 1);
                 return end.callMethod(context, "-", RubyFixnum.one(runtime));
