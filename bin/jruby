@@ -145,7 +145,7 @@ do
         fi
         ;;
      # Match switches that take an argument
-     -e|-I|-S) ruby_args=("${ruby_args[@]}" "$1" "$2"); shift ;;
+     -C|-e|-I|-S) ruby_args=("${ruby_args[@]}" "$1" "$2"); shift ;;
      # Match same switches with argument stuck together
      -e*|-I*|-S*) ruby_args=("${ruby_args[@]}" "$1" ) ;;
      # Run with the instrumented profiler: http://jiprof.sourceforge.net/
