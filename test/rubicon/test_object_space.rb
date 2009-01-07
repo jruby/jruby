@@ -5,9 +5,10 @@ require 'rbconfig'
 #
 # Find the name of the interpreter.
 #  FIXME: This should be moved to a common location.
-
-$interpreter = File.join(Config::CONFIG["bindir"], 
-			 Config::CONFIG["RUBY_INSTALL_NAME"])
+WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
+SEPARATOR = WINDOWS ? '\\' : '/'
+bin = Config::CONFIG['bindir'].gsub('/', SEPARATOR)
+$interpreter = [bin, Config::CONFIG['ruby_install_name']].join(SEPARATOR)
 
 class TestObjectSpace < Test::Unit::TestCase
 
@@ -57,7 +58,7 @@ class TestObjectSpace < Test::Unit::TestCase
       }
       tf.close
       if ENV['OS'] =~ /\AWin/
-        command = %{"#$interpreter" "#{tf.path}"}
+        command = %{#$interpreter "#{tf.path}"}
       else
         command = %{#$interpreter #{tf.path}}
       end
