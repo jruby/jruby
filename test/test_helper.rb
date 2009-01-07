@@ -3,13 +3,19 @@ require 'jruby' if defined?(JRUBY_VERSION)
 require 'tempfile'
 
 module TestHelper
-  RUBY = File.join(Config::CONFIG['bindir'], Config::CONFIG['ruby_install_name'])
+  # TODO: Consider how this should work if we have --windows or similiar
   WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
+  SEPARATOR = WINDOWS ? '\\' : '/'
+  RUBY = [Config::CONFIG['bindir'], Config::CONFIG['ruby_install_name']].join(SEPARATOR)
   
   arch = java.lang.System.getProperty('sun.arch.data.model')
   WINDOWS_JVM_64 = (WINDOWS && arch == '64')
   
   IBM_JVM = Config::CONFIG['host_vendor'] =~ /IBM Corporation/
+
+  def q
+    WINDOWS ? '"' : '\''
+  end
 
   def jruby(*args)
     prev_in_process = JRuby.runtime.instance_config.run_ruby_in_process
