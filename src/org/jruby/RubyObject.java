@@ -824,7 +824,7 @@ public class RubyObject extends RubyBasicObject {
     @JRubyMethod(name = "freeze")
     public IRubyObject freeze(ThreadContext context) {
         if ((flags & FROZEN_F) == 0) {
-            if (context.getRuntime().getSafeLevel() >= 4 && isTaint()) {
+            if (context.getRuntime().getSafeLevel() >= 4 && !isTaint()) {
                 throw context.getRuntime().newSecurityError("Insecure: can't freeze object");
             }
             flags |= FROZEN_F;
