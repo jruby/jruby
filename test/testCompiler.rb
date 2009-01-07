@@ -92,6 +92,8 @@ test_equal(2, compile_and_run(ifCode))
 test_equal(2, compile_and_run("2 if true"))
 test_equal(3, compile_and_run(unlessCode))
 test_equal(3, compile_and_run("3 unless false"))
+# statement-based 'and' with modifier
+test_equal(1, compile_and_run("1 and 2 if 3; 1"))
 test_equal(6, compile_and_run(whileCode))
 test_equal('baz', compile_and_run(iterBasic))
 compile_and_run(defBasic)

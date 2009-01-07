@@ -584,13 +584,14 @@ public class ASTCompiler {
         compile(andNode.getFirstNode(), context, true);
 
         BranchCallback longCallback = new BranchCallback() {
-
                     public void branch(BodyCompiler context) {
                         compile(andNode.getSecondNode(), context, true);
                     }
                 };
 
         context.performLogicalAnd(longCallback);
+
+        if (!expr) context.consumeCurrentValue();
     }
 
     public void compileArray(Node node, BodyCompiler context, boolean expr) {
