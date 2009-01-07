@@ -1079,9 +1079,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         final RubyMatchData match;
         if (backref.isNil() || ((RubyMatchData)backref).used()) {
             match = new RubyMatchData(runtime);
+            frame.setBackRef(match);
         } else {
             match = (RubyMatchData)backref;
-            match.setTaint(runtime.getSafeLevel() >= 3);
+            if (runtime.getSafeLevel() >= 3) match.setTaint(true);
         }
 
         match.regs = matcher.getRegion(); // lazy, null when no groups defined
@@ -1089,8 +1090,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         match.end = matcher.getEnd();
         match.pattern = regex;
         match.str = (RubyString)str.strDup(runtime).freeze(context);
-
-        frame.setBackRef(match);
 
         match.infectBy(str);
         return match;
