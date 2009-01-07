@@ -776,36 +776,55 @@ public class ASTCompiler {
 
     private boolean caseIsAllIntRangedFixnums(CaseNode caseNode) {
         boolean caseIsAllLiterals = true;
-        for (Node node = caseNode.getFirstWhenNode(); node != null && node instanceof WhenNode; node = ((WhenNode)node).getNextCase()) {
+       Outer: for (Node node = caseNode.getFirstWhenNode(); node != null && node instanceof WhenNode; node = ((WhenNode)node).getNextCase()) {
             WhenNode whenNode = (WhenNode)node;
             if (whenNode.getExpressionNodes() instanceof ArrayNode) {
                 ArrayNode arrayNode = (ArrayNode)whenNode.getExpressionNodes();
-                if (arrayNode.size() == 1 && arrayNode.get(0) instanceof FixnumNode) {
-                    FixnumNode fixnumNode = (FixnumNode)arrayNode.get(0);
-                    long value = fixnumNode.getValue();
-                    if (value <= Integer.MAX_VALUE && value >= Integer.MIN_VALUE) {
-                        // OK! we can safely use it in a case
-                        continue;
+
+                for (Node maybeFixnum : arrayNode.childNodes()) {
+                    if (maybeFixnum instanceof FixnumNode) {
+                        FixnumNode fixnumNode = (FixnumNode)maybeFixnum;
+                        long value = fixnumNode.getValue();
+                        if (value <= Integer.MAX_VALUE && value >= Integer.MIN_VALUE) {
+                            continue;
+                        } else {
+                            return false;
+                        }
+                    } else {
+                        return false;
                     }
                 }
+            } else {
+                return false;
             }
-            // if we get here, our rigid requirements have not been met; fail
-            caseIsAllLiterals = false;
-            break;
         }
         return caseIsAllLiterals;
     }
 
+    private class FixnumWhen {
+        public final int value;
+        public final WhenNode whenNode;
+
+        public FixnumWhen(int value, WhenNode whenNode) {
+            this.value = value;
+            this.whenNode = whenNode;
+        }
+    }
+
     @SuppressWarnings("unchecked")
     public void compileFixnumCase(final Node node, BodyCompiler context) {
-        List<WhenNode> cases = new ArrayList<WhenNode>();
+        List<FixnumWhen> cases = new ArrayList<FixnumWhen>();
         Node elseBody = null;
 
         // first get all when nodes
         for (Node tmpNode = node; tmpNode != null; tmpNode = ((WhenNode)tmpNode).getNextCase()) {
             WhenNode whenNode = (WhenNode)tmpNode;
+            ArrayNode expression = (ArrayNode)whenNode.getExpressionNodes();
 
-            cases.add(whenNode);
+            for (Node exprNode : expression.childNodes()) {
+                FixnumNode fixnumNode = (FixnumNode)exprNode;
+                cases.add(new FixnumWhen((int)fixnumNode.getValue(), whenNode));
+            }
 
             if (whenNode.getNextCase() != null) {
                 // if there's another node coming, make sure it will be a when...
@@ -822,10 +841,10 @@ public class ASTCompiler {
         // sort them based on literal value
         Collections.sort(cases, new Comparator() {
             public int compare(Object o1, Object o2) {
-                WhenNode w1 = (WhenNode)o1;
-                WhenNode w2 = (WhenNode)o2;
-                Integer value1 = (int)((FixnumNode)((ArrayNode)w1.getExpressionNodes()).get(0)).getValue();
-                Integer value2 = (int)((FixnumNode)((ArrayNode)w2.getExpressionNodes()).get(0)).getValue();
+                FixnumWhen w1 = (FixnumWhen)o1;
+                FixnumWhen w2 = (FixnumWhen)o2;
+                Integer value1 = w1.value;
+                Integer value2 = w2.value;
                 return value1.compareTo(value2);
             }
         });
@@ -834,8 +853,9 @@ public class ASTCompiler {
 
         // prepare arrays of int cases and code bodies
         for (int i = 0 ; i < intCases.length; i++) {
-            intCases[i] = (int)((FixnumNode)((ArrayNode)cases.get(i).getExpressionNodes()).get(0)).getValue();
-            bodies[i] = cases.get(i).getBodyNode();
+            FixnumWhen fw = cases.get(i);
+            intCases[i] = fw.value;
+            bodies[i] = fw.whenNode.getBodyNode();
         }
         
         final ArrayCallback callback = new ArrayCallback() {

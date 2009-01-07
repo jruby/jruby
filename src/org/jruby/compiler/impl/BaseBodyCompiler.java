@@ -8,6 +8,10 @@ import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -2220,21 +2224,31 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.label(ifEnd);
     }
 
-    public void literalSwitch(int[] cases, Object bodies, ArrayCallback arrayCallback, CompilerCallback defaultCallback) {
+    public void literalSwitch(int[] cases, Object[] bodies, ArrayCallback arrayCallback, CompilerCallback defaultCallback) {
         // TODO assuming case is a fixnum
         method.checkcast(p(RubyFixnum.class));
         method.invokevirtual(p(RubyFixnum.class), "getLongValue", sig(long.class));
         method.l2i();
 
+        Map<Object, Label> labelMap = new HashMap<Object, Label>();
         Label[] labels = new Label[cases.length];
         for (int i = 0; i < labels.length; i++) {
-            labels[i] = new Label();
+            Object body = bodies[i];
+            Label label = labelMap.get(body);
+            if (label == null) {
+                label = new Label();
+                labelMap.put(body, label);
+            }
+            labels[i] = label;
         }
         Label defaultLabel = new Label();
         Label endLabel = new Label();
 
         method.lookupswitch(defaultLabel, cases, labels);
+        Set<Label> labelDone = new HashSet<Label>();
         for (int i = 0; i < cases.length; i++) {
+            if (labelDone.contains(labels[i])) continue;
+            labelDone.add(labels[i]);
             method.label(labels[i]);
             arrayCallback.nextValue(this, bodies, i);
             method.go_to(endLabel);
