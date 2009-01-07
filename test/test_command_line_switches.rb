@@ -12,21 +12,6 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     end
   end
 
-  def test_dash_little_a_splits_input
-    args = %q{-a -n -e "print $F.join(',')"}
-
-    if (WINDOWS)
-      output = jruby_with_pipe("echo 1,2,3", args)
-    else
-      output = jruby_with_pipe("echo '1,2,3'", args)
-    end
-    assert_equal "1,2,3", output.chomp
-  end
-
-  def test_dash_little_b_benchmarks
-    assert_match /Runtime: \d+ ms/, jruby(%q{ -b -e 'puts nil' })
-  end
-
   def test_dash_little_c_checks_syntax
     with_jruby_shell_spawning do
       with_temp_script("bad : code") do |s|
@@ -42,47 +27,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
       end
     end
   end
-
-  def test_dash_big_c_changes_directory
-    parent_dir = Dir.chdir('..') { Dir.pwd }
-    # FIXME: we need gsub on Windows for some reason. This should not be needed.
-    assert_equal "#{parent_dir}\n", `#{RUBY} -C .. -e 'puts Dir.pwd'`.gsub('\\', '/')
-  end
-
-  def test_dash_little_d_sets_debug_flag
-    assert_equal "true\n", `#{RUBY} -d -e 'puts $DEBUG'`
-  end
-
-  def test_dash_little_e_executes_code
-    assert_equal "nil\n", `#{RUBY} -e 'puts nil'`
-  end
-
-  def test_dash_big_f_changes_autosplit_pattern
-    args = %q{-a -F, -n -e 'print $F.join(";")'}
-
-    if (WINDOWS)
-      # FIXME: fails on windows
-      # output = jruby_with_pipe("echo 1,2,3", args)
-    else
-      output = jruby_with_pipe("echo '1,2,3'", args)
-      assert_equal "1;2;3\n", output
-    end
-  end
-
-  def test_dash_big_i_puts_argument_on_load_path
-    assert_match /^hello/, `#{RUBY} -Ihello -e 'puts $LOAD_PATH'`
-  end
-
-  def test_dash_big_j_sets_java_properties
-    with_jruby_shell_spawning do
-      assert_match /ruby 1\.9/, `#{RUBY} -J-Djruby.compat.version=RUBY1_9 --version`
-    end
-  end
   
-  def test_dash_big_k_sets_kcode
-    assert_equal "UTF8\n", `#{RUBY} -Ku -e 'puts $KCODE'`
-  end
-
   # TODO -l: no idea what line ending processing is
   def test_dash_little_n_wraps_script_with_while_gets
     # FIXME: currently fails on windows and IBM JDK
@@ -104,27 +49,12 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     end
   end
 
-  def test_little_r_requires_library
-    with_temp_script("print defined?(Gem)") do |s|
-      assert_equal "constant", jruby("-rrubygems #{s.path}")
-    end
-  end
-
-  def test_dash_little_s_one_keyval
-    with_temp_script(%q{puts $v}) do |s|
-      assert_equal "123", `#{RUBY} -s #{s.path} -v=123`.chomp
-    end
-  end
-
-  def test_dash_little_s_two_keyvals
-    with_temp_script(%q{puts $v, $foo}) do |s|
-      assert_equal "123\nbar", `#{RUBY} -s #{s.path} -v=123 -foo=bar`.chomp
-    end
-  end
-
-  def test_dash_little_s_removes_options_from_argv
-    with_temp_script(%q{puts $v, *ARGV}) do |s|
-      assert_equal "123\n4\n5\n6", `#{RUBY} -s #{s.path} -v=123 4 5 6`.chomp
+  # two args passed in which we can see as globals.  We also can see that
+  # ARGV has removed those args from its list.  Also an improperly formatted
+  # -s option (-g-a=123) is passed and is ignored.
+  def test_dash_little_s
+    with_temp_script(%q{puts $g, $v, $foo, *ARGV}) do |s|
+      assert_equal "nil\n123\nbar\n4\n5\n6", `#{RUBY} -s #{s.path} -g-a=123 -v=123 -foo=bar 4 5 6`.chomp
     end
   end
 
@@ -134,19 +64,11 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     end
   end
 
-  def test_dash_little_s_options_ignores_invalid_global_var_names
-    with_temp_script(%q{puts $v}) do |s|
-      assert_equal "nil", `#{RUBY} -s #{s.path} -v-a=123`.chomp
-    end
-  end
-
   # JRUBY-2693
   def test_dash_little_r_provides_program_name_to_loaded_library
     with_temp_script(%q{puts $0; puts $PROGRAM_NAME}) do |s|
-      assert_equal(
-        "#{s.path}\n#{s.path}\n#{s.path}\n#{s.path}\n",
-        jruby("-r#{s.path} #{s.path}")
-      )
+      assert_equal("#{s.path}\n#{s.path}\n#{s.path}\n#{s.path}\n", 
+                   jruby("-r#{s.path} #{s.path}"))
     end
   end
 
@@ -156,21 +78,29 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     assert_match /^\d+\.\d+\.\d+/, `#{RUBY} -S jgem --version`
   end
 
-  def test_dash_big_T_sets_taint_level
-    assert_equal "3\n", `#{RUBY} -T3 -e 'puts $SAFE'`
-  end
+  def test_dash_little_v_version_verbose_T_taint_d_debug_K_kcode_r_require_b_benchmarks_a_splitsinput_I_loadpath_C_cwd_F_delimeter_J_javaprop
+    e_line = 'puts $VERBOSE, $SAFE, $DEBUG, $KCODE, Gem, $F.join(59.chr), $LOAD_PATH.join(44.chr), Dir.pwd, Java::java::lang::System.getProperty(:foo.to_s)'
+    args = "-v -T3 -d -Ku -rrubygems -b -a -n -Ihello -C .. -F, -J-Dfoo=bar -e #{q + e_line + q}"
+    lines = jruby_with_pipe("echo 1,2,3", args).split("\n")
+    parent_dir = Dir.chdir('..') { Dir.pwd }
 
-  def test_dash_little_v_prints_version
-    assert_match /ruby \d+\.\d+\.\d+/, `ruby -v -e 'a = 1'`
-  end
-  
-  def test_dash_little_v_turns_on_verbose_mode
-    assert_match /true\n$/, `#{RUBY} -v -e 'puts $VERBOSE'`
+    assert_match /ruby \d+\.\d+\.\d+/, lines[0]
+    assert_match /true$/, lines[1]
+    assert_equal "3", lines[2]
+    assert_equal "true", lines[3]
+    assert_equal "UTF8", lines[4]
+    assert_equal "Gem", lines[5]
+    assert_equal "1;2;3", lines[6].rstrip
+    assert_match /^hello/, lines[7]
+    # The gsub is for windows
+    assert_equal "#{parent_dir}", lines[8].gsub('\\', '/')
+    assert_equal "bar", lines[9]
+    assert_match /Runtime: \d+ ms/, lines[10]
   end
   
   def test_dash_little_w_turns_warnings_on
     with_jruby_shell_spawning do
-      assert_match /warning/, `#{RUBY} -v -e 'defined? true' 2>&1`
+      assert_match /warning/, `#{RUBY} -v -e "defined? true" 2>&1`
     end
   end
 
@@ -209,26 +139,19 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     assert_match /jruby \d+\.\d+\.\d+/, version_string
   end
 
-  # JRUBY-2805
-  def test_args_with_equals_sign
-    result = jruby(%q{ -rjava -J-Dfoo=bar -e "print java.lang.System.getProperty('foo')"})
-    assert_equal("bar", result)
-  end
-
-  # JRUBY-2648
+  # JRUBY-2648 [Note: jre6 on windows does not ship server VM - use jdk]
   def test_server_vm_option
     # server VM when explicitly set --server
     result = jruby(%Q{--server -rjava \
       -e "print java.lang.management.ManagementFactory.getCompilationMXBean.name"})
     assert_match /(tiered|server|j9jit24)/, result.downcase
-
-    # server VM when explicitly set via -J-server
-    result = jruby(%Q{-J-server -rjava \
-      -e "print java.lang.management.ManagementFactory.getCompilationMXBean.name"})
-    assert_match /(tiered|server|j9jit24)/, result.downcase
   end
 
-  # JRUBY-2648
+  # JRUBY-2648 [Note: Originally these tests had tests for default vm and
+  # also for -J options in addition to jruby options (-J-client versus 
+  # --client).  In other tests we test that -J works and passes thru and
+  # we should not assume to know what versions of Java will have as their
+  # default VM.
   def test_client_vm_option
     arch = java.lang.System.getProperty('sun.arch.data.model')
     if (arch == nil || arch == '64')
@@ -236,18 +159,8 @@ class TestCommandLineSwitches < Test::Unit::TestCase
       return
     end
 
-    # client VM by default:
-    result = jruby(%Q{-rjava \
-      -e "print java.lang.management.ManagementFactory.getCompilationMXBean.name"})
-    assert_match /client|j9jit24/, result.downcase
-
     # client VM when explicitly set via --client
     result = jruby(%Q{--client -rjava \
-      -e "print java.lang.management.ManagementFactory.getCompilationMXBean.name"})
-    assert_match /client|j9jit24/, result.downcase
-
-    # client VM when explicitly set via -J-client
-    result = jruby(%Q{-J-client -rjava \
       -e "print java.lang.management.ManagementFactory.getCompilationMXBean.name"})
     assert_match /client|j9jit24/, result.downcase
   end

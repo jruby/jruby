@@ -18,19 +18,11 @@ module TestHelper
   end
 
   def jruby(*args)
-    prev_in_process = JRuby.runtime.instance_config.run_ruby_in_process
-    JRuby.runtime.instance_config.run_ruby_in_process = false
-    `#{RUBY} #{args.join(' ')}`
-  ensure
-    JRuby.runtime.instance_config.run_ruby_in_process = prev_in_process
+    with_jruby_shell_spawning { `#{RUBY} #{args.join(' ')}` }
   end
 
   def jruby_with_pipe(pipe, *args)
-    prev_in_process = JRuby.runtime.instance_config.run_ruby_in_process
-    JRuby.runtime.instance_config.run_ruby_in_process = false
-    `#{pipe} | "#{RUBY}" #{args.join(' ')}`
-   ensure
-    JRuby.runtime.instance_config.run_ruby_in_process = prev_in_process
+    with_jruby_shell_spawning { `#{pipe} | "#{RUBY}" #{args.join(' ')}` }
   end
 
   def with_temp_script(script, filename="test-script")
@@ -54,6 +46,7 @@ module TestHelper
     prev_in_process = JRuby.runtime.instance_config.run_ruby_in_process
     JRuby.runtime.instance_config.run_ruby_in_process = false
     yield
+  ensure
     JRuby.runtime.instance_config.run_ruby_in_process = prev_in_process
   end
 end
