@@ -1,4 +1,5 @@
 require 'test/unit'
+require 'test/test_helper'
 require 'rbconfig'
 
 # Since we haven't found a good way to instantiate multiple ARGF instances for testing,
@@ -38,6 +39,7 @@ test_equal nil, ARGF.gets
 END_OF_SCRIPT
 
 class TestArgf < Test::Unit::TestCase
+  include TestHelper
 
   def test_argf_sanity
     begin
@@ -45,8 +47,7 @@ class TestArgf < Test::Unit::TestCase
       File.open('__argf_input_1', 'w') { |f| f.write "1:1\n1:2" }
       File.open('__argf_input_2', 'w') { |f| f.write "2:1\n2:2\n" }
 
-      ruby_launcher = "#{Config::CONFIG['bindir']}/#{Config::CONFIG['RUBY_INSTALL_NAME']}"
-      assert system("#{ruby_launcher} __argf_script.rb __argf_input_1 __argf_input_2"),
+      assert jruby("__argf_script.rb", "__argf_input_1", "__argf_input_2"),
              "Smoke test script for ARGF failed"
     ensure
       File.unlink '__argf_script.rb' rescue nil
