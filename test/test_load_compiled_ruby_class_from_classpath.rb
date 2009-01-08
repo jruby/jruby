@@ -93,12 +93,7 @@ public class #{StarterName} {
 
   def create_compiled_class
     File.open(RubySource, "w") { |f| f << "print 'hello from runner'" }
-    if (WINDOWS)
-      # Damn you, Windows!
-      jruby(%Q{-S jrubyc -p \\"\\" #{RubySource}})
-    else
-      jruby("-S jrubyc -p '' #{RubySource}")
-    end
+    jruby("-S jrubyc -p #{q}#{q} #{RubySource}")
     assert_equal 0, $?.exitstatus, "jrubyc failed to compile #{RubySource} into #{RubyClass}"
   ensure
     # just in case, remove the rb file
