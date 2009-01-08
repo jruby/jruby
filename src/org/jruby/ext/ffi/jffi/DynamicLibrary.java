@@ -3,11 +3,6 @@ package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.Address;
 import com.kenai.jffi.Library;
-import java.lang.ref.WeakReference;
-import java.util.Collections;
-import java.util.Map;
-import java.util.WeakHashMap;
-import java.util.concurrent.ConcurrentHashMap;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
