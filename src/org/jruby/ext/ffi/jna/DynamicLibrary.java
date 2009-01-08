@@ -71,7 +71,8 @@ public class DynamicLibrary extends RubyObject {
         @JRubyMethod(name = "inspect")
         public IRubyObject inspect(ThreadContext context) {
             return RubyString.newString(context.getRuntime(),
-                    String.format("#<Library Symbol library=%s symbol=%s address=%#x>", library.name, name, getAddress()));
+                    String.format("#<Library Symbol library=%s symbol=%s address=%#x>", 
+                    library.name, name, ptr2long(getAddress())));
         }
     }
 }
