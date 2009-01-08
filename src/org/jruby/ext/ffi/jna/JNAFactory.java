@@ -57,6 +57,9 @@ public class JNAFactory extends org.jruby.ext.ffi.Factory {
             if (ffi.fastGetClass("VariadicInvoker") == null) {
                 JNAVariadicInvoker.createVariadicInvokerClass(runtime, ffi);
             }
+            if (ffi.fastGetClass("DynamicLibrary") == null) {
+                DynamicLibrary.createDynamicLibraryClass(runtime, ffi);
+            }
         }
     }
     protected FFIProvider newProvider(Ruby runtime) {
