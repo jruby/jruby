@@ -30,7 +30,7 @@ public class JFFIInvoker extends org.jruby.ext.ffi.Invoker {
     public JFFIInvoker(Ruby runtime, String libraryName, String functionName, NativeType returnType, NativeParam[] parameterTypes, String convention) {
         super(runtime, parameterTypes.length);
         try {
-            this.library = new Library(libraryName, Library.LAZY);
+            this.library = LibraryCache.open(libraryName, Library.LAZY);
         } catch (UnsatisfiedLinkError ex) {
             throw runtime.newLoadError("Could not open library " + libraryName);
         }
