@@ -147,7 +147,7 @@ public class ASTCompiler {
     
     public void compile(Node node, BodyCompiler context, boolean expr) {
         if (node == null) {
-            context.loadNil();
+            if (expr) context.loadNil();
             return;
         }
         switch (node.getNodeType()) {
@@ -770,13 +770,10 @@ public class ASTCompiler {
         // could be done. Ideally, it should be combined with the when processing
         // to improve code reuse before it's generally available.
         if (hasCase && caseIsAllIntRangedFixnums(whenNodes) && RubyInstanceConfig.FASTCASE_COMPILE_ENABLED) {
-            compileFixnumCase(caseNode.getCaseNode(), whenNodes, elseNode, context);
+            compileFixnumCase(caseNode.getCaseNode(), whenNodes, elseNode, context, expr);
         } else {
-            compileWhen(caseNode.getCaseNode(), whenNodes, elseNode, context, hasCase);
+            compileWhen(caseNode.getCaseNode(), whenNodes, elseNode, context, expr, hasCase);
         }
-
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
     }
 
     private boolean caseIsAllIntRangedFixnums(List<WhenNode> whenNodes) {
@@ -817,7 +814,7 @@ public class ASTCompiler {
     }
 
     @SuppressWarnings("unchecked")
-    public void compileFixnumCase(final Node value, final List<WhenNode> whenNodes, final Node elseNode, BodyCompiler context) {
+    public void compileFixnumCase(final Node value, final List<WhenNode> whenNodes, final Node elseNode, BodyCompiler context, final boolean expr) {
         List<FixnumWhen> cases = new ArrayList<FixnumWhen>();
         Node elseBody = null;
 
@@ -854,9 +851,9 @@ public class ASTCompiler {
             public void nextValue(BodyCompiler context, Object array, int index) {
                 Node[] bodies = (Node[])array;
                 if (bodies[index] != null) {
-                    compile(bodies[index], context,true);
+                    compile(bodies[index], context, expr);
                 } else {
-                    context.loadNil();
+                    if (expr) context.loadNil();
                 }
             }
         };
@@ -865,9 +862,9 @@ public class ASTCompiler {
         final CompilerCallback elseCallback = new CompilerCallback() {
             public void call(BodyCompiler context) {
                 if (finalElse == null) {
-                    context.loadNil();
+                    if (expr) context.loadNil();
                 } else {
-                    compile(finalElse, context,true);
+                    compile(finalElse, context, expr);
                 }
             }
         };
@@ -884,13 +881,13 @@ public class ASTCompiler {
                 },
                 new BranchCallback() {
                     public void branch(BodyCompiler context) {
-                        compileWhen(value, whenNodes, elseNode, context, true);
+                        compileWhen(value, whenNodes, elseNode, context, expr, true);
                     }
                 }
         );
     }
 
-    public void compileWhen(final Node value, List<WhenNode> whenNodes, final Node elseNode, BodyCompiler context, final boolean hasCase) {
+    public void compileWhen(final Node value, List<WhenNode> whenNodes, final Node elseNode, BodyCompiler context, final boolean expr, final boolean hasCase) {
         CompilerCallback inputValue = null;
         if (value != null) inputValue = new CompilerCallback() {
             public void call(BodyCompiler context) {
@@ -906,7 +903,7 @@ public class ASTCompiler {
             ArgumentsCallback whenArgs;
             CompilerCallback body = new CompilerCallback() {
                 public void call(BodyCompiler context) {
-                    compile(whenNode.getBodyNode(), context, true);
+                    compile(whenNode.getBodyNode(), context, expr);
                 }
             };
 
@@ -946,143 +943,11 @@ public class ASTCompiler {
         
         CompilerCallback fallback = new CompilerCallback() {
             public void call(BodyCompiler context) {
-                compile(elseNode, context, true);
+                compile(elseNode, context, expr);
             }
         };
         
         context.compileSequencedConditional(inputValue, conditionals, bodies, fallback);
-        /*
-        if (whenNode.getExpressionNodes() instanceof ArrayNode) {
-            ArrayNode arrayNode = (ArrayNode) whenNode.getExpressionNodes();
-
-            compileMultiArgWhen(whenNode, arrayNode, 0, context, hasCase);
-        } else {
-            if (hasCase) {
-                context.duplicateCurrentValue();
-            }
-
-            // evaluate the when argument
-            compile(whenNode.getExpressionNodes(), context,true);
-
-            final WhenNode currentWhen = whenNode;
-
-            if (hasCase) {
-                // we have a case value, call === on the condition value passing the case value
-                context.swapValues();
-                context.getInvocationCompiler().invokeEqq();
-            }
-
-            // check if the condition result is true, branch appropriately
-            BranchCallback trueBranch = new BranchCallback() {
-
-                        public void branch(BodyCompiler context) {
-                            // consume extra case value, we won't need it anymore
-                            if (hasCase) {
-                                context.consumeCurrentValue();
-                            }
-
-                            if (currentWhen.getBodyNode() != null) {
-                                compile(currentWhen.getBodyNode(), context,true);
-                            } else {
-                                context.loadNil();
-                            }
-                        }
-                    };
-
-            BranchCallback falseBranch = new BranchCallback() {
-
-                        public void branch(BodyCompiler context) {
-                            // proceed to the next when
-                            compileWhen(currentWhen.getNextCase(), context, hasCase);
-                        }
-                    };
-
-            context.performBooleanBranch(trueBranch, falseBranch);
-        }
-
-        if (elseNode == null) {
-            // reached the end of the when chain, pop the case (if provided) and we're done
-            if (hasCase) {
-                context.consumeCurrentValue();
-            }
-            context.loadNil();
-            return;
-        } else {
-            if (hasCase) {
-                // case value provided and we're going into "else"; consume it.
-                context.consumeCurrentValue();
-            }
-            compile(elseNode, context,true);
-            return;
-        }
-
-        WhenNode whenNode = (WhenNode) node;
-*/
-    }
-
-    public void compileMultiArgWhen(final WhenNode whenNode, final ArrayNode expressionsNode, final int conditionIndex, BodyCompiler context, final boolean hasCase) {
-/*
-        if (conditionIndex >= expressionsNode.size()) {
-            // done with conditions, continue to next when in the chain
-            compileWhen(whenNode.getNextCase(), context, hasCase);
-            return;
-        }
-
-        Node tag = expressionsNode.get(conditionIndex);
-
-        context.setLinePosition(tag.getPosition());
-
-        // reduce the when cases to a true or false ruby value for the branch below
-        if (tag instanceof WhenNode) {
-            // prepare to handle the when logic
-            if (hasCase) {
-                context.duplicateCurrentValue();
-            } else {
-                context.loadNull();
-            }
-            compile(((WhenNode) tag).getExpressionNodes(), context,true);
-            context.checkWhenWithSplat();
-        } else {
-            if (hasCase) {
-                context.duplicateCurrentValue();
-            }
-
-            // evaluate the when argument
-            compile(tag, context,true);
-
-            if (hasCase) {
-                // we have a case value, call === on the condition value passing the case value
-                context.swapValues();
-                context.getInvocationCompiler().invokeEqq();
-            }
-        }
-
-        // check if the condition result is true, branch appropriately
-        BranchCallback trueBranch = new BranchCallback() {
-
-                    public void branch(BodyCompiler context) {
-                        // consume extra case value, we won't need it anymore
-                        if (hasCase) {
-                            context.consumeCurrentValue();
-                        }
-
-                        if (whenNode.getBodyNode() != null) {
-                            compile(whenNode.getBodyNode(), context,true);
-                        } else {
-                            context.loadNil();
-                        }
-                    }
-                };
-
-        BranchCallback falseBranch = new BranchCallback() {
-
-                    public void branch(BodyCompiler context) {
-                        // proceed to the next when
-                        compileMultiArgWhen(whenNode, expressionsNode, conditionIndex + 1, context, hasCase);
-                    }
-                };
-
-        context.performBooleanBranch(trueBranch, falseBranch);*/
     }
 
     public void compileClass(Node node, BodyCompiler context, boolean expr) {
