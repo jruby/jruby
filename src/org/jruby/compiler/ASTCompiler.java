@@ -32,8 +32,10 @@ package org.jruby.compiler;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.AliasNode;
@@ -761,19 +763,7 @@ public class ASTCompiler {
         // last node, either !instanceof WhenNode or null, is the else
         Node elseNode = maybeWhen;
 
-        // NOTE: Currently this optimization is limited to the following situations:
-        // * No multi-valued whens
-        // * All whens must be an int-ranged literal fixnum
-        // It also still emits the code for the "safe" when logic, which is rather
-        // wasteful (since it essentially doubles each code body). As such it is
-        // normally disabled, but it serves as an example of how this optimization
-        // could be done. Ideally, it should be combined with the when processing
-        // to improve code reuse before it's generally available.
-        if (hasCase && caseIsAllIntRangedFixnums(whenNodes) && RubyInstanceConfig.FASTCASE_COMPILE_ENABLED) {
-            compileFixnumCase(caseNode.getCaseNode(), whenNodes, elseNode, context, expr);
-        } else {
-            compileWhen(caseNode.getCaseNode(), whenNodes, elseNode, context, expr, hasCase);
-        }
+        compileWhen(caseNode.getCaseNode(), whenNodes, elseNode, context, expr, hasCase);
     }
 
     private boolean caseIsAllIntRangedFixnums(List<WhenNode> whenNodes) {
@@ -803,93 +793,9 @@ public class ASTCompiler {
         return caseIsAllLiterals;
     }
 
-    private class FixnumWhen {
-        public final int value;
-        public final WhenNode whenNode;
-
-        public FixnumWhen(int value, WhenNode whenNode) {
-            this.value = value;
-            this.whenNode = whenNode;
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    public void compileFixnumCase(final Node value, final List<WhenNode> whenNodes, final Node elseNode, BodyCompiler context, final boolean expr) {
-        List<FixnumWhen> cases = new ArrayList<FixnumWhen>();
-        Node elseBody = null;
-
-        // first get all when nodes
-        for (WhenNode whenNode : whenNodes) {
-            ArrayNode expression = (ArrayNode)whenNode.getExpressionNodes();
-
-            for (Node exprNode : expression.childNodes()) {
-                FixnumNode fixnumNode = (FixnumNode)exprNode;
-                cases.add(new FixnumWhen((int)fixnumNode.getValue(), whenNode));
-            }
-        }
-        // sort them based on literal value
-        Collections.sort(cases, new Comparator() {
-            public int compare(Object o1, Object o2) {
-                FixnumWhen w1 = (FixnumWhen)o1;
-                FixnumWhen w2 = (FixnumWhen)o2;
-                Integer value1 = w1.value;
-                Integer value2 = w2.value;
-                return value1.compareTo(value2);
-            }
-        });
-        final int[] intCases = new int[cases.size()];
-        final Node[] bodies = new Node[intCases.length];
-
-        // prepare arrays of int cases and code bodies
-        for (int i = 0 ; i < intCases.length; i++) {
-            FixnumWhen fw = cases.get(i);
-            intCases[i] = fw.value;
-            bodies[i] = fw.whenNode.getBodyNode();
-        }
-        
-        final ArrayCallback callback = new ArrayCallback() {
-            public void nextValue(BodyCompiler context, Object array, int index) {
-                Node[] bodies = (Node[])array;
-                if (bodies[index] != null) {
-                    compile(bodies[index], context, expr);
-                } else {
-                    if (expr) context.loadNil();
-                }
-            }
-        };
-
-        final Node finalElse = elseBody;
-        final CompilerCallback elseCallback = new CompilerCallback() {
-            public void call(BodyCompiler context) {
-                if (finalElse == null) {
-                    if (expr) context.loadNil();
-                } else {
-                    compile(finalElse, context, expr);
-                }
-            }
-        };
-
-        // compile the literal switch; embed the fast version, but also the slow
-        // in case we need to fall back on it
-        // TODO: It would be nice to detect only types that fixnum is === to here
-        // and just fail fast for the others...maybe examine Ruby 1.9's optz?
-        context.typeCheckBranch(RubyFixnum.class,
-                new BranchCallback() {
-                    public void branch(BodyCompiler context) {
-                        context.literalSwitch(intCases, bodies, callback, elseCallback);
-                    }
-                },
-                new BranchCallback() {
-                    public void branch(BodyCompiler context) {
-                        compileWhen(value, whenNodes, elseNode, context, expr, true);
-                    }
-                }
-        );
-    }
-
     public void compileWhen(final Node value, List<WhenNode> whenNodes, final Node elseNode, BodyCompiler context, final boolean expr, final boolean hasCase) {
-        CompilerCallback inputValue = null;
-        if (value != null) inputValue = new CompilerCallback() {
+        CompilerCallback caseValue = null;
+        if (value != null) caseValue = new CompilerCallback() {
             public void call(BodyCompiler context) {
                 compile(value, context, true);
                 context.pollThreadEvents();
@@ -898,47 +804,25 @@ public class ASTCompiler {
 
         List<ArgumentsCallback> conditionals = new ArrayList<ArgumentsCallback>();
         List<CompilerCallback> bodies = new ArrayList<CompilerCallback>();
+        Map<CompilerCallback, int[]> switchCases = null;
+        if (RubyInstanceConfig.FASTCASE_COMPILE_ENABLED && caseIsAllIntRangedFixnums(whenNodes)) {
+            // NOTE: Currently this optimization is limited to the following situations:
+            // * All expressions must be int-ranged literal fixnums
+            // It also still emits the code for the "safe" when logic, which is rather
+            // wasteful (since it essentially doubles each code body). As such it is
+            // normally disabled, but it serves as an example of how this optimization
+            // could be done. Ideally, it should be combined with the when processing
+            // to improve code reuse before it's generally available.
+            switchCases = new HashMap<CompilerCallback, int[]>();
+        }
         for (final WhenNode whenNode : whenNodes) {
-            ArrayNode cases = (ArrayNode)whenNode.getExpressionNodes();
-            ArgumentsCallback whenArgs;
             CompilerCallback body = new CompilerCallback() {
                 public void call(BodyCompiler context) {
                     compile(whenNode.getBodyNode(), context, expr);
                 }
             };
-
-            boolean embeddedWhens = cases.get(cases.size() - 1) instanceof WhenNode;
-
-            if (!embeddedWhens) {
-                whenArgs = getArgsCallback(whenNode.getExpressionNodes());
-                conditionals.add(whenArgs);
-                bodies.add(body);
-            } else {
-                // this is not ideal; if there's any embedded splat, we duplicate each value
-                // plus the splat with its own copy of the body
-                for (Node kase : cases.childNodes()) {
-                    if (kase instanceof WhenNode) {
-                        final WhenNode splatWhen = (WhenNode)kase;
-
-                        whenArgs = new ArgumentsCallback() {
-                            public int getArity() {
-                                return -1;
-                            }
-                            public void call(BodyCompiler context) {
-                                // splatted when, compile directly and splat
-                                compile(splatWhen.getExpressionNodes(), context, true);
-                                context.splatCurrentValue();
-                                context.convertToJavaArray();
-                            }
-                        };
-                    } else {
-                        whenArgs = getArgsCallback(kase);
-                    }
-
-                    conditionals.add(whenArgs);
-                    bodies.add(body);
-                }
-            }
+            addConditionalForWhen(whenNode, conditionals, bodies, body);
+            if (switchCases != null) switchCases.put(body, getOptimizedCases(whenNode));
         }
         
         CompilerCallback fallback = new CompilerCallback() {
@@ -947,7 +831,67 @@ public class ASTCompiler {
             }
         };
         
-        context.compileSequencedConditional(inputValue, conditionals, bodies, fallback);
+        context.compileSequencedConditional(caseValue, RubyFixnum.class, switchCases, conditionals, bodies, fallback);
+    }
+
+    private int[] getOptimizedCases(WhenNode whenNode) {
+        if (whenNode.getExpressionNodes() instanceof ArrayNode) {
+            ArrayNode expression = (ArrayNode)whenNode.getExpressionNodes();
+            if (expression.get(expression.size() - 1) instanceof WhenNode) {
+                // splatted when, can't do it yet
+                return null;
+            }
+
+            int[] cases = new int[expression.size()];
+            for (int i = 0; i < cases.length; i++) {
+                switch (expression.get(i).getNodeType()) {
+                case FIXNUMNODE:
+                    cases[i] = (int)((FixnumNode)expression.get(i)).getValue();
+                    break;
+                default:
+                    // can't do it
+                    return null;
+                }
+            }
+            return cases;
+        }
+        return null;
+    }
+
+    private void addConditionalForWhen(final WhenNode whenNode, List<ArgumentsCallback> conditionals, List<CompilerCallback> bodies, CompilerCallback body) {
+        ArrayNode cases = (ArrayNode)whenNode.getExpressionNodes();
+        ArgumentsCallback whenArgs;
+        boolean embeddedWhens = cases.get(cases.size() - 1) instanceof WhenNode;
+        if (!embeddedWhens) {
+            whenArgs = getArgsCallback(whenNode.getExpressionNodes());
+            conditionals.add(whenArgs);
+            bodies.add(body);
+        } else {
+            // this is not ideal; if there's any embedded splat, we duplicate each value
+            // plus the splat with its own copy of the body
+            for (Node kase : cases.childNodes()) {
+                if (kase instanceof WhenNode) {
+                    final WhenNode splatWhen = (WhenNode)kase;
+                    whenArgs = new ArgumentsCallback() {
+
+                        public int getArity() {
+                            return -1;
+                        }
+
+                        public void call(BodyCompiler context) {
+                            // splatted when, compile directly and splat
+                            compile(splatWhen.getExpressionNodes(), context, true);
+                            context.splatCurrentValue();
+                            context.convertToJavaArray();
+                        }
+                    };
+                } else {
+                    whenArgs = getArgsCallback(kase);
+                }
+                conditionals.add(whenArgs);
+                bodies.add(body);
+            }
+        }
     }
 
     public void compileClass(Node node, BodyCompiler context, boolean expr) {

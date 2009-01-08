@@ -11,9 +11,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -2292,10 +2296,21 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.invokestatic(p(RubyString.class), "newString", sig(RubyString.class, Ruby.class, CharSequence.class));
     }
 
-    public void compileSequencedConditional(CompilerCallback inputValue, List<ArgumentsCallback> conditionals, List<CompilerCallback> bodies, CompilerCallback fallback) {
+    public void compileSequencedConditional(
+            CompilerCallback inputValue,
+            Class fastPathClass,
+            Map<CompilerCallback, int[]> switchCases,
+            List<ArgumentsCallback> conditionals,
+            List<CompilerCallback> bodies,
+            CompilerCallback fallback) {
+        Map<CompilerCallback, Label> bodyLabels = new HashMap<CompilerCallback, Label>();
+        Label defaultCase = new Label();
+        Label slowPath = new Label();
         CompilerCallback getCaseValue = null;
         final int tmp = getVariableCompiler().grabTempLocal();
+        
         if (inputValue != null) {
+            // we have an input case, prepare branching logic
             inputValue.call(this);
             getVariableCompiler().setTempLocal(tmp);
             getCaseValue = new CompilerCallback() {
@@ -2303,13 +2318,49 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                     getVariableCompiler().getTempLocal(tmp);
                 }
             };
+
+            if (switchCases != null) {
+                // we have optimized switch cases, build a lookupswitch
+
+                SortedMap<Integer, Label> optimizedLabels = new TreeMap<Integer, Label>();
+                for (Map.Entry<CompilerCallback, int[]> entry : switchCases.entrySet()) {
+                    Label lbl = new Label();
+
+                    bodyLabels.put(entry.getKey(), lbl);
+                    
+                    for (int i : entry.getValue()) {
+                        optimizedLabels.put(i, lbl);
+                    }
+                }
+
+                int[] caseValues = new int[optimizedLabels.size()];
+                Label[] caseLabels = new Label[optimizedLabels.size()];
+                Set<Map.Entry<Integer, Label>> entrySet = optimizedLabels.entrySet();
+                Iterator<Map.Entry<Integer, Label>> iterator = entrySet.iterator();
+                for (int i = 0; i < entrySet.size(); i++) {
+                    Map.Entry<Integer, Label> entry = iterator.next();
+                    caseValues[i] = entry.getKey();
+                    caseLabels[i] = entry.getValue();
+                }
+
+                // checkcast the value; if match, fast path; otherwise proceed to slow logic
+                getCaseValue.call(this);
+                method.instance_of(p(fastPathClass));
+                method.ifeq(slowPath);
+                
+                getCaseValue.call(this);
+                method.checkcast(p(RubyFixnum.class));
+                method.invokevirtual(p(RubyFixnum.class), "getLongValue", sig(long.class));
+                method.l2i();
+
+                method.lookupswitch(defaultCase, caseValues, caseLabels);
+            }
         }
 
         Label done = new Label();
 
         // expression-based tests + bodies
-//        List<Label> labels = new ArrayList<Label>();
-        Label currentLabel = new Label();
+        Label currentLabel = slowPath;
         for (int i = 0; i < conditionals.size(); i++) {
             ArgumentsCallback conditional = conditionals.get(i);
             CompilerCallback body = bodies.get(i);
@@ -2317,8 +2368,17 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             method.label(currentLabel);
 
             getInvocationCompiler().invokeEqq(conditional, getCaseValue);
-            currentLabel = new Label();
+            if (i + 1 < conditionals.size()) {
+                // normal case, create a new label
+                currentLabel = new Label();
+            } else {
+                // last conditional case, use defaultCase
+                currentLabel = defaultCase;
+            }
             method.ifeq(currentLabel);
+
+            Label bodyLabel = bodyLabels.get(body);
+            if (bodyLabel != null) method.label(bodyLabel);
 
             body.call(this);
 

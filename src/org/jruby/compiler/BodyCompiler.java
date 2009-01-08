@@ -28,6 +28,7 @@
 package org.jruby.compiler;
 
 import java.util.List;
+import java.util.Map;
 import org.jruby.ast.NodeType;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
@@ -559,5 +560,11 @@ public interface BodyCompiler {
     public void storeExceptionInErrorInfo();
     public void clearErrorInfo();
 
-    public void compileSequencedConditional(CompilerCallback inputValue, List<ArgumentsCallback> conditionals, List<CompilerCallback> bodies, CompilerCallback fallback);
+    public void compileSequencedConditional(
+            CompilerCallback inputValue,
+            Class fastPathClass,
+            Map<CompilerCallback, int[]> switchCases,
+            List<ArgumentsCallback> conditionals,
+            List<CompilerCallback> bodies,
+            CompilerCallback fallback);
 }
