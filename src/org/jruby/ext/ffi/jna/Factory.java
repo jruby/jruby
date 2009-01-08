@@ -39,7 +39,7 @@ import org.jruby.ext.ffi.Pointer;
 /**
  * An implementation of FFI for JNA
  */
-public class JNAFactory extends org.jruby.ext.ffi.Factory {
+public class Factory extends org.jruby.ext.ffi.Factory {
     
     @Override
     public void init(Ruby runtime, RubyModule ffi) {

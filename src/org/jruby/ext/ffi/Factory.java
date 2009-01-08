@@ -48,7 +48,7 @@ public abstract class Factory {
         private static final Factory INSTANCE = getInstance();
 
         private static final Factory getInstance() {
-            final String providerName = System.getProperty("ffi.provider");
+            final String providerName = System.getProperty("ffi.factory");
             Factory factory = null;
             List<String> providerNames = new ArrayList<String>();
             if (providerName != null) {
@@ -56,7 +56,7 @@ public abstract class Factory {
             }
             final String prefix = FFIProvider.class.getPackage().getName();
             providerNames.add(prefix + ".jffi.Factory");
-            providerNames.add(prefix + ".jna.JNAFactory");
+            providerNames.add(prefix + ".jna.Factory");
             for (String className : providerNames) {
                 try {
                     factory = (Factory) Class.forName(className, true, Ruby.getClassLoader()).newInstance();
