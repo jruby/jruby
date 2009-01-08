@@ -7,9 +7,11 @@ package org.jruby.compiler.impl;
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.jruby.MetaClass;
@@ -2288,5 +2290,47 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         loadThis();
         method.getfield(getScriptCompiler().getClassname(), "filename", ci(String.class));
         method.invokestatic(p(RubyString.class), "newString", sig(RubyString.class, Ruby.class, CharSequence.class));
+    }
+
+    public void compileSequencedConditional(CompilerCallback inputValue, List<ArgumentsCallback> conditionals, List<CompilerCallback> bodies, CompilerCallback fallback) {
+        CompilerCallback getCaseValue = null;
+        final int tmp = getVariableCompiler().grabTempLocal();
+        if (inputValue != null) {
+            inputValue.call(this);
+            getVariableCompiler().setTempLocal(tmp);
+            getCaseValue = new CompilerCallback() {
+                public void call(BodyCompiler context) {
+                    getVariableCompiler().getTempLocal(tmp);
+                }
+            };
+        }
+
+        Label done = new Label();
+
+        // expression-based tests + bodies
+//        List<Label> labels = new ArrayList<Label>();
+        Label currentLabel = new Label();
+        for (int i = 0; i < conditionals.size(); i++) {
+            ArgumentsCallback conditional = conditionals.get(i);
+            CompilerCallback body = bodies.get(i);
+
+            method.label(currentLabel);
+
+            getInvocationCompiler().invokeEqq(conditional, getCaseValue);
+            currentLabel = new Label();
+            method.ifeq(currentLabel);
+
+            body.call(this);
+
+            method.go_to(done);
+        }
+
+        // "else" body
+        method.label(currentLabel);
+        fallback.call(this);
+
+        method.label(done);
+
+        getVariableCompiler().releaseTempLocal();
     }
 }

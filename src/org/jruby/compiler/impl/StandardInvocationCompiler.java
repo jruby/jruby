@@ -27,6 +27,7 @@
 
 package org.jruby.compiler.impl;
 
+import org.jruby.RubyArray;
 import org.jruby.compiler.ArgumentsCallback;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.compiler.InvocationCompiler;
@@ -584,18 +585,82 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         method.invokevirtual(p(Block.class), "yield", signature);
     }
 
-    public void invokeEqq() {
-        // receiver and args already present on the stack
-        
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, "===", CallType.NORMAL);
-        methodCompiler.loadThreadContext();
-        methodCompiler.loadSelf();
-        
-        methodCompiler.invokeUtilityMethod("invokeEqqForCaseWhen", sig(IRubyObject.class,
-                IRubyObject.class, /*receiver*/
-                IRubyObject.class, /*arg*/
-                CallSite.class,
-                ThreadContext.class,
-                IRubyObject.class /*self*/));
+    public void invokeEqq(ArgumentsCallback receivers, CompilerCallback argument) {
+        if (argument == null) {
+            receivers.call(methodCompiler);
+
+            switch (receivers.getArity()) {
+            case 1:
+                methodCompiler.invokeUtilityMethod("invokeEqqForCaselessWhen", sig(boolean.class,
+                        IRubyObject.class /*receiver*/
+                        ));
+                break;
+            case 2:
+                methodCompiler.invokeUtilityMethod("invokeEqqForCaselessWhen", sig(boolean.class,
+                        IRubyObject.class, /*receiver*/
+                        IRubyObject.class
+                        ));
+                break;
+            case 3:
+                methodCompiler.invokeUtilityMethod("invokeEqqForCaselessWhen", sig(boolean.class,
+                        IRubyObject.class, /*receiver*/
+                        IRubyObject.class,
+                        IRubyObject.class
+                        ));
+                break;
+            default:
+                methodCompiler.invokeUtilityMethod("invokeEqqForCaselessWhen", sig(boolean.class,
+                        IRubyObject[].class /*receiver*/
+                        ));
+            }
+        } else {
+            // arg and receiver already present on the stack
+            methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, "===", CallType.NORMAL);
+            methodCompiler.loadThreadContext();
+            methodCompiler.loadSelf();
+            argument.call(methodCompiler);
+            receivers.call(methodCompiler);
+
+            switch (receivers.getArity()) {
+            case 1:
+                methodCompiler.invokeUtilityMethod("invokeEqqForCaseWhen", sig(boolean.class,
+                        CallSite.class,
+                        ThreadContext.class,
+                        IRubyObject.class /*self*/,
+                        IRubyObject.class, /*arg*/
+                        IRubyObject.class /*receiver*/
+                        ));
+                break;
+            case 2:
+                methodCompiler.invokeUtilityMethod("invokeEqqForCaseWhen", sig(boolean.class,
+                        CallSite.class,
+                        ThreadContext.class,
+                        IRubyObject.class /*self*/,
+                        IRubyObject.class, /*arg*/
+                        IRubyObject.class, /*receiver*/
+                        IRubyObject.class
+                        ));
+                break;
+            case 3:
+                methodCompiler.invokeUtilityMethod("invokeEqqForCaseWhen", sig(boolean.class,
+                        CallSite.class,
+                        ThreadContext.class,
+                        IRubyObject.class /*self*/,
+                        IRubyObject.class, /*arg*/
+                        IRubyObject.class, /*receiver*/
+                        IRubyObject.class,
+                        IRubyObject.class
+                        ));
+                break;
+            default:
+                methodCompiler.invokeUtilityMethod("invokeEqqForCaseWhen", sig(boolean.class,
+                        CallSite.class,
+                        ThreadContext.class,
+                        IRubyObject.class /*self*/,
+                        IRubyObject.class, /*arg*/
+                        IRubyObject[].class /*receiver*/
+                        ));
+            }
+        }
     }
 }

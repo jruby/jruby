@@ -27,6 +27,7 @@
 
 package org.jruby.compiler;
 
+import java.util.List;
 import org.jruby.ast.NodeType;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
@@ -557,4 +558,6 @@ public interface BodyCompiler {
     public void loadFilename();
     public void storeExceptionInErrorInfo();
     public void clearErrorInfo();
+
+    public void compileSequencedConditional(CompilerCallback inputValue, List<ArgumentsCallback> conditionals, List<CompilerCallback> bodies, CompilerCallback fallback);
 }

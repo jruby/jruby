@@ -82,5 +82,5 @@ public interface InvocationCompiler {
     /**
      * Used for when nodes with a case; assumes stack is ..., case_value, when_cond_array
      */
-    public void invokeEqq();
+    public void invokeEqq(ArgumentsCallback receivers, CompilerCallback argument);
 }

@@ -94,8 +94,49 @@ public class RuntimeHelpers {
         return args[args.length - 1];
     }
 
-    public static IRubyObject invokeEqqForCaseWhen(IRubyObject receiver, IRubyObject arg, CallSite callSite, ThreadContext context, IRubyObject caller) {
-        return callSite.call(context, caller, receiver, arg);
+    public static boolean invokeEqqForCaseWhen(CallSite callSite, ThreadContext context, IRubyObject caller, IRubyObject arg, IRubyObject[] receivers) {
+        for (int i = 0; i < receivers.length; i++) {
+            IRubyObject receiver = receivers[i];
+            if (invokeEqqForCaseWhen(callSite, context, caller, arg, receiver)) return true;
+        }
+        return false;
+    }
+
+    public static boolean invokeEqqForCaseWhen(CallSite callSite, ThreadContext context, IRubyObject caller, IRubyObject arg, IRubyObject receiver) {
+        IRubyObject result = callSite.call(context, caller, receiver, arg);
+        if (result.isTrue()) return true;
+        return false;
+    }
+
+    public static boolean invokeEqqForCaseWhen(CallSite callSite, ThreadContext context, IRubyObject caller, IRubyObject arg, IRubyObject receiver0, IRubyObject receiver1) {
+        IRubyObject result = callSite.call(context, caller, receiver0, arg);
+        if (result.isTrue()) return true;
+        return invokeEqqForCaseWhen(callSite, context, caller, arg, receiver1);
+    }
+
+    public static boolean invokeEqqForCaseWhen(CallSite callSite, ThreadContext context, IRubyObject caller, IRubyObject arg, IRubyObject receiver0, IRubyObject receiver1, IRubyObject receiver2) {
+        IRubyObject result = callSite.call(context, caller, receiver0, arg);
+        if (result.isTrue()) return true;
+        return invokeEqqForCaseWhen(callSite, context, caller, arg, receiver1, receiver2);
+    }
+
+    public static boolean areAnyTrueForCaselessWhen(IRubyObject[] receivers) {
+        for (int i = 0; i < receivers.length; i++) {
+            if (receivers[i].isTrue()) return true;
+        }
+        return false;
+    }
+
+    public static boolean invokeEqqForCaselessWhen(IRubyObject receiver) {
+        return receiver.isTrue();
+    }
+
+    public static boolean invokeEqqForCaselessWhen(IRubyObject receiver0, IRubyObject receiver1) {
+        return receiver0.isTrue() || receiver1.isTrue();
+    }
+
+    public static boolean invokeEqqForCaselessWhen(IRubyObject receiver0, IRubyObject receiver1, IRubyObject receiver2) {
+        return receiver0.isTrue() || receiver1.isTrue() || receiver2.isTrue();
     }
     
     public static CompiledBlockCallback createBlockCallback(Ruby runtime, Object scriptObject, String closureMethod) {

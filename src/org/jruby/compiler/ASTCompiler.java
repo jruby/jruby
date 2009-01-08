@@ -746,15 +746,20 @@ public class ASTCompiler {
     public void compileCase(Node node, BodyCompiler context, boolean expr) {
         CaseNode caseNode = (CaseNode) node;
 
-        boolean hasCase = false;
-        if (caseNode.getCaseNode() != null) {
-            compile(caseNode.getCaseNode(), context, true);
-            hasCase = true;
+        boolean hasCase = caseNode.getCaseNode() != null;
+
+        // aggregate when nodes into a list, rather than walking a bloody hierarchy
+        List<WhenNode> whenNodes = new ArrayList<WhenNode>();
+
+        Node maybeWhen = caseNode.getFirstWhenNode();
+        while (maybeWhen instanceof WhenNode) {
+            WhenNode whenNode = (WhenNode)maybeWhen;
+            whenNodes.add((WhenNode)maybeWhen);
+            maybeWhen = whenNode.getNextCase();
         }
 
-        context.pollThreadEvents();
-        
-        Node firstWhenNode = caseNode.getFirstWhenNode();
+        // last node, either !instanceof WhenNode or null, is the else
+        Node elseNode = maybeWhen;
 
         // NOTE: Currently this optimization is limited to the following situations:
         // * No multi-valued whens
@@ -764,19 +769,19 @@ public class ASTCompiler {
         // normally disabled, but it serves as an example of how this optimization
         // could be done. Ideally, it should be combined with the when processing
         // to improve code reuse before it's generally available.
-        if (hasCase && caseIsAllIntRangedFixnums(caseNode) && RubyInstanceConfig.FASTCASE_COMPILE_ENABLED) {
-            compileFixnumCase(firstWhenNode, context);
+        if (hasCase && caseIsAllIntRangedFixnums(whenNodes) && RubyInstanceConfig.FASTCASE_COMPILE_ENABLED) {
+            compileFixnumCase(caseNode.getCaseNode(), whenNodes, elseNode, context);
         } else {
-            compileWhen(firstWhenNode, context, hasCase);
+            compileWhen(caseNode.getCaseNode(), whenNodes, elseNode, context, hasCase);
         }
 
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
 
-    private boolean caseIsAllIntRangedFixnums(CaseNode caseNode) {
+    private boolean caseIsAllIntRangedFixnums(List<WhenNode> whenNodes) {
         boolean caseIsAllLiterals = true;
-       Outer: for (Node node = caseNode.getFirstWhenNode(); node != null && node instanceof WhenNode; node = ((WhenNode)node).getNextCase()) {
+       Outer: for (Node node : whenNodes) {
             WhenNode whenNode = (WhenNode)node;
             if (whenNode.getExpressionNodes() instanceof ArrayNode) {
                 ArrayNode arrayNode = (ArrayNode)whenNode.getExpressionNodes();
@@ -812,30 +817,17 @@ public class ASTCompiler {
     }
 
     @SuppressWarnings("unchecked")
-    public void compileFixnumCase(final Node node, BodyCompiler context) {
+    public void compileFixnumCase(final Node value, final List<WhenNode> whenNodes, final Node elseNode, BodyCompiler context) {
         List<FixnumWhen> cases = new ArrayList<FixnumWhen>();
         Node elseBody = null;
 
         // first get all when nodes
-        for (Node tmpNode = node; tmpNode != null; tmpNode = ((WhenNode)tmpNode).getNextCase()) {
-            WhenNode whenNode = (WhenNode)tmpNode;
+        for (WhenNode whenNode : whenNodes) {
             ArrayNode expression = (ArrayNode)whenNode.getExpressionNodes();
 
             for (Node exprNode : expression.childNodes()) {
                 FixnumNode fixnumNode = (FixnumNode)exprNode;
                 cases.add(new FixnumWhen((int)fixnumNode.getValue(), whenNode));
-            }
-
-            if (whenNode.getNextCase() != null) {
-                // if there's another node coming, make sure it will be a when...
-                if (whenNode.getNextCase() instanceof WhenNode) {
-                    // normal when, continue
-                    continue;
-                } else {
-                    // ...or handle it as an else and we're done
-                    elseBody = whenNode.getNextCase();
-                    break;
-                }
             }
         }
         // sort them based on literal value
@@ -892,33 +884,74 @@ public class ASTCompiler {
                 },
                 new BranchCallback() {
                     public void branch(BodyCompiler context) {
-                        compileWhen(node, context, true);
+                        compileWhen(value, whenNodes, elseNode, context, true);
                     }
                 }
         );
     }
 
-    public void compileWhen(Node node, BodyCompiler context, final boolean hasCase) {
-        if (node == null) {
-            // reached the end of the when chain, pop the case (if provided) and we're done
-            if (hasCase) {
-                context.consumeCurrentValue();
+    public void compileWhen(final Node value, List<WhenNode> whenNodes, final Node elseNode, BodyCompiler context, final boolean hasCase) {
+        CompilerCallback inputValue = null;
+        if (value != null) inputValue = new CompilerCallback() {
+            public void call(BodyCompiler context) {
+                compile(value, context, true);
+                context.pollThreadEvents();
             }
-            context.loadNil();
-            return;
-        }
+        };
 
-        if (!(node instanceof WhenNode)) {
-            if (hasCase) {
-                // case value provided and we're going into "else"; consume it.
-                context.consumeCurrentValue();
+        List<ArgumentsCallback> conditionals = new ArrayList<ArgumentsCallback>();
+        List<CompilerCallback> bodies = new ArrayList<CompilerCallback>();
+        for (final WhenNode whenNode : whenNodes) {
+            ArrayNode cases = (ArrayNode)whenNode.getExpressionNodes();
+            ArgumentsCallback whenArgs;
+            CompilerCallback body = new CompilerCallback() {
+                public void call(BodyCompiler context) {
+                    compile(whenNode.getBodyNode(), context, true);
+                }
+            };
+
+            boolean embeddedWhens = cases.get(cases.size() - 1) instanceof WhenNode;
+
+            if (!embeddedWhens) {
+                whenArgs = getArgsCallback(whenNode.getExpressionNodes());
+                conditionals.add(whenArgs);
+                bodies.add(body);
+            } else {
+                // this is not ideal; if there's any embedded splat, we duplicate each value
+                // plus the splat with its own copy of the body
+                for (Node kase : cases.childNodes()) {
+                    if (kase instanceof WhenNode) {
+                        final WhenNode splatWhen = (WhenNode)kase;
+
+                        whenArgs = new ArgumentsCallback() {
+                            public int getArity() {
+                                return -1;
+                            }
+                            public void call(BodyCompiler context) {
+                                // splatted when, compile directly and splat
+                                compile(splatWhen.getExpressionNodes(), context, true);
+                                context.splatCurrentValue();
+                                context.convertToJavaArray();
+                            }
+                        };
+                    } else {
+                        whenArgs = getArgsCallback(kase);
+                    }
+
+                    conditionals.add(whenArgs);
+                    bodies.add(body);
+                }
             }
-            compile(node, context,true);
-            return;
         }
-
-        WhenNode whenNode = (WhenNode) node;
-
+        
+        CompilerCallback fallback = new CompilerCallback() {
+            public void call(BodyCompiler context) {
+                compile(elseNode, context, true);
+            }
+        };
+        
+        context.compileSequencedConditional(inputValue, conditionals, bodies, fallback);
+        /*
         if (whenNode.getExpressionNodes() instanceof ArrayNode) {
             ArrayNode arrayNode = (ArrayNode) whenNode.getExpressionNodes();
 
@@ -966,10 +999,29 @@ public class ASTCompiler {
 
             context.performBooleanBranch(trueBranch, falseBranch);
         }
+
+        if (elseNode == null) {
+            // reached the end of the when chain, pop the case (if provided) and we're done
+            if (hasCase) {
+                context.consumeCurrentValue();
+            }
+            context.loadNil();
+            return;
+        } else {
+            if (hasCase) {
+                // case value provided and we're going into "else"; consume it.
+                context.consumeCurrentValue();
+            }
+            compile(elseNode, context,true);
+            return;
+        }
+
+        WhenNode whenNode = (WhenNode) node;
+*/
     }
 
     public void compileMultiArgWhen(final WhenNode whenNode, final ArrayNode expressionsNode, final int conditionIndex, BodyCompiler context, final boolean hasCase) {
-
+/*
         if (conditionIndex >= expressionsNode.size()) {
             // done with conditions, continue to next when in the chain
             compileWhen(whenNode.getNextCase(), context, hasCase);
@@ -1030,7 +1082,7 @@ public class ASTCompiler {
                     }
                 };
 
-        context.performBooleanBranch(trueBranch, falseBranch);
+        context.performBooleanBranch(trueBranch, falseBranch);*/
     }
 
     public void compileClass(Node node, BodyCompiler context, boolean expr) {
