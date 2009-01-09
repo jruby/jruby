@@ -1,7 +1,20 @@
 module FFI::Library
+  DEFAULT = FFI::DynamicLibrary.open(nil, FFI::DynamicLibrary::RTLD_LAZY)
+
   # TODO: Rubinius does *names here and saves the array. Multiple libs?
   def ffi_lib(*names)
-    @ffi_lib = names
+    mapped_names = names.map { |name| FFI.map_library_name(name) }
+    errors = Hash.new
+    ffi_libs = mapped_names.map do |name|
+      begin
+        FFI::DynamicLibrary.open(name, FFI::DynamicLibrary::RTLD_LAZY | FFI::DynamicLibrary::RTLD_LOCAL)
+      rescue LoadError => ex
+        errors[name] = ex
+        nil
+  end
+    end.compact
+    raise LoadError, "Could not open any of [#{mapped_names.join(", ")}]" if ffi_libs.empty?
+    @ffi_libs = ffi_libs
   end
   def ffi_convention(convention)
     @ffi_convention = convention
@@ -18,44 +31,80 @@ module FFI::Library
 
   def attach_function(mname, a3, a4, a5=nil)
     cname, arg_types, ret_type = a5 ? [ a3, a4, a5 ] : [ mname.to_s, a3, a4 ]
-    libraries = defined?(@ffi_lib) ? @ffi_lib : [ nil ]
+    libraries = defined?(@ffi_libs) ? @ffi_libs : [ DEFAULT ]
     convention = defined?(@ffi_convention) ? @ffi_convention : :default
 
     # Convert :foo to the native type
-    arg_types = arg_types.map { |e|
-      begin
-        find_type(e)
-      rescue FFI::TypeError => ex
-        if defined?(@ffi_callbacks) && @ffi_callbacks.has_key?(e)
-          @ffi_callbacks[e]
-        elsif e.is_a?(Class) && e < FFI::Struct
-          FFI::NativeType::POINTER
-        else
-          raise ex
-        end
-      end
-    }
+    arg_types.map! { |e| find_type(e) }
     options = Hash.new
     options[:convention] = convention
     options[:type_map] = @ffi_typedefs if defined?(@ffi_typedefs)
     # Try to locate the function in any of the libraries
-    invoker = libraries.collect do |lib|
+    invokers = []
+    libraries.each do |lib|
       begin
-        FFI.create_invoker lib, cname.to_s, arg_types, find_type(ret_type), options
+        invokers << FFI.create_invoker(lib, cname.to_s, arg_types, find_type(ret_type), options)
       rescue LoadError => ex
-        nil
+      end if invokers.empty?
       end
-    end.compact.shift
-    raise FFI::NotFoundError.new(cname.to_s, libraries) unless invoker
-    invoker.attach(self.class, mname.to_s)
+    invoker = invokers.compact.shift
+    raise FFI::NotFoundError.new(cname.to_s, *libraries) unless invoker
     invoker.attach(self, mname.to_s)
-    # Return a callable version of the invoker
-    Module.new do
-      invoker.attach(self, "call")
-      extend self
-    end
+    invoker # Return a version that can be called via #call
   end
 
+  def attach_variable(mname, a1, a2 = nil)
+    cname, type = a2 ? [ a1, a2 ] : [ mname.to_s, a1 ]
+    libraries = defined?(@ffi_libs) ? @ffi_libs : [ DEFAULT ]
+    address = nil
+    libraries.each do |lib|
+      begin
+        address = lib.find_symbol(cname.to_s)
+        break unless address.nil?
+      rescue LoadError
+      end
+    end
+    raise FFI::NotFoundError.new(cname, libraries) if address.nil?
+    case find_type(type)
+    when :pointer, FFI::NativeType::POINTER
+      op = :pointer
+    when :char, FFI::NativeType::INT8
+      op = :int8
+    when :uchar, FFI::NativeType::UINT8
+      op = :uint8
+    when :short, FFI::NativeType::INT16
+      op = :int16
+    when :ushort, FFI::NativeType::UINT16
+      op = :uint16
+    when :int, FFI::NativeType::INT32
+      op = :int32
+    when :uint, FFI::NativeType::UINT32
+      op = :uint32
+    when :long, FFI::NativeType::LONG
+      op = :long
+    when :ulong, FFI::NativeType::ULONG
+      op = :ulong
+    when :long_long, FFI::NativeType::INT64
+      op = :int64
+    when :ulong_long, FFI::NativeType::UINT64
+      op = :uint64
+    else
+      raise ArgError, "Cannot access library variable of type #{type}"
+    end
+    #
+    # Attach to this module as mname/mname=
+    #
+    self.module_eval <<-code
+      @@ffi_gvar_#{mname} = address
+      def self.#{mname}
+        @@ffi_gvar_#{mname}.get_#{op.to_s}(0)
+      end
+      def self.#{mname}=(value)
+        @@ffi_gvar_#{mname}.put_#{op.to_s}(0, value)
+      end
+    code
+    address
+  end
   def callback(name, args, ret)
     @ffi_callbacks = Hash.new unless defined?(@ffi_callbacks)
     @ffi_callbacks[name] = FFI::CallbackInfo.new(find_type(ret), args.map { |e| find_type(e) })
@@ -71,8 +120,12 @@ module FFI::Library
     @ffi_typedefs[add] = code
   end
   def find_type(name)
-    code = if defined?(@ffi_typedefs)
+    code = if defined?(@ffi_typedefs) && @ffi_typedefs.has_key?(name)
       @ffi_typedefs[name]
+    elsif defined?(@ffi_callbacks) && @ffi_callbacks.has_key?(name)
+      @ffi_callbacks[name]
+    elsif name.is_a?(Class) && name < FFI::Struct
+      FFI::NativeType::POINTER
     end
     code = name if !code && name.kind_of?(FFI::CallbackInfo)
     if code.nil? || code.kind_of?(Symbol)

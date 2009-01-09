@@ -82,7 +82,10 @@ public class JNAVariadicInvoker extends RubyObject {
         int conv = "stdcall".equals(args[3].toString()) ? Function.ALT_CONVENTION : Function.C_CONVENTION;
         Function function;
         try {
-            function = NativeLibrary.getInstance(args[0].toString()).getFunction(args[1].toString(), conv);
+            NativeLibrary lib = args[0] instanceof DynamicLibrary
+                    ? ((DynamicLibrary) args[0]).getNativeLibrary()
+                    : NativeLibrary.getInstance(args[0].toString());
+            function = lib.getFunction(args[1].toString(), conv);
         } catch (UnsatisfiedLinkError ex) {
             throw context.getRuntime().newLoadError(ex.getMessage());
         }

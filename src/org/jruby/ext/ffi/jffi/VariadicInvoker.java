@@ -70,8 +70,12 @@ public class VariadicInvoker extends RubyObject {
         Library library;
         Address address;
         try {
-            library = new Library(args[0].toString(), Library.LAZY);
-            address = library.findSymbol(args[1].toString());
+            library = args[0] instanceof DynamicLibrary 
+                    ? ((DynamicLibrary) args[0]).getNativeLibrary() 
+                    : LibraryCache.open(args[0].toString(), Library.LAZY);
+            address = args[1] instanceof DynamicLibrary.Symbol
+                    ? new Address(((DynamicLibrary.Symbol) args[1]).getAddress())
+                    : library.findSymbol(args[1].toString());
         } catch (UnsatisfiedLinkError ex) {
             throw context.getRuntime().newLoadError(ex.getMessage());
         }

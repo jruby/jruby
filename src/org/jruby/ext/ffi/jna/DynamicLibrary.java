@@ -17,10 +17,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 @JRubyClass(name = "FFI::DynamicLibrary", parent = "Object")
 public class DynamicLibrary extends RubyObject {
     
-    @JRubyConstant public static final int LAZY   = 0x00001;
-    @JRubyConstant public static final int NOW    = 0x00002;
-    @JRubyConstant public static final int LOCAL  = 0x00004;
-    @JRubyConstant public static final int GLOBAL = 0x00008;
+    @JRubyConstant public static final int RTLD_LAZY   = 0x00001;
+    @JRubyConstant public static final int RTLD_NOW    = 0x00002;
+    @JRubyConstant public static final int RTLD_LOCAL  = 0x00004;
+    @JRubyConstant public static final int RTLD_GLOBAL = 0x00008;
     
     private final com.sun.jna.NativeLibrary library;
     private final String name;
@@ -59,8 +59,16 @@ public class DynamicLibrary extends RubyObject {
     @JRubyMethod(name = {  "find_symbol" })
     public IRubyObject findSymbol(ThreadContext context, IRubyObject symbolName) {
         final String sym = symbolName.toString();
-        com.sun.jna.Pointer ptr = library.getGlobalVariableAddress(sym);
-        return new Symbol(context.getRuntime(), this, sym, ptr);
+        try {
+            com.sun.jna.Pointer ptr = library.getGlobalVariableAddress(sym);
+            return new Symbol(context.getRuntime(), this, sym, ptr);
+        } catch (UnsatisfiedLinkError ex) {
+            return context.getRuntime().getNil();
+        }
+    }
+    @JRubyMethod(name = "name")
+    public IRubyObject name(ThreadContext context) {
+        return RubyString.newString(context.getRuntime(), name);
     }
     static final class Symbol extends JNABasePointer {
         private final DynamicLibrary library;
@@ -77,6 +85,10 @@ public class DynamicLibrary extends RubyObject {
             return RubyString.newString(context.getRuntime(),
                     String.format("#<Library Symbol library=%s symbol=%s address=%#x>", 
                     library.name, name, ptr2long(getAddress())));
+        }
+        @Override
+        public final String toString() {
+            return name;
         }
         final String getName() {
             return name;

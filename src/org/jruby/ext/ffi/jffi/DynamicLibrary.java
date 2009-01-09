@@ -20,10 +20,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 @JRubyClass(name = "FFI::DynamicLibrary", parent = "Object")
 public class DynamicLibrary extends RubyObject {
     
-    @JRubyConstant public static final int LAZY   = 0x00001;
-    @JRubyConstant public static final int NOW    = 0x00002;
-    @JRubyConstant public static final int LOCAL  = 0x00004;
-    @JRubyConstant public static final int GLOBAL = 0x00008;
+    @JRubyConstant public static final int RTLD_LAZY   = 0x00001;
+    @JRubyConstant public static final int RTLD_NOW    = 0x00002;
+    @JRubyConstant public static final int RTLD_LOCAL  = 0x00004;
+    @JRubyConstant public static final int RTLD_GLOBAL = 0x00008;
     
     private final Library library;
     private final String name;
@@ -42,10 +42,10 @@ public class DynamicLibrary extends RubyObject {
     }
     private static final int getNativeLibraryFlags(IRubyObject rbFlags) {
         int f = 0, flags = RubyNumeric.fix2int(rbFlags);
-        f |= (flags & LAZY) != 0 ? Library.LAZY : 0;
-        f |= (flags & NOW) != 0 ? Library.NOW : 0;
-        f |= (flags & LOCAL) != 0 ? Library.LOCAL : 0;
-        f |= (flags & GLOBAL) != 0 ? Library.GLOBAL : 0;
+        f |= (flags & RTLD_LAZY) != 0 ? Library.LAZY : 0;
+        f |= (flags & RTLD_NOW) != 0 ? Library.NOW : 0;
+        f |= (flags & RTLD_LOCAL) != 0 ? Library.LOCAL : 0;
+        f |= (flags & RTLD_GLOBAL) != 0 ? Library.GLOBAL : 0;
         return f;
     }
     public DynamicLibrary(Ruby runtime, RubyClass klass, String name, Library library) {
@@ -58,13 +58,13 @@ public class DynamicLibrary extends RubyObject {
     }
     @JRubyMethod(name = {  "open" }, meta = true)
     public static final  IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject libraryName, IRubyObject libraryFlags) {
-        final String libName = libraryName.toString();
+        final String libName = libraryName.isNil() ? null : libraryName.toString();
         try {
             return new DynamicLibrary(context.getRuntime(), (RubyClass) recv, 
                     libName, LibraryCache.open(libName, getNativeLibraryFlags(libraryFlags)));
         } catch (UnsatisfiedLinkError ex) {
             throw context.getRuntime().newLoadError(String.format("Could not open library '%s' : %s",
-                    libName, Library.lastError()));
+                    libName != null ? libName : "current process", Library.lastError()));
         }
     }
     @JRubyMethod(name = {  "find_symbol" })
@@ -75,6 +75,10 @@ public class DynamicLibrary extends RubyObject {
             return context.getRuntime().getNil();
         }
         return new Symbol(context.getRuntime(), this, sym, address.nativeAddress());
+    }
+    @JRubyMethod(name = "name")
+    public IRubyObject name(ThreadContext context) {
+        return RubyString.newString(context.getRuntime(), name);
     }
     static final class Symbol extends BasePointer {
         private final DynamicLibrary library;
@@ -90,6 +94,18 @@ public class DynamicLibrary extends RubyObject {
         public IRubyObject inspect(ThreadContext context) {
             return RubyString.newString(context.getRuntime(),
                     String.format("#<Library Symbol library=%s symbol=%s address=%#x>", library.name, name, getAddress()));
+        }
+        @Override
+        @JRubyMethod(name = "to_s", optional = 1)
+        public IRubyObject to_s(ThreadContext context, IRubyObject[] args) {
+            return RubyString.newString(context.getRuntime(), name);
+        }
+        @Override
+        public final String toString() {
+            return name;
+        }
+        final String getName() {
+            return name;
         }
     }
 }

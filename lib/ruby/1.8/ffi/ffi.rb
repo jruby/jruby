@@ -75,7 +75,8 @@ module FFI
   
   class NotFoundError < LoadError
     def initialize(function, *libraries)
-      super("Function '#{function}' not found in [#{libraries[0].nil? ? 'current process' : libraries.join(", ")}]")
+      libnames = libraries.map { |l| l.kind_of?(String) ? l : l.name }
+      super("Function '#{function}' not found in [#{libraries[0].nil? ? 'current process' : libnames.join(", ")}]")
     end
   end
 
@@ -89,19 +90,31 @@ module FFI
     end
     lib
   end
-
   def self.create_invoker(lib, name, args, ret, options = { :convention => :default })
-    lib = map_library_name(lib) if lib
 
     # Current artificial limitation based on JFFI limit
     raise FFI::SignatureError, 'FFI functions may take max 32 arguments!' if args.size > 32
+    # Open the library if needed
+    library = if lib.kind_of?(DynamicLibrary)
+      lib
+    elsif lib.kind_of?(String)
+      # Allow FFI.create_invoker to be  called with a library name
+      DynamicLibrary.open(FFI.map_library_name(lib), DynamicLibrary::RTLD_LAZY)
+    elsif lib.nil?
+      FFI::Library::DEFAULT
+    else
+      raise LoadError, "Invalid library '#{lib}'"
+    end
+    function = library.find_symbol(name)
+    raise NotFoundError.new(name, library.name) unless function
+
     args = args.map {|e| find_type(e) }
     invoker = if args.length > 0 && args[args.length - 1] == FFI::NativeType::VARARGS
-      FFI::VariadicInvoker.new(lib, name, args, find_type(ret), options)
+      FFI::VariadicInvoker.new(library, function, args, find_type(ret), options)
     else
-      InvokerFactory.createInvoker(lib, name, find_type(ret), args, options[:convention].to_s)
+      FFI::Invoker.new(library, function, args, find_type(ret), options[:convention].to_s)
     end
-    raise NotFoundError.new(name, lib) unless invoker
+    raise NotFoundError.new(name, library.name) unless invoker
     return invoker
   end
 
