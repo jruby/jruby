@@ -102,12 +102,7 @@ public final class Util {
         return value;
     }
     public static final float floatValue(IRubyObject parameter) {
-        final double value = RubyNumeric.num2dbl(parameter);
-        if (value < Float.MIN_VALUE || value > Float.MAX_VALUE) {
-            throw parameter.getRuntime().newRangeError("Value "
-                    + value + " outside float range");
-        }
-        return (float) value;
+        return (float) RubyNumeric.num2dbl(parameter);
     }
     public static final double doubleValue(IRubyObject parameter) {
         return RubyNumeric.num2dbl(parameter);
