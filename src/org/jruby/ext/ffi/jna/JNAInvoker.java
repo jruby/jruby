@@ -31,7 +31,7 @@ package org.jruby.ext.ffi.jna;
 import com.sun.jna.Function;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
-import org.jruby.ext.ffi.Invoker;
+import org.jruby.ext.ffi.AbstractInvoker;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
@@ -40,7 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * A native invoker that uses JNA.
  */
-final class JNAInvoker extends Invoker {
+final class JNAInvoker extends AbstractInvoker {
 
     private final Function function;
     private final FunctionInvoker functionInvoker;

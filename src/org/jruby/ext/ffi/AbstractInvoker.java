@@ -47,8 +47,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * A native function invoker
  */
-@JRubyClass(name = "FFI::" + Invoker.CLASS_NAME, parent = "Object")
-public abstract class Invoker extends RubyObject {
+@JRubyClass(name = "FFI::" + AbstractInvoker.CLASS_NAME, parent = "Object")
+public abstract class AbstractInvoker extends RubyObject {
     static final String CLASS_NAME = "Invoker";
     
     /**
@@ -60,8 +60,8 @@ public abstract class Invoker extends RubyObject {
         RubyClass result = module.defineClassUnder(CLASS_NAME,
                 runtime.getObject(), 
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        result.defineAnnotatedMethods(Invoker.class);
-        result.defineAnnotatedConstants(Invoker.class);
+        result.defineAnnotatedMethods(AbstractInvoker.class);
+        result.defineAnnotatedConstants(AbstractInvoker.class);
 
         return result;
     }
@@ -70,7 +70,7 @@ public abstract class Invoker extends RubyObject {
      * Creates a new <tt>Invoker</tt> instance.
      * @param arity
      */
-    protected Invoker(Ruby runtime, int arity) {
+    protected AbstractInvoker(Ruby runtime, int arity) {
         super(runtime, FFIProvider.getModule(runtime).fastGetClass(CLASS_NAME));
         this.arity = Arity.fixed(arity);
     }
@@ -104,7 +104,7 @@ public abstract class Invoker extends RubyObject {
 
             @Override
             public Arity getArity() {
-                return Invoker.this.getArity();
+                return AbstractInvoker.this.getArity();
             }
 
             @Override

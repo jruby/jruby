@@ -17,7 +17,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class JFFIInvoker extends org.jruby.ext.ffi.Invoker {
+public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
     private static final Map<DynamicMethod, Library> libraryRefMap
             = Collections.synchronizedMap(new WeakHashMap<DynamicMethod, Library>());
     private final Library library;

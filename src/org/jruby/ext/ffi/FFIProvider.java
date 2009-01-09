@@ -119,7 +119,7 @@ public abstract class FFIProvider extends RubyObject {
      * @param parameterTypes The parameter types the function takes.
      * @return a new <tt>Invoker</tt> instance.
      */
-    public abstract Invoker createInvoker(Ruby runtime, String libraryName, String functionName, NativeType returnType,
+    public abstract AbstractInvoker createInvoker(Ruby runtime, String libraryName, String functionName, NativeType returnType,
             NativeParam[] parameterTypes, String convention);
 
     /**

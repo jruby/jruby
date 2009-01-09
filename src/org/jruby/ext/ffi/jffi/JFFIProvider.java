@@ -3,7 +3,7 @@ package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.LastError;
 import org.jruby.Ruby;
-import org.jruby.ext.ffi.Invoker;
+import org.jruby.ext.ffi.AbstractInvoker;
 import org.jruby.ext.ffi.NativeParam;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.Platform;
@@ -15,7 +15,7 @@ public class JFFIProvider extends org.jruby.ext.ffi.FFIProvider {
         super(runtime);
     }
     @Override
-    public Invoker createInvoker(Ruby runtime, String libraryName, String functionName, NativeType returnType, NativeParam[] parameterTypes, String convention) {
+    public AbstractInvoker createInvoker(Ruby runtime, String libraryName, String functionName, NativeType returnType, NativeParam[] parameterTypes, String convention) {
         return new JFFIInvoker(runtime, 
                 libraryName != null ? Platform.getPlatform().mapLibraryName(libraryName) : null,
                 functionName, returnType, parameterTypes, convention);

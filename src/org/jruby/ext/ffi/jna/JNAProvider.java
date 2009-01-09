@@ -50,7 +50,7 @@ public final class JNAProvider extends FFIProvider {
     }
     
     @Override
-    public final Invoker createInvoker(Ruby runtime, String libraryName, String functionName,
+    public final AbstractInvoker createInvoker(Ruby runtime, String libraryName, String functionName,
             NativeType returnType, NativeParam[] parameterTypes, String convention) {
         int conv = "stdcall".equals(convention) ? Function.ALT_CONVENTION : Function.C_CONVENTION;
         if (libraryName == null) {
