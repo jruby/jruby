@@ -3414,7 +3414,8 @@ public class ASTCompiler {
     public void compileUntil(Node node, BodyCompiler context, boolean expr) {
         final UntilNode untilNode = (UntilNode) node;
 
-        if (untilNode.getConditionNode().getNodeType().alwaysTrue()) {
+        if (untilNode.getConditionNode().getNodeType().alwaysTrue() &&
+                untilNode.evaluateAtStart()) {
             // condition is always true, just compile it and not body
             compile(untilNode.getConditionNode(), context, false);
             if (expr) context.loadNil();
@@ -3467,7 +3468,8 @@ public class ASTCompiler {
     public void compileWhile(Node node, BodyCompiler context, boolean expr) {
         final WhileNode whileNode = (WhileNode) node;
 
-        if (whileNode.getConditionNode().getNodeType().alwaysFalse()) {
+        if (whileNode.getConditionNode().getNodeType().alwaysFalse() &&
+                whileNode.evaluateAtStart()) {
             // do nothing
             if (expr) context.loadNil();
         } else {
