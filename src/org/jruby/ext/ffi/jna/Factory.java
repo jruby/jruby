@@ -54,11 +54,14 @@ public class Factory extends org.jruby.ext.ffi.Factory {
             if (ffi.fastGetClass(JNAMemoryPointer.MEMORY_POINTER_NAME) == null) {
                 JNAMemoryPointer.createMemoryPointerClass(runtime, ffi);
             }
-            if (ffi.fastGetClass("VariadicInvoker") == null) {
-                JNAVariadicInvoker.createVariadicInvokerClass(runtime, ffi);
-            }
             if (ffi.fastGetClass("DynamicLibrary") == null) {
                 DynamicLibrary.createDynamicLibraryClass(runtime, ffi);
+            }
+            if (ffi.fastGetClass("Invoker") == null) {
+                JNAInvoker.createInvokerClass(runtime, ffi);
+            }
+            if (ffi.fastGetClass("VariadicInvoker") == null) {
+                JNAVariadicInvoker.createVariadicInvokerClass(runtime, ffi);
             }
         }
     }

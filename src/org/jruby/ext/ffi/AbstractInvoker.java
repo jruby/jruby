@@ -31,6 +31,7 @@ package org.jruby.ext.ffi;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyClass;
@@ -49,14 +50,14 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 @JRubyClass(name = "FFI::" + AbstractInvoker.CLASS_NAME, parent = "Object")
 public abstract class AbstractInvoker extends RubyObject {
-    static final String CLASS_NAME = "Invoker";
+    static final String CLASS_NAME = "AbstractInvoker";
     
     /**
      * The arity of this function.
      */
     protected final Arity arity;
     
-    public static RubyClass createInvokerClass(Ruby runtime, RubyModule module) {
+    public static RubyClass createAbstractInvokerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder(CLASS_NAME,
                 runtime.getObject(), 
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
@@ -71,7 +72,15 @@ public abstract class AbstractInvoker extends RubyObject {
      * @param arity
      */
     protected AbstractInvoker(Ruby runtime, int arity) {
-        super(runtime, FFIProvider.getModule(runtime).fastGetClass(CLASS_NAME));
+        this(runtime, FFIProvider.getModule(runtime).fastGetClass(CLASS_NAME), arity);
+    }
+
+    /**
+     * Creates a new <tt>Invoker</tt> instance.
+     * @param arity
+     */
+    protected AbstractInvoker(Ruby runtime, RubyClass klass, int arity) {
+        super(runtime, klass);
         this.arity = Arity.fixed(arity);
     }
 
@@ -88,44 +97,8 @@ public abstract class AbstractInvoker extends RubyObject {
         ((RubyModule) module).addMethod(methodName.asJavaString(), m);
         return context.getRuntime().getNil();
     }
-    protected DynamicMethod createDynamicMethod(RubyModule module) {
-        return new DynamicMethod(module, Visibility.PUBLIC, CallConfiguration.FrameNoneScopeNone) {
+    protected abstract DynamicMethod createDynamicMethod(RubyModule module);
 
-            @Override
-            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                arity.checkArity(context.getRuntime(), args);
-                return invoke(context, args);
-            }
-
-            @Override
-            public DynamicMethod dup() {
-                return this;
-            }
-
-            @Override
-            public Arity getArity() {
-                return AbstractInvoker.this.getArity();
-            }
-
-            @Override
-            public boolean isNative() {
-                return true;
-            }
-        }; 
-    }
-    
-    /**
-     * Invokes the native function with the supplied ruby arguments.
-     * @param rubyArgs The ruby arguments to pass to the native function.
-     * @return The return value from the native function, as a ruby object.
-     */
-    @JRubyMethod(name= { "invoke", "call" }, rest = true)
-    public IRubyObject call(ThreadContext context, IRubyObject[] rubyArgs) {
-        return invoke(context, ((RubyArray) rubyArgs[0]).toJavaArrayMaybeUnsafe());
-    }
-    
-    public abstract IRubyObject invoke(ThreadContext context, IRubyObject[] args);
-    
     /**
      * Returns the {@link org.jruby.runtime.Arity} of this function.
      * 
@@ -133,5 +106,19 @@ public abstract class AbstractInvoker extends RubyObject {
      */
     public final Arity getArity() {
         return arity;
+    }
+    protected static final NativeParam[] getNativeParameterTypes(Ruby runtime, RubyArray paramTypes) {
+        NativeParam[] nativeParamTypes = new NativeParam[paramTypes.size()];
+        for (int i = 0; i < paramTypes.size(); ++i) {
+            IRubyObject obj = (IRubyObject) paramTypes.entry(i);
+            if (obj instanceof NativeParam) {
+                nativeParamTypes[i] = (NativeParam) obj;
+            } else if (obj instanceof RubyInteger) {
+                nativeParamTypes[i] = NativeType.valueOf(Util.int32Value(obj));
+            } else {
+                runtime.newArgumentError("Invalid parameter type");
+            }
+        }
+        return nativeParamTypes;
     }
 }

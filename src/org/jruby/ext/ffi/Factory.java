@@ -107,7 +107,7 @@ public abstract class Factory {
                 FFIProvider.createProviderClass(runtime, ffi);
             }
             if (ffi.fastGetClass(AbstractInvoker.CLASS_NAME) == null) {
-                AbstractInvoker.createInvokerClass(runtime, ffi);
+                AbstractInvoker.createAbstractInvokerClass(runtime, ffi);
             }
             if (ffi.fastGetClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS) == null) {
                 AbstractMemory.createAbstractMemoryClass(runtime, ffi);

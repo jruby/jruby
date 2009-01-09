@@ -42,6 +42,10 @@ public class DynamicLibrary extends RubyObject {
         this.name = name;
         this.library = library;
     }
+
+    com.sun.jna.NativeLibrary getNativeLibrary() {
+        return library;
+    }
     @JRubyMethod(name = {  "open" }, meta = true)
     public static final  IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject libraryName, IRubyObject libraryFlags) {
         final String libName = libraryName.toString();
@@ -73,6 +77,9 @@ public class DynamicLibrary extends RubyObject {
             return RubyString.newString(context.getRuntime(),
                     String.format("#<Library Symbol library=%s symbol=%s address=%#x>", 
                     library.name, name, ptr2long(getAddress())));
+        }
+        final String getName() {
+            return name;
         }
     }
 }

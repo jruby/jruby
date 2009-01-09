@@ -63,7 +63,7 @@ public final class JNAProvider extends FFIProvider {
             marshallers[i] = getMarshaller(parameterTypes[i], conv);
         }
 
-        return new JNAInvoker(runtime, function, functionInvoker, marshallers);
+        return new JNAInvoker(runtime, FFIProvider.getModule(runtime).fastGetClass("Invoker"), function, functionInvoker, marshallers);
     }
     
     public int getLastError() {

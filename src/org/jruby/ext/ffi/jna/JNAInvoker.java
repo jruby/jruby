@@ -30,11 +30,21 @@ package org.jruby.ext.ffi.jna;
 
 import com.sun.jna.Function;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.AbstractInvoker;
+import org.jruby.ext.ffi.NativeParam;
+import org.jruby.ext.ffi.NativeType;
+import org.jruby.ext.ffi.Util;
+import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -46,13 +56,49 @@ final class JNAInvoker extends AbstractInvoker {
     private final FunctionInvoker functionInvoker;
     private final Marshaller[] marshallers;
 
-    public JNAInvoker(Ruby runtime, Function function, FunctionInvoker functionInvoker, Marshaller[] marshallers) {
-        super(runtime, marshallers.length);
+    public static RubyClass createInvokerClass(Ruby runtime, RubyModule module) {
+        RubyClass result = module.defineClassUnder("Invoker",
+                runtime.getObject(),
+                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        result.defineAnnotatedMethods(AbstractInvoker.class);
+        result.defineAnnotatedMethods(JNAInvoker.class);
+        result.defineAnnotatedConstants(JNAInvoker.class);
+
+        return result;
+    }
+
+    @JRubyMethod(name = { "new" }, meta = true, required = 5)
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        String convention = args[4].toString();
+        DynamicLibrary library = (DynamicLibrary) args[0];
+        String functionName = ((DynamicLibrary.Symbol) args[1]).getName();
+        RubyArray paramTypes = (RubyArray) args[2];
+        NativeParam[] parameterTypes = getNativeParameterTypes(context.getRuntime(), paramTypes);
+        NativeType returnType = NativeType.valueOf(Util.int32Value(args[3]));
+        int conv = "stdcall".equals(convention) ? Function.ALT_CONVENTION : Function.C_CONVENTION;
+        Function function = library.getNativeLibrary().getFunction(functionName, conv);
+        FunctionInvoker functionInvoker = JNAProvider.getFunctionInvoker(returnType);
+        Marshaller[] marshallers = new Marshaller[parameterTypes.length];
+        for (int i = 0; i < marshallers.length; ++i) {
+            marshallers[i] = JNAProvider.getMarshaller(parameterTypes[i], conv);
+        }
+
+        return new JNAInvoker(context.getRuntime(), (RubyClass) recv, function, functionInvoker, marshallers);
+    }
+
+    public JNAInvoker(Ruby runtime, RubyClass klass, Function function, FunctionInvoker functionInvoker, Marshaller[] marshallers) {
+        super(runtime, klass, marshallers.length);
         this.function = function;
         this.functionInvoker = functionInvoker;
         this.marshallers = marshallers;
     }
 
+    /**
+     * Invokes the native function with the supplied ruby arguments.
+     * @param rubyArgs The ruby arguments to pass to the native function.
+     * @return The return value from the native function, as a ruby object.
+     */
+    @JRubyMethod(name= { "invoke", "call", "call0", "call1", "call2", "call3" }, rest = true)
     public IRubyObject invoke(ThreadContext context, IRubyObject[] rubyArgs) {
         Object[] args = new Object[rubyArgs.length];
         Invocation invocation = new Invocation(context);
@@ -70,7 +116,6 @@ final class JNAInvoker extends AbstractInvoker {
      * @param module The module or class to attach the function to.
      * @param methodName The ruby name to attach the function as.
      */
-    @Override
     public DynamicMethod createDynamicMethod(RubyModule module) {
         /*
          * If there is exactly _one_ callback argument to the function,
@@ -98,7 +143,28 @@ final class JNAInvoker extends AbstractInvoker {
         } else if (Arity.THREE_ARGUMENTS.equals(arity)) {
             return new DynamicMethodThreeArg(module, function, functionInvoker, marshallers);
         } else {
-            return super.createDynamicMethod(module);
+            return new DynamicMethod(module, Visibility.PUBLIC, CallConfiguration.FrameNoneScopeNone) {
+                @Override
+                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                    arity.checkArity(context.getRuntime(), args);
+                    return invoke(context, args);
+                }
+
+                @Override
+                public DynamicMethod dup() {
+                    return this;
+                }
+
+                @Override
+                public Arity getArity() {
+                    return JNAInvoker.this.getArity();
+                }
+
+                @Override
+                public boolean isNative() {
+                    return true;
+                }
+            };
         }
     }
 }

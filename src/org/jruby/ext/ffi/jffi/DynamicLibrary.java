@@ -53,6 +53,9 @@ public class DynamicLibrary extends RubyObject {
         this.name = name;
         this.library = library;
     }
+    final Library getNativeLibrary() {
+        return library;
+    }
     @JRubyMethod(name = {  "open" }, meta = true)
     public static final  IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject libraryName, IRubyObject libraryFlags) {
         final String libName = libraryName.toString();

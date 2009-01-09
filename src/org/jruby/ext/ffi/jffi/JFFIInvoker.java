@@ -9,11 +9,19 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.ext.ffi.AbstractInvoker;
 import org.jruby.ext.ffi.CallbackInfo;
+import org.jruby.ext.ffi.FFIProvider;
 import org.jruby.ext.ffi.NativeParam;
 import org.jruby.ext.ffi.NativeType;
+import org.jruby.ext.ffi.Util;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -26,36 +34,66 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
     private final NativeParam[] parameterTypes;
     private final int parameterCount;
     private final CallingConvention convention;
+    private final RubyModule callModule;
+    private final DynamicMethod callMethod;
     
+    public static RubyClass createInvokerClass(Ruby runtime, RubyModule module) {
+        RubyClass result = module.defineClassUnder("Invoker",
+                runtime.getObject(),
+                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        result.defineAnnotatedMethods(AbstractInvoker.class);
+        result.defineAnnotatedMethods(JFFIInvoker.class);
+        result.defineAnnotatedConstants(JFFIInvoker.class);
+
+        return result;
+    }
     public JFFIInvoker(Ruby runtime, String libraryName, String functionName, NativeType returnType, NativeParam[] parameterTypes, String convention) {
-        super(runtime, parameterTypes.length);
-        try {
-            this.library = LibraryCache.open(libraryName, Library.LAZY);
-        } catch (UnsatisfiedLinkError ex) {
-            throw runtime.newLoadError("Could not open library " + libraryName);
-        }
-        Address address = library.findSymbol(functionName);
-        if (address == null) {
-            throw runtime.newLoadError("Could find function " + functionName);
-        }
+        this(runtime, FFIProvider.getModule(runtime).fastGetClass("Invoker"), LibraryCache.open(libraryName, Library.LAZY),
+                LibraryCache.open(libraryName, Library.LAZY).findSymbol(functionName).nativeAddress(),
+                returnType, parameterTypes, convention);
+    }
+    public JFFIInvoker(Ruby runtime, RubyClass klass, Library library, long address, NativeType returnType, NativeParam[] parameterTypes, String convention) {
+        super(runtime, klass, parameterTypes.length);
         final com.kenai.jffi.Type jffiReturnType = getFFIType(returnType);
         com.kenai.jffi.Type[] jffiParamTypes = new com.kenai.jffi.Type[parameterTypes.length];
         for (int i = 0; i < jffiParamTypes.length; ++i) {
             jffiParamTypes[i] = getFFIType(parameterTypes[i]);
         }
-        function = new Function(address, jffiReturnType, jffiParamTypes);
+        function = new Function(new Address(address), jffiReturnType, jffiParamTypes);
         this.parameterTypes = new NativeParam[parameterTypes.length];
         System.arraycopy(parameterTypes, 0, this.parameterTypes, 0, parameterTypes.length);
+        this.library = library;
         this.parameterCount = parameterTypes.length;
         this.returnType = returnType;
         this.convention = "stdcall".equals(convention)
                 ? CallingConvention.STDCALL : CallingConvention.DEFAULT;
+        this.callModule = RubyModule.newModule(runtime);
+        this.callModule.addModuleFunction("call", callMethod = createDynamicMethod(callModule));
+    }
+    @JRubyMethod(name = { "new" }, meta = true, required = 5)
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        String convention = args[4].toString();
+        DynamicLibrary library = (DynamicLibrary) args[0];
+        BasePointer ptr = (BasePointer) args[1];
+        
+        RubyArray paramTypes = (RubyArray) args[2];
+        NativeParam[] parameterTypes = getNativeParameterTypes(context.getRuntime(), paramTypes);
+        NativeType returnType = NativeType.valueOf(Util.int32Value(args[3]));
+        
+
+        return new JFFIInvoker(context.getRuntime(), (RubyClass) recv, 
+                library.getNativeLibrary(), ptr.getAddress(),
+                returnType, parameterTypes, convention);
     }
 
-
-    @Override
+    /**
+     * Invokes the native function with the supplied ruby arguments.
+     * @param rubyArgs The ruby arguments to pass to the native function.
+     * @return The return value from the native function, as a ruby object.
+     */
+    @JRubyMethod(name= { "invoke", "call", "call0", "call1", "call2", "call3" }, rest = true)
     public IRubyObject invoke(ThreadContext context, IRubyObject[] args) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return callMethod.call(context, callModule, callModule.getSingletonClass(), "call", args, Block.NULL_BLOCK);
     }
     @Override
     public DynamicMethod createDynamicMethod(RubyModule module) {
