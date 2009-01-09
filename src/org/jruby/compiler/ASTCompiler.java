@@ -1824,16 +1824,20 @@ public class ASTCompiler {
     }
 
     public void compileDot(Node node, BodyCompiler context, boolean expr) {
-        DotNode dotNode = (DotNode) node;
+        final DotNode dotNode = (DotNode) node;
 
         boolean doit = expr || !PEEPHOLE_OPTZ;
         boolean popit = !PEEPHOLE_OPTZ && !expr;
 
         if (doit) {
-            compile(dotNode.getBeginNode(), context, true);
-            compile(dotNode.getEndNode(), context, true);
+            CompilerCallback beginEndCallback = new CompilerCallback() {
+                public void call(BodyCompiler context) {
+                    compile(dotNode.getBeginNode(), context, true);
+                    compile(dotNode.getEndNode(), context, true);
+                }
+            };
 
-            context.createNewRange(dotNode.isExclusive());
+            context.createNewRange(beginEndCallback, dotNode.isExclusive());
         }
         if (popit) context.consumeCurrentValue();
     }

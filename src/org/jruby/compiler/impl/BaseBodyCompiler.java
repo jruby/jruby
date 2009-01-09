@@ -561,13 +561,10 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         }
     }
 
-    public void createNewRange(boolean isExclusive) {
+    public void createNewRange(CompilerCallback beginEndCallback, boolean isExclusive) {
         loadRuntime();
         loadThreadContext();
-
-        // could be more efficient with a callback
-        method.dup2_x2();
-        method.pop2();
+        beginEndCallback.call(this);
 
         if (isExclusive) {
             method.invokestatic(p(RubyRange.class), "newExclusiveRange", sig(RubyRange.class, params(Ruby.class, ThreadContext.class, IRubyObject.class, IRubyObject.class)));

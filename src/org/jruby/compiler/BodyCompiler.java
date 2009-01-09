@@ -193,7 +193,7 @@ public interface BodyCompiler {
      * 
      * @param isExclusive Whether the range is exclusive or not (inclusive)
      */
-    public void createNewRange(boolean isExclusive);
+    public void createNewRange(CompilerCallback beginEndCalback, boolean isExclusive);
 
     /**
      * Create a new literal lambda. The stack should contain a reference to the closure object.
