@@ -27,7 +27,6 @@
 
 package org.jruby.compiler.impl;
 
-import java.util.Arrays;
 import org.jruby.Ruby;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.parser.StaticScope;

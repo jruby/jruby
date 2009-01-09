@@ -543,21 +543,18 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void createNewHash(Object elements, ArrayCallback callback, int keyCount) {
         loadRuntime();
 
-        if (keyCount <= RuntimeHelpers.MAX_SPECIFIC_ARITY_HASH) {
-            // we have a specific-arity method we can use to construct, so use that
-            for (int i = 0; i < keyCount; i++) {
-                callback.nextValue(this, elements, i);
-            }
+        // use specific-arity for as much as possible
+        int i = 0;
+        for (; i < keyCount && i < RuntimeHelpers.MAX_SPECIFIC_ARITY_HASH; i++) {
+            callback.nextValue(this, elements, i);
+        }
 
-            invokeUtilityMethod("constructHash", sig(RubyHash.class, params(Ruby.class, IRubyObject.class, keyCount * 2)));
-        } else {
-            method.invokestatic(p(RubyHash.class), "newHash", sig(RubyHash.class, params(Ruby.class)));
+        invokeUtilityMethod("constructHash", sig(RubyHash.class, params(Ruby.class, IRubyObject.class, i * 2)));
 
-            for (int i = 0; i < keyCount; i++) {
-                method.dup();
-                callback.nextValue(this, elements, i);
-                method.invokevirtual(p(RubyHash.class), "fastASet", sig(void.class, params(IRubyObject.class, IRubyObject.class)));
-            }
+        for (; i < keyCount; i++) {
+            method.dup();
+            callback.nextValue(this, elements, i);
+            method.invokevirtual(p(RubyHash.class), "fastASet", sig(void.class, params(IRubyObject.class, IRubyObject.class)));
         }
     }
 

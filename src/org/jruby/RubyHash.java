@@ -767,6 +767,11 @@ public class RubyHash extends RubyObject implements Map {
         internalPut(key, value);
     }
 
+    public final RubyHash fastASetChained(IRubyObject key, IRubyObject value) {
+        internalPut(key, value);
+        return this;
+    }
+
     @Deprecated
     public IRubyObject op_aset(IRubyObject key, IRubyObject value) {
         return op_aset(getRuntime().getCurrentContext(), key, value);
