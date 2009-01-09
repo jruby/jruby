@@ -1043,9 +1043,9 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.invokevirtual(p(RubyRegexp.class), "op_match2", sig(IRubyObject.class, params(ThreadContext.class)));
     }
 
-    public void match2() {
+    public void match2(CompilerCallback value) {
         loadThreadContext();
-        method.swap();
+        value.call(this);
         method.invokevirtual(p(RubyRegexp.class), "op_match", sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class)));
     }
 

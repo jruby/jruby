@@ -470,7 +470,7 @@ public interface BodyCompiler {
 
     public void match();
 
-    public void match2();
+    public void match2(CompilerCallback value);
 
     public void match3();
 

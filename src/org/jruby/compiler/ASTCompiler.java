@@ -2543,12 +2543,16 @@ public class ASTCompiler {
     }
 
     public void compileMatch2(Node node, BodyCompiler context, boolean expr) {
-        Match2Node matchNode = (Match2Node) node;
+        final Match2Node matchNode = (Match2Node) node;
 
         compile(matchNode.getReceiverNode(), context,true);
-        compile(matchNode.getValueNode(), context,true);
+        CompilerCallback value = new CompilerCallback() {
+            public void call(BodyCompiler context) {
+                compile(matchNode.getValueNode(), context,true);
+            }
+        };
 
-        context.match2();
+        context.match2(value);
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
