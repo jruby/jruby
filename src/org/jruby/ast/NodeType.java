@@ -44,5 +44,34 @@ public enum NodeType {
     SELFNODE, SPLATNODE, STARNODE, STRNODE, SUPERNODE, SVALUENODE, SYMBOLNODE, TOARYNODE,
     TRUENODE, UNDEFNODE, UNTILNODE, VALIASNODE, VCALLNODE, WHENNODE, WHILENODE, XSTRNODE, YIELDNODE,
     ZARRAYNODE, ZEROARGNODE, ZSUPERNODE, COMMENTNODE, ROOTNODE, ATTRASSIGNNODE, ARGSPUSHNODE,
-    OPTARGNODE, ARGAUXILIARYNODE, LAMBDANODE, MULTIPLEASGN19NODE, RESTARG
+    OPTARGNODE, ARGAUXILIARYNODE, LAMBDANODE, MULTIPLEASGN19NODE, RESTARG;
+
+    public boolean alwaysTrue() {
+        switch (this) {
+        case TRUENODE:
+        case FIXNUMNODE:
+        case SELFNODE:
+        case FLOATNODE:
+        case REGEXPNODE:
+        case STRNODE:
+        case DOTNODE:
+        case SYMBOLNODE:
+        case BIGNUMNODE:
+        case ARRAYNODE:
+        case HASHNODE:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    public boolean alwaysFalse() {
+        switch (this) {
+        case NILNODE:
+        case FALSENODE:
+            return true;
+        default:
+            return false;
+        }
+    }
 }

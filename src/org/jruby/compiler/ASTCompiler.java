@@ -580,17 +580,24 @@ public class ASTCompiler {
     public void compileAnd(Node node, BodyCompiler context, final boolean expr) {
         final AndNode andNode = (AndNode) node;
 
-        compile(andNode.getFirstNode(), context, true);
+        if (andNode.getFirstNode().getNodeType().alwaysTrue()) {
+            // compile first node as non-expr and then second node
+            compile(andNode.getFirstNode(), context, false);
+            compile(andNode.getSecondNode(), context, expr);
+        } else if (andNode.getFirstNode().getNodeType().alwaysFalse()) {
+            // compile first node only
+            compile(andNode.getFirstNode(), context, expr);
+        } else {
+            compile(andNode.getFirstNode(), context, true);
+            BranchCallback longCallback = new BranchCallback() {
+                        public void branch(BodyCompiler context) {
+                            compile(andNode.getSecondNode(), context, true);
+                        }
+                    };
 
-        BranchCallback longCallback = new BranchCallback() {
-                    public void branch(BodyCompiler context) {
-                        compile(andNode.getSecondNode(), context, true);
-                    }
-                };
-
-        context.performLogicalAnd(longCallback);
-
-        if (!expr) context.consumeCurrentValue();
+            context.performLogicalAnd(longCallback);
+            if (!expr) context.consumeCurrentValue();
+        }
     }
 
     public void compileArray(Node node, BodyCompiler context, boolean expr) {
@@ -2367,31 +2374,15 @@ public class ASTCompiler {
         while (actualCondition instanceof NewlineNode) {
             actualCondition = ((NewlineNode)actualCondition).getNextNode();
         }
-        
-        switch (actualCondition.getNodeType()) {
-        case TRUENODE:
-        case FIXNUMNODE:
-        case SELFNODE:
-        case FLOATNODE:
-        case REGEXPNODE:
-        case STRNODE:
-        case DOTNODE:
-        case SYMBOLNODE:
-        case BIGNUMNODE:
-            // literals with no side effects that are always true
-            compile(ifNode.getThenBody(), context, expr);
-            break;
-        case FALSENODE:
-            // always false
-            compile(ifNode.getElseBody(), context, expr);
-            break;
-        case ARRAYNODE:
-        case HASHNODE:
-            // literals with potential side effects that are always true, use non-expr
+
+        if (actualCondition.getNodeType().alwaysTrue()) {
+            // compile condition as non-expr and just compile "then" body
             compile(actualCondition, context, false);
             compile(ifNode.getThenBody(), context, expr);
-            break;
-        default:
+        } else if (actualCondition.getNodeType().alwaysFalse()) {
+            // always false or nil
+            compile(ifNode.getElseBody(), context, expr);
+        } else {
             BranchCallback trueCallback = new BranchCallback() {
                 public void branch(BodyCompiler context) {
                     if (ifNode.getThenBody() != null) {
@@ -2416,7 +2407,6 @@ public class ASTCompiler {
             compile(actualCondition, context, true);
             context.performBooleanBranch(trueCallback, falseCallback);
         }
-
     }
 
     public void compileInstAsgn(Node node, BodyCompiler context, boolean expr) {
@@ -3084,18 +3074,27 @@ public class ASTCompiler {
     public void compileOr(Node node, BodyCompiler context, boolean expr) {
         final OrNode orNode = (OrNode) node;
 
-        compile(orNode.getFirstNode(), context,true);
+        if (orNode.getFirstNode().getNodeType().alwaysTrue()) {
+            // compile first node only
+            compile(orNode.getFirstNode(), context, expr);
+        } else if (orNode.getFirstNode().getNodeType().alwaysFalse()) {
+            // compile first node as non-expr and compile second node
+            compile(orNode.getFirstNode(), context, false);
+            compile(orNode.getSecondNode(), context, expr);
+        } else {
+            compile(orNode.getFirstNode(), context, true);
 
-        BranchCallback longCallback = new BranchCallback() {
+            BranchCallback longCallback = new BranchCallback() {
 
-                    public void branch(BodyCompiler context) {
-                        compile(orNode.getSecondNode(), context, true);
-                    }
-                };
+                        public void branch(BodyCompiler context) {
+                            compile(orNode.getSecondNode(), context, true);
+                        }
+                    };
 
-        context.performLogicalOr(longCallback);
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+            context.performLogicalOr(longCallback);
+            // TODO: don't require pop
+            if (!expr) context.consumeCurrentValue();
+        }
     }
 
     public void compilePostExe(Node node, BodyCompiler context, boolean expr) {
