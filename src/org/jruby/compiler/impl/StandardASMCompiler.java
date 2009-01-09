@@ -208,6 +208,17 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         // Create the class with the appropriate class name and source file
         classWriter.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER,getClassname(), null, p(AbstractScript.class), null);
+
+        // add setPosition impl, which stores filename as constant to speed updates
+        SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC, "setPosition", sig(Void.TYPE, params(ThreadContext.class, int.class)), null, null));
+        method.start();
+
+        method.aload(0); // thread context
+        method.ldc(sourcename);
+        method.iload(1); // line number
+        method.invokevirtual(p(ThreadContext.class), "setFileAndLine", sig(void.class, String.class, int.class));
+        method.voidreturn();
+        method.end();
         
         topLevelScope = scope;
 
@@ -306,17 +317,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.voidreturn();
             method.end();
         }
-        
-        // add setPosition impl, which stores filename as constant to speed updates
-        SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC, "setPosition", sig(Void.TYPE, params(ThreadContext.class, int.class)), null, null));
-        method.start();
-
-        method.aload(0); // thread context
-        method.ldc(sourcename);
-        method.iload(1); // line number
-        method.invokevirtual(p(ThreadContext.class), "setFileAndLine", sig(void.class, String.class, int.class));
-        method.voidreturn();
-        method.end();
 
         getCacheCompiler().finish();
         
