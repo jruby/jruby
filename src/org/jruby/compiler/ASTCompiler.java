@@ -986,12 +986,8 @@ public class ASTCompiler {
     public void compileClassVar(Node node, BodyCompiler context, boolean expr) {
         ClassVarNode classVarNode = (ClassVarNode) node;
 
-        if (PEEPHOLE_OPTZ) {
-            if (expr) context.retrieveClassVariable(classVarNode.getName());
-        } else {
-            context.retrieveClassVariable(classVarNode.getName());
-            if (!expr) context.consumeCurrentValue();
-        }
+        context.retrieveClassVariable(classVarNode.getName());
+        if (!expr) context.consumeCurrentValue();
     }
 
     public void compileClassVarAsgn(Node node, BodyCompiler context, boolean expr) {
