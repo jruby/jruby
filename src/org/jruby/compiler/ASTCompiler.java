@@ -3414,32 +3414,38 @@ public class ASTCompiler {
     public void compileUntil(Node node, BodyCompiler context, boolean expr) {
         final UntilNode untilNode = (UntilNode) node;
 
-        BranchCallback condition = new BranchCallback() {
-
-            public void branch(BodyCompiler context) {
-                compile(untilNode.getConditionNode(), context, true);
-                context.negateCurrentValue();
-            }
-        };
-
-        BranchCallback body = new BranchCallback() {
-
-            public void branch(BodyCompiler context) {
-                if (untilNode.getBodyNode() != null) {
-                    compile(untilNode.getBodyNode(), context, true);
-                }
-            }
-        };
-
-        if (untilNode.containsNonlocalFlow) {
-            context.performBooleanLoopSafe(condition, body, untilNode.evaluateAtStart());
+        if (untilNode.getConditionNode().getNodeType().alwaysTrue()) {
+            // condition is always true, just compile it and not body
+            compile(untilNode.getConditionNode(), context, false);
+            if (expr) context.loadNil();
         } else {
-            context.performBooleanLoopLight(condition, body, untilNode.evaluateAtStart());
-        }
+            BranchCallback condition = new BranchCallback() {
 
-        context.pollThreadEvents();
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+                public void branch(BodyCompiler context) {
+                    compile(untilNode.getConditionNode(), context, true);
+                    context.negateCurrentValue();
+                }
+            };
+
+            BranchCallback body = new BranchCallback() {
+
+                public void branch(BodyCompiler context) {
+                    if (untilNode.getBodyNode() != null) {
+                        compile(untilNode.getBodyNode(), context, true);
+                    }
+                }
+            };
+
+            if (untilNode.containsNonlocalFlow) {
+                context.performBooleanLoopSafe(condition, body, untilNode.evaluateAtStart());
+            } else {
+                context.performBooleanLoopLight(condition, body, untilNode.evaluateAtStart());
+            }
+
+            context.pollThreadEvents();
+            // TODO: don't require pop
+            if (!expr) context.consumeCurrentValue();
+        }
     }
 
     public void compileVAlias(Node node, BodyCompiler context, boolean expr) {
@@ -3461,31 +3467,36 @@ public class ASTCompiler {
     public void compileWhile(Node node, BodyCompiler context, boolean expr) {
         final WhileNode whileNode = (WhileNode) node;
 
-        BranchCallback condition = new BranchCallback() {
-
-            public void branch(BodyCompiler context) {
-                compile(whileNode.getConditionNode(), context, true);
-            }
-        };
-
-        BranchCallback body = new BranchCallback() {
-
-            public void branch(BodyCompiler context) {
-                if (whileNode.getBodyNode() != null) {
-                    compile(whileNode.getBodyNode(), context, true);
-                }
-            }
-        };
-
-        if (whileNode.containsNonlocalFlow) {
-            context.performBooleanLoopSafe(condition, body, whileNode.evaluateAtStart());
+        if (whileNode.getConditionNode().getNodeType().alwaysFalse()) {
+            // do nothing
+            if (expr) context.loadNil();
         } else {
-            context.performBooleanLoopLight(condition, body, whileNode.evaluateAtStart());
-        }
+            BranchCallback condition = new BranchCallback() {
 
-        context.pollThreadEvents();
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+                public void branch(BodyCompiler context) {
+                    compile(whileNode.getConditionNode(), context, true);
+                }
+            };
+
+            BranchCallback body = new BranchCallback() {
+
+                public void branch(BodyCompiler context) {
+                    if (whileNode.getBodyNode() != null) {
+                        compile(whileNode.getBodyNode(), context, true);
+                    }
+                }
+            };
+
+            if (whileNode.containsNonlocalFlow) {
+                context.performBooleanLoopSafe(condition, body, whileNode.evaluateAtStart());
+            } else {
+                context.performBooleanLoopLight(condition, body, whileNode.evaluateAtStart());
+            }
+
+            context.pollThreadEvents();
+            // TODO: don't require pop
+            if (!expr) context.consumeCurrentValue();
+        }
     }
 
     public void compileXStr(Node node, BodyCompiler context, boolean expr) {
