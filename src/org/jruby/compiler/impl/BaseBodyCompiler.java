@@ -284,8 +284,26 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             method.pop2();
             method.swap();
             break;
+        case 5:
+        case 6:
+        case 7:
+        case 8:
+        case 9:
+        case 10:
+            // up to ten, stuff into tmp locals, load in reverse order, and assign
+            // FIXME: There's probably a slightly smarter way, but is it important?
+            int[] tmpLocals = new int[count];
+            for (int i = 0; i < count; i++) {
+                tmpLocals[i] = getVariableCompiler().grabTempLocal();
+                getVariableCompiler().setTempLocal(tmpLocals[i]);
+            }
+            for (int i = 0; i < count; i++) {
+                getVariableCompiler().getTempLocal(tmpLocals[i]);
+                getVariableCompiler().releaseTempLocal();
+            }
+            break;
         default:
-            throw new NotCompilableException("can't reverse more than four values on the stack");
+            throw new NotCompilableException("can't reverse more than ten values on the stack");
         }
     }
 

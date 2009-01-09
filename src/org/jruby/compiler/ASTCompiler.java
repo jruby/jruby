@@ -2640,7 +2640,7 @@ public class ASTCompiler {
                     if (normalAssigns) {
                         // only supports simple parallel assignment of up to 4 values to the same number of assignees
                         int size = multipleAsgnNode.getHeadNode().size();
-                        if (size == 2 || size == 3 || size == 4) {
+                        if (size >= 2 && size <= 10) {
                             ArrayNode values = (ArrayNode)multipleAsgnNode.getValueNode();
                             for (Node value : values.childNodes()) {
                                 compile(value, context, true);
