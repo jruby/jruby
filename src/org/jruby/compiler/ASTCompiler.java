@@ -30,8 +30,6 @@
 package org.jruby.compiler;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -2364,31 +2362,61 @@ public class ASTCompiler {
     public void compileIf(Node node, BodyCompiler context, final boolean expr) {
         final IfNode ifNode = (IfNode) node;
 
-        compile(ifNode.getCondition(), context,true);
-
-        BranchCallback trueCallback = new BranchCallback() {
-
-                    public void branch(BodyCompiler context) {
-                        if (ifNode.getThenBody() != null) {
-                            compile(ifNode.getThenBody(), context, expr);
-                        } else {
-                            if (expr) context.loadNil();
-                        }
+        // optimizations if we know ahead of time it will always be true or false
+        Node actualCondition = ifNode.getCondition();
+        while (actualCondition instanceof NewlineNode) {
+            actualCondition = ((NewlineNode)actualCondition).getNextNode();
+        }
+        
+        switch (actualCondition.getNodeType()) {
+        case TRUENODE:
+        case FIXNUMNODE:
+        case SELFNODE:
+        case FLOATNODE:
+        case REGEXPNODE:
+        case STRNODE:
+        case DOTNODE:
+        case SYMBOLNODE:
+        case BIGNUMNODE:
+            // literals with no side effects that are always true
+            compile(ifNode.getThenBody(), context, expr);
+            break;
+        case FALSENODE:
+            // always false
+            compile(ifNode.getElseBody(), context, expr);
+            break;
+        case ARRAYNODE:
+        case HASHNODE:
+            // literals with potential side effects that are always true, use non-expr
+            compile(actualCondition, context, false);
+            compile(ifNode.getThenBody(), context, expr);
+            break;
+        default:
+            BranchCallback trueCallback = new BranchCallback() {
+                public void branch(BodyCompiler context) {
+                    if (ifNode.getThenBody() != null) {
+                        compile(ifNode.getThenBody(), context, expr);
+                    } else {
+                        if (expr) context.loadNil();
                     }
-                };
+                }
+            };
 
-        BranchCallback falseCallback = new BranchCallback() {
-
-                    public void branch(BodyCompiler context) {
-                        if (ifNode.getElseBody() != null) {
-                            compile(ifNode.getElseBody(), context, expr);
-                        } else {
-                            if (expr) context.loadNil();
-                        }
+            BranchCallback falseCallback = new BranchCallback() {
+                public void branch(BodyCompiler context) {
+                    if (ifNode.getElseBody() != null) {
+                        compile(ifNode.getElseBody(), context, expr);
+                    } else {
+                        if (expr) context.loadNil();
                     }
-                };
+                }
+            };
+            
+            // normal
+            compile(actualCondition, context, true);
+            context.performBooleanBranch(trueCallback, falseCallback);
+        }
 
-        context.performBooleanBranch(trueCallback, falseCallback);
     }
 
     public void compileInstAsgn(Node node, BodyCompiler context, boolean expr) {
