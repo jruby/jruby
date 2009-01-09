@@ -1114,8 +1114,7 @@ public class ASTCompiler {
         Colon3Node iVisited = (Colon3Node) node;
         String name = iVisited.getName();
 
-        context.loadObject();
-        context.retrieveConstantFromModule(name);
+        context.retrieveConstantFromObject(name);
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }

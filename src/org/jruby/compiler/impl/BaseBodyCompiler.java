@@ -338,6 +338,11 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         script.getCacheCompiler().cacheConstantFrom(this, name);
     }
 
+    public void retrieveConstantFromObject(String name) {
+        loadObject();
+        script.getCacheCompiler().cacheConstantFrom(this, name);
+    }
+
     public void retrieveClassVariable(String name) {
         loadThreadContext();
         loadRuntime();

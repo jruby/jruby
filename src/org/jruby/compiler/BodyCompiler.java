@@ -337,6 +337,13 @@ public interface BodyCompiler {
      * @param name The name of the constant
      */
     public void retrieveConstantFromModule(String name);
+
+    /**
+     * Retreive a named constant from the RubyModule/RubyClass that's just been pushed.
+     *
+     * @param name The name of the constant
+     */
+    public void retrieveConstantFromObject(String name);
     
     /**
      * Load a Ruby "false" value on top of the stack.
