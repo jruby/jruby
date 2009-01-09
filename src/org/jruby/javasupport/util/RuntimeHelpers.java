@@ -952,6 +952,10 @@ public class RuntimeHelpers {
     public static IRubyObject setConstantInModule(IRubyObject module, IRubyObject value, String name, ThreadContext context) {
         return context.setConstantInModule(name, module, value);
     }
+
+    public static IRubyObject setConstantInCurrent(IRubyObject value, ThreadContext context, String name) {
+        return context.setConstantInCurrent(name, value);
+    }
     
     public static IRubyObject retryJump() {
         throw JumpException.RETRY_JUMP;

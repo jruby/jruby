@@ -309,9 +309,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void assignConstantInCurrent(String name) {
         loadThreadContext();
         method.ldc(name);
-        method.dup2_x1();
-        method.pop2();
-        invokeThreadContext("setConstantInCurrent", sig(IRubyObject.class, params(String.class, IRubyObject.class)));
+        invokeUtilityMethod("setConstantInCurrent", sig(IRubyObject.class, params(IRubyObject.class, ThreadContext.class, String.class)));
     }
 
     public void assignConstantInModule(String name) {
