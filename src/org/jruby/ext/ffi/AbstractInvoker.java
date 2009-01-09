@@ -94,8 +94,8 @@ public abstract class AbstractInvoker extends RubyObject {
     public IRubyObject attach(ThreadContext context, IRubyObject module, IRubyObject methodName) {
 
         DynamicMethod m = createDynamicMethod((RubyModule) module);
-        ((RubyModule) module).addMethod(methodName.asJavaString(), m);
-        return context.getRuntime().getNil();
+        ((RubyModule) module).addModuleFunction(methodName.asJavaString(), m);
+        return this;
     }
     protected abstract DynamicMethod createDynamicMethod(RubyModule module);
 
