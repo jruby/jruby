@@ -21,5 +21,6 @@
 	<classpathentry kind="lib" path="build_lib/jffi.jar"/>
 	<classpathentry kind="lib" path="build_lib/invokedynamic.jar"/>
 	<classpathentry kind="lib" path="build_lib/constantine.jar"/>
+	<classpathentry kind="lib" path="build_lib/apt-mirror-api.jar"/>
 	<classpathentry kind="output" path="build/classes/jruby"/>
 </classpath>
