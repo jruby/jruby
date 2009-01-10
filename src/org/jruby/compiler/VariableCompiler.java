@@ -43,6 +43,7 @@ public interface VariableCompiler {
     public void beginMethod(CompilerCallback argsCallback, StaticScope scope);
     public void beginClass(CompilerCallback bodyPrep, StaticScope scope);
     public void beginClosure(CompilerCallback argsCallback, StaticScope scope);
+    public void beginFlatClosure(CompilerCallback argsCallback, StaticScope scope);
     public void assignLocalVariable(int index, boolean expr);
     public void assignLocalVariable(int index, int depth, boolean expr);
     public void assignLocalVariable(int index, int depth, CompilerCallback value, boolean expr);

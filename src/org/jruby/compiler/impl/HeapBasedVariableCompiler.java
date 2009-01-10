@@ -56,14 +56,18 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             methodCompiler.loadThreadContext();
             methodCompiler.invokeThreadContext("getCurrentScope", sig(DynamicScope.class));
             method.astore(methodCompiler.getDynamicScopeIndex());
-            method.aload(methodCompiler.getDynamicScopeIndex());
-            method.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
-            method.astore(methodCompiler.getVarsArrayIndex());
 
-            // fill local vars with nil, to avoid checking every access.
-            method.aload(methodCompiler.getVarsArrayIndex());
-            methodCompiler.loadRuntime();
-            methodCompiler.invokeUtilityMethod("fillNil", sig(void.class, IRubyObject[].class, Ruby.class));
+            // if more than 4 locals, get and populate the locals array too
+            if (scope.getNumberOfVariables() > 4) {
+                method.aload(methodCompiler.getDynamicScopeIndex());
+                method.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
+                method.astore(methodCompiler.getVarsArrayIndex());
+
+                // fill local vars with nil, to avoid checking every access.
+                method.aload(methodCompiler.getVarsArrayIndex());
+                methodCompiler.loadRuntime();
+                methodCompiler.invokeUtilityMethod("fillNil", sig(void.class, IRubyObject[].class, Ruby.class));
+            }
         }
 
         if (argsCallback != null) {
@@ -93,10 +97,14 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
         // store the new local vars in a local variable
         methodCompiler.loadThreadContext();
         methodCompiler.invokeThreadContext("getCurrentScope", sig(DynamicScope.class));
-        method.dup();
         method.astore(methodCompiler.getDynamicScopeIndex());
-        method.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
-        method.astore(methodCompiler.getVarsArrayIndex());
+
+        // if more than 4 locals, get the locals array too
+        if (scope.getNumberOfVariables() > 4) {
+            method.aload(methodCompiler.getDynamicScopeIndex());
+            method.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
+            method.astore(methodCompiler.getVarsArrayIndex());
+        }
 
         // fill local vars with nil, to avoid checking every access.
         method.aload(methodCompiler.getVarsArrayIndex());
@@ -108,9 +116,13 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
         methodCompiler.loadThreadContext();
         methodCompiler.invokeThreadContext("getCurrentScope", sig(DynamicScope.class));
         method.astore(methodCompiler.getDynamicScopeIndex());
-        method.aload(methodCompiler.getDynamicScopeIndex());
-        method.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
-        method.astore(methodCompiler.getVarsArrayIndex());
+
+        // if more than 4 locals, get the locals array too
+        if (scope.getNumberOfVariables() > 4) {
+            method.aload(methodCompiler.getDynamicScopeIndex());
+            method.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
+            method.astore(methodCompiler.getVarsArrayIndex());
+        }
         
         if (scope != null && scope.getNumberOfVariables() >= 1) {
             switch (scope.getNumberOfVariables()) {
@@ -148,6 +160,27 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             }
         }
         
+        if (argsCallback != null) {
+            // load args[0] which will be the IRubyObject representing block args
+            method.aload(argsIndex);
+            argsCallback.call(methodCompiler);
+        }
+    }
+
+    public void beginFlatClosure(CompilerCallback argsCallback, StaticScope scope) {
+        methodCompiler.loadThreadContext();
+        methodCompiler.invokeThreadContext("getCurrentScope", sig(DynamicScope.class));
+        method.astore(methodCompiler.getDynamicScopeIndex());
+
+        // if more than 4 locals, get the locals array too
+        if (scope.getNumberOfVariables() > 4) {
+            method.aload(methodCompiler.getDynamicScopeIndex());
+            method.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
+            method.astore(methodCompiler.getVarsArrayIndex());
+        }
+
+        // no variable initialization, because we're reusing parent's scope (flat)
+
         if (argsCallback != null) {
             // load args[0] which will be the IRubyObject representing block args
             method.aload(argsIndex);

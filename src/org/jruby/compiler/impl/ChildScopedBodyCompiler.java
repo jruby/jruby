@@ -1,7 +1,6 @@
 package org.jruby.compiler.impl;
 
 import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.ArrayCallback;
 import org.jruby.compiler.CompilerCallback;
@@ -48,7 +47,13 @@ public class ChildScopedBodyCompiler extends BaseBodyCompiler {
         invokeRuby("getNil", sig(IRubyObject.class));
         method.astore(getNilIndex());
 
-        variableCompiler.beginClosure(args, scope);
+        if (scope == null) {
+            // not using a new scope, use saved one for a flat closure
+            variableCompiler.beginFlatClosure(args, this.scope);
+        } else {
+            // normal closure
+            variableCompiler.beginClosure(args, scope);
+        }
         redoJump = new Label();
         method.label(scopeStart);
     }

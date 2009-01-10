@@ -128,6 +128,10 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
         }
     }
 
+    public void beginFlatClosure(CompilerCallback argsCallback, StaticScope scope) {
+        throw new NotCompilableException("Can't have flat closure with stack-based scope");
+    }
+
     public void assignLocalVariable(int index, boolean expr) {
         if (expr) {
             method.dup();

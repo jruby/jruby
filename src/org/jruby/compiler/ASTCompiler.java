@@ -3217,7 +3217,6 @@ public class ASTCompiler {
                     compile(realBody, context, true);
                     context.clearErrorInfo();
                 } else {
-
                     BodyCompiler nestedBody = context.outline("rescue_line_" + rescueBodyNode.getPosition().getStartLine());
                     compile(rescueBodyNode.getBodyNode(), nestedBody,true);
                     nestedBody.endBody();

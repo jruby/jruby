@@ -141,6 +141,33 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         return compiler;
     }
 
+    public void beginChainedMethod() {
+        method.start();
+
+        method.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
+        method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
+        method.astore(getRuntimeIndex());
+
+        // grab nil for local variables
+        method.aload(getRuntimeIndex());
+        method.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
+        method.astore(getNilIndex());
+
+        method.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
+        method.invokevirtual(p(ThreadContext.class), "getCurrentScope", sig(DynamicScope.class));
+        method.astore(getDynamicScopeIndex());
+
+        // if more than 4 locals, get the locals array too
+        if (scope.getNumberOfVariables() > 4) {
+            method.aload(getDynamicScopeIndex());
+            method.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
+            method.astore(getVarsArrayIndex());
+        }
+
+        // visit a label to start scoping for local vars in this method
+        method.label(scopeStart);
+    }
+
     public abstract BaseBodyCompiler outline(String methodName);
 
     public StandardASMCompiler getScriptCompiler() {
@@ -1348,9 +1375,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
             // set up a local IRuby variable
             mv.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
-            mv.dup();
             mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-            mv.dup();
             mv.astore(getRuntimeIndex());
 
             // store previous exception for restoration if we rescue something
@@ -1359,14 +1384,20 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             mv.astore(getPreviousExceptionIndex());
 
             // grab nil for local variables
+            loadRuntime();
             mv.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
             mv.astore(getNilIndex());
 
+            mv.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
             mv.invokevirtual(p(ThreadContext.class), "getCurrentScope", sig(DynamicScope.class));
-            mv.dup();
             mv.astore(getDynamicScopeIndex());
-            mv.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
-            mv.astore(getVarsArrayIndex());
+
+            // if more than 4 vars, get values array too
+            if (scope.getNumberOfVariables() > 4) {
+                mv.aload(getDynamicScopeIndex());
+                mv.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
+                mv.astore(getVarsArrayIndex());
+            }
 
             Label beforeBody = new Label();
             Label afterBody = new Label();
