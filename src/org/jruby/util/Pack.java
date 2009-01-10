@@ -19,6 +19,7 @@
  * Copyright (C) 2005 Derek Berner <derek.berner@state.nm.us>
  * Copyright (C) 2006 Evan Buswell <ebuswell@gmail.com>
  * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
+ * Copyright (C) 2009 Joseph LaFata <joe@quibb.org>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -42,6 +43,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyKernel;
 import org.jruby.RubyNumeric;
@@ -56,6 +58,7 @@ public class Pack {
     /** Native pack type.
      **/
     private static final String NATIVE_CODES = "sSiIlL";
+    private static final String MAPPED_CODES = "sSiIqQ";
     private static final String sTooFew = "too few arguments";
     private static final byte[] hex_table;
     private static final byte[] uu_table;
@@ -64,7 +67,7 @@ public class Pack {
     private static final int[] b64_xtable = new int[256];
     private static final Converter[] converters = new Converter[256];
 
-    private static final BigInteger QUAD_MIN = BigInteger.valueOf(Long.MIN_VALUE);
+    private static final BigInteger QUAD_MIN = new BigInteger("-ffffffffffffffff", 16);
     private static final BigInteger QUAD_MAX = new BigInteger("ffffffffffffffff", 16);
 
     /*
@@ -83,6 +86,34 @@ public class Pack {
             return big.longValue();
         }
         return RubyNumeric.num2long(arg);
+    }
+
+    private static float obj2flt(Ruby runtime, IRubyObject o) {
+        if(o instanceof RubyString) {
+            String str = o.asJavaString();
+            float f = (float)RubyNumeric.num2dbl(o.convertToFloat());
+            if(str.matches("^\\s*[-+]?\\s*[0-9].*")) {
+                return f;
+            } else {
+                throw runtime.newTypeError("array item not a float");
+            }
+        }
+
+        return (float)RubyKernel.new_float(o, o).getDoubleValue();
+    }
+
+    private static double obj2dbl(Ruby runtime, IRubyObject o) {
+        if(o instanceof RubyString) {
+            String str = o.asJavaString();
+            double d = RubyNumeric.num2dbl(o.convertToFloat());
+            if(str.matches("^\\s*[-+]?\\s*[0-9].*")) {
+                return d;
+            } else {
+                throw runtime.newTypeError("array item not a float");
+            }
+        }
+
+        return RubyKernel.new_float(o, o).getDoubleValue();
     }
 
     static {
@@ -107,7 +138,7 @@ public class Pack {
                         decodeShortUnsignedLittleEndian(enc));
             }
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
-                int s = o == runtime.getNil() ? 0 : (int) (RubyNumeric.num2long(o) & 0xffff);
+                int s = o == runtime.getNil() ? 0 : (int) (num2quad(o) & 0xffff);
                    encodeShortLittleEndian(result, s);
                }};
         // single precision, little-endian
@@ -116,16 +147,14 @@ public class Pack {
                 return RubyFloat.newFloat(runtime, decodeFloatLittleEndian(enc));
             }
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
-                float f = o == runtime.getNil() ? 0 : (float) RubyKernel.new_float(o,o).convertToFloat().getDoubleValue();
-                encodeFloatLittleEndian(result, f);
+                encodeFloatLittleEndian(result, obj2flt(runtime, o));
             }};
         Converter tmp = new Converter(4) {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 return RubyFloat.newFloat(runtime, decodeFloatBigEndian(enc));
             }
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
-                float f = o == runtime.getNil() ? 0 : (float) RubyKernel.new_float(o,o).convertToFloat().getDoubleValue();
-                encodeFloatBigEndian(result, f);
+                encodeFloatBigEndian(result, obj2flt(runtime, o));
             }
         };
         converters['F'] = tmp; // single precision, native
@@ -137,16 +166,14 @@ public class Pack {
                 return RubyFloat.newFloat(runtime, decodeDoubleLittleEndian(enc));
             }
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
-                double d = o == runtime.getNil() ? 0 : RubyKernel.new_float(o,o).convertToFloat().getDoubleValue();
-                encodeDoubleLittleEndian(result, d);
+                encodeDoubleLittleEndian(result, obj2dbl(runtime, o));
             }};
         tmp = new Converter(8) {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 return RubyFloat.newFloat(runtime, decodeDoubleBigEndian(enc));
             }
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
-                double d = o == runtime.getNil() ? 0 : RubyKernel.new_float(o,o).convertToFloat().getDoubleValue();
-                encodeDoubleBigEndian(result, d);
+                encodeDoubleBigEndian(result, obj2dbl(runtime, o));
             }
         };
         converters['D'] = tmp; // double precision native
@@ -157,17 +184,7 @@ public class Pack {
                 return runtime.newFixnum(decodeShortBigEndian(enc));
             }
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
-                int s;
-                if (o == runtime.getNil()) {
-                    s = 0;
-                } else {
-                    long l = RubyNumeric.num2long(o);
-                    // MRI 1.8 behavior:
-                    if (l == Long.MIN_VALUE || Math.abs(l) > 0xffffffffL) {
-                        throw runtime.newRangeError("bignum too big to convert into 'unsigned long'");
-                    }
-                    s = (int)(l & 0xffff);
-                }
+                int s = o == runtime.getNil() ? 0 : (int)(num2quad(o) & 0xffff);
                 encodeShortBigEndian(result, s);
             }};
         tmp = new Converter(2) {
@@ -176,7 +193,7 @@ public class Pack {
                         decodeShortUnsignedBigEndian(enc));
             }
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
-                int s = o == runtime.getNil() ? 0 : (int) (RubyNumeric.num2long(o) & 0xffff);
+                int s = o == runtime.getNil() ? 0 : (int) (num2quad(o) & 0xffff);
                 encodeShortBigEndian(result, s);
             }
         };
@@ -228,17 +245,7 @@ public class Pack {
                 return runtime.newFixnum(decodeIntBigEndian(enc));
             }
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
-                int s;
-                if (o == runtime.getNil()) {
-                    s = 0;
-                } else {
-                    long l = RubyNumeric.num2long(o);
-                    // MRI 1.8 behavior:
-                    if (l == Long.MIN_VALUE || Math.abs(l) > 0xffffffffL) {
-                        throw runtime.newRangeError("bignum too big to convert into 'unsigned long'");
-                    }
-                    s = (int)l;
-                }
+                int s = o == runtime.getNil() ? 0 : (int)RubyNumeric.num2long(o);
                 encodeIntBigEndian(result, s);
             }
         };
@@ -630,9 +637,13 @@ public class Pack {
             next = safeGet(format);
             // Next indicates to decode using native encoding format
             if (next == '_' || next == '!') {
-                if (NATIVE_CODES.indexOf(type) == -1) {
-                    throw runtime.newArgumentError("'" + next + "' allowed only after types " + NATIVE_CODES);
+                int index = NATIVE_CODES.indexOf(type);
+                if (index == -1) {
+                    throw runtime.newArgumentError("'" + next +
+                            "' allowed only after types " + NATIVE_CODES);
                 }
+                type = MAPPED_CODES.charAt(index);
+                
                 next = safeGet(format);
             }
 
@@ -1417,6 +1428,7 @@ public class Pack {
     public static RubyString pack(Ruby runtime, RubyArray list, ByteList formatString) {
         ByteBuffer format = ByteBuffer.wrap(formatString.unsafeBytes(), formatString.begin(), formatString.length());
         ByteList result = new ByteList();
+        boolean taintOutput = false;
         int listSize = list.size();
         int type = 0;
         int next = safeGet(format);
@@ -1445,10 +1457,12 @@ public class Pack {
             }
 
             if (next == '!' || next == '_') {
-                if (NATIVE_CODES.indexOf(type) == -1) {
+                int index = NATIVE_CODES.indexOf(type);
+                if (index == -1) {
                     throw runtime.newArgumentError("'" + next +
                             "' allowed only after types " + NATIVE_CODES);
                 }
+                type = MAPPED_CODES.charAt(index);
 
                 next = safeGet(format);
             }
@@ -1458,7 +1472,7 @@ public class Pack {
             boolean isStar = false;
             if (next != 0) {
                 if (next == '*') {
-                    if ("@Xxu".indexOf(type) != -1) {
+                    if ("@XxumM".indexOf(type) != -1) {
                         occurrences = 0;
                     } else {
                         occurrences = listSize;
@@ -1497,6 +1511,9 @@ public class Pack {
                         }
 
                         IRubyObject from = list.eltInternal(idx++);
+                        if(from.isTaint()) {
+                            taintOutput = true;
+                        }
                         lCurElemString = from == runtime.getNil() ? ByteList.EMPTY_BYTELIST : from.convertToString().getByteList();
 
                         if (isStar) {
@@ -1600,7 +1617,7 @@ public class Pack {
                                     int padLength = 0;
 
                                     if (occurrences > lCurElemString.length()) {
-                                        padLength = occurrences - lCurElemString.length();
+                                        padLength = occurrences - lCurElemString.length() + 1;
                                         occurrences = lCurElemString.length();
                                     }
 
@@ -1624,9 +1641,12 @@ public class Pack {
 
                                     if ((occurrences & 1) != 0) {
                                         result.append((byte) (currentByte & 0xff));
+                                        if(padLength > 0) {
+                                            padLength--;
+                                        }
                                     }
 
-                                    result.length(result.length() + padLength);
+                                    result.length(result.length() + padLength / 2);
                                 }
                             break;
                             case 'H' :
@@ -1635,7 +1655,7 @@ public class Pack {
                                     int padLength = 0;
 
                                     if (occurrences > lCurElemString.length()) {
-                                        padLength = occurrences - lCurElemString.length();
+                                        padLength = occurrences - lCurElemString.length() + 1;
                                         occurrences = lCurElemString.length();
                                     }
 
@@ -1659,9 +1679,12 @@ public class Pack {
 
                                     if ((occurrences & 1) != 0) {
                                         result.append((byte) (currentByte & 0xff));
+                                        if(padLength > 0) {
+                                            padLength--;
+                                        }
                                     }
 
-                                    result.length(result.length() + padLength);
+                                    result.length(result.length() + padLength / 2);
                                 }
                             break;
                         }
@@ -1741,56 +1764,70 @@ public class Pack {
                     }
                     break;
                 case 'w' :
-                    if (listSize-- <= 0) {
-                        throw runtime.newArgumentError(sTooFew);
-                    }
-                    IRubyObject from = list.eltInternal(idx++);
-                    String stringVal = from == runtime.getNil() ? "0" : from.asString().toString();
-                    BigInteger bigInt = new BigInteger(stringVal);
-                    
-                    // we don't deal with negatives.
-                    if (bigInt.compareTo(BigInteger.ZERO) >= 0) {
-                        int bitLength = bigInt.toString(2).length();
-                        byte[] bytes = bigInt.toByteArray();
-                        
-                        byte[] buf = new byte[(bitLength / 7) + ((bitLength % 7) > 0 ? 1 : 0)];
+                    while (occurrences-- > 0) {
+                        if (listSize-- <= 0) {
+                            throw runtime.newArgumentError(sTooFew);
+                        }
 
-                        int b = 0;
-                        int destBit = 0;
-                        int destByte = 0;
-                        
-                        for(int srcByte = bytes.length - 1; srcByte >= 0; srcByte--) {
-                            for(int srcBit = 0; srcBit < 8; srcBit++, destBit++) {
-                                if(destBit == 7) {
-                                    buf[buf.length - 1 - destByte++] = (byte) (b & 0xff);
-                                    b = 0x80;
-                                    destBit = 0;
-                                }
-                                int val = bytes[srcByte] & (1 << srcBit);
-                                
-                                if(destBit > srcBit) {
-                                    val = 0xff & (val << destBit - srcBit); 
-                                } else if(destBit < srcBit) {
-                                    val = 0xff & (val >> srcBit - destBit);
-                                } 
-                                
-                                b |= 0xff & val;
+                        ByteList buf = new ByteList();
+                        IRubyObject from = list.eltInternal(idx++);
+
+                        if(from.isNil()) {
+                            throw runtime.newTypeError("pack('w') does not take nil");
+                        }
+
+
+                        if(from instanceof RubyBignum) {
+                            RubyBignum big128 = RubyBignum.newBignum(runtime, 128);
+                            while (from instanceof RubyBignum) {
+                                RubyBignum bignum = (RubyBignum)from;
+                                RubyArray ary = (RubyArray)bignum.divmod(runtime.getCurrentContext(), big128);
+                                buf.append((byte)(RubyNumeric.fix2int(ary.at(RubyFixnum.one(runtime))) | 0x80) & 0xff);
+                                from = ary.at(RubyFixnum.zero(runtime));
                             }
                         }
-                        
-                        if(b != 0x80) {
-                            buf[destByte] = (byte) (b & 0xff);
+
+                        long l = RubyNumeric.num2long(from);
+
+                        // we don't deal with negatives.
+                        if (l >= 0) {
+
+                            while(l != 0) {
+                                buf.append((byte)(((l & 0x7f) | 0x80) & 0xff));
+                                l >>= 7;
+                            }
+
+                            int left = 0;
+                            int right = buf.realSize - 1;
+
+                            if(right >= 0)
+                                buf.bytes[0] &= 0x7F;
+                            else
+                                buf.append(0);
+
+                            while(left < right) {
+                                byte tmp = buf.bytes[left];
+                                buf.bytes[left] = buf.bytes[right];
+                                buf.bytes[right] = tmp;
+
+                                left++;
+                                right--;
+                            }
+
+                            result.append(buf);
+                        } else {
+                            throw runtime.newArgumentError("can't compress negative numbers");
                         }
-                        
-                        result.append(buf);
-                    } else {
-                        throw runtime.newArgumentError("can't compress negative numbers");
                     }
                     
                     break;
             }
         }
-        return runtime.newString(result);
+        RubyString output = runtime.newString(result);
+        if(taintOutput) {
+            output.taint(runtime.getCurrentContext());
+        }
+        return output;
     }
 
     /**
@@ -1940,7 +1977,7 @@ public class Pack {
      * @param d is the double to encode
      */
     private static void encodeDoubleLittleEndian(ByteList result, double d) {
-        encodeLongLittleEndian(result, Double.doubleToLongBits(d));
+        encodeLongLittleEndian(result, Double.doubleToRawLongBits(d));
     }
 
     /**
@@ -1950,7 +1987,7 @@ public class Pack {
      * @param d is the double to encode
      */
     private static void encodeDoubleBigEndian(ByteList result, double d) {
-        encodeLongBigEndian(result, Double.doubleToLongBits(d));
+        encodeLongBigEndian(result, Double.doubleToRawLongBits(d));
     }
 
     /**
@@ -1979,7 +2016,7 @@ public class Pack {
      * @param f is the float to encode
      */
     private static void encodeFloatLittleEndian(ByteList result, float f) {
-        encodeIntLittleEndian(result, Float.floatToIntBits(f));
+        encodeIntLittleEndian(result, Float.floatToRawIntBits(f));
     }
 
     /**
@@ -1988,7 +2025,7 @@ public class Pack {
      * @param f is the float to encode
      */
     private static void encodeFloatBigEndian(ByteList result, float f) {
-        encodeIntBigEndian(result, Float.floatToIntBits(f));
+        encodeIntBigEndian(result, Float.floatToRawIntBits(f));
     }
 
     /**
