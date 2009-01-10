@@ -304,7 +304,10 @@ module Benchmark
   # Returns the elapsed real time used to execute the given block.
   #
   def realtime(&blk) # :yield:
-    Benchmark::measure(&blk).real
+    r0 = Time.now
+    yield
+    r1 = Time.now
+    r1.to_f - r0.to_f
   end
 
 
@@ -330,7 +333,7 @@ module Benchmark
     # Registers the given label and block pair in the job list.
     #
     def item(label = "", &blk) # :yield:
-      raise ArgmentError, "no block" unless block_given?
+      raise ArgumentError, "no block" unless block_given?
       label.concat ' '
       w = label.length
       @width = w if @width < w

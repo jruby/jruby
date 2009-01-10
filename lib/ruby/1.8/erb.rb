@@ -365,21 +365,22 @@ class ERB
 	end
       end
 
-      ExplicitTrimRegexp = /(^[ \t]*<%-)|(-%>\n?\z)|(<%-)|(-%>)|(<%%)|(%%>)|(<%=)|(<%#)|(<%)|(%>)|(\n)/
       def explicit_trim_line(line)
-	line.split(ExplicitTrimRegexp).each do |token|
-	  next if token.empty?
-	  if @stag.nil? && /[ \t]*<%-/ =~ token
-	    yield('<%')
-	  elsif @stag && /-%>\n/ =~ token
-	    yield('%>')
-	    yield(:cr)
-	  elsif @stag && token == '-%>'
-	    yield('%>')
-	  else
-	    yield(token)
-	  end
-	end
+        line.scan(/(.*?)(^[ \t]*<%\-|<%\-|<%%|%%>|<%=|<%#|<%|-%>\n|-%>|%>|\z)/m) do |tokens|
+          tokens.each do |token|
+            next if token.empty?
+            if @stag.nil? && /[ \t]*<%-/ =~ token
+              yield('<%')
+            elsif @stag && token == "-%>\n"
+              yield('%>')
+              yield(:cr)
+            elsif @stag && token == '-%>'
+              yield('%>')
+            else
+              yield(token)
+            end
+          end
+        end
       end
 
       ERB_STAG = %w(<%= <%# <%)
@@ -705,16 +706,16 @@ class ERB
   # setup of an ERB _compiler_ object.
   #
   def set_eoutvar(compiler, eoutvar = '_erbout')
-    compiler.put_cmd = "#{eoutvar} << "
-    compiler.insert_cmd = "#{eoutvar} << "
+    compiler.put_cmd = "#{eoutvar}.concat"
+    compiler.insert_cmd = "#{eoutvar}.concat"
 
     cmd = []
-    cmd.push "#{eoutvar} = []"
+    cmd.push "#{eoutvar} = ''"
     
     compiler.pre_cmd = cmd
 
     cmd = []
-    cmd.push("#{eoutvar}.join('')")
+    cmd.push(eoutvar)
 
     compiler.post_cmd = cmd
   end

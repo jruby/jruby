@@ -2,8 +2,8 @@
 #--
 #   matrix.rb - 
 #       $Release Version: 1.0$
-#       $Revision$
-#       $Date$
+#       $Revision: 1.11 $
+#       $Date: 1999/10/06 11:01:53 $
 #       Original Version from Smalltalk-80 version
 #          on July 23, 1985 at 8:37:17 am
 #       by Keiju ISHITSUKA
@@ -105,7 +105,7 @@ end
 # * <tt> #inspect                       </tt>
 #
 class Matrix
-  @RCS_ID='-$Id$-'
+  @RCS_ID='-$Id: matrix.rb,v 1.11 1999/10/06 11:01:53 keiju Exp keiju $-'
   
 #  extend Exception2MessageMapper
   include ExceptionForMatrix

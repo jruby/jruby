@@ -814,7 +814,8 @@ class TestFile < Test::Unit::TestCase
     File.umask(orig_mask)
   end
 
-  # JRUBY-2694
+  # See JRUBY-2694; we don't have 1.8.7 support yet
+=begin
   def test_tempfile_with_suffix
     require 'tempfile'
     Tempfile.open(['prefix', 'suffix']) { |f|
@@ -822,4 +823,5 @@ class TestFile < Test::Unit::TestCase
       assert_match(/suffix$/, f.path)
     }
   end
+=end
 end

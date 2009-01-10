@@ -164,9 +164,9 @@ class Delegator
   # Checks for a method provided by this the delegate object by fowarding the 
   # call through \_\_getobj\_\_.
   # 
-  def respond_to?(m)
+  def respond_to?(m, include_private = false)
     return true if super
-    return self.__getobj__.respond_to?(m)
+    return self.__getobj__.respond_to?(m, include_private)
   end
 
   #
@@ -228,13 +228,15 @@ class SimpleDelegator<Delegator
 
   # Clone support for the object returned by \_\_getobj\_\_.
   def clone
-    super
-    __setobj__(__getobj__.clone)
+    new = super
+    new.__setobj__(__getobj__.clone)
+    new
   end
   # Duplication support for the object returned by \_\_getobj\_\_.
-  def dup(obj)
-    super
-    __setobj__(__getobj__.dup)
+  def dup
+    new = super
+    new.__setobj__(__getobj__.clone)
+    new
   end
 end
 
@@ -269,9 +271,9 @@ def DelegateClass(superclass)
       end
       @_dc_obj.__send__(m, *args)
     end
-    def respond_to?(m)  # :nodoc:
+    def respond_to?(m, include_private = false)  # :nodoc:
       return true if super
-      return @_dc_obj.respond_to?(m)
+      return @_dc_obj.respond_to?(m, include_private)
     end
     def __getobj__  # :nodoc:
       @_dc_obj
@@ -281,12 +283,14 @@ def DelegateClass(superclass)
       @_dc_obj = obj
     end
     def clone  # :nodoc:
-      super
-      __setobj__(__getobj__.clone)
+      new = super
+      new.__setobj__(__getobj__.clone)
+      new
     end
     def dup  # :nodoc:
-      super
-      __setobj__(__getobj__.dup)
+      new = super
+      new.__setobj__(__getobj__.clone)
+      new
     end
   }
   for method in methods

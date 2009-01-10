@@ -1,6 +1,8 @@
 require 'test/unit'
 require 'test/test_helper'
 
+require 'fileutils'
+
 class TestCommandLineSwitches < Test::Unit::TestCase
   include TestHelper
 
@@ -67,8 +69,15 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   # JRUBY-2693
   def test_dash_little_r_provides_program_name_to_loaded_library
     with_temp_script(%q{puts $0; puts $PROGRAM_NAME}) do |s|
-      assert_equal("#{s.path}\n#{s.path}\n#{s.path}\n#{s.path}\n", 
-                   jruby("-r#{s.path} #{s.path}"))
+      begin
+        # tempfile does not put the .rb extension at the end, so -r does not find it
+        path = s.path + ".rb"
+        FileUtils.cp(s.path, path)
+        assert_equal("#{path}\n#{path}\n#{path}\n#{path}\n",
+                     jruby("-r#{path} #{path}"))
+      ensure
+        File.unlink(path) rescue nil
+      end
     end
   end
 

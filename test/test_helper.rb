@@ -28,16 +28,11 @@ module TestHelper
   def with_temp_script(script, filename="test-script")
     Tempfile.open([filename, ".rb"]) do |f|
       begin
-        f << script
-        f.close
+        # we ignore errors writing to the tempfile to ensure the test tries to run
+        f.syswrite(script) rescue 1
+        return yield f
       ensure
-        begin
-          # Should always yield, even in case of exceptions, otherwise
-          # some tests won't even execute, and no failures will be shown
-          return yield f
-        ensure
-          f.unlink rescue nil
-        end
+        f.close!
       end
     end
   end

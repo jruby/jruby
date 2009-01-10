@@ -1,8 +1,8 @@
 #--
 #   finalizer.rb - 
 #   	$Release Version: 0.3$
-#   	$Revision$
-#   	$Date$
+#   	$Revision: 1.4 $
+#   	$Date: 1998/02/27 05:34:33 $
 #   	by Keiju ISHITSUKA
 #++
 #
@@ -48,10 +48,8 @@
 #   safe{..}
 #
 
-require 'monitor'
-
 module Finalizer
-  RCS_ID='-$Id$-'
+  RCS_ID='-$Id: finalize.rb,v 1.4 1998/02/27 05:34:33 keiju Exp keiju $-'
 
   class <<self
     # @dependency: {id => [[dependant, method, *opt], ...], ...}
@@ -170,9 +168,9 @@ module Finalizer
       @monitor.synchronize do
         ObjectSpace.remove_finalizer(@proc)
         begin
-	  yield
+         yield
         ensure
-	  ObjectSpace.add_finalizer(@proc)
+         ObjectSpace.add_finalizer(@proc)
         end
       end
     end

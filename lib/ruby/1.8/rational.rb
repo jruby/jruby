@@ -1,8 +1,8 @@
 #
 #   rational.rb -
 #       $Release Version: 0.5 $
-#       $Revision$
-#       $Date$
+#       $Revision: 1.7 $
+#       $Date: 1999/08/24 12:49:28 $
 #       by Keiju ISHITSUKA(SHL Japan Inc.)
 #
 # Documentation by Kevin Jackson and Gavin Sinclair.
@@ -62,7 +62,7 @@ end
 #   Rational(3,0)             # -> ZeroDivisionError
 #
 class Rational < Numeric
-  @RCS_ID='-$Id$-'
+  @RCS_ID='-$Id: rational.rb,v 1.7 1999/08/24 12:49:28 keiju Exp keiju $-'
 
   #
   # Reduces the given numerator and denominator to their lowest terms.  Use
@@ -240,10 +240,6 @@ class Rational < Numeric
     end
   end
 
-  def div(other)
-    (self / other).floor
-  end
-
   #
   # Returns the remainder when this value is divided by +other+.
   #
@@ -255,7 +251,7 @@ class Rational < Numeric
   #   r % 0.26             # -> 0.19
   #
   def % (other)
-    value = (self / other).floor
+    value = (self / other).to_i
     return self - other * value
   end
 
@@ -267,7 +263,7 @@ class Rational < Numeric
   #   r.divmod Rational(1,2)   # -> [3, Rational(1,4)]
   #
   def divmod(other)
-    value = (self / other).floor
+    value = (self / other).to_i
     return value, self - other * value
   end
 
@@ -276,7 +272,7 @@ class Rational < Numeric
   #
   def abs
     if @numerator > 0
-      self
+      Rational.new!(@numerator, @denominator)
     else
       Rational.new!(-@numerator, @denominator)
     end
@@ -344,43 +340,15 @@ class Rational < Numeric
   # Converts the rational to an Integer.  Not the _nearest_ integer, the
   # truncated integer.  Study the following example carefully:
   #   Rational(+7,4).to_i             # -> 1
-  #   Rational(-7,4).to_i             # -> -1
+  #   Rational(-7,4).to_i             # -> -2
   #   (-1.75).to_i                    # -> -1
   #
   # In other words:
   #   Rational(-7,4) == -1.75                 # -> true
-  #   Rational(-7,4).to_i == (-1.75).to_i     # -> true
+  #   Rational(-7,4).to_i == (-1.75).to_i     # false
   #
-
-
-  def floor()
-    @numerator.div(@denominator)
-  end
-
-  def ceil()
-    -((-@numerator).div(@denominator))
-  end
-
-  def truncate()
-    if @numerator < 0
-      return -((-@numerator).div(@denominator))
-    end
-    @numerator.div(@denominator)
-  end
-
-  alias_method :to_i, :truncate
-
-  def round()
-    if @numerator < 0
-      num = -@numerator
-      num = num * 2 + @denominator
-      den = @denominator * 2
-      -(num.div(den))
-    else
-      num = @numerator * 2 + @denominator
-      den = @denominator * 2
-      num.div(den)
-    end
+  def to_i
+    Integer(@numerator.div(@denominator))
   end
 
   #
@@ -513,11 +481,10 @@ class Integer
 end
 
 class Fixnum
-  remove_method :quo
-
-  # If Rational is defined, returns a Rational number instead of a Float.
+  undef quo
+  # If Rational is defined, returns a Rational number instead of a Fixnum.
   def quo(other)
-    Rational.new!(self, 1) / other
+    Rational.new!(self,1) / other
   end
   alias rdiv quo
 
@@ -526,39 +493,38 @@ class Fixnum
     if other >= 0
       self.power!(other)
     else
-      Rational.new!(self, 1)**other
+      Rational.new!(self,1)**other
     end
   end
 
-end
-
-class Bignum
-  remove_method :quo
-
-  # If Rational is defined, returns a Rational number instead of a Float.
-  def quo(other)
-    Rational.new!(self, 1) / other
-  end
-  alias rdiv quo
-
-  # Returns a Rational number if the result is in fact rational (i.e. +other+ < 0).
-  def rpower (other)
-    if other >= 0
-      self.power!(other)
-    else
-      Rational.new!(self, 1)**other
-    end
-  end
-
-end
-
-unless defined? 1.power!
-  class Fixnum
+  unless defined? 1.power!
     alias power! **
     alias ** rpower
   end
-  class Bignum
+end
+
+class Bignum
+  unless defined? Complex
     alias power! **
+  end
+
+  undef quo
+  # If Rational is defined, returns a Rational number instead of a Bignum.
+  def quo(other)
+    Rational.new!(self,1) / other
+  end
+  alias rdiv quo
+
+  # Returns a Rational number if the result is in fact rational (i.e. +other+ < 0).
+  def rpower (other)
+    if other >= 0
+      self.power!(other)
+    else
+      Rational.new!(self, 1)**other
+    end
+  end
+
+  unless defined? Complex
     alias ** rpower
   end
 end

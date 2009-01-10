@@ -1,8 +1,8 @@
 #
 #   tracer.rb - 
 #   	$Release Version: 0.2$
-#   	$Revision$
-#   	$Date$
+#   	$Revision: 1.8 $
+#   	$Date: 1998/05/19 03:42:49 $
 #   	by Keiju ISHITSUKA(Nippon Rational Inc.)
 #
 # --
@@ -14,7 +14,7 @@
 # tracer main class
 #
 class Tracer
-  @RCS_ID='-$Id$-'
+  @RCS_ID='-$Id: tracer.rb,v 1.8 1998/05/19 03:42:49 keiju Exp keiju $-'
 
   @stdout = STDOUT
   @verbose = false

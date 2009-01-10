@@ -529,7 +529,7 @@ class Context
 	  stdout.printf "%s\n", debug_eval($', binding).inspect
 
 	when /^\s*r(?:estart)?$/
-      stdout.print "JRuby doesn't support the command restart, since it depends on continuations"
+    stdout.print "JRuby doesn't support the command restart, since it depends on continuations"
 #          $debugger_restart.call
 
 	when /^\s*h(?:elp)?$/

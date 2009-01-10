@@ -480,19 +480,22 @@ public class RubyInstanceConfig {
     }
 
     public String getVersionString() {
-        String ver = Constants.RUBY_VERSION;
+        String ver = null;
+        String patchlevel = null;
         switch (compatVersion) {
         case RUBY1_8:
             ver = Constants.RUBY_VERSION;
+            patchlevel = Constants.RUBY_PATCHLEVEL;
             break;
         case RUBY1_9:
             ver = Constants.RUBY1_9_VERSION;
+            patchlevel = Constants.RUBY1_9_PATCHLEVEL;
             break;
         }
 
         String fullVersion = String.format(
                 "jruby %s (ruby %s patchlevel %s) (%s rev %s) [%s-java]\n",
-                Constants.VERSION, ver, Constants.RUBY_PATCHLEVEL,
+                Constants.VERSION, ver, patchlevel,
                 Constants.COMPILE_DATE, Constants.REVISION,
                 SafePropertyAccessor.getProperty("os.arch", "unknown")
                 );

@@ -1,8 +1,8 @@
 #
 #   complex.rb - 
 #   	$Release Version: 0.5 $
-#   	$Revision$
-#   	$Date$
+#   	$Revision: 1.3 $
+#   	$Date: 1998/07/08 10:05:28 $
 #   	by Keiju ISHITSUKA(SHL Japan Inc.)
 #
 # ----
@@ -99,7 +99,7 @@ end
 # The complex number class.  See complex.rb for an overview.
 #
 class Complex < Numeric
-  @RCS_ID='-$Id$-'
+  @RCS_ID='-$Id: complex.rb,v 1.3 1998/07/08 10:05:28 keiju Exp keiju $-'
 
   undef step
 

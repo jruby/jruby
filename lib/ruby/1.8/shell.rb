@@ -1,8 +1,8 @@
 #
 #   shell.rb - 
 #   	$Release Version: 0.6.0 $
-#   	$Revision$
-#   	$Date$
+#   	$Revision: 1.8 $
+#   	$Date: 2001/03/19 09:01:11 $
 #   	by Keiju ISHITSUKA(Nippon Rational Inc.)
 #
 # --
@@ -18,7 +18,7 @@ require "shell/command-processor"
 require "shell/process-controller"
 
 class Shell
-  @RCS_ID='-$Id$-'
+  @RCS_ID='-$Id: shell.rb,v 1.8 2001/03/19 09:01:11 keiju Exp keiju $-'
 
   include Error
   extend Exception2MessageMapper

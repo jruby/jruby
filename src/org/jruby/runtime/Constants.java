@@ -45,9 +45,10 @@ public final class Constants {
 
     public static final String RUBY_MAJOR_VERSION;
     public static final String RUBY_VERSION;
+    public static final String RUBY_PATCHLEVEL;
     public static final String RUBY1_9_MAJOR_VERSION;
     public static final String RUBY1_9_VERSION;
-    public static final String RUBY_PATCHLEVEL;
+    public static final String RUBY1_9_PATCHLEVEL;
 
     public static final String COMPILE_DATE;
     public static final String VERSION;
@@ -84,6 +85,7 @@ public final class Constants {
 
         RUBY1_9_MAJOR_VERSION = properties.getProperty("version.ruby1_9.major");
         RUBY1_9_VERSION = properties.getProperty("version.ruby1_9");
+        RUBY1_9_PATCHLEVEL = properties.getProperty("version.ruby1_9.patchlevel");
         COMPILE_DATE = properties.getProperty("release.date");
         VERSION = properties.getProperty("version.jruby");
         BUILD = properties.getProperty("build.jruby");
