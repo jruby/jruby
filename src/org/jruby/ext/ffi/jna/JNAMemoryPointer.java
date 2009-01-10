@@ -33,9 +33,12 @@ import com.sun.jna.Pointer;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -60,21 +63,42 @@ public class JNAMemoryPointer extends JNABasePointer implements JNAMemory {
     private JNAMemoryPointer(Ruby runtime, IRubyObject klass, MemoryIO io, long offset, long size) {
         super(runtime, (RubyClass) klass, io, offset, size);
     }
-    
-    @JRubyMethod(name = { "allocate", "allocate_direct", "allocateDirect" }, meta = true)
-    public static JNAMemoryPointer allocateDirect(ThreadContext context, IRubyObject recv, IRubyObject sizeArg) {
-        int size = Util.int32Value(sizeArg);
-        JNAMemoryIO io = size > 0 ? JNAMemoryIO.allocateDirect(size) : JNAMemoryIO.NULL;
-        return new JNAMemoryPointer(context.getRuntime(), recv, io, 0, size);
-    }
-    @JRubyMethod(name = { "allocate", "allocate_direct", "allocateDirect" }, meta = true)
-    public static JNAMemoryPointer allocateDirect(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject clearArg) {
-        int size = Util.int32Value(sizeArg);
-        JNAMemoryIO io = size > 0 ? JNAMemoryIO.allocateDirect(size) : JNAMemoryIO.NULL;
-        if (clearArg.isTrue()) {
+    private static final IRubyObject allocate(ThreadContext context, IRubyObject recv,
+            IRubyObject sizeArg, int count, boolean clear, Block block) {
+        int size = calculateSize(context, sizeArg);
+        int total = size * count;
+        if (total < 0) {
+            throw context.getRuntime().newArgumentError(String.format("Negative size (%d objects of %d size)", count, size));
+        }
+        JNAMemoryIO io = JNAMemoryIO.allocateDirect(total > 0 ? total : 1);
+        if (clear) {
             io.setMemory(0, size, (byte) 0);
         }
-        return new JNAMemoryPointer(context.getRuntime(), recv, io, 0, size);
+        if (io == null) {
+            Ruby runtime = context.getRuntime();
+            throw new RaiseException(runtime, runtime.getNoMemoryError(),
+                    String.format("Failed to allocate %d objects of %d bytes", count, size), true);
+        }
+        JNAMemoryPointer ptr = new JNAMemoryPointer(context.getRuntime(), recv, io, 0, total);
+        ptr.fastSetInstanceVariable("@type_size", context.getRuntime().newFixnum(size));
+        if (block.isGiven()) {
+            return block.yield(context, ptr);
+        } else {
+            return ptr;
+        }
+    }
+    @JRubyMethod(name = { "new" }, meta = true)
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, Block block) {
+        return allocate(context, recv, sizeArg, 1, true, block);
+    }
+    @JRubyMethod(name = { "new" }, meta = true)
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject count, Block block) {
+        return allocate(context, recv, sizeArg, RubyNumeric.fix2int(count), true, block);
+    }
+    @JRubyMethod(name = { "new" }, meta = true)
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv,
+            IRubyObject sizeArg, IRubyObject count, IRubyObject clear, Block block) {
+        return allocate(context, recv, sizeArg, RubyNumeric.fix2int(count), clear.isTrue(), block);
     }
 
     @Override

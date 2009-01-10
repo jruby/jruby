@@ -59,18 +59,7 @@ public final class Buffer extends AbstractMemory {
         super(runtime, (RubyClass) klass, io, offset, size);
         this.inout = inout;
     }
-
-    private static final int calculateSize(ThreadContext context, IRubyObject sizeArg) {
-        if (sizeArg instanceof RubyFixnum) {
-            return RubyFixnum.fix2int(sizeArg);
-        } else if (sizeArg instanceof RubySymbol) {
-            return RubyFixnum.fix2int(FFIProvider.getModule(context.getRuntime()).callMethod(context, "type_size", sizeArg));
-        } else if (sizeArg.respondsTo("size")) {
-            return RubyFixnum.fix2int(sizeArg.callMethod(context, "size"));
-        } else {
-            throw context.getRuntime().newArgumentError("Invalid size argument");
-        }
-    }
+    
     private static final int getCount(IRubyObject countArg) {
         return countArg instanceof RubyFixnum ? RubyFixnum.fix2int(countArg) : 1;
     }

@@ -36,6 +36,7 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
@@ -67,6 +68,17 @@ abstract public class AbstractMemory extends RubyObject {
         result.defineAnnotatedConstants(AbstractMemory.class);
 
         return result;
+    }
+    protected static final int calculateSize(ThreadContext context, IRubyObject sizeArg) {
+        if (sizeArg instanceof RubyFixnum) {
+            return RubyFixnum.fix2int(sizeArg);
+        } else if (sizeArg instanceof RubySymbol) {
+            return RubyFixnum.fix2int(FFIProvider.getModule(context.getRuntime()).callMethod(context, "type_size", sizeArg));
+        } else if (sizeArg.respondsTo("size")) {
+            return RubyFixnum.fix2int(sizeArg.callMethod(context, "size"));
+        } else {
+            throw context.getRuntime().newArgumentError("Invalid size argument");
+        }
     }
     
     protected AbstractMemory(Ruby runtime, RubyClass klass, MemoryIO io, long offset, long size) {

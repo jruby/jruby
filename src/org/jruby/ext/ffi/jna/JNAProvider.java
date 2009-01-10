@@ -452,6 +452,18 @@ public final class JNAProvider extends FFIProvider {
             } else if (parameter instanceof Buffer) {
                 ArrayMemoryIO io = (ArrayMemoryIO) ((Buffer) parameter).getMemoryIO();
                 return ByteBuffer.wrap(io.array(), io.arrayOffset(), io.arrayLength());
+            } else if (parameter instanceof Struct) {
+                IRubyObject memory = ((Struct) parameter).getMemory();
+                if (memory instanceof JNAMemory) {
+                    return (((JNAMemory) memory).getNativeMemory());
+                } else if (memory instanceof Buffer) {
+                    ArrayMemoryIO io = (ArrayMemoryIO) ((Buffer) memory).getMemoryIO();
+                    return ByteBuffer.wrap(io.array(), io.arrayOffset(), io.arrayLength());
+                } else if (memory == null || memory.isNil()) {
+                    return Pointer.NULL;
+                } else {
+                    throw invocation.getThreadContext().getRuntime().newArgumentError("Invalid Struct memory");
+                }
             } else if (parameter.isNil()) {
                 return Pointer.NULL;
             } else if (parameter instanceof RubyString) {
@@ -543,6 +555,18 @@ public final class JNAProvider extends FFIProvider {
             } else if (parameter instanceof Buffer) {
                 ArrayMemoryIO io = (ArrayMemoryIO) ((Buffer) parameter).getMemoryIO();
                 return ByteBuffer.wrap(io.array(), io.arrayOffset(), io.arrayLength());
+            } else if (parameter instanceof Struct) {
+                IRubyObject memory = ((Struct) parameter).getMemory();
+                if (memory instanceof JNAMemory) {
+                    return (((JNAMemory) memory).getNativeMemory());
+                } else if (memory instanceof Buffer) {
+                    ArrayMemoryIO io = (ArrayMemoryIO) ((Buffer) memory).getMemoryIO();
+                    return ByteBuffer.wrap(io.array(), io.arrayOffset(), io.arrayLength());
+                } else if (memory == null || memory.isNil()) {
+                    return Pointer.NULL;
+                } else {
+                    throw invocation.getThreadContext().getRuntime().newArgumentError("Invalid Struct memory");
+                }
             } else if (parameter.isNil()) {
                 return Pointer.NULL;
             } else if (parameter instanceof RubyString) {
