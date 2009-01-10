@@ -77,32 +77,59 @@ public class Struct extends RubyObject {
                 ? (StructLayout) klass.fastGetClassVar("@layout")
                 : new StructLayout(context.getRuntime());
     }
-    private static final Struct newStruct(ThreadContext context, IRubyObject klass, StructLayout layout, IRubyObject ptr) {
-        Struct s = new Struct(context.getRuntime(), (RubyClass) klass,
-                layout != null ? (StructLayout) layout : getStructLayout(context, klass),
-                ptr != null && !ptr.isNil() ? ptr : new Buffer(context.getRuntime(), getStructSize(klass)));
-        return s;
+    
+    private static final Struct allocateStruct(ThreadContext context, IRubyObject klass, int flags) {
+        return new Struct(context.getRuntime(), (RubyClass) klass,
+                getStructLayout(context, klass), new Buffer(context.getRuntime(), getStructSize(klass), flags));
     }
     @JRubyMethod(name = "new", meta = true)
     public static Struct newInstance(ThreadContext context, IRubyObject self) {
-        return newStruct(context, self, null, null);
+        return allocateStruct(context, self, Buffer.IN | Buffer.OUT);
     }
     @JRubyMethod(name = "new", meta = true)
     public static Struct newInstance(ThreadContext context, IRubyObject self, IRubyObject ptr) {
-        return newStruct(context, self, null, ptr);
+        return new Struct(context.getRuntime(), (RubyClass) self, getStructLayout(context, self), ptr);
     }
     
     @JRubyMethod(name = "new", meta = true, rest = true)
     public static Struct newInstance(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        IRubyObject ptr = args.length > 0 ? args[0] : null;
         StructLayout layout = null;
 
         if (args.length > 1) {
             IRubyObject[] layoutArgs = new IRubyObject[args.length - 1];
             System.arraycopy(args, 1, layoutArgs, 0, args.length - 1);
             layout = (StructLayout) self.callMethod(context, "layout", layoutArgs);
+        } else {
+            layout = getStructLayout(context, self);
         }
-        return newStruct(context, self, layout, ptr);
+        IRubyObject ptr = args.length > 0 && !args[0].isNil()
+                ? args[0] : new Buffer(context.getRuntime(), getStructSize(self));
+        return new Struct(context.getRuntime(), (RubyClass) self, layout, ptr);
+    }
+
+    @JRubyMethod(name = { "new_in", "alloc_in" }, meta = true)
+    public static IRubyObject allocateIn(ThreadContext context, IRubyObject klass) {
+        return allocateStruct(context, klass, Buffer.IN);
+    }
+    @JRubyMethod(name = { "new_in", "alloc_in" }, meta = true)
+    public static IRubyObject allocateIn(ThreadContext context, IRubyObject klass, IRubyObject clearArg) {
+        return allocateStruct(context, klass, Buffer.IN);
+    }
+    @JRubyMethod(name = { "new_out", "alloc_out" }, meta = true)
+    public static IRubyObject allocateOut(ThreadContext context, IRubyObject klass) {
+        return allocateStruct(context, klass, Buffer.OUT);
+    }
+    @JRubyMethod(name = { "new_out", "alloc_out" }, meta = true)
+    public static IRubyObject allocateOut(ThreadContext context, IRubyObject klass, IRubyObject clearArg) {
+        return allocateStruct(context, klass, Buffer.OUT);
+    }
+    @JRubyMethod(name = { "new_inout", "alloc_inout" }, meta = true)
+    public static IRubyObject allocateInOut(ThreadContext context, IRubyObject klass) {
+        return allocateStruct(context, klass, Buffer.IN | Buffer.OUT);
+    }
+    @JRubyMethod(name = { "new_inout", "alloc_inout" }, meta = true)
+    public static IRubyObject allocateInOut(ThreadContext context, IRubyObject klass, IRubyObject clearArg) {
+        return allocateStruct(context, klass, Buffer.IN | Buffer.OUT);
     }
     @JRubyMethod(name = "[]")
     public IRubyObject getFieldValue(ThreadContext context, IRubyObject fieldName) {

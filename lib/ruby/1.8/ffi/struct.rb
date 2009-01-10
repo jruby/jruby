@@ -3,16 +3,6 @@ require 'ffi'
 module FFI
   class Struct
     Buffer = FFI::Buffer
-    
-    def self.alloc_inout(clear = true)
-      self.new(Buffer.__alloc_inout(@size, clear))
-    end
-    def self.alloc_in(clear = true)
-      self.new(Buffer.__alloc_in(@size, clear))
-    end
-    def self.alloc_out(clear = true)
-      self.new(Buffer.__alloc_out(@size, clear))
-    end
     def self.size
       @size
     end
