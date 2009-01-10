@@ -100,8 +100,7 @@
                classname="sun.misc.Signal"/>
   </target>
 
-  <!-- Builds the Ant tasks that we need later on in the build -->
-  <target name="compile-tasks" depends="prepare">
+  <target name="prepare-resources" depends="prepare">
     <copy todir="${jruby.classes.dir}">
         <fileset dir="${src.dir}">
             <include name="**/*.rb"/>
@@ -144,7 +143,7 @@
     </javac>
   </target>
 
-  <target name="compile-jruby" depends="compile-tasks, compile-annotation-binder, check-for-optional-packages">
+  <target name="compile-jruby" depends="prepare-resources, compile-annotation-binder, check-for-optional-packages">
     <!-- Generate binding logic ahead of time -->
     <apt factory="org.jruby.anno.AnnotationBinder" destdir="${jruby.classes.dir}" debug="true" source="${javac.version}" target="${javac.version}" deprecation="true" encoding="UTF-8">
       <classpath refid="build.classpath"/>
