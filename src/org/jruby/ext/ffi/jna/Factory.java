@@ -32,6 +32,7 @@ import com.sun.jna.Native;
 import java.nio.channels.ByteChannel;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.ext.ffi.CallbackManager;
 import org.jruby.ext.ffi.FFIProvider;
 import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.ext.ffi.Pointer;
@@ -91,5 +92,9 @@ public class Factory extends org.jruby.ext.ffi.Factory {
     @Override
     public Pointer newPointer(Ruby runtime, MemoryIO io) {
         return new JNABasePointer(runtime, io, 0, Long.MAX_VALUE);
+    }
+
+    public CallbackManager getCallbackManager() {
+        throw new UnsupportedOperationException("Not implemented");
     }
 }

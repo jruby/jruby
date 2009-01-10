@@ -110,49 +110,55 @@ public final class StructLayoutBuilder extends RubyObject {
     public IRubyObject add(ThreadContext context, IRubyObject[] args) {
         final Ruby runtime = context.getRuntime();
         IRubyObject name = args[0];
-        NativeType type = NativeType.valueOf(Util.int32Value(args[1]));
+        NativeParam type;
         int offset = args.length > 2 ? Util.int32Value(args[2]) : -1;
         int align = 8, sizeBits = 8;
-        switch (type) {
-            case INT8:
-            case UINT8:
-                align = 8; sizeBits = 8;
-                break;
-            case INT16:
-            case UINT16:
-                align = 16; sizeBits = 16;
-                break;
-            case INT32:
-            case UINT32:
-                align = 32; sizeBits = 32;
-                break;
-            case INT64:
-            case UINT64:
-                align = LONG_ALIGN;
-                sizeBits = 64;
-                break;
-            case LONG:
-            case ULONG:
-                align = LONG_ALIGN;
-                sizeBits = LONG_SIZE;
-                break;
-            case FLOAT32:
-                align = FLOAT_ALIGN; 
-                sizeBits = 32;
-                break;
-            case FLOAT64:
-                align = DOUBLE_ALIGN;
-                sizeBits = 64;
-                break;
-            case POINTER:
-                align = Platform.getPlatform().addressSize();
-                sizeBits = LONG_ALIGN;
-                break;
-            case STRING:
-            case RBXSTRING:
-                align = ADDRESS_ALIGN;
-                sizeBits = ADDRESS_SIZE;
-                break;
+        if (args[1] instanceof CallbackInfo) {
+            type = (CallbackInfo) args[1];
+            align = ADDRESS_ALIGN; sizeBits = ADDRESS_SIZE;
+        } else {
+            type = NativeType.valueOf(Util.int32Value(args[1]));
+            switch ((NativeType) type) {
+                case INT8:
+                case UINT8:
+                    align = 8; sizeBits = 8;
+                    break;
+                case INT16:
+                case UINT16:
+                    align = 16; sizeBits = 16;
+                    break;
+                case INT32:
+                case UINT32:
+                    align = 32; sizeBits = 32;
+                    break;
+                case INT64:
+                case UINT64:
+                    align = LONG_ALIGN;
+                    sizeBits = 64;
+                    break;
+                case LONG:
+                case ULONG:
+                    align = LONG_ALIGN;
+                    sizeBits = LONG_SIZE;
+                    break;
+                case FLOAT32:
+                    align = FLOAT_ALIGN;
+                    sizeBits = 32;
+                    break;
+                case FLOAT64:
+                    align = DOUBLE_ALIGN;
+                    sizeBits = 64;
+                    break;
+                case POINTER:
+                    align = Platform.getPlatform().addressSize();
+                    sizeBits = LONG_ALIGN;
+                    break;
+                case STRING:
+                case RBXSTRING:
+                    align = ADDRESS_ALIGN;
+                    sizeBits = ADDRESS_SIZE;
+                    break;
+            }
         }
         if (offset < 0) {
             offset = alignMember(this.size, align);
@@ -186,6 +192,15 @@ public final class StructLayoutBuilder extends RubyObject {
             return key;
         }
         return runtime.getSymbolTable().getSymbol(key.asJavaString());
+    }
+    StructLayout.Member createMember(NativeParam type, long offset) {
+        if (type instanceof NativeType) {
+            return createMember((NativeType) type, offset);
+        } else if (type instanceof CallbackInfo) {
+            return CallbackMember.create((CallbackInfo) type, offset);
+        } else {
+            return null;
+        }
     }
     StructLayout.Member createMember(NativeType type, long offset) {
         switch (type) {
@@ -224,6 +239,7 @@ public final class StructLayoutBuilder extends RubyObject {
         }
         return null;
     }
+    
     static final class Signed8Member extends StructLayout.Member {
         Signed8Member(long offset) {
             super(offset);
@@ -423,5 +439,25 @@ public final class StructLayoutBuilder extends RubyObject {
         static StructLayout.Member create(long offset, int size) { 
             return new CharArrayMember(offset, size); 
         }
+    }
+    static final class CallbackMember extends StructLayout.Member {
+        private final CallbackInfo cbInfo;
+        CallbackMember(CallbackInfo cbInfo, long offset) {
+            super(offset);
+            this.cbInfo = cbInfo;
+        }
+        public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
+            if (value.isNil()) {
+                getMemoryIO(ptr).putAddress(offset, 0L);
+            } else {
+                Pointer cb = Factory.getInstance().getCallbackManager().getCallback(runtime, cbInfo, value);
+                getMemoryIO(ptr).putMemoryIO(offset, cb.getMemoryIO());
+            }
+        }
+
+        public IRubyObject get(Ruby runtime, IRubyObject ptr) {
+            throw runtime.newNotImplementedError("Cannot get callback struct fields");
+        }
+        static StructLayout.Member create(CallbackInfo cbInfo, long offset) { return new CallbackMember(cbInfo, offset); }
     }
 }

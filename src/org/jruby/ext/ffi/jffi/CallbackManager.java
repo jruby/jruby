@@ -26,7 +26,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class CallbackManager {
+public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
     private static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
     private static final class SingletonHolder {
         static final CallbackManager INSTANCE = new CallbackManager();
@@ -57,7 +57,7 @@ public class CallbackManager {
                     return cb;
                 }
             }
-            callbackMap.put(proc, map = Collections.synchronizedMap(new HashMap<CallbackInfo, Callback>()));
+            callbackMap.put(proc, map = Collections.synchronizedMap(new HashMap<CallbackInfo, Callback>(2)));
         }
         ClosureInfo info = infoMap.get(cbInfo);
         if (info == null) {
@@ -210,7 +210,7 @@ public class CallbackManager {
             setReturnValue(runtime, cbInfo.getReturnType(), buffer, retVal);
         }
     }
-    private static final class CallbackMemoryIO extends InvalidMemoryIO implements PointerMemoryIO {
+    static final class CallbackMemoryIO extends InvalidMemoryIO implements PointerMemoryIO {
         private final Closure.Handle handle;
         public CallbackMemoryIO(Ruby runtime,  Closure.Handle handle) {
             super(runtime);

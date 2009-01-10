@@ -184,4 +184,6 @@ public abstract class Factory {
      * @return
      */
     public abstract Pointer newPointer(Ruby runtime, MemoryIO io);
+
+    public abstract CallbackManager getCallbackManager();
 }

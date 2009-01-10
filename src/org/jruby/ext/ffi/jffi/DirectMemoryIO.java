@@ -112,7 +112,7 @@ class DirectMemoryIO implements PointerMemoryIO {
     }
 
     public final void putMemoryIO(long offset, MemoryIO value) {
-        IO.putAddress(address + offset, ((DirectMemoryIO) value).address);
+        IO.putAddress(address + offset, ((PointerMemoryIO) value).getAddress());
     }
 
     public final void get(long offset, byte[] dst, int off, int len) {

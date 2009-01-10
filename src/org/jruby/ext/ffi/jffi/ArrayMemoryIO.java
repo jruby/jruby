@@ -15,8 +15,8 @@ public final class ArrayMemoryIO extends org.jruby.ext.ffi.ArrayMemoryIO {
     }
 
     public final void putMemoryIO(long offset, MemoryIO value) {
-        if (value instanceof DirectMemoryIO) {
-            putAddress(offset, ((DirectMemoryIO) value).getAddress());
+        if (value instanceof PointerMemoryIO) {
+            putAddress(offset, ((PointerMemoryIO) value).getAddress());
         } else if (value instanceof NullMemoryIO) {
             putAddress(offset, 0L);
         } else {

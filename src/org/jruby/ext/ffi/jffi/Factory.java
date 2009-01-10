@@ -65,4 +65,8 @@ public class Factory extends org.jruby.ext.ffi.Factory {
         return new BasePointer(runtime, io, 0, Long.MAX_VALUE);
     }
 
+    @Override
+    public CallbackManager getCallbackManager() {
+        return CallbackManager.getInstance();
+    }
 }
