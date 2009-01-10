@@ -1,0 +1,1 @@
+fails(JRUBY-3298):Kernel.srand calls #to_i on number
