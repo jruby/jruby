@@ -16,6 +16,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
+import org.jruby.anno.JRubyClass;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.FFIProvider;
 import org.jruby.ext.ffi.InvalidMemoryIO;
@@ -166,6 +167,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                 throw new IllegalArgumentException("Unknown type " + type);
         }
     }
+    @JRubyClass(name = "FFI::Callback", parent = "FFI::BasePointer")
     static class Callback extends BasePointer {
         private final CallbackInfo cbInfo;
         private final Object proc;

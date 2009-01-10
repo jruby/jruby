@@ -38,6 +38,9 @@ public class Factory extends org.jruby.ext.ffi.Factory {
             if (ffi.fastGetClass("VariadicInvoker") == null) {
                 VariadicInvoker.createVariadicInvokerClass(runtime, ffi);
             }
+            if (ffi.fastGetClass("Callback") == null) {
+                CallbackManager.createCallbackClass(runtime, ffi);
+            }
         }
     }
     @Override
