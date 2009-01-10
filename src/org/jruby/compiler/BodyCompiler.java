@@ -549,6 +549,7 @@ public interface BodyCompiler {
     public void checkIsExceptionHandled(ArgumentsCallback rescueArgs);
     public void rethrowException();
     public void loadClass(String name);
+    public void loadStandardError();
     public void unwrapRaiseException();
     public void loadException();
     public void setFilePosition(ISourcePosition position);

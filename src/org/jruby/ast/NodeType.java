@@ -46,6 +46,12 @@ public enum NodeType {
     ZARRAYNODE, ZEROARGNODE, ZSUPERNODE, COMMENTNODE, ROOTNODE, ATTRASSIGNNODE, ARGSPUSHNODE,
     OPTARGNODE, ARGAUXILIARYNODE, LAMBDANODE, MULTIPLEASGN19NODE, RESTARG;
 
+
+    /**
+     * Whether this node type would always evaluate as being true.
+     *
+     * @return whether this node type would always evaluate as being true
+     */
     public boolean alwaysTrue() {
         switch (this) {
         case TRUENODE:
@@ -65,10 +71,31 @@ public enum NodeType {
         }
     }
 
+    /**
+     * Whether this node type would always evaluate as being false.
+     * 
+     * @return whether this node type would always evaluate as being false
+     */
     public boolean alwaysFalse() {
         switch (this) {
         case NILNODE:
         case FALSENODE:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    public boolean isImmediate() {
+        switch (this) {
+        case FIXNUMNODE:
+        case STRNODE:
+        case FLOATNODE:
+        case BIGNUMNODE:
+        case SELFNODE:
+        case TRUENODE:
+        case FALSENODE:
+        case NILNODE:
             return true;
         default:
             return false;

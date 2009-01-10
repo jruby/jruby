@@ -3158,27 +3158,25 @@ public class ASTCompiler {
         final RescueNode rescueNode = (RescueNode) node;
 
         BranchCallback body = new BranchCallback() {
+            public void branch(BodyCompiler context) {
+                if (rescueNode.getBodyNode() != null) {
+                    compile(rescueNode.getBodyNode(), context, true);
+                } else {
+                    context.loadNil();
+                }
 
-                    public void branch(BodyCompiler context) {
-                        if (rescueNode.getBodyNode() != null) {
-                            compile(rescueNode.getBodyNode(), context, true);
-                        } else {
-                            context.loadNil();
-                        }
-
-                        if (rescueNode.getElseNode() != null) {
-                            context.consumeCurrentValue();
-                            compile(rescueNode.getElseNode(), context, true);
-                        }
-                    }
-                };
+                if (rescueNode.getElseNode() != null) {
+                    context.consumeCurrentValue();
+                    compile(rescueNode.getElseNode(), context, true);
+                }
+            }
+        };
 
         BranchCallback rubyHandler = new BranchCallback() {
-
-                    public void branch(BodyCompiler context) {
-                        compileRescueBody(rescueNode.getRescueNode(), context);
-                    }
-                };
+            public void branch(BodyCompiler context) {
+                compileRescueBody(rescueNode.getRescueNode(), context);
+            }
+        };
 
         context.performRescue(body, rubyHandler);
         // TODO: don't require pop
@@ -3198,7 +3196,7 @@ public class ASTCompiler {
             }
 
             public void call(BodyCompiler context) {
-                context.loadClass("StandardError");
+                context.loadStandardError();
             }
         };
         
@@ -3206,8 +3204,19 @@ public class ASTCompiler {
 
         BranchCallback trueBranch = new BranchCallback() {
             public void branch(BodyCompiler context) {
-                if (rescueBodyNode.getBodyNode() != null) {
-                    context.storeExceptionInErrorInfo();
+                // check if it's an immediate, and don't outline
+                Node realBody = rescueBodyNode.getBodyNode();
+                if (realBody instanceof NewlineNode) {
+                    context.setLinePosition(realBody.getPosition());
+                    while (realBody instanceof NewlineNode) {
+                        realBody = ((NewlineNode)realBody).getNextNode();
+                    }
+                }
+
+                if (realBody.getNodeType().isImmediate()) {
+                    compile(realBody, context, true);
+                    context.clearErrorInfo();
+                } else {
 
                     BodyCompiler nestedBody = context.outline("rescue_line_" + rescueBodyNode.getPosition().getStartLine());
                     compile(rescueBodyNode.getBodyNode(), nestedBody,true);
@@ -3215,11 +3224,6 @@ public class ASTCompiler {
 
                     // FIXME: this should reset to what it was before
                     context.clearErrorInfo();
-                } else {
-                    // FIXME: this should reset to what it was before
-                    context.clearErrorInfo();
-                    // return nil from empty rescue
-                    context.loadNil();
                 }
             }
         };

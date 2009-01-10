@@ -2146,6 +2146,11 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         invokeRuby("getClass", sig(RubyClass.class, String.class));
     }
 
+    public void loadStandardError() {
+        loadRuntime();
+        invokeRuby("getStandardError", sig(RubyClass.class));
+    }
+
     public void unwrapRaiseException() {
         // RaiseException is on stack, get RubyException out
         method.invokevirtual(p(RaiseException.class), "getException", sig(RubyException.class));
