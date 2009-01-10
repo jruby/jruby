@@ -1465,13 +1465,13 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.invokevirtual(script.getClassname(), mname, sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, Block.class}));
     }
 
-    public void performRescue(BranchCallback regularCode, BranchCallback rubyCatchCode) {
+    public void performRescue(BranchCallback regularCode, BranchCallback rubyCatchCode, boolean needsRetry) {
         String mname = getNewRescueName();
         BaseBodyCompiler rescueMethod = outline(mname);
-        rescueMethod.performRescueInner(regularCode, rubyCatchCode);
+        rescueMethod.performRescueInner(regularCode, rubyCatchCode, needsRetry);
     }
 
-    public void performRescueInner(BranchCallback regularCode, BranchCallback rubyCatchCode) {
+    private void performRescueInner(BranchCallback regularCode, BranchCallback rubyCatchCode, boolean needsRetry) {
         Label afterRubyCatchBody = new Label();
         Label catchRetry = new Label();
         Label catchJumps = new Label();
@@ -1519,12 +1519,14 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         }
 
         // retry handling in the rescue blocks
-        method.trycatch(rubyCatchBlock, afterRubyCatchBody, catchRetry, p(JumpException.RetryJump.class));
-        method.label(catchRetry);
-        {
-            method.pop();
+        if (needsRetry) {
+            method.trycatch(rubyCatchBlock, afterRubyCatchBody, catchRetry, p(JumpException.RetryJump.class));
+            method.label(catchRetry);
+            {
+                method.pop();
+            }
+            method.go_to(beforeBody);
         }
-        method.go_to(beforeBody);
 
         // and remaining jump exceptions should restore $!
         method.trycatch(rubyCatchBlock, afterRubyCatchBody, catchJumps, p(JumpException.FlowControlException.class));

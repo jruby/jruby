@@ -3178,7 +3178,9 @@ public class ASTCompiler {
             }
         };
 
-        context.performRescue(body, rubyHandler);
+        ASTInspector rescueInspector = new ASTInspector();
+        rescueInspector.inspect(rescueNode.getRescueNode());
+        context.performRescue(body, rubyHandler, rescueInspector.getFlag(ASTInspector.RETRY));
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
@@ -3218,7 +3220,7 @@ public class ASTCompiler {
                     context.clearErrorInfo();
                 } else {
                     BodyCompiler nestedBody = context.outline("rescue_line_" + rescueBodyNode.getPosition().getStartLine());
-                    compile(rescueBodyNode.getBodyNode(), nestedBody,true);
+                    compile(rescueBodyNode.getBodyNode(), nestedBody, true);
                     nestedBody.endBody();
 
                     // FIXME: this should reset to what it was before

@@ -81,6 +81,7 @@ import org.jruby.ast.OptArgNode;
 import org.jruby.ast.OrNode;
 import org.jruby.ast.PostExeNode;
 import org.jruby.ast.PreExeNode;
+import org.jruby.ast.RescueBodyNode;
 import org.jruby.ast.ReturnNode;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.SClassNode;
@@ -123,6 +124,7 @@ public class ASTInspector {
     public static final int CONSTANT = 0x20000; // accesses or sets constants
     public static final int CLASS_VAR = 0x40000; // accesses or sets class variables
     public static final int SUPER = 0x80000; // makes normal super call
+    public static final int RETRY = 0x100000; // contains a retry
     
     private int flags;
     
@@ -631,13 +633,16 @@ public class ASTInspector {
             }
             break;
         case RESCUEBODYNODE:
-            disable();
+            RescueBodyNode rescueBody = (RescueBodyNode)node;
+            inspect(rescueBody.getExceptionNodes());
+            inspect(rescueBody.getBodyNode());
+            inspect(rescueBody.getOptRescueNode());
             break;
         case RESCUENODE:
             disable();
             break;
         case RETRYNODE:
-            disable();
+            setFlag(RETRY);
             break;
         case RETURNNODE:
             inspect(((ReturnNode)node).getValueNode());
