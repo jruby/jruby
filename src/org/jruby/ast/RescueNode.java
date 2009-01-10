@@ -186,7 +186,7 @@ public class RescueNode extends Node {
         while (cRescueNode != null) {
             IRubyObject[] exceptions = getExceptions(cRescueNode, runtime, context, self, aBlock);
 
-            if (RuntimeHelpers.isExceptionHandled(raisedException, exceptions, runtime, context, self).isTrue()) {
+            if (RuntimeHelpers.isExceptionHandled(raisedException, exceptions, context).isTrue()) {
                 return cRescueNode.interpret(runtime,context, self, aBlock);
             }
 
@@ -203,7 +203,7 @@ public class RescueNode extends Node {
         while (cRescueNode != null) {
             IRubyObject[] exceptions = getExceptions(cRescueNode, runtime, context, self, aBlock);
 
-            if (RuntimeHelpers.isJavaExceptionHandled(exception, exceptions, runtime, context, self).isTrue()) {
+            if (RuntimeHelpers.isJavaExceptionHandled(exception, exceptions, context).isTrue()) {
                 runtime.getGlobalVariables().set("$!", JavaUtil.convertJavaToUsableRubyObject(runtime, exception));
                 return cRescueNode.interpret(runtime, context, self, aBlock);
             }

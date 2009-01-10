@@ -2116,22 +2116,20 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void checkIsExceptionHandled(ArgumentsCallback rescueArgs) {
         // original exception is on stack
         rescueArgs.call(this);
-        loadRuntime();
         loadThreadContext();
-        loadSelf();
 
         switch (rescueArgs.getArity()) {
         case 1:
-            invokeUtilityMethod("isJavaExceptionHandled", sig(IRubyObject.class, Exception.class, IRubyObject.class, Ruby.class, ThreadContext.class, IRubyObject.class));
+            invokeUtilityMethod("isJavaExceptionHandled", sig(IRubyObject.class, Exception.class, IRubyObject.class, ThreadContext.class));
             break;
         case 2:
-            invokeUtilityMethod("isJavaExceptionHandled", sig(IRubyObject.class, Exception.class, IRubyObject.class, IRubyObject.class, Ruby.class, ThreadContext.class, IRubyObject.class));
+            invokeUtilityMethod("isJavaExceptionHandled", sig(IRubyObject.class, Exception.class, IRubyObject.class, IRubyObject.class, ThreadContext.class));
             break;
         case 3:
-            invokeUtilityMethod("isJavaExceptionHandled", sig(IRubyObject.class, Exception.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Ruby.class, ThreadContext.class, IRubyObject.class));
+            invokeUtilityMethod("isJavaExceptionHandled", sig(IRubyObject.class, Exception.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, ThreadContext.class));
             break;
         default:
-            invokeUtilityMethod("isJavaExceptionHandled", sig(IRubyObject.class, Exception.class, IRubyObject[].class, Ruby.class, ThreadContext.class, IRubyObject.class));
+            invokeUtilityMethod("isJavaExceptionHandled", sig(IRubyObject.class, Exception.class, IRubyObject[].class, ThreadContext.class));
         }
     }
 

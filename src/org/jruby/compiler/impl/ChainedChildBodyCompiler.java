@@ -32,18 +32,18 @@ public class ChainedChildBodyCompiler extends ChildScopedBodyCompiler {
         method.start();
 
         method.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
-        method.dup();
         method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-        method.dup();
         method.astore(getRuntimeIndex());
 
         // grab nil for local variables
+        method.aload(getRuntimeIndex());
         method.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
         method.astore(getNilIndex());
 
+        method.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
         method.invokevirtual(p(ThreadContext.class), "getCurrentScope", sig(DynamicScope.class));
-        method.dup();
         method.astore(getDynamicScopeIndex());
+        method.aload(getDynamicScopeIndex());
         method.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
         method.astore(getVarsArrayIndex());
 
