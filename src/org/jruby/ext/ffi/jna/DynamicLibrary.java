@@ -48,7 +48,7 @@ public class DynamicLibrary extends RubyObject {
     }
     @JRubyMethod(name = {  "open" }, meta = true)
     public static final  IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject libraryName, IRubyObject libraryFlags) {
-        final String libName = libraryName.toString();
+        final String libName = !libraryName.isNil() ? libraryName.toString() : "c"; // Ugly hack for JNA
         try {
             return new DynamicLibrary(context.getRuntime(), (RubyClass) recv, 
                     libName, com.sun.jna.NativeLibrary.getInstance(libName));
