@@ -44,8 +44,6 @@ public class FastLongMethodFactory {
             case STRING:
             case LONG:
             case ULONG:
-            case FLOAT32:
-            case FLOAT64:
                 return true;
             default:
                 return false;
@@ -64,8 +62,6 @@ public class FastLongMethodFactory {
                 case UINT64:
                 case LONG:
                 case ULONG:
-                case FLOAT32:
-                case FLOAT64:
                     return true;
             }
         }
