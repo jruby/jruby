@@ -217,8 +217,9 @@ public final class StructLayoutBuilder extends RubyObject {
             case UINT32:
                 return Unsigned32Member.create(offset);
             case INT64:
-            case UINT64:
                 return Signed64Member.create(offset);
+            case UINT64:
+                return Unsigned64Member.create(offset);
             case LONG:
                 return LONG_SIZE == 32 
                         ? Signed32Member.create(offset)
@@ -226,7 +227,7 @@ public final class StructLayoutBuilder extends RubyObject {
             case ULONG:
                 return LONG_SIZE == 32 
                         ? Unsigned32Member.create(offset)
-                        : Signed64Member.create(offset);
+                        : Unsigned64Member.create(offset);
             case FLOAT32:
                 return Float32Member.create(offset);
             case FLOAT64:
@@ -249,7 +250,7 @@ public final class StructLayoutBuilder extends RubyObject {
         }
 
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
-            return RubyFixnum.newFixnum(runtime, getMemoryIO(ptr).getByte(offset));
+            return Util.newSigned8(runtime, getMemoryIO(ptr).getByte(offset));
         }
         static StructLayout.Member create(long offset) { return new Signed8Member(offset); }
     }
@@ -262,9 +263,7 @@ public final class StructLayoutBuilder extends RubyObject {
         }
 
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
-            int value = getMemoryIO(ptr).getByte(offset);
-            return RubyFixnum.newFixnum(runtime,
-                value < 0 ? (short) ((value & 0x7F) + 0x80) : value);
+            return Util.newUnsigned8(runtime, getMemoryIO(ptr).getByte(offset));
         }
         static StructLayout.Member create(long offset) { return new Unsigned8Member(offset); }
     }
@@ -277,7 +276,7 @@ public final class StructLayoutBuilder extends RubyObject {
         }
 
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
-            return RubyFixnum.newFixnum(runtime, getMemoryIO(ptr).getShort(offset));
+            return Util.newSigned16(runtime, getMemoryIO(ptr).getShort(offset));
         }
         static StructLayout.Member create(long offset) { return new Signed16Member(offset); }
     }
@@ -290,9 +289,7 @@ public final class StructLayoutBuilder extends RubyObject {
         }
 
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
-            int value = getMemoryIO(ptr).getShort(offset);
-            return RubyFixnum.newFixnum(runtime, 
-                value < 0 ? (int)((value & 0x7FFF) + 0x8000) : value);
+            return Util.newUnsigned16(runtime, getMemoryIO(ptr).getShort(offset));
         }
         static StructLayout.Member create(long offset) { return new Unsigned16Member(offset); }
     }
@@ -305,7 +302,7 @@ public final class StructLayoutBuilder extends RubyObject {
         }
 
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
-            return RubyFixnum.newFixnum(runtime, getMemoryIO(ptr).getInt(offset));
+            return Util.newSigned32(runtime, getMemoryIO(ptr).getInt(offset));
         }
         static StructLayout.Member create(long offset) { return new Signed32Member(offset); }
     }
@@ -318,9 +315,7 @@ public final class StructLayoutBuilder extends RubyObject {
         }
 
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
-            long value = getMemoryIO(ptr).getInt(offset);
-            return RubyFixnum.newFixnum(runtime, 
-                value < 0 ? (long)((value & 0x7FFFFFFFL) + 0x80000000L) : value);
+            return Util.newUnsigned32(runtime, getMemoryIO(ptr).getInt(offset));
         }
         static StructLayout.Member create(long offset) { return new Unsigned32Member(offset); }
     }
@@ -333,9 +328,22 @@ public final class StructLayoutBuilder extends RubyObject {
         }
 
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
-            return RubyFixnum.newFixnum(runtime, getMemoryIO(ptr).getLong(offset));
+            return Util.newSigned64(runtime, getMemoryIO(ptr).getLong(offset));
         }
         static StructLayout.Member create(long offset) { return new Signed64Member(offset); }
+    }
+    static final class Unsigned64Member extends StructLayout.Member {
+        Unsigned64Member(long offset) {
+            super(offset);
+        }
+        public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
+            getMemoryIO(ptr).putLong(offset, Util.uint64Value(value));
+        }
+
+        public IRubyObject get(Ruby runtime, IRubyObject ptr) {
+            return Util.newUnsigned64(runtime, getMemoryIO(ptr).getLong(offset));
+        }
+        static StructLayout.Member create(long offset) { return new Unsigned64Member(offset); }
     }
     static final class PointerMember extends StructLayout.Member {
         PointerMember(long offset) {
