@@ -59,11 +59,12 @@ public final class StructLayoutBuilder extends RubyObject {
      */
     static final int LONG_SIZE = Platform.getPlatform().longSize();
     static final int ADDRESS_SIZE = Platform.getPlatform().addressSize();
+    static final int REGISTER_SIZE = Platform.getPlatform().addressSize();
     static final long LONG_MASK = LONG_SIZE == 32 ? 0x7FFFFFFFL : 0x7FFFFFFFFFFFFFFFL;
     static final int LONG_ALIGN = isSparc() ? 64 : LONG_SIZE;
-    static final int ADDRESS_ALIGN = isSparc() ? 64 : ADDRESS_SIZE;
-    static final int DOUBLE_ALIGN = isSparc() ? 64 : ADDRESS_SIZE;
-    static final int FLOAT_ALIGN = isSparc() ? 64 : ADDRESS_SIZE;
+    static final int ADDRESS_ALIGN = isSparc() ? 64 : REGISTER_SIZE;
+    static final int DOUBLE_ALIGN = isSparc() ? 64 : REGISTER_SIZE;
+    static final int FLOAT_ALIGN = isSparc() ? 64 : Float.SIZE;
     private final Map<IRubyObject, StructLayout.Member> fields = new LinkedHashMap<IRubyObject, StructLayout.Member>();
     private int size = 0;
     
