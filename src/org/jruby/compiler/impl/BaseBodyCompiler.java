@@ -1499,12 +1499,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         // Handle Flow exceptions, just propagating them
         method.label(flowCatchBlock);
         {
-            // restore the original exception
-            loadRuntime();
-            method.aload(getPreviousExceptionIndex());
-            invokeUtilityMethod("setErrorInfo", sig(void.class, Ruby.class, IRubyObject.class));
-
-            // rethrow
+            // rethrow to outer flow catcher
             method.athrow();
         }
 
@@ -1529,7 +1524,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         }
 
         // and remaining jump exceptions should restore $!
-        method.trycatch(rubyCatchBlock, afterRubyCatchBody, catchJumps, p(JumpException.FlowControlException.class));
+        method.trycatch(beforeBody, afterRubyCatchBody, catchJumps, p(JumpException.FlowControlException.class));
         method.label(catchJumps);
         {
             loadRuntime();
