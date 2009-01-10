@@ -487,7 +487,7 @@ public final class ThreadContext {
     }
     
     public void pollThreadEvents() {
-        getThread().pollThreadEvents(this);
+        thread.pollThreadEvents(this);
     }
     
     int calls = 0;

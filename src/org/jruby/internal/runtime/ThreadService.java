@@ -180,34 +180,14 @@ public class ThreadService {
     }
     
     public void setCritical(boolean critical) {
-        if (criticalLock.isHeldByCurrentThread()) {
-            if (critical) {
-                // do nothing
-            } else {
-                criticalLock.unlock();
-            }
-        } else {
-            if (critical) {
-                criticalLock.lock();
-            } else {
-                // do nothing
-            }
+        if (critical && !criticalLock.isHeldByCurrentThread()) {
+            criticalLock.lock();
+        } else if (criticalLock.isHeldByCurrentThread()) {
+            criticalLock.unlock();
         }
     }
     
     public boolean getCritical() {
         return criticalLock.isHeldByCurrentThread();
     }
-
-    public ReentrantLock getCriticalLock() {
-        return criticalLock;
-    }
-    
-    public void waitForCritical() {
-        if (criticalLock.isLocked()) {
-            criticalLock.lock();
-            criticalLock.unlock();
-        }
-    }
-
 }
