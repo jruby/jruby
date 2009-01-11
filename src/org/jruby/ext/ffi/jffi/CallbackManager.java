@@ -196,7 +196,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         public void invoke(Closure.Buffer buffer) {
             Object recv = proc.get();
             if (recv == null) {
-                buffer.setInt32Return(0);
+                buffer.setIntReturn(0);
                 return;
             }
             IRubyObject[] params = new IRubyObject[parameterTypes.length];
@@ -248,20 +248,20 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
             case VOID:
                 break;
             case INT8:
-                buffer.setInt8Return((byte) longValue(value)); break;
+                buffer.setByteReturn((byte) longValue(value)); break;
             case UINT8:
-                buffer.setInt8Return((byte) longValue(value)); break;
+                buffer.setByteReturn((byte) longValue(value)); break;
             case INT16:
-                buffer.setInt16Return((short) longValue(value)); break;
+                buffer.setShortReturn((short) longValue(value)); break;
             case UINT16:
-                buffer.setInt16Return((short) longValue(value)); break;
+                buffer.setShortReturn((short) longValue(value)); break;
             case INT32:
-                buffer.setInt32Return((int) longValue(value)); break;
+                buffer.setIntReturn((int) longValue(value)); break;
             case UINT32:
-                buffer.setInt32Return((int) longValue(value)); break;
+                buffer.setIntReturn((int) longValue(value)); break;
             case INT64:
             case UINT64:
-                buffer.setInt64Return(longValue(value)); break;
+                buffer.setLongReturn(longValue(value)); break;
             case FLOAT32:
                 buffer.setFloatReturn((float) RubyNumeric.num2dbl(value)); break;
             case FLOAT64:
@@ -277,21 +277,21 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
             case VOID:
                 return runtime.getNil();
             case INT8:
-                return Util.newSigned8(runtime, buffer.getInt8(index));
+                return Util.newSigned8(runtime, buffer.getByte(index));
             case UINT8:
-                return Util.newUnsigned8(runtime, buffer.getInt8(index));
+                return Util.newUnsigned8(runtime, buffer.getByte(index));
             case INT16:
-                return Util.newSigned16(runtime, buffer.getInt16(index));
+                return Util.newSigned16(runtime, buffer.getShort(index));
             case UINT16:
-                return Util.newUnsigned16(runtime, buffer.getInt16(index));
+                return Util.newUnsigned16(runtime, buffer.getShort(index));
             case INT32:
-                return Util.newSigned32(runtime, buffer.getInt32(index));
+                return Util.newSigned32(runtime, buffer.getInt(index));
             case UINT32:
-                return Util.newUnsigned32(runtime, buffer.getInt32(index));
+                return Util.newUnsigned32(runtime, buffer.getInt(index));
             case INT64:
-                return Util.newSigned64(runtime, buffer.getInt64(index));
+                return Util.newSigned64(runtime, buffer.getLong(index));
             case UINT64:
-                return Util.newUnsigned64(runtime, buffer.getInt64(index));
+                return Util.newUnsigned64(runtime, buffer.getLong(index));
             case FLOAT32:
                 return runtime.newFloat(buffer.getFloat(index));
             case FLOAT64:

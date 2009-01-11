@@ -1,7 +1,6 @@
 
 package org.jruby.ext.ffi.jffi;
 
-import com.kenai.jffi.Address;
 import com.kenai.jffi.Library;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -61,20 +60,20 @@ public class DynamicLibrary extends RubyObject {
         final String libName = libraryName.isNil() ? null : libraryName.toString();
         try {
             return new DynamicLibrary(context.getRuntime(), (RubyClass) recv, 
-                    libName, LibraryCache.open(libName, getNativeLibraryFlags(libraryFlags)));
+                    libName, Library.getCachedInstance(libName, getNativeLibraryFlags(libraryFlags)));
         } catch (UnsatisfiedLinkError ex) {
             throw context.getRuntime().newLoadError(String.format("Could not open library '%s' : %s",
-                    libName != null ? libName : "current process", Library.lastError()));
+                    libName != null ? libName : "current process", Library.getLastError()));
         }
     }
     @JRubyMethod(name = {  "find_symbol" })
     public IRubyObject findSymbol(ThreadContext context, IRubyObject symbolName) {
         final String sym = symbolName.toString();
-        final Address address = library.findSymbol(sym);
-        if (address == null || address.isNull()) {
+        final long address = library.getSymbolAddress(sym);
+        if (address == 0L) {
             return context.getRuntime().getNil();
         }
-        return new Symbol(context.getRuntime(), this, sym, address.nativeAddress());
+        return new Symbol(context.getRuntime(), this, sym, address);
     }
     @JRubyMethod(name = "name")
     public IRubyObject name(ThreadContext context) {

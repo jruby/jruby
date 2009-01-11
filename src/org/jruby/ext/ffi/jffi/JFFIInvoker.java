@@ -1,7 +1,6 @@
 
 package org.jruby.ext.ffi.jffi;
 
-import com.kenai.jffi.Address;
 import com.kenai.jffi.CallingConvention;
 import com.kenai.jffi.Function;
 import com.kenai.jffi.Library;
@@ -48,8 +47,8 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
         return result;
     }
     public JFFIInvoker(Ruby runtime, String libraryName, String functionName, NativeType returnType, NativeParam[] parameterTypes, String convention) {
-        this(runtime, FFIProvider.getModule(runtime).fastGetClass("Invoker"), LibraryCache.open(libraryName, Library.LAZY),
-                LibraryCache.open(libraryName, Library.LAZY).findSymbol(functionName).nativeAddress(),
+        this(runtime, FFIProvider.getModule(runtime).fastGetClass("Invoker"), Library.getCachedInstance(libraryName, Library.LAZY),
+                Library.getCachedInstance(libraryName, Library.LAZY).getSymbolAddress(functionName),
                 returnType, parameterTypes, convention);
     }
     public JFFIInvoker(Ruby runtime, RubyClass klass, Library library, long address, NativeType returnType, NativeParam[] parameterTypes, String convention) {
@@ -59,7 +58,7 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
         for (int i = 0; i < jffiParamTypes.length; ++i) {
             jffiParamTypes[i] = getFFIType(parameterTypes[i]);
         }
-        function = new Function(new Address(address), jffiReturnType, jffiParamTypes);
+        function = new Function(address, jffiReturnType, jffiParamTypes);
         this.parameterTypes = new NativeParam[parameterTypes.length];
         System.arraycopy(parameterTypes, 0, this.parameterTypes, 0, parameterTypes.length);
         this.library = library;

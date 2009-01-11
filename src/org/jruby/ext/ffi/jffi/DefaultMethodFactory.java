@@ -344,10 +344,10 @@ public final class DefaultMethodFactory {
      */
     static final class Signed8Marshaller extends BaseMarshaller {
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
-            buffer.putInt8(Util.int8Value(parameter));
+            buffer.putByte(Util.int8Value(parameter));
         }
         public void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
-            buffer.putInt8(Util.int8Value(parameter));
+            buffer.putByte(Util.int8Value(parameter));
         }
         public static final ParameterMarshaller INSTANCE = new Signed8Marshaller();
     }
@@ -357,10 +357,10 @@ public final class DefaultMethodFactory {
      */
     static final class Unsigned8Marshaller extends BaseMarshaller {
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
-            buffer.putInt8(Util.uint8Value(parameter));
+            buffer.putByte(Util.uint8Value(parameter));
         }
         public final void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
-            buffer.putInt8(Util.uint8Value(parameter));
+            buffer.putByte(Util.uint8Value(parameter));
         }
         public static final ParameterMarshaller INSTANCE = new Unsigned8Marshaller();
     }
@@ -370,10 +370,10 @@ public final class DefaultMethodFactory {
      */
     static final class Signed16Marshaller extends BaseMarshaller {
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
-            buffer.putInt16(Util.int16Value(parameter));
+            buffer.putShort(Util.int16Value(parameter));
         }
         public final void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
-            buffer.putInt16(Util.int16Value(parameter));
+            buffer.putShort(Util.int16Value(parameter));
         }
         public static final ParameterMarshaller INSTANCE = new Signed16Marshaller();
     }
@@ -383,10 +383,10 @@ public final class DefaultMethodFactory {
      */
     static final class Unsigned16Marshaller extends BaseMarshaller {
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
-            buffer.putInt16(Util.uint16Value(parameter));
+            buffer.putShort(Util.uint16Value(parameter));
         }
         public final void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
-            buffer.putInt16(Util.uint16Value(parameter));
+            buffer.putShort(Util.uint16Value(parameter));
         }
         public static final ParameterMarshaller INSTANCE = new Unsigned16Marshaller();
     }
@@ -396,10 +396,10 @@ public final class DefaultMethodFactory {
      */
     static final class Signed32Marshaller extends BaseMarshaller {
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
-            buffer.putInt32(Util.int32Value(parameter));
+            buffer.putInt(Util.int32Value(parameter));
         }
         public final void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
-            buffer.putInt32(Util.int32Value(parameter));
+            buffer.putInt(Util.int32Value(parameter));
         }
         public static final ParameterMarshaller INSTANCE = new Signed32Marshaller();
     }
@@ -409,10 +409,10 @@ public final class DefaultMethodFactory {
      */
     static final class Unsigned32Marshaller extends BaseMarshaller {
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
-            buffer.putInt32((int) Util.uint32Value(parameter));
+            buffer.putInt((int) Util.uint32Value(parameter));
         }
         public final void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
-            buffer.putInt32((int) Util.uint32Value(parameter));
+            buffer.putInt((int) Util.uint32Value(parameter));
         }
         public static final ParameterMarshaller INSTANCE = new Unsigned32Marshaller();
     }
@@ -422,10 +422,10 @@ public final class DefaultMethodFactory {
      */
     static final class Signed64Marshaller extends BaseMarshaller {
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
-            buffer.putInt64(Util.int64Value(parameter));
+            buffer.putLong(Util.int64Value(parameter));
         }
         public final void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
-            buffer.putInt64(Util.int64Value(parameter));
+            buffer.putLong(Util.int64Value(parameter));
         }
         public static final ParameterMarshaller INSTANCE = new Signed64Marshaller();
     }
@@ -435,10 +435,10 @@ public final class DefaultMethodFactory {
      */
     static final class Unsigned64Marshaller extends BaseMarshaller {
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
-            buffer.putInt64(Util.uint64Value(parameter));
+            buffer.putLong(Util.uint64Value(parameter));
         }
         public final void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
-            buffer.putInt64(Util.uint64Value(parameter));
+            buffer.putLong(Util.uint64Value(parameter));
         }
         public static final ParameterMarshaller INSTANCE = new Unsigned64Marshaller();
     }

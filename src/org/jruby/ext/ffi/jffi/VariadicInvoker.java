@@ -1,7 +1,6 @@
 
 package org.jruby.ext.ffi.jffi;
 
-import com.kenai.jffi.Address;
 import com.kenai.jffi.CallingConvention;
 import com.kenai.jffi.Function;
 import com.kenai.jffi.HeapInvocationBuffer;
@@ -26,7 +25,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class VariadicInvoker extends RubyObject {
     private final CallingConvention convention;
     private final Library library;
-    private final Address address;
+    private final long address;
     private final FunctionInvoker functionInvoker;
     private final Type returnType;
 
@@ -43,7 +42,7 @@ public class VariadicInvoker extends RubyObject {
      * Creates a new <tt>Invoker</tt> instance.
      * @param arity
      */
-    private VariadicInvoker(Ruby runtime, IRubyObject klazz, Library library, Address address, 
+    private VariadicInvoker(Ruby runtime, IRubyObject klazz, Library library, long address,
             FunctionInvoker functionInvoker, Type returnType,
             CallingConvention convention) {
         super(runtime, (RubyClass) klazz);
@@ -68,14 +67,14 @@ public class VariadicInvoker extends RubyObject {
         CallingConvention conv = "stdcall".equals(args[3].toString())
                 ? CallingConvention.STDCALL : CallingConvention.STDCALL;
         Library library;
-        Address address;
+        long address;
         try {
             library = args[0] instanceof DynamicLibrary 
                     ? ((DynamicLibrary) args[0]).getNativeLibrary() 
-                    : LibraryCache.open(args[0].toString(), Library.LAZY);
+                    : Library.getCachedInstance(args[0].toString(), Library.LAZY);
             address = args[1] instanceof DynamicLibrary.Symbol
-                    ? new Address(((DynamicLibrary.Symbol) args[1]).getAddress())
-                    : library.findSymbol(args[1].toString());
+                    ? ((DynamicLibrary.Symbol) args[1]).getAddress()
+                    : library.getSymbolAddress(args[1].toString());
         } catch (UnsatisfiedLinkError ex) {
             throw context.getRuntime().newLoadError(ex.getMessage());
         }
