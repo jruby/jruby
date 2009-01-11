@@ -76,7 +76,7 @@ import org.jruby.runtime.load.Library;
 import org.jruby.util.ClassProvider;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNoBlock;
+import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodN;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.java.MiniJava;
 import org.jruby.java.addons.ArrayJavaAddons;
@@ -691,7 +691,7 @@ public class Java implements Library {
             }
         });
 
-        rubySubclass.addMethod("__jcreate!", new JavaMethodNoBlock(subclassSingleton, Visibility.PUBLIC) {
+        rubySubclass.addMethod("__jcreate!", new JavaMethodN(subclassSingleton, Visibility.PUBLIC) {
             private final Map<Integer, ParameterTypes> methodCache = new HashMap<Integer, ParameterTypes>();
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {

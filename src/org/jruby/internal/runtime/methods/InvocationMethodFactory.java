@@ -600,90 +600,30 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             if (DEBUG) out.println(" min: " + info.getMin() + ", max: " + info.getMax() + ", hasBlock: " + info.isBlock() + ", rest: " + info.isRest());
 
             if (c == null) {
-                String superClass = null;
-                switch (info.getMin()) {
-                case 0:
-                    switch (info.getMax()) {
-                    case 1:
-                        if (info.isRest()) {
-                            if (info.isBlock()) {
-                                superClass = p(JavaMethod.JavaMethodZeroOrOneOrNBlock.class);
-                            } else {
-                                superClass = p(JavaMethod.JavaMethodZeroOrOneOrN.class);
-                            }
-                        } else {
-                            if (info.isBlock()) {
-                                superClass = p(JavaMethod.JavaMethodZeroOrOneBlock.class);
-                            } else {
-                                superClass = p(JavaMethod.JavaMethodZeroOrOne.class);
-                            }
-                        }
-                        break;
-                    case 2:
-                        if (info.isRest()) {
-                            if (info.isBlock()) {
-                                superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwoOrNBlock.class);
-                            } else {
-                                superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwoOrN.class);
-                            }
-                        } else {
-                            if (info.isBlock()) {
-                                superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwoBlock.class);
-                            } else {
-                                superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwo.class);
-                            }
-                        }
-                        break;
-                    case 3:
-                        if (info.isRest()) {
-                            if (info.isBlock()) {
-                                superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwoOrThreeOrNBlock.class);
-                            } else {
-                                superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwoOrThreeOrN.class);
-                            }
-                        } else {
-                            if (info.isBlock()) {
-                                superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwoOrThreeBlock.class);
-                            } else {
-                                superClass = p(JavaMethod.JavaMethodZeroOrOneOrTwoOrThree.class);
-                            }
-                        }
-                        break;
-                    }
-                    break;
-                case 1:
-                    switch (info.getMax()) {
-                    case 2:
+                Class superClass = null;
+                if (info.getMin() == -1) {
+                    // normal all-rest method
+                    superClass = JavaMethod.JavaMethodN.class;
+                } else {
+                    if (info.isRest()) {
                         if (info.isBlock()) {
-                            superClass = p(JavaMethod.JavaMethodOneOrTwoBlock.class);
+                            superClass = JavaMethod.BLOCK_REST_METHODS[info.getMin()][info.getMax()];
                         } else {
-                            superClass = p(JavaMethod.JavaMethodOneOrTwo.class);
+                            superClass = JavaMethod.REST_METHODS[info.getMin()][info.getMax()];
                         }
-                        break;
-                    case 3:
+                    } else {
                         if (info.isBlock()) {
-                            superClass = p(JavaMethod.JavaMethodOneOrTwoOrThreeBlock.class);
+                            superClass = JavaMethod.BLOCK_METHODS[info.getMin()][info.getMax()];
                         } else {
-                            superClass = p(JavaMethod.JavaMethodOneOrTwoOrThree.class);
+                            superClass = JavaMethod.METHODS[info.getMin()][info.getMax()];
                         }
-                        break;
                     }
-                    break;
-                case 2:
-                    switch (info.getMax()) {
-                    case 3:
-                        superClass = p(JavaMethod.JavaMethodTwoOrThree.class);
-                        break;
-                    }
-                    break;
-                case -1:
-                    // rest arg, use normal JavaMethod since N case will be defined
-                    superClass = p(JavaMethod.JavaMethodNoBlock.class);
-                    break;
                 }
+                
                 if (superClass == null) throw new RuntimeException("invalid multi combination");
+                String superClassString = p(superClass);
                 int dotIndex = desc1.declaringClassName.lastIndexOf('.');
-                ClassWriter cw = createJavaMethodCtor(generatedClassPath, desc1.declaringClassName.substring(dotIndex + 1) + "#" + desc1.name, superClass);
+                ClassWriter cw = createJavaMethodCtor(generatedClassPath, desc1.declaringClassName.substring(dotIndex + 1) + "#" + desc1.name, superClassString);
 
                 for (JavaMethodDescriptor desc: descs) {
                     int specificArity = -1;
@@ -707,7 +647,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     Label line = new Label();
                     mv.visitLineNumber(0, line);
 
-                    createAnnotatedMethodInvocation(desc, mv, superClass, specificArity, hasBlock);
+                    createAnnotatedMethodInvocation(desc, mv, superClassString, specificArity, hasBlock);
 
                     endMethod(mv);
                 }
@@ -727,9 +667,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      */
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc) {
         String javaMethodName = desc.name;
-        
-        String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, desc.declaringClassName, desc.isStatic, desc.actualRequired, desc.optional, false, desc.anno.frame());
-        String generatedClassPath = generatedClassName.replace('.', '/');
         
         synchronized (classLoader) {
             try {
@@ -839,6 +776,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             // for zero, one, two, three arities, JavaMethod.JavaMethod*.call(...IRubyObject[] args...) will check
             return;
         default:
+            boolean checkArity = false;
             if (jrubyMethod.rest()) {
                 if (jrubyMethod.required() > 0) {
                     // just confirm minimum args provided
@@ -846,6 +784,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     method.arraylength();
                     method.ldc(jrubyMethod.required());
                     method.if_icmplt(arityError);
+                    checkArity = true;
                 }
             } else if (jrubyMethod.optional() > 0) {
                 if (jrubyMethod.required() > 0) {
@@ -861,27 +800,31 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 method.arraylength();
                 method.ldc(jrubyMethod.required() + jrubyMethod.optional());
                 method.if_icmpgt(arityError);
+                checkArity = true;
             } else {
                 // just confirm args length == required
                 method.aload(ARGS_INDEX);
                 method.arraylength();
                 method.ldc(jrubyMethod.required());
                 method.if_icmpne(arityError);
+                checkArity = true;
             }
 
-            method.go_to(noArityError);
+            if (checkArity) {
+                method.go_to(noArityError);
 
-            // Raise an error if arity does not match requirements
-            method.label(arityError);
-            method.aload(THREADCONTEXT_INDEX);
-            method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-            method.aload(ARGS_INDEX);
-            method.ldc(jrubyMethod.required());
-            method.ldc(jrubyMethod.required() + jrubyMethod.optional());
-            method.invokestatic(p(Arity.class), "checkArgumentCount", sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
-            method.pop();
+                // Raise an error if arity does not match requirements
+                method.label(arityError);
+                method.aload(THREADCONTEXT_INDEX);
+                method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
+                method.aload(ARGS_INDEX);
+                method.ldc(jrubyMethod.required());
+                method.ldc(jrubyMethod.required() + jrubyMethod.optional());
+                method.invokestatic(p(Arity.class), "checkArgumentCount", sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
+                method.pop();
 
-            method.label(noArityError);
+                method.label(noArityError);
+            }
         }
     }
 
@@ -1178,12 +1121,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         return classLoader.defineClass(name, code);
     }
     
-    private void loadArgument(MethodVisitor mv, int argsIndex, int argIndex) {
-        mv.visitVarInsn(ALOAD, argsIndex);
-        mv.visitLdcInsn(new Integer(argIndex));
-        mv.visitInsn(AALOAD);
-    }
-    
     private SkinnyMethodAdapter beginMethod(ClassWriter cw, String methodName, int specificArity, boolean block) {
         switch (specificArity) {
         default:
@@ -1227,7 +1164,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             if (block) {
                 return JavaMethod.class;
             } else {
-                return JavaMethod.JavaMethodNoBlock.class;
+                return JavaMethod.JavaMethodN.class;
             }
         case 0:
             if (block) {
@@ -1256,20 +1193,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    @Deprecated
-    private String getAnnotatedMethodForIndex(ClassWriter cw, Method method, int index, String superClass) {
-        String methodName = "call" + index + "_" + method.getName();
-        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, methodName, COMPILED_CALL_SIG_BLOCK, null, null));
-        mv.visitCode();
-        Label line = new Label();
-        mv.visitLineNumber(0, line);
-        // TODO: indexed methods do not use specific arity yet
-        createAnnotatedMethodInvocation(new JavaMethodDescriptor(method), mv, superClass, -1, true);
-        endMethod(mv);
-        
-        return methodName;
-    }
-
     private void createAnnotatedMethodInvocation(JavaMethodDescriptor desc, SkinnyMethodAdapter method, String superClass, int specificArity, boolean block) {
         String typePath = desc.declaringClassPath;
         String javaMethodName = desc.name;
@@ -1288,8 +1211,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         Label tryBegin = new Label();
         Label tryEnd = new Label();
         Label doFinally = new Label();
-        Label doRedoFinally = new Label();
-        Label catchRedoJump = new Label();
 
         if (!callConfig.isNoop()) {
             method.trycatch(tryBegin, tryEnd, doFinally, null);

@@ -8,7 +8,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNoBlock;
+import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodN;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOne;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOneBlock;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
@@ -151,7 +151,7 @@ public class JavaInterfaceTemplate {
                 
                 // jcreate instantiates the proxy object which implements all interfaces
                 // and which is wrapped and implemented by this object
-                clazz.addMethod("__jcreate!", new JavaMethodNoBlock(clazz, Visibility.PRIVATE) {
+                clazz.addMethod("__jcreate!", new JavaMethodN(clazz, Visibility.PRIVATE) {
                     @Override
                     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
                         return jcreateProxy(self, args);
@@ -160,7 +160,7 @@ public class JavaInterfaceTemplate {
                 
                 // Used by our duck-typification of Proc into interface types, to allow
                 // coercing a simple proc into an interface parameter.
-                clazz.addMethod("__jcreate_meta!", new JavaMethodNoBlock(clazz, Visibility.PRIVATE) {
+                clazz.addMethod("__jcreate_meta!", new JavaMethodN(clazz, Visibility.PRIVATE) {
                     @Override
                     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
                         IRubyObject result = jcreateProxy(self, args);

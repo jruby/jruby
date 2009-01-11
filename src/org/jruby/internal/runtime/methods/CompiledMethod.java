@@ -199,11 +199,6 @@ public abstract class CompiledMethod extends JavaMethod implements JumpTarget, C
         
     }
     
-    public CompiledMethod(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope, Object scriptObject, CallConfiguration callConfig) {
-    	super(implementationClass, visibility, callConfig, staticScope, arity);
-        this.$scriptObject = scriptObject;
-    }
-    
     protected CompiledMethod() {}
     
     protected void init(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope, Object scriptObject, CallConfiguration callConfig) {
