@@ -292,11 +292,14 @@ public class RubyBignum extends RubyInteger {
      */
     @JRubyMethod(name = "*", required = 1)
     public IRubyObject op_mul(ThreadContext context, IRubyObject other) {
+        Ruby runtime = context.getRuntime();
         if (other instanceof RubyFixnum) {
-            return bignorm(getRuntime(), value.multiply(fix2big(((RubyFixnum) other))));
+            BigInteger result = value.multiply(fix2big(((RubyFixnum) other)));
+            return result == BigInteger.ZERO ? RubyFixnum.zero(runtime) : new RubyBignum(runtime, result);
         }
         if (other instanceof RubyBignum) {
-            return bignorm(getRuntime(), value.multiply(((RubyBignum) other).value));
+            BigInteger result = value.multiply(((RubyBignum)other).value);
+            return result == BigInteger.ZERO ? RubyFixnum.zero(runtime) : new RubyBignum(runtime, result);
         } else if (other instanceof RubyFloat) {
             return RubyFloat.newFloat(getRuntime(), big2dbl(this) * ((RubyFloat) other).getDoubleValue());
         }
