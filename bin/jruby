@@ -173,7 +173,9 @@ do
             JAVA_HOME=`cygpath -u "$JAVA_HOME"`
           fi
           JAVA_CMD="$JAVA_HOME/bin/jdb"
-        fi ;;
+        fi 
+        java_args=("${java_args[@]}" "-sourcepath" "$JRUBY_HOME/lib/ruby/1.8:.")
+        JRUBY_OPTS=("${JRUBY_OPTS[@]}" "-X+C") ;;
      --client)
         JAVA_VM=-client ;;
      --server)
