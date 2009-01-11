@@ -317,9 +317,7 @@ public class RubyBignum extends RubyInteger {
     /**
      * rb_big_divide. Shared part for both "/" and "div" operations.
      */
-    private IRubyObject op_divide(ThreadContext context, IRubyObject other, String op) {
-        assert ("/".equals(op) || "div".equals(op));
-
+    private IRubyObject op_divide(ThreadContext context, IRubyObject other, boolean slash) {
         final BigInteger otherValue;
         if (other instanceof RubyFixnum) {
             otherValue = fix2big((RubyFixnum) other);
@@ -327,19 +325,16 @@ public class RubyBignum extends RubyInteger {
             otherValue = ((RubyBignum) other).value;
         } else if (other instanceof RubyFloat) {
             double div = big2dbl(this) / ((RubyFloat) other).getDoubleValue();
-            if ("/".equals(op)) {
-                return RubyFloat.newFloat(getRuntime(),
-                        big2dbl(this) / ((RubyFloat) other).getDoubleValue());
+            if (slash) {
+                return RubyFloat.newFloat(getRuntime(), div);
             } else {
                 return RubyNumeric.dbl2num(getRuntime(), div);
             }
         } else {
-            return coerceBin(context, op, other);
+            return coerceBin(context, slash ? "/" : "div", other);
         }
 
-        if (otherValue.equals(BigInteger.ZERO)) {
-            throw getRuntime().newZeroDivisionError();
-        }
+        if (otherValue.signum() == 0) throw getRuntime().newZeroDivisionError();
 
         BigInteger[] results = value.divideAndRemainder(otherValue);
 
@@ -354,7 +349,7 @@ public class RubyBignum extends RubyInteger {
      */
     @JRubyMethod(name = {"/"}, required = 1)
     public IRubyObject op_div(ThreadContext context, IRubyObject other) {
-        return op_divide(context, other, "/");
+        return op_divide(context, other, true);
     }
 
     /** rb_big_idiv
@@ -362,7 +357,7 @@ public class RubyBignum extends RubyInteger {
      */
     @JRubyMethod(name = {"div"}, required = 1)
     public IRubyObject op_idiv(ThreadContext context, IRubyObject other) {
-        return op_divide(context, other, "div");
+        return op_divide(context, other, false);
     }
 
     /** rb_big_divmod
