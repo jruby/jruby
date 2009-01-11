@@ -28,8 +28,6 @@
 package org.jruby.ext.ffi;
 
 import java.nio.ByteOrder;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.regex.Pattern;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
@@ -41,154 +39,233 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  */
 public class Platform {
-    public enum OS {
-        DARWIN,
-        FREEBSD,
-        LINUX,
-        MAC,
-        NETBSD,
-        OPENBSD,
-        SUNOS,
-        WINDOWS,
+    public static final CPU CPU = determineCPU();
+    public static final OS OS = determineOS();
 
-        UNKNOWN;
-    }
-    public enum ARCH {
-        I386,
-        X86_64,
-        PPC,
-        SPARC,
-        SPARCV9,
-        UNKNOWN;
-    }
-    private static final class SingletonHolder {
-        private static final Platform INSTANCE = new Platform();
-    }
-    public static final Platform getPlatform() {
-        return SingletonHolder.INSTANCE;
-    }
-    private static final String DARWIN = "darwin";
-    private static final String WINDOWS = "windows";
-    private static final String LINUX = "linux";
-    private static final String FREEBSD = "freebsd";
-    private static final String OPENBSD = "openbsd";
-    private static final String SOLARIS = "solaris";
-    
-    public static final Map<String, String> OS_NAMES = new HashMap<String, String>() {{
-        put("Mac OS X", DARWIN);
-    }};
-    public static final Map<String, String> ARCH_NAMES = new HashMap<String, String>() {{
-        put("x86", "i386");
-    }};
-    private static final String getOperatingSystem() {
-        String osname = System.getProperty("os.name").toLowerCase();
-        for (String s : OS_NAMES.keySet()) {
-            if (s.equalsIgnoreCase(osname)) {
-                return OS_NAMES.get(s);
-            }
-        }
-        if (osname.startsWith("windows")) {
-            return WINDOWS;
-        }
-        return osname;
-    }
-    private static final String getArchitecture() {
-        String arch = System.getProperty("os.arch").toLowerCase();
-        for (String s : ARCH_NAMES.keySet()) {
-            if (s.equalsIgnoreCase(arch)) {
-                return ARCH_NAMES.get(s);
-            }
-        }       
-        return arch;
-    }
-    public static final String ARCH = getArchitecture();
-    public static final String OS = getOperatingSystem();
-    private static final String MACOS_LIBREGEX = "lib.*\\.(dylib|jnilib)$";
-    private static final String WIN32_LIBREGEX = ".*\\.dll$";
-    private static final String UNIX_LIBREGEX = "lib.*\\.so.*$";
-   
-    public static final boolean IS_WINDOWS = OS.equals(WINDOWS);
-    
-    public static final boolean IS_MAC = OS.equals(DARWIN);
-    public static final boolean IS_FREEBSD = OS.equals(FREEBSD);
-    public static final boolean IS_OPENBSD = OS.equals(OPENBSD);
-    public static final boolean IS_LINUX = OS.equals(LINUX);
-    public static final boolean IS_SOLARIS = OS.equals(SOLARIS);
-    public static final boolean IS_BSD = IS_MAC || IS_FREEBSD || IS_OPENBSD;
-    public static final String LIBC = IS_WINDOWS ? "msvcrt" : IS_LINUX ? "libc.so.6" : "c";
-    public static final String LIBPREFIX = IS_WINDOWS ? "" : "lib";
-    public static final String LIBSUFFIX = IS_WINDOWS ? "dll" : IS_MAC ? "dylib" : "so";
-    public static final String NAME = String.format("%s-%s", ARCH, OS);
+    public static final String NAME = CPU + "-" + OS;
+    public static final String LIBC = OS == OS.WINDOWS ? "msvcrt" : OS == OS.LINUX ? "libc.so.6" : "c";
+    public static final String LIBPREFIX = OS == OS.WINDOWS ? "" : "lib";
+    public static final String LIBSUFFIX = OS == OS.WINDOWS ? "dll" : OS == OS.DARWIN ? "dylib" : "so";
     public static final int BIG_ENDIAN = 4321;
     public static final int LITTLE_ENDIAN = 1234;
     public static final int BYTE_ORDER = ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN) ? BIG_ENDIAN : LITTLE_ENDIAN;
 
 
-    private final int addressSize, longSize;
-    private final Pattern libPattern;
-    protected Platform() {
-        final int dataModel = Integer.getInteger("sun.arch.data.model");
+    protected final int addressSize, longSize;
+    private final long addressMask;
+    protected final Pattern libPattern;
+    private final int javaVersionMajor;
+    public enum OS {
+        DARWIN,
+        FREEBSD,
+        NETBSD,
+        OPENBSD,
+        LINUX,
+        SOLARIS,
+        WINDOWS,
+
+        UNKNOWN;
+        @Override
+        public String toString() { return name().toLowerCase(); }
+    }
+    public enum CPU {
+        I386,
+        X86_64,
+        POWERPC,
+        POWERPC64,
+        SPARC,
+        SPARCV9,
+        UNKNOWN;
+        @Override
+        public String toString() { return name().toLowerCase(); }
+    }
+    private static final class SingletonHolder {
+        private static final Platform PLATFORM = determinePlatform(determineOS());
+    }
+    private static final OS determineOS() {
+        String osName = System.getProperty("os.name").split(" ")[0].toLowerCase();
+        if (osName.startsWith("mac") || osName.startsWith("darwin")) {
+            return OS.DARWIN;
+        } else if (osName.startsWith("linux")) {
+            return OS.LINUX;
+        } else if (osName.startsWith("sunos") || osName.startsWith("solaris")) {
+            return OS.SOLARIS;
+        } else if (osName.startsWith("openbsd")) {
+            return OS.OPENBSD;
+        } else if (osName.startsWith("freebsd")) {
+            return OS.FREEBSD;
+        } else {
+            throw new ExceptionInInitializerError("Unsupported operating system");
+        }
+    }
+    private static final Platform determinePlatform(OS os) {
+        switch (os) {
+            case DARWIN:
+                return new Darwin();
+            case LINUX:
+                return new Linux();
+            case WINDOWS:
+                return new Windows();
+            case UNKNOWN:
+                throw new ExceptionInInitializerError("Unsupported operating system");
+            default:
+                return new Default(os);
+        }
+    }
+    private static final CPU determineCPU() {
+        String archString = System.getProperty("os.arch").toLowerCase();
+        if ("x86".equals(archString) || "i386".equals(archString) || "i86pc".equals(archString)) {
+            return CPU.I386;
+        } else if ("x86_64".equals(archString) || "amd64".equals(archString)) {
+            return CPU.X86_64;
+        } else if ("ppc".equals(archString) || "powerpc".equals(archString)) {
+            return CPU.POWERPC;
+        } else if ("ppc64".equals(archString)) {
+            return CPU.POWERPC64;
+        } else if ("sparc".equals(archString)) {
+            return CPU.SPARC;
+        } else if ("sparcv9".equals(archString)) {
+            return CPU.SPARCV9;
+        } else {
+            throw new ExceptionInInitializerError("Unsupported CPU architecture: " + archString);
+        }
+    }
+    
+    protected Platform(OS os) {
+        int dataModel = Integer.getInteger("sun.arch.data.model");
         if (dataModel != 32 && dataModel != 64) {
-            throw new IllegalArgumentException("Unsupported data model");
+            switch (CPU) {
+                case I386:
+                case POWERPC:
+                case SPARC:
+                    dataModel = 32;
+                    break;
+                case X86_64:
+                case POWERPC64:
+                case SPARCV9:
+                    dataModel = 64;
+                    break;
+                default:
+                    throw new ExceptionInInitializerError("Cannot determine cpu address size");
+            }
         }
         addressSize = dataModel;
-        longSize = IS_WINDOWS ? 32 : addressSize; // Windows is LLP64
+        addressMask = addressSize == 32 ? 0xffffffffL : 0xffffffffffffffffL;
+        longSize = os == OS.WINDOWS ? 32 : addressSize; // Windows is LLP64
         String libpattern = null;
-        if (IS_WINDOWS) {
-            libpattern = WIN32_LIBREGEX;
-        } else if (IS_MAC) {
-            libpattern = MACOS_LIBREGEX;
-        } else {
-            libpattern = UNIX_LIBREGEX;
+        switch (os) {
+            case WINDOWS:
+                libpattern = ".*\\.dll$";
+                break;
+            case DARWIN:
+                libpattern = "lib.*\\.(dylib|jnilib)$";
+                break;
+            default:
+                libpattern = "lib.*\\.so.*$";
+                break;
         }
         libPattern = Pattern.compile(libpattern);
+        int version = 5;
+        try {
+            String versionString = System.getProperty("java.version");
+            if (versionString != null) {
+                String[] v = versionString.split("\\.");
+                version = Integer.valueOf(v[1]);
+            }
+        } catch (Exception ex) {
+            throw new ExceptionInInitializerError("Could not determine java version");
+        }
+        javaVersionMajor = version;
+    }
+/**
+     * Gets the current <tt>Platform</tt>
+     *
+     * @return The current platform.
+     */
+    public static final Platform getPlatform() {
+        return SingletonHolder.PLATFORM;
     }
 
-    public void init(Ruby runtime, RubyModule ffi) {
-        RubyModule platform = ffi.defineModuleUnder("Platform");
-        platform.defineConstant("ADDRESS_SIZE", runtime.newFixnum(addressSize()));
-        platform.defineConstant("LONG_SIZE", runtime.newFixnum(longSize()));
-        platform.defineConstant("OS", runtime.newString(OS));
-        platform.defineConstant("ARCH", runtime.newString(ARCH));
-        platform.defineConstant("NAME", runtime.newString(NAME));
-        platform.defineConstant("IS_WINDOWS", runtime.newBoolean(IS_WINDOWS));
-        platform.defineConstant("IS_BSD", runtime.newBoolean(IS_BSD));
-        platform.defineConstant("IS_FREEBSD", runtime.newBoolean(IS_FREEBSD));
-        platform.defineConstant("IS_OPENBSD", runtime.newBoolean(IS_OPENBSD));
-        platform.defineConstant("IS_SOLARIS", runtime.newBoolean(IS_SOLARIS));
-        platform.defineConstant("IS_LINUX", runtime.newBoolean(IS_LINUX));
-        platform.defineConstant("IS_MAC", runtime.newBoolean(IS_MAC));
-        platform.defineConstant("LIBC", runtime.newString(LIBC));
-        platform.defineConstant("LIBPREFIX", runtime.newString(LIBPREFIX));
-        platform.defineConstant("LIBSUFFIX", runtime.newString(LIBSUFFIX));
-        platform.defineConstant("BYTE_ORDER", runtime.newFixnum(BYTE_ORDER));
-        platform.defineConstant("BIG_ENDIAN", runtime.newFixnum(BIG_ENDIAN));
-        platform.defineConstant("LITTLE_ENDIAN", runtime.newFixnum(LITTLE_ENDIAN));
-        platform.defineAnnotatedMethods(Platform.class);
+    /**
+     * Gets the current Operating System.
+     *
+     * @return A <tt>OS</tt> value representing the current Operating System.
+     */
+    public final OS getOS() {
+        return OS;
+    }
+
+    /**
+     * Gets the current processor architecture the JVM is running on.
+     *
+     * @return A <tt>CPU</tt> value representing the current processor architecture.
+     */
+    public final CPU getCPU() {
+        return CPU;
+    }
+
+    /**
+     * Gets the version of the Java Virtual Machine (JVM) jffi is running on.
+     *
+     * @return A number representing the java version.  e.g. 5 for java 1.5, 6 for java 1.6
+     */
+    public final int getJavaMajorVersion() {
+        return javaVersionMajor;
+    }
+    public final boolean isBSD() {
+        return OS == OS.FREEBSD || OS == OS.OPENBSD || OS == OS.NETBSD || OS == OS.DARWIN;
+    }
+    public final boolean isUnix() {
+        return OS != OS.WINDOWS;
+    }
+    
+    public static void createPlatformModule(Ruby runtime, RubyModule ffi) {
+        RubyModule module = ffi.defineModuleUnder("Platform");
+        Platform platform = Platform.getPlatform();
+        OS os = Platform.getPlatform().getOS();
+        module.defineConstant("ADDRESS_SIZE", runtime.newFixnum(platform.addressSize));
+        module.defineConstant("LONG_SIZE", runtime.newFixnum(platform.longSize));
+        module.defineConstant("OS", runtime.newString(OS.toString()));
+        module.defineConstant("ARCH", runtime.newString(platform.getCPU().toString()));
+        module.defineConstant("NAME", runtime.newString(platform.getName()));
+        module.defineConstant("IS_WINDOWS", runtime.newBoolean(os == OS.WINDOWS));
+        module.defineConstant("IS_BSD", runtime.newBoolean(Platform.getPlatform().isBSD()));
+        module.defineConstant("IS_FREEBSD", runtime.newBoolean(os == OS.FREEBSD));
+        module.defineConstant("IS_OPENBSD", runtime.newBoolean(os == OS.OPENBSD));
+        module.defineConstant("IS_SOLARIS", runtime.newBoolean(os == OS.SOLARIS));
+        module.defineConstant("IS_LINUX", runtime.newBoolean(os == OS.LINUX));
+        module.defineConstant("IS_MAC", runtime.newBoolean(os == OS.DARWIN));
+        module.defineConstant("LIBC", runtime.newString(LIBC));
+        module.defineConstant("LIBPREFIX", runtime.newString(LIBPREFIX));
+        module.defineConstant("LIBSUFFIX", runtime.newString(LIBSUFFIX));
+        module.defineConstant("BYTE_ORDER", runtime.newFixnum(BYTE_ORDER));
+        module.defineConstant("BIG_ENDIAN", runtime.newFixnum(BIG_ENDIAN));
+        module.defineConstant("LITTLE_ENDIAN", runtime.newFixnum(LITTLE_ENDIAN));
+        module.defineAnnotatedMethods(Platform.class);
     }
     @JRubyMethod(name = "windows?", module=true)
     public static IRubyObject windows_p(ThreadContext context, IRubyObject recv) {
-        return context.getRuntime().newBoolean(IS_WINDOWS);
+        return context.getRuntime().newBoolean(OS == OS.WINDOWS);
     }
     @JRubyMethod(name = "mac?", module=true)
     public static IRubyObject mac_p(ThreadContext context, IRubyObject recv) {
-        return context.getRuntime().newBoolean(IS_MAC);
+        return context.getRuntime().newBoolean(OS == OS.DARWIN);
     }
     @JRubyMethod(name = "unix?", module=true)
     public static IRubyObject unix_p(ThreadContext context, IRubyObject recv) {
-        return context.getRuntime().newBoolean(IS_BSD || IS_LINUX || IS_SOLARIS);
+        return context.getRuntime().newBoolean(Platform.getPlatform().isUnix());
     }
     @JRubyMethod(name = "bsd?", module=true)
     public static IRubyObject bsd_p(ThreadContext context, IRubyObject recv) {
-        return context.getRuntime().newBoolean(IS_BSD);
+        return context.getRuntime().newBoolean(Platform.getPlatform().isBSD());
     }
     @JRubyMethod(name = "linux?", module=true)
     public static IRubyObject linux_p(ThreadContext context, IRubyObject recv) {
-        return context.getRuntime().newBoolean(IS_LINUX);
+        return context.getRuntime().newBoolean(OS == OS.LINUX);
     }
     @JRubyMethod(name = "solaris?", module=true)
     public static IRubyObject solaris_p(ThreadContext context, IRubyObject recv) {
-        return context.getRuntime().newBoolean(IS_SOLARIS);
+        return context.getRuntime().newBoolean(OS == OS.SOLARIS);
     }
     /**
      * An extension over <code>System.getProperty</code> method.
@@ -206,12 +283,40 @@ public class Platform {
             return defValue;
         }
     }
-    public int addressSize() {
+    /**
+     * Gets the size of a C 'long' on the native platform.
+     *
+     * @return the size of a long in bits
+     */
+    public final int longSize() {
         return addressSize;
     }
 
-    public int longSize() {
-        return longSize;
+    /**
+     * Gets the size of a C address/pointer on the native platform.
+     *
+     * @return the size of a pointer in bits
+     */
+    public final int addressSize() {
+        return addressSize;
+    }
+    
+    /**
+     * Gets the 32/64bit mask of a C address/pointer on the native platform.
+     *
+     * @return the size of a pointer in bits
+     */
+    public final long addressMask() {
+        return addressMask;
+    }
+
+    /**
+     * Gets the name of this <tt>Platform</tt>.
+     *
+     * @return The name of this platform.
+     */
+    public String getName() {
+        return CPU + "-" + OS;
     }
 
     public String mapLibraryName(String libName) {
@@ -222,5 +327,64 @@ public class Platform {
             return libName;
         }
         return System.mapLibraryName(libName);
+    }
+    private static final class Default extends Platform {
+
+        public Default(OS os) {
+            super(os);
+        }
+
+    }
+    /**
+     * A {@link Platform} subclass representing the MacOS system.
+     */
+    private static final class Darwin extends Platform {
+
+        public Darwin() {
+            super(OS.DARWIN);
+        }
+
+        @Override
+        public String mapLibraryName(String libName) {
+            //
+            // A specific version was requested - use as is for search
+            //
+            if (libPattern.matcher(libName).find()) {
+                return libName;
+            }
+            return "lib" + libName + ".dylib";
+        }
+
+        @Override
+        public String getName() {
+            return "darwin";
+        }
+    }
+    /**
+     * A {@link Platform} subclass representing the Linux operating system.
+     */
+    private static final class Linux extends Platform {
+
+        public Linux() {
+            super(OS.LINUX);
+        }
+
+        
+        @Override
+        public String mapLibraryName(String libName) {
+            // Older JDK on linux map 'c' to 'libc.so' which doesn't work
+            return "c".equals(libName) || "libc.so".equals(libName)
+                    ? "libc.so.6" : super.mapLibraryName(libName);
+        }
+    }
+
+    /**
+     * A {@link Platform} subclass representing the Windows system.
+     */
+    private static class Windows extends Platform {
+
+        public Windows() {
+            super(OS.WINDOWS);
+        }
     }
 }
