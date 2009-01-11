@@ -37,7 +37,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * Converts a ruby string or java <tt>ByteBuffer</tt> into a native pointer.
+ * Converts a ruby block or proc into a native callback.
  */
 final class CallbackMarshaller implements ParameterMarshaller {
     private final CallbackInfo cbInfo;

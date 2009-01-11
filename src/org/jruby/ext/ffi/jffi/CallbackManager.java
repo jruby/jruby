@@ -260,8 +260,9 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
             case UINT32:
                 buffer.setIntReturn((int) longValue(value)); break;
             case INT64:
+                buffer.setLongReturn(Util.int64Value(value)); break;
             case UINT64:
-                buffer.setLongReturn(longValue(value)); break;
+                buffer.setLongReturn(Util.uint64Value(value)); break;
             case FLOAT32:
                 buffer.setFloatReturn((float) RubyNumeric.num2dbl(value)); break;
             case FLOAT64:
