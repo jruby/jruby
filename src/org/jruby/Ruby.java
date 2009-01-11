@@ -2900,10 +2900,10 @@ public final class Ruby {
         return objectSpace;
     }
 
-    private class WeakDescriptorReference extends WeakReference<ChannelDescriptor> {
+    private class WeakDescriptorReference extends WeakReference {
         private int fileno;
 
-        public WeakDescriptorReference(ChannelDescriptor descriptor, ReferenceQueue<ChannelDescriptor> queue) {
+        public WeakDescriptorReference(ChannelDescriptor descriptor, ReferenceQueue queue) {
             super(descriptor, queue);
             this.fileno = descriptor.getFileno();
         }
@@ -2918,7 +2918,7 @@ public final class Ruby {
     }
 
     private void cleanDescriptors() {
-        Reference<? extends ChannelDescriptor> reference;
+        Reference reference;
         while ((reference = descriptorQueue.poll()) != null) {
             int fileno = ((WeakDescriptorReference)reference).getFileno();
             descriptors.remove(fileno);
@@ -2941,11 +2941,11 @@ public final class Ruby {
     public ChannelDescriptor getDescriptorByFileno(int aFileno) {
         cleanDescriptors();
         
-        Reference<ChannelDescriptor> reference = descriptors.get(new Integer(aFileno));
+        Reference reference = descriptors.get(new Integer(aFileno));
         if (reference == null) {
             return null;
         }
-        return reference.get();
+        return (ChannelDescriptor)reference.get();
     }
 
     public long incrementRandomSeedSequence() {

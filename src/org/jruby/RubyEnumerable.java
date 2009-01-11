@@ -259,7 +259,7 @@ public class RubyEnumerable {
     }    
 
     @JRubyMethod(name = "first", compat = CompatVersion.RUBY1_9)
-    public static IRubyObject first_0(ThreadContext context, IRubyObject self) {
+    public static IRubyObject first(ThreadContext context, IRubyObject self) {
         final Ruby runtime = context.getRuntime();
         final ThreadContext localContext = context;
         
@@ -279,7 +279,7 @@ public class RubyEnumerable {
     }
 
     @JRubyMethod(name = "first", compat = CompatVersion.RUBY1_9)
-    public static IRubyObject first_1(ThreadContext context, IRubyObject self, final IRubyObject num) {
+    public static IRubyObject first(ThreadContext context, IRubyObject self, final IRubyObject num) {
         final Ruby runtime = context.getRuntime();
         final RubyArray result = runtime.newArray();
         final ThreadContext localContext = context;
