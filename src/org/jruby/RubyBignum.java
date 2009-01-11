@@ -368,6 +368,7 @@ public class RubyBignum extends RubyInteger {
      */
     @JRubyMethod(name = "divmod", required = 1)
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
+        Ruby runtime = context.getRuntime();
         final BigInteger otherValue;
         if (other instanceof RubyFixnum) {
             otherValue = fix2big((RubyFixnum) other);
@@ -377,18 +378,14 @@ public class RubyBignum extends RubyInteger {
             return coerceBin(context, "divmod", other);
         }
 
-        if (otherValue.equals(BigInteger.ZERO)) {
-            throw getRuntime().newZeroDivisionError();
-        }
+        if (otherValue.signum() == 0) throw runtime.newZeroDivisionError();
 
         BigInteger[] results = value.divideAndRemainder(otherValue);
-
         if ((value.signum() * otherValue.signum()) == -1 && results[1].signum() != 0) {
             results[0] = results[0].subtract(BigInteger.ONE);
             results[1] = otherValue.add(results[1]);
     	}
-        final Ruby runtime = getRuntime();
-        return RubyArray.newArray(getRuntime(), bignorm(runtime, results[0]), bignorm(runtime, results[1]));
+        return RubyArray.newArray(runtime, bignorm(runtime, results[0]), bignorm(runtime, results[1]));
     }
 
     /** rb_big_modulo
@@ -404,16 +401,14 @@ public class RubyBignum extends RubyInteger {
         } else {
             return coerceBin(context, "%", other);
         }
-        if (otherValue.equals(BigInteger.ZERO)) {
-            throw getRuntime().newZeroDivisionError();
-        }
-        BigInteger result = value.mod(otherValue.abs());
-        if (otherValue.signum() == -1 && result.signum() != 0) {
-            result = otherValue.add(result);
-        }
-        return bignorm(getRuntime(), result);
+        Ruby runtime = context.getRuntime();
+        if (otherValue.signum() == 0) throw runtime.newZeroDivisionError();
 
-            }
+        BigInteger result = value.mod(otherValue.abs());
+        if (otherValue.signum() == -1 && result.signum() != 0) result = otherValue.add(result);
+        return bignorm(runtime, result);
+
+    }
 
     /** rb_big_remainder
      * 
@@ -428,10 +423,9 @@ public class RubyBignum extends RubyInteger {
         } else {
             return coerceBin(context, "remainder", other);
         }
-        if (otherValue.equals(BigInteger.ZERO)) {
-            throw getRuntime().newZeroDivisionError();
-    }
-        return bignorm(getRuntime(), value.remainder(otherValue));
+        Ruby runtime = context.getRuntime();
+        if (otherValue.signum() == 0) throw runtime.newZeroDivisionError();
+        return bignorm(runtime, value.remainder(otherValue));
     }
 
     /** rb_big_quo
