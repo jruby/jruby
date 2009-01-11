@@ -318,6 +318,7 @@ public class RubyBignum extends RubyInteger {
      * rb_big_divide. Shared part for both "/" and "div" operations.
      */
     private IRubyObject op_divide(ThreadContext context, IRubyObject other, boolean slash) {
+        Ruby runtime = context.getRuntime();
         final BigInteger otherValue;
         if (other instanceof RubyFixnum) {
             otherValue = fix2big((RubyFixnum) other);
@@ -326,22 +327,24 @@ public class RubyBignum extends RubyInteger {
         } else if (other instanceof RubyFloat) {
             double div = big2dbl(this) / ((RubyFloat) other).getDoubleValue();
             if (slash) {
-                return RubyFloat.newFloat(getRuntime(), div);
+                return RubyFloat.newFloat(runtime, div);
             } else {
-                return RubyNumeric.dbl2num(getRuntime(), div);
+                return RubyNumeric.dbl2num(runtime, div);
             }
         } else {
             return coerceBin(context, slash ? "/" : "div", other);
         }
 
-        if (otherValue.signum() == 0) throw getRuntime().newZeroDivisionError();
+        if (otherValue.signum() == 0) throw runtime.newZeroDivisionError();
 
-        BigInteger[] results = value.divideAndRemainder(otherValue);
-
-        if ((value.signum() * otherValue.signum()) == -1 && results[1].signum() != 0) {
-            return bignorm(getRuntime(), results[0].subtract(BigInteger.ONE));
+        final BigInteger result;
+        if (value.signum() * otherValue.signum() == -1) {
+            BigInteger[] results = value.divideAndRemainder(otherValue);
+            result = results[1].signum() != 0 ? results[0].subtract(BigInteger.ONE) : results[0];
+        } else {
+            result = value.divide(otherValue); 
         }
-        return bignorm(getRuntime(), results[0]);
+        return bignorm(getRuntime(), result);
     }
 
     /** rb_big_div
