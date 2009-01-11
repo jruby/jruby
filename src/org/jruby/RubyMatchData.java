@@ -58,6 +58,7 @@ public class RubyMatchData extends RubyObject {
     RubyString str;     // source string
     Regex pattern;
     RubyRegexp regexp;
+    boolean charOffsetUpdated;
 
     public static RubyClass createMatchDataClass(Ruby runtime) {
         RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getObject(), MATCH_DATA_ALLOCATOR);
@@ -104,7 +105,7 @@ public class RubyMatchData extends RubyObject {
     }
 
     private void checkLazyRegexp() {
-        if (regexp == null) regexp = RubyRegexp.newRegexp(getRuntime(), ByteList.EMPTY_BYTELIST, pattern);
+        if (regexp == null) regexp = RubyRegexp.newRegexp(getRuntime(), (ByteList)pattern.getUserObject(), pattern);
     }
 
     private RubyArray match_array(Ruby runtime, int start) {
