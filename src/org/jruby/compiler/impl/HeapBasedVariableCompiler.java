@@ -106,10 +106,41 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             method.astore(methodCompiler.getVarsArrayIndex());
         }
 
-        // fill local vars with nil, to avoid checking every access.
-        method.aload(methodCompiler.getVarsArrayIndex());
-        methodCompiler.loadRuntime();
-        methodCompiler.invokeUtilityMethod("fillNil", sig(void.class, IRubyObject[].class, Ruby.class));
+        if (scope != null && scope.getNumberOfVariables() >= 1) {
+            switch (scope.getNumberOfVariables()) {
+            case 1:
+                methodCompiler.loadNil();
+                assignLocalVariable(0, false);
+                break;
+            case 2:
+                methodCompiler.loadNil();
+                assignLocalVariable(0,true);
+                assignLocalVariable(1,false);
+                break;
+            case 3:
+                methodCompiler.loadNil();
+                assignLocalVariable(0,true);
+                assignLocalVariable(1,true);
+                assignLocalVariable(2,false);
+                break;
+            case 4:
+                methodCompiler.loadNil();
+                assignLocalVariable(0,true);
+                assignLocalVariable(1,true);
+                assignLocalVariable(2,true);
+                assignLocalVariable(3,false);
+                break;
+            default:
+                method.aload(methodCompiler.getVarsArrayIndex());
+                methodCompiler.loadNil();
+                assignLocalVariable(0,true);
+                assignLocalVariable(1,true);
+                assignLocalVariable(2,true);
+                assignLocalVariable(3,false);
+                methodCompiler.loadRuntime();
+                methodCompiler.invokeUtilityMethod("fillNil", sig(void.class, IRubyObject[].class, Ruby.class));
+            }
+        }
     }
 
     public void beginClosure(CompilerCallback argsCallback, StaticScope scope) {

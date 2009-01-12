@@ -221,7 +221,11 @@ public abstract class AbstractScript implements Script {
 
     public final RubyRegexp getRegexp(Ruby runtime, int index, String pattern, int options) {
         RubyRegexp regexp = regexps[index];
-        if (regexp == null) return regexps[index] = RubyRegexp.newRegexp(runtime, pattern, options);
+        if (regexp == null) {
+            regexp = RubyRegexp.newRegexp(runtime, pattern, options);
+            regexp.setLiteral();
+            regexps[index] = regexp;
+        }
         return regexp;
     }
 
@@ -244,7 +248,10 @@ public abstract class AbstractScript implements Script {
 
     public final void cacheRegexp(Ruby runtime, int index, ByteList pattern, int options) {
         RubyRegexp regexp = regexps[index];
-        if (regexp == null) regexps[index] = RubyRegexp.newRegexp(runtime, pattern, options);
+        if (regexp == null) {
+            regexp = RubyRegexp.newRegexp(runtime, pattern, options);
+            regexps[index] = regexp;
+        }
     }
 
     public final BigInteger getBigInteger(Ruby runtime, int index, String pattern) {
